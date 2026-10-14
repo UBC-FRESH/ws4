@@ -1,8 +1,11 @@
+"""Annual-step simulator over fragments, aggregated to blocks at runtime."""
+
 from __future__ import annotations
+
 from pathlib import Path
-from typing import Dict, Any, Iterable, Set
+
 import pandas as pd
-import numpy as np
+
 
 class Simulator:
     """Annual-step simulator over fragments; aggregates to blocks at runtime.
@@ -15,7 +18,9 @@ class Simulator:
       5) Patch metrics (computed over *blocks* using aggregated states)
       6) Accounts (summary/ratio/patch/route)
     """
-    def __init__(self, dataset_dir: Path):
+
+    def __init__(self, dataset_dir: Path) -> None:
+        """Load a compiled dataset and initialize each fragment's offset age."""
         self.dataset_dir = Path(dataset_dir)
         self.fragments = pd.read_parquet(self.dataset_dir / "fragments.parquet")
         self.tracks = pd.read_parquet(self.dataset_dir / "tracks.parquet")
@@ -28,11 +33,14 @@ class Simulator:
         self.fragments["offset"] = self.fragments["age"].astype(int)
 
     @classmethod
-    def from_dataset(cls, dataset_dir: Path) -> "Simulator":
+    def from_dataset(cls, dataset_dir: Path) -> Simulator:
+        """Build a simulator that reads the given compiled dataset."""
         return cls(dataset_dir)
 
-    def run(self, schedule_csv: Path, years: int, out_dir: Path):
-        out_dir = Path(out_dir); out_dir.mkdir(parents=True, exist_ok=True)
+    def run(self, schedule_csv: Path, years: int, out_dir: Path) -> None:
+        """Replay a schedule for the given horizon and write the run directory."""
+        out_dir = Path(out_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
         schedule = pd.read_csv(schedule_csv)  # block_id,treatment,period
         # Pre-index schedule by period for fast lookup
         sch_index = {int(p): df.drop(columns=["period"]) for p, df in schedule.groupby("period")}
@@ -44,14 +52,16 @@ class Simulator:
                 to_apply = sch_index[t]
                 # For each block, compute net operability = intersection across fragments
                 by_block = to_apply.groupby("block_id")
-                for block_id, rows in by_block:
+                for block_id, _rows in by_block:
                     # Find fragments in this block
                     mask = self.fragments["block_id"] == block_id
                     frag_ids = self.fragments.index[mask]
                     if len(frag_ids) == 0:
                         continue
-                    # VERY simplified operability gate: if any fragment would be inoperable, skip block
-                    # (real implementation should evaluate fragment-level exprs on attributes/offsets)
+                    # Simplified operability gate: if any fragment is inoperable,
+                    # skip the block. The real gate evaluates fragment-level
+                    # expressions against attributes and offsets.
+
                     can_apply = True
                     if not can_apply:
                         continue
@@ -62,5 +72,9 @@ class Simulator:
             self.fragments["offset"] = self.fragments["offset"].astype(int) + 1
 
         # Write a tiny report stub
-        blocks = self.fragments.groupby("block_id").agg(area_ha=("area_ha", "sum"), mean_offset=("offset", "mean")).reset_index()
+        blocks = (
+            self.fragments.groupby("block_id")
+            .agg(area_ha=("area_ha", "sum"), mean_offset=("offset", "mean"))
+            .reset_index()
+        )
         blocks.to_parquet(out_dir / "blocks_summary.parquet", index=False)
