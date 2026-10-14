@@ -39,8 +39,9 @@ Status values: `open`, `partial`, `blocked`, `done`.
 - **Full MKRf canonical model.** `blocked`. Its generated `xml/forestmodel.xml` has no copies on the
   reachable annex remote; regenerate once the Windows machine's inputs are published. The canonical
   strata add `origin`, `statecode`, and `hasnatcurve` over the PoC's six themes (7048 tracks vs 2116).
-- **Shapefile input.** `open`. The builder reads CSV/Parquet fragments; a shapefile needs the `geo`
-  extra (`geopandas`/`pyogrio`). The reference fragments are shapefiles.
+- **Shapefile input.** `done`. `ws4/io/fragments.py` reads a shapefile, GeoJSON, GeoPackage, CSV, or
+  Parquet (attributes; geometry is available separately). The geo dependency is imported lazily, and CI
+  installs the `geo` extra.
 - **Expression-based input fields.** `open`. `<input block="Int(RES_KEY)" area="Shape_Area/10000"
   age="Int(AGE_2020)"/>` is used verbatim as a column name; the expressions are not evaluated.
 - **Legacy matrix ingestion coverage.** `partial`. `ws4 ingest` maps the known legacy columns; other
@@ -110,7 +111,8 @@ Status values: `open`, `partial`, `blocked`, `done`.
 
 ## Tooling and process
 
-- **Shapefile/geo extra in CI.** `open`. The `geo` extra is declared but not installed in CI.
+- **Shapefile/geo extra in CI.** `done`. CI installs `.[geo]`, and `tests/test_fragments.py` covers a
+  shapefile read (skipping when geopandas is absent).
 - **Broaden mypy coverage to `ws4/`.** `open`. Type checking currently covers `scripts/`, `tests/`, and
   `docs/conf.py` plus transitively imported modules.
 - **Reference-matrix regression tests.** `partial`. The k3z pair is validated by hand; a committed

@@ -16,6 +16,7 @@ import pandas as pd
 
 from ..io.expressions import ExpressionError, evaluate_value
 from ..io.forest_model_xml import Recipe, parse_recipe
+from ..io.fragments import read_fragments
 from ..model.schema import MANIFEST_NAME, SCHEMA_VERSION, TABLES, coerce_to_schema
 from ..model.types import CanonicalDatasetManifest
 from .expansion import (
@@ -41,12 +42,8 @@ class _Portion(TypedDict):
 
 
 def _read_fragments(path: Path) -> pd.DataFrame:
-    """Read a fragment inventory from CSV or Parquet."""
-    if path.suffix.lower() in {".csv", ".txt"}:
-        return pd.read_csv(path)
-    if path.suffix.lower() in {".parquet", ".pq"}:
-        return pd.read_parquet(path)
-    raise ValueError(f"unsupported fragment inventory format: {path.suffix}")
+    """Read a fragment inventory from a shapefile, CSV, or Parquet."""
+    return read_fragments(path)
 
 
 def _sha256(path: Path) -> str:

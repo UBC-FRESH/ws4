@@ -145,6 +145,9 @@ issue comments.
 - P2.1: expanded the remaining label tokens (`%au`, `%s`) and implemented the `factor` expression. A
   factor scales the attribute's curve into a derived curve (reused per base curve and factor), so a
   scaled feature or product references its own curve. Added a factor test.
+- P2.1: added shapefile input (`ws4/io/fragments.py`): the builder reads a shapefile, GeoJSON,
+  GeoPackage, CSV, or Parquet fragment inventory, importing the geo dependency lazily. CI installs the
+  `geo` extra, and `tests/test_fragments.py` covers it.
 - Synced the UBC-FRESH dev workflow tooling to its latest release (P1-P4): updated
   `scripts/check_workflow.py` and the CI action versions and runners (`ubuntu-24.04`, `checkout@v5`,
   `setup-python@v6`, `upload-artifact@v6`, and the Pages actions), keeping the package install step.
