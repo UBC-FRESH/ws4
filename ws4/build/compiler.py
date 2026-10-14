@@ -87,13 +87,29 @@ def _expand_label(
     """
     if "%" not in label:
         return label
-    text = label.replace("%f", kind).replace("%m", _managed_value(row, constants))
+    text = (
+        label.replace("%f", kind)
+        .replace("%m", _managed_value(row, constants))
+        .replace("%au", str(row.get("au", "")))
+        .replace("%s", str(row.get("species", "")))
+    )
     if "+" in text or "if(" in text:
         try:
             return str(evaluate_value(text, row, constants))
         except ExpressionError:
             return text
     return text
+
+
+def _factor_value(attribute: object, row: Mapping[str, object], constants: dict[str, str]) -> float:
+    """Evaluate an attribute's factor expression, defaulting to 1.0."""
+    factor = getattr(attribute, "factor", None)
+    if factor is None:
+        return 1.0
+    try:
+        return float(str(evaluate_value(factor, row, constants)))
+    except (ExpressionError, ValueError):
+        return 1.0
 
 
 def _expression_curve(
@@ -229,14 +245,27 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
         ],
         columns=["track_id", "offset", "next_age", "cycle"],
     )
-    curves = pd.DataFrame(
-        [
-            {"curve_id": curve_ids[name], "x": x, "y": y}
-            for name, points in recipe.curves.items()
-            for x, y in points
-        ],
-        columns=["curve_id", "x", "y"],
-    )
+    curve_rows: list[dict[str, object]] = [
+        {"curve_id": curve_ids[name], "x": x, "y": y}
+        for name, points in recipe.curves.items()
+        for x, y in points
+    ]
+    scaled_ids: dict[tuple[str, float], int] = {}
+    next_curve = [len(curve_ids) + 1]
+
+    def curve_for(base_name: str, factor: float) -> int:
+        """Return a base curve's id, or a scaled copy when the factor is not 1."""
+        if factor == 1.0:
+            return curve_ids[base_name]
+        key = (base_name, round(factor, 6))
+        if key in scaled_ids:
+            return scaled_ids[key]
+        curve_id = next_curve[0]
+        next_curve[0] += 1
+        scaled_ids[key] = curve_id
+        for x, y in recipe.curves[base_name]:
+            curve_rows.append({"curve_id": curve_id, "x": x, "y": y * factor})
+        return curve_id
 
     feature_rows: list[dict[str, object]] = []
     product_rows: list[dict[str, object]] = []
@@ -261,7 +290,9 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
                     {
                         "track_id": stratum.track_id,
                         "label": label,
-                        "curve_id": curve_ids[curve_name],
+                        "curve_id": curve_for(
+                            curve_name, _factor_value(attribute, row, recipe.constants)
+                        ),
                     }
                 )
                 account_signal[label] = account_signal.get(label, False) or _curve_has_signal(
@@ -281,7 +312,9 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
                         "track_id": stratum.track_id,
                         "treatment": select.treatment_context,
                         "label": label,
-                        "curve_id": curve_ids[curve_name],
+                        "curve_id": curve_for(
+                            curve_name, _factor_value(attribute, row, recipe.constants)
+                        ),
                     }
                 )
                 account_signal[label] = account_signal.get(label, False) or _curve_has_signal(
@@ -322,7 +355,7 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
             treatment_rows,
             columns=["track_id", "begin", "end", "treatment", "new_track", "offset", "retain"],
         ),
-        "curves": curves,
+        "curves": pd.DataFrame(curve_rows, columns=["curve_id", "x", "y"]),
         "features": pd.DataFrame(feature_rows, columns=["track_id", "label", "curve_id"]),
         "products": pd.DataFrame(
             product_rows, columns=["track_id", "treatment", "label", "curve_id"]

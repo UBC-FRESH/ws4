@@ -181,6 +181,39 @@ def test_label_tokens_expand(tmp_path: Path) -> None:
     assert labels == {"feature.area.managed.total"}
 
 
+_FACTOR_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
+<ForestModel horizon="100" year="0" match="multi">
+  <curve id="unity"><point x="0" y="1.0"/></curve>
+  <curve id="volume"><point x="0" y="0"/><point x="100" y="100"/></curve>
+  <define field="IFM" column="IFM"/>
+  <input block="BLOCK" area="AREA_HA" age="F_AGE"/>
+  <output messages="messages.csv"/>
+  <select statement="IFM eq 'managed'">
+    <features>
+      <attribute label="feature.Volume" factor="0.5"><curve idref="volume"/></attribute>
+    </features>
+    <track><treatment label="CC" minage="0" maxage="100"/></track>
+  </select>
+</ForestModel>
+"""
+
+
+def test_attribute_factor_scales_the_curve(tmp_path: Path) -> None:
+    """A factor scales the attribute's curve into a new curve."""
+    (tmp_path / "recipe.xml").write_text(_FACTOR_RECIPE, encoding="utf-8")
+    pd.DataFrame({"BLOCK": [1], "AREA_HA": [5.0], "F_AGE": [50], "IFM": ["managed"]}).to_csv(
+        tmp_path / "fragments.csv", index=False
+    )
+    dataset = build_canonical_dataset(
+        tmp_path / "recipe.xml", tmp_path / "fragments.csv", tmp_path / "c"
+    )
+    features = pd.read_parquet(dataset / "features.parquet")
+    curves = pd.read_parquet(dataset / "curves.parquet")
+    resolved = int(features["curve_id"].iloc[0])
+    scaled = curves[curves["curve_id"] == resolved]
+    assert scaled["y"].max() == 50.0  # 100 * 0.5
+
+
 _CONTEXT_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
 <ForestModel horizon="100" year="0" match="multi">
   <curve id="unity"><point x="0" y="1.0"/></curve>

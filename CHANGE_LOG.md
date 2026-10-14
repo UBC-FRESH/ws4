@@ -142,6 +142,9 @@ issue comments.
 - P2.1: expanded `%f` (feature/product) and `%m` (managed/unmanaged) label tokens and evaluated
   expression labels (`'%f.area.%m.state.'+if(...)`). The evaluator now short-circuits `and`/`or` and
   treats a non-numeric `int`/`Number` operand as zero, so labels resolve on every stratum. Added a test.
+- P2.1: expanded the remaining label tokens (`%au`, `%s`) and implemented the `factor` expression. A
+  factor scales the attribute's curve into a derived curve (reused per base curve and factor), so a
+  scaled feature or product references its own curve. Added a factor test.
 - Synced the UBC-FRESH dev workflow tooling to its latest release (P1-P4): updated
   `scripts/check_workflow.py` and the CI action versions and runners (`ubuntu-24.04`, `checkout@v5`,
   `setup-python@v6`, `upload-artifact@v6`, and the Pages actions), keeping the package install step.

@@ -19,10 +19,10 @@ Status values: `open`, `partial`, `blocked`, `done`.
   curves. The evaluator now handles `curveId`, `attribute`, `lastindexof`, string concatenation, and
   arithmetic. The `<curve idref>` form and the `treatment eq 'X'` product context already match the k3z
   reference exactly.
-- **`%f` / `%m` / `%au` label tokens and `factor` expressions.** `partial`. The `%f` (feature/product)
-  and `%m` (managed/unmanaged) tokens expand per stratum, and an expression label such as
-  ``'%f.area.%m.state.'+if(...)`` is evaluated after substitution. Open: the `%au` and species tokens,
-  and the `factor` expression (which scales an attribute).
+- **`%f` / `%m` / `%au` label tokens and `factor` expressions.** `done`. The `%f` (feature/product),
+  `%m` (managed/unmanaged), `%au`, and `%s` tokens expand per stratum; an expression label such as
+  ``'%f.area.%m.state.'+if(...)`` is evaluated after substitution; and a `factor` expression scales the
+  attribute's curve into a derived curve (reused per base curve and factor).
 - **Account and feature/product de-duplication.** `partial`. Features and products now match the k3z
   reference exactly. Accounts are the union of feature and product labels, grouped by management state
   (`_MANAGED_`, `_UNMANAGED_`, `_ALL_`), and are close but not exact (k3z pct_light 1507 vs 1460).
