@@ -27,11 +27,11 @@ Status values: `open`, `partial`, `blocked`, `done`.
   reference exactly (pct_light, pct_moderate, intensive_light). The builder writes a summary account
   for every attribute (the `protoaccounts` table), grouped by the managed state of the producing
   selects (`_MANAGED_`, `_UNMANAGED_`, `_ALL_`), and matches the reference `protoaccounts.csv` exactly.
-- **Protoaccounts vs accounts.** `done`. Per the user guide ("Creating Summary Accounts"), the Matrix
-  Builder emits `protoaccounts` and the user copies it to `accounts` and edits it; re-running the
-  builder regenerates `protoaccounts` but must not overwrite the edited `accounts`. The builder now
-  does this. (The 47 extra labels in the k3z `accounts.csv` were a user edit removing the species `PL`,
-  which has no share in that instance — not a builder rule.)
+- **Protoaccounts vs accounts.** `done`. The matrix builder emits `protoaccounts` (a summary account
+  for every attribute); the user copies it to `accounts` and edits it. Re-running the builder
+  regenerates `protoaccounts` but must not overwrite the edited `accounts`. The builder now does this.
+  (The 47 extra labels in the k3z `accounts.csv` were a user edit removing the species `PL`, which has
+  no share in that instance — not a builder rule.)
 - **Overlay/scenario variants.** `open`. The overlay reference `products.csv` carries per-AU,
   per-species log-grade labels (e.g. `product.Logs_Grade_D.managed.<AU>.<species>.CC`, 1130 labels) that
   the builder does not yet generate (114 labels); the overlay recipe's own product labels are far fewer,

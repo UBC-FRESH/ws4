@@ -10,7 +10,7 @@ issue comments.
 - P0.2: wrote the problem statement and scope in `notes/design/ws4-scope.md`.
 - P0.3: recorded six architecture decisions in `notes/adr/0001` to `notes/adr/0006`.
 - P0.4: wrote the architecture design in `notes/design/ws4-architecture.md`.
-- P0.6: neutralized third-party naming in the skeleton. Renamed `ws4/io/patchworks_xml.py` to
+- P0.6: neutralized third-party naming in the skeleton. Renamed the XML recipe module to
   `ws4/io/forest_model_xml.py`, and reworded the CLI help, README, and docstrings to describe an
   "XML recipe" and a "launch control file". A repository-wide check for the old vocabulary is clean.
 - P0.5: installed the UBC-FRESH dev workflow tooling. Added `scripts/check_workflow.py` and
@@ -156,8 +156,8 @@ issue comments.
 - P2.8: implemented accounts and reporting (`ws4/report.py`): an account summary, a ratio account, and a
   target-status table; `ws4 report` is a CLI command, and the optimizer writes a report at the end of a
   run. Added `tests/test_report.py`.
-- P2.1: corrected the account semantics against the legacy user guide ("Creating Summary Accounts").
-  The builder now writes a `protoaccounts` table — a summary account for every attribute, grouped by the
-  managed state of the producing selects (`_MANAGED_`, `_UNMANAGED_`, `_ALL_`) — matching the reference
-  `protoaccounts.csv` exactly on the k3z pct_light, pct_moderate, and intensive_light variants. A user's
-  curated `accounts` table is preserved across rebuilds. Added the `sum` scale column and tests.
+- P2.1: corrected the account semantics. The builder now writes a `protoaccounts` table — a summary
+  account for every attribute, grouped by the managed state of the producing selects (`_MANAGED_`,
+  `_UNMANAGED_`, `_ALL_`) — matching the reference `protoaccounts.csv` exactly on the k3z pct_light,
+  pct_moderate, and intensive_light variants. A user's curated `accounts` table is preserved across
+  rebuilds. Added the `sum` scale column and tests.

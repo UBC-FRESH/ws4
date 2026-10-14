@@ -19,7 +19,7 @@ The lab already works with an established model format and a compiled matrix for
 
 The lab's FEMIC project already exports this pair (ForestModelXML + fragments shapefile) and validates
 it, with public functions such as `build_forestmodel_xml_tree`, `validate_forestmodel_xml_tree`,
-`build_fragments_geodataframe`, `validate_fragments_geodataframe`, and `export_patchworks_package`. Many
+`build_fragments_geodataframe`, `validate_fragments_geodataframe`, and `export_model_package`. Many
 users and organisations hold legacy datasets in this format, dating back to 2001.
 
 Inventing a new recipe format would discard that ecosystem and force every user to convert.
