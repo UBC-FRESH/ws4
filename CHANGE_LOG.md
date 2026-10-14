@@ -114,3 +114,6 @@ issue comments.
 - P2.7: implemented the road network subsystem (`ws4/roads/network.py`): load the four tables, build the
   segment graph, and route by shortest length or cost, with nearest-destination lookup. Added
   `tests/test_roads.py`.
+- P2.8: implemented accounts and reporting (`ws4/report.py`): an account summary, a ratio account, and a
+  target-status table; `ws4 report` is a CLI command, and the optimizer writes a report at the end of a
+  run. Added `tests/test_report.py`.

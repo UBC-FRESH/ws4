@@ -17,6 +17,7 @@ from typing import Any
 
 import pandas as pd
 
+from ..report import write_report
 from ..sim.engine import Simulator
 from .objective import Target, load_targets, objective
 from .operators import Candidates, OperatorRegistry, Schedule
@@ -164,7 +165,8 @@ class Optimizer:
         schedule_path = out_dir / "schedule.csv"
         self._schedule_frame(best).to_csv(schedule_path, index=False)
         simulator = Simulator.from_dataset(self.dataset_dir)
-        simulator.run(schedule_path, years=self.cfg.years, out_dir=out_dir)
+        values = simulator.run(schedule_path, years=self.cfg.years, out_dir=out_dir)
+        write_report(values, targets, out_dir)
         summary: dict[str, Any] = {
             "incumbent_objective": best_obj,
             "iterations": self.cfg.iterations,

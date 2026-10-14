@@ -79,9 +79,10 @@ Status values: `open`, `partial`, `blocked`, `done`.
 - **Road network, access, haul cost, exclusive routing.** `partial`. `ws4/roads/network.py` routes over
   the segment graph (shortest length and cost, nearest destination) with tests. Open: exclusive
   (one-of-many) routing, destination eligibility, and integration with the simulator's product flows.
-- **Account types and reports.** `open`. The compiled `accounts` table is the union of feature and
-  product labels; the summary, ratio, duplicate, and meta account types are not yet evaluated, and no
-  report writer exists.
+- **Account types and reports.** `partial`. `ws4/report.py` summarizes accounts, evaluates a ratio
+  account, reports target status, and writes `report_accounts.csv` / `report_targets.csv`; `ws4 report`
+  is a CLI command, and the optimizer writes a report at the end of a run. Open: duplicate and meta
+  accounts, and chart output.
 - **Unit conversion (map vs report units).** `open`.
 
 ## Programmatic model API (P2.9)
