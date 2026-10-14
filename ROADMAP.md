@@ -146,14 +146,14 @@ Status: active
 
 Goal: show that the build meets its acceptance criteria, and record the evidence in the changelog.
 
-- [ ] P3.1 Run the acceptance checks and record the evidence (#27)
-  - [ ] Matrix builder: rebuild each core variant and compare tracks, strata, treatments, blocks,
+- [x] P3.1 Run the acceptance checks and record the evidence (#27)
+  - [x] Matrix builder: rebuild each core variant and compare tracks, strata, treatments, blocks,
         features, products, and `protoaccounts` to the reference
-  - [ ] Simulator: reproduce the prototype's account values, and run the C5 end-to-end functional test
-  - [ ] Optimizer: satisfy a target set within a stated tolerance, and replay the schedule
-  - [ ] Spatial and road: route products and record patch metrics
-  - [ ] Programmatic API and the file path produce the same model
-  - [ ] Record the evidence, and any failure with its cause and backlog entry, in `CHANGE_LOG.md`
+  - [x] Simulator: reproduce the prototype's account values, and run the C5 end-to-end functional test
+  - [x] Optimizer: satisfy a target set within a stated tolerance, and replay the schedule
+  - [x] Spatial and road: route products and record patch metrics
+  - [x] Programmatic API and the file path produce the same model
+  - [x] Record the evidence, and any failure with its cause and backlog entry, in `CHANGE_LOG.md`
 
 ## Phase 4: Release and deploy
 

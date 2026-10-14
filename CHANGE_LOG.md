@@ -177,3 +177,9 @@ issue comments.
   -f visibility=public`, then `gh api -X POST repos/UBC-FRESH/ws4/pages -f build_type=workflow`), so the
   `Docs` deploy job can publish to `https://ubc-fresh.github.io/ws4/`. Pages was unavailable while the
   repository was private under the Free plan.
+- P3.1: ran the acceptance checks and recorded the evidence in `notes/acceptance.md`. Added a repeatable
+  `scripts/acceptance.py` (builder-vs-reference, prototype, optimizer, roads, and api checks). Result:
+  the builder matches the reference compiled matrices on all nine core variants; the C5 sample ingests
+  with 0 validation problems and simulates 30 years in 15.5 s; the optimizer meets its target; routing
+  and the programmatic model round-trip pass. `python -m pytest`: 218 passed, 94.78 percent branch
+  coverage. `python scripts/dashboard.py`: `OVERALL: GREEN`.
