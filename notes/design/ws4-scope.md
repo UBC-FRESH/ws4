@@ -39,8 +39,14 @@ outputs are inspectable datasets, and whose spatial relationships are enforced i
   handling.
 - A road and route subsystem: a network model with access, haul cost, destination eligibility, and
   exclusive (one-of-many) routing.
-- An optimization engine: weighted goal programming with a parallel metaheuristic search over
-  schedules.
+- An optimization engine: weighted goal programming with a layered, pluggable search stack
+  (operators, metaheuristics, a portfolio layer, and tuners) generalized from the lab's FHOPS toolkit,
+  with MIP bounds, warm starts, and destroy-repair subproblems.
+- Tuning and a meta-meta-heuristic portfolio driven by a telemetry store.
+- Multi-core and GPU execution: a NUMA-aware process pool, island metaheuristics, tensorized GPU move
+  evaluation, and parallel math-heuristics.
+- A Python-first implementation, with measured bottleneck kernels ported to C++ behind a stable Python
+  API.
 - Accounts and reporting over fragments, blocks, groups, patches, and routes.
 - A CLI (`build`, `simulate`, `optimize`, `validate`, `report`) and a small configuration surface.
 - Reproducibility: recorded seeds, deterministic simulation, and validated datasets.

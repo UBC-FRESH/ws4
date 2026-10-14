@@ -180,8 +180,16 @@ The search is a parallel metaheuristic:
   iterations, or when a time limit is reached.
 - **Checkpoints**: periodically persist the incumbent so a long run can resume.
 
-See `notes/adr/0004` for the choice of a metaheuristic over exact mixed-integer programming, and the
-alternatives considered.
+The optimizer is the top of a layered stack: a weighted-goal objective, a neighbourhood-operator
+registry, the metaheuristics, a portfolio/adaptation layer, and a tuning layer, over a shared telemetry
+store. The lab's FHOPS toolkit (simulated annealing, tabu search, iterated local search; random, grid,
+and Bayesian tuners) is generalized into a solver core that WS4, WS3, and FHOPS share through a problem
+adapter. A math-heuristic layer adds MIP bounds, warm starts, and destroy-repair subproblems. The
+design is in `notes/design/ws4-optimization-stack.md`.
+
+See `notes/adr/0004` for the choice of a metaheuristic over exact mixed-integer programming, and
+`notes/adr/0007` to `notes/adr/0010` for the stack, the language strategy, the parallel/GPU execution
+model, and telemetry-driven tuning.
 
 ## 9. Spatial subsystem
 
@@ -252,11 +260,18 @@ run directory with its inputs, its seed, and its outputs.
 
 ## 14. Performance and HPC
 
+The target host is a two-socket node (2 × Xeon Gold 6254, 72 logical CPUs, two NUMA nodes, 754 GB RAM)
+with an NVIDIA RTX PRO 6000 Blackwell (96 GB). The substrate is in
+`notes/design/ws4-optimization-stack.md`, section 5:
+
 - Columnar storage and vectorized kernels over fragments.
-- Optional compiled kernels (for example, with Numba) for the annual loop.
-- Parallel move evaluation and multi-start search across threads or processes.
+- A NUMA-aware process pool for parallel scenarios and islands, with per-worker seeds.
+- Island metaheuristics that exchange elites asynchronously.
+- GPU move evaluation by tensorizing the hot operators (PyTorch first; CPU fallback).
+- Parallel math-heuristics: concurrent MIP subproblems and a MIP lane for bounds and warm starts.
+- Python-first prototypes, with measured bottleneck kernels ported to C++ behind a stable Python API.
 - Checkpointing so long runs survive interruption.
-- A design that keeps the hot path free of per-block Python object churn.
+- A hot path free of per-block Python object churn.
 
 ## 15. Module layout and interfaces
 

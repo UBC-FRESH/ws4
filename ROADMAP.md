@@ -58,6 +58,10 @@ decisions that later phases can build on.
   - [x] Make `python scripts/dashboard.py` green on this repository
 - [x] P0.6 Neutralize third-party naming in the skeleton (#7)
   - [x] Rename the XML importer and reword the CLI help, README, and docstrings
+- [x] P0.7 Record the optimization and execution architecture (#9)
+  - [x] Layered optimization stack, generalized from the lab's metaheuristic toolkit
+  - [x] Parallel and GPU execution substrate; Python-first with C++ kernels behind an API
+  - [x] Telemetry-driven tuning and the meta-meta-heuristic portfolio
 
 Acceptance criteria:
 
@@ -93,9 +97,12 @@ Goal: implement the agreed scope, one task at a time, on the phase branch.
 
 - [ ] P2.1 Implement the ingestion and compilation pipeline
 - [ ] P2.2 Implement the simulation engine
-- [ ] P2.3 Implement the optimization engine
-- [ ] P2.4 Implement the spatial and road subsystems
-- [ ] P2.5 Implement accounts and reporting
+- [ ] P2.3 Implement the optimization engine: objective, operators, and one metaheuristic
+- [ ] P2.4 Implement the solver core: the shared operator/metaheuristic/tuning/telemetry package
+- [ ] P2.5 Implement the parallel and GPU execution substrate (process pool, islands, tensorized moves)
+- [ ] P2.6 Implement the math-heuristic layer (MIP bounds, warm starts, destroy-repair)
+- [ ] P2.7 Implement the spatial and road subsystems
+- [ ] P2.8 Implement accounts and reporting
 
 ## Phase 3: Verify
 
@@ -136,3 +143,6 @@ Goal: keep the project current: triage incoming ideas, review on a cadence, and 
 2. On approval: squash-merge #8, delete the branch, close parent issue #1, and launch P1 (contracts and
    prototype) with branch `feature/p1-contracts-prototype`.
 3. P1 fixes the compiled-dataset schema and builds the smallest end-to-end prototype on synthetic data.
+4. P2 builds the model and the optimization stack. The stack generalizes the lab's FHOPS toolkit into a
+   shared solver core; the execution substrate targets the 72-core host and the GPU. See
+   `notes/design/ws4-optimization-stack.md`.
