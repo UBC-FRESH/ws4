@@ -3,7 +3,7 @@
 Phase: P2 Build
 Parent issue: #15
 Pull request: #25, `feature/p2-build` into `main`
-Evidence head: `9bef098`, the head that the gates and the CI runs below cover
+Evidence head: `226fb24`, the head that the gates and the CI runs below cover
 Report commit: the commit that adds this report. Its CI run is posted on pull request #25.
 Date: 2026-10-14
 Status: queued for approval. Not merged.
@@ -63,9 +63,12 @@ Settings changes, each with its exact command. Each one runs only after its own 
 | Run ID | Head commit | Conclusion | Notes |
 | --- | --- | --- | --- |
 | 38532867166 (CI, pull request) | `f22cd6a` | failure | All three jobs failed: `ws4/opt/mip.py` imported `scipy` at module load, and CI installed only `.[geo]` plus the dev requirements. Fixed by `9bef098`. |
+| 38533086728 (CI, pull request) | `536a626` | failure | Same cause, before the fix. |
+| 38533520691 (CI, pull request) | `9bef098` | success | All three jobs pass after the fix. |
+| 38533611167 (CI, pull request) | `226fb24` | success | All three jobs pass. |
 | 38511591182 (Docs, `main`) | P1 merge | failure | The `build` job passes; the `deploy` job fails because GitHub Pages is not enabled. A settings change is named in the recommendation. |
 | 38493207193 (Docs, `main`) | P0 merge | failure | Same cause. |
-| this pull request's run | report commit | pending | CI runs on pull requests and `main` only, so the branch commits before the pull request have no CI run. |
+| this pull request's run | report commit | posted on the pull request | CI runs on pull requests and `main` only, so the branch commits before the pull request have no CI run. |
 
 ## 5. Deviations
 
