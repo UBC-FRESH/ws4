@@ -67,10 +67,14 @@ Status values: `open`, `partial`, `blocked`, `done`.
   three solvers in `ws4/opt/solvers.py` — simulated annealing, tabu search, and iterated local search —
   selected by `OptimizeConfig.metaheuristic`, with multi-start (`OptimizeConfig.starts`). All seeded and
   reproducible. Open: ALNS and the wider operator set.
-- **Solver core.** `open`. The shared package boundary is a recommendation, not code.
+- **Solver core.** `partial`. The problem-adapter boundary is implemented (`ws4/opt/core.py`: a
+  `Problem` with an evaluator, candidate moves, and an operator registry) and the solvers take it. Open:
+  extracting a separate shared package for WS4/WS3/FHOPS.
 - **Parallel and GPU execution substrate.** `open`.
 - **Math-heuristic layer (MIP).** `open`.
-- **Telemetry and tuning.** `open`.
+- **Telemetry and tuning.** `partial`. `ws4/opt/telemetry.py` writes a JSONL run header and a step
+  record per iteration, and the optimizer writes `telemetry.jsonl`. Open: the tuners and the portfolio
+  layer.
 
 ## Spatial, roads, accounts (P2.7-P2.8)
 

@@ -9,6 +9,7 @@ import pytest
 from ws4.build.compiler import build_canonical_dataset
 from ws4.opt.engine import OptimizeConfig, Optimizer
 from ws4.opt.objective import Target, load_targets, objective, penalty
+from ws4.opt.telemetry import RunLogger, read_records
 
 _FIXTURE = Path(__file__).resolve().parents[1] / "examples" / "synthetic"
 
@@ -65,6 +66,36 @@ def test_metaheuristics_improve_the_objective(tmp_path: Path, metaheuristic: str
     assert summary["incumbent_objective"] < 200.0
     assert summary["metaheuristic"] == metaheuristic
     assert (tmp_path / "run" / "schedule.csv").is_file()
+
+
+def test_run_logger_writes_a_header_and_steps(tmp_path: Path) -> None:
+    """The telemetry logger writes a run header and one record per step."""
+    path = tmp_path / "telemetry.jsonl"
+    with RunLogger(path, "run-1", {"seed": 7}) as logger:
+        logger.step(0, 10.0)
+        logger.step(1, 8.0)
+    records = read_records(path)
+    assert records[0] == {"type": "run", "run_id": "run-1", "config": {"seed": 7}}
+    assert records[1] == {"type": "step", "iteration": 0, "objective": 10.0}
+    assert records[2]["objective"] == 8.0
+
+
+def test_optimizer_writes_telemetry(tmp_path: Path) -> None:
+    """An optimizer run writes its telemetry beside its outputs."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    targets = tmp_path / "targets.yaml"
+    targets.write_text(
+        "targets:\n  - account: feature.Volume\n    year: 0\n    maximum: 500\n",
+        encoding="utf-8",
+    )
+    Optimizer.from_dataset(
+        dataset, OptimizeConfig(targets_path=str(targets), seed=1, years=1, iterations=5)
+    ).run(tmp_path / "run")
+    records = read_records(tmp_path / "run" / "telemetry.jsonl")
+    assert records[0]["type"] == "run"
+    assert sum(1 for record in records if record["type"] == "step") == 5
 
 
 def test_multi_start_is_no_worse_than_single_start(tmp_path: Path) -> None:

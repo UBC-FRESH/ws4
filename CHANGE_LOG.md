@@ -120,6 +120,10 @@ issue comments.
 - P2.9: implemented the programmatic model API (`ws4/model/api.py`). A `Model` holds one DataFrame per
   matrix table, with `append` and `replace`; `from_dataset` loads and `write` saves, round-tripping a
   dataset. Added `tests/test_model_api.py`.
+- P2.4: defined the solver-core boundary (`ws4/opt/core.py`: a `Problem` adapter with an evaluator,
+  candidate moves, and an operator registry) and refactored the solvers to take it. Added run telemetry
+  (`ws4/opt/telemetry.py`: a JSONL header and one step record per iteration); the optimizer writes
+  `telemetry.jsonl`. Added telemetry tests.
 - P2.8: implemented accounts and reporting (`ws4/report.py`): an account summary, a ratio account, and a
   target-status table; `ws4 report` is a CLI command, and the optimizer writes a report at the end of a
   run. Added `tests/test_report.py`.

@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import math
 import random
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
@@ -19,9 +19,11 @@ import pandas as pd
 
 from ..report import write_report
 from ..sim.engine import Simulator
+from .core import Problem
 from .objective import Target, load_targets, objective
 from .operators import Candidates, OperatorRegistry, Schedule
 from .solvers import solve_ils, solve_sa, solve_tabu
+from .telemetry import RunLogger
 
 
 @dataclass
@@ -124,43 +126,44 @@ class Optimizer:
         def evaluate(schedule: Schedule) -> float:
             return self._evaluate(schedule, targets)
 
+        problem = Problem(evaluate=evaluate, candidates=candidates, registry=self.registry)
+        logger = RunLogger(
+            out_dir / "telemetry.jsonl",
+            run_id=f"{self.cfg.metaheuristic}-{self.cfg.seed}",
+            config=asdict(self.cfg),
+        )
         best: Schedule = {}
         best_obj = math.inf
         for start in range(max(1, self.cfg.starts)):
             rng = random.Random(self.cfg.seed + start)
             if self.cfg.metaheuristic == "tabu":
                 candidate, candidate_obj = solve_tabu(
-                    {},
-                    evaluate,
-                    self.registry,
-                    candidates,
+                    problem,
                     rng,
                     iterations=self.cfg.iterations,
                     tenure=self.cfg.tenure,
+                    on_step=logger.step,
                 )
             elif self.cfg.metaheuristic == "ils":
                 candidate, candidate_obj = solve_ils(
-                    {},
-                    evaluate,
-                    self.registry,
-                    candidates,
+                    problem,
                     rng,
                     iterations=self.cfg.iterations,
                     perturbation=self.cfg.perturbation,
+                    on_step=logger.step,
                 )
             else:
                 candidate, candidate_obj = solve_sa(
-                    {},
-                    evaluate,
-                    self.registry,
-                    candidates,
+                    problem,
                     rng,
                     iterations=self.cfg.iterations,
                     temperature=self.cfg.temperature,
                     cooling=self.cfg.cooling,
+                    on_step=logger.step,
                 )
             if candidate_obj < best_obj:
                 best, best_obj = candidate, candidate_obj
+        logger.close()
 
         schedule_path = out_dir / "schedule.csv"
         self._schedule_frame(best).to_csv(schedule_path, index=False)
