@@ -8,10 +8,12 @@ fragment's offset age by one year. A schedule replays deterministically.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
 
 import pandas as pd
 
+from ..patch.metrics import load_topology, patch_metrics
 from .curve import curve_value
 
 
@@ -63,7 +65,7 @@ class Simulator:
         ]
         return match.iloc[0] if not match.empty else None
 
-    def apply_treatments(self, schedule: pd.DataFrame, year: int) -> int:
+    def apply_treatments(self, schedule: pd.DataFrame, year: int) -> set[int]:
         """Apply the treatments scheduled for a year and record their products.
 
         A product is produced when its treatment is applied to a fragment on the
@@ -79,10 +81,10 @@ class Simulator:
 
         Returns
         -------
-        int
-            The number of fragments treated.
+        set of int
+            The blocks that had at least one fragment treated.
         """
-        treated = 0
+        disturbed: set[int] = set()
         for _, row in schedule[schedule["period"] == year].iterrows():
             mask = self.fragments["block_id"] == row["block_id"]
             for index in self.fragments.index[mask]:
@@ -103,8 +105,8 @@ class Simulator:
                     )
                 self.fragments.at[index, "track_id"] = _as_int(treatment["new_track"])
                 self.fragments.at[index, "offset"] = _as_int(treatment["offset"])
-                treated += 1
-        return treated
+                disturbed.add(int(row["block_id"]))
+        return disturbed
 
     def account_values(self, year: int) -> list[dict[str, object]]:
         """Compute the feature account values for the current state.
@@ -124,8 +126,15 @@ class Simulator:
             records.append({"year": year, "account": label, "value": total})
         return records
 
-    def run(self, schedule_csv: Path, years: int, out_dir: Path) -> pd.DataFrame:
-        """Replay a schedule for the given horizon and write the account values.
+    def run(
+        self,
+        schedule_csv: Path,
+        years: int,
+        out_dir: Path,
+        topology_csv: Path | None = None,
+        patch_breaks: Sequence[float] = (5.0, 10.0, 50.0),
+    ) -> pd.DataFrame:
+        """Replay a schedule for the given horizon and write the run outputs.
 
         Parameters
         ----------
@@ -134,7 +143,12 @@ class Simulator:
         years : int
             The number of annual steps.
         out_dir : Path
-            Directory to write ``account_values.csv`` into.
+            Directory to write the run outputs into.
+        topology_csv : Path or None, optional
+            A block topology edge list. When given, per-year patch metrics are written
+            to ``patch_metrics.csv``.
+        patch_breaks : sequence of float, optional
+            The patch size-class upper bounds, in hectares.
 
         Returns
         -------
@@ -147,10 +161,27 @@ class Simulator:
         if "period" not in schedule.columns:
             schedule = schedule.assign(period=0)
 
+        edges: list[tuple[int, int]] = []
+        block_area: dict[int, float] = {}
+        if topology_csv is not None:
+            topology = load_topology(topology_csv)
+            edges = list(
+                zip(topology["src_block"].tolist(), topology["dst_block"].tolist(), strict=True)
+            )
+            block_area = {
+                _as_int(block): _as_float(area)
+                for block, area in self.fragments.groupby("block_id")["area_ha"].sum().items()
+            }
+
         records: list[dict[str, object]] = []
+        patch_records: list[dict[str, object]] = []
         self._product_values = []
         for year in range(years):
-            self.apply_treatments(schedule, year)
+            disturbed = self.apply_treatments(schedule, year)
+            if topology_csv is not None and disturbed:
+                patch_records.append(
+                    {"year": year, **patch_metrics(disturbed, edges, block_area, patch_breaks)}
+                )
             records.extend(self.account_values(year))
             self.fragments["offset"] = self.fragments["offset"].astype(int) + 1
 
@@ -159,4 +190,6 @@ class Simulator:
         pd.DataFrame(self._product_values, columns=["year", "account", "value"]).to_csv(
             out_dir / "product_values.csv", index=False
         )
+        if topology_csv is not None:
+            pd.DataFrame(patch_records).to_csv(out_dir / "patch_metrics.csv", index=False)
         return values

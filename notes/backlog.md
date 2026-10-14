@@ -53,7 +53,9 @@ Status values: `open`, `partial`, `blocked`, `done`.
 - **Product yields.** `done`. Applying a treatment records the product yield (area times the product
   curve at the pre-treatment offset) to `product_values.csv`.
 - **Route flows.** `open`. Products are not yet routed to destinations or costed.
-- **Patch metrics over blocks.** `open`.
+- **Patch metrics over blocks.** `done`. `ws4/patch/metrics.py` groups the disturbed blocks into
+  connected patches over the topology and reports the count, mean size, and size-class distribution;
+  the simulator writes `patch_metrics.csv` when given a topology.
 - **Deterministic replay test.** `done` (two runs are identical; an unoffered treatment is a no-op). A
   replay validated against a reference run remains open.
 

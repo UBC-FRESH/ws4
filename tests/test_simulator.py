@@ -53,6 +53,20 @@ def test_a_treatment_records_its_product_yield(tmp_path: Path) -> None:
     assert products["value"].iloc[0] == 360.0
 
 
+def test_patch_metrics_are_written(tmp_path: Path) -> None:
+    """With a topology, per-year patch metrics are written for the disturbed blocks."""
+    dataset = _dataset(tmp_path)
+    topology = tmp_path / "topology.csv"
+    pd.DataFrame({"src_block": [1], "dst_block": [2], "distance_m": [10.0]}).to_csv(
+        topology, index=False
+    )
+    schedule = _schedule(tmp_path, "cc.csv", [(1, "CC", 0)])
+    out = tmp_path / "pat"
+    Simulator.from_dataset(dataset).run(schedule, years=1, out_dir=out, topology_csv=topology)
+    metrics = pd.read_csv(out / "patch_metrics.csv")
+    assert metrics["patch_count"].iloc[0] == 1.0  # only block 1 is disturbed
+
+
 def test_a_treatment_the_track_does_not_offer_is_skipped(tmp_path: Path) -> None:
     """A scheduled treatment absent from the fragment's track does not apply."""
     dataset = _dataset(tmp_path)

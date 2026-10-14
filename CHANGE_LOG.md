@@ -99,3 +99,6 @@ issue comments.
   `new_track`. Applying a treatment records its product yield (area times the product curve at the
   pre-treatment offset) to `product_values.csv`. Added `tests/test_simulator.py` (deterministic replay;
   an unoffered treatment is a no-op; a treatment records its product yield).
+- P2.2: implemented patch metrics over the block topology (`ws4/patch/metrics.py`): connected patches,
+  size classes, and mean size. The simulator writes `patch_metrics.csv` when given a topology. Added
+  `tests/test_patch.py` and a simulator patch-metric test.
