@@ -61,6 +61,22 @@ def _strata_expr(variables: Sequence[str], key: tuple[str, ...]) -> str:
     return "+".join(f"{name}({value})" for name, value in zip(variables, key, strict=True))
 
 
+def _input_value(
+    expression: str, record: Mapping[str, object], constants: dict[str, str]
+) -> object:
+    """Resolve an ``<input>`` expression against a fragment row.
+
+    A plain column name is read directly; an expression such as ``Int(RES_KEY)`` or
+    ``Shape_Area/10000`` is evaluated against the row.
+    """
+    if expression in record:
+        return record[expression]
+    try:
+        return evaluate_value(expression, record, constants)
+    except ExpressionError:
+        return record.get(expression)
+
+
 def _managed_value(row: Mapping[str, object], constants: dict[str, str]) -> str:
     """Return the managed/unmanaged value for a stratum.
 
@@ -169,9 +185,9 @@ def _portions(
     example, ``IFM = unmanaged``); the rest keeps the fragment's own state.
     """
     key = state_of(record, variables, recipe)
-    block_id = int(_as_float(record[recipe.input_block]))
-    area = _as_float(record[recipe.input_area])
-    age = int(_as_float(record[recipe.input_age]))
+    block_id = int(_as_float(_input_value(recipe.input_block, record, recipe.constants)))
+    area = _as_float(_input_value(recipe.input_area, record, recipe.constants))
+    age = int(_as_float(_input_value(recipe.input_age, record, recipe.constants)))
     split = _retention_split(record, key, variables, recipe)
     if split is None:
         return [_Portion(block_id=block_id, area_ha=area, age=age, key=key)]

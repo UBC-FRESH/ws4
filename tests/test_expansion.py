@@ -151,6 +151,36 @@ def test_expression_sourced_curves_resolve(tmp_path: Path) -> None:
     assert curves[curves["curve_id"] == resolved]["y"].max() == 500.0
 
 
+_INPUT_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
+<ForestModel horizon="100" year="0" match="multi">
+  <curve id="unity"><point x="0" y="1.0"/></curve>
+  <curve id="volume"><point x="0" y="0"/><point x="100" y="100"/></curve>
+  <define field="au" column="AU"/>
+  <input block="Int(RES_KEY)" area="Shape_Area/10000" age="Int(AGE_2020)"/>
+  <output messages="messages.csv"/>
+  <select statement="au eq 1">
+    <features><attribute label="feature.Volume"><curve idref="volume"/></attribute></features>
+    <track><treatment label="CC" minage="0" maxage="100"/></track>
+  </select>
+</ForestModel>
+"""
+
+
+def test_input_expressions_are_evaluated(tmp_path: Path) -> None:
+    """``<input>`` block/area/age expressions evaluate against the fragment row."""
+    (tmp_path / "recipe.xml").write_text(_INPUT_RECIPE, encoding="utf-8")
+    pd.DataFrame({"RES_KEY": [7], "Shape_Area": [50000.0], "AGE_2020": [42], "AU": [1]}).to_csv(
+        tmp_path / "fragments.csv", index=False
+    )
+    dataset = build_canonical_dataset(
+        tmp_path / "recipe.xml", tmp_path / "fragments.csv", tmp_path / "c"
+    )
+    fragments = pd.read_parquet(dataset / "fragments.parquet")
+    assert fragments["block_id"].iloc[0] == 7
+    assert fragments["area_ha"].iloc[0] == 5.0  # 50000 / 10000
+    assert fragments["age"].iloc[0] == 42
+
+
 _TOKENS_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
 <ForestModel horizon="100" year="0" match="multi">
   <curve id="unity"><point x="0" y="1.0"/></curve>

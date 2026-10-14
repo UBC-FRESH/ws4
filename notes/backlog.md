@@ -42,8 +42,8 @@ Status values: `open`, `partial`, `blocked`, `done`.
 - **Shapefile input.** `done`. `ws4/io/fragments.py` reads a shapefile, GeoJSON, GeoPackage, CSV, or
   Parquet (attributes; geometry is available separately). The geo dependency is imported lazily, and CI
   installs the `geo` extra.
-- **Expression-based input fields.** `open`. `<input block="Int(RES_KEY)" area="Shape_Area/10000"
-  age="Int(AGE_2020)"/>` is used verbatim as a column name; the expressions are not evaluated.
+- **Expression-based input fields.** `done`. An ``<input>`` expression such as ``Int(RES_KEY)`` or
+  ``Shape_Area/10000`` is evaluated against the fragment row (a plain column name is read directly).
 - **Legacy matrix ingestion coverage.** `partial`. `ws4 ingest` maps the known legacy columns; other
   legacy layouts and the road model are not covered.
 

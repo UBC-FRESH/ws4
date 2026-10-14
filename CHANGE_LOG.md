@@ -148,6 +148,8 @@ issue comments.
 - P2.1: added shapefile input (`ws4/io/fragments.py`): the builder reads a shapefile, GeoJSON,
   GeoPackage, CSV, or Parquet fragment inventory, importing the geo dependency lazily. CI installs the
   `geo` extra, and `tests/test_fragments.py` covers it.
+- P2.1: evaluated the ``<input>`` block/area/age expressions against the fragment row, so a raw inventory
+  with `RES_KEY`/`Shape_Area`/`AGE_2020` columns works without pre-renaming. Added an expansion test.
 - Synced the UBC-FRESH dev workflow tooling to its latest release (P1-P4): updated
   `scripts/check_workflow.py` and the CI action versions and runners (`ubuntu-24.04`, `checkout@v5`,
   `setup-python@v6`, `upload-artifact@v6`, and the Pages actions), keeping the package install step.
