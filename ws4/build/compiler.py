@@ -64,6 +64,38 @@ def _strata_expr(variables: Sequence[str], key: tuple[str, ...]) -> str:
     return "+".join(f"{name}({value})" for name, value in zip(variables, key, strict=True))
 
 
+def _managed_value(row: Mapping[str, object], constants: dict[str, str]) -> str:
+    """Return the managed/unmanaged value for a stratum.
+
+    A model may carry an ``IFM`` field; otherwise the value is derived from the status
+    field and the ``managed`` constant.
+    """
+    if "IFM" in row:
+        return str(row["IFM"])
+    managed = constants.get("managed", "C")
+    return "managed" if str(row.get("status", "")) == managed else "unmanaged"
+
+
+def _expand_label(
+    label: str, row: Mapping[str, object], kind: str, constants: dict[str, str]
+) -> str:
+    """Expand a label's ``%f`` and ``%m`` tokens, and evaluate a label expression.
+
+    ``%f`` becomes the attribute's kind (``feature`` or ``product``) and ``%m`` the
+    managed/unmanaged value. A label that is an expression (for example
+    ``'%f.area.%m.state.'+if(...)``) is evaluated after substitution.
+    """
+    if "%" not in label:
+        return label
+    text = label.replace("%f", kind).replace("%m", _managed_value(row, constants))
+    if "+" in text or "if(" in text:
+        try:
+            return str(evaluate_value(text, row, constants))
+        except ExpressionError:
+            return text
+    return text
+
+
 def _expression_curve(
     recipe: Recipe, variables: Sequence[str], key: tuple[str, ...], expression: str
 ) -> str | None:
@@ -215,6 +247,7 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
     for stratum in strata:
         for select_index in stratum.select_indices:
             select = recipe.selects[select_index - 1]
+            row = dict(zip(variables, stratum.key, strict=True))
             for attribute in select.features:
                 curve_name = attribute.curve or (
                     _expression_curve(recipe, variables, stratum.key, attribute.expression)
@@ -223,16 +256,17 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
                 )
                 if curve_name is None or curve_name not in curve_ids:
                     continue
+                label = _expand_label(attribute.label, row, "feature", recipe.constants)
                 feature_rows.append(
                     {
                         "track_id": stratum.track_id,
-                        "label": attribute.label,
+                        "label": label,
                         "curve_id": curve_ids[curve_name],
                     }
                 )
-                account_signal[attribute.label] = account_signal.get(
-                    attribute.label, False
-                ) or _curve_has_signal(recipe, curve_name)
+                account_signal[label] = account_signal.get(label, False) or _curve_has_signal(
+                    recipe, curve_name
+                )
             for attribute in select.products:
                 curve_name = attribute.curve or (
                     _expression_curve(recipe, variables, stratum.key, attribute.expression)
@@ -241,17 +275,18 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
                 )
                 if curve_name is None or curve_name not in curve_ids:
                     continue
+                label = _expand_label(attribute.label, row, "product", recipe.constants)
                 product_rows.append(
                     {
                         "track_id": stratum.track_id,
                         "treatment": select.treatment_context,
-                        "label": attribute.label,
+                        "label": label,
                         "curve_id": curve_ids[curve_name],
                     }
                 )
-                account_signal[attribute.label] = account_signal.get(
-                    attribute.label, False
-                ) or _curve_has_signal(recipe, curve_name)
+                account_signal[label] = account_signal.get(label, False) or _curve_has_signal(
+                    recipe, curve_name
+                )
             for treatment in select.treatments:
                 treatment_rows.append(
                     {

@@ -234,9 +234,15 @@ def _call(name: str, args: list[Any], row: Mapping[str, object], constants: dict
     if name == "length":
         return float(len(str(values[0])))
     if name == "int":
-        return float(int(_as_number(values[0])))
+        try:
+            return float(int(_as_number(values[0])))
+        except ExpressionError:
+            return 0.0
     if name == "number":
-        return _as_number(values[0])
+        try:
+            return _as_number(values[0])
+        except ExpressionError:
+            return 0.0
     if name == "if":
         return values[1] if values[0] else values[2]
     if name == "lastindexof":
@@ -258,9 +264,12 @@ def _evaluate(node: Any, row: Mapping[str, object], constants: dict[str, str]) -
     if kind == "not":
         return not bool(_evaluate(node[1], row, constants))
     if kind == "bool":
+        # Short-circuit, so an unparsable right operand is not evaluated when the left
+        # decides the result (for example ``startswith(au,'t') or int(au) gt 2200``).
         left = bool(_evaluate(node[2], row, constants))
-        right = bool(_evaluate(node[3], row, constants))
-        return (left and right) if node[1] == "and" else (left or right)
+        if node[1] == "and":
+            return left and bool(_evaluate(node[3], row, constants))
+        return left or bool(_evaluate(node[3], row, constants))
     if kind == "cmp":
         return _compare(
             node[1], _evaluate(node[2], row, constants), _evaluate(node[3], row, constants)

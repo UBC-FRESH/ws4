@@ -151,6 +151,36 @@ def test_expression_sourced_curves_resolve(tmp_path: Path) -> None:
     assert curves[curves["curve_id"] == resolved]["y"].max() == 500.0
 
 
+_TOKENS_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
+<ForestModel horizon="100" year="0" match="multi">
+  <curve id="unity"><point x="0" y="1.0"/></curve>
+  <curve id="volume"><point x="0" y="0"/><point x="100" y="100"/></curve>
+  <define field="IFM" column="IFM"/>
+  <input block="BLOCK" area="AREA_HA" age="F_AGE"/>
+  <output messages="messages.csv"/>
+  <select statement="IFM eq 'managed'">
+    <features>
+      <attribute label="%f.area.%m.total"><curve idref="volume"/></attribute>
+    </features>
+    <track><treatment label="CC" minage="0" maxage="100"/></track>
+  </select>
+</ForestModel>
+"""
+
+
+def test_label_tokens_expand(tmp_path: Path) -> None:
+    """``%f`` and ``%m`` in an attribute label expand per stratum."""
+    (tmp_path / "recipe.xml").write_text(_TOKENS_RECIPE, encoding="utf-8")
+    pd.DataFrame({"BLOCK": [1], "AREA_HA": [5.0], "F_AGE": [50], "IFM": ["managed"]}).to_csv(
+        tmp_path / "fragments.csv", index=False
+    )
+    dataset = build_canonical_dataset(
+        tmp_path / "recipe.xml", tmp_path / "fragments.csv", tmp_path / "c"
+    )
+    labels = set(pd.read_parquet(dataset / "features.parquet")["label"])
+    assert labels == {"feature.area.managed.total"}
+
+
 _CONTEXT_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
 <ForestModel horizon="100" year="0" match="multi">
   <curve id="unity"><point x="0" y="1.0"/></curve>

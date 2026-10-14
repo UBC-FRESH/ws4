@@ -139,6 +139,9 @@ issue comments.
   concatenation, arithmetic, and the `curveId`, `attribute`, and `lastindexof` functions, and the builder
   evaluates an attribute's expression per stratum to a curve name. On the MKRf PoC the expression-sourced
   features and products now resolve. Added an expansion test.
+- P2.1: expanded `%f` (feature/product) and `%m` (managed/unmanaged) label tokens and evaluated
+  expression labels (`'%f.area.%m.state.'+if(...)`). The evaluator now short-circuits `and`/`or` and
+  treats a non-numeric `int`/`Number` operand as zero, so labels resolve on every stratum. Added a test.
 - Synced the UBC-FRESH dev workflow tooling to its latest release (P1-P4): updated
   `scripts/check_workflow.py` and the CI action versions and runners (`ubuntu-24.04`, `checkout@v5`,
   `setup-python@v6`, `upload-artifact@v6`, and the Pages actions), keeping the package install step.
