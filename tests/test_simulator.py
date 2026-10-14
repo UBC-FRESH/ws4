@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -40,6 +41,16 @@ def test_replay_is_deterministic(tmp_path: Path) -> None:
     first = _run(dataset, schedule, tmp_path, years=3, tag="a")
     second = _run(dataset, schedule, tmp_path, years=3, tag="b")
     pd.testing.assert_frame_equal(first, second)
+
+
+def test_run_records_the_dataset_reference(tmp_path: Path) -> None:
+    """A run directory identifies the dataset that produced it."""
+    dataset = _dataset(tmp_path)
+    out = tmp_path / "ref"
+    Simulator.from_dataset(dataset).run(_schedule(tmp_path, "s.csv", []), years=1, out_dir=out)
+    reference = json.loads((out / "dataset.json").read_text(encoding="utf-8"))
+    assert reference["schema_version"] == "0.1"
+    assert len(reference["manifest_sha256"]) == 64
 
 
 def test_a_treatment_records_its_product_yield(tmp_path: Path) -> None:

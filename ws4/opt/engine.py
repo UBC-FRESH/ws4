@@ -19,6 +19,7 @@ from typing import Any
 
 import pandas as pd
 
+from ..model.schema import dataset_reference
 from ..report import write_report
 from ..sim.engine import Simulator
 from .core import Problem
@@ -244,6 +245,7 @@ class Optimizer:
             "blocks_scheduled": len(best),
             "operators": self.registry.names(),
             "status": "ok",
+            "dataset": dataset_reference(self.dataset_dir),
         }
         if self.cfg.mip_bound:
             bound = bound_for(self.dataset_dir, targets, self.candidates(), self.cfg.years)

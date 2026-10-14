@@ -190,3 +190,9 @@ issue comments.
   (release preparation, notes, artifacts, docs, tagging, and post-release verification). Operate and
   maintain now has six tasks (review cadence, triage, dependency and security maintenance, planning
   upkeep, release cadence, and a maintainer guide).
+- P3.2: verified determinism and reproducibility. The simulator is deterministic; the same seed
+  reproduces the same objective and schedule; a parallel multi-start run matches the serial run; a warm
+  start is deterministic (and intentionally differs from a cold start, so the criterion was corrected);
+  and a run directory now records the dataset manifest (`dataset_reference` in `ws4/model/schema.py`,
+  used by the optimizer's `summary.json` and the simulator's `dataset.json`). `python -m pytest`: 224
+  passed, 94.78 percent branch coverage. `python scripts/dashboard.py`: `OVERALL: GREEN`.

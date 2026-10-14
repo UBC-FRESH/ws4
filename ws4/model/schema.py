@@ -7,6 +7,7 @@ that checks a dataset against both.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
@@ -263,6 +264,34 @@ def load_manifest(dataset_dir: Path) -> CanonicalDatasetManifest:
     manifest_path = dataset_dir / MANIFEST_NAME
     raw = json.loads(manifest_path.read_text(encoding="utf-8"))
     return CanonicalDatasetManifest.model_validate(raw)
+
+
+def dataset_reference(dataset_dir: Path) -> dict[str, object]:
+    """Return a reference to a compiled dataset, for a run record.
+
+    A run directory records this so that the dataset that produced it can be identified and
+    audited: the schema version, the source hashes, and the SHA-256 of the manifest file.
+
+    Parameters
+    ----------
+    dataset_dir : Path
+        The dataset directory.
+
+    Returns
+    -------
+    dict of str to object
+        The reference, or an empty mapping when the manifest is missing.
+    """
+    manifest_path = Path(dataset_dir) / MANIFEST_NAME
+    if not manifest_path.is_file():
+        return {}
+    raw = manifest_path.read_bytes()
+    manifest = json.loads(raw)
+    return {
+        "schema_version": manifest.get("schema_version"),
+        "sources": manifest.get("sources", []),
+        "manifest_sha256": hashlib.sha256(raw).hexdigest(),
+    }
 
 
 def _check_table(table: Table, dataset_dir: Path) -> list[Problem]:

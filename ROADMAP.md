@@ -155,12 +155,12 @@ release.
   - [x] Spatial and road: route products and record patch metrics
   - [x] Programmatic API and the file path produce the same model
   - [x] Record the evidence, and any failure with its cause and backlog entry, in `CHANGE_LOG.md`
-- [ ] P3.2 Verify determinism and reproducibility (#28)
-  - [ ] The simulator is deterministic: the same schedule produces identical account values across runs
-  - [ ] Every stochastic search records its seed, and the same seed reproduces the same result
-  - [ ] A parallel multi-start run matches the serial run for the same seeds
-  - [ ] A warm start produces the same result as a cold start for the same seed
-  - [ ] A run directory is self-describing: the config, the seed, and the manifest reproduce it
+- [x] P3.2 Verify determinism and reproducibility (#28)
+  - [x] The simulator is deterministic: the same schedule produces identical account values across runs
+  - [x] Every stochastic search records its seed, and the same seed reproduces the same result
+  - [x] A parallel multi-start run matches the serial run for the same seeds
+  - [x] A warm start is deterministic: the same seed reproduces the same result
+  - [x] A run directory is self-describing: it records the config, the seed, and the dataset manifest
 - [ ] P3.3 Verify correctness: reference regression and invariants (#29)
   - [ ] Commit a fixture-based regression test for the matrix builder against a reference matrix
   - [ ] Property tests for the Model II expansion invariants (every stratum has a track; every treatment

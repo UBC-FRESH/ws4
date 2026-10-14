@@ -8,12 +8,14 @@ fragment's offset age by one year. A schedule replays deterministically.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Sequence
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from ..model.schema import dataset_reference
 from ..patch.metrics import load_topology, patch_metrics
 from ..roads.network import RouteNetwork
 from .curve import curve_value
@@ -251,6 +253,9 @@ class Simulator:
             Simulator.from_dataset(self.dataset_dir).write_patch_metrics(
                 schedule, years, topology_csv, patch_breaks, out_dir
             )
+        (out_dir / "dataset.json").write_text(
+            json.dumps(dataset_reference(self.dataset_dir), indent=2) + "\n", encoding="utf-8"
+        )
         return values
 
     def write_patch_metrics(

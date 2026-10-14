@@ -6,7 +6,13 @@ import json
 from pathlib import Path
 
 import pandas as pd
-from ws4.model.schema import MANIFEST_NAME, TABLES, validate_dataset
+from ws4.model.schema import (
+    MANIFEST_NAME,
+    SCHEMA_VERSION,
+    TABLES,
+    dataset_reference,
+    validate_dataset,
+)
 from ws4.model.types import CanonicalDatasetManifest
 
 _EMPTY: dict[str, pd.DataFrame] = {
@@ -125,3 +131,15 @@ def test_non_monotonic_curve_is_reported(tmp_path: Path) -> None:
     broken["curves"] = pd.DataFrame({"curve_id": [1, 1], "x": [10.0, 0.0], "y": [1.0, 0.0]})
     codes = {problem.code for problem in validate_dataset(_write_dataset(tmp_path, broken))}
     assert "DATASET-CURVE-DOMAIN" in codes
+
+
+def test_dataset_reference_reports_the_manifest(tmp_path: Path) -> None:
+    """A dataset reference carries the schema version and the manifest digest."""
+    reference = dataset_reference(_write_dataset(tmp_path))
+    assert reference["schema_version"] == SCHEMA_VERSION
+    assert len(str(reference["manifest_sha256"])) == 64
+
+
+def test_dataset_reference_is_empty_without_a_manifest(tmp_path: Path) -> None:
+    """A directory without a manifest yields an empty reference."""
+    assert dataset_reference(tmp_path) == {}
