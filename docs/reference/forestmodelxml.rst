@@ -31,18 +31,21 @@ The matrix is a **Model II** model. State variables (themes) define a **stratum*
 unique trajectory over time between two treatments; and a **treatment** resets one or more state
 variables, which moves a block to the stratum of the new values and therefore onto that stratum's track.
 
-`ws4.build.compiler.build_canonical_dataset` currently maps the recipe and the fragments into the matrix
-in a simplified way:
+`ws4.build.compiler.build_canonical_dataset` builds the matrix with a Model II expansion
+(`ws4.build.expansion`):
 
-- one track per select, in order, named by its statement;
-- each fragment is assigned to the first select whose terms match its row (constants resolved);
-- features, products, and treatments are emitted per track;
-- a treatment's ``new_track`` is resolved by applying its transition to the source select's terms and
-  matching the result against the selects;
-- curves, blocks, groups, accounts, and messages are emitted.
+- the **state variables** are the recipe's non-constant define fields;
+- each fragment's state is read from its columns, and the **reachable strata** are enumerated from the
+  inventory and the treatment transitions, to a fixed point;
+- each stratum becomes a **track** (``tracknames``), named by its state values;
+- a stratum is governed by **every** select whose statement matches it, and features, products, and
+  treatments accumulate across those selects;
+- a treatment's ``new_track`` is the track of the stratum reached by applying its transition;
+- a block with fragments in more than one stratum is emitted once per portion (``blocks``).
 
-The full builder enumerates the reachable strata and expands each into a track, which is why the
-reference matrix has thousands of tracks.
+On the reference model's recipe and fragments, this expansion produces 1399 strata and 2024 treatment
+rows. The reference matrix for the full model has 7048 strata, so the remaining gap is the additional
+stratification (state variables beyond the recipe's defines).
 
 Legacy ingestion
 ----------------
@@ -75,10 +78,8 @@ Known gaps
 
 The following are not implemented yet and are tracked in the P2 tasks:
 
-- the Model II expansion engine: enumerate the state variables, enumerate the reachable strata, grow
-  each stratum's trajectory into a track, and connect treatments to the target stratum's track;
-- block splitting into managed and unmanaged portions (one row per portion, per track);
-- per-track treatment expansion;
+- the additional stratification state variables (``origin``, ``statecode``, ``hasnatcurve``, and the
+  rest) that the recipe's defines do not carry;
 - full evaluation of the select expression language (function calls, ``not``, string functions);
 - expression-based attribute labels and ``factor`` expressions, and the ``%f`` / ``%m`` / ``%au``
   label substitution patterns;

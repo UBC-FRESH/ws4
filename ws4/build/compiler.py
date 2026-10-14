@@ -1,16 +1,22 @@
-"""Compile a ForestModelXML recipe and a fragment inventory into the matrix dataset."""
+"""Compile a ForestModelXML recipe and a fragment inventory into the matrix dataset.
+
+The matrix is a Model II model: the builder enumerates the reachable strata (unique
+state-variable combinations) and expands each into a track, then connects treatments to
+the target stratum's track (see ``notes/design/ws4-matrix-builder-and-interop.md``).
+"""
 
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Mapping
+from collections.abc import Sequence
 from pathlib import Path
 
 import pandas as pd
 
-from ..io.forest_model_xml import Recipe, Select, Term, Treatment, parse_recipe
+from ..io.forest_model_xml import Recipe, parse_recipe
 from ..model.schema import MANIFEST_NAME, SCHEMA_VERSION, TABLES, coerce_to_schema
 from ..model.types import CanonicalDatasetManifest
+from .expansion import expand_strata, state_of, state_variables, transition_key
 
 _FRAGMENT_COLUMNS = ("fragment_id", "block_id", "area_ha", "age", "track_id")
 
@@ -29,66 +35,14 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _matches(terms: tuple[Term, ...], row: Mapping[str, object], constants: dict[str, str]) -> bool:
-    """Return whether a select statement's terms match a row.
-
-    A term the parser could not evaluate (``op == '?'``) is skipped, so matching is
-    best-effort for statements that use the full expression language.
-    """
-    for term in terms:
-        if term.op == "?":
-            continue
-        if term.field not in row:
-            return False
-        actual = str(row[term.field])
-        expected = constants.get(term.value, term.value) if term.op == "in" else term.value
-        if term.op in ("eq", "in"):
-            if actual != expected:
-                return False
-        elif term.op == "ne":
-            if actual == expected:
-                return False
-        else:
-            try:
-                left, right = float(actual), float(expected)
-            except ValueError:
-                return False
-            if (term.op == "lt" and not left < right) or (term.op == "le" and not left <= right):
-                return False
-            if (term.op == "gt" and not left > right) or (term.op == "ge" and not left >= right):
-                return False
-    return True
-
-
-def _track_for(
-    row: Mapping[str, object], selects: tuple[Select, ...], constants: dict[str, str]
-) -> int:
-    """Return the one-based track id of the first matching select, or 0."""
-    for index, select in enumerate(selects, start=1):
-        if _matches(select.terms, row, constants):
-            return index
-    return 0
-
-
-def _target_track(
-    select: Select, treatment: Treatment, selects: tuple[Select, ...], constants: dict[str, str]
-) -> int:
-    """Return the one-based track id a treatment transitions to, or 0 for none."""
-    state: dict[str, object] = {
-        term.field: constants.get(term.value, term.value) if term.op == "in" else term.value
-        for term in select.terms
-        if term.op in ("eq", "in")
-    }
-    state.update(treatment.transition)
-    for index, candidate in enumerate(selects, start=1):
-        if _matches(candidate.terms, state, constants):
-            return index
-    return 0
-
-
 def _curve_ids(recipe: Recipe) -> dict[str, int]:
     """Assign a stable integer id to every curve, in recipe order."""
     return {name: index for index, name in enumerate(recipe.curves, start=1)}
+
+
+def _strata_expr(variables: Sequence[str], key: tuple[str, ...]) -> str:
+    """Render a stratum as a strata expression such as ``status(C)+oper(Operable)``."""
+    return "+".join(f"{name}({value})" for name, value in zip(variables, key, strict=True))
 
 
 def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path) -> Path:
@@ -114,36 +68,37 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
     recipe = parse_recipe(xml_path)
     raw = _read_fragments(fragments_path)
     curve_ids = _curve_ids(recipe)
+    variables = state_variables(recipe)
+
+    records: list[dict[str, object]] = [
+        {str(key): value for key, value in record.items()} for record in raw.to_dict("records")
+    ]
+    fragment_keys = [state_of(record, variables, recipe) for record in records]
+    strata = expand_strata(fragment_keys, recipe)
+    track_of: dict[tuple[str, ...], int] = {s.key: s.track_id for s in strata}
 
     fragments = pd.DataFrame(
         {
-            "fragment_id": range(1, len(raw) + 1),
+            "fragment_id": range(1, len(records) + 1),
             "block_id": raw[recipe.input_block].astype("int64"),
             "area_ha": raw[recipe.input_area].astype("float64"),
             "age": raw[recipe.input_age].astype("int64"),
-            "track_id": [
-                _track_for(
-                    {str(key): value for key, value in record.items()},
-                    recipe.selects,
-                    recipe.constants,
-                )
-                for record in raw.to_dict("records")
-            ],
+            "track_id": [track_of.get(key, 0) for key in fragment_keys],
         },
         columns=list(_FRAGMENT_COLUMNS),
     )
 
     tracks = pd.DataFrame(
         [
-            {"track_id": index, "name": select.statement}
-            for index, select in enumerate(recipe.selects, start=1)
+            {"track_id": stratum.track_id, "name": _strata_expr(variables, stratum.key)}
+            for stratum in strata
         ],
         columns=["track_id", "name"],
     )
-    strata = pd.DataFrame(
+    strata_table = pd.DataFrame(
         [
-            {"track_id": index, "offset": 0, "next_age": recipe.horizon, "cycle": 0}
-            for index in range(1, len(recipe.selects) + 1)
+            {"track_id": stratum.track_id, "offset": 0, "next_age": recipe.horizon, "cycle": 0}
+            for stratum in strata
         ],
         columns=["track_id", "offset", "next_age", "cycle"],
     )
@@ -160,53 +115,58 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
     product_rows: list[dict[str, object]] = []
     treatment_rows: list[dict[str, object]] = []
     account_rows: list[dict[str, object]] = []
-    for index, select in enumerate(recipe.selects, start=1):
-        for attribute in select.features:
-            if attribute.curve is None:
-                continue
-            feature_rows.append(
-                {
-                    "track_id": index,
-                    "label": attribute.label,
-                    "curve_id": curve_ids[attribute.curve],
-                }
-            )
-            account_rows.append(
-                {"group": "forest", "attribute": attribute.label, "account": attribute.label}
-            )
-        for attribute in select.products:
-            if attribute.curve is None:
-                continue
-            product_rows.append(
-                {
-                    "track_id": index,
-                    "label": attribute.label,
-                    "curve_id": curve_ids[attribute.curve],
-                }
-            )
-        for treatment in select.treatments:
-            treatment_rows.append(
-                {
-                    "track_id": index,
-                    "begin": treatment.min_age,
-                    "end": treatment.max_age,
-                    "treatment": treatment.label,
-                    "new_track": _target_track(select, treatment, recipe.selects, recipe.constants),
-                    "offset": 0,
-                    "retain": 0,
-                }
-            )
+    for stratum in strata:
+        for select_index in stratum.select_indices:
+            select = recipe.selects[select_index - 1]
+            for attribute in select.features:
+                if attribute.curve is None:
+                    continue
+                feature_rows.append(
+                    {
+                        "track_id": stratum.track_id,
+                        "label": attribute.label,
+                        "curve_id": curve_ids[attribute.curve],
+                    }
+                )
+                account_rows.append(
+                    {"group": "forest", "attribute": attribute.label, "account": attribute.label}
+                )
+            for attribute in select.products:
+                if attribute.curve is None:
+                    continue
+                product_rows.append(
+                    {
+                        "track_id": stratum.track_id,
+                        "label": attribute.label,
+                        "curve_id": curve_ids[attribute.curve],
+                    }
+                )
+            for treatment in select.treatments:
+                treatment_rows.append(
+                    {
+                        "track_id": stratum.track_id,
+                        "begin": treatment.min_age,
+                        "end": treatment.max_age,
+                        "treatment": treatment.label,
+                        "new_track": track_of.get(
+                            transition_key(stratum.key, variables, treatment, recipe.constants), 0
+                        ),
+                        "offset": 0,
+                        "retain": 0,
+                    }
+                )
 
-    blocks = fragments.groupby("block_id", as_index=False).agg(
-        track_id=("track_id", "first"), area_ha=("area_ha", "sum")
+    blocks = (
+        fragments.groupby(["block_id", "track_id"], as_index=False)
+        .agg(offset=("age", "min"), area_ha=("area_ha", "sum"))
+        .loc[:, ["block_id", "track_id", "offset", "area_ha"]]
     )
-    blocks["offset"] = 0
 
     tables: dict[str, pd.DataFrame] = {
         "fragments": fragments,
-        "blocks": blocks[["block_id", "track_id", "offset", "area_ha"]],
+        "blocks": blocks,
         "tracks": tracks,
-        "strata": strata,
+        "strata": strata_table,
         "treatments": pd.DataFrame(
             treatment_rows,
             columns=["track_id", "begin", "end", "treatment", "new_track", "offset", "retain"],
@@ -222,8 +182,8 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
             {
                 "severity": ["info"],
                 "message": [
-                    f"compiled {len(fragments)} fragments into {len(blocks)} blocks, "
-                    f"{len(recipe.selects)} tracks"
+                    f"compiled {len(fragments)} fragments into {len(blocks)} block portions, "
+                    f"{len(strata)} strata"
                 ],
             }
         ),
@@ -240,7 +200,7 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
             {"path": xml_path.name, "sha256": _sha256(xml_path)},
             {"path": fragments_path.name, "sha256": _sha256(fragments_path)},
         ],
-        options={"period_length": 1, "recipe": "ForestModelXML"},
+        options={"period_length": 1, "recipe": "ForestModelXML", "model": "II"},
     )
     (out_dir / MANIFEST_NAME).write_text(manifest.model_dump_json(indent=2), encoding="utf-8")
     return out_dir

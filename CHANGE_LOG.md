@@ -70,3 +70,9 @@ issue comments.
   over time between two treatments, and a treatment resets state variables, which switches the block to
   the target stratum's track. This is the expansion engine the matrix builder needs, and it explains the
   reference matrix's 7048 tracks and its per-portion block rows.
+- P2.1: implemented the Model II expansion engine (`ws4/build/expansion.py`). The builder now enumerates
+  the reachable strata (inventory plus treatment transitions, to a fixed point), expands each stratum
+  into a track, treats a stratum as governed by every matching select (so features, products, and
+  treatments accumulate), and emits one block row per portion. On the reference recipe and fragments this
+  yields 1399 strata and 2024 treatment rows (from 0). Added `tests/test_expansion.py`. Dashboard result:
+  `python scripts/dashboard.py` reports `OVERALL: GREEN`.
