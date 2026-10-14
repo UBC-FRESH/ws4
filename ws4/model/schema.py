@@ -181,6 +181,37 @@ _KIND_CHECKS = {
 }
 
 
+def coerce_to_schema(frame: pd.DataFrame, table: Table) -> pd.DataFrame:
+    """Coerce a frame's required columns to the schema kinds.
+
+    Parameters
+    ----------
+    frame : pandas.DataFrame
+        The frame to coerce. A missing required column is added empty.
+    table : Table
+        The table schema.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The frame with its required columns typed.
+    """
+    result = frame.copy()
+    for column in table.columns:
+        series = (
+            result[column.name] if column.name in result.columns else pd.Series(dtype="float64")
+        )
+        if column.kind == "string":
+            result[column.name] = series.astype("string")
+        elif column.kind == "boolean":
+            result[column.name] = series.astype("bool")
+        elif column.kind == "integer":
+            result[column.name] = pd.to_numeric(series).astype("int64")
+        else:
+            result[column.name] = pd.to_numeric(series).astype("float64")
+    return result
+
+
 @dataclass(frozen=True)
 class Problem:
     """One validation finding.

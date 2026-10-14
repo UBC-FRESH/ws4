@@ -9,6 +9,7 @@ from rich import print
 from rich.table import Table
 
 from .build.compiler import build_canonical_dataset
+from .build.legacy import ingest_legacy_matrix
 from .model.schema import validate_dataset
 from .opt.engine import OptimizeConfig, Optimizer
 from .sim.engine import Simulator
@@ -77,6 +78,19 @@ def optimize(
     for k, v in result.items():
         table.add_row(k, str(v))
     print(table)
+
+
+@app.command()
+def ingest(
+    matrix: Path = typer.Option(..., "--matrix", exists=True, help="Legacy matrix directory"),
+    fragments: Path = typer.Option(
+        ..., "--fragments", exists=True, help="Fragment inventory (CSV or Parquet)"
+    ),
+    out: Path = typer.Option(..., "--out", help="Output directory for the canonical dataset"),
+) -> None:
+    """Ingest a legacy matrix dataset into the WS4 schema."""
+    out = ingest_legacy_matrix(matrix, fragments, out)
+    print(f"[bold green]Ingested dataset[/] → {out}")
 
 
 @app.command()

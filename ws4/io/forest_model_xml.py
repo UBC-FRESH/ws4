@@ -1,126 +1,271 @@
-"""Parse a forest-model XML recipe into canonical matrix tables.
+"""Parse a ForestModelXML recipe into structured parts.
 
-The recipe describes the *logical* model: tracks, treatments, curves, features, and
-products. Fragment-level assignment happens later in the compiler, using fragment
-attributes. The recipe is a compile-time input; launch control files and block
-geometry are not read here.
+The recipe is the established model format: a root ``ForestModel`` with a horizon and
+base year, curves, field defines, an input block/area/age definition, an output
+definition, and a set of ``select`` blocks that partition the inventory by a statement
+and carry features, a track with treatments, and products.
+
+Only the structural subset WS4 needs is parsed here; the full expression language is a
+later task. A select statement is read as a conjunction of ``field eq 'value'`` terms.
 """
 
 from __future__ import annotations
 
 import xml.etree.ElementTree as ET
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
-Row = dict[str, Any]
+Point = tuple[float, float]
 
 
-class ForestModelImporter:
-    """Parse a forest-model XML recipe into schema-conforming rows."""
+class ForestModelXMLError(ValueError):
+    """Raised when a recipe violates the ForestModelXML structure."""
 
-    def __init__(self, xml_path: Path) -> None:
-        """Store the path to the recipe to be parsed.
 
-        Parameters
-        ----------
-        xml_path : Path
-            Path to the forest-model XML recipe.
-        """
-        self.xml_path = Path(xml_path)
+@dataclass(frozen=True)
+class Attribute:
+    """A feature or product attribute.
 
-    def parse(self) -> dict[str, list[Row]]:
-        """Parse the recipe into the tables that do not depend on the inventory.
+    The source is either a curve reference or an expression. ``factor`` is the
+    optional area or yield modifier expression.
+    """
 
-        Returns
-        -------
-        dict of str to list of dict
-            The tables ``tracks``, ``strata``, ``treatments``, ``curves``,
-            ``features``, and ``products``.
-        """
-        root = ET.parse(self.xml_path).getroot()
-        return {
-            "tracks": self._tracks(root),
-            "strata": self._strata(root),
-            "treatments": self._treatments(root),
-            "curves": self._curves(root),
-            "features": self._features(root),
-            "products": self._products(root),
-        }
+    label: str
+    curve: str | None
+    expression: str | None
+    factor: str | None
 
-    def _tracks(self, root: ET.Element) -> list[Row]:
-        """Return the track rows."""
-        rows: list[Row] = []
-        for element in root.findall("./tracks/track"):
-            track_id = int(element.get("id", len(rows) + 1))
-            rows.append({"track_id": track_id, "name": element.get("name", f"track_{track_id}")})
-        return rows
 
-    def _strata(self, root: ET.Element) -> list[Row]:
-        """Return the stratum rows, one per track at offset zero."""
-        rows: list[Row] = []
-        for element in root.findall("./tracks/track"):
-            track_id = int(element.get("id", len(rows) + 1))
-            rows.append(
-                {
-                    "track_id": track_id,
-                    "offset": 0,
-                    "next_age": int(element.get("max_age", 0)),
-                    "cycle": 0,
-                }
-            )
-        return rows
+@dataclass(frozen=True)
+class Treatment:
+    """A treatment inside a track."""
 
-    def _treatments(self, root: ET.Element) -> list[Row]:
-        """Return the treatment rows."""
-        rows: list[Row] = []
-        for element in root.findall("./treatments/treatment"):
-            rows.append(
-                {
-                    "track_id": int(element.get("track", 0)),
-                    "begin": int(element.get("begin", 0)),
-                    "end": int(element.get("end", 0)),
-                    "treatment": element.get("label", element.get("id", "?")),
-                    "new_track": int(element.get("new_track", element.get("track", 0))),
-                    "offset": int(element.get("offset", 0)),
-                    "retain": int(element.get("retain", 0)),
-                }
-            )
-        return rows
+    label: str
+    min_age: int
+    max_age: int
+    transition: dict[str, str] = field(default_factory=dict)
 
-    def _curves(self, root: ET.Element) -> list[Row]:
-        """Return the curve points in long format."""
-        rows: list[Row] = []
-        for element in root.findall("./curves/curve"):
-            curve_id = int(element.get("id", 0))
-            for point in element.findall("./point"):
-                rows.append(
-                    {
-                        "curve_id": curve_id,
-                        "x": float(point.get("x", 0.0)),
-                        "y": float(point.get("y", 0.0)),
-                    }
+
+@dataclass(frozen=True)
+class Term:
+    """One term of a select statement.
+
+    ``op`` is one of ``eq``, ``ne``, ``lt``, ``le``, ``gt``, ``ge``, ``in``, or
+    ``?`` for a term the parser cannot evaluate (a function call or a ``not``
+    expression).
+    """
+
+    field: str
+    op: str
+    value: str
+
+
+@dataclass(frozen=True)
+class Select:
+    """One ``select`` block."""
+
+    statement: str
+    terms: tuple[Term, ...]
+    features: tuple[Attribute, ...]
+    products: tuple[Attribute, ...]
+    treatments: tuple[Treatment, ...]
+
+
+@dataclass(frozen=True)
+class Recipe:
+    """A parsed ForestModelXML recipe."""
+
+    horizon: int
+    year: int
+    match: str
+    curves: dict[str, tuple[Point, ...]]
+    defines: dict[str, str | None]
+    constants: dict[str, str]
+    input_block: str
+    input_area: str
+    input_age: str
+    output: dict[str, str]
+    selects: tuple[Select, ...]
+
+
+_OPERATORS: tuple[str, ...] = ("eq", "ne", "lt", "le", "gt", "ge", "in")
+
+
+def parse_statement(statement: str) -> tuple[Term, ...]:
+    """Parse a select statement into a tuple of terms.
+
+    A term is ``field op value`` for a comparison operator, or an opaque term
+    (``op='?'``) when the statement uses a function call or a ``not`` expression
+    that the parser cannot evaluate.
+
+    Parameters
+    ----------
+    statement : str
+        A statement such as ``"status in managed and oper in operable"``.
+
+    Returns
+    -------
+    tuple of Term
+        The parsed terms.
+    """
+    terms: list[Term] = []
+    for part in statement.split(" and "):
+        part = part.strip()
+        for op in _OPERATORS:
+            needle = f" {op} "
+            if needle in part:
+                field, value = part.split(needle, 1)
+                terms.append(Term(field.strip(), op, value.strip().strip("'")))
+                break
+        else:
+            terms.append(Term(part, "?", ""))
+    return tuple(terms)
+
+
+def _attribute(element: ET.Element) -> Attribute:
+    """Return the parsed attribute element.
+
+    An attribute carries a curve reference or an expression as its source; an
+    attribute with neither is rejected.
+    """
+    label = element.get("label")
+    if label is None:
+        raise ForestModelXMLError("an attribute needs a label")
+    curve = element.find("./curve")
+    expression = element.find("./expression")
+    curve_id = curve.get("idref") if curve is not None else None
+    statement = expression.get("statement") if expression is not None else None
+    if curve_id is None and statement is None:
+        raise ForestModelXMLError(f"attribute {label!r} needs a curve or an expression")
+    return Attribute(
+        label=label,
+        curve=curve_id,
+        expression=statement,
+        factor=element.get("factor"),
+    )
+
+
+def _int_or_zero(value: str | None) -> int:
+    """Parse an integer, or return 0 for an expression or missing value."""
+    if value is None:
+        return 0
+    try:
+        return int(value)
+    except ValueError:
+        return 0
+
+
+def _treatment(element: ET.Element) -> Treatment:
+    """Return the parsed treatment for a treatment element."""
+    label = element.get("label")
+    if label is None:
+        raise ForestModelXMLError("a treatment needs a label")
+    transition: dict[str, str] = {}
+    for assign in element.findall("./transition/assign"):
+        name = assign.get("field")
+        value = assign.get("value")
+        if name is not None and value is not None:
+            transition[name] = value.strip("'")
+    return Treatment(
+        label=label,
+        min_age=_int_or_zero(element.get("minage")),
+        max_age=_int_or_zero(element.get("maxage")),
+        transition=transition,
+    )
+
+
+def parse_recipe(path: Path) -> Recipe:
+    """Parse and validate a ForestModelXML recipe.
+
+    Parameters
+    ----------
+    path : Path
+        Path to the recipe.
+
+    Returns
+    -------
+    Recipe
+        The parsed recipe.
+
+    Raises
+    ------
+    ForestModelXMLError
+        When the recipe violates the required structure.
+    """
+    root = ET.parse(path).getroot()
+    if root.tag != "ForestModel":
+        raise ForestModelXMLError(f"root tag must be ForestModel, not {root.tag!r}")
+    for name in ("horizon", "year", "match"):
+        if root.get(name) is None:
+            raise ForestModelXMLError(f"ForestModel needs a {name} attribute")
+
+    curves: dict[str, tuple[Point, ...]] = {}
+    for curve in root.findall("./curve"):
+        curve_id = curve.get("id")
+        if curve_id is None:
+            raise ForestModelXMLError("a curve needs an id")
+        curves[curve_id] = tuple(
+            (float(point.get("x", 0.0)), float(point.get("y", 0.0)))
+            for point in curve.findall("./point")
+        )
+    if not curves:
+        raise ForestModelXMLError("the recipe needs at least one curve")
+
+    defines: dict[str, str | None] = {}
+    constants: dict[str, str] = {}
+    for element in root.findall("./define"):
+        name = element.get("field", "")
+        constant = element.get("constant")
+        if constant is not None:
+            constants[name] = constant.strip("'")
+        else:
+            defines[name] = element.get("column")
+
+    input_element = root.find("./input")
+    if input_element is None:
+        raise ForestModelXMLError("the recipe needs an <input> element")
+    for name in ("block", "area", "age"):
+        if input_element.get(name) is None:
+            raise ForestModelXMLError(f"<input> needs a {name} attribute")
+
+    output_element = root.find("./output")
+    if output_element is None:
+        raise ForestModelXMLError("the recipe needs an <output> element")
+
+    selects: list[Select] = []
+    for element in root.findall("./select"):
+        statement = element.get("statement", "")
+        features = tuple(_attribute(a) for a in element.findall("./features/attribute"))
+        products = tuple(_attribute(a) for a in element.findall("./products/attribute"))
+        treatments = tuple(_treatment(t) for t in element.findall("./track/treatment"))
+        for attribute in (*features, *products):
+            if attribute.curve is not None and attribute.curve not in curves:
+                raise ForestModelXMLError(
+                    f"attribute {attribute.label!r} references unknown curve {attribute.curve!r}"
                 )
-        return rows
+        selects.append(
+            Select(
+                statement=statement,
+                terms=parse_statement(statement),
+                features=features,
+                products=products,
+                treatments=treatments,
+            )
+        )
 
-    def _features(self, root: ET.Element) -> list[Row]:
-        """Return the per-track feature rows."""
-        return [
-            {
-                "track_id": int(element.get("track", 0)),
-                "label": element.get("label", "feature"),
-                "curve_id": int(element.get("curve", 0)),
-            }
-            for element in root.findall("./features/feature")
-        ]
+    if not any(select.treatments for select in selects):
+        raise ForestModelXMLError("the recipe needs at least one treatment")
 
-    def _products(self, root: ET.Element) -> list[Row]:
-        """Return the product rows."""
-        return [
-            {
-                "track_id": int(element.get("track", 0)),
-                "treatment": element.get("treatment", ""),
-                "label": element.get("label", "product"),
-                "curve_id": int(element.get("curve", 0)),
-            }
-            for element in root.findall("./products/product")
-        ]
+    return Recipe(
+        horizon=int(root.get("horizon", 0)),
+        year=int(root.get("year", 0)),
+        match=root.get("match", "single"),
+        curves=curves,
+        defines=defines,
+        constants=constants,
+        input_block=input_element.get("block", "BLOCK"),
+        input_area=input_element.get("area", "AREA_HA"),
+        input_age=input_element.get("age", "F_AGE"),
+        output=dict(output_element.attrib.items()),
+        selects=tuple(selects),
+    )

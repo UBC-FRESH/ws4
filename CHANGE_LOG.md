@@ -57,3 +57,11 @@ issue comments.
 - Completed Phase 1: squash-merged pull request #14 as `33ac569`, deleted `feature/p1-contracts-prototype`,
   and closed parent issue #10.
 - Launched Phase 2 (Build) on `feature/p2-build`, parent issue #15, with tasks P2.1 to P2.9 (#16 to #24).
+- P2.1 (in progress): replaced the prototype's minimal recipe parser with a ForestModelXML parser and
+  matrix builder, and added legacy matrix ingestion. The parser handles the real MKRf recipe
+  (`baseMKRF.xml`: 1057 curves, 11 selects, CC and CT treatments, 14 features, 14 products) and the
+  select statement operators `eq`, `ne`, `lt`, `le`, `gt`, `ge`, `in`, with opaque terms for function
+  calls. Added `ws4 ingest`, `tests/test_forest_model_xml.py`, and `tests/test_legacy.py`, and a
+  `docs/reference/forestmodelxml.rst` page that records the known gaps (full expression evaluation,
+  expression-sourced curves, `%`-token labels, succession/retention, shapefile input). Dashboard result:
+  `python scripts/dashboard.py` reports `OVERALL: GREEN`.

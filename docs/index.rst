@@ -13,6 +13,7 @@ project grows.
    :caption: Reference
 
    reference/compiled-dataset
+   reference/forestmodelxml
 
 .. toctree::
    :maxdepth: 2

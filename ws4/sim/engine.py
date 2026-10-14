@@ -51,17 +51,21 @@ class Simulator:
             self.fragments.loc[mask, "track_id"] = int(match["new_track"].iloc[0])
 
     def _account_values(self, year: int) -> list[dict[str, object]]:
-        """Compute the feature account values for the current state."""
+        """Compute the feature account values for the current state.
+
+        A label may appear on several tracks; the value is summed across them.
+        """
         records: list[dict[str, object]] = []
-        for _, feature in self.features.iterrows():
-            on_track = self.fragments["track_id"] == feature["track_id"]
+        for label in sorted(set(self.features["label"])):
             total = 0.0
-            for _, fragment in self.fragments[on_track].iterrows():
-                value = curve_value(
-                    self.curves, int(feature["curve_id"]), float(fragment["offset"])
-                )
-                total += float(fragment["area_ha"]) * value
-            records.append({"year": year, "account": feature["label"], "value": total})
+            for _, feature in self.features[self.features["label"] == label].iterrows():
+                on_track = self.fragments["track_id"] == feature["track_id"]
+                for _, fragment in self.fragments[on_track].iterrows():
+                    value = curve_value(
+                        self.curves, int(feature["curve_id"]), float(fragment["offset"])
+                    )
+                    total += float(fragment["area_ha"]) * value
+            records.append({"year": year, "account": label, "value": total})
         return records
 
     def run(self, schedule_csv: Path, years: int, out_dir: Path) -> None:
