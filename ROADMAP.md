@@ -12,7 +12,7 @@ exists and the maintainer approves it.
 | Phase | Parent issue | Branch | Status |
 | --- | --- | --- | --- |
 | P0 Scope and design | #1 | `feature/p0-scope-design` | complete |
-| P1 Contracts and prototype | #10 | `feature/p1-contracts-prototype` | active |
+| P1 Contracts and prototype | #10 | `feature/p1-contracts-prototype` | pr-open |
 | P2 Build | TBD | `feature/p2-build` | planned |
 | P3 Verify | TBD | `feature/p3-verify` | planned |
 | P4 Release and deploy | TBD | `feature/p4-release` | planned |
@@ -79,7 +79,7 @@ Phase 0 verification:
 
 Parent issue: #10
 Branch: `feature/p1-contracts-prototype`
-Status: active
+Status: pr-open
 
 Goal: fix the data contracts and build the smallest end-to-end prototype that exercises them on
 synthetic data.

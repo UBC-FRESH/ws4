@@ -46,3 +46,5 @@ issue comments.
   dataset ingestion in `notes/design/ws4-matrix-builder-and-interop.md`, with ADR 0011 (adopt the format
   and support legacy datasets) and ADR 0012 (two construction paths: file-based and programmatic). Updated
   the scope, the architecture note, and the P2 tasks.
+- Queued the Phase 1 close-out: pull request #14 (`feature/p1-contracts-prototype` into `main`) and the
+  report `notes/reports/p1-closeout.md`. Status: awaiting maintainer approval.
