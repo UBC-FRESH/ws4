@@ -3,7 +3,7 @@
 Phase: P0 Scope and design
 Parent issue: #1
 Pull request: #8, `feature/p0-scope-design` into `main`
-Evidence head: `d12ebec`, the head that the gates and the CI run below cover
+Evidence head: `6f8b296`, the head that the gates and the CI runs below cover
 Report commit: the commit that adds this report. Its CI run is posted on pull request #8.
 Date: 2026-10-14
 Status: queued for approval. Not merged.
@@ -30,6 +30,7 @@ Settings changes, each with its exact command. Each one runs only after its own 
 | The architecture note covers the data model, compilation, simulation, optimization, spatial and road subsystems, accounts, CLI, and performance, and names its open questions | `notes/design/ws4-architecture.md` (`41d1a76`) | met |
 | `python scripts/dashboard.py` is green on this repository | `OVERALL: GREEN` on all six gates (`d12ebec`) | met |
 | The repository names no third-party product in its tracked notes or documentation | `git grep` for the vocabulary returns nothing (`2711022`) | met |
+| The optimization and execution architecture is recorded, with its decisions as ADRs | `notes/design/ws4-optimization-stack.md`, `notes/adr/0007` to `notes/adr/0010` (`6f8b296`) | met |
 
 ## 2. Workflow compliance
 
@@ -37,8 +38,8 @@ Settings changes, each with its exact command. Each one runs only after its own 
   before parent issue #1. The issue was created during the close-out, at the maintainer's direction.
   Recorded in section 5.
 - Branch from `main`: merge-base `bf4f08b` (the initial skeleton commit).
-- Commit messages that start with task IDs: 4 of 4 (`d0e2f42` P0.1, `41d1a76` P0.2-P0.4, `2711022`
-  P0.6, `d12ebec` P0.5).
+- Commit messages that start with task IDs: 5 of 5 (`d0e2f42` P0.1, `41d1a76` P0.2-P0.4, `2711022`
+  P0.6, `d12ebec` P0.5, `6f8b296` P0.7).
 - Gates for each commit: section 3.
 - Roadmap and changelog in step: updated in `d0e2f42`, `41d1a76`, `2711022`, and `d12ebec`.
 - Child issues closed with closeout evidence: #2, #3, #4, #5, #6, #7.
@@ -53,14 +54,18 @@ Settings changes, each with its exact command. Each one runs only after its own 
 | `41d1a76` P0.2-P0.4 | None installed yet | not run (tooling arrives in P0.5) |
 | `2711022` P0.6 | None installed yet | not run (tooling arrives in P0.5) |
 | `d12ebec` P0.5 | `python scripts/dashboard.py` | `OVERALL: GREEN` (lint, format, types, tests with the 90% coverage gate, validator, docs) |
+| `6f8b296` P0.7 | `python scripts/dashboard.py` | `OVERALL: GREEN` (lint, format, types, tests with the 90% coverage gate, validator, docs) |
 
-The validator reports `0 error(s), 0 warning(s)` on `d12ebec`.
+The validator reports `0 error(s), 0 warning(s)` on `6f8b296`.
 
 ## 4. CI evidence
 
 | Run ID | Head commit | Conclusion | Notes |
 | --- | --- | --- | --- |
-| 38491645108 | `d12ebec` | see the pull request | First run for pull request #8. `Green dashboard summary` and `Pre-commit parity` pass; `Quality gates` runs the full suite. |
+| 38491645108 | `d12ebec` | success | First run for pull request #8. All three jobs pass. |
+| 38491937537 | `9020374` | success | Run for the close-out report commit. All three jobs pass. |
+
+The report commit's own run is posted on pull request #8.
 
 ## 5. Deviations
 
