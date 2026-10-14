@@ -170,3 +170,6 @@ issue comments.
   the optimizer and CI (which installed only `.[geo]` plus the dev requirements) failed on `f22cd6a`. The
   import is now lazy with a clear error, `scipy` is declared in the `opt` extra and the dev requirements,
   and `tests/test_mip.py` skips when it is absent.
+- P2 close-out carried out: pull request #25 squash-merged as `3e87d46`, branch `feature/p2-build`
+  deleted, and parent issue #15 closed. P2 is `complete` in `ROADMAP.md`. Launched P3 (Verify): parent
+  issue #26, branch `feature/p3-verify`, task P3.1 (#27).

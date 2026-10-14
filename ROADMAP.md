@@ -13,8 +13,8 @@ exists and the maintainer approves it.
 | --- | --- | --- | --- |
 | P0 Scope and design | #1 | `feature/p0-scope-design` | complete |
 | P1 Contracts and prototype | #10 | `feature/p1-contracts-prototype` | complete |
-| P2 Build | #15 | `feature/p2-build` | pr-open |
-| P3 Verify | TBD | `feature/p3-verify` | planned |
+| P2 Build | #15 | `feature/p2-build` | complete |
+| P3 Verify | #26 | `feature/p3-verify` | active |
 | P4 Release and deploy | TBD | `feature/p4-release` | planned |
 | P5 Operate and maintain | TBD | `feature/p5-operate` | planned |
 
@@ -98,7 +98,7 @@ synthetic data.
 
 Parent issue: #15
 Branch: `feature/p2-build`
-Status: pr-open
+Status: complete
 
 Goal: implement the agreed scope, one task at a time, on the phase branch.
 
@@ -140,13 +140,20 @@ Deferred from P2, tracked in `notes/backlog.md`:
 
 ## Phase 3: Verify
 
-Parent issue: TBD
+Parent issue: #26
 Branch: `feature/p3-verify`
-Status: planned
+Status: active
 
 Goal: show that the build meets its acceptance criteria, and record the evidence in the changelog.
 
-- [ ] P3.1 Run the acceptance checks and record the evidence
+- [ ] P3.1 Run the acceptance checks and record the evidence (#27)
+  - [ ] Matrix builder: rebuild each core variant and compare tracks, strata, treatments, blocks,
+        features, products, and `protoaccounts` to the reference
+  - [ ] Simulator: reproduce the prototype's account values, and run the C5 end-to-end functional test
+  - [ ] Optimizer: satisfy a target set within a stated tolerance, and replay the schedule
+  - [ ] Spatial and road: route products and record patch metrics
+  - [ ] Programmatic API and the file path produce the same model
+  - [ ] Record the evidence, and any failure with its cause and backlog entry, in `CHANGE_LOG.md`
 
 ## Phase 4: Release and deploy
 
@@ -175,10 +182,11 @@ Goal: keep the project current: triage incoming ideas, review on a cadence, and 
    issue #1 closed. The close-out report is `notes/reports/p0-closeout.md`.
 2. Phase 1 is complete: pull request #14 squash-merged as `33ac569`, the branch deleted, and parent
    issue #10 closed. The close-out report is `notes/reports/p1-closeout.md`.
-3. Phase 2 is queued for close-out on `feature/p2-build`, parent issue #15, with tasks P2.1 to P2.9
-   (#16 to #24). The pull request is open and the report is `notes/reports/p2-closeout.md`. Progress is
-   in the checklists above and in `notes/backlog.md`. The C5 sample is a full end-to-end functional test
-   (`notes/functional-test.md`). Five items are deferred and listed in the Phase 2 section.
+3. Phase 2 is complete: pull request #25 squash-merged as `3e87d46`, the branch deleted, and parent
+   issue #15 closed. The close-out report is `notes/reports/p2-closeout.md`. Five items are deferred and
+   listed in the Phase 2 section and tracked in `notes/backlog.md`.
 4. P2 builds the model and the optimization stack. The stack generalizes the lab's FHOPS toolkit into a
    shared solver core; the execution substrate targets the 72-core host and the GPU. See
    `notes/design/ws4-optimization-stack.md` and `notes/design/ws4-matrix-builder-and-interop.md`.
+5. Phase 3 is active on `feature/p3-verify`, parent issue #26, with task P3.1 (#27). It runs the
+   acceptance checks and records the evidence in `CHANGE_LOG.md` and a phase report.
