@@ -77,8 +77,8 @@ The canonical model types live in `ws4/model/types.py`. The core types are:
   those are computed by summing its fragments.
 - **Track** — a succession pathway. A track names a family of growth and yield behaviour and the
   treatments available along it. A treatment can move a fragment to a new track.
-- **Strata** — the development strata that a track resolves into over time, expressed as a sequence of
-  offset ages with their theme values.
+- **Stratum** — one development stratum that a track resolves into over time, expressed as an offset
+  age with its theme values. A track expands into a sequence of strata.
 - **Treatment** — an operation. It carries eligibility and operability predicates (fragment-level), an
   optional new track, an offset adjustment, and a retention setting.
 - **Curve** — a growth or yield curve as points `(x, y)` with linear interpolation.

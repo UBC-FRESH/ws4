@@ -20,4 +20,7 @@ issue comments.
   fixed the skeleton to pass lint, format, and types.
   Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all six gates (lint,
   format, types, tests, validator, docs).
-- Opened the Phase 0 parent issue #1 and child issues #2 to #7.
+- Opened the Phase 0 parent issue #1 and child issues #2 to #7. Closed the child issues with closeout
+  comments, and set the phase to `pr-open`.
+- Queued the Phase 0 close-out: pull request #8 (`feature/p0-scope-design` into `main`) and the report
+  `notes/reports/p0-closeout.md`. Status: awaiting maintainer approval.
