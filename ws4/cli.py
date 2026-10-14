@@ -20,7 +20,7 @@ app = typer.Typer(help="WS4 — Wood Supply Simulation System (Spatially explici
 def build(
     xml: Path = typer.Option(..., "--xml", exists=True, help="Forest-model XML recipe"),
     fragments: Path = typer.Option(
-        ..., "--fragments", exists=True, help="Fragments shapefile (polygons)"
+        ..., "--fragments", exists=True, help="Fragment inventory (CSV or Parquet)"
     ),
     out: Path = typer.Option(..., "--out", help="Output directory for canonical dataset"),
 ) -> None:

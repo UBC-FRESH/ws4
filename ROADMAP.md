@@ -87,7 +87,9 @@ synthetic data.
 - [x] P1.1 Define the compiled-dataset schema and manifest in `docs/` (#11)
   - [x] `docs/reference/compiled-dataset.rst`, `ws4/model/schema.py`, and `ws4 validate`
   - [x] `tests/test_schema.py` with a failing case per invariant
-- [ ] P1.2 Build a prototype that compiles, simulates, and reports on a tiny synthetic landscape (#12)
+- [x] P1.2 Build a prototype that compiles, simulates, and reports on a tiny synthetic landscape (#12)
+  - [x] Synthetic fixture in `examples/synthetic/`
+  - [x] Minimal `ws4 build` and `ws4 simulate`; `tests/test_prototype.py`
 
 ## Phase 2: Build
 

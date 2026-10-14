@@ -38,3 +38,7 @@ issue comments.
   validator), `docs/reference/compiled-dataset.rst`, a `ws4 validate` implementation, `tests/test_schema.py`,
   and the package `__init__.py` files plus the `ws4.build.compiler` stub. Added `pandas-stubs` to the dev
   requirements. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.
+- P1.2: built the end-to-end prototype. Added `examples/synthetic/` (recipe, fragments, notes), a real
+  `ws4 build` compiler that writes the matrix and manifest, a real `ws4 simulate` that replays a schedule
+  and writes `account_values.csv`, `ws4/sim/curve.py`, and `tests/test_prototype.py` (build, validate,
+  grow, and treat). Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.

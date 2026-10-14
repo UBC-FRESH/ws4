@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A tiny synthetic recipe for the WS4 prototype. Two tracks, one treatment,
+     two curves, one feature, and one product. -->
+<forestmodel name="synthetic">
+  <tracks>
+    <track id="1" name="natural" max_age="120"/>
+    <track id="2" name="managed" max_age="120"/>
+  </tracks>
+  <treatments>
+    <treatment id="10" track="1" begin="40" end="120" label="CC" new_track="2" offset="0" retain="0"/>
+  </treatments>
+  <curves>
+    <curve id="1">
+      <point x="0" y="0"/>
+      <point x="40" y="120"/>
+      <point x="80" y="220"/>
+    </curve>
+    <curve id="2">
+      <point x="0" y="0"/>
+      <point x="10" y="50"/>
+      <point x="40" y="180"/>
+    </curve>
+  </curves>
+  <features>
+    <feature track="1" label="feature.Volume" curve="1"/>
+  </features>
+  <products>
+    <product track="1" treatment="CC" label="product.Volume" curve="1"/>
+  </products>
+</forestmodel>
