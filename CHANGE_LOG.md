@@ -124,6 +124,9 @@ issue comments.
   candidate moves, and an operator registry) and refactored the solvers to take it. Added run telemetry
   (`ws4/opt/telemetry.py`: a JSONL header and one step record per iteration); the optimizer writes
   `telemetry.jsonl`. Added telemetry tests.
+- Synced the UBC-FRESH dev workflow tooling to its latest release (P1-P4): updated
+  `scripts/check_workflow.py` and the CI action versions and runners (`ubuntu-24.04`, `checkout@v5`,
+  `setup-python@v6`, `upload-artifact@v6`, and the Pages actions), keeping the package install step.
 - P2.8: implemented accounts and reporting (`ws4/report.py`): an account summary, a ratio account, and a
   target-status table; `ws4 report` is a CLI command, and the optimizer writes a report at the end of a
   run. Added `tests/test_report.py`.

@@ -3,9 +3,11 @@
 
 This module is the oracle for the planning surfaces. It parses ``ROADMAP.md`` and
 ``CHANGE_LOG.md``, resolves local Markdown links and the ``docs/llms.txt`` index, and
-scans tracked text for defects that must not reach a public repository: control
-characters, byte-order marks, personal paths, and secret-shaped strings. It uses only
-the standard library, so it runs in a fresh clone before anything is installed.
+scans the text that a commit would include for defects that must not reach a public
+repository: control characters, byte-order marks, personal paths, and secret-shaped
+strings. Outside a git repository, the scan walks the tree and honors the root
+``.gitignore``. It uses only the standard library, so it runs in a fresh clone before
+anything is installed.
 
 Command-line usage::
 
@@ -24,7 +26,7 @@ import os
 import re
 import subprocess
 import sys
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -213,6 +215,30 @@ class Phase:
     tasks: list[Task] = field(default_factory=list)
 
 
+@dataclass(frozen=True)
+class IgnoreRule:
+    """One rule from the root ``.gitignore``, compiled for the file walk.
+
+    Attributes
+    ----------
+    pattern : re.Pattern[str]
+        The compiled pattern that the candidate must match in full.
+    anchored : bool
+        ``True`` when the rule contains a slash, so it matches the path from the root. ``False``
+        when it matches the name of any path component.
+    directory_only : bool
+        ``True`` when the rule ends in a slash, so it applies to directories only.
+    negated : bool
+        ``True`` when the rule starts with ``!``, which re-includes a path that an earlier rule
+        ignores.
+    """
+
+    pattern: re.Pattern[str]
+    anchored: bool
+    directory_only: bool
+    negated: bool
+
+
 def error(code: str, path: str, line: int, message: str) -> Diagnostic:
     """Build an error-severity finding.
 
@@ -306,13 +332,199 @@ def _git_file_set(root: Path) -> list[Path] | None:
     return [root / name for name in listing.stdout.split("\0") if name]
 
 
-def _walk_files(root: Path) -> Iterator[Path]:
-    """Yield every file under a root, skipping the directories in ``SKIP_DIRS``.
+def _glob_to_regex(glob: str) -> str:
+    """Translate one gitignore glob, without ``**``, into a regular expression.
+
+    Parameters
+    ----------
+    glob : str
+        The pattern, with its ``!``, leading slash, and trailing slash already removed.
+
+    Returns
+    -------
+    str
+        A regular expression for the whole candidate. ``*`` and ``?`` do not match a slash. A
+        bracket expression is kept, and a ``!`` at its start negates it. A bracket that is never
+        closed is a literal ``[``.
+    """
+    pieces: list[str] = []
+    index = 0
+    while index < len(glob):
+        char = glob[index]
+        if char == "*":
+            pieces.append("[^/]*")
+        elif char == "?":
+            pieces.append("[^/]")
+        elif char == "[":
+            end = glob.find("]", index + 2)
+            if end == -1:
+                pieces.append(re.escape(char))
+            else:
+                body = glob[index + 1 : end]
+                pieces.append("[" + ("^" + body[1:] if body.startswith("!") else body) + "]")
+                index = end
+        else:
+            pieces.append(re.escape(char))
+        index += 1
+    return "".join(pieces)
+
+
+def _parse_ignore_line(line: str) -> IgnoreRule | None:
+    """Parse one line of a .gitignore file into a rule, or return ``None`` if it is not one.
+
+    Parameters
+    ----------
+    line : str
+        One line of the ignore file, without its line ending.
+
+    Returns
+    -------
+    IgnoreRule or None
+        The rule. ``None`` for a blank line, a comment, and an ignore line the reader does not
+        apply: a line with a backslash, a pattern with ``**``, a bare slash, or a bracket that is
+        not a valid character class. Leaving out an ignore rule scans more files. A negated line
+        the reader does not apply becomes a rule that re-includes every path, so no earlier rule
+        can hide a file that git would include.
+    """
+    text = line.rstrip()
+    if not text or text.startswith("#"):
+        return None
+    negated = text.startswith("!")
+    if negated:
+        text = text[1:]
+    directory_only = text.endswith("/")
+    text = text.rstrip("/")
+    if not text or "\\" in text or "**" in text:
+        return _unsupported(negated)
+    anchored = "/" in text
+    text = text.lstrip("/")
+    try:
+        pattern = re.compile(_glob_to_regex(text))
+    except re.error:
+        return _unsupported(negated)
+    return IgnoreRule(
+        pattern=pattern,
+        anchored=anchored,
+        directory_only=directory_only,
+        negated=negated,
+    )
+
+
+def _unsupported(negated: bool) -> IgnoreRule | None:
+    """Return the conservative rule for a line that the reader cannot apply.
+
+    Parameters
+    ----------
+    negated : bool
+        Whether the line starts with ``!``.
+
+    Returns
+    -------
+    IgnoreRule or None
+        A rule that re-includes every path when the line is negated, and ``None`` otherwise.
+    """
+    if not negated:
+        return None
+    return IgnoreRule(
+        pattern=re.compile(r".*"),
+        anchored=False,
+        directory_only=False,
+        negated=True,
+    )
+
+
+def _last_match(rules: Sequence[IgnoreRule], rel: str, *, is_dir: bool) -> bool:
+    """Decide whether one path is ignored, by the last rule that matches it.
+
+    Parameters
+    ----------
+    rules : sequence of IgnoreRule
+        The rules, in file order.
+    rel : str
+        The path, relative to the root, with forward slashes.
+    is_dir : bool
+        Whether the path is a directory.
+
+    Returns
+    -------
+    bool
+        ``True`` when the last matching rule ignores the path. ``False`` when no rule matches, or
+        when the last matching rule re-includes it.
+    """
+    ignored = False
+    name = rel.rsplit("/", 1)[-1]
+    for rule in rules:
+        if rule.directory_only and not is_dir:
+            continue
+        candidate = rel if rule.anchored else name
+        if rule.pattern.fullmatch(candidate) is not None:
+            ignored = not rule.negated
+    return ignored
+
+
+def is_ignored(rel: str, *, is_dir: bool, rules: Sequence[IgnoreRule]) -> bool:
+    """Report whether a path is ignored, the way git reports it.
+
+    A path under an ignored directory is ignored, even when a later rule re-includes it, because
+    git does not re-include a file whose directory is excluded.
+
+    Parameters
+    ----------
+    rel : str
+        The path, relative to the root, with forward slashes.
+    is_dir : bool
+        Whether the path is a directory.
+    rules : sequence of IgnoreRule
+        The rules from :func:`load_ignore_rules`, in file order.
+
+    Returns
+    -------
+    bool
+        ``True`` when the path, or one of the directories that contain it, is ignored.
+    """
+    parts = rel.split("/")
+    for depth in range(1, len(parts)):
+        if _last_match(rules, "/".join(parts[:depth]), is_dir=True):
+            return True
+    return _last_match(rules, rel, is_dir=is_dir)
+
+
+def load_ignore_rules(root: Path) -> list[IgnoreRule]:
+    """Read the root ``.gitignore`` rules, with a conservative rule for each unsupported negation.
+
+    Only the root file is read. A ``.gitignore`` in a subdirectory is not read, and neither is
+    ``.git/info/exclude``, because the walk has no index to consult.
+
+    Parameters
+    ----------
+    root : Path
+        Repository root, or the directory that stands in for one.
+
+    Returns
+    -------
+    list of IgnoreRule
+        The rules in file order. The list is empty when the root has no ``.gitignore``.
+    """
+    path = root / ".gitignore"
+    if not path.is_file():
+        return []
+    rules: list[IgnoreRule] = []
+    for line in _read_lines(path):
+        rule = _parse_ignore_line(line)
+        if rule is not None:
+            rules.append(rule)
+    return rules
+
+
+def _walk_files(root: Path, rules: Sequence[IgnoreRule]) -> Iterator[Path]:
+    """Yield the files under a root that the rules do not ignore. Ignored directories are pruned.
 
     Parameters
     ----------
     root : Path
         Directory to walk.
+    rules : sequence of IgnoreRule
+        The root ``.gitignore`` rules, from :func:`load_ignore_rules`.
 
     Yields
     ------
@@ -320,17 +532,25 @@ def _walk_files(root: Path) -> Iterator[Path]:
         Absolute path of each file, in sorted order within each directory.
     """
     for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = sorted(name for name in dirnames if name not in SKIP_DIRS)
+        here = Path(dirpath).relative_to(root)
+        kept: list[str] = []
+        for name in sorted(dirnames):
+            rel = (here / name).as_posix()
+            if name not in SKIP_DIRS and not is_ignored(rel, is_dir=True, rules=rules):
+                kept.append(name)
+        dirnames[:] = kept
         for name in sorted(filenames):
-            yield Path(dirpath) / name
+            if not is_ignored((here / name).as_posix(), is_dir=False, rules=rules):
+                yield Path(dirpath) / name
 
 
 def iter_text_files(root: Path) -> Iterator[Path]:
     """Yield the UTF-8 text files that the scans should read.
 
-    The candidates are the files that git would commit, when the root is a repository top level,
-    and every file under the root otherwise. The ``tests`` tree, the validator itself, symbolic
-    links, oversized files, and files that are not valid UTF-8 are skipped in both cases.
+    The candidates are the files that git would commit, when the root is a repository top level.
+    Otherwise they are the files under the root that its ``.gitignore`` does not ignore. The
+    ``tests`` tree, the validator itself, symbolic links, oversized files, and files that are not
+    valid UTF-8 are skipped in both cases.
 
     Parameters
     ----------
@@ -344,7 +564,7 @@ def iter_text_files(root: Path) -> Iterator[Path]:
     """
     candidates = _git_file_set(root)
     if candidates is None:
-        candidates = list(_walk_files(root))
+        candidates = list(_walk_files(root, load_ignore_rules(root)))
     for path in sorted(candidates):
         rel = path.relative_to(root)
         if rel.parts[0] in SKIP_TOP_LEVEL or rel.as_posix() == SELF_RELPATH:
