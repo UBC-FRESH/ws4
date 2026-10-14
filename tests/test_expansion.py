@@ -1,0 +1,325 @@
+"""Tests for the Model II stratum-and-track expansion."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import pandas as pd
+from ws4.build.compiler import build_canonical_dataset
+from ws4.build.expansion import format_state_value, resolve_value
+from ws4.model.schema import validate_dataset
+
+_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
+<ForestModel horizon="100" year="0" match="multi">
+  <curve id="unity"><point x="0" y="1.0"/></curve>
+  <curve id="volume"><point x="0" y="0"/><point x="100" y="100"/></curve>
+  <define field="status" column="STATUS"/>
+  <define field="treatment"/>
+  <input block="BLOCK" area="AREA_HA" age="F_AGE"/>
+  <output messages="messages.csv"/>
+  <select statement="status eq 'N'">
+    <features><attribute label="feature.Volume"><curve idref="volume"/></attribute></features>
+    <track/>
+  </select>
+  <select statement="status eq 'C'">
+    <features><attribute label="feature.Volume"><curve idref="volume"/></attribute></features>
+    <track>
+      <treatment label="CC" minage="40" maxage="100">
+        <transition><assign field="treatment" value="'CC'"/></transition>
+      </treatment>
+    </track>
+  </select>
+</ForestModel>
+"""
+
+
+def _build(tmp_path: Path) -> Path:
+    """Compile a two-status, three-fragment Model II fixture."""
+    (tmp_path / "recipe.xml").write_text(_RECIPE, encoding="utf-8")
+    pd.DataFrame(
+        {
+            "BLOCK": [1, 1, 2],
+            "AREA_HA": [3.0, 2.0, 4.0],
+            "F_AGE": [10, 20, 30],
+            "STATUS": ["N", "C", "C"],
+        }
+    ).to_csv(tmp_path / "fragments.csv", index=False)
+    return build_canonical_dataset(
+        tmp_path / "recipe.xml", tmp_path / "fragments.csv", tmp_path / "c"
+    )
+
+
+def test_expansion_dataset_validates(tmp_path: Path) -> None:
+    """The expanded dataset validates."""
+    assert validate_dataset(_build(tmp_path)) == []
+
+
+def test_expansion_enumerates_reachable_strata(tmp_path: Path) -> None:
+    """The inventory strata plus the treatment target become tracks."""
+    dataset = _build(tmp_path)
+    tracks = pd.read_parquet(dataset / "tracks.parquet")
+    strata = pd.read_parquet(dataset / "strata.parquet")
+    assert len(tracks) == 3  # (N, '') (C, '') (C, 'CC')
+    assert len(strata) == 3
+    assert set(tracks["name"]) == {
+        "status(N)+treatment()",
+        "status(C)+treatment()",
+        "status(C)+treatment(CC)",
+    }
+
+
+def test_expansion_splits_blocks_by_track(tmp_path: Path) -> None:
+    """A block with fragments in two strata gets one row per portion."""
+    dataset = _build(tmp_path)
+    blocks = pd.read_parquet(dataset / "blocks.parquet")
+    assert len(blocks) == 3  # block 1 x2, block 2 x1
+    assert int((blocks["block_id"] == 1).sum()) == 2
+
+
+def test_expansion_emits_per_track_treatments(tmp_path: Path) -> None:
+    """A treatment is emitted once per stratum whose select it governs."""
+    dataset = _build(tmp_path)
+    treatments = pd.read_parquet(dataset / "treatments.parquet")
+    assert len(treatments) == 2  # CC on (C, '') and (C, 'CC')
+    assert set(treatments["new_track"]) == {3}
+
+
+def test_format_state_value_canonicalizes_integral_floats() -> None:
+    """An integral float is rendered without a decimal part so it matches an int literal."""
+    assert format_state_value(985502002.0) == "985502002"
+    assert format_state_value(0.25) == "0.25"
+    assert format_state_value("managed") == "managed"
+
+
+def test_resolve_value_handles_references_and_concat() -> None:
+    """Transition values resolve literals, constants, field refs, and concat."""
+    state = {"au": "2001", "auf": "2101"}
+    assert resolve_value("'CC'", state, {}) == "CC"
+    assert resolve_value("managed", state, {"managed": "C"}) == "C"
+    assert resolve_value("auf", state, {}) == "2101"
+    assert resolve_value("'thn_'+au", state, {}) == "thn_2001"
+
+
+_RETENTION_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
+<ForestModel horizon="100" year="0" match="multi">
+  <curve id="unity"><point x="0" y="1.0"/></curve>
+  <curve id="volume"><point x="0" y="0"/><point x="100" y="100"/></curve>
+  <define field="IFM" column="IFM"/>
+  <define field="RET" column="RET"/>
+  <input block="BLOCK" area="AREA_HA" age="F_AGE"/>
+  <output messages="messages.csv"/>
+  <select statement="IFM eq 'managed'">
+    <features><attribute label="feature.Volume"><curve idref="volume"/></attribute></features>
+    <retention factor="RET"><assign field="IFM" value="'unmanaged'"/></retention>
+    <track><treatment label="CC" minage="0" maxage="100"/></track>
+  </select>
+</ForestModel>
+"""
+
+
+_EXPRESSION_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
+<ForestModel horizon="100" year="0" match="multi">
+  <curve id="unity"><point x="0" y="1.0"/></curve>
+  <curve id="Yield_2001"><point x="0" y="0"/><point x="100" y="500"/></curve>
+  <define field="au" column="AU"/>
+  <input block="BLOCK" area="AREA_HA" age="F_AGE"/>
+  <output messages="messages.csv"/>
+  <select statement="au eq 2001">
+    <features>
+      <attribute label="feature.Yield">
+        <expression statement="curveId('Yield_'+au)"/>
+      </attribute>
+    </features>
+    <track><treatment label="CC" minage="0" maxage="100"/></track>
+  </select>
+</ForestModel>
+"""
+
+
+def test_expression_sourced_curves_resolve(tmp_path: Path) -> None:
+    """An attribute whose curve comes from an expression resolves to a named curve."""
+    (tmp_path / "recipe.xml").write_text(_EXPRESSION_RECIPE, encoding="utf-8")
+    pd.DataFrame({"BLOCK": [1], "AREA_HA": [5.0], "F_AGE": [50], "AU": [2001]}).to_csv(
+        tmp_path / "fragments.csv", index=False
+    )
+    dataset = build_canonical_dataset(
+        tmp_path / "recipe.xml", tmp_path / "fragments.csv", tmp_path / "c"
+    )
+    features = pd.read_parquet(dataset / "features.parquet")
+    curves = pd.read_parquet(dataset / "curves.parquet")
+    resolved = int(features["curve_id"].iloc[0])
+    assert curves[curves["curve_id"] == resolved]["y"].max() == 500.0
+
+
+_INPUT_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
+<ForestModel horizon="100" year="0" match="multi">
+  <curve id="unity"><point x="0" y="1.0"/></curve>
+  <curve id="volume"><point x="0" y="0"/><point x="100" y="100"/></curve>
+  <define field="au" column="AU"/>
+  <input block="Int(RES_KEY)" area="Shape_Area/10000" age="Int(AGE_2020)"/>
+  <output messages="messages.csv"/>
+  <select statement="au eq 1">
+    <features><attribute label="feature.Volume"><curve idref="volume"/></attribute></features>
+    <track><treatment label="CC" minage="0" maxage="100"/></track>
+  </select>
+</ForestModel>
+"""
+
+
+def test_input_expressions_are_evaluated(tmp_path: Path) -> None:
+    """``<input>`` block/area/age expressions evaluate against the fragment row."""
+    (tmp_path / "recipe.xml").write_text(_INPUT_RECIPE, encoding="utf-8")
+    pd.DataFrame({"RES_KEY": [7], "Shape_Area": [50000.0], "AGE_2020": [42], "AU": [1]}).to_csv(
+        tmp_path / "fragments.csv", index=False
+    )
+    dataset = build_canonical_dataset(
+        tmp_path / "recipe.xml", tmp_path / "fragments.csv", tmp_path / "c"
+    )
+    fragments = pd.read_parquet(dataset / "fragments.parquet")
+    assert fragments["block_id"].iloc[0] == 7
+    assert fragments["area_ha"].iloc[0] == 5.0  # 50000 / 10000
+    assert fragments["age"].iloc[0] == 42
+
+
+_TOKENS_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
+<ForestModel horizon="100" year="0" match="multi">
+  <curve id="unity"><point x="0" y="1.0"/></curve>
+  <curve id="volume"><point x="0" y="0"/><point x="100" y="100"/></curve>
+  <define field="IFM" column="IFM"/>
+  <input block="BLOCK" area="AREA_HA" age="F_AGE"/>
+  <output messages="messages.csv"/>
+  <select statement="IFM eq 'managed'">
+    <features>
+      <attribute label="%f.area.%m.total"><curve idref="volume"/></attribute>
+    </features>
+    <track><treatment label="CC" minage="0" maxage="100"/></track>
+  </select>
+</ForestModel>
+"""
+
+
+def test_label_tokens_expand(tmp_path: Path) -> None:
+    """``%f`` and ``%m`` in an attribute label expand per stratum."""
+    (tmp_path / "recipe.xml").write_text(_TOKENS_RECIPE, encoding="utf-8")
+    pd.DataFrame({"BLOCK": [1], "AREA_HA": [5.0], "F_AGE": [50], "IFM": ["managed"]}).to_csv(
+        tmp_path / "fragments.csv", index=False
+    )
+    dataset = build_canonical_dataset(
+        tmp_path / "recipe.xml", tmp_path / "fragments.csv", tmp_path / "c"
+    )
+    labels = set(pd.read_parquet(dataset / "features.parquet")["label"])
+    assert labels == {"feature.area.managed.total"}
+
+
+_FACTOR_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
+<ForestModel horizon="100" year="0" match="multi">
+  <curve id="unity"><point x="0" y="1.0"/></curve>
+  <curve id="volume"><point x="0" y="0"/><point x="100" y="100"/></curve>
+  <define field="IFM" column="IFM"/>
+  <input block="BLOCK" area="AREA_HA" age="F_AGE"/>
+  <output messages="messages.csv"/>
+  <select statement="IFM eq 'managed'">
+    <features>
+      <attribute label="feature.Volume" factor="0.5"><curve idref="volume"/></attribute>
+    </features>
+    <track><treatment label="CC" minage="0" maxage="100"/></track>
+  </select>
+</ForestModel>
+"""
+
+
+def test_attribute_factor_scales_the_curve(tmp_path: Path) -> None:
+    """A factor scales the attribute's curve into a new curve."""
+    (tmp_path / "recipe.xml").write_text(_FACTOR_RECIPE, encoding="utf-8")
+    pd.DataFrame({"BLOCK": [1], "AREA_HA": [5.0], "F_AGE": [50], "IFM": ["managed"]}).to_csv(
+        tmp_path / "fragments.csv", index=False
+    )
+    dataset = build_canonical_dataset(
+        tmp_path / "recipe.xml", tmp_path / "fragments.csv", tmp_path / "c"
+    )
+    features = pd.read_parquet(dataset / "features.parquet")
+    curves = pd.read_parquet(dataset / "curves.parquet")
+    resolved = int(features["curve_id"].iloc[0])
+    scaled = curves[curves["curve_id"] == resolved]
+    assert scaled["y"].max() == 50.0  # 100 * 0.5
+
+
+_CONTEXT_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
+<ForestModel horizon="100" year="0" match="multi">
+  <curve id="unity"><point x="0" y="1.0"/></curve>
+  <curve id="volume"><point x="0" y="0"/><point x="100" y="100"/></curve>
+  <define field="status" column="STATUS"/>
+  <define field="treatment"/>
+  <input block="BLOCK" area="AREA_HA" age="F_AGE"/>
+  <output messages="messages.csv"/>
+  <select statement="status eq 'C'">
+    <features><attribute label="feature.Volume"><curve idref="volume"/></attribute></features>
+    <track><treatment label="CC" minage="0" maxage="100"/></track>
+  </select>
+  <select statement="status eq 'C' and treatment eq 'CC'">
+    <products><attribute label="product.Harvested.CC"><curve idref="volume"/></attribute></products>
+  </select>
+</ForestModel>
+"""
+
+
+def test_treatment_context_tags_products(tmp_path: Path) -> None:
+    """A ``treatment eq 'X'`` select contributes products tagged with X, not a new track."""
+    (tmp_path / "recipe.xml").write_text(_CONTEXT_RECIPE, encoding="utf-8")
+    pd.DataFrame({"BLOCK": [1], "AREA_HA": [5.0], "F_AGE": [50], "STATUS": ["C"]}).to_csv(
+        tmp_path / "fragments.csv", index=False
+    )
+    dataset = build_canonical_dataset(
+        tmp_path / "recipe.xml", tmp_path / "fragments.csv", tmp_path / "c"
+    )
+    tracks = pd.read_parquet(dataset / "tracks.parquet")
+    products = pd.read_parquet(dataset / "products.parquet")
+    assert len(tracks) == 1  # the treatment context is not a stratum dimension
+    assert list(products["treatment"]) == ["CC"]
+    assert list(products["label"]) == ["product.Harvested.CC"]
+
+
+def test_retention_split_creates_managed_and_unmanaged_portions(tmp_path: Path) -> None:
+    """A retention rule splits a fragment's area into two portions."""
+    (tmp_path / "recipe.xml").write_text(_RETENTION_RECIPE, encoding="utf-8")
+    pd.DataFrame(
+        {"BLOCK": [1], "AREA_HA": [8.0], "F_AGE": [50], "IFM": ["managed"], "RET": [0.25]}
+    ).to_csv(tmp_path / "fragments.csv", index=False)
+    dataset = build_canonical_dataset(
+        tmp_path / "recipe.xml", tmp_path / "fragments.csv", tmp_path / "c"
+    )
+    blocks = pd.read_parquet(dataset / "blocks.parquet").sort_values("area_ha")
+    tracks = pd.read_parquet(dataset / "tracks.parquet")
+    assert len(tracks) == 2  # managed and unmanaged
+    assert len(blocks) == 2  # one portion each
+    assert list(blocks["area_ha"]) == [2.0, 6.0]  # 0.25 and 0.75 of 8 ha
+
+
+def test_protoaccounts_cover_every_attribute(tmp_path: Path) -> None:
+    """The builder emits a summary account for every attribute (``protoaccounts``)."""
+    dataset = _build(tmp_path)
+    proto = pd.read_parquet(dataset / "protoaccounts.parquet")
+    assert set(proto["attribute"]) == {"feature.Volume"}
+    assert list(proto["account"]) == list(proto["attribute"])
+    assert (proto["sum"] == 1.0).all()
+    accounts = pd.read_parquet(dataset / "accounts.parquet")
+    assert set(accounts["attribute"]) == {"feature.Volume"}
+
+
+def test_rerun_preserves_a_curated_accounts_file(tmp_path: Path) -> None:
+    """Re-running the builder regenerates ``protoaccounts`` but keeps a curated ``accounts``."""
+    dataset = _build(tmp_path)
+    curated = pd.DataFrame(
+        {
+            "group": ["_ALL_"],
+            "attribute": ["feature.Volume"],
+            "account": ["net.value"],
+            "sum": [-1.0],
+        }
+    )
+    curated.to_parquet(dataset / "accounts.parquet", index=False)
+    _build(tmp_path)  # re-run the same build into the same directory
+    accounts = pd.read_parquet(dataset / "accounts.parquet")
+    assert list(accounts["account"]) == ["net.value"]  # the edit survived
+    proto = pd.read_parquet(dataset / "protoaccounts.parquet")
+    assert set(proto["account"]) == {"feature.Volume"}  # regenerated

@@ -19,7 +19,7 @@ The lab already works with an established model format and a compiled matrix for
 
 The lab's FEMIC project already exports this pair (ForestModelXML + fragments shapefile) and validates
 it, with public functions such as `build_forestmodel_xml_tree`, `validate_forestmodel_xml_tree`,
-`build_fragments_geodataframe`, `validate_fragments_geodataframe`, and `export_patchworks_package`. Many
+`build_fragments_geodataframe`, `validate_fragments_geodataframe`, and `export_model_package`. Many
 users and organisations hold legacy datasets in this format, dating back to 2001.
 
 Inventing a new recipe format would discard that ecosystem and force every user to convert.
@@ -50,7 +50,37 @@ Three concepts stay separate, exactly as the lab's model-semantics contract requ
 
 Do not infer one from another, and do not use curve-family availability as a proxy for eligibility.
 
-## 4. Reuse and boundary
+## 4. The stratum-and-track (Model II) formulation
+
+The matrix format is a **Model II** forest estate model. The vocabulary has three levels:
+
+- **State variables** (themes) are the block attributes the model tracks: eligibility, origin, seral
+  state, analysis unit, operability, and so on.
+- A **stratum** is a unique combination of state-variable values. It is the finest inventory unit the
+  model distinguishes.
+- A **track** is a unique trajectory over time between two treatments: a sequence of strata, one per
+  offset age, that a block follows as it grows.
+
+A **treatment** resets one or more state variables. Because a stratum is indexed by the state-variable
+values, resetting them moves the block to the stratum of the new values, and therefore onto that
+stratum's track. Treatments are the edges between tracks.
+
+This is why the compiled matrix is large. The builder enumerates the reachable strata and expands each
+one into a track, so a moderate model yields thousands of tracks (the reference MKRf matrix has 7048),
+and treatments appear once per track they apply to (10014 rows). It is also why a block can appear more
+than once: a block whose area is split between a managed and an unmanaged portion has one row per
+portion, because the portions sit on different tracks.
+
+The builder, then, is:
+
+1. Enumerate the state variables and their value spaces.
+2. Enumerate the reachable strata from the initial inventory.
+3. For each stratum, grow the trajectory (growth and succession) into a track.
+4. At each point where a treatment is eligible, apply it, reset the state variables, and connect to the
+   target stratum's track.
+5. Emit the tracks, strata, treatments, blocks (split by portion), features, products, and accounts.
+
+## 5. Reuse and boundary
 
 Recommended default: WS4 does not copy the exporter; it **reuses the format contract** and, where it
 helps, calls the lab exporter's functions to produce or validate ForestModelXML and the fragments
@@ -59,14 +89,14 @@ shapefile. The matrix builder in WS4 is the reader/compiler side of the same con
 Reason: one contract, two implementations (export and compile) is cheaper and less error-prone than a
 second, divergent copy of the format.
 
-## 5. Relationship to the P1.2 prototype
+## 6. Relationship to the P1.2 prototype
 
 The P1.2 prototype parses a minimal XML recipe so the pipeline can be exercised end to end. That minimal
 format is a placeholder. The production recipe parser (P2) replaces it with ForestModelXML, and the
 prototype's synthetic fixture becomes a ForestModelXML fixture. The compiled matrix and the simulator do
 not change, because the matrix is already the contract.
 
-## 6. Legacy ingestion
+## 7. Legacy ingestion
 
 A legacy dataset may arrive as:
 
@@ -78,7 +108,7 @@ A legacy dataset may arrive as:
 WS4 ingests the matrix and the spatial tables directly. Where a legacy matrix uses column names that
 differ from the WS4 schema, an adapter maps them and records the mapping in the manifest.
 
-## 7. Two construction paths
+## 8. Two construction paths
 
 Precedent: WS3 has used the Woodstock input file format since 2015, and it remains the go-to format for
 WS3 models. Teams also build or patch a `ws3.forest.ForestModel` instance directly when the file format
@@ -98,7 +128,7 @@ programmatically built model can be written to the matrix for a run, and a matri
 model. Neither path is privileged: the file path serves the common case and interoperability, and the
 programmatic path serves the unusual case and runtime changes.
 
-## 8. Open questions
+## 9. Open questions
 
 1. **Dependency direction.** Depend on the FEMIC package, or share the format contract and keep the
    code separate. Default: share the contract; depend only if the reuse is substantial.
