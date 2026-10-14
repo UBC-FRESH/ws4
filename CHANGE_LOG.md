@@ -48,3 +48,6 @@ issue comments.
   the scope, the architecture note, and the P2 tasks.
 - Queued the Phase 1 close-out: pull request #14 (`feature/p1-contracts-prototype` into `main`) and the
   report `notes/reports/p1-closeout.md`. Status: awaiting maintainer approval.
+- P1 fix: the CI jobs now install the package (`python -m pip install -e .`) before the gates, because
+  mypy and pytest need the runtime dependencies (pydantic, pandas, numpy, pyarrow). Added
+  `[tool.setuptools.packages.find]` so the package builds. The pre-commit parity job is green again.
