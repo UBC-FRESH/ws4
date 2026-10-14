@@ -11,8 +11,8 @@ exists and the maintainer approves it.
 
 | Phase | Parent issue | Branch | Status |
 | --- | --- | --- | --- |
-| P0 Scope and design | #1 | `feature/p0-scope-design` | pr-open |
-| P1 Contracts and prototype | TBD | `feature/p1-contracts-prototype` | planned |
+| P0 Scope and design | #1 | `feature/p0-scope-design` | complete |
+| P1 Contracts and prototype | #10 | `feature/p1-contracts-prototype` | active |
 | P2 Build | TBD | `feature/p2-build` | planned |
 | P3 Verify | TBD | `feature/p3-verify` | planned |
 | P4 Release and deploy | TBD | `feature/p4-release` | planned |
@@ -39,7 +39,7 @@ exists and the maintainer approves it.
 
 Parent issue: #1
 Branch: `feature/p0-scope-design`
-Status: pr-open
+Status: complete
 
 Goal: give WS4 a workflow contract, a recorded scope, and a reviewed architecture. The repository
 already carries a code skeleton; this phase turns it into a governed project with a plan of record and
@@ -77,9 +77,9 @@ Phase 0 verification:
 
 ## Phase 1: Contracts and prototype
 
-Parent issue: TBD
+Parent issue: #10
 Branch: `feature/p1-contracts-prototype`
-Status: planned
+Status: active
 
 Goal: fix the data contracts and build the smallest end-to-end prototype that exercises them on
 synthetic data.
@@ -137,11 +137,9 @@ Goal: keep the project current: triage incoming ideas, review on a cadence, and 
 
 ## Detailed Next Steps Notes
 
-1. Phase 0 is `pr-open` on `feature/p0-scope-design`. The scope, ADRs, architecture note, and workflow
-   tooling are complete. Pull request #8 and the close-out report `notes/reports/p0-closeout.md` await
-   the maintainer's approval.
-2. On approval: squash-merge #8, delete the branch, close parent issue #1, and launch P1 (contracts and
-   prototype) with branch `feature/p1-contracts-prototype`.
+1. Phase 0 is complete: pull request #8 squash-merged as `386c643`, the branch deleted, and parent
+   issue #1 closed. The close-out report is `notes/reports/p0-closeout.md`.
+2. Phase 1 is active on `feature/p1-contracts-prototype`, parent issue #10. Tasks P1.1 and P1.2.
 3. P1 fixes the compiled-dataset schema and builds the smallest end-to-end prototype on synthetic data.
 4. P2 builds the model and the optimization stack. The stack generalizes the lab's FHOPS toolkit into a
    shared solver core; the execution substrate targets the 72-core host and the GPU. See

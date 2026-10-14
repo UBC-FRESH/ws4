@@ -30,3 +30,7 @@ issue comments.
   math-heuristic layer.
 - Queued the Phase 0 close-out: pull request #8 (`feature/p0-scope-design` into `main`) and the report
   `notes/reports/p0-closeout.md`. Status: awaiting maintainer approval.
+- Completed Phase 0: squash-merged pull request #8 as `386c643`, deleted `feature/p0-scope-design`, and
+  closed parent issue #1.
+- Launched Phase 1 (Contracts and prototype) on `feature/p1-contracts-prototype`, parent issue #10, with
+  tasks P1.1 (compiled-dataset schema and manifest) and P1.2 (end-to-end prototype).
