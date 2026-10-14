@@ -34,3 +34,7 @@ issue comments.
   closed parent issue #1.
 - Launched Phase 1 (Contracts and prototype) on `feature/p1-contracts-prototype`, parent issue #10, with
   tasks P1.1 (compiled-dataset schema and manifest) and P1.2 (end-to-end prototype).
+- P1.1: defined the compiled-dataset schema and manifest. Added `ws4/model/schema.py` (tables, manifest,
+  validator), `docs/reference/compiled-dataset.rst`, a `ws4 validate` implementation, `tests/test_schema.py`,
+  and the package `__init__.py` files plus the `ws4.build.compiler` stub. Added `pandas-stubs` to the dev
+  requirements. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.

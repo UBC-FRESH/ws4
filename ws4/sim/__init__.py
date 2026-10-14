@@ -1,0 +1,1 @@
+"""Annual simulation over fragments."""

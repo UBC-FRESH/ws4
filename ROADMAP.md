@@ -84,8 +84,10 @@ Status: active
 Goal: fix the data contracts and build the smallest end-to-end prototype that exercises them on
 synthetic data.
 
-- [ ] P1.1 Define the compiled-dataset schema and manifest in `docs/`
-- [ ] P1.2 Build a prototype that compiles, simulates, and reports on a tiny synthetic landscape
+- [x] P1.1 Define the compiled-dataset schema and manifest in `docs/` (#11)
+  - [x] `docs/reference/compiled-dataset.rst`, `ws4/model/schema.py`, and `ws4 validate`
+  - [x] `tests/test_schema.py` with a failing case per invariant
+- [ ] P1.2 Build a prototype that compiles, simulates, and reports on a tiny synthetic landscape (#12)
 
 ## Phase 2: Build
 

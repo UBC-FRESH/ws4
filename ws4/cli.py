@@ -9,6 +9,7 @@ from rich import print
 from rich.table import Table
 
 from .build.compiler import build_canonical_dataset
+from .model.schema import validate_dataset
 from .opt.engine import OptimizeConfig, Optimizer
 from .sim.engine import Simulator
 
@@ -81,5 +82,15 @@ def optimize(
 @app.command()
 def validate(dataset: Path = typer.Option(..., exists=True)) -> None:
     """Validate a compiled dataset against its manifest and schema invariants."""
-    # TODO: implement schema checks, monotonicity, consistency
-    print(f"[yellow]Validation stub for[/] {dataset}")
+    problems = validate_dataset(dataset)
+    if not problems:
+        print(f"[bold green]Dataset is valid[/] → {dataset}")
+        return
+    table = Table(title="Validation problems")
+    table.add_column("code")
+    table.add_column("where")
+    table.add_column("message")
+    for problem in problems:
+        table.add_row(problem.code, problem.where, problem.message)
+    print(table)
+    raise typer.Exit(code=1)

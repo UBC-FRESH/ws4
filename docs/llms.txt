@@ -5,4 +5,5 @@
 ## Start here
 
 - [Home](index.html): the documentation home for the project.
+- [Compiled dataset](reference/compiled-dataset.html): the runtime contract, its tables, and its invariants.
 - [API reference](api/index.html): every public function, with its parameters, types, and return values.
