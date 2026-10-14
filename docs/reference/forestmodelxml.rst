@@ -43,9 +43,13 @@ variables, which moves a block to the stratum of the new values and therefore on
 - a treatment's ``new_track`` is the track of the stratum reached by applying its transition;
 - a block with fragments in more than one stratum is emitted once per portion (``blocks``).
 
-On the reference model's recipe and fragments, this expansion produces 1399 strata and 2024 treatment
-rows. The reference matrix for the full model has 7048 strata, so the remaining gap is the additional
-stratification (state variables beyond the recipe's defines).
+On the MKRf proof-of-concept recipe (`baseMKRF.xml`) and its fragments (1763 records), this expansion
+produces 1399 strata, 2024 treatment rows, 1763 block rows, and 4197 accounts. The matching reference
+matrix (the POC's own `Tracks/`) has 2116 strata, 2024 treatment rows, 3183 block rows, and 60 accounts.
+
+The treatment count matches exactly. The remaining gaps are the exact strata enumeration (2116 vs
+1399), block splitting into managed and unmanaged portions (3183 vs 1763), account de-duplication (60
+vs 4197), and the CC/CT split (the CT select's ``not startswith(au,'t')`` term is not yet evaluated).
 
 Legacy ingestion
 ----------------
@@ -60,18 +64,17 @@ maps the legacy column names to the schema, and records the mapping in the manif
 Reference output
 ----------------
 
-A reference compiled matrix for a real, moderately complex model (a UBC research forest) has these
-dimensions, which set the target for the builder:
+A reference compiled matrix for a real, moderately complex model (a UBC research forest) sets the
+target for the builder:
 
-- ``tracknames`` and ``strata``: 7048 tracks, one per development stratum;
-- ``treatments``: 10014 rows (treatments expand across the tracks they apply to);
+- ``tracknames`` and ``strata``: 2116 tracks, one per development stratum;
+- ``treatments``: 2024 rows (treatments expand across the tracks they apply to);
 - ``blocks``: 3183 rows, with a block split into a managed and an unmanaged portion;
-- ``accounts``: 91 accounts;
+- ``accounts``: 60 accounts;
 - ``messages``: no rows (a clean compile).
 
-WS4's current builder produces one track per select (11 for that model), so the main gaps are stratum
-expansion over the theme space, block splitting into managed and unmanaged portions, and per-track
-treatment expansion.
+The reference is the model's own ``Tracks/`` directory. Compare a builder run against the matrix from
+the same recipe and fragments; a matrix from a different model variant is not a valid comparison.
 
 Known gaps
 ----------
