@@ -8,10 +8,12 @@ Status values: `open`, `partial`, `blocked`, `done`.
 
 ## Matrix builder (P2.1)
 
-- **Expression language.** `partial`. Select statements are parsed into terms for
-  `eq/ne/lt/le/gt/ge/in`; a function call or a `not` expression is kept as an opaque term and skipped
-  when matching. Needed for correct matching (for example the CT eligibility
-  `not startswith(au,'t')`). Evidence: the MKRf PoC gives 0 CT-eligible strata under the opaque term.
+- **Expression language.** `done` (bounded). Select statements evaluate with `ws4/io/expressions.py`:
+  comparisons (`eq/ne/lt/le/gt/ge/in`), booleans (`and`/`or`/`not`), parentheses, and the functions
+  `startswith`, `endswith`, `substring`, `int`, `Number`, `length`, and `if`. An expression the evaluator
+  cannot parse falls back to the term matcher. Remaining: the wider function library (`curveId`,
+  `lookupTable`, `attribute`, string and math functions). Evidence: the CT eligibility
+  `not startswith(au,'t')` now evaluates correctly (MKRf PoC CT 586 vs reference 590).
 - **Expression-sourced attribute curves.** `open`. An `<attribute>` may source its curve from an
   `<expression>` (for example `curveId('Yield_'+au)`). The parser records the expression; the builder
   skips it, so those features/products are missing. Evidence: the k3z intensive variants have

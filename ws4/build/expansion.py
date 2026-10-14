@@ -13,6 +13,7 @@ import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
+from ..io.expressions import ExpressionError, evaluate
 from ..io.forest_model_xml import Recipe, Select, Term, Treatment
 
 
@@ -176,11 +177,16 @@ def matching_selects(
     first; features, products, and treatments accumulate across the matching selects.
     """
     row = dict(zip(variables, key, strict=True))
-    return tuple(
-        index
-        for index, select in enumerate(selects, start=1)
-        if _matches(select.terms, row, constants)
-    )
+    matched: list[int] = []
+    for index, select in enumerate(selects, start=1):
+        try:
+            hit = evaluate(select.statement, row, constants)
+        except ExpressionError:
+            # Fall back to the term matcher for an expression the evaluator cannot handle.
+            hit = _matches(select.terms, row, constants)
+        if hit:
+            matched.append(index)
+    return tuple(matched)
 
 
 _CONCAT_RE = re.compile(r"^'([^']*)'\s*\+\s*([A-Za-z_][A-Za-z0-9_]*)$")

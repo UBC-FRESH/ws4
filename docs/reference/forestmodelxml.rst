@@ -19,10 +19,11 @@ What the parser reads
 - treatment ``minage``, ``maxage``, ``retain``, and ``transition`` assigns;
 - attribute sources: a ``curve`` reference or an ``expression``.
 
-Select statements are parsed into terms. A term is ``field op value`` for ``eq``, ``ne``, ``lt``,
-``le``, ``gt``, ``ge``, and ``in``. A term that uses a function call or a ``not`` expression is kept
-as an opaque term (``op == '?'``) and skipped when matching, so a compile is best-effort for models
-that use the full expression language.
+Select statements are evaluated by ``ws4.io.expressions``: comparisons (``eq``, ``ne``, ``lt``, ``le``,
+``gt``, ``ge``, ``in``), the boolean operators (``and``, ``or``, ``not``), parentheses, and the
+functions ``startswith``, ``endswith``, ``substring``, ``int``, ``Number``, ``length``, and ``if``. An
+expression the evaluator cannot parse falls back to a term matcher that skips the terms it cannot read,
+so a compile is best-effort for models that use the wider function library.
 
 Compilation
 -----------

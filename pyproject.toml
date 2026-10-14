@@ -49,6 +49,9 @@ convention = "numpy"
 "docs/conf.py" = ["D", "ANN", "N"]
 # Typer options are declared as default arguments by design.
 "ws4/cli.py" = ["B008"]
+# The select-expression AST is a tuple tree of mixed node payloads; its node
+# functions are dynamically typed by construction.
+"ws4/io/expressions.py" = ["ANN401"]
 
 [tool.mypy]
 python_version = "3.11"

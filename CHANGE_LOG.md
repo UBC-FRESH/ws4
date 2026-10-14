@@ -85,3 +85,7 @@ issue comments.
   reference matrix exactly: the k3z intensive variants (732/732/963/427 and 553/553/605/427) and a
   421,945-fragment instance (tsa29: tracks 524, strata 524, treatments 210). Added the backlog note
   `notes/backlog.md` as the consolidated gap list.
+- P2.1: added a bounded select-expression evaluator (`ws4/io/expressions.py`): comparisons, booleans,
+  parentheses, and the functions `startswith`, `endswith`, `substring`, `int`, `Number`, `length`, and
+  `if`, with a fallback to the term matcher. The k3z reference matrices still match exactly, and the
+  MKRf PoC CT eligibility now evaluates (`not startswith(au,'t')`).
