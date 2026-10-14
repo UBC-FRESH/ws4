@@ -94,3 +94,6 @@ issue comments.
   terms (it is not a stratum dimension), and accounts are the union of feature and product labels grouped
   by management state. Accounts are close but not exact (k3z pct_light 1507 vs 1460; the reference
   excludes zero-signal families, recorded in the backlog).
+- P2.2: implemented the annual simulator over the compiled contract. A scheduled treatment applies only
+  where the fragment's track offers it (the Model II operability rule) and moves the fragment to its
+  `new_track`. Added `tests/test_simulator.py` (deterministic replay; an unoffered treatment is a no-op).

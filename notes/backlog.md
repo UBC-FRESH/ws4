@@ -46,12 +46,15 @@ Status values: `open`, `partial`, `blocked`, `done`.
 
 ## Simulation (P2.2)
 
-- **Operability and eligibility evaluation.** `open`. The simulator applies treatments unconditionally;
-  the fragment-level predicates are not evaluated.
-- **Succession and track switching during a run.** `open`.
-- **Products and route flows.** `open`.
+- **Operability and eligibility evaluation.** `done`. A scheduled treatment applies only where the
+  fragment's track offers it (the Model II rule).
+- **Succession and track switching during a run.** `done`. A treatment moves the fragment to its
+  `new_track` and resets its offset.
+- **Products and route flows.** `open`. The simulator records feature accounts; product yields at a
+  treatment and route flows are not yet computed.
 - **Patch metrics over blocks.** `open`.
-- **Deterministic replay test** against a reference run. `open`.
+- **Deterministic replay test.** `done` (two runs are identical; an unoffered treatment is a no-op). A
+  replay validated against a reference run remains open.
 
 ## Optimization and solver (P2.3-P2.6)
 
