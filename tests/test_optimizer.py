@@ -65,3 +65,24 @@ def test_metaheuristics_improve_the_objective(tmp_path: Path, metaheuristic: str
     assert summary["incumbent_objective"] < 200.0
     assert summary["metaheuristic"] == metaheuristic
     assert (tmp_path / "run" / "schedule.csv").is_file()
+
+
+def test_multi_start_is_no_worse_than_single_start(tmp_path: Path) -> None:
+    """More starts cannot raise the incumbent objective."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    targets = tmp_path / "targets.yaml"
+    targets.write_text(
+        "targets:\n  - account: feature.Volume\n    year: 0\n    maximum: 500\n",
+        encoding="utf-8",
+    )
+
+    def config(starts: int) -> OptimizeConfig:
+        return OptimizeConfig(
+            targets_path=str(targets), seed=1, years=1, iterations=40, starts=starts
+        )
+
+    single = Optimizer.from_dataset(dataset, config(1)).run(tmp_path / "s1")
+    multi = Optimizer.from_dataset(dataset, config(4)).run(tmp_path / "s4")
+    assert multi["incumbent_objective"] <= single["incumbent_objective"]
