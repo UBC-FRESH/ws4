@@ -8,17 +8,35 @@ the target stratum's track (see ``notes/design/ws4-matrix-builder-and-interop.md
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
+from typing import TypedDict
 
 import pandas as pd
 
 from ..io.forest_model_xml import Recipe, parse_recipe
 from ..model.schema import MANIFEST_NAME, SCHEMA_VERSION, TABLES, coerce_to_schema
 from ..model.types import CanonicalDatasetManifest
-from .expansion import expand_strata, state_of, state_variables, transition_key
+from .expansion import (
+    column_name,
+    expand_strata,
+    matching_selects,
+    resolve_value,
+    state_of,
+    state_variables,
+    transition_key,
+)
 
 _FRAGMENT_COLUMNS = ("fragment_id", "block_id", "area_ha", "age", "track_id")
+
+
+class _Portion(TypedDict):
+    """An area portion of a fragment, with its stratum key."""
+
+    block_id: int
+    area_ha: float
+    age: int
+    key: tuple[str, ...]
 
 
 def _read_fragments(path: Path) -> pd.DataFrame:
@@ -43,6 +61,56 @@ def _curve_ids(recipe: Recipe) -> dict[str, int]:
 def _strata_expr(variables: Sequence[str], key: tuple[str, ...]) -> str:
     """Render a stratum as a strata expression such as ``status(C)+oper(Operable)``."""
     return "+".join(f"{name}({value})" for name, value in zip(variables, key, strict=True))
+
+
+def _as_float(value: object) -> float:
+    """Convert a value to a float, or 0.0 when it is not numeric."""
+    try:
+        return float(str(value))
+    except ValueError:
+        return 0.0
+
+
+def _retention_split(
+    record: Mapping[str, object], key: tuple[str, ...], variables: Sequence[str], recipe: Recipe
+) -> tuple[float, tuple[str, ...]] | None:
+    """Return the retention factor and the retained state key, or None."""
+    for index in matching_selects(key, variables, recipe.selects, recipe.constants):
+        retention = recipe.selects[index - 1].retention
+        if retention is None:
+            continue
+        column = column_name(retention.factor) if retention.factor else ""
+        value = record.get(column)
+        factor = min(max(_as_float(value) if value is not None else 0.0, 0.0), 1.0)
+        state = dict(zip(variables, key, strict=True))
+        for name, value in retention.assigns.items():
+            state[name] = resolve_value(value, state, recipe.constants)
+        return factor, tuple(state.get(name, "") for name in variables)
+    return None
+
+
+def _portions(
+    record: Mapping[str, object], variables: Sequence[str], recipe: Recipe
+) -> list[_Portion]:
+    """Split a fragment into area portions by its retention rule.
+
+    The retained fraction moves to the state the retention rule assigns (for
+    example, ``IFM = unmanaged``); the rest keeps the fragment's own state.
+    """
+    key = state_of(record, variables, recipe)
+    block_id = int(_as_float(record[recipe.input_block]))
+    area = _as_float(record[recipe.input_area])
+    age = int(_as_float(record[recipe.input_age]))
+    split = _retention_split(record, key, variables, recipe)
+    if split is None:
+        return [_Portion(block_id=block_id, area_ha=area, age=age, key=key)]
+    factor, retained_key = split
+    rows: list[_Portion] = []
+    if factor < 1.0:
+        rows.append(_Portion(block_id=block_id, area_ha=area * (1.0 - factor), age=age, key=key))
+    if factor > 0.0:
+        rows.append(_Portion(block_id=block_id, area_ha=area * factor, age=age, key=retained_key))
+    return rows
 
 
 def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path) -> Path:
@@ -73,17 +141,18 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
     records: list[dict[str, object]] = [
         {str(key): value for key, value in record.items()} for record in raw.to_dict("records")
     ]
-    fragment_keys = [state_of(record, variables, recipe) for record in records]
+    portions = [portion for record in records for portion in _portions(record, variables, recipe)]
+    fragment_keys = [portion["key"] for portion in portions]
     strata = expand_strata(fragment_keys, recipe)
     track_of: dict[tuple[str, ...], int] = {s.key: s.track_id for s in strata}
 
     fragments = pd.DataFrame(
         {
-            "fragment_id": range(1, len(records) + 1),
-            "block_id": raw[recipe.input_block].astype("int64"),
-            "area_ha": raw[recipe.input_area].astype("float64"),
-            "age": raw[recipe.input_age].astype("int64"),
-            "track_id": [track_of.get(key, 0) for key in fragment_keys],
+            "fragment_id": range(1, len(portions) + 1),
+            "block_id": [portion["block_id"] for portion in portions],
+            "area_ha": [portion["area_ha"] for portion in portions],
+            "age": [portion["age"] for portion in portions],
+            "track_id": [track_of.get(portion["key"], 0) for portion in portions],
         },
         columns=list(_FRAGMENT_COLUMNS),
     )

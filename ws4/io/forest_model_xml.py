@@ -61,6 +61,18 @@ class Term:
 
 
 @dataclass(frozen=True)
+class Retention:
+    """A retention rule: move a fraction of the area to another state.
+
+    ``factor`` is the retained fraction (a column name or a constant), and
+    ``assigns`` are the state-variable values the retained area moves to.
+    """
+
+    factor: str
+    assigns: dict[str, str]
+
+
+@dataclass(frozen=True)
 class Select:
     """One ``select`` block."""
 
@@ -69,6 +81,7 @@ class Select:
     features: tuple[Attribute, ...]
     products: tuple[Attribute, ...]
     treatments: tuple[Treatment, ...]
+    retention: Retention | None = None
 
 
 @dataclass(frozen=True)
@@ -122,6 +135,17 @@ def parse_statement(statement: str) -> tuple[Term, ...]:
     return tuple(terms)
 
 
+def _retention(element: ET.Element) -> Retention | None:
+    """Return the parsed retention rule for a select, or None."""
+    retention = element.find("./retention")
+    if retention is None:
+        return None
+    assigns = {
+        assign.get("field", ""): assign.get("value", "") for assign in retention.findall("./assign")
+    }
+    return Retention(factor=retention.get("factor", ""), assigns=assigns)
+
+
 def _attribute(element: ET.Element) -> Attribute:
     """Return the parsed attribute element.
 
@@ -165,7 +189,9 @@ def _treatment(element: ET.Element) -> Treatment:
         name = assign.get("field")
         value = assign.get("value")
         if name is not None and value is not None:
-            transition[name] = value.strip("'")
+            # Keep the raw expression: it may be a constant, a field reference, or
+            # a string concatenation such as ``'thn_'+au``.
+            transition[name] = value
     return Treatment(
         label=label,
         min_age=_int_or_zero(element.get("minage")),
@@ -250,6 +276,7 @@ def parse_recipe(path: Path) -> Recipe:
                 features=features,
                 products=products,
                 treatments=treatments,
+                retention=_retention(element),
             )
         )
 

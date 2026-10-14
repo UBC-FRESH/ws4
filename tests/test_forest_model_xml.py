@@ -19,7 +19,7 @@ def test_parse_recipe_reads_the_structure() -> None:
     assert len(recipe.selects) == 2
     treatment = recipe.selects[0].treatments[0]
     assert treatment.label == "CC"
-    assert treatment.transition == {"IFM": "managed"}
+    assert treatment.transition == {"IFM": "'managed'"}
     feature = recipe.selects[0].features[0]
     assert feature.label == "feature.Volume"
     assert feature.curve == "natural_volume"

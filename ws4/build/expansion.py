@@ -9,6 +9,7 @@ stratum to the select that governs it.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
@@ -53,6 +54,35 @@ def state_variables(recipe: Recipe) -> tuple[str, ...]:
     return tuple(recipe.defines)
 
 
+_COLUMN_RE = re.compile(r"column\(\s*'([^']+)'\s*\)")
+_WRAP_RE = re.compile(r"^(?:string|Int|int|Number|number)\(\s*(.+?)\s*\)$")
+
+
+def column_name(expression: str) -> str:
+    """Extract the fragment column from a define's source expression.
+
+    Handles plain columns, ``string(X)`` / ``Int(X)`` / ``Number(X)`` wrappers, and
+    ``Number(column('X'))``.
+
+    Parameters
+    ----------
+    expression : str
+        The define's ``column`` expression.
+
+    Returns
+    -------
+    str
+        The fragment column name.
+    """
+    match = _COLUMN_RE.search(expression)
+    if match is not None:
+        return match.group(1)
+    wrapped = _WRAP_RE.match(expression)
+    if wrapped is not None:
+        return wrapped.group(1).strip("'")
+    return expression
+
+
 def state_of(
     row: Mapping[str, object], variables: Sequence[str], recipe: Recipe
 ) -> tuple[str, ...]:
@@ -74,7 +104,8 @@ def state_of(
     """
     values: list[str] = []
     for name in variables:
-        column = recipe.defines.get(name)
+        expression = recipe.defines.get(name)
+        column = column_name(expression) if expression is not None else None
         values.append(str(row[column]) if column is not None and column in row else "")
     return tuple(values)
 
@@ -129,13 +160,50 @@ def matching_selects(
     )
 
 
+_CONCAT_RE = re.compile(r"^'([^']*)'\s*\+\s*([A-Za-z_][A-Za-z0-9_]*)$")
+_QUOTED_RE = re.compile(r"^'([^']*)'$")
+
+
+def resolve_value(value: str, state: Mapping[str, str], constants: dict[str, str]) -> str:
+    """Resolve a transition value.
+
+    A value is a quoted literal (``'CC'``), a constant name (``managed``), a field
+    reference (``auf``), or a simple string concatenation (``'thn_'+au``).
+
+    Parameters
+    ----------
+    value : str
+        The raw transition value expression.
+    state : mapping of str to str
+        The current state-variable values.
+    constants : dict of str to str
+        The recipe's scalar constants.
+
+    Returns
+    -------
+    str
+        The resolved value.
+    """
+    quoted = _QUOTED_RE.match(value)
+    if quoted is not None:
+        return quoted.group(1)
+    if value in constants:
+        return constants[value]
+    if value in state:
+        return state[value]
+    concat = _CONCAT_RE.match(value)
+    if concat is not None:
+        return concat.group(1) + state.get(concat.group(2), "")
+    return value
+
+
 def transition_key(
     key: tuple[str, ...], variables: Sequence[str], treatment: Treatment, constants: dict[str, str]
 ) -> tuple[str, ...]:
     """Return the state key after a treatment resets its state variables."""
     state = dict(zip(variables, key, strict=True))
     for name, value in treatment.transition.items():
-        state[name] = constants.get(value, value)
+        state[name] = resolve_value(value, state, constants)
     return tuple(state.get(name, "") for name in variables)
 
 

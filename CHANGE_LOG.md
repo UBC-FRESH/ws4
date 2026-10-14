@@ -76,3 +76,7 @@ issue comments.
   treatments accumulate), and emits one block row per portion. On the reference recipe and fragments this
   yields 1399 strata and 2024 treatment rows (from 0). Added `tests/test_expansion.py`. Dashboard result:
   `python scripts/dashboard.py` reports `OVERALL: GREEN`.
+- P2.1: completed the Model II expansion against a reference matrix. Added field-reference and
+  concatenation transition resolution (`au = auf`, `'thn_'+au`) and `<retention>` splits (the retained
+  fraction moves to the assigned state). Against a real 218-fragment instance, the builder now matches
+  the reference exactly on tracks (351), strata (351), treatments (263), and blocks (399).

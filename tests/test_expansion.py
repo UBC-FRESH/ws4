@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 from ws4.build.compiler import build_canonical_dataset
+from ws4.build.expansion import resolve_value
 from ws4.model.schema import validate_dataset
 
 _RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
@@ -81,3 +82,45 @@ def test_expansion_emits_per_track_treatments(tmp_path: Path) -> None:
     treatments = pd.read_parquet(dataset / "treatments.parquet")
     assert len(treatments) == 2  # CC on (C, '') and (C, 'CC')
     assert set(treatments["new_track"]) == {3}
+
+
+def test_resolve_value_handles_references_and_concat() -> None:
+    """Transition values resolve literals, constants, field refs, and concat."""
+    state = {"au": "2001", "auf": "2101"}
+    assert resolve_value("'CC'", state, {}) == "CC"
+    assert resolve_value("managed", state, {"managed": "C"}) == "C"
+    assert resolve_value("auf", state, {}) == "2101"
+    assert resolve_value("'thn_'+au", state, {}) == "thn_2001"
+
+
+_RETENTION_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
+<ForestModel horizon="100" year="0" match="multi">
+  <curve id="unity"><point x="0" y="1.0"/></curve>
+  <curve id="volume"><point x="0" y="0"/><point x="100" y="100"/></curve>
+  <define field="IFM" column="IFM"/>
+  <define field="RET" column="RET"/>
+  <input block="BLOCK" area="AREA_HA" age="F_AGE"/>
+  <output messages="messages.csv"/>
+  <select statement="IFM eq 'managed'">
+    <features><attribute label="feature.Volume"><curve idref="volume"/></attribute></features>
+    <retention factor="RET"><assign field="IFM" value="'unmanaged'"/></retention>
+    <track><treatment label="CC" minage="0" maxage="100"/></track>
+  </select>
+</ForestModel>
+"""
+
+
+def test_retention_split_creates_managed_and_unmanaged_portions(tmp_path: Path) -> None:
+    """A retention rule splits a fragment's area into two portions."""
+    (tmp_path / "recipe.xml").write_text(_RETENTION_RECIPE, encoding="utf-8")
+    pd.DataFrame(
+        {"BLOCK": [1], "AREA_HA": [8.0], "F_AGE": [50], "IFM": ["managed"], "RET": [0.25]}
+    ).to_csv(tmp_path / "fragments.csv", index=False)
+    dataset = build_canonical_dataset(
+        tmp_path / "recipe.xml", tmp_path / "fragments.csv", tmp_path / "c"
+    )
+    blocks = pd.read_parquet(dataset / "blocks.parquet").sort_values("area_ha")
+    tracks = pd.read_parquet(dataset / "tracks.parquet")
+    assert len(tracks) == 2  # managed and unmanaged
+    assert len(blocks) == 2  # one portion each
+    assert list(blocks["area_ha"]) == [2.0, 6.0]  # 0.25 and 0.75 of 8 ha

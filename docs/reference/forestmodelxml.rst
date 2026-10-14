@@ -40,8 +40,37 @@ variables, which moves a block to the stratum of the new values and therefore on
 - each stratum becomes a **track** (``tracknames``), named by its state values;
 - a stratum is governed by **every** select whose statement matches it, and features, products, and
   treatments accumulate across those selects;
-- a treatment's ``new_track`` is the track of the stratum reached by applying its transition;
-- a block with fragments in more than one stratum is emitted once per portion (``blocks``).
+- a treatment's ``new_track`` is the track of the stratum reached by applying its transition
+  (a literal, a constant, a field reference such as ``au = auf``, or a concatenation such as
+  ``'thn_'+au``);
+- a ``<retention factor="RET">`` rule splits a fragment's area into a retained portion (the factor,
+  moved to the assigned state, for example ``IFM = unmanaged``) and a base portion (the remainder);
+- a block with fragments or portions in more than one stratum is emitted once per portion (``blocks``).
+
+Validation
+----------
+
+Against a reference compiled matrix for a real model (a 218-fragment instance), the builder matches
+all four structural counts exactly:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Table
+     - WS4
+     - Reference
+   * - tracks
+     - 351
+     - 351
+   * - strata
+     - 351
+     - 351
+   * - treatments
+     - 263
+     - 263
+   * - blocks
+     - 399
+     - 399
 
 On the MKRf proof-of-concept recipe (`baseMKRF.xml`) and its fragments (1763 records), this expansion
 produces 1399 strata, 2024 treatment rows, 1763 block rows, and 4197 accounts. The matching reference

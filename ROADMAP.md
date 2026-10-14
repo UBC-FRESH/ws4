@@ -106,9 +106,10 @@ Goal: implement the agreed scope, one task at a time, on the phase branch.
   - [x] ForestModelXML parser and structural validation (parses the real MKRf recipe: 1057 curves, 11 selects, 2 treatments)
   - [x] Matrix builder for the non-expression subset; legacy matrix ingestion with a recorded mapping
   - [x] The Model II expansion engine: enumerate the reachable strata, expand each into a track, connect treatments to target strata (`ws4/build/expansion.py`)
-  - [x] Block splitting into portions, and per-track treatment expansion (a stratum is governed by every matching select)
-  - [ ] Additional stratification state variables beyond the recipe's defines
+  - [x] Block splitting into portions, per-track treatment expansion, and retention splits
+  - [x] Matches a reference compiled matrix exactly on tracks, strata, treatments, and blocks (351/351/263/399)
   - [ ] Full expression language, expression-sourced curves, and shapefile input
+  - [ ] Reproduce the additional stratification of the full MKRf canonical model (blocked on its generated XML)
 - [ ] P2.2 Implement the simulation engine (#17)
 - [ ] P2.3 Implement the optimization engine: objective, operators, and one metaheuristic (#18)
 - [ ] P2.4 Implement the solver core: the shared operator/metaheuristic/tuning/telemetry package (#19)
