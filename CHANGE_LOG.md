@@ -163,3 +163,6 @@ issue comments.
   A user's curated `accounts` table is preserved across rebuilds. Added the `sum` scale column and tests.
   The `overlay_*` variants are a modelling convention for one instance family, not a format feature, so
   they are out of scope.
+- P2 close-out: queued pull request #25 (`feature/p2-build` into `main`) and wrote
+  `notes/reports/p2-closeout.md`. `ROADMAP.md` marks P2 `pr-open`; five items are deferred and tracked
+  in `notes/backlog.md`. `python scripts/dashboard.py`: `OVERALL: GREEN`.
