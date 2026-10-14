@@ -347,10 +347,23 @@ def _check_invariants(dataset_dir: Path) -> list[Problem]:
         The invariant findings.
     """
     problems: list[Problem] = []
-    fragments = pd.read_parquet(dataset_dir / "fragments.parquet")
-    blocks = pd.read_parquet(dataset_dir / "blocks.parquet")
-    tracks = pd.read_parquet(dataset_dir / "tracks.parquet")
-    curves = pd.read_parquet(dataset_dir / "curves.parquet")
+    frames = {
+        name: pd.read_parquet(dataset_dir / f"{name}.parquet")
+        for name in (
+            "fragments",
+            "blocks",
+            "tracks",
+            "strata",
+            "treatments",
+            "curves",
+            "features",
+            "products",
+        )
+    }
+    fragments = frames["fragments"]
+    blocks = frames["blocks"]
+    tracks = frames["tracks"]
+    curves = frames["curves"]
 
     if (fragments["area_ha"] < 0).any():
         problems.append(
@@ -367,12 +380,32 @@ def _check_invariants(dataset_dir: Path) -> list[Problem]:
         problems.append(
             Problem("DATASET-UNKNOWN-BLOCK", "fragments", f"block_id not in blocks: {sample}")
         )
-    unknown_tracks = set(blocks["track_id"]) - set(tracks["track_id"])
-    if unknown_tracks:
-        sample = sorted(unknown_tracks)[:5]
+
+    # Every table that names a track must name a real one.
+    track_ids = set(tracks["track_id"])
+    for name in ("blocks", "strata", "treatments", "features", "products"):
+        unknown = set(frames[name]["track_id"]) - track_ids
+        if unknown:
+            sample = sorted(unknown)[:5]
+            problems.append(
+                Problem("DATASET-UNKNOWN-TRACK", name, f"track_id not in tracks: {sample}")
+            )
+    # A treatment's target track is a real track, or 0 for no transition.
+    unknown_new = set(frames["treatments"]["new_track"]) - track_ids - {0}
+    if unknown_new:
+        sample = sorted(unknown_new)[:5]
         problems.append(
-            Problem("DATASET-UNKNOWN-TRACK", "blocks", f"track_id not in tracks: {sample}")
+            Problem("DATASET-UNKNOWN-TRACK", "treatments", f"new_track not in tracks: {sample}")
         )
+    # Every feature and product curve must exist.
+    curve_ids = set(curves["curve_id"])
+    for name in ("features", "products"):
+        unknown = set(frames[name]["curve_id"]) - curve_ids
+        if unknown:
+            sample = sorted(unknown)[:5]
+            problems.append(
+                Problem("DATASET-UNKNOWN-CURVE", name, f"curve_id not in curves: {sample}")
+            )
 
     for curve_id, group in curves.groupby("curve_id", sort=True):
         if not group["x"].is_monotonic_increasing or group["x"].duplicated().any():

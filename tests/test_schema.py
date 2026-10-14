@@ -143,3 +143,27 @@ def test_dataset_reference_reports_the_manifest(tmp_path: Path) -> None:
 def test_dataset_reference_is_empty_without_a_manifest(tmp_path: Path) -> None:
     """A directory without a manifest yields an empty reference."""
     assert dataset_reference(tmp_path) == {}
+
+
+def test_unknown_stratum_track_is_reported(tmp_path: Path) -> None:
+    """A stratum on an unknown track is rejected."""
+    broken = dict(_EMPTY)
+    broken["strata"] = _EMPTY["strata"].assign(track_id=[99])
+    codes = {problem.code for problem in validate_dataset(_write_dataset(tmp_path, broken))}
+    assert "DATASET-UNKNOWN-TRACK" in codes
+
+
+def test_unknown_treatment_target_is_reported(tmp_path: Path) -> None:
+    """A treatment whose target track is unknown is rejected."""
+    broken = dict(_EMPTY)
+    broken["treatments"] = _EMPTY["treatments"].assign(new_track=[99])
+    codes = {problem.code for problem in validate_dataset(_write_dataset(tmp_path, broken))}
+    assert "DATASET-UNKNOWN-TRACK" in codes
+
+
+def test_unknown_feature_curve_is_reported(tmp_path: Path) -> None:
+    """A feature on an unknown curve is rejected."""
+    broken = dict(_EMPTY)
+    broken["features"] = _EMPTY["features"].assign(curve_id=[99])
+    codes = {problem.code for problem in validate_dataset(_write_dataset(tmp_path, broken))}
+    assert "DATASET-UNKNOWN-CURVE" in codes

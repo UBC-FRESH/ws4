@@ -196,3 +196,11 @@ issue comments.
   and a run directory now records the dataset manifest (`dataset_reference` in `ws4/model/schema.py`,
   used by the optimizer's `summary.json` and the simulator's `dataset.json`). `python -m pytest`: 224
   passed, 94.78 percent branch coverage. `python scripts/dashboard.py`: `OVERALL: GREEN`.
+- P3.3: verified correctness. Added a self-contained matrix regression fixture
+  (`tests/fixtures/matrix/`, with committed `expected/` tables) and `tests/test_matrix_regression.py`;
+  property tests for the Model II expansion invariants (every stratum has a track; every treatment
+  connects to a real target track or 0; retention splits conserve area, with a hypothesis test over
+  random areas); strengthened `validate_dataset` to check strata, treatments, features, and products
+  against real tracks and curves (with tests per new finding); and a test that no random schedule has a
+  penalty below the MIP bound. The builder still matches the reference on all nine core variants.
+  `python -m pytest`: 240 passed, 94.78 percent branch coverage.

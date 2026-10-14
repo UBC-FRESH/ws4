@@ -161,12 +161,12 @@ release.
   - [x] A parallel multi-start run matches the serial run for the same seeds
   - [x] A warm start is deterministic: the same seed reproduces the same result
   - [x] A run directory is self-describing: it records the config, the seed, and the dataset manifest
-- [ ] P3.3 Verify correctness: reference regression and invariants (#29)
-  - [ ] Commit a fixture-based regression test for the matrix builder against a reference matrix
-  - [ ] Property tests for the Model II expansion invariants (every stratum has a track; every treatment
+- [x] P3.3 Verify correctness: reference regression and invariants (#29)
+  - [x] Commit a fixture-based regression test for the matrix builder against a reference matrix
+  - [x] Property tests for the Model II expansion invariants (every stratum has a track; every treatment
         connects to a real target; retention splits conserve area)
-  - [ ] The schema invariants hold on every compiled dataset
-  - [ ] The optimizer's MIP bound is a valid lower bound on the penalty
+  - [x] The schema invariants hold on every compiled dataset
+  - [x] The optimizer's MIP bound is a valid lower bound on the penalty
 - [ ] P3.4 Verify the spatial constraints (#30)
   - [ ] Adjacency and topology are enforced and visible in the outputs
   - [ ] Maximum opening size is respected, and violated only by an explicit override
