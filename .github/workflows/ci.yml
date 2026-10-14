@@ -12,14 +12,14 @@ permissions:
 jobs:
   quality:
     name: Quality gates
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -27,7 +27,7 @@ jobs:
       - name: Install dev requirements
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e .
+          python -m pip install -e ".[geo]"
           python -m pip install -r requirements-dev.txt
 
       - name: Lint
@@ -50,14 +50,14 @@ jobs:
 
   dashboard:
     name: Green dashboard summary
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -65,7 +65,7 @@ jobs:
       - name: Install dev requirements
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e .
+          python -m pip install -e ".[geo]"
           python -m pip install -r requirements-dev.txt
 
       - name: Run the dashboard
@@ -80,21 +80,21 @@ jobs:
 
       - name: Upload the dashboard record
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: dashboard-record
           path: runtime/dashboard.json
 
   pre-commit:
     name: Pre-commit parity
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -102,7 +102,7 @@ jobs:
       - name: Install dev requirements
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e .
+          python -m pip install -e ".[geo]"
           python -m pip install -r requirements-dev.txt
 
       - name: Run every pre-commit hook

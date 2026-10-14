@@ -38,7 +38,22 @@ _EMPTY: dict[str, pd.DataFrame] = {
     "products": pd.DataFrame(
         {"track_id": [1], "treatment": ["CC"], "label": ["product.Volume"], "curve_id": [1]}
     ),
-    "accounts": pd.DataFrame({"group": ["all"], "attribute": ["feature.Area"], "account": ["a"]}),
+    "protoaccounts": pd.DataFrame(
+        {
+            "group": ["all"],
+            "attribute": ["feature.Area"],
+            "account": ["feature.Area"],
+            "sum": [1.0],
+        }
+    ),
+    "accounts": pd.DataFrame(
+        {
+            "group": ["all"],
+            "attribute": ["feature.Area"],
+            "account": ["feature.Area"],
+            "sum": [1.0],
+        }
+    ),
     "groups": pd.DataFrame({"block_id": [1], "group": ["forest"]}),
     "messages": pd.DataFrame({"severity": ["info"], "message": ["ok"]}),
 }

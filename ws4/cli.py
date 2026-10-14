@@ -4,13 +4,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pandas as pd
 import typer
 from rich import print
 from rich.table import Table
 
 from .build.compiler import build_canonical_dataset
+from .build.legacy import ingest_legacy_matrix
 from .model.schema import validate_dataset
 from .opt.engine import OptimizeConfig, Optimizer
+from .opt.objective import load_targets
+from .report import write_report
 from .sim.engine import Simulator
 
 app = typer.Typer(help="WS4 — Wood Supply Simulation System (Spatially explicit)")
@@ -77,6 +81,32 @@ def optimize(
     for k, v in result.items():
         table.add_row(k, str(v))
     print(table)
+
+
+@app.command()
+def ingest(
+    matrix: Path = typer.Option(..., "--matrix", exists=True, help="Legacy matrix directory"),
+    fragments: Path = typer.Option(
+        ..., "--fragments", exists=True, help="Fragment inventory (CSV or Parquet)"
+    ),
+    out: Path = typer.Option(..., "--out", help="Output directory for the canonical dataset"),
+) -> None:
+    """Ingest a legacy matrix dataset into the WS4 schema."""
+    out = ingest_legacy_matrix(matrix, fragments, out)
+    print(f"[bold green]Ingested dataset[/] → {out}")
+
+
+@app.command()
+def report(
+    run: Path = typer.Option(..., "--run", exists=True, help="A run directory"),
+    targets: Path = typer.Option(None, "--targets", help="Optional targets YAML"),
+    out: Path = typer.Option(None, "--out", help="Output directory (defaults to the run)"),
+) -> None:
+    """Write an account summary and a target status for a run."""
+    values = pd.read_csv(run / "account_values.csv")
+    target_list = load_targets(targets) if targets is not None else []
+    write_report(values, target_list, out if out is not None else run)
+    print(f"[bold green]Report written[/] → {out if out is not None else run}")
 
 
 @app.command()
