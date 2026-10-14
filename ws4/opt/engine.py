@@ -46,6 +46,7 @@ class OptimizeConfig:
     perturbation: int = 2
     starts: int = 1
     workers: int = 1
+    warm_start: bool = False
 
 
 class Optimizer:
@@ -132,6 +133,12 @@ class Optimizer:
             registry=self.registry,
         )
         rng = random.Random(seed)
+        # A warm start seeds the search with each block's first candidate.
+        initial: Schedule | None = (
+            {block: options[0] for block, options in candidates.items() if options}
+            if self.cfg.warm_start
+            else None
+        )
         if self.cfg.metaheuristic == "tabu":
             return solve_tabu(
                 problem,
@@ -139,6 +146,7 @@ class Optimizer:
                 iterations=self.cfg.iterations,
                 tenure=self.cfg.tenure,
                 on_step=on_step,
+                initial=initial,
             )
         if self.cfg.metaheuristic == "ils":
             return solve_ils(
@@ -147,6 +155,7 @@ class Optimizer:
                 iterations=self.cfg.iterations,
                 perturbation=self.cfg.perturbation,
                 on_step=on_step,
+                initial=initial,
             )
         return solve_sa(
             problem,
@@ -155,6 +164,7 @@ class Optimizer:
             temperature=self.cfg.temperature,
             cooling=self.cfg.cooling,
             on_step=on_step,
+            initial=initial,
         )
 
     def search(self) -> tuple[Schedule, float, list[Target]]:

@@ -127,6 +127,8 @@ issue comments.
 - P2.5: added parallel multi-start (`OptimizeConfig.workers`). Starts run across a process pool, one
   seeded start per worker, and the best incumbent wins; the serial path is unchanged. Added a parallel
   test.
+- P2.6: added the destroy-repair large-neighbourhood operator (`lns`, in the default registry) and warm
+  starts (`OptimizeConfig.warm_start` seeds the search from each block's first candidate). Added tests.
 - Synced the UBC-FRESH dev workflow tooling to its latest release (P1-P4): updated
   `scripts/check_workflow.py` and the CI action versions and runners (`ubuntu-24.04`, `checkout@v5`,
   `setup-python@v6`, `upload-artifact@v6`, and the Pages actions), keeping the package install step.

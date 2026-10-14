@@ -41,6 +41,7 @@ def solve_sa(
     temperature: float,
     cooling: float,
     on_step: StepCallback | None = None,
+    initial: Schedule | None = None,
 ) -> tuple[Schedule, float]:
     """Run simulated annealing.
 
@@ -64,7 +65,7 @@ def solve_sa(
     tuple of (Schedule, float)
         The best schedule and its objective.
     """
-    current: Schedule = {}
+    current: Schedule = dict(initial) if initial is not None else {}
     current_obj = problem.evaluate(current)
     best, best_obj = dict(current), current_obj
     temp = temperature
@@ -91,6 +92,7 @@ def solve_tabu(
     tenure: int,
     samples: int = 8,
     on_step: StepCallback | None = None,
+    initial: Schedule | None = None,
 ) -> tuple[Schedule, float]:
     """Run tabu search: pick the best non-tabu move each iteration.
 
@@ -114,7 +116,7 @@ def solve_tabu(
     tuple of (Schedule, float)
         The best schedule and its objective.
     """
-    current: Schedule = {}
+    current: Schedule = dict(initial) if initial is not None else {}
     current_obj = problem.evaluate(current)
     best, best_obj = dict(current), current_obj
     tabu: deque[frozenset[tuple[int, tuple[str, int] | None]]] = deque(maxlen=tenure)
@@ -147,6 +149,7 @@ def solve_ils(
     iterations: int,
     perturbation: int,
     on_step: StepCallback | None = None,
+    initial: Schedule | None = None,
 ) -> tuple[Schedule, float]:
     """Run iterated local search: perturb, then accept an improvement.
 
@@ -168,7 +171,7 @@ def solve_ils(
     tuple of (Schedule, float)
         The best schedule and its objective.
     """
-    current: Schedule = {}
+    current: Schedule = dict(initial) if initial is not None else {}
     current_obj = problem.evaluate(current)
     best, best_obj = dict(current), current_obj
     for iteration in range(iterations):

@@ -99,6 +99,37 @@ class SwapOperator:
         return result
 
 
+class LnsOperator:
+    """Large-neighbourhood search: destroy a fraction of the schedule and repair it.
+
+    A destroy-repair move clears a random fraction of the assigned blocks and
+    reassigns them, exploring a large neighbourhood in one step.
+    """
+
+    name = "lns"
+
+    def __init__(self, weight: float = 0.2, destroy_fraction: float = 0.1) -> None:
+        """Set the operator's selection weight and the fraction destroyed."""
+        self.weight = weight
+        self.destroy_fraction = destroy_fraction
+
+    def apply(
+        self, schedule: Schedule, rng: random.Random, candidates: Candidates
+    ) -> Schedule | None:
+        """Destroy a fraction of the schedule and repair it."""
+        if not schedule:
+            return None
+        blocks = list(schedule)
+        count = max(1, int(len(blocks) * self.destroy_fraction))
+        destroyed = rng.sample(blocks, count)
+        result = {block: value for block, value in schedule.items() if block not in destroyed}
+        for block in destroyed:
+            options = candidates.get(block)
+            if options:
+                result[block] = rng.choice(options)
+        return result
+
+
 class OperatorRegistry:
     """A weighted set of operators."""
 
@@ -107,7 +138,7 @@ class OperatorRegistry:
         self._operators: list[Operator] = (
             operators
             if operators is not None
-            else [ToggleOperator(), ShiftOperator(), SwapOperator()]
+            else [ToggleOperator(), ShiftOperator(), SwapOperator(), LnsOperator()]
         )
 
     def names(self) -> list[str]:

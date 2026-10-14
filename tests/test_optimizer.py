@@ -98,6 +98,32 @@ def test_optimizer_writes_telemetry(tmp_path: Path) -> None:
     assert sum(1 for record in records if record["type"] == "step") == 5
 
 
+def test_lns_operator_is_registered(tmp_path: Path) -> None:
+    """The destroy-repair operator is part of the default registry."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    optimizer = Optimizer.from_dataset(dataset, OptimizeConfig())
+    assert "lns" in optimizer.registry.names()
+
+
+def test_warm_start_runs(tmp_path: Path) -> None:
+    """A warm-started run produces a valid incumbent."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    targets = tmp_path / "targets.yaml"
+    targets.write_text(
+        "targets:\n  - account: feature.Volume\n    year: 0\n    maximum: 500\n",
+        encoding="utf-8",
+    )
+    summary = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(targets_path=str(targets), seed=1, years=1, iterations=30, warm_start=True),
+    ).run(tmp_path / "run")
+    assert summary["incumbent_objective"] < 200.0
+
+
 def test_parallel_multi_start_matches_the_serial_result(tmp_path: Path) -> None:
     """A parallel multi-start run produces a valid incumbent."""
     dataset = build_canonical_dataset(
