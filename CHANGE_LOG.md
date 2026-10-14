@@ -183,3 +183,6 @@ issue comments.
   with 0 validation problems and simulates 30 years in 15.5 s; the optimizer meets its target; routing
   and the programmatic model round-trip pass. `python -m pytest`: 218 passed, 94.78 percent branch
   coverage. `python scripts/dashboard.py`: `OVERALL: GREEN`.
+- P3: expanded the Verify phase from one task to five. P3.1 acceptance checks (#27, done), P3.2
+  determinism and reproducibility (#28), P3.3 scale and performance (#29), P3.4 packaging and docs from
+  a clean checkout (#30), and P3.5 deferred-item triage (#31).

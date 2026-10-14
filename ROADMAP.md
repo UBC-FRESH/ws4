@@ -154,6 +154,22 @@ Goal: show that the build meets its acceptance criteria, and record the evidence
   - [x] Spatial and road: route products and record patch metrics
   - [x] Programmatic API and the file path produce the same model
   - [x] Record the evidence, and any failure with its cause and backlog entry, in `CHANGE_LOG.md`
+- [ ] P3.2 Verify determinism and reproducibility (#28)
+  - [ ] The simulator is deterministic: the same schedule produces identical account values across runs
+  - [ ] Every stochastic search records its seed, and the same seed reproduces the same result
+  - [ ] A parallel multi-start run matches the serial run for the same seeds
+  - [ ] A warm start produces the same result as a cold start for the same seed
+- [ ] P3.3 Verify scale and performance (#29)
+  - [ ] Record the C5 sample's ingest, simulate, optimize, and route runtimes
+  - [ ] Build and run a larger synthetic landscape; record the runtime and the peak memory
+  - [ ] Confirm the simulator's curve evaluation is vectorized per curve, not per fragment
+- [ ] P3.4 Verify packaging and docs from a clean checkout (#30)
+  - [ ] Install the package into a fresh virtual environment from the checkout
+  - [ ] Run the command line end to end on the synthetic fixture
+  - [ ] Build the docs with warnings as errors, and confirm the published site is reachable
+- [ ] P3.5 Triage the deferred items (#31)
+  - [ ] Confirm every deferred item in `notes/backlog.md` has a reason and a target phase
+  - [ ] Confirm the roadmap's deferred list and `notes/backlog.md` agree
 
 ## Phase 4: Release and deploy
 
