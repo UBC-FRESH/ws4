@@ -117,6 +117,41 @@ _RETENTION_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
 """
 
 
+_CONTEXT_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
+<ForestModel horizon="100" year="0" match="multi">
+  <curve id="unity"><point x="0" y="1.0"/></curve>
+  <curve id="volume"><point x="0" y="0"/><point x="100" y="100"/></curve>
+  <define field="status" column="STATUS"/>
+  <define field="treatment"/>
+  <input block="BLOCK" area="AREA_HA" age="F_AGE"/>
+  <output messages="messages.csv"/>
+  <select statement="status eq 'C'">
+    <features><attribute label="feature.Volume"><curve idref="volume"/></attribute></features>
+    <track><treatment label="CC" minage="0" maxage="100"/></track>
+  </select>
+  <select statement="status eq 'C' and treatment eq 'CC'">
+    <products><attribute label="product.Harvested.CC"><curve idref="volume"/></attribute></products>
+  </select>
+</ForestModel>
+"""
+
+
+def test_treatment_context_tags_products(tmp_path: Path) -> None:
+    """A ``treatment eq 'X'`` select contributes products tagged with X, not a new track."""
+    (tmp_path / "recipe.xml").write_text(_CONTEXT_RECIPE, encoding="utf-8")
+    pd.DataFrame({"BLOCK": [1], "AREA_HA": [5.0], "F_AGE": [50], "STATUS": ["C"]}).to_csv(
+        tmp_path / "fragments.csv", index=False
+    )
+    dataset = build_canonical_dataset(
+        tmp_path / "recipe.xml", tmp_path / "fragments.csv", tmp_path / "c"
+    )
+    tracks = pd.read_parquet(dataset / "tracks.parquet")
+    products = pd.read_parquet(dataset / "products.parquet")
+    assert len(tracks) == 1  # the treatment context is not a stratum dimension
+    assert list(products["treatment"]) == ["CC"]
+    assert list(products["label"]) == ["product.Harvested.CC"]
+
+
 def test_retention_split_creates_managed_and_unmanaged_portions(tmp_path: Path) -> None:
     """A retention rule splits a fragment's area into two portions."""
     (tmp_path / "recipe.xml").write_text(_RETENTION_RECIPE, encoding="utf-8")

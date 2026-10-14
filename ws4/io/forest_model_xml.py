@@ -82,6 +82,12 @@ class Select:
     products: tuple[Attribute, ...]
     treatments: tuple[Treatment, ...]
     retention: Retention | None = None
+    treatment_context: str = ""
+    """The ``treatment eq 'X'`` value, if the select has one.
+
+    A select with a treatment context applies to the stratum that matches its other
+    terms, and its products are tagged with ``X``. It is not a stratum dimension.
+    """
 
 
 @dataclass(frozen=True)
@@ -269,14 +275,19 @@ def parse_recipe(path: Path) -> Recipe:
                 raise ForestModelXMLError(
                     f"attribute {attribute.label!r} references unknown curve {attribute.curve!r}"
                 )
+        terms = parse_statement(statement)
+        context = next(
+            (term.value for term in terms if term.field == "treatment" and term.op == "eq"), ""
+        )
         selects.append(
             Select(
                 statement=statement,
-                terms=parse_statement(statement),
+                terms=terms,
                 features=features,
                 products=products,
                 treatments=treatments,
                 retention=_retention(element),
+                treatment_context=context,
             )
         )
 

@@ -63,6 +63,20 @@ def _strata_expr(variables: Sequence[str], key: tuple[str, ...]) -> str:
     return "+".join(f"{name}({value})" for name, value in zip(variables, key, strict=True))
 
 
+def _curve_has_signal(recipe: Recipe, curve_id: str) -> bool:
+    """Return whether a curve has any positive value (a non-zero family)."""
+    return any(y > 0 for _, y in recipe.curves.get(curve_id, ()))
+
+
+def _account_group(label: str) -> str:
+    """Return the account group a feature or product label belongs to."""
+    if "unmanaged" in label:
+        return "_UNMANAGED_"
+    if "managed" in label:
+        return "_MANAGED_"
+    return "_ALL_"
+
+
 def _as_float(value: object) -> float:
     """Convert a value to a float, or 0.0 when it is not numeric."""
     try:
@@ -183,7 +197,9 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
     feature_rows: list[dict[str, object]] = []
     product_rows: list[dict[str, object]] = []
     treatment_rows: list[dict[str, object]] = []
-    account_rows: list[dict[str, object]] = []
+    # Accounts are unique by (group, attribute, account); a label is included only when
+    # one of its curves has a positive value (a non-zero family).
+    account_signal: dict[str, bool] = {}
     for stratum in strata:
         for select_index in stratum.select_indices:
             select = recipe.selects[select_index - 1]
@@ -197,19 +213,23 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
                         "curve_id": curve_ids[attribute.curve],
                     }
                 )
-                account_rows.append(
-                    {"group": "forest", "attribute": attribute.label, "account": attribute.label}
-                )
+                account_signal[attribute.label] = account_signal.get(
+                    attribute.label, False
+                ) or _curve_has_signal(recipe, attribute.curve)
             for attribute in select.products:
                 if attribute.curve is None:
                     continue
                 product_rows.append(
                     {
                         "track_id": stratum.track_id,
+                        "treatment": select.treatment_context,
                         "label": attribute.label,
                         "curve_id": curve_ids[attribute.curve],
                     }
                 )
+                account_signal[attribute.label] = account_signal.get(
+                    attribute.label, False
+                ) or _curve_has_signal(recipe, attribute.curve)
             for treatment in select.treatments:
                 treatment_rows.append(
                     {
@@ -224,6 +244,11 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
                         "retain": 0,
                     }
                 )
+
+    account_rows = [
+        {"group": _account_group(label), "attribute": label, "account": label}
+        for label in account_signal
+    ]
 
     blocks = (
         fragments.groupby(["block_id", "track_id"], as_index=False)

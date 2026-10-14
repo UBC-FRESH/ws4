@@ -14,14 +14,19 @@ Status values: `open`, `partial`, `blocked`, `done`.
   cannot parse falls back to the term matcher. Remaining: the wider function library (`curveId`,
   `lookupTable`, `attribute`, string and math functions). Evidence: the CT eligibility
   `not startswith(au,'t')` now evaluates correctly (MKRf PoC CT 586 vs reference 590).
-- **Expression-sourced attribute curves.** `open`. An `<attribute>` may source its curve from an
+- **Expression-sourced attribute curves.** `partial`. An `<attribute>` may source its curve from an
   `<expression>` (for example `curveId('Yield_'+au)`). The parser records the expression; the builder
-  skips it, so those features/products are missing. Evidence: the k3z intensive variants have
-  `products 0` where the reference has 3166.
+  skips it, so those features/products are missing. The `<curve idref>` form and the
+  `treatment eq 'X'` product context now match the k3z reference exactly (features and products). Open:
+  the `<expression>`-sourced curves (the MKRf model).
 - **`%f` / `%m` / `%au` label tokens and `factor` expressions.** `open`. Attribute labels and factors
   use substitution tokens and expressions. The builder uses the raw label.
-- **Account and feature/product de-duplication.** `open`. The builder emits one account per feature per
-  stratum (4197 for the MKRf PoC where the reference has 60). The reference de-duplicates by label.
+- **Account and feature/product de-duplication.** `partial`. Features and products now match the k3z
+  reference exactly. Accounts are the union of feature and product labels, grouped by management state
+  (`_MANAGED_`, `_UNMANAGED_`, `_ALL_`), and are close but not exact (k3z pct_light 1507 vs 1460).
+- **Account zero-signal exclusion.** `open`. The reference excludes zero-signal families (the 47 extra
+  labels in k3z are all `PL` / lodgepole pine). The exact rule is not yet reproduced; a naive
+  "any curve value > 0" filter over-excludes.
 - **Succession and `produce` semantics.** `partial`. `<transition>` is applied; `<succession>` and
   `<produce>` are parsed only as far as treatments need.
 - **Intensive treatment lanes.** `done`. The k3z intensive variants (CT, PCT, F1-F3) now match the

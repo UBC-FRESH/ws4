@@ -89,3 +89,8 @@ issue comments.
   parentheses, and the functions `startswith`, `endswith`, `substring`, `int`, `Number`, `length`, and
   `if`, with a fallback to the term matcher. The k3z reference matrices still match exactly, and the
   MKRf PoC CT eligibility now evaluates (`not startswith(au,'t')`).
+- P2.1: the builder now matches the k3z reference exactly on **features and products** as well. A select
+  with a `treatment eq 'X'` context contributes products tagged `X` to the stratum matching its other
+  terms (it is not a stratum dimension), and accounts are the union of feature and product labels grouped
+  by management state. Accounts are close but not exact (k3z pct_light 1507 vs 1460; the reference
+  excludes zero-signal families, recorded in the backlog).

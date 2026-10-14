@@ -176,9 +176,12 @@ def matching_selects(
     A stratum is governed by every select whose statement matches it, not only the
     first; features, products, and treatments accumulate across the matching selects.
     """
-    row = dict(zip(variables, key, strict=True))
+    base = dict(zip(variables, key, strict=True))
     matched: list[int] = []
     for index, select in enumerate(selects, start=1):
+        # A treatment context is not a stratum dimension: evaluate the select with the
+        # ``treatment`` field set to the context it names.
+        row = {**base, "treatment": select.treatment_context}
         try:
             hit = evaluate(select.statement, row, constants)
         except ExpressionError:
