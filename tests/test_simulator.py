@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 from ws4.build.compiler import build_canonical_dataset
+from ws4.roads.network import RouteNetwork
 from ws4.sim.engine import Simulator
 
 _FIXTURE = Path(__file__).resolve().parents[1] / "examples" / "synthetic"
@@ -65,6 +66,24 @@ def test_patch_metrics_are_written(tmp_path: Path) -> None:
     Simulator.from_dataset(dataset).run(schedule, years=1, out_dir=out, topology_csv=topology)
     metrics = pd.read_csv(out / "patch_metrics.csv")
     assert metrics["patch_count"].iloc[0] == 1.0  # only block 1 is disturbed
+
+
+def test_products_are_routed_to_the_nearest_mill(tmp_path: Path) -> None:
+    """With a road network, a product is routed to the block's nearest destination."""
+    dataset = _dataset(tmp_path)
+    segments = pd.DataFrame(
+        {"from_vertex": [1], "to_vertex": [2], "length_m": [100.0], "cost": [10.0]}
+    )
+    destinations = pd.DataFrame({"dest_id": [10], "vertex_id": [2]})
+    linkages = pd.DataFrame({"block_id": [1, 2], "vertex_id": [1, 2]})
+    network = RouteNetwork.from_tables(segments, destinations, linkages)
+    schedule = _schedule(tmp_path, "cc.csv", [(1, "CC", 0)])
+    out = tmp_path / "route"
+    Simulator.from_dataset(dataset).run(schedule, years=1, out_dir=out, network=network)
+    routes = pd.read_csv(out / "route_values.csv")
+    assert list(routes["dest_id"]) == [10]
+    assert routes["volume"].iloc[0] == 360.0
+    assert routes["length_m"].iloc[0] == 100.0
 
 
 def test_a_treatment_the_track_does_not_offer_is_skipped(tmp_path: Path) -> None:

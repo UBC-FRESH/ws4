@@ -77,8 +77,10 @@ Status values: `open`, `partial`, `blocked`, `done`.
 - **Block topology and patch metrics.** `partial`. The topology loader and patch metrics are done
   (`ws4/patch/metrics.py`). Open: core-area rules and edge contrast.
 - **Road network, access, haul cost, exclusive routing.** `partial`. `ws4/roads/network.py` routes over
-  the segment graph (shortest length and cost, nearest destination) with tests. Open: exclusive
-  (one-of-many) routing, destination eligibility, and integration with the simulator's product flows.
+  the segment graph (shortest length and cost, nearest destination). The simulator routes each produced
+  product to the block's single nearest destination (`route_values.csv`) — exclusive by construction,
+  since each block is assigned to exactly one road node. Open: destination eligibility per product, and
+  route cost accounts.
 - **Account types and reports.** `partial`. `ws4/report.py` summarizes accounts, evaluates a ratio
   account, reports target status, and writes `report_accounts.csv` / `report_targets.csv`; `ws4 report`
   is a CLI command, and the optimizer writes a report at the end of a run. Open: duplicate and meta

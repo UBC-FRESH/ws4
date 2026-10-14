@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 
 from ..patch.metrics import load_topology, patch_metrics
+from ..roads.network import RouteNetwork
 from .curve import curve_value
 
 
@@ -49,6 +50,7 @@ class Simulator:
         self.accounts = pd.read_parquet(self.dataset_dir / "accounts.parquet")
         self.fragments["offset"] = self.fragments["age"].astype(int)
         self._product_values: list[dict[str, object]] = []
+        self._route_values: list[dict[str, object]] = []
         # Cache each curve's sorted x/y arrays for vectorized interpolation.
         self._curves: dict[int, tuple[np.ndarray, np.ndarray]] = {
             _as_int(curve_id): (
@@ -74,12 +76,16 @@ class Simulator:
         ]
         return match.iloc[0] if not match.empty else None
 
-    def apply_treatments(self, schedule: pd.DataFrame, year: int) -> set[int]:
+    def apply_treatments(
+        self, schedule: pd.DataFrame, year: int, network: RouteNetwork | None = None
+    ) -> set[int]:
         """Apply the treatments scheduled for a year and record their products.
 
         A product is produced when its treatment is applied to a fragment on the
         product's track; the yield is the fragment's area times the product curve at
-        the pre-treatment offset.
+        the pre-treatment offset. When a road network is given, each product is routed
+        to the block's nearest destination (exclusive routing) and the haul cost is
+        recorded.
 
         Parameters
         ----------
@@ -87,6 +93,8 @@ class Simulator:
             The schedule, with ``block_id``, ``treatment``, and ``period`` columns.
         year : int
             The year to apply.
+        network : RouteNetwork or None, optional
+            The road network for routing products to destinations.
 
         Returns
         -------
@@ -107,11 +115,27 @@ class Simulator:
                 produced = self.products[
                     (self.products["track_id"] == track_id) & (self.products["treatment"] == label)
                 ]
+                block_id = int(row["block_id"])
                 for _, product in produced.iterrows():
                     value = area * curve_value(self.curves, int(product["curve_id"]), offset)
                     self._product_values.append(
                         {"year": year, "account": str(product["label"]), "value": value}
                     )
+                    if network is not None:
+                        nearest = network.nearest_destination(block_id)
+                        if nearest is not None:
+                            destination, length = nearest
+                            self._route_values.append(
+                                {
+                                    "year": year,
+                                    "block_id": block_id,
+                                    "dest_id": destination,
+                                    "product": str(product["label"]),
+                                    "volume": value,
+                                    "length_m": length,
+                                    "cost": network.route_cost(block_id, destination),
+                                }
+                            )
                 self.fragments.at[index, "track_id"] = _as_int(treatment["new_track"])
                 self.fragments.at[index, "offset"] = _as_int(treatment["offset"])
                 disturbed.add(int(row["block_id"]))
@@ -145,7 +169,9 @@ class Simulator:
             for label, value in totals.items()
         ]
 
-    def simulate(self, schedule: pd.DataFrame, years: int) -> pd.DataFrame:
+    def simulate(
+        self, schedule: pd.DataFrame, years: int, network: RouteNetwork | None = None
+    ) -> pd.DataFrame:
         """Replay a schedule and return the account values, without writing files.
 
         Parameters
@@ -154,6 +180,8 @@ class Simulator:
             The schedule, with ``block_id``, ``treatment``, and ``period`` columns.
         years : int
             The number of annual steps.
+        network : RouteNetwork or None, optional
+            The road network for routing products to destinations.
 
         Returns
         -------
@@ -162,8 +190,9 @@ class Simulator:
         """
         records: list[dict[str, object]] = []
         self._product_values = []
+        self._route_values = []
         for year in range(years):
-            self.apply_treatments(schedule, year)
+            self.apply_treatments(schedule, year, network)
             records.extend(self.account_values(year))
             self.fragments["offset"] = self.fragments["offset"].astype(int) + 1
         return pd.DataFrame(records, columns=["year", "account", "value"])
@@ -175,6 +204,7 @@ class Simulator:
         out_dir: Path,
         topology_csv: Path | None = None,
         patch_breaks: Sequence[float] = (5.0, 10.0, 50.0),
+        network: RouteNetwork | None = None,
     ) -> pd.DataFrame:
         """Replay a schedule for the given horizon and write the run outputs.
 
@@ -191,6 +221,9 @@ class Simulator:
             to ``patch_metrics.csv``.
         patch_breaks : sequence of float, optional
             The patch size-class upper bounds, in hectares.
+        network : RouteNetwork or None, optional
+            The road network for routing products. When given, ``route_values.csv`` is
+            written.
 
         Returns
         -------
@@ -203,11 +236,16 @@ class Simulator:
         if "period" not in schedule.columns:
             schedule = schedule.assign(period=0)
 
-        values = self.simulate(schedule, years)
+        values = self.simulate(schedule, years, network)
         values.to_csv(out_dir / "account_values.csv", index=False)
         pd.DataFrame(self._product_values, columns=["year", "account", "value"]).to_csv(
             out_dir / "product_values.csv", index=False
         )
+        if network is not None:
+            pd.DataFrame(
+                self._route_values,
+                columns=["year", "block_id", "dest_id", "product", "volume", "length_m", "cost"],
+            ).to_csv(out_dir / "route_values.csv", index=False)
         if topology_csv is not None:
             # A fresh simulator: ``simulate`` above already advanced this one's state.
             Simulator.from_dataset(self.dataset_dir).write_patch_metrics(
