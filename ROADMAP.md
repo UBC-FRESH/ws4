@@ -90,6 +90,9 @@ synthetic data.
 - [x] P1.2 Build a prototype that compiles, simulates, and reports on a tiny synthetic landscape (#12)
   - [x] Synthetic fixture in `examples/synthetic/`
   - [x] Minimal `ws4 build` and `ws4 simulate`; `tests/test_prototype.py`
+- [x] P1.3 Adopt the ForestModelXML format and record the construction paths (#13)
+  - [x] `notes/design/ws4-matrix-builder-and-interop.md` and ADRs 0011 and 0012
+  - [x] Update the scope and the architecture note
 
 ## Phase 2: Build
 
@@ -99,7 +102,7 @@ Status: planned
 
 Goal: implement the agreed scope, one task at a time, on the phase branch.
 
-- [ ] P2.1 Implement the ingestion and compilation pipeline
+- [ ] P2.1 Implement the ForestModelXML matrix builder and legacy dataset ingestion
 - [ ] P2.2 Implement the simulation engine
 - [ ] P2.3 Implement the optimization engine: objective, operators, and one metaheuristic
 - [ ] P2.4 Implement the solver core: the shared operator/metaheuristic/tuning/telemetry package
@@ -107,6 +110,7 @@ Goal: implement the agreed scope, one task at a time, on the phase branch.
 - [ ] P2.6 Implement the math-heuristic layer (MIP bounds, warm starts, destroy-repair)
 - [ ] P2.7 Implement the spatial and road subsystems
 - [ ] P2.8 Implement accounts and reporting
+- [ ] P2.9 Implement the programmatic model API (build or patch the model in memory)
 
 ## Phase 3: Verify
 

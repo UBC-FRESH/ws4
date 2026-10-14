@@ -42,3 +42,7 @@ issue comments.
   `ws4 build` compiler that writes the matrix and manifest, a real `ws4 simulate` that replays a schedule
   and writes `account_values.csv`, `ws4/sim/curve.py`, and `tests/test_prototype.py` (build, validate,
   grow, and treat). Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.
+- P1.3: adopted the established ForestModelXML recipe format and recorded the matrix builder and legacy
+  dataset ingestion in `notes/design/ws4-matrix-builder-and-interop.md`, with ADR 0011 (adopt the format
+  and support legacy datasets) and ADR 0012 (two construction paths: file-based and programmatic). Updated
+  the scope, the architecture note, and the P2 tasks.

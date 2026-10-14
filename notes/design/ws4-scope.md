@@ -32,8 +32,8 @@ outputs are inspectable datasets, and whose spatial relationships are enforced i
 ## In scope (through the first release)
 
 - A fragment-level inventory model with blocks as a runtime aggregate.
-- An ingestion and compilation step that turns a management recipe and a fragment inventory into a
-  versioned, columnar **matrix** dataset.
+- An ingestion and compilation step that turns a **ForestModelXML** recipe and a fragment inventory into
+  a versioned, columnar **matrix** dataset, and that ingests legacy datasets directly.
 - An annual simulation engine with growth, succession, treatments, and block-level operability.
 - A spatial subsystem: block adjacency and topology, patch metrics and patch objectives, and core-area
   handling.
@@ -57,7 +57,8 @@ outputs are inspectable datasets, and whose spatial relationships are enforced i
 - A carbon accounting module and links to external carbon models.
 - Supply-chain and mill-optimization modules beyond route destinations.
 - Exact mixed-integer spatial optimization (revisited only if the metaheuristic proves insufficient).
-- Round-trip fidelity with any external proprietary model file format.
+- Writing back vendor-specific runtime artifacts beyond the ForestModelXML recipe and the fragments
+  inventory.
 - A hosted service or database backend.
 
 ## Relationship to WS3
