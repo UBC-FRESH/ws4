@@ -27,7 +27,12 @@ that use the full expression language.
 Compilation
 -----------
 
-`ws4.build.compiler.build_canonical_dataset` maps the recipe and the fragments into the matrix:
+The matrix is a **Model II** model. State variables (themes) define a **stratum**; a **track** is a
+unique trajectory over time between two treatments; and a **treatment** resets one or more state
+variables, which moves a block to the stratum of the new values and therefore onto that stratum's track.
+
+`ws4.build.compiler.build_canonical_dataset` currently maps the recipe and the fragments into the matrix
+in a simplified way:
 
 - one track per select, in order, named by its statement;
 - each fragment is assigned to the first select whose terms match its row (constants resolved);
@@ -35,6 +40,9 @@ Compilation
 - a treatment's ``new_track`` is resolved by applying its transition to the source select's terms and
   matching the result against the selects;
 - curves, blocks, groups, accounts, and messages are emitted.
+
+The full builder enumerates the reachable strata and expands each into a track, which is why the
+reference matrix has thousands of tracks.
 
 Legacy ingestion
 ----------------
@@ -67,6 +75,10 @@ Known gaps
 
 The following are not implemented yet and are tracked in the P2 tasks:
 
+- the Model II expansion engine: enumerate the state variables, enumerate the reachable strata, grow
+  each stratum's trajectory into a track, and connect treatments to the target stratum's track;
+- block splitting into managed and unmanaged portions (one row per portion, per track);
+- per-track treatment expansion;
 - full evaluation of the select expression language (function calls, ``not``, string functions);
 - expression-based attribute labels and ``factor`` expressions, and the ``%f`` / ``%m`` / ``%au``
   label substitution patterns;

@@ -65,3 +65,8 @@ issue comments.
   `docs/reference/forestmodelxml.rst` page that records the known gaps (full expression evaluation,
   expression-sourced curves, `%`-token labels, succession/retention, shapefile input). Dashboard result:
   `python scripts/dashboard.py` reports `OVERALL: GREEN`.
+- Recorded the Model II formulation in `notes/design/ws4-matrix-builder-and-interop.md` (section 4) and
+  `docs/reference/forestmodelxml.rst`: state variables define a stratum, a track is a unique trajectory
+  over time between two treatments, and a treatment resets state variables, which switches the block to
+  the target stratum's track. This is the expansion engine the matrix builder needs, and it explains the
+  reference matrix's 7048 tracks and its per-portion block rows.

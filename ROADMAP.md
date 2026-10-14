@@ -105,6 +105,8 @@ Goal: implement the agreed scope, one task at a time, on the phase branch.
 - [ ] P2.1 Implement the ForestModelXML matrix builder and legacy dataset ingestion (#16)
   - [x] ForestModelXML parser and structural validation (parses the real MKRf recipe: 1057 curves, 11 selects, 2 treatments)
   - [x] Matrix builder for the non-expression subset; legacy matrix ingestion with a recorded mapping
+  - [ ] The Model II expansion engine: enumerate the reachable strata, grow each into a track, connect treatments to target strata
+  - [ ] Block splitting into managed and unmanaged portions, and per-track treatment expansion
   - [ ] Full expression language, expression-sourced curves, and shapefile input
 - [ ] P2.2 Implement the simulation engine (#17)
 - [ ] P2.3 Implement the optimization engine: objective, operators, and one metaheuristic (#18)
