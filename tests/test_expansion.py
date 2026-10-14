@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 from ws4.build.compiler import build_canonical_dataset
-from ws4.build.expansion import resolve_value
+from ws4.build.expansion import format_state_value, resolve_value
 from ws4.model.schema import validate_dataset
 
 _RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
@@ -82,6 +82,13 @@ def test_expansion_emits_per_track_treatments(tmp_path: Path) -> None:
     treatments = pd.read_parquet(dataset / "treatments.parquet")
     assert len(treatments) == 2  # CC on (C, '') and (C, 'CC')
     assert set(treatments["new_track"]) == {3}
+
+
+def test_format_state_value_canonicalizes_integral_floats() -> None:
+    """An integral float is rendered without a decimal part so it matches an int literal."""
+    assert format_state_value(985502002.0) == "985502002"
+    assert format_state_value(0.25) == "0.25"
+    assert format_state_value("managed") == "managed"
 
 
 def test_resolve_value_handles_references_and_concat() -> None:

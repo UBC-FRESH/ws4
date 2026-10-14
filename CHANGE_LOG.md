@@ -80,3 +80,8 @@ issue comments.
   concatenation transition resolution (`au = auf`, `'thn_'+au`) and `<retention>` splits (the retained
   fraction moves to the assigned state). Against a real 218-fragment instance, the builder now matches
   the reference exactly on tracks (351), strata (351), treatments (263), and blocks (399).
+- P2.1: canonicalized numeric state values (an integral float renders without a decimal part) so a
+  numeric column matches an integer literal in a select. With that fix, the builder matches every tested
+  reference matrix exactly: the k3z intensive variants (732/732/963/427 and 553/553/605/427) and a
+  421,945-fragment instance (tsa29: tracks 524, strata 524, treatments 210). Added the backlog note
+  `notes/backlog.md` as the consolidated gap list.

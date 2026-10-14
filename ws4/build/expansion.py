@@ -83,6 +83,27 @@ def column_name(expression: str) -> str:
     return expression
 
 
+def format_state_value(value: object) -> str:
+    """Format a state value canonically for matching against a select statement.
+
+    An integral float is rendered without a decimal part (``985502002.0`` becomes
+    ``985502002``), so a numeric column matches an integer literal in a statement.
+
+    Parameters
+    ----------
+    value : object
+        The raw column value.
+
+    Returns
+    -------
+    str
+        The canonical string form.
+    """
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    return str(value)
+
+
 def state_of(
     row: Mapping[str, object], variables: Sequence[str], recipe: Recipe
 ) -> tuple[str, ...]:
@@ -106,7 +127,9 @@ def state_of(
     for name in variables:
         expression = recipe.defines.get(name)
         column = column_name(expression) if expression is not None else None
-        values.append(str(row[column]) if column is not None and column in row else "")
+        values.append(
+            format_state_value(row[column]) if column is not None and column in row else ""
+        )
     return tuple(values)
 
 

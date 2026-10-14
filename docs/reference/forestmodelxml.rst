@@ -50,27 +50,29 @@ variables, which moves a block to the stratum of the new values and therefore on
 Validation
 ----------
 
-Against a reference compiled matrix for a real model (a 218-fragment instance), the builder matches
-all four structural counts exactly:
+The builder is validated against several reference compiled matrices. On each, it reproduces the
+structural counts exactly:
 
 .. list-table::
    :header-rows: 1
+   :widths: 40 20 20 20
 
-   * - Table
-     - WS4
-     - Reference
-   * - tracks
-     - 351
-     - 351
-   * - strata
-     - 351
-     - 351
-   * - treatments
+   * - Model
+     - tracks / strata
+     - treatments
+     - blocks
+   * - a 218-fragment instance (two variants)
+     - 351 / 351
      - 263
-     - 263
-   * - blocks
      - 399
-     - 399
+   * - the same instance, intensive variants
+     - 732 / 732 and 553 / 553
+     - 963 and 605
+     - 427 and 427
+   * - a 421,945-fragment instance
+     - 524 / 524
+     - 210
+     - (not published)
 
 On the MKRf proof-of-concept recipe (`baseMKRF.xml`) and its fragments (1763 records), this expansion
 produces 1399 strata, 2024 treatment rows, 1763 block rows, and 4197 accounts. The matching reference

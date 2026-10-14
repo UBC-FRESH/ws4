@@ -11,6 +11,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 
 ## Index
 
+- `backlog.md` — the consolidated list of what is not done, kept current with the roadmap.
+
 - `design/ws4-scope.md` — problem statement, users, scope, and success criteria.
 - `design/ws4-architecture.md` — the architecture design.
 - `design/ws4-optimization-stack.md` — the optimization stack and the execution substrate.
