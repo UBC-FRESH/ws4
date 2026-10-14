@@ -32,10 +32,11 @@ Status values: `open`, `partial`, `blocked`, `done`.
   regenerates `protoaccounts` but must not overwrite the edited `accounts`. The builder now does this.
   (The 47 extra labels in the k3z `accounts.csv` were a user edit removing the species `PL`, which has
   no share in that instance — not a builder rule.)
-- **Overlay/scenario variants.** `open`. The overlay reference `products.csv` carries per-AU,
-  per-species log-grade labels (e.g. `product.Logs_Grade_D.managed.<AU>.<species>.CC`, 1130 labels) that
-  the builder does not yet generate (114 labels); the overlay recipe's own product labels are far fewer,
-  so the reference must merge or derive them. Investigate the overlay generation.
+- **Overlay/scenario variants.** `deferred` (non-core). The overlay `output/` recipes are reduced
+  exports (no `StemsPerHa` or log-grade products) and do not correspond to the `tracks_overlay_*`
+  matrices, so they cannot be compared directly. The builder matches the reference `protoaccounts`
+  exactly on all nine core variants (pct_light/heavy/moderate, intensive_light/moderate/heavy/
+  standstructure, ctfert_l15h5/l20h0); overlays are a scenario pipeline outside the matrix builder.
 - **Succession and `produce` semantics.** `partial`. `<transition>` is applied; `<succession>` and
   `<produce>` are parsed only as far as treatments need.
 - **Intensive treatment lanes.** `done`. The k3z intensive variants (CT, PCT, F1-F3) now match the

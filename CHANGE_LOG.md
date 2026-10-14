@@ -158,6 +158,8 @@ issue comments.
   run. Added `tests/test_report.py`.
 - P2.1: corrected the account semantics. The builder now writes a `protoaccounts` table — a summary
   account for every attribute, grouped by the managed state of the producing selects (`_MANAGED_`,
-  `_UNMANAGED_`, `_ALL_`) — matching the reference `protoaccounts.csv` exactly on the k3z pct_light,
-  pct_moderate, and intensive_light variants. A user's curated `accounts` table is preserved across
-  rebuilds. Added the `sum` scale column and tests.
+  `_UNMANAGED_`, `_ALL_`) — matching the reference `protoaccounts.csv` exactly on all nine core k3z
+  variants (pct_light/heavy/moderate, intensive_light/moderate/heavy/standstructure, ctfert_l15h5/l20h0).
+  A user's curated `accounts` table is preserved across rebuilds. Added the `sum` scale column and tests.
+  The overlay variants are a scenario pipeline outside the matrix builder (their `output/` recipes are
+  reduced exports that do not correspond to the `tracks_overlay_*` matrices), so they are out of scope.
