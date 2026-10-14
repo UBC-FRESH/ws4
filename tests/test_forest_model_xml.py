@@ -16,7 +16,10 @@ def test_parse_recipe_reads_the_structure() -> None:
     assert recipe.horizon == 120
     assert recipe.match == "single"
     assert "unity" in recipe.curves
-    assert len(recipe.selects) == 2
+    assert len(recipe.selects) == 3
+    product_select = recipe.selects[2]
+    assert product_select.treatment_context == "CC"
+    assert product_select.products[0].label == "product.Volume"
     treatment = recipe.selects[0].treatments[0]
     assert treatment.label == "CC"
     assert treatment.transition == {"IFM": "'managed'"}
