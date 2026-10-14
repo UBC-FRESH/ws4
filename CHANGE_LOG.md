@@ -54,3 +54,6 @@ issue comments.
 - P1 fix: the `.gitignore` rule `build/` also ignored the `ws4/build/` package, so the compiler was
   never committed. Narrowed the rule to `/build/` and committed `ws4/build/__init__.py` and
   `ws4/build/compiler.py`. This is why CI could not resolve `ws4.build.compiler`.
+- Completed Phase 1: squash-merged pull request #14 as `33ac569`, deleted `feature/p1-contracts-prototype`,
+  and closed parent issue #10.
+- Launched Phase 2 (Build) on `feature/p2-build`, parent issue #15, with tasks P2.1 to P2.9 (#16 to #24).

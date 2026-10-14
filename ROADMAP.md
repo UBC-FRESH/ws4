@@ -12,8 +12,8 @@ exists and the maintainer approves it.
 | Phase | Parent issue | Branch | Status |
 | --- | --- | --- | --- |
 | P0 Scope and design | #1 | `feature/p0-scope-design` | complete |
-| P1 Contracts and prototype | #10 | `feature/p1-contracts-prototype` | pr-open |
-| P2 Build | TBD | `feature/p2-build` | planned |
+| P1 Contracts and prototype | #10 | `feature/p1-contracts-prototype` | complete |
+| P2 Build | #15 | `feature/p2-build` | active |
 | P3 Verify | TBD | `feature/p3-verify` | planned |
 | P4 Release and deploy | TBD | `feature/p4-release` | planned |
 | P5 Operate and maintain | TBD | `feature/p5-operate` | planned |
@@ -79,7 +79,7 @@ Phase 0 verification:
 
 Parent issue: #10
 Branch: `feature/p1-contracts-prototype`
-Status: pr-open
+Status: complete
 
 Goal: fix the data contracts and build the smallest end-to-end prototype that exercises them on
 synthetic data.
@@ -96,21 +96,21 @@ synthetic data.
 
 ## Phase 2: Build
 
-Parent issue: TBD
+Parent issue: #15
 Branch: `feature/p2-build`
-Status: planned
+Status: active
 
 Goal: implement the agreed scope, one task at a time, on the phase branch.
 
-- [ ] P2.1 Implement the ForestModelXML matrix builder and legacy dataset ingestion
-- [ ] P2.2 Implement the simulation engine
-- [ ] P2.3 Implement the optimization engine: objective, operators, and one metaheuristic
-- [ ] P2.4 Implement the solver core: the shared operator/metaheuristic/tuning/telemetry package
-- [ ] P2.5 Implement the parallel and GPU execution substrate (process pool, islands, tensorized moves)
-- [ ] P2.6 Implement the math-heuristic layer (MIP bounds, warm starts, destroy-repair)
-- [ ] P2.7 Implement the spatial and road subsystems
-- [ ] P2.8 Implement accounts and reporting
-- [ ] P2.9 Implement the programmatic model API (build or patch the model in memory)
+- [ ] P2.1 Implement the ForestModelXML matrix builder and legacy dataset ingestion (#16)
+- [ ] P2.2 Implement the simulation engine (#17)
+- [ ] P2.3 Implement the optimization engine: objective, operators, and one metaheuristic (#18)
+- [ ] P2.4 Implement the solver core: the shared operator/metaheuristic/tuning/telemetry package (#19)
+- [ ] P2.5 Implement the parallel and GPU execution substrate (process pool, islands, tensorized moves) (#20)
+- [ ] P2.6 Implement the math-heuristic layer (MIP bounds, warm starts, destroy-repair) (#21)
+- [ ] P2.7 Implement the spatial and road subsystems (#22)
+- [ ] P2.8 Implement accounts and reporting (#23)
+- [ ] P2.9 Implement the programmatic model API (build or patch the model in memory) (#24)
 
 ## Phase 3: Verify
 
@@ -147,8 +147,10 @@ Goal: keep the project current: triage incoming ideas, review on a cadence, and 
 
 1. Phase 0 is complete: pull request #8 squash-merged as `386c643`, the branch deleted, and parent
    issue #1 closed. The close-out report is `notes/reports/p0-closeout.md`.
-2. Phase 1 is active on `feature/p1-contracts-prototype`, parent issue #10. Tasks P1.1 and P1.2.
-3. P1 fixes the compiled-dataset schema and builds the smallest end-to-end prototype on synthetic data.
+2. Phase 1 is complete: pull request #14 squash-merged as `33ac569`, the branch deleted, and parent
+   issue #10 closed. The close-out report is `notes/reports/p1-closeout.md`.
+3. Phase 2 is active on `feature/p2-build`, parent issue #15, with tasks P2.1 to P2.9 (#16 to #24).
+   Start with P2.1, the ForestModelXML matrix builder and legacy dataset ingestion.
 4. P2 builds the model and the optimization stack. The stack generalizes the lab's FHOPS toolkit into a
    shared solver core; the execution substrate targets the 72-core host and the GPU. See
-   `notes/design/ws4-optimization-stack.md`.
+   `notes/design/ws4-optimization-stack.md` and `notes/design/ws4-matrix-builder-and-interop.md`.
