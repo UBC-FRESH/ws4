@@ -106,3 +106,6 @@ issue comments.
   neighbourhood-operator registry (`ws4/opt/operators.py`: toggle, shift, swap), and a seeded
   simulated-annealing optimizer (`ws4/opt/engine.py`) that evaluates candidates through the simulator.
   Added `tests/test_optimizer.py`; `pyyaml` and `types-PyYAML` added to the dependencies.
+- P2.3: extracted three metaheuristics into `ws4/opt/solvers.py` — simulated annealing, tabu search, and
+  iterated local search — selected by `OptimizeConfig.metaheuristic` over the same operator registry and
+  objective. `tests/test_optimizer.py` runs all three and checks each lowers the penalty.

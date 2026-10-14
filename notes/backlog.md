@@ -63,9 +63,10 @@ Status values: `open`, `partial`, `blocked`, `done`.
 
 - **Objective and targets.** `done`. Weighted goal programming (`ws4/opt/objective.py`): per-year minimum
   and maximum with weights; targets load from YAML.
-- **Operator registry and metaheuristics.** `partial`. `ws4/opt/operators.py` (toggle, shift, swap) and a
-  simulated-annealing engine (`ws4/opt/engine.py`), seeded and reproducible. Open: Tabu, ILS, ALNS, and
-  the wider operator set.
+- **Operator registry and metaheuristics.** `partial`. `ws4/opt/operators.py` (toggle, shift, swap) and
+  three solvers in `ws4/opt/solvers.py` — simulated annealing, tabu search, and iterated local search —
+  selected by `OptimizeConfig.metaheuristic`. All seeded and reproducible. Open: ALNS, the wider
+  operator set, and multi-start.
 - **Solver core.** `open`. The shared package boundary is a recommendation, not code.
 - **Parallel and GPU execution substrate.** `open`.
 - **Math-heuristic layer (MIP).** `open`.

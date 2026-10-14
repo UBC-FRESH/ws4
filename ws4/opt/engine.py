@@ -9,7 +9,6 @@ reproducible from its seed.
 from __future__ import annotations
 
 import json
-import math
 import random
 from dataclasses import dataclass
 from pathlib import Path
@@ -20,6 +19,7 @@ import pandas as pd
 from ..sim.engine import Simulator
 from .objective import Target, load_targets, objective
 from .operators import Candidates, OperatorRegistry, Schedule
+from .solvers import solve_ils, solve_sa, solve_tabu
 
 
 @dataclass
@@ -35,6 +35,9 @@ class OptimizeConfig:
     iterations: int = 500
     temperature: float = 1000.0
     cooling: float = 0.99
+    metaheuristic: str = "sa"
+    tenure: int = 10
+    perturbation: int = 2
 
 
 class Optimizer:
@@ -116,22 +119,42 @@ class Optimizer:
         candidates = self.candidates()
         rng = random.Random(self.cfg.seed)
 
-        current: Schedule = {}
-        current_obj = self._evaluate(current, targets)
-        best, best_obj = dict(current), current_obj
-        temperature = self.cfg.temperature
-        for _ in range(self.cfg.iterations):
-            move = self.registry.pick(rng).apply(current, rng, candidates)
-            if move is None:
-                continue
-            move_obj = self._evaluate(move, targets)
-            if move_obj <= current_obj or rng.random() < math.exp(
-                (current_obj - move_obj) / max(temperature, 1e-9)
-            ):
-                current, current_obj = move, move_obj
-                if move_obj < best_obj:
-                    best, best_obj = dict(move), move_obj
-            temperature *= self.cfg.cooling
+        initial: Schedule = {}
+
+        def evaluate(schedule: Schedule) -> float:
+            return self._evaluate(schedule, targets)
+
+        if self.cfg.metaheuristic == "tabu":
+            best, best_obj = solve_tabu(
+                initial,
+                evaluate,
+                self.registry,
+                candidates,
+                rng,
+                iterations=self.cfg.iterations,
+                tenure=self.cfg.tenure,
+            )
+        elif self.cfg.metaheuristic == "ils":
+            best, best_obj = solve_ils(
+                initial,
+                evaluate,
+                self.registry,
+                candidates,
+                rng,
+                iterations=self.cfg.iterations,
+                perturbation=self.cfg.perturbation,
+            )
+        else:
+            best, best_obj = solve_sa(
+                initial,
+                evaluate,
+                self.registry,
+                candidates,
+                rng,
+                iterations=self.cfg.iterations,
+                temperature=self.cfg.temperature,
+                cooling=self.cfg.cooling,
+            )
 
         schedule_path = out_dir / "schedule.csv"
         self._schedule_frame(best).to_csv(schedule_path, index=False)
@@ -141,6 +164,7 @@ class Optimizer:
             "incumbent_objective": best_obj,
             "iterations": self.cfg.iterations,
             "seed": self.cfg.seed,
+            "metaheuristic": self.cfg.metaheuristic,
             "blocks_scheduled": len(best),
             "operators": self.registry.names(),
             "status": "ok",

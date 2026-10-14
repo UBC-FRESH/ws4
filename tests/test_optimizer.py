@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
+import pytest
 from ws4.build.compiler import build_canonical_dataset
 from ws4.opt.engine import OptimizeConfig, Optimizer
 from ws4.opt.objective import Target, load_targets, objective, penalty
@@ -38,8 +39,9 @@ def test_load_targets(tmp_path: Path) -> None:
     assert loaded == [Target("feature.Volume", 0, maximum=500.0)]
 
 
-def test_optimizer_improves_the_objective(tmp_path: Path) -> None:
-    """The optimizer finds a schedule that lowers the penalty."""
+@pytest.mark.parametrize("metaheuristic", ["sa", "tabu", "ils"])
+def test_metaheuristics_improve_the_objective(tmp_path: Path, metaheuristic: str) -> None:
+    """Each metaheuristic finds a schedule that lowers the penalty."""
     dataset = build_canonical_dataset(
         _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
     )
@@ -51,8 +53,15 @@ def test_optimizer_improves_the_objective(tmp_path: Path) -> None:
     )
     optimizer = Optimizer.from_dataset(
         dataset,
-        OptimizeConfig(targets_path=str(targets), seed=1, years=1, iterations=60),
+        OptimizeConfig(
+            targets_path=str(targets),
+            seed=1,
+            years=1,
+            iterations=60,
+            metaheuristic=metaheuristic,
+        ),
     )
     summary = optimizer.run(tmp_path / "run")
     assert summary["incumbent_objective"] < 200.0
+    assert summary["metaheuristic"] == metaheuristic
     assert (tmp_path / "run" / "schedule.csv").is_file()
