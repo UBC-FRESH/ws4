@@ -3,7 +3,7 @@
 Phase: P1 Contracts and prototype
 Parent issue: #10
 Pull request: #14, `feature/p1-contracts-prototype` into `main`
-Evidence head: `eb98268`, the head that the gates and the CI runs below cover
+Evidence head: `df0e89c`, the head that the gates and the CI runs below cover
 Report commit: the commit that adds this report. Its CI run is posted on pull request #14.
 Date: 2026-10-14
 Status: queued for approval. Not merged.
@@ -52,15 +52,17 @@ Settings changes, each with its exact command. Each one runs only after its own 
 | `9b55cb5` P1.2 | `python scripts/dashboard.py` | `OVERALL: GREEN` |
 | `4c0e72a` P1.3 | `python scripts/dashboard.py` | `OVERALL: GREEN` |
 | `eb98268` P1 CI fix | `python scripts/dashboard.py` | `OVERALL: GREEN` |
+| `df0e89c` P1 package-tracking fix | `python scripts/dashboard.py` | `OVERALL: GREEN` |
 
-The validator reports `0 error(s), 0 warning(s)` on `eb98268`.
+The validator reports `0 error(s), 0 warning(s)` on `df0e89c`.
 
 ## 4. CI evidence
 
 | Run ID | Head commit | Conclusion | Notes |
 | --- | --- | --- | --- |
 | 38510869868 | `ddc83d6` | failure | `Pre-commit parity` failed: the job installed only the dev requirements, so `mypy` and `pytest` could not import `pydantic` and `pandas`. Fixed by `eb98268`. |
-| see pull request #14 | `eb98268` | see the pull request | The CI-fix run. |
+| 38511061601 | `bb59a57` | failure | `Quality gates` and `Pre-commit parity` failed: `ws4/build/` was ignored by `.gitignore`, so the compiler was missing from the checkout. Fixed by `df0e89c`. |
+| 38511231174 | `df0e89c` | success | All three jobs pass. |
 
 CI runs on pull requests and on pushes to `main` only, so the branch commits before the pull request
 have no CI run. The report commit's own run is posted on pull request #14.
@@ -72,6 +74,7 @@ have no CI run. The report commit's own run is posted on pull request #14.
 | The P1.2 prototype uses a minimal XML recipe format | The prototype needed to exercise the pipeline before the format was fixed | The format was fixed in P1.3 (ADR 0011); the minimal format is superseded in P2, and the matrix contract does not change |
 | The branch commits before the pull request have no CI run | CI runs on pull requests and `main` only | The pull request runs the full suite on the report commit |
 | The first CI run on the branch failed (`Pre-commit parity`) | The CI jobs installed only the dev requirements, so `mypy` and `pytest` could not import the package's runtime dependencies | `eb98268` adds `python -m pip install -e .` to the CI and docs jobs and adds `[tool.setuptools.packages.find]` |
+| The second CI run failed on `ws4.build.compiler` | The `.gitignore` rule `build/` also ignored the `ws4/build/` package, so the compiler was never committed | `df0e89c` narrows the rule to `/build/` and commits `ws4/build/__init__.py` and `ws4/build/compiler.py` |
 
 ## 6. Next phase
 
