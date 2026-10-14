@@ -144,7 +144,8 @@ Parent issue: #26
 Branch: `feature/p3-verify`
 Status: active
 
-Goal: show that the build meets its acceptance criteria, and record the evidence in the changelog.
+Goal: show that the build meets its acceptance criteria, with evidence, and surface every gap before
+release.
 
 - [x] P3.1 Run the acceptance checks and record the evidence (#27)
   - [x] Matrix builder: rebuild each core variant and compare tracks, strata, treatments, blocks,
@@ -159,17 +160,31 @@ Goal: show that the build meets its acceptance criteria, and record the evidence
   - [ ] Every stochastic search records its seed, and the same seed reproduces the same result
   - [ ] A parallel multi-start run matches the serial run for the same seeds
   - [ ] A warm start produces the same result as a cold start for the same seed
-- [ ] P3.3 Verify scale and performance (#29)
+  - [ ] A run directory is self-describing: the config, the seed, and the manifest reproduce it
+- [ ] P3.3 Verify correctness: reference regression and invariants (#29)
+  - [ ] Commit a fixture-based regression test for the matrix builder against a reference matrix
+  - [ ] Property tests for the Model II expansion invariants (every stratum has a track; every treatment
+        connects to a real target; retention splits conserve area)
+  - [ ] The schema invariants hold on every compiled dataset
+  - [ ] The optimizer's MIP bound is a valid lower bound on the penalty
+- [ ] P3.4 Verify the spatial constraints (#30)
+  - [ ] Adjacency and topology are enforced and visible in the outputs
+  - [ ] Maximum opening size is respected, and violated only by an explicit override
+  - [ ] Green-up is respected, and violated only by an explicit override
+  - [ ] Patch metrics match an independent calculation on a small topology
+- [ ] P3.5 Verify scale and performance (#31)
   - [ ] Record the C5 sample's ingest, simulate, optimize, and route runtimes
   - [ ] Build and run a larger synthetic landscape; record the runtime and the peak memory
   - [ ] Confirm the simulator's curve evaluation is vectorized per curve, not per fragment
-- [ ] P3.4 Verify packaging and docs from a clean checkout (#30)
+  - [ ] Profile the hot paths and record the block-aggregation cost
+- [ ] P3.6 Verify packaging and docs from a clean checkout (#32)
   - [ ] Install the package into a fresh virtual environment from the checkout
   - [ ] Run the command line end to end on the synthetic fixture
   - [ ] Build the docs with warnings as errors, and confirm the published site is reachable
-- [ ] P3.5 Triage the deferred items (#31)
+- [ ] P3.7 Triage the deferred items and write the verification report (#33)
   - [ ] Confirm every deferred item in `notes/backlog.md` has a reason and a target phase
   - [ ] Confirm the roadmap's deferred list and `notes/backlog.md` agree
+  - [ ] Write the verification report with the evidence and the release recommendation
 
 ## Phase 4: Release and deploy
 
@@ -177,10 +192,16 @@ Parent issue: TBD
 Branch: `feature/p4-release`
 Status: planned
 
-Goal: tag a release, publish the docs, and verify the published artifacts from a clean checkout.
+Goal: tag a release, publish the artifacts and the docs, and verify the published release from a clean
+checkout.
 
-- [ ] P4.1 Write the release notes and the known-gaps list
-- [ ] P4.2 Tag, publish, and verify from a clean checkout (maintainer approval required)
+- [ ] P4.1 Prepare the release: version, changelog, license, citation, and packaging metadata
+- [ ] P4.2 Write the release notes and the known-gaps list
+- [ ] P4.3 Build and verify the release artifacts (sdist and wheel) from a clean checkout
+- [ ] P4.4 Publish the documentation site and verify it from a clean checkout
+- [ ] P4.5 Tag the release and publish the artifacts (maintainer approval required)
+- [ ] P4.6 Verify the published release: install it fresh, run the acceptance checks, and confirm
+      reproducibility
 
 ## Phase 5: Operate and maintain
 
@@ -191,6 +212,11 @@ Status: planned
 Goal: keep the project current: triage incoming ideas, review on a cadence, and close out cleanly.
 
 - [ ] P5.1 Set a review cadence and record the first review
+- [ ] P5.2 Stand up issue triage: labels, templates, and a triage cadence
+- [ ] P5.3 Dependency and security maintenance: automated updates and a review cadence
+- [ ] P5.4 Keep the roadmap, backlog, and changelog in step on a cadence
+- [ ] P5.5 Define the release cadence and the patch policy
+- [ ] P5.6 Write the maintainer and handover guide
 
 ## Detailed Next Steps Notes
 
@@ -204,5 +230,7 @@ Goal: keep the project current: triage incoming ideas, review on a cadence, and 
 4. P2 builds the model and the optimization stack. The stack generalizes the lab's FHOPS toolkit into a
    shared solver core; the execution substrate targets the 72-core host and the GPU. See
    `notes/design/ws4-optimization-stack.md` and `notes/design/ws4-matrix-builder-and-interop.md`.
-5. Phase 3 is active on `feature/p3-verify`, parent issue #26, with task P3.1 (#27). It runs the
-   acceptance checks and records the evidence in `CHANGE_LOG.md` and a phase report.
+5. Phase 3 is active on `feature/p3-verify`, parent issue #26, with seven tasks (#27 to #33): the
+   acceptance checks, determinism and reproducibility, correctness (regression and invariants), the
+   spatial constraints, scale and performance, packaging and docs from a clean checkout, and the
+   deferred-item triage and verification report.
