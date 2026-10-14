@@ -1,9 +1,13 @@
+"""Road network tables: access, haul cost, destinations, and routing."""
+
 from __future__ import annotations
+
 from pathlib import Path
-from typing import Tuple
+
 import pandas as pd
 
-def load_route_tables(root: Path) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+
+def load_route_tables(root: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Load vertices.csv, segments.csv, destinations.csv, linkages.csv.
 
     Returns (vertices, segments, destinations, linkages).
