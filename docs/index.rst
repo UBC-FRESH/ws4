@@ -10,6 +10,12 @@ project grows.
 
 .. toctree::
    :maxdepth: 2
+   :caption: Reference
+
+   reference/compiled-dataset
+
+.. toctree::
+   :maxdepth: 2
    :caption: API
 
    api/index

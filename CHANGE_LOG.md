@@ -30,3 +30,27 @@ issue comments.
   math-heuristic layer.
 - Queued the Phase 0 close-out: pull request #8 (`feature/p0-scope-design` into `main`) and the report
   `notes/reports/p0-closeout.md`. Status: awaiting maintainer approval.
+- Completed Phase 0: squash-merged pull request #8 as `386c643`, deleted `feature/p0-scope-design`, and
+  closed parent issue #1.
+- Launched Phase 1 (Contracts and prototype) on `feature/p1-contracts-prototype`, parent issue #10, with
+  tasks P1.1 (compiled-dataset schema and manifest) and P1.2 (end-to-end prototype).
+- P1.1: defined the compiled-dataset schema and manifest. Added `ws4/model/schema.py` (tables, manifest,
+  validator), `docs/reference/compiled-dataset.rst`, a `ws4 validate` implementation, `tests/test_schema.py`,
+  and the package `__init__.py` files plus the `ws4.build.compiler` stub. Added `pandas-stubs` to the dev
+  requirements. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.
+- P1.2: built the end-to-end prototype. Added `examples/synthetic/` (recipe, fragments, notes), a real
+  `ws4 build` compiler that writes the matrix and manifest, a real `ws4 simulate` that replays a schedule
+  and writes `account_values.csv`, `ws4/sim/curve.py`, and `tests/test_prototype.py` (build, validate,
+  grow, and treat). Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.
+- P1.3: adopted the established ForestModelXML recipe format and recorded the matrix builder and legacy
+  dataset ingestion in `notes/design/ws4-matrix-builder-and-interop.md`, with ADR 0011 (adopt the format
+  and support legacy datasets) and ADR 0012 (two construction paths: file-based and programmatic). Updated
+  the scope, the architecture note, and the P2 tasks.
+- Queued the Phase 1 close-out: pull request #14 (`feature/p1-contracts-prototype` into `main`) and the
+  report `notes/reports/p1-closeout.md`. Status: awaiting maintainer approval.
+- P1 fix: the CI jobs now install the package (`python -m pip install -e .`) before the gates, because
+  mypy and pytest need the runtime dependencies (pydantic, pandas, numpy, pyarrow). Added
+  `[tool.setuptools.packages.find]` so the package builds. The pre-commit parity job is green again.
+- P1 fix: the `.gitignore` rule `build/` also ignored the `ws4/build/` package, so the compiler was
+  never committed. Narrowed the rule to `/build/` and committed `ws4/build/__init__.py` and
+  `ws4/build/compiler.py`. This is why CI could not resolve `ws4.build.compiler`.
