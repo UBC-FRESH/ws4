@@ -117,6 +117,9 @@ issue comments.
 - P2.7: routed the simulator's product flows. When given a road network, the simulator sends each
   produced product to the block's single nearest destination (exclusive by construction) and writes
   `route_values.csv` (volume, route length, and cost). Added a routing test.
+- P2.9: implemented the programmatic model API (`ws4/model/api.py`). A `Model` holds one DataFrame per
+  matrix table, with `append` and `replace`; `from_dataset` loads and `write` saves, round-tripping a
+  dataset. Added `tests/test_model_api.py`.
 - P2.8: implemented accounts and reporting (`ws4/report.py`): an account summary, a ratio account, and a
   target-status table; `ws4 report` is a CLI command, and the optimizer writes a report at the end of a
   run. Added `tests/test_report.py`.

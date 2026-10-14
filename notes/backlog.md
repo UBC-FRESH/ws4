@@ -89,8 +89,11 @@ Status values: `open`, `partial`, `blocked`, `done`.
 
 ## Programmatic model API (P2.9)
 
-- **Model object and operations.** `open`.
-- **Load from / write to the matrix; round-trip equality.** `open`.
+- **Model object and operations.** `done`. `ws4/model/api.py` holds one DataFrame per matrix table with
+  `append` and `replace`.
+- **Load from / write to the matrix; round-trip equality.** `done`. `Model.from_dataset` and
+  `Model.write` round-trip a dataset (valid, same table lengths), and an empty model writes a valid
+  dataset.
 
 ## Tooling and process
 
