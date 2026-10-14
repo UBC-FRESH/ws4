@@ -51,3 +51,6 @@ issue comments.
 - P1 fix: the CI jobs now install the package (`python -m pip install -e .`) before the gates, because
   mypy and pytest need the runtime dependencies (pydantic, pandas, numpy, pyarrow). Added
   `[tool.setuptools.packages.find]` so the package builds. The pre-commit parity job is green again.
+- P1 fix: the `.gitignore` rule `build/` also ignored the `ws4/build/` package, so the compiler was
+  never committed. Narrowed the rule to `/build/` and committed `ws4/build/__init__.py` and
+  `ws4/build/compiler.py`. This is why CI could not resolve `ws4.build.compiler`.

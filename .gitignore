@@ -12,11 +12,11 @@ __pycache__/
 .venv/
 venv/
 
-# Builds
+# Builds (top-level only; the ws4/build/ package must stay tracked)
 _build/
 docs/_build/
-build/
-dist/
+/build/
+/dist/
 
 # Local work and private or generated material
 tmp/
