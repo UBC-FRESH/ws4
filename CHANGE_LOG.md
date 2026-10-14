@@ -133,6 +133,8 @@ issue comments.
   each option's delta are measured with the block's fragments isolated; an option-selection MILP (HiGHS
   via `scipy.optimize.milp`) minimizes the linearized weighted penalty for a valid lower bound and a
   candidate schedule. Added `tests/test_mip.py`.
+- P2.6: wired the MIP bound into the optimizer (`OptimizeConfig.mip_bound`); the run summary records the
+  bound, the gap (incumbent minus bound), and the bound status. Added a test asserting a non-negative gap.
 - Synced the UBC-FRESH dev workflow tooling to its latest release (P1-P4): updated
   `scripts/check_workflow.py` and the CI action versions and runners (`ubuntu-24.04`, `checkout@v5`,
   `setup-python@v6`, `upload-artifact@v6`, and the Pages actions), keeping the package install step.

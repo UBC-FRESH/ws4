@@ -22,6 +22,7 @@ import pandas as pd
 from ..report import write_report
 from ..sim.engine import Simulator
 from .core import Problem
+from .mip import bound_for
 from .objective import Target, load_targets, objective
 from .operators import Candidates, OperatorRegistry, Schedule
 from .solvers import solve_ils, solve_sa, solve_tabu
@@ -47,6 +48,7 @@ class OptimizeConfig:
     starts: int = 1
     workers: int = 1
     warm_start: bool = False
+    mip_bound: bool = False
 
 
 class Optimizer:
@@ -243,6 +245,11 @@ class Optimizer:
             "operators": self.registry.names(),
             "status": "ok",
         }
+        if self.cfg.mip_bound:
+            bound = bound_for(self.dataset_dir, targets, self.candidates(), self.cfg.years)
+            summary["bound"] = bound.objective
+            summary["gap"] = best_obj - bound.objective
+            summary["bound_status"] = bound.status
         (out_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
         return summary
 

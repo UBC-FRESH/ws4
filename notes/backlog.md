@@ -76,8 +76,9 @@ Status values: `open`, `partial`, `blocked`, `done`.
 - **Math-heuristic layer (MIP).** `partial`. Destroy-repair large-neighbourhood search is an operator
   (`ws4/opt/operators.py`, `lns`); a warm start seeds the search from each block's first candidate
   (`OptimizeConfig.warm_start`); and `ws4/opt/mip.py` solves an option-selection MILP (HiGHS via
-  `scipy.optimize.milp`) for a penalty **lower bound** and a candidate schedule. Open: wiring the bound
-  into the optimizer's gap tracking, and time-boxed MIP destroy-repair subproblems.
+  `scipy.optimize.milp`) for a penalty **lower bound** and a candidate schedule. `OptimizeConfig.mip_bound`
+  records the bound and the gap (`incumbent - bound`) in the run summary. Open: time-boxed MIP
+  destroy-repair subproblems.
 - **Telemetry and tuning.** `partial`. `ws4/opt/telemetry.py` writes a JSONL run header and a step
   record per iteration, and the optimizer writes `telemetry.jsonl`. Open: the tuners and the portfolio
   layer.

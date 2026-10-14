@@ -124,6 +124,25 @@ def test_warm_start_runs(tmp_path: Path) -> None:
     assert summary["incumbent_objective"] < 200.0
 
 
+def test_mip_bound_is_recorded_with_a_non_negative_gap(tmp_path: Path) -> None:
+    """A run with the MIP bound records the bound and a non-negative gap."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    targets = tmp_path / "targets.yaml"
+    targets.write_text(
+        "targets:\n  - account: feature.Volume\n    year: 0\n    maximum: 500\n",
+        encoding="utf-8",
+    )
+    summary = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(targets_path=str(targets), seed=1, years=1, iterations=40, mip_bound=True),
+    ).run(tmp_path / "run")
+    assert summary["bound_status"] == "optimal"
+    assert summary["gap"] >= 0.0
+    assert summary["bound"] <= summary["incumbent_objective"]
+
+
 def test_parallel_multi_start_matches_the_serial_result(tmp_path: Path) -> None:
     """A parallel multi-start run produces a valid incumbent."""
     dataset = build_canonical_dataset(
