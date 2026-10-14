@@ -74,9 +74,14 @@ Status values: `open`, `partial`, `blocked`, `done`.
 
 ## Spatial, roads, accounts (P2.7-P2.8)
 
-- **Block topology and patch metrics.** `open`. `ws4/patch/topology.py` is a loader only.
-- **Road network, access, haul cost, exclusive routing.** `open`. `ws4/roads/network.py` is a loader only.
-- **Account types and reports.** `open`.
+- **Block topology and patch metrics.** `partial`. The topology loader and patch metrics are done
+  (`ws4/patch/metrics.py`). Open: core-area rules and edge contrast.
+- **Road network, access, haul cost, exclusive routing.** `partial`. `ws4/roads/network.py` routes over
+  the segment graph (shortest length and cost, nearest destination) with tests. Open: exclusive
+  (one-of-many) routing, destination eligibility, and integration with the simulator's product flows.
+- **Account types and reports.** `open`. The compiled `accounts` table is the union of feature and
+  product labels; the summary, ratio, duplicate, and meta account types are not yet evaluated, and no
+  report writer exists.
 - **Unit conversion (map vs report units).** `open`.
 
 ## Programmatic model API (P2.9)

@@ -111,3 +111,6 @@ issue comments.
   objective. `tests/test_optimizer.py` runs all three and checks each lowers the penalty.
 - P2.4: added multi-start to the optimizer (`OptimizeConfig.starts`); each start uses its own seed and the
   best incumbent wins. A test asserts more starts is no worse than fewer.
+- P2.7: implemented the road network subsystem (`ws4/roads/network.py`): load the four tables, build the
+  segment graph, and route by shortest length or cost, with nearest-destination lookup. Added
+  `tests/test_roads.py`.
