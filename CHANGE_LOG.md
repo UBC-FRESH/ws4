@@ -161,5 +161,5 @@ issue comments.
   `_UNMANAGED_`, `_ALL_`) — matching the reference `protoaccounts.csv` exactly on all nine core k3z
   variants (pct_light/heavy/moderate, intensive_light/moderate/heavy/standstructure, ctfert_l15h5/l20h0).
   A user's curated `accounts` table is preserved across rebuilds. Added the `sum` scale column and tests.
-  The overlay variants are a scenario pipeline outside the matrix builder (their `output/` recipes are
-  reduced exports that do not correspond to the `tracks_overlay_*` matrices), so they are out of scope.
+  The `overlay_*` variants are a modelling convention for one instance family, not a format feature, so
+  they are out of scope.
