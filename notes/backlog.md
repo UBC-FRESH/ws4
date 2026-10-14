@@ -61,8 +61,11 @@ Status values: `open`, `partial`, `blocked`, `done`.
 
 ## Optimization and solver (P2.3-P2.6)
 
-- **Objective and targets.** `open`. Weighted goal programming is not implemented.
-- **Operator registry and metaheuristics.** `open`. SA, Tabu, ILS are not implemented.
+- **Objective and targets.** `done`. Weighted goal programming (`ws4/opt/objective.py`): per-year minimum
+  and maximum with weights; targets load from YAML.
+- **Operator registry and metaheuristics.** `partial`. `ws4/opt/operators.py` (toggle, shift, swap) and a
+  simulated-annealing engine (`ws4/opt/engine.py`), seeded and reproducible. Open: Tabu, ILS, ALNS, and
+  the wider operator set.
 - **Solver core.** `open`. The shared package boundary is a recommendation, not code.
 - **Parallel and GPU execution substrate.** `open`.
 - **Math-heuristic layer (MIP).** `open`.

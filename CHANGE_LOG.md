@@ -102,3 +102,7 @@ issue comments.
 - P2.2: implemented patch metrics over the block topology (`ws4/patch/metrics.py`): connected patches,
   size classes, and mean size. The simulator writes `patch_metrics.csv` when given a topology. Added
   `tests/test_patch.py` and a simulator patch-metric test.
+- P2.3: implemented the weighted-goal objective (`ws4/opt/objective.py`, targets from YAML), a
+  neighbourhood-operator registry (`ws4/opt/operators.py`: toggle, shift, swap), and a seeded
+  simulated-annealing optimizer (`ws4/opt/engine.py`) that evaluates candidates through the simulator.
+  Added `tests/test_optimizer.py`; `pyyaml` and `types-PyYAML` added to the dependencies.

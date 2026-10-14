@@ -126,6 +126,29 @@ class Simulator:
             records.append({"year": year, "account": label, "value": total})
         return records
 
+    def simulate(self, schedule: pd.DataFrame, years: int) -> pd.DataFrame:
+        """Replay a schedule and return the account values, without writing files.
+
+        Parameters
+        ----------
+        schedule : pandas.DataFrame
+            The schedule, with ``block_id``, ``treatment``, and ``period`` columns.
+        years : int
+            The number of annual steps.
+
+        Returns
+        -------
+        pandas.DataFrame
+            The account values, with ``year``, ``account``, and ``value`` columns.
+        """
+        records: list[dict[str, object]] = []
+        self._product_values = []
+        for year in range(years):
+            self.apply_treatments(schedule, year)
+            records.extend(self.account_values(year))
+            self.fragments["offset"] = self.fragments["offset"].astype(int) + 1
+        return pd.DataFrame(records, columns=["year", "account", "value"])
+
     def run(
         self,
         schedule_csv: Path,
@@ -161,35 +184,42 @@ class Simulator:
         if "period" not in schedule.columns:
             schedule = schedule.assign(period=0)
 
-        edges: list[tuple[int, int]] = []
-        block_area: dict[int, float] = {}
-        if topology_csv is not None:
-            topology = load_topology(topology_csv)
-            edges = list(
-                zip(topology["src_block"].tolist(), topology["dst_block"].tolist(), strict=True)
-            )
-            block_area = {
-                _as_int(block): _as_float(area)
-                for block, area in self.fragments.groupby("block_id")["area_ha"].sum().items()
-            }
-
-        records: list[dict[str, object]] = []
-        patch_records: list[dict[str, object]] = []
-        self._product_values = []
-        for year in range(years):
-            disturbed = self.apply_treatments(schedule, year)
-            if topology_csv is not None and disturbed:
-                patch_records.append(
-                    {"year": year, **patch_metrics(disturbed, edges, block_area, patch_breaks)}
-                )
-            records.extend(self.account_values(year))
-            self.fragments["offset"] = self.fragments["offset"].astype(int) + 1
-
-        values = pd.DataFrame(records, columns=["year", "account", "value"])
+        values = self.simulate(schedule, years)
         values.to_csv(out_dir / "account_values.csv", index=False)
         pd.DataFrame(self._product_values, columns=["year", "account", "value"]).to_csv(
             out_dir / "product_values.csv", index=False
         )
         if topology_csv is not None:
-            pd.DataFrame(patch_records).to_csv(out_dir / "patch_metrics.csv", index=False)
+            # A fresh simulator: ``simulate`` above already advanced this one's state.
+            Simulator.from_dataset(self.dataset_dir).write_patch_metrics(
+                schedule, years, topology_csv, patch_breaks, out_dir
+            )
         return values
+
+    def write_patch_metrics(
+        self,
+        schedule: pd.DataFrame,
+        years: int,
+        topology_csv: Path,
+        patch_breaks: Sequence[float],
+        out_dir: Path,
+    ) -> None:
+        """Replay a schedule and write per-year patch metrics for the disturbed blocks."""
+        topology = load_topology(topology_csv)
+        edges = list(
+            zip(topology["src_block"].tolist(), topology["dst_block"].tolist(), strict=True)
+        )
+        block_area = {
+            _as_int(block): _as_float(area)
+            for block, area in self.fragments.groupby("block_id")["area_ha"].sum().items()
+        }
+        patch_records: list[dict[str, object]] = []
+        self.fragments["offset"] = self.fragments["age"].astype(int)
+        for year in range(years):
+            disturbed = self.apply_treatments(schedule, year)
+            if disturbed:
+                patch_records.append(
+                    {"year": year, **patch_metrics(disturbed, edges, block_area, patch_breaks)}
+                )
+            self.fragments["offset"] = self.fragments["offset"].astype(int) + 1
+        pd.DataFrame(patch_records).to_csv(out_dir / "patch_metrics.csv", index=False)

@@ -5,6 +5,7 @@ coverage>=7.5
 ruff>=0.6
 mypy>=1.11
 pandas-stubs
+types-PyYAML
 numpydoc>=1.7
 hypothesis>=6.100
 pre-commit>=3.7
