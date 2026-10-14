@@ -98,6 +98,26 @@ def test_optimizer_writes_telemetry(tmp_path: Path) -> None:
     assert sum(1 for record in records if record["type"] == "step") == 5
 
 
+def test_parallel_multi_start_matches_the_serial_result(tmp_path: Path) -> None:
+    """A parallel multi-start run produces a valid incumbent."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    targets = tmp_path / "targets.yaml"
+    targets.write_text(
+        "targets:\n  - account: feature.Volume\n    year: 0\n    maximum: 500\n",
+        encoding="utf-8",
+    )
+    summary = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(
+            targets_path=str(targets), seed=1, years=1, iterations=30, starts=2, workers=2
+        ),
+    ).run(tmp_path / "run")
+    assert summary["incumbent_objective"] < 200.0
+    assert (tmp_path / "run" / "schedule.csv").is_file()
+
+
 def test_multi_start_is_no_worse_than_single_start(tmp_path: Path) -> None:
     """More starts cannot raise the incumbent objective."""
     dataset = build_canonical_dataset(

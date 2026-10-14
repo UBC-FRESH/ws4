@@ -70,7 +70,9 @@ Status values: `open`, `partial`, `blocked`, `done`.
 - **Solver core.** `partial`. The problem-adapter boundary is implemented (`ws4/opt/core.py`: a
   `Problem` with an evaluator, candidate moves, and an operator registry) and the solvers take it. Open:
   extracting a separate shared package for WS4/WS3/FHOPS.
-- **Parallel and GPU execution substrate.** `open`.
+- **Parallel and GPU execution substrate.** `partial`. Parallel multi-start runs across a process pool
+  (`OptimizeConfig.workers`), one seeded start per worker, keeping the best. Open: the island model with
+  elite sharing, NUMA-aware placement, and tensorized GPU move evaluation.
 - **Math-heuristic layer (MIP).** `open`.
 - **Telemetry and tuning.** `partial`. `ws4/opt/telemetry.py` writes a JSONL run header and a step
   record per iteration, and the optimizer writes `telemetry.jsonl`. Open: the tuners and the portfolio

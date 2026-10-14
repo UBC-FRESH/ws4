@@ -124,6 +124,9 @@ issue comments.
   candidate moves, and an operator registry) and refactored the solvers to take it. Added run telemetry
   (`ws4/opt/telemetry.py`: a JSONL header and one step record per iteration); the optimizer writes
   `telemetry.jsonl`. Added telemetry tests.
+- P2.5: added parallel multi-start (`OptimizeConfig.workers`). Starts run across a process pool, one
+  seeded start per worker, and the best incumbent wins; the serial path is unchanged. Added a parallel
+  test.
 - Synced the UBC-FRESH dev workflow tooling to its latest release (P1-P4): updated
   `scripts/check_workflow.py` and the CI action versions and runners (`ubuntu-24.04`, `checkout@v5`,
   `setup-python@v6`, `upload-artifact@v6`, and the Pages actions), keeping the package install step.
