@@ -13,15 +13,16 @@ app = typer.Typer(help="WS4 — Wood Supply Simulation System (Spatially explici
 
 @app.command()
 def build(
-    xml: Path = typer.Option(..., "--xml", exists=True, help="Patchworks ForestModel XML"),
+    xml: Path = typer.Option(..., "--xml", exists=True, help="Forest-model XML recipe"),
     fragments: Path = typer.Option(..., "--fragments", exists=True, help="Fragments shapefile (polygons)"),
     out: Path = typer.Option(..., "--out", help="Output directory for canonical dataset"),
 ):
-    """Compile a canonical dataset from Patchworks-style XML and a *fragments* shapefile.
+    """Compile a canonical dataset from an XML recipe and a *fragments* shapefile.
 
     Notes:
-      • PIN files are not required here (they're used to *launch*, not *build*).
-      • Blocks shapefile is not required to build (used at runtime for reporting/launch).
+      • Launch control files are not required here (they are used to *launch*,
+        not *build*).
+      • Block geometry is not required to build (it is a runtime view).
     """
     out = build_canonical_dataset(xml_path=xml, fragments_path=fragments, out_dir=out)
     print(f"[bold green]Built dataset[/] → {out}")

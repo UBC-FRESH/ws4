@@ -6,17 +6,17 @@ import xml.etree.ElementTree as ET
 from ..model.types import Track, Treatment, CurvePoint, Product, Destination
 
 class ForestModelImporter:
-    """Parse a Patchworks ForestModel XML into canonical parts.
+    """Parse a forest-model XML recipe into canonical parts.
+
     This importer focuses on *logical* content:
       • tracks
       • treatments (with operability in offset-age terms)
       • curves (long format)
       • products & destinations
-    Fragment-level assignment is executed later in the compiler using fragment attributes.
 
-    Notes specific to WS4:
-      • PIN is not used here (used only for launching in Patchworks).
-      • Blocks shapefile is irrelevant at build time.
+    Fragment-level assignment is executed later in the compiler using
+    fragment attributes. The recipe is a compile-time input; launch control
+    files and block geometry are not read here.
     """
     def __init__(self, xml_path: Path):
         self.xml_path = Path(xml_path)

@@ -57,6 +57,8 @@ decisions that later phases can build on.
 - [ ] P0.5 Install the workflow tooling
   - [ ] Copy the validator, dashboard, docs skeleton, tests, and CI from the seed
   - [ ] Make `python scripts/dashboard.py` green on this repository
+- [x] P0.6 Neutralize third-party naming in the skeleton
+  - [x] Rename the XML importer and reword the CLI help, README, and docstrings
 
 Acceptance criteria:
 
