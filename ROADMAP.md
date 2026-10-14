@@ -13,7 +13,7 @@ exists and the maintainer approves it.
 | --- | --- | --- | --- |
 | P0 Scope and design | #1 | `feature/p0-scope-design` | complete |
 | P1 Contracts and prototype | #10 | `feature/p1-contracts-prototype` | complete |
-| P2 Build | #15 | `feature/p2-build` | active |
+| P2 Build | #15 | `feature/p2-build` | pr-open |
 | P3 Verify | TBD | `feature/p3-verify` | planned |
 | P4 Release and deploy | TBD | `feature/p4-release` | planned |
 | P5 Operate and maintain | TBD | `feature/p5-operate` | planned |
@@ -98,40 +98,45 @@ synthetic data.
 
 Parent issue: #15
 Branch: `feature/p2-build`
-Status: active
+Status: pr-open
 
 Goal: implement the agreed scope, one task at a time, on the phase branch.
 
-- [ ] P2.1 Implement the ForestModelXML matrix builder and legacy dataset ingestion (#16)
+- [x] P2.1 Implement the ForestModelXML matrix builder and legacy dataset ingestion (#16)
   - [x] ForestModelXML parser and structural validation (parses the real MKRf recipe: 1057 curves, 11 selects, 2 treatments)
   - [x] Matrix builder for the non-expression subset; legacy matrix ingestion with a recorded mapping
   - [x] The Model II expansion engine: enumerate the reachable strata, expand each into a track, connect treatments to target strata (`ws4/build/expansion.py`)
   - [x] Block splitting into portions, per-track treatment expansion, and retention splits
-  - [x] Matches a reference compiled matrix exactly on tracks, strata, treatments, and blocks (351/351/263/399)
-  - [ ] Full expression language, expression-sourced curves, and shapefile input
-  - [ ] Reproduce the additional stratification of the full MKRf canonical model (blocked on its generated XML)
-- [ ] P2.2 Implement the simulation engine (#17)
+  - [x] Matches reference compiled matrices exactly on tracks, strata, treatments, blocks, features, products, and `protoaccounts` (nine core variants)
+  - [x] Full expression language, expression-sourced curves, shapefile input, and expression-based `<input>` fields
+  - [x] Emit `protoaccounts` and preserve a curated `accounts` table
+- [x] P2.2 Implement the simulation engine (#17)
   - [x] Operability (track-offered treatments), track switching, feature accounts, deterministic replay
   - [x] Product yields; vectorized curve evaluation; a full run on the C5 sample
   - [x] Patch metrics and product routing to the nearest mill
-  - [ ] Route cost accounts and destination eligibility
-- [ ] P2.3 Implement the optimization engine: objective, operators, and one metaheuristic (#18)
+- [x] P2.3 Implement the optimization engine: objective, operators, and one metaheuristic (#18)
   - [x] Weighted-goal objective and YAML targets
-  - [x] Operator registry (toggle, shift, swap)
+  - [x] Operator registry (toggle, shift, swap, LNS)
   - [x] Simulated annealing, tabu search, and iterated local search; multi-start
-  - [ ] ALNS and the wider operator set
-- [ ] P2.4 Implement the solver core: the shared operator/metaheuristic/tuning/telemetry package (#19)
-- [ ] P2.5 Implement the parallel and GPU execution substrate (process pool, islands, tensorized moves) (#20)
-- [ ] P2.6 Implement the math-heuristic layer (MIP bounds, warm starts, destroy-repair) (#21)
-- [ ] P2.7 Implement the spatial and road subsystems (#22)
+- [x] P2.4 Implement the solver core: the shared operator/metaheuristic/tuning/telemetry package (#19)
+- [x] P2.5 Implement the parallel and GPU execution substrate (#20)
+  - [x] Process-pool parallel multi-start and warm starts
+- [x] P2.6 Implement the math-heuristic layer (MIP bounds, warm starts, destroy-repair) (#21)
+- [x] P2.7 Implement the spatial and road subsystems (#22)
   - [x] Patch metrics over the block topology
   - [x] Road network routing (length, cost, nearest destination) and simulator product flows
-  - [ ] Core-area rules, edge contrast, destination eligibility, and route cost accounts
-- [ ] P2.8 Implement accounts and reporting (#23)
+- [x] P2.8 Implement accounts and reporting (#23)
   - [x] Account summary, ratio account, target status, and a report writer; `ws4 report`
-  - [ ] Duplicate and meta accounts, and chart output
 - [x] P2.9 Implement the programmatic model API (build or patch the model in memory) (#24)
   - [x] `ws4/model/api.py` with append/replace and a dataset round-trip
+
+Deferred from P2, tracked in `notes/backlog.md`:
+
+- Reproduce the additional stratification of the full MKRf canonical model (blocked on its generated XML).
+- Core-area rules, edge contrast, destination eligibility, and route cost accounts.
+- The wider operator set beyond LNS.
+- Duplicate and meta accounts, and chart output.
+- Islands and tensorized GPU moves.
 
 ## Phase 3: Verify
 
@@ -170,10 +175,10 @@ Goal: keep the project current: triage incoming ideas, review on a cadence, and 
    issue #1 closed. The close-out report is `notes/reports/p0-closeout.md`.
 2. Phase 1 is complete: pull request #14 squash-merged as `33ac569`, the branch deleted, and parent
    issue #10 closed. The close-out report is `notes/reports/p1-closeout.md`.
-3. Phase 2 is active on `feature/p2-build`, parent issue #15, with tasks P2.1 to P2.9 (#16 to #24).
-   Progress is in the checklists above and in `notes/backlog.md`. The C5 sample is a full end-to-end
-   functional test (`notes/functional-test.md`). Next: the solver core (P2.4), the execution substrate
-   (P2.5), and the math-heuristic layer (P2.6).
+3. Phase 2 is queued for close-out on `feature/p2-build`, parent issue #15, with tasks P2.1 to P2.9
+   (#16 to #24). The pull request is open and the report is `notes/reports/p2-closeout.md`. Progress is
+   in the checklists above and in `notes/backlog.md`. The C5 sample is a full end-to-end functional test
+   (`notes/functional-test.md`). Five items are deferred and listed in the Phase 2 section.
 4. P2 builds the model and the optimization stack. The stack generalizes the lab's FHOPS toolkit into a
    shared solver core; the execution substrate targets the 72-core host and the GPU. See
    `notes/design/ws4-optimization-stack.md` and `notes/design/ws4-matrix-builder-and-interop.md`.
