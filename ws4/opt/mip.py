@@ -19,7 +19,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy.optimize import Bounds, LinearConstraint, milp
 
 from .objective import Target
 from .operators import Candidates, Schedule
@@ -138,7 +137,19 @@ def solve_mip(
     -------
     MipResult
         The bound, the chosen schedule, and the solver status.
+
+    Raises
+    ------
+    RuntimeError
+        When the optional ``scipy`` dependency is not installed.
     """
+    try:
+        from scipy.optimize import Bounds, LinearConstraint, milp
+    except ImportError as exc:  # pragma: no cover - exercised only without the extra
+        raise RuntimeError(
+            "the mixed-integer bound needs scipy; install the 'opt' extra (pip install 'ws4[opt]')"
+        ) from exc
+
     variables = list(deltas)
     index = {key: position for position, key in enumerate(variables)}
     blocks = sorted(base)

@@ -5,11 +5,14 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
+import pytest
 from ws4.build.compiler import build_canonical_dataset
 from ws4.opt.engine import OptimizeConfig, Optimizer
 from ws4.opt.mip import bound_for
 from ws4.opt.objective import Target, objective
 from ws4.sim.engine import Simulator
+
+pytest.importorskip("scipy")  # the MIP bound needs the optional 'opt' extra
 
 _FIXTURE = Path(__file__).resolve().parents[1] / "examples" / "synthetic"
 _EMPTY = pd.DataFrame([], columns=["block_id", "treatment", "period"])

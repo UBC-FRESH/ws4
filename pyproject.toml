@@ -22,7 +22,7 @@ dependencies = [
 
 [project.optional-dependencies]
 geo = ["geopandas>=0.14", "pyogrio>=0.9", "shapely>=2.0", "rtree>=1.0"]
-opt = ["numba>=0.59", "networkx>=3.2", "ray>=2.9"]
+opt = ["numba>=0.59", "networkx>=3.2", "ray>=2.9", "scipy>=1.11"]
 
 [project.scripts]
 ws4 = "ws4.cli:app"

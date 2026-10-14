@@ -166,3 +166,7 @@ issue comments.
 - P2 close-out: queued pull request #25 (`feature/p2-build` into `main`) and wrote
   `notes/reports/p2-closeout.md`. `ROADMAP.md` marks P2 `pr-open`; five items are deferred and tracked
   in `notes/backlog.md`. `python scripts/dashboard.py`: `OVERALL: GREEN`.
+- P2 close-out fix: `ws4/opt/mip.py` imported `scipy` at module load, so a plain install could not import
+  the optimizer and CI (which installed only `.[geo]` plus the dev requirements) failed on `f22cd6a`. The
+  import is now lazy with a clear error, `scipy` is declared in the `opt` extra and the dev requirements,
+  and `tests/test_mip.py` skips when it is absent.
