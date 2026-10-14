@@ -65,6 +65,10 @@ files = ["scripts", "tests", "docs/conf.py"]
 module = ["numpydoc", "numpydoc.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = ["scipy", "scipy.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--cov=scripts --cov-branch --cov-report=term-missing --cov-fail-under=90"

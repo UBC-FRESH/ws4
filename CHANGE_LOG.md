@@ -129,6 +129,10 @@ issue comments.
   test.
 - P2.6: added the destroy-repair large-neighbourhood operator (`lns`, in the default registry) and warm
   starts (`OptimizeConfig.warm_start` seeds the search from each block's first candidate). Added tests.
+- P2.6: implemented a mixed-integer penalty bound (`ws4/opt/mip.py`). Each block's no-treatment value and
+  each option's delta are measured with the block's fragments isolated; an option-selection MILP (HiGHS
+  via `scipy.optimize.milp`) minimizes the linearized weighted penalty for a valid lower bound and a
+  candidate schedule. Added `tests/test_mip.py`.
 - Synced the UBC-FRESH dev workflow tooling to its latest release (P1-P4): updated
   `scripts/check_workflow.py` and the CI action versions and runners (`ubuntu-24.04`, `checkout@v5`,
   `setup-python@v6`, `upload-artifact@v6`, and the Pages actions), keeping the package install step.

@@ -74,9 +74,10 @@ Status values: `open`, `partial`, `blocked`, `done`.
   (`OptimizeConfig.workers`), one seeded start per worker, keeping the best. Open: the island model with
   elite sharing, NUMA-aware placement, and tensorized GPU move evaluation.
 - **Math-heuristic layer (MIP).** `partial`. Destroy-repair large-neighbourhood search is an operator
-  (`ws4/opt/operators.py`, `lns`), and a warm start seeds the search from each block's first candidate
-  (`OptimizeConfig.warm_start`). Open: a MIP solver for bounds, gap tracking, and time-boxed
-  destroy-repair subproblems.
+  (`ws4/opt/operators.py`, `lns`); a warm start seeds the search from each block's first candidate
+  (`OptimizeConfig.warm_start`); and `ws4/opt/mip.py` solves an option-selection MILP (HiGHS via
+  `scipy.optimize.milp`) for a penalty **lower bound** and a candidate schedule. Open: wiring the bound
+  into the optimizer's gap tracking, and time-boxed MIP destroy-repair subproblems.
 - **Telemetry and tuning.** `partial`. `ws4/opt/telemetry.py` writes a JSONL run header and a step
   record per iteration, and the optimizer writes `telemetry.jsonl`. Open: the tuners and the portfolio
   layer.
