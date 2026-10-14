@@ -29,7 +29,20 @@ _LEGACY: dict[str, pd.DataFrame] = {
         {"TRACK": [1], "TREATMENT": ["CC"], "LABEL": ["product.Volume"], "CURVE": [1]}
     ),
     "accounts.csv": pd.DataFrame(
-        {"GROUP": ["forest"], "ATTRIBUTE": ["feature.Volume"], "ACCOUNT": ["feature.Volume"]}
+        {
+            "GROUP": ["forest"],
+            "ATTRIBUTE": ["feature.Volume"],
+            "ACCOUNT": ["feature.Volume"],
+            "SUM": [1.0],
+        }
+    ),
+    "protoaccounts.csv": pd.DataFrame(
+        {
+            "GROUP": ["forest"],
+            "ATTRIBUTE": ["feature.Volume"],
+            "ACCOUNT": ["feature.Volume"],
+            "SUM": [1.0],
+        }
     ),
     "groups.csv": pd.DataFrame({"BLOCK": [1], "GROUP": ["forest"]}),
     "messages.csv": pd.DataFrame({"SEVERITY": ["info"], "MESSAGE": ["ok"]}),

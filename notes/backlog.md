@@ -23,12 +23,19 @@ Status values: `open`, `partial`, `blocked`, `done`.
   `%m` (managed/unmanaged), `%au`, and `%s` tokens expand per stratum; an expression label such as
   ``'%f.area.%m.state.'+if(...)`` is evaluated after substitution; and a `factor` expression scales the
   attribute's curve into a derived curve (reused per base curve and factor).
-- **Account and feature/product de-duplication.** `partial`. Features and products now match the k3z
-  reference exactly. Accounts are the union of feature and product labels, grouped by management state
-  (`_MANAGED_`, `_UNMANAGED_`, `_ALL_`), and are close but not exact (k3z pct_light 1507 vs 1460).
-- **Account zero-signal exclusion.** `open`. The reference excludes zero-signal families (the 47 extra
-  labels in k3z are all `PL` / lodgepole pine). The exact rule is not yet reproduced; a naive
-  "any curve value > 0" filter over-excludes.
+- **Account and feature/product de-duplication.** `done`. Features and products match the k3z
+  reference exactly (pct_light, pct_moderate, intensive_light). The builder writes a summary account
+  for every attribute (the `protoaccounts` table), grouped by the managed state of the producing
+  selects (`_MANAGED_`, `_UNMANAGED_`, `_ALL_`), and matches the reference `protoaccounts.csv` exactly.
+- **Protoaccounts vs accounts.** `done`. Per the user guide ("Creating Summary Accounts"), the Matrix
+  Builder emits `protoaccounts` and the user copies it to `accounts` and edits it; re-running the
+  builder regenerates `protoaccounts` but must not overwrite the edited `accounts`. The builder now
+  does this. (The 47 extra labels in the k3z `accounts.csv` were a user edit removing the species `PL`,
+  which has no share in that instance — not a builder rule.)
+- **Overlay/scenario variants.** `open`. The overlay reference `products.csv` carries per-AU,
+  per-species log-grade labels (e.g. `product.Logs_Grade_D.managed.<AU>.<species>.CC`, 1130 labels) that
+  the builder does not yet generate (114 labels); the overlay recipe's own product labels are far fewer,
+  so the reference must merge or derive them. Investigate the overlay generation.
 - **Succession and `produce` semantics.** `partial`. `<transition>` is applied; `<succession>` and
   `<produce>` are parsed only as far as treatments need.
 - **Intensive treatment lanes.** `done`. The k3z intensive variants (CT, PCT, F1-F3) now match the

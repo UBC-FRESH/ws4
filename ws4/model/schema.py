@@ -145,12 +145,23 @@ TABLES: tuple[Table, ...] = (
         ),
     ),
     Table(
+        "protoaccounts",
+        "protoaccounts.parquet",
+        (
+            Column("group", "string"),
+            Column("attribute", "string"),
+            Column("account", "string"),
+            Column("sum", "number"),
+        ),
+    ),
+    Table(
         "accounts",
         "accounts.parquet",
         (
             Column("group", "string"),
             Column("attribute", "string"),
             Column("account", "string"),
+            Column("sum", "number"),
         ),
     ),
     Table(

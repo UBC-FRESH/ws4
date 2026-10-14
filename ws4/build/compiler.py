@@ -136,17 +136,16 @@ def _expression_curve(
         return None
 
 
-def _curve_has_signal(recipe: Recipe, curve_id: str) -> bool:
-    """Return whether a curve has any positive value (a non-zero family)."""
-    return any(y > 0 for _, y in recipe.curves.get(curve_id, ()))
+def _account_group(states: set[str]) -> str:
+    """Return the account group for a label's producing selects.
 
-
-def _account_group(label: str) -> str:
-    """Return the account group a feature or product label belongs to."""
-    if "unmanaged" in label:
-        return "_UNMANAGED_"
-    if "managed" in label:
+    A label produced only by managed selects belongs to ``_MANAGED_``, only by unmanaged
+    selects to ``_UNMANAGED_``, and otherwise to ``_ALL_``.
+    """
+    if states == {"managed"}:
         return "_MANAGED_"
+    if states == {"unmanaged"}:
+        return "_UNMANAGED_"
     return "_ALL_"
 
 
@@ -283,13 +282,17 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
     feature_rows: list[dict[str, object]] = []
     product_rows: list[dict[str, object]] = []
     treatment_rows: list[dict[str, object]] = []
-    # Accounts are unique by (group, attribute, account); a label is included only when
-    # one of its curves has a positive value (a non-zero family).
-    account_signal: dict[str, bool] = {}
+    # The Matrix Builder writes a simple summary account for every attribute, with the
+    # account name identical to the attribute name (see the user guide, "Creating Summary
+    # Accounts"). The user copies ``protoaccounts`` to ``accounts`` and edits it; a re-run
+    # must not overwrite that edited copy. Each label records the managed state(s) of the
+    # selects that produce it, which determines its account group.
+    account_labels: dict[str, set[str]] = {}
     for stratum in strata:
         for select_index in stratum.select_indices:
             select = recipe.selects[select_index - 1]
             row = dict(zip(variables, stratum.key, strict=True))
+            managed = _managed_value(row, recipe.constants)
             for attribute in select.features:
                 curve_name = attribute.curve or (
                     _expression_curve(recipe, variables, stratum.key, attribute.expression)
@@ -308,9 +311,7 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
                         ),
                     }
                 )
-                account_signal[label] = account_signal.get(label, False) or _curve_has_signal(
-                    recipe, curve_name
-                )
+                account_labels.setdefault(label, set()).add(managed)
             for attribute in select.products:
                 curve_name = attribute.curve or (
                     _expression_curve(recipe, variables, stratum.key, attribute.expression)
@@ -330,9 +331,7 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
                         ),
                     }
                 )
-                account_signal[label] = account_signal.get(label, False) or _curve_has_signal(
-                    recipe, curve_name
-                )
+                account_labels.setdefault(label, set()).add(managed)
             for treatment in select.treatments:
                 treatment_rows.append(
                     {
@@ -348,9 +347,9 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
                     }
                 )
 
-    account_rows = [
-        {"group": _account_group(label), "attribute": label, "account": label}
-        for label in account_signal
+    protoaccount_rows = [
+        {"group": _account_group(states), "attribute": label, "account": label, "sum": 1.0}
+        for label, states in account_labels.items()
     ]
 
     blocks = (
@@ -373,7 +372,12 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
         "products": pd.DataFrame(
             product_rows, columns=["track_id", "treatment", "label", "curve_id"]
         ),
-        "accounts": pd.DataFrame(account_rows, columns=["group", "attribute", "account"]),
+        "protoaccounts": pd.DataFrame(
+            protoaccount_rows, columns=["group", "attribute", "account", "sum"]
+        ),
+        "accounts": pd.DataFrame(
+            protoaccount_rows, columns=["group", "attribute", "account", "sum"]
+        ),
         "groups": pd.DataFrame({"block_id": blocks["block_id"], "group": "forest"}),
         "messages": pd.DataFrame(
             {
@@ -388,6 +392,10 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
 
     out_dir.mkdir(parents=True, exist_ok=True)
     for table in TABLES:
+        # Preserve a user-curated accounts file: the builder only writes protoaccounts,
+        # and re-running must not overwrite an edited accounts table.
+        if table.name == "accounts" and (out_dir / table.file).is_file():
+            continue
         coerce_to_schema(tables[table.name], table).to_parquet(out_dir / table.file, index=False)
 
     manifest = CanonicalDatasetManifest(

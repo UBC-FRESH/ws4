@@ -36,7 +36,18 @@ LEGACY_MAPPING: dict[str, dict[str, str]] = {
         "LABEL": "label",
         "CURVE": "curve_id",
     },
-    "accounts": {"GROUP": "group", "ATTRIBUTE": "attribute", "ACCOUNT": "account"},
+    "accounts": {
+        "GROUP": "group",
+        "ATTRIBUTE": "attribute",
+        "ACCOUNT": "account",
+        "SUM": "sum",
+    },
+    "protoaccounts": {
+        "GROUP": "group",
+        "ATTRIBUTE": "attribute",
+        "ACCOUNT": "account",
+        "SUM": "sum",
+    },
     "groups": {"BLOCK": "block_id", "GROUP": "group"},
     "messages": {"SEVERITY": "severity", "MESSAGE": "message"},
 }

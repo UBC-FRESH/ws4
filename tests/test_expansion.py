@@ -293,3 +293,33 @@ def test_retention_split_creates_managed_and_unmanaged_portions(tmp_path: Path) 
     assert len(tracks) == 2  # managed and unmanaged
     assert len(blocks) == 2  # one portion each
     assert list(blocks["area_ha"]) == [2.0, 6.0]  # 0.25 and 0.75 of 8 ha
+
+
+def test_protoaccounts_cover_every_attribute(tmp_path: Path) -> None:
+    """The builder emits a summary account for every attribute (``protoaccounts``)."""
+    dataset = _build(tmp_path)
+    proto = pd.read_parquet(dataset / "protoaccounts.parquet")
+    assert set(proto["attribute"]) == {"feature.Volume"}
+    assert list(proto["account"]) == list(proto["attribute"])
+    assert (proto["sum"] == 1.0).all()
+    accounts = pd.read_parquet(dataset / "accounts.parquet")
+    assert set(accounts["attribute"]) == {"feature.Volume"}
+
+
+def test_rerun_preserves_a_curated_accounts_file(tmp_path: Path) -> None:
+    """Re-running the builder regenerates ``protoaccounts`` but keeps a curated ``accounts``."""
+    dataset = _build(tmp_path)
+    curated = pd.DataFrame(
+        {
+            "group": ["_ALL_"],
+            "attribute": ["feature.Volume"],
+            "account": ["net.value"],
+            "sum": [-1.0],
+        }
+    )
+    curated.to_parquet(dataset / "accounts.parquet", index=False)
+    _build(tmp_path)  # re-run the same build into the same directory
+    accounts = pd.read_parquet(dataset / "accounts.parquet")
+    assert list(accounts["account"]) == ["net.value"]  # the edit survived
+    proto = pd.read_parquet(dataset / "protoaccounts.parquet")
+    assert set(proto["account"]) == {"feature.Volume"}  # regenerated
