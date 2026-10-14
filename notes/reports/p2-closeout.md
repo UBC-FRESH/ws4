@@ -3,7 +3,7 @@
 Phase: P2 Build
 Parent issue: #15
 Pull request: #25, `feature/p2-build` into `main`
-Evidence head: `f22cd6a`, the head that the gates and the CI runs below cover
+Evidence head: `9bef098`, the head that the gates and the CI runs below cover
 Report commit: the commit that adds this report. Its CI run is posted on pull request #25.
 Date: 2026-10-14
 Status: queued for approval. Not merged.
@@ -62,6 +62,7 @@ Settings changes, each with its exact command. Each one runs only after its own 
 
 | Run ID | Head commit | Conclusion | Notes |
 | --- | --- | --- | --- |
+| 38532867166 (CI, pull request) | `f22cd6a` | failure | All three jobs failed: `ws4/opt/mip.py` imported `scipy` at module load, and CI installed only `.[geo]` plus the dev requirements. Fixed by `9bef098`. |
 | 38511591182 (Docs, `main`) | P1 merge | failure | The `build` job passes; the `deploy` job fails because GitHub Pages is not enabled. A settings change is named in the recommendation. |
 | 38493207193 (Docs, `main`) | P0 merge | failure | Same cause. |
 | this pull request's run | report commit | pending | CI runs on pull requests and `main` only, so the branch commits before the pull request have no CI run. |
@@ -73,6 +74,7 @@ Settings changes, each with its exact command. Each one runs only after its own 
 | The account table was first emitted with a signal filter that over-excluded | The account-generation convention was not yet pinned down | `289d784` emits `protoaccounts` for every attribute, groups by the managed state of the producing selects, and preserves a curated `accounts` table; matches the reference exactly on nine core variants |
 | The overlay variants do not match | They are a modelling convention for one instance family, not a format feature, and their `output/` recipes are reduced exports that do not correspond to the `tracks_overlay_*` matrices | Recorded as out of scope in `notes/backlog.md` and the Phase 2 section |
 | The `Docs` deploy job fails on `main` | GitHub Pages is not enabled | Named as a settings change in the recommendation |
+| CI failed on the branch head | `ws4/opt/mip.py` imported `scipy` at module load, and CI installed only `.[geo]` plus the dev requirements | `9bef098` makes the import lazy with a clear error, declares `scipy` in the `opt` extra and the dev requirements, and skips the MIP tests when it is absent |
 | One commit does not start with a task ID | A tooling sync | Noted here; no task to attribute it to |
 
 ## 6. Next phase
