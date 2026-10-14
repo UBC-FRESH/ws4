@@ -3,7 +3,7 @@
 Phase: P1 Contracts and prototype
 Parent issue: #10
 Pull request: #14, `feature/p1-contracts-prototype` into `main`
-Evidence head: `4c0e72a`, the head that the gates and the CI runs below cover
+Evidence head: `eb98268`, the head that the gates and the CI runs below cover
 Report commit: the commit that adds this report. Its CI run is posted on pull request #14.
 Date: 2026-10-14
 Status: queued for approval. Not merged.
@@ -51,14 +51,16 @@ Settings changes, each with its exact command. Each one runs only after its own 
 | `7b32404` P1.1 | `python scripts/dashboard.py` | `OVERALL: GREEN` |
 | `9b55cb5` P1.2 | `python scripts/dashboard.py` | `OVERALL: GREEN` |
 | `4c0e72a` P1.3 | `python scripts/dashboard.py` | `OVERALL: GREEN` |
+| `eb98268` P1 CI fix | `python scripts/dashboard.py` | `OVERALL: GREEN` |
 
-The validator reports `0 error(s), 0 warning(s)` on `4c0e72a`.
+The validator reports `0 error(s), 0 warning(s)` on `eb98268`.
 
 ## 4. CI evidence
 
 | Run ID | Head commit | Conclusion | Notes |
 | --- | --- | --- | --- |
-| see pull request #14 | `4c0e72a` | see the pull request | First run for this branch. |
+| 38510869868 | `ddc83d6` | failure | `Pre-commit parity` failed: the job installed only the dev requirements, so `mypy` and `pytest` could not import `pydantic` and `pandas`. Fixed by `eb98268`. |
+| see pull request #14 | `eb98268` | see the pull request | The CI-fix run. |
 
 CI runs on pull requests and on pushes to `main` only, so the branch commits before the pull request
 have no CI run. The report commit's own run is posted on pull request #14.
@@ -69,6 +71,7 @@ have no CI run. The report commit's own run is posted on pull request #14.
 | --- | --- | --- |
 | The P1.2 prototype uses a minimal XML recipe format | The prototype needed to exercise the pipeline before the format was fixed | The format was fixed in P1.3 (ADR 0011); the minimal format is superseded in P2, and the matrix contract does not change |
 | The branch commits before the pull request have no CI run | CI runs on pull requests and `main` only | The pull request runs the full suite on the report commit |
+| The first CI run on the branch failed (`Pre-commit parity`) | The CI jobs installed only the dev requirements, so `mypy` and `pytest` could not import the package's runtime dependencies | `eb98268` adds `python -m pip install -e .` to the CI and docs jobs and adds `[tool.setuptools.packages.find]` |
 
 ## 6. Next phase
 
