@@ -14,11 +14,11 @@ Status values: `open`, `partial`, `blocked`, `done`.
   cannot parse falls back to the term matcher. Remaining: the wider function library (`curveId`,
   `lookupTable`, `attribute`, string and math functions). Evidence: the CT eligibility
   `not startswith(au,'t')` now evaluates correctly (MKRf PoC CT 586 vs reference 590).
-- **Expression-sourced attribute curves.** `partial`. An `<attribute>` may source its curve from an
-  `<expression>` (for example `curveId('Yield_'+au)`). The parser records the expression; the builder
-  skips it, so those features/products are missing. The `<curve idref>` form and the
-  `treatment eq 'X'` product context now match the k3z reference exactly (features and products). Open:
-  the `<expression>`-sourced curves (the MKRf model).
+- **Expression-sourced attribute curves.** `done`. An `<attribute>` with an `<expression>` (for example
+  `curveId('Yield_'+au)`) is evaluated per stratum to a curve name and resolved against the recipe's
+  curves. The evaluator now handles `curveId`, `attribute`, `lastindexof`, string concatenation, and
+  arithmetic. The `<curve idref>` form and the `treatment eq 'X'` product context already match the k3z
+  reference exactly.
 - **`%f` / `%m` / `%au` label tokens and `factor` expressions.** `open`. Attribute labels and factors
   use substitution tokens and expressions. The builder uses the raw label.
 - **Account and feature/product de-duplication.** `partial`. Features and products now match the k3z

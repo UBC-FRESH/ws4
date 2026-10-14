@@ -22,6 +22,7 @@ _TOKEN_RE = re.compile(
     r"(?P<number>\d+(?:\.\d+)?)"
     r"|(?P<string>'[^']*')"
     r"|(?P<word>[A-Za-z_][A-Za-z0-9_]*)"
+    r"|(?P<arith>[+\-*/])"
     r"|(?P<lparen>\()"
     r"|(?P<rparen>\))"
     r"|(?P<comma>,)"
@@ -30,7 +31,18 @@ _TOKEN_RE = re.compile(
 )
 
 _COMPARISONS = {"eq", "ne", "lt", "le", "gt", "ge", "in"}
-_FUNCTIONS = {"startswith", "endswith", "substring", "int", "number", "length", "if"}
+_FUNCTIONS = {
+    "startswith",
+    "endswith",
+    "substring",
+    "int",
+    "number",
+    "length",
+    "if",
+    "lastindexof",
+    "curveid",
+    "attribute",
+}
 
 
 class ExpressionError(ValueError):
@@ -68,7 +80,7 @@ def tokenize(expression: str) -> list[_Token]:
         if match is None or match.end() == position:
             raise ExpressionError(f"unexpected character at {position}: {expression[position:]!r}")
         position = match.end()
-        for kind in ("number", "string", "word", "lparen", "rparen", "comma"):
+        for kind in ("number", "string", "word", "arith", "lparen", "rparen", "comma"):
             value = match.group(kind)
             if value is not None:
                 tokens.append(_Token(kind, value))
@@ -127,12 +139,30 @@ class _Parser:
         return self._parse_comparison()
 
     def _parse_comparison(self) -> Any:
-        left = self._parse_primary()
+        left = self._parse_additive()
         token = self._peek()
         if token is not None and token.kind == "word" and token.value.lower() in _COMPARISONS:
             self._index += 1
-            return ("cmp", token.value.lower(), left, self._parse_primary())
+            return ("cmp", token.value.lower(), left, self._parse_additive())
         return left
+
+    def _parse_additive(self) -> Any:
+        node = self._parse_multiplicative()
+        token = self._peek()
+        while token is not None and token.kind == "arith" and token.value in ("+", "-"):
+            self._index += 1
+            node = ("arith", token.value, node, self._parse_multiplicative())
+            token = self._peek()
+        return node
+
+    def _parse_multiplicative(self) -> Any:
+        node = self._parse_primary()
+        token = self._peek()
+        while token is not None and token.kind == "arith" and token.value in ("*", "/"):
+            self._index += 1
+            node = ("arith", token.value, node, self._parse_primary())
+            token = self._peek()
+        return node
 
     def _parse_primary(self) -> Any:
         token = self._next()
@@ -209,6 +239,11 @@ def _call(name: str, args: list[Any], row: Mapping[str, object], constants: dict
         return _as_number(values[0])
     if name == "if":
         return values[1] if values[0] else values[2]
+    if name == "lastindexof":
+        return float(str(values[0]).rfind(str(values[1])))
+    if name in ("curveid", "attribute"):
+        # A curve reference or an attribute reference; the value is its name.
+        return str(values[0])
     raise ExpressionError(f"unknown function: {name}")
 
 
@@ -230,9 +265,34 @@ def _evaluate(node: Any, row: Mapping[str, object], constants: dict[str, str]) -
         return _compare(
             node[1], _evaluate(node[2], row, constants), _evaluate(node[3], row, constants)
         )
+    if kind == "arith":
+        return _arith(
+            node[1], _evaluate(node[2], row, constants), _evaluate(node[3], row, constants)
+        )
     if kind == "call":
         return _call(node[1], node[2], row, constants)
     raise ExpressionError(f"unknown node: {kind}")
+
+
+def _arith(op: str, left: Any, right: Any) -> Any:
+    """Evaluate an arithmetic or string-concatenation operator.
+
+    ``+`` concatenates when either operand is a string. ``*`` and ``/`` scale a numeric
+    operand; when the left operand is a curve reference (a name), the name is kept,
+    because only the curve identity matters here.
+    """
+    if op == "+":
+        if isinstance(left, str) or isinstance(right, str):
+            return _canonical(left) + _canonical(right)
+        return _as_number(left) + _as_number(right)
+    if op == "-":
+        return _as_number(left) - _as_number(right)
+    try:
+        if op == "*":
+            return _as_number(left) * _as_number(right)
+        return _as_number(left) / _as_number(right)
+    except ExpressionError:
+        return left
 
 
 def _compare(op: str, left: Any, right: Any) -> bool:
@@ -266,6 +326,31 @@ def _equal(left: Any, right: Any) -> bool:
     if isinstance(left, float) and isinstance(right, float):
         return left == right
     return _canonical(left) == _canonical(right)
+
+
+def evaluate_value(expression: str, row: Mapping[str, object], constants: dict[str, str]) -> Any:
+    """Evaluate an expression and return its raw value.
+
+    Parameters
+    ----------
+    expression : str
+        The expression text.
+    row : mapping
+        The row's field values.
+    constants : dict of str to str
+        The recipe's scalar constants.
+
+    Returns
+    -------
+    Any
+        The expression's value (a string, number, or boolean).
+
+    Raises
+    ------
+    ExpressionError
+        When the expression cannot be parsed or evaluated.
+    """
+    return _evaluate(_Parser(tokenize(expression)).parse(), row, constants)
 
 
 def evaluate(expression: str, row: Mapping[str, object], constants: dict[str, str]) -> bool:

@@ -117,6 +117,40 @@ _RETENTION_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
 """
 
 
+_EXPRESSION_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
+<ForestModel horizon="100" year="0" match="multi">
+  <curve id="unity"><point x="0" y="1.0"/></curve>
+  <curve id="Yield_2001"><point x="0" y="0"/><point x="100" y="500"/></curve>
+  <define field="au" column="AU"/>
+  <input block="BLOCK" area="AREA_HA" age="F_AGE"/>
+  <output messages="messages.csv"/>
+  <select statement="au eq 2001">
+    <features>
+      <attribute label="feature.Yield">
+        <expression statement="curveId('Yield_'+au)"/>
+      </attribute>
+    </features>
+    <track><treatment label="CC" minage="0" maxage="100"/></track>
+  </select>
+</ForestModel>
+"""
+
+
+def test_expression_sourced_curves_resolve(tmp_path: Path) -> None:
+    """An attribute whose curve comes from an expression resolves to a named curve."""
+    (tmp_path / "recipe.xml").write_text(_EXPRESSION_RECIPE, encoding="utf-8")
+    pd.DataFrame({"BLOCK": [1], "AREA_HA": [5.0], "F_AGE": [50], "AU": [2001]}).to_csv(
+        tmp_path / "fragments.csv", index=False
+    )
+    dataset = build_canonical_dataset(
+        tmp_path / "recipe.xml", tmp_path / "fragments.csv", tmp_path / "c"
+    )
+    features = pd.read_parquet(dataset / "features.parquet")
+    curves = pd.read_parquet(dataset / "curves.parquet")
+    resolved = int(features["curve_id"].iloc[0])
+    assert curves[curves["curve_id"] == resolved]["y"].max() == 500.0
+
+
 _CONTEXT_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
 <ForestModel horizon="100" year="0" match="multi">
   <curve id="unity"><point x="0" y="1.0"/></curve>

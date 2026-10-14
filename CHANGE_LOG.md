@@ -135,6 +135,10 @@ issue comments.
   candidate schedule. Added `tests/test_mip.py`.
 - P2.6: wired the MIP bound into the optimizer (`OptimizeConfig.mip_bound`); the run summary records the
   bound, the gap (incumbent minus bound), and the bound status. Added a test asserting a non-negative gap.
+- P2.1: resolved `<expression>`-sourced attribute curves. The select-expression evaluator gained string
+  concatenation, arithmetic, and the `curveId`, `attribute`, and `lastindexof` functions, and the builder
+  evaluates an attribute's expression per stratum to a curve name. On the MKRf PoC the expression-sourced
+  features and products now resolve. Added an expansion test.
 - Synced the UBC-FRESH dev workflow tooling to its latest release (P1-P4): updated
   `scripts/check_workflow.py` and the CI action versions and runners (`ubuntu-24.04`, `checkout@v5`,
   `setup-python@v6`, `upload-artifact@v6`, and the Pages actions), keeping the package install step.

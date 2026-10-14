@@ -14,6 +14,7 @@ from typing import TypedDict
 
 import pandas as pd
 
+from ..io.expressions import ExpressionError, evaluate_value
 from ..io.forest_model_xml import Recipe, parse_recipe
 from ..model.schema import MANIFEST_NAME, SCHEMA_VERSION, TABLES, coerce_to_schema
 from ..model.types import CanonicalDatasetManifest
@@ -61,6 +62,17 @@ def _curve_ids(recipe: Recipe) -> dict[str, int]:
 def _strata_expr(variables: Sequence[str], key: tuple[str, ...]) -> str:
     """Render a stratum as a strata expression such as ``status(C)+oper(Operable)``."""
     return "+".join(f"{name}({value})" for name, value in zip(variables, key, strict=True))
+
+
+def _expression_curve(
+    recipe: Recipe, variables: Sequence[str], key: tuple[str, ...], expression: str
+) -> str | None:
+    """Evaluate an attribute's curve expression to a curve name, or None."""
+    row = dict(zip(variables, key, strict=True))
+    try:
+        return str(evaluate_value(expression, row, recipe.constants))
+    except ExpressionError:
+        return None
 
 
 def _curve_has_signal(recipe: Recipe, curve_id: str) -> bool:
@@ -204,32 +216,42 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
         for select_index in stratum.select_indices:
             select = recipe.selects[select_index - 1]
             for attribute in select.features:
-                if attribute.curve is None:
+                curve_name = attribute.curve or (
+                    _expression_curve(recipe, variables, stratum.key, attribute.expression)
+                    if attribute.expression is not None
+                    else None
+                )
+                if curve_name is None or curve_name not in curve_ids:
                     continue
                 feature_rows.append(
                     {
                         "track_id": stratum.track_id,
                         "label": attribute.label,
-                        "curve_id": curve_ids[attribute.curve],
+                        "curve_id": curve_ids[curve_name],
                     }
                 )
                 account_signal[attribute.label] = account_signal.get(
                     attribute.label, False
-                ) or _curve_has_signal(recipe, attribute.curve)
+                ) or _curve_has_signal(recipe, curve_name)
             for attribute in select.products:
-                if attribute.curve is None:
+                curve_name = attribute.curve or (
+                    _expression_curve(recipe, variables, stratum.key, attribute.expression)
+                    if attribute.expression is not None
+                    else None
+                )
+                if curve_name is None or curve_name not in curve_ids:
                     continue
                 product_rows.append(
                     {
                         "track_id": stratum.track_id,
                         "treatment": select.treatment_context,
                         "label": attribute.label,
-                        "curve_id": curve_ids[attribute.curve],
+                        "curve_id": curve_ids[curve_name],
                     }
                 )
                 account_signal[attribute.label] = account_signal.get(
                     attribute.label, False
-                ) or _curve_has_signal(recipe, attribute.curve)
+                ) or _curve_has_signal(recipe, curve_name)
             for treatment in select.treatments:
                 treatment_rows.append(
                     {
