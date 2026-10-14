@@ -11,7 +11,7 @@ exists and the maintainer approves it.
 
 | Phase | Parent issue | Branch | Status |
 | --- | --- | --- | --- |
-| P0 Scope and design | TBD | `feature/p0-scope-design` | active |
+| P0 Scope and design | #1 | `feature/p0-scope-design` | active |
 | P1 Contracts and prototype | TBD | `feature/p1-contracts-prototype` | planned |
 | P2 Build | TBD | `feature/p2-build` | planned |
 | P3 Verify | TBD | `feature/p3-verify` | planned |
@@ -37,7 +37,7 @@ exists and the maintainer approves it.
 
 ## Phase 0: Scope and design
 
-Parent issue: TBD
+Parent issue: #1
 Branch: `feature/p0-scope-design`
 Status: active
 
@@ -45,19 +45,18 @@ Goal: give WS4 a workflow contract, a recorded scope, and a reviewed architectur
 already carries a code skeleton; this phase turns it into a governed project with a plan of record and
 decisions that later phases can build on.
 
-- [x] P0.1 Adopt the workflow contract and governance files
+- [x] P0.1 Adopt the workflow contract and governance files (#2)
   - [x] `AGENTS.md`, `ROADMAP.md`, `CHANGE_LOG.md`, and `notes/` index
-  - [ ] Install the seed tooling: `scripts/`, `docs/`, `tests/`, and `.github/` (deferred to P0.5)
-- [x] P0.2 Write the problem statement and scope
+- [x] P0.2 Write the problem statement and scope (#3)
   - [x] `notes/design/ws4-scope.md`
-- [x] P0.3 Record the architecture decisions as ADRs
+- [x] P0.3 Record the architecture decisions as ADRs (#4)
   - [x] `notes/adr/0001` to `notes/adr/0006`
-- [x] P0.4 Write the architecture design
+- [x] P0.4 Write the architecture design (#5)
   - [x] `notes/design/ws4-architecture.md`
-- [ ] P0.5 Install the workflow tooling
-  - [ ] Copy the validator, dashboard, docs skeleton, tests, and CI from the seed
-  - [ ] Make `python scripts/dashboard.py` green on this repository
-- [x] P0.6 Neutralize third-party naming in the skeleton
+- [x] P0.5 Install the workflow tooling (#6)
+  - [x] Copy the validator, dashboard, docs skeleton, tests, and CI from the seed
+  - [x] Make `python scripts/dashboard.py` green on this repository
+- [x] P0.6 Neutralize third-party naming in the skeleton (#7)
   - [x] Rename the XML importer and reword the CLI help, README, and docstrings
 
 Acceptance criteria:

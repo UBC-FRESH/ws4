@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the repository."
+title: "WS4: Wood Supply Simulation System (Spatially explicit)"
+abstract: "A CLI-first, HPC-ready forest estate model that makes spatial structure part of the model: fragments are the decision units, blocks aggregate them at runtime, and adjacency, patch structure, and road access are enforced in simulation and optimization."
+authors:
+  - name: "UBC FRESH Lab"
+repository-code: "https://github.com/UBC-FRESH/ws4"
+url: "https://github.com/UBC-FRESH/ws4"
+license: "Apache-2.0"

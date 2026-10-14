@@ -3,15 +3,40 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .eggs/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.hypothesis/
+
+# Environments
+.venv/
+venv/
+
+# Builds
+_build/
+docs/_build/
 build/
 dist/
 
-# Virtual environments
-.venv/
-venv/
+# Local work and private or generated material
+tmp/
+local/
+data/private/
+outputs/
+runtime/
 
 # Notebook checkpoints
 .ipynb_checkpoints/
 
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
 # Original skeleton archive (extracted into the repo already)
 ws4_skeleton.zip
+
+# Coverage
+.coverage
+coverage.xml
