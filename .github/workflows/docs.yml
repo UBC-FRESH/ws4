@@ -45,10 +45,6 @@ jobs:
 
   deploy:
     needs: build
-    # GitHub Pages is not available for this repository under the current plan, so the
-    # deploy is off by default. Set the repository variable PAGES_ENABLED=true once Pages
-    # is available. The build job still runs and validates the docs on every push.
-    if: ${{ vars.PAGES_ENABLED == 'true' }}
     runs-on: ubuntu-24.04
     environment:
       name: github-pages

@@ -173,7 +173,7 @@ issue comments.
 - P2 close-out carried out: pull request #25 squash-merged as `3e87d46`, branch `feature/p2-build`
   deleted, and parent issue #15 closed. P2 is `complete` in `ROADMAP.md`. Launched P3 (Verify): parent
   issue #26, branch `feature/p3-verify`, task P3.1 (#27).
-- P3: enabling GitHub Pages failed because the plan does not support Pages for this repository
-  (`gh api -X POST repos/UBC-FRESH/ws4/pages` returned HTTP 422). The `Docs` deploy job is now guarded by
-  the repository variable `PAGES_ENABLED` and is off by default, so pushes to `main` no longer fail; the
-  `build` job still validates the docs. Set `PAGES_ENABLED=true` once Pages is available.
+- P3: made the repository public and enabled GitHub Pages (`gh api -X PATCH repos/UBC-FRESH/ws4
+  -f visibility=public`, then `gh api -X POST repos/UBC-FRESH/ws4/pages -f build_type=workflow`), so the
+  `Docs` deploy job can publish to `https://ubc-fresh.github.io/ws4/`. Pages was unavailable while the
+  repository was private under the Free plan.
