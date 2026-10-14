@@ -50,8 +50,9 @@ Status values: `open`, `partial`, `blocked`, `done`.
   fragment's track offers it (the Model II rule).
 - **Succession and track switching during a run.** `done`. A treatment moves the fragment to its
   `new_track` and resets its offset.
-- **Products and route flows.** `open`. The simulator records feature accounts; product yields at a
-  treatment and route flows are not yet computed.
+- **Product yields.** `done`. Applying a treatment records the product yield (area times the product
+  curve at the pre-treatment offset) to `product_values.csv`.
+- **Route flows.** `open`. Products are not yet routed to destinations or costed.
 - **Patch metrics over blocks.** `open`.
 - **Deterministic replay test.** `done` (two runs are identical; an unoffered treatment is a no-op). A
   replay validated against a reference run remains open.

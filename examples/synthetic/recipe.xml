@@ -46,4 +46,11 @@
     </features>
     <track/>
   </select>
+  <select statement="IFM eq 'unmanaged' and treatment eq 'CC'">
+    <products>
+      <attribute label="product.Volume">
+        <curve idref="natural_volume"/>
+      </attribute>
+    </products>
+  </select>
 </ForestModel>

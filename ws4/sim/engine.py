@@ -20,6 +20,11 @@ def _as_int(value: object) -> int:
     return int(float(str(value)))
 
 
+def _as_float(value: object) -> float:
+    """Convert a pandas scalar to a float."""
+    return float(str(value))
+
+
 class Simulator:
     """Annual-step simulator over fragments and tracks.
 
@@ -37,8 +42,10 @@ class Simulator:
         self.treatments = pd.read_parquet(self.dataset_dir / "treatments.parquet")
         self.curves = pd.read_parquet(self.dataset_dir / "curves.parquet")
         self.features = pd.read_parquet(self.dataset_dir / "features.parquet")
+        self.products = pd.read_parquet(self.dataset_dir / "products.parquet")
         self.accounts = pd.read_parquet(self.dataset_dir / "accounts.parquet")
         self.fragments["offset"] = self.fragments["age"].astype(int)
+        self._product_values: list[dict[str, object]] = []
 
     @classmethod
     def from_dataset(cls, dataset_dir: Path) -> Simulator:
@@ -57,7 +64,11 @@ class Simulator:
         return match.iloc[0] if not match.empty else None
 
     def apply_treatments(self, schedule: pd.DataFrame, year: int) -> int:
-        """Apply the treatments scheduled for a year.
+        """Apply the treatments scheduled for a year and record their products.
+
+        A product is produced when its treatment is applied to a fragment on the
+        product's track; the yield is the fragment's area times the product curve at
+        the pre-treatment offset.
 
         Parameters
         ----------
@@ -76,9 +87,20 @@ class Simulator:
             mask = self.fragments["block_id"] == row["block_id"]
             for index in self.fragments.index[mask]:
                 track_id = _as_int(self.fragments.at[index, "track_id"])
-                treatment = self._treatment(track_id, str(row["treatment"]))
+                label = str(row["treatment"])
+                treatment = self._treatment(track_id, label)
                 if treatment is None:
                     continue
+                offset = _as_int(self.fragments.at[index, "offset"])
+                area = _as_float(self.fragments.at[index, "area_ha"])
+                produced = self.products[
+                    (self.products["track_id"] == track_id) & (self.products["treatment"] == label)
+                ]
+                for _, product in produced.iterrows():
+                    value = area * curve_value(self.curves, int(product["curve_id"]), offset)
+                    self._product_values.append(
+                        {"year": year, "account": str(product["label"]), "value": value}
+                    )
                 self.fragments.at[index, "track_id"] = _as_int(treatment["new_track"])
                 self.fragments.at[index, "offset"] = _as_int(treatment["offset"])
                 treated += 1
@@ -126,6 +148,7 @@ class Simulator:
             schedule = schedule.assign(period=0)
 
         records: list[dict[str, object]] = []
+        self._product_values = []
         for year in range(years):
             self.apply_treatments(schedule, year)
             records.extend(self.account_values(year))
@@ -133,4 +156,7 @@ class Simulator:
 
         values = pd.DataFrame(records, columns=["year", "account", "value"])
         values.to_csv(out_dir / "account_values.csv", index=False)
+        pd.DataFrame(self._product_values, columns=["year", "account", "value"]).to_csv(
+            out_dir / "product_values.csv", index=False
+        )
         return values

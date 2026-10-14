@@ -41,6 +41,18 @@ def test_replay_is_deterministic(tmp_path: Path) -> None:
     pd.testing.assert_frame_equal(first, second)
 
 
+def test_a_treatment_records_its_product_yield(tmp_path: Path) -> None:
+    """Applying CC to block 1 produces the product at the pre-treatment offset."""
+    dataset = _dataset(tmp_path)
+    schedule = _schedule(tmp_path, "cc.csv", [(1, "CC", 0)])
+    out = tmp_path / "prod"
+    Simulator.from_dataset(dataset).run(schedule, years=1, out_dir=out)
+    products = pd.read_csv(out / "product_values.csv")
+    # block 1's fragment is 3.0 ha at offset 40; natural_volume(40) = 120 -> 360.
+    assert list(products["account"]) == ["product.Volume"]
+    assert products["value"].iloc[0] == 360.0
+
+
 def test_a_treatment_the_track_does_not_offer_is_skipped(tmp_path: Path) -> None:
     """A scheduled treatment absent from the fragment's track does not apply."""
     dataset = _dataset(tmp_path)

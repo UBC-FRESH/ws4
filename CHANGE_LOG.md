@@ -96,4 +96,6 @@ issue comments.
   excludes zero-signal families, recorded in the backlog).
 - P2.2: implemented the annual simulator over the compiled contract. A scheduled treatment applies only
   where the fragment's track offers it (the Model II operability rule) and moves the fragment to its
-  `new_track`. Added `tests/test_simulator.py` (deterministic replay; an unoffered treatment is a no-op).
+  `new_track`. Applying a treatment records its product yield (area times the product curve at the
+  pre-treatment offset) to `product_values.csv`. Added `tests/test_simulator.py` (deterministic replay;
+  an unoffered treatment is a no-op; a treatment records its product yield).
