@@ -93,15 +93,10 @@ class TargetsConfig(BaseModel):
 
 
 class CanonicalDatasetManifest(BaseModel):
-    """Manifest for a compiled dataset: version, sources, and table paths."""
+    """Manifest for a compiled dataset: schema version, tables, and sources."""
 
-    version: str = "0.1"
-    fragments_path: str
-    blocks_map_path: str | None = None
-    tracks_path: str
-    curves_path: str
-    treatments_path: str
-    products_path: str
-    destinations_path: str
-    routes_path: str | None = None
+    schema_version: str = "0.1"
+    tables: dict[str, str] = Field(default_factory=dict)
+    sources: list[dict[str, str]] = Field(default_factory=list)
+    options: dict[str, object] = Field(default_factory=dict)
     metadata: dict[str, object] = Field(default_factory=dict)

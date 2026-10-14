@@ -11,8 +11,8 @@ exists and the maintainer approves it.
 
 | Phase | Parent issue | Branch | Status |
 | --- | --- | --- | --- |
-| P0 Scope and design | #1 | `feature/p0-scope-design` | pr-open |
-| P1 Contracts and prototype | TBD | `feature/p1-contracts-prototype` | planned |
+| P0 Scope and design | #1 | `feature/p0-scope-design` | complete |
+| P1 Contracts and prototype | #10 | `feature/p1-contracts-prototype` | pr-open |
 | P2 Build | TBD | `feature/p2-build` | planned |
 | P3 Verify | TBD | `feature/p3-verify` | planned |
 | P4 Release and deploy | TBD | `feature/p4-release` | planned |
@@ -39,7 +39,7 @@ exists and the maintainer approves it.
 
 Parent issue: #1
 Branch: `feature/p0-scope-design`
-Status: pr-open
+Status: complete
 
 Goal: give WS4 a workflow contract, a recorded scope, and a reviewed architecture. The repository
 already carries a code skeleton; this phase turns it into a governed project with a plan of record and
@@ -77,15 +77,22 @@ Phase 0 verification:
 
 ## Phase 1: Contracts and prototype
 
-Parent issue: TBD
+Parent issue: #10
 Branch: `feature/p1-contracts-prototype`
-Status: planned
+Status: pr-open
 
 Goal: fix the data contracts and build the smallest end-to-end prototype that exercises them on
 synthetic data.
 
-- [ ] P1.1 Define the compiled-dataset schema and manifest in `docs/`
-- [ ] P1.2 Build a prototype that compiles, simulates, and reports on a tiny synthetic landscape
+- [x] P1.1 Define the compiled-dataset schema and manifest in `docs/` (#11)
+  - [x] `docs/reference/compiled-dataset.rst`, `ws4/model/schema.py`, and `ws4 validate`
+  - [x] `tests/test_schema.py` with a failing case per invariant
+- [x] P1.2 Build a prototype that compiles, simulates, and reports on a tiny synthetic landscape (#12)
+  - [x] Synthetic fixture in `examples/synthetic/`
+  - [x] Minimal `ws4 build` and `ws4 simulate`; `tests/test_prototype.py`
+- [x] P1.3 Adopt the ForestModelXML format and record the construction paths (#13)
+  - [x] `notes/design/ws4-matrix-builder-and-interop.md` and ADRs 0011 and 0012
+  - [x] Update the scope and the architecture note
 
 ## Phase 2: Build
 
@@ -95,7 +102,7 @@ Status: planned
 
 Goal: implement the agreed scope, one task at a time, on the phase branch.
 
-- [ ] P2.1 Implement the ingestion and compilation pipeline
+- [ ] P2.1 Implement the ForestModelXML matrix builder and legacy dataset ingestion
 - [ ] P2.2 Implement the simulation engine
 - [ ] P2.3 Implement the optimization engine: objective, operators, and one metaheuristic
 - [ ] P2.4 Implement the solver core: the shared operator/metaheuristic/tuning/telemetry package
@@ -103,6 +110,7 @@ Goal: implement the agreed scope, one task at a time, on the phase branch.
 - [ ] P2.6 Implement the math-heuristic layer (MIP bounds, warm starts, destroy-repair)
 - [ ] P2.7 Implement the spatial and road subsystems
 - [ ] P2.8 Implement accounts and reporting
+- [ ] P2.9 Implement the programmatic model API (build or patch the model in memory)
 
 ## Phase 3: Verify
 
@@ -137,11 +145,9 @@ Goal: keep the project current: triage incoming ideas, review on a cadence, and 
 
 ## Detailed Next Steps Notes
 
-1. Phase 0 is `pr-open` on `feature/p0-scope-design`. The scope, ADRs, architecture note, and workflow
-   tooling are complete. Pull request #8 and the close-out report `notes/reports/p0-closeout.md` await
-   the maintainer's approval.
-2. On approval: squash-merge #8, delete the branch, close parent issue #1, and launch P1 (contracts and
-   prototype) with branch `feature/p1-contracts-prototype`.
+1. Phase 0 is complete: pull request #8 squash-merged as `386c643`, the branch deleted, and parent
+   issue #1 closed. The close-out report is `notes/reports/p0-closeout.md`.
+2. Phase 1 is active on `feature/p1-contracts-prototype`, parent issue #10. Tasks P1.1 and P1.2.
 3. P1 fixes the compiled-dataset schema and builds the smallest end-to-end prototype on synthetic data.
 4. P2 builds the model and the optimization stack. The stack generalizes the lab's FHOPS toolkit into a
    shared solver core; the execution substrate targets the 72-core host and the GPU. See

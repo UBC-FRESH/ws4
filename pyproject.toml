@@ -26,6 +26,9 @@ opt = ["numba>=0.59", "networkx>=3.2", "ray>=2.9"]
 [project.scripts]
 ws4 = "ws4.cli:app"
 
+[tool.setuptools.packages.find]
+include = ["ws4*"]
+
 # Tool configuration for the green dashboard (scripts/dashboard.py). Each gate configured
 # here is also a CI check and a pre-commit hook.
 

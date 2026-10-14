@@ -6,17 +6,20 @@ from pathlib import Path
 
 import pandas as pd
 
+from .curve import curve_value
+
 
 class Simulator:
-    """Annual-step simulator over fragments; aggregates to blocks at runtime.
+    """Annual-step simulator over fragments.
 
     Order per year:
-      1) Growth (curves → feature/product states per fragment by offset age)
-      2) Succession (breakup/renew rules; switch tracks; reset offset when needed)
-      3) Treatments (apply scheduled ops; net operability at block = ∩ over fragments)
-      4) Products & routes (compute yields and route to destinations)
-      5) Patch metrics (computed over *blocks* using aggregated states)
-      6) Accounts (summary/ratio/patch/route)
+
+    1. Apply the scheduled treatments for the year (reset the offset, switch track).
+    2. Record the account values for the current state.
+    3. Advance every fragment's offset age by one year.
+
+    Product and feature attributes are aggregated to the block level on demand; the
+    prototype records feature accounts only.
     """
 
     def __init__(self, dataset_dir: Path) -> None:
@@ -25,11 +28,8 @@ class Simulator:
         self.fragments = pd.read_parquet(self.dataset_dir / "fragments.parquet")
         self.tracks = pd.read_parquet(self.dataset_dir / "tracks.parquet")
         self.treatments = pd.read_parquet(self.dataset_dir / "treatments.parquet")
-        # Curves/products/destinations available if needed
         self.curves = pd.read_parquet(self.dataset_dir / "curves.parquet")
-        self.products = pd.read_parquet(self.dataset_dir / "products.parquet")
-        self.destinations = pd.read_parquet(self.dataset_dir / "destinations.parquet")
-        # Offset age starts as current age
+        self.features = pd.read_parquet(self.dataset_dir / "features.parquet")
         self.fragments["offset"] = self.fragments["age"].astype(int)
 
     @classmethod
@@ -37,44 +37,47 @@ class Simulator:
         """Build a simulator that reads the given compiled dataset."""
         return cls(dataset_dir)
 
+    def _apply_treatments(self, schedule: pd.DataFrame, year: int) -> None:
+        """Apply the treatments scheduled for a year."""
+        rows = schedule[schedule["period"] == year]
+        for _, row in rows.iterrows():
+            mask = self.fragments["block_id"] == row["block_id"]
+            if not mask.any():
+                continue
+            match = self.treatments[self.treatments["treatment"] == row["treatment"]]
+            if match.empty:
+                continue
+            self.fragments.loc[mask, "offset"] = int(match["offset"].iloc[0])
+            self.fragments.loc[mask, "track_id"] = int(match["new_track"].iloc[0])
+
+    def _account_values(self, year: int) -> list[dict[str, object]]:
+        """Compute the feature account values for the current state."""
+        records: list[dict[str, object]] = []
+        for _, feature in self.features.iterrows():
+            on_track = self.fragments["track_id"] == feature["track_id"]
+            total = 0.0
+            for _, fragment in self.fragments[on_track].iterrows():
+                value = curve_value(
+                    self.curves, int(feature["curve_id"]), float(fragment["offset"])
+                )
+                total += float(fragment["area_ha"]) * value
+            records.append({"year": year, "account": feature["label"], "value": total})
+        return records
+
     def run(self, schedule_csv: Path, years: int, out_dir: Path) -> None:
-        """Replay a schedule for the given horizon and write the run directory."""
+        """Replay a schedule for the given horizon and write the account values."""
         out_dir = Path(out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
-        schedule = pd.read_csv(schedule_csv)  # block_id,treatment,period
-        # Pre-index schedule by period for fast lookup
-        sch_index = {int(p): df.drop(columns=["period"]) for p, df in schedule.groupby("period")}
+        schedule = pd.read_csv(schedule_csv)
+        if "period" not in schedule.columns:
+            schedule = schedule.assign(period=0)
 
-        # Simple annual loop (placeholder logic)
-        for t in range(years):
-            # Apply scheduled block-level treatments at year t by mapping to fragments
-            if t in sch_index:
-                to_apply = sch_index[t]
-                # For each block, compute net operability = intersection across fragments
-                by_block = to_apply.groupby("block_id")
-                for block_id, _rows in by_block:
-                    # Find fragments in this block
-                    mask = self.fragments["block_id"] == block_id
-                    frag_ids = self.fragments.index[mask]
-                    if len(frag_ids) == 0:
-                        continue
-                    # Simplified operability gate: if any fragment is inoperable,
-                    # skip the block. The real gate evaluates fragment-level
-                    # expressions against attributes and offsets.
-
-                    can_apply = True
-                    if not can_apply:
-                        continue
-                    # Apply: reset offset, maybe switch track (new_track_id if defined)
-                    self.fragments.loc[mask, "offset"] = 0
-
-            # Growth (placeholder): +1 offset per year
+        records: list[dict[str, object]] = []
+        for year in range(years):
+            self._apply_treatments(schedule, year)
+            records.extend(self._account_values(year))
             self.fragments["offset"] = self.fragments["offset"].astype(int) + 1
 
-        # Write a tiny report stub
-        blocks = (
-            self.fragments.groupby("block_id")
-            .agg(area_ha=("area_ha", "sum"), mean_offset=("offset", "mean"))
-            .reset_index()
+        pd.DataFrame(records, columns=["year", "account", "value"]).to_csv(
+            out_dir / "account_values.csv", index=False
         )
-        blocks.to_parquet(out_dir / "blocks_summary.parquet", index=False)

@@ -137,9 +137,18 @@ The algorithm:
 4. Resolve feature and product curves per track and treatment.
 5. Write the columnar tables and the manifest, and record any diagnostics as messages.
 
+The recipe format is the established **ForestModelXML**, not a new format, and the compiler is a matrix
+builder (see `notes/design/ws4-matrix-builder-and-interop.md` and `notes/adr/0011`). WS4 also ingests
+legacy datasets directly: an existing matrix directory, a blocks shapefile, a topology table, and a road
+model can be read without a recompile.
+
 Compilation is fragment-level by decision (see `notes/adr/0001`). The block shapefile and any launch
 control file are **not** compile inputs; blocks are a runtime view, and the launch file only starts a
 run.
+
+The compiler is one of two construction paths. WS4 also exposes a programmatic model API that builds or
+patches the model in memory for unusual cases and for runtime updates after ingestion, mirroring the WS3
+precedent (see `notes/adr/0012`).
 
 ## 7. Simulation engine
 

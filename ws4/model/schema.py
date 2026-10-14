@@ -1,0 +1,358 @@
+"""Compiled-dataset schema and validation for WS4.
+
+The compiled matrix dataset is the runtime contract (see ``notes/adr/0002`` and
+``notes/adr/0006``). This module defines the tables, the manifest, and a validator
+that checks a dataset against both.
+"""
+
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Literal
+
+import pandas as pd
+from pandas.api import types as ptypes
+
+from .types import CanonicalDatasetManifest
+
+SCHEMA_VERSION = "0.1"
+MANIFEST_NAME = "manifest.json"
+
+Kind = Literal["integer", "number", "string", "boolean"]
+
+
+@dataclass(frozen=True)
+class Column:
+    """One column of a matrix table.
+
+    Attributes
+    ----------
+    name : str
+        Column name.
+    kind : {"integer", "number", "string", "boolean"}
+        Expected value kind.
+    """
+
+    name: str
+    kind: Kind
+
+
+@dataclass(frozen=True)
+class Table:
+    """One table of the compiled matrix dataset.
+
+    Attributes
+    ----------
+    name : str
+        Logical table name, as used in the manifest.
+    file : str
+        File name inside the dataset directory.
+    columns : tuple of Column
+        The required columns.
+    """
+
+    name: str
+    file: str
+    columns: tuple[Column, ...]
+
+    @property
+    def required_columns(self) -> tuple[str, ...]:
+        """Return the required column names."""
+        return tuple(column.name for column in self.columns)
+
+
+TABLES: tuple[Table, ...] = (
+    Table(
+        "fragments",
+        "fragments.parquet",
+        (
+            Column("fragment_id", "integer"),
+            Column("block_id", "integer"),
+            Column("area_ha", "number"),
+            Column("age", "integer"),
+            Column("track_id", "integer"),
+        ),
+    ),
+    Table(
+        "blocks",
+        "blocks.parquet",
+        (
+            Column("block_id", "integer"),
+            Column("track_id", "integer"),
+            Column("offset", "integer"),
+            Column("area_ha", "number"),
+        ),
+    ),
+    Table(
+        "tracks",
+        "tracks.parquet",
+        (
+            Column("track_id", "integer"),
+            Column("name", "string"),
+        ),
+    ),
+    Table(
+        "strata",
+        "strata.parquet",
+        (
+            Column("track_id", "integer"),
+            Column("offset", "integer"),
+            Column("next_age", "integer"),
+            Column("cycle", "integer"),
+        ),
+    ),
+    Table(
+        "treatments",
+        "treatments.parquet",
+        (
+            Column("track_id", "integer"),
+            Column("begin", "integer"),
+            Column("end", "integer"),
+            Column("treatment", "string"),
+            Column("new_track", "integer"),
+            Column("offset", "integer"),
+            Column("retain", "integer"),
+        ),
+    ),
+    Table(
+        "curves",
+        "curves.parquet",
+        (
+            Column("curve_id", "integer"),
+            Column("x", "number"),
+            Column("y", "number"),
+        ),
+    ),
+    Table(
+        "features",
+        "features.parquet",
+        (
+            Column("track_id", "integer"),
+            Column("label", "string"),
+            Column("curve_id", "integer"),
+        ),
+    ),
+    Table(
+        "products",
+        "products.parquet",
+        (
+            Column("track_id", "integer"),
+            Column("treatment", "string"),
+            Column("label", "string"),
+            Column("curve_id", "integer"),
+        ),
+    ),
+    Table(
+        "accounts",
+        "accounts.parquet",
+        (
+            Column("group", "string"),
+            Column("attribute", "string"),
+            Column("account", "string"),
+        ),
+    ),
+    Table(
+        "groups",
+        "groups.parquet",
+        (
+            Column("block_id", "integer"),
+            Column("group", "string"),
+        ),
+    ),
+    Table(
+        "messages",
+        "messages.parquet",
+        (
+            Column("severity", "string"),
+            Column("message", "string"),
+        ),
+    ),
+)
+
+TABLES_BY_NAME: dict[str, Table] = {table.name: table for table in TABLES}
+
+_KIND_CHECKS = {
+    "integer": ptypes.is_integer_dtype,
+    "number": ptypes.is_numeric_dtype,
+    "string": ptypes.is_string_dtype,
+    "boolean": ptypes.is_bool_dtype,
+}
+
+
+@dataclass(frozen=True)
+class Problem:
+    """One validation finding.
+
+    Attributes
+    ----------
+    code : str
+        Stable finding code, such as ``DATASET-MISSING-COLUMN``.
+    where : str
+        The file or field the finding applies to.
+    message : str
+        A human-readable description.
+    """
+
+    code: str
+    where: str
+    message: str
+
+
+def load_manifest(dataset_dir: Path) -> CanonicalDatasetManifest:
+    """Load and parse the manifest of a dataset.
+
+    Parameters
+    ----------
+    dataset_dir : Path
+        The dataset directory.
+
+    Returns
+    -------
+    CanonicalDatasetManifest
+        The parsed manifest.
+
+    Raises
+    ------
+    FileNotFoundError
+        When the manifest is missing.
+    """
+    manifest_path = dataset_dir / MANIFEST_NAME
+    raw = json.loads(manifest_path.read_text(encoding="utf-8"))
+    return CanonicalDatasetManifest.model_validate(raw)
+
+
+def _check_table(table: Table, dataset_dir: Path) -> list[Problem]:
+    """Check one table for presence, columns, and kinds.
+
+    Parameters
+    ----------
+    table : Table
+        The table schema.
+    dataset_dir : Path
+        The dataset directory.
+
+    Returns
+    -------
+    list of Problem
+        The findings for this table.
+    """
+    problems: list[Problem] = []
+    path = dataset_dir / table.file
+    if not path.is_file():
+        problems.append(Problem("DATASET-MISSING-TABLE", table.name, f"missing file {table.file}"))
+        return problems
+    frame = pd.read_parquet(path)
+    for column in table.columns:
+        if column.name not in frame.columns:
+            problems.append(
+                Problem("DATASET-MISSING-COLUMN", table.name, f"missing column {column.name}")
+            )
+            continue
+        check = _KIND_CHECKS[column.kind]
+        if not check(frame[column.name]):
+            problems.append(
+                Problem(
+                    "DATASET-COLUMN-KIND",
+                    f"{table.name}.{column.name}",
+                    f"expected a {column.kind} column",
+                )
+            )
+    return problems
+
+
+def _check_invariants(dataset_dir: Path) -> list[Problem]:
+    """Check the cross-table and value invariants.
+
+    Parameters
+    ----------
+    dataset_dir : Path
+        The dataset directory.
+
+    Returns
+    -------
+    list of Problem
+        The invariant findings.
+    """
+    problems: list[Problem] = []
+    fragments = pd.read_parquet(dataset_dir / "fragments.parquet")
+    blocks = pd.read_parquet(dataset_dir / "blocks.parquet")
+    tracks = pd.read_parquet(dataset_dir / "tracks.parquet")
+    curves = pd.read_parquet(dataset_dir / "curves.parquet")
+
+    if (fragments["area_ha"] < 0).any():
+        problems.append(
+            Problem("DATASET-NEGATIVE-AREA", "fragments", "area_ha must be non-negative")
+        )
+    if (fragments["age"] < 0).any():
+        problems.append(Problem("DATASET-NEGATIVE-AGE", "fragments", "age must be non-negative"))
+    if (blocks["area_ha"] < 0).any():
+        problems.append(Problem("DATASET-NEGATIVE-AREA", "blocks", "area_ha must be non-negative"))
+
+    unknown_blocks = set(fragments["block_id"]) - set(blocks["block_id"])
+    if unknown_blocks:
+        sample = sorted(unknown_blocks)[:5]
+        problems.append(
+            Problem("DATASET-UNKNOWN-BLOCK", "fragments", f"block_id not in blocks: {sample}")
+        )
+    unknown_tracks = set(blocks["track_id"]) - set(tracks["track_id"])
+    if unknown_tracks:
+        sample = sorted(unknown_tracks)[:5]
+        problems.append(
+            Problem("DATASET-UNKNOWN-TRACK", "blocks", f"track_id not in tracks: {sample}")
+        )
+
+    for curve_id, group in curves.groupby("curve_id", sort=True):
+        if not group["x"].is_monotonic_increasing or group["x"].duplicated().any():
+            problems.append(
+                Problem(
+                    "DATASET-CURVE-DOMAIN",
+                    "curves",
+                    f"curve {curve_id} x values must be strictly increasing",
+                )
+            )
+    return problems
+
+
+def validate_dataset(dataset_dir: Path) -> list[Problem]:
+    """Validate a compiled dataset against its manifest and the schema.
+
+    Parameters
+    ----------
+    dataset_dir : Path
+        The dataset directory.
+
+    Returns
+    -------
+    list of Problem
+        Every finding. An empty list means the dataset is valid.
+    """
+    dataset_dir = Path(dataset_dir)
+    if not dataset_dir.is_dir():
+        return [Problem("DATASET-MISSING", str(dataset_dir), "dataset directory not found")]
+    try:
+        manifest = load_manifest(dataset_dir)
+    except FileNotFoundError:
+        return [Problem("DATASET-MISSING-MANIFEST", str(dataset_dir), f"missing {MANIFEST_NAME}")]
+    except ValueError as exc:  # pydantic validation error
+        return [Problem("DATASET-BAD-MANIFEST", MANIFEST_NAME, str(exc))]
+
+    problems: list[Problem] = []
+    if manifest.schema_version != SCHEMA_VERSION:
+        problems.append(
+            Problem(
+                "DATASET-SCHEMA-VERSION",
+                MANIFEST_NAME,
+                f"schema_version {manifest.schema_version} != {SCHEMA_VERSION}",
+            )
+        )
+    for table in TABLES:
+        if table.name not in manifest.tables:
+            problems.append(
+                Problem("DATASET-UNLISTED-TABLE", MANIFEST_NAME, f"{table.name} is not listed")
+            )
+        problems.extend(_check_table(table, dataset_dir))
+    if not problems:
+        problems.extend(_check_invariants(dataset_dir))
+    return problems
