@@ -10,7 +10,7 @@ from ws4.model.schema import validate_dataset
 
 _LEGACY: dict[str, pd.DataFrame] = {
     "blocks.csv": pd.DataFrame({"BLOCK": [1], "TRACK": [1], "OFFSET": [0], "AREA": [5.0]}),
-    "tracks.csv": pd.DataFrame({"TRACK": [1], "STRATA": ["all"]}),
+    "tracknames.csv": pd.DataFrame({"TRACK": [1], "STRATA": ["all"]}),
     "strata.csv": pd.DataFrame({"TRACK": [1], "OFFSET": [0], "NEXTAGE": [100], "CYCLE": [0]}),
     "treatments.csv": pd.DataFrame(
         {

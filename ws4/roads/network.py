@@ -6,7 +6,8 @@ The network is four tables:
 - ``segments``: ``from_vertex``, ``to_vertex``, ``length_m``, ``cost`` (an undirected
   edge between two vertices).
 - ``destinations``: ``dest_id``, ``vertex_id`` (a mill attached to a vertex).
-- ``linkages``: ``block_id``, ``vertex_id`` (a block attached to a vertex).
+- ``linkages``: ``block_id``, ``vertex_id``. Each block is assigned to **exactly one**
+  vertex, so the linkage is a one-to-one map from block to network node.
 
 Route length and cost are the shortest path over the segment graph.
 """
@@ -31,6 +32,14 @@ def _as_int(value: object) -> int:
 def _as_float(value: object) -> float:
     """Convert a pandas scalar to a float."""
     return float(str(value))
+
+
+def _get(row: object, *names: str) -> object:
+    """Return the first named attribute present on a row."""
+    for name in names:
+        if hasattr(row, name):
+            return getattr(row, name)
+    raise KeyError(f"none of {names} on the row")
 
 
 def load_route_tables(root: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -62,7 +71,7 @@ class RouteNetwork:
     edges : tuple of Edge
         ``(from_vertex, to_vertex, length_m, cost)``.
     block_vertex : dict of int to int
-        The vertex each block is linked to.
+        The single vertex each block is assigned to.
     destination_vertex : dict of int to int
         The vertex each destination is attached to.
     """
@@ -81,19 +90,19 @@ class RouteNetwork:
         """Build a network from the segments, destinations, and linkages tables."""
         edges = tuple(
             (
-                _as_int(row.from_vertex),
-                _as_int(row.to_vertex),
-                _as_float(row.length_m),
-                _as_float(getattr(row, "cost", 0.0)),
+                _as_int(_get(row, "from_vertex", "FNODE")),
+                _as_int(_get(row, "to_vertex", "TNODE")),
+                _as_float(_get(row, "length_m", "LENGTH")),
+                _as_float(_get(row, "cost", "HAUL") or 0.0),
             )
             for row in segments.itertuples(index=False)
         )
         block_vertex = {
-            _as_int(row.block_id): _as_int(row.vertex_id)
+            _as_int(_get(row, "block_id", "BLOCK")): _as_int(_get(row, "vertex_id", "NODE"))
             for row in linkages.itertuples(index=False)
         }
         destination_vertex = {
-            _as_int(row.dest_id): _as_int(row.vertex_id)
+            _as_int(_get(row, "dest_id", "NODE")): _as_int(_get(row, "vertex_id", "NODE"))
             for row in destinations.itertuples(index=False)
         }
         return cls(edges=edges, block_vertex=block_vertex, destination_vertex=destination_vertex)

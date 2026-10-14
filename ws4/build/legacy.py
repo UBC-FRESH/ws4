@@ -41,7 +41,11 @@ LEGACY_MAPPING: dict[str, dict[str, str]] = {
     "messages": {"SEVERITY": "severity", "MESSAGE": "message"},
 }
 
-LEGACY_FILES: dict[str, str] = {name: f"{name}.csv" for name in LEGACY_MAPPING}
+# The track table is usually ``tracknames.csv``; the rest share their table name.
+LEGACY_FILES: dict[str, str] = {
+    **{name: f"{name}.csv" for name in LEGACY_MAPPING},
+    "tracks": "tracknames.csv",
+}
 
 
 def _sha256(path: Path) -> str:

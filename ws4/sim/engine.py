@@ -11,6 +11,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from ..patch.metrics import load_topology, patch_metrics
@@ -48,6 +49,14 @@ class Simulator:
         self.accounts = pd.read_parquet(self.dataset_dir / "accounts.parquet")
         self.fragments["offset"] = self.fragments["age"].astype(int)
         self._product_values: list[dict[str, object]] = []
+        # Cache each curve's sorted x/y arrays for vectorized interpolation.
+        self._curves: dict[int, tuple[np.ndarray, np.ndarray]] = {
+            _as_int(curve_id): (
+                group.sort_values("x")["x"].to_numpy(dtype=float),
+                group.sort_values("x")["y"].to_numpy(dtype=float),
+            )
+            for curve_id, group in self.curves.groupby("curve_id")
+        }
 
     @classmethod
     def from_dataset(cls, dataset_dir: Path) -> Simulator:
@@ -112,19 +121,29 @@ class Simulator:
         """Compute the feature account values for the current state.
 
         A feature label may appear on several tracks; the value is summed across them.
+        The curves are evaluated vectorized per curve, then multiplied by area and
+        summed per account label.
         """
-        records: list[dict[str, object]] = []
-        for label in sorted(set(self.features["label"])):
-            total = 0.0
-            for _, feature in self.features[self.features["label"] == label].iterrows():
-                on_track = self.fragments["track_id"] == feature["track_id"]
-                for _, fragment in self.fragments[on_track].iterrows():
-                    value = curve_value(
-                        self.curves, int(feature["curve_id"]), float(fragment["offset"])
-                    )
-                    total += float(fragment["area_ha"]) * value
-            records.append({"year": year, "account": label, "value": total})
-        return records
+        merged = self.fragments[["track_id", "area_ha", "offset"]].merge(
+            self.features[["track_id", "label", "curve_id"]], on="track_id", how="inner"
+        )
+        if merged.empty:
+            return []
+        merged["yield"] = 0.0
+        for curve_id, group in merged.groupby("curve_id"):
+            arrays = self._curves.get(_as_int(curve_id))
+            if arrays is None:
+                continue
+            xs, ys = arrays
+            merged.loc[group.index, "yield"] = np.interp(
+                group["offset"].to_numpy(dtype=float), xs, ys
+            )
+        merged["value"] = merged["area_ha"].astype(float) * merged["yield"]
+        totals = merged.groupby("label")["value"].sum()
+        return [
+            {"year": year, "account": str(label), "value": float(value)}
+            for label, value in totals.items()
+        ]
 
     def simulate(self, schedule: pd.DataFrame, years: int) -> pd.DataFrame:
         """Replay a schedule and return the account values, without writing files.
