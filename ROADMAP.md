@@ -103,7 +103,7 @@ Status: complete
 Goal: implement the agreed scope, one task at a time, on the phase branch.
 
 - [x] P2.1 Implement the ForestModelXML matrix builder and legacy dataset ingestion (#16)
-  - [x] ForestModelXML parser and structural validation (parses the real MKRf recipe: 1057 curves, 11 selects, 2 treatments)
+  - [x] ForestModelXML parser and structural validation (parses the real MKRF recipe: 1057 curves, 11 selects, 2 treatments)
   - [x] Matrix builder for the non-expression subset; legacy matrix ingestion with a recorded mapping
   - [x] The Model II expansion engine: enumerate the reachable strata, expand each into a track, connect treatments to target strata (`ws4/build/expansion.py`)
   - [x] Block splitting into portions, per-track treatment expansion, and retention splits
@@ -137,7 +137,7 @@ Deferred from P2, triaged in `notes/backlog.md` (none is release-blocking):
   layer; core-area rules and edge contrast; destination eligibility and route cost accounts; duplicate
   and meta accounts and chart output; succession and `produce` semantics; the wider expression library;
   and unit conversion.
-- blocked: the full MKRf canonical model (needs its generated XML).
+- blocked: the full MKRF canonical model (needs its generated XML).
 
 ## Phase 3: Verify
 
@@ -207,9 +207,9 @@ checkout.
   - [x] Set the version in `pyproject.toml` and `ws4/__init__.py`
   - [x] Confirm the license, citation, and package metadata
   - [x] Confirm `CHANGE_LOG.md` is current through P3
-- [ ] P4.2 Write the release notes and the known-gaps list (#38)
-  - [ ] Write the release notes for the first release
-  - [ ] State the known gaps (the blocked MKRf model, and the future work in `notes/backlog.md`)
+- [x] P4.2 Write the release notes and the known-gaps list (#38)
+  - [x] Write the release notes for the first release
+  - [x] State the known gaps (the blocked MKRF model, and the future work in `notes/backlog.md`)
 - [ ] P4.3 Build and verify the release artifacts (sdist and wheel) from a clean checkout (#39)
   - [ ] Build the sdist and the wheel
   - [ ] Install the wheel into a fresh virtual environment and run the command line end to end

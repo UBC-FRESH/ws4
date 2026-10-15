@@ -75,7 +75,7 @@ structural counts exactly:
      - 210
      - (not published)
 
-On the MKRf proof-of-concept recipe (`baseMKRF.xml`) and its fragments (1763 records), this expansion
+On the MKRF proof-of-concept recipe (`baseMKRF.xml`) and its fragments (1763 records), this expansion
 produces 1399 strata, 2024 treatment rows, 1763 block rows, and 4197 accounts. The matching reference
 matrix (the POC's own `Tracks/`) has 2116 strata, 2024 treatment rows, 3183 block rows, and 60 accounts.
 

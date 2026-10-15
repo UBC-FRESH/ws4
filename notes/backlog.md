@@ -22,7 +22,7 @@ items are enhancements and maintenance.
   island model and GPU moves; time-boxed MIP subproblems; the tuners and the portfolio layer; core-area
   rules and edge contrast; destination eligibility and route cost accounts; duplicate and meta accounts
   and chart output; unit conversion; and the topology stub cleanup.
-- **Blocked:** the full MKRf canonical model (needs its generated XML).
+- **Blocked:** the full MKRF canonical model (needs its generated XML).
 - **Deferred:** the block-aggregation cache (not the hot path).
 
 ## Matrix builder (P2.1)
@@ -32,7 +32,7 @@ items are enhancements and maintenance.
   `startswith`, `endswith`, `substring`, `int`, `Number`, `length`, and `if`. An expression the evaluator
   cannot parse falls back to the term matcher. Remaining: the wider function library (`lookupTable`,
   string and math functions). Evidence: the CT eligibility `not startswith(au,'t')` now evaluates
-  correctly (MKRf PoC CT 586 vs reference 590). Target: post-release.
+  correctly (MKRF PoC CT 586 vs reference 590). Target: post-release.
 - **Expression-sourced attribute curves.** `done`. An `<attribute>` with an `<expression>` (for example
   `curveId('Yield_'+au)`) is evaluated per stratum to a curve name and resolved against the recipe's
   curves. The evaluator handles `curveId`, `attribute`, `lastindexof`, string concatenation, and
@@ -58,7 +58,7 @@ items are enhancements and maintenance.
   exactly. The fix was canonicalizing integral floats (`985502002.0` to `985502002`).
 - **Numeric vs literal matching.** `done`. State values are formatted canonically; an integral float is
   rendered without a decimal part.
-- **Full MKRf canonical model.** `blocked`. Its generated `xml/forestmodel.xml` has no copies on the
+- **Full MKRF canonical model.** `blocked`. Its generated `xml/forestmodel.xml` has no copies on the
   reachable annex remote; regenerate once the Windows machine's inputs are published. The canonical
   strata add `origin`, `statecode`, and `hasnatcurve` over the PoC's six themes (7048 tracks vs 2116).
   Target: when the inputs are published.

@@ -58,7 +58,7 @@ issue comments.
   and closed parent issue #10.
 - Launched Phase 2 (Build) on `feature/p2-build`, parent issue #15, with tasks P2.1 to P2.9 (#16 to #24).
 - P2.1 (in progress): replaced the prototype's minimal recipe parser with a ForestModelXML parser and
-  matrix builder, and added legacy matrix ingestion. The parser handles the real MKRf recipe
+  matrix builder, and added legacy matrix ingestion. The parser handles the real MKRF recipe
   (`baseMKRF.xml`: 1057 curves, 11 selects, CC and CT treatments, 14 features, 14 products) and the
   select statement operators `eq`, `ne`, `lt`, `le`, `gt`, `ge`, `in`, with opaque terms for function
   calls. Added `ws4 ingest`, `tests/test_forest_model_xml.py`, and `tests/test_legacy.py`, and a
@@ -88,7 +88,7 @@ issue comments.
 - P2.1: added a bounded select-expression evaluator (`ws4/io/expressions.py`): comparisons, booleans,
   parentheses, and the functions `startswith`, `endswith`, `substring`, `int`, `Number`, `length`, and
   `if`, with a fallback to the term matcher. The k3z reference matrices still match exactly, and the
-  MKRf PoC CT eligibility now evaluates (`not startswith(au,'t')`).
+  MKRF PoC CT eligibility now evaluates (`not startswith(au,'t')`).
 - P2.1: the builder now matches the k3z reference exactly on **features and products** as well. A select
   with a `treatment eq 'X'` context contributes products tagged `X` to the stratum matching its other
   terms (it is not a stratum dimension), and accounts are the union of feature and product labels grouped
@@ -137,7 +137,7 @@ issue comments.
   bound, the gap (incumbent minus bound), and the bound status. Added a test asserting a non-negative gap.
 - P2.1: resolved `<expression>`-sourced attribute curves. The select-expression evaluator gained string
   concatenation, arithmetic, and the `curveId`, `attribute`, and `lastindexof` functions, and the builder
-  evaluates an attribute's expression per stratum to a curve name. On the MKRf PoC the expression-sourced
+  evaluates an attribute's expression per stratum to a curve name. On the MKRF PoC the expression-sourced
   features and products now resolve. Added an expansion test.
 - P2.1: expanded `%f` (feature/product) and `%m` (managed/unmanaged) label tokens and evaluated
   expression labels (`'%f.area.%m.state.'+if(...)`). The evaluator now short-circuits `and`/`or` and
@@ -245,3 +245,7 @@ issue comments.
   added classifiers, keywords, and project URLs, and set the citation version and release date.
   Confirmed the Apache-2.0 license, and that `CHANGE_LOG.md` is current through P3. Removed the empty
   `debug.ipynb` skeleton stub. The installed metadata reports version `0.1.0` with the four project URLs.
+- P4.2: wrote `RELEASE_NOTES.md` for the first release: what is included, install and quick start, the
+  performance figures, the verification summary, the known gaps (the blocked MKRF model and the future
+  work in `notes/backlog.md`), and the out-of-scope items. Also normalized the acronym `MKRf` to `MKRF`
+  across the repository (8 files).
