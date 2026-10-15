@@ -14,7 +14,7 @@ exists and the maintainer approves it.
 | P0 Scope and design | #1 | `feature/p0-scope-design` | complete |
 | P1 Contracts and prototype | #10 | `feature/p1-contracts-prototype` | complete |
 | P2 Build | #15 | `feature/p2-build` | complete |
-| P3 Verify | #26 | `feature/p3-verify` | active |
+| P3 Verify | #26 | `feature/p3-verify` | pr-open |
 | P4 Release and deploy | TBD | `feature/p4-release` | planned |
 | P5 Operate and maintain | TBD | `feature/p5-operate` | planned |
 
@@ -143,7 +143,7 @@ Deferred from P2, triaged in `notes/backlog.md` (none is release-blocking):
 
 Parent issue: #26
 Branch: `feature/p3-verify`
-Status: active
+Status: pr-open
 
 Goal: show that the build meets its acceptance criteria, with evidence, and surface every gap before
 release.
@@ -238,7 +238,9 @@ Goal: keep the project current: triage incoming ideas, review on a cadence, and 
 4. P2 builds the model and the optimization stack. The stack generalizes the lab's FHOPS toolkit into a
    shared solver core; the execution substrate targets the 72-core host and the GPU. See
    `notes/design/ws4-optimization-stack.md` and `notes/design/ws4-matrix-builder-and-interop.md`.
-5. Phase 3 is active on `feature/p3-verify`, parent issue #26, with seven tasks (#27 to #33): the
-   acceptance checks, determinism and reproducibility, correctness (regression and invariants), the
-   spatial constraints, scale and performance, packaging and docs from a clean checkout, and the
-   deferred-item triage and verification report.
+5. Phase 3 is queued for close-out on `feature/p3-verify`, parent issue #26, with eight tasks (#27 to
+   #34): the acceptance checks, determinism and reproducibility, correctness (regression and
+   invariants), the spatial constraints, scale and performance, packaging and docs from a clean
+   checkout, the deferred-item triage and verification report, and the spatial-constraint enforcement.
+   The pull request is open and the report is `notes/reports/p3-closeout.md`; the verification report is
+   `notes/reports/p3-verify.md`.
