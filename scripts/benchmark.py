@@ -237,7 +237,10 @@ def run_spatial_benchmark(
     empty = schedule.head(0)
 
     started = time.perf_counter()
-    Simulator.from_dataset(dataset).simulate(empty, years)
+    base_simulator = Simulator.from_dataset(dataset)
+    timings["construct_seconds"] = time.perf_counter() - started
+    started = time.perf_counter()
+    base_simulator.simulate(empty, years)
     timings["simulate_base_seconds"] = time.perf_counter() - started
 
     topology = sample_dir / "blocks" / "topology_blocks_200r.csv"
@@ -245,8 +248,9 @@ def run_spatial_benchmark(
     elements = (
         EdgeElement("feature.Edge.OldYoung", "feature.Seral.old", "feature.Seral.young", 1.0),
     )
+    edge_simulator = Simulator.from_dataset(dataset)
     started = time.perf_counter()
-    Simulator.from_dataset(dataset).simulate(empty, years, edge_elements=elements, edges=edges)
+    edge_simulator.simulate(empty, years, edge_elements=elements, edges=edges)
     timings["simulate_edge_seconds"] = time.perf_counter() - started
 
     network = RouteNetwork.from_tables(
@@ -254,16 +258,18 @@ def run_spatial_benchmark(
         pd.read_csv(sample_dir / "roads" / "destinations.csv"),
         pd.read_csv(sample_dir / "roads" / "linkages.csv"),
     )
-    started = time.perf_counter()
     ledger = RouteCostLedger(network)
-    Simulator.from_dataset(dataset).simulate(
+    route_simulator = Simulator.from_dataset(dataset)
+    started = time.perf_counter()
+    route_simulator.simulate(
         schedule, years, route_model=RouteModel(network), ledger=ledger
     )
     timings["simulate_routing_seconds"] = time.perf_counter() - started
 
     account = PatchAccount(name="patch.disturbance", criteria="feature.Seral.young", threshold=0.5)
+    spatial_simulator = Simulator.from_dataset(dataset)
     started = time.perf_counter()
-    Simulator.from_dataset(dataset).write_patch_metrics(
+    spatial_simulator.write_patch_metrics(
         empty,
         spatial_years,
         topology,

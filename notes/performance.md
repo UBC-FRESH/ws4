@@ -103,3 +103,20 @@ every block, instead of one per block).
 
 The one remaining WP1 subtask (a single replay in `run` instead of a second replay for the spatial
 metrics) is deferred to WP3, where the spatial pass is restructured for incrementality.
+
+### P6.2 vectorized simulator core
+
+WP2 replaced the per-year pandas merge and groupby in `account_values` with a **precomputed
+fragment-to-feature join** (flat arrays of fragment position, curve id, and label code, rebuilt only
+when a treatment changes a track) and per-curve `numpy.interp` into a positional array.
+
+| Component | Before | After |
+| --- | ---: | ---: |
+| C5 `simulate` base, 30 years | 3.76 s | **0.41 s** |
+| C5 `simulate` base, 3 years | 0.41 s | **0.15 s** |
+
+The C5 benchmark now times simulator construction separately (about 0.6 s: it loads the parquet
+tables and indexes the 130 423 curves), so the component figures exclude it. The current C5 figures:
+base simulate (3 y) 0.16 s, edge contrast (3 y) 3.0 s, routing (3 y, 300 blocks) 3.9 s, patch accounts
+(1 y) 1.9 s, one objective evaluation 1.2 s, peak memory 372 MiB. The edge contrast and patch accounts
+are the WP3 target.

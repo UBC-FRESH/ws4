@@ -95,6 +95,57 @@ class Simulator:
         # The fragment-position index is rebuilt lazily (the caller may replace the frame).
         self._fragments_index_id = -1
         self._fragments_by_block: dict[int, list[int]] = {}
+        # The fragment-to-feature join is precomputed as arrays and rebuilt only when a
+        # treatment changes a fragment's track (or the frame is replaced).
+        self._join_dirty = True
+        self._join_frame_id = -1
+        self._pair_frag = np.empty(0, dtype=np.int64)
+        self._pair_curve = np.empty(0, dtype=np.int64)
+        self._pair_label = np.empty(0, dtype=np.int64)
+        self._labels: list[str] = []
+        self._curve_groups: dict[int, np.ndarray] = {}
+
+    def _rebuild_join(self) -> None:
+        """Precompute the fragment-to-feature join as flat arrays.
+
+        The join is ``(fragment position, curve id, label code)`` per feature of the
+        fragment's track, so a year's account values are a vectorized lookup rather than a
+        pandas merge and groupby.
+        """
+        feature_track = self.features["track_id"].to_numpy()
+        feature_curve = self.features["curve_id"].to_numpy()
+        feature_label = self.features["label"].astype(str).to_numpy()
+        by_track: dict[int, list[int]] = {}
+        for row, track in enumerate(feature_track):
+            by_track.setdefault(int(track), []).append(row)
+        labels: list[str] = []
+        codes: dict[str, int] = {}
+        pair_frag: list[int] = []
+        pair_curve: list[int] = []
+        pair_label: list[int] = []
+        for position, track in enumerate(self.fragments["track_id"].to_numpy()):
+            for row in by_track.get(int(track), ()):
+                pair_frag.append(position)
+                pair_curve.append(int(feature_curve[row]))
+                label = str(feature_label[row])
+                code = codes.get(label)
+                if code is None:
+                    code = len(labels)
+                    codes[label] = code
+                    labels.append(label)
+                pair_label.append(code)
+        self._pair_frag = np.asarray(pair_frag, dtype=np.int64)
+        self._pair_curve = np.asarray(pair_curve, dtype=np.int64)
+        self._pair_label = np.asarray(pair_label, dtype=np.int64)
+        self._labels = labels
+        groups: dict[int, list[int]] = {}
+        for index, curve_id in enumerate(pair_curve):
+            groups.setdefault(curve_id, []).append(index)
+        self._curve_groups = {
+            curve_id: np.asarray(rows, dtype=np.int64) for curve_id, rows in groups.items()
+        }
+        self._join_dirty = False
+        self._join_frame_id = id(self.fragments)
 
     def _block_index(self) -> dict[int, list[int]]:
         """Return the fragment positions per block, rebuilt when the frame is replaced."""
@@ -185,39 +236,35 @@ class Simulator:
         if changed:
             self.fragments["track_id"] = tracks
             self.fragments["offset"] = offsets
+            self._join_dirty = True
         return disturbed
 
     def account_values(self, year: int) -> list[dict[str, object]]:
         """Compute the feature account values for the current state.
 
-        A feature label may appear on several tracks; the value is summed across them.
-        The curves are evaluated vectorized per curve, then multiplied by area and
-        summed per account label.
+        A feature label may appear on several tracks; the value is the sum of the area
+        times the feature curve at the fragment's offset, over the precomputed join. The
+        curves are evaluated per curve with ``numpy.interp``.
         """
-        merged = (
-            self.fragments[["track_id", "area_ha", "offset"]]
-            .merge(self.features[["track_id", "label", "curve_id"]], on="track_id", how="inner")
-            .reset_index(drop=True)
-        )
-        if merged.empty:
+        if self._join_dirty or self._join_frame_id != id(self.fragments):
+            self._rebuild_join()
+        if self._pair_frag.size == 0:
             return []
-        # Assign into a positional array rather than ``.loc`` per curve: a big model has tens
-        # of thousands of curves, and a per-group ``.loc`` setitem dominates the run.
-        yields = np.zeros(len(merged), dtype=float)
-        for curve_id, group in merged.groupby("curve_id"):
-            arrays = self._curves.get(_as_int(curve_id))
+        offsets = self.fragments["offset"].to_numpy(dtype=float)
+        areas = self.fragments["area_ha"].to_numpy(dtype=float)
+        x = offsets[self._pair_frag]
+        yields = np.zeros(x.size, dtype=float)
+        for curve_id, rows in self._curve_groups.items():
+            arrays = self._curves.get(curve_id)
             if arrays is None:
                 continue
             xs, ys = arrays
-            yields[group.index.to_numpy()] = np.interp(
-                group["offset"].to_numpy(dtype=float), xs, ys
-            )
-        merged["yield"] = yields
-        merged["value"] = merged["area_ha"].astype(float) * merged["yield"]
-        totals = merged.groupby("label")["value"].sum()
+            yields[rows] = np.interp(x[rows], xs, ys)
+        values = areas[self._pair_frag] * yields
+        totals = np.bincount(self._pair_label, weights=values, minlength=len(self._labels))
         return [
-            {"year": year, "account": str(label), "value": float(value)}
-            for label, value in totals.items()
+            {"year": year, "account": self._labels[index], "value": float(total)}
+            for index, total in enumerate(totals)
         ]
 
     def block_criteria(self, label: str) -> dict[int, float]:
