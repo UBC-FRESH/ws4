@@ -261,9 +261,7 @@ def run_spatial_benchmark(
     ledger = RouteCostLedger(network)
     route_simulator = Simulator.from_dataset(dataset)
     started = time.perf_counter()
-    route_simulator.simulate(
-        schedule, years, route_model=RouteModel(network), ledger=ledger
-    )
+    route_simulator.simulate(schedule, years, route_model=RouteModel(network), ledger=ledger)
     timings["simulate_routing_seconds"] = time.perf_counter() - started
 
     account = PatchAccount(name="patch.disturbance", criteria="feature.Seral.young", threshold=0.5)
