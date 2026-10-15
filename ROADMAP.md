@@ -173,11 +173,11 @@ release.
   - [x] Adjacency, maximum opening size, and green-up are enforced, and violated only by an explicit
         override (implemented in P3.8)
   - [x] Patch metrics match an independent calculation on a small topology
-- [ ] P3.5 Verify scale and performance (#31)
-  - [ ] Record the C5 sample's ingest, simulate, optimize, and route runtimes
-  - [ ] Build and run a larger synthetic landscape; record the runtime and the peak memory
-  - [ ] Confirm the simulator's curve evaluation is vectorized per curve, not per fragment
-  - [ ] Profile the hot paths and record the block-aggregation cost
+- [x] P3.5 Verify scale and performance (#31)
+  - [x] Record the C5 sample's ingest, simulate, optimize, and route runtimes
+  - [x] Build and run a larger synthetic landscape; record the runtime and the peak memory
+  - [x] Confirm the simulator's curve evaluation is vectorized per curve, not per fragment
+  - [x] Profile the hot paths and record the block-aggregation cost
 - [ ] P3.6 Verify packaging and docs from a clean checkout (#32)
   - [ ] Install the package into a fresh virtual environment from the checkout
   - [ ] Run the command line end to end on the synthetic fixture

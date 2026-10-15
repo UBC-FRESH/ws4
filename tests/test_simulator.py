@@ -5,7 +5,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
+import pytest
 from ws4.build.compiler import build_canonical_dataset
 from ws4.roads.network import RouteNetwork
 from ws4.sim.engine import Simulator
@@ -51,6 +53,30 @@ def test_run_records_the_dataset_reference(tmp_path: Path) -> None:
     reference = json.loads((out / "dataset.json").read_text(encoding="utf-8"))
     assert reference["schema_version"] == "0.1"
     assert len(reference["manifest_sha256"]) == 64
+
+
+def test_curve_evaluation_is_vectorized_per_curve(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Account values call ``np.interp`` once per curve, not once per fragment."""
+    dataset = _dataset(tmp_path)
+    simulator = Simulator.from_dataset(dataset)
+    active = simulator.features[
+        simulator.features["track_id"].isin(simulator.fragments["track_id"])
+    ]
+    calls: list[int] = []
+    real_interp = np.interp
+
+    def counting(
+        x: np.ndarray, xp: np.ndarray, fp: np.ndarray, *args: float, **kwargs: float
+    ) -> np.ndarray:
+        calls.append(1)
+        return np.asarray(real_interp(x, xp, fp, *args, **kwargs), dtype=float)
+
+    monkeypatch.setattr(np, "interp", counting)
+    simulator.account_values(0)
+    assert len(calls) == active["curve_id"].nunique()
+    assert len(calls) < len(simulator.fragments)
 
 
 def test_a_treatment_records_its_product_yield(tmp_path: Path) -> None:

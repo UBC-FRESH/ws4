@@ -130,7 +130,9 @@ Status values: `open`, `partial`, `blocked`, `done`.
   shapefile read (skipping when geopandas is absent).
 - **Broaden mypy coverage to `ws4/`.** `open`. Type checking currently covers `scripts/`, `tests/`, and
   `docs/conf.py` plus transitively imported modules.
-- **Reference-matrix regression tests.** `partial`. The k3z pair is validated by hand; a committed
-  fixture-based regression test is not in place.
+- **Reference-matrix regression tests.** `done`. A self-contained fixture with committed expected
+  tables is in `tests/fixtures/matrix/`, compared by `tests/test_matrix_regression.py` (P3.3).
+- **Block-aggregation cost.** `deferred`. The C5 profile shows the per-curve yield evaluation dominates
+  the simulator, so a cached incremental block aggregate is not needed yet (`notes/performance.md`).
 - **Docs for each subsystem.** `partial`. The compiled dataset and ForestModelXML pages exist; the
   simulator, optimizer, spatial, and road subsystems are undocumented.

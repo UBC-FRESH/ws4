@@ -216,3 +216,11 @@ issue comments.
   by the explicit `allow_spatial_override`. The CLI exposes `--topology`, `--max-opening-ha`,
   `--min-green-up-years`, and `--spatial-override`. The P3.4 gap is closed. `python -m pytest`: 254
   passed, 94.78 percent branch coverage. `python scripts/dashboard.py`: `OVERALL: GREEN`.
+- P3.5: verified scale and performance (`notes/performance.md`, `scripts/benchmark.py`). Profiling found
+  two hot paths and both were fixed: the builder re-parsed each select expression per fragment (now
+  cached by statement; build of 100 038 fragments 3.79 s to 1.66 s), and `account_values` used a per-curve
+  `pandas` `.loc` setitem (now a positional numpy assignment; the C5 30-year simulate 15.5 s to 4.2 s).
+  The synthetic build is linear in the fragment count, curve evaluation is vectorized per curve, and the
+  block-aggregation cost is not the hot path, so the cached incremental aggregate is deferred.
+  `python -m pytest`: 264 passed, 94.28 percent branch coverage. `python scripts/dashboard.py`:
+  `OVERALL: GREEN`.

@@ -15,6 +15,7 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Any
 
 _TOKEN_RE = re.compile(
@@ -359,7 +360,18 @@ def evaluate_value(expression: str, row: Mapping[str, object], constants: dict[s
     ExpressionError
         When the expression cannot be parsed or evaluated.
     """
-    return _evaluate(_Parser(tokenize(expression)).parse(), row, constants)
+    return _evaluate(_parse(expression), row, constants)
+
+
+@lru_cache(maxsize=2048)
+def _parse(expression: str) -> Any:
+    """Parse an expression into a tree, caching the tree by the expression text.
+
+    A select statement is re-evaluated for every fragment, so parsing once per distinct
+    statement (rather than per fragment) is a large saving on a big inventory. The tree is
+    built from immutable tuples and is never mutated, so sharing it is safe.
+    """
+    return _Parser(tokenize(expression)).parse()
 
 
 def evaluate(expression: str, row: Mapping[str, object], constants: dict[str, str]) -> bool:
@@ -384,5 +396,4 @@ def evaluate(expression: str, row: Mapping[str, object], constants: dict[str, st
     ExpressionError
         When the expression cannot be parsed or evaluated.
     """
-    tree = _Parser(tokenize(expression)).parse()
-    return bool(_evaluate(tree, row, constants))
+    return bool(_evaluate(_parse(expression), row, constants))

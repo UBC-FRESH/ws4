@@ -151,20 +151,25 @@ class Simulator:
         The curves are evaluated vectorized per curve, then multiplied by area and
         summed per account label.
         """
-        merged = self.fragments[["track_id", "area_ha", "offset"]].merge(
-            self.features[["track_id", "label", "curve_id"]], on="track_id", how="inner"
+        merged = (
+            self.fragments[["track_id", "area_ha", "offset"]]
+            .merge(self.features[["track_id", "label", "curve_id"]], on="track_id", how="inner")
+            .reset_index(drop=True)
         )
         if merged.empty:
             return []
-        merged["yield"] = 0.0
+        # Assign into a positional array rather than ``.loc`` per curve: a big model has tens
+        # of thousands of curves, and a per-group ``.loc`` setitem dominates the run.
+        yields = np.zeros(len(merged), dtype=float)
         for curve_id, group in merged.groupby("curve_id"):
             arrays = self._curves.get(_as_int(curve_id))
             if arrays is None:
                 continue
             xs, ys = arrays
-            merged.loc[group.index, "yield"] = np.interp(
+            yields[group.index.to_numpy()] = np.interp(
                 group["offset"].to_numpy(dtype=float), xs, ys
             )
+        merged["yield"] = yields
         merged["value"] = merged["area_ha"].astype(float) * merged["yield"]
         totals = merged.groupby("label")["value"].sum()
         return [
