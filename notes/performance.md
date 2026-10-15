@@ -88,3 +88,18 @@ The dominant hot path is route reconstruction (`RouteNetwork._segments_by_id` re
 row-wise `apply_treatments`. The plan to fix this — profiling, bottleneck map, targets, and the
 ordered work packages — is `notes/design/ws4-performance.md`, and the work is phase 6
 (`feature/p6-performance`).
+
+### P6.1 route and simulation quick wins
+
+WP1 cached the route-network indexes (built once), precomputed the treatment/product/fragment
+lookups, vectorized `apply_treatments` (no pandas `iterrows`), and switched routing to
+**per-destination** shortest paths (the graph is undirected, so one Dijkstra per destination serves
+every block, instead of one per block).
+
+| Component | Before | After |
+| --- | ---: | ---: |
+| `simulate` + routing, 3 years, 300 blocks | 65.4 s | **4.5 s** |
+| Peak memory (same run) | 2.8 GiB | **338 MiB** |
+
+The one remaining WP1 subtask (a single replay in `run` instead of a second replay for the spatial
+metrics) is deferred to WP3, where the spatial pass is restructured for incrementality.
