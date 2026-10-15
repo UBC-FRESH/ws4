@@ -241,7 +241,7 @@ Status: active
 Goal: keep the project current: triage incoming ideas, review on a cadence, and close out cleanly.
 
 - [x] P5.1 Set a review cadence and record the first review (#45)
-- [ ] P5.2 Stand up issue triage: labels, templates, and a triage cadence (#46)
+- [x] P5.2 Stand up issue triage: labels, templates, and a triage cadence (#46)
 - [ ] P5.3 Dependency and security maintenance: automated updates and a review cadence (#47)
 - [ ] P5.4 Keep the roadmap, backlog, and changelog in step on a cadence (#48)
 - [ ] P5.5 Define the release cadence and the patch policy (#49)

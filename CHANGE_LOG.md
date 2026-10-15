@@ -366,3 +366,7 @@ issue comments.
 - P5.1: set the review cadence (monthly, on the first working day, plus out-of-cadence triggers for a
   security advisory, a broken release, or a scope change) and recorded the first review in
   `notes/review-cadence.md`. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.
+- P5.2: stood up issue triage. Added type labels (`performance`, `security`, `chore`), priority labels
+  (`priority: high|medium|low`), and area labels (`area: builder|simulator|optimizer|spatial|roads|
+  docs|performance|tooling`); added a pull request template; and recorded the label scheme, routing
+  rules, and triage cadence in `notes/triage.md`.
