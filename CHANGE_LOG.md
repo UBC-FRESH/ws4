@@ -235,3 +235,6 @@ issue comments.
 - P3 close-out: queued pull request #35 (`feature/p3-verify` into `main`) and wrote
   `notes/reports/p3-closeout.md`. `ROADMAP.md` marks P3 `pr-open`. `python scripts/dashboard.py`:
   `OVERALL: GREEN`.
+- P3 close-out carried out: pull request #35 squash-merged as `83e2d60`, branch `feature/p3-verify`
+  deleted, and parent issue #26 closed. P3 is `complete` in `ROADMAP.md`. Launched P4 (Release and
+  deploy): parent issue #36, branch `feature/p4-release`, tasks P4.1 to P4.6 (#37 to #42).

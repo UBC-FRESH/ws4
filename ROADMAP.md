@@ -14,8 +14,8 @@ exists and the maintainer approves it.
 | P0 Scope and design | #1 | `feature/p0-scope-design` | complete |
 | P1 Contracts and prototype | #10 | `feature/p1-contracts-prototype` | complete |
 | P2 Build | #15 | `feature/p2-build` | complete |
-| P3 Verify | #26 | `feature/p3-verify` | pr-open |
-| P4 Release and deploy | TBD | `feature/p4-release` | planned |
+| P3 Verify | #26 | `feature/p3-verify` | complete |
+| P4 Release and deploy | #36 | `feature/p4-release` | active |
 | P5 Operate and maintain | TBD | `feature/p5-operate` | planned |
 
 ## Lifecycle Map
@@ -143,7 +143,7 @@ Deferred from P2, triaged in `notes/backlog.md` (none is release-blocking):
 
 Parent issue: #26
 Branch: `feature/p3-verify`
-Status: pr-open
+Status: complete
 
 Goal: show that the build meets its acceptance criteria, with evidence, and surface every gap before
 release.
@@ -196,20 +196,35 @@ release.
 
 ## Phase 4: Release and deploy
 
-Parent issue: TBD
+Parent issue: #36
 Branch: `feature/p4-release`
-Status: planned
+Status: active
 
 Goal: tag a release, publish the artifacts and the docs, and verify the published release from a clean
 checkout.
 
-- [ ] P4.1 Prepare the release: version, changelog, license, citation, and packaging metadata
-- [ ] P4.2 Write the release notes and the known-gaps list
-- [ ] P4.3 Build and verify the release artifacts (sdist and wheel) from a clean checkout
-- [ ] P4.4 Publish the documentation site and verify it from a clean checkout
-- [ ] P4.5 Tag the release and publish the artifacts (maintainer approval required)
-- [ ] P4.6 Verify the published release: install it fresh, run the acceptance checks, and confirm
-      reproducibility
+- [ ] P4.1 Prepare the release: version, changelog, license, citation, and packaging metadata (#37)
+  - [ ] Set the version in `pyproject.toml` and `ws4/__init__.py`
+  - [ ] Confirm the license, citation, and package metadata
+  - [ ] Confirm `CHANGE_LOG.md` is current through P3
+- [ ] P4.2 Write the release notes and the known-gaps list (#38)
+  - [ ] Write the release notes for the first release
+  - [ ] State the known gaps (the blocked MKRf model, and the future work in `notes/backlog.md`)
+- [ ] P4.3 Build and verify the release artifacts (sdist and wheel) from a clean checkout (#39)
+  - [ ] Build the sdist and the wheel
+  - [ ] Install the wheel into a fresh virtual environment and run the command line end to end
+  - [ ] Confirm the artifacts contain the package and not the tests or the notes
+- [ ] P4.4 Publish the documentation site and verify it from a clean checkout (#40)
+  - [ ] Confirm the `Docs` workflow builds and deploys from `main`
+  - [ ] Verify the published site is reachable and matches the checkout
+  - [ ] Add the subsystem pages assigned to P4 (simulator, optimizer, spatial, roads)
+- [ ] P4.5 Tag the release and publish the artifacts (#41, maintainer approval required)
+  - [ ] Create the annotated tag
+  - [ ] Publish the artifacts after approval, and record the locations and commands
+- [ ] P4.6 Verify the published release (#42)
+  - [ ] Install the published artifact into a fresh virtual environment
+  - [ ] Run the acceptance checks against the installed package
+  - [ ] Confirm reproducibility: the same configuration and seed reproduce a run
 
 ## Phase 5: Operate and maintain
 
@@ -238,9 +253,9 @@ Goal: keep the project current: triage incoming ideas, review on a cadence, and 
 4. P2 builds the model and the optimization stack. The stack generalizes the lab's FHOPS toolkit into a
    shared solver core; the execution substrate targets the 72-core host and the GPU. See
    `notes/design/ws4-optimization-stack.md` and `notes/design/ws4-matrix-builder-and-interop.md`.
-5. Phase 3 is queued for close-out on `feature/p3-verify`, parent issue #26, with eight tasks (#27 to
-   #34): the acceptance checks, determinism and reproducibility, correctness (regression and
-   invariants), the spatial constraints, scale and performance, packaging and docs from a clean
-   checkout, the deferred-item triage and verification report, and the spatial-constraint enforcement.
-   The pull request is open and the report is `notes/reports/p3-closeout.md`; the verification report is
-   `notes/reports/p3-verify.md`.
+5. Phase 3 is complete: pull request #35 squash-merged as `83e2d60`, the branch deleted, and parent
+   issue #26 closed. The close-out report is `notes/reports/p3-closeout.md`, and the verification report
+   is `notes/reports/p3-verify.md`.
+6. Phase 4 is active on `feature/p4-release`, parent issue #36, with six tasks (#37 to #42): release
+   preparation, release notes and known gaps, the release artifacts, the documentation site, the tag and
+   publication, and post-release verification. It must not add features; gaps go to `notes/backlog.md`.
