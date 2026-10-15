@@ -255,3 +255,11 @@ issue comments.
   remaining blockers are recorded in `notes/backlog.md`: the producer's git-annex branch was not pushed
   to `origin`, and the recipe's defines use `lookupTable(...)`, which the expression evaluator does not
   implement.
+- Fixed the builder for the canonical MKRF recipe and reproduced its core matrix exactly: **tracks
+  7048/7048, strata 7048/7048, treatments 10014/10014, blocks 3183/3183**. Four fixes: `lookupTable` in
+  the expression evaluator; expression-based `<define column>` values evaluated against the fragment
+  row; a literal retention factor (previously read as a column name and treated as zero, which had
+  dropped every unmanaged stratum); and label/product expressions without `%` tokens, with context-less
+  product selects tagged per treatment (products 274872 → 390546). The nine k3z core variants still
+  match exactly. Remaining: five labels need `operable(...)` and the runtime curve bank
+  (features 97522/104311, products 390546/420588). `python -m pytest`: 270 passed.

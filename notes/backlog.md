@@ -58,15 +58,18 @@ items are enhancements and maintenance.
   exactly. The fix was canonicalizing integral floats (`985502002.0` to `985502002`).
 - **Numeric vs literal matching.** `done`. State values are formatted canonically; an integral float is
   rendered without a decimal part.
-- **Full MKRF canonical model.** `blocked` (narrowed). The canonical artifacts were materialized on
-  2026-10-15: `xml/forestmodel.xml` (3.73 MB) and `tracks/{curves,features,products}.csv` were fetched
-  from the public `arbutus-s3` bucket by their chunked keys and `git annex reinject`ed, after the
-  SHA-256 values matched the producer's exactly. Two blockers remain: the producer's git-annex branch
-  was not pushed to `origin`, so a fresh clone cannot `get` the objects; and the recipe's defines use
-  `lookupTable(...)`, which `ws4/io/expressions.py` does not implement, so the builder falls back to the
-  term matcher and cannot reproduce the canonical strata (7048 tracks, adding `origin`, `statecode`, and
-  `hasnatcurve` over the PoC's six themes). Target: post-release (the `lookupTable` function, then the
-  canonical comparison).
+- **Full MKRF canonical model.** `partial` (nearly complete). The canonical artifacts were materialized
+  on 2026-10-15 (SHA-256 verified against the producer's), and the builder now reproduces the canonical
+  matrix on **tracks (7048/7048), strata (7048/7048), treatments (10014/10014), and blocks (3183/3183)**.
+  Four fixes closed the gap: `lookupTable` in the expression evaluator; expression-based
+  `<define column>` values (evaluated against the fragment row, not just read as a column name); a
+  literal retention factor (`0.1`/`0.2`, previously read as a column name and treated as zero); and
+  label/product expressions without `%` tokens, with context-less product selects now tagged per
+  treatment (products 274872 → 390546). Remaining: five labels (`feature.area.retention.total`,
+  `feature.yield.managed.merch.total`, and the three `product.Cost_*`/`product.NetRevenue` labels) need
+  the `operable(...)` function and the runtime curve bank; features are 97522/104311 and products
+  390546/420588. The producer's git-annex branch was not pushed to `origin`, so a fresh clone cannot
+  `get` the artifacts (a `reinject` workaround was used locally). Target: post-release.
 - **Shapefile input.** `done`. `ws4/io/fragments.py` reads a shapefile, GeoJSON, GeoPackage, CSV, or
   Parquet (attributes; geometry is available separately). The geo dependency is imported lazily, and CI
   installs the `geo` extra.
