@@ -16,6 +16,24 @@ def test_the_parse_is_cached_across_calls() -> None:
     assert _parse.cache_info().hits >= 1
 
 
+def test_lookup_table_maps_a_key_to_a_value() -> None:
+    """``lookupTable`` returns the value aligned with the key."""
+    from ws4.io.expressions import evaluate_value
+
+    assert evaluate_value("lookupTable(Int(cov),'1,2,3','a,b,c')", {"cov": 2}, {}) == "b"
+    assert evaluate_value("lookupTable(Int(cov),'1,2,3','a,b,c')", {"cov": 9}, {}) == ""
+    assert evaluate_value("lookupTable(au,'x,y','p,q')", {"au": "y"}, {}) == "q"
+
+
+def test_lookup_table_nests_in_if() -> None:
+    """``lookupTable`` composes with ``if`` and comparisons."""
+    from ws4.io.expressions import evaluate_value
+
+    text = "if(lookupTable(Int(cov),'1,2','Y,N') eq 'Y','yes','no')"
+    assert evaluate_value(text, {"cov": 2}, {}) == "no"
+    assert evaluate_value(text, {"cov": 1}, {}) == "yes"
+
+
 def test_comparisons_and_booleans() -> None:
     """Equality, inequality, and the boolean operators evaluate."""
     row = {"status": "C", "oper": "Operable", "ct": "Y", "au": "2121"}

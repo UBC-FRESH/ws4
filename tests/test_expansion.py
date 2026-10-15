@@ -323,3 +323,79 @@ def test_rerun_preserves_a_curated_accounts_file(tmp_path: Path) -> None:
     assert list(accounts["account"]) == ["net.value"]  # the edit survived
     proto = pd.read_parquet(dataset / "protoaccounts.parquet")
     assert set(proto["account"]) == {"feature.Volume"}  # regenerated
+
+
+_LITERAL_RETENTION_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
+<ForestModel horizon="100" year="0" match="multi">
+  <curve id="unity"><point x="0" y="1.0"/></curve>
+  <curve id="volume"><point x="0" y="0"/><point x="100" y="100"/></curve>
+  <define field="IFM" column="IFM"/>
+  <input block="BLOCK" area="AREA_HA" age="F_AGE"/>
+  <output messages="messages.csv"/>
+  <select statement="IFM eq 'managed'">
+    <features>
+      <attribute label="feature.Volume.managed"><curve idref="volume"/></attribute>
+    </features>
+    <retention factor="0.25"><assign field="IFM" value="'unmanaged'"/></retention>
+    <track><treatment label="CC" minage="0" maxage="100"/></track>
+  </select>
+  <select statement="IFM eq 'unmanaged'">
+    <features>
+      <attribute label="feature.Volume.unmanaged"><curve idref="volume"/></attribute>
+    </features>
+    <track/>
+  </select>
+</ForestModel>
+"""
+
+
+def test_a_literal_retention_factor_splits_the_area(tmp_path: Path) -> None:
+    """A retention factor given as a literal (not a column) still splits the fragment."""
+    (tmp_path / "recipe.xml").write_text(_LITERAL_RETENTION_RECIPE, encoding="utf-8")
+    pd.DataFrame({"BLOCK": [1], "AREA_HA": [8.0], "F_AGE": [50], "IFM": ["managed"]}).to_csv(
+        tmp_path / "fragments.csv", index=False
+    )
+    dataset = build_canonical_dataset(
+        tmp_path / "recipe.xml", tmp_path / "fragments.csv", tmp_path / "c"
+    )
+    blocks = pd.read_parquet(dataset / "blocks.parquet").sort_values("area_ha")
+    assert len(blocks) == 2  # the retained portion and the rest
+    assert list(blocks["area_ha"]) == [2.0, 6.0]  # 0.25 and 0.75 of 8 ha
+
+
+_TREATMENT_PRODUCT_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
+<ForestModel horizon="100" year="0" match="multi">
+  <curve id="unity"><point x="0" y="1.0"/></curve>
+  <curve id="volume"><point x="0" y="0"/><point x="100" y="100"/></curve>
+  <define field="IFM" column="IFM"/>
+  <define field="treatment"/>
+  <input block="BLOCK" area="AREA_HA" age="F_AGE"/>
+  <output messages="messages.csv"/>
+  <select statement="IFM eq 'managed'">
+    <features><attribute label="feature.Volume"><curve idref="volume"/></attribute></features>
+    <track>
+      <treatment label="CC" minage="0" maxage="100"/>
+      <treatment label="CT" minage="0" maxage="100"/>
+    </track>
+  </select>
+  <select statement="IFM eq 'managed'">
+    <products>
+      <attribute label="'product.area.treat.'+treatment"><curve idref="volume"/></attribute>
+    </products>
+  </select>
+</ForestModel>
+"""
+
+
+def test_a_product_without_a_context_applies_to_every_treatment(tmp_path: Path) -> None:
+    """A product select with no treatment context is tagged with each treatment."""
+    (tmp_path / "recipe.xml").write_text(_TREATMENT_PRODUCT_RECIPE, encoding="utf-8")
+    pd.DataFrame({"BLOCK": [1], "AREA_HA": [5.0], "F_AGE": [50], "IFM": ["managed"]}).to_csv(
+        tmp_path / "fragments.csv", index=False
+    )
+    dataset = build_canonical_dataset(
+        tmp_path / "recipe.xml", tmp_path / "fragments.csv", tmp_path / "c"
+    )
+    products = pd.read_parquet(dataset / "products.parquet")
+    assert set(products["treatment"]) == {"CC", "CT"}
+    assert set(products["label"]) == {"product.area.treat.CC", "product.area.treat.CT"}

@@ -43,6 +43,7 @@ _FUNCTIONS = {
     "lastindexof",
     "curveid",
     "attribute",
+    "lookuptable",
 }
 
 
@@ -248,10 +249,45 @@ def _call(name: str, args: list[Any], row: Mapping[str, object], constants: dict
         return values[1] if values[0] else values[2]
     if name == "lastindexof":
         return float(str(values[0]).rfind(str(values[1])))
+    if name == "lookuptable":
+        return _lookup_table(values[0], str(values[1]), str(values[2]))
     if name in ("curveid", "attribute"):
         # A curve reference or an attribute reference; the value is its name.
         return str(values[0])
     raise ExpressionError(f"unknown function: {name}")
+
+
+def _lookup_table(key: Any, keys_text: str, values_text: str) -> str:
+    """Return the value whose position matches ``key`` in a comma-separated table.
+
+    ``lookupTable(k, '1,2,3', 'a,b,c')`` returns ``'b'`` for ``k == 2``. A numeric key
+    compares numerically; any other key compares as text. A key that is absent returns
+    an empty string.
+
+    Parameters
+    ----------
+    key : Any
+        The lookup key.
+    keys_text : str
+        The comma-separated table keys.
+    values_text : str
+        The comma-separated table values, positionally aligned with ``keys_text``.
+
+    Returns
+    -------
+    str
+        The matching value, or an empty string when the key is absent.
+    """
+    keys = [part.strip() for part in keys_text.split(",")]
+    entries = [part.strip() for part in values_text.split(",")]
+    for position, candidate in enumerate(keys):
+        try:
+            matches = _as_number(candidate) == _as_number(key)
+        except ExpressionError:
+            matches = candidate == str(key)
+        if matches:
+            return entries[position] if position < len(entries) else ""
+    return ""
 
 
 def _evaluate(node: Any, row: Mapping[str, object], constants: dict[str, str]) -> Any:

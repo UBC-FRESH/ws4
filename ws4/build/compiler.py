@@ -20,7 +20,6 @@ from ..io.fragments import read_fragments
 from ..model.schema import MANIFEST_NAME, SCHEMA_VERSION, TABLES, coerce_to_schema
 from ..model.types import CanonicalDatasetManifest
 from .expansion import (
-    column_name,
     expand_strata,
     matching_selects,
     resolve_value,
@@ -96,10 +95,9 @@ def _expand_label(
 
     ``%f`` becomes the attribute's kind (``feature`` or ``product``) and ``%m`` the
     managed/unmanaged value. A label that is an expression (for example
-    ``'%f.area.%m.state.'+if(...)``) is evaluated after substitution.
+    ``'%f.area.%m.state.'+if(...)`` or ``'product.area.managed.state.'+statecode``) is
+    evaluated against the row.
     """
-    if "%" not in label:
-        return label
     text = (
         label.replace("%f", kind)
         .replace("%m", _managed_value(row, constants))
@@ -157,6 +155,25 @@ def _as_float(value: object) -> float:
         return 0.0
 
 
+def _retention_factor(
+    expression: str, record: Mapping[str, object], constants: dict[str, str]
+) -> float:
+    """Evaluate a retention factor to a value in ``[0, 1]``.
+
+    The factor is a literal number (for example ``0.1``), a fragment column, or an
+    expression. A factor that cannot be evaluated is treated as zero.
+    """
+    value: object
+    if expression in record:
+        value = record[expression]
+    else:
+        try:
+            value = evaluate_value(expression, record, constants)
+        except ExpressionError:
+            value = 0.0
+    return min(max(_as_float(value), 0.0), 1.0)
+
+
 def _retention_split(
     record: Mapping[str, object], key: tuple[str, ...], variables: Sequence[str], recipe: Recipe
 ) -> tuple[float, tuple[str, ...]] | None:
@@ -165,9 +182,11 @@ def _retention_split(
         retention = recipe.selects[index - 1].retention
         if retention is None:
             continue
-        column = column_name(retention.factor) if retention.factor else ""
-        value = record.get(column)
-        factor = min(max(_as_float(value) if value is not None else 0.0, 0.0), 1.0)
+        factor = (
+            _retention_factor(retention.factor, record, recipe.constants)
+            if retention.factor
+            else 0.0
+        )
         state = dict(zip(variables, key, strict=True))
         for name, value in retention.assigns.items():
             state[name] = resolve_value(value, state, recipe.constants)
@@ -282,6 +301,16 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
     feature_rows: list[dict[str, object]] = []
     product_rows: list[dict[str, object]] = []
     treatment_rows: list[dict[str, object]] = []
+    # A product select with no ``treatment eq`` context applies to every treatment its
+    # track offers, so each product is tagged with each of those treatments.
+    treatments_of_track: dict[int, list[str]] = {}
+    for stratum in strata:
+        labels: list[str] = []
+        for select_index in stratum.select_indices:
+            labels.extend(
+                treatment.label for treatment in recipe.selects[select_index - 1].treatments
+            )
+        treatments_of_track[stratum.track_id] = labels
     # The Matrix Builder writes a simple summary account for every attribute, with the
     # account name identical to the attribute name (see the user guide, "Creating Summary
     # Accounts"). The user copies ``protoaccounts`` to ``accounts`` and edits it; a re-run
@@ -320,18 +349,26 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
                 )
                 if curve_name is None or curve_name not in curve_ids:
                     continue
-                label = _expand_label(attribute.label, row, "product", recipe.constants)
-                product_rows.append(
-                    {
-                        "track_id": stratum.track_id,
-                        "treatment": select.treatment_context,
-                        "label": label,
-                        "curve_id": curve_for(
-                            curve_name, _factor_value(attribute, row, recipe.constants)
-                        ),
-                    }
-                )
-                account_labels.setdefault(label, set()).add(managed)
+                if select.treatment_context:
+                    contexts = [select.treatment_context]
+                else:
+                    contexts = treatments_of_track.get(stratum.track_id, [])
+                for context in contexts:
+                    label_row = dict(row)
+                    if context:
+                        label_row["treatment"] = context
+                    label = _expand_label(attribute.label, label_row, "product", recipe.constants)
+                    product_rows.append(
+                        {
+                            "track_id": stratum.track_id,
+                            "treatment": context,
+                            "label": label,
+                            "curve_id": curve_for(
+                                curve_name, _factor_value(attribute, row, recipe.constants)
+                            ),
+                        }
+                    )
+                    account_labels.setdefault(label, set()).add(managed)
             for treatment in select.treatments:
                 treatment_rows.append(
                     {
