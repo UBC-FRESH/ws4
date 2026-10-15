@@ -111,9 +111,8 @@ command line):
    )
 
 Open items: the route model runs in the optimizer's inner loop, so each objective evaluation routes
-every scheduled block (a full C5 single-iteration run is minutes); incremental routing for the
-objective is a future optimization. Core-area and edge-contrast rules remain (see
-``notes/backlog.md``).
+every scheduled block (a full C5 single-iteration run is minutes). Incremental routing, and the wider
+performance work, are the next effort; see `notes/design/ws4-performance.md`.
 
 API
 ---
