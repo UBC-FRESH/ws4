@@ -43,11 +43,22 @@ _FUNCTIONS = {
     "lastindexof",
     "curveid",
     "attribute",
+    "operable",
+    "lookuptable",
 }
 
 
 class ExpressionError(ValueError):
     """Raised when an expression cannot be parsed or evaluated."""
+
+
+class CurveRef(str):
+    """A curve reference: a name produced by ``curveId`` or ``attribute``.
+
+    It behaves as a string, so it still concatenates in a label expression, but
+    arithmetic can tell it apart from a data value: a curve scaled or offset by a
+    constant stays that curve.
+    """
 
 
 @dataclass(frozen=True)
@@ -221,8 +232,14 @@ def _field(row: Mapping[str, object], name: str, constants: dict[str, str]) -> s
     raise ExpressionError(f"unknown field: {name}")
 
 
-def _call(name: str, args: list[Any], row: Mapping[str, object], constants: dict[str, str]) -> Any:
-    values = [_evaluate(arg, row, constants) for arg in args]
+def _call(
+    name: str,
+    args: list[Any],
+    row: Mapping[str, object],
+    constants: dict[str, str],
+    attributes: Mapping[str, str] | None,
+) -> Any:
+    values = [_evaluate(arg, row, constants, attributes) for arg in args]
     if name == "startswith":
         return str(values[0]).startswith(str(values[1]))
     if name == "endswith":
@@ -248,13 +265,62 @@ def _call(name: str, args: list[Any], row: Mapping[str, object], constants: dict
         return values[1] if values[0] else values[2]
     if name == "lastindexof":
         return float(str(values[0]).rfind(str(values[1])))
-    if name in ("curveid", "attribute"):
-        # A curve reference or an attribute reference; the value is its name.
-        return str(values[0])
+    if name == "lookuptable":
+        return _lookup_table(values[0], str(values[1]), str(values[2]))
+    if name == "curveid":
+        # A curve reference; the value is its name.
+        return CurveRef(str(values[0]))
+    if name == "attribute":
+        key = str(values[0])
+        if attributes is not None and key in attributes:
+            return CurveRef(attributes[key])
+        return CurveRef(key)
+    if name == "operable":
+        # ``operable(X)`` marks a curve as restricted to operable area. The curve
+        # identity is unchanged here; masking is a runtime concern.
+        return values[0]
     raise ExpressionError(f"unknown function: {name}")
 
 
-def _evaluate(node: Any, row: Mapping[str, object], constants: dict[str, str]) -> Any:
+def _lookup_table(key: Any, keys_text: str, values_text: str) -> str:
+    """Return the value whose position matches ``key`` in a comma-separated table.
+
+    ``lookupTable(k, '1,2,3', 'a,b,c')`` returns ``'b'`` for ``k == 2``. A numeric key
+    compares numerically; any other key compares as text. A key that is absent returns
+    an empty string.
+
+    Parameters
+    ----------
+    key : Any
+        The lookup key.
+    keys_text : str
+        The comma-separated table keys.
+    values_text : str
+        The comma-separated table values, positionally aligned with ``keys_text``.
+
+    Returns
+    -------
+    str
+        The matching value, or an empty string when the key is absent.
+    """
+    keys = [part.strip() for part in keys_text.split(",")]
+    entries = [part.strip() for part in values_text.split(",")]
+    for position, candidate in enumerate(keys):
+        try:
+            matches = _as_number(candidate) == _as_number(key)
+        except ExpressionError:
+            matches = candidate == str(key)
+        if matches:
+            return entries[position] if position < len(entries) else ""
+    return ""
+
+
+def _evaluate(
+    node: Any,
+    row: Mapping[str, object],
+    constants: dict[str, str],
+    attributes: Mapping[str, str] | None = None,
+) -> Any:
     kind = node[0]
     if kind == "num":
         return node[1]
@@ -263,46 +329,57 @@ def _evaluate(node: Any, row: Mapping[str, object], constants: dict[str, str]) -
     if kind == "field":
         return _field(row, node[1], constants)
     if kind == "not":
-        return not bool(_evaluate(node[1], row, constants))
+        return not bool(_evaluate(node[1], row, constants, attributes))
     if kind == "bool":
         # Short-circuit, so an unparsable right operand is not evaluated when the left
         # decides the result (for example ``startswith(au,'t') or int(au) gt 2200``).
-        left = bool(_evaluate(node[2], row, constants))
+        left = bool(_evaluate(node[2], row, constants, attributes))
         if node[1] == "and":
-            return left and bool(_evaluate(node[3], row, constants))
-        return left or bool(_evaluate(node[3], row, constants))
+            return left and bool(_evaluate(node[3], row, constants, attributes))
+        return left or bool(_evaluate(node[3], row, constants, attributes))
     if kind == "cmp":
         return _compare(
-            node[1], _evaluate(node[2], row, constants), _evaluate(node[3], row, constants)
+            node[1],
+            _evaluate(node[2], row, constants, attributes),
+            _evaluate(node[3], row, constants, attributes),
         )
     if kind == "arith":
         return _arith(
-            node[1], _evaluate(node[2], row, constants), _evaluate(node[3], row, constants)
+            node[1],
+            _evaluate(node[2], row, constants, attributes),
+            _evaluate(node[3], row, constants, attributes),
         )
     if kind == "call":
-        return _call(node[1], node[2], row, constants)
+        return _call(node[1], node[2], row, constants, attributes)
     raise ExpressionError(f"unknown node: {kind}")
 
 
 def _arith(op: str, left: Any, right: Any) -> Any:
     """Evaluate an arithmetic or string-concatenation operator.
 
-    ``+`` concatenates when either operand is a string. ``*`` and ``/`` scale a numeric
-    operand; when the left operand is a curve reference (a name), the name is kept,
-    because only the curve identity matters here.
+    ``+`` concatenates two strings (``'a' + 'b'``). When exactly one operand is a
+    :class:`CurveRef` — a curve reference such as the result of ``curveId('Yield')`` —
+    the curve is kept through arithmetic: a curve scaled or offset by a constant is
+    still that curve for matrix purposes, so ``curveId('Yield') * 55 + 2963`` resolves
+    to the ``Yield`` curve.
     """
     if op == "+":
+        if isinstance(left, CurveRef) and not isinstance(right, CurveRef):
+            return left
+        if isinstance(right, CurveRef) and not isinstance(left, CurveRef):
+            return right
         if isinstance(left, str) or isinstance(right, str):
             return _canonical(left) + _canonical(right)
         return _as_number(left) + _as_number(right)
+    if isinstance(left, CurveRef):
+        return left
+    if isinstance(right, CurveRef):
+        return right
     if op == "-":
         return _as_number(left) - _as_number(right)
-    try:
-        if op == "*":
-            return _as_number(left) * _as_number(right)
-        return _as_number(left) / _as_number(right)
-    except ExpressionError:
-        return left
+    if op == "*":
+        return _as_number(left) * _as_number(right)
+    return _as_number(left) / _as_number(right)
 
 
 def _compare(op: str, left: Any, right: Any) -> bool:
@@ -338,7 +415,12 @@ def _equal(left: Any, right: Any) -> bool:
     return _canonical(left) == _canonical(right)
 
 
-def evaluate_value(expression: str, row: Mapping[str, object], constants: dict[str, str]) -> Any:
+def evaluate_value(
+    expression: str,
+    row: Mapping[str, object],
+    constants: dict[str, str],
+    attributes: Mapping[str, str] | None = None,
+) -> Any:
     """Evaluate an expression and return its raw value.
 
     Parameters
@@ -349,6 +431,9 @@ def evaluate_value(expression: str, row: Mapping[str, object], constants: dict[s
         The row's field values.
     constants : dict of str to str
         The recipe's scalar constants.
+    attributes : mapping of str to str, optional
+        A label-to-curve-name map for ``attribute('label')`` lookups. When omitted,
+        ``attribute('label')`` evaluates to the label itself.
 
     Returns
     -------
@@ -360,7 +445,7 @@ def evaluate_value(expression: str, row: Mapping[str, object], constants: dict[s
     ExpressionError
         When the expression cannot be parsed or evaluated.
     """
-    return _evaluate(_parse(expression), row, constants)
+    return _evaluate(_parse(expression), row, constants, attributes)
 
 
 @lru_cache(maxsize=2048)
@@ -374,7 +459,12 @@ def _parse(expression: str) -> Any:
     return _Parser(tokenize(expression)).parse()
 
 
-def evaluate(expression: str, row: Mapping[str, object], constants: dict[str, str]) -> bool:
+def evaluate(
+    expression: str,
+    row: Mapping[str, object],
+    constants: dict[str, str],
+    attributes: Mapping[str, str] | None = None,
+) -> bool:
     """Evaluate a select statement against a row.
 
     Parameters
@@ -385,6 +475,8 @@ def evaluate(expression: str, row: Mapping[str, object], constants: dict[str, st
         The row's field values.
     constants : dict of str to str
         The recipe's scalar constants.
+    attributes : mapping of str to str, optional
+        A label-to-curve-name map for ``attribute('label')`` lookups.
 
     Returns
     -------
@@ -396,4 +488,4 @@ def evaluate(expression: str, row: Mapping[str, object], constants: dict[str, st
     ExpressionError
         When the expression cannot be parsed or evaluated.
     """
-    return bool(_evaluate(_parse(expression), row, constants))
+    return bool(_evaluate(_parse(expression), row, constants, attributes))

@@ -48,7 +48,7 @@ Gates at the evidence head: `python -m pytest` reports 264 passed at 94.28 perce
 | A per-curve `.loc` setitem dominated the simulator | P3.5 | Closed in P3.5 (positional assignment; C5 30-year simulate 15.5 s to 4.2 s) |
 | `ws4/patch/topology.py` is a stub that duplicates the loader | P3.4 | Recorded; target post-release |
 | The wider operator set, GPU moves, tuners, portfolio, core-area rules, edge contrast, destination eligibility, route cost accounts, duplicate/meta accounts, unit conversion | P2 | Recorded with a target phase in `notes/backlog.md`; none is release-blocking |
-| The full MKRf canonical model | P2 | Blocked on its generated XML |
+| The full MKRF canonical model | P2 | Blocked on its generated XML |
 
 ## 4. Deviations
 
@@ -72,7 +72,7 @@ Gates at the evidence head: `python -m pytest` reports 264 passed at 94.28 perce
 - A full run is reproducible from its configuration and seed.
 
 The open items are enhancements and maintenance, none of which blocks a first release. Two deserve a
-mention in the release notes: the full MKRf canonical model is blocked on external inputs, and the
+mention in the release notes: the full MKRF canonical model is blocked on external inputs, and the
 wider operator set and the tuning portfolio are future work.
 
 ## 6. Next

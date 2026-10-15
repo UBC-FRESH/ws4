@@ -13,7 +13,7 @@ import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
-from ..io.expressions import ExpressionError, evaluate
+from ..io.expressions import ExpressionError, evaluate, evaluate_value
 from ..io.forest_model_xml import Recipe, Select, Term, Treatment
 
 
@@ -127,10 +127,21 @@ def state_of(
     values: list[str] = []
     for name in variables:
         expression = recipe.defines.get(name)
-        column = column_name(expression) if expression is not None else None
-        values.append(
-            format_state_value(row[column]) if column is not None and column in row else ""
-        )
+        if expression is None:
+            values.append("")
+            continue
+        column = column_name(expression)
+        if column in row:
+            values.append(format_state_value(row[column]))
+            continue
+        # An expression define (for example ``lookupTable(Int(FOREST_COV), ...)``) is
+        # evaluated against the fragment row.
+        try:
+            value = evaluate_value(expression, row, recipe.constants)
+        except ExpressionError:
+            values.append("")
+            continue
+        values.append(format_state_value(value))
     return tuple(values)
 
 

@@ -14,6 +14,10 @@ project grows.
 
    reference/compiled-dataset
    reference/forestmodelxml
+   reference/simulator
+   reference/optimizer
+   reference/spatial
+   reference/roads
 
 .. toctree::
    :maxdepth: 2

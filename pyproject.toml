@@ -4,12 +4,24 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ws4"
-version = "0.0.1"
+version = "0.1.0"
 description = "WS4: Wood Supply Simulation System (Spatially explicit)"
 authors = [{name = "FRESH Lab", email = "noreply@example.org"}]
 requires-python = ">=3.11"
 readme = "README.md"
 license = {text = "Apache-2.0"}
+keywords = ["forestry", "forest estate model", "simulation", "optimization", "spatial"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering",
+  "Typing :: Typed",
+]
 dependencies = [
   "pydantic>=2.7",
   "typer>=0.12",
@@ -23,6 +35,12 @@ dependencies = [
 [project.optional-dependencies]
 geo = ["geopandas>=0.14", "pyogrio>=0.9", "shapely>=2.0", "rtree>=1.0"]
 opt = ["numba>=0.59", "networkx>=3.2", "ray>=2.9", "scipy>=1.11"]
+
+[project.urls]
+Homepage = "https://github.com/UBC-FRESH/ws4"
+Documentation = "https://ubc-fresh.github.io/ws4/"
+Repository = "https://github.com/UBC-FRESH/ws4"
+Issues = "https://github.com/UBC-FRESH/ws4/issues"
 
 [project.scripts]
 ws4 = "ws4.cli:app"

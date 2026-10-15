@@ -101,7 +101,7 @@ Recommended defaults, each with its reason:
 
 - **Keep the version at 0.0.1 until the release tag.** Reason: P4.1 owns the version bump.
 - **Publish the docs from the existing Pages workflow.** Reason: it already builds and deploys.
-- **Name the two known gaps in the release notes.** Reason: the full MKRf canonical model is blocked,
+- **Name the two known gaps in the release notes.** Reason: the full MKRF canonical model is blocked,
   and the wider operator set and tuning portfolio are future work.
 
 ## 7. Decision

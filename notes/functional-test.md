@@ -45,6 +45,13 @@ network.nearest_destination(block_id)
   `feature.Area.managed.DF` at year 2 reports `met`.
 - Roads: `vertices 27231`, `segments 36721`, `destinations 3`, `linkages 12567`; block 1's
   nearest destination is about 66.4 km away, and a route cost is reported.
+- Route model: the three destinations are kept by account name (`destination.MILL1`,
+  `destination.MILL2`, `destination.MILL3`; MILL1 and MILL3 share a vertex); a run with a route model
+  writes `route_values.csv`, `network_table.csv`, a `route_table.<destination>.csv`, and
+  `route_cost_report.csv`.
+- Patch accounts: a run with the block topology and a patch account (criteria `feature.Seral.young`,
+  threshold 0.5) writes `patch_accounts.csv` with the `area`, `size`, `shape`, and `frequency`
+  sub-accounts per size class.
 
 ## Notes
 
