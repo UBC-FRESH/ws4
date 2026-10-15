@@ -52,6 +52,11 @@ Run
    ws4 optimize --dataset build/compiled --targets targets.yaml --weights weights.yaml \
                 --threads 8 --seed 42 --out opt
 
+When a route configuration is given (``OptimizeConfig.route_config_path`` or
+``--route-config``), the objective is evaluated with the route model, and the route accounts and
+duplicate accounts (see :doc:`roads`) are resolved into the account values, so targets can be set on
+accounts such as ``route.Total.haul``.
+
 Outputs
 -------
 

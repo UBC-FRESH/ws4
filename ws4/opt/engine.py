@@ -20,9 +20,17 @@ from typing import Any
 import pandas as pd
 
 from ..model.schema import dataset_reference
+from ..patch.accounts import load_patch_edges
 from ..patch.constraints import schedule_years, spatial_penalty
-from ..patch.metrics import load_topology
 from ..report import write_report
+from ..roads.accounts import (
+    DuplicateAccount,
+    RouteAccount,
+    RouteCostLedger,
+    RouteModel,
+    load_route_config,
+    resolve_account_values,
+)
 from ..sim.engine import Simulator
 from .core import Problem
 from .mip import bound_for
@@ -53,6 +61,7 @@ class OptimizeConfig:
     warm_start: bool = False
     mip_bound: bool = False
     topology_path: str = ""
+    route_config_path: str = ""
     max_opening_ha: float | None = None
     min_green_up_years: int | None = None
     spatial_weight: float = 1.0
@@ -68,11 +77,37 @@ class Optimizer:
         self.cfg = cfg
         self.registry = OperatorRegistry()
         self._spatial_cache: tuple[list[tuple[int, int]], dict[int, float]] | None = None
+        self._route_cache: (
+            tuple[RouteModel | None, tuple[RouteAccount, ...], tuple[DuplicateAccount, ...]] | None
+        ) = None
 
     @classmethod
     def from_dataset(cls, dataset_dir: Path, cfg: OptimizeConfig) -> Optimizer:
         """Build an optimizer that reads the given compiled dataset."""
         return cls(dataset_dir, cfg)
+
+    def route(
+        self,
+    ) -> tuple[RouteModel | None, tuple[RouteAccount, ...], tuple[DuplicateAccount, ...]]:
+        """Return the route model, route accounts, and duplicate accounts, loaded once.
+
+        Returns
+        -------
+        tuple
+            ``(model, route_accounts, duplicate_accounts)``. The model is None when no
+            route configuration is set.
+        """
+        if self._route_cache is None:
+            if self.cfg.route_config_path:
+                config = load_route_config(Path(self.cfg.route_config_path))
+                self._route_cache = (
+                    config.model,
+                    config.route_accounts,
+                    config.duplicate_accounts,
+                )
+            else:
+                self._route_cache = (None, (), ())
+        return self._route_cache
 
     def candidates(self) -> Candidates:
         """Return the possible ``(treatment, year)`` options for each block.
@@ -116,16 +151,23 @@ class Optimizer:
     def _evaluate(self, schedule: Schedule, targets: list[Target]) -> float:
         """Return the objective for a schedule, including any spatial penalty."""
         frame = self._schedule_frame(schedule)
-        values = Simulator.from_dataset(self.dataset_dir).simulate(frame, self.cfg.years)
+        model, route_accounts, duplicate_accounts = self.route()
+        simulator = Simulator.from_dataset(self.dataset_dir)
+        ledger = RouteCostLedger(model.network) if model is not None else None
+        values = simulator.simulate(frame, self.cfg.years, route_model=model, ledger=ledger)
+        if ledger is not None and route_accounts:
+            values = resolve_account_values(
+                values, ledger.account_values(route_accounts), duplicate_accounts
+            )
+        elif duplicate_accounts:
+            values = resolve_account_values(values, None, duplicate_accounts)
         return objective(values, targets) + self._spatial_penalty(frame)
 
     def _spatial(self) -> tuple[list[tuple[int, int]], dict[int, float]]:
         """Return the cached topology edges and block areas, loading them once."""
         if self._spatial_cache is None:
-            topology = load_topology(Path(self.cfg.topology_path))
-            edges = list(
-                zip(topology["src_block"].tolist(), topology["dst_block"].tolist(), strict=True)
-            )
+            graph = load_patch_edges(Path(self.cfg.topology_path))
+            edges = [(source, target) for source, target, _ in graph]
             simulator = Simulator.from_dataset(self.dataset_dir)
             block_area = {
                 int(float(str(block))): float(str(area))
@@ -281,8 +323,16 @@ class Optimizer:
 
         schedule_path = out_dir / "schedule.csv"
         self._schedule_frame(best).to_csv(schedule_path, index=False)
+        model, route_accounts, duplicate_accounts = self.route()
         simulator = Simulator.from_dataset(self.dataset_dir)
-        values = simulator.run(schedule_path, years=self.cfg.years, out_dir=out_dir)
+        values = simulator.run(
+            schedule_path,
+            years=self.cfg.years,
+            out_dir=out_dir,
+            route_model=model,
+            route_accounts=route_accounts,
+            duplicate_accounts=duplicate_accounts,
+        )
         write_report(values, targets, out_dir)
         summary: dict[str, Any] = {
             "incumbent_objective": best_obj,

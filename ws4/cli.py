@@ -15,6 +15,7 @@ from .model.schema import validate_dataset
 from .opt.engine import OptimizeConfig, Optimizer
 from .opt.objective import load_targets
 from .report import write_report
+from .roads.accounts import load_route_config
 from .sim.engine import Simulator
 
 app = typer.Typer(help="WS4 — Wood Supply Simulation System (Spatially explicit)")
@@ -48,10 +49,24 @@ def simulate(
     ),
     years: int = typer.Option(200, help="Simulation horizon in years"),
     out: Path = typer.Option(..., help="Output directory"),
+    route_config: Path = typer.Option(
+        None, "--route-config", exists=True, help="Optional route model and route accounts (YAML)"
+    ),
 ) -> None:
     """Simulate a schedule over a compiled dataset and write a run directory."""
     sim = Simulator.from_dataset(dataset)
-    sim.run(schedule_csv=schedule, years=years, out_dir=out)
+    if route_config is not None:
+        config = load_route_config(route_config)
+        sim.run(
+            schedule_csv=schedule,
+            years=years,
+            out_dir=out,
+            route_model=config.model,
+            route_accounts=config.route_accounts,
+            duplicate_accounts=config.duplicate_accounts,
+        )
+    else:
+        sim.run(schedule_csv=schedule, years=years, out_dir=out)
     print(f"[bold green]Simulation complete[/] → {out}")
 
 
@@ -65,6 +80,9 @@ def optimize(
     seed: int = typer.Option(42),
     out: Path = typer.Option(...),
     topology: Path = typer.Option(None, exists=True, help="Block topology for spatial constraints"),
+    route_config: Path = typer.Option(
+        None, "--route-config", exists=True, help="Optional route model and route accounts (YAML)"
+    ),
     max_opening_ha: float = typer.Option(None, help="Maximum opening size, in hectares"),
     min_green_up_years: int = typer.Option(None, help="Green-up interval, in years"),
     spatial_override: bool = typer.Option(
@@ -79,6 +97,7 @@ def optimize(
         targets_path=str(targets),
         weights_path=str(weights),
         topology_path=str(topology) if topology is not None else "",
+        route_config_path=str(route_config) if route_config is not None else "",
         max_opening_ha=max_opening_ha,
         min_green_up_years=min_green_up_years,
         allow_spatial_override=spatial_override,

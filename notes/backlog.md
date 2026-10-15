@@ -19,10 +19,9 @@ items are enhancements and maintenance.
 - **P5:** broaden `mypy` coverage to `ws4/`.
 - **post-release:** the wider expression library; succession and `produce` semantics; legacy-ingestion
   coverage; a reference replay; the wider operator set and ALNS; the shared solver-core package; the
-  island model and GPU moves; time-boxed MIP subproblems; the tuners and the portfolio layer; wiring
-  the exclusive/duplicate route accounts into the optimizer objective; core-area rules and edge
-  contrast; duplicate and meta accounts and chart output; unit conversion; and the topology stub
-  cleanup.
+  island model and GPU moves; time-boxed MIP subproblems; the tuners and the portfolio layer;
+  incremental routing for the optimizer objective; core-area rules and edge contrast; duplicate and
+  meta accounts and chart output; unit conversion; and the topology stub cleanup.
 - **Blocked:** the MKRF canonical artifacts' location log is not on `origin` (the objects are on
   `arbutus-s3`); a fresh clone needs the producer to push the git-annex branch.
 - **Deferred:** the block-aggregation cache (not the hot path).
@@ -137,8 +136,12 @@ items are enhancements and maintenance.
   eligibility, with an optional unutilized (surplus) account, and the route cost ledger accumulates
   the haul, build (charged once), and maintenance (charged per period used) costs. The simulator
   writes `route_values.csv`, `network_table.csv`, `route_table.<destination>.csv`, and the
-  `route_cost_report.csv`. Open: wiring the exclusive/duplicate accounts into the optimizer's
-  objective, and core-area and edge-contrast rules. Target: post-release.
+  `route_cost_report.csv`. Route accounts (`RouteAccount`) and duplicate accounts
+  (`DuplicateAccount`) are resolved into the account values (`resolve_account_values`), so the
+  optimizer can target accounts such as `route.Total.haul`; a route configuration YAML
+  (`load_route_config`) names the tables, eligibility, and accounts. Open: the route model runs in
+  the optimizer's inner loop, so each evaluation routes every scheduled block (a future
+  incrementality optimization), and core-area and edge-contrast rules. Target: post-release.
 - **Patch accounts.** `done`. `ws4/patch/accounts.py` implements the patch size-class sub-accounts
   (area, size, shape, frequency, attractor) over the block topology for a criteria feature and a
   threshold; the criteria value per block is derived from a feature curve

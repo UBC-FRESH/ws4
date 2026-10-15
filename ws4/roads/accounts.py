@@ -23,8 +23,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import pandas as pd
+import yaml
 
-from .network import Route, RouteNetwork
+from .network import Route, RouteNetwork, load_route_eligibility
 
 # The report column order of the established Route Cost Report.
 _ROUTE_COST_COLUMNS: tuple[str, ...] = (
@@ -127,6 +128,181 @@ class RouteModel:
         return destination, self.network.route(block_id, destination)
 
 
+@dataclass(frozen=True)
+class RouteAccount:
+    """A route account definition (``addRouteHaulAccount`` and friends).
+
+    Attributes
+    ----------
+    destination : str
+        The destination the account tracks.
+    kind : {"haul", "build", "maintain", "volume"}
+        The route value to sum: a cost, or the product volume.
+    account : str
+        The name to add the value into.
+    factor : float
+        A scaling factor, applied to the value (default 1; use -1 to subtract).
+    """
+
+    destination: str
+    kind: str
+    account: str
+    factor: float = 1.0
+
+
+@dataclass(frozen=True)
+class DuplicateAccount:
+    """A duplicate account (``duplicateAccount(master, target, factor)``).
+
+    Attributes
+    ----------
+    master : str
+        The account whose value is copied.
+    target : str
+        The account the value is added into.
+    factor : float
+        A scaling factor (default 1; use -1 to subtract).
+    """
+
+    master: str
+    target: str
+    factor: float = 1.0
+
+
+@dataclass(frozen=True)
+class RouteConfig:
+    """A loaded route configuration.
+
+    Attributes
+    ----------
+    model : RouteModel
+        The route model (network, eligibility, surplus).
+    route_accounts : tuple of RouteAccount
+        The route accounts to resolve.
+    duplicate_accounts : tuple of DuplicateAccount
+        The duplicate accounts to resolve.
+    period_width : int
+        The planning-period width, in years.
+    """
+
+    model: RouteModel
+    route_accounts: tuple[RouteAccount, ...] = ()
+    duplicate_accounts: tuple[DuplicateAccount, ...] = ()
+    period_width: int = 1
+
+
+def load_route_config(path: Path) -> RouteConfig:
+    """Load a route configuration from YAML.
+
+    The file names the four route tables (``segments``, ``destinations``, ``linkages``), an
+    optional ``eligibility`` table, an optional ``unutilized`` account, and lists of
+    ``route_accounts`` and ``duplicate_accounts``. Relative paths resolve against the
+    configuration file's directory.
+
+    Parameters
+    ----------
+    path : Path
+        The YAML configuration file.
+
+    Returns
+    -------
+    RouteConfig
+        The loaded configuration.
+    """
+    path = Path(path)
+    raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    base = path.parent
+    route = raw.get("route", {})
+
+    def resolve(name: str) -> Path:
+        candidate = Path(name)
+        return candidate if candidate.is_absolute() else base / candidate
+
+    table_names = ("segments", "destinations", "linkages")
+    missing = [name for name in table_names if name not in route]
+    if missing:
+        raise ValueError(f"route config needs {', '.join(missing)}")
+    segments = pd.read_csv(resolve(route["segments"]))
+    destinations = pd.read_csv(resolve(route["destinations"]))
+    linkages = pd.read_csv(resolve(route["linkages"]))
+    network = RouteNetwork.from_tables(segments, destinations, linkages)
+    eligibility = (
+        load_route_eligibility(resolve(route["eligibility"])) if route.get("eligibility") else {}
+    )
+    model = RouteModel(
+        network=network,
+        eligibility=eligibility,
+        unutilized=str(route.get("unutilized", "")),
+    )
+    route_accounts = tuple(
+        RouteAccount(
+            destination=str(item["destination"]),
+            kind=str(item["kind"]),
+            account=str(item["account"]),
+            factor=float(item.get("factor", 1.0)),
+        )
+        for item in raw.get("route_accounts", [])
+    )
+    duplicate_accounts = tuple(
+        DuplicateAccount(
+            master=str(item["master"]),
+            target=str(item["target"]),
+            factor=float(item.get("factor", 1.0)),
+        )
+        for item in raw.get("duplicate_accounts", [])
+    )
+    return RouteConfig(
+        model=model,
+        route_accounts=route_accounts,
+        duplicate_accounts=duplicate_accounts,
+        period_width=int(raw.get("period_width", 1)),
+    )
+
+
+def resolve_account_values(
+    values: pd.DataFrame,
+    extra: pd.DataFrame | None = None,
+    duplicates: Sequence[DuplicateAccount] = (),
+) -> pd.DataFrame:
+    """Combine account values, apply duplicate accounts, and sum by year and account.
+
+    Parameters
+    ----------
+    values : pandas.DataFrame
+        The simulated account values (``year``, ``account``, ``value``).
+    extra : pandas.DataFrame or None, optional
+        Additional account values (for example route cost accounts).
+    duplicates : sequence of DuplicateAccount, optional
+        Duplicate accounts. Each copies the value of its master account (summed over the
+        year) into its target, scaled by its factor. Duplicates are applied once, in
+        order, against the combined values (they do not chain).
+
+    Returns
+    -------
+    pandas.DataFrame
+        The resolved values, with ``year``, ``account``, and ``value`` columns, summed by
+        year and account.
+    """
+    frames = [values]
+    if extra is not None and not extra.empty:
+        frames.append(extra)
+    combined = pd.concat(frames, ignore_index=True) if len(frames) > 1 else values.copy()
+    if duplicates:
+        totals = combined.groupby(["year", "account"], as_index=False)["value"].sum()
+        additions: list[pd.DataFrame] = []
+        for duplicate in duplicates:
+            source = totals[totals["account"] == duplicate.master]
+            if source.empty:
+                continue
+            copied = source.copy()
+            copied["account"] = duplicate.target
+            copied["value"] = copied["value"] * duplicate.factor
+            additions.append(copied)
+        if additions:
+            combined = pd.concat([combined, *additions], ignore_index=True)
+    return pd.DataFrame(combined.groupby(["year", "account"], as_index=False)["value"].sum())
+
+
 @dataclass
 class _SegmentState:
     """The per-period state of one segment."""
@@ -172,6 +348,7 @@ class RouteCostLedger:
         self._first_use: dict[int, int] = {}
         self._year_distance: dict[int, float] = {}
         self._year_volume: dict[int, float] = {}
+        self._destination_volume: dict[tuple[int, str], float] = {}
         self._route_rows: list[dict[str, object]] = []
 
     def record(
@@ -214,16 +391,20 @@ class RouteCostLedger:
         if route is None or volume <= 0.0:
             return
         self._year_volume[year] = self._year_volume.get(year, 0.0) + volume
+        self._destination_volume[(year, destination)] = (
+            self._destination_volume.get((year, destination), 0.0) + volume
+        )
         self._year_distance[year] = self._year_distance.get(year, 0.0) + volume * route.length_m
         for segment_id in route.segment_ids:
             segment = self._by_id[segment_id]
+            is_new = segment_id not in self._built
             state = self._segments.setdefault((year, segment_id), _SegmentState())
             state.volume += volume
             state.haul_expense += volume * segment.haul_cost
             state.length = segment.length_m
             state.maintain_expense += segment.maintain_cost
             self._first_use.setdefault(segment_id, year)
-            if segment_id not in self._built:
+            if is_new:
                 self._built.add(segment_id)
                 state.built_length += segment.length_m
                 state.build_expense += segment.build_cost
@@ -233,6 +414,9 @@ class RouteCostLedger:
             per_dest.volume += volume
             per_dest.haul_expense += volume * segment.haul_cost
             per_dest.length = segment.length_m
+            per_dest.maintain_expense += segment.maintain_cost
+            if is_new:
+                per_dest.build_expense += segment.build_cost
 
     def route_rows(self) -> pd.DataFrame:
         """Return the per-product routing rows.
@@ -342,6 +526,49 @@ class RouteCostLedger:
                 "haul_cost",
             ],
         )
+
+    def account_values(self, route_accounts: Sequence[RouteAccount]) -> pd.DataFrame:
+        """Return the route account values, one row per period and account.
+
+        Each :class:`RouteAccount` sums a route value (haul, build, maintenance, or
+        volume) for its destination into its named account, scaled by its factor.
+
+        Parameters
+        ----------
+        route_accounts : sequence of RouteAccount
+            The route accounts to resolve.
+
+        Returns
+        -------
+        pandas.DataFrame
+            ``year``, ``account``, and ``value`` columns.
+        """
+        totals: dict[tuple[int, str], dict[str, float]] = {}
+        for (year, destination, _segment_id), state in self._by_destination.items():
+            bucket = totals.setdefault(
+                (year, destination),
+                {"haul": 0.0, "build": 0.0, "maintain": 0.0, "volume": 0.0},
+            )
+            bucket["haul"] += state.haul_expense
+            bucket["build"] += state.build_expense
+            bucket["maintain"] += state.maintain_expense
+        for key, volume in self._destination_volume.items():
+            totals.setdefault(key, {"haul": 0.0, "build": 0.0, "maintain": 0.0, "volume": 0.0})[
+                "volume"
+            ] = volume
+        rows: list[dict[str, object]] = []
+        for account in route_accounts:
+            for (year, destination), bucket in totals.items():
+                if destination != account.destination:
+                    continue
+                rows.append(
+                    {
+                        "year": year,
+                        "account": account.account,
+                        "value": bucket.get(account.kind, 0.0) * account.factor,
+                    }
+                )
+        return pd.DataFrame(rows, columns=["year", "account", "value"])
 
     def route_cost_report(self) -> pd.DataFrame:
         """Return the route cost report: one row per period.

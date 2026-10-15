@@ -19,7 +19,13 @@ from ..model.schema import dataset_reference
 from ..patch.accounts import PatchAccount, PatchLedger, load_patch_edges
 from ..patch.constraints import green_up_violations, opening_violations, schedule_years
 from ..patch.metrics import patch_metrics
-from ..roads.accounts import RouteCostLedger, RouteModel
+from ..roads.accounts import (
+    DuplicateAccount,
+    RouteAccount,
+    RouteCostLedger,
+    RouteModel,
+    resolve_account_values,
+)
 from ..roads.network import RouteNetwork
 from .curve import curve_value
 
@@ -277,6 +283,8 @@ class Simulator:
         patch_breaks: Sequence[float] = (5.0, 10.0, 50.0),
         network: RouteNetwork | None = None,
         route_model: RouteModel | None = None,
+        route_accounts: Sequence[RouteAccount] = (),
+        duplicate_accounts: Sequence[DuplicateAccount] = (),
         max_opening_ha: float | None = None,
         min_green_up_years: int | None = None,
         patch_accounts: Sequence[PatchAccount] = (),
@@ -301,6 +309,10 @@ class Simulator:
         route_model : RouteModel or None, optional
             The route model (destinations, eligibility, surplus). When omitted but
             ``network`` is given, a default model over that network is used.
+        route_accounts : sequence of RouteAccount, optional
+            The route accounts to resolve into the account values.
+        duplicate_accounts : sequence of DuplicateAccount, optional
+            The duplicate accounts to apply to the account values.
         max_opening_ha : float or None, optional
             The maximum opening size. When given, ``spatial_violations.csv`` reports the
             patches over it.
@@ -328,6 +340,12 @@ class Simulator:
         ledger = RouteCostLedger(model.network) if model is not None else None
 
         values = self.simulate(schedule, years, route_model=model, ledger=ledger)
+        if ledger is not None and route_accounts:
+            values = resolve_account_values(
+                values, ledger.account_values(route_accounts), duplicate_accounts
+            )
+        elif duplicate_accounts:
+            values = resolve_account_values(values, None, duplicate_accounts)
         values.to_csv(out_dir / "account_values.csv", index=False)
         pd.DataFrame(self._product_values, columns=["year", "account", "value"]).to_csv(
             out_dir / "product_values.csv", index=False

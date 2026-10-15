@@ -66,21 +66,54 @@ It writes, into the run directory:
   MAINTAIN_EXPENSE, TOTAL, VOLUME, AVERAGEHAULDIST, AVERAGEBUILDCOST, AVERAGEHAULCOST,
   AVERAGEMAINTCOST``).
 
-Run a route model from the Python API:
+Route accounts and duplicate accounts
+-------------------------------------
+
+A **route account** (``RouteAccount``, matching ``addRouteHaulAccount`` and friends) sums a route
+value — haul, build, maintenance, or volume — for a destination into a named account. A
+**duplicate account** (``DuplicateAccount``, matching ``duplicateAccount``) copies an account's
+value into another, scaled by a factor. ``resolve_account_values`` combines the simulated account
+values with the route account values and applies the duplicates, so the resulting accounts (for
+example ``route.Total.haul``) can be targeted by the optimizer.
+
+A **route configuration** file (YAML) names the four route tables, an optional eligibility table,
+an optional unutilized account, the route accounts, and the duplicate accounts:
+
+.. code-block:: yaml
+
+   route:
+     segments: segments.csv
+     destinations: destinations.csv
+     linkages: linkages.csv
+     eligibility: eligibility.csv
+     unutilized: product.Unutilized
+   route_accounts:
+     - {destination: destination.MILL1, kind: haul, account: route.Mill1.haul}
+     - {destination: destination.MILL1, kind: volume, account: product.Mill1.Yield}
+   duplicate_accounts:
+     - {master: route.Mill1.haul, target: route.Total.haul}
+
+Load it with ``load_route_config`` and pass the model, route accounts, and duplicate accounts to
+the simulator or the optimizer (``OptimizeConfig.route_config_path`` or ``--route-config`` on the
+command line):
 
 .. code-block:: python
 
-   from ws4.roads.network import RouteNetwork, load_route_eligibility
-   from ws4.roads.accounts import RouteModel
+   from ws4.roads.accounts import load_route_config
    from ws4.sim.engine import Simulator
 
-   network = RouteNetwork.from_tables(segments, destinations, linkages)
-   model = RouteModel(network, eligibility=load_route_eligibility(eligibility_csv))
-   Simulator.from_dataset(dataset).run(schedule, years, out_dir, route_model=model)
+   config = load_route_config("route.yaml")
+   Simulator.from_dataset(dataset).run(
+       schedule, years, out_dir,
+       route_model=config.model,
+       route_accounts=config.route_accounts,
+       duplicate_accounts=config.duplicate_accounts,
+   )
 
-Open items: destination eligibility per product and the route cost accounts are implemented; the
-exclusive/unutilized/duplicate account wiring for the optimizer's objective, and core-area and
-edge-contrast rules, remain (see ``notes/backlog.md``).
+Open items: the route model runs in the optimizer's inner loop, so each objective evaluation routes
+every scheduled block (a full C5 single-iteration run is minutes); incremental routing for the
+objective is a future optimization. Core-area and edge-contrast rules remain (see
+``notes/backlog.md``).
 
 API
 ---
@@ -97,6 +130,19 @@ API
 
 .. autoclass:: ws4.roads.accounts.RouteModel
    :members:
+
+.. autoclass:: ws4.roads.accounts.RouteAccount
+   :members:
+
+.. autoclass:: ws4.roads.accounts.DuplicateAccount
+   :members:
+
+.. autoclass:: ws4.roads.accounts.RouteConfig
+   :members:
+
+.. autofunction:: ws4.roads.accounts.load_route_config
+
+.. autofunction:: ws4.roads.accounts.resolve_account_values
 
 .. autoclass:: ws4.roads.accounts.RouteCostLedger
    :members:

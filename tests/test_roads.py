@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
+import pytest
 from ws4.roads.accounts import RouteCostLedger, RouteModel
 from ws4.roads.network import RouteNetwork, load_route_eligibility
 
@@ -128,3 +129,81 @@ def test_route_cost_ledger_charges_build_once_and_maintenance_each_year() -> Non
     assert build[0] > 0.0
     assert build[1] == 0.0  # built once
     assert maintain[0] == maintain[1] > 0.0  # maintained each period
+
+
+def test_route_accounts_sum_costs_and_volume() -> None:
+    """Route accounts sum the haul cost and volume per destination."""
+    from ws4.roads.accounts import RouteAccount
+
+    network = _network()
+    ledger = RouteCostLedger(network)
+    route = network.route(1, "10")
+    assert route is not None
+    ledger.record(0, 1, "product.Yield", 10.0, "10", route)
+    accounts = ledger.account_values(
+        [
+            RouteAccount("10", "haul", "route.mill.haul"),
+            RouteAccount("10", "volume", "product.mill.Yield"),
+        ]
+    )
+    values = dict(zip(accounts["account"], accounts["value"], strict=True))
+    assert values["route.mill.haul"] == 300.0  # 10 volume * (10 + 20) haul rate
+    assert values["product.mill.Yield"] == 10.0
+
+
+def test_duplicate_accounts_copy_and_scale() -> None:
+    """A duplicate account copies its master into a target, scaled."""
+    from ws4.roads.accounts import DuplicateAccount, resolve_account_values
+
+    values = pd.DataFrame({"year": [0], "account": ["a"], "value": [5.0]})
+    extra = pd.DataFrame({"year": [0], "account": ["route.haul"], "value": [100.0]})
+    resolved = resolve_account_values(
+        values, extra, [DuplicateAccount("route.haul", "route.total", 0.5)]
+    )
+    lookup = dict(zip(resolved["account"], resolved["value"], strict=True))
+    assert lookup["a"] == 5.0
+    assert lookup["route.total"] == 50.0
+
+
+def test_load_route_config(tmp_path: Path) -> None:
+    """A route config loads the network, eligibility, and accounts."""
+    from ws4.roads.accounts import load_route_config
+
+    (tmp_path / "segments.csv").write_text(
+        "SEGMENT,FNODE,TNODE,LENGTH,HAUL\n1,1,2,100.0,10.0\n", encoding="utf-8"
+    )
+    (tmp_path / "destinations.csv").write_text(
+        "NODE,ACCOUNT\n2,destination.MILL1\n", encoding="utf-8"
+    )
+    (tmp_path / "linkages.csv").write_text("BLOCK,NODE\n1,1\n", encoding="utf-8")
+    (tmp_path / "eligibility.csv").write_text(
+        "product,destination\nproduct.Decid,destination.MILL1\n", encoding="utf-8"
+    )
+    config_path = tmp_path / "route.yaml"
+    config_path.write_text(
+        "route:\n"
+        "  segments: segments.csv\n"
+        "  destinations: destinations.csv\n"
+        "  linkages: linkages.csv\n"
+        "  eligibility: eligibility.csv\n"
+        "route_accounts:\n"
+        "  - {destination: destination.MILL1, kind: haul, account: route.Mill1.haul}\n"
+        "duplicate_accounts:\n"
+        "  - {master: route.Mill1.haul, target: route.Total.haul}\n",
+        encoding="utf-8",
+    )
+    config = load_route_config(config_path)
+    assert config.model.network.destination_names() == ("destination.MILL1",)
+    assert config.model.eligible("product.Decid") == ("destination.MILL1",)
+    assert config.route_accounts[0].account == "route.Mill1.haul"
+    assert config.duplicate_accounts[0].target == "route.Total.haul"
+
+
+def test_load_route_config_requires_the_tables(tmp_path: Path) -> None:
+    """A route config without the route tables is rejected."""
+    from ws4.roads.accounts import load_route_config
+
+    path = tmp_path / "route.yaml"
+    path.write_text("route:\n  segments: s.csv\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="destinations, linkages"):
+        load_route_config(path)

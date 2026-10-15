@@ -307,3 +307,19 @@ issue comments.
   report with haul/build/maintain, and a per-period `patch_accounts.csv`. Also documented the road and
   patch accounts and updated `notes/backlog.md`. Dashboard result: `python scripts/dashboard.py`
   reports `OVERALL: GREEN`. `python -m pytest`: 291 passed.
+- P4 fix (maintainer request): closed the remaining route-account gaps. Added **route accounts**
+  (`RouteAccount`, matching `addRouteHaulAccount` and friends) that sum a destination's haul, build,
+  maintenance, or volume into a named account, and **duplicate accounts** (`DuplicateAccount`,
+  matching `duplicateAccount`) that copy an account into another with a factor.
+  `resolve_account_values` combines the simulated values, the route account values, and the
+  duplicates. A **route configuration** YAML (`load_route_config`) names the route tables,
+  eligibility, unutilized account, route accounts, and duplicate accounts. The **optimizer** now
+  loads the route config (`OptimizeConfig.route_config_path` / `--route-config`), evaluates its
+  objective with the route model, and resolves the route and duplicate accounts before scoring, so
+  targets can be set on accounts such as `route.Total.haul`; the CLI `ws4 simulate` also accepts
+  `--route-config`. Verified on C5: the route accounts resolve (`route.Total.haul` = MILL1 + MILL2
+  haul; `product.Harvested` = the mill volumes), and a single-iteration optimize with a
+  `route.Total.haul` target scores and writes the route tables. Note: routing in the optimizer's
+  inner loop is the current cost (a C5 single-iteration run is ~13 minutes); incremental routing is
+  recorded in `notes/backlog.md`. Dashboard result: `python scripts/dashboard.py` reports
+  `OVERALL: GREEN`. `python -m pytest`: 296 passed.
