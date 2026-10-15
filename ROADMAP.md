@@ -16,7 +16,8 @@ exists and the maintainer approves it.
 | P2 Build | #15 | `feature/p2-build` | complete |
 | P3 Verify | #26 | `feature/p3-verify` | complete |
 | P4 Release and deploy | #36 | `feature/p4-release` | complete |
-| P5 Operate and maintain | #44 | `feature/p5-operate` | pr-open |
+| P5 Operate and maintain | #44 | `feature/p5-operate` | complete |
+| P6 Performance and scalability | #60 | `feature/p6-performance` | active |
 
 ## Lifecycle Map
 
@@ -236,7 +237,13 @@ checkout.
 
 Parent issue: #44
 Branch: `feature/p5-operate`
-Status: pr-open
+Status: complete
+
+P5 is complete: pull request #51 squash-merged as `5f6c704`, the branch deleted, and parent issue #44
+closed. Delivered the review cadence, issue triage, dependency and security maintenance (Dependabot
+version updates and security updates enabled), the roadmap/backlog/changelog sync checklist, the
+release and patch policy, and the maintainer and handover guide. Close-out report:
+`notes/reports/p5-closeout.md`.
 
 Goal: keep the project current: triage incoming ideas, review on a cadence, and close out cleanly.
 
@@ -246,6 +253,32 @@ Goal: keep the project current: triage incoming ideas, review on a cadence, and 
 - [x] P5.4 Keep the roadmap, backlog, and changelog in step on a cadence (#48)
 - [x] P5.5 Define the release cadence and the patch policy (#49)
 - [x] P5.6 Write the maintainer and handover guide (#50)
+
+## Phase 6: Performance and scalability
+
+Parent issue: #60
+Branch: `feature/p6-performance`
+Status: active
+
+Goal: make the simulator, the spatial metrics, and the route model fast enough that the metaheuristic
+optimizer can evaluate thousands of candidate schedules on a C5-class dataset within a practical
+budget. Plan of record: `notes/design/ws4-performance.md`.
+
+- [ ] P6.0 Benchmark harness and baseline (#61)
+- [ ] P6.1 Route and simulation quick wins (#62)
+- [ ] P6.2 Vectorized simulator core (#63)
+- [ ] P6.3 Spatial precompute and incremental metrics (#64)
+- [ ] P6.4 Incremental objective evaluation (#65)
+- [ ] P6.5 Solvers at scale (#66)
+- [ ] P6.6 Native kernels (#67)
+- [ ] P6.7 Guardrails (#68)
+
+Acceptance criteria:
+
+- C5 30-year `simulate` under 1 s; 3-year `simulate` plus routing under 5 s.
+- Patch accounts, edge contrast, and core area per year under 0.2 s.
+- One optimizer objective evaluation on C5 under 50 ms (incremental).
+- Near-linear scaling to 32+ cores; reproducibility preserved.
 
 ## Detailed Next Steps Notes
 
@@ -271,6 +304,10 @@ Goal: keep the project current: triage incoming ideas, review on a cadence, and 
    and core area run inside the optimizer objective). The plan — profiling, bottleneck map, targets, and
    the ordered work packages — is `notes/design/ws4-performance.md`. The implementation is deliberately
    deferred: no optimization work lands before the release merges.
-8. Phase 5 is active on `feature/p5-operate`, parent issue #44, with six tasks (#45 to #50): a review
-   cadence, issue triage, dependency maintenance, a roadmap/backlog/changelog sync, a release and patch
-   policy, and a maintainer and handover guide. The performance build phase follows P5.
+8. Phase 5 is complete: pull request #51 squash-merged as `5f6c704`, the branch deleted, and parent
+   issue #44 closed. The close-out report is `notes/reports/p5-closeout.md`.
+9. Phase 6 (Performance and scalability) is active on `feature/p6-performance`, parent issue #60, with
+   eight work packages (#61 to #68) from the plan in `notes/design/ws4-performance.md`: the benchmark
+   harness and baseline, route and simulation quick wins, a vectorized simulator core, spatial
+   precompute and incremental metrics, incremental objective evaluation, solvers at scale, native
+   kernels, and the guardrails.

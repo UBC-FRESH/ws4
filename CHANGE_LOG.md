@@ -386,3 +386,8 @@ issue comments.
   `notes/design/ws4-performance.md`) with its WP0 to WP7 work packages. It names one settings change
   (Dependabot security updates). Status: awaiting maintainer approval. CI on the evidence head
   `880c14a` is green.
+- Completed Phase 5 (Operate and maintain): squash-merged pull request #51 as `5f6c704`, deleted the
+  branch `feature/p5-operate`, and closed parent issue #44. Enabled Dependabot security updates
+  (version-update pull requests are already open).
+- Launched Phase 6 (Performance and scalability) on `feature/p6-performance`, parent issue #60, with
+  work packages P6.0 to P6.7 (#61 to #68) from `notes/design/ws4-performance.md`.
