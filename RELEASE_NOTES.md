@@ -73,6 +73,10 @@ target phase:
   producer's git-annex location log for its four large artifacts is not on `origin`, so a fresh clone
   cannot `get` them (a local `reinject` workaround was used). The objects themselves are on
   `arbutus-s3`.
+- **Performance on space-and-roads models.** The simulator, route model, patch accounts, edge contrast,
+  and core-area rules run inside the optimizer's objective, so a full C5-class evaluation is slow
+  (minutes, not milliseconds). This is the next major effort after this release; the plan is
+  `notes/design/ws4-performance.md`.
 - **Future work:** the wider expression library; succession and `produce` semantics; wider
   legacy-ingestion coverage; a reference replay; the wider operator set and ALNS; a shared solver-core
   package; the island model and tensorized GPU moves; time-boxed MIP subproblems; the tuners and the

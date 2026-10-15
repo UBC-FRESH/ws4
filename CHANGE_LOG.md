@@ -335,3 +335,13 @@ issue comments.
   Verified on C5: 167 core-area violations at a 500 ha minimum / 50 m buffer, and
   `feature.Edge.OldYoung` = 700748 m of old/young contrast edge. Dashboard result:
   `python scripts/dashboard.py` reports `OVERALL: GREEN`. `python -m pytest`: 300 passed.
+- P4 planning (maintainer request): recorded the post-release performance and scalability plan in
+  `notes/design/ws4-performance.md`. It profiles the spatial+route path on the C5 sample, maps the
+  bottlenecks (route reconstruction rebuilt per call, row-wise `apply_treatments`, per-year criteria
+  merges, double replay, no incrementality, single-threaded inner loop), and lays out the strategic,
+  tactical, and operational plan: precompute a spatial index, incremental (delta) objective
+  evaluation, a vectorized array simulator, an island/parallel substrate, and native kernels behind
+  the Python API. Targets: C5 30-year simulate <1 s, one optimizer objective evaluation <50 ms,
+  near-linear scaling to 32+ cores. The implementation is deliberately deferred until after the phase
+  4 initial release ("functionally complete but slow"); the release notes and `notes/performance.md`
+  record the current limits. Also indexed the plan in `notes/README.md` and the roadmap.

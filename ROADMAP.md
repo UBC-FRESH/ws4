@@ -259,3 +259,8 @@ Goal: keep the project current: triage incoming ideas, review on a cadence, and 
 6. Phase 4 is active on `feature/p4-release`, parent issue #36, with six tasks (#37 to #42): release
    preparation, release notes and known gaps, the release artifacts, the documentation site, the tag and
    publication, and post-release verification. It must not add features; gaps go to `notes/backlog.md`.
+7. Performance is the next major effort, **after** the phase 4 initial release. The release is
+   functionally complete but slow on space-and-roads workloads (routing, patch accounts, edge contrast,
+   and core area run inside the optimizer objective). The plan — profiling, bottleneck map, targets, and
+   the ordered work packages — is `notes/design/ws4-performance.md`. The implementation is deliberately
+   deferred: no optimization work lands before the release merges.
