@@ -408,3 +408,9 @@ issue comments.
   per-curve `numpy.interp`, instead of a per-year pandas merge and groupby. C5 `simulate` base fell from
   3.76 s to **0.41 s** over 30 years (target under 1 s met). The benchmark now times simulator
   construction separately. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.
+- P6.3: spatial precompute and incremental metrics. `block_criteria` uses a precomputed per-label join
+  with `numpy.interp` and `np.bincount` (no pandas merge/groupby per label per year), and the patch
+  perimeter is a single pass over the edges instead of a per-patch scan. C5 edge contrast fell from
+  3.0 s to **0.31 s** (3 y; 0.070 s/yr) and patch accounts from 1.9 s to **0.25 s** (1 y; 0.066 s/yr),
+  both under the 0.2 s-per-year target. Full-history incrementality and the single replay in `run` move
+  to WP4. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.

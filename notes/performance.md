@@ -120,3 +120,21 @@ tables and indexes the 130 423 curves), so the component figures exclude it. The
 base simulate (3 y) 0.16 s, edge contrast (3 y) 3.0 s, routing (3 y, 300 blocks) 3.9 s, patch accounts
 (1 y) 1.9 s, one objective evaluation 1.2 s, peak memory 372 MiB. The edge contrast and patch accounts
 are the WP3 target.
+
+### P6.3 spatial precompute and incremental metrics
+
+WP3 replaced the two spatial hot paths with single passes:
+
+- `block_criteria` (the patch/edge criterion per block) now uses a precomputed per-label join with
+  `numpy.interp` and `np.bincount`, instead of a pandas merge and groupby per label per year.
+- the patch perimeter is one pass over the edges (an edge with exactly one member end is boundary),
+  instead of re-scanning all edges per patch.
+
+| Component (C5) | Before | After | Per year |
+| --- | ---: | ---: | ---: |
+| Edge contrast, 3 years | 3.0 s | 0.31 s | 0.070 s |
+| Patch accounts, 1 year | 1.9 s | 0.25 s | 0.066 s |
+
+Both are well under the 0.2 s-per-year target. The full-history incrementality (an update that touches
+only the changed blocks) and the single replay in `run` remain for WP4, where the objective's
+evaluation is made incremental.

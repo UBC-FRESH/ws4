@@ -104,6 +104,9 @@ class Simulator:
         self._pair_label = np.empty(0, dtype=np.int64)
         self._labels: list[str] = []
         self._curve_groups: dict[int, np.ndarray] = {}
+        # Per-label joins for the patch/edge criteria, rebuilt when the frame changes.
+        self._criteria_cache: dict[str, tuple[np.ndarray, dict[int, np.ndarray]]] = {}
+        self._criteria_frame_id = -1
 
     def _rebuild_join(self) -> None:
         """Precompute the fragment-to-feature join as flat arrays.
@@ -284,29 +287,61 @@ class Simulator:
         dict of int to float
             The criterion value per block.
         """
-        features = self.features[self.features["label"] == label]
-        merged = self.fragments[["block_id", "track_id", "area_ha", "offset"]].merge(
-            features[["track_id", "curve_id"]], on="track_id", how="inner"
-        )
-        if merged.empty:
+        pair_frag, curve_groups = self._criteria_join(label)
+        if pair_frag.size == 0:
             return {}
-        values = np.zeros(len(merged), dtype=float)
-        for curve_id, group in merged.groupby("curve_id"):
-            arrays = self._curves.get(_as_int(curve_id))
+        offsets = self.fragments["offset"].to_numpy(dtype=float)
+        areas = self.fragments["area_ha"].to_numpy(dtype=float)
+        x = offsets[pair_frag]
+        yields = np.zeros(x.size, dtype=float)
+        for curve_id, rows in curve_groups.items():
+            arrays = self._curves.get(curve_id)
             if arrays is None:
                 continue
             xs, ys = arrays
-            values[group.index.to_numpy()] = np.interp(
-                group["offset"].to_numpy(dtype=float), xs, ys
-            )
-        merged = merged.assign(weighted=values * merged["area_ha"].astype(float))
-        grouped = merged.groupby("block_id").agg(
-            weighted=("weighted", "sum"), area=("area_ha", "sum")
-        )
+            yields[rows] = np.interp(x[rows], xs, ys)
+        frag_area = areas[pair_frag]
+        weighted = frag_area * yields
+        blocks = self.fragments["block_id"].to_numpy(dtype=np.int64)[pair_frag]
+        unique, inverse = np.unique(blocks, return_inverse=True)
+        numerator = np.bincount(inverse, weights=weighted, minlength=unique.size)
+        denominator = np.bincount(inverse, weights=frag_area, minlength=unique.size)
         return {
-            _as_int(block): float(row.weighted / row.area) if row.area > 0.0 else 0.0
-            for block, row in grouped.iterrows()
+            int(block): float(numerator[index] / denominator[index])
+            if denominator[index] > 0.0
+            else 0.0
+            for index, block in enumerate(unique)
         }
+
+    def _criteria_join(self, label: str) -> tuple[np.ndarray, dict[int, np.ndarray]]:
+        """Return the fragment positions and per-curve groups for a feature label."""
+        if self._criteria_frame_id != id(self.fragments):
+            self._criteria_cache = {}
+            self._criteria_frame_id = id(self.fragments)
+        cached = self._criteria_cache.get(label)
+        if cached is not None:
+            return cached
+        feature = self.features[self.features["label"] == label]
+        by_track: dict[int, list[int]] = {}
+        for track, curve in zip(
+            feature["track_id"].to_numpy(), feature["curve_id"].to_numpy(), strict=True
+        ):
+            by_track.setdefault(int(track), []).append(int(curve))
+        pair_frag: list[int] = []
+        pair_curve: list[int] = []
+        for position, track in enumerate(self.fragments["track_id"].to_numpy()):
+            for curve in by_track.get(int(track), ()):
+                pair_frag.append(position)
+                pair_curve.append(curve)
+        groups: dict[int, list[int]] = {}
+        for index, curve in enumerate(pair_curve):
+            groups.setdefault(curve, []).append(index)
+        result = (
+            np.asarray(pair_frag, dtype=np.int64),
+            {curve: np.asarray(rows, dtype=np.int64) for curve, rows in groups.items()},
+        )
+        self._criteria_cache[label] = result
+        return result
 
     def simulate(
         self,

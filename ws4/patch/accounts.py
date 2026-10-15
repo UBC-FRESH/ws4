@@ -29,7 +29,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from .metrics import connected_patches, patch_perimeter
+from .metrics import connected_patches
 
 DEFAULT_SIZE_CLASSES: tuple[float, ...] = (50.0, 150.0, 250.0, 2500.0, math.inf)
 
@@ -121,21 +121,33 @@ def patch_account_values(
     members = {block for block, value in values.items() if value > account.threshold}
     adjacency = [(source, target) for source, target, _ in edges]
     patches = connected_patches(members, adjacency)
-    patch_area = [
-        sum(values.get(block, 0.0) * block_area.get(block, 0.0) for block in patch)
-        for patch in patches
-    ]
+    patch_of: dict[int, int] = {}
+    for index, patch in enumerate(patches):
+        for block in patch:
+            patch_of[block] = index
+    patch_area = [0.0] * len(patches)
+    for block, index in patch_of.items():
+        patch_area[index] += values.get(block, 0.0) * block_area.get(block, 0.0)
+    # One pass over the edges gives every patch's perimeter (the edges with exactly one
+    # member end), instead of re-scanning all edges per patch.
+    patch_perimeter_length = [0.0] * len(patches)
+    for source, target, length in edges:
+        source_patch = patch_of.get(source)
+        target_patch = patch_of.get(target)
+        if source_patch is not None and target_patch is None:
+            patch_perimeter_length[source_patch] += length
+        elif target_patch is not None and source_patch is None:
+            patch_perimeter_length[target_patch] += length
     total_area = sum(patch_area)
     labels = size_class_labels(account.size_classes)
     result: dict[str, float] = {}
     by_label: dict[str, list[tuple[float, float]]] = {label: [] for label in labels}
-    for patch, area in zip(patches, patch_area, strict=True):
-        perimeter = patch_perimeter(patch, edges)
-        compactness = _compactness(area, perimeter)
-        for index, upper in enumerate(account.size_classes):
-            lower = 0.0 if index == 0 else account.size_classes[index - 1]
+    for index, area in enumerate(patch_area):
+        compactness = _compactness(area, patch_perimeter_length[index])
+        for class_index, upper in enumerate(account.size_classes):
+            lower = 0.0 if class_index == 0 else account.size_classes[class_index - 1]
             if lower < area <= upper:
-                by_label[labels[index]].append((area, compactness))
+                by_label[labels[class_index]].append((area, compactness))
                 break
     for label in labels:
         members_in_class = by_label[label]
