@@ -58,10 +58,15 @@ items are enhancements and maintenance.
   exactly. The fix was canonicalizing integral floats (`985502002.0` to `985502002`).
 - **Numeric vs literal matching.** `done`. State values are formatted canonically; an integral float is
   rendered without a decimal part.
-- **Full MKRF canonical model.** `blocked`. Its generated `xml/forestmodel.xml` has no copies on the
-  reachable annex remote; regenerate once the Windows machine's inputs are published. The canonical
-  strata add `origin`, `statecode`, and `hasnatcurve` over the PoC's six themes (7048 tracks vs 2116).
-  Target: when the inputs are published.
+- **Full MKRF canonical model.** `blocked` (narrowed). The canonical artifacts were materialized on
+  2026-10-15: `xml/forestmodel.xml` (3.73 MB) and `tracks/{curves,features,products}.csv` were fetched
+  from the public `arbutus-s3` bucket by their chunked keys and `git annex reinject`ed, after the
+  SHA-256 values matched the producer's exactly. Two blockers remain: the producer's git-annex branch
+  was not pushed to `origin`, so a fresh clone cannot `get` the objects; and the recipe's defines use
+  `lookupTable(...)`, which `ws4/io/expressions.py` does not implement, so the builder falls back to the
+  term matcher and cannot reproduce the canonical strata (7048 tracks, adding `origin`, `statecode`, and
+  `hasnatcurve` over the PoC's six themes). Target: post-release (the `lookupTable` function, then the
+  canonical comparison).
 - **Shapefile input.** `done`. `ws4/io/fragments.py` reads a shapefile, GeoJSON, GeoPackage, CSV, or
   Parquet (attributes; geometry is available separately). The geo dependency is imported lazily, and CI
   installs the `geo` extra.

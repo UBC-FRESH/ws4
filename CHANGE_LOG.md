@@ -249,3 +249,9 @@ issue comments.
   performance figures, the verification summary, the known gaps (the blocked MKRF model and the future
   work in `notes/backlog.md`), and the out-of-scope items. Also normalized the acronym `MKRf` to `MKRF`
   across the repository (8 files).
+- Materialized the canonical MKRF artifacts for the downstream check: `xml/forestmodel.xml` and
+  `tracks/{curves,features,products}.csv` were fetched from the public `arbutus-s3` bucket by their
+  chunked keys and `git annex reinject`ed, after all four SHA-256 values matched the producer's. The
+  remaining blockers are recorded in `notes/backlog.md`: the producer's git-annex branch was not pushed
+  to `origin`, and the recipe's defines use `lookupTable(...)`, which the expression evaluator does not
+  implement.
