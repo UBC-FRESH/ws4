@@ -350,3 +350,16 @@ issue comments.
   (P4.5), the docs publish and verification (P4.4), the post-publish verification (P4.6), closing parent
   issue #36, and launching P5, with the exact commands. Set P4 to `pr-open` in `ROADMAP.md`. Status:
   awaiting maintainer approval. CI on the evidence head `4516345` is green.
+- Completed Phase 4 (Release and deploy): squash-merged pull request #43 as `a06d0ca`, deleted the
+  branch `feature/p4-release`, and closed parent issue #36. Created and pushed the annotated tag
+  `v0.1.0`, and published the GitHub release `v0.1.0` with the sdist (`ws4-0.1.0.tar.gz`) and the wheel
+  (`ws4-0.1.0-py3-none-any.whl`), built from a clean checkout of the tag. Verified the published docs
+  site (`https://ubc-fresh.github.io/ws4/`, the Docs workflow run `38785009892` on `main`) and the
+  published artifact (P4.6): a fresh virtual environment installed the released wheel, and the `ws4`
+  command ran build, validate, simulate, report, and optimize end to end; the simulator was
+  reproducible (identical `account_values.csv`) and the optimizer reproduced its objective for the same
+  seed. Fixed a stale roads docs line (`9e4419d`).
+- Launched Phase 5 (Operate and maintain) on `feature/p5-operate`, parent issue #44, with tasks P5.1 to
+  P5.6 (#45 to #50): a review cadence, issue triage, dependency maintenance, a
+  roadmap/backlog/changelog sync, a release and patch policy, and a maintainer and handover guide. The
+  performance build phase follows P5 (`notes/design/ws4-performance.md`).

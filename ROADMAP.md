@@ -15,8 +15,8 @@ exists and the maintainer approves it.
 | P1 Contracts and prototype | #10 | `feature/p1-contracts-prototype` | complete |
 | P2 Build | #15 | `feature/p2-build` | complete |
 | P3 Verify | #26 | `feature/p3-verify` | complete |
-| P4 Release and deploy | #36 | `feature/p4-release` | pr-open |
-| P5 Operate and maintain | TBD | `feature/p5-operate` | planned |
+| P4 Release and deploy | #36 | `feature/p4-release` | complete |
+| P5 Operate and maintain | #44 | `feature/p5-operate` | active |
 
 ## Lifecycle Map
 
@@ -198,7 +198,12 @@ release.
 
 Parent issue: #36
 Branch: `feature/p4-release`
-Status: pr-open
+Status: complete
+
+P4 is complete: pull request #43 squash-merged as `a06d0ca`, the branch deleted, the annotated tag
+`v0.1.0` created and pushed, the GitHub release `v0.1.0` published with the sdist and the wheel, the
+docs site verified, and the published artifact verified from a fresh install (P4.6). Close-out report:
+`notes/reports/p4-closeout.md`.
 
 Goal: tag a release, publish the artifacts and the docs, and verify the published release from a clean
 checkout.
@@ -214,32 +219,33 @@ checkout.
   - [x] Build the sdist and the wheel
   - [x] Install the wheel into a fresh virtual environment and run the command line end to end
   - [x] Confirm the artifacts contain the package and not the tests or the notes (added `MANIFEST.in`)
-- [ ] P4.4 Publish the documentation site and verify it from a clean checkout (#40)
-  - [ ] Confirm the `Docs` workflow builds and deploys from `main`
-  - [ ] Verify the published site is reachable and matches the checkout
+- [x] P4.4 Publish the documentation site and verify it from a clean checkout (#40)
+  - [x] Confirm the `Docs` workflow builds and deploys from `main` (run `38785009892`)
+  - [x] Verify the published site is reachable and matches the checkout
   - [x] Add the subsystem pages assigned to P4 (simulator, optimizer, spatial, roads)
-- [ ] P4.5 Tag the release and publish the artifacts (#41, maintainer approval required)
-  - [ ] Create the annotated tag
-  - [ ] Publish the artifacts after approval, and record the locations and commands
-- [ ] P4.6 Verify the published release (#42)
-  - [ ] Install the published artifact into a fresh virtual environment
-  - [ ] Run the acceptance checks against the installed package
-  - [ ] Confirm reproducibility: the same configuration and seed reproduce a run
+- [x] P4.5 Tag the release and publish the artifacts (#41, maintainer approval required)
+  - [x] Create the annotated tag (`v0.1.0` at `a06d0ca`)
+  - [x] Publish the artifacts after approval, and record the locations and commands (the GitHub release
+    `v0.1.0`; see `notes/reports/p4-closeout.md`)
+- [x] P4.6 Verify the published release (#42)
+  - [x] Install the published artifact into a fresh virtual environment
+  - [x] Run the acceptance checks against the installed package
+  - [x] Confirm reproducibility: the same configuration and seed reproduce a run
 
 ## Phase 5: Operate and maintain
 
-Parent issue: TBD
+Parent issue: #44
 Branch: `feature/p5-operate`
-Status: planned
+Status: active
 
 Goal: keep the project current: triage incoming ideas, review on a cadence, and close out cleanly.
 
-- [ ] P5.1 Set a review cadence and record the first review
-- [ ] P5.2 Stand up issue triage: labels, templates, and a triage cadence
-- [ ] P5.3 Dependency and security maintenance: automated updates and a review cadence
-- [ ] P5.4 Keep the roadmap, backlog, and changelog in step on a cadence
-- [ ] P5.5 Define the release cadence and the patch policy
-- [ ] P5.6 Write the maintainer and handover guide
+- [ ] P5.1 Set a review cadence and record the first review (#45)
+- [ ] P5.2 Stand up issue triage: labels, templates, and a triage cadence (#46)
+- [ ] P5.3 Dependency and security maintenance: automated updates and a review cadence (#47)
+- [ ] P5.4 Keep the roadmap, backlog, and changelog in step on a cadence (#48)
+- [ ] P5.5 Define the release cadence and the patch policy (#49)
+- [ ] P5.6 Write the maintainer and handover guide (#50)
 
 ## Detailed Next Steps Notes
 
@@ -256,11 +262,15 @@ Goal: keep the project current: triage incoming ideas, review on a cadence, and 
 5. Phase 3 is complete: pull request #35 squash-merged as `83e2d60`, the branch deleted, and parent
    issue #26 closed. The close-out report is `notes/reports/p3-closeout.md`, and the verification report
    is `notes/reports/p3-verify.md`.
-6. Phase 4 is active on `feature/p4-release`, parent issue #36, with six tasks (#37 to #42): release
-   preparation, release notes and known gaps, the release artifacts, the documentation site, the tag and
-   publication, and post-release verification. It must not add features; gaps go to `notes/backlog.md`.
+6. Phase 4 is complete: pull request #43 squash-merged as `a06d0ca`, the branch deleted, and parent
+   issue #36 closed. The annotated tag `v0.1.0` was created and pushed, and the GitHub release
+   `v0.1.0` published the sdist and the wheel. The docs site and the published artifact were verified
+   (P4.4, P4.6). The close-out report is `notes/reports/p4-closeout.md`.
 7. Performance is the next major effort, **after** the phase 4 initial release. The release is
    functionally complete but slow on space-and-roads workloads (routing, patch accounts, edge contrast,
    and core area run inside the optimizer objective). The plan — profiling, bottleneck map, targets, and
    the ordered work packages — is `notes/design/ws4-performance.md`. The implementation is deliberately
    deferred: no optimization work lands before the release merges.
+8. Phase 5 is active on `feature/p5-operate`, parent issue #44, with six tasks (#45 to #50): a review
+   cadence, issue triage, dependency maintenance, a roadmap/backlog/changelog sync, a release and patch
+   policy, and a maintainer and handover guide. The performance build phase follows P5.
