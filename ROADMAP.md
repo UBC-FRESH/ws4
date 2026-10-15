@@ -167,11 +167,11 @@ release.
         connects to a real target; retention splits conserve area)
   - [x] The schema invariants hold on every compiled dataset
   - [x] The optimizer's MIP bound is a valid lower bound on the penalty
-- [ ] P3.4 Verify the spatial constraints (#30)
+- [x] P3.4 Verify the spatial constraints (#30)
   - [x] Adjacency and topology are visible in the outputs: patch count, mean size, and the largest
         opening per year
-  - [ ] Adjacency, maximum opening size, and green-up are enforced, and violated only by an explicit
-        override — not implemented; recorded as a release gap
+  - [x] Adjacency, maximum opening size, and green-up are enforced, and violated only by an explicit
+        override (implemented in P3.8)
   - [x] Patch metrics match an independent calculation on a small topology
 - [ ] P3.5 Verify scale and performance (#31)
   - [ ] Record the C5 sample's ingest, simulate, optimize, and route runtimes
@@ -186,6 +186,12 @@ release.
   - [ ] Confirm every deferred item in `notes/backlog.md` has a reason and a target phase
   - [ ] Confirm the roadmap's deferred list and `notes/backlog.md` agree
   - [ ] Write the verification report with the evidence and the release recommendation
+- [x] P3.8 Implement and enforce the spatial constraints (#34)
+  - [x] `ws4/patch/constraints.py`: the largest opening per year, opening violations, green-up
+        violations, and a combined penalty
+  - [x] The simulator reports per-year violations in `spatial_violations.csv`
+  - [x] The optimizer penalizes violations, with an explicit `allow_spatial_override`
+  - [x] Tests for the functions, the simulator report, and the optimizer (enforced and override)
 
 ## Phase 4: Release and deploy
 

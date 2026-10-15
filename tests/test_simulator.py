@@ -94,6 +94,40 @@ def test_patch_metrics_report_the_largest_opening(tmp_path: Path) -> None:
     assert metrics["max_patch_area"].iloc[0] == 5.0  # 3.0 ha + 2.0 ha
 
 
+def test_a_maximum_opening_violation_is_reported(tmp_path: Path) -> None:
+    """A 5 ha opening over a 4 ha maximum is reported."""
+    dataset = _dataset(tmp_path)
+    topology = tmp_path / "topology.csv"
+    pd.DataFrame({"src_block": [1], "dst_block": [2], "distance_m": [10.0]}).to_csv(
+        topology, index=False
+    )
+    schedule = _schedule(tmp_path, "cc.csv", [(1, "CC", 0), (2, "CC", 0)])
+    out = tmp_path / "spatial"
+    Simulator.from_dataset(dataset).run(
+        schedule, years=1, out_dir=out, topology_csv=topology, max_opening_ha=4.0
+    )
+    violations = pd.read_csv(out / "spatial_violations.csv")
+    assert list(violations["kind"]) == ["opening"]
+    assert violations["area_ha"].iloc[0] == 5.0
+
+
+def test_a_green_up_violation_is_reported(tmp_path: Path) -> None:
+    """Two adjacent blocks disturbed one year apart under a 3-year rule are reported."""
+    dataset = _dataset(tmp_path)
+    topology = tmp_path / "topology.csv"
+    pd.DataFrame({"src_block": [1], "dst_block": [2], "distance_m": [10.0]}).to_csv(
+        topology, index=False
+    )
+    schedule = _schedule(tmp_path, "cc.csv", [(1, "CC", 0), (2, "CC", 1)])
+    out = tmp_path / "greenup"
+    Simulator.from_dataset(dataset).run(
+        schedule, years=2, out_dir=out, topology_csv=topology, min_green_up_years=3
+    )
+    violations = pd.read_csv(out / "spatial_violations.csv")
+    assert list(violations["kind"]) == ["green_up"]
+    assert violations["years"].iloc[0] == 1
+
+
 def test_products_are_routed_to_the_nearest_mill(tmp_path: Path) -> None:
     """With a road network, a product is routed to the block's nearest destination."""
     dataset = _dataset(tmp_path)

@@ -20,6 +20,8 @@ from typing import Any
 import pandas as pd
 
 from ..model.schema import dataset_reference
+from ..patch.constraints import schedule_years, spatial_penalty
+from ..patch.metrics import load_topology
 from ..report import write_report
 from ..sim.engine import Simulator
 from .core import Problem
@@ -50,6 +52,11 @@ class OptimizeConfig:
     workers: int = 1
     warm_start: bool = False
     mip_bound: bool = False
+    topology_path: str = ""
+    max_opening_ha: float | None = None
+    min_green_up_years: int | None = None
+    spatial_weight: float = 1.0
+    allow_spatial_override: bool = False
 
 
 class Optimizer:
@@ -60,6 +67,7 @@ class Optimizer:
         self.dataset_dir = Path(dataset_dir)
         self.cfg = cfg
         self.registry = OperatorRegistry()
+        self._spatial_cache: tuple[list[tuple[int, int]], dict[int, float]] | None = None
 
     @classmethod
     def from_dataset(cls, dataset_dir: Path, cfg: OptimizeConfig) -> Optimizer:
@@ -106,10 +114,50 @@ class Optimizer:
         return pd.DataFrame(rows, columns=["block_id", "treatment", "period"])
 
     def _evaluate(self, schedule: Schedule, targets: list[Target]) -> float:
-        """Return the objective for a schedule."""
-        simulator = Simulator.from_dataset(self.dataset_dir)
-        values = simulator.simulate(self._schedule_frame(schedule), self.cfg.years)
-        return objective(values, targets)
+        """Return the objective for a schedule, including any spatial penalty."""
+        frame = self._schedule_frame(schedule)
+        values = Simulator.from_dataset(self.dataset_dir).simulate(frame, self.cfg.years)
+        return objective(values, targets) + self._spatial_penalty(frame)
+
+    def _spatial(self) -> tuple[list[tuple[int, int]], dict[int, float]]:
+        """Return the cached topology edges and block areas, loading them once."""
+        if self._spatial_cache is None:
+            topology = load_topology(Path(self.cfg.topology_path))
+            edges = list(
+                zip(topology["src_block"].tolist(), topology["dst_block"].tolist(), strict=True)
+            )
+            simulator = Simulator.from_dataset(self.dataset_dir)
+            block_area = {
+                int(float(str(block))): float(str(area))
+                for block, area in simulator.fragments.groupby("block_id")["area_ha"].sum().items()
+            }
+            self._spatial_cache = (edges, block_area)
+        return self._spatial_cache
+
+    def _spatial_penalty(self, schedule: pd.DataFrame) -> float:
+        """Return the weighted spatial penalty for a schedule, or zero when disabled.
+
+        The penalty is disabled by ``allow_spatial_override`` (the explicit override), and
+        when no maximum opening size or green-up interval is set.
+        """
+        if self.cfg.allow_spatial_override:
+            return 0.0
+        if self.cfg.max_opening_ha is None and self.cfg.min_green_up_years is None:
+            return 0.0
+        edges, block_area = self._spatial()
+        pairs = [
+            (int(float(str(row.block_id))), int(float(str(row.period))))
+            for row in schedule.itertuples(index=False)
+        ]
+        selected_by_year, harvest_year = schedule_years(pairs)
+        return self.cfg.spatial_weight * spatial_penalty(
+            selected_by_year,
+            harvest_year,
+            edges,
+            block_area,
+            self.cfg.max_opening_ha,
+            self.cfg.min_green_up_years,
+        )
 
     def _solve(
         self, seed: int, on_step: Callable[[int, float], None] | None = None

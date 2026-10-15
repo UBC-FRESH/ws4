@@ -210,3 +210,9 @@ issue comments.
   opening size, or green-up, and the optimizer's objective has no spatial term. Recorded as a release
   gap in `notes/backlog.md`; the scope lists these constraints as in scope through the first release, so
   they must be closed before P4.
+- P3.8: implemented and enforced the spatial constraints. `ws4/patch/constraints.py` reports the largest
+  opening per year, opening violations, green-up violations, and a combined penalty; the simulator writes
+  `spatial_violations.csv`; and the optimizer adds a weighted spatial penalty to its objective, disabled
+  by the explicit `allow_spatial_override`. The CLI exposes `--topology`, `--max-opening-ha`,
+  `--min-green-up-years`, and `--spatial-override`. The P3.4 gap is closed. `python -m pytest`: 254
+  passed, 94.78 percent branch coverage. `python scripts/dashboard.py`: `OVERALL: GREEN`.

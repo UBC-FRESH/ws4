@@ -100,9 +100,11 @@ Status values: `open`, `partial`, `blocked`, `done`.
   implemented (`ws4/patch/metrics.py`) and verified against an independent calculation in P3.4; the
   largest opening per year (`max_patch_area`) is now reported in `patch_metrics.csv`. `ws4/patch/
   topology.py` is still a stub that duplicates the loader.
-- **Spatial-constraint enforcement.** `open` (release gap). No code enforces adjacency, a maximum opening
-  size, or green-up, and the optimizer's objective has no spatial term. The scope lists these as in scope
-  through the first release, so this must be closed before P4. Open: core-area rules and edge contrast.
+- **Spatial-constraint enforcement.** `done`. `ws4/patch/constraints.py` reports the largest opening per
+  year, opening violations, green-up violations, and a combined penalty; the simulator writes
+  `spatial_violations.csv`; and the optimizer adds a weighted spatial penalty to its objective, disabled
+  by the explicit `allow_spatial_override`. The CLI exposes `--topology`, `--max-opening-ha`,
+  `--min-green-up-years`, and `--spatial-override`. Open: core-area rules and edge contrast.
 - **Road network, access, haul cost, exclusive routing.** `partial`. `ws4/roads/network.py` routes over
   the segment graph (shortest length and cost, nearest destination). The simulator routes each produced
   product to the block's single nearest destination (`route_values.csv`) — exclusive by construction,

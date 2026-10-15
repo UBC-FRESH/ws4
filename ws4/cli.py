@@ -64,6 +64,12 @@ def optimize(
     time_limit: str = typer.Option("01:00:00", help="HH:MM:SS"),
     seed: int = typer.Option(42),
     out: Path = typer.Option(...),
+    topology: Path = typer.Option(None, exists=True, help="Block topology for spatial constraints"),
+    max_opening_ha: float = typer.Option(None, help="Maximum opening size, in hectares"),
+    min_green_up_years: int = typer.Option(None, help="Green-up interval, in years"),
+    spatial_override: bool = typer.Option(
+        False, "--spatial-override", help="Allow schedules that violate the spatial constraints"
+    ),
 ) -> None:
     """Search for a schedule that satisfies the targets and write a summary."""
     cfg = OptimizeConfig(
@@ -72,6 +78,10 @@ def optimize(
         seed=seed,
         targets_path=str(targets),
         weights_path=str(weights),
+        topology_path=str(topology) if topology is not None else "",
+        max_opening_ha=max_opening_ha,
+        min_green_up_years=min_green_up_years,
+        allow_spatial_override=spatial_override,
     )
     opt = Optimizer.from_dataset(dataset, cfg)
     result = opt.run(out)
