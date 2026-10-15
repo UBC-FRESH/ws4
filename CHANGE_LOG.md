@@ -363,3 +363,6 @@ issue comments.
   P5.6 (#45 to #50): a review cadence, issue triage, dependency maintenance, a
   roadmap/backlog/changelog sync, a release and patch policy, and a maintainer and handover guide. The
   performance build phase follows P5 (`notes/design/ws4-performance.md`).
+- P5.1: set the review cadence (monthly, on the first working day, plus out-of-cadence triggers for a
+  security advisory, a broken release, or a scope change) and recorded the first review in
+  `notes/review-cadence.md`. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.

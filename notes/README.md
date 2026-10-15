@@ -15,6 +15,7 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `functional-test.md` — the full end-to-end check over a complete sample model.
 - `acceptance.md` — the P3.1 acceptance-check results.
 - `performance.md` — the P3.5 compile and simulate benchmarks.
+- `review-cadence.md` — the review cadence and the first review (P5.1).
 - `packaging.md` — the P3.6 clean-checkout install, command line, and docs results.
 
 - `design/ws4-scope.md` — problem statement, users, scope, and success criteria.
