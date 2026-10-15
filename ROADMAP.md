@@ -203,10 +203,10 @@ Status: active
 Goal: tag a release, publish the artifacts and the docs, and verify the published release from a clean
 checkout.
 
-- [ ] P4.1 Prepare the release: version, changelog, license, citation, and packaging metadata (#37)
-  - [ ] Set the version in `pyproject.toml` and `ws4/__init__.py`
-  - [ ] Confirm the license, citation, and package metadata
-  - [ ] Confirm `CHANGE_LOG.md` is current through P3
+- [x] P4.1 Prepare the release: version, changelog, license, citation, and packaging metadata (#37)
+  - [x] Set the version in `pyproject.toml` and `ws4/__init__.py`
+  - [x] Confirm the license, citation, and package metadata
+  - [x] Confirm `CHANGE_LOG.md` is current through P3
 - [ ] P4.2 Write the release notes and the known-gaps list (#38)
   - [ ] Write the release notes for the first release
   - [ ] State the known gaps (the blocked MKRf model, and the future work in `notes/backlog.md`)

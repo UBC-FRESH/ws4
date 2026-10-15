@@ -238,3 +238,10 @@ issue comments.
 - P3 close-out carried out: pull request #35 squash-merged as `83e2d60`, branch `feature/p3-verify`
   deleted, and parent issue #26 closed. P3 is `complete` in `ROADMAP.md`. Launched P4 (Release and
   deploy): parent issue #36, branch `feature/p4-release`, tasks P4.1 to P4.6 (#37 to #42).
+
+## 2026-10-15
+
+- P4.1: prepared the release. Bumped the version to `0.1.0` (`pyproject.toml` and `ws4/__init__.py`),
+  added classifiers, keywords, and project URLs, and set the citation version and release date.
+  Confirmed the Apache-2.0 license, and that `CHANGE_LOG.md` is current through P3. Removed the empty
+  `debug.ipynb` skeleton stub. The installed metadata reports version `0.1.0` with the four project URLs.
