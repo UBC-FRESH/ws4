@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A matrix-builder regression fixture. Two analysis units, managed and unmanaged
+     lanes, a retention rule that splits a managed fragment, one harvest treatment that
+     transitions to the managed lane, and a product. The committed expected/ tables pin
+     the compiled matrix so an unintended change is caught. -->
+<ForestModel horizon="100" year="0" match="multi">
+  <curve id="unity">
+    <point x="0" y="1.0"/>
+  </curve>
+  <curve id="natural_volume">
+    <point x="0" y="0"/>
+    <point x="50" y="150"/>
+    <point x="100" y="250"/>
+  </curve>
+  <curve id="managed_volume">
+    <point x="0" y="0"/>
+    <point x="50" y="200"/>
+  </curve>
+  <define field="AU" column="AU"/>
+  <define field="IFM" column="IFM"/>
+  <define field="RETENTION" column="Number(column('RETENTION'))"/>
+  <define field="treatment"/>
+  <input block="BLOCK" area="AREA_HA" age="F_AGE"/>
+  <output messages="messages.csv"/>
+  <select statement="IFM eq 'managed'">
+    <features>
+      <attribute label="feature.Volume.managed">
+        <curve idref="managed_volume"/>
+      </attribute>
+    </features>
+    <retention factor="RETENTION">
+      <assign field="IFM" value="'unmanaged'"/>
+    </retention>
+    <track>
+      <treatment label="CC" minage="40" maxage="100">
+        <produce>
+          <assign field="treatment" value="'CC'"/>
+        </produce>
+        <transition>
+          <assign field="IFM" value="'managed'"/>
+        </transition>
+      </treatment>
+    </track>
+  </select>
+  <select statement="IFM eq 'unmanaged'">
+    <features>
+      <attribute label="feature.Volume.unmanaged">
+        <curve idref="natural_volume"/>
+      </attribute>
+    </features>
+    <track/>
+  </select>
+  <select statement="IFM eq 'managed' and treatment eq 'CC'">
+    <products>
+      <attribute label="product.Harvested.CC">
+        <curve idref="managed_volume"/>
+      </attribute>
+    </products>
+  </select>
+</ForestModel>

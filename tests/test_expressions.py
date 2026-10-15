@@ -3,9 +3,17 @@
 from __future__ import annotations
 
 import pytest
-from ws4.io.expressions import ExpressionError, evaluate
+from ws4.io.expressions import ExpressionError, _parse, evaluate
 
 _CONSTANTS = {"managed": "C", "operable": "Operable"}
+
+
+def test_the_parse_is_cached_across_calls() -> None:
+    """A repeated statement reuses its parsed tree."""
+    _parse.cache_clear()
+    assert evaluate("a eq 1", {"a": 1}, {}) is True
+    assert evaluate("a eq 1", {"a": 2}, {}) is False
+    assert _parse.cache_info().hits >= 1
 
 
 def test_comparisons_and_booleans() -> None:

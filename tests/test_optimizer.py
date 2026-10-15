@@ -143,8 +143,8 @@ def test_mip_bound_is_recorded_with_a_non_negative_gap(tmp_path: Path) -> None:
     assert summary["bound"] <= summary["incumbent_objective"]
 
 
-def test_parallel_multi_start_matches_the_serial_result(tmp_path: Path) -> None:
-    """A parallel multi-start run produces a valid incumbent."""
+def _compile(tmp_path: Path) -> tuple[Path, str]:
+    """Compile the fixture and write a target that a treatment can meet."""
     dataset = build_canonical_dataset(
         _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
     )
@@ -153,14 +153,119 @@ def test_parallel_multi_start_matches_the_serial_result(tmp_path: Path) -> None:
         "targets:\n  - account: feature.Volume\n    year: 0\n    maximum: 500\n",
         encoding="utf-8",
     )
+    return dataset, str(targets)
+
+
+def test_parallel_multi_start_matches_the_serial_result(tmp_path: Path) -> None:
+    """A parallel multi-start run produces the same result as the serial run."""
+    dataset, targets = _compile(tmp_path)
+
+    def run(name: str, workers: int) -> dict[str, object]:
+        return Optimizer.from_dataset(
+            dataset,
+            OptimizeConfig(
+                targets_path=targets, seed=1, years=1, iterations=30, starts=3, workers=workers
+            ),
+        ).run(tmp_path / name)
+
+    serial = run("serial", 1)
+    parallel = run("parallel", 3)
+    assert serial["incumbent_objective"] == parallel["incumbent_objective"]
+    assert (tmp_path / "serial" / "schedule.csv").read_text() == (
+        tmp_path / "parallel" / "schedule.csv"
+    ).read_text()
+
+
+def test_same_seed_reproduces_the_same_result(tmp_path: Path) -> None:
+    """The same seed reproduces the same objective and the same schedule."""
+    dataset, targets = _compile(tmp_path)
+
+    def run(name: str) -> dict[str, object]:
+        return Optimizer.from_dataset(
+            dataset, OptimizeConfig(targets_path=targets, seed=5, years=1, iterations=40)
+        ).run(tmp_path / name)
+
+    first = run("a")
+    second = run("b")
+    assert first["incumbent_objective"] == second["incumbent_objective"]
+    assert (tmp_path / "a" / "schedule.csv").read_text() == (
+        tmp_path / "b" / "schedule.csv"
+    ).read_text()
+
+
+def test_warm_start_is_deterministic(tmp_path: Path) -> None:
+    """A warm-started run reproduces itself for the same seed."""
+    dataset, targets = _compile(tmp_path)
+
+    def run(name: str) -> dict[str, object]:
+        return Optimizer.from_dataset(
+            dataset,
+            OptimizeConfig(targets_path=targets, seed=5, years=1, iterations=30, warm_start=True),
+        ).run(tmp_path / name)
+
+    assert run("a")["incumbent_objective"] == run("b")["incumbent_objective"]
+
+
+def test_run_records_the_dataset_reference(tmp_path: Path) -> None:
+    """A run summary identifies the dataset that produced it."""
+    dataset, targets = _compile(tmp_path)
     summary = Optimizer.from_dataset(
+        dataset, OptimizeConfig(targets_path=targets, seed=1, years=1, iterations=5)
+    ).run(tmp_path / "run")
+    reference = summary["dataset"]
+    assert isinstance(reference, dict)
+    assert reference["schema_version"] == "0.1"
+    assert len(str(reference["manifest_sha256"])) == 64
+
+
+def test_optimizer_avoids_a_maximum_opening_violation(tmp_path: Path) -> None:
+    """With enforcement, the optimizer does not open adjacent blocks past the cap."""
+    dataset, targets = _compile(tmp_path)
+    topology = tmp_path / "topology.csv"
+    pd.DataFrame({"src_block": [1], "dst_block": [2], "distance_m": [10.0]}).to_csv(
+        topology, index=False
+    )
+    Optimizer.from_dataset(
         dataset,
         OptimizeConfig(
-            targets_path=str(targets), seed=1, years=1, iterations=30, starts=2, workers=2
+            targets_path=targets,
+            seed=1,
+            years=1,
+            iterations=80,
+            topology_path=str(topology),
+            max_opening_ha=4.0,
+            spatial_weight=1000.0,
         ),
     ).run(tmp_path / "run")
-    assert summary["incumbent_objective"] < 200.0
-    assert (tmp_path / "run" / "schedule.csv").is_file()
+    schedule = pd.read_csv(tmp_path / "run" / "schedule.csv")
+    # Treating both adjacent blocks in the only year opens 5 ha, over the 4 ha cap.
+    assert not ({1, 2} <= set(schedule["block_id"]))
+
+
+def test_spatial_override_disables_the_penalty(tmp_path: Path) -> None:
+    """The explicit override turns the spatial penalty off."""
+    dataset, _ = _compile(tmp_path)
+    topology = tmp_path / "topology.csv"
+    pd.DataFrame({"src_block": [1], "dst_block": [2], "distance_m": [10.0]}).to_csv(
+        topology, index=False
+    )
+    frame = pd.DataFrame(
+        [
+            {"block_id": 1, "treatment": "CC", "period": 0},
+            {"block_id": 2, "treatment": "CC", "period": 0},
+        ]
+    )
+    enforced = Optimizer.from_dataset(
+        dataset, OptimizeConfig(topology_path=str(topology), max_opening_ha=4.0)
+    )
+    override = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(
+            topology_path=str(topology), max_opening_ha=4.0, allow_spatial_override=True
+        ),
+    )
+    assert enforced._spatial_penalty(frame) == 1.0  # 5 ha over a 4 ha cap
+    assert override._spatial_penalty(frame) == 0.0
 
 
 def test_multi_start_is_no_worse_than_single_start(tmp_path: Path) -> None:

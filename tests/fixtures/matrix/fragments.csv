@@ -1,0 +1,6 @@
+BLOCK,AREA_HA,F_AGE,AU,IFM,RETENTION
+1,10.0,30,A,managed,0.0
+1,5.0,60,A,managed,0.25
+2,8.0,50,B,unmanaged,0.0
+2,4.0,20,B,managed,0.0
+3,6.0,80,A,unmanaged,0.0

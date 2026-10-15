@@ -1,0 +1,4 @@
+track_id,begin,end,treatment,new_track,offset,retain
+1,40,100,CC,1,0,0
+2,40,100,CC,2,0,0
+5,40,100,CC,5,0,0

@@ -1,0 +1,190 @@
+"""Spatial constraints over the block adjacency topology.
+
+A maximum opening size caps the area of a connected patch of blocks disturbed in the same
+year. A green-up rule requires a minimum number of years between disturbances of adjacent
+blocks. The functions here report violations, so the simulator can show them and the
+optimizer can penalize them.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterable, Mapping, Sequence
+
+from .metrics import connected_patches
+
+
+def openings_by_year(
+    selected_by_year: Mapping[int, Iterable[int]],
+    edges: Iterable[tuple[int, int]],
+    block_area: Mapping[int, float],
+) -> dict[int, float]:
+    """Return the largest opening area per year.
+
+    Parameters
+    ----------
+    selected_by_year : mapping of int to iterable of int
+        The blocks disturbed in each year.
+    edges : iterable of (int, int)
+        The adjacency edges (undirected).
+    block_area : mapping of int to float
+        The area of each block, in hectares.
+
+    Returns
+    -------
+    dict of int to float
+        The largest connected opening area in each year that had a disturbance.
+    """
+    edge_list = list(edges)
+    result: dict[int, float] = {}
+    for year, selected in selected_by_year.items():
+        patches = connected_patches(selected, edge_list)
+        areas = [sum(block_area.get(block, 0.0) for block in patch) for patch in patches]
+        result[int(year)] = max(areas) if areas else 0.0
+    return result
+
+
+def opening_violations(
+    selected_by_year: Mapping[int, Iterable[int]],
+    edges: Iterable[tuple[int, int]],
+    block_area: Mapping[int, float],
+    max_opening_ha: float,
+) -> list[dict[str, object]]:
+    """Return one record per patch whose area exceeds the maximum opening size.
+
+    Parameters
+    ----------
+    selected_by_year : mapping of int to iterable of int
+        The blocks disturbed in each year.
+    edges : iterable of (int, int)
+        The adjacency edges.
+    block_area : mapping of int to float
+        The area of each block.
+    max_opening_ha : float
+        The maximum permitted opening area.
+
+    Returns
+    -------
+    list of dict
+        Each record has ``kind`` (``"opening"``), ``year``, ``area_ha``, and ``limit``.
+    """
+    edge_list = list(edges)
+    records: list[dict[str, object]] = []
+    for year, selected in selected_by_year.items():
+        for patch in connected_patches(selected, edge_list):
+            area = sum(block_area.get(block, 0.0) for block in patch)
+            if area > max_opening_ha:
+                records.append(
+                    {
+                        "kind": "opening",
+                        "year": int(year),
+                        "area_ha": area,
+                        "limit": max_opening_ha,
+                    }
+                )
+    return records
+
+
+def green_up_violations(
+    harvest_year: Mapping[int, int],
+    edges: Iterable[tuple[int, int]],
+    min_years: int,
+) -> list[dict[str, object]]:
+    """Return one record per adjacent pair disturbed within the green-up interval.
+
+    Parameters
+    ----------
+    harvest_year : mapping of int to int
+        The year each block is disturbed.
+    edges : iterable of (int, int)
+        The adjacency edges (undirected).
+    min_years : int
+        The minimum number of years between disturbances of adjacent blocks.
+
+    Returns
+    -------
+    list of dict
+        Each record has ``kind`` (``"green_up"``), ``block_a``, ``block_b``, ``years``, and
+        ``limit``.
+    """
+    records: list[dict[str, object]] = []
+    for u, v in edges:
+        if u in harvest_year and v in harvest_year:
+            gap = abs(int(harvest_year[u]) - int(harvest_year[v]))
+            if gap < min_years:
+                records.append(
+                    {
+                        "kind": "green_up",
+                        "block_a": int(u),
+                        "block_b": int(v),
+                        "years": gap,
+                        "limit": min_years,
+                    }
+                )
+    return records
+
+
+def spatial_penalty(
+    selected_by_year: Mapping[int, Iterable[int]],
+    harvest_year: Mapping[int, int],
+    edges: Iterable[tuple[int, int]],
+    block_area: Mapping[int, float],
+    max_opening_ha: float | None,
+    min_green_up_years: int | None,
+) -> float:
+    """Return a penalty for the spatial violations of a schedule.
+
+    The penalty is the summed excess opening area plus the summed green-up shortfall, so a
+    schedule that respects the constraints scores zero.
+
+    Parameters
+    ----------
+    selected_by_year : mapping of int to iterable of int
+        The blocks disturbed in each year.
+    harvest_year : mapping of int to int
+        The year each block is disturbed.
+    edges : iterable of (int, int)
+        The adjacency edges.
+    block_area : mapping of int to float
+        The area of each block.
+    max_opening_ha : float or None
+        The maximum opening size, or None to skip the opening check.
+    min_green_up_years : int or None
+        The green-up interval, or None to skip the green-up check.
+
+    Returns
+    -------
+    float
+        The penalty; zero when the schedule respects every active constraint.
+    """
+    edge_list = list(edges)
+    penalty = 0.0
+    if max_opening_ha is not None:
+        for record in opening_violations(selected_by_year, edge_list, block_area, max_opening_ha):
+            penalty += float(str(record["area_ha"])) - max_opening_ha
+    if min_green_up_years is not None:
+        for record in green_up_violations(harvest_year, edge_list, min_green_up_years):
+            penalty += float(min_green_up_years - int(str(record["years"])))
+    return penalty
+
+
+def schedule_years(
+    schedule: Sequence[tuple[int, int]],
+) -> tuple[dict[int, set[int]], dict[int, int]]:
+    """Split a schedule into per-year blocks and each block's first disturbance year.
+
+    Parameters
+    ----------
+    schedule : sequence of (int, int)
+        ``(block_id, year)`` pairs.
+
+    Returns
+    -------
+    tuple of (dict, dict)
+        The blocks disturbed in each year, and the first disturbance year per block.
+    """
+    selected_by_year: dict[int, set[int]] = {}
+    harvest_year: dict[int, int] = {}
+    for block, year in schedule:
+        selected_by_year.setdefault(int(year), set()).add(int(block))
+        harvest_year.setdefault(int(block), int(year))
+    return selected_by_year, harvest_year
