@@ -130,13 +130,14 @@ Goal: implement the agreed scope, one task at a time, on the phase branch.
 - [x] P2.9 Implement the programmatic model API (build or patch the model in memory) (#24)
   - [x] `ws4/model/api.py` with append/replace and a dataset round-trip
 
-Deferred from P2, tracked in `notes/backlog.md`:
+Deferred from P2, triaged in `notes/backlog.md` (none is release-blocking):
 
-- Reproduce the additional stratification of the full MKRf canonical model (blocked on its generated XML).
-- Core-area rules, edge contrast, destination eligibility, and route cost accounts.
-- The wider operator set beyond LNS.
-- Duplicate and meta accounts, and chart output.
-- Islands and tensorized GPU moves.
+- post-release (a future build phase): the wider operator set beyond LNS; the shared solver-core
+  package; islands and tensorized GPU moves; time-boxed MIP subproblems; the tuners and the portfolio
+  layer; core-area rules and edge contrast; destination eligibility and route cost accounts; duplicate
+  and meta accounts and chart output; succession and `produce` semantics; the wider expression library;
+  and unit conversion.
+- blocked: the full MKRf canonical model (needs its generated XML).
 
 ## Phase 3: Verify
 
@@ -182,10 +183,10 @@ release.
   - [x] Install the package into a fresh virtual environment from the checkout
   - [x] Run the command line end to end on the synthetic fixture
   - [x] Build the docs with warnings as errors, and confirm the published site is reachable
-- [ ] P3.7 Triage the deferred items and write the verification report (#33)
-  - [ ] Confirm every deferred item in `notes/backlog.md` has a reason and a target phase
-  - [ ] Confirm the roadmap's deferred list and `notes/backlog.md` agree
-  - [ ] Write the verification report with the evidence and the release recommendation
+- [x] P3.7 Triage the deferred items and write the verification report (#33)
+  - [x] Confirm every deferred item in `notes/backlog.md` has a reason and a target phase
+  - [x] Confirm the roadmap's deferred list and `notes/backlog.md` agree
+  - [x] Write the verification report with the evidence and the release recommendation
 - [x] P3.8 Implement and enforce the spatial constraints (#34)
   - [x] `ws4/patch/constraints.py`: the largest opening per year, opening violations, green-up
         violations, and a combined penalty
