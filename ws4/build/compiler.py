@@ -15,7 +15,7 @@ from typing import TypedDict
 import pandas as pd
 
 from ..io.expressions import ExpressionError, evaluate_value
-from ..io.forest_model_xml import Recipe, parse_recipe
+from ..io.forest_model_xml import Attribute, Recipe, Retention, parse_recipe
 from ..io.fragments import read_fragments
 from ..model.schema import MANIFEST_NAME, SCHEMA_VERSION, TABLES, coerce_to_schema
 from ..model.types import CanonicalDatasetManifest
@@ -88,22 +88,31 @@ def _managed_value(row: Mapping[str, object], constants: dict[str, str]) -> str:
     return "managed" if str(row.get("status", "")) == managed else "unmanaged"
 
 
+def _expand_tokens(
+    text: str, row: Mapping[str, object], kind: str, constants: dict[str, str]
+) -> str:
+    """Replace a label or expression's ``%f``, ``%m``, ``%au``, and ``%s`` tokens.
+
+    ``%f`` becomes the attribute's kind (``feature`` or ``product``), ``%m`` the
+    managed/unmanaged value, and ``%au`` / ``%s`` the analysis unit and species.
+    """
+    return (
+        text.replace("%f", kind)
+        .replace("%m", _managed_value(row, constants))
+        .replace("%au", str(row.get("au", "")))
+        .replace("%s", str(row.get("species", "")))
+    )
+
+
 def _expand_label(
     label: str, row: Mapping[str, object], kind: str, constants: dict[str, str]
 ) -> str:
     """Expand a label's ``%f`` and ``%m`` tokens, and evaluate a label expression.
 
-    ``%f`` becomes the attribute's kind (``feature`` or ``product``) and ``%m`` the
-    managed/unmanaged value. A label that is an expression (for example
-    ``'%f.area.%m.state.'+if(...)`` or ``'product.area.managed.state.'+statecode``) is
-    evaluated against the row.
+    A label that is an expression (for example ``'%f.area.%m.state.'+if(...)`` or
+    ``'product.area.managed.state.'+statecode``) is evaluated against the row.
     """
-    text = (
-        label.replace("%f", kind)
-        .replace("%m", _managed_value(row, constants))
-        .replace("%au", str(row.get("au", "")))
-        .replace("%s", str(row.get("species", "")))
-    )
+    text = _expand_tokens(label, row, kind, constants)
     if "+" in text or "if(" in text:
         try:
             return str(evaluate_value(text, row, constants))
@@ -124,14 +133,42 @@ def _factor_value(attribute: object, row: Mapping[str, object], constants: dict[
 
 
 def _expression_curve(
-    recipe: Recipe, variables: Sequence[str], key: tuple[str, ...], expression: str
+    recipe: Recipe,
+    variables: Sequence[str],
+    key: tuple[str, ...],
+    expression: str,
+    kind: str,
+    attributes: dict[str, str] | None = None,
+    treatment: str = "",
 ) -> str | None:
-    """Evaluate an attribute's curve expression to a curve name, or None."""
+    """Evaluate an attribute's curve expression to a curve name or a number string.
+
+    ``%f`` / ``%m`` / ``%au`` / ``%s`` tokens are expanded first, and
+    ``attribute('label')`` resolves against ``attributes`` (the labels already emitted
+    for this stratum). The result is a curve name, a number, or None when the
+    expression cannot be evaluated.
+    """
     row = dict(zip(variables, key, strict=True))
+    if treatment:
+        row["treatment"] = treatment
+    text = _expand_tokens(expression, row, kind, recipe.constants)
     try:
-        return str(evaluate_value(expression, row, recipe.constants))
+        return str(evaluate_value(text, row, recipe.constants, attributes))
     except ExpressionError:
         return None
+
+
+def _retained_key(
+    key: tuple[str, ...],
+    variables: Sequence[str],
+    retention: Retention,
+    constants: dict[str, str],
+) -> tuple[str, ...]:
+    """Return the state key a retention rule moves its area to."""
+    state = dict(zip(variables, key, strict=True))
+    for name, value in retention.assigns.items():
+        state[name] = resolve_value(value, state, constants)
+    return tuple(state.get(name, "") for name in variables)
 
 
 def _account_group(states: set[str]) -> str:
@@ -282,6 +319,7 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
         for x, y in points
     ]
     scaled_ids: dict[tuple[str, float], int] = {}
+    constant_ids: dict[float, int] = {}
     next_curve = [len(curve_ids) + 1]
 
     def curve_for(base_name: str, factor: float) -> int:
@@ -297,6 +335,50 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
         for x, y in recipe.curves[base_name]:
             curve_rows.append({"curve_id": curve_id, "x": x, "y": y * factor})
         return curve_id
+
+    def constant_curve(value: float) -> int:
+        """Return the id of a constant-valued curve, creating it on first use."""
+        key = round(value, 9)
+        if key in constant_ids:
+            return constant_ids[key]
+        curve_id = next_curve[0]
+        next_curve[0] += 1
+        constant_ids[key] = curve_id
+        curve_rows.append({"curve_id": curve_id, "x": 0.0, "y": key})
+        return curve_id
+
+    def resolve_curve(
+        attribute: Attribute,
+        key: tuple[str, ...],
+        kind: str,
+        attributes: dict[str, str],
+        treatment: str = "",
+    ) -> tuple[int | None, str | None]:
+        """Resolve an attribute to a curve id and, when it names one, its curve name.
+
+        A ``<curve idref>`` resolves to that curve; an expression resolves to a curve
+        name (an existing recipe curve) or, when it evaluates to a number, to a constant
+        curve. The name is returned so a later ``attribute('label')`` can resolve to it.
+        """
+        row = dict(zip(variables, key, strict=True))
+        if treatment:
+            row["treatment"] = treatment
+        factor = _factor_value(attribute, row, recipe.constants)
+        if attribute.curve is not None:
+            return curve_for(attribute.curve, factor), attribute.curve
+        if attribute.expression is None:
+            return None, None
+        result = _expression_curve(
+            recipe, variables, key, attribute.expression, kind, attributes, treatment
+        )
+        if result is None:
+            return None, None
+        if result in curve_ids:
+            return curve_for(result, factor), result
+        try:
+            return constant_curve(float(result) * factor), None
+        except ValueError:
+            return None, None
 
     feature_rows: list[dict[str, object]] = []
     product_rows: list[dict[str, object]] = []
@@ -318,42 +400,59 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
     # selects that produce it, which determines its account group.
     account_labels: dict[str, set[str]] = {}
     for stratum in strata:
+        row = dict(zip(variables, stratum.key, strict=True))
+        managed = _managed_value(row, recipe.constants)
+        # The curve each feature label already resolved to for this stratum, so an
+        # expression such as ``operable(attribute('feature.yield.managed.total'))`` can
+        # resolve to the same curve the base attribute used.
+        label_curves: dict[str, str] = {}
         for select_index in stratum.select_indices:
             select = recipe.selects[select_index - 1]
-            row = dict(zip(variables, stratum.key, strict=True))
-            managed = _managed_value(row, recipe.constants)
             for attribute in select.features:
-                curve_name = attribute.curve or (
-                    _expression_curve(recipe, variables, stratum.key, attribute.expression)
-                    if attribute.expression is not None
-                    else None
+                curve_id, curve_name = resolve_curve(
+                    attribute, stratum.key, "feature", label_curves
                 )
-                if curve_name is None or curve_name not in curve_ids:
+                if curve_id is None:
                     continue
                 label = _expand_label(attribute.label, row, "feature", recipe.constants)
+                if curve_name is not None:
+                    label_curves[label] = curve_name
                 feature_rows.append(
-                    {
-                        "track_id": stratum.track_id,
-                        "label": label,
-                        "curve_id": curve_for(
-                            curve_name, _factor_value(attribute, row, recipe.constants)
-                        ),
-                    }
+                    {"track_id": stratum.track_id, "label": label, "curve_id": curve_id}
                 )
                 account_labels.setdefault(label, set()).add(managed)
+            # A retention rule's features describe the retained fraction, so they attach
+            # to the stratum the rule moves the area to, not to the select's own stratum.
+            if select.retention is not None:
+                retained = _retained_key(stratum.key, variables, select.retention, recipe.constants)
+                retained_track = track_of.get(retained)
+                retained_row = dict(zip(variables, retained, strict=True))
+                for attribute in select.retention_features:
+                    curve_id, _ = resolve_curve(attribute, retained, "feature", label_curves)
+                    if curve_id is None or retained_track is None:
+                        continue
+                    label = _expand_label(
+                        attribute.label, retained_row, "feature", recipe.constants
+                    )
+                    feature_rows.append(
+                        {"track_id": retained_track, "label": label, "curve_id": curve_id}
+                    )
+                    account_labels.setdefault(label, set()).add(managed)
             for attribute in select.products:
-                curve_name = attribute.curve or (
-                    _expression_curve(recipe, variables, stratum.key, attribute.expression)
-                    if attribute.expression is not None
-                    else None
-                )
-                if curve_name is None or curve_name not in curve_ids:
-                    continue
                 if select.treatment_context:
                     contexts = [select.treatment_context]
                 else:
                     contexts = treatments_of_track.get(stratum.track_id, [])
                 for context in contexts:
+                    # A product curve may depend on the treatment; try the treatment
+                    # context first and fall back to the stratum-wide value.
+                    curve_id, _ = resolve_curve(
+                        attribute, stratum.key, "product", label_curves, treatment=context
+                    )
+                    if curve_id is None and context:
+                        curve_id, _ = resolve_curve(attribute, stratum.key, "product", label_curves)
+                    if curve_id is None:
+                        continue
                     label_row = dict(row)
                     if context:
                         label_row["treatment"] = context
@@ -363,9 +462,7 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
                             "track_id": stratum.track_id,
                             "treatment": context,
                             "label": label,
-                            "curve_id": curve_for(
-                                curve_name, _factor_value(attribute, row, recipe.constants)
-                            ),
+                            "curve_id": curve_id,
                         }
                     )
                     account_labels.setdefault(label, set()).add(managed)

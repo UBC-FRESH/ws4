@@ -263,3 +263,15 @@ issue comments.
   product selects tagged per treatment (products 274872 → 390546). The nine k3z core variants still
   match exactly. Remaining: five labels need `operable(...)` and the runtime curve bank
   (features 97522/104311, products 390546/420588). `python -m pytest`: 270 passed.
+- P4 fix (maintainer request): the canonical MKRF model now builds **exactly**. The last five labels
+  closed the gap: a `<features>` element nested inside `<retention>` is parsed (`retention_features`)
+  and attaches to the retained stratum, so `feature.area.retention.total` is produced; the evaluator
+  gained `operable(x)` and a real `attribute('label')` lookup against the labels already emitted for a
+  stratum, so `feature.yield.managed.merch.total` resolves to the base yield curve; a curve reference
+  (`CurveRef`) survives scaling and offsetting arithmetic, so `product.Cost_Total`/`NetRevenue` resolve
+  instead of concatenating to a bogus name or raising; and an expression that evaluates to a number
+  becomes a generated constant curve, so `product.Cost_Silviculture` is produced (per treatment
+  context). Result: tracks 7048/7048, strata 7048/7048, treatments 10014/10014, blocks 3183/3183,
+  features 104311/104311, products 420588/420588, protoaccounts 91/91 (row counts and label sets;
+  `scripts/acceptance.py`). Updated `docs/reference/forestmodelxml.rst`. Dashboard result:
+  `python scripts/dashboard.py` reports `OVERALL: GREEN`. `python -m pytest`: 278 passed.

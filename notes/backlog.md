@@ -22,17 +22,20 @@ items are enhancements and maintenance.
   island model and GPU moves; time-boxed MIP subproblems; the tuners and the portfolio layer; core-area
   rules and edge contrast; destination eligibility and route cost accounts; duplicate and meta accounts
   and chart output; unit conversion; and the topology stub cleanup.
-- **Blocked:** the full MKRF canonical model (needs its generated XML).
+- **Blocked:** the MKRF canonical artifacts' location log is not on `origin` (the objects are on
+  `arbutus-s3`); a fresh clone needs the producer to push the git-annex branch.
 - **Deferred:** the block-aggregation cache (not the hot path).
 
 ## Matrix builder (P2.1)
 
 - **Expression language.** `done` (bounded). Select statements evaluate with `ws4/io/expressions.py`:
-  comparisons (`eq/ne/lt/le/gt/ge/in`), booleans (`and`/`or`/`not`), parentheses, and the functions
-  `startswith`, `endswith`, `substring`, `int`, `Number`, `length`, and `if`. An expression the evaluator
-  cannot parse falls back to the term matcher. Remaining: the wider function library (`lookupTable`,
-  string and math functions). Evidence: the CT eligibility `not startswith(au,'t')` now evaluates
-  correctly (MKRF PoC CT 586 vs reference 590). Target: post-release.
+  comparisons (`eq/ne/lt/le/gt/ge/in`), booleans (`and`/`or`/`not`), parentheses, string concatenation
+  and arithmetic, and the functions `startswith`, `endswith`, `substring`, `int`, `Number`, `length`,
+  `if`, `lastindexof`, `lookupTable`, `curveId`, `attribute`, and `operable`. A curve reference
+  (`curveId`/`attribute`) survives scaling and offsetting arithmetic, so a derived curve keeps the base
+  curve's identity; `operable(x)` is an identity here (masking is a runtime concern); and an expression
+  that evaluates to a number becomes a constant curve. An expression the evaluator cannot parse falls
+  back to the term matcher. Remaining: the wider function library. Target: post-release.
 - **Expression-sourced attribute curves.** `done`. An `<attribute>` with an `<expression>` (for example
   `curveId('Yield_'+au)`) is evaluated per stratum to a curve name and resolved against the recipe's
   curves. The evaluator handles `curveId`, `attribute`, `lastindexof`, string concatenation, and
@@ -58,18 +61,19 @@ items are enhancements and maintenance.
   exactly. The fix was canonicalizing integral floats (`985502002.0` to `985502002`).
 - **Numeric vs literal matching.** `done`. State values are formatted canonically; an integral float is
   rendered without a decimal part.
-- **Full MKRF canonical model.** `partial` (nearly complete). The canonical artifacts were materialized
-  on 2026-10-15 (SHA-256 verified against the producer's), and the builder now reproduces the canonical
-  matrix on **tracks (7048/7048), strata (7048/7048), treatments (10014/10014), and blocks (3183/3183)**.
-  Four fixes closed the gap: `lookupTable` in the expression evaluator; expression-based
-  `<define column>` values (evaluated against the fragment row, not just read as a column name); a
-  literal retention factor (`0.1`/`0.2`, previously read as a column name and treated as zero); and
-  label/product expressions without `%` tokens, with context-less product selects now tagged per
-  treatment (products 274872 → 390546). Remaining: five labels (`feature.area.retention.total`,
-  `feature.yield.managed.merch.total`, and the three `product.Cost_*`/`product.NetRevenue` labels) need
-  the `operable(...)` function and the runtime curve bank; features are 97522/104311 and products
-  390546/420588. The producer's git-annex branch was not pushed to `origin`, so a fresh clone cannot
-  `get` the artifacts (a `reinject` workaround was used locally). Target: post-release.
+- **Full MKRF canonical model.** `done`. The canonical artifacts were materialized on 2026-10-15
+  (SHA-256 verified against the producer's), and the builder now reproduces the canonical matrix
+  **exactly** — tracks 7048/7048, strata 7048/7048, treatments 10014/10014, blocks 3183/3183, features
+  104311/104311, products 420588/420588, and protoaccounts 91/91 (row counts and label sets;
+  `scripts/acceptance.py`). Earlier fixes covered `lookupTable`, expression-based `<define column>`
+  values, a literal retention factor, and label/product expressions without `%` tokens. The last five
+  labels closed the gap: a `<features>` element nested inside `<retention>` is parsed and attaches to the
+  retained stratum (`feature.area.retention.total`); `operable(...)` and `attribute('label')` resolve an
+  attribute against the labels already emitted for a stratum (`feature.yield.managed.merch.total`); a
+  curve reference survives scaling and offsetting arithmetic; and an expression that evaluates to a
+  number becomes a constant curve (`product.Cost_Silviculture`/`Cost_Total`/`NetRevenue`). The producer's
+  git-annex branch was not pushed to `origin`, so a fresh clone cannot `get` the artifacts (a `reinject`
+  workaround was used locally); the four objects are on `arbutus-s3` and only the location log is missing.
 - **Shapefile input.** `done`. `ws4/io/fragments.py` reads a shapefile, GeoJSON, GeoPackage, CSV, or
   Parquet (attributes; geometry is available separately). The geo dependency is imported lazily, and CI
   installs the `geo` extra.

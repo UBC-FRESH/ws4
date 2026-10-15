@@ -399,3 +399,132 @@ def test_a_product_without_a_context_applies_to_every_treatment(tmp_path: Path) 
     products = pd.read_parquet(dataset / "products.parquet")
     assert set(products["treatment"]) == {"CC", "CT"}
     assert set(products["label"]) == {"product.area.treat.CC", "product.area.treat.CT"}
+
+
+_RETENTION_FEATURE_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
+<ForestModel horizon="100" year="0" match="multi">
+  <curve id="unity"><point x="0" y="1.0"/></curve>
+  <curve id="volume"><point x="0" y="0"/><point x="100" y="100"/></curve>
+  <define field="IFM" column="IFM"/>
+  <input block="BLOCK" area="AREA_HA" age="F_AGE"/>
+  <output messages="messages.csv"/>
+  <select statement="IFM eq 'managed'">
+    <features><attribute label="feature.Volume"><curve idref="volume"/></attribute></features>
+    <retention factor="0.25">
+      <assign field="IFM" value="'unmanaged'"/>
+      <features>
+        <attribute label="feature.area.retention.total"><curve idref="unity"/></attribute>
+      </features>
+    </retention>
+    <track><treatment label="CC" minage="0" maxage="100"/></track>
+  </select>
+  <select statement="IFM eq 'unmanaged'"><track/></select>
+</ForestModel>
+"""
+
+
+def test_retention_features_attach_to_the_retained_stratum(tmp_path: Path) -> None:
+    """A feature nested in a ``<retention>`` attaches to the retained stratum."""
+    (tmp_path / "recipe.xml").write_text(_RETENTION_FEATURE_RECIPE, encoding="utf-8")
+    pd.DataFrame({"BLOCK": [1], "AREA_HA": [8.0], "F_AGE": [50], "IFM": ["managed"]}).to_csv(
+        tmp_path / "fragments.csv", index=False
+    )
+    dataset = build_canonical_dataset(
+        tmp_path / "recipe.xml", tmp_path / "fragments.csv", tmp_path / "c"
+    )
+    features = pd.read_parquet(dataset / "features.parquet")
+    assert set(features["label"]) == {"feature.Volume", "feature.area.retention.total"}
+    managed = int(features.loc[features["label"] == "feature.Volume", "track_id"].iloc[0])
+    retained = int(
+        features.loc[features["label"] == "feature.area.retention.total", "track_id"].iloc[0]
+    )
+    assert retained != managed  # the retained portion is its own track
+
+
+_OPERABLE_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
+<ForestModel horizon="100" year="0" match="multi">
+  <curve id="unity"><point x="0" y="1.0"/></curve>
+  <curve id="volume"><point x="0" y="0"/><point x="100" y="100"/></curve>
+  <define field="IFM" column="IFM"/>
+  <input block="BLOCK" area="AREA_HA" age="F_AGE"/>
+  <output messages="messages.csv"/>
+  <select statement="IFM eq 'managed'">
+    <features>
+      <attribute label="%f.yield.%m.total"><curve idref="volume"/></attribute>
+    </features>
+    <track><treatment label="CC" minage="0" maxage="100"/></track>
+  </select>
+  <select statement="IFM eq 'managed'">
+    <features>
+      <attribute label="%f.yield.%m.merch.total">
+        <expression statement="operable(attribute('feature.yield.%m.total'))"/>
+      </attribute>
+    </features>
+  </select>
+</ForestModel>
+"""
+
+
+def test_operable_attribute_resolves_to_the_base_curve(tmp_path: Path) -> None:
+    """``operable(attribute('label'))`` resolves to the base attribute's curve."""
+    (tmp_path / "recipe.xml").write_text(_OPERABLE_RECIPE, encoding="utf-8")
+    pd.DataFrame({"BLOCK": [1], "AREA_HA": [5.0], "F_AGE": [50], "IFM": ["managed"]}).to_csv(
+        tmp_path / "fragments.csv", index=False
+    )
+    dataset = build_canonical_dataset(
+        tmp_path / "recipe.xml", tmp_path / "fragments.csv", tmp_path / "c"
+    )
+    features = pd.read_parquet(dataset / "features.parquet")
+    assert set(features["label"]) == {
+        "feature.yield.managed.total",
+        "feature.yield.managed.merch.total",
+    }
+    base = int(features.loc[features["label"] == "feature.yield.managed.total", "curve_id"].iloc[0])
+    merch = int(
+        features.loc[features["label"] == "feature.yield.managed.merch.total", "curve_id"].iloc[0]
+    )
+    assert merch == base
+
+
+_NUMERIC_PRODUCT_RECIPE = """<?xml version="1.0" encoding="UTF-8"?>
+<ForestModel horizon="100" year="0" match="multi">
+  <curve id="unity"><point x="0" y="1.0"/></curve>
+  <curve id="volume"><point x="0" y="0"/><point x="100" y="100"/></curve>
+  <define field="IFM" column="IFM"/>
+  <define field="treatment"/>
+  <input block="BLOCK" area="AREA_HA" age="F_AGE"/>
+  <output messages="messages.csv"/>
+  <select statement="IFM eq 'managed'">
+    <track>
+      <treatment label="CC" minage="0" maxage="100"/>
+      <treatment label="CT" minage="0" maxage="100"/>
+    </track>
+  </select>
+  <select statement="IFM eq 'managed'">
+    <products>
+      <attribute label="product.cost">
+        <expression statement="Number(lookupTable(treatment,'CC,CT','5,7'))"/>
+      </attribute>
+    </products>
+  </select>
+</ForestModel>
+"""
+
+
+def test_a_numeric_product_expression_becomes_a_constant_curve(tmp_path: Path) -> None:
+    """An expression that evaluates to a number becomes a constant curve per treatment."""
+    (tmp_path / "recipe.xml").write_text(_NUMERIC_PRODUCT_RECIPE, encoding="utf-8")
+    pd.DataFrame({"BLOCK": [1], "AREA_HA": [5.0], "F_AGE": [50], "IFM": ["managed"]}).to_csv(
+        tmp_path / "fragments.csv", index=False
+    )
+    dataset = build_canonical_dataset(
+        tmp_path / "recipe.xml", tmp_path / "fragments.csv", tmp_path / "c"
+    )
+    products = pd.read_parquet(dataset / "products.parquet")
+    curves = pd.read_parquet(dataset / "curves.parquet")
+    assert set(products["treatment"]) == {"CC", "CT"}
+    values = {
+        str(row["treatment"]): float(curves.loc[curves["curve_id"] == row["curve_id"], "y"].iloc[0])
+        for _, row in products.iterrows()
+    }
+    assert values == {"CC": 5.0, "CT": 7.0}

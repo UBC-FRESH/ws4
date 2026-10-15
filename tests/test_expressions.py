@@ -88,3 +88,39 @@ def test_unparseable_expression_raises() -> None:
     """A malformed expression raises."""
     with pytest.raises(ExpressionError):
         evaluate("status eq", {"status": "C"}, _CONSTANTS)
+
+
+def test_curve_reference_survives_arithmetic() -> None:
+    """A curve scaled or offset by a constant stays that curve."""
+    from ws4.io.expressions import evaluate_value
+
+    assert evaluate_value("curveId('Yield') * 55.0", {}, {}) == "Yield"
+    assert evaluate_value("(curveId('Yield') * 89.87) + 2963.0", {}, {}) == "Yield"
+    assert evaluate_value("curveId('Yield') - 5", {}, {}) == "Yield"
+
+
+def test_string_concatenation_still_joins() -> None:
+    """``+`` concatenates a label fragment with a (possibly numeric) field."""
+    from ws4.io.expressions import evaluate_value
+
+    assert evaluate_value("'Yield_'+au", {"au": 2001}, {}) == "Yield_2001"
+    assert evaluate_value("curveId('Yield_'+au)", {"au": 2001}, {}) == "Yield_2001"
+
+
+def test_numeric_field_arithmetic_is_numeric() -> None:
+    """A numeric field divided by a number stays numeric."""
+    from ws4.io.expressions import evaluate_value
+
+    assert evaluate_value("Shape_Area/10000", {"Shape_Area": 50000.0}, {}) == 5.0
+
+
+def test_operable_and_attribute_resolve() -> None:
+    """``attribute`` resolves to a curve and ``operable`` keeps its identity."""
+    from ws4.io.expressions import evaluate_value
+
+    attributes = {"feature.yield.managed.total": "MG_CWH"}
+    assert (
+        evaluate_value("operable(attribute('feature.yield.managed.total'))", {}, {}, attributes)
+        == "MG_CWH"
+    )
+    assert evaluate_value("attribute('missing')", {}, {}, {}) == "missing"
