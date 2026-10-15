@@ -65,17 +65,26 @@ python scripts/benchmark.py --fragments 100000 --years 10 --profile
 ## Space-and-roads baseline (P4)
 
 The spatial and route paths (patch accounts, edge contrast, core area, routing) run inside the
-optimizer's objective and dominate the cost. Measured on the C5 sample:
+optimizer's objective and dominate the cost. Reproduce the C5 scenario with the harness:
 
-| Path | Time |
-| --- | ---: |
-| `simulate` base, 3 years | 3.6 s |
-| `simulate` + edge contrast, 3 years | 6.3 s |
-| `simulate` + routing, 3 years, 300 blocks scheduled | 61 s |
-| `write_patch_metrics` + patch accounts, 1 year | 2.1 s |
-| One optimizer objective evaluation (C5, warm start, routing) | ~13 min |
+```bash
+python scripts/benchmark.py --scenario c5 --sample-dir <sample> \
+    --years 3 --route-blocks 300 --spatial-years 1 --workdir tmp/benchmark
+```
+
+Recorded baseline (C5 sample; the sample is unpacked outside the repository):
+
+| Component | Time | Notes |
+| --- | ---: | --- |
+| Ingest | 0.24 s | 16 174 fragments |
+| `simulate` base, 3 years (empty schedule) | 0.88 s | |
+| `simulate` + edge contrast, 3 years | 3.6 s | |
+| `simulate` + routing, 3 years, 300 blocks | 65.4 s | the dominant cost |
+| Patch accounts, 1 year | 2.2 s | patch metrics + the size-class sub-accounts |
+| One optimizer objective evaluation | 1.3 s | empty schedule; grows with the schedule |
+| Peak memory | 2.8 GiB | |
 
 The dominant hot path is route reconstruction (`RouteNetwork._segments_by_id` rebuilt per route) and
 row-wise `apply_treatments`. The plan to fix this — profiling, bottleneck map, targets, and the
-ordered work packages — is `notes/design/ws4-performance.md`; it is deliberately deferred until after
-the phase 4 initial release.
+ordered work packages — is `notes/design/ws4-performance.md`, and the work is phase 6
+(`feature/p6-performance`).
