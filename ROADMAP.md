@@ -264,7 +264,7 @@ Goal: make the simulator, the spatial metrics, and the route model fast enough t
 optimizer can evaluate thousands of candidate schedules on a C5-class dataset within a practical
 budget. Plan of record: `notes/design/ws4-performance.md`.
 
-- [ ] P6.0 Benchmark harness and baseline (#61)
+- [x] P6.0 Benchmark harness and baseline (#61)
 - [ ] P6.1 Route and simulation quick wins (#62)
 - [ ] P6.2 Vectorized simulator core (#63)
 - [ ] P6.3 Spatial precompute and incremental metrics (#64)

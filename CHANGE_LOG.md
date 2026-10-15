@@ -391,3 +391,9 @@ issue comments.
   (version-update pull requests are already open).
 - Launched Phase 6 (Performance and scalability) on `feature/p6-performance`, parent issue #60, with
   work packages P6.0 to P6.7 (#61 to #68) from `notes/design/ws4-performance.md`.
+- P6.0: extended `scripts/benchmark.py` with a `c5` spatial+route scenario (`--scenario c5
+  --sample-dir ... --route-blocks ... --spatial-years ...`) that times ingest, base simulate, edge
+  contrast, routing, patch accounts, and one optimizer objective evaluation, plus `--profile`. Recorded
+  the reproducible baseline in `notes/performance.md`: ingest 0.24 s, base simulate (3 y) 0.88 s, edge
+  contrast 3.6 s, routing (3 y, 300 blocks) 65.4 s, patch accounts 2.2 s, one objective evaluation
+  1.3 s, peak memory 2.8 GiB. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.
