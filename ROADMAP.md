@@ -178,10 +178,10 @@ release.
   - [x] Build and run a larger synthetic landscape; record the runtime and the peak memory
   - [x] Confirm the simulator's curve evaluation is vectorized per curve, not per fragment
   - [x] Profile the hot paths and record the block-aggregation cost
-- [ ] P3.6 Verify packaging and docs from a clean checkout (#32)
-  - [ ] Install the package into a fresh virtual environment from the checkout
-  - [ ] Run the command line end to end on the synthetic fixture
-  - [ ] Build the docs with warnings as errors, and confirm the published site is reachable
+- [x] P3.6 Verify packaging and docs from a clean checkout (#32)
+  - [x] Install the package into a fresh virtual environment from the checkout
+  - [x] Run the command line end to end on the synthetic fixture
+  - [x] Build the docs with warnings as errors, and confirm the published site is reachable
 - [ ] P3.7 Triage the deferred items and write the verification report (#33)
   - [ ] Confirm every deferred item in `notes/backlog.md` has a reason and a target phase
   - [ ] Confirm the roadmap's deferred list and `notes/backlog.md` agree

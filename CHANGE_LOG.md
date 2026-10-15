@@ -224,3 +224,7 @@ issue comments.
   block-aggregation cost is not the hot path, so the cached incremental aggregate is deferred.
   `python -m pytest`: 264 passed, 94.28 percent branch coverage. `python scripts/dashboard.py`:
   `OVERALL: GREEN`.
+- P3.6: verified packaging and docs from a clean checkout (`notes/packaging.md`). A fresh virtual
+  environment installs `ws4 0.0.1`; the command line runs end to end (`ws4 build`, `simulate`, `report`,
+  `validate`) on the synthetic fixture; the docs build with warnings as errors; and the published site
+  returns HTTP 200.
