@@ -370,3 +370,13 @@ issue comments.
   (`priority: high|medium|low`), and area labels (`area: builder|simulator|optimizer|spatial|roads|
   docs|performance|tooling`); added a pull request template; and recorded the label scheme, routing
   rules, and triage cadence in `notes/triage.md`.
+- P5.3: dependency and security maintenance. Added `.github/dependabot.yml` (weekly pip and
+  github-actions updates) and recorded the review cadence and the out-of-cadence advisory policy in
+  `notes/dependencies.md`.
+- P5.4: recorded the roadmap/backlog/changelog sync checklist and the first sync in
+  `notes/sync-checklist.md`, and linked it from the review cadence.
+- P5.5: recorded the version scheme, release cadence, patch policy, and artifact hosting in
+  `notes/release-policy.md`.
+- P5.6: wrote the maintainer and handover guide in `notes/handover.md` (repository map, workflow,
+  gates, releases, environment, and the next effort). Dashboard result: `python scripts/dashboard.py`
+  reports `OVERALL: GREEN`. `python -m pytest`: 300 passed.

@@ -242,10 +242,10 @@ Goal: keep the project current: triage incoming ideas, review on a cadence, and 
 
 - [x] P5.1 Set a review cadence and record the first review (#45)
 - [x] P5.2 Stand up issue triage: labels, templates, and a triage cadence (#46)
-- [ ] P5.3 Dependency and security maintenance: automated updates and a review cadence (#47)
-- [ ] P5.4 Keep the roadmap, backlog, and changelog in step on a cadence (#48)
-- [ ] P5.5 Define the release cadence and the patch policy (#49)
-- [ ] P5.6 Write the maintainer and handover guide (#50)
+- [x] P5.3 Dependency and security maintenance: automated updates and a review cadence (#47)
+- [x] P5.4 Keep the roadmap, backlog, and changelog in step on a cadence (#48)
+- [x] P5.5 Define the release cadence and the patch policy (#49)
+- [x] P5.6 Write the maintainer and handover guide (#50)
 
 ## Detailed Next Steps Notes
 
