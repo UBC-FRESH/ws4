@@ -380,3 +380,9 @@ issue comments.
 - P5.6: wrote the maintainer and handover guide in `notes/handover.md` (repository map, workflow,
   gates, releases, environment, and the next effort). Dashboard result: `python scripts/dashboard.py`
   reports `OVERALL: GREEN`. `python -m pytest`: 300 passed.
+- Queued the Phase 5 close-out: pull request #51 (`feature/p5-operate` into `main`) and the report
+  `notes/reports/p5-closeout.md`. The report recommends the squash merge, closing parent issue #44,
+  setting P5 to `complete`, and launching the performance and scalability build (P6, the plan in
+  `notes/design/ws4-performance.md`) with its WP0 to WP7 work packages. It names one settings change
+  (Dependabot security updates). Status: awaiting maintainer approval. CI on the evidence head
+  `880c14a` is green.

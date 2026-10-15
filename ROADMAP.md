@@ -16,7 +16,7 @@ exists and the maintainer approves it.
 | P2 Build | #15 | `feature/p2-build` | complete |
 | P3 Verify | #26 | `feature/p3-verify` | complete |
 | P4 Release and deploy | #36 | `feature/p4-release` | complete |
-| P5 Operate and maintain | #44 | `feature/p5-operate` | active |
+| P5 Operate and maintain | #44 | `feature/p5-operate` | pr-open |
 
 ## Lifecycle Map
 
@@ -236,7 +236,7 @@ checkout.
 
 Parent issue: #44
 Branch: `feature/p5-operate`
-Status: active
+Status: pr-open
 
 Goal: keep the project current: triage incoming ideas, review on a cadence, and close out cleanly.
 
