@@ -17,7 +17,13 @@ import pandas as pd
 
 from ..model.schema import dataset_reference
 from ..patch.accounts import PatchAccount, PatchLedger, load_patch_edges
-from ..patch.constraints import green_up_violations, opening_violations, schedule_years
+from ..patch.constraints import (
+    core_area_violations,
+    green_up_violations,
+    opening_violations,
+    schedule_years,
+)
+from ..patch.edge import EdgeElement, edge_values
 from ..patch.metrics import patch_metrics
 from ..roads.accounts import (
     DuplicateAccount,
@@ -62,6 +68,7 @@ class Simulator:
         self.fragments["offset"] = self.fragments["age"].astype(int)
         self._product_values: list[dict[str, object]] = []
         self._route_values: list[dict[str, object]] = []
+        self._edge_values: list[dict[str, object]] = []
         # Cache each curve's sorted x/y arrays for vectorized interpolation.
         self._curves: dict[int, tuple[np.ndarray, np.ndarray]] = {
             _as_int(curve_id): (
@@ -240,6 +247,8 @@ class Simulator:
         network: RouteNetwork | None = None,
         route_model: RouteModel | None = None,
         ledger: RouteCostLedger | None = None,
+        edge_elements: Sequence[EdgeElement] = (),
+        edges: Sequence[tuple[int, int, float]] = (),
     ) -> pd.DataFrame:
         """Replay a schedule and return the account values, without writing files.
 
@@ -256,6 +265,11 @@ class Simulator:
             that network is used.
         ledger : RouteCostLedger or None, optional
             The route cost ledger to record routed products into.
+        edge_elements : sequence of EdgeElement, optional
+            Edge contrast elements. When given with ``edges``, an edge contrast account
+            value per element per year is added to the account values.
+        edges : sequence of (int, int, float), optional
+            The adjacency edges ``(src, dst, shared_length)`` for the edge contrast.
 
         Returns
         -------
@@ -268,9 +282,20 @@ class Simulator:
         records: list[dict[str, object]] = []
         self._product_values = []
         self._route_values = []
+        self._edge_values = []
+        criteria_labels = sorted(
+            {element.attribute1 for element in edge_elements}
+            | {element.attribute2 for element in edge_elements}
+        )
         for year in range(years):
             self.apply_treatments(schedule, year, model, ledger)
             records.extend(self.account_values(year))
+            if edge_elements:
+                criteria = {label: self.block_criteria(label) for label in criteria_labels}
+                for row in edge_values(edge_elements, list(edges), criteria):
+                    record = {"year": year, "account": row["account"], "value": row["value"]}
+                    records.append(record)
+                    self._edge_values.append(dict(record))
             self.fragments["offset"] = self.fragments["offset"].astype(int) + 1
         return pd.DataFrame(records, columns=["year", "account", "value"])
 
@@ -288,6 +313,9 @@ class Simulator:
         max_opening_ha: float | None = None,
         min_green_up_years: int | None = None,
         patch_accounts: Sequence[PatchAccount] = (),
+        edge_elements: Sequence[EdgeElement] = (),
+        core_buffer_m: float | None = None,
+        min_core_area_ha: float | None = None,
     ) -> pd.DataFrame:
         """Replay a schedule for the given horizon and write the run outputs.
 
@@ -322,6 +350,15 @@ class Simulator:
         patch_accounts : sequence of PatchAccount, optional
             Patch account definitions. When given with a topology, ``patch_accounts.csv``
             is written.
+        edge_elements : sequence of EdgeElement, optional
+            Edge contrast elements. When given with a topology, an edge contrast account
+            value per element per year is added to the account values and written to
+            ``edge_metrics.csv``.
+        core_buffer_m : float or None, optional
+            The core-area buffer width, in metres. When given with ``min_core_area_ha``,
+            ``spatial_violations.csv`` reports patches whose core area is below it.
+        min_core_area_ha : float or None, optional
+            The minimum core area, in hectares.
 
         Returns
         -------
@@ -338,8 +375,16 @@ class Simulator:
         if model is None and network is not None:
             model = RouteModel(network)
         ledger = RouteCostLedger(model.network) if model is not None else None
+        graph = load_patch_edges(topology_csv) if topology_csv is not None else []
 
-        values = self.simulate(schedule, years, route_model=model, ledger=ledger)
+        values = self.simulate(
+            schedule,
+            years,
+            route_model=model,
+            ledger=ledger,
+            edge_elements=edge_elements,
+            edges=graph,
+        )
         if ledger is not None and route_accounts:
             values = resolve_account_values(
                 values, ledger.account_values(route_accounts), duplicate_accounts
@@ -350,6 +395,10 @@ class Simulator:
         pd.DataFrame(self._product_values, columns=["year", "account", "value"]).to_csv(
             out_dir / "product_values.csv", index=False
         )
+        if edge_elements:
+            pd.DataFrame(self._edge_values, columns=["year", "account", "value"]).to_csv(
+                out_dir / "edge_metrics.csv", index=False
+            )
         if ledger is not None:
             ledger.write(out_dir)
         elif self._route_values:
@@ -376,6 +425,8 @@ class Simulator:
                 max_opening_ha=max_opening_ha,
                 min_green_up_years=min_green_up_years,
                 patch_accounts=patch_accounts,
+                core_buffer_m=core_buffer_m,
+                min_core_area_ha=min_core_area_ha,
             )
         (out_dir / "dataset.json").write_text(
             json.dumps(dataset_reference(self.dataset_dir), indent=2) + "\n", encoding="utf-8"
@@ -392,6 +443,8 @@ class Simulator:
         max_opening_ha: float | None = None,
         min_green_up_years: int | None = None,
         patch_accounts: Sequence[PatchAccount] = (),
+        core_buffer_m: float | None = None,
+        min_core_area_ha: float | None = None,
     ) -> None:
         """Replay a schedule and write per-year patch metrics and patch accounts."""
         out_dir = Path(out_dir)
@@ -421,7 +474,11 @@ class Simulator:
         pd.DataFrame(patch_records).to_csv(out_dir / "patch_metrics.csv", index=False)
         if ledger is not None:
             ledger.write(out_dir)
-        if max_opening_ha is not None or min_green_up_years is not None:
+        if (
+            max_opening_ha is not None
+            or min_green_up_years is not None
+            or min_core_area_ha is not None
+        ):
             selected_by_year, harvest_year = schedule_years(schedule_pairs)
             violations: list[dict[str, object]] = []
             if max_opening_ha is not None:
@@ -430,6 +487,12 @@ class Simulator:
                 )
             if min_green_up_years is not None:
                 violations.extend(green_up_violations(harvest_year, edges, min_green_up_years))
+            if min_core_area_ha is not None and core_buffer_m is not None:
+                violations.extend(
+                    core_area_violations(
+                        selected_by_year, graph, block_area, core_buffer_m, min_core_area_ha
+                    )
+                )
             pd.DataFrame(
                 violations,
                 columns=["kind", "year", "area_ha", "limit", "block_a", "block_b", "years"],

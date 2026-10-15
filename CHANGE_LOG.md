@@ -323,3 +323,15 @@ issue comments.
   inner loop is the current cost (a C5 single-iteration run is ~13 minutes); incremental routing is
   recorded in `notes/backlog.md`. Dashboard result: `python scripts/dashboard.py` reports
   `OVERALL: GREEN`. `python -m pytest`: 296 passed.
+- P4 fix (maintainer request): closed the spatial function gaps — **core-area rules** and **edge
+  contrast**. `core_area` removes a buffer strip around a patch perimeter (from the perimeter and
+  area); `core_area_violations`/`core_area_penalty` report and penalize patches whose core is below a
+  minimum. `edge_contrast` sums the shared boundary where one side matches the first attribute and the
+  other matches the second, weighted by the shared edge length; `ws4/patch/edge.py` loads edge elements
+  and produces a per-period edge account. The simulator accepts `core_buffer_m`, `min_core_area_ha`,
+  and `edge_elements`, writes core-area rows into `spatial_violations.csv` and `edge_metrics.csv`, and
+  adds the edge accounts to `account_values.csv`; the optimizer (`--core-buffer-m`,
+  `--min-core-area-ha`, `--edge-elements`) adds the core-area penalty and can target the edge accounts.
+  Verified on C5: 167 core-area violations at a 500 ha minimum / 50 m buffer, and
+  `feature.Edge.OldYoung` = 700748 m of old/young contrast edge. Dashboard result:
+  `python scripts/dashboard.py` reports `OVERALL: GREEN`. `python -m pytest`: 300 passed.

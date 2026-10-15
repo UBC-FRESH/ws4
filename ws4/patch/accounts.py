@@ -29,7 +29,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from .metrics import connected_patches
+from .metrics import connected_patches, patch_perimeter
 
 DEFAULT_SIZE_CLASSES: tuple[float, ...] = (50.0, 150.0, 250.0, 2500.0, math.inf)
 
@@ -81,15 +81,6 @@ def size_class_labels(size_classes: Sequence[float]) -> tuple[str, ...]:
     return tuple(labels)
 
 
-def _patch_perimeter(patch: set[int], edges: Sequence[tuple[int, int, float]]) -> float:
-    """Return the boundary length of a patch (edges with one member end)."""
-    perimeter = 0.0
-    for source, target, length in edges:
-        if (source in patch) != (target in patch):
-            perimeter += length
-    return perimeter
-
-
 def _compactness(area_ha: float, perimeter_m: float) -> float:
     """Return a patch's compactness from 0 to 100 (100 is a circle).
 
@@ -139,7 +130,7 @@ def patch_account_values(
     result: dict[str, float] = {}
     by_label: dict[str, list[tuple[float, float]]] = {label: [] for label in labels}
     for patch, area in zip(patches, patch_area, strict=True):
-        perimeter = _patch_perimeter(patch, edges)
+        perimeter = patch_perimeter(patch, edges)
         compactness = _compactness(area, perimeter)
         for index, upper in enumerate(account.size_classes):
             lower = 0.0 if index == 0 else account.size_classes[index - 1]

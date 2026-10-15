@@ -20,9 +20,10 @@ the total penalty (lower is better). Targets load from a YAML file:
        year: 0
        maximum: 500
 
-The weights file is accepted by the command line and the configuration. Spatial constraints add a
-weighted penalty to the objective (see :doc:`spatial`), disabled only by the explicit
-``--spatial-override``.
+The weights file is accepted by the command line and the configuration. The spatial constraints add a
+weighted penalty to the objective (see :doc:`spatial`): a maximum opening size, a green-up interval,
+and a core-area rule. Edge contrast accounts (``--edge-elements``) are added to the account values, so
+they can be targeted. The penalties are disabled only by the explicit ``--spatial-override``.
 
 Search stack
 ------------

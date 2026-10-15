@@ -21,7 +21,8 @@ import pandas as pd
 
 from ..model.schema import dataset_reference
 from ..patch.accounts import load_patch_edges
-from ..patch.constraints import schedule_years, spatial_penalty
+from ..patch.constraints import core_area_penalty, schedule_years, spatial_penalty
+from ..patch.edge import EdgeElement, load_edge_elements
 from ..report import write_report
 from ..roads.accounts import (
     DuplicateAccount,
@@ -62,8 +63,11 @@ class OptimizeConfig:
     mip_bound: bool = False
     topology_path: str = ""
     route_config_path: str = ""
+    edge_elements_path: str = ""
     max_opening_ha: float | None = None
     min_green_up_years: int | None = None
+    core_buffer_m: float | None = None
+    min_core_area_ha: float | None = None
     spatial_weight: float = 1.0
     allow_spatial_override: bool = False
 
@@ -80,6 +84,8 @@ class Optimizer:
         self._route_cache: (
             tuple[RouteModel | None, tuple[RouteAccount, ...], tuple[DuplicateAccount, ...]] | None
         ) = None
+        self._edge_cache: tuple[EdgeElement, ...] | None = None
+        self._graph_cache: list[tuple[int, int, float]] | None = None
 
     @classmethod
     def from_dataset(cls, dataset_dir: Path, cfg: OptimizeConfig) -> Optimizer:
@@ -154,7 +160,15 @@ class Optimizer:
         model, route_accounts, duplicate_accounts = self.route()
         simulator = Simulator.from_dataset(self.dataset_dir)
         ledger = RouteCostLedger(model.network) if model is not None else None
-        values = simulator.simulate(frame, self.cfg.years, route_model=model, ledger=ledger)
+        edges = self._graph() if self.cfg.topology_path else []
+        values = simulator.simulate(
+            frame,
+            self.cfg.years,
+            route_model=model,
+            ledger=ledger,
+            edge_elements=self.edge_elements(),
+            edges=edges,
+        )
         if ledger is not None and route_accounts:
             values = resolve_account_values(
                 values, ledger.account_values(route_accounts), duplicate_accounts
@@ -163,11 +177,32 @@ class Optimizer:
             values = resolve_account_values(values, None, duplicate_accounts)
         return objective(values, targets) + self._spatial_penalty(frame)
 
+    def edge_elements(self) -> tuple[EdgeElement, ...]:
+        """Return the edge contrast elements, loading them once.
+
+        Returns
+        -------
+        tuple of EdgeElement
+            The edge elements, or an empty tuple when none are configured.
+        """
+        if self._edge_cache is None:
+            self._edge_cache = (
+                load_edge_elements(Path(self.cfg.edge_elements_path))
+                if self.cfg.edge_elements_path
+                else ()
+            )
+        return self._edge_cache
+
+    def _graph(self) -> list[tuple[int, int, float]]:
+        """Return the cached topology graph ``(src, dst, shared_length)``."""
+        if self._graph_cache is None:
+            self._graph_cache = load_patch_edges(Path(self.cfg.topology_path))
+        return self._graph_cache
+
     def _spatial(self) -> tuple[list[tuple[int, int]], dict[int, float]]:
         """Return the cached topology edges and block areas, loading them once."""
         if self._spatial_cache is None:
-            graph = load_patch_edges(Path(self.cfg.topology_path))
-            edges = [(source, target) for source, target, _ in graph]
+            edges = [(source, target) for source, target, _ in self._graph()]
             simulator = Simulator.from_dataset(self.dataset_dir)
             block_area = {
                 int(float(str(block))): float(str(area))
@@ -180,11 +215,15 @@ class Optimizer:
         """Return the weighted spatial penalty for a schedule, or zero when disabled.
 
         The penalty is disabled by ``allow_spatial_override`` (the explicit override), and
-        when no maximum opening size or green-up interval is set.
+        when no maximum opening size, green-up interval, or core-area rule is set.
         """
         if self.cfg.allow_spatial_override:
             return 0.0
-        if self.cfg.max_opening_ha is None and self.cfg.min_green_up_years is None:
+        if (
+            self.cfg.max_opening_ha is None
+            and self.cfg.min_green_up_years is None
+            and self.cfg.min_core_area_ha is None
+        ):
             return 0.0
         edges, block_area = self._spatial()
         pairs = [
@@ -192,7 +231,7 @@ class Optimizer:
             for row in schedule.itertuples(index=False)
         ]
         selected_by_year, harvest_year = schedule_years(pairs)
-        return self.cfg.spatial_weight * spatial_penalty(
+        penalty = spatial_penalty(
             selected_by_year,
             harvest_year,
             edges,
@@ -200,6 +239,15 @@ class Optimizer:
             self.cfg.max_opening_ha,
             self.cfg.min_green_up_years,
         )
+        if self.cfg.min_core_area_ha is not None and self.cfg.core_buffer_m is not None:
+            penalty += core_area_penalty(
+                selected_by_year,
+                self._graph(),
+                block_area,
+                self.cfg.core_buffer_m,
+                self.cfg.min_core_area_ha,
+            )
+        return self.cfg.spatial_weight * penalty
 
     def _solve(
         self, seed: int, on_step: Callable[[int, float], None] | None = None
@@ -329,9 +377,13 @@ class Optimizer:
             schedule_path,
             years=self.cfg.years,
             out_dir=out_dir,
+            topology_csv=Path(self.cfg.topology_path) if self.cfg.topology_path else None,
             route_model=model,
             route_accounts=route_accounts,
             duplicate_accounts=duplicate_accounts,
+            edge_elements=self.edge_elements(),
+            core_buffer_m=self.cfg.core_buffer_m,
+            min_core_area_ha=self.cfg.min_core_area_ha,
         )
         write_report(values, targets, out_dir)
         summary: dict[str, Any] = {

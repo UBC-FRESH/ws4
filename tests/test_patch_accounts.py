@@ -91,3 +91,62 @@ def test_load_patch_edges_rejects_a_missing_block_column(tmp_path: Path) -> None
     path.write_text("a,b\n1,2\n", encoding="utf-8")
     with pytest.raises(ValueError, match="no block columns"):
         load_patch_edges(path)
+
+
+def test_core_area_removes_a_buffer_around_the_perimeter() -> None:
+    """Core area is the patch area less a buffer strip; it clips at zero."""
+    from ws4.patch.metrics import core_area
+
+    # A 100 ha square, 4000 m perimeter, 50 m buffer: 100 - 4000*50/10000 + pi*0.25 ha.
+    core = core_area(100.0, 4000.0, 50.0)
+    assert core == pytest.approx(100.0 - 20.0 + 3.14159265 * 0.25, rel=1e-4)
+    assert core_area(1.0, 100000.0, 50.0) == 0.0
+
+
+def test_core_area_violations_flag_a_small_core() -> None:
+    """A patch whose core is below the minimum is a violation."""
+    from ws4.patch.constraints import core_area_violations
+
+    # Blocks 1 and 2 form a 2 ha patch; block 3 is outside, so the (2, 3) edge is
+    # boundary, giving a 100 m perimeter.
+    selected_by_year = {0: {1, 2}}
+    edges = [(1, 2, 100.0), (2, 3, 100.0)]
+    block_area = {1: 1.0, 2: 1.0, 3: 1.0}
+    records = core_area_violations(selected_by_year, edges, block_area, 50.0, 3.0)
+    assert records
+    assert records[0]["kind"] == "core_area"
+    # A modest minimum is not violated (the core is ~2.29 ha).
+    assert core_area_violations(selected_by_year, edges, block_area, 50.0, 2.0) == []
+
+
+def test_edge_contrast_counts_the_shared_boundary() -> None:
+    """A type1/type2 boundary contributes the shared edge length."""
+    from ws4.patch.constraints import edge_contrast
+
+    edges = [(1, 2, 300.0)]
+    # Block 1 is type1 and block 2 is type2: the shared edge is a contrast boundary.
+    assert edge_contrast({1: 1.0}, {2: 1.0}, edges) == 300.0
+    # Two blocks already in both types do not contrast.
+    assert edge_contrast({1: 1.0, 2: 1.0}, {1: 1.0, 2: 1.0}, edges) == 0.0
+    # The factor scales the difference.
+    assert edge_contrast({1: 1.0}, {2: 1.0}, edges, 2.0) == 600.0
+
+
+def test_edge_elements_load_and_evaluate(tmp_path: Path) -> None:
+    """Edge elements load from CSV and produce one account value each."""
+    from ws4.patch.edge import edge_values, load_edge_elements
+
+    path = tmp_path / "edges.csv"
+    path.write_text(
+        "account,attribute1,attribute2,factor\n"
+        "feature.Edge.OldYoung,feature.Seral.old,feature.Seral.young,1\n",
+        encoding="utf-8",
+    )
+    elements = load_edge_elements(path)
+    assert elements[0].account == "feature.Edge.OldYoung"
+    records = edge_values(
+        elements,
+        [(1, 2, 300.0)],
+        {"feature.Seral.old": {1: 1.0}, "feature.Seral.young": {2: 1.0}},
+    )
+    assert records == [{"account": "feature.Edge.OldYoung", "value": 300.0}]

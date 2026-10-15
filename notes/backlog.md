@@ -20,8 +20,9 @@ items are enhancements and maintenance.
 - **post-release:** the wider expression library; succession and `produce` semantics; legacy-ingestion
   coverage; a reference replay; the wider operator set and ALNS; the shared solver-core package; the
   island model and GPU moves; time-boxed MIP subproblems; the tuners and the portfolio layer;
-  incremental routing for the optimizer objective; core-area rules and edge contrast; duplicate and
-  meta accounts and chart output; unit conversion; and the topology stub cleanup.
+  incremental routing and spatial metrics for the optimizer objective (see
+  `notes/design/ws4-performance.md`); duplicate and meta accounts and chart output; unit conversion;
+  and the topology stub cleanup.
 - **Blocked:** the MKRF canonical artifacts' location log is not on `origin` (the objects are on
   `arbutus-s3`); a fresh clone needs the producer to push the git-annex branch.
 - **Deferred:** the block-aggregation cache (not the hot path).
@@ -126,9 +127,18 @@ items are enhancements and maintenance.
   implemented and verified against an independent calculation (P3.4). `ws4/patch/topology.py` is a stub
   that duplicates the loader. Target: post-release.
 - **Spatial-constraint enforcement.** `done`. `ws4/patch/constraints.py` reports the largest opening per
-  year, opening violations, green-up violations, and a combined penalty; the simulator writes
-  `spatial_violations.csv`; and the optimizer adds a weighted spatial penalty, disabled by the explicit
-  `allow_spatial_override`. Open: core-area rules and edge contrast. Target: post-release.
+  year, opening violations, green-up violations, core-area violations, and a combined penalty; the
+  simulator writes `spatial_violations.csv`; and the optimizer adds a weighted spatial penalty
+  (opening, green-up, and core-area), disabled by the explicit `allow_spatial_override`.
+- **Core-area rule.** `done`. `core_area` (in `ws4/patch/metrics.py`) removes a buffer strip around a
+  patch perimeter; `core_area_violations`/`core_area_penalty` (in `ws4/patch/constraints.py`) report and
+  penalize patches whose core is below a minimum. Wired into the simulator (`core_buffer_m`,
+  `min_core_area_ha`) and the optimizer.
+- **Edge contrast.** `done`. `edge_contrast` (in `ws4/patch/constraints.py`) sums the shared boundary
+  where one side matches the first attribute and the other matches the second, weighted by the shared
+  edge length. `ws4/patch/edge.py` loads the edge elements and produces an edge account value per
+  period; the simulator writes `edge_metrics.csv` and adds the edge accounts to `account_values.csv`,
+  so the optimizer can target them.
 - **Road network, access, haul cost, exclusive routing.** `done`. `ws4/roads/network.py` routes over
   the segment graph (least-haul-cost route, shortest length and cost, nearest destination), and a
   destination is identified by its **account name** (several destinations may share a vertex). The

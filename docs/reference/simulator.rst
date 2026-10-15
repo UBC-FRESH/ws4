@@ -58,8 +58,10 @@ writes:
 - ``patch_metrics.csv`` — per-year patch count, mean size, largest opening, and size-class
   distribution (see :doc:`spatial`);
 - ``patch_accounts.csv`` — per-year patch accounts, when ``patch_accounts`` are given;
-- ``spatial_violations.csv`` — ``kind,year,area_ha,limit,block_a,block_b,years``, when a maximum
-  opening size or a green-up interval is given.
+- ``edge_metrics.csv`` — per-year edge contrast accounts, when ``edge_elements`` are given;
+- ``spatial_violations.csv`` — ``kind,year,area_ha,limit,block_a,block_b,years`` (``kind`` is
+  ``opening``, ``green_up``, or ``core_area``), when a maximum opening size, a green-up interval, or
+  a core-area rule is given.
 
 API
 ---

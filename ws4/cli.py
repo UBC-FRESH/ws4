@@ -14,6 +14,7 @@ from .build.legacy import ingest_legacy_matrix
 from .model.schema import validate_dataset
 from .opt.engine import OptimizeConfig, Optimizer
 from .opt.objective import load_targets
+from .patch.edge import load_edge_elements
 from .report import write_report
 from .roads.accounts import load_route_config
 from .sim.engine import Simulator
@@ -49,24 +50,36 @@ def simulate(
     ),
     years: int = typer.Option(200, help="Simulation horizon in years"),
     out: Path = typer.Option(..., help="Output directory"),
+    topology: Path = typer.Option(None, exists=True, help="Block topology for spatial metrics"),
     route_config: Path = typer.Option(
         None, "--route-config", exists=True, help="Optional route model and route accounts (YAML)"
+    ),
+    edge_elements: Path = typer.Option(
+        None, "--edge-elements", exists=True, help="Optional edge contrast elements (CSV)"
+    ),
+    core_buffer_m: float = typer.Option(
+        None, "--core-buffer-m", help="Core-area buffer, in metres"
+    ),
+    min_core_area_ha: float = typer.Option(
+        None, "--min-core-area-ha", help="Minimum core area, in hectares"
     ),
 ) -> None:
     """Simulate a schedule over a compiled dataset and write a run directory."""
     sim = Simulator.from_dataset(dataset)
-    if route_config is not None:
-        config = load_route_config(route_config)
-        sim.run(
-            schedule_csv=schedule,
-            years=years,
-            out_dir=out,
-            route_model=config.model,
-            route_accounts=config.route_accounts,
-            duplicate_accounts=config.duplicate_accounts,
-        )
-    else:
-        sim.run(schedule_csv=schedule, years=years, out_dir=out)
+    elements = load_edge_elements(edge_elements) if edge_elements is not None else ()
+    config = load_route_config(route_config) if route_config is not None else None
+    sim.run(
+        schedule_csv=schedule,
+        years=years,
+        out_dir=out,
+        topology_csv=topology,
+        route_model=config.model if config is not None else None,
+        route_accounts=config.route_accounts if config is not None else (),
+        duplicate_accounts=config.duplicate_accounts if config is not None else (),
+        edge_elements=elements,
+        core_buffer_m=core_buffer_m,
+        min_core_area_ha=min_core_area_ha,
+    )
     print(f"[bold green]Simulation complete[/] → {out}")
 
 
@@ -83,6 +96,15 @@ def optimize(
     route_config: Path = typer.Option(
         None, "--route-config", exists=True, help="Optional route model and route accounts (YAML)"
     ),
+    edge_elements: Path = typer.Option(
+        None, "--edge-elements", exists=True, help="Optional edge contrast elements (CSV)"
+    ),
+    core_buffer_m: float = typer.Option(
+        None, "--core-buffer-m", help="Core-area buffer, in metres"
+    ),
+    min_core_area_ha: float = typer.Option(
+        None, "--min-core-area-ha", help="Minimum core area, in hectares"
+    ),
     max_opening_ha: float = typer.Option(None, help="Maximum opening size, in hectares"),
     min_green_up_years: int = typer.Option(None, help="Green-up interval, in years"),
     spatial_override: bool = typer.Option(
@@ -98,8 +120,11 @@ def optimize(
         weights_path=str(weights),
         topology_path=str(topology) if topology is not None else "",
         route_config_path=str(route_config) if route_config is not None else "",
+        edge_elements_path=str(edge_elements) if edge_elements is not None else "",
         max_opening_ha=max_opening_ha,
         min_green_up_years=min_green_up_years,
+        core_buffer_m=core_buffer_m,
+        min_core_area_ha=min_core_area_ha,
         allow_spatial_override=spatial_override,
     )
     opt = Optimizer.from_dataset(dataset, cfg)

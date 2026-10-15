@@ -76,6 +76,8 @@ Constraints
     Patches whose area exceeds a maximum opening size.
 ``green_up_violations``
     Adjacent blocks disturbed within a green-up interval.
+``core_area_violations``
+    Patches whose **core area** is below a minimum (see below).
 
 ``spatial_penalty`` combines them into a single penalty, and ``schedule_years`` splits a schedule into
 per-year blocks and each block's first disturbance year. The simulator writes the violations to
@@ -88,7 +90,7 @@ per-year blocks and each block's first disturbance year. The simulator writes th
    * - Column
      - Meaning
    * - ``kind``
-     - ``opening`` or ``green_up``.
+     - ``opening``, ``green_up``, or ``core_area``.
    * - ``year``
      - The year of the violation.
    * - ``area_ha``
@@ -99,6 +101,38 @@ per-year blocks and each block's first disturbance year. The simulator writes th
      - The adjacent blocks (a green-up violation), else -1.
    * - ``years``
      - The gap between the two disturbances (a green-up violation), else 0.
+
+Core-area rule
+--------------
+
+A **core-area rule** requires interior habitat, not just disturbed area. The core area of a patch
+removes a strip of ``buffer_m`` metres around its perimeter
+(``core = area - perimeter * buffer + pi * buffer**2``, clipped at zero), so a patch of the same area
+with a longer, more dendritic edge has less core. ``core_area_violations`` reports each patch whose
+core is below ``min_core_area_ha``; the optimizer adds the shortfall to its penalty
+(``OptimizeConfig.core_buffer_m`` / ``min_core_area_ha`` or ``--core-buffer-m`` /
+``--min-core-area-ha``).
+
+Edge contrast
+-------------
+
+An **edge contrast** account measures the juxtaposition of one forest type beside another (the
+established edge-target API). For each shared edge it takes the boundary where one side matches the
+first attribute and the other matches the second, weighted by the per-unit values and the shared edge
+length, and sums it into a named account:
+
+.. code-block:: bash
+
+   # edges.csv
+   account,attribute1,attribute2,factor
+   feature.Edge.OldYoung,feature.Seral.old,feature.Seral.young,1
+
+Adjacent blocks of the same type contribute nothing; a hard boundary between two contrasting types
+contributes the shared edge length. The per-block attribute values come from feature curves
+(``Simulator.block_criteria``), so the account changes over time. The simulator writes
+``edge_metrics.csv`` and adds the edge accounts to ``account_values.csv`` (so the optimizer can target
+them, for example a minimum on ``feature.Edge.OldYoung``). ``load_edge_elements`` loads the
+specifications from CSV.
 
 Enforcement in the optimizer
 ----------------------------
@@ -127,7 +161,26 @@ API
 
 .. autofunction:: ws4.patch.constraints.spatial_penalty
 
+.. autofunction:: ws4.patch.constraints.core_area_violations
+
+.. autofunction:: ws4.patch.constraints.core_area_penalty
+
+.. autofunction:: ws4.patch.constraints.edge_contrast
+
 .. autofunction:: ws4.patch.constraints.schedule_years
+
+.. autofunction:: ws4.patch.metrics.core_area
+
+.. autofunction:: ws4.patch.metrics.patch_core_areas
+
+.. autofunction:: ws4.patch.metrics.patch_perimeter
+
+.. autofunction:: ws4.patch.edge.load_edge_elements
+
+.. autofunction:: ws4.patch.edge.edge_values
+
+.. autoclass:: ws4.patch.edge.EdgeElement
+   :members:
 
 .. autofunction:: ws4.patch.accounts.load_patch_edges
 
