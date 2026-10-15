@@ -403,3 +403,8 @@ issue comments.
   Dijkstra per destination serves every block). C5 `simulate` + routing (3 years, 300 blocks) fell
   from 65.4 s to **4.5 s**, and peak memory from 2.8 GiB to **338 MiB**. The single-replay subtask is
   deferred to WP3. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.
+- P6.2: vectorized simulator core. `account_values` now uses a precomputed fragment-to-feature join
+  (flat arrays of fragment position, curve id, and label code, rebuilt only when a track changes) with
+  per-curve `numpy.interp`, instead of a per-year pandas merge and groupby. C5 `simulate` base fell from
+  3.76 s to **0.41 s** over 30 years (target under 1 s met). The benchmark now times simulator
+  construction separately. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.
