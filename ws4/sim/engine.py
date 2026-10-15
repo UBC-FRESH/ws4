@@ -77,22 +77,39 @@ class Simulator:
             )
             for curve_id, group in self.curves.groupby("curve_id")
         }
+        # Index the treatments, products, and fragments once, so a year's treatments do not
+        # index the frames row by row.
+        self._treatment_by_key: dict[tuple[int, str], tuple[int, int]] = {
+            (_as_int(row.track_id), str(row.treatment)): (
+                _as_int(row.new_track),
+                _as_int(row.offset),
+            )
+            for row in self.treatments.itertuples(index=False)
+        }
+        self._products_by_key: dict[tuple[int, str], list[tuple[int, str]]] = {}
+        for product in self.products.itertuples(index=False):
+            key = (_as_int(product.track_id), str(product.treatment))
+            self._products_by_key.setdefault(key, []).append(
+                (_as_int(product.curve_id), str(product.label))
+            )
+        # The fragment-position index is rebuilt lazily (the caller may replace the frame).
+        self._fragments_index_id = -1
+        self._fragments_by_block: dict[int, list[int]] = {}
+
+    def _block_index(self) -> dict[int, list[int]]:
+        """Return the fragment positions per block, rebuilt when the frame is replaced."""
+        if self._fragments_index_id != id(self.fragments):
+            by_block: dict[int, list[int]] = {}
+            for index, block in enumerate(self.fragments["block_id"].to_numpy()):
+                by_block.setdefault(int(block), []).append(index)
+            self._fragments_by_block = by_block
+            self._fragments_index_id = id(self.fragments)
+        return self._fragments_by_block
 
     @classmethod
     def from_dataset(cls, dataset_dir: Path) -> Simulator:
         """Build a simulator that reads the given compiled dataset."""
         return cls(dataset_dir)
-
-    def _treatment(self, track_id: int, label: str) -> pd.Series | None:
-        """Return the treatment row for a track and label, or None.
-
-        A fragment is operable for a treatment only when its track offers it; this
-        is the block-level intersection rule applied at the fragment.
-        """
-        match = self.treatments[
-            (self.treatments["track_id"] == track_id) & (self.treatments["treatment"] == label)
-        ]
-        return match.iloc[0] if not match.empty else None
 
     def apply_treatments(
         self,
@@ -126,23 +143,23 @@ class Simulator:
             The blocks that had at least one fragment treated.
         """
         disturbed: set[int] = set()
-        for _, row in schedule[schedule["period"] == year].iterrows():
-            mask = self.fragments["block_id"] == row["block_id"]
-            for index in self.fragments.index[mask]:
-                track_id = _as_int(self.fragments.at[index, "track_id"])
-                label = str(row["treatment"])
-                treatment = self._treatment(track_id, label)
+        tracks = self.fragments["track_id"].to_numpy(copy=True)
+        offsets = self.fragments["offset"].to_numpy(copy=True)
+        areas = self.fragments["area_ha"].to_numpy(copy=True)
+        by_block = self._block_index()
+        changed = False
+        for row in schedule[schedule["period"] == year].itertuples(index=False):
+            block_id = _as_int(row.block_id)
+            label = str(row.treatment)
+            for index in by_block.get(block_id, []):
+                key = (int(tracks[index]), label)
+                treatment = self._treatment_by_key.get(key)
                 if treatment is None:
                     continue
-                offset = _as_int(self.fragments.at[index, "offset"])
-                area = _as_float(self.fragments.at[index, "area_ha"])
-                produced = self.products[
-                    (self.products["track_id"] == track_id) & (self.products["treatment"] == label)
-                ]
-                block_id = int(row["block_id"])
-                for _, product in produced.iterrows():
-                    value = area * curve_value(self.curves, int(product["curve_id"]), offset)
-                    product_label = str(product["label"])
+                offset = int(offsets[index])
+                area = float(areas[index])
+                for curve_id, product_label in self._products_by_key.get(key, []):
+                    value = area * curve_value(self.curves, curve_id, offset)
                     self._product_values.append(
                         {"year": year, "account": product_label, "value": value}
                     )
@@ -161,9 +178,13 @@ class Simulator:
                                 "haul_cost": route.haul_cost if route is not None else 0.0,
                             }
                         )
-                self.fragments.at[index, "track_id"] = _as_int(treatment["new_track"])
-                self.fragments.at[index, "offset"] = _as_int(treatment["offset"])
-                disturbed.add(int(row["block_id"]))
+                tracks[index] = treatment[0]
+                offsets[index] = treatment[1]
+                changed = True
+                disturbed.add(block_id)
+        if changed:
+            self.fragments["track_id"] = tracks
+            self.fragments["offset"] = offsets
         return disturbed
 
     def account_values(self, year: int) -> list[dict[str, object]]:

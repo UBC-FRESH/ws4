@@ -265,7 +265,7 @@ optimizer can evaluate thousands of candidate schedules on a C5-class dataset wi
 budget. Plan of record: `notes/design/ws4-performance.md`.
 
 - [x] P6.0 Benchmark harness and baseline (#61)
-- [ ] P6.1 Route and simulation quick wins (#62)
+- [x] P6.1 Route and simulation quick wins (#62)
 - [ ] P6.2 Vectorized simulator core (#63)
 - [ ] P6.3 Spatial precompute and incremental metrics (#64)
 - [ ] P6.4 Incremental objective evaluation (#65)

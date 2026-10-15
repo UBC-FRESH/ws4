@@ -397,3 +397,9 @@ issue comments.
   the reproducible baseline in `notes/performance.md`: ingest 0.24 s, base simulate (3 y) 0.88 s, edge
   contrast 3.6 s, routing (3 y, 300 blocks) 65.4 s, patch accounts 2.2 s, one objective evaluation
   1.3 s, peak memory 2.8 GiB. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.
+- P6.1: route and simulation quick wins. The route-network indexes are built once; the treatment,
+  product, and fragment lookups are precomputed; `apply_treatments` is vectorized (no pandas
+  `iterrows`); and routing uses per-destination shortest paths (the graph is undirected, so one
+  Dijkstra per destination serves every block). C5 `simulate` + routing (3 years, 300 blocks) fell
+  from 65.4 s to **4.5 s**, and peak memory from 2.8 GiB to **338 MiB**. The single-replay subtask is
+  deferred to WP3. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.
