@@ -82,6 +82,13 @@ class Select:
     products: tuple[Attribute, ...]
     treatments: tuple[Treatment, ...]
     retention: Retention | None = None
+    retention_features: tuple[Attribute, ...] = ()
+    """The features carried by a ``<retention>`` rule.
+
+    A retention rule may carry its own features, nested inside the ``retention``
+    element. They describe the retained fraction of the area, so they attach to the
+    stratum the retention moves the area to, not to the select's own stratum.
+    """
     treatment_context: str = ""
     """The ``treatment eq 'X'`` value, if the select has one.
 
@@ -268,9 +275,15 @@ def parse_recipe(path: Path) -> Recipe:
     for element in root.findall("./select"):
         statement = element.get("statement", "")
         features = tuple(_attribute(a) for a in element.findall("./features/attribute"))
+        retention = _retention(element)
+        retention_features = (
+            tuple(_attribute(a) for a in element.findall("./retention/features/attribute"))
+            if retention is not None
+            else ()
+        )
         products = tuple(_attribute(a) for a in element.findall("./products/attribute"))
         treatments = tuple(_treatment(t) for t in element.findall("./track/treatment"))
-        for attribute in (*features, *products):
+        for attribute in (*features, *retention_features, *products):
             if attribute.curve is not None and attribute.curve not in curves:
                 raise ForestModelXMLError(
                     f"attribute {attribute.label!r} references unknown curve {attribute.curve!r}"
@@ -286,7 +299,8 @@ def parse_recipe(path: Path) -> Recipe:
                 features=features,
                 products=products,
                 treatments=treatments,
-                retention=_retention(element),
+                retention=retention,
+                retention_features=retention_features,
                 treatment_context=context,
             )
         )

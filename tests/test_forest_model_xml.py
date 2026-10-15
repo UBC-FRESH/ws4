@@ -72,3 +72,27 @@ def test_unknown_curve_reference_is_rejected(tmp_path: Path) -> None:
     )
     with pytest.raises(ForestModelXMLError):
         parse_recipe(bad)
+
+
+def test_retention_features_are_parsed(tmp_path: Path) -> None:
+    """A feature nested inside a ``<retention>`` is parsed as a retention feature."""
+    recipe_path = tmp_path / "recipe.xml"
+    recipe_path.write_text(
+        '<ForestModel horizon="1" year="0" match="single">'
+        '<curve id="unity"><point x="0" y="1.0"/></curve>'
+        '<input block="B" area="A" age="G"/><output/>'
+        "<select statement=\"IFM eq 'managed'\">"
+        '<retention factor="0.1"><assign field="IFM" value="unmanaged"/>'
+        '<features><attribute label="feature.area.retention.total">'
+        '<curve idref="unity"/></attribute></features></retention>'
+        '<track><treatment label="CC" minage="0" maxage="1"/></track>'
+        "</select></ForestModel>",
+        encoding="utf-8",
+    )
+    recipe = parse_recipe(recipe_path)
+    select = recipe.selects[0]
+    assert select.features == ()
+    assert [attribute.label for attribute in select.retention_features] == [
+        "feature.area.retention.total"
+    ]
+    assert select.retention_features[0].curve == "unity"

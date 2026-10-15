@@ -66,7 +66,7 @@ values, resetting them moves the block to the stratum of the new values, and the
 stratum's track. Treatments are the edges between tracks.
 
 This is why the compiled matrix is large. The builder enumerates the reachable strata and expands each
-one into a track, so a moderate model yields thousands of tracks (the reference MKRf matrix has 7048),
+one into a track, so a moderate model yields thousands of tracks (the reference MKRF matrix has 7048),
 and treatments appear once per track they apply to (10014 rows). It is also why a block can appear more
 than once: a block whose area is split between a managed and an unmanaged portion has one row per
 portion, because the portions sit on different tracks.

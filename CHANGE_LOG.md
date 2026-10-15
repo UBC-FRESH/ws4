@@ -58,7 +58,7 @@ issue comments.
   and closed parent issue #10.
 - Launched Phase 2 (Build) on `feature/p2-build`, parent issue #15, with tasks P2.1 to P2.9 (#16 to #24).
 - P2.1 (in progress): replaced the prototype's minimal recipe parser with a ForestModelXML parser and
-  matrix builder, and added legacy matrix ingestion. The parser handles the real MKRf recipe
+  matrix builder, and added legacy matrix ingestion. The parser handles the real MKRF recipe
   (`baseMKRF.xml`: 1057 curves, 11 selects, CC and CT treatments, 14 features, 14 products) and the
   select statement operators `eq`, `ne`, `lt`, `le`, `gt`, `ge`, `in`, with opaque terms for function
   calls. Added `ws4 ingest`, `tests/test_forest_model_xml.py`, and `tests/test_legacy.py`, and a
@@ -88,7 +88,7 @@ issue comments.
 - P2.1: added a bounded select-expression evaluator (`ws4/io/expressions.py`): comparisons, booleans,
   parentheses, and the functions `startswith`, `endswith`, `substring`, `int`, `Number`, `length`, and
   `if`, with a fallback to the term matcher. The k3z reference matrices still match exactly, and the
-  MKRf PoC CT eligibility now evaluates (`not startswith(au,'t')`).
+  MKRF PoC CT eligibility now evaluates (`not startswith(au,'t')`).
 - P2.1: the builder now matches the k3z reference exactly on **features and products** as well. A select
   with a `treatment eq 'X'` context contributes products tagged `X` to the stratum matching its other
   terms (it is not a stratum dimension), and accounts are the union of feature and product labels grouped
@@ -137,7 +137,7 @@ issue comments.
   bound, the gap (incumbent minus bound), and the bound status. Added a test asserting a non-negative gap.
 - P2.1: resolved `<expression>`-sourced attribute curves. The select-expression evaluator gained string
   concatenation, arithmetic, and the `curveId`, `attribute`, and `lastindexof` functions, and the builder
-  evaluates an attribute's expression per stratum to a curve name. On the MKRf PoC the expression-sourced
+  evaluates an attribute's expression per stratum to a curve name. On the MKRF PoC the expression-sourced
   features and products now resolve. Added an expansion test.
 - P2.1: expanded `%f` (feature/product) and `%m` (managed/unmanaged) label tokens and evaluated
   expression labels (`'%f.area.%m.state.'+if(...)`). The evaluator now short-circuits `and`/`or` and
@@ -235,3 +235,118 @@ issue comments.
 - P3 close-out: queued pull request #35 (`feature/p3-verify` into `main`) and wrote
   `notes/reports/p3-closeout.md`. `ROADMAP.md` marks P3 `pr-open`. `python scripts/dashboard.py`:
   `OVERALL: GREEN`.
+- P3 close-out carried out: pull request #35 squash-merged as `83e2d60`, branch `feature/p3-verify`
+  deleted, and parent issue #26 closed. P3 is `complete` in `ROADMAP.md`. Launched P4 (Release and
+  deploy): parent issue #36, branch `feature/p4-release`, tasks P4.1 to P4.6 (#37 to #42).
+
+## 2026-10-15
+
+- P4.1: prepared the release. Bumped the version to `0.1.0` (`pyproject.toml` and `ws4/__init__.py`),
+  added classifiers, keywords, and project URLs, and set the citation version and release date.
+  Confirmed the Apache-2.0 license, and that `CHANGE_LOG.md` is current through P3. Removed the empty
+  `debug.ipynb` skeleton stub. The installed metadata reports version `0.1.0` with the four project URLs.
+- P4.2: wrote `RELEASE_NOTES.md` for the first release: what is included, install and quick start, the
+  performance figures, the verification summary, the known gaps (the blocked MKRF model and the future
+  work in `notes/backlog.md`), and the out-of-scope items. Also normalized the acronym `MKRf` to `MKRF`
+  across the repository (8 files).
+- Materialized the canonical MKRF artifacts for the downstream check: `xml/forestmodel.xml` and
+  `tracks/{curves,features,products}.csv` were fetched from the public `arbutus-s3` bucket by their
+  chunked keys and `git annex reinject`ed, after all four SHA-256 values matched the producer's. The
+  remaining blockers are recorded in `notes/backlog.md`: the producer's git-annex branch was not pushed
+  to `origin`, and the recipe's defines use `lookupTable(...)`, which the expression evaluator does not
+  implement.
+- Fixed the builder for the canonical MKRF recipe and reproduced its core matrix exactly: **tracks
+  7048/7048, strata 7048/7048, treatments 10014/10014, blocks 3183/3183**. Four fixes: `lookupTable` in
+  the expression evaluator; expression-based `<define column>` values evaluated against the fragment
+  row; a literal retention factor (previously read as a column name and treated as zero, which had
+  dropped every unmanaged stratum); and label/product expressions without `%` tokens, with context-less
+  product selects tagged per treatment (products 274872 → 390546). The nine k3z core variants still
+  match exactly. Remaining: five labels need `operable(...)` and the runtime curve bank
+  (features 97522/104311, products 390546/420588). `python -m pytest`: 270 passed.
+- P4 fix (maintainer request): the canonical MKRF model now builds **exactly**. The last five labels
+  closed the gap: a `<features>` element nested inside `<retention>` is parsed (`retention_features`)
+  and attaches to the retained stratum, so `feature.area.retention.total` is produced; the evaluator
+  gained `operable(x)` and a real `attribute('label')` lookup against the labels already emitted for a
+  stratum, so `feature.yield.managed.merch.total` resolves to the base yield curve; a curve reference
+  (`CurveRef`) survives scaling and offsetting arithmetic, so `product.Cost_Total`/`NetRevenue` resolve
+  instead of concatenating to a bogus name or raising; and an expression that evaluates to a number
+  becomes a generated constant curve, so `product.Cost_Silviculture` is produced (per treatment
+  context). Result: tracks 7048/7048, strata 7048/7048, treatments 10014/10014, blocks 3183/3183,
+  features 104311/104311, products 420588/420588, protoaccounts 91/91 (row counts and label sets;
+  `scripts/acceptance.py`). Updated `docs/reference/forestmodelxml.rst`. Dashboard result:
+  `python scripts/dashboard.py` reports `OVERALL: GREEN`. `python -m pytest`: 278 passed.
+- P4.3 (in progress): built and verified the release artifacts. From a clean checkout,
+  `python -m build` produced `dist/ws4-0.1.0.tar.gz` and `dist/ws4-0.1.0-py3-none-any.whl`. The wheel
+  installs into a fresh virtual environment (Python 3.12) and its `ws4` console script runs the full
+  path end to end: `ws4 build` → `ws4 validate` → `ws4 simulate` → `ws4 report` → `ws4 optimize` all
+  succeed on the synthetic example, the optimizer meeting its target with an objective of 0. The wheel
+  contains only `ws4/` and the dist-info. Added `MANIFEST.in` so the sdist carries the package and not
+  the tests or the notes. Also refreshed `RELEASE_NOTES.md`: the MKRF canonical model is now reported as
+  reproduced, and the test count is 278.
+- P4.4 (partial): added the subsystem documentation pages assigned to P4 — `docs/reference/simulator.rst`
+  (the annual-step engine, its schedule, and its run outputs), `optimizer.rst` (the objective, the
+  operator registry, the metaheuristics, and the MIP bound), `spatial.rst` (the block topology, patch
+  metrics, and the opening and green-up rules), and `roads.rst` (the network tables, shortest-path
+  routing, and the route outputs). Wired them into the docs toctree and the `docs/llms.txt` index. The
+  remaining P4.4 subtasks (confirm the `Docs` workflow deploys from `main`, and verify the published
+  site) depend on the phase merging to `main`. Dashboard result: `python scripts/dashboard.py` reports
+  `OVERALL: GREEN`.
+- P4 fix (maintainer request): the C5 route model and patch accounts. **Roads/route/mill/product.**
+  A destination is now identified by its account name and several destinations may share a vertex
+  (before, MILL1 and MILL3 at the same node collapsed to one). Added a route model
+  (`ws4/roads/accounts.py`) with product eligibility, an exclusive destination choice per product per
+  block, and an optional unutilized (surplus) account; a route cost ledger that charges haul cost by
+  volume, build cost once (first period a segment is used), and maintenance cost each period used; and
+  the route outputs `route_values.csv`, `network_table.csv`, `route_table.<destination>.csv`, and
+  `route_cost_report.csv` (the established columns). Shortest paths are cached, so the C5 run is fast.
+  **Patch accounts.** Added `ws4/patch/accounts.py`: the patch criteria attribute with a threshold,
+  the size classes, and the `area`, `size`, `shape`, `frequency`, and `attractor` sub-accounts; the
+  criteria value per block is derived from a feature curve (`Simulator.block_criteria`). The topology
+  loader accepts the established `BLOCK1,BLOCK2,DISTANCE,LENGTH` columns with the `-9999` sentinel.
+  Verified on the C5 sample end to end: ingest (0 validation problems), 3 destinations, a route cost
+  report with haul/build/maintain, and a per-period `patch_accounts.csv`. Also documented the road and
+  patch accounts and updated `notes/backlog.md`. Dashboard result: `python scripts/dashboard.py`
+  reports `OVERALL: GREEN`. `python -m pytest`: 291 passed.
+- P4 fix (maintainer request): closed the remaining route-account gaps. Added **route accounts**
+  (`RouteAccount`, matching `addRouteHaulAccount` and friends) that sum a destination's haul, build,
+  maintenance, or volume into a named account, and **duplicate accounts** (`DuplicateAccount`,
+  matching `duplicateAccount`) that copy an account into another with a factor.
+  `resolve_account_values` combines the simulated values, the route account values, and the
+  duplicates. A **route configuration** YAML (`load_route_config`) names the route tables,
+  eligibility, unutilized account, route accounts, and duplicate accounts. The **optimizer** now
+  loads the route config (`OptimizeConfig.route_config_path` / `--route-config`), evaluates its
+  objective with the route model, and resolves the route and duplicate accounts before scoring, so
+  targets can be set on accounts such as `route.Total.haul`; the CLI `ws4 simulate` also accepts
+  `--route-config`. Verified on C5: the route accounts resolve (`route.Total.haul` = MILL1 + MILL2
+  haul; `product.Harvested` = the mill volumes), and a single-iteration optimize with a
+  `route.Total.haul` target scores and writes the route tables. Note: routing in the optimizer's
+  inner loop is the current cost (a C5 single-iteration run is ~13 minutes); incremental routing is
+  recorded in `notes/backlog.md`. Dashboard result: `python scripts/dashboard.py` reports
+  `OVERALL: GREEN`. `python -m pytest`: 296 passed.
+- P4 fix (maintainer request): closed the spatial function gaps — **core-area rules** and **edge
+  contrast**. `core_area` removes a buffer strip around a patch perimeter (from the perimeter and
+  area); `core_area_violations`/`core_area_penalty` report and penalize patches whose core is below a
+  minimum. `edge_contrast` sums the shared boundary where one side matches the first attribute and the
+  other matches the second, weighted by the shared edge length; `ws4/patch/edge.py` loads edge elements
+  and produces a per-period edge account. The simulator accepts `core_buffer_m`, `min_core_area_ha`,
+  and `edge_elements`, writes core-area rows into `spatial_violations.csv` and `edge_metrics.csv`, and
+  adds the edge accounts to `account_values.csv`; the optimizer (`--core-buffer-m`,
+  `--min-core-area-ha`, `--edge-elements`) adds the core-area penalty and can target the edge accounts.
+  Verified on C5: 167 core-area violations at a 500 ha minimum / 50 m buffer, and
+  `feature.Edge.OldYoung` = 700748 m of old/young contrast edge. Dashboard result:
+  `python scripts/dashboard.py` reports `OVERALL: GREEN`. `python -m pytest`: 300 passed.
+- P4 planning (maintainer request): recorded the post-release performance and scalability plan in
+  `notes/design/ws4-performance.md`. It profiles the spatial+route path on the C5 sample, maps the
+  bottlenecks (route reconstruction rebuilt per call, row-wise `apply_treatments`, per-year criteria
+  merges, double replay, no incrementality, single-threaded inner loop), and lays out the strategic,
+  tactical, and operational plan: precompute a spatial index, incremental (delta) objective
+  evaluation, a vectorized array simulator, an island/parallel substrate, and native kernels behind
+  the Python API. Targets: C5 30-year simulate <1 s, one optimizer objective evaluation <50 ms,
+  near-linear scaling to 32+ cores. The implementation is deliberately deferred until after the phase
+  4 initial release ("functionally complete but slow"); the release notes and `notes/performance.md`
+  record the current limits. Also indexed the plan in `notes/README.md` and the roadmap.
+- Queued the Phase 4 close-out: pull request #43 (`feature/p4-release` into `main`) and the report
+  `notes/reports/p4-closeout.md`. The report recommends the squash merge, the `v0.1.0` tag and release
+  (P4.5), the docs publish and verification (P4.4), the post-publish verification (P4.6), closing parent
+  issue #36, and launching P5, with the exact commands. Set P4 to `pr-open` in `ROADMAP.md`. Status:
+  awaiting maintainer approval. CI on the evidence head `4516345` is green.

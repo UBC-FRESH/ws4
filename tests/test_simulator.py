@@ -160,16 +160,17 @@ def test_products_are_routed_to_the_nearest_mill(tmp_path: Path) -> None:
     segments = pd.DataFrame(
         {"from_vertex": [1], "to_vertex": [2], "length_m": [100.0], "cost": [10.0]}
     )
-    destinations = pd.DataFrame({"dest_id": [10], "vertex_id": [2]})
+    destinations = pd.DataFrame({"NODE": [2], "ACCOUNT": ["destination.MILL1"]})
     linkages = pd.DataFrame({"block_id": [1, 2], "vertex_id": [1, 2]})
     network = RouteNetwork.from_tables(segments, destinations, linkages)
     schedule = _schedule(tmp_path, "cc.csv", [(1, "CC", 0)])
     out = tmp_path / "route"
     Simulator.from_dataset(dataset).run(schedule, years=1, out_dir=out, network=network)
     routes = pd.read_csv(out / "route_values.csv")
-    assert list(routes["dest_id"]) == [10]
+    assert list(routes["destination"]) == ["destination.MILL1"]
     assert routes["volume"].iloc[0] == 360.0
     assert routes["length_m"].iloc[0] == 100.0
+    assert (out / "route_cost_report.csv").is_file()
 
 
 def test_a_treatment_the_track_does_not_offer_is_skipped(tmp_path: Path) -> None:

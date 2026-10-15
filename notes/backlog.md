@@ -15,24 +15,28 @@ phase, to be created), or a named condition.
 Nothing here is release-blocking: every in-scope success criterion is met by P3.1 to P3.6. The open
 items are enhancements and maintenance.
 
-- **P4:** docs for each subsystem (the release publishes the docs).
+- **P4:** none open (the subsystem docs landed in P4.4).
 - **P5:** broaden `mypy` coverage to `ws4/`.
 - **post-release:** the wider expression library; succession and `produce` semantics; legacy-ingestion
   coverage; a reference replay; the wider operator set and ALNS; the shared solver-core package; the
-  island model and GPU moves; time-boxed MIP subproblems; the tuners and the portfolio layer; core-area
-  rules and edge contrast; destination eligibility and route cost accounts; duplicate and meta accounts
-  and chart output; unit conversion; and the topology stub cleanup.
-- **Blocked:** the full MKRf canonical model (needs its generated XML).
+  island model and GPU moves; time-boxed MIP subproblems; the tuners and the portfolio layer;
+  incremental routing and spatial metrics for the optimizer objective (see
+  `notes/design/ws4-performance.md`); duplicate and meta accounts and chart output; unit conversion;
+  and the topology stub cleanup.
+- **Blocked:** the MKRF canonical artifacts' location log is not on `origin` (the objects are on
+  `arbutus-s3`); a fresh clone needs the producer to push the git-annex branch.
 - **Deferred:** the block-aggregation cache (not the hot path).
 
 ## Matrix builder (P2.1)
 
 - **Expression language.** `done` (bounded). Select statements evaluate with `ws4/io/expressions.py`:
-  comparisons (`eq/ne/lt/le/gt/ge/in`), booleans (`and`/`or`/`not`), parentheses, and the functions
-  `startswith`, `endswith`, `substring`, `int`, `Number`, `length`, and `if`. An expression the evaluator
-  cannot parse falls back to the term matcher. Remaining: the wider function library (`lookupTable`,
-  string and math functions). Evidence: the CT eligibility `not startswith(au,'t')` now evaluates
-  correctly (MKRf PoC CT 586 vs reference 590). Target: post-release.
+  comparisons (`eq/ne/lt/le/gt/ge/in`), booleans (`and`/`or`/`not`), parentheses, string concatenation
+  and arithmetic, and the functions `startswith`, `endswith`, `substring`, `int`, `Number`, `length`,
+  `if`, `lastindexof`, `lookupTable`, `curveId`, `attribute`, and `operable`. A curve reference
+  (`curveId`/`attribute`) survives scaling and offsetting arithmetic, so a derived curve keeps the base
+  curve's identity; `operable(x)` is an identity here (masking is a runtime concern); and an expression
+  that evaluates to a number becomes a constant curve. An expression the evaluator cannot parse falls
+  back to the term matcher. Remaining: the wider function library. Target: post-release.
 - **Expression-sourced attribute curves.** `done`. An `<attribute>` with an `<expression>` (for example
   `curveId('Yield_'+au)`) is evaluated per stratum to a curve name and resolved against the recipe's
   curves. The evaluator handles `curveId`, `attribute`, `lastindexof`, string concatenation, and
@@ -58,10 +62,19 @@ items are enhancements and maintenance.
   exactly. The fix was canonicalizing integral floats (`985502002.0` to `985502002`).
 - **Numeric vs literal matching.** `done`. State values are formatted canonically; an integral float is
   rendered without a decimal part.
-- **Full MKRf canonical model.** `blocked`. Its generated `xml/forestmodel.xml` has no copies on the
-  reachable annex remote; regenerate once the Windows machine's inputs are published. The canonical
-  strata add `origin`, `statecode`, and `hasnatcurve` over the PoC's six themes (7048 tracks vs 2116).
-  Target: when the inputs are published.
+- **Full MKRF canonical model.** `done`. The canonical artifacts were materialized on 2026-10-15
+  (SHA-256 verified against the producer's), and the builder now reproduces the canonical matrix
+  **exactly** — tracks 7048/7048, strata 7048/7048, treatments 10014/10014, blocks 3183/3183, features
+  104311/104311, products 420588/420588, and protoaccounts 91/91 (row counts and label sets;
+  `scripts/acceptance.py`). Earlier fixes covered `lookupTable`, expression-based `<define column>`
+  values, a literal retention factor, and label/product expressions without `%` tokens. The last five
+  labels closed the gap: a `<features>` element nested inside `<retention>` is parsed and attaches to the
+  retained stratum (`feature.area.retention.total`); `operable(...)` and `attribute('label')` resolve an
+  attribute against the labels already emitted for a stratum (`feature.yield.managed.merch.total`); a
+  curve reference survives scaling and offsetting arithmetic; and an expression that evaluates to a
+  number becomes a constant curve (`product.Cost_Silviculture`/`Cost_Total`/`NetRevenue`). The producer's
+  git-annex branch was not pushed to `origin`, so a fresh clone cannot `get` the artifacts (a `reinject`
+  workaround was used locally); the four objects are on `arbutus-s3` and only the location log is missing.
 - **Shapefile input.** `done`. `ws4/io/fragments.py` reads a shapefile, GeoJSON, GeoPackage, CSV, or
   Parquet (attributes; geometry is available separately). The geo dependency is imported lazily, and CI
   installs the `geo` extra.
@@ -114,13 +127,36 @@ items are enhancements and maintenance.
   implemented and verified against an independent calculation (P3.4). `ws4/patch/topology.py` is a stub
   that duplicates the loader. Target: post-release.
 - **Spatial-constraint enforcement.** `done`. `ws4/patch/constraints.py` reports the largest opening per
-  year, opening violations, green-up violations, and a combined penalty; the simulator writes
-  `spatial_violations.csv`; and the optimizer adds a weighted spatial penalty, disabled by the explicit
-  `allow_spatial_override`. Open: core-area rules and edge contrast. Target: post-release.
-- **Road network, access, haul cost, exclusive routing.** `partial`. `ws4/roads/network.py` routes over
-  the segment graph (shortest length and cost, nearest destination). The simulator routes each produced
-  product to the block's single nearest destination — exclusive by construction. Open: destination
-  eligibility per product, and route cost accounts. Target: post-release.
+  year, opening violations, green-up violations, core-area violations, and a combined penalty; the
+  simulator writes `spatial_violations.csv`; and the optimizer adds a weighted spatial penalty
+  (opening, green-up, and core-area), disabled by the explicit `allow_spatial_override`.
+- **Core-area rule.** `done`. `core_area` (in `ws4/patch/metrics.py`) removes a buffer strip around a
+  patch perimeter; `core_area_violations`/`core_area_penalty` (in `ws4/patch/constraints.py`) report and
+  penalize patches whose core is below a minimum. Wired into the simulator (`core_buffer_m`,
+  `min_core_area_ha`) and the optimizer.
+- **Edge contrast.** `done`. `edge_contrast` (in `ws4/patch/constraints.py`) sums the shared boundary
+  where one side matches the first attribute and the other matches the second, weighted by the shared
+  edge length. `ws4/patch/edge.py` loads the edge elements and produces an edge account value per
+  period; the simulator writes `edge_metrics.csv` and adds the edge accounts to `account_values.csv`,
+  so the optimizer can target them.
+- **Road network, access, haul cost, exclusive routing.** `done`. `ws4/roads/network.py` routes over
+  the segment graph (least-haul-cost route, shortest length and cost, nearest destination), and a
+  destination is identified by its **account name** (several destinations may share a vertex). The
+  route model (`ws4/roads/accounts.py`) chooses an exclusive destination per product per block by
+  eligibility, with an optional unutilized (surplus) account, and the route cost ledger accumulates
+  the haul, build (charged once), and maintenance (charged per period used) costs. The simulator
+  writes `route_values.csv`, `network_table.csv`, `route_table.<destination>.csv`, and the
+  `route_cost_report.csv`. Route accounts (`RouteAccount`) and duplicate accounts
+  (`DuplicateAccount`) are resolved into the account values (`resolve_account_values`), so the
+  optimizer can target accounts such as `route.Total.haul`; a route configuration YAML
+  (`load_route_config`) names the tables, eligibility, and accounts. Open: the route model runs in
+  the optimizer's inner loop, so each evaluation routes every scheduled block (a future
+  incrementality optimization), and core-area and edge-contrast rules. Target: post-release.
+- **Patch accounts.** `done`. `ws4/patch/accounts.py` implements the patch size-class sub-accounts
+  (area, size, shape, frequency, attractor) over the block topology for a criteria feature and a
+  threshold; the criteria value per block is derived from a feature curve
+  (`Simulator.block_criteria`), and the simulator writes `patch_accounts.csv`. The topology loader
+  accepts the established `BLOCK1,BLOCK2,DISTANCE,LENGTH` columns with the `-9999` sentinel.
 - **Account types and reports.** `partial`. `ws4/report.py` summarizes accounts, evaluates a ratio
   account, reports target status, and writes `report_accounts.csv` / `report_targets.csv`. Open:
   duplicate and meta accounts, and chart output. Target: post-release.
@@ -145,5 +181,5 @@ items are enhancements and maintenance.
 - **Block-aggregation cost.** `deferred`. The C5 profile shows the per-curve yield evaluation dominates
   the simulator, so a cached incremental block aggregate is not needed yet (`notes/performance.md`).
   Target: post-release, if profiling shows it.
-- **Docs for each subsystem.** `partial`. The compiled dataset and ForestModelXML pages exist; the
-  simulator, optimizer, spatial, and road subsystems are undocumented. Target: P4.
+- **Docs for each subsystem.** `done`. The compiled dataset, ForestModelXML, simulator, optimizer,
+  spatial, and road pages exist under `docs/reference/`, and the API pages cover the tooling.

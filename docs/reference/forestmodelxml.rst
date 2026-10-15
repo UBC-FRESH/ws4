@@ -20,10 +20,11 @@ What the parser reads
 - attribute sources: a ``curve`` reference or an ``expression``.
 
 Select statements are evaluated by ``ws4.io.expressions``: comparisons (``eq``, ``ne``, ``lt``, ``le``,
-``gt``, ``ge``, ``in``), the boolean operators (``and``, ``or``, ``not``), parentheses, and the
-functions ``startswith``, ``endswith``, ``substring``, ``int``, ``Number``, ``length``, and ``if``. An
-expression the evaluator cannot parse falls back to a term matcher that skips the terms it cannot read,
-so a compile is best-effort for models that use the wider function library.
+``gt``, ``ge``, ``in``), the boolean operators (``and``, ``or``, ``not``), string concatenation and
+arithmetic, parentheses, and the functions ``startswith``, ``endswith``, ``substring``, ``int``,
+``Number``, ``length``, ``lastindexof``, ``if``, ``lookupTable``, ``curveId``, ``attribute``, and
+``operable``. An expression the evaluator cannot parse falls back to a term matcher that skips the
+terms it cannot read, so a compile is best-effort for models that use a function the evaluator lacks.
 
 Compilation
 -----------
@@ -46,6 +47,11 @@ variables, which moves a block to the stratum of the new values and therefore on
   ``'thn_'+au``);
 - a ``<retention factor="RET">`` rule splits a fragment's area into a retained portion (the factor,
   moved to the assigned state, for example ``IFM = unmanaged``) and a base portion (the remainder);
+  a ``<features>`` element nested inside the ``retention`` describes the retained fraction and attaches
+  to the stratum the rule moves the area to;
+- an ``expression``-sourced attribute resolves to a curve name, or, when it evaluates to a number, to a
+  generated constant curve; ``attribute('label')`` resolves to a label already emitted for the same
+  stratum, so an attribute can be derived from another (for example ``operable(attribute('…'))``);
 - a block with fragments or portions in more than one stratum is emitted once per portion (``blocks``).
 
 Validation
@@ -75,13 +81,11 @@ structural counts exactly:
      - 210
      - (not published)
 
-On the MKRf proof-of-concept recipe (`baseMKRF.xml`) and its fragments (1763 records), this expansion
-produces 1399 strata, 2024 treatment rows, 1763 block rows, and 4197 accounts. The matching reference
-matrix (the POC's own `Tracks/`) has 2116 strata, 2024 treatment rows, 3183 block rows, and 60 accounts.
-
-The treatment count matches exactly. The remaining gaps are the exact strata enumeration (2116 vs
-1399), block splitting into managed and unmanaged portions (3183 vs 1763), account de-duplication (60
-vs 4197), and the CC/CT split (the CT select's ``not startswith(au,'t')`` term is not yet evaluated).
+On the MKRF canonical rebuild recipe and its fragments (1763 records), the builder reproduces the
+reference matrix exactly: **tracks 7048/7048, strata 7048/7048, treatments 10014/10014, blocks
+3183/3183, features 104311/104311, products 420588/420588, and protoaccounts 91/91** (row counts and
+label sets; `scripts/acceptance.py`). The reference is the model's own canonical ``tracks/`` directory.
+A matrix from a different model variant is not a valid comparison.
 
 Legacy ingestion
 ----------------
@@ -111,17 +115,12 @@ the same recipe and fragments; a matrix from a different model variant is not a 
 Known gaps
 ----------
 
-The following are not implemented yet and are tracked in the P2 tasks:
+The following remain and are tracked in the backlog (``notes/backlog.md``):
 
-- the additional stratification state variables (``origin``, ``statecode``, ``hasnatcurve``, and the
-  rest) that the recipe's defines do not carry;
-- full evaluation of the select expression language (function calls, ``not``, string functions);
-- expression-based attribute labels and ``factor`` expressions, and the ``%f`` / ``%m`` / ``%au``
-  label substitution patterns;
-- ``expression``-sourced attribute curves (the curve is chosen by an expression at runtime);
-- ``succession``, ``retention``, and ``produce`` semantics beyond treatment transitions;
-- reading a fragments shapefile (needs the ``geo`` extra);
-- evaluating expression-based ``input`` fields such as ``Int(RES_KEY)`` and ``Shape_Area/10000``.
+- the wider expression function library (functions beyond those listed above);
+- ``succession`` and ``produce`` semantics beyond treatment transitions;
+- legacy-ingestion layouts beyond the known columns, and the road model;
+- a replay of a run validated against a reference schedule.
 
 API
 ---

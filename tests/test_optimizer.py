@@ -29,6 +29,49 @@ def test_objective_sums_targets() -> None:
     assert objective(values, targets) == 5.0 + 50.0
 
 
+def test_the_optimizer_resolves_route_accounts(tmp_path: Path) -> None:
+    """With a route config, the run resolves route accounts and writes the route tables."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    (tmp_path / "segments.csv").write_text(
+        "SEGMENT,FNODE,TNODE,LENGTH,HAUL\n1,1,2,100.0,10.0\n", encoding="utf-8"
+    )
+    (tmp_path / "destinations.csv").write_text(
+        "NODE,ACCOUNT\n2,destination.MILL1\n", encoding="utf-8"
+    )
+    (tmp_path / "linkages.csv").write_text("BLOCK,NODE\n1,1\n2,1\n", encoding="utf-8")
+    (tmp_path / "route.yaml").write_text(
+        "route:\n"
+        "  segments: segments.csv\n"
+        "  destinations: destinations.csv\n"
+        "  linkages: linkages.csv\n"
+        "route_accounts:\n"
+        "  - {destination: destination.MILL1, kind: haul, account: route.Mill1.haul}\n"
+        "duplicate_accounts:\n"
+        "  - {master: route.Mill1.haul, target: route.Total.haul}\n",
+        encoding="utf-8",
+    )
+    targets = tmp_path / "targets.yaml"
+    targets.write_text(
+        "targets:\n  - account: route.Total.haul\n    year: 0\n    minimum: 0\n", encoding="utf-8"
+    )
+    cfg = OptimizeConfig(
+        years=1,
+        iterations=2,
+        seed=1,
+        warm_start=True,
+        targets_path=str(targets),
+        route_config_path=str(tmp_path / "route.yaml"),
+    )
+    result = Optimizer.from_dataset(dataset, cfg).run(tmp_path / "opt")
+    assert result["status"] == "ok"
+    assert (tmp_path / "opt" / "route_cost_report.csv").is_file()
+    values = pd.read_csv(tmp_path / "opt" / "account_values.csv")
+    assert (values["account"] == "route.Mill1.haul").any()
+    assert (values["account"] == "route.Total.haul").any()
+
+
 def test_load_targets(tmp_path: Path) -> None:
     """Targets load from a YAML file."""
     path = tmp_path / "targets.yaml"

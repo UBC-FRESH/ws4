@@ -21,6 +21,7 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `design/ws4-architecture.md` — the architecture design.
 - `design/ws4-optimization-stack.md` — the optimization stack and the execution substrate.
 - `design/ws4-matrix-builder-and-interop.md` — the ForestModelXML recipe, the matrix builder, and legacy ingestion.
+- `design/ws4-performance.md` — the post-release performance and scalability plan (profiling, bottlenecks, targets).
 - `adr/0001-fragment-compilation.md` — fragments are the compilation unit; blocks are a runtime aggregate.
 - `adr/0002-columnar-matrix-dataset.md` — the compiled dataset is versioned and columnar.
 - `adr/0003-spatial-structure-first-class.md` — spatial structure is part of the model.

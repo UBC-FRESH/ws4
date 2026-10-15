@@ -61,3 +61,21 @@ curve, not once per fragment
 python scripts/benchmark.py --fragments 100000 --years 10
 python scripts/benchmark.py --fragments 100000 --years 10 --profile
 ```
+
+## Space-and-roads baseline (P4)
+
+The spatial and route paths (patch accounts, edge contrast, core area, routing) run inside the
+optimizer's objective and dominate the cost. Measured on the C5 sample:
+
+| Path | Time |
+| --- | ---: |
+| `simulate` base, 3 years | 3.6 s |
+| `simulate` + edge contrast, 3 years | 6.3 s |
+| `simulate` + routing, 3 years, 300 blocks scheduled | 61 s |
+| `write_patch_metrics` + patch accounts, 1 year | 2.1 s |
+| One optimizer objective evaluation (C5, warm start, routing) | ~13 min |
+
+The dominant hot path is route reconstruction (`RouteNetwork._segments_by_id` rebuilt per route) and
+row-wise `apply_treatments`. The plan to fix this — profiling, bottleneck map, targets, and the
+ordered work packages — is `notes/design/ws4-performance.md`; it is deliberately deferred until after
+the phase 4 initial release.
