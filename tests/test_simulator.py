@@ -79,6 +79,21 @@ def test_patch_metrics_are_written(tmp_path: Path) -> None:
     assert metrics["patch_count"].iloc[0] == 1.0  # only block 1 is disturbed
 
 
+def test_patch_metrics_report_the_largest_opening(tmp_path: Path) -> None:
+    """Two adjacent disturbed blocks form one opening whose area is their sum."""
+    dataset = _dataset(tmp_path)
+    topology = tmp_path / "topology.csv"
+    pd.DataFrame({"src_block": [1], "dst_block": [2], "distance_m": [10.0]}).to_csv(
+        topology, index=False
+    )
+    schedule = _schedule(tmp_path, "cc.csv", [(1, "CC", 0), (2, "CC", 0)])
+    out = tmp_path / "open"
+    Simulator.from_dataset(dataset).run(schedule, years=1, out_dir=out, topology_csv=topology)
+    metrics = pd.read_csv(out / "patch_metrics.csv")
+    assert metrics["patch_count"].iloc[0] == 1.0
+    assert metrics["max_patch_area"].iloc[0] == 5.0  # 3.0 ha + 2.0 ha
+
+
 def test_products_are_routed_to_the_nearest_mill(tmp_path: Path) -> None:
     """With a road network, a product is routed to the block's nearest destination."""
     dataset = _dataset(tmp_path)

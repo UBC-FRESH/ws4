@@ -96,8 +96,13 @@ Status values: `open`, `partial`, `blocked`, `done`.
 
 ## Spatial, roads, accounts (P2.7-P2.8)
 
-- **Block topology and patch metrics.** `partial`. The topology loader and patch metrics are done
-  (`ws4/patch/metrics.py`). Open: core-area rules and edge contrast.
+- **Block topology and patch metrics.** `done` (metrics). The topology loader and patch metrics are
+  implemented (`ws4/patch/metrics.py`) and verified against an independent calculation in P3.4; the
+  largest opening per year (`max_patch_area`) is now reported in `patch_metrics.csv`. `ws4/patch/
+  topology.py` is still a stub that duplicates the loader.
+- **Spatial-constraint enforcement.** `open` (release gap). No code enforces adjacency, a maximum opening
+  size, or green-up, and the optimizer's objective has no spatial term. The scope lists these as in scope
+  through the first release, so this must be closed before P4. Open: core-area rules and edge contrast.
 - **Road network, access, haul cost, exclusive routing.** `partial`. `ws4/roads/network.py` routes over
   the segment graph (shortest length and cost, nearest destination). The simulator routes each produced
   product to the block's single nearest destination (`route_values.csv`) — exclusive by construction,

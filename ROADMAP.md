@@ -168,10 +168,11 @@ release.
   - [x] The schema invariants hold on every compiled dataset
   - [x] The optimizer's MIP bound is a valid lower bound on the penalty
 - [ ] P3.4 Verify the spatial constraints (#30)
-  - [ ] Adjacency and topology are enforced and visible in the outputs
-  - [ ] Maximum opening size is respected, and violated only by an explicit override
-  - [ ] Green-up is respected, and violated only by an explicit override
-  - [ ] Patch metrics match an independent calculation on a small topology
+  - [x] Adjacency and topology are visible in the outputs: patch count, mean size, and the largest
+        opening per year
+  - [ ] Adjacency, maximum opening size, and green-up are enforced, and violated only by an explicit
+        override — not implemented; recorded as a release gap
+  - [x] Patch metrics match an independent calculation on a small topology
 - [ ] P3.5 Verify scale and performance (#31)
   - [ ] Record the C5 sample's ingest, simulate, optimize, and route runtimes
   - [ ] Build and run a larger synthetic landscape; record the runtime and the peak memory

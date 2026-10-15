@@ -204,3 +204,9 @@ issue comments.
   against real tracks and curves (with tests per new finding); and a test that no random schedule has a
   penalty below the MIP bound. The builder still matches the reference on all nine core variants.
   `python -m pytest`: 240 passed, 94.78 percent branch coverage.
+- P3.4: verified the spatial subsystem. Patch metrics now include the largest opening per year
+  (`max_patch_area`), and they match an independent hand calculation on a small topology; the simulator
+  reports the largest opening in `patch_metrics.csv`. Gap found: no code enforces adjacency, a maximum
+  opening size, or green-up, and the optimizer's objective has no spatial term. Recorded as a release
+  gap in `notes/backlog.md`; the scope lists these constraints as in scope through the first release, so
+  they must be closed before P4.
