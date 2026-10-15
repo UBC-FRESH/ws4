@@ -232,3 +232,6 @@ issue comments.
   names a target phase (`P4`, `P5`, `post-release`, or a condition), the roadmap's P2 deferred list was
   reconciled with the backlog, and `notes/reports/p3-verify.md` records the findings and recommends
   proceeding to P4. No open item is release-blocking.
+- P3 close-out: queued pull request #35 (`feature/p3-verify` into `main`) and wrote
+  `notes/reports/p3-closeout.md`. `ROADMAP.md` marks P3 `pr-open`. `python scripts/dashboard.py`:
+  `OVERALL: GREEN`.
