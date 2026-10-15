@@ -15,7 +15,7 @@ exists and the maintainer approves it.
 | P1 Contracts and prototype | #10 | `feature/p1-contracts-prototype` | complete |
 | P2 Build | #15 | `feature/p2-build` | complete |
 | P3 Verify | #26 | `feature/p3-verify` | complete |
-| P4 Release and deploy | #36 | `feature/p4-release` | active |
+| P4 Release and deploy | #36 | `feature/p4-release` | pr-open |
 | P5 Operate and maintain | TBD | `feature/p5-operate` | planned |
 
 ## Lifecycle Map
@@ -198,7 +198,7 @@ release.
 
 Parent issue: #36
 Branch: `feature/p4-release`
-Status: active
+Status: pr-open
 
 Goal: tag a release, publish the artifacts and the docs, and verify the published release from a clean
 checkout.

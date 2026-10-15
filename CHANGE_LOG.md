@@ -345,3 +345,8 @@ issue comments.
   near-linear scaling to 32+ cores. The implementation is deliberately deferred until after the phase
   4 initial release ("functionally complete but slow"); the release notes and `notes/performance.md`
   record the current limits. Also indexed the plan in `notes/README.md` and the roadmap.
+- Queued the Phase 4 close-out: pull request #43 (`feature/p4-release` into `main`) and the report
+  `notes/reports/p4-closeout.md`. The report recommends the squash merge, the `v0.1.0` tag and release
+  (P4.5), the docs publish and verification (P4.4), the post-publish verification (P4.6), closing parent
+  issue #36, and launching P5, with the exact commands. Set P4 to `pr-open` in `ROADMAP.md`. Status:
+  awaiting maintainer approval. CI on the evidence head `4516345` is green.
