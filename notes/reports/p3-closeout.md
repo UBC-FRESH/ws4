@@ -58,10 +58,11 @@ Settings changes, each with its exact command. Each one runs only after its own 
 
 | Run ID | Head commit | Conclusion | Notes |
 | --- | --- | --- | --- |
-| this pull request's run | report commit | posted on the pull request | CI runs on pull requests and `main` only, so the branch commits before the pull request have no CI run. |
+| 38684845264 | `18b7f67` | success | All three jobs pass. |
+| 38684988659 | `4a3f817` | success | All three jobs pass (the report commit). |
+| 38535309590 (Docs, `main`) | — | success | The docs deploy succeeds after the repository was made public and Pages was enabled. |
 
-The `Docs` workflow deploys successfully on `main` after the repository was made public and Pages was
-enabled (run `38535309590`, success).
+CI runs on pull requests and `main` only, so the branch commits before the pull request have no CI run.
 
 ## 5. Deviations
 
