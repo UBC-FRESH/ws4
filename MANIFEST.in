@@ -1,0 +1,5 @@
+# The source distribution carries the package and the release metadata, not the test
+# suite or the working notes (ROADMAP P4.3: the artifacts contain the package and not
+# the tests or the notes). The wheel already includes only the package.
+prune tests
+prune notes

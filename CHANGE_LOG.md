@@ -275,3 +275,11 @@ issue comments.
   features 104311/104311, products 420588/420588, protoaccounts 91/91 (row counts and label sets;
   `scripts/acceptance.py`). Updated `docs/reference/forestmodelxml.rst`. Dashboard result:
   `python scripts/dashboard.py` reports `OVERALL: GREEN`. `python -m pytest`: 278 passed.
+- P4.3 (in progress): built and verified the release artifacts. From a clean checkout,
+  `python -m build` produced `dist/ws4-0.1.0.tar.gz` and `dist/ws4-0.1.0-py3-none-any.whl`. The wheel
+  installs into a fresh virtual environment (Python 3.12) and its `ws4` console script runs the full
+  path end to end: `ws4 build` → `ws4 validate` → `ws4 simulate` → `ws4 report` → `ws4 optimize` all
+  succeed on the synthetic example, the optimizer meeting its target with an objective of 0. The wheel
+  contains only `ws4/` and the dist-info. Added `MANIFEST.in` so the sdist carries the package and not
+  the tests or the notes. Also refreshed `RELEASE_NOTES.md`: the MKRF canonical model is now reported as
+  reproduced, and the test count is 278.

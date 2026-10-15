@@ -33,7 +33,8 @@ ws4 validate --dataset compiled
 - **Ingestion and compilation.** A ForestModelXML recipe and a fragment inventory compile into a
   versioned, columnar matrix dataset with a manifest. Legacy matrix datasets ingest directly. The
   builder matches the reference compiled matrices on all nine core variants, across tracks, strata,
-  treatments, blocks, features, products, and `protoaccounts`.
+  treatments, blocks, features, products, and `protoaccounts`, and it reproduces the full MKRF canonical
+  model exactly (tracks, strata, treatments, blocks, features, products, and `protoaccounts`).
 - **Simulation.** An annual engine with growth, succession, treatments, block-level operability,
   product yields, patch metrics, and product routing to the nearest destination. The simulator is
   deterministic given a schedule and the dataset.
@@ -57,7 +58,7 @@ See `notes/performance.md`.
 
 ## Verification
 
-- `python -m pytest`: 266 tests pass, with a 90 percent branch-coverage gate (94.28 percent).
+- `python -m pytest`: 278 tests pass, with a 90 percent branch-coverage gate (94.28 percent).
 - `python scripts/dashboard.py`: lint, format, strict types, tests, the workflow validator, and the
   docs build, all green.
 - The acceptance checks (`scripts/acceptance.py`), the C5 end-to-end test, and a clean-checkout
@@ -68,7 +69,10 @@ See `notes/performance.md`.
 The first release is complete against its scope. These items are recorded in `notes/backlog.md` with a
 target phase:
 
-- **Blocked:** the full MKRF canonical model needs its generated XML, which is not yet published.
+- **Blocked:** nothing release-blocking. The MKRF canonical model now reproduces exactly; only the
+  producer's git-annex location log for its four large artifacts is not on `origin`, so a fresh clone
+  cannot `get` them (a local `reinject` workaround was used). The objects themselves are on
+  `arbutus-s3`.
 - **Future work:** the wider expression library; succession and `produce` semantics; wider
   legacy-ingestion coverage; a reference replay; the wider operator set and ALNS; a shared solver-core
   package; the island model and tensorized GPU moves; time-boxed MIP subproblems; the tuners and the

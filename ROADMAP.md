@@ -210,10 +210,10 @@ checkout.
 - [x] P4.2 Write the release notes and the known-gaps list (#38)
   - [x] Write the release notes for the first release
   - [x] State the known gaps (the blocked MKRF model, and the future work in `notes/backlog.md`)
-- [ ] P4.3 Build and verify the release artifacts (sdist and wheel) from a clean checkout (#39)
-  - [ ] Build the sdist and the wheel
-  - [ ] Install the wheel into a fresh virtual environment and run the command line end to end
-  - [ ] Confirm the artifacts contain the package and not the tests or the notes
+- [x] P4.3 Build and verify the release artifacts (sdist and wheel) from a clean checkout (#39)
+  - [x] Build the sdist and the wheel
+  - [x] Install the wheel into a fresh virtual environment and run the command line end to end
+  - [x] Confirm the artifacts contain the package and not the tests or the notes (added `MANIFEST.in`)
 - [ ] P4.4 Publish the documentation site and verify it from a clean checkout (#40)
   - [ ] Confirm the `Docs` workflow builds and deploys from `main`
   - [ ] Verify the published site is reachable and matches the checkout
