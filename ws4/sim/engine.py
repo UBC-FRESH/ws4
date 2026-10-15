@@ -16,8 +16,10 @@ import numpy as np
 import pandas as pd
 
 from ..model.schema import dataset_reference
+from ..patch.accounts import PatchAccount, PatchLedger, load_patch_edges
 from ..patch.constraints import green_up_violations, opening_violations, schedule_years
-from ..patch.metrics import load_topology, patch_metrics
+from ..patch.metrics import patch_metrics
+from ..roads.accounts import RouteCostLedger, RouteModel
 from ..roads.network import RouteNetwork
 from .curve import curve_value
 
@@ -80,14 +82,18 @@ class Simulator:
         return match.iloc[0] if not match.empty else None
 
     def apply_treatments(
-        self, schedule: pd.DataFrame, year: int, network: RouteNetwork | None = None
+        self,
+        schedule: pd.DataFrame,
+        year: int,
+        route_model: RouteModel | None = None,
+        ledger: RouteCostLedger | None = None,
     ) -> set[int]:
         """Apply the treatments scheduled for a year and record their products.
 
         A product is produced when its treatment is applied to a fragment on the
         product's track; the yield is the fragment's area times the product curve at
-        the pre-treatment offset. When a road network is given, each product is routed
-        to the block's nearest destination (exclusive routing) and the haul cost is
+        the pre-treatment offset. When a route model is given, each product is sent to an
+        eligible destination (exclusive per product per block) and the route cost is
         recorded.
 
         Parameters
@@ -96,8 +102,10 @@ class Simulator:
             The schedule, with ``block_id``, ``treatment``, and ``period`` columns.
         year : int
             The year to apply.
-        network : RouteNetwork or None, optional
-            The road network for routing products to destinations.
+        route_model : RouteModel or None, optional
+            The route model (destinations, eligibility, surplus) for routing products.
+        ledger : RouteCostLedger or None, optional
+            The route cost ledger to record the routed products into.
 
         Returns
         -------
@@ -121,24 +129,25 @@ class Simulator:
                 block_id = int(row["block_id"])
                 for _, product in produced.iterrows():
                     value = area * curve_value(self.curves, int(product["curve_id"]), offset)
+                    product_label = str(product["label"])
                     self._product_values.append(
-                        {"year": year, "account": str(product["label"]), "value": value}
+                        {"year": year, "account": product_label, "value": value}
                     )
-                    if network is not None:
-                        nearest = network.nearest_destination(block_id)
-                        if nearest is not None:
-                            destination, length = nearest
-                            self._route_values.append(
-                                {
-                                    "year": year,
-                                    "block_id": block_id,
-                                    "dest_id": destination,
-                                    "product": str(product["label"]),
-                                    "volume": value,
-                                    "length_m": length,
-                                    "cost": network.route_cost(block_id, destination),
-                                }
-                            )
+                    if route_model is not None:
+                        destination, route = route_model.assign(block_id, product_label)
+                        if ledger is not None:
+                            ledger.record(year, block_id, product_label, value, destination, route)
+                        self._route_values.append(
+                            {
+                                "year": year,
+                                "block_id": block_id,
+                                "destination": destination,
+                                "product": product_label,
+                                "volume": value,
+                                "length_m": route.length_m if route is not None else 0.0,
+                                "haul_cost": route.haul_cost if route is not None else 0.0,
+                            }
+                        )
                 self.fragments.at[index, "track_id"] = _as_int(treatment["new_track"])
                 self.fragments.at[index, "offset"] = _as_int(treatment["offset"])
                 disturbed.add(int(row["block_id"]))
@@ -177,8 +186,54 @@ class Simulator:
             for label, value in totals.items()
         ]
 
+    def block_criteria(self, label: str) -> dict[int, float]:
+        """Return the per-block value of a feature label, area-weighted.
+
+        The value is the area-weighted mean of the feature curve over the block's
+        fragments, so a half disturbed block has a criterion value of 0.5. This is the
+        patch membership criterion of the patch accounts (see ``ws4.patch.accounts``).
+
+        Parameters
+        ----------
+        label : str
+            The feature label (for example ``feature.Seral.young``).
+
+        Returns
+        -------
+        dict of int to float
+            The criterion value per block.
+        """
+        features = self.features[self.features["label"] == label]
+        merged = self.fragments[["block_id", "track_id", "area_ha", "offset"]].merge(
+            features[["track_id", "curve_id"]], on="track_id", how="inner"
+        )
+        if merged.empty:
+            return {}
+        values = np.zeros(len(merged), dtype=float)
+        for curve_id, group in merged.groupby("curve_id"):
+            arrays = self._curves.get(_as_int(curve_id))
+            if arrays is None:
+                continue
+            xs, ys = arrays
+            values[group.index.to_numpy()] = np.interp(
+                group["offset"].to_numpy(dtype=float), xs, ys
+            )
+        merged = merged.assign(weighted=values * merged["area_ha"].astype(float))
+        grouped = merged.groupby("block_id").agg(
+            weighted=("weighted", "sum"), area=("area_ha", "sum")
+        )
+        return {
+            _as_int(block): float(row.weighted / row.area) if row.area > 0.0 else 0.0
+            for block, row in grouped.iterrows()
+        }
+
     def simulate(
-        self, schedule: pd.DataFrame, years: int, network: RouteNetwork | None = None
+        self,
+        schedule: pd.DataFrame,
+        years: int,
+        network: RouteNetwork | None = None,
+        route_model: RouteModel | None = None,
+        ledger: RouteCostLedger | None = None,
     ) -> pd.DataFrame:
         """Replay a schedule and return the account values, without writing files.
 
@@ -190,17 +245,25 @@ class Simulator:
             The number of annual steps.
         network : RouteNetwork or None, optional
             The road network for routing products to destinations.
+        route_model : RouteModel or None, optional
+            The route model. When omitted but ``network`` is given, a default model over
+            that network is used.
+        ledger : RouteCostLedger or None, optional
+            The route cost ledger to record routed products into.
 
         Returns
         -------
         pandas.DataFrame
             The account values, with ``year``, ``account``, and ``value`` columns.
         """
+        model = route_model
+        if model is None and network is not None:
+            model = RouteModel(network)
         records: list[dict[str, object]] = []
         self._product_values = []
         self._route_values = []
         for year in range(years):
-            self.apply_treatments(schedule, year, network)
+            self.apply_treatments(schedule, year, model, ledger)
             records.extend(self.account_values(year))
             self.fragments["offset"] = self.fragments["offset"].astype(int) + 1
         return pd.DataFrame(records, columns=["year", "account", "value"])
@@ -213,8 +276,10 @@ class Simulator:
         topology_csv: Path | None = None,
         patch_breaks: Sequence[float] = (5.0, 10.0, 50.0),
         network: RouteNetwork | None = None,
+        route_model: RouteModel | None = None,
         max_opening_ha: float | None = None,
         min_green_up_years: int | None = None,
+        patch_accounts: Sequence[PatchAccount] = (),
     ) -> pd.DataFrame:
         """Replay a schedule for the given horizon and write the run outputs.
 
@@ -232,14 +297,19 @@ class Simulator:
         patch_breaks : sequence of float, optional
             The patch size-class upper bounds, in hectares.
         network : RouteNetwork or None, optional
-            The road network for routing products. When given, ``route_values.csv`` is
-            written.
+            The road network for routing products.
+        route_model : RouteModel or None, optional
+            The route model (destinations, eligibility, surplus). When omitted but
+            ``network`` is given, a default model over that network is used.
         max_opening_ha : float or None, optional
             The maximum opening size. When given, ``spatial_violations.csv`` reports the
             patches over it.
         min_green_up_years : int or None, optional
             The green-up interval. When given, ``spatial_violations.csv`` reports the
             adjacent pairs disturbed within it.
+        patch_accounts : sequence of PatchAccount, optional
+            Patch account definitions. When given with a topology, ``patch_accounts.csv``
+            is written.
 
         Returns
         -------
@@ -252,15 +322,30 @@ class Simulator:
         if "period" not in schedule.columns:
             schedule = schedule.assign(period=0)
 
-        values = self.simulate(schedule, years, network)
+        model = route_model
+        if model is None and network is not None:
+            model = RouteModel(network)
+        ledger = RouteCostLedger(model.network) if model is not None else None
+
+        values = self.simulate(schedule, years, route_model=model, ledger=ledger)
         values.to_csv(out_dir / "account_values.csv", index=False)
         pd.DataFrame(self._product_values, columns=["year", "account", "value"]).to_csv(
             out_dir / "product_values.csv", index=False
         )
-        if network is not None:
+        if ledger is not None:
+            ledger.write(out_dir)
+        elif self._route_values:
             pd.DataFrame(
                 self._route_values,
-                columns=["year", "block_id", "dest_id", "product", "volume", "length_m", "cost"],
+                columns=[
+                    "year",
+                    "block_id",
+                    "destination",
+                    "product",
+                    "volume",
+                    "length_m",
+                    "haul_cost",
+                ],
             ).to_csv(out_dir / "route_values.csv", index=False)
         if topology_csv is not None:
             # A fresh simulator: ``simulate`` above already advanced this one's state.
@@ -272,6 +357,7 @@ class Simulator:
                 out_dir,
                 max_opening_ha=max_opening_ha,
                 min_green_up_years=min_green_up_years,
+                patch_accounts=patch_accounts,
             )
         (out_dir / "dataset.json").write_text(
             json.dumps(dataset_reference(self.dataset_dir), indent=2) + "\n", encoding="utf-8"
@@ -287,21 +373,27 @@ class Simulator:
         out_dir: Path,
         max_opening_ha: float | None = None,
         min_green_up_years: int | None = None,
+        patch_accounts: Sequence[PatchAccount] = (),
     ) -> None:
-        """Replay a schedule and write per-year patch metrics and spatial violations."""
-        topology = load_topology(topology_csv)
-        edges = list(
-            zip(topology["src_block"].tolist(), topology["dst_block"].tolist(), strict=True)
-        )
+        """Replay a schedule and write per-year patch metrics and patch accounts."""
+        out_dir = Path(out_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        graph = load_patch_edges(topology_csv)
+        edges = [(source, target) for source, target, _ in graph]
         block_area = {
             _as_int(block): _as_float(area)
             for block, area in self.fragments.groupby("block_id")["area_ha"].sum().items()
         }
+        ledger = PatchLedger(patch_accounts, graph, block_area) if patch_accounts else None
+        criteria_labels = sorted({account.criteria for account in patch_accounts})
         patch_records: list[dict[str, object]] = []
         schedule_pairs: list[tuple[int, int]] = []
         self.fragments["offset"] = self.fragments["age"].astype(int)
         for year in range(years):
             disturbed = self.apply_treatments(schedule, year)
+            if ledger is not None:
+                criteria = {label: self.block_criteria(label) for label in criteria_labels}
+                ledger.record(year, criteria)
             if disturbed:
                 schedule_pairs.extend((int(block), year) for block in disturbed)
                 patch_records.append(
@@ -309,6 +401,8 @@ class Simulator:
                 )
             self.fragments["offset"] = self.fragments["offset"].astype(int) + 1
         pd.DataFrame(patch_records).to_csv(out_dir / "patch_metrics.csv", index=False)
+        if ledger is not None:
+            ledger.write(out_dir)
         if max_opening_ha is not None or min_green_up_years is not None:
             selected_by_year, harvest_year = schedule_years(schedule_pairs)
             violations: list[dict[str, object]] = []

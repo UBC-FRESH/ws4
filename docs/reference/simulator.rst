@@ -47,17 +47,17 @@ Outputs
    * - ``dataset.json``
      - The dataset manifest, so a run records what it read.
 
-When the simulator is given a road network (the Python API, ``Simulator.run(..., network=...)``), it
-also writes:
-
-- ``route_values.csv`` — ``year,block_id,dest_id,product,volume,length_m,cost``, each produced product
-  routed to the block's nearest destination (see :doc:`roads`).
+When the simulator is given a road network (the Python API, ``Simulator.run(..., network=...)`` or
+``route_model=...``), ``RouteCostLedger.write`` also writes ``route_values.csv``,
+``network_table.csv``, ``route_table.<destination>.csv``, and ``route_cost_report.csv`` — see
+:doc:`roads`.
 
 When the simulator is given a block topology (``Simulator.run(..., topology_csv=...)``), it also
 writes:
 
 - ``patch_metrics.csv`` — per-year patch count, mean size, largest opening, and size-class
   distribution (see :doc:`spatial`);
+- ``patch_accounts.csv`` — per-year patch accounts, when ``patch_accounts`` are given;
 - ``spatial_violations.csv`` — ``kind,year,area_ha,limit,block_a,block_b,years``, when a maximum
   opening size or a green-up interval is given.
 

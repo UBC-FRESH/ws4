@@ -24,6 +24,49 @@ The simulator writes these to ``patch_metrics.csv`` when it is given a topology:
    # Python API
    Simulator.from_dataset(dataset).run(schedule_csv, years, out_dir, topology_csv=topology)
 
+Patch accounts
+--------------
+
+A **patch account** describes the size distribution of connected patches over the topology, for a
+patch **criteria** attribute and a threshold (``ws4.patch.accounts``). A block joins a patch when
+its criterion value exceeds the threshold, and its contribution to the patch area is the criterion
+value times its block area (a half disturbed block contributes half its area). For each size class
+the account reports five sub-accounts:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 18 82
+
+   * - Sub-account
+     - Meaning
+   * - ``area``
+     - The patch area in the size class, in hectares.
+   * - ``size``
+     - The area in the class as a percentage of the total patch area.
+   * - ``shape``
+     - The mean compactness of the patches in the class, 0 to 100 (100 is a circle).
+   * - ``frequency``
+     - The number of patches in the class.
+   * - ``attractor``
+     - A flag that draws the average patch size toward the class; its value mimics ``size``.
+
+The criteria value per block comes from a feature curve (``Simulator.block_criteria``), so the
+patch membership changes over time as stands age and are treated. When a topology and patch
+accounts are given, the simulator writes ``patch_accounts.csv`` with one row per period.
+
+.. code-block:: python
+
+   from ws4.patch.accounts import PatchAccount
+
+   account = PatchAccount(name="patch.disturbance", criteria="feature.Seral.young", threshold=0.5)
+   Simulator.from_dataset(dataset).run(
+       schedule, years, out_dir, topology_csv=topology, patch_accounts=[account]
+   )
+
+The topology loader (``load_patch_edges``) accepts the established columns
+(``BLOCK1,BLOCK2,DISTANCE,LENGTH``) and drops the ``-9999`` boundary sentinel, as well as the WS4
+columns (``src_block,dst_block,distance_m``).
+
 Constraints
 -----------
 
@@ -85,3 +128,15 @@ API
 .. autofunction:: ws4.patch.constraints.spatial_penalty
 
 .. autofunction:: ws4.patch.constraints.schedule_years
+
+.. autofunction:: ws4.patch.accounts.load_patch_edges
+
+.. autofunction:: ws4.patch.accounts.size_class_labels
+
+.. autofunction:: ws4.patch.accounts.patch_account_values
+
+.. autoclass:: ws4.patch.accounts.PatchAccount
+   :members:
+
+.. autoclass:: ws4.patch.accounts.PatchLedger
+   :members:

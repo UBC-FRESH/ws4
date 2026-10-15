@@ -19,9 +19,10 @@ items are enhancements and maintenance.
 - **P5:** broaden `mypy` coverage to `ws4/`.
 - **post-release:** the wider expression library; succession and `produce` semantics; legacy-ingestion
   coverage; a reference replay; the wider operator set and ALNS; the shared solver-core package; the
-  island model and GPU moves; time-boxed MIP subproblems; the tuners and the portfolio layer; core-area
-  rules and edge contrast; destination eligibility and route cost accounts; duplicate and meta accounts
-  and chart output; unit conversion; and the topology stub cleanup.
+  island model and GPU moves; time-boxed MIP subproblems; the tuners and the portfolio layer; wiring
+  the exclusive/duplicate route accounts into the optimizer objective; core-area rules and edge
+  contrast; duplicate and meta accounts and chart output; unit conversion; and the topology stub
+  cleanup.
 - **Blocked:** the MKRF canonical artifacts' location log is not on `origin` (the objects are on
   `arbutus-s3`); a fresh clone needs the producer to push the git-annex branch.
 - **Deferred:** the block-aggregation cache (not the hot path).
@@ -129,10 +130,20 @@ items are enhancements and maintenance.
   year, opening violations, green-up violations, and a combined penalty; the simulator writes
   `spatial_violations.csv`; and the optimizer adds a weighted spatial penalty, disabled by the explicit
   `allow_spatial_override`. Open: core-area rules and edge contrast. Target: post-release.
-- **Road network, access, haul cost, exclusive routing.** `partial`. `ws4/roads/network.py` routes over
-  the segment graph (shortest length and cost, nearest destination). The simulator routes each produced
-  product to the block's single nearest destination — exclusive by construction. Open: destination
-  eligibility per product, and route cost accounts. Target: post-release.
+- **Road network, access, haul cost, exclusive routing.** `done`. `ws4/roads/network.py` routes over
+  the segment graph (least-haul-cost route, shortest length and cost, nearest destination), and a
+  destination is identified by its **account name** (several destinations may share a vertex). The
+  route model (`ws4/roads/accounts.py`) chooses an exclusive destination per product per block by
+  eligibility, with an optional unutilized (surplus) account, and the route cost ledger accumulates
+  the haul, build (charged once), and maintenance (charged per period used) costs. The simulator
+  writes `route_values.csv`, `network_table.csv`, `route_table.<destination>.csv`, and the
+  `route_cost_report.csv`. Open: wiring the exclusive/duplicate accounts into the optimizer's
+  objective, and core-area and edge-contrast rules. Target: post-release.
+- **Patch accounts.** `done`. `ws4/patch/accounts.py` implements the patch size-class sub-accounts
+  (area, size, shape, frequency, attractor) over the block topology for a criteria feature and a
+  threshold; the criteria value per block is derived from a feature curve
+  (`Simulator.block_criteria`), and the simulator writes `patch_accounts.csv`. The topology loader
+  accepts the established `BLOCK1,BLOCK2,DISTANCE,LENGTH` columns with the `-9999` sentinel.
 - **Account types and reports.** `partial`. `ws4/report.py` summarizes accounts, evaluates a ratio
   account, reports target status, and writes `report_accounts.csv` / `report_targets.csv`. Open:
   duplicate and meta accounts, and chart output. Target: post-release.

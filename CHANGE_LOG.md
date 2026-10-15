@@ -291,3 +291,19 @@ issue comments.
   remaining P4.4 subtasks (confirm the `Docs` workflow deploys from `main`, and verify the published
   site) depend on the phase merging to `main`. Dashboard result: `python scripts/dashboard.py` reports
   `OVERALL: GREEN`.
+- P4 fix (maintainer request): the C5 route model and patch accounts. **Roads/route/mill/product.**
+  A destination is now identified by its account name and several destinations may share a vertex
+  (before, MILL1 and MILL3 at the same node collapsed to one). Added a route model
+  (`ws4/roads/accounts.py`) with product eligibility, an exclusive destination choice per product per
+  block, and an optional unutilized (surplus) account; a route cost ledger that charges haul cost by
+  volume, build cost once (first period a segment is used), and maintenance cost each period used; and
+  the route outputs `route_values.csv`, `network_table.csv`, `route_table.<destination>.csv`, and
+  `route_cost_report.csv` (the established columns). Shortest paths are cached, so the C5 run is fast.
+  **Patch accounts.** Added `ws4/patch/accounts.py`: the patch criteria attribute with a threshold,
+  the size classes, and the `area`, `size`, `shape`, `frequency`, and `attractor` sub-accounts; the
+  criteria value per block is derived from a feature curve (`Simulator.block_criteria`). The topology
+  loader accepts the established `BLOCK1,BLOCK2,DISTANCE,LENGTH` columns with the `-9999` sentinel.
+  Verified on the C5 sample end to end: ingest (0 validation problems), 3 destinations, a route cost
+  report with haul/build/maintain, and a per-period `patch_accounts.csv`. Also documented the road and
+  patch accounts and updated `notes/backlog.md`. Dashboard result: `python scripts/dashboard.py`
+  reports `OVERALL: GREEN`. `python -m pytest`: 291 passed.
