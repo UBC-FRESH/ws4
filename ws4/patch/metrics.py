@@ -125,13 +125,15 @@ def patch_metrics(
     Returns
     -------
     dict of str to float
-        ``patch_count``, ``mean_patch_area``, and one entry per size class.
+        ``patch_count``, ``mean_patch_area``, ``max_patch_area`` (the largest opening),
+        and one entry per size class.
     """
     patches = connected_patches(selected, edges)
     areas = [sum(block_area.get(block, 0.0) for block in patch) for patch in patches]
     metrics: dict[str, float] = {
         "patch_count": float(len(patches)),
         "mean_patch_area": (sum(areas) / len(areas)) if areas else 0.0,
+        "max_patch_area": max(areas) if areas else 0.0,
     }
     metrics.update(patch_size_classes(patches, block_area, breaks))
     return metrics

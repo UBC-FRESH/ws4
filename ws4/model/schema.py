@@ -7,6 +7,7 @@ that checks a dataset against both.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
@@ -265,6 +266,34 @@ def load_manifest(dataset_dir: Path) -> CanonicalDatasetManifest:
     return CanonicalDatasetManifest.model_validate(raw)
 
 
+def dataset_reference(dataset_dir: Path) -> dict[str, object]:
+    """Return a reference to a compiled dataset, for a run record.
+
+    A run directory records this so that the dataset that produced it can be identified and
+    audited: the schema version, the source hashes, and the SHA-256 of the manifest file.
+
+    Parameters
+    ----------
+    dataset_dir : Path
+        The dataset directory.
+
+    Returns
+    -------
+    dict of str to object
+        The reference, or an empty mapping when the manifest is missing.
+    """
+    manifest_path = Path(dataset_dir) / MANIFEST_NAME
+    if not manifest_path.is_file():
+        return {}
+    raw = manifest_path.read_bytes()
+    manifest = json.loads(raw)
+    return {
+        "schema_version": manifest.get("schema_version"),
+        "sources": manifest.get("sources", []),
+        "manifest_sha256": hashlib.sha256(raw).hexdigest(),
+    }
+
+
 def _check_table(table: Table, dataset_dir: Path) -> list[Problem]:
     """Check one table for presence, columns, and kinds.
 
@@ -318,10 +347,23 @@ def _check_invariants(dataset_dir: Path) -> list[Problem]:
         The invariant findings.
     """
     problems: list[Problem] = []
-    fragments = pd.read_parquet(dataset_dir / "fragments.parquet")
-    blocks = pd.read_parquet(dataset_dir / "blocks.parquet")
-    tracks = pd.read_parquet(dataset_dir / "tracks.parquet")
-    curves = pd.read_parquet(dataset_dir / "curves.parquet")
+    frames = {
+        name: pd.read_parquet(dataset_dir / f"{name}.parquet")
+        for name in (
+            "fragments",
+            "blocks",
+            "tracks",
+            "strata",
+            "treatments",
+            "curves",
+            "features",
+            "products",
+        )
+    }
+    fragments = frames["fragments"]
+    blocks = frames["blocks"]
+    tracks = frames["tracks"]
+    curves = frames["curves"]
 
     if (fragments["area_ha"] < 0).any():
         problems.append(
@@ -338,12 +380,32 @@ def _check_invariants(dataset_dir: Path) -> list[Problem]:
         problems.append(
             Problem("DATASET-UNKNOWN-BLOCK", "fragments", f"block_id not in blocks: {sample}")
         )
-    unknown_tracks = set(blocks["track_id"]) - set(tracks["track_id"])
-    if unknown_tracks:
-        sample = sorted(unknown_tracks)[:5]
+
+    # Every table that names a track must name a real one.
+    track_ids = set(tracks["track_id"])
+    for name in ("blocks", "strata", "treatments", "features", "products"):
+        unknown = set(frames[name]["track_id"]) - track_ids
+        if unknown:
+            sample = sorted(unknown)[:5]
+            problems.append(
+                Problem("DATASET-UNKNOWN-TRACK", name, f"track_id not in tracks: {sample}")
+            )
+    # A treatment's target track is a real track, or 0 for no transition.
+    unknown_new = set(frames["treatments"]["new_track"]) - track_ids - {0}
+    if unknown_new:
+        sample = sorted(unknown_new)[:5]
         problems.append(
-            Problem("DATASET-UNKNOWN-TRACK", "blocks", f"track_id not in tracks: {sample}")
+            Problem("DATASET-UNKNOWN-TRACK", "treatments", f"new_track not in tracks: {sample}")
         )
+    # Every feature and product curve must exist.
+    curve_ids = set(curves["curve_id"])
+    for name in ("features", "products"):
+        unknown = set(frames[name]["curve_id"]) - curve_ids
+        if unknown:
+            sample = sorted(unknown)[:5]
+            problems.append(
+                Problem("DATASET-UNKNOWN-CURVE", name, f"curve_id not in curves: {sample}")
+            )
 
     for curve_id, group in curves.groupby("curve_id", sort=True):
         if not group["x"].is_monotonic_increasing or group["x"].duplicated().any():

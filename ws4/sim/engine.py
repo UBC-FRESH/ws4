@@ -8,12 +8,15 @@ fragment's offset age by one year. A schedule replays deterministically.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Sequence
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from ..model.schema import dataset_reference
+from ..patch.constraints import green_up_violations, opening_violations, schedule_years
 from ..patch.metrics import load_topology, patch_metrics
 from ..roads.network import RouteNetwork
 from .curve import curve_value
@@ -148,20 +151,25 @@ class Simulator:
         The curves are evaluated vectorized per curve, then multiplied by area and
         summed per account label.
         """
-        merged = self.fragments[["track_id", "area_ha", "offset"]].merge(
-            self.features[["track_id", "label", "curve_id"]], on="track_id", how="inner"
+        merged = (
+            self.fragments[["track_id", "area_ha", "offset"]]
+            .merge(self.features[["track_id", "label", "curve_id"]], on="track_id", how="inner")
+            .reset_index(drop=True)
         )
         if merged.empty:
             return []
-        merged["yield"] = 0.0
+        # Assign into a positional array rather than ``.loc`` per curve: a big model has tens
+        # of thousands of curves, and a per-group ``.loc`` setitem dominates the run.
+        yields = np.zeros(len(merged), dtype=float)
         for curve_id, group in merged.groupby("curve_id"):
             arrays = self._curves.get(_as_int(curve_id))
             if arrays is None:
                 continue
             xs, ys = arrays
-            merged.loc[group.index, "yield"] = np.interp(
+            yields[group.index.to_numpy()] = np.interp(
                 group["offset"].to_numpy(dtype=float), xs, ys
             )
+        merged["yield"] = yields
         merged["value"] = merged["area_ha"].astype(float) * merged["yield"]
         totals = merged.groupby("label")["value"].sum()
         return [
@@ -205,6 +213,8 @@ class Simulator:
         topology_csv: Path | None = None,
         patch_breaks: Sequence[float] = (5.0, 10.0, 50.0),
         network: RouteNetwork | None = None,
+        max_opening_ha: float | None = None,
+        min_green_up_years: int | None = None,
     ) -> pd.DataFrame:
         """Replay a schedule for the given horizon and write the run outputs.
 
@@ -224,6 +234,12 @@ class Simulator:
         network : RouteNetwork or None, optional
             The road network for routing products. When given, ``route_values.csv`` is
             written.
+        max_opening_ha : float or None, optional
+            The maximum opening size. When given, ``spatial_violations.csv`` reports the
+            patches over it.
+        min_green_up_years : int or None, optional
+            The green-up interval. When given, ``spatial_violations.csv`` reports the
+            adjacent pairs disturbed within it.
 
         Returns
         -------
@@ -249,8 +265,17 @@ class Simulator:
         if topology_csv is not None:
             # A fresh simulator: ``simulate`` above already advanced this one's state.
             Simulator.from_dataset(self.dataset_dir).write_patch_metrics(
-                schedule, years, topology_csv, patch_breaks, out_dir
+                schedule,
+                years,
+                topology_csv,
+                patch_breaks,
+                out_dir,
+                max_opening_ha=max_opening_ha,
+                min_green_up_years=min_green_up_years,
             )
+        (out_dir / "dataset.json").write_text(
+            json.dumps(dataset_reference(self.dataset_dir), indent=2) + "\n", encoding="utf-8"
+        )
         return values
 
     def write_patch_metrics(
@@ -260,8 +285,10 @@ class Simulator:
         topology_csv: Path,
         patch_breaks: Sequence[float],
         out_dir: Path,
+        max_opening_ha: float | None = None,
+        min_green_up_years: int | None = None,
     ) -> None:
-        """Replay a schedule and write per-year patch metrics for the disturbed blocks."""
+        """Replay a schedule and write per-year patch metrics and spatial violations."""
         topology = load_topology(topology_csv)
         edges = list(
             zip(topology["src_block"].tolist(), topology["dst_block"].tolist(), strict=True)
@@ -271,12 +298,27 @@ class Simulator:
             for block, area in self.fragments.groupby("block_id")["area_ha"].sum().items()
         }
         patch_records: list[dict[str, object]] = []
+        schedule_pairs: list[tuple[int, int]] = []
         self.fragments["offset"] = self.fragments["age"].astype(int)
         for year in range(years):
             disturbed = self.apply_treatments(schedule, year)
             if disturbed:
+                schedule_pairs.extend((int(block), year) for block in disturbed)
                 patch_records.append(
                     {"year": year, **patch_metrics(disturbed, edges, block_area, patch_breaks)}
                 )
             self.fragments["offset"] = self.fragments["offset"].astype(int) + 1
         pd.DataFrame(patch_records).to_csv(out_dir / "patch_metrics.csv", index=False)
+        if max_opening_ha is not None or min_green_up_years is not None:
+            selected_by_year, harvest_year = schedule_years(schedule_pairs)
+            violations: list[dict[str, object]] = []
+            if max_opening_ha is not None:
+                violations.extend(
+                    opening_violations(selected_by_year, edges, block_area, max_opening_ha)
+                )
+            if min_green_up_years is not None:
+                violations.extend(green_up_violations(harvest_year, edges, min_green_up_years))
+            pd.DataFrame(
+                violations,
+                columns=["kind", "year", "area_ha", "limit", "block_a", "block_b", "years"],
+            ).to_csv(out_dir / "spatial_violations.csv", index=False)

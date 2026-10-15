@@ -1,0 +1,4 @@
+group,attribute,account,sum
+_MANAGED_,feature.Volume.managed,feature.Volume.managed,1.0
+_MANAGED_,product.Harvested.CC,product.Harvested.CC,1.0
+_UNMANAGED_,feature.Volume.unmanaged,feature.Volume.unmanaged,1.0

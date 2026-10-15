@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
+import pytest
 from ws4.build.compiler import build_canonical_dataset
 from ws4.roads.network import RouteNetwork
 from ws4.sim.engine import Simulator
@@ -42,6 +45,40 @@ def test_replay_is_deterministic(tmp_path: Path) -> None:
     pd.testing.assert_frame_equal(first, second)
 
 
+def test_run_records_the_dataset_reference(tmp_path: Path) -> None:
+    """A run directory identifies the dataset that produced it."""
+    dataset = _dataset(tmp_path)
+    out = tmp_path / "ref"
+    Simulator.from_dataset(dataset).run(_schedule(tmp_path, "s.csv", []), years=1, out_dir=out)
+    reference = json.loads((out / "dataset.json").read_text(encoding="utf-8"))
+    assert reference["schema_version"] == "0.1"
+    assert len(reference["manifest_sha256"]) == 64
+
+
+def test_curve_evaluation_is_vectorized_per_curve(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Account values call ``np.interp`` once per curve, not once per fragment."""
+    dataset = _dataset(tmp_path)
+    simulator = Simulator.from_dataset(dataset)
+    active = simulator.features[
+        simulator.features["track_id"].isin(simulator.fragments["track_id"])
+    ]
+    calls: list[int] = []
+    real_interp = np.interp
+
+    def counting(
+        x: np.ndarray, xp: np.ndarray, fp: np.ndarray, *args: float, **kwargs: float
+    ) -> np.ndarray:
+        calls.append(1)
+        return np.asarray(real_interp(x, xp, fp, *args, **kwargs), dtype=float)
+
+    monkeypatch.setattr(np, "interp", counting)
+    simulator.account_values(0)
+    assert len(calls) == active["curve_id"].nunique()
+    assert len(calls) < len(simulator.fragments)
+
+
 def test_a_treatment_records_its_product_yield(tmp_path: Path) -> None:
     """Applying CC to block 1 produces the product at the pre-treatment offset."""
     dataset = _dataset(tmp_path)
@@ -66,6 +103,55 @@ def test_patch_metrics_are_written(tmp_path: Path) -> None:
     Simulator.from_dataset(dataset).run(schedule, years=1, out_dir=out, topology_csv=topology)
     metrics = pd.read_csv(out / "patch_metrics.csv")
     assert metrics["patch_count"].iloc[0] == 1.0  # only block 1 is disturbed
+
+
+def test_patch_metrics_report_the_largest_opening(tmp_path: Path) -> None:
+    """Two adjacent disturbed blocks form one opening whose area is their sum."""
+    dataset = _dataset(tmp_path)
+    topology = tmp_path / "topology.csv"
+    pd.DataFrame({"src_block": [1], "dst_block": [2], "distance_m": [10.0]}).to_csv(
+        topology, index=False
+    )
+    schedule = _schedule(tmp_path, "cc.csv", [(1, "CC", 0), (2, "CC", 0)])
+    out = tmp_path / "open"
+    Simulator.from_dataset(dataset).run(schedule, years=1, out_dir=out, topology_csv=topology)
+    metrics = pd.read_csv(out / "patch_metrics.csv")
+    assert metrics["patch_count"].iloc[0] == 1.0
+    assert metrics["max_patch_area"].iloc[0] == 5.0  # 3.0 ha + 2.0 ha
+
+
+def test_a_maximum_opening_violation_is_reported(tmp_path: Path) -> None:
+    """A 5 ha opening over a 4 ha maximum is reported."""
+    dataset = _dataset(tmp_path)
+    topology = tmp_path / "topology.csv"
+    pd.DataFrame({"src_block": [1], "dst_block": [2], "distance_m": [10.0]}).to_csv(
+        topology, index=False
+    )
+    schedule = _schedule(tmp_path, "cc.csv", [(1, "CC", 0), (2, "CC", 0)])
+    out = tmp_path / "spatial"
+    Simulator.from_dataset(dataset).run(
+        schedule, years=1, out_dir=out, topology_csv=topology, max_opening_ha=4.0
+    )
+    violations = pd.read_csv(out / "spatial_violations.csv")
+    assert list(violations["kind"]) == ["opening"]
+    assert violations["area_ha"].iloc[0] == 5.0
+
+
+def test_a_green_up_violation_is_reported(tmp_path: Path) -> None:
+    """Two adjacent blocks disturbed one year apart under a 3-year rule are reported."""
+    dataset = _dataset(tmp_path)
+    topology = tmp_path / "topology.csv"
+    pd.DataFrame({"src_block": [1], "dst_block": [2], "distance_m": [10.0]}).to_csv(
+        topology, index=False
+    )
+    schedule = _schedule(tmp_path, "cc.csv", [(1, "CC", 0), (2, "CC", 1)])
+    out = tmp_path / "greenup"
+    Simulator.from_dataset(dataset).run(
+        schedule, years=2, out_dir=out, topology_csv=topology, min_green_up_years=3
+    )
+    violations = pd.read_csv(out / "spatial_violations.csv")
+    assert list(violations["kind"]) == ["green_up"]
+    assert violations["years"].iloc[0] == 1
 
 
 def test_products_are_routed_to_the_nearest_mill(tmp_path: Path) -> None:

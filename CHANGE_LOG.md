@@ -170,3 +170,68 @@ issue comments.
   the optimizer and CI (which installed only `.[geo]` plus the dev requirements) failed on `f22cd6a`. The
   import is now lazy with a clear error, `scipy` is declared in the `opt` extra and the dev requirements,
   and `tests/test_mip.py` skips when it is absent.
+- P2 close-out carried out: pull request #25 squash-merged as `3e87d46`, branch `feature/p2-build`
+  deleted, and parent issue #15 closed. P2 is `complete` in `ROADMAP.md`. Launched P3 (Verify): parent
+  issue #26, branch `feature/p3-verify`, task P3.1 (#27).
+- P3: made the repository public and enabled GitHub Pages (`gh api -X PATCH repos/UBC-FRESH/ws4
+  -f visibility=public`, then `gh api -X POST repos/UBC-FRESH/ws4/pages -f build_type=workflow`), so the
+  `Docs` deploy job can publish to `https://ubc-fresh.github.io/ws4/`. Pages was unavailable while the
+  repository was private under the Free plan.
+- P3.1: ran the acceptance checks and recorded the evidence in `notes/acceptance.md`. Added a repeatable
+  `scripts/acceptance.py` (builder-vs-reference, prototype, optimizer, roads, and api checks). Result:
+  the builder matches the reference compiled matrices on all nine core variants; the C5 sample ingests
+  with 0 validation problems and simulates 30 years in 15.5 s; the optimizer meets its target; routing
+  and the programmatic model round-trip pass. `python -m pytest`: 218 passed, 94.78 percent branch
+  coverage. `python scripts/dashboard.py`: `OVERALL: GREEN`.
+- P3: reviewed and expanded every remaining phase plan. Verify now has seven tasks (#27 to #33):
+  acceptance checks (done), determinism and reproducibility, correctness (reference regression and
+  invariants), the spatial constraints, scale and performance, packaging and docs from a clean checkout,
+  and the deferred-item triage and verification report. Release and deploy now has six tasks
+  (release preparation, notes, artifacts, docs, tagging, and post-release verification). Operate and
+  maintain now has six tasks (review cadence, triage, dependency and security maintenance, planning
+  upkeep, release cadence, and a maintainer guide).
+- P3.2: verified determinism and reproducibility. The simulator is deterministic; the same seed
+  reproduces the same objective and schedule; a parallel multi-start run matches the serial run; a warm
+  start is deterministic (and intentionally differs from a cold start, so the criterion was corrected);
+  and a run directory now records the dataset manifest (`dataset_reference` in `ws4/model/schema.py`,
+  used by the optimizer's `summary.json` and the simulator's `dataset.json`). `python -m pytest`: 224
+  passed, 94.78 percent branch coverage. `python scripts/dashboard.py`: `OVERALL: GREEN`.
+- P3.3: verified correctness. Added a self-contained matrix regression fixture
+  (`tests/fixtures/matrix/`, with committed `expected/` tables) and `tests/test_matrix_regression.py`;
+  property tests for the Model II expansion invariants (every stratum has a track; every treatment
+  connects to a real target track or 0; retention splits conserve area, with a hypothesis test over
+  random areas); strengthened `validate_dataset` to check strata, treatments, features, and products
+  against real tracks and curves (with tests per new finding); and a test that no random schedule has a
+  penalty below the MIP bound. The builder still matches the reference on all nine core variants.
+  `python -m pytest`: 240 passed, 94.78 percent branch coverage.
+- P3.4: verified the spatial subsystem. Patch metrics now include the largest opening per year
+  (`max_patch_area`), and they match an independent hand calculation on a small topology; the simulator
+  reports the largest opening in `patch_metrics.csv`. Gap found: no code enforces adjacency, a maximum
+  opening size, or green-up, and the optimizer's objective has no spatial term. Recorded as a release
+  gap in `notes/backlog.md`; the scope lists these constraints as in scope through the first release, so
+  they must be closed before P4.
+- P3.8: implemented and enforced the spatial constraints. `ws4/patch/constraints.py` reports the largest
+  opening per year, opening violations, green-up violations, and a combined penalty; the simulator writes
+  `spatial_violations.csv`; and the optimizer adds a weighted spatial penalty to its objective, disabled
+  by the explicit `allow_spatial_override`. The CLI exposes `--topology`, `--max-opening-ha`,
+  `--min-green-up-years`, and `--spatial-override`. The P3.4 gap is closed. `python -m pytest`: 254
+  passed, 94.78 percent branch coverage. `python scripts/dashboard.py`: `OVERALL: GREEN`.
+- P3.5: verified scale and performance (`notes/performance.md`, `scripts/benchmark.py`). Profiling found
+  two hot paths and both were fixed: the builder re-parsed each select expression per fragment (now
+  cached by statement; build of 100 038 fragments 3.79 s to 1.66 s), and `account_values` used a per-curve
+  `pandas` `.loc` setitem (now a positional numpy assignment; the C5 30-year simulate 15.5 s to 4.2 s).
+  The synthetic build is linear in the fragment count, curve evaluation is vectorized per curve, and the
+  block-aggregation cost is not the hot path, so the cached incremental aggregate is deferred.
+  `python -m pytest`: 264 passed, 94.28 percent branch coverage. `python scripts/dashboard.py`:
+  `OVERALL: GREEN`.
+- P3.6: verified packaging and docs from a clean checkout (`notes/packaging.md`). A fresh virtual
+  environment installs `ws4 0.0.1`; the command line runs end to end (`ws4 build`, `simulate`, `report`,
+  `validate`) on the synthetic fixture; the docs build with warnings as errors; and the published site
+  returns HTTP 200.
+- P3.7: triaged the deferred items and wrote the verification report. Every `notes/backlog.md` item now
+  names a target phase (`P4`, `P5`, `post-release`, or a condition), the roadmap's P2 deferred list was
+  reconciled with the backlog, and `notes/reports/p3-verify.md` records the findings and recommends
+  proceeding to P4. No open item is release-blocking.
+- P3 close-out: queued pull request #35 (`feature/p3-verify` into `main`) and wrote
+  `notes/reports/p3-closeout.md`. `ROADMAP.md` marks P3 `pr-open`. `python scripts/dashboard.py`:
+  `OVERALL: GREEN`.

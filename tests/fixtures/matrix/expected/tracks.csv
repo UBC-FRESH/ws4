@@ -1,0 +1,7 @@
+track_id,name
+1,AU(A)+IFM(managed)+RETENTION(0)+treatment()
+2,AU(A)+IFM(managed)+RETENTION(0.25)+treatment()
+3,AU(A)+IFM(unmanaged)+RETENTION(0.25)+treatment()
+4,AU(B)+IFM(unmanaged)+RETENTION(0)+treatment()
+5,AU(B)+IFM(managed)+RETENTION(0)+treatment()
+6,AU(A)+IFM(unmanaged)+RETENTION(0)+treatment()

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import random
 from pathlib import Path
 
 import pandas as pd
@@ -51,3 +52,26 @@ def test_mip_bound_is_achieved_by_its_schedule(tmp_path: Path) -> None:
     achieved = objective(Simulator.from_dataset(dataset).simulate(schedule, 1), targets)
     assert achieved == result.objective
     assert result.objective == 0.0  # both blocks can be treated
+
+
+def test_mip_bound_is_a_lower_bound_for_random_schedules(tmp_path: Path) -> None:
+    """No schedule has a penalty below the bound."""
+    dataset, targets = _setup(tmp_path)
+    candidates = Optimizer.from_dataset(dataset, OptimizeConfig(years=1)).candidates()
+    result = bound_for(dataset, targets, candidates, 1)
+    rng = random.Random(0)
+    for _ in range(8):
+        schedule = {
+            block: rng.choice(options)
+            for block, options in candidates.items()
+            if options and rng.random() < 0.5
+        }
+        frame = pd.DataFrame(
+            [
+                {"block_id": block, "treatment": treatment, "period": year}
+                for block, (treatment, year) in schedule.items()
+            ],
+            columns=["block_id", "treatment", "period"],
+        )
+        values = Simulator.from_dataset(dataset).simulate(frame, 1)
+        assert objective(values, targets) >= result.objective - 1e-6
