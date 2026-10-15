@@ -7,4 +7,8 @@
 - [Home](index.html): the documentation home for the project.
 - [Compiled dataset](reference/compiled-dataset.html): the runtime contract, its tables, and its invariants.
 - [ForestModelXML recipe](reference/forestmodelxml.html): the recipe format, the matrix builder, legacy ingestion, and the known gaps.
+- [Simulator](reference/simulator.html): the annual-step engine, its schedule, and its run outputs.
+- [Optimizer](reference/optimizer.html): the objective, the operator registry, the metaheuristics, and the MIP bound.
+- [Spatial structure and constraints](reference/spatial.html): the block topology, patch metrics, and opening and green-up rules.
+- [Roads](reference/roads.html): the network tables, shortest-path routing, and the route outputs.
 - [API reference](api/index.html): every public function, with its parameters, types, and return values.

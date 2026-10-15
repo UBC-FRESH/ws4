@@ -217,7 +217,7 @@ checkout.
 - [ ] P4.4 Publish the documentation site and verify it from a clean checkout (#40)
   - [ ] Confirm the `Docs` workflow builds and deploys from `main`
   - [ ] Verify the published site is reachable and matches the checkout
-  - [ ] Add the subsystem pages assigned to P4 (simulator, optimizer, spatial, roads)
+  - [x] Add the subsystem pages assigned to P4 (simulator, optimizer, spatial, roads)
 - [ ] P4.5 Tag the release and publish the artifacts (#41, maintainer approval required)
   - [ ] Create the annotated tag
   - [ ] Publish the artifacts after approval, and record the locations and commands

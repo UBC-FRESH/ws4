@@ -283,3 +283,11 @@ issue comments.
   contains only `ws4/` and the dist-info. Added `MANIFEST.in` so the sdist carries the package and not
   the tests or the notes. Also refreshed `RELEASE_NOTES.md`: the MKRF canonical model is now reported as
   reproduced, and the test count is 278.
+- P4.4 (partial): added the subsystem documentation pages assigned to P4 — `docs/reference/simulator.rst`
+  (the annual-step engine, its schedule, and its run outputs), `optimizer.rst` (the objective, the
+  operator registry, the metaheuristics, and the MIP bound), `spatial.rst` (the block topology, patch
+  metrics, and the opening and green-up rules), and `roads.rst` (the network tables, shortest-path
+  routing, and the route outputs). Wired them into the docs toctree and the `docs/llms.txt` index. The
+  remaining P4.4 subtasks (confirm the `Docs` workflow deploys from `main`, and verify the published
+  site) depend on the phase merging to `main`. Dashboard result: `python scripts/dashboard.py` reports
+  `OVERALL: GREEN`.

@@ -15,7 +15,7 @@ phase, to be created), or a named condition.
 Nothing here is release-blocking: every in-scope success criterion is met by P3.1 to P3.6. The open
 items are enhancements and maintenance.
 
-- **P4:** docs for each subsystem (the release publishes the docs).
+- **P4:** none open (the subsystem docs landed in P4.4).
 - **P5:** broaden `mypy` coverage to `ws4/`.
 - **post-release:** the wider expression library; succession and `produce` semantics; legacy-ingestion
   coverage; a reference replay; the wider operator set and ALNS; the shared solver-core package; the
@@ -157,5 +157,5 @@ items are enhancements and maintenance.
 - **Block-aggregation cost.** `deferred`. The C5 profile shows the per-curve yield evaluation dominates
   the simulator, so a cached incremental block aggregate is not needed yet (`notes/performance.md`).
   Target: post-release, if profiling shows it.
-- **Docs for each subsystem.** `partial`. The compiled dataset and ForestModelXML pages exist; the
-  simulator, optimizer, spatial, and road subsystems are undocumented. Target: P4.
+- **Docs for each subsystem.** `done`. The compiled dataset, ForestModelXML, simulator, optimizer,
+  spatial, and road pages exist under `docs/reference/`, and the API pages cover the tooling.
