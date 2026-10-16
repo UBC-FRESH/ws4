@@ -482,3 +482,9 @@ issue comments.
   time. A/B vs `p6-routerecord-checkpoint` (C5, 3-year, 300-block, collect=True, warm): ~0.78 → **~0.08 s**
   (~10×), outputs unchanged. Spike branch `spike/route-record` merged to `feature/p6-performance`; plan
   and log in `notes/design/ws4-route-record.md`.
+- P6.13 (spike, adopted): adjacency-scoped spatial constraints. The optimizer's spatial penalty scanned
+  every topology edge per evaluation; an adjacency index (`_edges_by_block` / `_incident_edges`) now
+  scopes it to the harvested blocks. A/B vs `p6-spatial-checkpoint` (C5, 300-block schedule):
+  `_spatial_penalty` 163.7 → **13.1 ms** (12.5×), penalties identical (parity test). Spike branch
+  `spike/incremental-spatial` merged to `feature/p6-performance`; plan and log in
+  `notes/design/ws4-spatial-scoped.md`.
