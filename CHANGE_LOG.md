@@ -472,3 +472,8 @@ issue comments.
   93.0 → **14.2 ms** (6.5×); the first evaluation is slower (builds the per-block deltas). Spike branch
   `spike/inc-route-accounts` merged to `feature/p6-performance`; plan and log in
   `notes/design/ws4-incremental-route-accounts.md`.
+- P6.11 (spike, adopted): faster simulator construction. The per-curve sorted cache `_curves` was used
+  only as the non-integer-age fallback after the age table landed; `CurveTable.value` now serves every
+  age (exact at integers, linear between, clamped), so `_curves` is removed. A/B vs
+  `p6-construction-checkpoint`: construction ~0.55 → **~0.15 s** (3.7×). Spike branch `spike/construction`
+  merged to `feature/p6-performance`; plan and log in `notes/design/ws4-construction.md`.
