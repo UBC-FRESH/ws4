@@ -278,6 +278,7 @@ budget. Plan of record: `notes/design/ws4-performance.md`.
 - [x] P6.12 Faster route-record accumulation (#73)
 - [x] P6.13 Adjacency-scoped spatial constraints (#74)
 - [x] P6.14 Faster matrix builder (#75)
+- [x] P6.15 Score product accounts (#76)
 
 Deferred from P6, triaged in `notes/backlog.md`:
 

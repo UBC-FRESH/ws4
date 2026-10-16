@@ -41,9 +41,11 @@ Outputs
    * - File
      - Contents
    * - ``account_values.csv``
-     - ``year,account,value`` — the feature account values over the horizon.
+     - ``year,account,value`` — the feature and product account values over the horizon; a year's
+       products are summed per account.
    * - ``product_values.csv``
-     - ``year,account,value`` — the product yields recorded at each treatment.
+     - ``year,account,value`` — the product yields recorded at each treatment (per event, before the
+       per-account aggregation).
    * - ``dataset.json``
      - The dataset manifest, so a run records what it read.
 

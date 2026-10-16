@@ -90,7 +90,9 @@ items are enhancements and maintenance.
 - **Succession and track switching during a run.** `done`. A treatment moves the fragment to its
   `new_track` and resets its offset.
 - **Product yields.** `done`. Applying a treatment records the product yield (area times the product
-  curve at the pre-treatment offset) to `product_values.csv`.
+  curve at the pre-treatment offset) to `product_values.csv`, and the year's products are summed into
+  the account values (one row per year and account), so the optimizer scores a target on a `product.*`
+  account.
 - **Route flows.** `done`. With a road network, each produced product is routed to the block's nearest
   destination and written to `route_values.csv` with its length and cost.
 - **Patch metrics over blocks.** `done`. `ws4/patch/metrics.py` groups the disturbed blocks into

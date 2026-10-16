@@ -352,7 +352,9 @@ class Simulator:
         Returns
         -------
         dict of (int, str) to float
-            The account value per year and label (non-zero entries only).
+            The account value per year and label (non-zero entries only). Feature labels
+            and the product labels produced by the treatment are both included, so the
+            result is addable to the empty-schedule base for every simulated account.
         """
         positions = self._block_index().get(int(block_id), [])
         if not positions:
@@ -364,8 +366,17 @@ class Simulator:
         for step in range(years):
             if treatment is not None and step == year:
                 for index in range(len(positions)):
-                    transition = self._treatment_by_key.get((int(tracks[index]), str(treatment)))
+                    current = int(tracks[index])
+                    transition = self._treatment_by_key.get((current, str(treatment)))
                     if transition is not None:
+                        area = float(areas[index])
+                        offset = int(offsets[index])
+                        for curve_id, product_label in self._products_by_key.get(
+                            (current, str(treatment)), []
+                        ):
+                            value = area * self._curve_value(curve_id, offset)
+                            key = (step, product_label)
+                            totals[key] = totals.get(key, 0.0) + value
                         tracks[index] = transition[0]
                         offsets[index] = transition[1]
             for index in range(len(positions)):
@@ -506,7 +517,10 @@ class Simulator:
         Returns
         -------
         pandas.DataFrame
-            The account values, with ``year``, ``account``, and ``value`` columns.
+            The account values, with ``year``, ``account``, and ``value`` columns. Feature
+            and product accounts are both included: a treatment's products are recorded as
+            account values in the year they are produced, so every simulated account is
+            scoreable.
         """
         model = route_model
         if model is None and network is not None:
@@ -520,8 +534,17 @@ class Simulator:
             | {element.attribute2 for element in edge_elements}
         )
         for year in range(years):
+            products_before = len(self._product_values)
             self.apply_treatments(schedule, year, model, ledger)
             records.extend(self.account_values(year))
+            produced: dict[str, float] = {}
+            for record in self._product_values[products_before:]:
+                account = str(record["account"])
+                produced[account] = produced.get(account, 0.0) + float(str(record["value"]))
+            records.extend(
+                {"year": year, "account": account, "value": value}
+                for account, value in produced.items()
+            )
             if edge_elements:
                 criteria = {label: self.block_criteria(label) for label in criteria_labels}
                 for row in edge_values(edge_elements, list(edges), criteria):
