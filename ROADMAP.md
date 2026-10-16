@@ -271,7 +271,7 @@ budget. Plan of record: `notes/design/ws4-performance.md`.
 - [x] P6.4 Incremental objective evaluation (#65)
 - [x] P6.5 Solvers at scale (#66)
 - [ ] P6.6 Native kernels (#67)
-- [ ] P6.7 Guardrails (#68)
+- [x] P6.7 Guardrails (#68)
 
 Acceptance criteria:
 
