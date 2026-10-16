@@ -272,9 +272,19 @@ def expand_strata(fragment_keys: Sequence[tuple[str, ...]], recipe: Recipe) -> l
     keys: list[tuple[str, ...]] = list(dict.fromkeys(fragment_keys))
     known = set(keys)
     frontier = list(keys)
+    matches: dict[tuple[str, ...], tuple[int, ...]] = {}
+
+    def select_indices(key: tuple[str, ...]) -> tuple[int, ...]:
+        """Return (and memoize) the selects that govern a stratum."""
+        found = matches.get(key)
+        if found is None:
+            found = matching_selects(key, variables, recipe.selects, recipe.constants)
+            matches[key] = found
+        return found
+
     while frontier:
         key = frontier.pop(0)
-        for select_index in matching_selects(key, variables, recipe.selects, recipe.constants):
+        for select_index in select_indices(key):
             for treatment in recipe.selects[select_index - 1].treatments:
                 target = transition_key(key, variables, treatment, recipe.constants)
                 if target not in known:
@@ -282,10 +292,6 @@ def expand_strata(fragment_keys: Sequence[tuple[str, ...]], recipe: Recipe) -> l
                     keys.append(target)
                     frontier.append(target)
     return [
-        Stratum(
-            key=key,
-            track_id=index,
-            select_indices=matching_selects(key, variables, recipe.selects, recipe.constants),
-        )
+        Stratum(key=key, track_id=index, select_indices=select_indices(key))
         for index, key in enumerate(keys, start=1)
     ]
