@@ -40,6 +40,7 @@ from .objective import Target, load_targets, objective
 from .operators import (
     Candidates,
     Chain,
+    ClusterOperator,
     LnsOperator,
     OperatorRegistry,
     Schedule,
@@ -94,6 +95,8 @@ class OptimizeConfig:
     swap_weight: float = 0.5
     lns_weight: float = 0.2
     lns_destroy: float = 0.1
+    cluster_weight: float = 0.0
+    cluster_size: int = 8
     warm_cache: bool = False
     patch_accounts_path: str = ""
 
@@ -105,12 +108,19 @@ class Optimizer:
         """Store the dataset directory and the run configuration."""
         self.dataset_dir = Path(dataset_dir)
         self.cfg = cfg
+        self._graph_cache: list[tuple[int, int, float]] | None = None
+        self._edges_by_block_cache: dict[int, list[tuple[int, int, float]]] | None = None
         self.registry = OperatorRegistry(
             [
                 ToggleOperator(weight=cfg.toggle_weight),
                 ShiftOperator(weight=cfg.shift_weight),
                 SwapOperator(weight=cfg.swap_weight),
                 LnsOperator(weight=cfg.lns_weight, destroy_fraction=cfg.lns_destroy),
+                ClusterOperator(
+                    weight=cfg.cluster_weight,
+                    size=cfg.cluster_size,
+                    neighbours=self._neighbours() if cfg.cluster_weight > 0.0 else {},
+                ),
             ]
         )
         self._block_area_cache: dict[int, float] | None = None
@@ -118,8 +128,6 @@ class Optimizer:
             tuple[RouteModel | None, tuple[RouteAccount, ...], tuple[DuplicateAccount, ...]] | None
         ) = None
         self._edge_cache: tuple[EdgeElement, ...] | None = None
-        self._graph_cache: list[tuple[int, int, float]] | None = None
-        self._edges_by_block_cache: dict[int, list[tuple[int, int, float]]] | None = None
         self._simulator_cache: Simulator | None = None
         self._patch_cache: PatchModel | None = None
         self._patch_accounts_cache: tuple[PatchAccount, ...] | None = None
@@ -567,6 +575,22 @@ class Optimizer:
         if self._graph_cache is None:
             self._graph_cache = load_patch_edges(Path(self.cfg.topology_path))
         return self._graph_cache
+
+    def _neighbours(self) -> dict[int, tuple[int, ...]]:
+        """Return each block's topological neighbours (empty without a topology).
+
+        Returns
+        -------
+        dict of int to tuple of int
+            The neighbour blocks per block.
+        """
+        if not self.cfg.topology_path:
+            return {}
+        index: dict[int, list[int]] = {}
+        for source, target, _ in self._graph():
+            index.setdefault(source, []).append(target)
+            index.setdefault(target, []).append(source)
+        return {block: tuple(items) for block, items in index.items()}
 
     def _edges_by_block(self) -> dict[int, list[tuple[int, int, float]]]:
         """Return the cached adjacency index: each block to its incident edges."""
