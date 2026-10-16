@@ -330,3 +330,40 @@ def test_multi_start_is_no_worse_than_single_start(tmp_path: Path) -> None:
     single = Optimizer.from_dataset(dataset, config(1)).run(tmp_path / "s1")
     multi = Optimizer.from_dataset(dataset, config(4)).run(tmp_path / "s4")
     assert multi["incumbent_objective"] <= single["incumbent_objective"]
+
+
+def test_incremental_evaluation_matches_a_full_simulation(tmp_path: Path) -> None:
+    """The base-plus-delta objective equals a full re-simulation, cell for cell."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    optimizer = Optimizer.from_dataset(dataset, OptimizeConfig(years=3, iterations=1, seed=1))
+    targets = [Target("feature.Volume", 0, maximum=1000.0)]
+    options = optimizer.candidates()
+    schedule = {block: choices[0] for block, choices in options.items() if choices}
+    assert schedule  # the fixture offers at least one treatment
+
+    incremental = optimizer._incremental_values(schedule, ())
+    full = optimizer._full_values(schedule, None, (), ())
+    joined = (
+        incremental.set_index(["year", "account"])["value"]
+        .to_frame("incremental")
+        .join(full.set_index(["year", "account"])["value"].to_frame("full"), how="outer")
+        .fillna(0.0)
+    )
+    assert (joined["incremental"] - joined["full"]).abs().max() == pytest.approx(0.0, abs=1e-6)
+    assert optimizer._evaluate(schedule, targets) == pytest.approx(
+        objective(optimizer._full_values(schedule, None, (), ()), targets)
+    )
+
+
+def test_incremental_evaluation_matches_for_the_empty_schedule(tmp_path: Path) -> None:
+    """The empty schedule's incremental objective equals a full simulation."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    optimizer = Optimizer.from_dataset(dataset, OptimizeConfig(years=3, iterations=1, seed=1))
+    targets = [Target("feature.Volume", 0, minimum=0.0)]
+    assert optimizer._evaluate({}, targets) == pytest.approx(
+        objective(optimizer._full_values({}, None, (), ()), targets)
+    )

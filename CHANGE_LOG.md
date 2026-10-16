@@ -424,3 +424,9 @@ issue comments.
   (300-block schedule, 10 years) and ~1.3 s to ~0.23 s (empty). The delta evaluation (base plus
   per-block contributions) is the next step. Dashboard result: `python scripts/dashboard.py` reports
   `OVERALL: GREEN`.
+- P6.4: incremental objective evaluation. Feature account values are additive over blocks, so the
+  objective is the empty-schedule base plus a per-block delta (base and deltas cached, lazily per
+  assignment); edge contrast and route accounts fall back to the full simulation (not additive over
+  blocks). Parity with the full simulation holds to floating-point tolerance. C5 10-year warm
+  evaluation: ~1.29 s to 0.23 s (empty) and ~3.8 s to **6.7 ms** (300-block schedule), meeting the
+  under-50 ms target. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.
