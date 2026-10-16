@@ -109,10 +109,33 @@ class Simulator:
         self._join_dirty = True
         self._join_frame_id = -1
         self._pair_frag = np.empty(0, dtype=np.int64)
-        self._pair_curve = np.empty(0, dtype=np.int64)
         self._pair_label = np.empty(0, dtype=np.int64)
-        self._labels: list[str] = []
         self._pair_row = np.empty(0, dtype=np.int64)
+        self._labels: list[str] = []
+        # Precompute the feature side of the join once (the features table never changes):
+        # the feature rows sorted by track code, with each curve's table row and the label
+        # code resolved, so a rebuild is only a searchsorted and a vectorized expansion.
+        self._track_ids = np.unique(self.tracks["track_id"].to_numpy(dtype=np.int64))
+        feature_track = self.features["track_id"].to_numpy(dtype=np.int64)
+        feature_curve = self.features["curve_id"].to_numpy(dtype=np.int64)
+        feature_label = self.features["label"].astype(str).to_numpy()
+        label_names, feature_label_code = np.unique(feature_label, return_inverse=True)
+        self._labels = [str(name) for name in label_names]
+        feature_codes = np.searchsorted(self._track_ids, feature_track)
+        self._feature_order = np.argsort(feature_codes, kind="stable")
+        self._feature_per_code = np.bincount(feature_codes, minlength=self._track_ids.size)
+        self._feature_starts = np.zeros(self._track_ids.size, dtype=np.int64)
+        if self._track_ids.size:
+            self._feature_starts[1:] = np.cumsum(self._feature_per_code)[:-1]
+        sorted_curve = feature_curve[self._feature_order]
+        self._sorted_label_code = feature_label_code[self._feature_order]
+        unique_curve, curve_inverse = np.unique(sorted_curve, return_inverse=True)
+        row_lookup = np.zeros(unique_curve.size, dtype=np.int64)
+        for index, curve_id in enumerate(unique_curve):
+            curve_row = self._curve_table.row(int(curve_id))
+            if curve_row is not None:
+                row_lookup[index] = curve_row
+        self._sorted_row = row_lookup[curve_inverse]
         # Per-label joins for the patch/edge criteria, rebuilt when the frame changes.
         self._criteria_cache: dict[str, tuple[np.ndarray, np.ndarray]] = {}
         self._criteria_frame_id = -1
@@ -120,52 +143,29 @@ class Simulator:
     def _rebuild_join(self) -> None:
         """Precompute the fragment-to-feature join as flat arrays.
 
-        The join is ``(fragment position, curve id, label code)`` per feature of the
-        fragment's track, so a year's account values are a vectorized lookup rather than a
-        pandas merge and groupby. The expansion is vectorized with numpy.
+        The join is ``(fragment position, curve row, label code)`` per feature of the
+        fragment's track, so a year's account values are a vectorized gather. The feature
+        side is precomputed once; only the fragment tracks change between rebuilds.
         """
-        feature_track = self.features["track_id"].to_numpy()
-        feature_curve = self.features["curve_id"].to_numpy()
-        feature_label = self.features["label"].astype(str).to_numpy()
-        fragment_track = self.fragments["track_id"].to_numpy()
+        fragment_track = self.fragments["track_id"].to_numpy(dtype=np.int64)
         fragment_count = fragment_track.size
-        if fragment_count == 0 or feature_track.size == 0:
+        if fragment_count == 0 or self._feature_order.size == 0:
             self._pair_frag = np.empty(0, dtype=np.int64)
-            self._pair_curve = np.empty(0, dtype=np.int64)
             self._pair_label = np.empty(0, dtype=np.int64)
-            self._labels = []
             self._pair_row = np.empty(0, dtype=np.int64)
             self._join_dirty = False
             self._join_frame_id = id(self.fragments)
             return
-        _, inverse = np.unique(np.concatenate([fragment_track, feature_track]), return_inverse=True)
-        fragment_codes = inverse[:fragment_count]
-        feature_codes = inverse[fragment_count:]
-        code_count = int(np.max(fragment_codes)) + 1
-        feature_per_code = np.bincount(feature_codes, minlength=code_count)
-        feature_order = np.argsort(feature_codes, kind="stable")
-        starts = np.zeros(code_count, dtype=np.int64)
-        starts[1:] = np.cumsum(feature_per_code)[:-1]
-        per_fragment = feature_per_code[fragment_codes]
+        fragment_codes = np.searchsorted(self._track_ids, fragment_track)
+        per_fragment = self._feature_per_code[fragment_codes]
         pair_frag = np.repeat(np.arange(fragment_count, dtype=np.int64), per_fragment)
         cumulative = np.cumsum(per_fragment)
         block_start = cumulative - per_fragment
         within = np.arange(pair_frag.size, dtype=np.int64) - np.repeat(block_start, per_fragment)
-        feature_rows = starts[np.repeat(fragment_codes, per_fragment)] + within
-        pair_curve = feature_curve[feature_order][feature_rows]
-        pair_label_raw = feature_label[feature_order][feature_rows]
-        unique_labels, pair_label = np.unique(pair_label_raw, return_inverse=True)
-        self._labels = [str(label) for label in unique_labels]
+        feature_rows = self._feature_starts[np.repeat(fragment_codes, per_fragment)] + within
         self._pair_frag = pair_frag
-        self._pair_curve = pair_curve.astype(np.int64)
-        self._pair_label = pair_label.astype(np.int64)
-        unique_curve, curve_inverse = np.unique(self._pair_curve, return_inverse=True)
-        row_lookup = np.zeros(unique_curve.size, dtype=np.int64)
-        for index, curve_id in enumerate(unique_curve):
-            row = self._curve_table.row(int(curve_id))
-            if row is not None:
-                row_lookup[index] = row
-        self._pair_row = row_lookup[curve_inverse]
+        self._pair_row = self._sorted_row[feature_rows]
+        self._pair_label = self._sorted_label_code[feature_rows]
         self._join_dirty = False
         self._join_frame_id = id(self.fragments)
 
