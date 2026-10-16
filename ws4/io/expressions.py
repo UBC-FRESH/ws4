@@ -12,6 +12,7 @@ it (for example, an unresolved term).
 
 from __future__ import annotations
 
+import contextlib
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -282,12 +283,35 @@ def _call(
     raise ExpressionError(f"unknown function: {name}")
 
 
+_TABLE_CACHE: dict[int, tuple[str, dict[str, str], dict[float, str]]] = {}
+
+
+def _parse_table(keys_text: str, values_text: str) -> tuple[dict[str, str], dict[float, str]]:
+    """Parse a comma-separated lookup table into a string map and a numeric map."""
+    string_table: dict[str, str] = {}
+    numeric_table: dict[float, str] = {}
+    keys = keys_text.split(",")
+    entries = values_text.split(",")
+    for position, candidate in enumerate(keys):
+        key = candidate.strip()
+        value = entries[position].strip() if position < len(entries) else ""
+        string_table[key] = value
+        with contextlib.suppress(ValueError):
+            numeric_table[float(key)] = value
+    return string_table, numeric_table
+
+
 def _lookup_table(key: Any, keys_text: str, values_text: str) -> str:
     """Return the value whose position matches ``key`` in a comma-separated table.
 
     ``lookupTable(k, '1,2,3', 'a,b,c')`` returns ``'b'`` for ``k == 2``. A numeric key
-    compares numerically; any other key compares as text. A key that is absent returns
-    an empty string.
+    compares numerically; any other key compares as text. A key that is absent returns an
+    empty string.
+
+    The table literals in a recipe are large and constant, so the parsed form is cached by
+    the identity of the keys string (the evaluator reuses the same parse tree, so the same
+    string object is passed on every call). The cached tuple keeps the string alive and the
+    identity is checked, so ``id`` reuse cannot serve a stale table.
 
     Parameters
     ----------
@@ -303,16 +327,21 @@ def _lookup_table(key: Any, keys_text: str, values_text: str) -> str:
     str
         The matching value, or an empty string when the key is absent.
     """
-    keys = [part.strip() for part in keys_text.split(",")]
-    entries = [part.strip() for part in values_text.split(",")]
-    for position, candidate in enumerate(keys):
-        try:
-            matches = _as_number(candidate) == _as_number(key)
-        except ExpressionError:
-            matches = candidate == str(key)
-        if matches:
-            return entries[position] if position < len(entries) else ""
-    return ""
+    cached = _TABLE_CACHE.get(id(keys_text))
+    if cached is None or cached[0] is not keys_text:
+        string_table, numeric_table = _parse_table(keys_text, values_text)
+        cached = (keys_text, string_table, numeric_table)
+        _TABLE_CACHE[id(keys_text)] = cached
+    _, string_table, numeric_table = cached
+    try:
+        number = float(key)
+    except (TypeError, ValueError):
+        number = None
+    if number is not None:
+        match = numeric_table.get(number)
+        if match is not None:
+            return match
+    return string_table.get(str(key), "")
 
 
 def _evaluate(

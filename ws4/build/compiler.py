@@ -94,8 +94,11 @@ def _expand_tokens(
     """Replace a label or expression's ``%f``, ``%m``, ``%au``, and ``%s`` tokens.
 
     ``%f`` becomes the attribute's kind (``feature`` or ``product``), ``%m`` the
-    managed/unmanaged value, and ``%au`` / ``%s`` the analysis unit and species.
+    managed/unmanaged value, and ``%au`` / ``%s`` the analysis unit and species. A text
+    with no ``%`` is returned unchanged without scanning it (recipe expressions are huge).
     """
+    if "%" not in text:
+        return text
     return (
         text.replace("%f", kind)
         .replace("%m", _managed_value(row, constants))
