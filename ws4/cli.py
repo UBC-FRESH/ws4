@@ -12,6 +12,8 @@ from rich.table import Table
 from .build.compiler import build_canonical_dataset
 from .build.legacy import ingest_legacy_matrix
 from .model.schema import validate_dataset
+from .opt.calibrate import calibrate as run_calibration
+from .opt.calibrate import write_targets
 from .opt.engine import OptimizeConfig, Optimizer
 from .opt.objective import load_targets
 from .opt.watch import run_watch
@@ -280,6 +282,56 @@ def watch(
     for key, value in summary.items():
         table.add_row(str(key), f"{value:.4g}" if isinstance(value, float) else str(value))
     print(table)
+
+
+@app.command()
+def calibrate(
+    dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
+    targets: Path = typer.Option(..., exists=True, help="Targets YAML to calibrate"),
+    out: Path = typer.Option(..., "--out", help="Calibrated targets YAML"),
+    iterations: int = typer.Option(2000, help="Pilot search iterations"),
+    samples: int = typer.Option(32, help="Times the per-term penalties are sampled"),
+    seed: int = typer.Option(42),
+    years: int = typer.Option(50, help="Simulation horizon in years"),
+    topology: Path = typer.Option(None, exists=True, help="Block topology, for patch accounts"),
+    patch_accounts: Path = typer.Option(
+        None, "--patch-accounts", exists=True, help="Patch size-distribution accounts (YAML)"
+    ),
+    warm_start: bool = typer.Option(
+        False, "--warm-start", help="Start the pilot from each block's first candidate"
+    ),
+) -> None:
+    """Balance target weights from a pilot search and write a targets file."""
+    target_list = load_targets(targets)
+    cfg = OptimizeConfig(
+        years=years,
+        iterations=iterations,
+        seed=seed,
+        targets_path=str(targets),
+        topology_path=str(topology) if topology is not None else "",
+        patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",
+    )
+    optimizer = Optimizer.from_dataset(dataset, cfg)
+    calibrated = run_calibration(
+        optimizer,
+        target_list,
+        iterations=iterations,
+        seed=seed,
+        samples=samples,
+        warm_start=warm_start,
+    )
+    write_targets(out, calibrated)
+    table = Table(title="Calibrated weights")
+    table.add_column("account")
+    table.add_column("year")
+    table.add_column("min weight")
+    table.add_column("max weight")
+    for before, after in zip(target_list, calibrated, strict=True):
+        table.add_row(
+            before.account, str(before.year), f"{after.min_weight:.4g}", f"{after.max_weight:.4g}"
+        )
+    print(table)
+    print(f"[bold green]Calibrated targets[/] → {out}")
 
 
 @app.command()

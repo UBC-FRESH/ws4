@@ -120,6 +120,24 @@ adjacency is indexed by block, and a move updates only the components near the m
 a resize, a merge, a new standalone patch, or a removal/split — so a patch evaluation costs
 tens of milliseconds rather than a full re-simulation.
 
+Calibrate
+---------
+
+Targets of different magnitudes unbalance the objective: the largest term dominates and the search
+freezes before the others are considered. ``ws4 calibrate`` runs a short pilot search, records the
+largest penalty each target reaches, and writes a targets file whose weights are rescaled so the
+peaks match. Pass the result to ``optimize`` or ``watch``.
+
+.. code-block:: bash
+
+   ws4 calibrate --dataset build/compiled --targets targets.yaml --out calibrated.yaml \
+                 --topology topology.csv --patch-accounts patches.yaml --warm-start
+   ws4 optimize --dataset build/compiled --targets calibrated.yaml --out opt
+
+A target that never fires in the pilot keeps its own weights. Match ``--warm-start`` to the run's
+setting: a warm-started pilot starts from the same schedule, so terms that only appear once blocks
+are harvested (such as a patch term) register.
+
 Outputs
 -------
 
@@ -164,6 +182,16 @@ API
 .. autofunction:: ws4.opt.objective.objective
 
 .. autofunction:: ws4.opt.objective.penalty
+
+.. autofunction:: ws4.opt.objective.objective_terms
+
+.. autofunction:: ws4.opt.objective.balance_targets
+
+.. autofunction:: ws4.opt.calibrate.pilot_peaks
+
+.. autofunction:: ws4.opt.calibrate.calibrate
+
+.. autofunction:: ws4.opt.calibrate.write_targets
 
 .. autofunction:: ws4.opt.watch.run_watch
 

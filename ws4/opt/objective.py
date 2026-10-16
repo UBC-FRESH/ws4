@@ -7,8 +7,8 @@ the maximum; the objective is the total penalty (lower is better).
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from collections.abc import Sequence
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import pandas as pd
@@ -98,15 +98,93 @@ def objective(values: pd.DataFrame, targets: Sequence[Target]) -> float:
     float
         The total penalty.
     """
-    index: Mapping[tuple[int, str], float] = {
-        (int(float(str(row.year))), str(row.account)): float(str(row.value))
-        for row in values.itertuples(index=False)
-    }
+    index = _value_index(values)
     total = 0.0
     for target in targets:
         value = sum(index.get((year, target.account), 0.0) for year in target.cell_years())
         total += penalty(value, target)
     return total
+
+
+def _value_index(values: pd.DataFrame) -> dict[tuple[int, str], float]:
+    """Index an account-values frame by ``(year, account)``."""
+    return {
+        (int(float(str(row.year))), str(row.account)): float(str(row.value))
+        for row in values.itertuples(index=False)
+    }
+
+
+def objective_terms(values: pd.DataFrame, targets: Sequence[Target]) -> list[float]:
+    """Return the penalty of each target, in order.
+
+    Parameters
+    ----------
+    values : pandas.DataFrame
+        Account values, with ``year``, ``account``, and ``value`` columns.
+    targets : sequence of Target
+        The targets.
+
+    Returns
+    -------
+    list of float
+        One penalty per target.
+    """
+    index = _value_index(values)
+    return [
+        penalty(sum(index.get((year, target.account), 0.0) for year in target.cell_years()), target)
+        for target in targets
+    ]
+
+
+def balance_targets(targets: Sequence[Target], peaks: Sequence[float]) -> list[Target]:
+    """Rescale the targets so no single penalty term dominates the objective.
+
+    ``peaks[i]`` is the largest penalty target ``i`` reached in a pilot run. Every target that
+    fired is rescaled so its peak matches the mean peak of the firing targets; a target that
+    never fired keeps its own weights. This automates the first pass of the manual rescaling
+    Lockwood and Moore (1993) used to make the terms decrease at similar rates.
+
+    Parameters
+    ----------
+    targets : sequence of Target
+        The targets.
+    peaks : sequence of float
+        The peak penalty per target, in the same order.
+
+    Returns
+    -------
+    list of Target
+        The rescaled targets.
+
+    Raises
+    ------
+    ValueError
+        If ``peaks`` and ``targets`` differ in length.
+    """
+    if len(peaks) != len(targets):
+        raise ValueError("peaks and targets must have the same length")
+    active = [peak for peak in peaks if peak > 0.0]
+    if not active:
+        return list(targets)
+    mean_peak = sum(active) / len(active)
+    scaled: list[Target] = []
+    for target, peak in zip(targets, peaks, strict=True):
+        if peak <= 0.0:
+            scaled.append(target)
+            continue
+        factor = mean_peak / peak
+        scaled.append(
+            replace(
+                target,
+                min_weight=target.min_weight * factor
+                if target.minimum is not None
+                else target.min_weight,
+                max_weight=target.max_weight * factor
+                if target.maximum is not None
+                else target.max_weight,
+            )
+        )
+    return scaled
 
 
 def load_targets(path: Path) -> list[Target]:
