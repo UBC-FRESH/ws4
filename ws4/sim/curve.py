@@ -117,6 +117,40 @@ class CurveTable:
         age = min(max(int(x), 0), self.age_max)
         return float(self.table[row, age])
 
+    def value(self, curve_id: int, x: float) -> float:
+        """Return a curve's value at any age.
+
+        Integer ages are exact; a non-integer age interpolates the two bracketing integer
+        columns (the curve is linear between integer breakpoints). Ages at or beyond the
+        ends clamp, and an absent curve is ``0.0``.
+
+        Parameters
+        ----------
+        curve_id : int
+            The curve.
+        x : float
+            The age.
+
+        Returns
+        -------
+        float
+            The value.
+        """
+        row = self.row_of.get(int(curve_id))
+        if row is None:
+            return 0.0
+        if x >= self.age_max:
+            return float(self.table[row, self.age_max])
+        if x <= 0:
+            return float(self.table[row, 0])
+        low = int(x)
+        fraction = x - low
+        if fraction == 0.0:
+            return float(self.table[row, low])
+        lower = float(self.table[row, low])
+        upper = float(self.table[row, low + 1])
+        return lower + fraction * (upper - lower)
+
     def gather(self, rows: np.ndarray, ages: np.ndarray) -> np.ndarray:
         """Return the values for precomputed curve rows at integer ages.
 

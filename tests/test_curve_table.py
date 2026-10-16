@@ -81,3 +81,13 @@ def test_an_empty_curves_table_builds_an_empty_table() -> None:
     table = CurveTable.from_curves(pd.DataFrame({"curve_id": [], "x": [], "y": []}))
     assert table.row_of == {}
     assert table.at(1, 0) is None
+
+
+def test_value_matches_curve_value_for_integer_and_fractional_ages() -> None:
+    """``value`` is exact at integer ages and linear between them, and clamps."""
+    table = CurveTable.from_curves(_tiny())
+    for age in (0, 5, 10, 15, 20, 2.5, 7.25, -3, 100):
+        assert table.value(1, age) == pytest.approx(curve_value(_tiny(), 1, age))
+    # A single-point curve is constant, and an absent curve is zero.
+    assert table.value(2, 7.5) == pytest.approx(curve_value(_tiny(), 2, 7.5))
+    assert table.value(99, 3) == 0.0
