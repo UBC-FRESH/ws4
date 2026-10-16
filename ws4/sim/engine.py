@@ -393,6 +393,73 @@ class Simulator:
             offsets += 1
         return totals
 
+    def block_route_accounts(
+        self,
+        block_id: int,
+        treatment: str | None,
+        year: int,
+        years: int,
+        route_model: RouteModel,
+        route_accounts: Sequence[RouteAccount],
+    ) -> dict[tuple[int, str], float]:
+        """Return one block's route-account values over a horizon.
+
+        The block's fragments are simulated in isolation (like :meth:`block_trajectory`),
+        but its produced products are routed with ``route_model`` and recorded into a fresh
+        summary ledger; the ledger's account values are returned as
+        ``(year, account) -> value``. Route haul, maintenance, and volume are additive over
+        blocks; build cost is not (it is charged once per segment across the whole
+        schedule), so the objective excludes ``build`` accounts from the incremental path.
+
+        Parameters
+        ----------
+        block_id : int
+            The block.
+        treatment : str or None
+            The treatment to apply, or None.
+        year : int
+            The year to apply the treatment.
+        years : int
+            The horizon, in years.
+        route_model : RouteModel
+            The route model (destinations, eligibility, surplus).
+        route_accounts : sequence of RouteAccount
+            The route accounts to resolve.
+
+        Returns
+        -------
+        dict of (int, str) to float
+            The route account value per year and account (non-zero entries only).
+        """
+        positions = self._block_index().get(int(block_id), [])
+        if not positions or not route_accounts:
+            return {}
+        tracks = self.fragments["track_id"].to_numpy()[positions].astype(np.int64)
+        offsets = self.fragments["offset"].to_numpy()[positions].astype(np.int64)
+        areas = self.fragments["area_ha"].to_numpy()[positions].astype(float)
+        ledger = RouteCostLedger(route_model.network, collect=False)
+        for step in range(years):
+            if treatment is not None and step == year:
+                for index in range(len(positions)):
+                    key = (int(tracks[index]), str(treatment))
+                    transition = self._treatment_by_key.get(key)
+                    if transition is None:
+                        continue
+                    offset = int(offsets[index])
+                    area = float(areas[index])
+                    for curve_id, product_label in self._products_by_key.get(key, []):
+                        value = area * self._curve_value(curve_id, offset)
+                        destination, route = route_model.assign(int(block_id), product_label)
+                        ledger.record(step, int(block_id), product_label, value, destination, route)
+                    tracks[index] = transition[0]
+                    offsets[index] = transition[1]
+            offsets += 1
+        frame = ledger.account_values(route_accounts)
+        return {
+            (int(str(row.year)), str(row.account)): float(str(row.value))
+            for row in frame.itertuples(index=False)
+        }
+
     def _criteria_join(self, label: str) -> tuple[np.ndarray, np.ndarray]:
         """Return the fragment positions and curve-table rows for a feature label."""
         if self._criteria_frame_id != id(self.fragments):

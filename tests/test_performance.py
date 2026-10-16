@@ -10,6 +10,8 @@ import pytest
 from ws4.build.compiler import build_canonical_dataset
 from ws4.opt.engine import OptimizeConfig, Optimizer
 from ws4.opt.objective import Target, objective
+from ws4.roads.accounts import RouteAccount, RouteCostLedger, RouteModel
+from ws4.roads.network import RouteNetwork
 from ws4.sim.engine import Simulator
 
 import benchmark as bm
@@ -91,3 +93,52 @@ def test_incremental_matches_the_full_simulation_on_random_schedules(tmp_path: P
         assert optimizer._evaluate(schedule, targets) == pytest.approx(
             objective(optimizer._full_values(schedule, None, (), ()), targets)
         )
+
+
+def _route_model() -> RouteModel:
+    """A one-segment network: block 1 -> vertex 1, destination.MILL1 -> vertex 2."""
+    network = RouteNetwork.from_tables(
+        pd.DataFrame(
+            {
+                "from_vertex": [1],
+                "to_vertex": [2],
+                "length_m": [100.0],
+                "haul_cost": [10.0],
+                "build_cost": [0.0],
+                "maintain_cost": [1.0],
+            }
+        ),
+        pd.DataFrame({"NODE": [2], "ACCOUNT": ["destination.MILL1"]}),
+        pd.DataFrame({"block_id": [1], "vertex_id": [1]}),
+    )
+    return RouteModel(network)
+
+
+def _route_account_specs() -> list[RouteAccount]:
+    """Volume, haul, and maintenance route accounts for the test destination."""
+    return [
+        RouteAccount("destination.MILL1", "volume", "route.volume"),
+        RouteAccount("destination.MILL1", "haul", "route.haul"),
+        RouteAccount("destination.MILL1", "maintain", "route.maintain"),
+    ]
+
+
+def test_block_route_accounts_match_the_shared_ledger(tmp_path: Path) -> None:
+    """One block's route accounts equal a single-block run through the shared ledger."""
+    dataset = _dataset(tmp_path)
+    simulator = Simulator.from_dataset(dataset)
+    model = _route_model()
+    accounts = _route_account_specs()
+    per_block = simulator.block_route_accounts(1, "CC", 0, 3, model, accounts)
+
+    simulator.reset()
+    ledger = RouteCostLedger(model.network, collect=False)
+    schedule = pd.DataFrame({"block_id": [1], "treatment": ["CC"], "period": [0]})
+    simulator.simulate(schedule, 3, route_model=model, ledger=ledger)
+    full = {
+        (int(str(row.year)), str(row.account)): float(str(row.value))
+        for row in ledger.account_values(accounts).itertuples(index=False)
+    }
+    assert set(per_block) == set(full)
+    for cell in per_block:
+        assert per_block[cell] == pytest.approx(full[cell])

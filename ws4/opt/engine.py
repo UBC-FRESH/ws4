@@ -91,6 +91,7 @@ class Optimizer:
         self._simulator_cache: Simulator | None = None
         self._base_cache: dict[tuple[int, str], float] | None = None
         self._delta_cache: dict[tuple[int, str, int], dict[tuple[int, str], float]] = {}
+        self._route_delta_cache: dict[tuple[int, str, int], dict[tuple[int, str], float]] = {}
 
     @classmethod
     def from_dataset(cls, dataset_dir: Path, cfg: OptimizeConfig) -> Optimizer:
@@ -178,10 +179,14 @@ class Optimizer:
         model, route_accounts, duplicate_accounts = self.route()
         # Feature account values are additive over blocks, so a schedule is the
         # empty-schedule base plus a per-block delta — exact and far cheaper than a full
-        # re-simulation. Edge contrast and route accounts are not additive over blocks, so
-        # those configurations fall back to the full evaluation.
-        if not self.edge_elements() and not route_accounts:
-            values = self._incremental_values(schedule, duplicate_accounts)
+        # re-simulation. Route accounts are additive too, except build (charged once per
+        # segment across the schedule); edge contrast is not additive. Those configurations
+        # fall back to the full evaluation.
+        additive_routes = not route_accounts or (
+            model is not None and all(account.kind != "build" for account in route_accounts)
+        )
+        if not self.edge_elements() and additive_routes:
+            values = self._incremental_values(schedule, duplicate_accounts, route_accounts)
         else:
             values = self._full_values(schedule, model, route_accounts, duplicate_accounts)
         return objective(values, targets) + self._spatial_penalty(frame)
@@ -254,24 +259,57 @@ class Optimizer:
         self._delta_cache[key] = delta
         return delta
 
-    def _incremental_values(
-        self, schedule: Schedule, duplicate_accounts: tuple[DuplicateAccount, ...]
-    ) -> pd.DataFrame:
-        """Return the account values from the base plus per-block deltas."""
-        self.simulator().reset()
-        totals = dict(self._base_values())
-        for block, (treatment, year) in schedule.items():
-            for cell, value in self._block_delta(block, treatment, year).items():
-                totals[cell] = totals.get(cell, 0.0) + value
-        values = pd.DataFrame(
+    def _block_route_delta(
+        self, block: int, treatment: str, year: int
+    ) -> dict[tuple[int, str], float]:
+        """Return a block's route-account delta for an assignment, cached."""
+        key = (block, treatment, year)
+        cached = self._route_delta_cache.get(key)
+        if cached is not None:
+            return cached
+        model, route_accounts, _ = self.route()
+        delta: dict[tuple[int, str], float] = {}
+        if model is not None and route_accounts:
+            delta = self.simulator().block_route_accounts(
+                block, treatment, year, self.cfg.years, model, route_accounts
+            )
+            delta = {cell: value for cell, value in delta.items() if value != 0.0}
+        self._route_delta_cache[key] = delta
+        return delta
+
+    @staticmethod
+    def _values_frame(totals: dict[tuple[int, str], float]) -> pd.DataFrame:
+        """Render a ``(year, account) -> value`` mapping as an account-values frame."""
+        return pd.DataFrame(
             [
                 {"year": year, "account": account, "value": value}
                 for (year, account), value in totals.items()
             ],
             columns=["year", "account", "value"],
         )
+
+    def _incremental_values(
+        self,
+        schedule: Schedule,
+        duplicate_accounts: tuple[DuplicateAccount, ...] = (),
+        route_accounts: tuple[RouteAccount, ...] = (),
+    ) -> pd.DataFrame:
+        """Return the account values from the base plus per-block feature and route deltas."""
+        self.simulator().reset()
+        totals = dict(self._base_values())
+        route_totals: dict[tuple[int, str], float] = {}
+        for block, (treatment, year) in schedule.items():
+            for cell, value in self._block_delta(block, treatment, year).items():
+                totals[cell] = totals.get(cell, 0.0) + value
+            if route_accounts:
+                for cell, value in self._block_route_delta(block, treatment, year).items():
+                    route_totals[cell] = route_totals.get(cell, 0.0) + value
+        values = self._values_frame(totals)
+        if route_accounts:
+            route = self._values_frame(route_totals) if route_totals else None
+            return resolve_account_values(values, route, duplicate_accounts)
         if duplicate_accounts:
-            values = resolve_account_values(values, None, duplicate_accounts)
+            return resolve_account_values(values, None, duplicate_accounts)
         return values
 
     def edge_elements(self) -> tuple[EdgeElement, ...]:
