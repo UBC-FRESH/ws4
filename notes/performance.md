@@ -272,3 +272,17 @@ evaluation scan `schedule x degree` edges instead.
 
 Penalties are identical (parity test vs the full-edge computation). Plan and log:
 `notes/design/ws4-spatial-scoped.md`.
+
+### Faster matrix builder (`spike/builder-perf`)
+
+The builder re-parsed the recipe's huge constant `lookupTable(...)` literals on every evaluation (once
+per stratum per attribute). The parsed form is now cached by the identity of the keys string; token
+expansion skips texts with no `%`; and each stratum's matching selects are memoized.
+
+| Metric (MKRF canonical recipe) | Before | After |
+| --- | ---: | ---: |
+| Build, 200-fragment slice | 17.7 s | **2.2 s** (8.1×) |
+| Build, 1 763 fragments (full canonical) | 192.7 s | **21.5 s** (9.0×) |
+
+Outputs are identical (`scripts/acceptance.py` `compare_matrix`: MATCH). Plan and log:
+`notes/design/ws4-builder-perf.md`.

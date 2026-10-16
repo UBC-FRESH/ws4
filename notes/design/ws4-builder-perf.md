@@ -81,3 +81,22 @@ to recipe semantics or the compiled dataset.
 ## 9. Log
 
 - 2026-10-16: plan written; profiling done (section 1). Starting M1.
+- 2026-10-16 M1: cached the parsed `lookupTable` literal by the identity of the keys string (with the
+  string kept alive and an identity check), removing the per-call split/strip and the per-entry
+  `_as_number` scan. 200-fragment slice 34 s (profiled) → 3.1 s.
+- 2026-10-16 M2: `_expand_tokens` returns without scanning when the text has no `%`; `expand_strata`
+  memoizes each stratum's `matching_selects` (it was computed twice). Slice → 2.17 s.
+- 2026-10-16 M3 A/B vs `p6-builder-checkpoint`:
+
+  | Metric | Checkpoint | Spike | Speedup |
+  | --- | ---: | ---: | ---: |
+  | 200-fragment slice | 17.7 s | **2.2 s** | 8.1× |
+  | Canonical MKRF build (1 763 fragments) | 192.7 s | **21.5 s** | 9.0× |
+
+  Both runs have identical outputs (`scripts/acceptance.py` `compare_matrix`: **MATCH** — tracks 7048,
+  strata 7048, treatments 10014, blocks 3183, features 104311, products 420588, protoaccounts 91).
+
+  **Decision: adopt.** The full canonical build drops from minutes to seconds with identical output.
+  The result is confined to the expression evaluator and the expansion; the compiled dataset is
+  unchanged. Follow-ups (noted, not needed now): precompiling constant tables into the parse tree to
+  drop the identity cache entirely; parallelizing the per-select attribute evaluation.
