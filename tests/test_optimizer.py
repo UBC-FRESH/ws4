@@ -72,6 +72,55 @@ def test_the_optimizer_resolves_route_accounts(tmp_path: Path) -> None:
     assert (values["account"] == "route.Total.haul").any()
 
 
+def test_incremental_route_accounts_match_the_full_simulation(tmp_path: Path) -> None:
+    """Route accounts are additive (except build), so the delta matches a full simulation."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    (tmp_path / "segments.csv").write_text(
+        "SEGMENT,FNODE,TNODE,LENGTH,HAUL,BUILD,MAINTAIN\n1,1,2,100.0,10.0,0.0,1.0\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "destinations.csv").write_text(
+        "NODE,ACCOUNT\n2,destination.MILL1\n", encoding="utf-8"
+    )
+    (tmp_path / "linkages.csv").write_text("BLOCK,NODE\n1,1\n2,1\n", encoding="utf-8")
+    (tmp_path / "route.yaml").write_text(
+        "route:\n"
+        "  segments: segments.csv\n"
+        "  destinations: destinations.csv\n"
+        "  linkages: linkages.csv\n"
+        "route_accounts:\n"
+        "  - {destination: destination.MILL1, kind: volume, account: route.vol}\n"
+        "  - {destination: destination.MILL1, kind: haul, account: route.haul}\n"
+        "  - {destination: destination.MILL1, kind: maintain, account: route.maint}\n"
+        "duplicate_accounts:\n"
+        "  - {master: route.haul, target: route.total.haul}\n",
+        encoding="utf-8",
+    )
+    optimizer = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(
+            years=3, iterations=1, seed=1, route_config_path=str(tmp_path / "route.yaml")
+        ),
+    )
+    model, route_accounts, duplicate_accounts = optimizer.route()
+    schedule = {1: ("CC", 0), 2: ("CC", 0)}
+    incremental = optimizer._incremental_values(schedule, duplicate_accounts, route_accounts)
+    full = optimizer._full_values(schedule, model, route_accounts, duplicate_accounts)
+    joined = (
+        incremental.set_index(["year", "account"])["value"]
+        .to_frame("incremental")
+        .join(full.set_index(["year", "account"])["value"].to_frame("full"), how="outer")
+        .fillna(0.0)
+    )
+    assert (joined["incremental"] - joined["full"]).abs().max() == pytest.approx(0.0, abs=1e-6)
+    # The route accounts are present, not just the feature accounts.
+    assert {"route.vol", "route.haul", "route.maint", "route.total.haul"} <= set(
+        incremental["account"]
+    )
+
+
 def test_load_targets(tmp_path: Path) -> None:
     """Targets load from a YAML file."""
     path = tmp_path / "targets.yaml"
