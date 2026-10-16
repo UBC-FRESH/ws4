@@ -33,7 +33,6 @@ from ..roads.accounts import (
     resolve_account_values,
 )
 from ..roads.network import RouteNetwork
-from .curve import curve_value
 
 
 def _as_int(value: object) -> int:
@@ -66,6 +65,8 @@ class Simulator:
         self.products = pd.read_parquet(self.dataset_dir / "products.parquet")
         self.accounts = pd.read_parquet(self.dataset_dir / "accounts.parquet")
         self.fragments["offset"] = self.fragments["age"].astype(int)
+        self._initial_track = self.fragments["track_id"].to_numpy(copy=True)
+        self._initial_offset = self.fragments["offset"].to_numpy(copy=True)
         self._product_values: list[dict[str, object]] = []
         self._route_values: list[dict[str, object]] = []
         self._edge_values: list[dict[str, object]] = []
@@ -113,39 +114,50 @@ class Simulator:
 
         The join is ``(fragment position, curve id, label code)`` per feature of the
         fragment's track, so a year's account values are a vectorized lookup rather than a
-        pandas merge and groupby.
+        pandas merge and groupby. The expansion is vectorized with numpy.
         """
         feature_track = self.features["track_id"].to_numpy()
         feature_curve = self.features["curve_id"].to_numpy()
         feature_label = self.features["label"].astype(str).to_numpy()
-        by_track: dict[int, list[int]] = {}
-        for row, track in enumerate(feature_track):
-            by_track.setdefault(int(track), []).append(row)
-        labels: list[str] = []
-        codes: dict[str, int] = {}
-        pair_frag: list[int] = []
-        pair_curve: list[int] = []
-        pair_label: list[int] = []
-        for position, track in enumerate(self.fragments["track_id"].to_numpy()):
-            for row in by_track.get(int(track), ()):
-                pair_frag.append(position)
-                pair_curve.append(int(feature_curve[row]))
-                label = str(feature_label[row])
-                code = codes.get(label)
-                if code is None:
-                    code = len(labels)
-                    codes[label] = code
-                    labels.append(label)
-                pair_label.append(code)
-        self._pair_frag = np.asarray(pair_frag, dtype=np.int64)
-        self._pair_curve = np.asarray(pair_curve, dtype=np.int64)
-        self._pair_label = np.asarray(pair_label, dtype=np.int64)
-        self._labels = labels
-        groups: dict[int, list[int]] = {}
-        for index, curve_id in enumerate(pair_curve):
-            groups.setdefault(curve_id, []).append(index)
+        fragment_track = self.fragments["track_id"].to_numpy()
+        fragment_count = fragment_track.size
+        if fragment_count == 0 or feature_track.size == 0:
+            self._pair_frag = np.empty(0, dtype=np.int64)
+            self._pair_curve = np.empty(0, dtype=np.int64)
+            self._pair_label = np.empty(0, dtype=np.int64)
+            self._labels = []
+            self._curve_groups = {}
+            self._join_dirty = False
+            self._join_frame_id = id(self.fragments)
+            return
+        _, inverse = np.unique(np.concatenate([fragment_track, feature_track]), return_inverse=True)
+        fragment_codes = inverse[:fragment_count]
+        feature_codes = inverse[fragment_count:]
+        code_count = int(np.max(fragment_codes)) + 1
+        feature_per_code = np.bincount(feature_codes, minlength=code_count)
+        feature_order = np.argsort(feature_codes, kind="stable")
+        starts = np.zeros(code_count, dtype=np.int64)
+        starts[1:] = np.cumsum(feature_per_code)[:-1]
+        per_fragment = feature_per_code[fragment_codes]
+        pair_frag = np.repeat(np.arange(fragment_count, dtype=np.int64), per_fragment)
+        cumulative = np.cumsum(per_fragment)
+        block_start = cumulative - per_fragment
+        within = np.arange(pair_frag.size, dtype=np.int64) - np.repeat(block_start, per_fragment)
+        feature_rows = starts[np.repeat(fragment_codes, per_fragment)] + within
+        pair_curve = feature_curve[feature_order][feature_rows]
+        pair_label_raw = feature_label[feature_order][feature_rows]
+        unique_labels, pair_label = np.unique(pair_label_raw, return_inverse=True)
+        self._labels = [str(label) for label in unique_labels]
+        self._pair_frag = pair_frag
+        self._pair_curve = pair_curve.astype(np.int64)
+        self._pair_label = pair_label.astype(np.int64)
+        order = np.argsort(pair_curve, kind="stable")
+        sorted_curve = pair_curve[order]
+        boundaries = np.flatnonzero(np.diff(sorted_curve)) + 1
+        segments = np.split(order, boundaries)
+        group_ids = sorted_curve[np.concatenate([[0], boundaries])] if segments else np.empty(0)
         self._curve_groups = {
-            curve_id: np.asarray(rows, dtype=np.int64) for curve_id, rows in groups.items()
+            int(curve_id): rows for curve_id, rows in zip(group_ids, segments, strict=True)
         }
         self._join_dirty = False
         self._join_frame_id = id(self.fragments)
@@ -160,10 +172,30 @@ class Simulator:
             self._fragments_index_id = id(self.fragments)
         return self._fragments_by_block
 
+    def _curve_value(self, curve_id: int, x: float) -> float:
+        """Evaluate a curve at one point from the precomputed per-curve arrays."""
+        arrays = self._curves.get(curve_id)
+        if arrays is None:
+            return 0.0
+        xs, ys = arrays
+        return float(np.interp(x, xs, ys))
+
     @classmethod
     def from_dataset(cls, dataset_dir: Path) -> Simulator:
         """Build a simulator that reads the given compiled dataset."""
         return cls(dataset_dir)
+
+    def reset(self) -> None:
+        """Restore the mutable state (tracks and offsets) to the construction state.
+
+        The static caches (curves, feature joins, treatment and product indexes) are kept,
+        so a search can reuse one simulator across evaluations instead of reloading the
+        dataset each time.
+        """
+        self.fragments["track_id"] = self._initial_track
+        self.fragments["offset"] = self._initial_offset
+        self._join_dirty = True
+        self._criteria_frame_id = -1
 
     def apply_treatments(
         self,
@@ -213,7 +245,7 @@ class Simulator:
                 offset = int(offsets[index])
                 area = float(areas[index])
                 for curve_id, product_label in self._products_by_key.get(key, []):
-                    value = area * curve_value(self.curves, curve_id, offset)
+                    value = area * self._curve_value(curve_id, offset)
                     self._product_values.append(
                         {"year": year, "account": product_label, "value": value}
                     )
