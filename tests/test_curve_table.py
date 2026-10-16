@@ -73,9 +73,7 @@ def test_the_table_matches_curve_value_on_a_real_dataset() -> None:
     table = CurveTable.from_curves(curves)
     for curve_id in (1, 2):
         for age in (0, 1, 17, 40, 80, 99, 200):
-            assert table.at(curve_id, age) == pytest.approx(
-                curve_value(curves, curve_id, age)
-            )
+            assert table.at(curve_id, age) == pytest.approx(curve_value(curves, curve_id, age))
 
 
 def test_an_empty_curves_table_builds_an_empty_table() -> None:

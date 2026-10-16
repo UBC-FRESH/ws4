@@ -131,4 +131,3 @@ class CurveTable:
         """
         clipped = np.clip(ages, 0, self.age_max).astype(np.int64)
         return np.asarray(self.table[rows, clipped])
-
