@@ -15,7 +15,7 @@ from collections.abc import Callable
 
 from .core import Problem
 from .incremental import IncrementalObjective
-from .operators import Candidates, Chain, OperatorRegistry, Schedule
+from .operators import Candidates, Chain, OperatorRegistry, Schedule, restore
 
 StepCallback = Callable[[int, float], None]
 
@@ -142,17 +142,20 @@ def solve_sa_delta(
     best, best_obj = dict(current), current_obj
     temp = temperature
     for iteration in range(iterations):
-        proposal = registry.pick(rng).propose(current, rng, candidates)
-        if proposal is not None:
-            move, changed = proposal
-            move_obj = current_obj + evaluator.delta(changed, move)
+        operator = registry.pick(rng)
+        undo = operator.propose_inplace(current, rng, candidates)
+        if undo is not None:
+            changed = list(undo)
+            move_obj = current_obj + evaluator.delta(changed, current)
             if move_obj <= current_obj or rng.random() < math.exp(
                 (current_obj - move_obj) / max(temp, 1e-9)
             ):
-                evaluator.apply(changed, move)
-                current, current_obj = move, move_obj
+                evaluator.apply(changed, current)
+                current_obj = move_obj
                 if move_obj < best_obj:
-                    best, best_obj = dict(move), move_obj
+                    best, best_obj = dict(current), move_obj
+            else:
+                restore(current, undo)
         temp *= cooling
         _report(on_step, iteration, best_obj)
     return best, best_obj

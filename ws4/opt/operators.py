@@ -2,8 +2,12 @@
 
 A schedule maps a block to its **chain**: the ordered treatments applied to it over the
 horizon (a block may be treated more than once, as rotations). Each event is a
-``(treatment, year)`` pair. An empty chain means the block is not treated. Operators
-propose a modified schedule, or ``None`` when they cannot move.
+``(treatment, year)`` pair. An empty chain means the block is not treated.
+
+Operators propose a move **in place**: they mutate the schedule and return the previous
+chain of each block they touched, so the caller can undo a rejected move without copying
+the whole schedule. A copying :meth:`propose` is provided on top for callers that want a
+new schedule.
 """
 
 from __future__ import annotations
@@ -15,6 +19,7 @@ Event = tuple[str, int]
 Chain = tuple[Event, ...]
 Schedule = dict[int, Chain]
 Candidates = dict[int, list[Chain]]
+Undo = dict[int, "Chain | None"]
 
 _OptionIndex = tuple[tuple[int, ...], dict[int, tuple[Chain, ...]]]
 _INDEX_CACHE: dict[int, tuple[Candidates, _OptionIndex]] = {}
@@ -24,9 +29,8 @@ def _index(candidates: Candidates) -> _OptionIndex:
     """Return (and cache) the assignable blocks and the rechoosable chains per block.
 
     ``blocks`` is every block with at least one candidate chain; ``rechoosable`` maps a
-    block with more than one candidate chain to its chains, so the shift operator does no
-    per-call scan. The cache is keyed by the identity of ``candidates`` (kept alive so the
-    id cannot be reused).
+    block with more than one candidate chain to its chains. The cache is keyed by the
+    identity of ``candidates`` (kept alive so the id cannot be reused).
 
     Parameters
     ----------
@@ -48,24 +52,74 @@ def _index(candidates: Candidates) -> _OptionIndex:
     return result
 
 
+def restore(schedule: Schedule, undo: Undo) -> None:
+    """Undo an in-place move, restoring each touched block's previous chain.
+
+    Parameters
+    ----------
+    schedule : dict of int to Chain
+        The mutated schedule.
+    undo : dict of int to Chain or None
+        The previous chain per touched block (None means the block was absent).
+    """
+    for block, previous in undo.items():
+        if previous is None:
+            schedule.pop(block, None)
+        else:
+            schedule[block] = previous
+
+
 class Operator(Protocol):
     """A neighbourhood move."""
 
     name: str
     weight: float
 
-    def apply(
+    def propose_inplace(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
-    ) -> Schedule | None:
-        """Return a modified schedule, or None if the operator cannot move."""
+    ) -> Undo | None:
+        """Mutate the schedule and return the previous chains, or None to move."""
 
     def propose(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
     ) -> tuple[Schedule, tuple[int, ...]] | None:
-        """Return a modified schedule and the blocks it changed, or None."""
+        """Return a modified copy and the blocks it changed, or None."""
+
+    def apply(
+        self, schedule: Schedule, rng: random.Random, candidates: Candidates
+    ) -> Schedule | None:
+        """Return a modified copy, or None if the operator cannot move."""
 
 
-class ToggleOperator:
+class _OperatorBase:
+    """Shared plumbing: a copying ``propose``/``apply`` on top of an in-place move."""
+
+    name = ""
+    weight = 1.0
+
+    def propose_inplace(
+        self, schedule: Schedule, rng: random.Random, candidates: Candidates
+    ) -> Undo | None:  # pragma: no cover - overridden
+        """Mutate the schedule and return the previous chains, or None."""
+        raise NotImplementedError
+
+    def propose(
+        self, schedule: Schedule, rng: random.Random, candidates: Candidates
+    ) -> tuple[Schedule, tuple[int, ...]] | None:
+        """Return a modified copy and the blocks it changed, or None."""
+        result = dict(schedule)
+        undo = self.propose_inplace(result, rng, candidates)
+        return None if undo is None else (result, tuple(undo))
+
+    def apply(
+        self, schedule: Schedule, rng: random.Random, candidates: Candidates
+    ) -> Schedule | None:
+        """Return a modified copy, or None if the operator cannot move."""
+        proposal = self.propose(schedule, rng, candidates)
+        return None if proposal is None else proposal[0]
+
+
+class ToggleOperator(_OperatorBase):
     """Assign a candidate chain to a block, or clear an assigned block."""
 
     name = "toggle"
@@ -74,30 +128,23 @@ class ToggleOperator:
         """Set the operator's selection weight."""
         self.weight = weight
 
-    def propose(
+    def propose_inplace(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
-    ) -> tuple[Schedule, tuple[int, ...]] | None:
-        """Return a toggled schedule and the block that changed."""
+    ) -> Undo | None:
+        """Toggle one block in place."""
         blocks, _ = _index(candidates)
         if not blocks:
             return None
         block = rng.choice(blocks)
-        result = dict(schedule)
-        if result.get(block) and rng.random() < 0.5:
-            result[block] = ()
+        undo: Undo = {block: schedule.get(block)}
+        if block in schedule and rng.random() < 0.5:
+            del schedule[block]
         else:
-            result[block] = rng.choice(candidates[block])
-        return result, (block,)
-
-    def apply(
-        self, schedule: Schedule, rng: random.Random, candidates: Candidates
-    ) -> Schedule | None:
-        """Toggle one block."""
-        proposal = self.propose(schedule, rng, candidates)
-        return None if proposal is None else proposal[0]
+            schedule[block] = rng.choice(candidates[block])
+        return undo
 
 
-class ShiftOperator:
+class ShiftOperator(_OperatorBase):
     """Rechoose a block's chain (a different rotation sequence)."""
 
     name = "shift"
@@ -106,41 +153,29 @@ class ShiftOperator:
         """Set the operator's selection weight."""
         self.weight = weight
 
-    def propose(
+    def propose_inplace(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
-    ) -> tuple[Schedule, tuple[int, ...]] | None:
-        """Return a schedule with one block's chain rechoosing, and the block.
-
-        A rechoosable block is sampled by drawing a candidate block and testing it, rather
-        than scanning the schedule, so the move is O(1) when most assigned blocks have more
-        than one chain.
-        """
+    ) -> Undo | None:
+        """Rechoose one assigned block's chain, in place."""
         if not schedule:
             return None
         blocks, rechoosable = _index(candidates)
         for _ in range(12):
             block = rng.choice(blocks)
-            if schedule.get(block) and block in rechoosable:
-                result = dict(schedule)
-                result[block] = rng.choice(rechoosable[block])
-                return result, (block,)
-        assigned = [block for block in schedule if schedule[block] and block in rechoosable]
+            current = schedule.get(block)
+            if current and block in rechoosable:
+                schedule[block] = rng.choice(rechoosable[block])
+                return {block: current}
+        assigned = [block for block, chain in schedule.items() if chain and block in rechoosable]
         if not assigned:
             return None
         block = rng.choice(assigned)
-        result = dict(schedule)
-        result[block] = rng.choice(rechoosable[block])
-        return result, (block,)
-
-    def apply(
-        self, schedule: Schedule, rng: random.Random, candidates: Candidates
-    ) -> Schedule | None:
-        """Rechoose one block's chain."""
-        proposal = self.propose(schedule, rng, candidates)
-        return None if proposal is None else proposal[0]
+        current = schedule[block]
+        schedule[block] = rng.choice(rechoosable[block])
+        return {block: current}
 
 
-class SwapOperator:
+class SwapOperator(_OperatorBase):
     """Exchange the chains of two blocks."""
 
     name = "swap"
@@ -149,31 +184,36 @@ class SwapOperator:
         """Set the operator's selection weight."""
         self.weight = weight
 
-    def propose(
+    def propose_inplace(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
-    ) -> tuple[Schedule, tuple[int, ...]] | None:
-        """Return a schedule with two blocks' chains exchanged, and the two blocks."""
-        blocks = list(schedule)
-        if len(blocks) < 2:
+    ) -> Undo | None:
+        """Exchange two assigned blocks' chains, in place."""
+        if len(schedule) < 2:
             return None
-        first, second = rng.sample(blocks, 2)
-        result = dict(schedule)
-        result[first], result[second] = result[second], result[first]
-        return result, (first, second)
+        blocks, _ = _index(candidates)
+        first: int | None = None
+        second: int | None = None
+        for _ in range(24):
+            block = rng.choice(blocks)
+            if block not in schedule:
+                continue
+            if first is None:
+                first = block
+            elif block != first:
+                second = block
+                break
+        if first is None or second is None:
+            return None
+        first_chain = schedule[first]
+        schedule[first], schedule[second] = schedule[second], first_chain
+        return {first: first_chain, second: schedule[first]}
 
-    def apply(
-        self, schedule: Schedule, rng: random.Random, candidates: Candidates
-    ) -> Schedule | None:
-        """Swap two assigned blocks."""
-        proposal = self.propose(schedule, rng, candidates)
-        return None if proposal is None else proposal[0]
 
+class LnsOperator(_OperatorBase):
+    """Large-neighbourhood search: rechoose a fraction of the schedule in one move.
 
-class LnsOperator:
-    """Large-neighbourhood search: destroy a fraction of the schedule and repair it.
-
-    A destroy-repair move clears a random fraction of the assigned blocks and reassigns
-    them to random candidate chains, exploring a large neighbourhood in one step.
+    The destroyed blocks are sampled by rejection from the candidate blocks, so the move
+    costs O(blocks touched) rather than O(schedule).
     """
 
     name = "lns"
@@ -183,30 +223,31 @@ class LnsOperator:
         self.weight = weight
         self.destroy_fraction = destroy_fraction
 
-    def propose(
+    def propose_inplace(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
-    ) -> tuple[Schedule, tuple[int, ...]] | None:
-        """Destroy a fraction of the schedule, repair it, and report the changed blocks."""
+    ) -> Undo | None:
+        """Rechoose a fraction of the schedule in place."""
         if not schedule:
             return None
-        blocks = list(schedule)
-        count = max(1, int(len(blocks) * self.destroy_fraction))
-        destroyed = set(rng.sample(blocks, count))
-        result = {block: value for block, value in schedule.items() if block not in destroyed}
-        repaired: list[int] = []
-        for block in destroyed:
+        blocks, _ = _index(candidates)
+        count = max(1, int(len(schedule) * self.destroy_fraction))
+        chosen: set[int] = set()
+        limit = count * 4 + 8
+        tries = 0
+        while len(chosen) < count and tries < limit:
+            tries += 1
+            block = rng.choice(blocks)
+            if block in schedule:
+                chosen.add(block)
+        undo: Undo = {}
+        for block in chosen:
+            undo[block] = schedule.get(block)
             chains = candidates.get(block)
             if chains:
-                result[block] = rng.choice(chains)
-            repaired.append(block)
-        return result, tuple(repaired)
-
-    def apply(
-        self, schedule: Schedule, rng: random.Random, candidates: Candidates
-    ) -> Schedule | None:
-        """Destroy a fraction of the schedule and repair it."""
-        proposal = self.propose(schedule, rng, candidates)
-        return None if proposal is None else proposal[0]
+                schedule[block] = rng.choice(chains)
+            else:
+                schedule.pop(block, None)
+        return undo
 
 
 class OperatorRegistry:
@@ -237,3 +278,19 @@ class OperatorRegistry:
             if threshold <= 0:
                 return operator
         return self._operators[-1]
+
+
+__all__ = [
+    "Candidates",
+    "Chain",
+    "Event",
+    "LnsOperator",
+    "Operator",
+    "OperatorRegistry",
+    "Schedule",
+    "ShiftOperator",
+    "SwapOperator",
+    "ToggleOperator",
+    "Undo",
+    "restore",
+]
