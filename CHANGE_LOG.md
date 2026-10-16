@@ -465,3 +465,10 @@ issue comments.
   `p6-joinrebuild-checkpoint`: one rebuild 0.127 → 0.0045 s (**28×**), cold 30-year simulate 0.299 →
   0.129 s (2.3×). Spike branch `spike/join-rebuild` merged to `feature/p6-performance`; plan and log in
   `notes/design/ws4-join-rebuild.md`.
+- P6.10 (spike, adopted): incremental route accounts. Haul, maintenance, and volume route accounts are
+  additive over blocks, so they join the incremental objective (`Simulator.block_route_accounts` replays
+  one block's products and routing into a summary ledger); build cost is not additive and keeps the full
+  path. A/B vs `p6-routeinc-checkpoint` (C5, route-target config, 10 years): warm 300-block evaluation
+  93.0 → **14.2 ms** (6.5×); the first evaluation is slower (builds the per-block deltas). Spike branch
+  `spike/inc-route-accounts` merged to `feature/p6-performance`; plan and log in
+  `notes/design/ws4-incremental-route-accounts.md`.
