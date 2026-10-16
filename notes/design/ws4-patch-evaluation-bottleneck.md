@@ -1,171 +1,146 @@
 # The patch-account evaluation bottleneck
 
-Status: analysis complete, first fixes landed, compiled port designed and prototyped.
+Status: representation corrected, first fixes landed, compiled port designed and prototyped.
 
-This note records what makes the optimizer slow when a patch size-distribution target is active,
-what was measured, what was fixed, and what remains. It is written to be picked up cold by another
-engineer or model.
+This note records how patch accounts are represented, what the optimizer costs when a patch
+size-distribution target is active, what was fixed, and what remains. It is written to be picked up
+cold by another engineer or model.
 
-## Summary
+## Read this first: the representation
 
-- A patch target costs roughly a **30x to 70x** drop in search iterations per second against an
-  additive product target on C5 (50-year horizon): about **2,000-2,600 -> 37 iterations/s**.
-- The cost is **not** the objective arithmetic, the string formatting, or the criterion curves. It is
-  **graph work on the patch connectivity**: walking a connected component of the member blocks.
-- Two facts dominate everything:
-  1. The member graph is **one giant component** (4,273 of 4,695 members in the largest year state)
-     plus ~70 fragments. Almost any change touches the giant component.
-  2. Only **189 of 4,695 members (4%) are articulation points** (cut vertices). The other 96% cannot
-     split a patch, yet the code walked the whole component to prove it.
-- **Landed**: an exact early-exit connectivity test and the removal of per-call work. Single-block
-  moves went **37.9 -> 142.5 iterations/s (3.8x)**; the default configuration went
-  **37.2 -> 43.2 iterations/s** because it is dominated by the bulk (LNS) rebuild instead.
-- **Prototyped**: the dominant bulk rebuild as a numba kernel over CSR arrays is **41x faster**
-  (10.98 ms -> 0.269 ms) with identical component areas. This is the single largest remaining lever.
+A patch is a **connected component of member blocks** in the block adjacency graph, where a block is a
+member in a year when its criterion value exceeds the account threshold. Two configuration choices
+decide whether the result means anything:
+
+- **`search_distance`**, in metres. It is the largest gap between two block polygons that still counts
+  as adjacency; the topology's `DISTANCE` column is the shortest distance between the two polygons, so
+  `0` means the blocks literally touch (share a vertex). **The default is `0.0`.** A larger value
+  admits more neighbour edges, so patches can only get *larger*. `None` admits every edge in the
+  topology, which on the sample topology means up to 200 m across roads and creeks — mathematically
+  valid, never what a resources analyst wants to express.
+- **`criteria`**: what a patch *is*. `feature.Seral.regen` (value 1 for ages 0-37) is a recently
+  disturbed stand, which is what a harvest opening looks like. `feature.Seral.young` (1 for ages
+  42-97) is a seral *stage*, so a patch of it is a band of young forest decades after the cut, not an
+  opening. The curve tables are the authority; check them before naming an account.
+
+Two bugs in this area were found and fixed in this work; both made the optimizer's patch values
+disagree with the reporting path:
+
+1. **Untreated blocks were dropped.** `PatchModel.reset` iterated only the blocks present in the
+   schedule, and a block absent from the schedule was priced at criterion `0.0` instead of its
+   inventory series. With an empty schedule the optimizer therefore saw **zero patches** where the
+   reporting path saw 262 (26,384.9 ha). Fixed: an untreated block keeps its inventory series, and the
+   model iterates every block.
+2. **The reporting path ignored `search_distance`.** `PatchLedger` used every topology edge for every
+   account. Fixed: the ledger filters per account, so the report and the optimizer agree.
+
+Correctness is now held by `tests/test_patch_accounts.py` (including a monotonicity property: a larger
+`search_distance` can only *merge* patches, never split them) and `tests/test_patch_objective.py`
+(including the empty-schedule regression and the reporting-path parity).
 
 ## How to measure this (do not trust `cProfile`)
 
-`cProfile` **misattributes this workload by an order of magnitude**. The hot loops are pure Python
-over `dict`/`set`, so profiling overhead lands almost entirely on them. Under `cProfile` the
-single-block rate read 18.6 iterations/s; measured directly it was 37.9. `rebuild_local` showed as
-63% of runtime under `cProfile` but LNS moves were shown to be *not* dominant by a direct A/B.
-
-Use one of:
-
-- **Phase timers**: monkeypatch the `PatchGroupYear` / `PatchModel` methods to accumulate
-  `perf_counter()` around each call, then run the search unguarded. This is what the tables below use.
-- A sampling profiler (`py-spy`) would also be safe; `cProfile` is not.
+`cProfile` **misattributes this workload by an order of magnitude**. The hot loops are pure Python over
+`dict`/`set`, so profiling overhead lands almost entirely on them. Under `cProfile` the single-block
+rate read 18.6 iterations/s; measured directly it was 37.9. Use phase timers (wrap the
+`PatchGroupYear` and `PatchModel` methods to accumulate `perf_counter()` around each call and run the
+search unguarded), or a sampling profiler such as `py-spy`. Do not use `cProfile` for this.
 
 ## The shape of the problem
 
-Patch accounts are a **dynamic connectivity aggregation** problem:
+Graph `G` is fixed: nodes are blocks, edges are adjacency (sample topology: 12,561 blocks; 68,586
+block-pair edges, of which 28,727 (42%) are distance 0 and the rest reach up to 200 m). Membership
+`M_t` is per year. A patch is a connected component of `G[M_t]`; each component contributes area
+(`sum value * block_area`), perimeter (`sum length of boundary edges`), and a size class.
 
-- Graph `G`: fixed. Nodes are blocks, edges are topology adjacency (C5: ~12.5k blocks, ~68.6k edges).
-  An account's `search_distance` filters edges by length.
-- Membership `M_t` per year: block `b` is a member in year `t` iff its criterion value
-  (`block_criteria_series(block, chain)[label][t]`) exceeds the account threshold.
-- A **patch** is a connected component of the induced subgraph `G[M_t]`. Per component the accounts
-  need: area (`sum value * block_area`), perimeter (`sum length of edges leaving the component`),
-  and a size class.
-- A move changes one block's treatment chain, which changes `M_t` and the values for a contiguous
-  range of years. Only those years' components change ("spatial locality"), but see below.
+Structure at the inventory state, **with the corrected defaults** (touching adjacency), for candidate
+criteria:
 
-Measured on the largest year state of C5's `feature.Seral.young` patch account (threshold 0.5):
+| criterion | members | components | largest component | median component |
+| --- | ---: | ---: | ---: | ---: |
+| `feature.Seral.young` | 2,737 | 858 | 178 (6.5% of members) | 1 |
+| `feature.Seral.regen` | 825 | 276 | 45 (5.5%) | 1 |
+| `feature.young` | 1,063 | 341 | 55 (5.2%) | 1 |
+| `feature.Seral.mature` | 7,143 | 650 | 4,122 (57.7%) | 1 |
 
-| quantity | value |
-| --- | --- |
-| members | 4,695 |
-| components | 70 |
-| largest component | 4,273 (91% of members) |
-| component sizes | min 1, median 2, max 4,273; next largest 137 |
-| member degree within component | 0: 34, 1: 113, 2: 270, >=3: 4,278 |
-| **exact articulation points** | **189 (4.0%)**, computable in 0.02 s with one Tarjan pass |
-
-The important structural fact: the giant patch is a **dense blob with very few cut vertices**. It is
-essentially 2-connected, so removing one block almost never splits it.
+So the realistic patch is small (median 1 block) and the distribution is broad. **Do not tune for the
+pathological configuration**: with `search_distance=None` and a mature criterion the whole forest
+collapses into one 4,273-block component, and almost every measurement becomes about that one blob.
+That configuration was measured early in this work and its numbers (a 4% articulation fraction, a
+2.25 ms component walk dominating 86% of a move) describe the blob, not normal use.
 
 ## Where the time goes
 
-### Single-block move, default 50-year C5 patch target, before any fix
+### Single-block move, default configuration, current
 
-300 iterations, `lns_weight=0`, phase timers (inclusive seconds):
+`--lns-weight 0`, 600 iterations on C5, 50 years: **298.9 iterations/s** (3.3 ms per move). For
+reference the same objective machinery on an additive product target runs at roughly 2,000-2,600/s,
+so a patch target costs about 7-9x with single-block moves.
 
-| phase | inclusive s | calls | us/call |
-| --- | ---: | ---: | ---: |
-| `pending` (whole delta) | 7.83 | 300 | 26,102 |
-| `set_value` | 7.66 | 5,275 | 1,452 |
-| `_detach` | 7.64 | 3,332 | 2,293 |
-| **`_component_from`** | **7.30** | 3,244 | **2,251** |
-| `_value` | 0.48 | 570,075 | 0.8 |
-| `_split` | 0.23 | 205 | 1,114 |
-| `_cells` | 0.06 | 4,266 | 13 |
-| `_affected` | 0.05 | 300 | 163 |
-| `_attach` | 0.01 | 773 | 17 |
+The dominant cost used to be the connectivity walk: every detach of a member with two or more member
+neighbours ran a full BFS of the component to discover it does **not** split. That is now an
+**exact early-exit test**: a detach of `v` only disconnects its patch if `v` is an articulation point,
+so it suffices to BFS from one member-neighbour of `v` and stop the moment every *other*
+member-neighbour has been reached (if all of `v`'s neighbours lie in one component of `C - v`, then
+`C - v` is connected). If the walk exhausts first, `v` is an articulation point and the reached set is
+one of the pieces. Combined with cached size-class labels and an inlined value lookup this took
+single-block moves from 37.9 to 142.5 iterations/s *on the old pathological configuration*, and the
+corrected representation reaches 298.9/s.
 
-**`_component_from` was 86% of a single-block move**: every detach of a member with two or more
-member neighbours ran a full BFS of the component (~2.25 ms for the 4,273-block blob) purely to
-discover that it does **not** split (96% of the time).
+### Bulk (LNS) move, the current bottleneck
 
-### Bulk (LNS) move, `lns_weight=0.2`, after the single-block fix
-
-300 iterations, 8.90 s = 33.7 iterations/s (29.7 ms per move):
+`--lns-weight 0.2` (the default), 300 iterations, 8.22 s = **36.5 iterations/s** (27.4 ms per move),
+phase timers:
 
 | phase | inclusive s | calls | us/call |
 | --- | ---: | ---: | ---: |
-| `pending` | 7.89 | 300 | 26,309 |
-| **`_local_cells` / `rebuild_local`** | **5.66** | 1,015 | **5,572** |
-| `_affected` | 1.95 | 300 | 6,488 |
-| `_value` | 1.02 | 1,138,289 | 0.9 |
-| `set_value` (single-block path) | 0.21 | 3,031 | 69 |
-| `_reachable` (new) | 0.13 | 1,034 | 123 |
-| `_component_from` | 0.01 | 239 | 36 |
+| `pending` (whole delta) | 6.65 | 300 | 22,151 |
+| **`_local_cells` / `rebuild_local`** | **4.36** | 1,018 | **4,279** |
+| **`_affected`** | **1.82** | 300 | **6,063** |
+| `_value` | 1.14 | 1,259,240 | 0.9 |
+| `set_value` (single-block path) | 0.04 | 2,540 | 17 |
+| `_detach` / `_reachable` / `_split` | 0.07 | 2,253 | 30 |
 
-So the bulk path is now: **`rebuild_local` 64% + `_affected` 22%**. `_value` was called 1.14M times
-because `rebuild_local` took a `lookup` closure and invoked it per changed block per affected year.
-
-## What was fixed (landed)
-
-1. **Exact early-exit connectivity test** (`PatchGroupYear._reachable`). A detach of `v` only
-   disconnects `C` if `v` is an articulation point. It is enough to BFS from **one** member-neighbour
-   of `v` and stop the moment **every other** member-neighbour has been reached: if all neighbours of
-   `v` lie in one component of `C - v`, then `C - v` is connected (any vertex of `C` reaches a
-   neighbour of `v`, and there is no edge to `v`). If the walk exhausts first, `v` **is** an
-   articulation point and the reached set is one of the pieces for `_split`.
-   - Exact, no new state. Measured 3.7x on the walk alone (median 23 nodes vs 4,273; p90 still 4,267).
-2. **Cached size-class labels.** `class_of` recomputed `size_class_labels(...)` on every call
-   (188k calls in the profiled run). Bounds and labels are now computed once per state; the dead
-   `class_of` wrapper was removed and `class_index` is used directly.
-3. **Inlined the value lookup.** `_local_cells` now builds `{block: value}` directly instead of
-   passing a closure that called `_value` (1.14M Python calls, ~1.0 s, removed).
-
-Result on the same benchmark:
-
-| configuration | before | after | speed-up |
-| --- | ---: | ---: | ---: |
-| single-block (`lns_weight=0`), 600 iters | 37.9/s | 142.5/s | 3.8x |
-| default (`lns_weight=0.2`) | 37.2/s | 43.2/s | 1.16x |
-| `lns_weight=0.5`, destroy 0.02 | 29.1/s | 34.0/s | 1.17x |
-
-Parity is held by `tests/test_patch_state.py` and `tests/test_patch_objective.py`, which compare
-against the from-scratch and reporting paths.
+- **`rebuild_local` (53%)**: an LNS move changes ~1,100 blocks, so the bulk path rebuilds the
+  components touched in each affected year (`_REBUILD_ABOVE = 8` switches from per-block updates to
+  this). Each call walks a component and recomputes its area and perimeter.
+- **`_affected` (22%)**: it compares the old and new criterion series over **all** years for every
+  changed block (~1,100 blocks x 50 years per LNS move). The series are dense `{year: value}` dicts.
+- `_value` is called 1.26M times; `_affected` and the per-block path are the callers.
 
 ## The design insight: articulation points and negative space
 
 For **split** moves, a patch move is only structurally interesting at an articulation point of the
-patch. Everything else just shaves area off a component. So proposals should target cut vertices.
+patch. For **merge** moves, the target is the **negative space** between proximal patches: a
+non-member block whose member-neighbours span two or more distinct components. Adding it merges them.
 
-For **merge** moves, the target is the **negative space** between proximal patches: a non-member
-block whose member-neighbours span two or more distinct components. Adding it merges them.
+Both are cheap to detect locally:
 
-Both are cheap to maintain or detect locally:
+- **Negative space**: for a non-member block, collect the component ids of its member-neighbours; it is
+  a merge point iff they span >= 2 components. `O(degree)`, and maintainable incrementally because a
+  block's status changes only when it or a neighbour changes.
+- **Cut vertices**: one Tarjan pass gives all of them (0.01-0.02 s for a whole year state at C5
+  scale); whether a *given* `v` is one is what the early-exit test answers, cheaply in the common case.
 
-- **Negative space**: for each non-member block, look at its member-neighbours' component ids. It is
-  a merge point iff those ids span >= 2 components. `O(degree)` per block, and the set can be
-  maintained incrementally (a block's gap status changes only when it or a neighbour changes).
-- **Cut vertices**: exactly the output of a Tarjan pass (0.02 s for the whole C5 year state). Detecting
-  *whether a given* `v` is a cut vertex is what `_reachable` now does exactly and adaptively.
-
-### Cheap exact "not a cut vertex" predicates
-
-Measured over the 4,273-member giant component (all have **zero false positives**):
+Cheap exact "not a cut vertex" predicates, measured **on the old pathological blob** (all with zero
+false positives; re-measure on a realistic configuration before relying on them):
 
 | predicate | proves not-cut for | fraction |
 | --- | ---: | ---: |
 | degree <= 1 | 65 | 1.5% |
 | member-neighbourhood is a clique | 615 | 14.4% |
-| **`v` is a leaf of a BFS spanning tree of the component** | **2,778** | **65.0%** |
+| leaf of a BFS spanning tree of the component | 2,778 | 65.0% |
 
-The spanning-tree leaf test is the strong one: removing a leaf of any spanning tree leaves a
-spanning tree of `C - v`, so `C - v` is connected. Maintaining a spanning forest of each component
-under vertex toggles would let **65% of detaches skip the walk entirely**.
-
-Combined with the early-exit test for the remaining 35%, the walk cost should fall by roughly 3-5x
-again on top of the 3.8x already landed.
+Removing a leaf of a spanning tree leaves a spanning tree of `C - v`, so `C - v` is connected.
+Maintaining a spanning forest per component would let a large share of detaches skip the walk
+entirely, with no compiled dependency.
 
 ## The compiled kernel (prototyped, 41x on the dominant routine)
 
-The bulk rebuild and the walks are pointer-chasing over small integers. That is exactly what a
-compiled kernel does 40x better than Python. Prototype (numba, CSR adjacency, explicit stack):
+`rebuild_local` and the walks are pointer-chasing over small integers, which is what a compiled kernel
+does far better than Python. Prototype (numba, CSR adjacency, explicit stack), measured on the old
+4,273-block component: **Python 10.98 ms -> numba 0.269 ms, 41x**, with identical component count and
+top-5 areas. The kernel:
 
 ```python
 @njit(cache=True, fastmath=True)
@@ -206,69 +181,39 @@ def label_and_aggregate(indptr, indices, lengths, is_member, value, area, out_co
     return cid, comp_area, comp_perim
 ```
 
-Same data, same machine, 50 repeats:
-
-| implementation | per full rebuild |
-| --- | ---: |
-| Python (dict/set walk, the current `rebuild`) | 10.98 ms |
-| numba CSR kernel | **0.269 ms** |
-| speed-up | **41x** |
-
-Parity: identical component count (70) and identical top-5 component areas to one decimal.
+The 41x is on a singleton rebuild; the realistic `rebuild_local` is called ~3.4 times per LNS move
+over smaller components, so expect a smaller whole-search factor, but this is the largest single lever.
 
 ## Implementation plan
 
-Ordered by (value / risk). Steps 1-2 are the cheapest meaningful wins.
+Ordered by value over risk.
 
-1. **Spanning-forest leaf test** (pure Python, no compiled code). Maintain, per component, a spanning
-   tree with parent pointers and a child count. Attach links `v` as a child of a member neighbour
-   (`O(degree)`). Detach of a leaf is `O(1)` and proves "no split". Detach of a non-leaf falls back to
-   `_reachable` and, if not a cut, repairs the tree (re-link the children's subtrees using a
-   non-tree edge, or rebuild the component's tree). Merges re-root the smaller side to bound the copy.
-   Expected: another 2-4x on detaches, no compiled dependency.
-2. **Cache `_affected` per block.** Two chains with the same events up to year `t` have identical
-   series up to `t`; the differing years are a suffix `[first_difference, years)`. Computing the first
-   differing event year is `O(events)` instead of `O(years)` per block. Alternatively store the series
-   sparsely (only non-zero years) and compare key sets. Expected: most of the 22% `_affected` cost.
-3. **CSR + numba for the bulk rebuild and the walks.** This is the big one (41x measured). It needs
-   the state to hold, per year state: `indptr`/`indices`/`lengths` (shared per `search_distance`),
-   `is_member` (uint8), `value` (float64), `comp` (int32), plus per-component `area`/`perimeter` and
-   the size-class sums kept in Python. Keep the Python state as the source of truth and treat the CSR
-   as a derived buffer to keep parity easy, then invert once the tests hold. The undo/`revert` path
-   needs care: save the changed `is_member`/`value` slots and the touched component aggregates.
-4. **Articulation- and gap-targeted operators.** Maintain the negative-space (merge) set
-   incrementally (`O(degree)` updates). Add a `SplitOperator` that proposes detaching a cut vertex,
-   and a `MergeOperator` that proposes treating a negative-space block (plus its neighbourhood) to
-   join two patches. These change *which* moves are proposed, improving solution quality per move;
-   they also make patch moves structurally meaningful rather than random.
-5. **Reconsider `_affected` granularity for LNS.** An LNS move changes ~1,100 blocks and touches ~17
-   year states (pending + revert). If the destroy set is spatially coherent (a k-hop ball rather than
-   random blocks) the affected components shrink and the rebuild gets cheaper.
-
-## Correctness / parity strategy
-
-- `tests/test_patch_state.py` and `tests/test_patch_objective.py` already compare the incremental
-  state cell-for-cell against the from-scratch computation over random mutation sequences. Any change
-  must keep those green; add cases that force splits, merges, articulation detaches, leaf detaches,
-  and negative-space merges.
-- For the compiled port, keep a pure-Python reference path and assert equality of the cells (not the
-  internals) on random schedules before switching the default.
-
-## Reproduction
-
-The scratch harnesses used for these numbers are not tracked (they reference local datasets). To
-reproduce: compile a dataset with a topology, define a patch account on a criterion with a
-threshold, and run `ws4 optimize --patch-accounts ... --topology ...` with `--lns-weight 0` for the
-single-block case. Add phase timers by wrapping the `PatchGroupYear` and `PatchModel` methods. The
-structural probes are a Tarjan pass, a BFS spanning tree, and an inclusive neighbour-degree count
-over the largest year state.
+1. **Make `_affected` cheap** (22% today, pure Python, no compiled dependency). Two options: store the
+   criterion series sparsely (only non-zero years) and compare key sets; or exploit the structure that
+   two chains sharing a prefix of events have identical series up to the first differing event year, so
+   the differing years are a suffix. Either removes the `blocks x years` inner loop.
+2. **Spanning-forest leaf test** (pure Python). Maintain a spanning tree per component; a detach of a
+   tree leaf is `O(1)` and proves "no split". Re-measure the leaf fraction on a realistic
+   configuration first.
+3. **CSR + numba for the bulk rebuild and the walks** (the 41x above). Concrete: per year state keep
+   `is_member` (uint8), `value` (float64), `comp` (int32) plus `indptr`/`indices`/`lengths` shared per
+   `search_distance`; keep the size-class sums in Python. Keep the Python state as the source of truth
+   initially and treat the CSR as a derived buffer so parity is easy to test; invert once green. The
+   undo/`revert` path must restore the changed `is_member`/`value` slots and the touched aggregates.
+4. **Articulation- and gap-targeted operators**: maintain the negative-space (merge) set incrementally;
+   add a `SplitOperator` that detaches a cut vertex and a `MergeOperator` that treats a
+   negative-space block (plus its neighbourhood). These change *which* moves are proposed, so they help
+   solution quality per move as well as cost.
+5. **Consider excluding LNS, or making its destroy set spatially coherent**, for patch targets. LNS
+   currently dominates the cost (53%) and buys about 0.8 objective units on the sample problem; a
+   k-hop-ball destroy set would shrink the affected components.
 
 ## Open questions
 
-- Does the bulk path stay dominant when the criterion forms *many small* patches rather than one
-  giant one? The whole analysis above is for a single huge blob; a different criterion could favour
-  the incremental path instead. Worth measuring before committing to the compiled port.
-- How stable is "65% are spanning-tree leaves" across criteria, thresholds, and `search_distance`?
-  The spanning-forest step is only worth its complexity if that fraction stays high.
-- Is a full compiled port worth it against simply disabling LNS for patch targets? No: LNS is worth
-  about 0.8 objective units on the patch target (11.598 vs 12.437 at equal iterations).
+- Re-measure everything above on a realistic account (`feature.Seral.regen`, default `search_distance`,
+  a period-length horizon). The structure and the bottleneck ranking both came from the pathological
+  configuration and the single-block fix has already changed them once.
+- Which extra accounts cost what: perimeter (for `compactness`/`shape`) needs a boundary scan that the
+  area does not; measure separately.
+- Does a compiled port pay once `_affected` and the walk heuristics land? The 41x is real but measured
+  on the pathological case; re-measure before committing the complexity.

@@ -27,8 +27,12 @@ _FIXTURE = Path(__file__).resolve().parents[1] / "examples" / "synthetic"
 
 
 def _topology(path: Path) -> Path:
-    """Write a one-edge topology joining the fixture's two blocks."""
-    path.write_text("BLOCK1,BLOCK2,DISTANCE,LENGTH\n1,2,10,100\n", encoding="utf-8")
+    """Write a one-edge topology joining the fixture's two blocks.
+
+    The blocks share a vertex (distance 0), so the default ``search_distance`` of 0 keeps the
+    edge.
+    """
+    path.write_text("BLOCK1,BLOCK2,DISTANCE,LENGTH\n1,2,0,100\n", encoding="utf-8")
     return path
 
 
@@ -101,10 +105,10 @@ def test_patch_model_matches_the_reporting_path(tmp_path: Path) -> None:
     }
 
     # the reporting path: a fresh simulator, the ledger recorded per year
-    from ws4.patch.accounts import load_patch_edges
+    from ws4.patch.accounts import load_patch_edges_detailed
 
     accounts = optimizer.patch_accounts()
-    edges = load_patch_edges(topology)
+    edges = load_patch_edges_detailed(topology)
     simulator = Simulator.from_dataset(dataset)
     block_area = simulator.fragments.groupby("block_id")["area_ha"].sum().to_dict()
     ledger = PatchLedger(
@@ -136,6 +140,50 @@ def test_patch_model_matches_the_reporting_path(tmp_path: Path) -> None:
     assert keys  # the fixture produces patch cells
     for cell in keys:
         assert model_cells.get(cell, 0.0) == pytest.approx(ledger_cells.get(cell, 0.0), abs=1e-9)
+
+
+def test_an_empty_schedule_still_prices_the_inventory_patches(tmp_path: Path) -> None:
+    """With no treatments the model prices the inventory patches, not nothing (regression)."""
+    from ws4.patch.accounts import load_patch_edges
+
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    topology = _topology(tmp_path / "topology.csv")
+    patches = _patches(tmp_path / "patches.yaml")
+    optimizer = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(
+            years=1,
+            iterations=1,
+            seed=1,
+            topology_path=str(topology),
+            patch_accounts_path=str(patches),
+        ),
+    )
+    account = optimizer.patch_accounts()[0]
+    simulator = Simulator.from_dataset(dataset)
+    block_area = {
+        int(float(str(k))): float(v)
+        for k, v in simulator.fragments.groupby("block_id")["area_ha"].sum().to_dict().items()
+    }
+    expected = {
+        f"{account.name}.{key}": value
+        for key, value in patch_account_values(
+            account,
+            simulator.block_criteria("feature.Volume"),
+            load_patch_edges(topology),
+            block_area,
+        ).items()
+    }
+    assert expected["patch.harvest.TOTAL.frequency"] > 0.0  # an untended member remains
+
+    evaluator = IncrementalObjective(optimizer, [], (), optimizer.patch_accounts())
+    evaluator.reset({})
+    assert evaluator.patch is not None
+    got = {name: value for (year, name), value in evaluator.patch.cell_map().items() if year == 0}
+    for key in set(expected) | set(got):
+        assert got.get(key, 0.0) == pytest.approx(expected.get(key, 0.0), abs=1e-9)
 
 
 def test_incremental_patch_model_tracks_moves(tmp_path: Path) -> None:

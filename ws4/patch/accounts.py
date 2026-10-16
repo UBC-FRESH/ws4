@@ -51,8 +51,9 @@ class PatchAccount:
     attractor : int or None
         The index of the class an attractor sub-account is defined for, or None.
     search_distance : float or None
-        The topology search distance, in metres: only edges no longer than it join a patch.
-        None considers every edge.
+        The topology search distance, in metres: only edges whose endpoints are no further apart
+        than it join a patch. The default ``0.0`` joins only blocks that literally touch (their
+        polygons share a vertex); None considers every edge in the topology.
     """
 
     name: str
@@ -60,7 +61,7 @@ class PatchAccount:
     threshold: float = 0.0
     size_classes: tuple[float, ...] = DEFAULT_SIZE_CLASSES
     attractor: int | None = None
-    search_distance: float | None = None
+    search_distance: float | None = 0.0
 
 
 def size_class_labels(size_classes: Sequence[float]) -> tuple[str, ...]:
@@ -278,6 +279,7 @@ def load_patch_accounts(path: Path) -> tuple[PatchAccount, ...]:
     accounts: list[PatchAccount] = []
     for entry in entries:
         classes = tuple(float(value) for value in entry.get("size_classes", DEFAULT_SIZE_CLASSES))
+        raw_distance = entry.get("search_distance", 0.0)
         accounts.append(
             PatchAccount(
                 name=str(entry["name"]),
@@ -285,9 +287,7 @@ def load_patch_accounts(path: Path) -> tuple[PatchAccount, ...]:
                 threshold=float(entry.get("threshold", 0.0)),
                 size_classes=classes,
                 attractor=entry.get("attractor"),
-                search_distance=(
-                    float(entry["search_distance"]) if entry.get("search_distance") else None
-                ),
+                search_distance=None if raw_distance is None else float(raw_distance),
             )
         )
     return tuple(accounts)
@@ -301,8 +301,9 @@ class PatchLedger:
     ----------
     accounts : sequence of PatchAccount
         The patch account definitions.
-    edges : sequence of (int, int, float)
-        The adjacency edges ``(src, dst, shared_length)``.
+    edges : sequence of (int, int, float, float)
+        The adjacency edges ``(src, dst, shared_length, distance)``. Each account keeps only
+        the edges within its own ``search_distance``.
     block_area : mapping of int to float
         The area of each block.
     period_width : int, optional
@@ -310,10 +311,22 @@ class PatchLedger:
     """
 
     accounts: Sequence[PatchAccount]
-    edges: Sequence[tuple[int, int, float]]
+    edges: Sequence[tuple[int, int, float, float]]
     block_area: Mapping[int, float]
     period_width: int = 1
     _records: list[dict[str, float]] = field(default_factory=list)
+    _by_account: list[list[tuple[int, int, float]]] = field(init=False, default_factory=list)
+
+    def __post_init__(self) -> None:
+        """Keep, per account, only the edges within that account's search distance."""
+        self._by_account = [
+            [
+                (source, target, length)
+                for source, target, length, distance in self.edges
+                if account.search_distance is None or distance <= account.search_distance
+            ]
+            for account in self.accounts
+        ]
 
     def record(self, year: int, criteria: Mapping[str, Mapping[int, float]]) -> None:
         """Record one period's patch accounts.
@@ -326,11 +339,9 @@ class PatchLedger:
             The criterion values per block, keyed by the criteria feature label.
         """
         row: dict[str, float] = {"period": float(year), "year": float(year)}
-        for account in self.accounts:
+        for account, edges in zip(self.accounts, self._by_account, strict=True):
             values = criteria.get(account.criteria, {})
-            for key, value in patch_account_values(
-                account, values, self.edges, self.block_area
-            ).items():
+            for key, value in patch_account_values(account, values, edges, self.block_area).items():
                 row[f"{account.name}.{key}"] = value
         self._records.append(row)
 

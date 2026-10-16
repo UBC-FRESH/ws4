@@ -664,3 +664,20 @@ issue comments.
   `notes/design/ws4-patch-evaluation-bottleneck.md`. `cProfile` misattributes this workload by an order
   of magnitude; the numbers use phase timers. Tests: `tests/test_patch_state.py`,
   `tests/test_patch_objective.py`. Dashboard: **GREEN**.
+- P6.26 (fix): patch accounts were representing the wrong thing, twice over, and P6.25's measurements
+  were taken on that wrong configuration. An untreated block was priced at criterion `0.0` instead of
+  its inventory series, and `PatchModel.reset` skipped it entirely — so with an empty schedule the
+  optimizer saw **zero patches** where the reporting path saw 262 (26,384.9 ha). Separately,
+  `PatchLedger` ignored `search_distance`, so the report and the optimizer disagreed whenever it was
+  set. Both are fixed, and `PatchAccount.search_distance` now defaults to **0.0**: only blocks that
+  literally touch (their polygons share a vertex) are neighbours. The topology's `DISTANCE` column is
+  the shortest gap between two polygons, so the old `None` default silently joined patches up to 200 m
+  across roads and creeks — mathematically valid, never what a resources analyst wants to express. On
+  the sample dataset the default keeps 28,727 of 68,586 edges and gives a median patch of one block
+  (largest 178 of 2,737 members for `feature.Seral.young`), where the old default collapsed the forest
+  into a single 4,273-block patch. With the representation corrected, single-block patch moves run at
+  **298.9 iterations/s** (against 37.9 originally) and LNS is the whole of the remaining cost (53%
+  `rebuild_local`, 22% `_affected`). Added a monotonicity property test (a larger `search_distance` can
+  only merge patches, never split them), an empty-schedule regression test, and reporting-path parity.
+  `notes/design/ws4-patch-evaluation-bottleneck.md` was rewritten on the corrected configuration.
+  Tests: `tests/test_patch_accounts.py`, `tests/test_patch_objective.py`. Dashboard: **GREEN**.

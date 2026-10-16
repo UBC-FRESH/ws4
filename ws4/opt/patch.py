@@ -48,6 +48,7 @@ class PatchModel:
         self.accounts = tuple(accounts)
         self.years = optimizer.cfg.years
         self.area = optimizer._block_area()
+        self.blocks = tuple(self.area)
         self._detailed = load_patch_edges_detailed(Path(optimizer.cfg.topology_path))
         self._adjacency: dict[float | None, dict[int, tuple[tuple[int, float], ...]]] = {}
         grouped: dict[tuple[str, float, float | None], list[PatchAccount]] = {}
@@ -66,23 +67,38 @@ class PatchModel:
         self._undo: list[tuple[PatchGroupYear, int, float | None]] = []
         self._untouched: dict[int, dict[str, float]] = {}
 
-    def series(self, block: int, chain: Chain) -> dict[str, dict[int, float]]:
-        """Return (and cache) a block chain's criterion series per label."""
-        key = (block, chain)
+    def series(self, block: int, chain: Chain | None) -> dict[str, dict[int, float]]:
+        """Return (and cache) a block chain's criterion series per label.
+
+        An untreated block (``chain`` is None) keeps its inventory series, so the empty chain
+        is a real, cacheable state rather than a zero.
+
+        Parameters
+        ----------
+        block : int
+            The block.
+        chain : tuple or None
+            The treatment chain, or None for an untreated block.
+
+        Returns
+        -------
+        dict of str to dict of int to float
+            The criterion value per label and year.
+        """
+        events: Chain = chain if chain is not None else ()
+        key = (block, events)
         cached = self._series.get(key)
         if cached is None:
             simulator = self.optimizer.simulator()
             cached = {
-                label: simulator.block_criteria_series(block, chain, label, self.years)
+                label: simulator.block_criteria_series(block, events, label, self.years)
                 for label in self.labels
             }
             self._series[key] = cached
         return cached
 
     def _value(self, block: int, chain: Chain | None, label: str, year: int) -> float:
-        """Return a block's criterion value in a year under a chain."""
-        if chain is None:
-            return 0.0
+        """Return a block's criterion value in a year under a chain (None is untreated)."""
         return self.series(block, chain)[label].get(year, 0.0)
 
     def adjacency(self, search_distance: float | None) -> dict[int, tuple[tuple[int, float], ...]]:
@@ -147,8 +163,8 @@ class PatchModel:
                 label = key[0]
                 threshold = key[1]
                 members: dict[int, float] = {}
-                for block, chain in schedule.items():
-                    value = self._value(block, chain, label, year)
+                for block in self.blocks:
+                    value = self._value(block, schedule.get(block), label, year)
                     if value > threshold:
                         members[block] = value
                 self._state(key, year).rebuild(members)
@@ -158,13 +174,11 @@ class PatchModel:
         """Return the years where a changed block's criterion differs."""
         affected: set[int] = set()
         for block in changed:
-            old = self.assignments.get(block)
-            new = schedule.get(block)
-            old_series = self.series(block, old) if old is not None else None
-            new_series = self.series(block, new) if new is not None else None
+            old_series = self.series(block, self.assignments.get(block))
+            new_series = self.series(block, schedule.get(block))
             for label in self.labels:
-                old_values = old_series[label] if old_series is not None else {}
-                new_values = new_series[label] if new_series is not None else {}
+                old_values = old_series[label]
+                new_values = new_series[label]
                 for year in range(self.years):
                     if old_values.get(year, 0.0) != new_values.get(year, 0.0):
                         affected.add(year)
@@ -180,10 +194,7 @@ class PatchModel:
             state = self._state(key, year)
             new_values: dict[int, float] = {}
             for block in changed:
-                chain = schedule.get(block)
-                new_values[block] = (
-                    0.0 if chain is None else series(block, chain)[label].get(year, 0.0)
-                )
+                new_values[block] = series(block, schedule.get(block))[label].get(year, 0.0)
             state.rebuild_local(changed, new_values)
         return self._cells(year)
 

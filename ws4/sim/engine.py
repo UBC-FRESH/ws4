@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 
 from ..model.schema import dataset_reference
-from ..patch.accounts import PatchAccount, PatchLedger, load_patch_edges
+from ..patch.accounts import PatchAccount, PatchLedger, load_patch_edges, load_patch_edges_detailed
 from ..patch.constraints import (
     core_area_violations,
     green_up_violations,
@@ -956,12 +956,13 @@ class Simulator:
         out_dir = Path(out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         graph = load_patch_edges(topology_csv)
+        detailed = load_patch_edges_detailed(topology_csv)
         edges = [(source, target) for source, target, _ in graph]
         block_area = {
             _as_int(block): _as_float(area)
             for block, area in self.fragments.groupby("block_id")["area_ha"].sum().items()
         }
-        ledger = PatchLedger(patch_accounts, graph, block_area) if patch_accounts else None
+        ledger = PatchLedger(patch_accounts, detailed, block_area) if patch_accounts else None
         criteria_labels = sorted({account.criteria for account in patch_accounts})
         patch_records: list[dict[str, object]] = []
         schedule_pairs: list[tuple[int, int]] = []

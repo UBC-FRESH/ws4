@@ -116,11 +116,21 @@ on the sub-accounts:
        search_distance: 200.0
 
 Targets then read ``patch.harvest.50_150.area``, ``…size``, ``…frequency``, or ``…shape``.
-``search_distance`` (metres) is the neighbourhood: only topology edges no longer than it join
-blocks, so a patch stays within it. Each block's criterion series is cached per chain, the
-adjacency is indexed by block, and a move updates only the components near the moved block —
-a resize, a merge, a new standalone patch, or a removal/split — so a patch evaluation costs
-tens of milliseconds rather than a full re-simulation.
+
+``search_distance`` (metres) is how far apart two blocks may be and still be neighbours. It
+defaults to ``0``, which joins only blocks that literally touch (their polygons share a vertex);
+a larger value admits more neighbour edges, so patches can only get **larger**. The topology's
+``DISTANCE`` column is the shortest distance between the two blocks' polygons, so a non-zero
+value is a real gap — a road, a creek, a right-of-way — that the default keeps out of a patch.
+
+The ``criteria`` feature decides what a patch *is*. ``feature.Seral.regen`` is a recently
+disturbed stand (up to ~37 years), which is what a harvest opening looks like;
+``feature.Seral.young`` is a seral stage 42-97 years after disturbance, so a patch of it is a
+band of young forest, not an opening. Pick the criterion that matches the question.
+
+Each block's criterion series is cached per chain, the adjacency is indexed by block, and a move
+updates only the components near the moved block — a resize, a merge, a new standalone patch, or a
+removal/split — so a patch evaluation costs tens of milliseconds rather than a full re-simulation.
 
 Calibrate
 ---------
