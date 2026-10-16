@@ -436,3 +436,8 @@ issue comments.
   (tested), and no worse than a single start. NUMA-aware placement and batched/candidate-level parallel
   move evaluation remain as future refinements. Dashboard result: `python scripts/dashboard.py` reports
   `OVERALL: GREEN`.
+- P6.7: guardrails. Added `tests/test_performance.py` (the incremental objective must be strictly faster
+  than a full simulation and must match it on random schedules; the simulator is deterministic), and a
+  user-facing `docs/reference/performance.rst` page with the measured figures, the incremental
+  objective, and the reproduce steps. Dashboard result: `python scripts/dashboard.py` reports
+  `OVERALL: GREEN`.

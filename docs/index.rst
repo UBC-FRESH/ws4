@@ -18,6 +18,7 @@ project grows.
    reference/optimizer
    reference/spatial
    reference/roads
+   reference/performance
 
 .. toctree::
    :maxdepth: 2
