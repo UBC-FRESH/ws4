@@ -520,6 +520,13 @@ issue comments.
   ceiling from **17.74 to 41.02 Mm3** (0.887 to 2.051 Mm3/period), so a 1.3 Mm3/period even flow is
   feasible. Branch `feature/p6-optimizer-core` merged to `feature/p6-performance`; plan and log in
   `notes/design/ws4-optimizer-core.md`. Dashboard on close: **GREEN**.
+- P6.18 refinement (post-merge): the operators now move **in place** — they mutate the schedule and
+  return an undo record, so a rejected move is undone without copying the whole schedule, and the LNS
+  and swap operators sample their blocks by rejection instead of building an O(schedule) list. Warm
+  C5 200-year: overall ~2252 → **2478 iters/s**; the default (LNS weight 0.2) **2259 → 2910** (1.29×).
+  LNS remains the dominant cost (no-LNS ~5613/s), so the operator weights are now configurable
+  (`OptimizeConfig.lns_weight`/`lns_destroy`, and `--lns-weight`/`--lns-destroy` on `ws4 watch` and
+  `ws4 optimize`). Dashboard: **GREEN**.
 - P6.18 (feature): move-based incremental objective. The evaluator keeps the realized totals per
   `(year, account)` for the target accounts and prices a move by the exact delta it makes, instead of
   recomputing the whole schedule: ~2,000,000 dict updates per move become a few hundred operations.

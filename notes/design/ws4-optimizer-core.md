@@ -168,3 +168,7 @@ slot in: the dZ loop is a handful of vectorised array ops.
   target is **feasible** (63% of the ceiling); a 600-iteration SA already reaches 22.2 Mm3 with 1,991
   multi-rotation blocks. Remaining: the MIP bound's re-validation against rotations, and a longer
   even-flow run.
+- 2026-10-16 post-close refinement: the operators move **in place** (mutate + undo record) and LNS/swap
+  sample by rejection, removing the per-move O(schedule) dict copy and list. Warm C5 200-year overall
+  2252 -> **2478 iters/s**; default (LNS 0.2) 2259 -> **2910** (1.29x). LNS is still the dominant cost
+  (no-LNS 5613/s), so the operator weights are configurable (config + `--lns-weight`/`--lns-destroy`).
