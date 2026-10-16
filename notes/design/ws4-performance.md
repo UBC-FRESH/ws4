@@ -152,6 +152,15 @@ Each work package is one issue; each has a measurable acceptance criterion. Orde
 - numba `njit` (then optional C++) for curve interpolation, union-find, Dijkstra, edge contrast.
 - Acceptance: parity tests vs the Python path; **≥5×** on the identified hot loops; documented API.
 
+**Status: deferred (post-P6 profiling).** After WP1–WP4 the profiled hot loops no longer show a ≥5×
+target: the objective evaluation is ~7 ms (incremental), the base simulate is ~0.4 s over 30 years,
+and the remaining Python loops (the route ledger's per-segment bookkeeping, the per-block delta
+trajectory) are small and run once per run, not per evaluation. numba is an optional dependency (the
+`opt` extra) that CI does not install, so a kernel could not be tested there. Per ADR 0008 (native
+kernels for profiled bottlenecks), WP6 waits for a real target. **Trigger to revisit:** a profiled
+loop where a kernel would give a large speedup — for example a much larger dataset, or a route/edge
+objective that needs the full simulation on every evaluation.
+
 **WP7 — Guardrails and docs.**
 - CI perf smoke; determinism/parity tests; update `notes/performance.md`, the design notes, and the
   user-facing performance section.
