@@ -59,6 +59,8 @@ class OptimizeConfig:
     perturbation: int = 2
     starts: int = 1
     workers: int = 1
+    islands: int = 0
+    episodes: int = 1
     warm_start: bool = False
     mip_bound: bool = False
     topology_path: str = ""
@@ -345,7 +347,10 @@ class Optimizer:
         return self.cfg.spatial_weight * penalty
 
     def _solve(
-        self, seed: int, on_step: Callable[[int, float], None] | None = None
+        self,
+        seed: int,
+        on_step: Callable[[int, float], None] | None = None,
+        initial: Schedule | None = None,
     ) -> tuple[Schedule, float]:
         """Run one metaheuristic start with the given seed.
 
@@ -355,6 +360,9 @@ class Optimizer:
             The seed for this start.
         on_step : callable or None, optional
             Called with ``(iteration, best_objective)`` each iteration.
+        initial : Schedule or None, optional
+            A starting schedule (for example a migrated elite). When omitted, the warm
+            start seeds the search with each block's first candidate.
 
         Returns
         -------
@@ -369,12 +377,8 @@ class Optimizer:
             registry=self.registry,
         )
         rng = random.Random(seed)
-        # A warm start seeds the search with each block's first candidate.
-        initial: Schedule | None = (
-            {block: options[0] for block, options in candidates.items() if options}
-            if self.cfg.warm_start
-            else None
-        )
+        if initial is None and self.cfg.warm_start:
+            initial = {block: options[0] for block, options in candidates.items() if options}
         if self.cfg.metaheuristic == "tabu":
             return solve_tabu(
                 problem,
@@ -403,8 +407,28 @@ class Optimizer:
             initial=initial,
         )
 
+    def _use_pool(self) -> bool:
+        """Return whether the search should run across a process pool.
+
+        True for the island model (more than one island and more than one worker) or for a
+        parallel multi-start (more than one start and more than one worker).
+
+        Returns
+        -------
+        bool
+            Whether to use the process pool.
+        """
+        if self.cfg.workers <= 1:
+            return False
+        return (self.cfg.islands > 1) or (self.cfg.starts > 1)
+
     def search(self) -> tuple[Schedule, float, list[Target]]:
-        """Run the search (serial or parallel multi-start) and return the incumbent.
+        """Run the search and return the incumbent.
+
+        When ``islands`` is set (and there is more than one), the islands run in parallel
+        for ``episodes`` rounds, and the global best schedule is migrated into every island
+        as the next round's starting point. Otherwise the starts run independently (serially
+        or across a process pool).
 
         Returns
         -------
@@ -412,6 +436,9 @@ class Optimizer:
             The best schedule, its objective, and the targets.
         """
         targets = load_targets(Path(self.cfg.targets_path)) if self.cfg.targets_path else []
+        if self.cfg.islands > 1 and self.cfg.workers > 1:
+            best, best_obj = self._island_search()
+            return best, best_obj, targets
         starts = max(1, self.cfg.starts)
         if self.cfg.workers > 1 and starts > 1:
             jobs = [
@@ -433,6 +460,34 @@ class Optimizer:
                     best, best_obj = candidate, candidate_obj
         return best, best_obj, targets
 
+    def _island_search(self) -> tuple[Schedule, float]:
+        """Run the island model: parallel islands with elite migration.
+
+        Returns
+        -------
+        tuple of (Schedule, float)
+            The best schedule across all islands and episodes, and its objective.
+        """
+        islands = max(1, self.cfg.islands)
+        episodes = max(1, self.cfg.episodes)
+        island_config = replace(
+            self.cfg, islands=1, starts=1, workers=1, episodes=1, warm_start=False
+        )
+        seeds = [self.cfg.seed + index for index in range(islands)]
+        best: Schedule = {}
+        best_obj = math.inf
+        for _episode in range(episodes):
+            jobs = [
+                (str(self.dataset_dir), island_config, seed, best if best else None)
+                for seed in seeds
+            ]
+            with ProcessPoolExecutor(max_workers=islands) as pool:
+                results = list(pool.map(_island_job, jobs))
+            for candidate, candidate_obj in results:
+                if candidate_obj < best_obj:
+                    best, best_obj = candidate, candidate_obj
+        return best, best_obj
+
     def run(self, out_dir: Path) -> dict[str, Any]:
         """Run the search and write the incumbent schedule and a summary.
 
@@ -453,7 +508,7 @@ class Optimizer:
             run_id=f"{self.cfg.metaheuristic}-{self.cfg.seed}",
             config=asdict(self.cfg),
         )
-        if self.cfg.workers > 1 and self.cfg.starts > 1:
+        if self._use_pool():
             best, best_obj, targets = self.search()
         else:
             best, best_obj = {}, math.inf
@@ -518,3 +573,25 @@ def _run_start(job: tuple[str, OptimizeConfig, int]) -> tuple[Schedule, float]:
     """
     dataset_dir, cfg, seed = job
     return Optimizer.from_dataset(Path(dataset_dir), cfg)._solve(seed)
+
+
+def _island_job(
+    job: tuple[str, OptimizeConfig, int, Schedule | None],
+) -> tuple[Schedule, float]:
+    """Run one island episode in a worker process.
+
+    Top-level so it is picklable by the process pool.
+
+    Parameters
+    ----------
+    job : tuple
+        ``(dataset_dir, config, seed, initial)``, where ``initial`` is the migrated elite
+        (or None on the first episode).
+
+    Returns
+    -------
+    tuple of (Schedule, float)
+        The island's best schedule and its objective.
+    """
+    dataset_dir, cfg, seed, initial = job
+    return Optimizer.from_dataset(Path(dataset_dir), cfg)._solve(seed, initial=initial)

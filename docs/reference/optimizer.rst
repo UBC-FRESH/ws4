@@ -41,6 +41,11 @@ The solvers are simulated annealing (``sa``), tabu search (``tabu``), and iterat
 (``OptimizeConfig.starts``), serial or across a process pool (``OptimizeConfig.workers``), keeping the
 best. ``OptimizeConfig.warm_start`` seeds the search from each block's first candidate.
 
+For scale, an **island model** (``OptimizeConfig.islands`` and ``episodes``, or ``--islands`` /
+``--episodes``) runs several islands in parallel as processes and, after each episode, migrates the
+global best schedule into every island as the next episode's starting point. The result is
+deterministic for a given seed.
+
 The mixed-integer layer (``ws4.opt.mip``) solves an option-selection MILP (HiGHS via
 ``scipy.optimize.milp``) for a penalty **lower bound** and a candidate schedule. Enabling
 ``OptimizeConfig.mip_bound`` records the bound and the gap in the summary.

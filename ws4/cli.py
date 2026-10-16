@@ -91,6 +91,8 @@ def optimize(
     threads: int = typer.Option(8, min=1),
     time_limit: str = typer.Option("01:00:00", help="HH:MM:SS"),
     seed: int = typer.Option(42),
+    islands: int = typer.Option(0, help="parallel islands with elite migration (0 = off)"),
+    episodes: int = typer.Option(1, help="island episodes (elite migrations)"),
     out: Path = typer.Option(...),
     topology: Path = typer.Option(None, exists=True, help="Block topology for spatial constraints"),
     route_config: Path = typer.Option(
@@ -116,6 +118,8 @@ def optimize(
         threads=threads,
         time_limit=time_limit,
         seed=seed,
+        islands=islands,
+        episodes=episodes,
         targets_path=str(targets),
         weights_path=str(weights),
         topology_path=str(topology) if topology is not None else "",

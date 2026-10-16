@@ -367,3 +367,36 @@ def test_incremental_evaluation_matches_for_the_empty_schedule(tmp_path: Path) -
     assert optimizer._evaluate({}, targets) == pytest.approx(
         objective(optimizer._full_values({}, None, (), ()), targets)
     )
+
+
+def test_island_search_is_deterministic_and_no_worse_than_a_single_start(tmp_path: Path) -> None:
+    """The island model reproduces its result and does not raise the objective."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    targets = tmp_path / "targets.yaml"
+    targets.write_text(
+        "targets:\n  - account: feature.Volume\n    year: 0\n    maximum: 500\n",
+        encoding="utf-8",
+    )
+
+    def island_config() -> OptimizeConfig:
+        return OptimizeConfig(
+            targets_path=str(targets),
+            seed=1,
+            years=1,
+            iterations=30,
+            islands=2,
+            episodes=2,
+            workers=2,
+        )
+
+    first = Optimizer.from_dataset(dataset, island_config()).run(tmp_path / "i1")
+    second = Optimizer.from_dataset(dataset, island_config()).run(tmp_path / "i2")
+    assert first["incumbent_objective"] == second["incumbent_objective"]
+
+    single = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(targets_path=str(targets), seed=1, years=1, iterations=30),
+    ).run(tmp_path / "s")
+    assert first["incumbent_objective"] <= single["incumbent_objective"] + 1e-9
