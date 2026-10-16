@@ -14,6 +14,7 @@ from .build.legacy import ingest_legacy_matrix
 from .model.schema import validate_dataset
 from .opt.engine import OptimizeConfig, Optimizer
 from .opt.objective import load_targets
+from .opt.watch import run_watch
 from .patch.edge import load_edge_elements
 from .report import write_report
 from .roads.accounts import load_route_config
@@ -138,6 +139,80 @@ def optimize(
     table.add_column("value")
     for k, v in result.items():
         table.add_row(k, str(v))
+    print(table)
+
+
+@app.command()
+def watch(
+    dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
+    targets: Path = typer.Option(..., exists=True, help="Targets YAML (levels are per year)"),
+    account: list[str] | None = typer.Option(
+        None,
+        "--account",
+        help="Account to watch (repeat to sum several); defaults to the target accounts",
+    ),
+    period_width: int = typer.Option(10, "--period-width", help="Years per period"),
+    years: int = typer.Option(50, help="Simulation horizon in years"),
+    iterations: int = typer.Option(2000, help="Search iterations"),
+    metaheuristic: str = typer.Option("sa", help="sa, tabu, or ils"),
+    temperature: float = typer.Option(1000.0, help="Initial SA temperature"),
+    cooling: float = typer.Option(0.99, help="SA cooling factor"),
+    seed: int = typer.Option(1),
+    warm_start: bool = typer.Option(
+        False, "--warm-start", help="Seed each block's first candidate"
+    ),
+    refresh: float = typer.Option(0.25, "--refresh", help="Seconds between repaints"),
+    plain: bool = typer.Option(False, "--plain", help="Print one final frame (no live view)"),
+    route_config: Path = typer.Option(
+        None, "--route-config", exists=True, help="Optional route model and route accounts (YAML)"
+    ),
+    topology: Path = typer.Option(None, exists=True, help="Block topology for spatial constraints"),
+    max_opening_ha: float = typer.Option(None, help="Maximum opening size, in hectares"),
+    min_green_up_years: int = typer.Option(None, help="Green-up interval, in years"),
+    core_buffer_m: float = typer.Option(
+        None, "--core-buffer-m", help="Core-area buffer, in metres"
+    ),
+    min_core_area_ha: float = typer.Option(
+        None, "--min-core-area-ha", help="Minimum core area, in hectares"
+    ),
+) -> None:
+    """Watch realized versus target account values while the search runs."""
+    target_list = load_targets(targets)
+    accounts = tuple(account) if account else tuple(sorted({t.account for t in target_list}))
+    if not accounts:
+        print("[red]No account to watch: pass --account or put a target in the file.[/]")
+        raise typer.Exit(code=1)
+    cfg = OptimizeConfig(
+        seed=seed,
+        years=years,
+        iterations=iterations,
+        metaheuristic=metaheuristic,
+        temperature=temperature,
+        cooling=cooling,
+        warm_start=warm_start,
+        targets_path=str(targets),
+        topology_path=str(topology) if topology is not None else "",
+        route_config_path=str(route_config) if route_config is not None else "",
+        max_opening_ha=max_opening_ha,
+        min_green_up_years=min_green_up_years,
+        core_buffer_m=core_buffer_m,
+        min_core_area_ha=min_core_area_ha,
+    )
+    optimizer = Optimizer.from_dataset(dataset, cfg)
+    summary = run_watch(
+        optimizer,
+        target_list,
+        accounts,
+        period_width=period_width,
+        label=" + ".join(accounts),
+        refresh=refresh,
+        plain=plain,
+    )
+    table = Table(title="Watch summary")
+    table.add_column("key")
+    table.add_column("value")
+    for key, value in summary.items():
+        table.add_row(str(key), f"{value:.4g}" if isinstance(value, float) else str(value))
     print(table)
 
 

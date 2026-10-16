@@ -502,3 +502,11 @@ issue comments.
   synthetic fixture a `product.Volume` target of `minimum=1000` now yields a penalty of 640 (the exact
   shortfall against the 360 produced) rather than 1000. Branch `fix/product-account-objective`.
   Dashboard on close: **GREEN** (`python scripts/dashboard.py`).
+- P6.16 (feature): live target-window watcher. `ws4 watch` runs the same search and paints the
+  realized-versus-target window of an account in place — the reference target chart: one column per
+  period, the minimum/maximum target band shaded, and the realized value drawn over it, coloured by
+  status (green inside the window, red below the minimum, blue above the maximum). Targets are per
+  year; the view sums them into periods of `--period-width` years. The optimizer now exposes the
+  account values of its latest evaluation (`Optimizer.last_account_values`). `ws4/opt/watch.py` plus
+  the `watch` command; tests in `tests/test_watch.py`. Branch `feature/p6-watch`. Dashboard on close:
+  **GREEN** (`python scripts/dashboard.py`).
