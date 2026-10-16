@@ -568,3 +568,17 @@ issue comments.
   (200-year, periodic targets, 20k iterations per search): serial 32.7 s; multi-start x8 / islands x8
   **40.7 s for 8x the search** (best objective 14.1 vs 63.8); islands x32 53.2 s for 32x. Near-linear
   wall-clock scaling (~83% at 8 workers). Dashboard: **GREEN**.
+- P6.16 follow-up (watcher islands): `ws4 watch --islands N` runs N islands in parallel and paints
+  the **global** best (each island streams its incumbent over a queue; the parent keeps the minimum).
+  Islands honour the warm start and `--warm-cache`. Convergence measured on C5 (200-year, periodic
+  even flow, 16 independent seeds, 20,000 iterations each — all in parallel, ~42 s wall-clock):
+
+  | budget/island | best-of-1 final | best-of-16 final | iterations to match best-of-1 |
+  | --- | ---: | ---: | ---: |
+  | 2,000 | 1,227,485 | 1,053,039 | 1,700 (1.2x) |
+  | 5,000 | 458,912 | 229,743 | 3,500 (1.4x) |
+  | 20,000 | 66.5 | 14.1 | 12,000 (1.7x) |
+
+  So islands give better solutions faster (~1.2-1.7x fewer iterations, i.e. less wall-clock since
+  they run in parallel) and a better best at the same wall-clock — modest here because the landscape
+  is friendly (most seeds reach the same basin). Tests: `tests/test_watch.py`. Dashboard: **GREEN**.
