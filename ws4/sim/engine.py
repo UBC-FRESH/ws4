@@ -68,6 +68,7 @@ class Simulator:
         self.fragments["offset"] = self.fragments["age"].astype(int)
         self._initial_track = self.fragments["track_id"].to_numpy(copy=True)
         self._initial_offset = self.fragments["offset"].to_numpy(copy=True)
+        self._arrays: tuple[np.ndarray, np.ndarray, np.ndarray] | None = None
         self._product_values: list[dict[str, object]] = []
         self._route_values: list[dict[str, object]] = []
         self._edge_values: list[dict[str, object]] = []
@@ -192,6 +193,28 @@ class Simulator:
             self._join_dirty = True
         self.fragments["offset"] = self._initial_offset
         self._criteria_frame_id = -1
+        self._arrays = None
+
+    def _fragment_arrays(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Return (and cache) the fragments' track, offset, and area arrays.
+
+        The arrays are rebuilt after any state change (a reset, a treatment, or an age
+        step), so a search that prices many blocks reuses one set.
+
+        Returns
+        -------
+        tuple of numpy.ndarray
+            ``(track_id, offset, area_ha)`` as int64, int64, and float64 arrays.
+        """
+        cached = self._arrays
+        if cached is None:
+            cached = (
+                self.fragments["track_id"].to_numpy(dtype=np.int64),
+                self.fragments["offset"].to_numpy(dtype=np.int64),
+                self.fragments["area_ha"].to_numpy(dtype=float),
+            )
+            self._arrays = cached
+        return cached
 
     def apply_treatments(
         self,
@@ -267,6 +290,7 @@ class Simulator:
         if changed:
             self.fragments["track_id"] = tracks
             self.fragments["offset"] = offsets
+            self._arrays = None
             self._join_dirty = True
         return disturbed
 
@@ -358,9 +382,10 @@ class Simulator:
         if not positions:
             return {}
         by_year = {int(year): str(treatment) for treatment, year in events}
-        tracks = self.fragments["track_id"].to_numpy()[positions].astype(np.int64)
-        offsets = self.fragments["offset"].to_numpy()[positions].astype(np.int64)
-        areas = self.fragments["area_ha"].to_numpy()[positions].astype(float)
+        arrays_track, arrays_offset, arrays_area = self._fragment_arrays()
+        tracks = arrays_track[positions]
+        offsets = arrays_offset[positions]
+        areas = arrays_area[positions]
         totals: dict[tuple[int, str], float] = {}
         for step in range(years):
             treatment = by_year.get(step)
@@ -415,9 +440,10 @@ class Simulator:
         if not positions or not events:
             return {}
         by_year = {int(year): str(treatment) for treatment, year in events}
-        tracks = self.fragments["track_id"].to_numpy()[positions].astype(np.int64)
-        offsets = self.fragments["offset"].to_numpy()[positions].astype(np.int64)
-        areas = self.fragments["area_ha"].to_numpy()[positions].astype(float)
+        arrays_track, arrays_offset, arrays_area = self._fragment_arrays()
+        tracks = arrays_track[positions]
+        offsets = arrays_offset[positions]
+        areas = arrays_area[positions]
         totals: dict[tuple[int, str], float] = {}
         current = 0
         for year in sorted(by_year):
@@ -706,6 +732,7 @@ class Simulator:
                     records.append(record)
                     self._edge_values.append(dict(record))
             self.fragments["offset"] = self.fragments["offset"].astype(int) + 1
+            self._arrays = None
         return pd.DataFrame(records, columns=["year", "account", "value"])
 
     def run(
@@ -880,6 +907,7 @@ class Simulator:
                     {"year": year, **patch_metrics(disturbed, edges, block_area, patch_breaks)}
                 )
             self.fragments["offset"] = self.fragments["offset"].astype(int) + 1
+            self._arrays = None
         pd.DataFrame(patch_records).to_csv(out_dir / "patch_metrics.csv", index=False)
         if ledger is not None:
             ledger.write(out_dir)
