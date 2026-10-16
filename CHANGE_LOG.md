@@ -648,3 +648,19 @@ issue comments.
   `--topology` and `--max-opening-ha` feed the stand-centred opening constraints into it. The
   `optimize` command also gained `--years` (it had no horizon option, so it always ran the 50-year
   default). Tests: `tests/test_optimizer.py`. Dashboard: **GREEN**.
+- P6.25 (performance): the patch-account evaluation bottleneck, profiled and partly fixed. A patch
+  target costs a 30-70x drop in iterations per second against an additive target on C5, and the cost is
+  **graph work on the patch connectivity**, not the objective arithmetic or the criterion curves. Two
+  facts dominate: the member graph is one giant component (4,273 of 4,695 members in the largest year
+  state), and only **4% of members are articulation points**, so 96% of detaches walked the whole
+  component (86% of a single-block move) only to prove it does not split. Fixed an exact early-exit
+  connectivity test (`PatchGroupYear._reachable`: walk from one member-neighbour and stop once the
+  others are all reached), cached the size-class labels, and inlined the per-block value lookup.
+  Single-block moves **37.9 -> 142.5 iterations/s (3.8x)**; the default configuration only 37.2 ->
+  43.2/s because it is dominated by the bulk (LNS) rebuild. The remainder is analysed and prototyped:
+  the bulk rebuild as a numba CSR kernel is **41x faster** (10.98 ms -> 0.269 ms) with identical
+  component areas, and a BFS spanning-tree leaf test proves 65% of detaches cannot split in O(1). The
+  full analysis, measurements, kernel, and an ordered plan are in
+  `notes/design/ws4-patch-evaluation-bottleneck.md`. `cProfile` misattributes this workload by an order
+  of magnitude; the numbers use phase timers. Tests: `tests/test_patch_state.py`,
+  `tests/test_patch_objective.py`. Dashboard: **GREEN**.

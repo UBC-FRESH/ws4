@@ -3,8 +3,10 @@
 A period's patch accounts are derived from the connected components of the member blocks and
 their areas and perimeters. Rebuilding them from scratch on every move is what makes patch
 targets slow. This class maintains the components, their areas and perimeters, and the
-per-size-class sums directly, so setting one block's criterion value costs O(degree) in the
-common case and O(affected component) when a component splits or merges.
+per-size-class sums directly, so setting one block's criterion value is cheap: a detach only walks
+the component when the block could be an articulation point, and that walk stops as soon as it has
+proved the component stays connected, so it costs O(degree) in the common case and O(piece) only
+when a component really splits or merges.
 
 The class is deliberately self-contained and is held to exact parity with the from-scratch
 computation (see ``tests/test_patch_state.py``).
@@ -13,7 +15,7 @@ computation (see ``tests/test_patch_state.py``).
 from __future__ import annotations
 
 import math
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 
 from ..patch.accounts import PatchAccount, size_class_labels
 
@@ -26,14 +28,13 @@ def compactness(area_ha: float, perimeter_m: float) -> float:
     return min(100.0, 100.0 * 4.0 * math.pi * area_m2 / (perimeter_m * perimeter_m))
 
 
-def class_of(account: PatchAccount, area: float) -> str:
-    """Return the size-class label an area falls in."""
-    labels = size_class_labels(account.size_classes)
-    for index, upper in enumerate(account.size_classes):
-        lower = 0.0 if index == 0 else account.size_classes[index - 1]
+def class_index(size_classes: Sequence[float], area: float) -> int:
+    """Return the size-class index an area falls in."""
+    for index, upper in enumerate(size_classes):
+        lower = 0.0 if index == 0 else size_classes[index - 1]
         if lower < area <= upper:
-            return labels[index]
-    return labels[-1]
+            return index
+    return len(size_classes) - 1
 
 
 class PatchGroupYear:
@@ -70,10 +71,11 @@ class PatchGroupYear:
         self.next_id = 0
         self.total = 0.0
         self.count = 0
+        self._bounds = [tuple(account.size_classes) for account in self.accounts]
+        self._labels = [size_class_labels(account.size_classes) for account in self.accounts]
         self.class_of: list[dict[int, str]] = [{} for _ in self.accounts]
         self.sums: list[dict[str, list[float]]] = [
-            {label: [0.0, 0.0, 0.0] for label in size_class_labels(a.size_classes)}
-            for a in self.accounts
+            {label: [0.0, 0.0, 0.0] for label in labels} for labels in self._labels
         ]
 
     def _new_id(self) -> int:
@@ -96,8 +98,8 @@ class PatchGroupYear:
         """Add a component's contribution to every account's sums."""
         area = self.area[cid]
         shape = compactness(area, self.perimeter[cid])
-        for index, account in enumerate(self.accounts):
-            label = class_of(account, area)
+        for index in range(len(self.accounts)):
+            label = self._labels[index][class_index(self._bounds[index], area)]
             self.class_of[index][cid] = label
             entry = self.sums[index][label]
             entry[0] += area
@@ -118,10 +120,7 @@ class PatchGroupYear:
         self.area = {}
         self.perimeter = {}
         self.class_of = [{} for _ in self.accounts]
-        self.sums = [
-            {label: [0.0, 0.0, 0.0] for label in size_class_labels(a.size_classes)}
-            for a in self.accounts
-        ]
+        self.sums = [{label: [0.0, 0.0, 0.0] for label in labels} for labels in self._labels]
         self.total = 0.0
         for block, value in self.values.items():
             self.total += value * self.block_area.get(block, 0.0)
@@ -151,7 +150,7 @@ class PatchGroupYear:
             self._add_class(cid)
         self.count = len(self.members)
 
-    def rebuild_local(self, changed: Sequence[int], lookup: Callable[[int], float]) -> None:
+    def rebuild_local(self, changed: Sequence[int], values: Mapping[int, float]) -> None:
         """Apply new criterion values to the changed blocks, rebuilding only nearby components.
 
         Only the components containing a changed block or one of its member neighbours can
@@ -161,12 +160,12 @@ class PatchGroupYear:
         ----------
         changed : sequence of int
             The blocks whose criterion value changed.
-        lookup : callable
-            Returns the new criterion value for a block (0.0 when it is not a member).
+        values : mapping of int to float
+            The new criterion value per changed block (0.0 when it is not a member).
         """
         touched: set[int] = set()
         for block in changed:
-            value = lookup(block)
+            value = values.get(block, 0.0)
             previous = self.values.get(block)
             if value > self.threshold:
                 self.values[block] = value
@@ -311,18 +310,60 @@ class PatchGroupYear:
             del self.perimeter[cid]
             self.count -= 1
             return
-        member_neighbours = sum(
-            1 for other, _ in self.neighbours.get(block, ()) if other in self.values
-        )
-        if member_neighbours <= 1:
+        member_neighbours = [
+            other for other, _ in self.neighbours.get(block, ()) if other in self.values
+        ]
+        if len(member_neighbours) <= 1:
             # a leaf removal cannot disconnect the component, so skip the connectivity walk
             self._add_class(cid)
             return
-        seen = self._component_from(next(iter(self.members[cid])), cid)
-        if len(seen) == len(self.members[cid]):
+        seen = self._reachable(member_neighbours[0], set(member_neighbours[1:]), cid)
+        if seen is None:
+            # every member-neighbour is reachable without the block: it is not an articulation
+            # point, so the component stays connected
             self._add_class(cid)
             return
         self.count += self._split(cid, seen)
+
+    def _reachable(self, start: int, targets: set[int], cid: int) -> set[int] | None:
+        """Walk from ``start`` within ``cid``, stopping once every target is reached.
+
+        Returns None when all ``targets`` are reachable (so the removed block did not disconnect
+        the component), or the reachable set when the walk exhausts without reaching them all
+        (the block is an articulation point and this set is one of the pieces).
+
+        Parameters
+        ----------
+        start : int
+            The member to start from.
+        targets : set of int
+            The other member-neighbours of the removed block; reaching them all proves the
+            block is not an articulation point.
+        cid : int
+            The component being walked.
+
+        Returns
+        -------
+        set of int or None
+            None when every target was reached, otherwise the reachable members.
+        """
+        seen = {start}
+        if targets <= seen:
+            return None
+        values = self.values
+        comp = self.comp
+        neighbours = self.neighbours
+        stack = [start]
+        while stack:
+            node = stack.pop()
+            for other, _ in neighbours.get(node, ()):
+                if other in seen or other not in values or comp.get(other) != cid:
+                    continue
+                seen.add(other)
+                stack.append(other)
+                if targets <= seen:
+                    return None
+        return seen
 
     def _component_from(self, start: int, cid: int) -> set[int]:
         """Return the members reachable from ``start`` within component ``cid``."""
@@ -387,7 +428,7 @@ class PatchGroupYear:
         """
         out: dict[str, float] = {}
         for index, account in enumerate(self.accounts):
-            labels = size_class_labels(account.size_classes)
+            labels = self._labels[index]
             sums = self.sums[index]
             for label in labels:
                 area, shape, count = sums[label]
