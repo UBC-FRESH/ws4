@@ -681,3 +681,17 @@ issue comments.
   only merge patches, never split them), an empty-schedule regression test, and reporting-path parity.
   `notes/design/ws4-patch-evaluation-bottleneck.md` was rewritten on the corrected configuration.
   Tests: `tests/test_patch_accounts.py`, `tests/test_patch_objective.py`. Dashboard: **GREEN**.
+- P6.27 (performance): `_affected` was not what it looked like. It compares the old and new criterion
+  series over every year for every changed block, which reads as a comparison cost, but call counters
+  showed `series()` is called 1.25M times per run against only ~11k cache misses: the cost was
+  **constructing** a new chain's series, not comparing series. `Simulator.block_criteria_series` was a
+  Python loop over every year and, inside it, every fragment calling `_curve_value` — 159 us per call.
+  It now fills the horizon in one integer-age gather over the curve table per treatment **event**
+  rather than per year, and runs at **58.7 us (2.7x)**. A per-year numpy version was tried first and was
+  **not** faster: numpy call overhead on a 50-element array (~1.5 us) matches the Python work it
+  replaces, so the vectorisation has to be per event, not per year. Hoisting the per-block series
+  lookup out of the per-year loops in `pending`, `_local_cells` and `reset` (it was redone once per
+  year for a value that already covers every year) went with it. `_affected` 1.84 -> 0.78 s, the
+  default search 41.9 -> **55.7 iterations/s (+33%)**, single-block moves 298.9 -> **387.9 (+30%)**.
+  `rebuild_local` is now the only dominant cost (~62% of a bulk move). Tests:
+  `tests/test_simulator.py`, `tests/test_patch_objective.py`. Dashboard: **GREEN**.

@@ -96,6 +96,14 @@ class Simulator:
             self._track_features.setdefault(_as_int(feature.track_id), []).append(
                 (_as_int(feature.curve_id), str(feature.label))
             )
+        # The curve table row of the first feature with a given (track, label), so a
+        # criterion series is a gather rather than a per-curve interpolation.
+        self._label_row: dict[tuple[int, str], int] = {}
+        for track, features in self._track_features.items():
+            for curve_id, feature_name in features:
+                row = self._curve_table.row(curve_id)
+                if row is not None:
+                    self._label_row.setdefault((track, feature_name), row)
         # The fragment-position index is rebuilt lazily (the caller may replace the frame).
         self._fragments_index_id = -1
         self._fragments_by_block: dict[int, list[int]] = {}
@@ -366,7 +374,8 @@ class Simulator:
         The criterion is the area-weighted mean of the label's curve over the block's
         fragments, isolated as in :meth:`block_chain`. A block's value depends only on its
         own chain, so this is cacheable per ``(block, chain, label)`` and never needs the
-        whole schedule's state.
+        whole schedule's state. The years are evaluated as one gather over the curve table
+        rather than a curve call per year.
 
         Parameters
         ----------
@@ -389,31 +398,54 @@ class Simulator:
             return {}
         by_year = {int(year): str(treatment) for treatment, year in events}
         arrays_track, arrays_offset, arrays_area = self._fragment_arrays()
-        tracks = arrays_track[positions]
-        offsets = arrays_offset[positions]
-        areas = arrays_area[positions]
+        tracks = arrays_track[positions].astype(np.int64)
+        offsets = arrays_offset[positions].astype(np.int64)
+        areas = arrays_area[positions].astype(np.float64)
         total_area = float(areas.sum())
-        if total_area <= 0.0:
-            return {}
-        series: dict[int, float] = {}
-        for step in range(years):
-            treatment = by_year.get(step)
-            if treatment is not None:
-                for index in range(len(positions)):
-                    transition = self._treatment_by_key.get((int(tracks[index]), treatment))
-                    if transition is not None:
-                        tracks[index] = transition[0]
-                        offsets[index] = transition[1]
-            value = 0.0
-            for index in range(len(positions)):
-                offset = int(offsets[index])
-                for curve_id, feature_label in self._track_features.get(int(tracks[index]), ()):
-                    if feature_label == label:
-                        value += float(areas[index]) * self._curve_value(curve_id, offset)
-                        break
-            series[step] = value / total_area
-            offsets = offsets + 1
-        return series
+        if total_area <= 0.0 or self._curve_table.table.shape[0] == 0:
+            return dict.fromkeys(range(years), 0.0)
+        count = len(positions)
+        label_row = self._label_row
+        rows = np.zeros((years, count), dtype=np.int64)
+        ages = np.empty((years, count), dtype=np.int64)
+        present = np.zeros((years, count), dtype=bool)
+        current = np.zeros(count, dtype=np.int64)
+        has = np.zeros(count, dtype=bool)
+        for index in range(count):
+            row = label_row.get((int(tracks[index]), label))
+            if row is not None:
+                current[index] = row
+                has[index] = True
+
+        def fill(start: int, stop: int, offset_vec: np.ndarray) -> None:
+            """Record the constant track and the age trajectory over ``[start, stop)``."""
+            if stop <= start:
+                return
+            length = stop - start
+            rows[start:stop] = current
+            ages[start:stop] = offset_vec + np.arange(length, dtype=np.int64)[:, None]
+            present[start:stop] = has
+
+        cursor = 0
+        for event_year, treatment in sorted(by_year.items()):
+            if event_year >= years:
+                break
+            fill(cursor, event_year, offsets)
+            offsets = offsets + (event_year - cursor)
+            for index in range(count):
+                transition = self._treatment_by_key.get((int(tracks[index]), treatment))
+                if transition is not None:
+                    tracks[index] = transition[0]
+                    offsets[index] = transition[1]
+                    row = label_row.get((transition[0], label))
+                    current[index] = 0 if row is None else row
+                    has[index] = row is not None
+            cursor = event_year
+        fill(cursor, years, offsets)
+        values = self._curve_table.gather(rows.reshape(-1), ages.reshape(-1)).reshape(years, count)
+        values[~present] = 0.0
+        series = values @ areas / total_area
+        return {int(step): float(series[step]) for step in range(years)}
 
     def block_chain(
         self, block_id: int, events: Sequence[tuple[str, int]], years: int

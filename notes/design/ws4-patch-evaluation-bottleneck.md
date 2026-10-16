@@ -73,9 +73,9 @@ That configuration was measured early in this work and its numbers (a 4% articul
 
 ### Single-block move, default configuration, current
 
-`--lns-weight 0`, 600 iterations on C5, 50 years: **298.9 iterations/s** (3.3 ms per move). For
+`--lns-weight 0`, 600 iterations on C5, 50 years: **387.9 iterations/s** (2.6 ms per move). For
 reference the same objective machinery on an additive product target runs at roughly 2,000-2,600/s,
-so a patch target costs about 7-9x with single-block moves.
+so a patch target costs about 5-7x with single-block moves.
 
 The dominant cost used to be the connectivity walk: every detach of a member with two or more member
 neighbours ran a full BFS of the component to discover it does **not** split. That is now an
@@ -89,24 +89,41 @@ corrected representation reaches 298.9/s.
 
 ### Bulk (LNS) move, the current bottleneck
 
-`--lns-weight 0.2` (the default), 300 iterations, 8.22 s = **36.5 iterations/s** (27.4 ms per move),
+`--lns-weight 0.2` (the default), 300 iterations, 10.8 s = **55.7 iterations/s** (18 ms per move),
 phase timers:
 
 | phase | inclusive s | calls | us/call |
 | --- | ---: | ---: | ---: |
-| `pending` (whole delta) | 6.65 | 300 | 22,151 |
-| **`_local_cells` / `rebuild_local`** | **4.36** | 1,018 | **4,279** |
-| **`_affected`** | **1.82** | 300 | **6,063** |
-| `_value` | 1.14 | 1,259,240 | 0.9 |
+| `pending` (whole delta) | 5.42 | 300 | 18,079 |
+| **`_local_cells` / `rebuild_local`** | **4.36** | 1,018 | **4,283** |
+| `_affected` | 0.78 | 300 | 2,613 |
 | `set_value` (single-block path) | 0.04 | 2,540 | 17 |
-| `_detach` / `_reachable` / `_split` | 0.07 | 2,253 | 30 |
+| `_detach` / `_reachable` / `_split` | 0.05 | 2,253 | 22 |
 
-- **`rebuild_local` (53%)**: an LNS move changes ~1,100 blocks, so the bulk path rebuilds the
+- **`rebuild_local` (~62%)**: an LNS move changes ~40 blocks, so the bulk path rebuilds the
   components touched in each affected year (`_REBUILD_ABOVE = 8` switches from per-block updates to
   this). Each call walks a component and recomputes its area and perimeter.
-- **`_affected` (22%)**: it compares the old and new criterion series over **all** years for every
-  changed block (~1,100 blocks x 50 years per LNS move). The series are dense `{year: value}` dicts.
-- `_value` is called 1.26M times; `_affected` and the per-block path are the callers.
+- `_affected` was the second cost (1.84 s, 22%) and is now 0.78 s; see below.
+
+### `_affected` was not what it looked like
+
+The obvious reading of `_affected` is "it compares old and new series over every year for every
+changed block, so make the comparison cheaper". That is wrong. Measured with call counters, `series()`
+is called 1.25M times per run but only ~11k are cache misses, and those misses dominate: the cost was
+**constructing new chains' criterion series**, not comparing them. The comparison loop itself costs
+well under a millisecond per call.
+
+So the fix was to the primitive, `Simulator.block_criteria_series`, which was **159 us per call** (a
+Python loop over every year, and inside it a Python loop over every fragment calling
+`_curve_value`). It is now **58.7 us (2.7x)**: an integer-age gather over the curve table, filling the
+horizon in one numpy operation per treatment event (not per year — a per-year numpy loop was tried
+first and was *not* faster, because numpy call overhead on a 50-element array is ~1.5 us, the same as
+the Python work it replaced). `_affected` fell from 1.84 s to 0.78 s, and two smaller wins went with
+it: hoisting the per-block series lookup out of the per-year loops in `pending`, `_local_cells` and
+`reset` (it was being redone once per year for a value that covers all years), and caching the
+size-class labels.
+
+Result: default 41.9 -> **55.7 iterations/s (+33%)**, single-block 298.9 -> **387.9 (+30%)**.
 
 ## The design insight: articulation points and negative space
 
@@ -188,24 +205,25 @@ over smaller components, so expect a smaller whole-search factor, but this is th
 
 Ordered by value over risk.
 
-1. **Make `_affected` cheap** (22% today, pure Python, no compiled dependency). Two options: store the
-   criterion series sparsely (only non-zero years) and compare key sets; or exploit the structure that
-   two chains sharing a prefix of events have identical series up to the first differing event year, so
-   the differing years are a suffix. Either removes the `blocks x years` inner loop.
-2. **Spanning-forest leaf test** (pure Python). Maintain a spanning tree per component; a detach of a
-   tree leaf is `O(1)` and proves "no split". Re-measure the leaf fraction on a realistic
-   configuration first.
-3. **CSR + numba for the bulk rebuild and the walks** (the 41x above). Concrete: per year state keep
+1. **Make the criterion series primitive cheaper — done.** `block_criteria_series` is 2.7x faster
+   (159 -> 58.7 us) via a segment-based table gather; `_affected` fell 1.84 -> 0.78 s. The lesson to
+   keep: do not vectorise per *year* with numpy on tiny arrays, vectorise per *event* over the whole
+   horizon.
+2. **CSR + numba for the bulk rebuild and the walks** — now the only dominant cost (`rebuild_local`,
+   ~62%). Concrete: per year state keep
    `is_member` (uint8), `value` (float64), `comp` (int32) plus `indptr`/`indices`/`lengths` shared per
    `search_distance`; keep the size-class sums in Python. Keep the Python state as the source of truth
    initially and treat the CSR as a derived buffer so parity is easy to test; invert once green. The
    undo/`revert` path must restore the changed `is_member`/`value` slots and the touched aggregates.
+3. **Spanning-forest leaf test** (pure Python, no compiled dependency). Maintain a spanning tree per
+   component; a detach of a tree leaf is `O(1)` and proves "no split". Re-measure the leaf fraction on
+   a realistic configuration first: the 65% below is from the pathological one.
 4. **Articulation- and gap-targeted operators**: maintain the negative-space (merge) set incrementally;
    add a `SplitOperator` that detaches a cut vertex and a `MergeOperator` that treats a
    negative-space block (plus its neighbourhood). These change *which* moves are proposed, so they help
    solution quality per move as well as cost.
 5. **Consider excluding LNS, or making its destroy set spatially coherent**, for patch targets. LNS
-   currently dominates the cost (53%) and buys about 0.8 objective units on the sample problem; a
+   currently dominates the cost (~62%) and buys about 0.8 objective units on the sample problem; a
    k-hop-ball destroy set would shrink the affected components.
 
 ## Open questions

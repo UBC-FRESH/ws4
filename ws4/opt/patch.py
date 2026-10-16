@@ -12,7 +12,7 @@ block's own chain), and the adjacency is indexed by block.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -158,13 +158,14 @@ class PatchModel:
         self._undo = []
         self._undo_values = {}
         self._untouched = {}
+        series_by_block = {block: self.series(block, schedule.get(block)) for block in self.blocks}
         for year in range(self.years):
             for key in self.groups:
                 label = key[0]
                 threshold = key[1]
                 members: dict[int, float] = {}
                 for block in self.blocks:
-                    value = self._value(block, schedule.get(block), label, year)
+                    value = series_by_block[block][label].get(year, 0.0)
                     if value > threshold:
                         members[block] = value
                 self._state(key, year).rebuild(members)
@@ -185,16 +186,19 @@ class PatchModel:
         return affected
 
     def _local_cells(
-        self, year: int, changed: Sequence[int], schedule: Schedule
+        self,
+        year: int,
+        changed: Sequence[int],
+        schedule: Schedule,
+        series_by_block: Mapping[int, dict[str, dict[int, float]]] | None = None,
     ) -> dict[str, float]:
         """Update a year's states for the changed blocks only, and return its cells."""
-        series = self.series
+        if series_by_block is None:
+            series_by_block = {block: self.series(block, schedule.get(block)) for block in changed}
         for key in self.groups:
             label = key[0]
             state = self._state(key, year)
-            new_values: dict[int, float] = {}
-            for block in changed:
-                new_values[block] = series(block, schedule.get(block))[label].get(year, 0.0)
+            new_values = {block: series_by_block[block][label].get(year, 0.0) for block in changed}
             state.rebuild_local(changed, new_values)
         return self._cells(year)
 
@@ -224,9 +228,11 @@ class PatchModel:
         self._affected_years = sorted(self._affected(changed, schedule))
         merged: dict[Cell, float] = {}
         bulk = len(changed) > _REBUILD_ABOVE
+        # the new chain's series is the same for every affected year, so look it up once
+        series_by_block = {block: self.series(block, schedule.get(block)) for block in changed}
         for year in self._affected_years:
             if bulk:
-                cells = self._local_cells(year, changed, schedule)
+                cells = self._local_cells(year, changed, schedule, series_by_block)
                 self._rebuilt.append(year)
             else:
                 for key in self.groups:
@@ -235,8 +241,7 @@ class PatchModel:
                     for block in changed:
                         previous = state.values.get(block)
                         self._undo.append((state, block, previous))
-                        new = schedule.get(block)
-                        state.set_value(block, self._value(block, new, label, year))
+                        state.set_value(block, series_by_block[block][label].get(year, 0.0))
                 cells = self._cells(year)
             previous_cells = self.values.get(year, {})
             self._undo_values[year] = previous_cells
