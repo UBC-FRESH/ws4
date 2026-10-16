@@ -1,6 +1,6 @@
 # Optimizer core: event chains and move-based evaluation
 
-Status: **proposed** (issues #78, #79). Not started.
+Status: **done** (issues #78, #79). Merged to `feature/p6-performance`.
 
 Related: `notes/design/ws4-optimization-stack.md`, `notes/design/ws4-performance.md`,
 `docs/reference/optimizer.rst`.
