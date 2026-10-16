@@ -426,12 +426,10 @@ def _header(state: WatchState, optimizer: Optimizer, elapsed: float) -> Panel:
     """Render the run header panel."""
     rate = state.evaluations / elapsed if elapsed > 0.0 else 0.0
     objective = state.best_objective
-    window = state.window if state.window is not None else state.current_window()
     body = Text()
     body.append(state.label, style="bold")
     objective_text = "—" if math.isinf(objective) else format_value(objective)
     body.append(f"   objective (sum of penalties): {objective_text}")
-    body.append(f"   period penalty: {format_value(window.total_penalty())}")
     body.append(f"\niteration {state.iteration}/{optimizer.cfg.iterations}   {rate:.2f} eval/s")
     body.append(f"   elapsed {elapsed:.1f}s   seed {optimizer.cfg.seed}")
     body.append(f"   {optimizer.cfg.metaheuristic}")
