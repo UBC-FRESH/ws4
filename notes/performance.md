@@ -137,6 +137,28 @@ WP3 replaced the two spatial hot paths with single passes:
 
 Both are well under the 0.2 s-per-year target.
 
+### Parallelism: threads vs processes
+
+The obvious "use the 72 cores" move is thread-level parallelism. Measured on the C5 numeric core, it
+does **not** pay:
+
+| Approach | Time (per year of account values) | vs the current loop |
+| --- | ---: | ---: |
+| Current per-curve `numpy.interp` loop | 5.8 ms | 1.00× |
+| Threads (4 / 8 / 16) over the curve loop | — | **0.35× / 0.29× / 0.23×** (slower) |
+| Fully vectorized multi-curve interpolation (disjoint-domain searchsorted) | 18.0 ms | 0.32× (slower) |
+
+`numpy.interp` holds the GIL and the per-curve work is small, so threads serialize and add overhead;
+the vectorized single pass allocates many full-size temporaries and loses to 1 114 small interps. The
+numeric core is already at the practical numpy floor. Threads do help one GIL-releasing path —
+parallel parquet reads in simulator construction (52.6 ms → 29.6 ms, 1.78×) — but that is ~5% of
+construction, which happens once per run.
+
+The effective parallel lever is therefore **process-level** (the island model in
+`ws4/opt/engine.py`), not threads: independent searches and evaluations run in worker processes, and
+the island model migrates the global elite between episodes. This is recorded so the thread idea is
+not re-tried without cause.
+
 ### P6.4 incremental objective evaluation
 
 WP4 first removed the per-evaluation waste: one reusable `Simulator` (reset instead of rebuilt),
