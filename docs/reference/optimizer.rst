@@ -104,11 +104,14 @@ on the sub-accounts:
        criteria: feature.Seral.young
        threshold: 0.5
        size_classes: [5.0, 10.0, 50.0, 250.0, .inf]
+       search_distance: 200.0
 
-Targets then read ``patch.harvest.50_150.area``, ``…size``, ``…frequency``, or ``…shape``. Each
-block's criterion series is cached per chain, the adjacency is indexed by block, and a move recomputes
-only the years it changes, so a patch evaluation costs tens of milliseconds rather than a full
-re-simulation.
+Targets then read ``patch.harvest.50_150.area``, ``…size``, ``…frequency``, or ``…shape``.
+``search_distance`` (metres) is the neighbourhood: only topology edges no longer than it join
+blocks, so a patch stays within it. Each block's criterion series is cached per chain, the
+adjacency is indexed by block, and a move updates only the components near the moved block —
+a resize, a merge, a new standalone patch, or a removal/split — so a patch evaluation costs
+tens of milliseconds rather than a full re-simulation.
 
 Outputs
 -------

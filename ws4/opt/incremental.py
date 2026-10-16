@@ -143,6 +143,11 @@ class IncrementalObjective:
             for chain in chains:
                 self._contribution(block, chain)
 
+    def revert(self) -> None:
+        """Undo a move's patch changes that were not committed."""
+        if self.patch is not None:
+            self.patch.revert()
+
     def _pending(self, changed: Sequence[int], schedule: Schedule) -> dict[Cell, float]:
         """Return the per-cell change a move makes."""
         pending: dict[Cell, float] = {}

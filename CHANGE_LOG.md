@@ -589,5 +589,10 @@ issue comments.
   drops the whole-edge scan (matching `patch_account_values` exactly), and a move recomputes only the
   years it changes. `--patch-accounts` (YAML) with `--topology` enables targets on sub-accounts such as
   `patch.harvest.50_150.area`. Measured on C5 (50-year, 5,648 blocks): full patch reset 2.1 s, then
-  **~13 iterations/s** with a patch target, and it optimizes (objective 12.9 -> 11.7 in 400
-  iterations). Tests: `tests/test_patch_objective.py`. Dashboard: **GREEN**.
+  **~35 iterations/s** with a patch target, and it optimizes (objective 12.9 -> 11.7 in 400
+  iterations). The state is dynamic (`ws4/opt/patch_state.py`): each year keeps its components, areas,
+  perimeters, and per-size-class sums, and a move only touches the neighbourhood of the moved block —
+  a resize, a merge, a new standalone patch, or a removal/split. `search_distance` (the patch
+  account's topology neighbourhood, in metres) scopes the adjacency. Verified cell-for-cell against the
+  reporting path and the from-scratch computation over random mutation sequences
+  (`tests/test_patch_state.py`, `tests/test_patch_objective.py`). Dashboard: **GREEN**.
