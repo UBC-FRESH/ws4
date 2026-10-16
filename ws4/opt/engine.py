@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import math
 import random
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
@@ -34,10 +34,11 @@ from ..roads.accounts import (
 )
 from ..sim.engine import Simulator
 from .core import Problem
+from .incremental import IncrementalObjective
 from .mip import bound_for
 from .objective import Target, load_targets, objective
 from .operators import Candidates, OperatorRegistry, Schedule
-from .solvers import solve_ils, solve_sa, solve_tabu
+from .solvers import solve_ils, solve_sa, solve_sa_delta, solve_tabu
 from .telemetry import RunLogger
 
 
@@ -210,6 +211,29 @@ class Optimizer:
         if self._last_values is None:
             return pd.DataFrame(columns=["year", "account", "value"])
         return self._last_values
+
+    def delta_evaluator(self, targets: Sequence[Target]) -> IncrementalObjective | None:
+        """Return a move-based objective evaluator when the configuration supports one.
+
+        The evaluator tracks only the accounts the targets read, so it is used when the run
+        has no route accounts, duplicate accounts, or edge contrast (each rewrites or extends
+        the account values). When it returns None the caller falls back to whole-schedule
+        evaluation.
+
+        Parameters
+        ----------
+        targets : sequence of Target
+            The goals.
+
+        Returns
+        -------
+        IncrementalObjective or None
+            The evaluator, or None when the configuration needs whole-schedule values.
+        """
+        _, route_accounts, duplicate_accounts = self.route()
+        if route_accounts or duplicate_accounts or self.edge_elements():
+            return None
+        return IncrementalObjective(self, targets)
 
     def _full_values(
         self,
@@ -479,6 +503,19 @@ class Optimizer:
                 perturbation=self.cfg.perturbation,
                 on_step=on_step,
                 initial=initial,
+            )
+        evaluator = self.delta_evaluator(targets)
+        if evaluator is not None:
+            return solve_sa_delta(
+                evaluator,
+                rng,
+                iterations=self.cfg.iterations,
+                temperature=self.cfg.temperature,
+                cooling=self.cfg.cooling,
+                candidates=candidates,
+                registry=self.registry,
+                initial=initial,
+                on_step=on_step,
             )
         return solve_sa(
             problem,
