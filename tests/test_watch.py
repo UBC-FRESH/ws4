@@ -12,7 +12,7 @@ from typer.testing import CliRunner
 from ws4.build.compiler import build_canonical_dataset
 from ws4.cli import app
 from ws4.opt.engine import OptimizeConfig, Optimizer
-from ws4.opt.objective import Target
+from ws4.opt.objective import Target, load_targets
 from ws4.opt.watch import (
     TargetWindow,
     chart_cells,
@@ -169,6 +169,39 @@ def test_watch_command_prints_a_frame(tmp_path: Path) -> None:
     )
     assert result.exit_code == 0, result.output
     assert "product.Volume" in result.output
+
+
+def test_watch_runs_islands(tmp_path: Path) -> None:
+    """The watcher can run parallel islands and still finish with a summary."""
+    dataset = _dataset(tmp_path)
+    targets_path = tmp_path / "islands.yaml"
+    targets_path.write_text(
+        "targets:\n  - account: product.Volume\n    year: 0\n    minimum: 300\n    maximum: 400\n",
+        encoding="utf-8",
+    )
+    optimizer = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(
+            years=2,
+            iterations=5,
+            seed=1,
+            warm_start=True,
+            islands=2,
+            workers=2,
+            targets_path=str(targets_path),
+        ),
+    )
+    stream = StringIO()
+    summary = run_watch(
+        optimizer,
+        load_targets(targets_path),
+        ["product.Volume"],
+        period_width=1,
+        plain=True,
+        console=Console(file=stream, width=100),
+    )
+    assert summary["objective"] < float("inf")
+    assert summary["blocks"] > 0
 
 
 def test_watch_command_needs_an_account(tmp_path: Path) -> None:

@@ -187,6 +187,7 @@ def watch(
     warm_cache: bool = typer.Option(
         False, "--warm-cache", help="Precompute every candidate chain's contribution first"
     ),
+    islands: int = typer.Option(0, "--islands", help="Parallel islands (0 = single search)"),
     route_config: Path = typer.Option(
         None, "--route-config", exists=True, help="Optional route model and route accounts (YAML)"
     ),
@@ -218,6 +219,8 @@ def watch(
         lns_weight=lns_weight,
         lns_destroy=lns_destroy,
         warm_cache=warm_cache,
+        islands=islands,
+        workers=islands,
         topology_path=str(topology) if topology is not None else "",
         route_config_path=str(route_config) if route_config is not None else "",
         max_opening_ha=max_opening_ha,

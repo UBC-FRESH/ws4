@@ -18,8 +18,10 @@ import math
 import random
 import time
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, replace
+from pathlib import Path
+from queue import Empty
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 from rich.console import Console, Group, RenderableType
@@ -33,6 +35,9 @@ from .engine import Optimizer
 from .objective import Target
 from .operators import Schedule
 from .solvers import solve_ils, solve_sa, solve_sa_delta, solve_tabu
+
+if TYPE_CHECKING:
+    from .incremental import IncrementalObjective
 
 Cell = tuple[str, str]
 
@@ -408,6 +413,8 @@ class WatchState:
     evaluations: int = 0
     iteration: int = 0
     window: TargetWindow | None = None
+    islands: int = 1
+    blocks: int = 0
 
     def current_window(self) -> TargetWindow:
         """Return the window for the incumbent (an empty window before the first best)."""
@@ -444,6 +451,8 @@ def _header(state: WatchState, optimizer: Optimizer, elapsed: float) -> Panel:
     body.append(f"\niteration {state.iteration}/{optimizer.cfg.iterations}   {rate:.2f} eval/s")
     body.append(f"   elapsed {elapsed:.1f}s   seed {optimizer.cfg.seed}")
     body.append(f"   {optimizer.cfg.metaheuristic}")
+    if state.islands > 1:
+        body.append(f"   islands {state.islands} (showing the best)")
     if optimizer.cfg.warm_start:
         body.append(" (warm start)")
     return Panel(body, title="ws4 watch", border_style="cyan")
@@ -464,6 +473,117 @@ def _wrapped_evaluate(
         return objective
 
     return evaluate
+
+
+def _snapshot(evaluator: IncrementalObjective) -> tuple[tuple[int, str, float], ...]:
+    """Return the evaluator's account values as picklable tuples."""
+    return tuple(
+        (int(float(str(row.year))), str(row.account), float(str(row.value)))
+        for row in evaluator.values_frame().itertuples(index=False)
+    )
+
+
+def _island_worker(job: tuple[Any, ...]) -> None:
+    """Run one island and stream its incumbent to the parent process.
+
+    Module-level so ``multiprocessing`` can pickle it. The job carries the dataset path, the
+    per-island configuration, the targets and watched accounts, the seed, the streaming
+    interval, and the queue.
+    """
+    dataset_dir, cfg, targets, accounts, seed, interval, queue = job
+    optimizer = Optimizer.from_dataset(Path(dataset_dir), cfg)
+    evaluator = optimizer.delta_evaluator(targets, accounts)
+    if evaluator is None:
+        queue.put((seed, cfg.iterations, math.inf, (), 0))
+        return
+    candidates = optimizer.candidates()
+    if cfg.warm_cache:
+        evaluator.warm(candidates)
+    initial = (
+        {block: chains[0] for block, chains in candidates.items() if chains}
+        if cfg.warm_start
+        else None
+    )
+    seen = [math.inf]
+    last = [0.0]
+
+    def report(iteration: int, objective: float) -> None:
+        if objective >= seen[0]:
+            return
+        seen[0] = objective
+        now = time.monotonic()
+        if now - last[0] < interval:
+            return
+        last[0] = now
+        queue.put((seed, iteration, objective, _snapshot(evaluator), 0))
+
+    best, objective = solve_sa_delta(
+        evaluator,
+        random.Random(seed),
+        iterations=cfg.iterations,
+        temperature=cfg.temperature,
+        cooling=cfg.cooling,
+        candidates=candidates,
+        registry=optimizer.registry,
+        initial=initial,
+        on_step=report,
+    )
+    evaluator.reset(best)
+    queue.put((seed, cfg.iterations, objective, _snapshot(evaluator), len(best)))
+
+
+def _drain(queue: Any, state: WatchState) -> None:  # noqa: ANN401 - a multiprocessing queue
+    """Apply every pending island report to the shared state, keeping the global best."""
+    while True:
+        try:
+            _seed, iteration, objective, cells, blocks = queue.get_nowait()
+        except Empty:
+            return
+        if iteration > state.iteration:
+            state.iteration = iteration
+        if objective < state.best_objective:
+            state.best_objective = objective
+            state.best_values = pd.DataFrame(list(cells), columns=["year", "account", "value"])
+            state.window = state.current_window()
+        if blocks:
+            state.blocks = blocks
+
+
+def _run_islands(
+    optimizer: Optimizer,
+    targets: Sequence[Target],
+    accounts: tuple[str, ...],
+    state: WatchState,
+    refresh: float,
+) -> None:
+    """Run the islands in parallel, keeping the global best in ``state``."""
+    from multiprocessing import Process, Queue
+
+    cfg = optimizer.cfg
+    queue: Any = Queue()
+    jobs = [
+        (
+            str(optimizer.dataset_dir),
+            replace(cfg, islands=1, workers=1),
+            list(targets),
+            accounts,
+            cfg.seed + index,
+            max(refresh, 0.1),
+            queue,
+        )
+        for index in range(max(1, cfg.islands))
+    ]
+    processes = [Process(target=_island_worker, args=(job,)) for job in jobs]
+    for process in processes:
+        process.start()
+    try:
+        while any(process.is_alive() for process in processes):
+            _drain(queue, state)
+            time.sleep(0.05)
+    finally:
+        for process in processes:
+            process.join()
+    _drain(queue, state)
 
 
 def run_watch(
@@ -520,6 +640,7 @@ def run_watch(
     if evaluator is not None and cfg.warm_cache:
         console.print("[grey50]warming the contribution cache…[/]")
         evaluator.warm(candidates)
+    state.islands = cfg.islands if (cfg.islands > 1 and evaluator is not None) else 1
     problem = Problem(
         evaluate=_wrapped_evaluate(optimizer, targets, state),
         candidates=candidates,
@@ -542,6 +663,29 @@ def run_watch(
             get_renderable=lambda: render_frame(state, optimizer, time.monotonic() - started),
         )
     )
+
+    if state.islands > 1:
+        if live is not None:
+            with live:
+                _run_islands(optimizer, targets, accounts_tuple, state, refresh)
+                live.update(
+                    render_frame(state, optimizer, time.monotonic() - started), refresh=True
+                )
+            console.print()
+        else:
+            _run_islands(optimizer, targets, accounts_tuple, state, refresh)
+            state.window = state.current_window()
+            console.print(render_frame(state, optimizer, time.monotonic() - started))
+        elapsed_islands = time.monotonic() - started
+        state.iteration = cfg.iterations
+        state.window = state.current_window()
+        return {
+            "objective": state.best_objective,
+            "penalty": state.window.total_penalty(),
+            "evaluations": state.evaluations,
+            "blocks": state.blocks,
+            "elapsed": elapsed_islands,
+        }
 
     def on_step(iteration: int, objective: float) -> None:
         state.iteration = iteration
