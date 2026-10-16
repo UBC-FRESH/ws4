@@ -23,9 +23,9 @@ items are enhancements and maintenance.
   and meta accounts and chart output; unit conversion; and the topology stub cleanup.
 - **Blocked:** the MKRF canonical artifacts' location log is not on `origin` (the objects are on
   `arbutus-s3`); a fresh clone needs the producer to push the git-annex branch.
-- **Deferred:** the block-aggregation cache (not the hot path); native kernels (P6.6) — no profiled loop
-  after P6.1–P6.4 shows a large speedup, and numba is not installed in CI (trigger and evidence in
-  `notes/design/ws4-performance.md`).
+- **Deferred:** the block-aggregation cache (not the hot path). Native kernels (P6.6) are **adopted**
+  (a numba product-gather kernel, ~1.1× end-to-end, exact parity, Python fallback; CI installs numba).
+  See `notes/design/ws4-performance.md`.
 
 ## Matrix builder (P2.1)
 
