@@ -1,23 +1,28 @@
 """Incremental patch state for one criterion group and one year.
 
-A period's patch accounts are derived from the connected components of the member blocks and
-their areas and perimeters. Rebuilding them from scratch on every move is what makes patch
-targets slow. This class maintains the components, their areas and perimeters, and the
-per-size-class sums directly, so setting one block's criterion value is cheap: a detach only walks
-the component when the block could be an articulation point, and that walk stops as soon as it has
-proved the component stays connected, so it costs O(degree) in the common case and O(piece) only
-when a component really splits or merges.
+A period's patch accounts are derived from the connected components of the member blocks and their
+areas and perimeters. Rebuilding them from scratch on every move is what makes patch targets slow.
+This class maintains the components directly, so a move is cheap: a detach only walks the component
+when the block could be an articulation point, and that walk stops as soon as it has proved the
+component stays connected. A bulk move (an LNS operator changes hundreds of blocks) relabels the
+touched components in a compiled kernel.
 
-The class is deliberately self-contained and is held to exact parity with the from-scratch
-computation (see ``tests/test_patch_state.py``).
+The membership, criterion value and component of each block are held in arrays, so the kernel shares
+the same representation and a bulk move needs no marshalling; the per-component aggregates are
+dictionaries keyed by component id, and only the components a move touches are written back. The
+class is held to exact parity with the from-scratch computation (see ``tests/test_patch_state.py``).
 """
 
 from __future__ import annotations
 
+import array
 import math
 from collections.abc import Mapping, Sequence
 
+import numpy as np
+
 from ..patch.accounts import PatchAccount, size_class_labels
+from .patch_kernels import label_all, label_from_seeds
 
 
 def compactness(area_ha: float, perimeter_m: float) -> float:
@@ -50,6 +55,17 @@ class PatchGroupYear:
         The adjacency ``(neighbour, shared_length)`` per block.
     block_area : mapping of int to float
         The area of each block.
+
+    Attributes
+    ----------
+    count : int
+        The number of components.
+    total : float
+        The total patch area (the criterion value times the block area, summed).
+    area : dict of int to float
+        The area per component.
+    perimeter : dict of int to float
+        The shared boundary length per component.
     """
 
     def __init__(
@@ -63,25 +79,82 @@ class PatchGroupYear:
         self.threshold = threshold
         self.neighbours = neighbours
         self.block_area = block_area
-        self.values: dict[int, float] = {}
-        self.comp: dict[int, int] = {}
-        self.members: dict[int, set[int]] = {}
+        self.blocks: tuple[int, ...] = tuple(sorted(set(block_area) | set(neighbours)))
+        self.index: dict[int, int] = {block: i for i, block in enumerate(self.blocks)}
+        size = len(self.blocks)
+        # The per-node and per-edge state lives in array.array: indexing it from Python (the
+        # per-block walks) costs about what a list does, while the compiled kernels get a
+        # writable zero-copy numpy view, so a bulk relabel needs no marshalling either way.
+        self.is_member = array.array("b", bytes(size))
+        self.value = array.array("d", bytes(8 * size))
+        self.comp = array.array("i", [-1] * size)
+        self._area = array.array("d", (float(block_area.get(block, 0.0)) for block in self.blocks))
+        ptr = array.array("q", bytes(8 * (size + 1)))
+        index = array.array("q")
+        length = array.array("d")
+        for position, block in enumerate(self.blocks):
+            for other, shared in neighbours.get(block, ()):
+                neighbour = self.index.get(other)
+                if neighbour is not None:
+                    index.append(neighbour)
+                    length.append(float(shared))
+            ptr[position + 1] = len(index)
+        self._ptr = ptr
+        self._indices = index
+        self._lengths = length
+        self._v_member = np.frombuffer(self.is_member, dtype=np.int8)
+        self._v_value = np.frombuffer(self.value, dtype=np.float64)
+        self._v_comp = np.frombuffer(self.comp, dtype=np.int32)
+        self._v_area = np.frombuffer(self._area, dtype=np.float64)
+        self._v_ptr = np.frombuffer(self._ptr, dtype=np.int64)
+        self._v_indices = np.frombuffer(self._indices, dtype=np.int64)
+        self._v_lengths = np.frombuffer(self._lengths, dtype=np.float64)
+        for view in (
+            self._v_member,
+            self._v_value,
+            self._v_comp,
+            self._v_area,
+            self._v_ptr,
+            self._v_indices,
+            self._v_lengths,
+        ):
+            view.flags.writeable = True
+        self.count_of: dict[int, int] = {}
         self.area: dict[int, float] = {}
         self.perimeter: dict[int, float] = {}
         self.next_id = 0
         self.total = 0.0
         self.count = 0
-        self._bounds = [tuple(account.size_classes) for account in self.accounts]
         self._labels = [size_class_labels(account.size_classes) for account in self.accounts]
+        self._bounds = [tuple(account.size_classes) for account in self.accounts]
         self.class_of: list[dict[int, str]] = [{} for _ in self.accounts]
         self.sums: list[dict[str, list[float]]] = [
             {label: [0.0, 0.0, 0.0] for label in labels} for labels in self._labels
         ]
+        self._buf_stack: np.ndarray | None = None
+        self._buf_walk: np.ndarray | None = None
+        self._buf_visited: np.ndarray | None = None
+        self._buf_area: np.ndarray | None = None
+        self._buf_perim: np.ndarray | None = None
+        self._buf_count: np.ndarray | None = None
+        self._gen = 0
 
     def _new_id(self) -> int:
         """Return a fresh component id."""
         self.next_id += 1
         return self.next_id
+
+    def _ensure_scratch(self) -> None:
+        """Allocate the kernel scratch buffers on first use."""
+        if self._buf_stack is not None:
+            return
+        size = len(self.blocks)
+        self._buf_stack = np.empty(size, dtype=np.int32)
+        self._buf_walk = np.empty(size, dtype=np.int32)
+        self._buf_visited = np.zeros(size, dtype=np.int32)
+        self._buf_area = np.empty(size, dtype=np.float64)
+        self._buf_perim = np.empty(size, dtype=np.float64)
+        self._buf_count = np.empty(size, dtype=np.int64)
 
     def _drop_class(self, cid: int) -> None:
         """Remove a component's contribution from every account's sums."""
@@ -114,47 +187,59 @@ class PatchGroupYear:
         values : mapping of int to float
             The criterion value per member block.
         """
-        self.values = dict(values)
-        self.comp = {}
-        self.members = {}
+        size = len(self.blocks)
+        self.is_member[:] = array.array("b", bytes(size))
+        self.value[:] = array.array("d", bytes(8 * size))
+        self.comp[:] = array.array("i", [-1] * size)
+        self.total = 0.0
+        for block, value in values.items():
+            position = self.index.get(block)
+            if position is None or value <= self.threshold:
+                continue
+            self.is_member[position] = 1
+            self.value[position] = value
+            self.total += value * self._area[position]
+        self.count_of = {}
         self.area = {}
         self.perimeter = {}
         self.class_of = [{} for _ in self.accounts]
         self.sums = [{label: [0.0, 0.0, 0.0] for label in labels} for labels in self._labels]
-        self.total = 0.0
-        for block, value in self.values.items():
-            self.total += value * self.block_area.get(block, 0.0)
-        for start in self.values:
-            if start in self.comp:
-                continue
-            cid = self._new_id()
-            members: set[int] = set()
-            stack = [start]
-            self.comp[start] = cid
-            area = 0.0
-            perimeter = 0.0
-            while stack:
-                block = stack.pop()
-                members.add(block)
-                area += self.values[block] * self.block_area.get(block, 0.0)
-                for other, length in self.neighbours.get(block, ()):
-                    if other in self.values:
-                        if other not in self.comp:
-                            self.comp[other] = cid
-                            stack.append(other)
-                    else:
-                        perimeter += length
-            self.members[cid] = members
-            self.area[cid] = area
-            self.perimeter[cid] = perimeter
+        self._ensure_scratch()
+        assert self._buf_stack is not None
+        assert self._buf_visited is not None
+        assert self._buf_area is not None
+        assert self._buf_perim is not None
+        assert self._buf_count is not None
+        base = self.next_id + 1
+        count = label_all(
+            self._v_ptr,
+            self._v_indices,
+            self._v_lengths,
+            self._v_area,
+            self._v_member,
+            self._v_value,
+            self._v_comp,
+            base,
+            self._buf_stack,
+            self._buf_area,
+            self._buf_perim,
+            self._buf_count,
+        )
+        for offset in range(count):
+            cid = base + offset
+            self.area[cid] = float(self._buf_area[offset])
+            self.perimeter[cid] = float(self._buf_perim[offset])
+            self.count_of[cid] = int(self._buf_count[offset])
             self._add_class(cid)
-        self.count = len(self.members)
+        self.next_id = base + count - 1
+        self.count = count
 
     def rebuild_local(self, changed: Sequence[int], values: Mapping[int, float]) -> None:
-        """Apply new criterion values to the changed blocks, rebuilding only nearby components.
+        """Apply new criterion values to the changed blocks, rebuilding nearby components.
 
-        Only the components containing a changed block or one of its member neighbours can
-        change, so everything else is left untouched — the spatial locality of patches.
+        Only the components containing a changed block or one of its member neighbours can change,
+        so everything else is left untouched — the spatial locality of patches. The changed
+        components are relabelled in the compiled kernel.
 
         Parameters
         ----------
@@ -163,67 +248,96 @@ class PatchGroupYear:
         values : mapping of int to float
             The new criterion value per changed block (0.0 when it is not a member).
         """
-        touched: set[int] = set()
+        positions: list[int] = []
         for block in changed:
-            value = values.get(block, 0.0)
-            previous = self.values.get(block)
-            if value > self.threshold:
-                self.values[block] = value
-                self.total += (value - (previous or 0.0)) * self.block_area.get(block, 0.0)
-            elif previous is not None:
-                del self.values[block]
-                self.total -= previous * self.block_area.get(block, 0.0)
-            touched.add(block)
-            for other, _ in self.neighbours.get(block, ()):
-                if other in self.values:
-                    touched.add(other)
-        seeds = {block for block in touched if block in self.values}
-        seen: set[int] = set()
-        rebuilt: list[set[int]] = []
-        for start in seeds:
-            if start in seen:
+            position = self.index.get(block)
+            if position is None:
                 continue
-            piece: set[int] = set()
-            stack = [start]
-            seen.add(start)
-            while stack:
-                block = stack.pop()
-                piece.add(block)
-                for other, _ in self.neighbours.get(block, ()):
-                    if other in self.values and other not in seen:
-                        seen.add(other)
-                        stack.append(other)
-            rebuilt.append(piece)
+            positions.append(position)
+            new = values.get(block, 0.0)
+            previous = float(self.value[position]) if self.is_member[position] else 0.0
+            if new > self.threshold:
+                self.is_member[position] = 1
+                self.value[position] = new
+                self.total += (new - previous) * self._area[position]
+            elif self.is_member[position]:
+                self.is_member[position] = 0
+                self.value[position] = 0.0
+                self.total -= previous * self._area[position]
+        if not positions:
+            return
+        ptr = self._ptr
+        indices = self._indices
         stale: set[int] = set()
-        for block in touched:
-            cid = self.comp.get(block)
-            if cid is not None:
+        for position in positions:
+            cid = int(self.comp[position])
+            if cid >= 0:
                 stale.add(cid)
-        for block in seen:
-            cid = self.comp.get(block)
-            if cid is not None:
-                stale.add(cid)
+            for edge in range(ptr[position], ptr[position + 1]):
+                neighbour = indices[edge]
+                if self.is_member[neighbour]:
+                    neighbour_cid = int(self.comp[neighbour])
+                    if neighbour_cid >= 0:
+                        stale.add(neighbour_cid)
         for cid in stale:
             self._drop_class(cid)
-            self.members.pop(cid, None)
+            self.count_of.pop(cid, None)
             self.area.pop(cid, None)
             self.perimeter.pop(cid, None)
             self.count -= 1
-        for piece in rebuilt:
-            cid = self._new_id()
-            self.members[cid] = piece
-            area = 0.0
-            perimeter = 0.0
-            for block in piece:
-                area += self.values[block] * self.block_area.get(block, 0.0)
-                for other, length in self.neighbours.get(block, ()):
-                    if other not in self.values:
-                        perimeter += length
-                self.comp[block] = cid
-            self.area[cid] = area
-            self.perimeter[cid] = perimeter
+        self._ensure_scratch()
+        assert self._buf_stack is not None
+        assert self._buf_walk is not None
+        assert self._buf_visited is not None
+        assert self._buf_area is not None
+        assert self._buf_perim is not None
+        assert self._buf_count is not None
+        self._gen += 2
+        base = self.next_id + 1
+        count = label_from_seeds(
+            self._v_ptr,
+            self._v_indices,
+            self._v_lengths,
+            self._v_area,
+            self._v_member,
+            self._v_value,
+            self._v_comp,
+            np.array(positions, dtype=np.int64),
+            base,
+            self._buf_stack,
+            self._buf_walk,
+            self._buf_visited,
+            self._gen,
+            self._buf_area,
+            self._buf_perim,
+            self._buf_count,
+        )
+        for offset in range(count):
+            cid = base + offset
+            self.area[cid] = float(self._buf_area[offset])
+            self.perimeter[cid] = float(self._buf_perim[offset])
+            self.count_of[cid] = int(self._buf_count[offset])
             self._add_class(cid)
             self.count += 1
+        self.next_id = base + count - 1
+
+    def value_of(self, block: int) -> float | None:
+        """Return a block's criterion value, or None when it is not a member.
+
+        Parameters
+        ----------
+        block : int
+            The block.
+
+        Returns
+        -------
+        float or None
+            The criterion value, or None.
+        """
+        position = self.index.get(block)
+        if position is None or not self.is_member[position]:
+            return None
+        return float(self.value[position])
 
     def set_value(self, block: int, value: float | None) -> None:
         """Set a block's criterion value, or remove it (``None`` or at/below the threshold).
@@ -235,110 +349,135 @@ class PatchGroupYear:
         value : float or None
             The criterion value.
         """
-        if value is None or value <= self.threshold:
-            if block in self.values:
-                self._detach(block)
+        position = self.index.get(block)
+        if position is None:
             return
-        old = self.values.get(block)
-        if old is None:
-            self._attach(block, value)
-        elif old != value:
-            self._resize(block, value)
+        if value is None or value <= self.threshold:
+            if self.is_member[position]:
+                self._detach(position)
+            return
+        if not self.is_member[position]:
+            self._attach(position, value)
+        elif float(self.value[position]) != value:
+            self._resize(position, value)
 
-    def _attach(self, block: int, value: float) -> None:
+    def _attach(self, position: int, value: float) -> None:
         """Add a member, merging the components it bridges."""
-        self.values[block] = value
+        self.is_member[position] = 1
+        self.value[position] = value
+        ptr = self._ptr
+        indices = self._indices
         adjacent: list[tuple[int, float]] = []
         add_perimeter = 0.0
-        for other, length in self.neighbours.get(block, ()):
-            if other in self.values:
-                adjacent.append((other, length))
+        for edge in range(ptr[position], ptr[position + 1]):
+            neighbour = indices[edge]
+            if self.is_member[neighbour]:
+                adjacent.append((neighbour, float(self._lengths[edge])))
             else:
-                add_perimeter += length
-        cids = {self.comp[other] for other, _ in adjacent}
-        merged = len(cids)
-        for cid in cids:
+                add_perimeter += float(self._lengths[edge])
+        representatives: dict[int, int] = {}
+        for neighbour, _ in adjacent:
+            cid = int(self.comp[neighbour])
+            representatives.setdefault(cid, neighbour)
+        for cid in representatives:
             self._drop_class(cid)
-        for other, length in adjacent:
-            self.perimeter[self.comp[other]] -= length
-        if not cids:
+        for neighbour, length in adjacent:
+            self.perimeter[int(self.comp[neighbour])] -= length
+        if not representatives:
             cid = self._new_id()
             self.area[cid] = 0.0
             self.perimeter[cid] = 0.0
-            self.members[cid] = set()
+            self.count_of[cid] = 0
+            merged = 0
         else:
-            cid = cids.pop()
-            for other_cid in cids:
-                cid = self._merge(cid, other_cid)
-        self.comp[block] = cid
-        self.members[cid].add(block)
-        self.area[cid] += value * self.block_area.get(block, 0.0)
+            # absorb the smaller components into the largest, so the re-pointing walk is short
+            order = sorted(representatives, key=lambda other: self.count_of[other], reverse=True)
+            cid = order[0]
+            for other in order[1:]:
+                self.count_of[cid] += self.count_of[other]
+                self.area[cid] += self.area[other]
+                self.perimeter[cid] += self.perimeter[other]
+                self._repoint(representatives[other], other, cid)
+                self.count_of.pop(other, None)
+                self.area.pop(other, None)
+                self.perimeter.pop(other, None)
+            merged = len(order)
+        self.comp[position] = cid
+        self.count_of[cid] += 1
+        self.area[cid] += value * self._area[position]
         self.perimeter[cid] += add_perimeter
-        self.total += value * self.block_area.get(block, 0.0)
+        self.total += value * self._area[position]
         self.count += 1 - merged
         self._add_class(cid)
 
-    def _merge(self, keep: int, other: int) -> int:
-        """Merge two components, keeping ``keep``'s id."""
-        self.area[keep] += self.area[other]
-        self.perimeter[keep] += self.perimeter[other]
-        for block in self.members[other]:
-            self.comp[block] = keep
-            self.members[keep].add(block)
-        del self.members[other]
-        del self.area[other]
-        del self.perimeter[other]
-        return keep
+    def _repoint(self, node: int, old: int, new: int) -> None:
+        """Re-point every member of component ``old`` to ``new``, walking from ``node``."""
+        ptr = self._ptr
+        indices = self._indices
+        member = self.is_member
+        comp = self.comp
+        comp[node] = new
+        stack = [node]
+        while stack:
+            current = stack.pop()
+            for edge in range(ptr[current], ptr[current + 1]):
+                neighbour = indices[edge]
+                if member[neighbour] and comp[neighbour] == old:
+                    comp[neighbour] = new
+                    stack.append(neighbour)
 
-    def _detach(self, block: int) -> None:
+    def _detach(self, position: int) -> None:
         """Remove a member, splitting its component if it disconnects."""
-        cid = self.comp.pop(block)
-        value = self.values.pop(block)
-        self.members[cid].discard(block)
-        removed = value * self.block_area.get(block, 0.0)
+        cid = int(self.comp[position])
+        self.comp[position] = -1
+        value = float(self.value[position])
+        self.is_member[position] = 0
+        self.value[position] = 0.0
+        self.count_of[cid] -= 1
+        removed = value * self._area[position]
         self._drop_class(cid)
         self.area[cid] -= removed
         self.total -= removed
-        for other, length in self.neighbours.get(block, ()):
-            if other in self.values:
-                self.perimeter[cid] += length
+        ptr = self._ptr
+        indices = self._indices
+        neighbour_nodes: list[int] = []
+        for edge in range(ptr[position], ptr[position + 1]):
+            neighbour = indices[edge]
+            if self.is_member[neighbour]:
+                self.perimeter[cid] += float(self._lengths[edge])
+                neighbour_nodes.append(neighbour)
             else:
-                self.perimeter[cid] -= length
-        if not self.members[cid]:
-            del self.members[cid]
-            del self.area[cid]
-            del self.perimeter[cid]
+                self.perimeter[cid] -= float(self._lengths[edge])
+        if self.count_of[cid] == 0:
+            self.count_of.pop(cid, None)
+            self.area.pop(cid, None)
+            self.perimeter.pop(cid, None)
             self.count -= 1
             return
-        member_neighbours = [
-            other for other, _ in self.neighbours.get(block, ()) if other in self.values
-        ]
-        if len(member_neighbours) <= 1:
+        if len(neighbour_nodes) <= 1:
             # a leaf removal cannot disconnect the component, so skip the connectivity walk
             self._add_class(cid)
             return
-        seen = self._reachable(member_neighbours[0], set(member_neighbours[1:]), cid)
+        seen = self._reachable(neighbour_nodes[0], set(neighbour_nodes[1:]), cid)
         if seen is None:
             # every member-neighbour is reachable without the block: it is not an articulation
             # point, so the component stays connected
             self._add_class(cid)
             return
-        self.count += self._split(cid, seen)
+        self.count += self._split(cid, seen, neighbour_nodes)
 
     def _reachable(self, start: int, targets: set[int], cid: int) -> set[int] | None:
         """Walk from ``start`` within ``cid``, stopping once every target is reached.
 
         Returns None when all ``targets`` are reachable (so the removed block did not disconnect
-        the component), or the reachable set when the walk exhausts without reaching them all
-        (the block is an articulation point and this set is one of the pieces).
+        the component), or the reachable set when the walk exhausts first.
 
         Parameters
         ----------
         start : int
-            The member to start from.
+            The node to start from.
         targets : set of int
-            The other member-neighbours of the removed block; reaching them all proves the
-            block is not an articulation point.
+            The other member-neighbours of the removed block.
         cid : int
             The component being walked.
 
@@ -347,72 +486,86 @@ class PatchGroupYear:
         set of int or None
             None when every target was reached, otherwise the reachable members.
         """
+        ptr = self._ptr
+        indices = self._indices
+        member = self.is_member
+        comp = self.comp
         seen = {start}
         if targets <= seen:
             return None
-        values = self.values
-        comp = self.comp
-        neighbours = self.neighbours
         stack = [start]
         while stack:
-            node = stack.pop()
-            for other, _ in neighbours.get(node, ()):
-                if other in seen or other not in values or comp.get(other) != cid:
+            current = stack.pop()
+            for edge in range(ptr[current], ptr[current + 1]):
+                neighbour = indices[edge]
+                if neighbour in seen or not member[neighbour] or comp[neighbour] != cid:
                     continue
-                seen.add(other)
-                stack.append(other)
+                seen.add(neighbour)
+                stack.append(neighbour)
                 if targets <= seen:
                     return None
         return seen
 
     def _component_from(self, start: int, cid: int) -> set[int]:
-        """Return the members reachable from ``start`` within component ``cid``."""
+        """Return every member reachable from ``start`` within component ``cid``."""
+        ptr = self._ptr
+        indices = self._indices
+        member = self.is_member
+        comp = self.comp
         seen = {start}
         stack = [start]
         while stack:
-            block = stack.pop()
-            for other, _ in self.neighbours.get(block, ()):
-                if other in self.values and self.comp[other] == cid and other not in seen:
-                    seen.add(other)
-                    stack.append(other)
+            current = stack.pop()
+            for edge in range(ptr[current], ptr[current + 1]):
+                neighbour = indices[edge]
+                if neighbour not in seen and member[neighbour] and comp[neighbour] == cid:
+                    seen.add(neighbour)
+                    stack.append(neighbour)
         return seen
 
-    def _split(self, cid: int, first: set[int]) -> int:
-        """Split ``cid`` into connected pieces; return the change in the component count."""
+    def _split(self, cid: int, first: set[int], neighbour_nodes: Sequence[int]) -> int:
+        """Split ``cid`` into connected pieces; return the change in the component count.
+
+        ``first`` is one piece and every other piece contains a member-neighbour of the removed
+        block, so the walk can start from those and never needs the component's member list.
+        """
         pieces: list[set[int]] = [first]
-        remaining = self.members[cid] - first
-        while remaining:
-            start = next(iter(remaining))
+        covered = set(first)
+        for start in neighbour_nodes:
+            if start in covered:
+                continue
             piece = self._component_from(start, cid)
             pieces.append(piece)
-            remaining -= piece
+            covered |= piece
         self._drop_class(cid)
-        del self.members[cid]
-        del self.area[cid]
-        del self.perimeter[cid]
+        self.count_of.pop(cid, None)
+        self.area.pop(cid, None)
+        self.perimeter.pop(cid, None)
+        ptr = self._ptr
+        indices = self._indices
         for piece in pieces:
             new_id = self._new_id()
-            self.members[new_id] = piece
+            self.count_of[new_id] = len(piece)
             area = 0.0
             perimeter = 0.0
-            for block in piece:
-                area += self.values[block] * self.block_area.get(block, 0.0)
-                for other, length in self.neighbours.get(block, ()):
-                    if other not in self.values:
-                        perimeter += length
+            for node in piece:
+                area += float(self.value[node]) * self._area[node]
+                for edge in range(ptr[node], ptr[node + 1]):
+                    neighbour = indices[edge]
+                    if not self.is_member[neighbour]:
+                        perimeter += float(self._lengths[edge])
+                self.comp[node] = new_id
             self.area[new_id] = area
             self.perimeter[new_id] = perimeter
-            for block in piece:
-                self.comp[block] = new_id
             self._add_class(new_id)
         return len(pieces) - 1
 
-    def _resize(self, block: int, value: float) -> None:
+    def _resize(self, position: int, value: float) -> None:
         """Change a member's value without changing its membership."""
-        old = self.values[block]
-        self.values[block] = value
-        cid = self.comp[block]
-        area = self.block_area.get(block, 0.0)
+        old = float(self.value[position])
+        self.value[position] = value
+        cid = int(self.comp[position])
+        area = self._area[position]
         self._drop_class(cid)
         self.area[cid] += (value - old) * area
         self.total += (value - old) * area

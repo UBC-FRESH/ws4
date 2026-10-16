@@ -239,7 +239,7 @@ class PatchModel:
                     label = key[0]
                     state = self._state(key, year)
                     for block in changed:
-                        previous = state.values.get(block)
+                        previous = state.value_of(block)
                         self._undo.append((state, block, previous))
                         state.set_value(block, series_by_block[block][label].get(year, 0.0))
                 cells = self._cells(year)

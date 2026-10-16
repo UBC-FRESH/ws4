@@ -708,3 +708,18 @@ issue comments.
   to end (about 56 -> 200+ iterations/s) are in `notes/design/ws4-patch-evaluation-bottleneck.md`.
   No production code change in this entry; it is the go/no-go measurement. Prototype harness kept out
   of the repository per the scratch rule. Dashboard: **GREEN**.
+- P6.29 (performance): the patch state is array-backed and the bulk relabel is compiled. `PatchGroupYear`
+  now holds the membership, criterion value and component of each block in `array.array` (Python
+  indexing is about list speed) and hands the numba kernels a **writable zero-copy numpy view**, so a
+  bulk relabel needs no marshalling either way; the `members` sets are gone (a component's size is a
+  count, a merge re-points by walking `comp`, and a split is found by walking from the removed block's
+  member-neighbours, since every resulting piece contains one). New `ws4/opt/patch_kernels.py` holds the
+  two relabels, `label_all` (reset) and `label_from_seeds` (a bulk move). Fresh-process A/B, 600
+  iterations, C5 at 50 years: the default search **30.0 -> 52.2 iterations/s (+70%)**, and the pure
+  single-block path 148.9 -> 113.0 (**-22%**, because the Python walks now do array lookups per edge
+  where the dictionaries did membership tests). Measurement discipline is part of the result: a single
+  process that runs several configurations warms numba and the caches, so its second configuration can
+  read 2-4x faster with no cause, and the in-process numbers in P6.27 and P6.28 are superseded by these
+  one-config-per-process runs. Parity is held cell-for-cell against the from-scratch scan by
+  `tests/test_patch_state.py`. Tests: `tests/test_patch_state.py`, `tests/test_patch_objective.py`.
+  Dashboard: **GREEN**.
