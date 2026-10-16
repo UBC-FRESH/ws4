@@ -19,12 +19,16 @@ import yaml
 class Target:
     """One goal-programming target.
 
+    A target is **periodic**: it applies to the account summed over ``period_width`` years
+    starting at ``year`` (a single year when ``period_width`` is 1). Treatments are still
+    scheduled by year; only the accounting is aggregated.
+
     Attributes
     ----------
     account : str
         The account label the target applies to.
     year : int
-        The year the target applies to.
+        The first year of the period the target applies to.
     minimum : float or None
         The lower bound; a value below it is penalized.
     maximum : float or None
@@ -33,6 +37,8 @@ class Target:
         The weight on the shortfall below the minimum.
     max_weight : float
         The weight on the excess above the maximum.
+    period_width : int
+        The number of years the account is summed over for this target.
     """
 
     account: str
@@ -41,6 +47,17 @@ class Target:
     maximum: float | None = None
     min_weight: float = 1.0
     max_weight: float = 1.0
+    period_width: int = 1
+
+    def cell_years(self) -> range:
+        """Return the years the target sums the account over.
+
+        Returns
+        -------
+        range
+            The years of the target's period.
+        """
+        return range(self.year, self.year + max(1, self.period_width))
 
 
 def penalty(value: float, target: Target) -> float:
@@ -85,14 +102,19 @@ def objective(values: pd.DataFrame, targets: Sequence[Target]) -> float:
         (int(float(str(row.year))), str(row.account)): float(str(row.value))
         for row in values.itertuples(index=False)
     }
-    return sum(penalty(index.get((target.year, target.account), 0.0), target) for target in targets)
+    total = 0.0
+    for target in targets:
+        value = sum(index.get((year, target.account), 0.0) for year in target.cell_years())
+        total += penalty(value, target)
+    return total
 
 
 def load_targets(path: Path) -> list[Target]:
     """Load targets from a YAML file.
 
     The file is a mapping with a ``targets`` list; each entry has ``account``,
-    ``year``, and any of ``minimum``, ``maximum``, ``min_weight``, and ``max_weight``.
+    ``year``, and any of ``minimum``, ``maximum``, ``min_weight``, ``max_weight``, and
+    ``period_width`` (years per period; the account is summed over them).
 
     Parameters
     ----------
@@ -114,6 +136,7 @@ def load_targets(path: Path) -> list[Target]:
             maximum=entry.get("maximum"),
             min_weight=float(entry.get("min_weight", 1.0)),
             max_weight=float(entry.get("max_weight", 1.0)),
+            period_width=int(entry.get("period_width", 1)),
         )
         for entry in entries
     ]

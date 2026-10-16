@@ -543,3 +543,12 @@ issue comments.
   (1.10×), identical objective. The bigger win in the same change was caching the fragments' numpy
   arrays (no dependency): 50-year 730 → 1797/s (2.5×), 200-year 312 → 617/s (2×). Evidence in
   `notes/design/ws4-performance.md` (WP6). Dashboard on close: **GREEN**.
+- P6.17 follow-up (maintainer finding, correctness): two fixes to the even-flow problem. **(1)** The
+  candidate years only offered three points per treatment window (begin/mid/end), so the scheduler
+  could not place a treatment at an arbitrary operable age — several 10-year periods were structurally
+  below the target. Candidates now cover **every year of every window** (later rotations stay sampled,
+  capped). **(2)** Targets were per-year; they are now **periodic** (`Target.period_width`): the account
+  is summed over the period and compared to the period levels, so the accounting is per period while
+  treatments are still scheduled by year. With both, C5 (200-year, 20 periods) even flow reaches a flat
+  **0.800 Mm3 every period** (objective 1), and the move-based objective equals a full simulation.
+  `Target.period_width` is documented in `docs/reference/optimizer.rst`. Dashboard: **GREEN**.

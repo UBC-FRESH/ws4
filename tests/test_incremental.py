@@ -5,11 +5,12 @@ from __future__ import annotations
 import random
 from pathlib import Path
 
+import pandas as pd
 import pytest
 from ws4.build.compiler import build_canonical_dataset
 from ws4.opt.engine import OptimizeConfig, Optimizer
 from ws4.opt.incremental import IncrementalObjective
-from ws4.opt.objective import Target
+from ws4.opt.objective import Target, objective
 from ws4.opt.solvers import _changed_blocks, solve_sa_delta
 
 _FIXTURE = Path(__file__).resolve().parents[1] / "examples" / "synthetic"
@@ -109,6 +110,30 @@ def test_delta_solver_agrees_with_a_fresh_evaluation(tmp_path: Path) -> None:
         initial=initial,
     )
     assert objective == pytest.approx(optimizer._evaluate(best, targets))
+
+
+def test_periodic_target_sums_the_account_over_its_period() -> None:
+    """A period-width target scores the account summed over the years of the period."""
+    values = pd.DataFrame(
+        {"year": [0, 1, 2, 3], "account": ["a"] * 4, "value": [1.0, 2.0, 3.0, 4.0]}
+    )
+    periodic = [
+        Target("a", 0, minimum=3.0, maximum=3.0, period_width=2),
+        Target("a", 2, minimum=3.0, maximum=3.0, period_width=2),
+    ]
+    assert objective(values, periodic) == pytest.approx(4.0)  # |3-3| + |7-3|
+
+
+def test_incremental_matches_periodic_targets(tmp_path: Path) -> None:
+    """The move-based evaluator scores a periodic target the same as the whole-schedule path."""
+    optimizer = _optimizer(tmp_path, years=6)
+    targets = [Target("product.Volume", 0, minimum=300.0, maximum=300.0, period_width=2)]
+    candidates = optimizer.candidates()
+    schedule = {block: chains[0] for block, chains in candidates.items() if chains}
+    evaluator = IncrementalObjective(optimizer, targets)
+    evaluator.reset(schedule)
+    full = optimizer._incremental_values(schedule, (), ())
+    assert evaluator.objective == pytest.approx(objective(full, targets))
 
 
 def test_delta_evaluator_is_available_without_routes(tmp_path: Path) -> None:

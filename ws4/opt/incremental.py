@@ -72,7 +72,8 @@ class IncrementalObjective:
         self._pending_move: tuple[dict[Cell, float], list[int], Schedule] | None = None
         self._targets_by_cell: dict[Cell, list[int]] = {}
         for index, target in enumerate(self.targets):
-            self._targets_by_cell.setdefault((target.year, target.account), []).append(index)
+            for year in target.cell_years():
+                self._targets_by_cell.setdefault((year, target.account), []).append(index)
 
     def reset(self, schedule: Schedule) -> None:
         """Set the state to the empty-schedule base plus the schedule's contributions.
@@ -122,11 +123,14 @@ class IncrementalObjective:
 
     @property
     def objective(self) -> float:
-        """Return the objective for the current state."""
-        return sum(
-            penalty(self.totals.get((target.year, target.account), 0.0), target)
-            for target in self.targets
-        )
+        """Return the objective for the current state (periods summed)."""
+        total = 0.0
+        for target in self.targets:
+            value = sum(
+                self.totals.get((year, target.account), 0.0) for year in target.cell_years()
+            )
+            total += penalty(value, target)
+        return total
 
     def delta(self, changed: Sequence[int], schedule: Schedule) -> float:
         """Return the exact objective change a move would make, without applying it.
@@ -153,9 +157,11 @@ class IncrementalObjective:
         total = 0.0
         for index in affected:
             target = self.targets[index]
-            cell = (target.year, target.account)
-            before = self.totals.get(cell, 0.0)
-            total += penalty(before + pending.get(cell, 0.0), target) - penalty(before, target)
+            before = sum(
+                self.totals.get((year, target.account), 0.0) for year in target.cell_years()
+            )
+            change = sum(pending.get((year, target.account), 0.0) for year in target.cell_years())
+            total += penalty(before + change, target) - penalty(before, target)
         return total
 
     def apply(self, changed: Sequence[int], schedule: Schedule) -> None:
