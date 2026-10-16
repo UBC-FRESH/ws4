@@ -22,7 +22,13 @@ from collections.abc import Mapping, Sequence
 import numpy as np
 
 from ..patch.accounts import PatchAccount, size_class_labels
-from .patch_kernels import label_all, label_from_seeds
+from .patch_kernels import (
+    component_from,
+    label_all,
+    label_from_seeds,
+    piece_aggregate,
+    reachable_from,
+)
 
 
 def compactness(area_ha: float, perimeter_m: float) -> float:
@@ -134,6 +140,7 @@ class PatchGroupYear:
         self._buf_stack: np.ndarray | None = None
         self._buf_walk: np.ndarray | None = None
         self._buf_visited: np.ndarray | None = None
+        self._buf_target: np.ndarray | None = None
         self._buf_area: np.ndarray | None = None
         self._buf_perim: np.ndarray | None = None
         self._buf_count: np.ndarray | None = None
@@ -152,6 +159,7 @@ class PatchGroupYear:
         self._buf_stack = np.empty(size, dtype=np.int32)
         self._buf_walk = np.empty(size, dtype=np.int32)
         self._buf_visited = np.zeros(size, dtype=np.int32)
+        self._buf_target = np.zeros(size, dtype=np.uint8)
         self._buf_area = np.empty(size, dtype=np.float64)
         self._buf_perim = np.empty(size, dtype=np.float64)
         self._buf_count = np.empty(size, dtype=np.int64)
@@ -458,107 +466,103 @@ class PatchGroupYear:
             # a leaf removal cannot disconnect the component, so skip the connectivity walk
             self._add_class(cid)
             return
-        seen = self._reachable(neighbour_nodes[0], set(neighbour_nodes[1:]), cid)
-        if seen is None:
+        self._ensure_scratch()
+        assert self._buf_stack is not None
+        assert self._buf_walk is not None
+        assert self._buf_visited is not None
+        assert self._buf_target is not None
+        self._gen += 2
+        reached_all, count = reachable_from(
+            self._v_ptr,
+            self._v_indices,
+            self._v_member,
+            self._v_comp,
+            neighbour_nodes[0],
+            np.array(neighbour_nodes[1:], dtype=np.int64),
+            self._buf_target,
+            cid,
+            self._buf_visited,
+            self._buf_stack,
+            self._buf_walk,
+            self._gen,
+        )
+        if reached_all:
             # every member-neighbour is reachable without the block: it is not an articulation
             # point, so the component stays connected
             self._add_class(cid)
             return
-        self.count += self._split(cid, seen, neighbour_nodes)
+        self.count += self._split(cid, count, neighbour_nodes)
 
-    def _reachable(self, start: int, targets: set[int], cid: int) -> set[int] | None:
-        """Walk from ``start`` within ``cid``, stopping once every target is reached.
-
-        Returns None when all ``targets`` are reachable (so the removed block did not disconnect
-        the component), or the reachable set when the walk exhausts first.
-
-        Parameters
-        ----------
-        start : int
-            The node to start from.
-        targets : set of int
-            The other member-neighbours of the removed block.
-        cid : int
-            The component being walked.
-
-        Returns
-        -------
-        set of int or None
-            None when every target was reached, otherwise the reachable members.
-        """
-        ptr = self._ptr
-        indices = self._indices
-        member = self.is_member
-        comp = self.comp
-        seen = {start}
-        if targets <= seen:
-            return None
-        stack = [start]
-        while stack:
-            current = stack.pop()
-            for edge in range(ptr[current], ptr[current + 1]):
-                neighbour = indices[edge]
-                if neighbour in seen or not member[neighbour] or comp[neighbour] != cid:
-                    continue
-                seen.add(neighbour)
-                stack.append(neighbour)
-                if targets <= seen:
-                    return None
-        return seen
-
-    def _component_from(self, start: int, cid: int) -> set[int]:
-        """Return every member reachable from ``start`` within component ``cid``."""
-        ptr = self._ptr
-        indices = self._indices
-        member = self.is_member
-        comp = self.comp
-        seen = {start}
-        stack = [start]
-        while stack:
-            current = stack.pop()
-            for edge in range(ptr[current], ptr[current + 1]):
-                neighbour = indices[edge]
-                if neighbour not in seen and member[neighbour] and comp[neighbour] == cid:
-                    seen.add(neighbour)
-                    stack.append(neighbour)
-        return seen
-
-    def _split(self, cid: int, first: set[int], neighbour_nodes: Sequence[int]) -> int:
+    def _split(self, cid: int, first_count: int, neighbour_nodes: Sequence[int]) -> int:
         """Split ``cid`` into connected pieces; return the change in the component count.
 
-        ``first`` is one piece and every other piece contains a member-neighbour of the removed
-        block, so the walk can start from those and never needs the component's member list.
+        The first piece is already in the walk buffer from the connectivity test, and every other
+        piece contains a member-neighbour of the removed block, so the walk can start from those and
+        never needs the component's member list. Stamping the first piece's component id before the
+        later walks also stops them re-traversing it.
         """
-        pieces: list[set[int]] = [first]
-        covered = set(first)
-        for start in neighbour_nodes:
-            if start in covered:
-                continue
-            piece = self._component_from(start, cid)
-            pieces.append(piece)
-            covered |= piece
         self._drop_class(cid)
         self.count_of.pop(cid, None)
         self.area.pop(cid, None)
         self.perimeter.pop(cid, None)
-        ptr = self._ptr
-        indices = self._indices
-        for piece in pieces:
+        assert self._buf_walk is not None
+        assert self._buf_stack is not None
+        assert self._buf_visited is not None
+        added = 0
+        new_id = self._new_id()
+        area, perimeter = piece_aggregate(
+            self._v_ptr,
+            self._v_indices,
+            self._v_lengths,
+            self._v_member,
+            self._v_value,
+            self._v_area,
+            self._buf_walk,
+            first_count,
+            new_id,
+            self._v_comp,
+        )
+        self.count_of[new_id] = first_count
+        self.area[new_id] = float(area)
+        self.perimeter[new_id] = float(perimeter)
+        self._add_class(new_id)
+        added += 1
+        for start in neighbour_nodes:
+            if int(self._v_comp[start]) != cid:
+                # already re-stamped as part of an earlier piece
+                continue
+            self._gen += 2
+            count = component_from(
+                self._v_ptr,
+                self._v_indices,
+                self._v_member,
+                self._v_comp,
+                start,
+                cid,
+                self._buf_visited,
+                self._buf_stack,
+                self._buf_walk,
+                self._gen,
+            )
             new_id = self._new_id()
-            self.count_of[new_id] = len(piece)
-            area = 0.0
-            perimeter = 0.0
-            for node in piece:
-                area += float(self.value[node]) * self._area[node]
-                for edge in range(ptr[node], ptr[node + 1]):
-                    neighbour = indices[edge]
-                    if not self.is_member[neighbour]:
-                        perimeter += float(self._lengths[edge])
-                self.comp[node] = new_id
-            self.area[new_id] = area
-            self.perimeter[new_id] = perimeter
+            area, perimeter = piece_aggregate(
+                self._v_ptr,
+                self._v_indices,
+                self._v_lengths,
+                self._v_member,
+                self._v_value,
+                self._v_area,
+                self._buf_walk,
+                count,
+                new_id,
+                self._v_comp,
+            )
+            self.count_of[new_id] = count
+            self.area[new_id] = float(area)
+            self.perimeter[new_id] = float(perimeter)
             self._add_class(new_id)
-        return len(pieces) - 1
+            added += 1
+        return added - 1
 
     def _resize(self, position: int, value: float) -> None:
         """Change a member's value without changing its membership."""

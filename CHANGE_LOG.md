@@ -723,3 +723,13 @@ issue comments.
   one-config-per-process runs. Parity is held cell-for-cell against the from-scratch scan by
   `tests/test_patch_state.py`. Tests: `tests/test_patch_state.py`, `tests/test_patch_objective.py`.
   Dashboard: **GREEN**.
+- P6.30 (performance): the connectivity walks are compiled too. P6.29's arrays cost the single-block
+  path 22%, because its walks then did per-edge array lookups where the dictionaries had done
+  membership tests. Those walks — `reachable_from` (the early-exit connectivity test), `component_from`
+  (a split's piece walk) and `piece_aggregate` (a piece's area and perimeter) — are now kernels over
+  the same CSR arrays, with generation-stamped scratch so nothing is cleared between calls, and the
+  `covered` set in `_split` is gone (the first piece's component id is already restamped, so later
+  walks cannot re-traverse it). Fresh-process A/B, three runs each, 600 iterations, C5 at 50 years:
+  the default **29.6 -> 48.1 iterations/s (+62%)** and the single-block path 153.3 -> 141.2 (**-8%**,
+  down from -22%). This supersedes the P6.29 numbers for the walks. Tests:
+  `tests/test_patch_state.py`, `tests/test_patch_objective.py`. Dashboard: **GREEN**.

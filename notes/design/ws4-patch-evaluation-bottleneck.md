@@ -167,24 +167,30 @@ phase timers, or a sampling profiler.
 
 `PatchGroupYear` now holds the membership, criterion value and component of each block in arrays
 (`array.array`, so Python indexing is about list speed) and hands the compiled kernels a **writable,
-zero-copy numpy view** (`np.frombuffer(...)` with `flags.writeable = True`), so a bulk relabel needs
-no marshalling in either direction. The per-component aggregates stay dictionaries indexed by
-component id and only the components a move touches are written back. The `members` sets are gone:
-a component's size is `count_of[cid]`, a merge re-points by walking `comp`, and a split is found by
-walking from the removed block's member-neighbours (every resulting piece contains one).
+zero-copy numpy view** (`np.frombuffer(...)` with `flags.writeable = True`), so no marshalling happens
+in either direction. The per-component aggregates stay dictionaries indexed by component id and only
+the components a move touches are written back. The `members` sets are gone: a component's size is
+`count_of[cid]`, a merge re-points by walking `comp`, a split is found by walking from the removed
+block's member-neighbours, and the walks themselves are kernels (`reachable_from`, `component_from`,
+`piece_aggregate` in `ws4/opt/patch_kernels.py`), with generation-stamped scratch so nothing is
+cleared between calls.
 
-Fresh-process A/B, 600 iterations, C5, 50 years, one patch target:
+Fresh-process A/B, 600 iterations, C5, 50 years, one patch target, three runs each:
 
-| configuration | dicts (before) | arrays + kernel (after) | |
+| configuration | dicts | arrays + kernels | |
 | --- | ---: | ---: | --- |
-| `--lns-weight 0.2` (default) | 30.0, 30.4 | **52.2, 50.4** | **+70%** |
-| `--lns-weight 0` (single block) | 148.9, 154.2 | 113.0, 123.2 | **-22%** |
+| `--lns-weight 0.2` (default) | 29.6 | **48.1** | **+62%** |
+| `--lns-weight 0` (single block) | 153.3 | 141.2 | -8% |
 
-So the compiled bulk path is a clear win and the pure single-block path pays about a fifth of its
-speed for it: the Python walks (`_reachable`, `_split`) do two or three array lookups per edge where
-the old code did dict membership tests, and `array.array` indexing is ~5x a dict lookup even though
-it is near list speed. The default configuration is what the feature is for, so this is the right
-trade today — see the plan for closing the gap.
+The single-block path pays a little for the array representation: the walks are compiled now, but the
+per-edge `comp`/`member` reads in `_attach`/`_detach` and the per-component write-back are still
+Python over arrays, where the old code used dict membership tests. An earlier version without the walk
+kernels cost 22% there; kernelising the walks recovered most of it. A redundant `covered` set was
+removed from `_split` after realising the first piece's component id is already restamped, so the
+later walks cannot re-traverse it.
+
+`array.array` + a writable `np.frombuffer` view is worth remembering: it gives Python near-list
+indexing and numba a zero-copy array in the same object, with no per-call marshalling.
 
 ## The compiled kernel: measured on realistic components
 
@@ -303,20 +309,16 @@ Ordered by value over risk.
    (159 -> 58.7 us) via a segment-based table gather; `_affected` fell 1.84 -> 0.78 s. The lesson to
    keep: do not vectorise per *year* with numpy on tiny arrays, vectorise per *event* over the whole
    horizon.
-2. **The array-backed state and the compiled bulk relabel — done.** Default search +70% (30 -> 52
-   iterations/s, fresh process); single-block -22%. See above.
-3. **Kernelise the Python walks** (`_reachable`, and the split's piece walk and aggregate scan). They
-   are the whole of the single-block regression and a share of the bulk path, and they are the same
-   BFS over the same CSR arrays the kernels already use (`reachable_from` with a generation-stamped
-   `seen` array and a `target` flag). Expected: recover the -22% and add to the default.
-4. **Spanning-forest leaf test** (pure Python, no compiled dependency). Maintain a spanning tree per
+2. **The array-backed state and the compiled relabels — done.** Default search +62% (29.6 -> 48.1
+   iterations/s, fresh process); single-block -8%. The walks are kernels too. See above.
+3. **Spanning-forest leaf test** (pure Python, no compiled dependency). Maintain a spanning tree per
    component; a detach of a tree leaf is `O(1)` and proves "no split". Re-measure the leaf fraction on
    a realistic configuration first: the 65% below is from the pathological one.
-5. **Articulation- and gap-targeted operators**: maintain the negative-space (merge) set incrementally;
+4. **Articulation- and gap-targeted operators**: maintain the negative-space (merge) set incrementally;
    add a `SplitOperator` that detaches a cut vertex and a `MergeOperator` that treats a
    negative-space block (plus its neighbourhood). These change *which* moves are proposed, so they help
    solution quality per move as well as cost.
-6. **Consider excluding LNS, or making its destroy set spatially coherent**, for patch targets. LNS
+5. **Consider excluding LNS, or making its destroy set spatially coherent**, for patch targets. LNS
    is what the compiled path is for, and buys about 0.8 objective units on the sample problem; a
    k-hop-ball destroy set would shrink the affected components further.
 
