@@ -161,7 +161,7 @@ def watch(
     warm_start: bool = typer.Option(
         False, "--warm-start", help="Seed each block's first candidate"
     ),
-    refresh: float = typer.Option(0.25, "--refresh", help="Seconds between repaints"),
+    refresh: float = typer.Option(2.0, "--refresh", help="Seconds between repaints (heartbeat)"),
     plain: bool = typer.Option(False, "--plain", help="Print one final frame (no live view)"),
     route_config: Path = typer.Option(
         None, "--route-config", exists=True, help="Optional route model and route accounts (YAML)"
