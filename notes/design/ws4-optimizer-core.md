@@ -138,3 +138,11 @@ slot in: the dZ loop is a handful of vectorised array ops.
   347 tests). Remaining cost is flat Python/pandas overhead (dict lookups, per-call array extraction,
   LNS). To go beyond ~1000 iters/s the state would move to numpy arrays with an optional compiled
   kernel (P6.6).
+- 2026-10-16 **M2a done** (issue #78): `Simulator.block_chain(block, events, years)` evaluates a
+  block under a *sequence* of treatments (rotations), and `block_trajectory` is now a one-event
+  chain. This is the per-chain contribution the optimizer's delta will price. Verified: a one-event
+  chain equals `block_trajectory`; a two-event chain's delta equals a full `simulate` of the same
+  rows (fixture worst diff 0.000000 with the product cell present; C5 worst 0.000000). Next (M2b):
+  candidates as feasible chains (walk the track transitions), a chain schedule type, and operators +
+  delta over chains; then (M2c) spatial disturbance years per rotation and route accounts for a
+  chain.

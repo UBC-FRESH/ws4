@@ -327,25 +327,24 @@ class Simulator:
             for index, block in enumerate(unique)
         }
 
-    def block_trajectory(
-        self, block_id: int, treatment: str | None, year: int, years: int
+    def block_chain(
+        self, block_id: int, events: Sequence[tuple[str, int]], years: int
     ) -> dict[tuple[int, str], float]:
-        """Return one block's feature account values over a horizon.
+        """Return one block's account values over a horizon under a chain of treatments.
 
-        The block's fragments are simulated in isolation: if ``treatment`` is given, it is
-        applied in ``year`` (a no-op where the fragment's track does not offer it), and
+        The block's fragments are simulated in isolation: each ``(treatment, year)`` event
+        is applied in its year (a no-op where the fragment's track does not offer it), and
         every fragment's offset advances one year per step. The result is
         ``(year, label) -> value``, so a schedule's account values are the empty-schedule
-        base plus a per-block delta. Feature account values are additive over blocks.
+        base plus a per-block delta. A block may be treated more than once (rotations);
+        events are applied in year order.
 
         Parameters
         ----------
         block_id : int
             The block.
-        treatment : str or None
-            The treatment to apply, or None for no treatment.
-        year : int
-            The year to apply the treatment.
+        events : sequence of (str, int)
+            The treatments and the year each is applied.
         years : int
             The horizon, in years.
 
@@ -353,26 +352,27 @@ class Simulator:
         -------
         dict of (int, str) to float
             The account value per year and label (non-zero entries only). Feature labels
-            and the product labels produced by the treatment are both included, so the
-            result is addable to the empty-schedule base for every simulated account.
+            and the product labels produced by the treatments are both included.
         """
         positions = self._block_index().get(int(block_id), [])
         if not positions:
             return {}
+        by_year = {int(year): str(treatment) for treatment, year in events}
         tracks = self.fragments["track_id"].to_numpy()[positions].astype(np.int64)
         offsets = self.fragments["offset"].to_numpy()[positions].astype(np.int64)
         areas = self.fragments["area_ha"].to_numpy()[positions].astype(float)
         totals: dict[tuple[int, str], float] = {}
         for step in range(years):
-            if treatment is not None and step == year:
+            treatment = by_year.get(step)
+            if treatment is not None:
                 for index in range(len(positions)):
                     current = int(tracks[index])
-                    transition = self._treatment_by_key.get((current, str(treatment)))
+                    transition = self._treatment_by_key.get((current, treatment))
                     if transition is not None:
                         area = float(areas[index])
                         offset = int(offsets[index])
                         for curve_id, product_label in self._products_by_key.get(
-                            (current, str(treatment)), []
+                            (current, treatment), []
                         ):
                             value = area * self._curve_value(curve_id, offset)
                             key = (step, product_label)
@@ -388,6 +388,32 @@ class Simulator:
                     totals[key] = totals.get(key, 0.0) + value
             offsets += 1
         return totals
+
+    def block_trajectory(
+        self, block_id: int, treatment: str | None, year: int, years: int
+    ) -> dict[tuple[int, str], float]:
+        """Return one block's account values over a horizon under a single treatment.
+
+        This is :meth:`block_chain` with at most one event; see it for the semantics.
+
+        Parameters
+        ----------
+        block_id : int
+            The block.
+        treatment : str or None
+            The treatment to apply, or None for no treatment.
+        year : int
+            The year to apply the treatment.
+        years : int
+            The horizon, in years.
+
+        Returns
+        -------
+        dict of (int, str) to float
+            The account value per year and label (non-zero entries only).
+        """
+        events: list[tuple[str, int]] = [] if treatment is None else [(str(treatment), int(year))]
+        return self.block_chain(block_id, events, years)
 
     def block_products(self, block_id: int, treatment: str, year: int) -> dict[str, float]:
         """Return the product values a treatment makes on a block.

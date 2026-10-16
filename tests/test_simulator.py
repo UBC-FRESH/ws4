@@ -214,3 +214,35 @@ def test_a_treatment_the_track_does_not_offer_is_skipped(tmp_path: Path) -> None
     assert offered["value"].iloc[0] != baseline["value"].iloc[0]
     # An unoffered treatment leaves the state unchanged.
     pd.testing.assert_frame_equal(missing, baseline)
+
+
+def test_block_chain_matches_block_trajectory(tmp_path: Path) -> None:
+    """A one-event chain is the single-treatment trajectory; an empty chain is no treatment."""
+    dataset = _dataset(tmp_path)
+    simulator = Simulator.from_dataset(dataset)
+    assert simulator.block_chain(1, [("CC", 0)], 4) == simulator.block_trajectory(1, "CC", 0, 4)
+    assert simulator.block_chain(1, [], 4) == simulator.block_trajectory(1, None, 0, 4)
+
+
+def test_block_chain_delta_equals_the_simulate_delta(tmp_path: Path) -> None:
+    """A chain of events is additive: its delta equals simulate()'s delta for the same rows."""
+    dataset = _dataset(tmp_path)
+    events = [("CC", 0), ("CC", 2)]
+    rows = pd.DataFrame({"block_id": [1, 1], "treatment": ["CC", "CC"], "period": [0, 2]})
+    values = Simulator.from_dataset(dataset).simulate(rows, 4)
+    base = Simulator.from_dataset(dataset).simulate(rows.head(0), 4)
+    combined = values.set_index(["year", "account"])["value"]
+    baseline = base.set_index(["year", "account"])["value"]
+    simulated = combined.subtract(baseline, fill_value=0.0)
+
+    simulator = Simulator.from_dataset(dataset)
+    chain = simulator.block_chain(1, events, 4)
+    empty = simulator.block_chain(1, [], 4)
+    expected = {
+        cell: chain.get(cell, 0.0) - empty.get(cell, 0.0) for cell in set(chain) | set(empty)
+    }
+    expected = {cell: value for cell, value in expected.items() if value != 0.0}
+    assert expected
+    for cell, value in expected.items():
+        year, account = cell
+        assert simulated.get((year, account), 0.0) == pytest.approx(value)
