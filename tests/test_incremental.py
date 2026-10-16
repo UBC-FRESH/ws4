@@ -117,6 +117,17 @@ def test_delta_evaluator_is_available_without_routes(tmp_path: Path) -> None:
     assert optimizer.delta_evaluator(_targets()) is not None
 
 
+def test_operator_weights_come_from_the_config(tmp_path: Path) -> None:
+    """The optimizer builds its operator registry from the config weights."""
+    optimizer = Optimizer.from_dataset(
+        _dataset(tmp_path),
+        OptimizeConfig(years=2, iterations=1, seed=1, toggle_weight=2.0, lns_weight=0.0),
+    )
+    weights = optimizer.registry.weights()
+    assert weights["toggle"] == 2.0
+    assert weights["lns"] == 0.0
+
+
 def test_candidates_are_treatment_chains(tmp_path: Path) -> None:
     """A block's candidates are chains of (treatment, year) events."""
     optimizer = _optimizer(tmp_path)

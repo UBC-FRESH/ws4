@@ -113,6 +113,12 @@ def optimize(
     spatial_override: bool = typer.Option(
         False, "--spatial-override", help="Allow schedules that violate the spatial constraints"
     ),
+    lns_weight: float = typer.Option(
+        0.2, "--lns-weight", help="Weight of the LNS operator (0 disables it)"
+    ),
+    lns_destroy: float = typer.Option(
+        0.1, "--lns-destroy", help="Fraction of the schedule an LNS move destroys"
+    ),
 ) -> None:
     """Search for a schedule that satisfies the targets and write a summary."""
     cfg = OptimizeConfig(
@@ -131,6 +137,8 @@ def optimize(
         core_buffer_m=core_buffer_m,
         min_core_area_ha=min_core_area_ha,
         allow_spatial_override=spatial_override,
+        lns_weight=lns_weight,
+        lns_destroy=lns_destroy,
     )
     opt = Optimizer.from_dataset(dataset, cfg)
     result = opt.run(out)
@@ -163,6 +171,12 @@ def watch(
     ),
     refresh: float = typer.Option(2.0, "--refresh", help="Seconds between repaints (heartbeat)"),
     plain: bool = typer.Option(False, "--plain", help="Print one final frame (no live view)"),
+    lns_weight: float = typer.Option(
+        0.2, "--lns-weight", help="Weight of the LNS operator (0 disables it)"
+    ),
+    lns_destroy: float = typer.Option(
+        0.1, "--lns-destroy", help="Fraction of the schedule an LNS move destroys"
+    ),
     route_config: Path = typer.Option(
         None, "--route-config", exists=True, help="Optional route model and route accounts (YAML)"
     ),
@@ -191,6 +205,8 @@ def watch(
         cooling=cooling,
         warm_start=warm_start,
         targets_path=str(targets),
+        lns_weight=lns_weight,
+        lns_destroy=lns_destroy,
         topology_path=str(topology) if topology is not None else "",
         route_config_path=str(route_config) if route_config is not None else "",
         max_opening_ha=max_opening_ha,

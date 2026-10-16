@@ -98,10 +98,10 @@ class IncrementalObjective:
         contribution = {
             cell: value
             for cell, value in self.optimizer._block_delta(block, chain, self.accounts).items()
-            if cell[1] in self.accounts
+            if cell[1] in self.accounts and value != 0.0
         }
         for cell, value in self.optimizer._block_route_delta(block, chain).items():
-            if cell[1] in self.accounts:
+            if cell[1] in self.accounts and value != 0.0:
                 contribution[cell] = contribution.get(cell, 0.0) + value
         self._contributions[key] = contribution
         return contribution
@@ -112,12 +112,12 @@ class IncrementalObjective:
         for block in changed:
             old = self.assignments.get(block)
             new = schedule.get(block)
-            old_contribution = self._contribution(block, old) if old is not None else {}
-            new_contribution = self._contribution(block, new) if new is not None else {}
-            for cell in set(old_contribution) | set(new_contribution):
-                difference = new_contribution.get(cell, 0.0) - old_contribution.get(cell, 0.0)
-                if difference:
-                    pending[cell] = pending.get(cell, 0.0) + difference
+            if new is not None:
+                for cell, value in self._contribution(block, new).items():
+                    pending[cell] = pending.get(cell, 0.0) + value
+            if old is not None:
+                for cell, value in self._contribution(block, old).items():
+                    pending[cell] = pending.get(cell, 0.0) - value
         return pending
 
     @property
