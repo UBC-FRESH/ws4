@@ -111,6 +111,200 @@ def label_all(
 
 
 @njit(cache=True, fastmath=True)
+def reachable_from(
+    ptr: np.ndarray,
+    indices: np.ndarray,
+    member: np.ndarray,
+    comp: np.ndarray,
+    start: int,
+    targets: np.ndarray,
+    target_flag: np.ndarray,
+    cid: int,
+    seen: np.ndarray,
+    stack: np.ndarray,
+    seen_out: np.ndarray,
+    gen: int,
+) -> tuple[bool, int]:
+    """Walk from ``start`` within ``cid``, stopping once every target is reached.
+
+    Returns ``(all_reached, count)``; ``seen_out[0:count]`` holds the reached nodes in visit order.
+    ``seen`` and ``target_flag`` are generation-stamped scratch, so nothing has to be cleared
+    between calls beyond the current generation.
+
+    Parameters
+    ----------
+    ptr, indices : numpy.ndarray
+        The CSR adjacency.
+    member : numpy.ndarray
+        Non-zero for a member block.
+    comp : numpy.ndarray
+        The component id per node.
+    start : int
+        The node to start from.
+    targets : numpy.ndarray
+        The nodes that must all be reached.
+    target_flag : numpy.ndarray
+        Scratch, at least as long as the node count; set and cleared here.
+    cid : int
+        The component being walked.
+    seen : numpy.ndarray
+        Generation-stamped scratch, at least as long as the node count.
+    stack, seen_out : numpy.ndarray
+        Scratch, at least as long as the node count.
+    gen : int
+        The generation stamp; must exceed any value left in ``seen``.
+
+    Returns
+    -------
+    tuple of (bool, int)
+        Whether every target was reached, and the number of nodes reached.
+    """
+    for k in range(targets.size):
+        target_flag[targets[k]] = 1
+    remaining = targets.size
+    top = 0
+    stack[top] = start
+    top += 1
+    count = 0
+    seen_out[count] = start
+    count += 1
+    seen[start] = gen
+    if target_flag[start] == 1:
+        remaining -= 1
+    while top > 0:
+        top -= 1
+        node = stack[top]
+        for e in range(ptr[node], ptr[node + 1]):
+            other = indices[e]
+            if seen[other] != gen and member[other] == 1 and comp[other] == cid:
+                seen[other] = gen
+                stack[top] = other
+                top += 1
+                seen_out[count] = other
+                count += 1
+                if target_flag[other] == 1:
+                    remaining -= 1
+                    if remaining == 0:
+                        for k in range(targets.size):
+                            target_flag[targets[k]] = 0
+                        return True, count
+    for k in range(targets.size):
+        target_flag[targets[k]] = 0
+    return False, count
+
+
+@njit(cache=True, fastmath=True)
+def component_from(
+    ptr: np.ndarray,
+    indices: np.ndarray,
+    member: np.ndarray,
+    comp: np.ndarray,
+    start: int,
+    cid: int,
+    seen: np.ndarray,
+    stack: np.ndarray,
+    seen_out: np.ndarray,
+    gen: int,
+) -> int:
+    """Walk every member reachable from ``start`` within ``cid``.
+
+    Parameters
+    ----------
+    ptr, indices : numpy.ndarray
+        The CSR adjacency.
+    member : numpy.ndarray
+        Non-zero for a member block.
+    comp : numpy.ndarray
+        The component id per node.
+    start : int
+        The node to start from.
+    cid : int
+        The component being walked.
+    seen : numpy.ndarray
+        Generation-stamped scratch, at least as long as the node count.
+    stack, seen_out : numpy.ndarray
+        Scratch, at least as long as the node count.
+    gen : int
+        The generation stamp; must exceed any value left in ``seen``.
+
+    Returns
+    -------
+    int
+        The number of nodes reached; they are listed in ``seen_out[0:count]``.
+    """
+    top = 0
+    stack[top] = start
+    top += 1
+    count = 0
+    seen_out[count] = start
+    count += 1
+    seen[start] = gen
+    while top > 0:
+        top -= 1
+        node = stack[top]
+        for e in range(ptr[node], ptr[node + 1]):
+            other = indices[e]
+            if seen[other] != gen and member[other] == 1 and comp[other] == cid:
+                seen[other] = gen
+                stack[top] = other
+                top += 1
+                seen_out[count] = other
+                count += 1
+    return count
+
+
+@njit(cache=True, fastmath=True)
+def piece_aggregate(
+    ptr: np.ndarray,
+    indices: np.ndarray,
+    lengths: np.ndarray,
+    member: np.ndarray,
+    value: np.ndarray,
+    areas: np.ndarray,
+    nodes: np.ndarray,
+    count: int,
+    cid: int,
+    comp: np.ndarray,
+) -> tuple[float, float]:
+    """Sum a piece's area and perimeter and stamp its component id.
+
+    Parameters
+    ----------
+    ptr, indices, lengths : numpy.ndarray
+        The CSR adjacency.
+    member : numpy.ndarray
+        Non-zero for a member block.
+    value : numpy.ndarray
+        The criterion value per node.
+    areas : numpy.ndarray
+        The block area per node.
+    nodes : numpy.ndarray
+        The piece's nodes, in the first ``count`` slots.
+    count : int
+        The number of nodes in the piece.
+    cid : int
+        The component id to write.
+    comp : numpy.ndarray
+        The component id per node, written here.
+
+    Returns
+    -------
+    tuple of (float, float)
+        The piece's area and perimeter.
+    """
+    area = 0.0
+    perim = 0.0
+    for k in range(count):
+        node = nodes[k]
+        comp[node] = cid
+        area += value[node] * areas[node]
+        for e in range(ptr[node], ptr[node + 1]):
+            if member[indices[e]] == 0:
+                perim += lengths[e]
+    return area, perim
+
+
+@njit(cache=True, fastmath=True)
 def label_from_seeds(
     ptr: np.ndarray,
     indices: np.ndarray,

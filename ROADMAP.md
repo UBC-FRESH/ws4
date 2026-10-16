@@ -294,6 +294,7 @@ budget. Plan of record: `notes/design/ws4-performance.md`.
 - [x] P6.27 Make the criterion-series primitive cheap (patch `_affected`)
 - [x] P6.28 Compiled-port ceiling measured on realistic components (decision; prototype only)
 - [x] P6.29 Array-backed patch state with a compiled bulk relabel
+- [x] P6.30 Compiled connectivity walks (recovers the single-block regression)
 
 Deferred from P6, triaged in `notes/backlog.md`:
 
