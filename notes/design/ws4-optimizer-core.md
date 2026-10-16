@@ -146,3 +146,14 @@ slot in: the dZ loop is a handful of vectorised array ops.
   candidates as feasible chains (walk the track transitions), a chain schedule type, and operators +
   delta over chains; then (M2c) spatial disturbance years per rotation and route accounts for a
   chain.
+- 2026-10-16 **M2b done** (issue #78): the optimizer now searches chains. `Schedule` is
+  `dict[int, Chain]` (a block's ordered events); `candidates()` walks the track transitions to
+  generate the feasible rotations (window start/mid/end per rotation, capped at 3 rotations and 12
+  chains per block); `_schedule_frame` expands a chain to rows; `_block_delta(block, chain)` evaluates
+  a chain (with the `block_chain_products` fast path); the delta evaluator prices a changed block's
+  whole chain; the operators toggle/rechoose/swap/destroy chains. Verified on C5 (200-year): 6,169 of
+  12,567 blocks have multi-rotation candidates (e.g. block 35 -> `(('CC', 28), ('CC', 178))`), a mixed
+  chain schedule's incremental values equal a full simulation exactly (0.000000), and SA built an
+  incumbent with 1,060 multi-rotation blocks. Remaining (M2c): spatial disturbance years per rotation,
+  route accounts for a chain (the route path falls back to a full simulation for multi-event chains),
+  and the MIP bound.

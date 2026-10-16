@@ -37,9 +37,12 @@ from .core import Problem
 from .incremental import IncrementalObjective
 from .mip import bound_for
 from .objective import Target, load_targets, objective
-from .operators import Candidates, OperatorRegistry, Schedule
+from .operators import Candidates, Chain, OperatorRegistry, Schedule
 from .solvers import solve_ils, solve_sa, solve_sa_delta, solve_tabu
 from .telemetry import RunLogger
+
+_MAX_ROTATIONS = 3
+_MAX_CHAINS = 12
 
 
 @dataclass
@@ -93,10 +96,10 @@ class Optimizer:
         self._simulator_cache: Simulator | None = None
         self._base_cache: dict[tuple[int, str], float] | None = None
         self._product_delta_cache: dict[
-            tuple[int, str, int, tuple[str, ...]], dict[tuple[int, str], float]
+            tuple[int, Chain, tuple[str, ...]], dict[tuple[int, str], float]
         ] = {}
         self._last_values: pd.DataFrame | None = None
-        self._delta_cache: dict[tuple[int, str, int], dict[tuple[int, str], float]] = {}
+        self._delta_cache: dict[tuple[int, Chain], dict[tuple[int, str], float]] = {}
         self._route_delta_cache: dict[tuple[int, str, int], dict[tuple[int, str], float]] = {}
 
     @classmethod
@@ -128,41 +131,99 @@ class Optimizer:
         return self._route_cache
 
     def candidates(self) -> Candidates:
-        """Return the possible ``(treatment, year)`` options for each block.
+        """Return the possible treatment chains for each block.
 
-        A block's options are the treatments offered by its track, at the start, the
-        midpoint, and the end of each treatment's eligible age window.
+        A block may be treated more than once. A chain is built by walking the track
+        transitions: a treatment applies over an age window, so its schedule years are the
+        years the block reaches that window; after a treatment the block moves to the
+        successor track at the treatment's reset age, and the next rotation is read from
+        there. The window start, midpoint, and end are taken per rotation, up to a rotation
+        cap, and each block's chain list is capped.
+
+        Returns
+        -------
+        dict of int to list of Chain
+            The candidate treatment chains per block (single rotations first, earliest
+            first, then multi-rotation chains).
         """
         simulator = Simulator.from_dataset(self.dataset_dir)
+        by_track: dict[int, list[tuple[str, int, int, int, int]]] = {}
+        for row in simulator.treatments.itertuples(index=False):
+            by_track.setdefault(int(float(str(row.track_id))), []).append(
+                (
+                    str(row.treatment),
+                    int(float(str(row.begin))),
+                    int(float(str(row.end))),
+                    int(float(str(row.new_track))),
+                    int(float(str(row.offset))),
+                )
+            )
         grouped = simulator.fragments.groupby("block_id")
         track_of = grouped["track_id"].first().to_dict()
         age_of = grouped["age"].min().to_dict()
         options: Candidates = {}
+        rotations = min(_MAX_ROTATIONS, max(1, self.cfg.years))
         for raw_block, raw_track in track_of.items():
             block_id = int(float(str(raw_block)))
             track_id = int(float(str(raw_track)))
             age = int(float(str(age_of[raw_block])))
-            rows = simulator.treatments[simulator.treatments["track_id"] == track_id]
-            block_options: list[tuple[str, int]] = []
-            for _, treatment in rows.iterrows():
-                # The treatment's window is an age window; the schedule year is when the
-                # block reaches that age.
-                begin = max(0, int(treatment["begin"]) - age)
-                raw_end = int(treatment["end"])
-                end = self.cfg.years - 1 if raw_end <= 0 else min(self.cfg.years - 1, raw_end - age)
-                if begin > end:
-                    continue
-                label = str(treatment["treatment"])
-                for year in sorted({begin, (begin + end) // 2, end}):
-                    block_options.append((label, year))
-            options[block_id] = block_options
+            options[block_id] = self._chains(by_track, track_id, age, rotations)
         return options
 
+    def _chains(
+        self,
+        by_track: dict[int, list[tuple[str, int, int, int, int]]],
+        track: int,
+        age: int,
+        rotations: int,
+    ) -> list[Chain]:
+        """Return a block's feasible treatment chains, bounded.
+
+        Parameters
+        ----------
+        by_track : dict
+            The treatments per track, as ``(treatment, begin, end, new_track, offset)``.
+        track : int
+            The block's initial track.
+        age : int
+            The block's initial age.
+        rotations : int
+            The maximum number of treatments in a chain.
+
+        Returns
+        -------
+        list of Chain
+            The chains; a single rotation first (earliest first), then multi-rotation chains.
+        """
+        single: list[Chain] = []
+        multi: list[Chain] = []
+        frontier: list[tuple[Chain, int, int, int]] = [((), track, age, 0)]
+        last_year = self.cfg.years - 1
+        for _ in range(rotations):
+            next_frontier: list[tuple[Chain, int, int, int]] = []
+            for chain, current_track, current_age, current_year in frontier:
+                for label, begin, end, new_track, new_age in by_track.get(current_track, []):
+                    start = current_year + max(0, begin - current_age)
+                    stop = last_year if end <= 0 else current_year + (end - current_age)
+                    stop = min(stop, last_year)
+                    if start > stop:
+                        continue
+                    for year in sorted({start, (start + stop) // 2, stop}):
+                        new_chain = (*chain, (label, year))
+                        (single if len(new_chain) == 1 else multi).append(new_chain)
+                        next_frontier.append((new_chain, new_track, new_age, year))
+            frontier = next_frontier
+            if not frontier:
+                break
+        single.sort(key=lambda chain: chain[0][1])
+        return (single + multi)[:_MAX_CHAINS]
+
     def _schedule_frame(self, schedule: Schedule) -> pd.DataFrame:
-        """Render a schedule as a DataFrame."""
+        """Render a schedule as a DataFrame (one row per treatment event)."""
         rows = [
             {"block_id": block, "treatment": treatment, "period": year}
-            for block, (treatment, year) in schedule.items()
+            for block, chain in schedule.items()
+            for treatment, year in chain
         ]
         return pd.DataFrame(rows, columns=["block_id", "treatment", "period"])
 
@@ -191,7 +252,10 @@ class Optimizer:
         additive_routes = not route_accounts or (
             model is not None and all(account.kind != "build" for account in route_accounts)
         )
-        if not self.edge_elements() and additive_routes:
+        # The route delta is priced per single treatment; with a multi-rotation chain and
+        # route accounts, fall back to a full simulation.
+        multi = any(len(chain) > 1 for chain in schedule.values())
+        if not self.edge_elements() and additive_routes and not (route_accounts and multi):
             values = self._incremental_values(schedule, duplicate_accounts, route_accounts)
         else:
             values = self._full_values(schedule, model, route_accounts, duplicate_accounts)
@@ -294,21 +358,19 @@ class Optimizer:
         return base
 
     def _block_delta(
-        self, block: int, treatment: str, year: int, accounts: set[str] | None = None
+        self, block: int, chain: Chain, accounts: set[str] | None = None
     ) -> dict[tuple[int, str], float]:
-        """Return a block's account-value delta for an assignment, cached.
+        """Return a block's account-value delta for a treatment chain, cached.
 
         Parameters
         ----------
         block : int
             The block.
-        treatment : str
-            The treatment.
-        year : int
-            The year the treatment is applied.
+        chain : tuple of (str, int)
+            The block's treatment chain (events applied in year order).
         accounts : set of str or None, optional
             When given and the names are all product accounts, the delta is the products
-            produced at the treatment year, computed without stepping the horizon.
+            the chain makes, computed without stepping every year.
 
         Returns
         -------
@@ -316,23 +378,21 @@ class Optimizer:
             The account value per ``(year, account)`` cell (non-zero entries only).
         """
         if accounts is not None and all(name.startswith("product.") for name in accounts):
-            product_key = (block, treatment, year, tuple(sorted(accounts)))
+            product_key = (block, chain, tuple(sorted(accounts)))
             cached_product = self._product_delta_cache.get(product_key)
             if cached_product is not None:
                 return cached_product
-            products = self.simulator().block_products(block, treatment, year)
-            product_delta = {
-                (year, label): value for label, value in products.items() if label in accounts
-            }
+            products = self.simulator().block_chain_products(block, chain)
+            product_delta = {cell: value for cell, value in products.items() if cell[1] in accounts}
             self._product_delta_cache[product_key] = product_delta
             return product_delta
-        key = (block, treatment, year)
+        key = (block, chain)
         cached = self._delta_cache.get(key)
         if cached is not None:
             return cached
         simulator = self.simulator()
-        treated = simulator.block_trajectory(block, treatment, year, self.cfg.years)
-        empty = simulator.block_trajectory(block, None, year, self.cfg.years)
+        treated = simulator.block_chain(block, chain, self.cfg.years)
+        empty = simulator.block_chain(block, (), self.cfg.years)
         delta = {
             cell: treated.get(cell, 0.0) - empty.get(cell, 0.0)
             for cell in set(treated) | set(empty)
@@ -380,10 +440,11 @@ class Optimizer:
         self.simulator().reset()
         totals = dict(self._base_values())
         route_totals: dict[tuple[int, str], float] = {}
-        for block, (treatment, year) in schedule.items():
-            for cell, value in self._block_delta(block, treatment, year).items():
+        for block, chain in schedule.items():
+            for cell, value in self._block_delta(block, chain).items():
                 totals[cell] = totals.get(cell, 0.0) + value
-            if route_accounts:
+            if route_accounts and chain:
+                treatment, year = chain[0]
                 for cell, value in self._block_route_delta(block, treatment, year).items():
                     route_totals[cell] = route_totals.get(cell, 0.0) + value
         values = self._values_frame(totals)
