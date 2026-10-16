@@ -430,3 +430,9 @@ issue comments.
   blocks). Parity with the full simulation holds to floating-point tolerance. C5 10-year warm
   evaluation: ~1.29 s to 0.23 s (empty) and ~3.8 s to **6.7 ms** (300-block schedule), meeting the
   under-50 ms target. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.
+- P6.5: solvers at scale. Added an island model (`OptimizeConfig.islands` / `episodes`, `--islands` /
+  `--episodes`): islands run as parallel processes and, after each episode, the global best schedule is
+  migrated into every island as the next episode's starting point. Deterministic for a given seed
+  (tested), and no worse than a single start. NUMA-aware placement and batched/candidate-level parallel
+  move evaluation remain as future refinements. Dashboard result: `python scripts/dashboard.py` reports
+  `OVERALL: GREEN`.

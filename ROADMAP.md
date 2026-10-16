@@ -269,7 +269,7 @@ budget. Plan of record: `notes/design/ws4-performance.md`.
 - [x] P6.2 Vectorized simulator core (#63)
 - [x] P6.3 Spatial precompute and incremental metrics (#64)
 - [x] P6.4 Incremental objective evaluation (#65)
-- [ ] P6.5 Solvers at scale (#66)
+- [x] P6.5 Solvers at scale (#66)
 - [ ] P6.6 Native kernels (#67)
 - [ ] P6.7 Guardrails (#68)
 
