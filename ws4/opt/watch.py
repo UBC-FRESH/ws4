@@ -32,7 +32,7 @@ from .core import Problem
 from .engine import Optimizer
 from .objective import Target
 from .operators import Schedule
-from .solvers import solve_ils, solve_sa, solve_tabu
+from .solvers import solve_ils, solve_sa, solve_sa_delta, solve_tabu
 
 Cell = tuple[str, str]
 
@@ -500,6 +500,9 @@ def run_watch(
         targets=tuple(targets),
     )
     candidates = optimizer.candidates()
+    evaluator = (
+        optimizer.delta_evaluator(targets, accounts_tuple) if cfg.metaheuristic == "sa" else None
+    )
     problem = Problem(
         evaluate=_wrapped_evaluate(optimizer, targets, state),
         candidates=candidates,
@@ -523,11 +526,28 @@ def run_watch(
         )
     )
 
-    def on_step(iteration: int, _objective: float) -> None:
+    def on_step(iteration: int, objective: float) -> None:
         state.iteration = iteration
+        state.evaluations = iteration + 1
+        if evaluator is not None and objective < state.best_objective:
+            state.best_objective = objective
+            state.best_values = evaluator.values_frame()
+            state.window = state.current_window()
 
     def solve() -> Schedule:
-        if cfg.metaheuristic == "tabu":
+        if evaluator is not None:
+            best, _ = solve_sa_delta(
+                evaluator,
+                rng,
+                iterations=cfg.iterations,
+                temperature=cfg.temperature,
+                cooling=cfg.cooling,
+                candidates=candidates,
+                registry=optimizer.registry,
+                initial=initial,
+                on_step=on_step,
+            )
+        elif cfg.metaheuristic == "tabu":
             best, _ = solve_tabu(
                 problem,
                 rng,

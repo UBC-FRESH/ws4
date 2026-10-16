@@ -114,8 +114,19 @@ slot in: the dZ loop is a handful of vectorised array ops.
   schedule, 60 iterations): whole-schedule 26.80 s (2.2 iters/s) vs move-based **0.426 s
   (141 iters/s)** = **63x**, incumbent objective identical (17 458 613) and confirmed by a full
   re-evaluation. Tests: `tests/test_incremental.py` (6).
-- 2026-10-16 M1 profile of what remains (per move): `evaluator.delta` **0.001 ms** and `apply`
-  0.001 ms, but `operator.apply` 0.611 ms (it rebuilds the candidate block list and copies the
-  schedule each call) and `_changed_blocks` 0.540 ms (O(schedule) diff). So the objective delta is
-  solved; the next win is the move bookkeeping (precompute the operator block lists, have operators
-  report changed blocks, avoid whole-schedule dict copies) — target ~1000 iters/s.
+- 2026-10-16 **M1b done** (issue #79): the objective delta was already ~1 us; the rest was
+  bookkeeping. Fixes: the LNS destroy used a *list* membership test (`block not in destroyed` over
+  ~565 items x 5,648 blocks -> 32 ms/call -> 1.0 ms with a set); a shared operator option index
+  (assignable blocks, shiftable options) removed per-call scans (toggle 0.50 -> 0.08 ms, shift
+  1.83 -> 0.70 ms); `Simulator.block_products` computes only the products at the treatment year and
+  `Optimizer._block_delta(..., accounts)` uses it when the targets are product accounts, so a cache
+  miss costs O(fragments) not O(fragments x years). Measured on C5 (50-year): cold reset
+  13.4 -> **0.9 s**; steady state 39.8 -> **443 iters/s**; whole-schedule ~2.2 iters/s, so ~200x.
+  Correctness: 300-path comparison and a 60-move random walk are exact (0 mismatch); the A/B
+  incumbent matches a full re-evaluation and follows the same trajectory.
+- 2026-10-16 the watcher now uses the delta evaluator (`run_watch` builds it via
+  `delta_evaluator(targets, watched_accounts)`), so `ws4 watch` is on the fast path too: 1000
+  iterations in ~3.1 s on C5 (50-year).
+- Bug found and fixed on the way: the new `block_products` fast path must use the fragment's offset
+  *at the treatment year* (the simulator ages the fragment `year` steps), i.e. `offset + year`;
+  without it the delta under-reported and the search diverged.

@@ -389,6 +389,47 @@ class Simulator:
             offsets += 1
         return totals
 
+    def block_products(self, block_id: int, treatment: str, year: int) -> dict[str, float]:
+        """Return the product values a treatment makes on a block.
+
+        The value is the fragment area times the product curve at the pre-treatment
+        offset **at the treatment year** (the fragment ages ``year`` steps before the
+        treatment), summed over the block's fragments. This is the product part of
+        :meth:`block_trajectory` without stepping the horizon, so it costs O(fragments)
+        rather than O(fragments x years).
+
+        Parameters
+        ----------
+        block_id : int
+            The block.
+        treatment : str
+            The treatment to apply.
+        year : int
+            The year the treatment is applied.
+
+        Returns
+        -------
+        dict of str to float
+            The product value per product label (non-zero entries only).
+        """
+        positions = self._block_index().get(int(block_id), [])
+        if not positions:
+            return {}
+        tracks = self.fragments["track_id"].to_numpy()
+        offsets = self.fragments["offset"].to_numpy()
+        areas = self.fragments["area_ha"].to_numpy(dtype=float)
+        totals: dict[str, float] = {}
+        for index in positions:
+            key = (int(tracks[index]), str(treatment))
+            if key not in self._treatment_by_key:
+                continue
+            offset = int(offsets[index]) + int(year)
+            area = float(areas[index])
+            for curve_id, product_label in self._products_by_key.get(key, []):
+                value = area * self._curve_value(curve_id, offset)
+                totals[product_label] = totals.get(product_label, 0.0) + value
+        return totals
+
     def block_route_accounts(
         self,
         block_id: int,
