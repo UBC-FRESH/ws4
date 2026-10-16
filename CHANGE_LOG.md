@@ -596,3 +596,20 @@ issue comments.
   account's topology neighbourhood, in metres) scopes the adjacency. Verified cell-for-cell against the
   reporting path and the from-scratch computation over random mutation sequences
   (`tests/test_patch_state.py`, `tests/test_patch_objective.py`). Dashboard: **GREEN**.
+
+## 2026-10-16
+
+- P6.20 (feature): topology cluster operator. Single-block moves rarely reach a harvest-block
+  configuration, so `ClusterOperator` (`--cluster-weight`, `--cluster-size`) proposes one move over a
+  whole topology neighbourhood and lets the search create or break a patch in a single step. On the
+  50-year patch-target problem it reached objective 10.67 at weight 0.5, against 11.60 with the operator
+  off, at about 39 iterations/s. Tests: `tests/test_operators.py`. Dashboard: **GREEN**.
+- P6.21 (feature): stand-centred opening constraints in the MIP bound. `bound_for` accepts a topology
+  and `max_opening_ha`, and `solve_mip` then adds one linear row per stand and year
+  (Gunn and Richards 2005, eq. 6) rather than enumerating adjacency covers; a stand whose own area
+  exceeds the cap is forbidden (the `A_k+` below-zero case). The bound stays a valid lower bound and
+  tightens monotonically as the cap falls: on a 20-block C5 subset over 200 years it is 3,866,245 with
+  no cap, 3,884,505 at 80 ha, 3,890,015 at 60 ha, and 3,951,474 at 30 ha, and each returned schedule
+  re-simulates to within the mixed-integer tolerance of its bound. The optimizer forwards the configured
+  `topology_path` and `max_opening_ha` when `mip_bound` is set. Tests: `tests/test_mip.py`.
+  Dashboard: **GREEN**.

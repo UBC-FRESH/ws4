@@ -882,7 +882,14 @@ class Optimizer:
             "dataset": dataset_reference(self.dataset_dir),
         }
         if self.cfg.mip_bound:
-            bound = bound_for(self.dataset_dir, targets, self.candidates(), self.cfg.years)
+            bound = bound_for(
+                self.dataset_dir,
+                targets,
+                self.candidates(),
+                self.cfg.years,
+                topology_path=Path(self.cfg.topology_path) if self.cfg.topology_path else None,
+                max_opening_ha=self.cfg.max_opening_ha,
+            )
             summary["bound"] = bound.objective
             summary["gap"] = best_obj - bound.objective
             summary["bound_status"] = bound.status

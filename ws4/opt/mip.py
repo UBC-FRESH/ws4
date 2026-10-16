@@ -13,13 +13,14 @@ subproblem), not a full landscape.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from ..patch.accounts import load_patch_edges_detailed
 from .objective import Target
 from .operators import Candidates, Chain, Schedule
 
@@ -121,11 +122,82 @@ def option_contributions(
     return base, deltas, accounted
 
 
+def _opening_rows(
+    variables: list[tuple[int, Chain]],
+    index: dict[tuple[int, Chain], int],
+    n_vars: int,
+    years: int,
+    adjacency: Mapping[int, Sequence[int]],
+    block_area: Mapping[int, float],
+    max_opening_ha: float,
+) -> tuple[list[np.ndarray], list[float], list[float]]:
+    """Return the stand-centred adjacency rows (Gunn and Richards 2005, eq. 6).
+
+    For each stand ``k`` and year ``t``::
+
+        sum_{i in A_k} a_i x_it + A'_k x_kt <= sum_{i in A_k} a_i
+
+    where ``A_k`` is the stands adjacent to ``k``, ``a_i`` the stand area, and
+    ``A'_k = sum_{i in A_k} a_i - (A_max - a_k)``. One linear row per stand and period
+    expresses the opening-size adjacency limit without enumerating covers.
+    """
+    treated: dict[tuple[int, Chain], set[int]] = {
+        key: {year for _, year in key[1]} for key in variables
+    }
+    by_block: dict[int, list[tuple[int, Chain]]] = {}
+    for key in variables:
+        by_block.setdefault(key[0], []).append(key)
+    rows: list[np.ndarray] = []
+    lower: list[float] = []
+    upper: list[float] = []
+    for block, neighbours in adjacency.items():
+        area_k = block_area.get(block, 0.0)
+        plus = max_opening_ha - area_k
+        neighbour_area = sum(block_area.get(other, 0.0) for other in neighbours)
+        if plus < 0.0:
+            # the stand alone exceeds the opening cap, so it cannot be harvested at all
+            for year in range(years):
+                row = np.zeros(n_vars)
+                touched = False
+                for key in by_block.get(block, ()):
+                    if year in treated[key]:
+                        row[index[key]] = 1.0
+                        touched = True
+                if touched:
+                    rows.append(row)
+                    lower.append(-np.inf)
+                    upper.append(0.0)
+            continue
+        aprime = neighbour_area - plus
+        for year in range(years):
+            row = np.zeros(n_vars)
+            touched = False
+            for other in neighbours:
+                other_area = block_area.get(other, 0.0)
+                for key in by_block.get(other, ()):
+                    if year in treated[key]:
+                        row[index[key]] += other_area
+                        touched = True
+            if aprime != 0.0:
+                for key in by_block.get(block, ()):
+                    if year in treated[key]:
+                        row[index[key]] += aprime
+                        touched = True
+            if not touched:
+                continue
+            rows.append(row)
+            lower.append(-np.inf)
+            upper.append(neighbour_area)
+    return rows, lower, upper
+
+
 def solve_mip(
     base: dict[int, dict[tuple[str, int], float]],
     deltas: dict[tuple[int, Chain], dict[tuple[str, int], float]],
     accounted: Sequence[tuple[str, int]],
     targets: Sequence[Target],
+    opening: tuple[Mapping[int, Sequence[int]], Mapping[int, float], float] | None = None,
+    years: int = 0,
 ) -> MipResult:
     """Solve the option-selection MILP and return the bound.
 
@@ -187,13 +259,13 @@ def solve_mip(
 
     # value + shortfall >= minimum ; -value + excess >= -maximum.
     for target_index, target in enumerate(targets):
-        years = list(target.cell_years())
+        target_years = list(target.cell_years())
         delta_row = np.zeros(n_vars)
         for key, delta in deltas.items():
-            total = sum(delta.get((target.account, year), 0.0) for year in years)
+            total = sum(delta.get((target.account, year), 0.0) for year in target_years)
             if total:
                 delta_row[index[key]] = total
-        offset_value = sum(offset.get((target.account, year), 0.0) for year in years)
+        offset_value = sum(offset.get((target.account, year), 0.0) for year in target_years)
         if target.minimum is not None:
             row = delta_row.copy()
             row[n_x + target_index] = 1.0
@@ -206,6 +278,15 @@ def solve_mip(
             rows.append(row)
             lower.append(-target.maximum + offset_value)
             upper.append(np.inf)
+
+    if opening is not None and years:
+        adjacency, block_area, max_opening_ha = opening
+        opening_rows, opening_lower, opening_upper = _opening_rows(
+            variables, index, n_vars, years, adjacency, block_area, max_opening_ha
+        )
+        rows.extend(opening_rows)
+        lower.extend(opening_lower)
+        upper.extend(opening_upper)
 
     if not rows:
         return MipResult(0.0, {}, "no-targets", n_x)
@@ -231,7 +312,12 @@ def solve_mip(
 
 
 def bound_for(
-    dataset_dir: Path, targets: Sequence[Target], candidates: Candidates, years: int
+    dataset_dir: Path,
+    targets: Sequence[Target],
+    candidates: Candidates,
+    years: int,
+    topology_path: Path | None = None,
+    max_opening_ha: float | None = None,
 ) -> MipResult:
     """Compute a penalty lower bound for a dataset and a target set.
 
@@ -245,6 +331,11 @@ def bound_for(
         The candidate options per block.
     years : int
         The simulation horizon.
+    topology_path : Path or None, optional
+        The block topology. When given with ``max_opening_ha``, the stand-centred opening
+        constraints (Gunn and Richards 2005, eq. 6) tighten the bound.
+    max_opening_ha : float or None, optional
+        The maximum opening (harvest block) area the stand-centred constraints enforce.
 
     Returns
     -------
@@ -257,4 +348,16 @@ def bound_for(
         return Simulator.from_dataset(dataset_dir)
 
     base, deltas, accounted = option_contributions(factory, candidates, targets, years)
-    return solve_mip(base, deltas, accounted, targets)
+    opening: tuple[Mapping[int, Sequence[int]], Mapping[int, float], float] | None = None
+    if topology_path is not None and max_opening_ha is not None:
+        adjacency: dict[int, list[int]] = {}
+        for source, target, _length, _distance in load_patch_edges_detailed(topology_path):
+            adjacency.setdefault(source, []).append(target)
+            adjacency.setdefault(target, []).append(source)
+        block_area = factory().fragments.groupby("block_id")["area_ha"].sum().to_dict()
+        opening = (
+            {block: tuple(items) for block, items in adjacency.items()},
+            {int(float(str(k))): float(v) for k, v in block_area.items()},
+            float(max_opening_ha),
+        )
+    return solve_mip(base, deltas, accounted, targets, opening=opening, years=years)
