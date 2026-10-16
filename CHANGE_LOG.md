@@ -628,3 +628,17 @@ issue comments.
   unchanged (about 3,200 and 59 iterations/s); the adaptive schedule is marginally faster because a
   warmer search rejects fewer moves, and a rejection restores the schedule and reverts the evaluator.
   Tests: `tests/test_cooling.py`, `tests/test_watch.py`. Dashboard: **GREEN**.
+- P6.23 (feature): target-weight calibration. Targets of different magnitudes unbalance the
+  objective: the largest term dominates and the search freezes before the others are considered
+  (Lockwood and Moore 1993 traced each term as the control parameter fell and rescaled them by hand
+  until they decreased at similar rates). `ws4 calibrate` runs a short pilot search, records the
+  largest penalty each target reaches (`objective_terms` in `ws4/opt/objective.py`), and writes a
+  targets file whose weights are rescaled so the peaks match (`balance_targets`, `ws4/opt/calibrate.py`);
+  a target that never fires keeps its own weights. It matters when the terms differ in magnitude: on
+  C5 with even-flow volume and a patch-size term, the pilot measures the volume peak at 7.7e6 against
+  12.9 for the patch term, so the patch term has no effect on the uncalibrated search; after
+  calibration the search improves **both** realized terms (volume 9.64e6 to 9.33e6, patch 11.06 to
+  9.47). The cost is real: the patch term makes each iteration about 2.3x more expensive, because the
+  moves that alter patches are the ones that cost, so the same 2,000 iterations take 117 s against 52 s.
+  The pilot must match the run's `--warm-start`, or a term that only appears once blocks are harvested
+  never registers. Tests: `tests/test_calibrate.py`. Dashboard: **GREEN**.
