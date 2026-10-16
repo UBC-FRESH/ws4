@@ -30,6 +30,7 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `design/ws4-performance.md` — the post-release performance and scalability plan (profiling, bottlenecks, targets).
 - `design/ws4-curve-grid.md` — the shared age-grid curve-table spike (data-layout change for the numeric core).
 - `design/ws4-join-rebuild.md` — the fast fragment-to-feature join rebuild spike (cold-path cost).
+- `design/ws4-incremental-route-accounts.md` — incremental route accounts in the objective (spike).
 - `adr/0001-fragment-compilation.md` — fragments are the compilation unit; blocks are a runtime aggregate.
 - `adr/0002-columnar-matrix-dataset.md` — the compiled dataset is versioned and columnar.
 - `adr/0003-spatial-structure-first-class.md` — spatial structure is part of the model.
