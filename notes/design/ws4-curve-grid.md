@@ -71,13 +71,18 @@ Conclusion: a per-age table is exact here (integer breakpoints) and small.
 - The existing suite (simulator, prototype, optimizer, performance parity, acceptance) must pass
   **unchanged** — that is the primary gate.
 
-## 6. Performance targets
+## 6. Performance targets and outcome
 
-| Metric | Current | Target |
-| --- | ---: | ---: |
-| `account_values`, per year | 5.8 ms | < 2 ms |
-| C5 base simulate, 30 years | 0.376 s | < 0.2 s |
-| Peak memory delta | — | < +50 MB |
+| Metric | Before | Target | Achieved |
+| --- | ---: | ---: | ---: |
+| `account_values`, per year | ~11.9 ms | < 2 ms | **2.33 ms** (5.1×) |
+| C5 base simulate, 30 years (warm) | 0.376 s | < 0.2 s | **0.095 s** (3.9×) |
+| C5 base simulate, 30 years (cold, incl. join build) | 0.376 s | < 0.2 s | 0.266 s (the 0.13 s join rebuild dominates) |
+| Construction | 0.52 s | < +50 MB | 0.57 s (+~0.05 s for the table; ~12 MB float64) |
+
+The target is met on the warm path (the optimizer's case). On a **cold** simulate the fragment-to-
+feature join rebuild (0.13 s) now dominates; that is separate from curves and is the next cold-path
+candidate, not part of this spike.
 
 ## 7. Risks and mitigations
 
@@ -107,6 +112,34 @@ Conclusion: a per-age table is exact here (integer breakpoints) and small.
 - **Abandon** if it is not clearly faster or if parity cannot hold: `git checkout feature/p6-performance`
   (or `git reset --hard p6-sharedgrid-checkpoint`); the spike lives only on `spike/shared-grid`.
 
+**Decision: adopt.** The warm 30-year base simulate is 0.095 s (3.9×) and `account_values` is 5.1×,
+with the full suite and the curve-table parity tests green. The gain is a data-layout change (an
+integer-age table), not a kernel or threads. The cold-path join rebuild is the next candidate and is
+recorded for a follow-up. The spike can be merged into `feature/p6-performance` or abandoned; the
+checkpoint tag `p6-sharedgrid-checkpoint` gives a clean rollback either way.
+
 ## 10. Log (updated as the work proceeds)
 
 - 2026-10-16: plan written; reconnaissance complete (section 3). Starting M1.
+- 2026-10-16 M1: `CurveTable` + 8 unit tests (parity, clamp, single-point, non-integer, empty). Green.
+  Note: I twice committed with the format gate red by chaining the commit on a pipe; fixed both.
+- 2026-10-16 M2: wired `account_values` to the table gather.
+  - Surprise: the build with per-curve masking was slow (construction 0.52 → 1.41 s). **Adjustment:**
+    build the table from one `sort_values(["curve_id","x"])` and slice groups (construction back to
+    ~0.57 s).
+  - Surprise: `account_values` measured against the *isolated* loop was misleading; the real function
+    went from ~11.9 ms/yr to **2.33 ms/yr (5.1×)**.
+  - Surprise (insight): the empty-schedule simulate was dominated not by curve evaluation but by a
+    **join rebuild (0.13 s)** triggered on every `reset()`. **Adjustment:** `reset()` now invalidates
+    the join only when the tracks actually changed. Cold 30-y simulate 0.376 → 0.266 s; warm
+    0.376 → **0.095 s**.
+  - One existing test encoded the old mechanism (`np.interp` once per curve); updated to the new
+    invariant (no interpolation at evaluation time) — the plan's §5 gate is behavior, not mechanism.
+- 2026-10-16 M3: wired `_curve_value` (treatments), `_criteria_join`/`block_criteria`, and (via
+  `_curve_value`) `block_trajectory` to the table, keeping the `curve_value` fallback for non-integer
+  ages. Spatial components were already vectorized, so they are unchanged (edge 0.26 s/3 y, patch
+  0.17 s/1 y). Green.
+  - Insight: with curve evaluation cheap, the **join rebuild (0.13 s)** is now the largest fixed cost
+    of a cold simulate. Out of scope here (it is the fragment-to-feature join, not curves); recorded as
+    the next cold-path candidate.
+- 2026-10-16 M4: docs and guardrails (below). Decision in section 9.

@@ -17,7 +17,7 @@ segments; a 72-core host):
      - Achieved
    * - C5 30-year ``simulate``
      - < 1 s
-     - ~0.4 s
+     - ~0.1 s (warm) / ~0.3 s (cold)
    * - C5 3-year ``simulate`` + routing (300 blocks)
      - < 5 s
      - ~3.9 s

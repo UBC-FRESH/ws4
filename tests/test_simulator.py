@@ -55,15 +55,12 @@ def test_run_records_the_dataset_reference(tmp_path: Path) -> None:
     assert len(reference["manifest_sha256"]) == 64
 
 
-def test_curve_evaluation_is_vectorized_per_curve(
+def test_curve_evaluation_uses_the_precomputed_table(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Account values call ``np.interp`` once per curve, not once per fragment."""
+    """Account values gather from the precomputed age table, not per-fragment interpolation."""
     dataset = _dataset(tmp_path)
     simulator = Simulator.from_dataset(dataset)
-    active = simulator.features[
-        simulator.features["track_id"].isin(simulator.fragments["track_id"])
-    ]
     calls: list[int] = []
     real_interp = np.interp
 
@@ -75,8 +72,8 @@ def test_curve_evaluation_is_vectorized_per_curve(
 
     monkeypatch.setattr(np, "interp", counting)
     simulator.account_values(0)
-    assert len(calls) == active["curve_id"].nunique()
-    assert len(calls) < len(simulator.fragments)
+    assert calls == []  # no interpolation at evaluation time
+    assert simulator._curve_table.table.shape[0] == simulator.curves["curve_id"].nunique()
 
 
 def test_a_treatment_records_its_product_yield(tmp_path: Path) -> None:

@@ -33,6 +33,7 @@ from ..roads.accounts import (
     resolve_account_values,
 )
 from ..roads.network import RouteNetwork
+from .curve import CurveTable
 
 
 def _as_int(value: object) -> int:
@@ -70,7 +71,8 @@ class Simulator:
         self._product_values: list[dict[str, object]] = []
         self._route_values: list[dict[str, object]] = []
         self._edge_values: list[dict[str, object]] = []
-        # Cache each curve's sorted x/y arrays for vectorized interpolation.
+        # Cache each curve's sorted x/y arrays for vectorized interpolation (the fallback
+        # for non-integer ages), and an integer-age table for the gather fast path.
         self._curves: dict[int, tuple[np.ndarray, np.ndarray]] = {
             _as_int(curve_id): (
                 group.sort_values("x")["x"].to_numpy(dtype=float),
@@ -78,6 +80,7 @@ class Simulator:
             )
             for curve_id, group in self.curves.groupby("curve_id")
         }
+        self._curve_table = CurveTable.from_curves(self.curves)
         # Index the treatments, products, and fragments once, so a year's treatments do not
         # index the frames row by row.
         self._treatment_by_key: dict[tuple[int, str], tuple[int, int]] = {
@@ -109,9 +112,9 @@ class Simulator:
         self._pair_curve = np.empty(0, dtype=np.int64)
         self._pair_label = np.empty(0, dtype=np.int64)
         self._labels: list[str] = []
-        self._curve_groups: dict[int, np.ndarray] = {}
+        self._pair_row = np.empty(0, dtype=np.int64)
         # Per-label joins for the patch/edge criteria, rebuilt when the frame changes.
-        self._criteria_cache: dict[str, tuple[np.ndarray, dict[int, np.ndarray]]] = {}
+        self._criteria_cache: dict[str, tuple[np.ndarray, np.ndarray]] = {}
         self._criteria_frame_id = -1
 
     def _rebuild_join(self) -> None:
@@ -131,7 +134,7 @@ class Simulator:
             self._pair_curve = np.empty(0, dtype=np.int64)
             self._pair_label = np.empty(0, dtype=np.int64)
             self._labels = []
-            self._curve_groups = {}
+            self._pair_row = np.empty(0, dtype=np.int64)
             self._join_dirty = False
             self._join_frame_id = id(self.fragments)
             return
@@ -156,14 +159,13 @@ class Simulator:
         self._pair_frag = pair_frag
         self._pair_curve = pair_curve.astype(np.int64)
         self._pair_label = pair_label.astype(np.int64)
-        order = np.argsort(pair_curve, kind="stable")
-        sorted_curve = pair_curve[order]
-        boundaries = np.flatnonzero(np.diff(sorted_curve)) + 1
-        segments = np.split(order, boundaries)
-        group_ids = sorted_curve[np.concatenate([[0], boundaries])] if segments else np.empty(0)
-        self._curve_groups = {
-            int(curve_id): rows for curve_id, rows in zip(group_ids, segments, strict=True)
-        }
+        unique_curve, curve_inverse = np.unique(self._pair_curve, return_inverse=True)
+        row_lookup = np.zeros(unique_curve.size, dtype=np.int64)
+        for index, curve_id in enumerate(unique_curve):
+            row = self._curve_table.row(int(curve_id))
+            if row is not None:
+                row_lookup[index] = row
+        self._pair_row = row_lookup[curve_inverse]
         self._join_dirty = False
         self._join_frame_id = id(self.fragments)
 
@@ -178,7 +180,10 @@ class Simulator:
         return self._fragments_by_block
 
     def _curve_value(self, curve_id: int, x: float) -> float:
-        """Evaluate a curve at one point from the precomputed per-curve arrays."""
+        """Evaluate a curve at one point: the age table for an integer age, else interp."""
+        value = self._curve_table.at(curve_id, x)
+        if value is not None:
+            return value
         arrays = self._curves.get(curve_id)
         if arrays is None:
             return 0.0
@@ -195,11 +200,12 @@ class Simulator:
 
         The static caches (curves, feature joins, treatment and product indexes) are kept,
         so a search can reuse one simulator across evaluations instead of reloading the
-        dataset each time.
+        dataset each time. The join is only invalidated when the tracks actually changed.
         """
-        self.fragments["track_id"] = self._initial_track
+        if not np.array_equal(self.fragments["track_id"].to_numpy(), self._initial_track):
+            self.fragments["track_id"] = self._initial_track
+            self._join_dirty = True
         self.fragments["offset"] = self._initial_offset
-        self._join_dirty = True
         self._criteria_frame_id = -1
 
     def apply_treatments(
@@ -284,7 +290,7 @@ class Simulator:
 
         A feature label may appear on several tracks; the value is the sum of the area
         times the feature curve at the fragment's offset, over the precomputed join. The
-        curves are evaluated per curve with ``numpy.interp``.
+        curves are evaluated with a single integer-age table gather.
         """
         if self._join_dirty or self._join_frame_id != id(self.fragments):
             self._rebuild_join()
@@ -292,14 +298,7 @@ class Simulator:
             return []
         offsets = self.fragments["offset"].to_numpy(dtype=float)
         areas = self.fragments["area_ha"].to_numpy(dtype=float)
-        x = offsets[self._pair_frag]
-        yields = np.zeros(x.size, dtype=float)
-        for curve_id, rows in self._curve_groups.items():
-            arrays = self._curves.get(curve_id)
-            if arrays is None:
-                continue
-            xs, ys = arrays
-            yields[rows] = np.interp(x[rows], xs, ys)
+        yields = self._curve_table.gather(self._pair_row, offsets[self._pair_frag])
         values = areas[self._pair_frag] * yields
         totals = np.bincount(self._pair_label, weights=values, minlength=len(self._labels))
         return [
@@ -324,19 +323,12 @@ class Simulator:
         dict of int to float
             The criterion value per block.
         """
-        pair_frag, curve_groups = self._criteria_join(label)
+        pair_frag, pair_row = self._criteria_join(label)
         if pair_frag.size == 0:
             return {}
         offsets = self.fragments["offset"].to_numpy(dtype=float)
         areas = self.fragments["area_ha"].to_numpy(dtype=float)
-        x = offsets[pair_frag]
-        yields = np.zeros(x.size, dtype=float)
-        for curve_id, rows in curve_groups.items():
-            arrays = self._curves.get(curve_id)
-            if arrays is None:
-                continue
-            xs, ys = arrays
-            yields[rows] = np.interp(x[rows], xs, ys)
+        yields = self._curve_table.gather(pair_row, offsets[pair_frag])
         frag_area = areas[pair_frag]
         weighted = frag_area * yields
         blocks = self.fragments["block_id"].to_numpy(dtype=np.int64)[pair_frag]
@@ -401,8 +393,8 @@ class Simulator:
             offsets += 1
         return totals
 
-    def _criteria_join(self, label: str) -> tuple[np.ndarray, dict[int, np.ndarray]]:
-        """Return the fragment positions and per-curve groups for a feature label."""
+    def _criteria_join(self, label: str) -> tuple[np.ndarray, np.ndarray]:
+        """Return the fragment positions and curve-table rows for a feature label."""
         if self._criteria_frame_id != id(self.fragments):
             self._criteria_cache = {}
             self._criteria_frame_id = id(self.fragments)
@@ -414,19 +406,16 @@ class Simulator:
         for track, curve in zip(
             feature["track_id"].to_numpy(), feature["curve_id"].to_numpy(), strict=True
         ):
-            by_track.setdefault(int(track), []).append(int(curve))
+            by_track.setdefault(int(track), []).append(self._curve_table.row(int(curve)) or 0)
         pair_frag: list[int] = []
-        pair_curve: list[int] = []
+        pair_row: list[int] = []
         for position, track in enumerate(self.fragments["track_id"].to_numpy()):
-            for curve in by_track.get(int(track), ()):
+            for row in by_track.get(int(track), ()):
                 pair_frag.append(position)
-                pair_curve.append(curve)
-        groups: dict[int, list[int]] = {}
-        for index, curve in enumerate(pair_curve):
-            groups.setdefault(curve, []).append(index)
+                pair_row.append(row)
         result = (
             np.asarray(pair_frag, dtype=np.int64),
-            {curve: np.asarray(rows, dtype=np.int64) for curve, rows in groups.items()},
+            np.asarray(pair_row, dtype=np.int64),
         )
         self._criteria_cache[label] = result
         return result
