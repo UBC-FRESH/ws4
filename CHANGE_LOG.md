@@ -414,3 +414,13 @@ issue comments.
   3.0 s to **0.31 s** (3 y; 0.070 s/yr) and patch accounts from 1.9 s to **0.25 s** (1 y; 0.066 s/yr),
   both under the 0.2 s-per-year target. Full-history incrementality and the single replay in `run` move
   to WP4. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.
+- P6.4 (in progress): incremental objective evaluation. First, the removal of per-evaluation waste:
+  the optimizer reuses one `Simulator` (`Simulator.reset` restores tracks/offsets instead of
+  reconstructing); `apply_treatments` evaluates curves from the precomputed per-curve arrays (the old
+  `curve_value` masked the whole 130 423-row curves frame per product); the route model memoizes the
+  destination choice per (block, product); the route ledger has a summary mode (`collect=False`) that
+  keeps only the per-destination totals the objective needs; and the fragment-to-feature join is
+  rebuilt with a vectorized numpy expansion. C5 warm objective evaluation fell from ~3.8 s to ~0.28 s
+  (300-block schedule, 10 years) and ~1.3 s to ~0.23 s (empty). The delta evaluation (base plus
+  per-block contributions) is the next step. Dashboard result: `python scripts/dashboard.py` reports
+  `OVERALL: GREEN`.

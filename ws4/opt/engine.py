@@ -86,6 +86,7 @@ class Optimizer:
         ) = None
         self._edge_cache: tuple[EdgeElement, ...] | None = None
         self._graph_cache: list[tuple[int, int, float]] | None = None
+        self._simulator_cache: Simulator | None = None
 
     @classmethod
     def from_dataset(cls, dataset_dir: Path, cfg: OptimizeConfig) -> Optimizer:
@@ -154,12 +155,26 @@ class Optimizer:
         ]
         return pd.DataFrame(rows, columns=["block_id", "treatment", "period"])
 
+    def simulator(self) -> Simulator:
+        """Return a reusable simulator, built once and reset before each use.
+
+        Returns
+        -------
+        Simulator
+            The simulator. Its mutable state is reset by :meth:`Simulator.reset` before
+            each evaluation, so one dataset load serves the whole search.
+        """
+        if self._simulator_cache is None:
+            self._simulator_cache = Simulator.from_dataset(self.dataset_dir)
+        return self._simulator_cache
+
     def _evaluate(self, schedule: Schedule, targets: list[Target]) -> float:
         """Return the objective for a schedule, including any spatial penalty."""
         frame = self._schedule_frame(schedule)
         model, route_accounts, duplicate_accounts = self.route()
-        simulator = Simulator.from_dataset(self.dataset_dir)
-        ledger = RouteCostLedger(model.network) if model is not None else None
+        simulator = self.simulator()
+        simulator.reset()
+        ledger = RouteCostLedger(model.network, collect=False) if model is not None else None
         edges = self._graph() if self.cfg.topology_path else []
         values = simulator.simulate(
             frame,
