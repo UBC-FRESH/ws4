@@ -142,3 +142,30 @@ def test_block_route_accounts_match_the_shared_ledger(tmp_path: Path) -> None:
     assert set(per_block) == set(full)
     for cell in per_block:
         assert per_block[cell] == pytest.approx(full[cell])
+
+
+def test_collect_and_summary_ledgers_agree(tmp_path: Path) -> None:
+    """The reporting ledger (collect) and the summary ledger agree on the route accounts."""
+    dataset = _dataset(tmp_path)
+    model = _route_model()
+    accounts = _route_account_specs()
+    schedule = pd.DataFrame({"block_id": [1], "treatment": ["CC"], "period": [0]})
+
+    reporting = RouteCostLedger(model.network, collect=True)
+    Simulator.from_dataset(dataset).simulate(schedule, 3, route_model=model, ledger=reporting)
+    summary = RouteCostLedger(model.network, collect=False)
+    Simulator.from_dataset(dataset).simulate(schedule, 3, route_model=model, ledger=summary)
+
+    summary_values = summary.account_values(accounts)
+    joined = (
+        reporting.account_values(accounts)
+        .set_index(["year", "account"])["value"]
+        .to_frame("reporting")
+        .join(
+            summary_values.set_index(["year", "account"])["value"].to_frame("summary"),
+            how="outer",
+        )
+        .fillna(0.0)
+    )
+    assert (joined["reporting"] - joined["summary"]).abs().max() == pytest.approx(0.0, abs=1e-9)
+    assert joined["reporting"].sum() > 0.0
