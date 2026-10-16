@@ -123,6 +123,10 @@ def optimize(
     warm_cache: bool = typer.Option(
         False, "--warm-cache", help="Precompute every candidate chain's contribution first"
     ),
+    cluster_weight: float = typer.Option(
+        0.0, "--cluster-weight", help="Weight of the topology cluster operator (0 disables it)"
+    ),
+    cluster_size: int = typer.Option(8, "--cluster-size", help="Blocks per cluster move"),
     patch_accounts: Path = typer.Option(
         None, "--patch-accounts", exists=True, help="Patch size-distribution accounts (YAML)"
     ),
@@ -149,6 +153,8 @@ def optimize(
         lns_weight=lns_weight,
         lns_destroy=lns_destroy,
         warm_cache=warm_cache,
+        cluster_weight=cluster_weight,
+        cluster_size=cluster_size,
         patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",
     )
     opt = Optimizer.from_dataset(dataset, cfg)
@@ -192,6 +198,10 @@ def watch(
         False, "--warm-cache", help="Precompute every candidate chain's contribution first"
     ),
     islands: int = typer.Option(0, "--islands", help="Parallel islands (0 = single search)"),
+    cluster_weight: float = typer.Option(
+        0.0, "--cluster-weight", help="Weight of the topology cluster operator (0 disables it)"
+    ),
+    cluster_size: int = typer.Option(8, "--cluster-size", help="Blocks per cluster move"),
     patch_accounts: Path = typer.Option(
         None, "--patch-accounts", exists=True, help="Patch size-distribution accounts (YAML)"
     ),
@@ -228,6 +238,8 @@ def watch(
         warm_cache=warm_cache,
         islands=islands,
         workers=islands,
+        cluster_weight=cluster_weight,
+        cluster_size=cluster_size,
         patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",
         topology_path=str(topology) if topology is not None else "",
         route_config_path=str(route_config) if route_config is not None else "",

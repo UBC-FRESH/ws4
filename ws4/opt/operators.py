@@ -13,6 +13,7 @@ new schedule.
 from __future__ import annotations
 
 import random
+from collections.abc import Mapping
 from typing import Protocol
 
 Event = tuple[str, int]
@@ -250,6 +251,65 @@ class LnsOperator(_OperatorBase):
         return undo
 
 
+class ClusterOperator(_OperatorBase):
+    """Rechoose a connected cluster of blocks — a patch-shaped move.
+
+    Instead of scattering single blocks (toggle/shift) or random blocks (LNS), this grows a
+    small connected set from a seed block along the topology and rechooses every block in it.
+    Openings and patches are the decision objects in the harvest-adjacency literature, so a
+    move along the topology explores coherent patch changes.
+    """
+
+    name = "cluster"
+
+    def __init__(
+        self,
+        weight: float = 0.5,
+        size: int = 8,
+        neighbours: Mapping[int, tuple[int, ...]] | None = None,
+    ) -> None:
+        """Set the weight, the cluster size, and the topological neighbours per block."""
+        self.weight = weight
+        self.size = size
+        self.neighbours = neighbours or {}
+
+    def _grow(self, seed: int, rng: random.Random) -> list[int]:
+        """Return a connected set of at most ``size`` blocks, grown from ``seed``."""
+        chosen = [seed]
+        seen = {seed}
+        frontier = [seed]
+        while frontier and len(chosen) < self.size:
+            block = frontier.pop(rng.randrange(len(frontier)))
+            options = list(self.neighbours.get(block, ()))
+            rng.shuffle(options)
+            for other in options:
+                if other in seen:
+                    continue
+                seen.add(other)
+                chosen.append(other)
+                frontier.append(other)
+                if len(chosen) >= self.size:
+                    break
+        return chosen
+
+    def propose_inplace(
+        self, schedule: Schedule, rng: random.Random, candidates: Candidates
+    ) -> Undo | None:
+        """Rechoose a connected cluster of blocks, in place."""
+        blocks, _ = _index(candidates)
+        if not blocks:
+            return None
+        seed = rng.choice(blocks)
+        undo: Undo = {}
+        for block in self._grow(seed, rng):
+            options = candidates.get(block)
+            if not options:
+                continue
+            undo[block] = schedule.get(block)
+            schedule[block] = rng.choice(options)
+        return undo or None
+
+
 class OperatorRegistry:
     """A weighted set of operators."""
 
@@ -283,6 +343,7 @@ class OperatorRegistry:
 __all__ = [
     "Candidates",
     "Chain",
+    "ClusterOperator",
     "Event",
     "LnsOperator",
     "Operator",
