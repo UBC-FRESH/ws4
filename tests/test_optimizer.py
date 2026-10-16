@@ -10,6 +10,7 @@ from ws4.build.compiler import build_canonical_dataset
 from ws4.opt.engine import OptimizeConfig, Optimizer
 from ws4.opt.objective import Target, load_targets, objective, penalty
 from ws4.opt.telemetry import RunLogger, read_records
+from ws4.patch.constraints import core_area_penalty, schedule_years, spatial_penalty
 
 _FIXTURE = Path(__file__).resolve().parents[1] / "examples" / "synthetic"
 
@@ -308,6 +309,47 @@ def test_run_records_the_dataset_reference(tmp_path: Path) -> None:
     assert isinstance(reference, dict)
     assert reference["schema_version"] == "0.1"
     assert len(str(reference["manifest_sha256"])) == 64
+
+
+def test_the_scoped_spatial_penalty_matches_the_full_edge_computation(tmp_path: Path) -> None:
+    """Scanning only incident edges gives the same penalty as scanning every edge."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    (tmp_path / "topology.csv").write_text(
+        "src_block,dst_block,length_m\n1,2,100.0\n3,4,100.0\n", encoding="utf-8"
+    )
+    max_opening, green_up, min_core, core_buffer = 3.0, 3, 2.0, 50.0
+    config = OptimizeConfig(
+        years=2,
+        iterations=1,
+        topology_path=str(tmp_path / "topology.csv"),
+        max_opening_ha=max_opening,
+        min_green_up_years=green_up,
+        min_core_area_ha=min_core,
+        core_buffer_m=core_buffer,
+    )
+    optimizer = Optimizer.from_dataset(dataset, config)
+    schedule = {1: ("CC", 0), 2: ("CC", 1)}
+    frame = optimizer._schedule_frame(schedule)
+    scoped = optimizer._spatial_penalty(frame)
+
+    graph = optimizer._graph()
+    block_area = optimizer._block_area()
+    pairs = [
+        (int(float(str(row.block_id))), int(float(str(row.period))))
+        for row in frame.itertuples(index=False)
+    ]
+    selected_by_year, harvest_year = schedule_years(pairs)
+    full = spatial_penalty(
+        selected_by_year,
+        harvest_year,
+        [(source, target) for source, target, _ in graph],
+        block_area,
+        max_opening,
+        green_up,
+    ) + core_area_penalty(selected_by_year, graph, block_area, core_buffer, min_core)
+    assert scoped == pytest.approx(config.spatial_weight * full)
 
 
 def test_optimizer_avoids_a_maximum_opening_violation(tmp_path: Path) -> None:

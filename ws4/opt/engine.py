@@ -82,12 +82,13 @@ class Optimizer:
         self.dataset_dir = Path(dataset_dir)
         self.cfg = cfg
         self.registry = OperatorRegistry()
-        self._spatial_cache: tuple[list[tuple[int, int]], dict[int, float]] | None = None
+        self._block_area_cache: dict[int, float] | None = None
         self._route_cache: (
             tuple[RouteModel | None, tuple[RouteAccount, ...], tuple[DuplicateAccount, ...]] | None
         ) = None
         self._edge_cache: tuple[EdgeElement, ...] | None = None
         self._graph_cache: list[tuple[int, int, float]] | None = None
+        self._edges_by_block_cache: dict[int, list[tuple[int, int, float]]] | None = None
         self._simulator_cache: Simulator | None = None
         self._base_cache: dict[tuple[int, str], float] | None = None
         self._delta_cache: dict[tuple[int, str, int], dict[tuple[int, str], float]] = {}
@@ -334,17 +335,38 @@ class Optimizer:
             self._graph_cache = load_patch_edges(Path(self.cfg.topology_path))
         return self._graph_cache
 
-    def _spatial(self) -> tuple[list[tuple[int, int]], dict[int, float]]:
-        """Return the cached topology edges and block areas, loading them once."""
-        if self._spatial_cache is None:
-            edges = [(source, target) for source, target, _ in self._graph()]
+    def _edges_by_block(self) -> dict[int, list[tuple[int, int, float]]]:
+        """Return the cached adjacency index: each block to its incident edges."""
+        if self._edges_by_block_cache is None:
+            index: dict[int, list[tuple[int, int, float]]] = {}
+            for source, target, length in self._graph():
+                index.setdefault(source, []).append((source, target, length))
+                index.setdefault(target, []).append((source, target, length))
+            self._edges_by_block_cache = index
+        return self._edges_by_block_cache
+
+    def _incident_edges(self, blocks: set[int]) -> list[tuple[int, int, float]]:
+        """Return the edges incident to any of ``blocks``, de-duplicated.
+
+        Only an edge incident to a disturbed block can contribute to an opening, a
+        perimeter, or a green-up violation, so scanning these instead of every edge keeps
+        the spatial penalty proportional to the schedule, not the whole topology.
+        """
+        index = self._edges_by_block()
+        seen: set[tuple[int, int, float]] = set()
+        for block in blocks:
+            seen.update(index.get(block, ()))
+        return list(seen)
+
+    def _block_area(self) -> dict[int, float]:
+        """Return the cached block areas, loading them once."""
+        if self._block_area_cache is None:
             simulator = Simulator.from_dataset(self.dataset_dir)
-            block_area = {
+            self._block_area_cache = {
                 int(float(str(block))): float(str(area))
                 for block, area in simulator.fragments.groupby("block_id")["area_ha"].sum().items()
             }
-            self._spatial_cache = (edges, block_area)
-        return self._spatial_cache
+        return self._block_area_cache
 
     def _spatial_penalty(self, schedule: pd.DataFrame) -> float:
         """Return the weighted spatial penalty for a schedule, or zero when disabled.
@@ -360,16 +382,20 @@ class Optimizer:
             and self.cfg.min_core_area_ha is None
         ):
             return 0.0
-        edges, block_area = self._spatial()
+        block_area = self._block_area()
         pairs = [
             (int(float(str(row.block_id))), int(float(str(row.period))))
             for row in schedule.itertuples(index=False)
         ]
         selected_by_year, harvest_year = schedule_years(pairs)
+        # Only edges incident to a disturbed block can contribute; this keeps the penalty
+        # proportional to the schedule rather than to the whole topology.
+        incident = self._incident_edges(set(harvest_year))
+        incident_edges = [(source, target) for source, target, _ in incident]
         penalty = spatial_penalty(
             selected_by_year,
             harvest_year,
-            edges,
+            incident_edges,
             block_area,
             self.cfg.max_opening_ha,
             self.cfg.min_green_up_years,
@@ -377,7 +403,7 @@ class Optimizer:
         if self.cfg.min_core_area_ha is not None and self.cfg.core_buffer_m is not None:
             penalty += core_area_penalty(
                 selected_by_year,
-                self._graph(),
+                incident,
                 block_area,
                 self.cfg.core_buffer_m,
                 self.cfg.min_core_area_ha,
