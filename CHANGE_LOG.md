@@ -695,3 +695,16 @@ issue comments.
   default search 41.9 -> **55.7 iterations/s (+33%)**, single-block moves 298.9 -> **387.9 (+30%)**.
   `rebuild_local` is now the only dominant cost (~62% of a bulk move). Tests:
   `tests/test_simulator.py`, `tests/test_patch_objective.py`. Dashboard: **GREEN**.
+- P6.28 (decision): the ceiling for the compiled port, measured *before* committing to the refactor.
+  Captured real `rebuild_local` calls from a real search on the corrected touching adjacency, then ran
+  the Python implementation and an equivalent numba kernel on identical inputs (60 bulk calls, 564
+  changed blocks each, ~3,332 members over 12,567 blocks and 57,454 CSR edges). The kernel does the
+  relabel plus area and perimeter in **0.279 ms against 6.768 ms in Python — 24.3x** — with zero area
+  and zero perimeter mismatches. Marshalling the dicts into arrays per call gives 4.9x, and that still
+  excludes writing the result back into the `members` sets, which is roughly half of `rebuild_local`'s
+  work; so a dict-marshalling wrapper is worth about **2x, not 24x**. The port therefore has to make
+  the arrays the source of truth and drop the `members` sets in favour of `comp` + `count` +
+  BFS-on-demand — a simplification of `PatchGroupYear`. The kernel, the design, and the expected end
+  to end (about 56 -> 200+ iterations/s) are in `notes/design/ws4-patch-evaluation-bottleneck.md`.
+  No production code change in this entry; it is the go/no-go measurement. Prototype harness kept out
+  of the repository per the scratch rule. Dashboard: **GREEN**.

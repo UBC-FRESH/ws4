@@ -292,6 +292,7 @@ budget. Plan of record: `notes/design/ws4-performance.md`.
 - [x] P6.25 Patch-account evaluation bottleneck (profiled; early-exit and label fixes landed)
 - [x] P6.26 Patch accounts: correct the membership and the default search distance
 - [x] P6.27 Make the criterion-series primitive cheap (patch `_affected`)
+- [x] P6.28 Compiled-port ceiling measured on realistic components (decision; prototype only)
 
 Deferred from P6, triaged in `notes/backlog.md`:
 

@@ -152,54 +152,99 @@ Removing a leaf of a spanning tree leaves a spanning tree of `C - v`, so `C - v`
 Maintaining a spanning forest per component would let a large share of detaches skip the walk
 entirely, with no compiled dependency.
 
-## The compiled kernel (prototyped, 41x on the dominant routine)
+## The compiled kernel: measured on realistic components
 
-`rebuild_local` and the walks are pointer-chasing over small integers, which is what a compiled kernel
-does far better than Python. Prototype (numba, CSR adjacency, explicit stack), measured on the old
-4,273-block component: **Python 10.98 ms -> numba 0.269 ms, 41x**, with identical component count and
-top-5 areas. The kernel:
+The first prototype measured a full relabel of the old 4,273-block blob and reported 41x. That is not
+the relevant number. The relevant test captures **real `rebuild_local` calls from a real search** on
+the corrected touching adjacency, then runs the Python implementation and an equivalent numba kernel
+on identical inputs. Workload captured: 60 bulk calls, 564 changed blocks per call, state of ~3,332
+members over 12,567 blocks and 57,454 directed CSR edges.
+
+| per call | time | speed-up |
+| --- | ---: | ---: |
+| Python `rebuild_local` | 6.768 ms | — |
+| numba kernel (relabel + area + perimeter) | **0.279 ms** | **24.3x** |
+| kernel + marshalling the dicts into arrays | 1.377 ms | 4.9x |
+
+Parity is exact: zero area mismatches and zero perimeter mismatches over the 60 calls.
+
+**The design decision this forces.** A "wrapper" that keeps the Python dicts and marshals into arrays
+per call measures 4.9x, and that still excludes writing the kernel's result back into the Python
+structures. `rebuild_local` spends roughly half its time building the `members` sets and dict entries
+for the rebuilt components, and a wrapper still has to do that. So a wrapper is worth about 2x, not
+24x, and is not worth the complexity.
+
+The 24x needs the arrays to be the **source of truth**, which means eliminating the `members` sets:
+
+- Hold `comp` (int32 per block), `count` (per component), and the per-component area/perimeter, with
+  `is_member`/`value` per state; `class_of`/sums stay as they are.
+- `members` is then only ever needed to (a) know a component's size — use `count`; (b) re-point a
+  merged component — a BFS over `comp`; (c) find the pieces of a split — a BFS over `comp`, which the
+  kernel already does.
+- That is a *simplification* of `PatchGroupYear`, and it is what lets the kernel own the bulk path
+  with no write-back.
+
+Expected end to end: `rebuild_local` is ~62% of a bulk move, so at 24x the default search should go
+from ~56 to ~200+ iterations/s, subject to the remaining ~38%.
+
+The kernel (from the prototype, parity-checked against the Python implementation):
 
 ```python
 @njit(cache=True, fastmath=True)
-def label_and_aggregate(indptr, indices, lengths, is_member, value, area, out_comp):
-    n = is_member.size
-    for i in range(n):
-        out_comp[i] = -1
-    stack = np.empty(n, dtype=np.int32)
-    comp_area = np.empty(n, dtype=np.float64)
-    comp_perim = np.empty(n, dtype=np.float64)
-    cid = 0
-    for start in range(n):
-        if not is_member[start] or out_comp[start] != -1:
+def rebuild_kernel(ptr, indices, lengths, is_member, value, areas, changed, new_value,
+                   threshold, stack, walk, visited, gen, area_out, perim_out):
+    """Apply a change and relabel the components holding a changed block or its neighbours."""
+    for k in range(changed.size):
+        b = changed[k]
+        v = new_value[k]
+        if v > threshold:
+            is_member[b] = 1
+            value[b] = v
+        else:
+            is_member[b] = 0
+            value[b] = 0.0
+    seeds = 0
+    for k in range(changed.size):
+        b = changed[k]
+        if is_member[b] and visited[b] != gen:
+            visited[b] = gen
+            stack[seeds] = b
+            seeds += 1
+        for e in range(ptr[b], ptr[b + 1]):
+            o = indices[e]
+            if is_member[o] and visited[o] != gen:
+                visited[o] = gen
+                stack[seeds] = o
+                seeds += 1
+    count = 0
+    for s in range(seeds):
+        start = stack[s]
+        if visited[start] == gen + 1:
             continue
-        top = 0
-        stack[top] = start
-        top += 1
-        out_comp[start] = cid
-        while top:
-            top -= 1
-            node = stack[top]
-            for k in range(indptr[node], indptr[node + 1]):
-                other = indices[k]
-                if is_member[other] and out_comp[other] == -1:
-                    out_comp[other] = cid
-                    stack[top] = other
-                    top += 1
-        cid += 1
-    for c in range(cid):
-        comp_area[c] = 0.0
-        comp_perim[c] = 0.0
-    for node in range(n):
-        c = out_comp[node]
-        comp_area[c] += value[node] * area[node]
-        for k in range(indptr[node], indptr[node + 1]):
-            if not is_member[indices[k]]:
-                comp_perim[c] += lengths[k]
-    return cid, comp_area, comp_perim
+        area = 0.0
+        perim = 0.0
+        sp = 0
+        walk[sp] = start
+        sp += 1
+        visited[start] = gen + 1
+        while sp > 0:
+            sp -= 1
+            node = walk[sp]
+            area += value[node] * areas[node]
+            for e in range(ptr[node], ptr[node + 1]):
+                o = indices[e]
+                if is_member[o]:
+                    if visited[o] != gen + 1:
+                        visited[o] = gen + 1
+                        walk[sp] = o
+                        sp += 1
+                else:
+                    perim += lengths[e]
+        area_out[count] = area
+        perim_out[count] = perim
+        count += 1
+    return count
 ```
-
-The 41x is on a singleton rebuild; the realistic `rebuild_local` is called ~3.4 times per LNS move
-over smaller components, so expect a smaller whole-search factor, but this is the largest single lever.
 
 ## Implementation plan
 
@@ -209,12 +254,13 @@ Ordered by value over risk.
    (159 -> 58.7 us) via a segment-based table gather; `_affected` fell 1.84 -> 0.78 s. The lesson to
    keep: do not vectorise per *year* with numpy on tiny arrays, vectorise per *event* over the whole
    horizon.
-2. **CSR + numba for the bulk rebuild and the walks** — now the only dominant cost (`rebuild_local`,
-   ~62%). Concrete: per year state keep
-   `is_member` (uint8), `value` (float64), `comp` (int32) plus `indptr`/`indices`/`lengths` shared per
-   `search_distance`; keep the size-class sums in Python. Keep the Python state as the source of truth
-   initially and treat the CSR as a derived buffer so parity is easy to test; invert once green. The
-   undo/`revert` path must restore the changed `is_member`/`value` slots and the touched aggregates.
+2. **Move the component structure to arrays and put the numba kernel in the bulk path** — the only
+   dominant cost (`rebuild_local`, ~62%), measured at **24.3x for the kernel** and only **~2x for a
+   dict-marshalling wrapper**, so the arrays must be the source of truth. Replace the `members` sets
+   with `comp` + `count` + BFS-on-demand, hold `is_member`/`value`/`comp` per state, keep the
+   size-class sums in Python, and feed the kernel above. Keep a pure-Python reference path and assert
+   cell-for-cell equality on random schedules before switching the default. The undo/`revert` path must
+   restore the changed `is_member`/`value` slots and the touched aggregates.
 3. **Spanning-forest leaf test** (pure Python, no compiled dependency). Maintain a spanning tree per
    component; a detach of a tree leaf is `O(1)` and proves "no split". Re-measure the leaf fraction on
    a realistic configuration first: the 65% below is from the pathological one.
@@ -233,5 +279,5 @@ Ordered by value over risk.
   configuration and the single-block fix has already changed them once.
 - Which extra accounts cost what: perimeter (for `compactness`/`shape`) needs a boundary scan that the
   area does not; measure separately.
-- Does a compiled port pay once `_affected` and the walk heuristics land? The 41x is real but measured
-  on the pathological case; re-measure before committing the complexity.
+- Does a compiled port pay? **Answered: yes for the kernel (24.3x measured on real calls), but it
+  requires the array-backed state — a dict-marshalling wrapper is only ~2x.** See the kernel section.
