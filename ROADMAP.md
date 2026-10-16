@@ -271,6 +271,7 @@ budget. Plan of record: `notes/design/ws4-performance.md`.
 - [x] P6.4 Incremental objective evaluation (#65)
 - [x] P6.5 Solvers at scale (#66)
 - [x] P6.7 Guardrails (#68)
+- [x] P6.8 Shared age-grid curve table (#69)
 
 Deferred from P6, triaged in `notes/backlog.md`:
 
