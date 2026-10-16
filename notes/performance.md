@@ -235,3 +235,15 @@ accounts in isolation, reusing the summary ledger for consistency.
 
 The first evaluation is slower (it builds the per-block route deltas); a search amortizes it across
 its iterations. Plan and log: `notes/design/ws4-incremental-route-accounts.md`.
+
+### Faster simulator construction (`spike/construction`)
+
+Construction built a per-curve sorted x/y cache (`_curves`) that, after the age table, was used only as
+the non-integer-age fallback. `CurveTable.value` now serves any age (exact at integers, linear between
+them, clamped), so `_curves` is gone.
+
+| Metric (C5) | Before | After |
+| --- | ---: | ---: |
+| Simulator construction | ~0.55 s | **~0.15 s** (3.7×) |
+
+Plan and log: `notes/design/ws4-construction.md`.
