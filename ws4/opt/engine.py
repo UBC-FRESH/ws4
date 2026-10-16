@@ -731,9 +731,7 @@ class Optimizer:
         """
         islands = max(1, self.cfg.islands)
         episodes = max(1, self.cfg.episodes)
-        island_config = replace(
-            self.cfg, islands=1, starts=1, workers=1, episodes=1, warm_start=False
-        )
+        island_config = replace(self.cfg, islands=1, starts=1, workers=1, episodes=1)
         seeds = [self.cfg.seed + index for index in range(islands)]
         best: Schedule = {}
         best_obj = math.inf
