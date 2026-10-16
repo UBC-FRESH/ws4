@@ -450,3 +450,12 @@ issue comments.
   only parallel parquet reads in construction (1.78× on ~5% of construction). The effective parallel
   lever is process-level (the island model, P6.5). Recorded in `notes/performance.md` so the thread
   idea is not re-tried without cause.
+- P6.8 (spike, adopted): shared age-grid curve table. Curve breakpoints and offsets are integers, so
+  each curve is precomputed at every integer age once (`ws4/sim/curve.py:CurveTable`) and evaluation is
+  a 2-D gather; `account_values`, `_curve_value`, the patch/edge criteria, and the block trajectories
+  use it (with the `numpy.interp` fallback for a non-integer age). Two adjustments from the spike plan:
+  the table is built with one sort-and-slice (not per-curve masking), and `Simulator.reset` now
+  invalidates the fragment-to-feature join only when the tracks actually changed. A/B vs the checkpoint:
+  `account_values` 12.60 → 2.43 ms/yr (**5.2×**), warm 30-year simulate 0.422 → 0.095 s (**4.4×**), cold
+  30-year simulate 0.397 → 0.261 s (the 0.13 s join rebuild now dominates the cold path). Spike branch
+  `spike/shared-grid` merged to `feature/p6-performance`; plan and log in `notes/design/ws4-curve-grid.md`.
