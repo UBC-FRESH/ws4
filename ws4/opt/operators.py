@@ -224,6 +224,10 @@ class OperatorRegistry:
         """Return the operator names."""
         return [operator.name for operator in self._operators]
 
+    def weights(self) -> dict[str, float]:
+        """Return the operator weights by name."""
+        return {operator.name: operator.weight for operator in self._operators}
+
     def pick(self, rng: random.Random) -> Operator:
         """Return a weighted-random operator."""
         total = sum(operator.weight for operator in self._operators)

@@ -37,7 +37,16 @@ from .core import Problem
 from .incremental import IncrementalObjective
 from .mip import bound_for
 from .objective import Target, load_targets, objective
-from .operators import Candidates, Chain, OperatorRegistry, Schedule
+from .operators import (
+    Candidates,
+    Chain,
+    LnsOperator,
+    OperatorRegistry,
+    Schedule,
+    ShiftOperator,
+    SwapOperator,
+    ToggleOperator,
+)
 from .solvers import solve_ils, solve_sa, solve_sa_delta, solve_tabu
 from .telemetry import RunLogger
 
@@ -76,6 +85,11 @@ class OptimizeConfig:
     min_core_area_ha: float | None = None
     spatial_weight: float = 1.0
     allow_spatial_override: bool = False
+    toggle_weight: float = 1.0
+    shift_weight: float = 1.0
+    swap_weight: float = 0.5
+    lns_weight: float = 0.2
+    lns_destroy: float = 0.1
 
 
 class Optimizer:
@@ -85,7 +99,14 @@ class Optimizer:
         """Store the dataset directory and the run configuration."""
         self.dataset_dir = Path(dataset_dir)
         self.cfg = cfg
-        self.registry = OperatorRegistry()
+        self.registry = OperatorRegistry(
+            [
+                ToggleOperator(weight=cfg.toggle_weight),
+                ShiftOperator(weight=cfg.shift_weight),
+                SwapOperator(weight=cfg.swap_weight),
+                LnsOperator(weight=cfg.lns_weight, destroy_fraction=cfg.lns_destroy),
+            ]
+        )
         self._block_area_cache: dict[int, float] | None = None
         self._route_cache: (
             tuple[RouteModel | None, tuple[RouteAccount, ...], tuple[DuplicateAccount, ...]] | None
