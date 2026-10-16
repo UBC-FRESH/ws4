@@ -88,6 +88,40 @@ def test_a_treatment_records_its_product_yield(tmp_path: Path) -> None:
     assert products["value"].iloc[0] == 360.0
 
 
+def test_simulate_reports_the_product_account(tmp_path: Path) -> None:
+    """A produced product is an account value in the year it is produced."""
+    dataset = _dataset(tmp_path)
+    schedule = _schedule(tmp_path, "cc.csv", [(1, "CC", 0)])
+    values = Simulator.from_dataset(dataset).simulate(pd.read_csv(schedule), years=2)
+    produced = values[values["account"] == "product.Volume"].set_index("year")["value"]
+    assert produced.loc[0] == pytest.approx(360.0)
+    assert 1 not in produced.index  # produced once, in the treatment year
+
+
+def test_simulate_aggregates_products_per_year_and_account(tmp_path: Path) -> None:
+    """Products of a year sum into one account row, matching the per-block trajectories."""
+    dataset = _dataset(tmp_path)
+    schedule = _schedule(tmp_path, "cc.csv", [(1, "CC", 0), (2, "CC", 0)])
+    values = Simulator.from_dataset(dataset).simulate(pd.read_csv(schedule), years=1)
+    rows = values[values["account"] == "product.Volume"]
+    assert not rows[["year", "account"]].duplicated().any()
+    expected = sum(
+        Simulator.from_dataset(dataset)
+        .block_trajectory(block, "CC", 0, 1)
+        .get((0, "product.Volume"), 0.0)
+        for block in (1, 2)
+    )
+    assert rows["value"].sum() == pytest.approx(expected)
+
+
+def test_block_trajectory_includes_the_product_account(tmp_path: Path) -> None:
+    """A block's isolated trajectory reports the product its treatment produces."""
+    dataset = _dataset(tmp_path)
+    trajectory = Simulator.from_dataset(dataset).block_trajectory(1, "CC", 0, 2)
+    assert trajectory[(0, "product.Volume")] == pytest.approx(360.0)
+    assert (1, "product.Volume") not in trajectory
+
+
 def test_patch_metrics_are_written(tmp_path: Path) -> None:
     """With a topology, per-year patch metrics are written for the disturbed blocks."""
     dataset = _dataset(tmp_path)

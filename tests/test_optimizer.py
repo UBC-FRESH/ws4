@@ -460,6 +460,20 @@ def test_incremental_evaluation_matches_for_the_empty_schedule(tmp_path: Path) -
     )
 
 
+def test_objective_scores_a_product_account_target(tmp_path: Path) -> None:
+    """A target on a raw product account is scored against the produced volume."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    optimizer = Optimizer.from_dataset(dataset, OptimizeConfig(years=1, iterations=1, seed=1))
+    schedule: dict[int, tuple[str, int]] = {1: ("CC", 0)}
+    # Block 1 produces 360; a minimum above it shows the exact shortfall, not a zero value.
+    shortfall = optimizer._evaluate(schedule, [Target("product.Volume", 0, minimum=1000.0)])
+    assert shortfall == pytest.approx(640.0)
+    met = optimizer._evaluate(schedule, [Target("product.Volume", 0, minimum=100.0)])
+    assert met == pytest.approx(0.0)
+
+
 def test_island_search_is_deterministic_and_no_worse_than_a_single_start(tmp_path: Path) -> None:
     """The island model reproduces its result and does not raise the objective."""
     dataset = build_canonical_dataset(

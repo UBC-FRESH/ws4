@@ -494,3 +494,11 @@ issue comments.
   A/B vs `p6-builder-checkpoint`: 200-fragment slice 17.7 → **2.2 s** (8.1×); canonical MKRF build
   192.7 → **21.5 s** (9.0×), outputs identical (`compare_matrix`: MATCH). Spike branch `spike/builder-perf`
   merged to `feature/p6-performance`; plan and log in `notes/design/ws4-builder-perf.md`.
+- P6.15 (fix, adopted): score product accounts. A target on a raw `product.*` account was evaluated
+  against a missing value, because `Simulator.simulate` returned only feature account values and
+  `block_trajectory` (the incremental objective's per-block path) ignored products. A year's produced
+  products are now summed into the account values (one row per year and account), and products are
+  produced in `block_trajectory`, so the incremental and full paths agree cell for cell. On the
+  synthetic fixture a `product.Volume` target of `minimum=1000` now yields a penalty of 640 (the exact
+  shortfall against the 360 produced) rather than 1000. Branch `fix/product-account-objective`.
+  Dashboard on close: **GREEN** (`python scripts/dashboard.py`).
