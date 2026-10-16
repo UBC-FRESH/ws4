@@ -459,3 +459,9 @@ issue comments.
   `account_values` 12.60 → 2.43 ms/yr (**5.2×**), warm 30-year simulate 0.422 → 0.095 s (**4.4×**), cold
   30-year simulate 0.397 → 0.261 s (the 0.13 s join rebuild now dominates the cold path). Spike branch
   `spike/shared-grid` merged to `feature/p6-performance`; plan and log in `notes/design/ws4-curve-grid.md`.
+- P6.9 (spike, adopted): fast fragment-to-feature join rebuild. The rebuild used `np.unique` over ~210 k
+  string labels; the feature side is fixed, so it is now precomputed once (sorted feature rows with each
+  curve's table row and label code) and a rebuild is a `searchsorted` plus a vectorized expansion. A/B vs
+  `p6-joinrebuild-checkpoint`: one rebuild 0.127 → 0.0045 s (**28×**), cold 30-year simulate 0.299 →
+  0.129 s (2.3×). Spike branch `spike/join-rebuild` merged to `feature/p6-performance`; plan and log in
+  `notes/design/ws4-join-rebuild.md`.
