@@ -191,8 +191,23 @@ The kernel (from the prototype, parity-checked against the Python implementation
 
 ```python
 @njit(cache=True, fastmath=True)
-def rebuild_kernel(ptr, indices, lengths, is_member, value, areas, changed, new_value,
-                   threshold, stack, walk, visited, gen, area_out, perim_out):
+def rebuild_kernel(
+    ptr,
+    indices,
+    lengths,
+    is_member,
+    value,
+    areas,
+    changed,
+    new_value,
+    threshold,
+    stack,
+    walk,
+    visited,
+    gen,
+    area_out,
+    perim_out,
+):
     """Apply a change and relabel the components holding a changed block or its neighbours."""
     for k in range(changed.size):
         b = changed[k]
