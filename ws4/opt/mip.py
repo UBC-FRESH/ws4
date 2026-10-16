@@ -31,7 +31,9 @@ class MipResult:
     Attributes
     ----------
     objective : float
-        The optimal penalty of the relaxation (a lower bound on the true penalty).
+        The penalty optimum of the option-selection model: exact for additive accounts,
+        a lower bound when interactions (adjacency, edge contrast) are ignored, and
+        accurate to the mixed-integer solver's tolerance (a relative ~1e-6).
     schedule : Schedule
         The option chosen for each block in the solved subset.
     status : str
@@ -96,7 +98,9 @@ def option_contributions(
     tuple of (dict, dict, list)
         The base values per block, the deltas per block-option, and the accounted keys.
     """
-    accounted = sorted({(target.account, target.year) for target in targets})
+    accounted = sorted(
+        {(target.account, year) for target in targets for year in target.cell_years()}
+    )
     empty = pd.DataFrame([], columns=["block_id", "treatment", "period"])
     base: dict[int, dict[tuple[str, int], float]] = {}
     deltas: dict[tuple[int, Chain], dict[tuple[str, int], float]] = {}
@@ -183,22 +187,24 @@ def solve_mip(
 
     # value + shortfall >= minimum ; -value + excess >= -maximum.
     for target_index, target in enumerate(targets):
-        accounted_index = accounted.index((target.account, target.year))
-        key_pair = accounted[accounted_index]
+        years = list(target.cell_years())
         delta_row = np.zeros(n_vars)
         for key, delta in deltas.items():
-            delta_row[index[key]] = delta[key_pair]
+            total = sum(delta.get((target.account, year), 0.0) for year in years)
+            if total:
+                delta_row[index[key]] = total
+        offset_value = sum(offset.get((target.account, year), 0.0) for year in years)
         if target.minimum is not None:
             row = delta_row.copy()
             row[n_x + target_index] = 1.0
             rows.append(row)
-            lower.append(target.minimum - offset[key_pair])
+            lower.append(target.minimum - offset_value)
             upper.append(np.inf)
         if target.maximum is not None:
             row = -delta_row
             row[n_x + n_targets + target_index] = 1.0
             rows.append(row)
-            lower.append(-target.maximum + offset[key_pair])
+            lower.append(-target.maximum + offset_value)
             upper.append(np.inf)
 
     if not rows:

@@ -552,3 +552,11 @@ issue comments.
   treatments are still scheduled by year. With both, C5 (200-year, 20 periods) even flow reaches a flat
   **0.800 Mm3 every period** (objective 1), and the move-based objective equals a full simulation.
   `Target.period_width` is documented in `docs/reference/optimizer.rst`. Dashboard: **GREEN**.
+- P6.17 follow-up (MIP re-validation): the mixed-integer bound anchored each target to a single
+  year, so with periodic targets it constrained only the first year of each period. Fixed to sum the
+  account over the whole period (`option_contributions` accounts every cell of the period; the
+  constraint rows sum the period's deltas). Re-validated on a 20-block rotation-enabled C5 subset
+  (80 options, 20 multi-rotation): the model value of the returned schedule equals a full simulation
+  exactly (0.000), every random schedule respects the bound (0 violations), and the reported optimum
+  is within ~5e-7 relative of the schedule it returns (a mixed-integer solver tolerance). A committed
+  test covers periodic targets (`tests/test_mip.py`). Dashboard: **GREEN**.
