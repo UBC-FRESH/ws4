@@ -73,3 +73,15 @@ of construction after this change).
 ## 9. Log
 
 - 2026-10-16: plan written; profiling done (section 1). Starting M1.
+- 2026-10-16 M1: added `CurveTable.value` (exact integer ages; linear between them; clamp; absent →
+  0.0), made `_curve_value` delegate to it, and **removed `_curves`** (the per-curve sorted x/y dict).
+  The only user was the non-integer fallback, now served by the table. Full suite green.
+- 2026-10-16 M2 A/B vs `p6-construction-checkpoint` (clean tree; committed first):
+
+  | Metric | Checkpoint | Spike | Speedup |
+  | --- | ---: | ---: | ---: |
+  | Simulator construction (C5) | ~0.55 s | **~0.15 s** | ~3.7× |
+
+  **Decision: adopt.** Construction is well under the 0.35 s target with the suite green. The result
+  is a deletion (less code, no new dependency), so the risk is low. Out of scope and unchanged: lazy
+  table building for unused curves; parallel parquet reads (~2% of construction now).
