@@ -9,6 +9,7 @@ import pytest
 from ws4.build.compiler import build_canonical_dataset
 from ws4.opt.engine import OptimizeConfig, Optimizer
 from ws4.opt.objective import Target, load_targets, objective, penalty
+from ws4.opt.operators import Schedule
 from ws4.opt.telemetry import RunLogger, read_records
 from ws4.patch.constraints import core_area_penalty, schedule_years, spatial_penalty
 
@@ -106,7 +107,7 @@ def test_incremental_route_accounts_match_the_full_simulation(tmp_path: Path) ->
         ),
     )
     model, route_accounts, duplicate_accounts = optimizer.route()
-    schedule = {1: ("CC", 0), 2: ("CC", 0)}
+    schedule: Schedule = {1: (("CC", 0),), 2: (("CC", 0),)}
     incremental = optimizer._incremental_values(schedule, duplicate_accounts, route_accounts)
     full = optimizer._full_values(schedule, model, route_accounts, duplicate_accounts)
     joined = (
@@ -330,7 +331,7 @@ def test_the_scoped_spatial_penalty_matches_the_full_edge_computation(tmp_path: 
         core_buffer_m=core_buffer,
     )
     optimizer = Optimizer.from_dataset(dataset, config)
-    schedule = {1: ("CC", 0), 2: ("CC", 1)}
+    schedule: Schedule = {1: (("CC", 0),), 2: (("CC", 1),)}
     frame = optimizer._schedule_frame(schedule)
     scoped = optimizer._spatial_penalty(frame)
 
@@ -466,7 +467,7 @@ def test_objective_scores_a_product_account_target(tmp_path: Path) -> None:
         _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
     )
     optimizer = Optimizer.from_dataset(dataset, OptimizeConfig(years=1, iterations=1, seed=1))
-    schedule: dict[int, tuple[str, int]] = {1: ("CC", 0)}
+    schedule: Schedule = {1: (("CC", 0),)}
     # Block 1 produces 360; a minimum above it shows the exact shortfall, not a zero value.
     shortfall = optimizer._evaluate(schedule, [Target("product.Volume", 0, minimum=1000.0)])
     assert shortfall == pytest.approx(640.0)

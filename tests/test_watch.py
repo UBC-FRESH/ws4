@@ -133,7 +133,7 @@ def test_last_account_values_exposes_the_evaluation(tmp_path: Path) -> None:
     empty = optimizer.last_account_values()
     assert list(empty.columns) == ["year", "account", "value"]
     assert empty.empty
-    optimizer._evaluate({1: ("CC", 0)}, [Target("product.Volume", 0, minimum=0.0)])
+    optimizer._evaluate({1: (("CC", 0),)}, [Target("product.Volume", 0, minimum=0.0)])
     values = optimizer.last_account_values()
     assert not values.empty
     assert "product.Volume" in {str(a) for a in values["account"]}

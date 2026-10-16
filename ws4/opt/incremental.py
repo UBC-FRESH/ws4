@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 from .objective import Target, penalty
-from .operators import Schedule
+from .operators import Chain, Schedule
 
 if TYPE_CHECKING:
     from .engine import Optimizer
@@ -68,7 +68,7 @@ class IncrementalObjective:
         self.accounts: set[str] = {target.account for target in self.targets} | set(extra_accounts)
         self.totals: dict[Cell, float] = {}
         self.assignments: Schedule = {}
-        self._contributions: dict[tuple[int, str, int], dict[Cell, float]] = {}
+        self._contributions: dict[tuple[int, Chain], dict[Cell, float]] = {}
         self._pending_move: tuple[dict[Cell, float], list[int], Schedule] | None = None
         self._targets_by_cell: dict[Cell, list[int]] = {}
         for index, target in enumerate(self.targets):
@@ -89,13 +89,13 @@ class IncrementalObjective:
             for cell, value in self._contribution(block, assignment).items():
                 self.totals[cell] = self.totals.get(cell, 0.0) + value
 
-    def _contribution(self, block: int, assignment: tuple[str, int]) -> dict[Cell, float]:
-        """Return (and cache) a block assignment's tracked-cell contribution."""
-        key = (block, assignment[0], assignment[1])
+    def _contribution(self, block: int, chain: Chain) -> dict[Cell, float]:
+        """Return (and cache) a block chain's tracked-cell contribution."""
+        key = (block, chain)
         cached = self._contributions.get(key)
         if cached is not None:
             return cached
-        delta = self.optimizer._block_delta(block, assignment[0], assignment[1], self.accounts)
+        delta = self.optimizer._block_delta(block, chain, self.accounts)
         contribution = {cell: value for cell, value in delta.items() if cell[1] in self.accounts}
         self._contributions[key] = contribution
         return contribution

@@ -1,7 +1,9 @@
 """Neighbourhood operators for the schedule search.
 
-A schedule maps a block to a chosen ``(treatment, year)``. Operators propose a
-modified schedule, or ``None`` when they cannot move.
+A schedule maps a block to its **chain**: the ordered treatments applied to it over the
+horizon (a block may be treated more than once, as rotations). Each event is a
+``(treatment, year)`` pair. An empty chain means the block is not treated. Operators
+propose a modified schedule, or ``None`` when they cannot move.
 """
 
 from __future__ import annotations
@@ -9,44 +11,39 @@ from __future__ import annotations
 import random
 from typing import Protocol
 
-Schedule = dict[int, tuple[str, int]]
-Candidates = dict[int, list[tuple[str, int]]]
+Event = tuple[str, int]
+Chain = tuple[Event, ...]
+Schedule = dict[int, Chain]
+Candidates = dict[int, list[Chain]]
 
-_OptionIndex = tuple[tuple[int, ...], dict[tuple[int, str], tuple[tuple[str, int], ...]]]
+_OptionIndex = tuple[tuple[int, ...], dict[int, tuple[Chain, ...]]]
 _INDEX_CACHE: dict[int, tuple[Candidates, _OptionIndex]] = {}
 
 
 def _index(candidates: Candidates) -> _OptionIndex:
-    """Return (and cache) the assignable blocks and the shiftable options per block.
+    """Return (and cache) the assignable blocks and the rechoosable chains per block.
 
-    ``blocks`` is every block with at least one option; ``shiftable`` maps a
-    ``(block, treatment)`` to its more-than-one years, so the shift operator does no
-    per-call scan of the options. The cache is keyed by the identity of ``candidates``
-    (kept alive so the id cannot be reused).
+    ``blocks`` is every block with at least one candidate chain; ``rechoosable`` maps a
+    block with more than one candidate chain to its chains, so the shift operator does no
+    per-call scan. The cache is keyed by the identity of ``candidates`` (kept alive so the
+    id cannot be reused).
 
     Parameters
     ----------
-    candidates : dict of int to list of tuple of (str, int)
-        The per-block options.
+    candidates : dict of int to list of Chain
+        The per-block candidate chains.
 
     Returns
     -------
     tuple
-        ``(blocks, shiftable)``.
+        ``(blocks, rechoosable)``.
     """
     cached = _INDEX_CACHE.get(id(candidates))
     if cached is not None and cached[0] is candidates:
         return cached[1]
-    blocks = tuple(block for block, options in candidates.items() if options)
-    shiftable: dict[tuple[int, str], tuple[tuple[str, int], ...]] = {}
-    for block, options in candidates.items():
-        grouped: dict[str, list[tuple[str, int]]] = {}
-        for option in options:
-            grouped.setdefault(option[0], []).append(option)
-        for treatment, group in grouped.items():
-            if len(group) > 1:
-                shiftable[(block, treatment)] = tuple(group)
-    result = (blocks, shiftable)
+    blocks = tuple(block for block, chains in candidates.items() if chains)
+    rechoosable = {block: tuple(chains) for block, chains in candidates.items() if len(chains) > 1}
+    result = (blocks, rechoosable)
     _INDEX_CACHE[id(candidates)] = (candidates, result)
     return result
 
@@ -69,7 +66,7 @@ class Operator(Protocol):
 
 
 class ToggleOperator:
-    """Assign a treatment to a block, or clear an assigned block."""
+    """Assign a candidate chain to a block, or clear an assigned block."""
 
     name = "toggle"
 
@@ -86,8 +83,8 @@ class ToggleOperator:
             return None
         block = rng.choice(blocks)
         result = dict(schedule)
-        if block in result and rng.random() < 0.5:
-            del result[block]
+        if result.get(block) and rng.random() < 0.5:
+            result[block] = ()
         else:
             result[block] = rng.choice(candidates[block])
         return result, (block,)
@@ -101,7 +98,7 @@ class ToggleOperator:
 
 
 class ShiftOperator:
-    """Move an assigned block to a different year for the same treatment."""
+    """Rechoose a block's chain (a different rotation sequence)."""
 
     name = "shift"
 
@@ -112,42 +109,39 @@ class ShiftOperator:
     def propose(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
     ) -> tuple[Schedule, tuple[int, ...]] | None:
-        """Return a shifted schedule and the block that changed.
+        """Return a schedule with one block's chain rechoosing, and the block.
 
-        A shiftable block is sampled by drawing a candidate block and testing it, rather
-        than scanning the schedule, so the move is O(1) when most assigned blocks can
-        shift. A full scan is the fallback when the sample fails.
+        A rechoosable block is sampled by drawing a candidate block and testing it, rather
+        than scanning the schedule, so the move is O(1) when most assigned blocks have more
+        than one chain.
         """
         if not schedule:
             return None
-        blocks, shiftable = _index(candidates)
+        blocks, rechoosable = _index(candidates)
         for _ in range(12):
             block = rng.choice(blocks)
-            assignment = schedule.get(block)
-            if assignment is not None and (block, assignment[0]) in shiftable:
+            if schedule.get(block) and block in rechoosable:
                 result = dict(schedule)
-                result[block] = rng.choice(shiftable[(block, assignment[0])])
+                result[block] = rng.choice(rechoosable[block])
                 return result, (block,)
-        candidates_blocks = [
-            block for block, (treatment, _) in schedule.items() if (block, treatment) in shiftable
-        ]
-        if not candidates_blocks:
+        assigned = [block for block in schedule if schedule[block] and block in rechoosable]
+        if not assigned:
             return None
-        block = rng.choice(candidates_blocks)
+        block = rng.choice(assigned)
         result = dict(schedule)
-        result[block] = rng.choice(shiftable[(block, schedule[block][0])])
+        result[block] = rng.choice(rechoosable[block])
         return result, (block,)
 
     def apply(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
     ) -> Schedule | None:
-        """Shift one block in time."""
+        """Rechoose one block's chain."""
         proposal = self.propose(schedule, rng, candidates)
         return None if proposal is None else proposal[0]
 
 
 class SwapOperator:
-    """Exchange the assignments of two blocks."""
+    """Exchange the chains of two blocks."""
 
     name = "swap"
 
@@ -158,7 +152,7 @@ class SwapOperator:
     def propose(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
     ) -> tuple[Schedule, tuple[int, ...]] | None:
-        """Return a swapped schedule and the two blocks that changed."""
+        """Return a schedule with two blocks' chains exchanged, and the two blocks."""
         blocks = list(schedule)
         if len(blocks) < 2:
             return None
@@ -178,8 +172,8 @@ class SwapOperator:
 class LnsOperator:
     """Large-neighbourhood search: destroy a fraction of the schedule and repair it.
 
-    A destroy-repair move clears a random fraction of the assigned blocks and
-    reassigns them, exploring a large neighbourhood in one step.
+    A destroy-repair move clears a random fraction of the assigned blocks and reassigns
+    them to random candidate chains, exploring a large neighbourhood in one step.
     """
 
     name = "lns"
@@ -201,9 +195,9 @@ class LnsOperator:
         result = {block: value for block, value in schedule.items() if block not in destroyed}
         repaired: list[int] = []
         for block in destroyed:
-            options = candidates.get(block)
-            if options:
-                result[block] = rng.choice(options)
+            chains = candidates.get(block)
+            if chains:
+                result[block] = rng.choice(chains)
             repaired.append(block)
         return result, tuple(repaired)
 

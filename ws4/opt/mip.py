@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 
 from .objective import Target
-from .operators import Candidates, Schedule
+from .operators import Candidates, Chain, Schedule
 
 
 @dataclass(frozen=True)
@@ -72,7 +72,7 @@ def option_contributions(
     years: int,
 ) -> tuple[
     dict[int, dict[tuple[str, int], float]],
-    dict[tuple[int, tuple[str, int]], dict[tuple[str, int], float]],
+    dict[tuple[int, Chain], dict[tuple[str, int], float]],
     list[tuple[str, int]],
 ]:
     """Compute each block's base value and each option's delta.
@@ -99,13 +99,16 @@ def option_contributions(
     accounted = sorted({(target.account, target.year) for target in targets})
     empty = pd.DataFrame([], columns=["block_id", "treatment", "period"])
     base: dict[int, dict[tuple[str, int], float]] = {}
-    deltas: dict[tuple[int, tuple[str, int]], dict[tuple[str, int], float]] = {}
+    deltas: dict[tuple[int, Chain], dict[tuple[str, int], float]] = {}
     for block, options in candidates.items():
         base_index = _simulate_index(simulator_factory, empty, years, block)
         base[block] = {key: base_index.get(key, 0.0) for key in accounted}
         for option in options:
             schedule = pd.DataFrame(
-                [{"block_id": block, "treatment": option[0], "period": option[1]}]
+                [
+                    {"block_id": block, "treatment": treatment, "period": year}
+                    for treatment, year in option
+                ]
             )
             option_index = _simulate_index(simulator_factory, schedule, years, block)
             deltas[(block, option)] = {
@@ -116,7 +119,7 @@ def option_contributions(
 
 def solve_mip(
     base: dict[int, dict[tuple[str, int], float]],
-    deltas: dict[tuple[int, tuple[str, int]], dict[tuple[str, int], float]],
+    deltas: dict[tuple[int, Chain], dict[tuple[str, int], float]],
     accounted: Sequence[tuple[str, int]],
     targets: Sequence[Target],
 ) -> MipResult:

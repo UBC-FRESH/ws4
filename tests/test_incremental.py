@@ -54,9 +54,7 @@ def test_delta_tracks_a_random_walk_of_moves(tmp_path: Path) -> None:
     targets = _targets()
     candidates = optimizer.candidates()
     evaluator = IncrementalObjective(optimizer, targets)
-    schedule: dict[int, tuple[str, int]] = {
-        block: options[0] for block, options in candidates.items() if options
-    }
+    schedule = {block: options[0] for block, options in candidates.items() if options}
     evaluator.reset(schedule)
     rng = random.Random(11)
     for _ in range(40):
@@ -117,6 +115,38 @@ def test_delta_evaluator_is_available_without_routes(tmp_path: Path) -> None:
     """A plain configuration yields a move-based evaluator."""
     optimizer = _optimizer(tmp_path)
     assert optimizer.delta_evaluator(_targets()) is not None
+
+
+def test_candidates_are_treatment_chains(tmp_path: Path) -> None:
+    """A block's candidates are chains of (treatment, year) events."""
+    optimizer = _optimizer(tmp_path)
+    candidates = optimizer.candidates()
+    chains = [chain for chains in candidates.values() for chain in chains]
+    assert chains
+    for chain in chains:
+        assert isinstance(chain, tuple)
+        assert chain
+        for event in chain:
+            assert isinstance(event, tuple)
+            assert len(event) == 2
+            assert isinstance(event[0], str)
+            assert isinstance(event[1], int)
+
+
+def test_a_chain_schedule_evaluates_incrementally_and_fully(tmp_path: Path) -> None:
+    """A schedule of chains agrees between the incremental and the full simulation."""
+    optimizer = _optimizer(tmp_path, years=6)
+    candidates = optimizer.candidates()
+    schedule = {block: chains[0] for block, chains in candidates.items() if chains}
+    incremental = optimizer._incremental_values(schedule, (), ())
+    full = optimizer._full_values(schedule, None, (), ())
+    joined = (
+        incremental.set_index(["year", "account"])["value"]
+        .to_frame("incremental")
+        .join(full.set_index(["year", "account"])["value"].to_frame("full"), how="outer")
+        .fillna(0.0)
+    )
+    assert (joined["incremental"] - joined["full"]).abs().max() == pytest.approx(0.0, abs=1e-6)
 
 
 def test_optimizer_uses_the_delta_path(tmp_path: Path) -> None:

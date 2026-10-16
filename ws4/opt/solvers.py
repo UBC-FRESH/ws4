@@ -15,7 +15,7 @@ from collections.abc import Callable
 
 from .core import Problem
 from .incremental import IncrementalObjective
-from .operators import Candidates, OperatorRegistry, Schedule
+from .operators import Candidates, Chain, OperatorRegistry, Schedule
 
 StepCallback = Callable[[int, float], None]
 
@@ -27,7 +27,7 @@ def _changed_blocks(before: Schedule, after: Schedule) -> list[int]:
     return changed
 
 
-def _signature(before: Schedule, after: Schedule) -> frozenset[tuple[int, tuple[str, int] | None]]:
+def _signature(before: Schedule, after: Schedule) -> frozenset[tuple[int, Chain | None]]:
     """Return the set of blocks a move changed, with their new assignment."""
     blocks = set(before) | set(after)
     return frozenset(
@@ -193,7 +193,7 @@ def solve_tabu(
     current: Schedule = dict(initial) if initial is not None else {}
     current_obj = problem.evaluate(current)
     best, best_obj = dict(current), current_obj
-    tabu: deque[frozenset[tuple[int, tuple[str, int] | None]]] = deque(maxlen=tenure)
+    tabu: deque[frozenset[tuple[int, Chain | None]]] = deque(maxlen=tenure)
     for iteration in range(iterations):
         chosen: Schedule | None = None
         chosen_obj = math.inf

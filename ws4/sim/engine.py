@@ -389,6 +389,58 @@ class Simulator:
             offsets += 1
         return totals
 
+    def block_chain_products(
+        self, block_id: int, events: Sequence[tuple[str, int]]
+    ) -> dict[tuple[int, str], float]:
+        """Return the product cells a treatment chain makes on a block.
+
+        The value at each event is the fragment area times the product curve at the
+        fragment's offset in that event's year: the fragment ages between events and resets
+        on each treatment. This is the product part of :meth:`block_chain` without stepping
+        every year, so it costs O(fragments x events).
+
+        Parameters
+        ----------
+        block_id : int
+            The block.
+        events : sequence of (str, int)
+            The treatments and the year each is applied.
+
+        Returns
+        -------
+        dict of (int, str) to float
+            The product value per ``(year, label)`` cell (non-zero entries only).
+        """
+        positions = self._block_index().get(int(block_id), [])
+        if not positions or not events:
+            return {}
+        by_year = {int(year): str(treatment) for treatment, year in events}
+        tracks = self.fragments["track_id"].to_numpy()[positions].astype(np.int64)
+        offsets = self.fragments["offset"].to_numpy()[positions].astype(np.int64)
+        areas = self.fragments["area_ha"].to_numpy()[positions].astype(float)
+        totals: dict[tuple[int, str], float] = {}
+        current = 0
+        for year in sorted(by_year):
+            gap = year - current
+            if gap:
+                offsets = offsets + gap
+                current = year
+            treatment = by_year[year]
+            for index in range(len(positions)):
+                key = (int(tracks[index]), treatment)
+                transition = self._treatment_by_key.get(key)
+                if transition is None:
+                    continue
+                area = float(areas[index])
+                offset = int(offsets[index])
+                for curve_id, product_label in self._products_by_key.get(key, []):
+                    value = area * self._curve_value(curve_id, offset)
+                    cell = (year, product_label)
+                    totals[cell] = totals.get(cell, 0.0) + value
+                tracks[index] = transition[0]
+                offsets[index] = transition[1]
+        return totals
+
     def block_trajectory(
         self, block_id: int, treatment: str | None, year: int, years: int
     ) -> dict[tuple[int, str], float]:

@@ -46,7 +46,8 @@ def test_mip_bound_is_achieved_by_its_schedule(tmp_path: Path) -> None:
     schedule = pd.DataFrame(
         [
             {"block_id": block, "treatment": treatment, "period": year}
-            for block, (treatment, year) in result.schedule.items()
+            for block, chain in result.schedule.items()
+            for treatment, year in chain
         ]
     )
     achieved = objective(Simulator.from_dataset(dataset).simulate(schedule, 1), targets)
@@ -69,7 +70,8 @@ def test_mip_bound_is_a_lower_bound_for_random_schedules(tmp_path: Path) -> None
         frame = pd.DataFrame(
             [
                 {"block_id": block, "treatment": treatment, "period": year}
-                for block, (treatment, year) in schedule.items()
+                for block, chain in schedule.items()
+                for treatment, year in chain
             ],
             columns=["block_id", "treatment", "period"],
         )

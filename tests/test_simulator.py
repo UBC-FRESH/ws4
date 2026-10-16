@@ -224,6 +224,18 @@ def test_block_chain_matches_block_trajectory(tmp_path: Path) -> None:
     assert simulator.block_chain(1, [], 4) == simulator.block_trajectory(1, None, 0, 4)
 
 
+def test_block_chain_products_matches_the_chain(tmp_path: Path) -> None:
+    """The product fast path equals the product cells of the block chain."""
+    dataset = _dataset(tmp_path)
+    simulator = Simulator.from_dataset(dataset)
+    events = [("CC", 0)]
+    chain = simulator.block_chain(1, events, 4)
+    products = {
+        cell: value for cell, value in chain.items() if cell[1].startswith("product.") and value
+    }
+    assert simulator.block_chain_products(1, events) == products
+
+
 def test_block_chain_delta_equals_the_simulate_delta(tmp_path: Path) -> None:
     """A chain of events is additive: its delta equals simulate()'s delta for the same rows."""
     dataset = _dataset(tmp_path)
