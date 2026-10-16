@@ -477,3 +477,8 @@ issue comments.
   age (exact at integers, linear between, clamped), so `_curves` is removed. A/B vs
   `p6-construction-checkpoint`: construction ~0.55 → **~0.15 s** (3.7×). Spike branch `spike/construction`
   merged to `feature/p6-performance`; plan and log in `notes/design/ws4-construction.md`.
+- P6.12 (spike, adopted): faster route-record accumulation. The reporting ledger aggregated
+  (volume, count) per (year, destination, route) and did the per-segment pass once per route at flush
+  time. A/B vs `p6-routerecord-checkpoint` (C5, 3-year, 300-block, collect=True, warm): ~0.78 → **~0.08 s**
+  (~10×), outputs unchanged. Spike branch `spike/route-record` merged to `feature/p6-performance`; plan
+  and log in `notes/design/ws4-route-record.md`.
