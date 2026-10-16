@@ -220,3 +220,18 @@ each curve's table row and label code), and a rebuild is a `searchsorted` plus a
 | Warm 30-year simulate | 0.102 s | 0.096 s |
 
 Plan and log: `notes/design/ws4-join-rebuild.md`.
+
+### Incremental route accounts (`spike/inc-route-accounts`)
+
+Route accounts (haul, maintenance, volume) are additive over blocks like feature accounts, so they
+join the incremental objective; only **build** cost is not (charged once per segment across the
+schedule) and keeps the full path. `Simulator.block_route_accounts` computes one block's routed
+accounts in isolation, reusing the summary ledger for consistency.
+
+| Metric (C5, route-target config, 10 y) | Before | After |
+| --- | ---: | ---: |
+| Warm evaluation, 300-block schedule | 93.0 ms | **14.2 ms** (6.5×) |
+| First evaluation (cold, builds the per-block deltas) | 604 ms | 1871 ms |
+
+The first evaluation is slower (it builds the per-block route deltas); a search amortizes it across
+its iterations. Plan and log: `notes/design/ws4-incremental-route-accounts.md`.
