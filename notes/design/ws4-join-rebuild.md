@@ -84,3 +84,19 @@ No `np.unique`, no string sort.
 ## 9. Log
 
 - 2026-10-16: plan written; profiling done (section 1). Starting M1.
+- 2026-10-16 M1: precomputed the feature side (`_track_ids`, sorted feature rows with each curve's
+  table row and label code) and rewrote `_rebuild_join` as a `searchsorted` + vectorized expansion
+  (no `np.unique`, no string sort). Full suite green.
+  - Caution logged: a `git stash` during the first A/B silently reverted the working tree to the old
+    code, producing a bogus "no difference" result. Redone after committing.
+- 2026-10-16 M2 A/B vs `p6-joinrebuild-checkpoint` (same script and dataset):
+
+  | Metric | Checkpoint | Spike | Speedup |
+  | --- | ---: | ---: | ---: |
+  | One join rebuild | 0.127 s | **0.0045 s** | **28×** |
+  | Cold 30-y simulate (incl. join build) | 0.299 s | 0.129 s | 2.3× |
+  | Warm 30-y simulate | 0.102 s | 0.096 s | ~1.1× (no rebuild) |
+  | `account_values` / year | 2.55 ms | 2.41 ms | unchanged (not the target) |
+
+  **Decision: adopt.** Both targets met (rebuild < 0.02 s; cold < 0.15 s) with the suite green. The
+  gain is small on the warm path (which is the optimizer's case) and material on the cold path.
