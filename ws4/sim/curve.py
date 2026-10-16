@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import numpy as np
 import pandas as pd
 
@@ -32,3 +34,101 @@ def curve_value(curves: pd.DataFrame, curve_id: int, x: float) -> float:
     xs = points["x"].to_numpy(dtype=float)
     ys = points["y"].to_numpy(dtype=float)
     return float(np.interp(x, xs, ys))
+
+
+@dataclass
+class CurveTable:
+    """Curve values precomputed at every integer age, for gather-based evaluation.
+
+    Every offset that reaches curve evaluation is an integer age, and curve breakpoints
+    are integers, so a table ``table[row, age] = curve(age)`` is exact and evaluation is a
+    2-D gather rather than a per-curve interpolation. Ages above ``age_max`` clamp to the
+    last column (matching ``numpy.interp``).
+
+    Attributes
+    ----------
+    table : numpy.ndarray
+        ``(n_curves, age_max + 1)`` float64 values.
+    row_of : dict of int to int
+        Curve id to table row.
+    age_max : int
+        The largest age the table covers.
+    """
+
+    table: np.ndarray
+    row_of: dict[int, int]
+    age_max: int
+
+    @classmethod
+    def from_curves(cls, curves: pd.DataFrame) -> CurveTable:
+        """Build the table from a long-format curves table.
+
+        Parameters
+        ----------
+        curves : pandas.DataFrame
+            The ``curves`` table, with ``curve_id``, ``x``, and ``y`` columns.
+
+        Returns
+        -------
+        CurveTable
+            The table. Empty when the curves table is empty.
+        """
+        if curves.empty:
+            return cls(table=np.zeros((0, 1)), row_of={}, age_max=0)
+        age_max = int(np.max(curves["x"].to_numpy(dtype=float)))
+        identifiers = sorted(int(curve_id) for curve_id in curves["curve_id"].unique())
+        table = np.zeros((len(identifiers), age_max + 1), dtype=float)
+        row_of: dict[int, int] = {}
+        grid = np.arange(age_max + 1, dtype=float)
+        for row, curve_id in enumerate(identifiers):
+            points = curves[curves["curve_id"] == curve_id].sort_values("x")
+            xs = points["x"].to_numpy(dtype=float)
+            ys = points["y"].to_numpy(dtype=float)
+            table[row] = np.interp(grid, xs, ys)
+            row_of[curve_id] = row
+        return cls(table=table, row_of=row_of, age_max=age_max)
+
+    def row(self, curve_id: int) -> int | None:
+        """Return a curve's table row, or None when the curve is absent."""
+        return self.row_of.get(int(curve_id))
+
+    def at(self, curve_id: int, x: float) -> float | None:
+        """Return a curve's value at an integer age, or None for a non-integer/absent curve.
+
+        Parameters
+        ----------
+        curve_id : int
+            The curve.
+        x : float
+            The age. A non-integer age returns None so the caller can fall back to
+            interpolation.
+
+        Returns
+        -------
+        float or None
+            The value, or None when the curve is absent or the age is not an integer.
+        """
+        row = self.row_of.get(int(curve_id))
+        if row is None or x != int(x):
+            return None
+        age = min(max(int(x), 0), self.age_max)
+        return float(self.table[row, age])
+
+    def gather(self, rows: np.ndarray, ages: np.ndarray) -> np.ndarray:
+        """Return the values for precomputed curve rows at integer ages.
+
+        Parameters
+        ----------
+        rows : numpy.ndarray
+            The table row per query (from :meth:`row`).
+        ages : numpy.ndarray
+            The integer age per query; clipped to ``[0, age_max]``.
+
+        Returns
+        -------
+        numpy.ndarray
+            The curve value per query.
+        """
+        clipped = np.clip(ages, 0, self.age_max).astype(np.int64)
+        return np.asarray(self.table[rows, clipped])
+
