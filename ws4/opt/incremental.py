@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 from .objective import Target, penalty
-from .operators import Chain, Schedule
+from .operators import Candidates, Chain, Schedule
 
 if TYPE_CHECKING:
     from .engine import Optimizer
@@ -106,6 +106,21 @@ class IncrementalObjective:
                 contribution[cell] = contribution.get(cell, 0.0) + value
         self._contributions[key] = contribution
         return contribution
+
+    def warm(self, candidates: Candidates) -> None:
+        """Precompute every candidate chain's contribution.
+
+        The search then has no contribution misses, which suits long runs (the one-off cost
+        is paid once instead of as misses scattered through the search).
+
+        Parameters
+        ----------
+        candidates : dict of int to list of Chain
+            The candidate chains per block.
+        """
+        for block, chains in candidates.items():
+            for chain in chains:
+                self._contribution(block, chain)
 
     def _pending(self, changed: Sequence[int], schedule: Schedule) -> dict[Cell, float]:
         """Return the per-cell change a move makes."""

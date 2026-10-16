@@ -112,6 +112,16 @@ def test_delta_solver_agrees_with_a_fresh_evaluation(tmp_path: Path) -> None:
     assert objective == pytest.approx(optimizer._evaluate(best, targets))
 
 
+def test_warm_precomputes_the_candidate_contributions(tmp_path: Path) -> None:
+    """warm() fills the contribution cache for every candidate chain."""
+    optimizer = _optimizer(tmp_path)
+    candidates = optimizer.candidates()
+    evaluator = IncrementalObjective(optimizer, _targets())
+    evaluator.reset({})
+    evaluator.warm(candidates)
+    assert len(evaluator._contributions) == sum(len(chains) for chains in candidates.values())
+
+
 def test_periodic_target_sums_the_account_over_its_period() -> None:
     """A period-width target scores the account summed over the years of the period."""
     values = pd.DataFrame(

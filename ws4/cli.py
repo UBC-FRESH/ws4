@@ -119,6 +119,9 @@ def optimize(
     lns_destroy: float = typer.Option(
         0.1, "--lns-destroy", help="Fraction of the schedule an LNS move destroys"
     ),
+    warm_cache: bool = typer.Option(
+        False, "--warm-cache", help="Precompute every candidate chain's contribution first"
+    ),
 ) -> None:
     """Search for a schedule that satisfies the targets and write a summary."""
     cfg = OptimizeConfig(
@@ -139,6 +142,7 @@ def optimize(
         allow_spatial_override=spatial_override,
         lns_weight=lns_weight,
         lns_destroy=lns_destroy,
+        warm_cache=warm_cache,
     )
     opt = Optimizer.from_dataset(dataset, cfg)
     result = opt.run(out)
@@ -177,6 +181,9 @@ def watch(
     lns_destroy: float = typer.Option(
         0.1, "--lns-destroy", help="Fraction of the schedule an LNS move destroys"
     ),
+    warm_cache: bool = typer.Option(
+        False, "--warm-cache", help="Precompute every candidate chain's contribution first"
+    ),
     route_config: Path = typer.Option(
         None, "--route-config", exists=True, help="Optional route model and route accounts (YAML)"
     ),
@@ -207,6 +214,7 @@ def watch(
         targets_path=str(targets),
         lns_weight=lns_weight,
         lns_destroy=lns_destroy,
+        warm_cache=warm_cache,
         topology_path=str(topology) if topology is not None else "",
         route_config_path=str(route_config) if route_config is not None else "",
         max_opening_ha=max_opening_ha,

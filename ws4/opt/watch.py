@@ -517,6 +517,9 @@ def run_watch(
     evaluator = (
         optimizer.delta_evaluator(targets, accounts_tuple) if cfg.metaheuristic == "sa" else None
     )
+    if evaluator is not None and cfg.warm_cache:
+        console.print("[grey50]warming the contribution cache…[/]")
+        evaluator.warm(candidates)
     problem = Problem(
         evaluate=_wrapped_evaluate(optimizer, targets, state),
         candidates=candidates,

@@ -93,6 +93,7 @@ class OptimizeConfig:
     swap_weight: float = 0.5
     lns_weight: float = 0.2
     lns_destroy: float = 0.1
+    warm_cache: bool = False
 
 
 class Optimizer:
@@ -644,6 +645,8 @@ class Optimizer:
             )
         evaluator = self.delta_evaluator(targets)
         if evaluator is not None:
+            if self.cfg.warm_cache:
+                evaluator.warm(candidates)
             return solve_sa_delta(
                 evaluator,
                 rng,
