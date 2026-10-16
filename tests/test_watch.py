@@ -171,6 +171,41 @@ def test_watch_command_prints_a_frame(tmp_path: Path) -> None:
     assert "product.Volume" in result.output
 
 
+def test_watch_command_accepts_the_adaptive_schedule(tmp_path: Path) -> None:
+    """The watch command runs with the adaptive temperature schedule."""
+    dataset = _dataset(tmp_path)
+    targets = tmp_path / "adaptive.yaml"
+    targets.write_text(
+        "targets:\n  - account: product.Volume\n    year: 0\n    minimum: 300\n    maximum: 400\n",
+        encoding="utf-8",
+    )
+    result = CliRunner().invoke(
+        app,
+        [
+            "watch",
+            "--dataset",
+            str(dataset),
+            "--targets",
+            str(targets),
+            "--account",
+            "product.Volume",
+            "--years",
+            "2",
+            "--period-width",
+            "1",
+            "--iterations",
+            "12",
+            "--cooling-mode",
+            "adaptive",
+            "--cooling-window",
+            "4",
+            "--plain",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert "product.Volume" in result.output
+
+
 def test_watch_runs_islands(tmp_path: Path) -> None:
     """The watcher can run parallel islands and still finish with a summary."""
     dataset = _dataset(tmp_path)
