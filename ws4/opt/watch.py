@@ -514,7 +514,9 @@ def run_watch(
         initial = {block: options[0] for block, options in candidates.items() if options}
 
     started = time.monotonic()
-    live: Live | None = None if plain else Live(console=console, auto_refresh=False)
+    live: Live | None = (
+        None if plain else Live(console=console, auto_refresh=False, refresh_per_second=4)
+    )
 
     def on_step(iteration: int, _objective: float) -> None:
         state.iteration = iteration
@@ -523,7 +525,7 @@ def run_watch(
         now = time.monotonic()
         if now - state.last_render >= refresh:
             state.last_render = now
-            live.update(render_frame(state, optimizer, now - started))
+            live.update(render_frame(state, optimizer, now - started), refresh=True)
 
     def solve() -> Schedule:
         if cfg.metaheuristic == "tabu":
@@ -559,15 +561,17 @@ def run_watch(
     if live is not None:
         with live:
             best = solve()
-            live.update(render_frame(state, optimizer, time.monotonic() - started))
+            elapsed = time.monotonic() - started
+            state.iteration = cfg.iterations
+            state.window = state.current_window()
+            live.update(render_frame(state, optimizer, elapsed), refresh=True)
+        console.print()
     else:
         best = solve()
-    elapsed = time.monotonic() - started
-    state.iteration = cfg.iterations
-    state.window = state.current_window()
-    console.print(render_frame(state, optimizer, elapsed))
-    if live is not None:
-        console.print()
+        elapsed = time.monotonic() - started
+        state.iteration = cfg.iterations
+        state.window = state.current_window()
+        console.print(render_frame(state, optimizer, elapsed))
     return {
         "objective": state.best_objective,
         "penalty": state.window.total_penalty(),
