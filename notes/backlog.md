@@ -19,13 +19,13 @@ items are enhancements and maintenance.
 - **P5:** broaden `mypy` coverage to `ws4/`.
 - **post-release:** the wider expression library; succession and `produce` semantics; legacy-ingestion
   coverage; a reference replay; the wider operator set and ALNS; the shared solver-core package; the
-  island model and GPU moves; time-boxed MIP subproblems; the tuners and the portfolio layer;
-  incremental routing and spatial metrics for the optimizer objective (see
-  `notes/design/ws4-performance.md`); duplicate and meta accounts and chart output; unit conversion;
-  and the topology stub cleanup.
+  island model and GPU moves; time-boxed MIP subproblems; the tuners and the portfolio layer; duplicate
+  and meta accounts and chart output; unit conversion; and the topology stub cleanup.
 - **Blocked:** the MKRF canonical artifacts' location log is not on `origin` (the objects are on
   `arbutus-s3`); a fresh clone needs the producer to push the git-annex branch.
-- **Deferred:** the block-aggregation cache (not the hot path).
+- **Deferred:** the block-aggregation cache (not the hot path); native kernels (P6.6) — no profiled loop
+  after P6.1–P6.4 shows a large speedup, and numba is not installed in CI (trigger and evidence in
+  `notes/design/ws4-performance.md`).
 
 ## Matrix builder (P2.1)
 

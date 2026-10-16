@@ -441,3 +441,6 @@ issue comments.
   user-facing `docs/reference/performance.rst` page with the measured figures, the incremental
   objective, and the reproduce steps. Dashboard result: `python scripts/dashboard.py` reports
   `OVERALL: GREEN`.
+- P6.6 (native kernels) is deferred after post-P6 profiling found no loop with a large kernel speedup;
+  numba is not installed in CI. Recorded in the roadmap's "Deferred from P6" list, `notes/backlog.md`,
+  and `notes/design/ws4-performance.md`, with a trigger to revisit. Issue #67 closed as not planned.

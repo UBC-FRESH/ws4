@@ -270,8 +270,13 @@ budget. Plan of record: `notes/design/ws4-performance.md`.
 - [x] P6.3 Spatial precompute and incremental metrics (#64)
 - [x] P6.4 Incremental objective evaluation (#65)
 - [x] P6.5 Solvers at scale (#66)
-- [ ] P6.6 Native kernels (#67)
 - [x] P6.7 Guardrails (#68)
+
+Deferred from P6, triaged in `notes/backlog.md`:
+
+- P6.6 Native kernels (#67): **deferred**. No profiled loop after WP1–WP4 shows a ≥5× target; numba is
+  an optional dependency CI does not install. See `notes/design/ws4-performance.md` (WP6 status) for
+  the trigger to revisit.
 
 Acceptance criteria:
 
