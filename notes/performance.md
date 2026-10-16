@@ -186,3 +186,24 @@ simulation.
 Parity with the full simulation holds to floating-point tolerance (cell-wise max difference ~3e-8),
 covered by `tests/test_optimizer.py`. The target (under 50 ms) is met for the account-value objective;
 the route/edge configurations keep the full path.
+
+### Shared age-grid curve table (spike, `spike/shared-grid`)
+
+Every offset is an integer age and every curve breakpoint is an integer, so each curve is precomputed
+at every integer age once (`ws4/sim/curve.py:CurveTable`), turning curve evaluation into a 2-D gather.
+`account_values` uses one gather; `_curve_value`, the patch/edge criteria, and the per-block
+trajectories use the same table (with the `numpy.interp` fallback for a non-integer age).
+
+| Metric (C5) | Before | After |
+| --- | ---: | ---: |
+| `account_values`, per year | ~11.9 ms | **2.33 ms** (5.1×) |
+| Base simulate, 30 years (warm) | 0.376 s | **0.095 s** (3.9×) |
+| Base simulate, 30 years (cold, incl. join build) | 0.376 s | 0.266 s |
+| Construction | 0.52 s | 0.57 s (+~12 MB table) |
+
+Two findings from the spike: an inefficient table build (per-curve masking) made construction slow
+until it was rewritten as one sort-and-slice; and `Simulator.reset` was invalidating the
+fragment-to-feature join on every call, so the empty-schedule simulate paid a 0.13 s rebuild —
+`reset` now invalidates only when the tracks actually changed. The **join rebuild (0.13 s)** is now the
+largest fixed cost of a cold simulate (separate from curves) and is the next cold-path candidate.
+Plan and full log: `notes/design/ws4-curve-grid.md`.

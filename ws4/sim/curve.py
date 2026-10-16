@@ -75,17 +75,20 @@ class CurveTable:
         """
         if curves.empty:
             return cls(table=np.zeros((0, 1)), row_of={}, age_max=0)
-        age_max = int(np.max(curves["x"].to_numpy(dtype=float)))
-        identifiers = sorted(int(curve_id) for curve_id in curves["curve_id"].unique())
-        table = np.zeros((len(identifiers), age_max + 1), dtype=float)
+        frame = curves.sort_values(["curve_id", "x"])
+        identifiers = frame["curve_id"].to_numpy()
+        xs_all = frame["x"].to_numpy(dtype=float)
+        ys_all = frame["y"].to_numpy(dtype=float)
+        age_max = int(np.max(xs_all))
+        boundaries = np.flatnonzero(np.diff(identifiers)) + 1
+        group_ids = identifiers[np.concatenate([[0], boundaries])]
+        segments = np.split(np.arange(identifiers.size), boundaries)
+        table = np.zeros((len(group_ids), age_max + 1), dtype=float)
         row_of: dict[int, int] = {}
         grid = np.arange(age_max + 1, dtype=float)
-        for row, curve_id in enumerate(identifiers):
-            points = curves[curves["curve_id"] == curve_id].sort_values("x")
-            xs = points["x"].to_numpy(dtype=float)
-            ys = points["y"].to_numpy(dtype=float)
-            table[row] = np.interp(grid, xs, ys)
-            row_of[curve_id] = row
+        for row, (curve_id, segment) in enumerate(zip(group_ids, segments, strict=True)):
+            table[row] = np.interp(grid, xs_all[segment], ys_all[segment])
+            row_of[int(curve_id)] = row
         return cls(table=table, row_of=row_of, age_max=age_max)
 
     def row(self, curve_id: int) -> int | None:
