@@ -123,6 +123,9 @@ def optimize(
     warm_cache: bool = typer.Option(
         False, "--warm-cache", help="Precompute every candidate chain's contribution first"
     ),
+    patch_accounts: Path = typer.Option(
+        None, "--patch-accounts", exists=True, help="Patch size-distribution accounts (YAML)"
+    ),
 ) -> None:
     """Search for a schedule that satisfies the targets and write a summary."""
     cfg = OptimizeConfig(
@@ -146,6 +149,7 @@ def optimize(
         lns_weight=lns_weight,
         lns_destroy=lns_destroy,
         warm_cache=warm_cache,
+        patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",
     )
     opt = Optimizer.from_dataset(dataset, cfg)
     result = opt.run(out)
@@ -188,6 +192,9 @@ def watch(
         False, "--warm-cache", help="Precompute every candidate chain's contribution first"
     ),
     islands: int = typer.Option(0, "--islands", help="Parallel islands (0 = single search)"),
+    patch_accounts: Path = typer.Option(
+        None, "--patch-accounts", exists=True, help="Patch size-distribution accounts (YAML)"
+    ),
     route_config: Path = typer.Option(
         None, "--route-config", exists=True, help="Optional route model and route accounts (YAML)"
     ),
@@ -221,6 +228,7 @@ def watch(
         warm_cache=warm_cache,
         islands=islands,
         workers=islands,
+        patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",
         topology_path=str(topology) if topology is not None else "",
         route_config_path=str(route_config) if route_config is not None else "",
         max_opening_ha=max_opening_ha,

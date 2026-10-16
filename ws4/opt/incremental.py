@@ -24,8 +24,10 @@ import pandas as pd
 
 from .objective import Target, penalty
 from .operators import Candidates, Chain, Schedule
+from .patch import PatchModel
 
 if TYPE_CHECKING:
+    from ..patch.accounts import PatchAccount
     from .engine import Optimizer
 
 Cell = tuple[int, str]
@@ -49,7 +51,11 @@ class IncrementalObjective:
     """
 
     def __init__(
-        self, optimizer: Optimizer, targets: Sequence[Target], extra_accounts: Sequence[str] = ()
+        self,
+        optimizer: Optimizer,
+        targets: Sequence[Target],
+        extra_accounts: Sequence[str] = (),
+        patch_accounts: Sequence[PatchAccount] = (),
     ) -> None:
         """Build the evaluator for a target set.
 
@@ -62,10 +68,21 @@ class IncrementalObjective:
         extra_accounts : sequence of str, optional
             Further accounts to track (for example, accounts a viewer displays); they do
             not affect the objective.
+        patch_accounts : sequence of PatchAccount, optional
+            Patch size-distribution accounts, evaluated by a :class:`PatchModel` (they are
+            non-additive, so they are priced separately).
         """
         self.optimizer = optimizer
         self.targets = list(targets)
-        self.accounts: set[str] = {target.account for target in self.targets} | set(extra_accounts)
+        self.patch = PatchModel(optimizer, patch_accounts) if patch_accounts else None
+        patch_names = {account.name for account in patch_accounts}
+
+        def is_patch(name: str) -> bool:
+            return any(name == stem or name.startswith(f"{stem}.") for stem in patch_names)
+
+        self.accounts: set[str] = {
+            target.account for target in self.targets if not is_patch(target.account)
+        } | {name for name in extra_accounts if not is_patch(name)}
         self.totals: dict[Cell, float] = {}
         self.assignments: Schedule = {}
         self._contributions: dict[tuple[int, Chain], dict[Cell, float]] = {}
@@ -88,6 +105,10 @@ class IncrementalObjective:
         self.assignments = dict(schedule)
         for block, assignment in schedule.items():
             for cell, value in self._contribution(block, assignment).items():
+                self.totals[cell] = self.totals.get(cell, 0.0) + value
+        if self.patch is not None:
+            self.patch.reset(schedule)
+            for cell, value in self.patch.cell_map().items():
                 self.totals[cell] = self.totals.get(cell, 0.0) + value
 
     def _contribution(self, block: int, chain: Chain) -> dict[Cell, float]:
@@ -134,6 +155,9 @@ class IncrementalObjective:
             if old is not None:
                 for cell, value in self._contribution(block, old).items():
                     pending[cell] = pending.get(cell, 0.0) - value
+        if self.patch is not None:
+            for cell, value in self.patch.pending(changed, schedule).items():
+                pending[cell] = pending.get(cell, 0.0) + value
         return pending
 
     @property
@@ -203,6 +227,8 @@ class IncrementalObjective:
                 self.assignments.pop(block, None)
             else:
                 self.assignments[block] = assignment
+        if self.patch is not None:
+            self.patch.commit(changed, schedule)
 
     def values_frame(self) -> pd.DataFrame:
         """Return the tracked account values as a frame (``year``, ``account``, ``value``)."""
