@@ -143,3 +143,13 @@ checkpoint tag `p6-sharedgrid-checkpoint` gives a clean rollback either way.
     of a cold simulate. Out of scope here (it is the fragment-to-feature join, not curves); recorded as
     the next cold-path candidate.
 - 2026-10-16 M4: docs and guardrails (below). Decision in section 9.
+- 2026-10-16 M4 A/B vs `p6-sharedgrid-checkpoint` (same measurement script, same dataset):
+
+  | Metric | Checkpoint | Spike | Speedup |
+  | --- | ---: | ---: | ---: |
+  | Construction | 0.545 s | 0.575 s | 0.95× (table build) |
+  | Cold 30-y simulate (incl. join build) | 0.397 s | 0.261 s | 1.52× |
+  | Warm 30-y simulate | 0.422 s | 0.095 s | **4.4×** |
+  | `account_values` / year | 12.60 ms | 2.43 ms | **5.2×** |
+
+  Adopt. Kept on `spike/shared-grid`; merge into `feature/p6-performance` only on request.
