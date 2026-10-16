@@ -74,3 +74,14 @@ from `products x segments` to `routes x segments` (~9x on C5).
 ## 9. Log
 
 - 2026-10-16: plan written; profiling done (section 1). Starting M1.
+- 2026-10-16 M1: `record` (collect) now aggregates `(volume, count)` per
+  `(year, destination, route)`; `_flush` does the per-segment pass once per route, called by every
+  reader. `collect=False` untouched. Cross-check test (reporting vs summary ledger) and the suite green.
+- 2026-10-16 M2 A/B vs `p6-routerecord-checkpoint` (C5, 3-year, 300-block, collect=True; warm runs):
+
+  | Metric | Checkpoint | Spike | Speedup |
+  | --- | ---: | ---: | ---: |
+  | `simulate` + reporting, warm | ~0.78 s | **~0.08 s** | ~10× |
+
+  **Decision: adopt.** Target (< 0.2 s) met with identical outputs (the aggregation is exact) and the
+  suite green.
