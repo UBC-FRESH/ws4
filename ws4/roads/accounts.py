@@ -366,6 +366,7 @@ class RouteCostLedger:
         self._year_distance: dict[int, float] = {}
         self._year_volume: dict[int, float] = {}
         self._dest_totals: dict[tuple[int, str], dict[str, float]] = {}
+        self._flows: dict[tuple[int, str, tuple[int, ...]], list[float]] = {}
         self._route_rows: list[dict[str, object]] = []
 
     def record(
@@ -416,32 +417,62 @@ class RouteCostLedger:
         totals["volume"] += volume
         totals["haul"] += volume * route.haul_cost
         totals["maintain"] += route.maintain_cost
+        if self.collect:
+            # Aggregate per (year, destination, route): products of the same block to the
+            # same destination share the route, so the per-segment work runs once per route
+            # at flush time. Volume is summed; the record count drives maintenance.
+            key = (year, destination, route.segment_ids)
+            flow = self._flows.get(key)
+            if flow is None:
+                self._flows[key] = [volume, 1.0]
+            else:
+                flow[0] += volume
+                flow[1] += 1.0
+            return
         for segment_id in route.segment_ids:
-            segment = self._by_id[segment_id]
-            is_new = segment_id not in self._built
-            if is_new:
+            if segment_id not in self._built:
                 self._built.add(segment_id)
-                totals["build"] += segment.build_cost
-            if not self.collect:
-                continue
-            state = self._segments.setdefault((year, segment_id), _SegmentState())
-            if is_new:
-                state.built_length += segment.length_m
-                state.build_expense += segment.build_cost
-                self._first_use.setdefault(segment_id, year)
-            state.volume += volume
-            state.haul_expense += volume * segment.haul_cost
-            state.length = segment.length_m
-            state.maintain_expense += segment.maintain_cost
-            per_dest = self._by_destination.setdefault(
-                (year, destination, segment_id), _SegmentState()
-            )
-            per_dest.volume += volume
-            per_dest.haul_expense += volume * segment.haul_cost
-            per_dest.length = segment.length_m
-            per_dest.maintain_expense += segment.maintain_cost
-            if is_new:
-                per_dest.build_expense += segment.build_cost
+                totals["build"] += self._by_id[segment_id].build_cost
+
+    def _flush(self) -> None:
+        """Fold the aggregated route flows into the per-segment tables.
+
+        Called by every reader, so the per-segment tables are materialized only when an
+        output needs them; the per-segment work runs once per route rather than once per
+        produced product.
+        """
+        if not self._flows:
+            return
+        for (year, destination, segment_ids), flow in self._flows.items():
+            volume, count = flow[0], flow[1]
+            for segment_id in segment_ids:
+                segment = self._by_id[segment_id]
+                is_new = segment_id not in self._built
+                if is_new:
+                    self._built.add(segment_id)
+                    self._dest_totals.setdefault(
+                        (year, destination),
+                        {"haul": 0.0, "build": 0.0, "maintain": 0.0, "volume": 0.0},
+                    )["build"] += segment.build_cost
+                state = self._segments.setdefault((year, segment_id), _SegmentState())
+                if is_new:
+                    state.built_length += segment.length_m
+                    state.build_expense += segment.build_cost
+                    self._first_use.setdefault(segment_id, year)
+                state.volume += volume
+                state.haul_expense += volume * segment.haul_cost
+                state.length = segment.length_m
+                state.maintain_expense += segment.maintain_cost * count
+                per_dest = self._by_destination.setdefault(
+                    (year, destination, segment_id), _SegmentState()
+                )
+                per_dest.volume += volume
+                per_dest.haul_expense += volume * segment.haul_cost
+                per_dest.length = segment.length_m
+                per_dest.maintain_expense += segment.maintain_cost * count
+                if is_new:
+                    per_dest.build_expense += segment.build_cost
+        self._flows.clear()
 
     def route_rows(self) -> pd.DataFrame:
         """Return the per-product routing rows.
@@ -476,6 +507,7 @@ class RouteCostLedger:
             ``<destination>.volume`` and ``<destination>.haul_expense``.
         """
         rows: list[dict[str, object]] = []
+        self._flush()
         destinations = self.network.destination_names()
         for (year, segment_id), state in sorted(self._segments.items()):
             row: dict[str, object] = {
@@ -522,6 +554,7 @@ class RouteCostLedger:
             ``haul_expense``, ``length``, ``haul_cost``, ``distance``.
         """
         rows: list[dict[str, object]] = []
+        self._flush()
         for (year, name, segment_id), state in sorted(self._by_destination.items()):
             if name != destination:
                 continue
@@ -569,6 +602,7 @@ class RouteCostLedger:
             ``year``, ``account``, and ``value`` columns.
         """
         rows: list[dict[str, object]] = []
+        self._flush()
         for account in route_accounts:
             for (year, destination), totals in self._dest_totals.items():
                 if destination != account.destination:
@@ -591,6 +625,7 @@ class RouteCostLedger:
             The report, in the established column order. Column labels use the
             established command-line tokens when written by :meth:`write`.
         """
+        self._flush()
         periods = sorted({year for year, _ in self._segments} | set(self._year_volume))
         rows: list[dict[str, float]] = []
         for period in periods:
