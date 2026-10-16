@@ -14,9 +14,17 @@ from collections import deque
 from collections.abc import Callable
 
 from .core import Problem
-from .operators import Schedule
+from .incremental import IncrementalObjective
+from .operators import Candidates, OperatorRegistry, Schedule
 
 StepCallback = Callable[[int, float], None]
+
+
+def _changed_blocks(before: Schedule, after: Schedule) -> list[int]:
+    """Return the blocks whose assignment differs between two schedules."""
+    changed = [block for block, value in after.items() if before.get(block) != value]
+    changed.extend(block for block in before if block not in after)
+    return changed
 
 
 def _signature(before: Schedule, after: Schedule) -> frozenset[tuple[int, tuple[str, int] | None]]:
@@ -76,6 +84,72 @@ def solve_sa(
             if move_obj <= current_obj or rng.random() < math.exp(
                 (current_obj - move_obj) / max(temp, 1e-9)
             ):
+                current, current_obj = move, move_obj
+                if move_obj < best_obj:
+                    best, best_obj = dict(move), move_obj
+        temp *= cooling
+        _report(on_step, iteration, best_obj)
+    return best, best_obj
+
+
+def solve_sa_delta(
+    evaluator: IncrementalObjective,
+    rng: random.Random,
+    *,
+    iterations: int,
+    temperature: float,
+    cooling: float,
+    candidates: Candidates,
+    registry: OperatorRegistry,
+    initial: Schedule | None = None,
+    on_step: StepCallback | None = None,
+) -> tuple[Schedule, float]:
+    """Run simulated annealing priced by per-move objective deltas.
+
+    The acceptance rule is identical to :func:`solve_sa`, but the objective is updated by
+    the move's exact delta instead of recomputing the whole schedule, so a move costs
+    O(cells the block touches) rather than O(schedule).
+
+    Parameters
+    ----------
+    evaluator : IncrementalObjective
+        The move-based evaluator (it also holds the running state).
+    rng : random.Random
+        The random source.
+    iterations : int
+        The iteration budget.
+    temperature : float
+        The initial temperature.
+    cooling : float
+        The geometric cooling factor.
+    candidates : dict of int to list of tuple of (str, int)
+        The per-block options.
+    registry : OperatorRegistry
+        The move operators.
+    initial : dict or None, optional
+        A starting schedule.
+    on_step : callable or None, optional
+        Called with ``(iteration, best_objective)`` each iteration.
+
+    Returns
+    -------
+    tuple of (Schedule, float)
+        The best schedule and its objective.
+    """
+    current: Schedule = dict(initial) if initial is not None else {}
+    evaluator.reset(current)
+    current_obj = evaluator.objective
+    best, best_obj = dict(current), current_obj
+    temp = temperature
+    for iteration in range(iterations):
+        move = registry.pick(rng).apply(current, rng, candidates)
+        if move is not None:
+            changed = _changed_blocks(current, move)
+            move_obj = current_obj + evaluator.delta(changed, move)
+            if move_obj <= current_obj or rng.random() < math.exp(
+                (current_obj - move_obj) / max(temp, 1e-9)
+            ):
+                evaluator.apply(changed, move)
                 current, current_obj = move, move_obj
                 if move_obj < best_obj:
                     best, best_obj = dict(move), move_obj
