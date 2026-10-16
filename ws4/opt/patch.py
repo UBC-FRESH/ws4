@@ -12,7 +12,7 @@ block's own chain), and the adjacency is indexed by block.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -170,22 +170,21 @@ class PatchModel:
                         affected.add(year)
         return affected
 
-    def _lookup(self, year: int, label: str, schedule: Schedule) -> Callable[[int], float]:
-        """Return a function giving a block's criterion value under a schedule."""
-
-        def value(block: int) -> float:
-            return self._value(block, schedule.get(block), label, year)
-
-        return value
-
     def _local_cells(
         self, year: int, changed: Sequence[int], schedule: Schedule
     ) -> dict[str, float]:
         """Update a year's states for the changed blocks only, and return its cells."""
+        series = self.series
         for key in self.groups:
             label = key[0]
             state = self._state(key, year)
-            state.rebuild_local(changed, self._lookup(year, label, schedule))
+            new_values: dict[int, float] = {}
+            for block in changed:
+                chain = schedule.get(block)
+                new_values[block] = (
+                    0.0 if chain is None else series(block, chain)[label].get(year, 0.0)
+                )
+            state.rebuild_local(changed, new_values)
         return self._cells(year)
 
     def pending(self, changed: Sequence[int], schedule: Schedule) -> dict[Cell, float]:
