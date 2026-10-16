@@ -34,6 +34,7 @@ from ..roads.accounts import (
 )
 from ..roads.network import RouteNetwork
 from .curve import CurveTable
+from .kernels import HAVE_NUMBA, ProductKernel
 
 
 def _as_int(value: object) -> int:
@@ -69,6 +70,7 @@ class Simulator:
         self._initial_track = self.fragments["track_id"].to_numpy(copy=True)
         self._initial_offset = self.fragments["offset"].to_numpy(copy=True)
         self._arrays: tuple[np.ndarray, np.ndarray, np.ndarray] | None = None
+        self._product_kernel: ProductKernel | None = None
         self._product_values: list[dict[str, object]] = []
         self._route_values: list[dict[str, object]] = []
         self._edge_values: list[dict[str, object]] = []
@@ -193,7 +195,12 @@ class Simulator:
             self._join_dirty = True
         self.fragments["offset"] = self._initial_offset
         self._criteria_frame_id = -1
+        self._invalidate_state()
+
+    def _invalidate_state(self) -> None:
+        """Drop the cached fragment arrays and the prepared kernel after a state change."""
         self._arrays = None
+        self._product_kernel = None
 
     def _fragment_arrays(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Return (and cache) the fragments' track, offset, and area arrays.
@@ -290,7 +297,7 @@ class Simulator:
         if changed:
             self.fragments["track_id"] = tracks
             self.fragments["offset"] = offsets
-            self._arrays = None
+            self._invalidate_state()
             self._join_dirty = True
         return disturbed
 
@@ -439,6 +446,12 @@ class Simulator:
         positions = self._block_index().get(int(block_id), [])
         if not positions or not events:
             return {}
+        if HAVE_NUMBA:
+            kernel = self._product_kernel
+            if kernel is None:
+                kernel = ProductKernel(self)
+                self._product_kernel = kernel
+            return kernel.products(block_id, events)
         by_year = {int(year): str(treatment) for treatment, year in events}
         arrays_track, arrays_offset, arrays_area = self._fragment_arrays()
         tracks = arrays_track[positions]
@@ -732,7 +745,7 @@ class Simulator:
                     records.append(record)
                     self._edge_values.append(dict(record))
             self.fragments["offset"] = self.fragments["offset"].astype(int) + 1
-            self._arrays = None
+            self._invalidate_state()
         return pd.DataFrame(records, columns=["year", "account", "value"])
 
     def run(
@@ -907,7 +920,7 @@ class Simulator:
                     {"year": year, **patch_metrics(disturbed, edges, block_area, patch_breaks)}
                 )
             self.fragments["offset"] = self.fragments["offset"].astype(int) + 1
-            self._arrays = None
+            self._invalidate_state()
         pd.DataFrame(patch_records).to_csv(out_dir / "patch_metrics.csv", index=False)
         if ledger is not None:
             ledger.write(out_dir)

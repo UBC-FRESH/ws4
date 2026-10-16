@@ -161,16 +161,23 @@ kernels for profiled bottlenecks), WP6 waits for a real target. **Trigger to rev
 loop where a kernel would give a large speedup — for example a much larger dataset, or a route/edge
 objective that needs the full simulation on every evaluation.
 
-**Re-examined 2026-10-16 (during P6.17/P6.18).** The trigger was revisited with an actual numba
-kernel. The hot loop is now the per-block product gather (`Simulator.block_chain_products`) on
-delta cache misses (~65% of a 200-year delta iteration). A numba `njit` kernel for that loop (built
-with precomputed CSR indexes, exact parity to the Python path) measures only **1.5–2.4×** — the work
-per call (a handful of fragments and products) is too small to beat the kernel's dispatch and
-allocation overhead. That is below the ≥5× acceptance bar, so the kernel is not adopted and WP6 stays
-deferred, now with measurements rather than a packaging argument. The win came instead from caching
-the fragments' numpy arrays (no dependency): C5 50-year objective evaluations **730 → 1797/s** (2.5×)
-and 200-year **312 → 617/s** (2×). The trigger remains: a loop with enough work per call, or a
-genuinely batched kernel across many moves.
+**Re-examined and adopted 2026-10-16 (during P6.17/P6.18).** The trigger was revisited with an actual
+numba kernel (`ws4/sim/kernels.py`): an `njit` gather over the per-block product loop, behind an
+auto-detected path with a pure-Python fallback and exact parity (`tests/test_kernels.py`; CI installs
+numba via `requirements-dev.txt`). A clean same-seed A/B of the delta solver:
+
+| C5 | numba off | numba on | speedup |
+| --- | ---: | ---: | ---: |
+| 200-year | 690.6 iters/s | **774.2** | **1.12×** |
+| 50-year | 2421 iters/s | **2658** | **1.10×** |
+
+The objective is identical (exact parity). The gain is modest — a loop-level prototype showed
+1.5–2.4×, but per-call kernel dispatch and slot→label mapping consume most of it, since the work per
+call is small. It is adopted because it is a real, correct speedup at low integration risk (the
+fallback keeps numba optional). A larger win would need a **batched** kernel over a whole move (an LNS
+move changes ~20 blocks; pricing them in one call would amortize the dispatch). The array caching that
+came with this work (no dependency) was the bigger change: C5 50-year evaluations 730 → 1797/s (2.5×),
+200-year 312 → 617/s (2×).
 
 **WP7 — Guardrails and docs.**
 - CI perf smoke; determinism/parity tests; update `notes/performance.md`, the design notes, and the

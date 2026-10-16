@@ -528,3 +528,11 @@ issue comments.
   evaluations rose from **2.2 to ~730 per second** (~330x); `ws4 watch` is on the fast path.
   Correctness: 0 mismatch over a 300-move path comparison; the delta incumbent follows the same
   trajectory as a full evaluation. Tests in `tests/test_incremental.py`. Dashboard on close: **GREEN**.
+- P6.6 (adopted): native kernels. WP6's `≥5×` acceptance had kept the numba path deferred; it was
+  re-probed with a real kernel and adopted on its merits instead. `ws4/sim/kernels.py` holds an `njit`
+  gather for the per-block product loop, used automatically when numba is installed with a pure-Python
+  fallback and exact parity (`tests/test_kernels.py`; `requirements-dev.txt` installs numba so the CI
+  gate runs). Same-seed A/B: C5 200-year 690.6 → **774.2 iters/s** (**1.12×**), 50-year 2421 → **2658**
+  (1.10×), identical objective. The bigger win in the same change was caching the fragments' numpy
+  arrays (no dependency): 50-year 730 → 1797/s (2.5×), 200-year 312 → 617/s (2×). Evidence in
+  `notes/design/ws4-performance.md` (WP6). Dashboard on close: **GREEN**.
