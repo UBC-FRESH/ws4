@@ -69,3 +69,18 @@ evaluation scan ~`schedule x degree` edges (~2 500 for 300 blocks) instead of al
 ## 9. Log
 
 - 2026-10-16: plan written; profiling done (section 1). Starting M1.
+  - Note: the plan item was framed as spatial *outputs*, but profiling showed the optimizer's
+    **spatial penalty** (166 ms/eval) was the real cost, so the scope was the penalty, not the outputs.
+- 2026-10-16 M1: added `_edges_by_block` / `_incident_edges` and passed only incident edges (of the
+  harvested blocks) to `spatial_penalty` and `core_area_penalty`; the constraint functions already
+  ignore edges with no selected endpoint, so this is exact. Parity test vs the full-edge computation
+  added; suite green.
+- 2026-10-16 M2 A/B vs `p6-spatial-checkpoint` (C5, 300-block schedule; warm):
+
+  | Metric | Checkpoint | Spike | Speedup |
+  | --- | ---: | ---: | ---: |
+  | `_spatial_penalty`, 300-block | 163.7 ms | **13.1 ms** | 12.5× |
+
+  **Decision: adopt.** Target (< 25 ms) met with identical penalties and the suite green. The spatial
+  outputs (`write_patch_metrics`, ~0.03 s/year) were left as-is: they are already cheap and are a
+  one-time replay.

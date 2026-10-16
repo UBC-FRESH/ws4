@@ -259,3 +259,16 @@ flush time (volume summed, haul linear in volume, maintenance per record, build 
 | `simulate` + reporting | ~0.78 s | **~0.08 s** (10×) |
 
 Plan and log: `notes/design/ws4-route-record.md`.
+
+### Adjacency-scoped spatial constraints (`spike/incremental-spatial`)
+
+The optimizer's spatial penalty scanned every topology edge on each evaluation (166 ms for a 300-block
+C5 schedule). Only edges incident to a disturbed block can contribute, so an adjacency index lets an
+evaluation scan `schedule x degree` edges instead.
+
+| Metric (C5, 300-block schedule) | Before | After |
+| --- | ---: | ---: |
+| `_spatial_penalty` | 163.7 ms | **13.1 ms** (12.5×) |
+
+Penalties are identical (parity test vs the full-edge computation). Plan and log:
+`notes/design/ws4-spatial-scoped.md`.
