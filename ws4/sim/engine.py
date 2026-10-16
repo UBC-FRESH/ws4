@@ -71,15 +71,7 @@ class Simulator:
         self._product_values: list[dict[str, object]] = []
         self._route_values: list[dict[str, object]] = []
         self._edge_values: list[dict[str, object]] = []
-        # Cache each curve's sorted x/y arrays for vectorized interpolation (the fallback
-        # for non-integer ages), and an integer-age table for the gather fast path.
-        self._curves: dict[int, tuple[np.ndarray, np.ndarray]] = {
-            _as_int(curve_id): (
-                group.sort_values("x")["x"].to_numpy(dtype=float),
-                group.sort_values("x")["y"].to_numpy(dtype=float),
-            )
-            for curve_id, group in self.curves.groupby("curve_id")
-        }
+        # An integer-age table for gather-based evaluation (see :class:`CurveTable`).
         self._curve_table = CurveTable.from_curves(self.curves)
         # Index the treatments, products, and fragments once, so a year's treatments do not
         # index the frames row by row.
@@ -180,15 +172,8 @@ class Simulator:
         return self._fragments_by_block
 
     def _curve_value(self, curve_id: int, x: float) -> float:
-        """Evaluate a curve at one point: the age table for an integer age, else interp."""
-        value = self._curve_table.at(curve_id, x)
-        if value is not None:
-            return value
-        arrays = self._curves.get(curve_id)
-        if arrays is None:
-            return 0.0
-        xs, ys = arrays
-        return float(np.interp(x, xs, ys))
+        """Evaluate a curve at one point: exact for integer ages, linear between them."""
+        return self._curve_table.value(curve_id, x)
 
     @classmethod
     def from_dataset(cls, dataset_dir: Path) -> Simulator:
