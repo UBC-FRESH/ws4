@@ -286,6 +286,7 @@ budget. Plan of record: `notes/design/ws4-performance.md`.
 - [x] P6.19 Patch size-distribution targets (#80)
 - [x] P6.20 Topology cluster operator
 - [x] P6.21 Stand-centred opening constraints in the MIP bound
+- [x] P6.22 Adaptive temperature schedule
 
 Deferred from P6, triaged in `notes/backlog.md`:
 

@@ -72,6 +72,8 @@ class OptimizeConfig:
     iterations: int = 500
     temperature: float = 1000.0
     cooling: float = 0.99
+    cooling_mode: str = "geometric"
+    cooling_window: int = 64
     metaheuristic: str = "sa"
     tenure: int = 10
     perturbation: int = 2
@@ -99,6 +101,11 @@ class OptimizeConfig:
     cluster_size: int = 8
     warm_cache: bool = False
     patch_accounts_path: str = ""
+
+    def __post_init__(self) -> None:
+        """Reject an unknown temperature schedule before the search starts."""
+        if self.cooling_mode not in {"geometric", "adaptive"}:
+            raise ValueError(f"unknown cooling_mode: {self.cooling_mode!r}")
 
 
 class Optimizer:
@@ -732,6 +739,8 @@ class Optimizer:
                 registry=self.registry,
                 initial=initial,
                 on_step=on_step,
+                adaptive=self.cfg.cooling_mode == "adaptive",
+                cooling_window=self.cfg.cooling_window,
             )
         return solve_sa(
             problem,
@@ -741,6 +750,8 @@ class Optimizer:
             cooling=self.cfg.cooling,
             on_step=on_step,
             initial=initial,
+            adaptive=self.cfg.cooling_mode == "adaptive",
+            cooling_window=self.cfg.cooling_window,
         )
 
     def _use_pool(self) -> bool:

@@ -130,6 +130,12 @@ def optimize(
     patch_accounts: Path = typer.Option(
         None, "--patch-accounts", exists=True, help="Patch size-distribution accounts (YAML)"
     ),
+    cooling_mode: str = typer.Option(
+        "geometric", "--cooling-mode", help="Temperature schedule: geometric or adaptive"
+    ),
+    cooling_window: int = typer.Option(
+        64, "--cooling-window", help="Iterations per temperature with the adaptive schedule"
+    ),
 ) -> None:
     """Search for a schedule that satisfies the targets and write a summary."""
     cfg = OptimizeConfig(
@@ -156,6 +162,8 @@ def optimize(
         cluster_weight=cluster_weight,
         cluster_size=cluster_size,
         patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",
+        cooling_mode=cooling_mode,
+        cooling_window=cooling_window,
     )
     opt = Optimizer.from_dataset(dataset, cfg)
     result = opt.run(out)
@@ -182,6 +190,12 @@ def watch(
     metaheuristic: str = typer.Option("sa", help="sa, tabu, or ils"),
     temperature: float = typer.Option(1000.0, help="Initial SA temperature"),
     cooling: float = typer.Option(0.99, help="SA cooling factor"),
+    cooling_mode: str = typer.Option(
+        "geometric", "--cooling-mode", help="Temperature schedule: geometric or adaptive"
+    ),
+    cooling_window: int = typer.Option(
+        64, "--cooling-window", help="Iterations per temperature with the adaptive schedule"
+    ),
     seed: int = typer.Option(1),
     warm_start: bool = typer.Option(
         False, "--warm-start", help="Seed each block's first candidate"
@@ -247,6 +261,8 @@ def watch(
         min_green_up_years=min_green_up_years,
         core_buffer_m=core_buffer_m,
         min_core_area_ha=min_core_area_ha,
+        cooling_mode=cooling_mode,
+        cooling_window=cooling_window,
     )
     optimizer = Optimizer.from_dataset(dataset, cfg)
     summary = run_watch(

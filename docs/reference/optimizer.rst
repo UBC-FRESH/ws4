@@ -49,6 +49,13 @@ The solvers are simulated annealing (``sa``), tabu search (``tabu``), and iterat
 (``OptimizeConfig.starts``), serial or across a process pool (``OptimizeConfig.workers``), keeping the
 best. ``OptimizeConfig.warm_start`` seeds the search from each block's first candidate.
 
+Simulated annealing cools geometrically by default (``OptimizeConfig.temperature`` and
+``OptimizeConfig.cooling``). Setting ``OptimizeConfig.cooling_mode`` to ``adaptive`` (``--cooling-mode
+adaptive``) uses the polynomial-time schedule of Aarts and Van Laarhoven instead: the initial
+temperature is set from the observed uphill moves and decreased from the objective spread, so the
+schedule needs no per-instance tuning. ``OptimizeConfig.cooling_window`` (``--cooling-window``) sets
+the iterations per temperature; ``geometric`` remains the default.
+
 For scale, an **island model** (``OptimizeConfig.islands`` and ``episodes``, or ``--islands`` /
 ``--episodes``) runs several islands in parallel as processes and, after each episode, migrates the
 global best schedule into every island as the next episode's starting point. The result is
@@ -141,6 +148,12 @@ API
    :members:
 
 .. autoclass:: ws4.opt.engine.Optimizer
+   :members:
+
+.. autoclass:: ws4.opt.cooling.AdaptiveCooling
+   :members:
+
+.. autoclass:: ws4.opt.cooling.TemperatureSchedule
    :members:
 
 .. autoclass:: ws4.opt.core.Problem

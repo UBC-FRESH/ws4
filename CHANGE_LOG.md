@@ -613,3 +613,18 @@ issue comments.
   re-simulates to within the mixed-integer tolerance of its bound. The optimizer forwards the configured
   `topology_path` and `max_opening_ha` when `mip_bound` is set. Tests: `tests/test_mip.py`.
   Dashboard: **GREEN**.
+- P6.22 (feature): adaptive temperature schedule. The search used a geometric schedule
+  (`temperature *= cooling`) whose two constants were fixed at `1000` and `0.99` for every problem, so
+  they had to be re-tuned by trial per instance. `ws4/opt/cooling.py` adds the polynomial-time rule of
+  Aarts and Van Laarhoven (the schedule Lockwood and Moore 1993 chose over the geometric one): the
+  initial temperature is set from the mean uphill move for a target acceptance ratio, and the
+  temperature is then decreased from the observed objective spread. `--cooling-mode adaptive` selects
+  it (`--cooling-window`, default 64, sets the iterations per temperature); `geometric` stays the
+  default. Measured on C5 at equal seeds and iteration budget: on the 200-year even-flow problem the
+  mean objective is **64** against **572** for the shipped geometric constants (its best seed still
+  wins, 14 against 42), and it matches a hand-tuned geometric factor (0.9995, mean 49) with no sweep;
+  on the 50-year patch problem it beats both the shipped and the tuned geometric factors on every seed
+  (mean **10.61** against 11.39 and 11.59; best **9.81** against 11.20). Per-iteration cost is
+  unchanged (about 3,200 and 59 iterations/s); the adaptive schedule is marginally faster because a
+  warmer search rejects fewer moves, and a rejection restores the schedule and reverts the evaluator.
+  Tests: `tests/test_cooling.py`, `tests/test_watch.py`. Dashboard: **GREEN**.

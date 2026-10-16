@@ -527,6 +527,8 @@ def _island_worker(job: tuple[Any, ...]) -> None:
         registry=optimizer.registry,
         initial=initial,
         on_step=report,
+        adaptive=cfg.cooling_mode == "adaptive",
+        cooling_window=cfg.cooling_window,
     )
     evaluator.reset(best)
     queue.put((seed, cfg.iterations, objective, _snapshot(evaluator), len(best)))
@@ -707,6 +709,8 @@ def run_watch(
                 registry=optimizer.registry,
                 initial=initial,
                 on_step=on_step,
+                adaptive=cfg.cooling_mode == "adaptive",
+                cooling_window=cfg.cooling_window,
             )
         elif cfg.metaheuristic == "tabu":
             best, _ = solve_tabu(
@@ -735,6 +739,8 @@ def run_watch(
                 cooling=cfg.cooling,
                 on_step=on_step,
                 initial=initial,
+                adaptive=cfg.cooling_mode == "adaptive",
+                cooling_window=cfg.cooling_window,
             )
         return best
 

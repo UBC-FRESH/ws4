@@ -13,6 +13,7 @@ import random
 from collections import deque
 from collections.abc import Callable
 
+from .cooling import TemperatureSchedule
 from .core import Problem
 from .incremental import IncrementalObjective
 from .operators import Candidates, Chain, OperatorRegistry, Schedule, restore
@@ -50,6 +51,8 @@ def solve_sa(
     cooling: float,
     on_step: StepCallback | None = None,
     initial: Schedule | None = None,
+    adaptive: bool = False,
+    cooling_window: int = 64,
 ) -> tuple[Schedule, float]:
     """Run simulated annealing.
 
@@ -67,6 +70,12 @@ def solve_sa(
         The geometric cooling factor.
     on_step : callable or None, optional
         Called with ``(iteration, best_objective)`` each iteration.
+    initial : dict or None, optional
+        A starting schedule.
+    adaptive : bool, optional
+        Use the adaptive Aarts-Van Laarhoven schedule instead of the geometric one.
+    cooling_window : int, optional
+        The iterations per temperature when ``adaptive`` is set, capped at half the budget.
 
     Returns
     -------
@@ -76,18 +85,25 @@ def solve_sa(
     current: Schedule = dict(initial) if initial is not None else {}
     current_obj = problem.evaluate(current)
     best, best_obj = dict(current), current_obj
-    temp = temperature
+    schedule = TemperatureSchedule(
+        initial=temperature,
+        cooling=cooling,
+        adaptive=adaptive,
+        window=TemperatureSchedule.effective_window(iterations, cooling_window),
+    )
     for iteration in range(iterations):
+        increase = 0.0
         move = problem.registry.pick(rng).apply(current, rng, problem.candidates)
         if move is not None:
             move_obj = problem.evaluate(move)
+            increase = move_obj - current_obj
             if move_obj <= current_obj or rng.random() < math.exp(
-                (current_obj - move_obj) / max(temp, 1e-9)
+                (current_obj - move_obj) / max(schedule.temperature, 1e-9)
             ):
                 current, current_obj = move, move_obj
                 if move_obj < best_obj:
                     best, best_obj = dict(move), move_obj
-        temp *= cooling
+        schedule.observe(increase, current_obj)
         _report(on_step, iteration, best_obj)
     return best, best_obj
 
@@ -103,6 +119,8 @@ def solve_sa_delta(
     registry: OperatorRegistry,
     initial: Schedule | None = None,
     on_step: StepCallback | None = None,
+    adaptive: bool = False,
+    cooling_window: int = 64,
 ) -> tuple[Schedule, float]:
     """Run simulated annealing priced by per-move objective deltas.
 
@@ -130,6 +148,10 @@ def solve_sa_delta(
         A starting schedule.
     on_step : callable or None, optional
         Called with ``(iteration, best_objective)`` each iteration.
+    adaptive : bool, optional
+        Use the adaptive Aarts-Van Laarhoven schedule instead of the geometric one.
+    cooling_window : int, optional
+        The iterations per temperature when ``adaptive`` is set, capped at half the budget.
 
     Returns
     -------
@@ -140,15 +162,22 @@ def solve_sa_delta(
     evaluator.reset(current)
     current_obj = evaluator.objective
     best, best_obj = dict(current), current_obj
-    temp = temperature
+    schedule = TemperatureSchedule(
+        initial=temperature,
+        cooling=cooling,
+        adaptive=adaptive,
+        window=TemperatureSchedule.effective_window(iterations, cooling_window),
+    )
     for iteration in range(iterations):
+        increase = 0.0
         operator = registry.pick(rng)
         undo = operator.propose_inplace(current, rng, candidates)
         if undo is not None:
             changed = list(undo)
             move_obj = current_obj + evaluator.delta(changed, current)
+            increase = move_obj - current_obj
             if move_obj <= current_obj or rng.random() < math.exp(
-                (current_obj - move_obj) / max(temp, 1e-9)
+                (current_obj - move_obj) / max(schedule.temperature, 1e-9)
             ):
                 evaluator.apply(changed, current)
                 current_obj = move_obj
@@ -157,7 +186,7 @@ def solve_sa_delta(
             else:
                 restore(current, undo)
                 evaluator.revert()
-        temp *= cooling
+        schedule.observe(increase, current_obj)
         _report(on_step, iteration, best_obj)
     return best, best_obj
 
