@@ -12,6 +12,44 @@ from typing import Protocol
 Schedule = dict[int, tuple[str, int]]
 Candidates = dict[int, list[tuple[str, int]]]
 
+_OptionIndex = tuple[tuple[int, ...], dict[tuple[int, str], tuple[tuple[str, int], ...]]]
+_INDEX_CACHE: dict[int, tuple[Candidates, _OptionIndex]] = {}
+
+
+def _index(candidates: Candidates) -> _OptionIndex:
+    """Return (and cache) the assignable blocks and the shiftable options per block.
+
+    ``blocks`` is every block with at least one option; ``shiftable`` maps a
+    ``(block, treatment)`` to its more-than-one years, so the shift operator does no
+    per-call scan of the options. The cache is keyed by the identity of ``candidates``
+    (kept alive so the id cannot be reused).
+
+    Parameters
+    ----------
+    candidates : dict of int to list of tuple of (str, int)
+        The per-block options.
+
+    Returns
+    -------
+    tuple
+        ``(blocks, shiftable)``.
+    """
+    cached = _INDEX_CACHE.get(id(candidates))
+    if cached is not None and cached[0] is candidates:
+        return cached[1]
+    blocks = tuple(block for block, options in candidates.items() if options)
+    shiftable: dict[tuple[int, str], tuple[tuple[str, int], ...]] = {}
+    for block, options in candidates.items():
+        grouped: dict[str, list[tuple[str, int]]] = {}
+        for option in options:
+            grouped.setdefault(option[0], []).append(option)
+        for treatment, group in grouped.items():
+            if len(group) > 1:
+                shiftable[(block, treatment)] = tuple(group)
+    result = (blocks, shiftable)
+    _INDEX_CACHE[id(candidates)] = (candidates, result)
+    return result
+
 
 class Operator(Protocol):
     """A neighbourhood move."""
@@ -38,7 +76,7 @@ class ToggleOperator:
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
     ) -> Schedule | None:
         """Toggle one block."""
-        blocks = [block for block, options in candidates.items() if options]
+        blocks, _ = _index(candidates)
         if not blocks:
             return None
         block = rng.choice(blocks)
@@ -63,17 +101,15 @@ class ShiftOperator:
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
     ) -> Schedule | None:
         """Shift one block in time."""
+        _, shiftable = _index(candidates)
         blocks = [
-            block
-            for block in schedule
-            if len([o for o in candidates.get(block, []) if o[0] == schedule[block][0]]) > 1
+            block for block, (treatment, _) in schedule.items() if (block, treatment) in shiftable
         ]
         if not blocks:
             return None
         block = rng.choice(blocks)
-        options = [o for o in candidates[block] if o[0] == schedule[block][0]]
         result = dict(schedule)
-        result[block] = rng.choice(options)
+        result[block] = rng.choice(shiftable[(block, schedule[block][0])])
         return result
 
 
@@ -121,7 +157,7 @@ class LnsOperator:
             return None
         blocks = list(schedule)
         count = max(1, int(len(blocks) * self.destroy_fraction))
-        destroyed = rng.sample(blocks, count)
+        destroyed = set(rng.sample(blocks, count))
         result = {block: value for block, value in schedule.items() if block not in destroyed}
         for block in destroyed:
             options = candidates.get(block)

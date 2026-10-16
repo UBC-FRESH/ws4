@@ -48,7 +48,9 @@ class IncrementalObjective:
         The current schedule.
     """
 
-    def __init__(self, optimizer: Optimizer, targets: Sequence[Target]) -> None:
+    def __init__(
+        self, optimizer: Optimizer, targets: Sequence[Target], extra_accounts: Sequence[str] = ()
+    ) -> None:
         """Build the evaluator for a target set.
 
         Parameters
@@ -57,13 +59,17 @@ class IncrementalObjective:
             The optimizer (its block-delta cache is reused).
         targets : sequence of Target
             The goals.
+        extra_accounts : sequence of str, optional
+            Further accounts to track (for example, accounts a viewer displays); they do
+            not affect the objective.
         """
         self.optimizer = optimizer
         self.targets = list(targets)
-        self.accounts: set[str] = {target.account for target in self.targets}
+        self.accounts: set[str] = {target.account for target in self.targets} | set(extra_accounts)
         self.totals: dict[Cell, float] = {}
         self.assignments: Schedule = {}
         self._contributions: dict[tuple[int, str, int], dict[Cell, float]] = {}
+        self._pending_move: tuple[dict[Cell, float], list[int], Schedule] | None = None
         self._targets_by_cell: dict[Cell, list[int]] = {}
         for index, target in enumerate(self.targets):
             self._targets_by_cell.setdefault((target.year, target.account), []).append(index)
@@ -89,7 +95,7 @@ class IncrementalObjective:
         cached = self._contributions.get(key)
         if cached is not None:
             return cached
-        delta = self.optimizer._block_delta(block, assignment[0], assignment[1])
+        delta = self.optimizer._block_delta(block, assignment[0], assignment[1], self.accounts)
         contribution = {cell: value for cell, value in delta.items() if cell[1] in self.accounts}
         self._contributions[key] = contribution
         return contribution
@@ -132,6 +138,7 @@ class IncrementalObjective:
             The objective after minus the objective before.
         """
         pending = self._pending(changed, schedule)
+        self._pending_move = (pending, list(changed), schedule)
         if not pending:
             return 0.0
         affected: set[int] = set()
@@ -155,9 +162,15 @@ class IncrementalObjective:
         schedule : dict of int to tuple of (str, int)
             The schedule after the move.
         """
-        for cell, value in self._pending(changed, schedule).items():
+        stored = self._pending_move
+        if stored is not None and stored[2] is schedule and stored[1] == list(changed):
+            pending, changed_blocks, _ = stored
+        else:
+            pending, changed_blocks = self._pending(changed, schedule), list(changed)
+        self._pending_move = None
+        for cell, value in pending.items():
             self.totals[cell] = self.totals.get(cell, 0.0) + value
-        for block in changed:
+        for block in changed_blocks:
             assignment = schedule.get(block)
             if assignment is None:
                 self.assignments.pop(block, None)

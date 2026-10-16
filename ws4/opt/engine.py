@@ -92,6 +92,9 @@ class Optimizer:
         self._edges_by_block_cache: dict[int, list[tuple[int, int, float]]] | None = None
         self._simulator_cache: Simulator | None = None
         self._base_cache: dict[tuple[int, str], float] | None = None
+        self._product_delta_cache: dict[
+            tuple[int, str, int, tuple[str, ...]], dict[tuple[int, str], float]
+        ] = {}
         self._last_values: pd.DataFrame | None = None
         self._delta_cache: dict[tuple[int, str, int], dict[tuple[int, str], float]] = {}
         self._route_delta_cache: dict[tuple[int, str, int], dict[tuple[int, str], float]] = {}
@@ -212,18 +215,22 @@ class Optimizer:
             return pd.DataFrame(columns=["year", "account", "value"])
         return self._last_values
 
-    def delta_evaluator(self, targets: Sequence[Target]) -> IncrementalObjective | None:
+    def delta_evaluator(
+        self, targets: Sequence[Target], extra_accounts: Sequence[str] = ()
+    ) -> IncrementalObjective | None:
         """Return a move-based objective evaluator when the configuration supports one.
 
-        The evaluator tracks only the accounts the targets read, so it is used when the run
-        has no route accounts, duplicate accounts, or edge contrast (each rewrites or extends
-        the account values). When it returns None the caller falls back to whole-schedule
-        evaluation.
+        The evaluator tracks only the accounts the targets read (plus any
+        ``extra_accounts``), so it is used when the run has no route accounts, duplicate
+        accounts, or edge contrast (each rewrites or extends the account values). When it
+        returns None the caller falls back to whole-schedule evaluation.
 
         Parameters
         ----------
         targets : sequence of Target
             The goals.
+        extra_accounts : sequence of str, optional
+            Further accounts to track for display; they do not affect the objective.
 
         Returns
         -------
@@ -233,7 +240,7 @@ class Optimizer:
         _, route_accounts, duplicate_accounts = self.route()
         if route_accounts or duplicate_accounts or self.edge_elements():
             return None
-        return IncrementalObjective(self, targets)
+        return IncrementalObjective(self, targets, extra_accounts)
 
     def _full_values(
         self,
@@ -286,8 +293,39 @@ class Optimizer:
         self._base_cache = base
         return base
 
-    def _block_delta(self, block: int, treatment: str, year: int) -> dict[tuple[int, str], float]:
-        """Return a block's account-value delta for an assignment, cached."""
+    def _block_delta(
+        self, block: int, treatment: str, year: int, accounts: set[str] | None = None
+    ) -> dict[tuple[int, str], float]:
+        """Return a block's account-value delta for an assignment, cached.
+
+        Parameters
+        ----------
+        block : int
+            The block.
+        treatment : str
+            The treatment.
+        year : int
+            The year the treatment is applied.
+        accounts : set of str or None, optional
+            When given and the names are all product accounts, the delta is the products
+            produced at the treatment year, computed without stepping the horizon.
+
+        Returns
+        -------
+        dict of (int, str) to float
+            The account value per ``(year, account)`` cell (non-zero entries only).
+        """
+        if accounts is not None and all(name.startswith("product.") for name in accounts):
+            product_key = (block, treatment, year, tuple(sorted(accounts)))
+            cached_product = self._product_delta_cache.get(product_key)
+            if cached_product is not None:
+                return cached_product
+            products = self.simulator().block_products(block, treatment, year)
+            product_delta = {
+                (year, label): value for label, value in products.items() if label in accounts
+            }
+            self._product_delta_cache[product_key] = product_delta
+            return product_delta
         key = (block, treatment, year)
         cached = self._delta_cache.get(key)
         if cached is not None:
