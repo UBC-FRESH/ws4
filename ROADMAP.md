@@ -276,6 +276,7 @@ budget. Plan of record: `notes/design/ws4-performance.md`.
 - [x] P6.10 Incremental route accounts (#71)
 - [x] P6.11 Faster simulator construction (#72)
 - [x] P6.12 Faster route-record accumulation (#73)
+- [x] P6.13 Adjacency-scoped spatial constraints (#74)
 
 Deferred from P6, triaged in `notes/backlog.md`:
 
