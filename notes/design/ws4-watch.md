@@ -77,3 +77,16 @@ command in `ws4/cli.py`. No change to solver behaviour.
 ## 8. Log
 
 - 2026-10-16: plan written; issue #77. Starting M1.
+- 2026-10-16 M1: `Optimizer.last_account_values` returns the account values of the most recent
+  objective evaluation; the pure functions (`period_totals`, `target_window`, penalties, statuses,
+  `chart_cells`) and the rendering (`chart_renderable`, `window_table`, `render_frame`) are in
+  `ws4/opt/watch.py`.
+- 2026-10-16 M2: the `watch` command runs the configured solver with a wrapped evaluate that keeps
+  the incumbent's values, and repaints on a time budget; `--plain` prints one frame. Verified on the
+  C5 dataset (softwood even-flow): the frame shows the window per 10-year period with the realized
+  value and the shortfall/excess. Tests in `tests/test_watch.py` (11 tests).
+- 2026-10-16 M3: docs (`docs/reference/optimizer.rst`), roadmap (P6.16), changelog. Dashboard
+  **GREEN**.
+- Note: the built-in warm start seeds each block's first candidate, which for C5 is volume-lumpy (all
+  periods above the softwood target); a search must spread it. A volume-aware warm start (fill each
+  period to the target) starts near-feasible and is a possible follow-up.
