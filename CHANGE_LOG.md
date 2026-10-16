@@ -444,3 +444,9 @@ issue comments.
 - P6.6 (native kernels) is deferred after post-P6 profiling found no loop with a large kernel speedup;
   numba is not installed in CI. Recorded in the roadmap's "Deferred from P6" list, `notes/backlog.md`,
   and `notes/design/ws4-performance.md`, with a trigger to revisit. Issue #67 closed as not planned.
+- P6.6 investigation (thread-level parallelism): measured on the C5 numeric core; threads make the
+  curve-evaluation loop **slower** (0.23–0.35×) because `numpy.interp` holds the GIL and the per-curve
+  work is small, and a fully vectorized multi-curve interpolation is also slower (0.32×). Threads help
+  only parallel parquet reads in construction (1.78× on ~5% of construction). The effective parallel
+  lever is process-level (the island model, P6.5). Recorded in `notes/performance.md` so the thread
+  idea is not re-tried without cause.
