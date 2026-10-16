@@ -77,3 +77,21 @@ additive.
 ## 9. Log
 
 - 2026-10-16: plan written. Starting M1.
+- 2026-10-16 M1: `Simulator.block_route_accounts` (per-block route trajectory reusing a summary
+  ledger) + a test that it matches the shared ledger for a single-block run. Green.
+- 2026-10-16 M2: optimizer eligibility (incremental unless edge elements or a `build` route account),
+  per-block route deltas (cached), and the combine via `resolve_account_values`. Parity test: the
+  incremental route values equal the full simulation cell-for-cell. Green.
+  - Caution logged (repeat of the join-rebuild trap): the first A/B used an **uncommitted** working
+    tree, so both branches ran the new code and showed no difference. Redone after committing.
+- 2026-10-16 M2 A/B vs `p6-routeinc-checkpoint` (C5, route-target config, 10 years):
+
+  | Metric | Checkpoint (full) | Spike (incremental) | Delta |
+  | --- | ---: | ---: | ---: |
+  | Warm eval, empty schedule | 43.7 ms | 6.9 ms | 6.3× |
+  | Warm eval, 300-block schedule | 93.0 ms | **14.2 ms** | 6.5× |
+  | First eval, 300-block (cold) | 604 ms | 1871 ms | 3.1× **slower** |
+
+  **Decision: adopt.** The warm target (< 50 ms) is met. The nuance: the first evaluation builds the
+  per-block route deltas (300 blocks), so it is slower; a search amortizes this over its iterations
+  (break-even ~17 evaluations). This is the mirror of the feature delta, which has the same cold cost.
