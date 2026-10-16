@@ -50,6 +50,9 @@ class PatchAccount:
         The size-class upper bounds, in hectares, ascending. The last may be ``inf``.
     attractor : int or None
         The index of the class an attractor sub-account is defined for, or None.
+    search_distance : float or None
+        The topology search distance, in metres: only edges no longer than it join a patch.
+        None considers every edge.
     """
 
     name: str
@@ -57,6 +60,7 @@ class PatchAccount:
     threshold: float = 0.0
     size_classes: tuple[float, ...] = DEFAULT_SIZE_CLASSES
     attractor: int | None = None
+    search_distance: float | None = None
 
 
 def size_class_labels(size_classes: Sequence[float]) -> tuple[str, ...]:
@@ -281,6 +285,9 @@ def load_patch_accounts(path: Path) -> tuple[PatchAccount, ...]:
                 threshold=float(entry.get("threshold", 0.0)),
                 size_classes=classes,
                 attractor=entry.get("attractor"),
+                search_distance=(
+                    float(entry["search_distance"]) if entry.get("search_distance") else None
+                ),
             )
         )
     return tuple(accounts)
@@ -336,6 +343,49 @@ class PatchLedger:
         out_dir = Path(out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         self.frame().to_csv(out_dir / "patch_accounts.csv", index=False)
+
+
+def load_patch_edges_detailed(
+    csv_path: Path,
+) -> list[tuple[int, int, float, float]]:
+    """Load a proximal topology with both shared length and block distance.
+
+    Parameters
+    ----------
+    csv_path : Path
+        The topology CSV.
+
+    Returns
+    -------
+    list of (int, int, float, float)
+        The undirected edges ``(src, dst, shared_length, distance)``; the distance is 0.0
+        when the file has no distance column.
+    """
+    frame = pd.read_csv(csv_path)
+    columns = {name.lower(): name for name in frame.columns}
+
+    def pick(*names: str) -> str | None:
+        for name in names:
+            if name in columns:
+                return columns[name]
+        return None
+
+    source = pick("src_block", "block1", "source")
+    target = pick("dst_block", "block2", "target")
+    if source is None or target is None:
+        raise ValueError(f"no block columns in {csv_path}")
+    length = pick("shared_length", "length_m", "length")
+    distance = pick("distance_m", "distance")
+    edges: list[tuple[int, int, float, float]] = []
+    for row in frame.itertuples(index=False):
+        left = int(getattr(row, source))
+        right = int(getattr(row, target))
+        if left < 0 or right < 0:
+            continue
+        shared = float(getattr(row, length)) if length is not None else 0.0
+        span = float(getattr(row, distance)) if distance is not None else 0.0
+        edges.append((left, right, shared, span))
+    return edges
 
 
 def load_patch_edges(csv_path: Path) -> list[tuple[int, int, float]]:

@@ -1,39 +1,34 @@
 """Patch size-distribution accounts for the optimizer, maintained incrementally.
 
-Patch accounts are **non-additive**: a patch is a connected set of adjacent member blocks, so
-a move changes the patches around the block it touches. This model keeps, per year, the
-member set and the patch sub-account values, and a move recomputes only the years where a
-changed block's criterion differs.
+Patch accounts are **non-additive**: a patch is a connected set of adjacent member blocks, so a
+move changes the patches around the block it touches. This model keeps one
+:class:`~ws4.opt.patch_state.PatchGroupYear` per criterion group and year — the components,
+their areas and perimeters, and the per-size-class sums — and a move sets the changed blocks'
+criterion values there, so only the affected years' aggregates move.
 
-Two things make that affordable:
-
-- each block's criterion series is cached per ``(block, chain)`` — it depends only on that
-  block's own chain, never on the rest of the schedule;
-- the adjacency is indexed by block, so a period costs O(members x degree) instead of a
-  full scan of the topology's edges.
+Each block's criterion series is cached per ``(block, chain)`` (it depends only on that
+block's own chain), and the adjacency is indexed by block.
 """
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from dataclasses import dataclass, field
+from collections.abc import Callable, Sequence
+from pathlib import Path
 from typing import TYPE_CHECKING
 
-from ..patch.accounts import PatchAccount, patch_account_values_indexed
+from ..patch.accounts import PatchAccount, load_patch_edges_detailed
 from .operators import Chain, Schedule
+from .patch_state import PatchGroupYear
 
 if TYPE_CHECKING:
     from .engine import Optimizer
 
 Cell = tuple[int, str]
+GroupKey = tuple[str, float, float | None]
 
-
-@dataclass
-class _Pending:
-    """A move's affected years and the recomputed cells for each."""
-
-    years: set[int] = field(default_factory=set)
-    cells: dict[int, dict[str, float]] = field(default_factory=dict)
+# A move changing more blocks than this rebuilds the affected years instead of updating each
+# block in place (an LNS move touches hundreds).
+_REBUILD_ABOVE = 8
 
 
 class PatchModel:
@@ -53,20 +48,23 @@ class PatchModel:
         self.accounts = tuple(accounts)
         self.years = optimizer.cfg.years
         self.area = optimizer._block_area()
-        neighbours: dict[int, list[tuple[int, float]]] = {}
-        for source, target, length in optimizer._graph():
-            neighbours.setdefault(source, []).append((target, length))
-            neighbours.setdefault(target, []).append((source, length))
-        self.neighbours = {block: tuple(items) for block, items in neighbours.items()}
-        self.groups: dict[tuple[str, float], list[PatchAccount]] = {}
+        self._detailed = load_patch_edges_detailed(Path(optimizer.cfg.topology_path))
+        self._adjacency: dict[float | None, dict[int, tuple[tuple[int, float], ...]]] = {}
+        grouped: dict[tuple[str, float, float | None], list[PatchAccount]] = {}
         for account in self.accounts:
-            self.groups.setdefault((account.criteria, account.threshold), []).append(account)
+            key = (account.criteria, account.threshold, account.search_distance)
+            grouped.setdefault(key, []).append(account)
+        self.groups: dict[tuple[str, float, float | None], tuple[PatchAccount, ...]] = {
+            key: tuple(value) for key, value in grouped.items()
+        }
         self.labels = sorted({account.criteria for account in self.accounts})
         self._series: dict[tuple[int, Chain], dict[str, dict[int, float]]] = {}
         self.assignments: Schedule = {}
-        self.members: dict[int, frozenset[int]] = {}
+        self.states: dict[tuple[GroupKey, int], PatchGroupYear] = {}
         self.values: dict[int, dict[str, float]] = {}
-        self._pending: _Pending | None = None
+        self._undo_values: dict[int, dict[str, float]] = {}
+        self._undo: list[tuple[PatchGroupYear, int, float | None]] = []
+        self._untouched: dict[int, dict[str, float]] = {}
 
     def series(self, block: int, chain: Chain) -> dict[str, dict[int, float]]:
         """Return (and cache) a block chain's criterion series per label."""
@@ -81,23 +79,54 @@ class PatchModel:
             self._series[key] = cached
         return cached
 
-    def _year(self, year: int, assignments: Schedule) -> tuple[frozenset[int], dict[str, float]]:
-        """Compute one year's member set and patch cells."""
-        cells: dict[str, float] = {}
-        members: set[int] = set()
-        for (label, threshold), accounts in self.groups.items():
-            values: dict[int, float] = {}
-            for block, chain in assignments.items():
-                value = self.series(block, chain)[label].get(year, 0.0)
-                if value > threshold:
-                    values[block] = value
-                    members.add(block)
-            for account in accounts:
-                for key, value in patch_account_values_indexed(
-                    account, values, self.neighbours, self.area
-                ).items():
-                    cells[f"{account.name}.{key}"] = value
-        return frozenset(members), cells
+    def _value(self, block: int, chain: Chain | None, label: str, year: int) -> float:
+        """Return a block's criterion value in a year under a chain."""
+        if chain is None:
+            return 0.0
+        return self.series(block, chain)[label].get(year, 0.0)
+
+    def adjacency(self, search_distance: float | None) -> dict[int, tuple[tuple[int, float], ...]]:
+        """Return (and cache) the block adjacency within a topology search distance.
+
+        Only edges no longer than ``search_distance`` metres join blocks, so a patch stays
+        within the neighbourhood the account defines.
+
+        Parameters
+        ----------
+        search_distance : float or None
+            The search distance, in metres; None keeps every edge.
+
+        Returns
+        -------
+        dict of int to tuple of (int, float)
+            The ``(neighbour, shared_length)`` pairs per block.
+        """
+        cached = self._adjacency.get(search_distance)
+        if cached is None:
+            index: dict[int, list[tuple[int, float]]] = {}
+            for source, target, length, distance in self._detailed:
+                if search_distance is not None and distance > search_distance:
+                    continue
+                index.setdefault(source, []).append((target, length))
+                index.setdefault(target, []).append((source, length))
+            cached = {block: tuple(items) for block, items in index.items()}
+            self._adjacency[search_distance] = cached
+        return cached
+
+    def _state(self, key: GroupKey, year: int) -> PatchGroupYear:
+        """Return (building once) a group's state for a year."""
+        state = self.states.get((key, year))
+        if state is None:
+            state = PatchGroupYear(self.groups[key], key[1], self.adjacency(key[2]), self.area)
+            self.states[(key, year)] = state
+        return state
+
+    def _cells(self, year: int) -> dict[str, float]:
+        """Return a year's patch cells from the group states."""
+        out: dict[str, float] = {}
+        for key in self.groups:
+            out.update(self._state(key, year).cells())
+        return out
 
     def reset(self, schedule: Schedule) -> None:
         """Set the state to the schedule's patch accounts.
@@ -108,13 +137,22 @@ class PatchModel:
             The schedule.
         """
         self.assignments = dict(schedule)
-        self.members = {}
+        self.states = {}
         self.values = {}
+        self._undo = []
+        self._undo_values = {}
+        self._untouched = {}
         for year in range(self.years):
-            members, cells = self._year(year, self.assignments)
-            self.members[year] = members
-            self.values[year] = cells
-        self._pending = None
+            for key in self.groups:
+                label = key[0]
+                threshold = key[1]
+                members: dict[int, float] = {}
+                for block, chain in schedule.items():
+                    value = self._value(block, chain, label, year)
+                    if value > threshold:
+                        members[block] = value
+                self._state(key, year).rebuild(members)
+            self.values[year] = self._cells(year)
 
     def _affected(self, changed: Sequence[int], schedule: Schedule) -> set[int]:
         """Return the years where a changed block's criterion differs."""
@@ -132,8 +170,30 @@ class PatchModel:
                         affected.add(year)
         return affected
 
+    def _lookup(self, year: int, label: str, schedule: Schedule) -> Callable[[int], float]:
+        """Return a function giving a block's criterion value under a schedule."""
+
+        def value(block: int) -> float:
+            return self._value(block, schedule.get(block), label, year)
+
+        return value
+
+    def _local_cells(
+        self, year: int, changed: Sequence[int], schedule: Schedule
+    ) -> dict[str, float]:
+        """Update a year's states for the changed blocks only, and return its cells."""
+        for key in self.groups:
+            label = key[0]
+            state = self._state(key, year)
+            state.rebuild_local(changed, self._lookup(year, label, schedule))
+        return self._cells(year)
+
     def pending(self, changed: Sequence[int], schedule: Schedule) -> dict[Cell, float]:
-        """Return the patch-cell change a move makes, without applying it.
+        """Apply a move to the states and return the patch-cell change.
+
+        The change can be undone with :meth:`revert` (until :meth:`commit`). A small move
+        updates each changed block's value in place; a large one (an LNS move) rebuilds the
+        affected years, which is cheaper than hundreds of local updates.
 
         Parameters
         ----------
@@ -147,20 +207,47 @@ class PatchModel:
         dict of (int, str) to float
             The change per ``(year, account)`` cell.
         """
-        pending = _Pending()
+        self._undo = []
+        self._undo_values = {}
+        self._rebuilt = []
+        self._changed = list(changed)
+        self._affected_years = sorted(self._affected(changed, schedule))
         merged: dict[Cell, float] = {}
-        for year in self._affected(changed, schedule):
-            members, cells = self._year(year, schedule)
-            pending.years.add(year)
-            pending.cells[year] = cells
-            old = self.values.get(year, {})
-            for key in set(old) | set(cells):
-                difference = cells.get(key, 0.0) - old.get(key, 0.0)
+        bulk = len(changed) > _REBUILD_ABOVE
+        for year in self._affected_years:
+            if bulk:
+                cells = self._local_cells(year, changed, schedule)
+                self._rebuilt.append(year)
+            else:
+                for key in self.groups:
+                    label = key[0]
+                    state = self._state(key, year)
+                    for block in changed:
+                        previous = state.values.get(block)
+                        self._undo.append((state, block, previous))
+                        new = schedule.get(block)
+                        state.set_value(block, self._value(block, new, label, year))
+                cells = self._cells(year)
+            previous_cells = self.values.get(year, {})
+            self._undo_values[year] = previous_cells
+            for name in set(previous_cells) | set(cells):
+                difference = cells.get(name, 0.0) - previous_cells.get(name, 0.0)
                 if difference:
-                    merged[(year, key)] = difference
-            del members
-        self._pending = pending
+                    merged[(year, name)] = difference
+            self.values[year] = cells
         return merged
+
+    def revert(self) -> None:
+        """Undo a :meth:`pending` move that was not committed."""
+        for state, block, previous in self._undo:
+            state.set_value(block, previous)
+        for year in self._rebuilt:
+            self._local_cells(year, self._changed, self.assignments)
+        for year, cells in self._undo_values.items():
+            self.values[year] = cells
+        self._undo = []
+        self._rebuilt = []
+        self._undo_values = {}
 
     def commit(self, changed: Sequence[int], schedule: Schedule) -> None:
         """Apply a move to the model.
@@ -178,14 +265,9 @@ class PatchModel:
                 self.assignments.pop(block, None)
             else:
                 self.assignments[block] = assignment
-        pending = self._pending
-        if pending is None:
-            self.pending(changed, schedule)
-            pending = self._pending
-        assert pending is not None
-        for year in pending.years:
-            self.values[year] = pending.cells[year]
-        self._pending = None
+        self._undo = []
+        self._undo_values = {}
+        self._untouched = {}
 
     def cell_map(self) -> dict[Cell, float]:
         """Return the current patch cells as a ``(year, account) -> value`` mapping."""

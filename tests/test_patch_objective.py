@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import random
 from pathlib import Path
 
 import pandas as pd
@@ -12,6 +13,7 @@ from ws4.opt.engine import OptimizeConfig, Optimizer
 from ws4.opt.incremental import IncrementalObjective
 from ws4.opt.objective import Target, objective
 from ws4.opt.operators import Schedule
+from ws4.opt.patch import PatchModel
 from ws4.patch.accounts import (
     PatchAccount,
     PatchLedger,
@@ -134,6 +136,49 @@ def test_patch_model_matches_the_reporting_path(tmp_path: Path) -> None:
     assert keys  # the fixture produces patch cells
     for cell in keys:
         assert model_cells.get(cell, 0.0) == pytest.approx(ledger_cells.get(cell, 0.0), abs=1e-9)
+
+
+def test_incremental_patch_model_tracks_moves(tmp_path: Path) -> None:
+    """After random moves the incremental patch cells match a freshly built model."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    topology = _topology(tmp_path / "topology.csv")
+    patches = _patches(tmp_path / "patches.yaml")
+    optimizer = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(
+            years=3,
+            iterations=1,
+            seed=1,
+            warm_start=True,
+            topology_path=str(topology),
+            patch_accounts_path=str(patches),
+        ),
+    )
+    candidates = optimizer.candidates()
+    schedule: Schedule = {block: chains[0] for block, chains in candidates.items() if chains}
+    evaluator = IncrementalObjective(optimizer, [], (), optimizer.patch_accounts())
+    evaluator.reset(schedule)
+    rng = random.Random(2)
+    for _ in range(20):
+        operator = optimizer.registry.pick(rng)
+        undo = operator.propose_inplace(schedule, rng, candidates)
+        if undo is None:
+            continue
+        changed = list(undo)
+        evaluator.delta(changed, schedule)
+        evaluator.apply(changed, schedule)
+        fresh = PatchModel(optimizer, optimizer.patch_accounts())
+        fresh.reset(schedule)
+        expected = fresh.cell_map()
+        got = {
+            (year, account): value
+            for (year, account), value in evaluator.totals.items()
+            if account.startswith("patch.")
+        }
+        for cell in set(expected) | set(got):
+            assert got.get(cell, 0.0) == pytest.approx(expected.get(cell, 0.0), abs=1e-9)
 
 
 def test_a_patch_target_is_scored(tmp_path: Path) -> None:

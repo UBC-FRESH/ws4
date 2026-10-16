@@ -156,6 +156,7 @@ def solve_sa_delta(
                     best, best_obj = dict(current), move_obj
             else:
                 restore(current, undo)
+                evaluator.revert()
         temp *= cooling
         _report(on_step, iteration, best_obj)
     return best, best_obj
