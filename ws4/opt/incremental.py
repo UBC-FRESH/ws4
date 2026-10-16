@@ -90,13 +90,19 @@ class IncrementalObjective:
                 self.totals[cell] = self.totals.get(cell, 0.0) + value
 
     def _contribution(self, block: int, chain: Chain) -> dict[Cell, float]:
-        """Return (and cache) a block chain's tracked-cell contribution."""
+        """Return (and cache) a chain's tracked-cell contribution (feature, product, route)."""
         key = (block, chain)
         cached = self._contributions.get(key)
         if cached is not None:
             return cached
-        delta = self.optimizer._block_delta(block, chain, self.accounts)
-        contribution = {cell: value for cell, value in delta.items() if cell[1] in self.accounts}
+        contribution = {
+            cell: value
+            for cell, value in self.optimizer._block_delta(block, chain, self.accounts).items()
+            if cell[1] in self.accounts
+        }
+        for cell, value in self.optimizer._block_route_delta(block, chain).items():
+            if cell[1] in self.accounts:
+                contribution[cell] = contribution.get(cell, 0.0) + value
         self._contributions[key] = contribution
         return contribution
 

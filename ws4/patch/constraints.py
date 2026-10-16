@@ -85,16 +85,20 @@ def opening_violations(
 
 
 def green_up_violations(
-    harvest_year: Mapping[int, int],
+    disturbance_years: Mapping[int, Sequence[int]],
     edges: Iterable[tuple[int, int]],
     min_years: int,
 ) -> list[dict[str, object]]:
     """Return one record per adjacent pair disturbed within the green-up interval.
 
+    A block may be disturbed several times (rotations). A pair is a violation when the
+    closest of their disturbance years is within the interval, and the record's ``years`` is
+    that closest gap.
+
     Parameters
     ----------
-    harvest_year : mapping of int to int
-        The year each block is disturbed.
+    disturbance_years : mapping of int to sequence of int
+        The years each block is disturbed.
     edges : iterable of (int, int)
         The adjacency edges (undirected).
     min_years : int
@@ -108,24 +112,27 @@ def green_up_violations(
     """
     records: list[dict[str, object]] = []
     for u, v in edges:
-        if u in harvest_year and v in harvest_year:
-            gap = abs(int(harvest_year[u]) - int(harvest_year[v]))
-            if gap < min_years:
-                records.append(
-                    {
-                        "kind": "green_up",
-                        "block_a": int(u),
-                        "block_b": int(v),
-                        "years": gap,
-                        "limit": min_years,
-                    }
-                )
+        years_u = disturbance_years.get(u)
+        years_v = disturbance_years.get(v)
+        if not years_u or not years_v:
+            continue
+        gap = min(abs(int(a) - int(b)) for a in years_u for b in years_v)
+        if gap < min_years:
+            records.append(
+                {
+                    "kind": "green_up",
+                    "block_a": int(u),
+                    "block_b": int(v),
+                    "years": gap,
+                    "limit": min_years,
+                }
+            )
     return records
 
 
 def spatial_penalty(
     selected_by_year: Mapping[int, Iterable[int]],
-    harvest_year: Mapping[int, int],
+    disturbance_years: Mapping[int, Sequence[int]],
     edges: Iterable[tuple[int, int]],
     block_area: Mapping[int, float],
     max_opening_ha: float | None,
@@ -140,8 +147,8 @@ def spatial_penalty(
     ----------
     selected_by_year : mapping of int to iterable of int
         The blocks disturbed in each year.
-    harvest_year : mapping of int to int
-        The year each block is disturbed.
+    disturbance_years : mapping of int to sequence of int
+        The years each block is disturbed.
     edges : iterable of (int, int)
         The adjacency edges.
     block_area : mapping of int to float
@@ -162,7 +169,7 @@ def spatial_penalty(
         for record in opening_violations(selected_by_year, edge_list, block_area, max_opening_ha):
             penalty += float(str(record["area_ha"])) - max_opening_ha
     if min_green_up_years is not None:
-        for record in green_up_violations(harvest_year, edge_list, min_green_up_years):
+        for record in green_up_violations(disturbance_years, edge_list, min_green_up_years):
             penalty += float(min_green_up_years - int(str(record["years"])))
     return penalty
 
@@ -299,8 +306,11 @@ def edge_contrast(
 
 def schedule_years(
     schedule: Sequence[tuple[int, int]],
-) -> tuple[dict[int, set[int]], dict[int, int]]:
-    """Split a schedule into per-year blocks and each block's first disturbance year.
+) -> tuple[dict[int, set[int]], dict[int, list[int]]]:
+    """Split a schedule into per-year blocks and each block's disturbance years.
+
+    A block may be disturbed more than once (rotations), so the second result maps each
+    block to every year it is disturbed, sorted.
 
     Parameters
     ----------
@@ -310,11 +320,11 @@ def schedule_years(
     Returns
     -------
     tuple of (dict, dict)
-        The blocks disturbed in each year, and the first disturbance year per block.
+        The blocks disturbed in each year, and the disturbance years per block.
     """
     selected_by_year: dict[int, set[int]] = {}
-    harvest_year: dict[int, int] = {}
+    disturbance_years: dict[int, set[int]] = {}
     for block, year in schedule:
         selected_by_year.setdefault(int(year), set()).add(int(block))
-        harvest_year.setdefault(int(block), int(year))
-    return selected_by_year, harvest_year
+        disturbance_years.setdefault(int(block), set()).add(int(year))
+    return selected_by_year, {block: sorted(years) for block, years in disturbance_years.items()}

@@ -341,10 +341,10 @@ def test_the_scoped_spatial_penalty_matches_the_full_edge_computation(tmp_path: 
         (int(float(str(row.block_id))), int(float(str(row.period))))
         for row in frame.itertuples(index=False)
     ]
-    selected_by_year, harvest_year = schedule_years(pairs)
+    selected_by_year, disturbance_years = schedule_years(pairs)
     full = spatial_penalty(
         selected_by_year,
-        harvest_year,
+        disturbance_years,
         [(source, target) for source, target, _ in graph],
         block_area,
         max_opening,

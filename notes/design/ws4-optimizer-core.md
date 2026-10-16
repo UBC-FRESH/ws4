@@ -157,3 +157,14 @@ slot in: the dZ loop is a handful of vectorised array ops.
   incumbent with 1,060 multi-rotation blocks. Remaining (M2c): spatial disturbance years per rotation,
   route accounts for a chain (the route path falls back to a full simulation for multi-event chains),
   and the MIP bound.
+- 2026-10-16 **M2c done**: spatial and routes handle chains. `schedule_years` now returns **every**
+  disturbance year per block (sorted), `green_up_violations` uses the closest pair of their years, and
+  `spatial_penalty`/its callers (simulator, optimizer) follow. `Simulator.block_route_chain` routes a
+  whole chain (with `block_route_accounts` delegating), `Optimizer._block_route_delta(block, chain)`
+  prices it, the delta evaluator adds route cells to a block's contribution, and `delta_evaluator`
+  now allows route accounts (no build, no duplicates, no edges). Verified: route+chain incremental vs
+  full parity 0.000000 (95 multi-event chains). **Feasibility:** with rotations the softwood ceiling is
+  **41.02 Mm3** (2.051 Mm3/period) versus 17.74 Mm3 one-pass, so the 1.3 Mm3/period x 20 = 26 Mm3
+  target is **feasible** (63% of the ceiling); a 600-iteration SA already reaches 22.2 Mm3 with 1,991
+  multi-rotation blocks. Remaining: the MIP bound's re-validation against rotations, and a longer
+  even-flow run.

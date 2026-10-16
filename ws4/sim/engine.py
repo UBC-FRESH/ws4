@@ -508,32 +508,29 @@ class Simulator:
                 totals[product_label] = totals.get(product_label, 0.0) + value
         return totals
 
-    def block_route_accounts(
+    def block_route_chain(
         self,
         block_id: int,
-        treatment: str | None,
-        year: int,
+        events: Sequence[tuple[str, int]],
         years: int,
         route_model: RouteModel,
         route_accounts: Sequence[RouteAccount],
     ) -> dict[tuple[int, str], float]:
-        """Return one block's route-account values over a horizon.
+        """Return one block's route-account values over a horizon under a treatment chain.
 
-        The block's fragments are simulated in isolation (like :meth:`block_trajectory`),
-        but its produced products are routed with ``route_model`` and recorded into a fresh
-        summary ledger; the ledger's account values are returned as
-        ``(year, account) -> value``. Route haul, maintenance, and volume are additive over
-        blocks; build cost is not (it is charged once per segment across the whole
-        schedule), so the objective excludes ``build`` accounts from the incremental path.
+        The block's fragments are simulated in isolation (like :meth:`block_chain`), but its
+        produced products are routed with ``route_model`` and recorded into a fresh summary
+        ledger; the ledger's account values are returned as ``(year, account) -> value``.
+        Route haul, maintenance, and volume are additive over blocks; build cost is not (it
+        is charged once per segment across the whole schedule), so the objective excludes
+        ``build`` accounts from the incremental path.
 
         Parameters
         ----------
         block_id : int
             The block.
-        treatment : str or None
-            The treatment to apply, or None.
-        year : int
-            The year to apply the treatment.
+        events : sequence of (str, int)
+            The treatments and the year each is applied.
         years : int
             The horizon, in years.
         route_model : RouteModel
@@ -549,14 +546,16 @@ class Simulator:
         positions = self._block_index().get(int(block_id), [])
         if not positions or not route_accounts:
             return {}
+        by_year = {int(year): str(treatment) for treatment, year in events}
         tracks = self.fragments["track_id"].to_numpy()[positions].astype(np.int64)
         offsets = self.fragments["offset"].to_numpy()[positions].astype(np.int64)
         areas = self.fragments["area_ha"].to_numpy()[positions].astype(float)
         ledger = RouteCostLedger(route_model.network, collect=False)
         for step in range(years):
-            if treatment is not None and step == year:
+            treatment = by_year.get(step)
+            if treatment is not None:
                 for index in range(len(positions)):
-                    key = (int(tracks[index]), str(treatment))
+                    key = (int(tracks[index]), treatment)
                     transition = self._treatment_by_key.get(key)
                     if transition is None:
                         continue
@@ -574,6 +573,42 @@ class Simulator:
             (int(str(row.year)), str(row.account)): float(str(row.value))
             for row in frame.itertuples(index=False)
         }
+
+    def block_route_accounts(
+        self,
+        block_id: int,
+        treatment: str | None,
+        year: int,
+        years: int,
+        route_model: RouteModel,
+        route_accounts: Sequence[RouteAccount],
+    ) -> dict[tuple[int, str], float]:
+        """Return one block's route-account values under a single treatment.
+
+        This is :meth:`block_route_chain` with at most one event; see it for the semantics.
+
+        Parameters
+        ----------
+        block_id : int
+            The block.
+        treatment : str or None
+            The treatment to apply, or None.
+        year : int
+            The year to apply the treatment.
+        years : int
+            The horizon, in years.
+        route_model : RouteModel
+            The route model.
+        route_accounts : sequence of RouteAccount
+            The route accounts to resolve.
+
+        Returns
+        -------
+        dict of (int, str) to float
+            The route account value per year and account (non-zero entries only).
+        """
+        events: list[tuple[str, int]] = [] if treatment is None else [(str(treatment), int(year))]
+        return self.block_route_chain(block_id, events, years, route_model, route_accounts)
 
     def _criteria_join(self, label: str) -> tuple[np.ndarray, np.ndarray]:
         """Return the fragment positions and curve-table rows for a feature label."""
@@ -853,14 +888,14 @@ class Simulator:
             or min_green_up_years is not None
             or min_core_area_ha is not None
         ):
-            selected_by_year, harvest_year = schedule_years(schedule_pairs)
+            selected_by_year, disturbance_years = schedule_years(schedule_pairs)
             violations: list[dict[str, object]] = []
             if max_opening_ha is not None:
                 violations.extend(
                     opening_violations(selected_by_year, edges, block_area, max_opening_ha)
                 )
             if min_green_up_years is not None:
-                violations.extend(green_up_violations(harvest_year, edges, min_green_up_years))
+                violations.extend(green_up_violations(disturbance_years, edges, min_green_up_years))
             if min_core_area_ha is not None and core_buffer_m is not None:
                 violations.extend(
                     core_area_violations(

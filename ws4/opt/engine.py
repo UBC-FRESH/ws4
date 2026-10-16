@@ -100,7 +100,7 @@ class Optimizer:
         ] = {}
         self._last_values: pd.DataFrame | None = None
         self._delta_cache: dict[tuple[int, Chain], dict[tuple[int, str], float]] = {}
-        self._route_delta_cache: dict[tuple[int, str, int], dict[tuple[int, str], float]] = {}
+        self._route_delta_cache: dict[tuple[int, Chain], dict[tuple[int, str], float]] = {}
 
     @classmethod
     def from_dataset(cls, dataset_dir: Path, cfg: OptimizeConfig) -> Optimizer:
@@ -252,10 +252,7 @@ class Optimizer:
         additive_routes = not route_accounts or (
             model is not None and all(account.kind != "build" for account in route_accounts)
         )
-        # The route delta is priced per single treatment; with a multi-rotation chain and
-        # route accounts, fall back to a full simulation.
-        multi = any(len(chain) > 1 for chain in schedule.values())
-        if not self.edge_elements() and additive_routes and not (route_accounts and multi):
+        if not self.edge_elements() and additive_routes:
             values = self._incremental_values(schedule, duplicate_accounts, route_accounts)
         else:
             values = self._full_values(schedule, model, route_accounts, duplicate_accounts)
@@ -301,8 +298,10 @@ class Optimizer:
         IncrementalObjective or None
             The evaluator, or None when the configuration needs whole-schedule values.
         """
-        _, route_accounts, duplicate_accounts = self.route()
-        if route_accounts or duplicate_accounts or self.edge_elements():
+        model, route_accounts, duplicate_accounts = self.route()
+        if duplicate_accounts or self.edge_elements():
+            return None
+        if route_accounts and (model is None or any(a.kind == "build" for a in route_accounts)):
             return None
         return IncrementalObjective(self, targets, extra_accounts)
 
@@ -401,19 +400,17 @@ class Optimizer:
         self._delta_cache[key] = delta
         return delta
 
-    def _block_route_delta(
-        self, block: int, treatment: str, year: int
-    ) -> dict[tuple[int, str], float]:
-        """Return a block's route-account delta for an assignment, cached."""
-        key = (block, treatment, year)
+    def _block_route_delta(self, block: int, chain: Chain) -> dict[tuple[int, str], float]:
+        """Return a block's route-account delta for a treatment chain, cached."""
+        key = (block, chain)
         cached = self._route_delta_cache.get(key)
         if cached is not None:
             return cached
         model, route_accounts, _ = self.route()
         delta: dict[tuple[int, str], float] = {}
         if model is not None and route_accounts:
-            delta = self.simulator().block_route_accounts(
-                block, treatment, year, self.cfg.years, model, route_accounts
+            delta = self.simulator().block_route_chain(
+                block, chain, self.cfg.years, model, route_accounts
             )
             delta = {cell: value for cell, value in delta.items() if value != 0.0}
         self._route_delta_cache[key] = delta
@@ -444,8 +441,7 @@ class Optimizer:
             for cell, value in self._block_delta(block, chain).items():
                 totals[cell] = totals.get(cell, 0.0) + value
             if route_accounts and chain:
-                treatment, year = chain[0]
-                for cell, value in self._block_route_delta(block, treatment, year).items():
+                for cell, value in self._block_route_delta(block, chain).items():
                     route_totals[cell] = route_totals.get(cell, 0.0) + value
         values = self._values_frame(totals)
         if route_accounts:
@@ -529,14 +525,14 @@ class Optimizer:
             (int(float(str(row.block_id))), int(float(str(row.period))))
             for row in schedule.itertuples(index=False)
         ]
-        selected_by_year, harvest_year = schedule_years(pairs)
+        selected_by_year, disturbance_years = schedule_years(pairs)
         # Only edges incident to a disturbed block can contribute; this keeps the penalty
         # proportional to the schedule rather than to the whole topology.
-        incident = self._incident_edges(set(harvest_year))
+        incident = self._incident_edges(set(disturbance_years))
         incident_edges = [(source, target) for source, target, _ in incident]
         penalty = spatial_penalty(
             selected_by_year,
-            harvest_year,
+            disturbance_years,
             incident_edges,
             block_area,
             self.cfg.max_opening_ha,
