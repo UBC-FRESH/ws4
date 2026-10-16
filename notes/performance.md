@@ -135,6 +135,32 @@ WP3 replaced the two spatial hot paths with single passes:
 | Edge contrast, 3 years | 3.0 s | 0.31 s | 0.070 s |
 | Patch accounts, 1 year | 1.9 s | 0.25 s | 0.066 s |
 
-Both are well under the 0.2 s-per-year target. The full-history incrementality (an update that touches
-only the changed blocks) and the single replay in `run` remain for WP4, where the objective's
-evaluation is made incremental.
+Both are well under the 0.2 s-per-year target.
+
+### P6.4 incremental objective evaluation
+
+WP4 first removed the per-evaluation waste: one reusable `Simulator` (reset instead of rebuilt),
+per-curve arrays in `apply_treatments`, a memoized destination choice per (block, product), a route
+ledger summary mode, and a vectorized fragment-to-feature join. Then it made the objective itself
+incremental.
+
+Feature account values are **additive over blocks** (fragments evolve independently), so a schedule's
+account values are the empty-schedule base plus a per-block delta:
+
+```
+values(schedule) = base + sum over scheduled blocks of (treated_block - empty_block)
+```
+
+The optimizer caches the base once and each block's delta (lazily, per assignment), so an evaluation
+is a few hundred dictionary additions rather than a full multi-year re-simulation. Edge contrast and
+route accounts are not additive over blocks, so those configurations fall back to the full
+simulation.
+
+| Metric (C5, 10 years) | Before WP4 | After |
+| --- | ---: | ---: |
+| Warm objective evaluation, empty schedule | 1.29 s | 0.23 s |
+| Warm objective evaluation, 300-block schedule | 3.8 s | **0.0067 s** (6.7 ms) |
+
+Parity with the full simulation holds to floating-point tolerance (cell-wise max difference ~3e-8),
+covered by `tests/test_optimizer.py`. The target (under 50 ms) is met for the account-value objective;
+the route/edge configurations keep the full path.

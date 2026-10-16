@@ -93,6 +93,11 @@ class Simulator:
             self._products_by_key.setdefault(key, []).append(
                 (_as_int(product.curve_id), str(product.label))
             )
+        self._track_features: dict[int, list[tuple[int, str]]] = {}
+        for feature in self.features.itertuples(index=False):
+            self._track_features.setdefault(_as_int(feature.track_id), []).append(
+                (_as_int(feature.curve_id), str(feature.label))
+            )
         # The fragment-position index is rebuilt lazily (the caller may replace the frame).
         self._fragments_index_id = -1
         self._fragments_by_block: dict[int, list[int]] = {}
@@ -344,6 +349,57 @@ class Simulator:
             else 0.0
             for index, block in enumerate(unique)
         }
+
+    def block_trajectory(
+        self, block_id: int, treatment: str | None, year: int, years: int
+    ) -> dict[tuple[int, str], float]:
+        """Return one block's feature account values over a horizon.
+
+        The block's fragments are simulated in isolation: if ``treatment`` is given, it is
+        applied in ``year`` (a no-op where the fragment's track does not offer it), and
+        every fragment's offset advances one year per step. The result is
+        ``(year, label) -> value``, so a schedule's account values are the empty-schedule
+        base plus a per-block delta. Feature account values are additive over blocks.
+
+        Parameters
+        ----------
+        block_id : int
+            The block.
+        treatment : str or None
+            The treatment to apply, or None for no treatment.
+        year : int
+            The year to apply the treatment.
+        years : int
+            The horizon, in years.
+
+        Returns
+        -------
+        dict of (int, str) to float
+            The account value per year and label (non-zero entries only).
+        """
+        positions = self._block_index().get(int(block_id), [])
+        if not positions:
+            return {}
+        tracks = self.fragments["track_id"].to_numpy()[positions].astype(np.int64)
+        offsets = self.fragments["offset"].to_numpy()[positions].astype(np.int64)
+        areas = self.fragments["area_ha"].to_numpy()[positions].astype(float)
+        totals: dict[tuple[int, str], float] = {}
+        for step in range(years):
+            if treatment is not None and step == year:
+                for index in range(len(positions)):
+                    transition = self._treatment_by_key.get((int(tracks[index]), str(treatment)))
+                    if transition is not None:
+                        tracks[index] = transition[0]
+                        offsets[index] = transition[1]
+            for index in range(len(positions)):
+                area = float(areas[index])
+                offset = int(offsets[index])
+                for curve_id, label in self._track_features.get(int(tracks[index]), ()):
+                    value = area * self._curve_value(curve_id, offset)
+                    key = (step, label)
+                    totals[key] = totals.get(key, 0.0) + value
+            offsets += 1
+        return totals
 
     def _criteria_join(self, label: str) -> tuple[np.ndarray, dict[int, np.ndarray]]:
         """Return the fragment positions and per-curve groups for a feature label."""
