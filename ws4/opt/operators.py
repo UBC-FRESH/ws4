@@ -62,6 +62,11 @@ class Operator(Protocol):
     ) -> Schedule | None:
         """Return a modified schedule, or None if the operator cannot move."""
 
+    def propose(
+        self, schedule: Schedule, rng: random.Random, candidates: Candidates
+    ) -> tuple[Schedule, tuple[int, ...]] | None:
+        """Return a modified schedule and the blocks it changed, or None."""
+
 
 class ToggleOperator:
     """Assign a treatment to a block, or clear an assigned block."""
@@ -72,10 +77,10 @@ class ToggleOperator:
         """Set the operator's selection weight."""
         self.weight = weight
 
-    def apply(
+    def propose(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
-    ) -> Schedule | None:
-        """Toggle one block."""
+    ) -> tuple[Schedule, tuple[int, ...]] | None:
+        """Return a toggled schedule and the block that changed."""
         blocks, _ = _index(candidates)
         if not blocks:
             return None
@@ -85,7 +90,14 @@ class ToggleOperator:
             del result[block]
         else:
             result[block] = rng.choice(candidates[block])
-        return result
+        return result, (block,)
+
+    def apply(
+        self, schedule: Schedule, rng: random.Random, candidates: Candidates
+    ) -> Schedule | None:
+        """Toggle one block."""
+        proposal = self.propose(schedule, rng, candidates)
+        return None if proposal is None else proposal[0]
 
 
 class ShiftOperator:
@@ -97,20 +109,41 @@ class ShiftOperator:
         """Set the operator's selection weight."""
         self.weight = weight
 
+    def propose(
+        self, schedule: Schedule, rng: random.Random, candidates: Candidates
+    ) -> tuple[Schedule, tuple[int, ...]] | None:
+        """Return a shifted schedule and the block that changed.
+
+        A shiftable block is sampled by drawing a candidate block and testing it, rather
+        than scanning the schedule, so the move is O(1) when most assigned blocks can
+        shift. A full scan is the fallback when the sample fails.
+        """
+        if not schedule:
+            return None
+        blocks, shiftable = _index(candidates)
+        for _ in range(12):
+            block = rng.choice(blocks)
+            assignment = schedule.get(block)
+            if assignment is not None and (block, assignment[0]) in shiftable:
+                result = dict(schedule)
+                result[block] = rng.choice(shiftable[(block, assignment[0])])
+                return result, (block,)
+        candidates_blocks = [
+            block for block, (treatment, _) in schedule.items() if (block, treatment) in shiftable
+        ]
+        if not candidates_blocks:
+            return None
+        block = rng.choice(candidates_blocks)
+        result = dict(schedule)
+        result[block] = rng.choice(shiftable[(block, schedule[block][0])])
+        return result, (block,)
+
     def apply(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
     ) -> Schedule | None:
         """Shift one block in time."""
-        _, shiftable = _index(candidates)
-        blocks = [
-            block for block, (treatment, _) in schedule.items() if (block, treatment) in shiftable
-        ]
-        if not blocks:
-            return None
-        block = rng.choice(blocks)
-        result = dict(schedule)
-        result[block] = rng.choice(shiftable[(block, schedule[block][0])])
-        return result
+        proposal = self.propose(schedule, rng, candidates)
+        return None if proposal is None else proposal[0]
 
 
 class SwapOperator:
@@ -122,17 +155,24 @@ class SwapOperator:
         """Set the operator's selection weight."""
         self.weight = weight
 
-    def apply(
+    def propose(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
-    ) -> Schedule | None:
-        """Swap two assigned blocks."""
+    ) -> tuple[Schedule, tuple[int, ...]] | None:
+        """Return a swapped schedule and the two blocks that changed."""
         blocks = list(schedule)
         if len(blocks) < 2:
             return None
         first, second = rng.sample(blocks, 2)
         result = dict(schedule)
         result[first], result[second] = result[second], result[first]
-        return result
+        return result, (first, second)
+
+    def apply(
+        self, schedule: Schedule, rng: random.Random, candidates: Candidates
+    ) -> Schedule | None:
+        """Swap two assigned blocks."""
+        proposal = self.propose(schedule, rng, candidates)
+        return None if proposal is None else proposal[0]
 
 
 class LnsOperator:
@@ -149,21 +189,30 @@ class LnsOperator:
         self.weight = weight
         self.destroy_fraction = destroy_fraction
 
-    def apply(
+    def propose(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
-    ) -> Schedule | None:
-        """Destroy a fraction of the schedule and repair it."""
+    ) -> tuple[Schedule, tuple[int, ...]] | None:
+        """Destroy a fraction of the schedule, repair it, and report the changed blocks."""
         if not schedule:
             return None
         blocks = list(schedule)
         count = max(1, int(len(blocks) * self.destroy_fraction))
         destroyed = set(rng.sample(blocks, count))
         result = {block: value for block, value in schedule.items() if block not in destroyed}
+        repaired: list[int] = []
         for block in destroyed:
             options = candidates.get(block)
             if options:
                 result[block] = rng.choice(options)
-        return result
+            repaired.append(block)
+        return result, tuple(repaired)
+
+    def apply(
+        self, schedule: Schedule, rng: random.Random, candidates: Candidates
+    ) -> Schedule | None:
+        """Destroy a fraction of the schedule and repair it."""
+        proposal = self.propose(schedule, rng, candidates)
+        return None if proposal is None else proposal[0]
 
 
 class OperatorRegistry:

@@ -130,3 +130,11 @@ slot in: the dZ loop is a handful of vectorised array ops.
 - Bug found and fixed on the way: the new `block_products` fast path must use the fragment's offset
   *at the treatment year* (the simulator ages the fragment `year` steps), i.e. `offset + year`;
   without it the delta under-reported and the search diverged.
+- 2026-10-16 **M1c done** (issue #79): operators gained `propose`, which returns the new schedule
+  *and the blocks it changed*; the delta solver no longer diffs the schedule (`_changed_blocks` was
+  61% of the remaining time). The shift operator samples a shiftable block in O(1) with a scan
+  fallback instead of building an O(schedule) list each call. Steady state 443 -> **730 iters/s** on
+  C5 (50-year); cold reset 0.8 s. Correctness unchanged (0 mismatch over a 300-move path comparison;
+  347 tests). Remaining cost is flat Python/pandas overhead (dict lookups, per-call array extraction,
+  LNS). To go beyond ~1000 iters/s the state would move to numpy arrays with an optional compiled
+  kernel (P6.6).

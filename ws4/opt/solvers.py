@@ -142,9 +142,9 @@ def solve_sa_delta(
     best, best_obj = dict(current), current_obj
     temp = temperature
     for iteration in range(iterations):
-        move = registry.pick(rng).apply(current, rng, candidates)
-        if move is not None:
-            changed = _changed_blocks(current, move)
+        proposal = registry.pick(rng).propose(current, rng, candidates)
+        if proposal is not None:
+            move, changed = proposal
             move_obj = current_obj + evaluator.delta(changed, move)
             if move_obj <= current_obj or rng.random() < math.exp(
                 (current_obj - move_obj) / max(temp, 1e-9)
