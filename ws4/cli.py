@@ -90,6 +90,7 @@ def optimize(
     targets: Path = typer.Option(..., exists=True),
     weights: Path = typer.Option(..., exists=True),
     threads: int = typer.Option(8, min=1),
+    starts: int = typer.Option(1, min=1, help="parallel multi-starts (needs --threads > 1)"),
     time_limit: str = typer.Option("01:00:00", help="HH:MM:SS"),
     seed: int = typer.Option(42),
     islands: int = typer.Option(0, help="parallel islands with elite migration (0 = off)"),
@@ -126,6 +127,8 @@ def optimize(
     """Search for a schedule that satisfies the targets and write a summary."""
     cfg = OptimizeConfig(
         threads=threads,
+        workers=threads,
+        starts=starts,
         time_limit=time_limit,
         seed=seed,
         islands=islands,

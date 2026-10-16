@@ -560,3 +560,11 @@ issue comments.
   exactly (0.000), every random schedule respects the bound (0 violations), and the reported optimum
   is within ~5e-7 relative of the schedule it returns (a mixed-integer solver tolerance). A committed
   test covers periodic targets (`tests/test_mip.py`). Dashboard: **GREEN**.
+- P6.5 follow-up (island mode): two fixes so the parallel path is actually usable and correct.
+  `_island_search` hardcoded ``warm_start=False`` (each island started from an empty schedule, so it
+  never converged — objective 1.6M vs 64 with the warm start); it now honours the configured warm
+  start. And the CLI never set ``workers`` (only ``threads``, which was dead), so the process pool was
+  unreachable; ``--threads`` now sets the worker count and ``--starts`` was added. Measured on C5
+  (200-year, periodic targets, 20k iterations per search): serial 32.7 s; multi-start x8 / islands x8
+  **40.7 s for 8x the search** (best objective 14.1 vs 63.8); islands x32 53.2 s for 32x. Near-linear
+  wall-clock scaling (~83% at 8 workers). Dashboard: **GREEN**.
