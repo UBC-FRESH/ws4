@@ -510,3 +510,21 @@ issue comments.
   account values of its latest evaluation (`Optimizer.last_account_values`). `ws4/opt/watch.py` plus
   the `watch` command; tests in `tests/test_watch.py`. Branch `feature/p6-watch`. Dashboard on close:
   **GREEN** (`python scripts/dashboard.py`).
+- P6.17 (feature): multi-rotation treatment chains. A block may be treated more than once. The
+  optimizer's schedule is now `dict[block, chain]` (an ordered tuple of events); `candidates()` walks
+  the track transitions to generate the feasible rotations; `Simulator.block_chain` /
+  `block_chain_products` evaluate a chain; the delta evaluator prices a changed block's whole chain;
+  and the spatial (`schedule_years` returns every disturbance year per block, green-up across
+  rotations) and route (`block_route_chain`) paths are chain-aware. Verified: incremental vs full
+  parity 0.000000 for mixed chain schedules (fixture and C5); rotations lift the C5 200-year softwood
+  ceiling from **17.74 to 41.02 Mm3** (0.887 to 2.051 Mm3/period), so a 1.3 Mm3/period even flow is
+  feasible. Branch `feature/p6-optimizer-core` merged to `feature/p6-performance`; plan and log in
+  `notes/design/ws4-optimizer-core.md`. Dashboard on close: **GREEN**.
+- P6.18 (feature): move-based incremental objective. The evaluator keeps the realized totals per
+  `(year, account)` for the target accounts and prices a move by the exact delta it makes, instead of
+  recomputing the whole schedule: ~2,000,000 dict updates per move become a few hundred operations.
+  With a product fast path (`block_products` / `block_chain_products`), a shared operator option index,
+  LNS set membership, and operators that report their changed blocks, C5 (50-year) objective
+  evaluations rose from **2.2 to ~730 per second** (~330x); `ws4 watch` is on the fast path.
+  Correctness: 0 mismatch over a 300-move path comparison; the delta incumbent follows the same
+  trajectory as a full evaluation. Tests in `tests/test_incremental.py`. Dashboard on close: **GREEN**.
