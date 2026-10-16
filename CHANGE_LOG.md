@@ -488,3 +488,9 @@ issue comments.
   `_spatial_penalty` 163.7 → **13.1 ms** (12.5×), penalties identical (parity test). Spike branch
   `spike/incremental-spatial` merged to `feature/p6-performance`; plan and log in
   `notes/design/ws4-spatial-scoped.md`.
+- P6.14 (spike, adopted): faster matrix builder. The builder re-parsed the recipe's huge constant
+  `lookupTable(...)` literals on every evaluation; the parsed form is cached by the identity of the keys
+  string, `_expand_tokens` skips texts with no `%`, and each stratum's `matching_selects` is memoized.
+  A/B vs `p6-builder-checkpoint`: 200-fragment slice 17.7 → **2.2 s** (8.1×); canonical MKRF build
+  192.7 → **21.5 s** (9.0×), outputs identical (`compare_matrix`: MATCH). Spike branch `spike/builder-perf`
+  merged to `feature/p6-performance`; plan and log in `notes/design/ws4-builder-perf.md`.
