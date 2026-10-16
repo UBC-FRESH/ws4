@@ -380,8 +380,6 @@ class WatchState:
         The number of evaluations.
     iteration : int
         The current iteration.
-    last_render : float
-        The monotonic time of the last repaint.
     window : TargetWindow or None
         The window of the incumbent.
     """
@@ -395,7 +393,6 @@ class WatchState:
     best_values: pd.DataFrame | None = None
     evaluations: int = 0
     iteration: int = 0
-    last_render: float = 0.0
     window: TargetWindow | None = None
 
     def current_window(self) -> TargetWindow:
@@ -462,7 +459,7 @@ def run_watch(
     *,
     period_width: int = 10,
     label: str | None = None,
-    refresh: float = 0.25,
+    refresh: float = 2.0,
     plain: bool = False,
     console: Console | None = None,
 ) -> dict[str, Any]:
@@ -481,7 +478,7 @@ def run_watch(
     label : str or None, optional
         A display label; defaults to the accounts joined with ``+``.
     refresh : float, optional
-        The minimum seconds between repaints.
+        The heartbeat interval, in seconds, between repaints.
     plain : bool, optional
         Print a single final frame instead of a live view.
     console : rich.console.Console or None, optional
@@ -514,18 +511,20 @@ def run_watch(
         initial = {block: options[0] for block, options in candidates.items() if options}
 
     started = time.monotonic()
+    heartbeat = max(refresh, 0.1)
     live: Live | None = (
-        None if plain else Live(console=console, auto_refresh=False, refresh_per_second=4)
+        None
+        if plain
+        else Live(
+            console=console,
+            auto_refresh=True,
+            refresh_per_second=1.0 / heartbeat,
+            get_renderable=lambda: render_frame(state, optimizer, time.monotonic() - started),
+        )
     )
 
     def on_step(iteration: int, _objective: float) -> None:
         state.iteration = iteration
-        if live is None:
-            return
-        now = time.monotonic()
-        if now - state.last_render >= refresh:
-            state.last_render = now
-            live.update(render_frame(state, optimizer, now - started), refresh=True)
 
     def solve() -> Schedule:
         if cfg.metaheuristic == "tabu":

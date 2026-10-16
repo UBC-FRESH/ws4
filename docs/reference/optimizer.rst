@@ -71,7 +71,9 @@ place: one column per period, the minimum/maximum target band shaded, and the re
 over it, coloured by status (green inside the window, red below the minimum, blue above the
 maximum). Targets are per year; the view sums them into periods of ``--period-width`` years, so
 per-year levels that sum to a periodic target read as the periodic window. ``--plain`` prints one
-final frame instead of a live view.
+final frame instead of a live view. The live view repaints on a fixed heartbeat
+(``--refresh`` seconds, default 2), independent of the search, so the header (iteration rate,
+objective) stays current even between improvements.
 
 .. code-block:: bash
 
