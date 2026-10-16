@@ -247,3 +247,15 @@ them, clamped), so `_curves` is gone.
 | Simulator construction | ~0.55 s | **~0.15 s** (3.7×) |
 
 Plan and log: `notes/design/ws4-construction.md`.
+
+### Faster route-record accumulation (`spike/route-record`)
+
+The reporting ledger's `record` did per-segment dict work once per produced product. It now aggregates
+`(volume, count)` per `(year, destination, route)` and does the per-segment pass once per route at
+flush time (volume summed, haul linear in volume, maintenance per record, build once).
+
+| Metric (C5, 3-year, 300-block, collect=True; warm) | Before | After |
+| --- | ---: | ---: |
+| `simulate` + reporting | ~0.78 s | **~0.08 s** (10×) |
+
+Plan and log: `notes/design/ws4-route-record.md`.
