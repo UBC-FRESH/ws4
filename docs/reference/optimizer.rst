@@ -9,9 +9,12 @@ result is reproducible.
 Objective
 ---------
 
-A target names one account and one year, with a ``minimum``, a ``maximum``, or both. The penalty is
-the weighted shortfall below the minimum plus the weighted excess above the maximum; the objective is
-the total penalty (lower is better). Targets load from a YAML file:
+A target names one account and the first year of a period, with a ``minimum``, a ``maximum``, or
+both. Treatments are scheduled by year; the **accounting is per period** — with ``period_width``
+(default 1) the account is summed over the period's years and compared to the levels, so a decade
+target is ``period_width: 10``. The penalty is the weighted shortfall below the minimum plus the
+weighted excess above the maximum; the objective is the total penalty (lower is better). Targets load
+from a YAML file:
 
 .. code-block:: yaml
 
@@ -19,6 +22,11 @@ the total penalty (lower is better). Targets load from a YAML file:
      - account: feature.Volume
        year: 0
        maximum: 500
+     - account: product.Yield.managed.Conif
+       year: 0
+       minimum: 800000
+       maximum: 800000
+       period_width: 10
 
 The weights file is accepted by the command line and the configuration. The spatial constraints add a
 weighted penalty to the objective (see :doc:`spatial`): a maximum opening size, a green-up interval,

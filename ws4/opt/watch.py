@@ -104,18 +104,32 @@ def period_totals(
 def _period_levels(
     targets: Sequence[Target], account: str, period_width: int, years: int
 ) -> tuple[list[float | None], list[float | None]]:
-    """Return one account's summed minimum and maximum per period."""
+    """Return one account's minimum and maximum per period.
+
+    A target's level is spread over its own period and apportioned to the watcher's periods
+    by their overlap: a per-year target sums over the years of a watcher period, while a
+    period-width target (the usual case) applies directly.
+    """
     n_periods = (years + period_width - 1) // period_width
     minima: list[float | None] = [None] * max(0, n_periods)
     maxima: list[float | None] = [None] * max(0, n_periods)
     for target in targets:
-        if target.account != account or target.year < 0 or target.year >= years:
+        if target.account != account:
             continue
-        period = target.year // period_width
-        if target.minimum is not None:
-            minima[period] = (minima[period] or 0.0) + target.minimum
-        if target.maximum is not None:
-            maxima[period] = (maxima[period] or 0.0) + target.maximum
+        width = max(1, target.period_width)
+        start = target.year
+        stop = target.year + width
+        first = max(0, start // period_width)
+        last = min((stop - 1) // period_width, n_periods - 1)
+        for period in range(first, last + 1):
+            window = period * period_width
+            overlap = min(stop, window + period_width) - max(start, window)
+            if overlap <= 0:
+                continue
+            if target.minimum is not None:
+                minima[period] = (minima[period] or 0.0) + target.minimum * overlap / width
+            if target.maximum is not None:
+                maxima[period] = (maxima[period] or 0.0) + target.maximum * overlap / width
     return minima, maxima
 
 

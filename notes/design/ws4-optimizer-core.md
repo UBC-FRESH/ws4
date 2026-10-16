@@ -172,3 +172,8 @@ slot in: the dZ loop is a handful of vectorised array ops.
   sample by rejection, removing the per-move O(schedule) dict copy and list. Warm C5 200-year overall
   2252 -> **2478 iters/s**; default (LNS 0.2) 2259 -> **2910** (1.29x). LNS is still the dominant cost
   (no-LNS 5613/s), so the operator weights are configurable (config + `--lns-weight`/`--lns-destroy`).
+- 2026-10-16 correctness follow-up (maintainer): the even flow did not converge because the candidate
+  years offered only three points per window, and the targets were per **year**. Fixed: candidates
+  cover every year of every operability window (rotations sampled), and `Target` is **periodic**
+  (`period_width`) so the account is summed over the period — accounting per period, treatments by
+  year. Result: C5 200-year even flow is a flat 0.800 Mm3 every period (objective 1), delta == full.

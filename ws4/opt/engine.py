@@ -51,7 +51,10 @@ from .solvers import solve_ils, solve_sa, solve_sa_delta, solve_tabu
 from .telemetry import RunLogger
 
 _MAX_ROTATIONS = 3
-_MAX_CHAINS = 12
+_MAX_CHAINS = 320
+_CHAIN_STEP = 10
+_FRONTIER_CAP = 80
+_ROTATION_SEEDS = 12
 
 
 @dataclass
@@ -216,11 +219,28 @@ class Optimizer:
         list of Chain
             The chains; a single rotation first (earliest first), then multi-rotation chains.
         """
-        single: list[Chain] = []
-        multi: list[Chain] = []
-        frontier: list[tuple[Chain, int, int, int]] = [((), track, age, 0)]
         last_year = self.cfg.years - 1
-        for _ in range(rotations):
+        single: list[Chain] = []
+        for label, begin, end, _, _ in by_track.get(track, []):
+            start = max(0, begin - age)
+            stop = last_year if end <= 0 else min(last_year, end - age)
+            if start > stop:
+                continue
+            single.extend(((label, year),) for year in range(start, stop + 1))
+        single.sort(key=lambda chain: chain[0][1])
+        if rotations <= 1 or not single:
+            return single[:_MAX_CHAINS]
+        # Later rotations: seed from a sample of first-rotation years and step by the period,
+        # so every operable age is a first-rotation candidate while the list stays bounded.
+        stride = max(1, len(single) // _ROTATION_SEEDS)
+        frontier: list[tuple[Chain, int, int, int]] = []
+        for chain in single[::stride][:_ROTATION_SEEDS]:
+            label, year = chain[0]
+            transition = next((row for row in by_track.get(track, []) if row[0] == label), None)
+            if transition is not None:
+                frontier.append((chain, transition[3], transition[4], year))
+        multi: list[Chain] = []
+        for _ in range(rotations - 1):
             next_frontier: list[tuple[Chain, int, int, int]] = []
             for chain, current_track, current_age, current_year in frontier:
                 for label, begin, end, new_track, new_age in by_track.get(current_track, []):
@@ -229,14 +249,16 @@ class Optimizer:
                     stop = min(stop, last_year)
                     if start > stop:
                         continue
-                    for year in sorted({start, (start + stop) // 2, stop}):
+                    years = list(range(start, stop + 1, _CHAIN_STEP))
+                    if years[-1] != stop:
+                        years.append(stop)
+                    for year in years:
                         new_chain = (*chain, (label, year))
-                        (single if len(new_chain) == 1 else multi).append(new_chain)
+                        multi.append(new_chain)
                         next_frontier.append((new_chain, new_track, new_age, year))
-            frontier = next_frontier
+            frontier = next_frontier[:_FRONTIER_CAP]
             if not frontier:
                 break
-        single.sort(key=lambda chain: chain[0][1])
         return (single + multi)[:_MAX_CHAINS]
 
     def _schedule_frame(self, schedule: Schedule) -> pd.DataFrame:
