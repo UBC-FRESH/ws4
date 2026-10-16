@@ -161,6 +161,17 @@ kernels for profiled bottlenecks), WP6 waits for a real target. **Trigger to rev
 loop where a kernel would give a large speedup — for example a much larger dataset, or a route/edge
 objective that needs the full simulation on every evaluation.
 
+**Re-examined 2026-10-16 (during P6.17/P6.18).** The trigger was revisited with an actual numba
+kernel. The hot loop is now the per-block product gather (`Simulator.block_chain_products`) on
+delta cache misses (~65% of a 200-year delta iteration). A numba `njit` kernel for that loop (built
+with precomputed CSR indexes, exact parity to the Python path) measures only **1.5–2.4×** — the work
+per call (a handful of fragments and products) is too small to beat the kernel's dispatch and
+allocation overhead. That is below the ≥5× acceptance bar, so the kernel is not adopted and WP6 stays
+deferred, now with measurements rather than a packaging argument. The win came instead from caching
+the fragments' numpy arrays (no dependency): C5 50-year objective evaluations **730 → 1797/s** (2.5×)
+and 200-year **312 → 617/s** (2×). The trigger remains: a loop with enough work per call, or a
+genuinely batched kernel across many moves.
+
 **WP7 — Guardrails and docs.**
 - CI perf smoke; determinism/parity tests; update `notes/performance.md`, the design notes, and the
   user-facing performance section.
