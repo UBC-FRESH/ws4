@@ -63,7 +63,9 @@ deterministic for a given seed.
 
 The mixed-integer layer (``ws4.opt.mip``) solves an option-selection MILP (HiGHS via
 ``scipy.optimize.milp``) for a penalty **lower bound** and a candidate schedule. Enabling
-``OptimizeConfig.mip_bound`` records the bound and the gap in the summary.
+``OptimizeConfig.mip_bound`` (``--mip-bound``) records the bound, the gap, and the bound status in the
+summary. With ``--topology`` and ``--max-opening-ha`` the bound also enforces the stand-centred
+opening constraints, which tighten it as the cap falls.
 
 Run
 ---

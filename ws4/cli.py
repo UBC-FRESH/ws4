@@ -94,6 +94,7 @@ def optimize(
     threads: int = typer.Option(8, min=1),
     starts: int = typer.Option(1, min=1, help="parallel multi-starts (needs --threads > 1)"),
     time_limit: str = typer.Option("01:00:00", help="HH:MM:SS"),
+    years: int = typer.Option(50, help="Simulation horizon in years"),
     seed: int = typer.Option(42),
     islands: int = typer.Option(0, help="parallel islands with elite migration (0 = off)"),
     episodes: int = typer.Option(1, help="island episodes (elite migrations)"),
@@ -138,6 +139,9 @@ def optimize(
     cooling_window: int = typer.Option(
         64, "--cooling-window", help="Iterations per temperature with the adaptive schedule"
     ),
+    mip_bound: bool = typer.Option(
+        False, "--mip-bound", help="Record a mixed-integer penalty lower bound in the summary"
+    ),
 ) -> None:
     """Search for a schedule that satisfies the targets and write a summary."""
     cfg = OptimizeConfig(
@@ -145,6 +149,7 @@ def optimize(
         workers=threads,
         starts=starts,
         time_limit=time_limit,
+        years=years,
         seed=seed,
         islands=islands,
         episodes=episodes,
@@ -166,6 +171,7 @@ def optimize(
         patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",
         cooling_mode=cooling_mode,
         cooling_window=cooling_window,
+        mip_bound=mip_bound,
     )
     opt = Optimizer.from_dataset(dataset, cfg)
     result = opt.run(out)

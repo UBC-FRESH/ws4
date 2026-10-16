@@ -288,6 +288,7 @@ budget. Plan of record: `notes/design/ws4-performance.md`.
 - [x] P6.21 Stand-centred opening constraints in the MIP bound
 - [x] P6.22 Adaptive temperature schedule
 - [x] P6.23 Target-weight calibration
+- [x] P6.24 MIP bound on the command line
 
 Deferred from P6, triaged in `notes/backlog.md`:
 

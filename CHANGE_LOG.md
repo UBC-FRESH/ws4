@@ -642,3 +642,9 @@ issue comments.
   moves that alter patches are the ones that cost, so the same 2,000 iterations take 117 s against 52 s.
   The pilot must match the run's `--warm-start`, or a term that only appears once blocks are harvested
   never registers. Tests: `tests/test_calibrate.py`. Dashboard: **GREEN**.
+- P6.24 (feature): the mixed-integer bound on the command line. `OptimizeConfig.mip_bound` was
+  reachable only from the API, so `solve_mip` was unusable from a shell. `ws4 optimize --mip-bound`
+  now records the bound, the gap, and the bound status in `summary.json`, and the configured
+  `--topology` and `--max-opening-ha` feed the stand-centred opening constraints into it. The
+  `optimize` command also gained `--years` (it had no horizon option, so it always ran the 50-year
+  default). Tests: `tests/test_optimizer.py`. Dashboard: **GREEN**.

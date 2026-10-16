@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pandas as pd
 import pytest
+from typer.testing import CliRunner
 from ws4.build.compiler import build_canonical_dataset
+from ws4.cli import app
 from ws4.opt.engine import OptimizeConfig, Optimizer
 from ws4.opt.objective import Target, load_targets, objective, penalty
 from ws4.opt.operators import Schedule
@@ -506,3 +509,43 @@ def test_island_search_is_deterministic_and_no_worse_than_a_single_start(tmp_pat
         OptimizeConfig(targets_path=str(targets), seed=1, years=1, iterations=30),
     ).run(tmp_path / "s")
     assert first["incumbent_objective"] <= single["incumbent_objective"] + 1e-9
+
+
+def test_optimize_command_records_a_mip_bound(tmp_path: Path) -> None:
+    """The optimize command records a mixed-integer bound when asked."""
+    pytest.importorskip("scipy")
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    targets = tmp_path / "targets.yaml"
+    targets.write_text(
+        "targets:\n  - account: feature.Volume\n    year: 0\n    maximum: 500\n", encoding="utf-8"
+    )
+    weights = tmp_path / "weights.yaml"
+    weights.write_text("weights: {}\n", encoding="utf-8")
+    out = tmp_path / "opt"
+    result = CliRunner().invoke(
+        app,
+        [
+            "optimize",
+            "--dataset",
+            str(dataset),
+            "--targets",
+            str(targets),
+            "--weights",
+            str(weights),
+            "--out",
+            str(out),
+            "--years",
+            "1",
+            "--time-limit",
+            "00:00:10",
+            "--threads",
+            "1",
+            "--mip-bound",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    summary = json.loads((out / "summary.json").read_text(encoding="utf-8"))
+    assert summary["bound_status"] == "optimal"
+    assert summary["gap"] >= 0.0
