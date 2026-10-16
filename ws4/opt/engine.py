@@ -91,6 +91,7 @@ class Optimizer:
         self._edges_by_block_cache: dict[int, list[tuple[int, int, float]]] | None = None
         self._simulator_cache: Simulator | None = None
         self._base_cache: dict[tuple[int, str], float] | None = None
+        self._last_values: pd.DataFrame | None = None
         self._delta_cache: dict[tuple[int, str, int], dict[tuple[int, str], float]] = {}
         self._route_delta_cache: dict[tuple[int, str, int], dict[tuple[int, str], float]] = {}
 
@@ -190,7 +191,25 @@ class Optimizer:
             values = self._incremental_values(schedule, duplicate_accounts, route_accounts)
         else:
             values = self._full_values(schedule, model, route_accounts, duplicate_accounts)
+        self._last_values = values
         return objective(values, targets) + self._spatial_penalty(frame)
+
+    def last_account_values(self) -> pd.DataFrame:
+        """Return the account values of the most recent objective evaluation.
+
+        The objective computes an account-values frame for every schedule it scores; this
+        returns the one from the latest call, so a caller can inspect what the optimizer
+        last saw (for example, to watch the target window of an account).
+
+        Returns
+        -------
+        pandas.DataFrame
+            The account values, with ``year``, ``account``, and ``value`` columns, or an
+            empty frame with those columns before any evaluation.
+        """
+        if self._last_values is None:
+            return pd.DataFrame(columns=["year", "account", "value"])
+        return self._last_values
 
     def _full_values(
         self,

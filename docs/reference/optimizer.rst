@@ -63,6 +63,22 @@ When a route configuration is given (``OptimizeConfig.route_config_path`` or
 duplicate accounts (see :doc:`roads`) are resolved into the account values, so targets can be set on
 accounts such as ``route.Total.haul``.
 
+Watch
+-----
+
+``ws4 watch`` runs the same search and paints the realized-versus-target window of an account in
+place: one column per period, the minimum/maximum target band shaded, and the realized value drawn
+over it, coloured by status (green inside the window, red below the minimum, blue above the
+maximum). Targets are per year; the view sums them into periods of ``--period-width`` years, so
+per-year levels that sum to a periodic target read as the periodic window. ``--plain`` prints one
+final frame instead of a live view.
+
+.. code-block:: bash
+
+   ws4 watch --dataset build/compiled --targets targets.yaml \
+             --account product.Yield.managed.Conif --period-width 10 --years 50 \
+             --iterations 5000 --warm-start
+
 Outputs
 -------
 
@@ -101,6 +117,11 @@ API
 .. autofunction:: ws4.opt.objective.objective
 
 .. autofunction:: ws4.opt.objective.penalty
+
+.. autofunction:: ws4.opt.watch.run_watch
+
+.. autoclass:: ws4.opt.watch.TargetWindow
+   :members:
 
 .. autofunction:: ws4.opt.mip.bound_for
 
