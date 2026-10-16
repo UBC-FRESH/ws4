@@ -358,6 +358,63 @@ class Simulator:
             for index, block in enumerate(unique)
         }
 
+    def block_criteria_series(
+        self, block_id: int, events: Sequence[tuple[str, int]], label: str, years: int
+    ) -> dict[int, float]:
+        """Return one block's area-weighted criterion value per year under a chain.
+
+        The criterion is the area-weighted mean of the label's curve over the block's
+        fragments, isolated as in :meth:`block_chain`. A block's value depends only on its
+        own chain, so this is cacheable per ``(block, chain, label)`` and never needs the
+        whole schedule's state.
+
+        Parameters
+        ----------
+        block_id : int
+            The block.
+        events : sequence of (str, int)
+            The treatments and the year each is applied.
+        label : str
+            The criterion feature label.
+        years : int
+            The horizon, in years.
+
+        Returns
+        -------
+        dict of int to float
+            The criterion value per year.
+        """
+        positions = self._block_index().get(int(block_id), [])
+        if not positions:
+            return {}
+        by_year = {int(year): str(treatment) for treatment, year in events}
+        arrays_track, arrays_offset, arrays_area = self._fragment_arrays()
+        tracks = arrays_track[positions]
+        offsets = arrays_offset[positions]
+        areas = arrays_area[positions]
+        total_area = float(areas.sum())
+        if total_area <= 0.0:
+            return {}
+        series: dict[int, float] = {}
+        for step in range(years):
+            treatment = by_year.get(step)
+            if treatment is not None:
+                for index in range(len(positions)):
+                    transition = self._treatment_by_key.get((int(tracks[index]), treatment))
+                    if transition is not None:
+                        tracks[index] = transition[0]
+                        offsets[index] = transition[1]
+            value = 0.0
+            for index in range(len(positions)):
+                offset = int(offsets[index])
+                for curve_id, feature_label in self._track_features.get(int(tracks[index]), ()):
+                    if feature_label == label:
+                        value += float(areas[index]) * self._curve_value(curve_id, offset)
+                        break
+            series[step] = value / total_area
+            offsets = offsets + 1
+        return series
+
     def block_chain(
         self, block_id: int, events: Sequence[tuple[str, int]], years: int
     ) -> dict[tuple[int, str], float]:

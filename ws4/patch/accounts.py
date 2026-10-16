@@ -168,6 +168,124 @@ def patch_account_values(
     return result
 
 
+def patch_account_values_indexed(
+    account: PatchAccount,
+    values: Mapping[int, float],
+    neighbours: Mapping[int, Sequence[tuple[int, float]]],
+    block_area: Mapping[int, float],
+) -> dict[str, float]:
+    """Compute one period's patch sub-account values from an indexed adjacency.
+
+    This is :func:`patch_account_values` with the adjacency pre-grouped by block, so a
+    period costs O(members x degree) instead of scanning every edge in the topology. The
+    two agree exactly.
+
+    Parameters
+    ----------
+    account : PatchAccount
+        The account definition.
+    values : mapping of int to float
+        The criterion value per block (already restricted to the members).
+    neighbours : mapping of int to sequence of (int, float)
+        The adjacency ``(neighbour, shared_length)`` per block.
+    block_area : mapping of int to float
+        The area of each block.
+
+    Returns
+    -------
+    dict of str to float
+        The sub-account values, keyed ``"<class>.<sub>"`` plus ``"TOTAL.area"`` and
+        ``"TOTAL.frequency"``.
+    """
+    members = values
+    component: dict[int, int] = {}
+    areas: list[float] = []
+    perimeters: list[float] = []
+    for start in members:
+        if start in component:
+            continue
+        index = len(areas)
+        stack = [start]
+        component[start] = index
+        area = 0.0
+        perimeter = 0.0
+        while stack:
+            block = stack.pop()
+            area += values[block] * block_area.get(block, 0.0)
+            for other, length in neighbours.get(block, ()):
+                if other in members:
+                    if other not in component:
+                        component[other] = index
+                        stack.append(other)
+                else:
+                    perimeter += length
+        areas.append(area)
+        perimeters.append(perimeter)
+    total_area = math.fsum(areas)
+    labels = size_class_labels(account.size_classes)
+    by_label: dict[str, list[tuple[float, float]]] = {label: [] for label in labels}
+    for index, area in enumerate(areas):
+        compactness = _compactness(area, perimeters[index])
+        for class_index, upper in enumerate(account.size_classes):
+            lower = 0.0 if class_index == 0 else account.size_classes[class_index - 1]
+            if lower < area <= upper:
+                by_label[labels[class_index]].append((area, compactness))
+                break
+    result: dict[str, float] = {}
+    for label in labels:
+        members_in_class = by_label[label]
+        class_area = sum(area for area, _ in members_in_class)
+        result[f"{label}.area"] = class_area
+        result[f"{label}.size"] = (100.0 * class_area / total_area) if total_area > 0.0 else 0.0
+        result[f"{label}.frequency"] = float(len(members_in_class))
+        result[f"{label}.shape"] = (
+            sum(shape for _, shape in members_in_class) / len(members_in_class)
+            if members_in_class
+            else 0.0
+        )
+    result["TOTAL.area"] = total_area
+    result["TOTAL.frequency"] = float(len(areas))
+    if account.attractor is not None:
+        label = labels[account.attractor]
+        result[f"{label}.attractor"] = 1.0
+    return result
+
+
+def load_patch_accounts(path: Path) -> tuple[PatchAccount, ...]:
+    """Load patch account definitions from YAML.
+
+    The file is a mapping with an ``accounts`` list; each entry has ``name``, ``criteria``,
+    and any of ``threshold``, ``size_classes``, and ``attractor``.
+
+    Parameters
+    ----------
+    path : Path
+        The YAML file.
+
+    Returns
+    -------
+    tuple of PatchAccount
+        The definitions.
+    """
+    import yaml
+
+    raw = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
+    entries = raw.get("accounts", []) if isinstance(raw, dict) else []
+    accounts: list[PatchAccount] = []
+    for entry in entries:
+        classes = tuple(float(value) for value in entry.get("size_classes", DEFAULT_SIZE_CLASSES))
+        accounts.append(
+            PatchAccount(
+                name=str(entry["name"]),
+                criteria=str(entry["criteria"]),
+                threshold=float(entry.get("threshold", 0.0)),
+                size_classes=classes,
+                attractor=entry.get("attractor"),
+            )
+        )
+    return tuple(accounts)
+
+
 @dataclass
 class PatchLedger:
     """Accumulate patch accounts over a run.

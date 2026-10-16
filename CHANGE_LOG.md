@@ -582,3 +582,12 @@ issue comments.
   So islands give better solutions faster (~1.2-1.7x fewer iterations, i.e. less wall-clock since
   they run in parallel) and a better best at the same wall-clock — modest here because the landscape
   is friendly (most seeds reach the same basin). Tests: `tests/test_watch.py`. Dashboard: **GREEN**.
+- P6.19 (feature): patch size-distribution targets. Patch accounts were reporting-only; the optimizer
+  can now score them. Since they are **non-additive** (a patch spans adjacent blocks), they are priced
+  by a new `PatchModel` (`ws4/opt/patch.py`): each block's criterion series is cached per chain
+  (`Simulator.block_criteria_series`), the adjacency is indexed by block, `patch_account_values_indexed`
+  drops the whole-edge scan (matching `patch_account_values` exactly), and a move recomputes only the
+  years it changes. `--patch-accounts` (YAML) with `--topology` enables targets on sub-accounts such as
+  `patch.harvest.50_150.area`. Measured on C5 (50-year, 5,648 blocks): full patch reset 2.1 s, then
+  **~13 iterations/s** with a patch target, and it optimizes (objective 12.9 -> 11.7 in 400
+  iterations). Tests: `tests/test_patch_objective.py`. Dashboard: **GREEN**.

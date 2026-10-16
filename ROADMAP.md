@@ -283,6 +283,7 @@ budget. Plan of record: `notes/design/ws4-performance.md`.
 - [x] P6.16 Live target-window watcher (#77)
 - [x] P6.17 Multi-rotation schedules in the optimizer (#78)
 - [x] P6.18 Move-based incremental objective (#79)
+- [x] P6.19 Patch size-distribution targets (#80)
 
 Deferred from P6, triaged in `notes/backlog.md`:
 

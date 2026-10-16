@@ -89,6 +89,27 @@ objective) stays current even between improvements.
              --account product.Yield.managed.Conif --period-width 10 --years 50 \
              --iterations 5000 --warm-start
 
+Patch size distribution
+-----------------------
+
+Patch accounts (the size distribution of connected patches of a criteria feature — see
+:doc:`spatial`) are **non-additive**: a patch spans adjacent blocks, so the move-based delta does not
+apply directly. Give ``--patch-accounts`` (a YAML of definitions) with ``--topology``, and set targets
+on the sub-accounts:
+
+.. code-block:: yaml
+
+   accounts:
+     - name: patch.harvest
+       criteria: feature.Seral.young
+       threshold: 0.5
+       size_classes: [5.0, 10.0, 50.0, 250.0, .inf]
+
+Targets then read ``patch.harvest.50_150.area``, ``…size``, ``…frequency``, or ``…shape``. Each
+block's criterion series is cached per chain, the adjacency is indexed by block, and a move recomputes
+only the years it changes, so a patch evaluation costs tens of milliseconds rather than a full
+re-simulation.
+
 Outputs
 -------
 

@@ -20,7 +20,7 @@ from typing import Any
 import pandas as pd
 
 from ..model.schema import dataset_reference
-from ..patch.accounts import load_patch_edges
+from ..patch.accounts import PatchAccount, load_patch_accounts, load_patch_edges
 from ..patch.constraints import core_area_penalty, schedule_years, spatial_penalty
 from ..patch.edge import EdgeElement, load_edge_elements
 from ..report import write_report
@@ -47,6 +47,7 @@ from .operators import (
     SwapOperator,
     ToggleOperator,
 )
+from .patch import PatchModel
 from .solvers import solve_ils, solve_sa, solve_sa_delta, solve_tabu
 from .telemetry import RunLogger
 
@@ -94,6 +95,7 @@ class OptimizeConfig:
     lns_weight: float = 0.2
     lns_destroy: float = 0.1
     warm_cache: bool = False
+    patch_accounts_path: str = ""
 
 
 class Optimizer:
@@ -119,6 +121,8 @@ class Optimizer:
         self._graph_cache: list[tuple[int, int, float]] | None = None
         self._edges_by_block_cache: dict[int, list[tuple[int, int, float]]] | None = None
         self._simulator_cache: Simulator | None = None
+        self._patch_cache: PatchModel | None = None
+        self._patch_accounts_cache: tuple[PatchAccount, ...] | None = None
         self._base_cache: dict[tuple[int, str], float] | None = None
         self._product_delta_cache: dict[
             tuple[int, Chain, tuple[str, ...]], dict[tuple[int, str], float]
@@ -301,6 +305,19 @@ class Optimizer:
         else:
             values = self._full_values(schedule, model, route_accounts, duplicate_accounts)
         self._last_values = values
+        patch = self.patch_model()
+        if patch is not None:
+            patch.reset(schedule)
+            rows = [
+                {"year": year, "account": account, "value": value}
+                for (year, account), value in patch.cell_map().items()
+            ]
+            if rows:
+                values = pd.concat(
+                    [values, pd.DataFrame(rows, columns=["year", "account", "value"])],
+                    ignore_index=True,
+                )
+                self._last_values = values
         return objective(values, targets) + self._spatial_penalty(frame)
 
     def last_account_values(self) -> pd.DataFrame:
@@ -319,6 +336,37 @@ class Optimizer:
         if self._last_values is None:
             return pd.DataFrame(columns=["year", "account", "value"])
         return self._last_values
+
+    def patch_accounts(self) -> tuple[PatchAccount, ...]:
+        """Return the configured patch accounts (empty when none).
+
+        Returns
+        -------
+        tuple of PatchAccount
+            The definitions.
+        """
+        if self._patch_cache is not None:
+            return self._patch_cache.accounts
+        if not self.cfg.patch_accounts_path:
+            return ()
+        if self._patch_accounts_cache is None:
+            self._patch_accounts_cache = load_patch_accounts(Path(self.cfg.patch_accounts_path))
+        return self._patch_accounts_cache
+
+    def patch_model(self) -> PatchModel | None:
+        """Return the patch model when patch accounts are configured, built once.
+
+        Returns
+        -------
+        PatchModel or None
+            The model, or None when no patch accounts are configured.
+        """
+        accounts = self.patch_accounts()
+        if not accounts:
+            return None
+        if self._patch_cache is None:
+            self._patch_cache = PatchModel(self, accounts)
+        return self._patch_cache
 
     def delta_evaluator(
         self, targets: Sequence[Target], extra_accounts: Sequence[str] = ()
@@ -347,7 +395,10 @@ class Optimizer:
             return None
         if route_accounts and (model is None or any(a.kind == "build" for a in route_accounts)):
             return None
-        return IncrementalObjective(self, targets, extra_accounts)
+        patch_accounts = self.patch_accounts()
+        if patch_accounts and not self.cfg.topology_path:
+            raise ValueError("patch accounts need a topology (set topology_path)")
+        return IncrementalObjective(self, targets, extra_accounts, patch_accounts)
 
     def _full_values(
         self,
