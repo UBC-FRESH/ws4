@@ -33,6 +33,7 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `design/ws4-incremental-route-accounts.md` — incremental route accounts in the objective (spike).
 - `design/ws4-construction.md` — faster simulator construction (spike).
 - `design/ws4-route-record.md` — faster route-record accumulation (spike).
+- `design/ws4-spatial-scoped.md` — adjacency-scoped spatial constraints (spike).
 - `adr/0001-fragment-compilation.md` — fragments are the compilation unit; blocks are a runtime aggregate.
 - `adr/0002-columnar-matrix-dataset.md` — the compiled dataset is versioned and columnar.
 - `adr/0003-spatial-structure-first-class.md` — spatial structure is part of the model.
