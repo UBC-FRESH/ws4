@@ -204,6 +204,19 @@ trajectories use the same table (with the `numpy.interp` fallback for a non-inte
 Two findings from the spike: an inefficient table build (per-curve masking) made construction slow
 until it was rewritten as one sort-and-slice; and `Simulator.reset` was invalidating the
 fragment-to-feature join on every call, so the empty-schedule simulate paid a 0.13 s rebuild —
-`reset` now invalidates only when the tracks actually changed. The **join rebuild (0.13 s)** is now the
-largest fixed cost of a cold simulate (separate from curves) and is the next cold-path candidate.
-Plan and full log: `notes/design/ws4-curve-grid.md`.
+`reset` now invalidates only when the tracks actually changed. Plan and full log:
+`notes/design/ws4-curve-grid.md`.
+
+### Fast fragment-to-feature join rebuild (`spike/join-rebuild`)
+
+The join rebuild that dominated the cold path used `np.unique` over ~210 k **string** labels. Since the
+features table never changes, its side of the join is now precomputed once (sorted feature rows with
+each curve's table row and label code), and a rebuild is a `searchsorted` plus a vectorized expansion.
+
+| Metric (C5) | Before | After |
+| --- | ---: | ---: |
+| One join rebuild | 0.127 s | **0.0045 s** (28×) |
+| Cold 30-year simulate | 0.299 s | **0.129 s** (2.3×) |
+| Warm 30-year simulate | 0.102 s | 0.096 s |
+
+Plan and log: `notes/design/ws4-join-rebuild.md`.
