@@ -18,6 +18,7 @@ from ws4.opt.watch import (
     WatchState,
     chart_cells,
     format_value,
+    period_label,
     period_totals,
     run_watch,
     target_window,
@@ -138,6 +139,12 @@ def test_last_account_values_exposes_the_evaluation(tmp_path: Path) -> None:
     values = optimizer.last_account_values()
     assert not values.empty
     assert "product.Volume" in {str(a) for a in values["account"]}
+
+
+def test_period_labels_start_at_one() -> None:
+    """Period 0 is the pre-simulation state, so simulated periods are numbered from 1."""
+    assert period_label(0) == "1"
+    assert period_label(4) == "5"
 
 
 def test_a_percentage_account_is_averaged_over_a_period() -> None:

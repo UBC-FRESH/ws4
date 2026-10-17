@@ -306,6 +306,25 @@ def target_window(
     )
 
 
+def period_label(period: int) -> str:
+    """Return the display label for an internal period index.
+
+    The established convention numbers the **instantaneous pre-simulation state period 0**, so the
+    first simulated period (the years ``0 .. period_width - 1``) is period **1**.
+
+    Parameters
+    ----------
+    period : int
+        The internal zero-based index of a simulated period.
+
+    Returns
+    -------
+    str
+        The display label.
+    """
+    return str(period + 1)
+
+
 def axis_maximum(window: TargetWindow) -> float:
     """Return a value-axis maximum that fits the realized values and the window."""
     candidates = [abs(value) for value in window.realized]
@@ -397,7 +416,7 @@ def chart_renderable(
     lines.append(axis)
     ticks = Text(" " * (label_width + 2))
     for period in range(window.n_periods):
-        ticks.append(f"{period:<{column_width}}", style="grey50")
+        ticks.append(f"{period_label(period):<{column_width}}", style="grey50")
     lines.append(ticks)
     return Group(*lines)
 
@@ -434,7 +453,7 @@ def window_table(window: TargetWindow, compact: bool = False) -> Table:
         status = statuses[period]
         style = {"ok": _OK, "below": _BELOW, "above": _ABOVE}[status]
         row = [
-            str(period),
+            period_label(period),
             "—" if low is None else format_value(low),
             format_value(window.realized[period]),
             "—" if high is None else format_value(high),
@@ -894,6 +913,7 @@ __all__ = [
     "chart_renderable",
     "format_value",
     "is_percentage",
+    "period_label",
     "period_totals",
     "render_frame",
     "run_watch",

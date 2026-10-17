@@ -826,3 +826,10 @@ issue comments.
   — the short horizon is higher because it can liquidate inventory with no terminal constraint. The
   finding is recorded in `notes/design/ws4-patch-evaluation-bottleneck.md`. No production change.
   Dashboard: **GREEN**.
+- P6.40 (fix): period indices are numbered as analysts expect. The watcher labelled the accounting
+  periods ``0..N-1``; the established convention reserves **period 0 for the instantaneous
+  pre-simulation state** of the forest (a zero-length period), so the simulated periods are ``1..N``.
+  `period_label` is now the single source of that mapping for the chart ticks and the period table, and
+  the objective documentation states the convention and that a target's `year` is a year, not a period
+  index — a target at `year: 0` with `period_width: 10` is the level for period 1, which covers years 0
+  to 9. Tests: `tests/test_watch.py`. Dashboard: **GREEN**.
