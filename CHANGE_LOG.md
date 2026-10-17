@@ -807,3 +807,9 @@ issue comments.
   documentation says plainly that an additive account is summed over its period while a patch account (a
   map snapshot) is read at the period's first year. Tests: `tests/test_optimizer.py`. Dashboard:
   **GREEN**.
+- P6.38 (feature): the watch windows sit side by side. `render_frame` laid the target windows out
+  vertically, so a volume window and a patch window could not be compared directly. They are now laid
+  out in `rich.columns.Columns` (which falls back to stacking by itself on a narrow console), and with
+  more than one window the per-period table drops its shortfall and excess columns so two of them fit
+  the width — that information is in the penalty in each window's title. `window_table` gained a
+  `compact` argument. Tests: `tests/test_watch.py`. Dashboard: **GREEN**.
