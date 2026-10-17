@@ -27,6 +27,14 @@ def test_penalty_weights_shortfall_and_excess() -> None:
     assert penalty(25.0, target) == 3.0 * 5.0
 
 
+def test_penalty_non_linear_squares_the_deviation() -> None:
+    """A non-linear target adds the weight times the squared deviation."""
+    target = Target("a", 0, minimum=10.0, min_weight=3.0, shape="non_linear")
+    assert penalty(7.0, target) == 3.0 * 3.0 * 3.0
+    with pytest.raises(ValueError, match="penalty shape"):
+        Target("a", 0, minimum=1.0, shape="cubic")
+
+
 def test_objective_sums_targets() -> None:
     """The objective sums the penalties over the targets."""
     values = pd.DataFrame({"year": [0, 0], "account": ["a", "b"], "value": [5.0, 100.0]})

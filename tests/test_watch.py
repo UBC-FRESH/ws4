@@ -15,6 +15,7 @@ from ws4.opt.engine import OptimizeConfig, Optimizer
 from ws4.opt.objective import Target, load_targets
 from ws4.opt.watch import (
     TargetWindow,
+    WatchState,
     chart_cells,
     format_value,
     period_totals,
@@ -137,6 +138,63 @@ def test_last_account_values_exposes_the_evaluation(tmp_path: Path) -> None:
     values = optimizer.last_account_values()
     assert not values.empty
     assert "product.Volume" in {str(a) for a in values["account"]}
+
+
+def test_a_watch_state_builds_one_window_per_account() -> None:
+    """Each watched account gets its own target window, not a summed one."""
+    state = WatchState(
+        label="a+b",
+        accounts=("a", "b"),
+        period_width=1,
+        years=2,
+        targets=(Target("a", 0, minimum=1.0), Target("b", 1, minimum=2.0)),
+    )
+    state.best_values = pd.DataFrame(
+        [
+            {"year": 0, "account": "a", "value": 1.0},
+            {"year": 1, "account": "b", "value": 3.0},
+        ]
+    )
+    windows = state.current_windows()
+    assert [window.account for window in windows] == ["a", "b"]
+    assert windows[0].realized == (1.0, 0.0)
+    assert windows[1].realized == (0.0, 3.0)
+    assert windows[0].total_penalty() == 0.0
+    assert windows[1].total_penalty() == 0.0
+
+
+def test_watch_command_shows_two_windows(tmp_path: Path) -> None:
+    """Repeating --account paints one window per account."""
+    dataset = _dataset(tmp_path)
+    targets = tmp_path / "two.yaml"
+    targets.write_text(
+        "targets:\n  - account: product.Volume\n    year: 0\n    minimum: 300\n",
+        encoding="utf-8",
+    )
+    result = CliRunner().invoke(
+        app,
+        [
+            "watch",
+            "--dataset",
+            str(dataset),
+            "--targets",
+            str(targets),
+            "--account",
+            "product.Volume",
+            "--account",
+            "feature.Volume",
+            "--years",
+            "2",
+            "--period-width",
+            "1",
+            "--iterations",
+            "3",
+            "--plain",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert "product.Volume" in result.output
+    assert "feature.Volume" in result.output
 
 
 def test_watch_command_prints_a_frame(tmp_path: Path) -> None:

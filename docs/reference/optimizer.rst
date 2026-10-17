@@ -92,11 +92,16 @@ final frame instead of a live view. The live view repaints on a fixed heartbeat
 (``--refresh`` seconds, default 2), independent of the search, so the header (iteration rate,
 objective) stays current even between improvements.
 
+Repeat ``--account`` to watch several accounts **side by side, one window each** — each with its own
+axis, title and penalty, so accounts with different units read correctly. That is how to see a volume
+target (m3 per period) and a patch size-class target (percent of patch area) converging together:
+
 .. code-block:: bash
 
    ws4 watch --dataset build/compiled --targets targets.yaml \
-             --account product.Yield.managed.Conif --period-width 10 --years 50 \
-             --iterations 5000 --warm-start
+             --account product.Yield.managed.Conif --account patch.harvest.10_50.size \
+             --period-width 10 --years 200 --iterations 5000 --warm-start \
+             --patch-accounts patches.yaml --topology topology.csv
 
 Patch size distribution
 -----------------------

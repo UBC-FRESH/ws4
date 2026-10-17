@@ -774,3 +774,10 @@ issue comments.
   zero large patches. Lesson recorded: pair a patch target with a volume constraint and report the patch
   term separately, or the operators will look better than they are. Tests:
   `tests/test_patch_objective.py`, `tests/test_operators.py`. Dashboard: **GREEN**.
+- P6.34 (feature): the watcher paints several target windows at once. `ws4 watch` accepted repeated
+  `--account` flags but **summed** them into a single window, which is useless when the accounts have
+  different units (m3 per period and percent of patch area). Each `--account` now gets its own window,
+  with its own axis, title and penalty, so a volume target and a patch size-class target can be watched
+  converging side by side — the view an analyst uses to see that the search is working and how fast.
+  `WatchState.window` became `windows`, and the summary `penalty` is summed across them. Tests:
+  `tests/test_watch.py` (one window per account; the CLI shows both). Dashboard: **GREEN**.
