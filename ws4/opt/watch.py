@@ -24,6 +24,7 @@ from queue import Empty
 from typing import TYPE_CHECKING, Any
 
 import pandas as pd
+from rich.columns import Columns
 from rich.console import Console, Group, RenderableType
 from rich.live import Live
 from rich.panel import Panel
@@ -401,25 +402,47 @@ def chart_renderable(
     return Group(*lines)
 
 
-def window_table(window: TargetWindow) -> Table:
-    """Render the window's exact values as a table."""
+def window_table(window: TargetWindow, compact: bool = False) -> Table:
+    """Render the window's exact values as a table.
+
+    Parameters
+    ----------
+    window : TargetWindow
+        The realized values and window.
+    compact : bool, optional
+        Drop the shortfall and excess columns, so several windows can share the width.
+        Defaults to False.
+
+    Returns
+    -------
+    rich.table.Table
+        The table, ready to print.
+    """
     table = Table(title=f"{window.account} — per {window.period_width}-year period", box=None)
-    for column in ("period", "min", "realized", "max", "shortfall", "excess", "status"):
+    columns = ["period", "min", "realized", "max"]
+    if not compact:
+        columns += ["shortfall", "excess"]
+    columns.append("status")
+    for column in columns:
         table.add_column(column, justify="right")
+    statuses = window.statuses()
+    shortfalls = window.shortfalls()
+    excesses = window.excesses()
     for period in range(window.n_periods):
         low = window.minimum[period]
         high = window.maximum[period]
-        status = window.statuses()[period]
+        status = statuses[period]
         style = {"ok": _OK, "below": _BELOW, "above": _ABOVE}[status]
-        table.add_row(
+        row = [
             str(period),
             "—" if low is None else format_value(low),
             format_value(window.realized[period]),
             "—" if high is None else format_value(high),
-            format_value(window.shortfalls()[period]),
-            format_value(window.excesses()[period]),
-            f"[{style}]{status}[/]",
-        )
+        ]
+        if not compact:
+            row += [format_value(shortfalls[period]), format_value(excesses[period])]
+        row.append(f"[{style}]{status}[/]")
+        table.add_row(*row)
     return table
 
 
@@ -485,21 +508,24 @@ class WatchState:
 
 
 def render_frame(state: WatchState, optimizer: Optimizer, elapsed: float) -> RenderableType:
-    """Render one frame: header, then one target window per watched account."""
+    """Render one frame: header, then the target windows side by side."""
     windows = state.windows if state.windows else state.current_windows()
-    parts: list[RenderableType] = [_header(state, optimizer, elapsed)]
+    compact = len(windows) > 1
+    panels: list[RenderableType] = []
     for window in windows:
-        parts.append(Text(""))
-        parts.append(
-            Text(
-                f"{window.account}   penalty {format_value(window.total_penalty())}",
-                style="bold",
+        panels.append(
+            Group(
+                Text(
+                    f"{window.account}   penalty {format_value(window.total_penalty())}",
+                    style="bold",
+                ),
+                chart_renderable(window),
+                Text(""),
+                window_table(window, compact=compact),
             )
         )
-        parts.append(chart_renderable(window))
-        parts.append(Text(""))
-        parts.append(window_table(window))
-    return Group(*parts)
+    body: RenderableType = Columns(panels, expand=True) if panels else Text("")
+    return Group(_header(state, optimizer, elapsed), Text(""), body)
 
 
 def _header(state: WatchState, optimizer: Optimizer, elapsed: float) -> Panel:
