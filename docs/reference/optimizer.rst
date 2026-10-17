@@ -75,19 +75,45 @@ the same account sets the level.
        maximum: 0
        min_weight: 1.0
 
-``flow.even`` is the **percent difference of each period from a reference period**,
-``sum(|100 * (x_p - x_ref) / x_ref|)``, where the reference is the **final period of the window**
-unless ``flow_reference`` names another (the first year of the period to use). ``flow.ndy`` is the
-**percent change between consecutive periods**, ``100 * (x_p - x_{p-1}) / x_{p-1}``, counting only the
-declines. ``flow_start`` and ``flow_end`` (in years) clip the window, defaulting to the whole horizon,
-and ``period_width`` groups the years. Both aggregate whole periods, so they are period-level terms
-rather than per-year cells.
+``flow.even`` gives each period its **percent difference from a reference period**,
+``100 * (x_p - x_ref) / x_ref``, where the reference is the **final period of the window** unless
+``flow_reference`` names another (the first year of the period to use); the reference period itself
+contributes no value. ``flow.ndy`` gives each period the **percent change from the one before it**,
+``100 * (x_p - x_{p-1}) / x_{p-1}``. ``flow_start`` and ``flow_end`` (in years) clip the window,
+defaulting to the whole horizon, and ``period_width`` groups the years.
 
-Because both divide by a balance, the term is **infinite while that balance is zero** — for ``even``
-the reference period, for ``ndy`` every period a comparison starts from. That is definitional, and it
-is why a flow account is switched on only *after* the reference period is primed: run first with a
-linear volume target above the sustainable level (weight 1), so that every period carries wood, and
-then add the flow target.
+The target's minimum, maximum, weights and shape are applied **period by period**, so
+``minimum: -1`` with ``maximum: 1`` is a one-percent-either-way safe band that the scheduler is free
+to move inside:
+
+.. code-block:: yaml
+
+   targets:
+     # pull the level up; a minimum only, so it never pins the level
+     - account: product.Yield.managed.Conif
+       year: 0
+       minimum: 2000000
+       period_width: 10
+     # hold the profile flat: +-1% of the final period, and far from free outside that
+     - account: product.Yield.managed.Conif
+       year: 0
+       flow: even
+       period_width: 10
+       minimum: -1
+       maximum: 1
+       min_weight: 10000
+       max_weight: 10000
+       shape: non_linear
+
+That pairing is the useful idiom: the band constrains only the *shape*, the minimum target pulls the
+level up, and the pair converges on the **highest even-flow level** the forest can sustain without the
+level ever being specified — so the same two targets work across scenarios.
+
+Because both flow kinds divide by a balance, the term is **infinite while that balance is zero** — for
+``even`` the reference period, for ``ndy`` every period a comparison starts from. That is definitional,
+which is why a flow account is switched on only *after* the reference period is primed: run first with
+a linear volume minimum above the sustainable level so that every period carries wood, then add the
+flow target. `run_watch` takes an ``initial`` schedule for exactly that: continue from the primed run.
 
 The weights file is accepted by the command line and the configuration. The spatial constraints add a
 weighted penalty to the objective (see :doc:`spatial`): a maximum opening size, a green-up interval,

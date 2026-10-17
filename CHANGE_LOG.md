@@ -858,3 +858,16 @@ issue comments.
   schedule the term is `inf`; primed it is 102.02 with per-period volumes 1.504 / 1.501 / 1.535 / 1.704
   / 2.095; with the flow term switched on it falls to **0.00** and the volumes become 1.708 in every
   period. Tests: `tests/test_flow_targets.py`. Dashboard: **GREEN**.
+- P6.43 (fix): flow targets are priced **per period**. P6.42 summed a flow target's percent values
+  and applied the band once to the sum, which made a `minimum: -1` / `maximum: 1` band meaningless —
+  nineteen periods of +1% would sum well past 1. The values are now one per period and the target's
+  minimum, maximum, weights and shape apply period by period, which is what makes a
+  one-percent-either-way safe band work. Two display bugs fell out of the same area: the watcher's
+  `Z +` breakdown used the additive pricing for a flow target (printing absurd contributions such as
+  `1.16e+07G`) and the account window merged a flow band into the account's *level* window (a `max 1`
+  column) — a flow target is a percent term, not an account level, so the window now skips it. Verified
+  on C5 (50 years): a 2M linear minimum plus a +-1% band at weight 10000 non-linear converges from a
+  ragged primed profile (2.001 / 0.598 / 1.066 / 1.426 / 1.893 M m3) to
+  2.00 / 1.96 / 1.97 / 1.97 / 1.98 — every period inside the band, and the level found without being
+  specified. `run_watch` also gained an `initial` schedule so a flow run can continue from its primed
+  predecessor. Tests: `tests/test_flow_targets.py`, `tests/test_watch.py`. Dashboard: **GREEN**.

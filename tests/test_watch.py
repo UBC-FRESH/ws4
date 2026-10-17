@@ -141,6 +141,16 @@ def test_last_account_values_exposes_the_evaluation(tmp_path: Path) -> None:
     assert "product.Volume" in {str(a) for a in values["account"]}
 
 
+def test_a_flow_target_does_not_change_the_account_window() -> None:
+    """A flow target is a percent term, not an account level, so the window ignores it."""
+    values = pd.DataFrame([{"year": 0, "account": "a", "value": 5.0}])
+    level = Target("a", 0, minimum=1.0)
+    flow = Target("a", 0, flow="even", minimum=-1.0, maximum=1.0, min_weight=10.0)
+    window = target_window(values, [level, flow], ("a",), 1, 1)
+    assert window.minimum == (1.0,)
+    assert window.maximum == (None,)
+
+
 def test_period_labels_start_at_one() -> None:
     """Period 0 is the pre-simulation state, so simulated periods are numbered from 1."""
     assert period_label(0) == "1"
