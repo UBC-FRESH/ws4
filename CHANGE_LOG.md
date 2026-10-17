@@ -913,3 +913,29 @@ issue comments.
   Tests: `tests/test_doc_audit.py` makes each code fire on a fixture (`MISSING`, `PARAMS`, `STALE`,
   `RETURNS`, `SECTION`, `IMPORT`) and asserts the real scope clean, so the gate cannot pass by checking
   nothing. Dashboard: **GREEN** (seven gates).
+- P6.46 (verify): the flow definitions, checked against the established specification instead of
+  inferred. P6.41–P6.43 chose the formulas from the first-party call signatures, which defer the
+  arithmetic to an API document that was not available; that document is in the extract after all, and
+  it settles every open question. `even()` compares **every period with the final one** (period 0, the
+  state before the simulation, is not compared), and `ndy(low, high, offset)` compares a selected
+  period with the period at that offset — the sample scenario uses offset `-1` over its last periods,
+  so the denominator is the **previous period**, which is what ws4 already did. The accounts are
+  created with a factor of **100**, so the values are percentages, which is also what ws4 did. Two
+  things were wrong, one behavioural and one documentary:
+  **behaviour**, the established window includes its first period, which is measured against the period
+  immediately before the window; ws4 skipped that comparison when the window did not start at the
+  horizon, so the first year of a closing-inventory window was unconstrained. `flow_values` now seeds
+  a non-declining series one period earlier, and a window starting at year 0 still has no predecessor
+  and so contributes no value for its first period.
+  **documentation**, the reference's non-declining example set `maximum: 0`, which charges growth as
+  well as decline. The idiom is a **two-sided percent band**: the value is the percent change from the
+  previous period, so a minimum of `-1` lets a period come in one percent below its predecessor before
+  anything is charged and a maximum of `1` mirrors it, the lower side being the one that usually maps
+  to a policy; the strict closing-inventory form is a minimum of `0` with **no maximum**, which is what
+  the first-party sample does, so growth is free there. The reference now states the verified
+  correspondence, both idioms, and the one presentational difference — `flow_end` is exclusive here
+  while the established argument is inclusive.
+  Tests: `tests/test_flow_targets.py` gains the window's first period compared with the period before
+  it, a window starting at the horizon having no predecessor, and a two-sided band tolerating a
+  percent either way while charging what falls outside it; the idiom test pins that a maximum would
+  charge growth. Dashboard: **GREEN**.

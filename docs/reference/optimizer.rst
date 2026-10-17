@@ -64,16 +64,19 @@ the same account sets the level.
        maximum: 0
        min_weight: 0.001
        max_weight: 0.001
-     # non-declining yield over the final periods
+     # non-declining yield over the final periods: a period may fall 1% below the one before it,
+     # and rise 1% above it, before a penalty is charged. A minimum of 0 instead of -1 allows no
+     # decline at all, and leaving the maximum out makes growth free.
      - account: product.Yield.managed.Conif
        year: 0
        flow: ndy
        period_width: 10
        flow_start: 150
        flow_end: 200
-       minimum: 0
-       maximum: 0
+       minimum: -1
+       maximum: 1
        min_weight: 1.0
+       max_weight: 1.0
 
 ``flow.even`` gives each period its **percent difference from a reference period**,
 ``100 * (x_p - x_ref) / x_ref``, where the reference is the **final period of the window** unless
@@ -81,6 +84,32 @@ the same account sets the level.
 contributes no value. ``flow.ndy`` gives each period the **percent change from the one before it**,
 ``100 * (x_p - x_{p-1}) / x_{p-1}``. ``flow_start`` and ``flow_end`` (in years) clip the window,
 defaulting to the whole horizon, and ``period_width`` groups the years.
+
+Both definitions were checked against the established implementation: its specification describes
+comparing every period with the final one for even flow and comparing a selected period with an
+offset period — the previous one for a closing inventory — and its sample scenario makes exactly
+those two calls. The account is created with a factor of 100, so the values are **percentages**, and
+period 0, the state before the simulation starts, is not compared. Two idioms follow from that and
+are worth copying:
+
+- **The two sides are independent, and each one is a policy.** For non-declining yield the value is
+  the percent change from the previous period, so ``minimum: -1`` lets a period come in one percent
+  below its predecessor before anything is charged, and ``maximum: 1`` mirrors it by letting a period
+  come in one percent above. Setting only the minimum is the common case, because the decline is what
+  a policy usually constrains, but the upper side is available when a case wants it. ``even`` reads
+  the same way, a percent either side of its reference period.
+- **A strict non-declining target is a minimum of zero with no maximum.** That is what the sample
+  scenario does for a closing inventory: no decline from the period before is tolerated at all, and
+  growth is free because nothing constrains the upper side. Adding a maximum there would charge the
+  growth as well.
+- **Every period of a non-declining window is compared, including the first**, which is measured
+  against the period immediately before the window. An even-flow window compares to its reference
+  instead, so its first period is an ordinary member of the band. A window that starts at year 0 has
+  no period before it, so its first period contributes no value.
+
+One difference is presentational: ``flow_end`` is **exclusive** here, while the established argument
+names the last period to compare **inclusively**. A ten-period window that ends at year 200 is
+``flow_end: 200`` here and a final period of 190 there.
 
 The target's minimum, maximum, weights and shape are applied **period by period**, so
 ``minimum: -1`` with ``maximum: 1`` is a one-percent-either-way safe band that the scheduler is free

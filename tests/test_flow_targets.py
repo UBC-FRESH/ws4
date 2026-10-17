@@ -60,6 +60,48 @@ def test_ndy_values_are_the_change_between_consecutive_periods() -> None:
     non_declining = Target("a", 0, period_width=1, flow="ndy", minimum=0.0, min_weight=1.0)
     assert flow_penalty(rising, non_declining, 3) == 0.0
     assert flow_penalty(falling, non_declining, 3) == pytest.approx(100 / 3 + 50.0)
+    # growth is free because the idiom sets a minimum and no maximum; a maximum would charge it
+    capped = Target(
+        "a", 0, period_width=1, flow="ndy", minimum=0.0, maximum=0.0, min_weight=1.0, max_weight=1.0
+    )
+    assert flow_penalty(rising, capped, 3) == pytest.approx(150.0)
+
+
+def test_ndy_compares_the_first_period_of_the_window_with_the_one_before_it() -> None:
+    """A window includes its first period, which compares with the period before the window."""
+    index = {(year, "a"): float(10 - year) for year in range(6)}  # 10 9 8 7 6 5
+    late = Target("a", 0, period_width=1, flow="ndy", flow_start=2, flow_end=6)
+    # periods 2, 3, 4 and 5, each against the one before it: 8/9, 7/8, 6/7, 5/6
+    assert flow_values(index, late, 6) == pytest.approx(
+        [100 * (8 - 9) / 9, 100 * (7 - 8) / 8, 100 * (6 - 7) / 7, 100 * (5 - 6) / 6]
+    )
+
+
+def test_ndy_starting_at_the_horizon_has_no_period_before_it() -> None:
+    """No pre-simulation period exists, so the window's first period contributes nothing."""
+    index = {(year, "a"): float(year + 1) for year in range(4)}  # 1 2 3 4
+    target = Target("a", 0, period_width=1, flow="ndy", flow_start=0, flow_end=4)
+    assert flow_values(index, target, 4) == pytest.approx([100.0, 50.0, 100 / 3])
+
+
+def test_ndy_tolerates_a_percent_either_way_inside_a_two_sided_band() -> None:
+    """A minimum of -1 tolerates a one-percent decline; a maximum of 1 tolerates a rise."""
+    band = Target(
+        "a",
+        0,
+        period_width=1,
+        flow="ndy",
+        minimum=-1.0,
+        maximum=1.0,
+        min_weight=1.0,
+        max_weight=1.0,
+    )
+    inside = {(0, "a"): 100.0, (1, "a"): 99.1, (2, "a"): 99.9}  # -0.9% then +0.8%
+    assert flow_values(inside, band, 3) == pytest.approx([-0.9, 100 * 0.8 / 99.1])
+    assert flow_penalty(inside, band, 3) == 0.0
+    outside = {(0, "a"): 100.0, (1, "a"): 97.0, (2, "a"): 99.0}  # -3% then +2.06%
+    assert flow_values(outside, band, 3) == pytest.approx([-3.0, 100 * 2 / 97])
+    assert flow_penalty(outside, band, 3) == pytest.approx(2.0 + (100 * 2 / 97 - 1.0))
 
 
 def test_a_flow_term_groups_and_clips_its_window() -> None:

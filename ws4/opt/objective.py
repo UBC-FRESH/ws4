@@ -140,7 +140,8 @@ def flow_values(
       default, or ``flow_reference`` (the first year of the period to use), and it contributes no
       value of its own.
     * ``ndy`` (non-declining yield) is the **percent change between consecutive periods**:
-      ``100 * (x_p - x_{p-1}) / x_{p-1}``, starting from the second period of the window.
+      ``100 * (x_p - x_{p-1}) / x_{p-1}``. Every period in the window is compared, the first of
+      them with the period immediately before the window when one exists.
 
     Both divide by a balance that can be zero, in which case every period that depends on it is
     infinite. A run primes that balance first, for example with a linear volume target above the
@@ -166,9 +167,14 @@ def flow_values(
     width = max(1, target.period_width)
     stop = target.flow_end if target.flow_end is not None else years
     account = target.account
+    first = target.flow_start
+    if target.flow == "ndy" and first >= width:
+        # A non-declining window includes its first period, which compares with the period before
+        # the window, so the series starts one period earlier than the window does.
+        first -= width
     periods: list[float] = []
     starts: list[int] = []
-    for begin in range(target.flow_start, stop, width):
+    for begin in range(first, stop, width):
         total = 0.0
         for year in range(begin, min(begin + width, stop)):
             cell = (year, account)
@@ -214,8 +220,10 @@ def flow_penalty(
     """Return a flow target's penalty: each period's percent value, priced by the target.
 
     The target's minimum, maximum, weights and shape are applied **per period**, so a band of
-    ``minimum: -1`` and ``maximum: 1`` gives every period a one-percent-either-way safe range and
-    charges only what falls outside it.
+    ``minimum: -1`` and ``maximum: 1`` is a one-percent-either-way safe range: around the reference
+    period for ``even``, and around the previous period for ``ndy``, where a minimum of ``-1``
+    tolerates a one-percent decline and a maximum of ``1`` tolerates a one-percent rise. Either side
+    may be left out; with only a minimum, growth is free.
 
     Parameters
     ----------
