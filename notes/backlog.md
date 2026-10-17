@@ -188,8 +188,11 @@ items are enhancements and maintenance.
 - **Command-line gaps found while writing the user docs.** `done` (P7.1, #83). `--weights` is optional
   and documented as accepted-for-compatibility, and `ws4 optimize` takes `--iterations`. Applying a
   per-account factor file is a capability worth having only if a study asks for it; it is not.
-- **`threads` is documented but not applied.** `open` (P7.2, #84). `OptimizeConfig.threads` claims to
-  set BLAS and worker threads; nothing reads it, and the CLI passes its value to `workers`. Target: P7.
+- **Island scaling past 8 islands.** `open`. The limit is contention rather than BLAS oversubscription
+  (P7.2 measured both: pinning the pools changes nothing, and the same 32-island configuration ran at
+  13x to 16x while the host's load moved between 4 and 65). A candidate cause worth measuring is the
+  per-process copies of the dataset and the patch state; a shared or mmapped dataset would cut the
+  memory traffic that the 32 processes contend for. Target: after P7.
 - **`Optimizer.last_account_values()` after a `run`.** `open` (P7.5, #87). The incremental search path
   does not populate it, so a script that calls `run` and then reads it gets an empty frame; the run's
   own `account_values.csv` is the reliable source. Target: P7.

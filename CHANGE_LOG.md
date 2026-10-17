@@ -1023,3 +1023,22 @@ issue comments.
   is honoured in `summary.json`, a weights file is still accepted, and the help marks only the dataset,
   the targets and the output as required. The notebook gallery, the docs and the example commands were
   re-run. Dashboard: **GREEN** (seven gates).
+- P7.2 (fix): apply the `threads` setting, and re-measure the island scaling with it in place.
+  `OptimizeConfig.threads` was documented as the number of BLAS and worker threads and read by nothing;
+  it is now applied wherever an optimizer is built, which covers the parent and every worker process.
+  Two mechanisms are needed because the obvious one does not work: the environment variables cover
+  libraries loaded later and are inherited by children, but a **forked worker inherits its parent's
+  already-initialised BLAS**, so setting them in the child is too late; `threadpoolctl` retunes the
+  pools already loaded in the process, which is what pins a worker. It joins the `opt` extra and
+  `requirements-dev.txt`; without it the environment is still set and the configuration still records
+  the request. The default of one thread per process is measured, not assumed: a single island ran at
+  1 037 iterations/s with one thread and 1 033 with eight, and 32 islands ran at 13 660 and 14 385
+  pinned against 12 318 and 15 877 unpinned, so BLAS parallelism neither helps nor hurts the search
+  and a pool of one-thread processes cannot oversubscribe the machine. **The scaling limit is not
+  BLAS**: the same 32-island configuration reaches 13x to 16x while the host's load average moved
+  between 4 and 65 during the session, so the criterion stays "met with a stated limit" — now with the
+  limit diagnosed, both tables carrying the load they were taken at, and a follow-up recorded for a
+  shared or mmapped dataset to cut the memory traffic the processes contend for. `threads` also has a
+  CLI help string and a docstring that say what it does. Tests: `tests/test_optimizer.py` adds two —
+  the setting limits the pools and the environment of the process it runs in, and the default is one
+  thread per process. Dashboard: **GREEN** (seven gates).

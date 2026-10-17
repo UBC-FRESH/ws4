@@ -17,19 +17,19 @@ segments; a 72-core host):
      - Achieved
    * - C5 30-year ``simulate``
      - < 1 s
-     - ~0.1 s (warm) / ~0.3 s (cold)
+     - ~0.11 s (cold, 16 174 fragments)
    * - C5 3-year ``simulate`` + routing (300 blocks)
      - < 5 s
-     - ~3.9 s
+     - ~0.69 s
    * - Patch accounts / edge contrast / core area, per year
      - < 0.2 s
-     - ~0.07 s
-   * - One optimizer objective evaluation
+     - 29 / 39 / 31 ms, amortised over 30 years; a single cold year adds ~0.3 s of setup
+   * - One optimizer move (the incremental evaluation)
      - < 50 ms
-     - ~7 ms
-   * - One optimizer move with patch targets (200 y, 20 periods)
-     - —
-     - ~3 ms (62 → 310 iterations/s)
+     - ~0.003 ms against a volume target, ~1 ms per iteration on a binding volume-plus-patch workload
+   * - Island throughput at 8 / 32 islands
+     - near-linear
+     - 5.0k / 14k iterations/s (4.7x / 13x in one run, up to 15.9k and 16x in another)
 
 The incremental objective
 -------------------------
@@ -46,6 +46,27 @@ through a patch model instead (a move touches only the components near the moved
 simulation is annual while the accounting is periodic, the patch statistics are maintained only at
 the years a patch target reads — the first year of its period — which is what took the patch
 benchmark from 62 to 310 iterations/s.
+
+Threads and scaling
+-------------------
+
+``OptimizeConfig.threads`` is the number of BLAS threads **each process** may use, and on the command
+line ``--threads`` also sets the number of worker processes. It is applied where an optimizer is
+built, which covers the parent and every worker process: the environment variables are set for
+libraries loaded later and inherited by children, and ``threadpoolctl`` (installed with the ``opt``
+extra) retunes the pools already loaded in the process — needed because a forked worker inherits its
+parent's initialised BLAS, so the environment alone cannot reach it.
+
+The default is one thread per process. Measured on the C5-class binding workload (a volume floor plus
+a patch ramp, 4 000 iterations per island), BLAS parallelism buys the search nothing: one island ran
+at 1 037 iterations/s with one thread and 1 033 with eight, and 32 islands ran at 13 660 / 14 385
+iterations/s pinned against 12 318 / 15 877 unpinned — overlapping, so the difference is noise.
+
+Parallelism is **process-level**, and the island model is the lever: independent islands, elite
+migration between episodes, a deterministic result for a given seed. What limits it is not the BLAS
+pools but contention on the host: the same 32-island run measured 13x to 16x across rounds while the
+machine's load average moved between 4 and 65, so a scaling figure is only meaningful with the load
+it was taken at.
 
 Reproduce
 ---------

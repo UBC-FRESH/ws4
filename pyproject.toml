@@ -34,7 +34,7 @@ dependencies = [
 
 [project.optional-dependencies]
 geo = ["geopandas>=0.14", "pyogrio>=0.9", "shapely>=2.0", "rtree>=1.0"]
-opt = ["numba>=0.59", "networkx>=3.2", "ray>=2.9", "scipy>=1.11"]
+opt = ["numba>=0.59", "networkx>=3.2", "ray>=2.9", "scipy>=1.11", "threadpoolctl>=3.1"]
 
 [project.urls]
 Homepage = "https://github.com/UBC-FRESH/ws4"
@@ -85,6 +85,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["scipy", "scipy.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["threadpoolctl", "threadpoolctl.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

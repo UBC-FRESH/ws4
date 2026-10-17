@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -564,3 +565,31 @@ def test_optimize_command_records_a_mip_bound(tmp_path: Path) -> None:
     summary = json.loads((out / "summary.json").read_text(encoding="utf-8"))
     assert summary["bound_status"] == "optimal"
     assert summary["gap"] >= 0.0
+
+
+def test_the_thread_setting_pins_the_process_it_runs_in(tmp_path: Path) -> None:
+    """``threads`` limits the BLAS pools and the environment, not only the configuration.
+
+    A forked worker inherits its parent's already-initialised BLAS, so the environment alone cannot
+    reach it; the pools loaded in this process are retuned as well.
+    """
+    optimizer = Optimizer.from_dataset(
+        tmp_path / "unused", OptimizeConfig(years=1, iterations=0, threads=2)
+    )
+
+    assert optimizer.cfg.threads == 2
+    assert os.environ["OMP_NUM_THREADS"] == "2"
+    assert os.environ["OPENBLAS_NUM_THREADS"] == "2"
+    assert os.environ["MKL_NUM_THREADS"] == "2"
+
+    threadpoolctl = pytest.importorskip("threadpoolctl")
+    pools = [pool for pool in threadpoolctl.threadpool_info() if "num_threads" in pool]
+    assert pools, "expected at least one discoverable thread pool in this environment"
+    assert all(pool["num_threads"] == 2 for pool in pools)
+
+
+def test_the_default_thread_setting_is_one_per_process(tmp_path: Path) -> None:
+    """One BLAS thread per process is the default, so a pool of workers does not oversubscribe."""
+    Optimizer.from_dataset(tmp_path / "unused", OptimizeConfig(years=1, iterations=0))
+
+    assert os.environ["OMP_NUM_THREADS"] == "1"
