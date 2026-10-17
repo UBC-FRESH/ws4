@@ -12,6 +12,7 @@ block's own chain), and the adjacency is indexed by block.
 
 from __future__ import annotations
 
+import random
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -61,6 +62,7 @@ class PatchModel:
         self.labels = sorted({account.criteria for account in self.accounts})
         self._series: dict[tuple[int, Chain], dict[str, dict[int, float]]] = {}
         self.assignments: Schedule = {}
+        self.focus_years: tuple[int, ...] = ()
         self.states: dict[tuple[GroupKey, int], PatchGroupYear] = {}
         self.values: dict[int, dict[str, float]] = {}
         self._undo_values: dict[int, dict[str, float]] = {}
@@ -201,6 +203,72 @@ class PatchModel:
             new_values = {block: series_by_block[block][label].get(year, 0.0) for block in changed}
             state.rebuild_local(changed, new_values)
         return self._cells(year)
+
+    def set_focus_years(self, years: Sequence[int]) -> None:
+        """Record the years the objective reads, so gap moves target them.
+
+        Parameters
+        ----------
+        years : sequence of int
+            The years the targets are accounted in.
+        """
+        self.focus_years = tuple(sorted(set(years)))
+
+    def value(self, block: int, chain: Chain | None, label: str, year: int) -> float:
+        """Return a block's criterion value in a year under a chain (None is untreated).
+
+        Parameters
+        ----------
+        block : int
+            The block.
+        chain : tuple or None
+            The treatment chain, or None for an untreated block.
+        label : str
+            The criterion feature label.
+        year : int
+            The year.
+
+        Returns
+        -------
+        float
+            The criterion value.
+        """
+        return self._value(block, chain, label, year)
+
+    def find_gap(
+        self, year: int, rng: random.Random, *, samples: int = 8
+    ) -> tuple[int, str, float] | None:
+        """Return ``(block, label, threshold)`` for a gap in ``year``, or None.
+
+        A gap is a non-member block whose member-neighbours span two or more components, so treating
+        it would join those patches. Sampling a few blocks keeps a proposal O(1) rather than a scan
+        of the whole forest.
+
+        Parameters
+        ----------
+        year : int
+            The year to look in.
+        rng : random.Random
+            The random source.
+        samples : int, optional
+            The number of blocks to test. Defaults to 8.
+
+        Returns
+        -------
+        tuple of (int, str, float) or None
+            The gap block, the criterion label, and the threshold, or None if none was found.
+        """
+        if not self.groups or not self.blocks:
+            return None
+        for key in self.groups:
+            label, threshold, _ = key
+            state = self._state(key, year)
+            blocks = state.blocks
+            for _ in range(samples):
+                block = blocks[rng.randrange(len(blocks))]
+                if state.is_gap(state.index[block]):
+                    return block, label, threshold
+        return None
 
     def pending(self, changed: Sequence[int], schedule: Schedule) -> dict[Cell, float]:
         """Apply a move to the states and return the patch-cell change.

@@ -208,6 +208,30 @@ Phase timers on the default configuration, after all of the above (600 iteration
 The connectivity walks are no longer a measurable cost — compiling them worked. What is left is the
 bulk relabel's own bookkeeping and the criterion series.
 
+## Quality, at last
+
+Every performance number in this note above was measured against a target satisfied at iteration 0
+(`objective=0.000`) — overhead on a solved problem, not the cost of optimising patches. With a binding
+target (`patch.harvest.0_5.frequency <= 60`, year 0) the search drives the penalty from 88 into the
+low 20s over 4,000 iterations, so it does optimise patches.
+
+Added the **gap/merge operator** (`--merge-weight`, default 0). A *gap* is a non-member block whose
+member-neighbours span two or more components — the negative space between proximal patches; adding it
+would join them. `is_gap` is `O(degree)` and needs no incremental index (the operator samples blocks),
+and `PatchModel.focus_years` records the years the objective reads so the move targets one of them
+rather than a random year (that distinction was worth most of the operator's effect).
+
+Over five seeds at 4,000 iterations, weight 0.5 against 0.0:
+
+| | final penalty (mean of 5) | iteration rate |
+| --- | ---: | ---: |
+| without | 16.4 | 56-69/s |
+| with merge | **14.6** | 67-77/s |
+
+Three seeds improve, one ties, one worsens. The rate rises because a merge move is a single block and
+displaces expensive LNS moves. It is opt-in and not yet a clear win — the next step is to target the
+*class* the objective cares about (and the split side of the same idea) rather than any gap.
+
 ## The compiled kernel: measured on realistic components
 
 The first prototype measured a full relabel of the old 4,273-block blob and reported 41x. That is not
@@ -333,10 +357,9 @@ Ordered by value over risk.
    component's spanning tree repaired, which is a full component BFS, and the walks are compiled now
    anyway. At or below the ~50% break-even, with a repair cost of the same order as the walk it
    replaces, it does not pay. Recorded so nobody has to re-derive it.
-4. **Articulation- and gap-targeted operators**: maintain the negative-space (merge) set incrementally;
-   add a `SplitOperator` that detaches a cut vertex and a `MergeOperator` that treats a
-   negative-space block (plus its neighbourhood). These change *which* moves are proposed, so they help
-   solution quality per move as well as cost.
+4. **Articulation- and gap-targeted operators**: the merge side is in (`MergeOperator`, `is_gap`,
+   `focus_years`); it needs to target the *class* the objective scores, not any gap, and the split
+   side (`reachable_from` already identifies articulation detaches exactly) is not built yet.
 5. **Consider excluding LNS, or making its destroy set spatially coherent**, for patch targets. LNS
    is what the compiled path is for, and buys about 0.8 objective units on the sample problem; a
    k-hop-ball destroy set would shrink the affected components further.

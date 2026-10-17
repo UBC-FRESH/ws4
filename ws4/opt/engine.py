@@ -42,6 +42,7 @@ from .operators import (
     Chain,
     ClusterOperator,
     LnsOperator,
+    MergeOperator,
     OperatorRegistry,
     Schedule,
     ShiftOperator,
@@ -101,6 +102,7 @@ class OptimizeConfig:
     cluster_size: int = 8
     warm_cache: bool = False
     patch_accounts_path: str = ""
+    merge_weight: float = 0.0
 
     def __post_init__(self) -> None:
         """Reject an unknown temperature schedule before the search starts."""
@@ -128,6 +130,7 @@ class Optimizer:
                     size=cfg.cluster_size,
                     neighbours=self._neighbours() if cfg.cluster_weight > 0.0 else {},
                 ),
+                MergeOperator(self, weight=cfg.merge_weight),
             ]
         )
         self._block_area_cache: dict[int, float] | None = None
@@ -137,6 +140,7 @@ class Optimizer:
         self._edge_cache: tuple[EdgeElement, ...] | None = None
         self._simulator_cache: Simulator | None = None
         self._patch_cache: PatchModel | None = None
+        self._active_patch: PatchModel | None = None
         self._patch_accounts_cache: tuple[PatchAccount, ...] | None = None
         self._base_cache: dict[tuple[int, str], float] | None = None
         self._product_delta_cache: dict[
@@ -382,6 +386,26 @@ class Optimizer:
         if self._patch_cache is None:
             self._patch_cache = PatchModel(self, accounts)
         return self._patch_cache
+
+    def active_patch_model(self) -> PatchModel | None:
+        """Return the patch model the current evaluator is maintaining.
+
+        Returns
+        -------
+        PatchModel or None
+            The live model, or None when the run has no patch accounts or no evaluator yet.
+        """
+        return self._active_patch
+
+    def set_active_patch_model(self, model: PatchModel | None) -> None:
+        """Record the patch model the current evaluator is maintaining.
+
+        Parameters
+        ----------
+        model : PatchModel or None
+            The live model, or None.
+        """
+        self._active_patch = model
 
     def delta_evaluator(
         self, targets: Sequence[Target], extra_accounts: Sequence[str] = ()

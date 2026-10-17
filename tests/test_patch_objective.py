@@ -14,6 +14,7 @@ from ws4.opt.incremental import IncrementalObjective
 from ws4.opt.objective import Target, objective
 from ws4.opt.operators import Schedule
 from ws4.opt.patch import PatchModel
+from ws4.opt.patch_state import PatchGroupYear
 from ws4.patch.accounts import (
     PatchAccount,
     PatchLedger,
@@ -140,6 +141,21 @@ def test_patch_model_matches_the_reporting_path(tmp_path: Path) -> None:
     assert keys  # the fixture produces patch cells
     for cell in keys:
         assert model_cells.get(cell, 0.0) == pytest.approx(ledger_cells.get(cell, 0.0), abs=1e-9)
+
+
+def test_a_gap_is_a_non_member_between_two_components() -> None:
+    """is_gap is true only for a non-member whose member-neighbours span two components."""
+    account = PatchAccount(name="p", criteria="c", threshold=0.5, size_classes=(2.0, float("inf")))
+    neighbours = {1: ((2, 1.0),), 2: ((1, 1.0), (3, 1.0)), 3: ((2, 1.0),)}
+    area = {1: 1.0, 2: 1.0, 3: 1.0}
+    state = PatchGroupYear([account], 0.5, neighbours, area)
+    state.set_value(1, 1.0)
+    state.set_value(3, 1.0)
+    assert state.is_gap(state.index[2])  # block 2 joins the components of 1 and 3
+    state.set_value(2, 1.0)
+    assert not state.is_gap(state.index[1])  # a member is never a gap
+    state.set_value(3, None)
+    assert not state.is_gap(state.index[2])  # only one component left to join
 
 
 def test_an_empty_schedule_still_prices_the_inventory_patches(tmp_path: Path) -> None:
