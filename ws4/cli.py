@@ -198,7 +198,7 @@ def watch(
     account: list[str] | None = typer.Option(
         None,
         "--account",
-        help="Account to watch (repeat to sum several); defaults to the target accounts",
+        help="Account to watch; repeat it to watch several, one window each",
     ),
     period_width: int = typer.Option(10, "--period-width", help="Years per period"),
     years: int = typer.Option(50, help="Simulation horizon in years"),

@@ -399,8 +399,8 @@ class WatchState:
         The number of evaluations.
     iteration : int
         The current iteration.
-    window : TargetWindow or None
-        The window of the incumbent.
+    windows : tuple of TargetWindow
+        One window per watched account, for the incumbent.
     """
 
     label: str
@@ -412,32 +412,46 @@ class WatchState:
     best_values: pd.DataFrame | None = None
     evaluations: int = 0
     iteration: int = 0
-    window: TargetWindow | None = None
+    windows: tuple[TargetWindow, ...] = ()
     islands: int = 1
     blocks: int = 0
 
-    def current_window(self) -> TargetWindow:
-        """Return the window for the incumbent (an empty window before the first best)."""
+    def current_windows(self) -> tuple[TargetWindow, ...]:
+        """Return one window per watched account for the incumbent.
+
+        Returns
+        -------
+        tuple of TargetWindow
+            One window per account, in the order the accounts were given; an empty window
+            before the first best.
+        """
         values = (
             self.best_values
             if self.best_values is not None
             else pd.DataFrame(columns=["year", "account", "value"])
         )
-        return target_window(
-            values, self.targets, self.accounts, self.period_width, self.years, self.label
+        return tuple(
+            target_window(values, self.targets, (account,), self.period_width, self.years, account)
+            for account in self.accounts
         )
 
 
 def render_frame(state: WatchState, optimizer: Optimizer, elapsed: float) -> RenderableType:
-    """Render one frame: header, chart, and the exact period table."""
-    window = state.window if state.window is not None else state.current_window()
-    return Group(
-        _header(state, optimizer, elapsed),
-        Text(""),
-        chart_renderable(window),
-        Text(""),
-        window_table(window),
-    )
+    """Render one frame: header, then one target window per watched account."""
+    windows = state.windows if state.windows else state.current_windows()
+    parts: list[RenderableType] = [_header(state, optimizer, elapsed)]
+    for window in windows:
+        parts.append(Text(""))
+        parts.append(
+            Text(
+                f"{window.account}   penalty {format_value(window.total_penalty())}",
+                style="bold",
+            )
+        )
+        parts.append(chart_renderable(window))
+        parts.append(Text(""))
+        parts.append(window_table(window))
+    return Group(*parts)
 
 
 def _header(state: WatchState, optimizer: Optimizer, elapsed: float) -> Panel:
@@ -469,7 +483,7 @@ def _wrapped_evaluate(
         if objective < state.best_objective:
             state.best_objective = objective
             state.best_values = optimizer.last_account_values()
-            state.window = state.current_window()
+            state.windows = state.current_windows()
         return objective
 
     return evaluate
@@ -546,7 +560,7 @@ def _drain(queue: Any, state: WatchState) -> None:  # noqa: ANN401 - a multiproc
         if objective < state.best_objective:
             state.best_objective = objective
             state.best_values = pd.DataFrame(list(cells), columns=["year", "account", "value"])
-            state.window = state.current_window()
+            state.windows = state.current_windows()
         if blocks:
             state.blocks = blocks
 
@@ -608,11 +622,11 @@ def run_watch(
     targets : sequence of Target
         The goals the objective uses.
     accounts : sequence of str
-        The account labels to watch (summed).
+        The account labels to watch; each gets its own target window.
     period_width : int, optional
         The number of years per period.
     label : str or None, optional
-        A display label; defaults to the accounts joined with ``+``.
+        A display label for the header; defaults to the accounts joined with ``+``.
     refresh : float, optional
         The heartbeat interval, in seconds, between repaints.
     plain : bool, optional
@@ -623,7 +637,8 @@ def run_watch(
     Returns
     -------
     dict
-        ``objective``, ``penalty``, ``evaluations``, ``blocks``, and ``elapsed``.
+        ``objective``, ``penalty`` (summed across the windows), ``evaluations``, ``blocks``, and
+        ``elapsed``.
     """
     cfg = optimizer.cfg
     console = console if console is not None else Console()
@@ -676,14 +691,14 @@ def run_watch(
             console.print()
         else:
             _run_islands(optimizer, targets, accounts_tuple, state, refresh)
-            state.window = state.current_window()
+            state.windows = state.current_windows()
             console.print(render_frame(state, optimizer, time.monotonic() - started))
         elapsed_islands = time.monotonic() - started
         state.iteration = cfg.iterations
-        state.window = state.current_window()
+        state.windows = state.current_windows()
         return {
             "objective": state.best_objective,
-            "penalty": state.window.total_penalty(),
+            "penalty": sum(window.total_penalty() for window in state.windows),
             "evaluations": state.evaluations,
             "blocks": state.blocks,
             "elapsed": elapsed_islands,
@@ -695,7 +710,7 @@ def run_watch(
         if evaluator is not None and objective < state.best_objective:
             state.best_objective = objective
             state.best_values = evaluator.values_frame()
-            state.window = state.current_window()
+            state.windows = state.current_windows()
 
     def solve() -> Schedule:
         if evaluator is not None:
@@ -749,18 +764,18 @@ def run_watch(
             best = solve()
             elapsed = time.monotonic() - started
             state.iteration = cfg.iterations
-            state.window = state.current_window()
+            state.windows = state.current_windows()
             live.update(render_frame(state, optimizer, elapsed), refresh=True)
         console.print()
     else:
         best = solve()
         elapsed = time.monotonic() - started
         state.iteration = cfg.iterations
-        state.window = state.current_window()
+        state.windows = state.current_windows()
         console.print(render_frame(state, optimizer, elapsed))
     return {
         "objective": state.best_objective,
-        "penalty": state.window.total_penalty(),
+        "penalty": sum(window.total_penalty() for window in state.windows),
         "evaluations": state.evaluations,
         "blocks": len(best),
         "elapsed": elapsed,

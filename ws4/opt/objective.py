@@ -39,6 +39,10 @@ class Target:
         The weight on the excess above the maximum.
     period_width : int
         The number of years the account is summed over for this target.
+    shape : str
+        The penalty shape: ``"linear"`` adds the weighted deviation, ``"non_linear"`` adds the
+        weighted squared deviation (the weight is applied after squaring, matching the default
+        non-premultiplied scaling).
     """
 
     account: str
@@ -48,6 +52,12 @@ class Target:
     min_weight: float = 1.0
     max_weight: float = 1.0
     period_width: int = 1
+    shape: str = "linear"
+
+    def __post_init__(self) -> None:
+        """Reject an unknown penalty shape."""
+        if self.shape not in {"linear", "non_linear"}:
+            raise ValueError(f"unknown penalty shape: {self.shape!r}")
 
     def cell_years(self) -> range:
         """Return the years the target sums the account over.
@@ -77,9 +87,15 @@ def penalty(value: float, target: Target) -> float:
     """
     total = 0.0
     if target.minimum is not None and value < target.minimum:
-        total += target.min_weight * (target.minimum - value)
+        deviation = target.minimum - value
+        if target.shape == "non_linear":
+            deviation *= deviation
+        total += target.min_weight * deviation
     if target.maximum is not None and value > target.maximum:
-        total += target.max_weight * (value - target.maximum)
+        deviation = value - target.maximum
+        if target.shape == "non_linear":
+            deviation *= deviation
+        total += target.max_weight * deviation
     return total
 
 
@@ -191,8 +207,9 @@ def load_targets(path: Path) -> list[Target]:
     """Load targets from a YAML file.
 
     The file is a mapping with a ``targets`` list; each entry has ``account``,
-    ``year``, and any of ``minimum``, ``maximum``, ``min_weight``, ``max_weight``, and
-    ``period_width`` (years per period; the account is summed over them).
+    ``year``, and any of ``minimum``, ``maximum``, ``min_weight``, ``max_weight``,
+    ``period_width`` (years per period; the account is summed over them), and ``shape``
+    (``linear`` or ``non_linear``).
 
     Parameters
     ----------
@@ -215,6 +232,7 @@ def load_targets(path: Path) -> list[Target]:
             min_weight=float(entry.get("min_weight", 1.0)),
             max_weight=float(entry.get("max_weight", 1.0)),
             period_width=int(entry.get("period_width", 1)),
+            shape=str(entry.get("shape", "linear")),
         )
         for entry in entries
     ]
