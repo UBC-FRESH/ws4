@@ -376,6 +376,56 @@ class MergeOperator(_OperatorBase):
         return None
 
 
+class SplitOperator(_OperatorBase):
+    """Untreat an articulation block, splitting its patch."""
+
+    name = "split"
+
+    def __init__(
+        self,
+        optimizer: PatchSource,
+        *,
+        weight: float = 0.0,
+        samples: int = 6,
+    ) -> None:
+        """Set the weight and how many blocks to test per proposal.
+
+        Parameters
+        ----------
+        optimizer : PatchSource
+            The optimizer, used to reach the live patch model.
+        weight : float, optional
+            The operator's selection weight. Defaults to 0.0.
+        samples : int, optional
+            The number of blocks to test for an articulation point. Defaults to 6.
+        """
+        self.optimizer = optimizer
+        self.weight = weight
+        self.samples = samples
+
+    def propose_inplace(
+        self, schedule: Schedule, rng: random.Random, candidates: Candidates
+    ) -> Undo | None:
+        """Untreat a block that will split its patch, in place."""
+        model = self.optimizer.active_patch_model()
+        if model is None or not model.groups or model.years <= 0:
+            return None
+        years = model.focus_years or tuple(range(model.years))
+        year = years[rng.randrange(len(years))]
+        for key in model.groups:
+            state = model._state(key, year)
+            blocks = state.blocks
+            for _ in range(self.samples):
+                block = blocks[rng.randrange(len(blocks))]
+                if block not in schedule:
+                    continue
+                if state.is_cut(state.index[block]):
+                    undo: Undo = {block: schedule.get(block)}
+                    schedule.pop(block, None)
+                    return undo
+        return None
+
+
 class OperatorRegistry:
     """A weighted set of operators."""
 
@@ -418,6 +468,7 @@ __all__ = [
     "PatchSource",
     "Schedule",
     "ShiftOperator",
+    "SplitOperator",
     "SwapOperator",
     "ToggleOperator",
     "Undo",

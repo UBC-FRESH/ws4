@@ -46,6 +46,7 @@ from .operators import (
     OperatorRegistry,
     Schedule,
     ShiftOperator,
+    SplitOperator,
     SwapOperator,
     ToggleOperator,
 )
@@ -103,6 +104,7 @@ class OptimizeConfig:
     warm_cache: bool = False
     patch_accounts_path: str = ""
     merge_weight: float = 0.0
+    split_weight: float = 0.0
 
     def __post_init__(self) -> None:
         """Reject an unknown temperature schedule before the search starts."""
@@ -131,6 +133,7 @@ class Optimizer:
                     neighbours=self._neighbours() if cfg.cluster_weight > 0.0 else {},
                 ),
                 MergeOperator(self, weight=cfg.merge_weight),
+                SplitOperator(self, weight=cfg.split_weight),
             ]
         )
         self._block_area_cache: dict[int, float] | None = None

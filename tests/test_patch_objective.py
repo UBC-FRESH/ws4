@@ -158,6 +158,20 @@ def test_a_gap_is_a_non_member_between_two_components() -> None:
     assert not state.is_gap(state.index[2])  # only one component left to join
 
 
+def test_a_cut_block_is_the_one_that_splits_a_patch() -> None:
+    """is_cut identifies the interior block of a chain, not its end."""
+    account = PatchAccount(name="p", criteria="c", threshold=0.5, size_classes=(2.0, float("inf")))
+    neighbours = {1: ((2, 1.0),), 2: ((1, 1.0), (3, 1.0)), 3: ((2, 1.0),)}
+    area = {1: 1.0, 2: 1.0, 3: 1.0}
+    state = PatchGroupYear([account], 0.5, neighbours, area)
+    for block in (1, 2, 3):
+        state.set_value(block, 1.0)
+    assert state.is_cut(state.index[2])  # removing the middle block splits the chain
+    assert not state.is_cut(state.index[1])  # an end block does not
+    state.set_value(2, None)
+    assert not state.is_cut(state.index[1])  # not a member any more
+
+
 def test_an_empty_schedule_still_prices_the_inventory_patches(tmp_path: Path) -> None:
     """With no treatments the model prices the inventory patches, not nothing (regression)."""
     from ws4.patch.accounts import load_patch_edges

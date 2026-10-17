@@ -352,6 +352,61 @@ class PatchGroupYear:
                 return True
         return False
 
+    def is_cut(self, position: int) -> bool:
+        """Return whether removing this member would split its component.
+
+        Temporarily removes the block and asks the early-exit connectivity test whether every
+        member-neighbour is still reachable, restoring the block afterwards. It is the same test a
+        detach uses, so a split-targeted move can pick a block that will really split a patch.
+
+        Parameters
+        ----------
+        position : int
+            The block's dense index.
+
+        Returns
+        -------
+        bool
+            True when the block is an articulation point of its component.
+        """
+        if not self.is_member[position]:
+            return False
+        ptr = self._ptr
+        indices = self._indices
+        neighbours = [
+            indices[edge]
+            for edge in range(ptr[position], ptr[position + 1])
+            if self.is_member[indices[edge]]
+        ]
+        if len(neighbours) <= 1:
+            return False
+        cid = int(self.comp[position])
+        self.is_member[position] = 0
+        self.comp[position] = -1
+        self._ensure_scratch()
+        assert self._buf_stack is not None
+        assert self._buf_walk is not None
+        assert self._buf_visited is not None
+        assert self._buf_target is not None
+        self._gen += 2
+        reached_all, _count = reachable_from(
+            self._v_ptr,
+            self._v_indices,
+            self._v_member,
+            self._v_comp,
+            neighbours[0],
+            np.array(neighbours[1:], dtype=np.int64),
+            self._buf_target,
+            cid,
+            self._buf_visited,
+            self._buf_stack,
+            self._buf_walk,
+            self._gen,
+        )
+        self.is_member[position] = 1
+        self.comp[position] = cid
+        return not reached_all
+
     def value_of(self, block: int) -> float | None:
         """Return a block's criterion value, or None when it is not a member.
 
