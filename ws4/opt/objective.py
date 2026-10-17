@@ -7,7 +7,7 @@ the maximum; the objective is the total penalty (lower is better).
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
 
@@ -133,7 +133,11 @@ def _value_index(values: pd.DataFrame) -> dict[tuple[int, str], float]:
     }
 
 
-def objective_terms(values: pd.DataFrame, targets: Sequence[Target]) -> list[float]:
+def objective_terms(
+    values: pd.DataFrame,
+    targets: Sequence[Target],
+    point_in_time: Callable[[str], bool] | None = None,
+) -> list[float]:
     """Return the penalty of each target, in order.
 
     Parameters
@@ -142,6 +146,10 @@ def objective_terms(values: pd.DataFrame, targets: Sequence[Target]) -> list[flo
         Account values, with ``year``, ``account``, and ``value`` columns.
     targets : sequence of Target
         The targets.
+    point_in_time : callable or None, optional
+        Returns True for an account that is a snapshot rather than an additive quantity (a patch
+        account); such a target is read at the first year of its period only. Defaults to None
+        (every account is additive).
 
     Returns
     -------
@@ -149,10 +157,14 @@ def objective_terms(values: pd.DataFrame, targets: Sequence[Target]) -> list[flo
         One penalty per target.
     """
     index = _value_index(values)
-    return [
-        penalty(sum(index.get((year, target.account), 0.0) for year in target.cell_years()), target)
-        for target in targets
-    ]
+    penalties: list[float] = []
+    for target in targets:
+        years = list(target.cell_years())
+        if point_in_time is not None and point_in_time(target.account):
+            years = years[:1]
+        value = sum(index.get((year, target.account), 0.0) for year in years)
+        penalties.append(penalty(value, target))
+    return penalties
 
 
 def balance_targets(targets: Sequence[Target], peaks: Sequence[float]) -> list[Target]:

@@ -813,3 +813,16 @@ issue comments.
   more than one window the per-period table drops its shortfall and excess columns so two of them fit
   the width — that information is in the penalty in each window's title. `window_table` gained a
   `compact` argument. Tests: `tests/test_watch.py`. Dashboard: **GREEN**.
+- P6.39 (benchmark note): the warm start is level-dependent, and a corrected even-flow ceiling.
+  Watching the 50-year C5 problem showed harvest spiking in the first and last periods. It is not the
+  objective: from a cold start the solver reaches a perfectly flat profile with a penalty of exactly
+  **0** in 10,000 iterations. It is the `--warm-start` schedule, which gives every block a year-0
+  clearcut; whether that helps depends on the target level against the ceiling — far below it (300k
+  against a ~1,500k ceiling) the warm start over-harvests by about 9x and the search spends its budget
+  undoing it (13.3M -> 7.2M in 10,000 iterations), while near the ceiling (1,000k over 200 years) it
+  starts with roughly the right total volume and only has to redistribute. This also corrects an
+  earlier claim of mine that 800k per period is unreachable over 50 years: it is exactly reachable, and
+  the measured cold ceilings are **~1,500k** per 10-year period over 50 years and **~1,000k** over 200
+  — the short horizon is higher because it can liquidate inventory with no terminal constraint. The
+  finding is recorded in `notes/design/ws4-patch-evaluation-bottleneck.md`. No production change.
+  Dashboard: **GREEN**.
