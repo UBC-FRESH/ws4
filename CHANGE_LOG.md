@@ -733,3 +733,16 @@ issue comments.
   the default **29.6 -> 48.1 iterations/s (+62%)** and the single-block path 153.3 -> 141.2 (**-8%**,
   down from -22%). This supersedes the P6.29 numbers for the walks. Tests:
   `tests/test_patch_state.py`, `tests/test_patch_objective.py`. Dashboard: **GREEN**.
+- P6.31 (performance): the bulk relabel reports its own stale components. `rebuild_local` still scanned
+  every changed block's neighbourhood in Python (roughly 0.8-1.5 ms of array reads per bulk call) to
+  find which component ids to drop; `label_from_seeds` now records the previous component id of each
+  changed block and member neighbour as it seeds, so the drop is a set over that list and the scan is
+  gone. Also measured the spanning-forest leaf test and decided against it: on the realistic
+  configuration only 50.3% (peak year state) and 43.8% (year 25) of the detaches that take the walk are
+  leaves of a BFS spanning forest, and the other half would need a full component BFS to repair the
+  tree, so it does not pay now that the walks are compiled. Fresh-process A/B, 600 iterations, C5 at 50
+  years: the default search **31.0 -> 56.4 iterations/s (+82% against the dictionary implementation)**,
+  the single-block path unchanged at -8% (it never uses the bulk path). The walks are no longer a
+  measurable cost: the default's time is now `rebuild_local` 43%, criterion `series` lookups 19%,
+  `_affected` 15%, and the whole single-block path 4%. Tests: `tests/test_patch_state.py`,
+  `tests/test_patch_objective.py`. Dashboard: **GREEN**.

@@ -175,22 +175,38 @@ block's member-neighbours, and the walks themselves are kernels (`reachable_from
 `piece_aggregate` in `ws4/opt/patch_kernels.py`), with generation-stamped scratch so nothing is
 cleared between calls.
 
-Fresh-process A/B, 600 iterations, C5, 50 years, one patch target, three runs each:
+Fresh-process A/B, 600 iterations, C5, 50 years, one patch target, two to three runs each:
 
 | configuration | dicts | arrays + kernels | |
 | --- | ---: | ---: | --- |
-| `--lns-weight 0.2` (default) | 29.6 | **48.1** | **+62%** |
+| `--lns-weight 0.2` (default) | 31.0 | **56.4** | **+82%** |
 | `--lns-weight 0` (single block) | 153.3 | 141.2 | -8% |
 
 The single-block path pays a little for the array representation: the walks are compiled now, but the
 per-edge `comp`/`member` reads in `_attach`/`_detach` and the per-component write-back are still
 Python over arrays, where the old code used dict membership tests. An earlier version without the walk
-kernels cost 22% there; kernelising the walks recovered most of it. A redundant `covered` set was
-removed from `_split` after realising the first piece's component id is already restamped, so the
-later walks cannot re-traverse it.
+kernels cost 22% there; kernelising the walks recovered most of it. Two further things came out of
+measuring rather than guessing: the `covered` set in `_split` was redundant (the first piece's
+component id is already restamped, so later walks cannot re-traverse it), and the bulk relabel now
+reports its own stale component ids, which removed a Python scan of every changed block's
+neighbourhood (~0.8-1.5 ms per bulk call, worth 13% of the default).
 
 `array.array` + a writable `np.frombuffer` view is worth remembering: it gives Python near-list
 indexing and numba a zero-copy array in the same object, with no per-call marshalling.
+
+### What the walks cost now
+
+Phase timers on the default configuration, after all of the above (600 iterations, 49 iterations/s):
+
+| phase | share |
+| --- | ---: |
+| `rebuild_local` (the bulk relabel) | 43% |
+| `series` (criterion series lookups) | 19% |
+| `_affected` | 15% |
+| `set_value` + `_detach` + `_split` + `_attach` (the whole single-block path) | 4% |
+
+The connectivity walks are no longer a measurable cost — compiling them worked. What is left is the
+bulk relabel's own bookkeeping and the criterion series.
 
 ## The compiled kernel: measured on realistic components
 
@@ -311,9 +327,12 @@ Ordered by value over risk.
    horizon.
 2. **The array-backed state and the compiled relabels — done.** Default search +62% (29.6 -> 48.1
    iterations/s, fresh process); single-block -8%. The walks are kernels too. See above.
-3. **Spanning-forest leaf test** (pure Python, no compiled dependency). Maintain a spanning tree per
-   component; a detach of a tree leaf is `O(1)` and proves "no split". Re-measure the leaf fraction on
-   a realistic configuration first: the 65% below is from the pathological one.
+3. **Spanning-forest leaf test — measured, not worth it.** On the realistic configuration 50.3% (peak
+   year state) and 43.8% (year 25) of the detaches that currently take the walk are leaves of a BFS
+   spanning forest, so about half could skip it in `O(1)`. But the other half would then need their
+   component's spanning tree repaired, which is a full component BFS, and the walks are compiled now
+   anyway. At or below the ~50% break-even, with a repair cost of the same order as the walk it
+   replaces, it does not pay. Recorded so nobody has to re-derive it.
 4. **Articulation- and gap-targeted operators**: maintain the negative-space (merge) set incrementally;
    add a `SplitOperator` that detaches a cut vertex and a `MergeOperator` that treats a
    negative-space block (plus its neighbourhood). These change *which* moves are proposed, so they help
