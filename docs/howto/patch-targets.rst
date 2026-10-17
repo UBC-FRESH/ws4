@@ -22,15 +22,18 @@ Procedure
 ---------
 
 **1. Provide the topology.** A CSV of proximal block pairs, with the shortest distance between their
-polygons:
+polygons. The sample estate ships one for its 8 x 8 grid:
+
+.. code-block:: bash
+
+   head -4 examples/estate/topology.csv
 
 .. code-block:: text
 
    src_block,dst_block,distance_m
    1,2,0
    2,3,0
-   1,4,0
-   4,5,0
+   1,9,0
 
 A distance of ``0`` means the polygons touch. Building this file is a one-off GIS step; the
 established ``BLOCK1,BLOCK2,DISTANCE,LENGTH`` column names are accepted too.
@@ -39,18 +42,38 @@ established ``BLOCK1,BLOCK2,DISTANCE,LENGTH`` column names are accepted too.
 
 .. code-block:: yaml
 
-   # tmp/howto/patches.yaml
+   # examples/estate/patches.yaml
    accounts:
-     - name: patch.harvest
-       criteria: feature.Volume.managed   # what a patch is made of
-       threshold: 20                      # a block joins when its criterion exceeds this
-       size_classes: [10.0, 50.0, 150.0, .inf]
-       search_distance: 0.0               # 0 joins only blocks that literally touch
+     - name: patch.opening
+       criteria: feature.Seral.regen   # what a patch is made of: a fresh opening
+       threshold: 0.5                  # a block joins when its criterion exceeds this
+       size_classes: [10.0, 50.0, 150.0, 400.0, .inf]
+       search_distance: 0.0            # 0 joins only blocks that literally touch
 
 ``size_classes`` are the upper bounds, in hectares. They produce the labels ``0_10``, ``10_50``,
-``50_150``, and ``150_9999999``, and each label carries the sub-accounts ``area``, ``size`` (the
-share of total patch area, in percent), ``frequency``, ``shape``, and, for an ``attractor`` class,
-``attractor``.
+``50_150``, ``150_400`` and ``400_9999999``, and each label carries the sub-accounts ``area``, ``size``
+(the share of total patch area, in percent), ``frequency``, ``shape``, and, for an ``attractor``
+class, ``attractor``.
+
+Simulate a schedule and read the openings, which is the reliable way to see the classes:
+
+.. code-block:: bash
+
+   ws4 simulate --dataset tmp/estate/compiled --schedule tmp/estate/schedule.csv \
+                --years 10 --topology examples/estate/topology.csv --out tmp/estate/run
+
+.. code-block:: text
+
+   year  patch_count  mean_patch_area  max_patch_area  le5  le10  le50  over
+      0          4.0           20.125            50.4    0     1     2     1
+
+.. note::
+
+   Targeting these classes in a **search** currently misprices them: the search's own view of the
+   patch accounts can read zero for a schedule whose openings exist, so its objective and the run's
+   ``report_targets.csv`` disagree with a simulation of the same schedule. The report is the side to
+   trust, and the correction is queued; the patch targets themselves, the topology and the operators
+   below are unaffected.
 
 **3. Target a class.** A size class is a share, so the usual target is a floor on the share of
 harvesting that lands in the class:

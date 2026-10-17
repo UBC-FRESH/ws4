@@ -1,0 +1,14 @@
+route:
+  segments: segments.csv
+  destinations: destinations.csv
+  linkages: linkages.csv
+  eligibility: eligibility.csv
+  unutilized: product.Unutilized
+route_accounts:
+  - {destination: destination.MILL1, kind: haul, account: route.Mill1.haul}
+  - {destination: destination.MILL2, kind: haul, account: route.Mill2.haul}
+  - {destination: destination.MILL1, kind: volume, account: product.Mill1.Yield}
+  - {destination: destination.MILL2, kind: volume, account: product.Mill2.Yield}
+duplicate_accounts:
+  - {master: route.Mill1.haul, target: route.Total.haul}
+  - {master: route.Mill2.haul, target: route.Total.haul}

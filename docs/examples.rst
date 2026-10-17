@@ -16,3 +16,4 @@ resolve.
    examples/000_environment_check
    examples/010_quickstart
    examples/020_even_flow
+   examples/030_sample_estate

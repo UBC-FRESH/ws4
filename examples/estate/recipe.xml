@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The sample estate: a small grid of blocks with a natural lane, a managed lane, one clearcut
+     treatment, a seral feature that marks fresh openings (for patch targets), and a product that
+     the treatment produces (for volume and haul targets). See README.md in this directory for what
+     it is for and how to run it. -->
+<ForestModel horizon="100" year="0" match="multi">
+  <curve id="natural_volume">
+    <point x="0" y="0"/>
+    <point x="50" y="150"/>
+    <point x="120" y="250"/>
+  </curve>
+  <curve id="managed_volume">
+    <point x="0" y="0"/>
+    <point x="40" y="180"/>
+    <point x="120" y="280"/>
+  </curve>
+  <curve id="zero">
+    <point x="0" y="0"/>
+    <point x="120" y="0"/>
+  </curve>
+  <curve id="seral_regen">
+    <point x="0" y="1"/>
+    <point x="40" y="1"/>
+    <point x="41" y="0"/>
+    <point x="120" y="0"/>
+  </curve>
+  <define field="SERAL" column="SERAL"/>
+  <define field="treatment"/>
+  <input block="BLOCK" area="AREA_HA" age="F_AGE"/>
+  <output messages="messages.csv"/>
+
+  <!-- A natural stand may be clearcut once it is old enough; the cut moves it to the managed lane.
+       It carries the seral feature at zero, so every block reports the criterion the patch accounts
+       read. -->
+  <select statement="SERAL eq 'natural'">
+    <features>
+      <attribute label="feature.Volume.natural">
+        <curve idref="natural_volume"/>
+      </attribute>
+      <attribute label="feature.Seral.regen">
+        <curve idref="zero"/>
+      </attribute>
+    </features>
+    <track>
+      <treatment label="CC" minage="40" maxage="100">
+        <produce>
+          <assign field="treatment" value="'CC'"/>
+        </produce>
+        <transition>
+          <assign field="SERAL" value="'regen'"/>
+        </transition>
+      </treatment>
+    </track>
+  </select>
+
+  <!-- The managed lane carries the opening: the seral feature marks it fresh for forty years, and
+       the volume curve describes what grew back. It may be cut again, which is what makes a
+       rotation. -->
+  <select statement="SERAL eq 'regen'">
+    <features>
+      <attribute label="feature.Seral.regen">
+        <curve idref="seral_regen"/>
+      </attribute>
+      <attribute label="feature.Volume.managed">
+        <curve idref="managed_volume"/>
+      </attribute>
+    </features>
+    <track>
+      <treatment label="CC" minage="40" maxage="100">
+        <produce>
+          <assign field="treatment" value="'CC'"/>
+        </produce>
+        <transition>
+          <assign field="SERAL" value="'regen'"/>
+        </transition>
+      </treatment>
+    </track>
+  </select>
+
+  <!-- What a cut produces, on each lane: the stand's own volume at the age it is cut. -->
+  <select statement="SERAL eq 'natural' and treatment eq 'CC'">
+    <products>
+      <attribute label="product.Harvested.CC">
+        <curve idref="natural_volume"/>
+      </attribute>
+    </products>
+  </select>
+  <select statement="SERAL eq 'regen' and treatment eq 'CC'">
+    <products>
+      <attribute label="product.Harvested.CC">
+        <curve idref="managed_volume"/>
+      </attribute>
+    </products>
+  </select>
+</ForestModel>

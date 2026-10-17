@@ -12,7 +12,8 @@ Prerequisites
 
 * A compiled dataset whose ``blocks`` table has the same block ids as the network's linkages.
 * Four network tables, or the established equivalents (see :doc:`../reference/roads`):
-  ``vertices.csv``, ``segments.csv``, ``destinations.csv``, ``linkages.csv``.
+  ``vertices.csv``, ``segments.csv``, ``destinations.csv``, ``linkages.csv``. The sample estate ships
+  all of them, with two mills, so the guide's commands run as they are.
 * Optionally an eligibility table (``product,destination``) saying which mill may receive which
   product.
 
@@ -23,7 +24,7 @@ Procedure
 
 .. code-block:: yaml
 
-   # tmp/howto/route.yaml
+   # examples/estate/route.yaml — the shipped configuration, with two mills
    route:
      segments: segments.csv
      destinations: destinations.csv
@@ -32,9 +33,12 @@ Procedure
      unutilized: product.Unutilized    # optional: where unreachable volume is recorded
    route_accounts:
      - {destination: destination.MILL1, kind: haul, account: route.Mill1.haul}
+     - {destination: destination.MILL2, kind: haul, account: route.Mill2.haul}
      - {destination: destination.MILL1, kind: volume, account: product.Mill1.Yield}
+     - {destination: destination.MILL2, kind: volume, account: product.Mill2.Yield}
    duplicate_accounts:
      - {master: route.Mill1.haul, target: route.Total.haul}
+     - {master: route.Mill2.haul, target: route.Total.haul}
 
 A **route account** sums one route value (``haul``, ``build``, ``maintain``, or ``volume``) for one
 destination into a named account. A **duplicate account** copies an account into another, scaled by a
@@ -44,9 +48,26 @@ factor, which is how a per-mill cost becomes a total.
 
 .. code-block:: bash
 
-   ws4 simulate --dataset tmp/howto/compiled --schedule tmp/howto/schedule.csv \
-                --years 100 --route-config tmp/howto/route.yaml \
-                --out tmp/howto/routed
+   ws4 simulate --dataset tmp/estate/compiled --schedule tmp/estate/schedule.csv \
+                --years 60 --topology examples/estate/topology.csv \
+                --route-config examples/estate/route.yaml --out tmp/estate/run
+
+Cutting eight blocks in year 0 on the sample estate splits between the mills by least haul cost, and
+the route accounts resolve into the account values:
+
+.. code-block:: text
+
+   year                account        value
+      0   product.Harvested.CC  8793.814286
+      0   product.Mill1.Yield  3423.514286
+      0   product.Mill2.Yield  5370.300000
+      0      route.Mill1.haul   684.702857
+      0      route.Mill2.haul   749.115000
+      0    route.Total.haul  1433.817857
+
+``route_values.csv`` says where each load went: a block at the west end goes to ``destination.MILL1``,
+and one further east to ``destination.MILL2``, because that is the cheaper chain of segments even
+though its own spur is longer.
 
 The run directory gains ``route_values.csv`` (one row per routed product), ``network_table.csv`` (one
 row per segment per period), ``route_table.<destination>.csv``, and ``route_cost_report.csv``.

@@ -339,7 +339,8 @@ where a new analyst needs it.
 
 - [x] P7.1 Close the command-line gaps: `--weights` and `--iterations` (#83)
 - [x] P7.2 Apply the `threads` setting and re-measure island scaling (#84)
-- [ ] P7.3 Ship a sample estate under `examples/` (#85)
+- [x] P7.3 Ship a sample estate under `examples/` (#85)
+- [ ] P7.6 A patch target in a search misprices the classes (#88)
 - [ ] P7.4 Add the patch, route, and sweep notebooks, and a concepts section (#86)
 - [ ] P7.5 Patch performance under a dense harvest (#87)
 
