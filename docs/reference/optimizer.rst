@@ -37,6 +37,11 @@ first year of its period. Targets load from a YAML file:
        min_weight: 10000
        shape: non_linear
 
+**Period numbering** follows the established convention: **period 0 is a zero-length period describing
+the instantaneous state of the forest before the simulation starts**, and periods **1 to N** are the
+accounting periods the targets are set on. A target's ``year`` is a year, not a period index: a target
+at ``year: 0`` with ``period_width: 10`` is the level for period 1, which covers years 0 to 9.
+
 The weights file is accepted by the command line and the configuration. The spatial constraints add a
 weighted penalty to the objective (see :doc:`spatial`): a maximum opening size, a green-up interval,
 and a core-area rule. Edge contrast accounts (``--edge-elements``) are added to the account values, so
