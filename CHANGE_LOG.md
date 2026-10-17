@@ -833,3 +833,16 @@ issue comments.
   the objective documentation states the convention and that a target's `year` is a year, not a period
   index — a target at `year: 0` with `period_width: 10` is the level for period 1, which covers years 0
   to 9. Tests: `tests/test_watch.py`. Dashboard: **GREEN**.
+- P6.41 (feature): flow targets — even flow and non-declining yield. Patchworks expresses these as
+  derived accounts (`flow.even.*`, `flow.ndy.*`, built with `addFlowRatioAccount` and a `FlowSpec`)
+  whose target is **zero with a weight**, so the constraint is on the *flow* rather than the level; the
+  level comes from a separate target on the same account, and the C5 scenario script pairs exactly
+  those two. ws4 now has the same as a target flavour: `flow: even` sums `|period - mean|` over the
+  window and `flow: ndy` sums how much each period falls below the one before it, with
+  `flow_start`/`flow_end` (years) clipping the window (default the whole horizon) and `period_width`
+  grouping the years. They are period-level terms, so the objective and the evaluator aggregate whole
+  periods, the evaluator tracks every year of the window, and the move delta recomputes the term from
+  the pending change — the delta still equals a fresh evaluation, including for a flow term. The
+  definitions are WS4's own: the first-party documentation gives the call signatures but defers the
+  formula to an API document that is not available, so it is documented in the reference and easy to
+  change. Tests: `tests/test_flow_targets.py`. Dashboard: **GREEN**.

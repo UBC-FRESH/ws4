@@ -7,7 +7,7 @@ the maximum; the objective is the total penalty (lower is better).
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
 
@@ -44,6 +44,14 @@ class Target:
         The penalty shape: ``"linear"`` adds the weighted deviation, ``"non_linear"`` adds the
         weighted squared deviation (the weight is applied after squaring, matching the default
         non-premultiplied scaling).
+    flow : str
+        A flow term: ``""`` for an ordinary level target, ``"even"`` for even flow, or ``"ndy"`` for
+        non-declining yield. A flow target's value is an aggregate over the periods of its window,
+        not a period's account value, and it is normally targeted at ``0`` with a weight.
+    flow_start : int
+        The first year of a flow term's window.
+    flow_end : int or None
+        The year the flow window ends (exclusive), or None for the end of the horizon.
     """
 
     account: str
@@ -54,13 +62,20 @@ class Target:
     max_weight: float = 1.0
     period_width: int = 1
     shape: str = "linear"
+    flow: str = ""
+    flow_start: int = 0
+    flow_end: int | None = None
 
     def __post_init__(self) -> None:
-        """Reject an unknown penalty shape or a period shorter than a year."""
+        """Reject an unknown penalty shape, flow type, or a period shorter than a year."""
         if self.shape not in {"linear", "non_linear"}:
             raise ValueError(f"unknown penalty shape: {self.shape!r}")
         if self.period_width < 1:
             raise ValueError("period_width must be at least one year")
+        if self.flow not in {"", "even", "ndy"}:
+            raise ValueError(f"unknown flow type: {self.flow!r}")
+        if self.flow_end is not None and self.flow_end <= self.flow_start:
+            raise ValueError("flow_end must be after flow_start")
 
     def cell_years(self) -> range:
         """Return the years the target sums the account over.
@@ -102,6 +117,56 @@ def penalty(value: float, target: Target) -> float:
     return total
 
 
+def flow_term(
+    index: Mapping[tuple[int, str], float],
+    target: Target,
+    years: int,
+    pending: Mapping[tuple[int, str], float] | None = None,
+) -> float:
+    """Return a flow target's aggregate over its period window.
+
+    ``even`` measures how uneven the periods are: the sum of each period's distance from the mean
+    period value. ``ndy`` (non-declining yield) measures the total decline between consecutive
+    periods, so a value of zero means no period is below the one before it. Both are targeted at
+    zero with a weight, which is the established way to express a flow constraint without pinning
+    the level: the level comes from a separate target on the same account.
+
+    Parameters
+    ----------
+    index : mapping of (int, str) to float
+        The account values by ``(year, account)``.
+    target : Target
+        A target whose ``flow`` is ``"even"`` or ``"ndy"``.
+    years : int
+        The horizon, in years; the window's end when ``flow_end`` is not set.
+    pending : mapping of (int, str) to float, optional
+        A move's change per cell, added to ``index`` without copying it.
+
+    Returns
+    -------
+    float
+        The aggregate: the non-evenness, or the total decline.
+    """
+    width = max(1, target.period_width)
+    stop = target.flow_end if target.flow_end is not None else years
+    account = target.account
+    periods: list[float] = []
+    for begin in range(target.flow_start, stop, width):
+        total = 0.0
+        for year in range(begin, min(begin + width, stop)):
+            cell = (year, account)
+            total += index.get(cell, 0.0)
+            if pending is not None:
+                total += pending.get(cell, 0.0)
+        periods.append(total)
+    if len(periods) < 2:
+        return 0.0
+    if target.flow == "even":
+        mean = sum(periods) / len(periods)
+        return sum(abs(value - mean) for value in periods)
+    return sum(max(0.0, periods[i] - periods[i + 1]) for i in range(len(periods) - 1))
+
+
 def objective(values: pd.DataFrame, targets: Sequence[Target]) -> float:
     """Return the total weighted penalty over a set of targets.
 
@@ -118,8 +183,12 @@ def objective(values: pd.DataFrame, targets: Sequence[Target]) -> float:
         The total penalty.
     """
     index = _value_index(values)
+    horizon = max((year for year, _ in index), default=-1) + 1
     total = 0.0
     for target in targets:
+        if target.flow:
+            total += penalty(flow_term(index, target, horizon), target)
+            continue
         value = sum(index.get((year, target.account), 0.0) for year in target.cell_years())
         total += penalty(value, target)
     return total
@@ -223,8 +292,9 @@ def load_targets(path: Path) -> list[Target]:
 
     The file is a mapping with a ``targets`` list; each entry has ``account``,
     ``year``, and any of ``minimum``, ``maximum``, ``min_weight``, ``max_weight``,
-    ``period_width`` (years per period; the account is summed over them), and ``shape``
-    (``linear`` or ``non_linear``).
+    ``period_width`` (years per period; the account is summed over them), ``shape``
+    (``linear`` or ``non_linear``), and the flow keys ``flow`` (``even`` or ``ndy``),
+    ``flow_start`` and ``flow_end`` (the flow window, in years).
 
     Parameters
     ----------
@@ -248,6 +318,9 @@ def load_targets(path: Path) -> list[Target]:
             max_weight=float(entry.get("max_weight", 1.0)),
             period_width=int(entry.get("period_width", 1)),
             shape=str(entry.get("shape", "linear")),
+            flow=str(entry.get("flow", "")),
+            flow_start=int(entry.get("flow_start", 0)),
+            flow_end=(int(entry["flow_end"]) if entry.get("flow_end") is not None else None),
         )
         for entry in entries
     ]

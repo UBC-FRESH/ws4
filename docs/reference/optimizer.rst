@@ -42,6 +42,43 @@ the instantaneous state of the forest before the simulation starts**, and period
 accounting periods the targets are set on. A target's ``year`` is a year, not a period index: a target
 at ``year: 0`` with ``period_width: 10`` is the level for period 1, which covers years 0 to 9.
 
+**Flow targets** express even flow or non-declining yield without pinning the level, which is the
+established way to state them: the flow target is set to zero with a weight, and a separate target on
+the same account sets the level.
+
+.. code-block:: yaml
+
+   targets:
+     # the level
+     - account: product.Yield.managed.Conif
+       year: 0
+       minimum: 900000
+       maximum: 1400000
+       period_width: 10
+     # even flow: the sum of each period's distance from the mean must be zero
+     - account: product.Yield.managed.Conif
+       year: 0
+       flow: even
+       period_width: 10
+       minimum: 0
+       maximum: 0
+       min_weight: 0.001
+       max_weight: 0.001
+     # non-declining yield over the final periods
+     - account: product.Yield.managed.Conif
+       year: 0
+       flow: ndy
+       period_width: 10
+       flow_start: 150
+       flow_end: 200
+       minimum: 0
+       maximum: 0
+       min_weight: 1.0
+
+``flow.even`` sums ``|period - mean|`` over its window and ``flow.ndy`` sums how much each period falls
+below the one before it; ``flow_start`` and ``flow_end`` (in years) clip the window, defaulting to the
+whole horizon. Both aggregate whole periods, so they are period-level terms rather than per-year cells.
+
 The weights file is accepted by the command line and the configuration. The spatial constraints add a
 weighted penalty to the objective (see :doc:`spatial`): a maximum opening size, a green-up interval,
 and a core-area rule. Edge contrast accounts (``--edge-elements``) are added to the account values, so
