@@ -1093,3 +1093,20 @@ issue comments.
   reads; neither is done, and the measurement is the baseline to judge them against, recorded in
   `notes/backlog.md`. Tests: `tests/test_optimizer.py` asserts the accessor is empty before any
   evaluation and holds the incumbent's values after a run. Dashboard: **GREEN** (seven gates).
+- P7.4 (docs): the patch, route and sweep notebooks, and a concepts section. The gallery gains three
+  executed notebooks. `040_patch_targets` sets a ramp on the 50-150 ha class over the sample estate
+  with the shape-aware operators weighted, and shows the search meeting 25 and 50 percent at 63.8
+  percent, falling short of 75 (which a squared miss at weight 2000 prices at 249 340), and holding the
+  shares steady across the horizon because the 40-year rotation keeps refreshing the openings into the
+  same class — the P7.6 fix is what makes its report agree with the search. `050_routes_and_mills`
+  routes a schedule over the estate's two mills, reads the volume and haul split per destination and
+  the route accounts in the values, then constrains the haul cost in a search. `060_parameter_sweep`
+  sweeps the volume floor and collects the objective, the treatments, the realized volume and the patch
+  status into a frame, which is the automation pattern the how-to describes. All three drive the CLI
+  through a small subprocess helper rather than shell magic, so they run headless and lex as Python.
+  A **Concepts** section joins the documentation, in the role the sibling project's textbook plays:
+  four pages on the model (fragments, blocks, strata, tracks, treatments, rotations), the simulation
+  (the annual step, the age-grid curves, operability windows), the accounting (the year clock against
+  the period clock, and period 0 as the pre-simulation state), and the objective (targets, weights, and
+  the three shapes of constraint: a level, a flow, and a map). It is indexed from the home page and the
+  agent index, and each page links into the reference for the detail. Dashboard: **GREEN** (seven gates).

@@ -32,6 +32,9 @@ Quick Navigation
    * - :doc:`getting-started/index`
      - New users
      - Installation, a first run, and how the pieces fit together.
+   * - :doc:`concepts/index`
+     - New and returning users
+     - What the model *is*: fragments, strata, annual growth, periods, and the objective.
    * - :doc:`howto/index`
      - Analysts
      - Task guides: targets, even flow, patch size distributions, routes, the Python API.
@@ -53,6 +56,12 @@ Documentation Sections
    :caption: Getting started
 
    getting-started/index
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Concepts
+
+   concepts/index
 
 .. toctree::
    :maxdepth: 2
