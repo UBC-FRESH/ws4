@@ -986,3 +986,13 @@ issue comments.
   incremental path. Every command, snippet, and notebook output in the new pages was executed against
   the repository's own examples, and the numbers shown (340 m3, the ragged-to-flat even-flow profile)
   are the ones the runs produced. Dashboard: **GREEN**.
+- Queued the Phase 6 close-out: pull request #81 (`feature/p6-performance` into `main`) and the report
+  `notes/reports/p6-closeout.md`. The report recommends the squash merge, deleting the branch, closing
+  parent issue #60, and launching P7 (parity and the analyst workflow). It records the acceptance
+  evidence — 0.108 s for the C5 30-year simulate, 0.685 s for the 3-year simulate with routing, 29 / 39
+  / 31 ms per year for patch accounts, edge contrast, and core area, a 0.003 ms incremental move, and
+  6.4x / 15.3x island throughput at 8 and 32 islands with parallel multi-start reproducing the serial
+  result exactly — plus the deviations (23 spike commits without a task ID, the `--weights` and
+  `threads` gaps, the dependency pull requests the authorship rewrite closed) and the one settings
+  change still needing approval, moving the `v0.1.0` release tag into the rewritten history.
+  Dashboard: **GREEN** (seven gates).

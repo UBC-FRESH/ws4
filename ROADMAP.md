@@ -17,7 +17,7 @@ exists and the maintainer approves it.
 | P3 Verify | #26 | `feature/p3-verify` | complete |
 | P4 Release and deploy | #36 | `feature/p4-release` | complete |
 | P5 Operate and maintain | #44 | `feature/p5-operate` | complete |
-| P6 Performance and scalability | #60 | `feature/p6-performance` | active |
+| P6 Performance and scalability | #60 | `feature/p6-performance` | pr-open |
 
 ## Lifecycle Map
 
@@ -258,7 +258,7 @@ Goal: keep the project current: triage incoming ideas, review on a cadence, and 
 
 Parent issue: #60
 Branch: `feature/p6-performance`
-Status: active
+Status: pr-open
 
 Goal: make the simulator, the spatial metrics, and the route model fast enough that the metaheuristic
 optimizer can evaluate thousands of candidate schedules on a C5-class dataset within a practical
