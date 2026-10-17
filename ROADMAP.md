@@ -305,6 +305,7 @@ budget. Plan of record: `notes/design/ws4-performance.md`.
 - [x] P6.38 Watch the target windows side by side
 - [x] P6.39 Weighted term display, side-by-side windows, and the warm-start/ceiling finding
 - [x] P6.40 Number accounting periods from 1 (period 0 is the pre-simulation state)
+- [x] P6.41 Flow targets (`flow: even`, `flow: ndy`)
 
 Deferred from P6, triaged in `notes/backlog.md`:
 

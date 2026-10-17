@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from .objective import Target, penalty
+from .objective import Target, flow_term, penalty
 from .operators import Candidates, Chain, Schedule
 from .patch import PatchModel
 
@@ -104,13 +104,19 @@ class IncrementalObjective:
         self._pending_move: tuple[dict[Cell, float], list[int], Schedule] | None = None
         # A patch account is a snapshot of the map at one point in time, so a patch target is read
         # at the first year of its period rather than summed across it (the accounting is periodic
-        # while the simulation is annual).
-        self._target_years: list[tuple[int, ...]] = [
-            tuple(target.cell_years())[:1]
-            if is_patch(target.account)
-            else tuple(target.cell_years())
-            for target in self.targets
-        ]
+        # while the simulation is annual). A flow target aggregates whole periods across its window,
+        # so it tracks every year of that window.
+        horizon = optimizer.cfg.years
+
+        def years_for(target: Target) -> tuple[int, ...]:
+            if target.flow:
+                stop = target.flow_end if target.flow_end is not None else horizon
+                return tuple(range(target.flow_start, stop))
+            if is_patch(target.account):
+                return tuple(target.cell_years())[:1]
+            return tuple(target.cell_years())
+
+        self._target_years: list[tuple[int, ...]] = [years_for(target) for target in self.targets]
         self._targets_by_cell: dict[Cell, list[int]] = {}
         for index, target in enumerate(self.targets):
             for year in self._target_years[index]:
@@ -194,6 +200,9 @@ class IncrementalObjective:
         """Return the objective for the current state (periods summed)."""
         total = 0.0
         for index, target in enumerate(self.targets):
+            if target.flow:
+                total += penalty(flow_term(self.totals, target, self.optimizer.cfg.years), target)
+                continue
             value = sum(
                 self.totals.get((year, target.account), 0.0) for year in self._target_years[index]
             )
@@ -225,6 +234,12 @@ class IncrementalObjective:
         total = 0.0
         for index in affected:
             target = self.targets[index]
+            if target.flow:
+                horizon = self.optimizer.cfg.years
+                before = flow_term(self.totals, target, horizon)
+                after = flow_term(self.totals, target, horizon, pending)
+                total += penalty(after, target) - penalty(before, target)
+                continue
             before = sum(
                 self.totals.get((year, target.account), 0.0) for year in target.cell_years()
             )
