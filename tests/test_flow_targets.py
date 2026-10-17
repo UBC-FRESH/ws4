@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 import pandas as pd
@@ -14,32 +15,45 @@ from ws4.opt.objective import Target, flow_term, objective
 _FIXTURE = Path(__file__).resolve().parents[1] / "examples" / "synthetic"
 
 
-def test_an_even_flow_term_sums_the_distance_from_the_mean() -> None:
-    """Even flow is the sum of |period - mean| over the periods."""
+def test_an_even_flow_term_is_measured_against_the_reference_period() -> None:
+    """Even flow is the percent difference from the reference period, the final one by default."""
     index = {(0, "a"): 10.0, (1, "a"): 20.0, (2, "a"): 30.0}
     target = Target("a", 0, period_width=1, flow="even")
-    assert flow_term(index, target, 3) == pytest.approx(20.0)  # mean 20, +-10 each side
+    # reference is the final period (30): |100*(10-30)/30| + |100*(20-30)/30| = 66.67 + 33.33
+    assert flow_term(index, target, 3) == pytest.approx(100.0)
+    first = Target("a", 0, period_width=1, flow="even", flow_reference=0)
+    # reference is the first period (10): 100 + 200
+    assert flow_term(index, first, 3) == pytest.approx(300.0)
 
 
-def test_an_ndy_term_sums_the_declines() -> None:
-    """Non-declining yield sums how much each period falls below the one before it."""
+def test_an_even_flow_term_is_infinite_while_the_reference_is_empty() -> None:
+    """A zero reference balance leaves the ratio undefined, which is the definitional behaviour."""
+    index = {(0, "a"): 5.0, (1, "a"): 0.0}  # the default reference, the final period, is empty
+    target = Target("a", 0, period_width=1, flow="even")
+    assert math.isinf(flow_term(index, target, 2))
+
+
+def test_an_ndy_term_is_the_percent_change_between_consecutive_periods() -> None:
+    """Non-declining yield sums the percent declines from each period to the next."""
     rising = {(0, "a"): 10.0, (1, "a"): 20.0, (2, "a"): 30.0}
     falling = {(0, "a"): 30.0, (1, "a"): 20.0, (2, "a"): 10.0}
     target = Target("a", 0, period_width=1, flow="ndy")
     assert flow_term(rising, target, 3) == 0.0
-    assert flow_term(falling, target, 3) == pytest.approx(20.0)
+    assert flow_term(falling, target, 3) == pytest.approx(100 / 3 + 50.0)  # -33.3% and -50%
 
 
 def test_a_flow_term_aggregates_by_period_width_and_window() -> None:
     """The period width groups the years and the window clips them."""
     index = {(year, "a"): float(year + 1) for year in range(10)}
     one_period = Target("a", 0, period_width=6, flow="even", flow_start=0, flow_end=6)
-    assert flow_term(index, one_period, 10) == 0.0  # a single period is trivially even
-    two_periods = Target("a", 0, period_width=3, flow="ndy", flow_start=0, flow_end=6)
-    assert flow_term(index, two_periods, 10) == 0.0  # 6 then 15: rising, no decline
-    declining = Target("a", 0, period_width=3, flow="ndy", flow_start=0, flow_end=6)
+    assert (
+        flow_term(index, one_period, 10) == 0.0
+    )  # a single period has no reference to differ from
+    rising = Target("a", 0, period_width=3, flow="ndy", flow_start=0, flow_end=6)
+    assert flow_term(index, rising, 10) == 0.0  # 6 then 15: a rise, not a decline
     falling = {(year, "a"): float(10 - year) for year in range(6)}
-    assert flow_term(falling, declining, 10) == pytest.approx(9.0)  # 27 then 18
+    declining = Target("a", 0, period_width=3, flow="ndy", flow_start=0, flow_end=6)
+    assert flow_term(falling, declining, 10) == pytest.approx(100 / 3)  # 27 then 18
 
 
 def test_a_flow_target_is_rejected_for_unknown_keys() -> None:
@@ -68,7 +82,8 @@ def test_objective_prices_a_flow_target_from_a_frame() -> None:
         min_weight=2.0,
         max_weight=2.0,
     )
-    assert objective(values, [target]) == pytest.approx(2.0 * 20.0)  # mean 20, +-10 each side
+    # the reference is the final period (30), so the difference is |100*(10-30)/30| = 66.67
+    assert objective(values, [target]) == pytest.approx(2.0 * 200.0 / 3.0)
 
 
 def test_the_move_delta_matches_a_fresh_evaluation_for_a_flow_target(tmp_path: Path) -> None:

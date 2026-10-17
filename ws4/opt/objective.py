@@ -7,6 +7,7 @@ the maximum; the objective is the total penalty (lower is better).
 
 from __future__ import annotations
 
+import math
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -52,6 +53,9 @@ class Target:
         The first year of a flow term's window.
     flow_end : int or None
         The year the flow window ends (exclusive), or None for the end of the horizon.
+    flow_reference : int or None
+        The first year of the flow term's reference period, or None for the final period of the
+        window. Every other period is measured as a percent difference from it.
     """
 
     account: str
@@ -65,6 +69,7 @@ class Target:
     flow: str = ""
     flow_start: int = 0
     flow_end: int | None = None
+    flow_reference: int | None = None
 
     def __post_init__(self) -> None:
         """Reject an unknown penalty shape, flow type, or a period shorter than a year."""
@@ -125,11 +130,21 @@ def flow_term(
 ) -> float:
     """Return a flow target's aggregate over its period window.
 
-    ``even`` measures how uneven the periods are: the sum of each period's distance from the mean
-    period value. ``ndy`` (non-declining yield) measures the total decline between consecutive
-    periods, so a value of zero means no period is below the one before it. Both are targeted at
-    zero with a weight, which is the established way to express a flow constraint without pinning
-    the level: the level comes from a separate target on the same account.
+    A flow target constrains the **shape** of the account's profile over the periods, not its level,
+    and is normally targeted at zero with a weight; the level comes from a separate target on the
+    same account. The two kinds differ in what they compare:
+
+    * ``even`` is the **percent difference of each period from a reference period**, summed in
+      absolute value: ``sum(|100 * (x_p - x_ref) / x_ref|)``. The reference is the **final period of
+      the window** by default, or ``flow_reference`` (the first year of the period to use).
+    * ``ndy`` (non-declining yield) is the **percent change between consecutive periods**:
+      ``100 * (x_{p+1} - x_p) / x_p``, counting only the declines.
+
+    Both divide by a balance that can be zero, so the term is **infinite while that balance is
+    zero** — the ``even`` reference period, and every period an ``ndy`` comparison starts from. A
+    run primes them first, for example with a linear volume target above the sustainable level, so
+    that every period has a positive balance; only then do the ratios have a positive denominator.
+    This is the definitional behaviour, not a defect.
 
     Parameters
     ----------
@@ -145,12 +160,14 @@ def flow_term(
     Returns
     -------
     float
-        The aggregate: the non-evenness, or the total decline.
+        The summed percent difference over the non-reference periods, or infinity when the
+        reference period's balance is zero.
     """
     width = max(1, target.period_width)
     stop = target.flow_end if target.flow_end is not None else years
     account = target.account
     periods: list[float] = []
+    starts: list[int] = []
     for begin in range(target.flow_start, stop, width):
         total = 0.0
         for year in range(begin, min(begin + width, stop)):
@@ -159,12 +176,35 @@ def flow_term(
             if pending is not None:
                 total += pending.get(cell, 0.0)
         periods.append(total)
+        starts.append(begin)
     if len(periods) < 2:
         return 0.0
+    reference = len(periods) - 1
+    if target.flow_reference is not None:
+        # the period containing that year, clamped to the window
+        reference = 0
+        for position, begin in enumerate(starts):
+            if begin <= target.flow_reference:
+                reference = position
+    balance = periods[reference]
     if target.flow == "even":
-        mean = sum(periods) / len(periods)
-        return sum(abs(value - mean) for value in periods)
-    return sum(max(0.0, periods[i] - periods[i + 1]) for i in range(len(periods) - 1))
+        if balance <= 0.0:
+            return math.inf
+        total_change = 0.0
+        for position, value in enumerate(periods):
+            if position == reference:
+                continue
+            total_change += abs(100.0 * (value - balance) / balance)
+        return total_change
+    # ndy is the consecutive decline, relative to the earlier period of each pair
+    total_change = 0.0
+    for position in range(1, len(periods)):
+        previous = periods[position - 1]
+        if previous <= 0.0:
+            return math.inf
+        change = 100.0 * (periods[position] - previous) / previous
+        total_change += max(0.0, -change)
+    return total_change
 
 
 def objective(values: pd.DataFrame, targets: Sequence[Target]) -> float:
@@ -321,6 +361,9 @@ def load_targets(path: Path) -> list[Target]:
             flow=str(entry.get("flow", "")),
             flow_start=int(entry.get("flow_start", 0)),
             flow_end=(int(entry["flow_end"]) if entry.get("flow_end") is not None else None),
+            flow_reference=(
+                int(entry["flow_reference"]) if entry.get("flow_reference") is not None else None
+            ),
         )
         for entry in entries
     ]
