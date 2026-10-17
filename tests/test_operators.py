@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import random
 
-from ws4.opt.operators import ClusterOperator, Schedule, restore
+from ws4.opt.operators import ClusterOperator, MergeOperator, Schedule, restore
 
 
 def _candidates() -> dict[int, list[tuple[tuple[str, int], ...]]]:
@@ -54,3 +54,17 @@ def test_cluster_operator_without_neighbours_moves_one_block() -> None:
     undo = operator.propose_inplace(schedule, random.Random(2), _candidates())
     assert undo is not None
     assert len(undo) == 1
+
+
+class _NoPatch:
+    """An optimizer stand-in with no patch model."""
+
+    def active_patch_model(self) -> None:
+        """Return no model."""
+        return None
+
+
+def test_merge_operator_cannot_move_without_a_patch_model() -> None:
+    """The merge operator declines when the run has no patch accounts."""
+    operator = MergeOperator(_NoPatch())
+    assert operator.propose_inplace({}, random.Random(3), _candidates()) is None

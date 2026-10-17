@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import random
 from collections.abc import Mapping
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 Event = tuple[str, int]
 Chain = tuple[Event, ...]
@@ -310,6 +310,72 @@ class ClusterOperator(_OperatorBase):
         return undo or None
 
 
+if TYPE_CHECKING:
+    from .patch import PatchModel
+
+
+class PatchSource(Protocol):
+    """The patch state a move operator can consult."""
+
+    def active_patch_model(self) -> PatchModel | None:
+        """Return the patch model the current evaluator is maintaining."""
+
+
+class MergeOperator(_OperatorBase):
+    """Treat a gap block — the negative space between two patches — to join them."""
+
+    name = "merge"
+
+    def __init__(
+        self,
+        optimizer: PatchSource,
+        *,
+        weight: float = 0.3,
+        samples: int = 6,
+        chains: int = 8,
+    ) -> None:
+        """Set the weight, the gap sampling, and how many chains to try.
+
+        Parameters
+        ----------
+        optimizer : PatchSource
+            The optimizer, used to reach the live patch model.
+        weight : float, optional
+            The operator's selection weight. Defaults to 0.3.
+        samples : int, optional
+            The number of blocks to test for a gap per proposal. Defaults to 6.
+        chains : int, optional
+            The number of candidate chains to try per gap. Defaults to 8.
+        """
+        self.optimizer = optimizer
+        self.weight = weight
+        self.samples = samples
+        self.chains = chains
+
+    def propose_inplace(
+        self, schedule: Schedule, rng: random.Random, candidates: Candidates
+    ) -> Undo | None:
+        """Assign a gap block a chain that makes it a member, in place."""
+        model = self.optimizer.active_patch_model()
+        if model is None or not model.groups or model.years <= 0:
+            return None
+        years = model.focus_years or tuple(range(model.years))
+        year = years[rng.randrange(len(years))]
+        gap = model.find_gap(year, rng, samples=self.samples)
+        if gap is None:
+            return None
+        block, label, threshold = gap
+        options = candidates.get(block)
+        if not options:
+            return None
+        for chain in rng.sample(options, min(self.chains, len(options))):
+            if model.value(block, chain, label, year) > threshold:
+                undo: Undo = {block: schedule.get(block)}
+                schedule[block] = chain
+                return undo
+        return None
+
+
 class OperatorRegistry:
     """A weighted set of operators."""
 
@@ -346,8 +412,10 @@ __all__ = [
     "ClusterOperator",
     "Event",
     "LnsOperator",
+    "MergeOperator",
     "Operator",
     "OperatorRegistry",
+    "PatchSource",
     "Schedule",
     "ShiftOperator",
     "SwapOperator",

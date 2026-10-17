@@ -746,3 +746,17 @@ issue comments.
   measurable cost: the default's time is now `rebuild_local` 43%, criterion `series` lookups 19%,
   `_affected` 15%, and the whole single-block path 4%. Tests: `tests/test_patch_state.py`,
   `tests/test_patch_objective.py`. Dashboard: **GREEN**.
+- P6.32 (feature): a binding patch benchmark, and the gap/merge operator. Every earlier patch number
+  was measured against a target satisfied at iteration 0 (`objective=0.000`), so it characterised
+  overhead on a solved problem rather than the cost of optimising patches. With a binding target
+  (`patch.harvest.0_5.frequency <= 60`, year 0) the search drives the penalty from 88 into the low 20s
+  over 4,000 iterations, so the optimizer does optimise patches. Added `MergeOperator`
+  (`--merge-weight`, default 0): it samples a **gap** — a non-member block whose member-neighbours span
+  two or more components, the negative space between proximal patches — and gives it a chain that makes
+  it a member in one of the years the objective reads (new `PatchModel.focus_years`; targeting the
+  objective's years rather than a random year was worth most of the effect). `is_gap` is `O(degree)` and
+  needs no incremental index. Over five seeds at 4,000 iterations the mean final penalty is 16.4
+  without the operator and **14.6** at weight 0.5 (three seeds improve, one ties, one worsens), and the
+  rate rises from 56-69 to 67-77 iterations/s because a merge move is a single block and displaces
+  expensive LNS moves. Tests: `tests/test_patch_objective.py`, `tests/test_operators.py`.
+  Dashboard: **GREEN**.

@@ -75,6 +75,11 @@ class IncrementalObjective:
         self.optimizer = optimizer
         self.targets = list(targets)
         self.patch = PatchModel(optimizer, patch_accounts) if patch_accounts else None
+        optimizer.set_active_patch_model(self.patch)
+        if self.patch is not None:
+            self.patch.set_focus_years(
+                sorted({year for target in targets for year in target.cell_years()})
+            )
         patch_names = {account.name for account in patch_accounts}
 
         def is_patch(name: str) -> bool:

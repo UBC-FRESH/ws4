@@ -322,6 +322,36 @@ class PatchGroupYear:
             self.count += 1
         self.next_id = base + count - 1
 
+    def is_gap(self, position: int) -> bool:
+        """Return whether a non-member joins two or more components.
+
+        A gap block is the negative space between patches: adding it would merge the components its
+        member-neighbours belong to, which is what a merge move deliberately targets.
+
+        Parameters
+        ----------
+        position : int
+            The block's dense index.
+
+        Returns
+        -------
+        bool
+            True when the block is a non-member with member-neighbours in two or more components.
+        """
+        if self.is_member[position]:
+            return False
+        first = -1
+        for edge in range(self._ptr[position], self._ptr[position + 1]):
+            neighbour = self._indices[edge]
+            if not self.is_member[neighbour]:
+                continue
+            cid = int(self.comp[neighbour])
+            if first < 0:
+                first = cid
+            elif cid != first:
+                return True
+        return False
+
     def value_of(self, block: int) -> float | None:
         """Return a block's criterion value, or None when it is not a member.
 

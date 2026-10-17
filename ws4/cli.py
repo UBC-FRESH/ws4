@@ -130,6 +130,9 @@ def optimize(
         0.0, "--cluster-weight", help="Weight of the topology cluster operator (0 disables it)"
     ),
     cluster_size: int = typer.Option(8, "--cluster-size", help="Blocks per cluster move"),
+    merge_weight: float = typer.Option(
+        0.0, "--merge-weight", help="Weight of the patch merge operator (0 disables it)"
+    ),
     patch_accounts: Path = typer.Option(
         None, "--patch-accounts", exists=True, help="Patch size-distribution accounts (YAML)"
     ),
@@ -168,6 +171,7 @@ def optimize(
         warm_cache=warm_cache,
         cluster_weight=cluster_weight,
         cluster_size=cluster_size,
+        merge_weight=merge_weight,
         patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",
         cooling_mode=cooling_mode,
         cooling_window=cooling_window,
