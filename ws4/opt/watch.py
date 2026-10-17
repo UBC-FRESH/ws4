@@ -33,7 +33,7 @@ from rich.text import Text
 
 from .core import Problem
 from .engine import Optimizer
-from .objective import Target
+from .objective import Target, objective_terms
 from .operators import Schedule
 from .solvers import solve_ils, solve_sa, solve_sa_delta, solve_tabu
 
@@ -472,6 +472,8 @@ class WatchState:
         The current iteration.
     windows : tuple of TargetWindow
         One window per watched account, for the incumbent.
+    point_in_time : tuple of str
+        The patch account names; their targets are snapshots read at the period's first year.
     """
 
     label: str
@@ -479,6 +481,7 @@ class WatchState:
     period_width: int
     years: int
     targets: tuple[Target, ...]
+    point_in_time: tuple[str, ...] = ()
     best_objective: float = math.inf
     best_values: pd.DataFrame | None = None
     evaluations: int = 0
@@ -486,6 +489,30 @@ class WatchState:
     windows: tuple[TargetWindow, ...] = ()
     islands: int = 1
     blocks: int = 0
+
+    def terms(self) -> dict[str, float]:
+        """Return each account's true weighted contribution to the objective.
+
+        The contribution is the same penalty the objective charges (weight and shape included),
+        so the windows show directly which term dominates.
+
+        Returns
+        -------
+        dict of str to float
+            The contribution per account, keyed by account name; empty before the first best.
+        """
+        if self.best_values is None:
+            return {}
+        names = self.point_in_time
+
+        def is_point_in_time(account: str) -> bool:
+            return any(account == stem or account.startswith(f"{stem}.") for stem in names)
+
+        result: dict[str, float] = {}
+        terms = objective_terms(self.best_values, self.targets, is_point_in_time)
+        for target, value in zip(self.targets, terms, strict=True):
+            result[target.account] = result.get(target.account, 0.0) + value
+        return result
 
     def current_windows(self) -> tuple[TargetWindow, ...]:
         """Return one window per watched account for the incumbent.
@@ -511,14 +538,16 @@ def render_frame(state: WatchState, optimizer: Optimizer, elapsed: float) -> Ren
     """Render one frame: header, then the target windows side by side."""
     windows = state.windows if state.windows else state.current_windows()
     compact = len(windows) > 1
+    terms = state.terms()
     panels: list[RenderableType] = []
     for window in windows:
+        contribution = terms.get(window.account)
+        title = window.account
+        if contribution is not None:
+            title = f"{window.account}   Z +{format_value(contribution)}"
         panels.append(
             Group(
-                Text(
-                    f"{window.account}   penalty {format_value(window.total_penalty())}",
-                    style="bold",
-                ),
+                Text(title, style="bold"),
                 chart_renderable(window),
                 Text(""),
                 window_table(window, compact=compact),
@@ -723,6 +752,7 @@ def run_watch(
         period_width=period_width,
         years=cfg.years,
         targets=tuple(targets),
+        point_in_time=tuple(account.name for account in optimizer.patch_accounts()),
     )
     candidates = optimizer.candidates()
     evaluator = (

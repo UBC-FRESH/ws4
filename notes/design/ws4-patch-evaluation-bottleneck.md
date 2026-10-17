@@ -163,6 +163,34 @@ from one-config-per-process runs, back to back, and repeat within a few percent.
 `cProfile` is also unusable here (pure-Python inner loops are inflated by an order of magnitude). Use
 phase timers, or a sampling profiler.
 
+### The warm start is level-dependent, and the horizon sets the ceiling
+
+The warm start gives every block its first candidate chain — usually a year-0 clearcut — so it starts
+with close to the whole estate harvested at once. Whether that helps depends on the target level
+against the ceiling:
+
+- **Well below the ceiling** (300k per 10-year period over 50 years, ceiling ~1,500k): it over-harvests
+  by about 9x and the search spends its whole budget undoing that — 13.3M penalty at the start, 7.2M
+  after 10,000 iterations and still spiking, where a **cold** start reaches a perfectly flat profile,
+  penalty exactly **0**, in the same 10,000 iterations.
+- **Near the ceiling** (1,000k per period over 200 years): it starts with roughly the right total
+  volume and only has to redistribute it, so it converges far faster than a cold start, which must
+  build the volume from nothing.
+
+So "always warm" and "always cold" are both wrong: warm if the target volume is near the ceiling, cold
+if it is well below. Harvest "spiking" in the first and last periods is the warm start's year-0 dump
+and the tail of the stands it consumed, not a defect in the objective.
+
+Even-flow ceilings measured cold (20,000 iterations, 1-year simulation step, 10-year account period):
+
+| horizon | ceiling per 10-year period |
+| --- | --- |
+| 50 years | **~1,500k** (1,400k exact, 1,600k within 0.7%, 2,000k fails) |
+| 200 years | **~1,000k** sustainable |
+
+The short horizon is *higher* because it can liquidate standing inventory with no terminal constraint;
+over 200 years the level is bounded by sustainable yield.
+
 ## The array-backed state (landed)
 
 `PatchGroupYear` now holds the membership, criterion value and component of each block in arrays
