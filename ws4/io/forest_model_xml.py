@@ -28,6 +28,17 @@ class Attribute:
 
     The source is either a curve reference or an expression. ``factor`` is the
     optional area or yield modifier expression.
+
+    Attributes
+    ----------
+    label : str
+        The attribute label, as it appears in the account or feature name.
+    curve : str or None
+        The curve the attribute is read from, or None when it is an expression.
+    expression : str or None
+        The expression the attribute is evaluated from, or None when it reads a curve.
+    factor : str or None
+        The optional area or yield modifier applied to the attribute.
     """
 
     label: str
@@ -38,7 +49,22 @@ class Attribute:
 
 @dataclass(frozen=True)
 class Treatment:
-    """A treatment inside a track."""
+    """A treatment inside a track.
+
+    Attributes
+    ----------
+    label : str
+        The treatment label, matched by a select's ``treatment eq`` context.
+    min_age : int
+        The youngest operable age for the treatment, in years (the ``minage`` attribute).
+        A stratum cannot be treated before it reaches this age.
+    max_age : int
+        The oldest operable age for the treatment, in years (the ``maxage`` attribute); zero or
+        less means no upper age limit.
+    transition : dict of str to str
+        The state-variable values the treated area moves to, keyed by field name, as raw
+        expressions.
+    """
 
     label: str
     min_age: int
@@ -53,6 +79,15 @@ class Term:
     ``op`` is one of ``eq``, ``ne``, ``lt``, ``le``, ``gt``, ``ge``, ``in``, or
     ``?`` for a term the parser cannot evaluate (a function call or a ``not``
     expression).
+
+    Attributes
+    ----------
+    field : str
+        The state variable or column the term tests.
+    op : str
+        The comparison operator.
+    value : str
+        The raw right-hand side, kept as an expression.
     """
 
     field: str
@@ -64,8 +99,12 @@ class Term:
 class Retention:
     """A retention rule: move a fraction of the area to another state.
 
-    ``factor`` is the retained fraction (a column name or a constant), and
-    ``assigns`` are the state-variable values the retained area moves to.
+    Attributes
+    ----------
+    factor : str
+        The retained fraction, as a column name or a constant expression.
+    assigns : dict of str to str
+        The state-variable values the retained area moves to.
     """
 
     factor: str
@@ -74,7 +113,31 @@ class Retention:
 
 @dataclass(frozen=True)
 class Select:
-    """One ``select`` block."""
+    """One ``select`` block.
+
+    Attributes
+    ----------
+    statement : str
+        The raw select statement, kept for reporting and diagnostics.
+    terms : tuple of Term
+        The parsed terms of the statement.
+    features : tuple of Attribute
+        The feature attributes the select defines.
+    products : tuple of Attribute
+        The product attributes the select defines.
+    treatments : tuple of Treatment
+        The treatments the select makes available.
+    retention : Retention or None
+        The retention rule, or None when the select has none.
+    retention_features : tuple of Attribute
+        The features carried by a ``<retention>`` rule. They describe the retained fraction of
+        the area, so they attach to the stratum the retention moves the area to, not to the
+        select's own stratum.
+    treatment_context : str
+        The ``treatment eq 'X'`` value, if the select has one. A select with a treatment context
+        applies to the stratum that matches its other terms, and its products are tagged with
+        ``X``; it is not a stratum dimension.
+    """
 
     statement: str
     terms: tuple[Term, ...]
@@ -83,23 +146,39 @@ class Select:
     treatments: tuple[Treatment, ...]
     retention: Retention | None = None
     retention_features: tuple[Attribute, ...] = ()
-    """The features carried by a ``<retention>`` rule.
-
-    A retention rule may carry its own features, nested inside the ``retention``
-    element. They describe the retained fraction of the area, so they attach to the
-    stratum the retention moves the area to, not to the select's own stratum.
-    """
     treatment_context: str = ""
-    """The ``treatment eq 'X'`` value, if the select has one.
-
-    A select with a treatment context applies to the stratum that matches its other
-    terms, and its products are tagged with ``X``. It is not a stratum dimension.
-    """
 
 
 @dataclass(frozen=True)
 class Recipe:
-    """A parsed ForestModelXML recipe."""
+    """A parsed ForestModelXML recipe.
+
+    Attributes
+    ----------
+    horizon : int
+        The number of years the recipe runs for.
+    year : int
+        The year the recipe starts, for relative expressions.
+    match : str
+        The model's match mode, such as ``single``.
+    curves : dict of str to tuple of Point
+        The curve points, keyed by curve id.
+    defines : dict of str to str or None
+        The non-constant ``<define>`` fields, mapped to the column each reads, or None when the
+        element names no column.
+    constants : dict of str to str
+        The constant ``<define>`` values, by field name.
+    input_block : str
+        The expression the input block id is read from.
+    input_area : str
+        The expression the input area is read from.
+    input_age : str
+        The expression the input age is read from.
+    output : dict of str to str
+        The ``<output>`` element's attributes, as given.
+    selects : tuple of Select
+        The select blocks, in document order.
+    """
 
     horizon: int
     year: int

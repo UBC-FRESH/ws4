@@ -188,7 +188,18 @@ class Simulator:
 
     @classmethod
     def from_dataset(cls, dataset_dir: Path) -> Simulator:
-        """Build a simulator that reads the given compiled dataset."""
+        """Build a simulator that reads the given compiled dataset.
+
+        Parameters
+        ----------
+        dataset_dir : Path
+            The compiled dataset directory.
+
+        Returns
+        -------
+        Simulator
+            The simulator for that dataset.
+        """
         return cls(dataset_dir)
 
     def reset(self) -> None:
@@ -315,6 +326,16 @@ class Simulator:
         A feature label may appear on several tracks; the value is the sum of the area
         times the feature curve at the fragment's offset, over the precomputed join. The
         curves are evaluated with a single integer-age table gather.
+
+        Parameters
+        ----------
+        year : int
+            The year to label the values with.
+
+        Returns
+        -------
+        list of dict
+            One ``{"year", "account", "value"}`` record per feature account.
         """
         if self._join_dirty or self._join_frame_id != id(self.fragments):
             self._rebuild_join()
@@ -984,7 +1005,31 @@ class Simulator:
         core_buffer_m: float | None = None,
         min_core_area_ha: float | None = None,
     ) -> None:
-        """Replay a schedule and write per-year patch metrics and patch accounts."""
+        """Replay a schedule and write per-year patch metrics and patch accounts.
+
+        Parameters
+        ----------
+        schedule : pandas.DataFrame
+            The schedule, with ``block_id``, ``treatment``, and ``period`` columns.
+        years : int
+            The number of annual steps.
+        topology_csv : Path
+            The block topology edge list.
+        patch_breaks : sequence of float
+            The size-class upper bounds, in hectares, for ``patch_metrics.csv``.
+        out_dir : Path
+            The directory to write the outputs into.
+        max_opening_ha : float or None, optional
+            The maximum opening size, in hectares, for the violation record.
+        min_green_up_years : int or None, optional
+            The green-up interval, for the violation record.
+        patch_accounts : sequence of PatchAccount, optional
+            The patch accounts to accumulate over the run.
+        core_buffer_m : float or None, optional
+            The core-area buffer distance, in metres.
+        min_core_area_ha : float or None, optional
+            The minimum core area, in hectares.
+        """
         out_dir = Path(out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         graph = load_patch_edges(topology_csv)

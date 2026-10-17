@@ -60,7 +60,13 @@ class Table:
 
     @property
     def required_columns(self) -> tuple[str, ...]:
-        """Return the required column names."""
+        """Return the required column names.
+
+        Returns
+        -------
+        tuple of str
+            The names of the columns the table requires.
+        """
         return tuple(column.name for column in self.columns)
 
 

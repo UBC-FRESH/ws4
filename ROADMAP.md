@@ -309,6 +309,7 @@ budget. Plan of record: `notes/design/ws4-performance.md`.
 - [x] P6.42 Correct the flow definitions (reference-period percent difference; ndy between periods)
 - [x] P6.43 Price flow targets per period; fix the watcher's flow display
 - [x] P6.44 Docs audit: correct the stale page claims and complete the `ws4.opt` docstrings
+- [x] P6.45 Public-docstring audit and the `docstrings` dashboard gate
 
 Deferred from P6, triaged in `notes/backlog.md`:
 

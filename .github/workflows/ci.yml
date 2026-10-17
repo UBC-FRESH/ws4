@@ -48,6 +48,9 @@ jobs:
       - name: Build docs with warnings as errors
         run: sphinx-build -b html docs _build/html -W
 
+      - name: Audit public docstrings
+        run: python scripts/doc_audit.py
+
   dashboard:
     name: Green dashboard summary
     runs-on: ubuntu-24.04
