@@ -140,6 +140,23 @@ def test_last_account_values_exposes_the_evaluation(tmp_path: Path) -> None:
     assert "product.Volume" in {str(a) for a in values["account"]}
 
 
+def test_a_percentage_account_is_averaged_over_a_period() -> None:
+    """A patch size-class share is a mean over the period, not a sum."""
+    account = "patch.h.10_50.size"
+    values = pd.DataFrame(
+        [
+            {"year": 0, "account": account, "value": 40.0},
+            {"year": 1, "account": account, "value": 60.0},
+        ]
+    )
+    assert period_totals(values, (account,), 2, 2) == [100.0]
+    assert period_totals(values, (account,), 2, 2, mean=True) == [50.0]
+    window = target_window(values, [Target(account, 0, minimum=100.0)], (account,), 2, 2)
+    assert window.realized == (50.0,)
+    assert window.minimum == (100.0,)
+    assert window.total_penalty() == 50.0
+
+
 def test_a_watch_state_builds_one_window_per_account() -> None:
     """Each watched account gets its own target window, not a summed one."""
     state = WatchState(

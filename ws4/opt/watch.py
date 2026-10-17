@@ -69,10 +69,34 @@ def format_value(value: float) -> str:
     return f"{value:.4g}"
 
 
+def is_percentage(account: str) -> bool:
+    """Return whether an account is a percentage share, which is averaged over a period.
+
+    The patch size-class sub-accounts (``…<class>.size``) are the share of the total patch area
+    held by a size class, so summing them over a period would multiply a percentage by the period
+    length. Everything else (volumes, areas, counts) is summed.
+
+    Parameters
+    ----------
+    account : str
+        The account label.
+
+    Returns
+    -------
+    bool
+        True for a percentage account.
+    """
+    return account.endswith(".size")
+
+
 def period_totals(
-    values: pd.DataFrame, accounts: Sequence[str], period_width: int, years: int
+    values: pd.DataFrame,
+    accounts: Sequence[str],
+    period_width: int,
+    years: int,
+    mean: bool = False,
 ) -> list[float]:
-    """Sum the given accounts' values over each period.
+    """Sum the given accounts' values over each period, or average them.
 
     Parameters
     ----------
@@ -84,14 +108,18 @@ def period_totals(
         The number of years per period.
     years : int
         The horizon, in years.
+    mean : bool, optional
+        Average the years instead of summing them; use it for a percentage account. Defaults to
+        False.
 
     Returns
     -------
     list of float
-        One total per period; periods with no rows are zero.
+        One value per period; periods with no rows are zero.
     """
     n_periods = (years + period_width - 1) // period_width
     totals = [0.0] * max(0, n_periods)
+    counts = [0] * max(0, n_periods)
     wanted = set(accounts)
     if values.empty or not wanted or period_width <= 0 or years <= 0:
         return totals
@@ -103,17 +131,24 @@ def period_totals(
         if year < 0 or year >= years:
             continue
         totals[year // period_width] += float(str(row.value))
+        counts[year // period_width] += 1
+    if mean:
+        return [
+            total / count if count else 0.0 for total, count in zip(totals, counts, strict=True)
+        ]
     return totals
 
 
 def _period_levels(
-    targets: Sequence[Target], account: str, period_width: int, years: int
+    targets: Sequence[Target], account: str, period_width: int, years: int, mean: bool = False
 ) -> tuple[list[float | None], list[float | None]]:
     """Return one account's minimum and maximum per period.
 
     A target's level is spread over its own period and apportioned to the watcher's periods
     by their overlap: a per-year target sums over the years of a watcher period, while a
-    period-width target (the usual case) applies directly.
+    period-width target (the usual case) applies directly. With ``mean`` (a percentage account)
+    the level is taken as the largest set in the period instead of the sum, so a per-year
+    ``…size`` target reads as its own percentage.
     """
     n_periods = (years + period_width - 1) // period_width
     minima: list[float | None] = [None] * max(0, n_periods)
@@ -132,9 +167,21 @@ def _period_levels(
             if overlap <= 0:
                 continue
             if target.minimum is not None:
-                minima[period] = (minima[period] or 0.0) + target.minimum * overlap / width
+                if mean:
+                    current = minima[period]
+                    minima[period] = (
+                        target.minimum if current is None else max(current, target.minimum)
+                    )
+                else:
+                    minima[period] = (minima[period] or 0.0) + target.minimum * overlap / width
             if target.maximum is not None:
-                maxima[period] = (maxima[period] or 0.0) + target.maximum * overlap / width
+                if mean:
+                    current = maxima[period]
+                    maxima[period] = (
+                        target.maximum if current is None else min(current, target.maximum)
+                    )
+                else:
+                    maxima[period] = (maxima[period] or 0.0) + target.maximum * overlap / width
     return minima, maxima
 
 
@@ -236,10 +283,11 @@ def target_window(
         The realized values and the minimum/maximum window per period.
     """
     n_periods = (years + period_width - 1) // period_width
+    mean = all(is_percentage(account) for account in accounts) and bool(accounts)
     minima: list[float | None] = [None] * max(0, n_periods)
     maxima: list[float | None] = [None] * max(0, n_periods)
     for account in accounts:
-        account_minima, account_maxima = _period_levels(targets, account, period_width, years)
+        account_minima, account_maxima = _period_levels(targets, account, period_width, years, mean)
         for period in range(n_periods):
             low = account_minima[period]
             if low is not None:
@@ -247,7 +295,7 @@ def target_window(
             high = account_maxima[period]
             if high is not None:
                 maxima[period] = (maxima[period] or 0.0) + high
-    realized = period_totals(values, accounts, period_width, years)
+    realized = period_totals(values, accounts, period_width, years, mean)
     return TargetWindow(
         account=label if label is not None else "+".join(accounts),
         period_width=period_width,
@@ -789,6 +837,7 @@ __all__ = [
     "chart_cells",
     "chart_renderable",
     "format_value",
+    "is_percentage",
     "period_totals",
     "render_frame",
     "run_watch",

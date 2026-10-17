@@ -779,5 +779,8 @@ issue comments.
   different units (m3 per period and percent of patch area). Each `--account` now gets its own window,
   with its own axis, title and penalty, so a volume target and a patch size-class target can be watched
   converging side by side — the view an analyst uses to see that the search is working and how fast.
-  `WatchState.window` became `windows`, and the summary `penalty` is summed across them. Tests:
-  `tests/test_watch.py` (one window per account; the CLI shows both). Dashboard: **GREEN**.
+  `WatchState.window` became `windows`, and the summary `penalty` is summed across them. A
+  **percentage** account (the patch ``…<class>.size`` shares) is averaged over a period rather than
+  summed, since a share is not additive; before that fix the patch window read 379% where the truth
+  was ~38% and the target looked satisfied. Tests: `tests/test_watch.py` (one window per account, the
+  CLI shows both, and a percentage is averaged). Dashboard: **GREEN**.

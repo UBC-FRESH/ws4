@@ -93,7 +93,9 @@ final frame instead of a live view. The live view repaints on a fixed heartbeat
 objective) stays current even between improvements.
 
 Repeat ``--account`` to watch several accounts **side by side, one window each** — each with its own
-axis, title and penalty, so accounts with different units read correctly. That is how to see a volume
+axis, title and penalty, so accounts with different units read correctly. A **percentage** account
+(the patch size-class ``…<class>.size`` shares of total patch area) is averaged over a period, not
+summed, since summing a share would multiply it by the period length. That is how to see a volume
 target (m3 per period) and a patch size-class target (percent of patch area) converging together:
 
 .. code-block:: bash
