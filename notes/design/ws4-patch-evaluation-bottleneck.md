@@ -210,6 +210,14 @@ bulk relabel's own bookkeeping and the criterion series.
 
 ## Quality, at last
 
+**The simulation is annual; the accounting is periodic.** `PatchModel` originally held component state
+for *every* year of the horizon (200 states for 200 years) and updated every year a move changed, which
+is wasted work: patch statistics are only needed where a patch target reads them. It now maintains
+`active_years` — the years the patch targets are accounted in — so `reset` builds one state per
+accounting point and a move only looks for changes there. A single-year patch target on a 50-year
+horizon went from 50 states to 1, and the volume-floored benchmark from **62 to 310 iterations/s (5x)**
+with the patch penalty unchanged.
+
 Every performance number in this note above was measured against a target satisfied at iteration 0
 (`objective=0.000`) — overhead on a solved problem, not the cost of optimising patches. With a binding
 target (`patch.harvest.0_5.frequency <= 60`, year 0) the search drives the penalty from 88 into the
