@@ -71,7 +71,25 @@ def restore(schedule: Schedule, undo: Undo) -> None:
 
 
 class Operator(Protocol):
-    """A neighbourhood move."""
+    """A neighbourhood move.
+
+    Operators are selected by weight, so a registry turns a mix of operators into a single
+    proposal distribution. A move that cannot be made returns None and is not counted.
+
+    Attributes
+    ----------
+    name : str
+        The operator name, as it appears in the run summary.
+    weight : float
+        The relative probability of selecting the operator.
+
+    Parameters
+    ----------
+    *args
+        Accepted for protocol compatibility; operators take no positional arguments.
+    **kwargs
+        Accepted for protocol compatibility; operators take no keyword arguments.
+    """
 
     name: str
     weight: float
@@ -79,17 +97,63 @@ class Operator(Protocol):
     def propose_inplace(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
     ) -> Undo | None:
-        """Mutate the schedule and return the previous chains, or None to move."""
+        """Mutate the schedule and return the previous chains, or None to move.
+
+        Parameters
+        ----------
+        schedule : dict of int to Chain
+            The schedule to mutate in place.
+        rng : random.Random
+            The random source.
+        candidates : dict of int to list of Chain
+            The candidate chains per block.
+
+        Returns
+        -------
+        dict of int to Chain or None
+            The previous chain per touched block (None means the block was absent), or None
+            when the operator cannot move.
+        """
 
     def propose(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
     ) -> tuple[Schedule, tuple[int, ...]] | None:
-        """Return a modified copy and the blocks it changed, or None."""
+        """Return a modified copy and the blocks it changed, or None.
+
+        Parameters
+        ----------
+        schedule : dict of int to Chain
+            The schedule to copy and modify.
+        rng : random.Random
+            The random source.
+        candidates : dict of int to list of Chain
+            The candidate chains per block.
+
+        Returns
+        -------
+        tuple or None
+            ``(schedule, changed)``, or None when the operator cannot move.
+        """
 
     def apply(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
     ) -> Schedule | None:
-        """Return a modified copy, or None if the operator cannot move."""
+        """Return a modified copy, or None if the operator cannot move.
+
+        Parameters
+        ----------
+        schedule : dict of int to Chain
+            The schedule to copy and modify.
+        rng : random.Random
+            The random source.
+        candidates : dict of int to list of Chain
+            The candidate chains per block.
+
+        Returns
+        -------
+        dict of int to Chain or None
+            The modified copy, or None when the operator cannot move.
+        """
 
 
 class _OperatorBase:
@@ -121,7 +185,16 @@ class _OperatorBase:
 
 
 class ToggleOperator(_OperatorBase):
-    """Assign a candidate chain to a block, or clear an assigned block."""
+    """Assign a candidate chain to a block, or clear an assigned block.
+
+    The block is drawn uniformly from the assignable blocks. An assigned block is cleared
+    with probability one half, otherwise it takes a randomly chosen candidate chain.
+
+    Parameters
+    ----------
+    weight : float, optional
+        The operator's selection weight. Defaults to 1.0.
+    """
 
     name = "toggle"
 
@@ -132,7 +205,22 @@ class ToggleOperator(_OperatorBase):
     def propose_inplace(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
     ) -> Undo | None:
-        """Toggle one block in place."""
+        """Toggle one block in place.
+
+        Parameters
+        ----------
+        schedule : dict of int to Chain
+            The schedule to mutate in place.
+        rng : random.Random
+            The random source.
+        candidates : dict of int to list of Chain
+            The candidate chains per block.
+
+        Returns
+        -------
+        dict of int to Chain or None
+            The previous chain of the touched block, or None when no block can be assigned.
+        """
         blocks, _ = _index(candidates)
         if not blocks:
             return None
@@ -146,7 +234,17 @@ class ToggleOperator(_OperatorBase):
 
 
 class ShiftOperator(_OperatorBase):
-    """Rechoose a block's chain (a different rotation sequence)."""
+    """Rechoose a block's chain (a different rotation sequence).
+
+    Only blocks with more than one candidate chain can move. The block is drawn from the
+    assignable blocks, retrying a bounded number of times before falling back to a block
+    that is already assigned.
+
+    Parameters
+    ----------
+    weight : float, optional
+        The operator's selection weight. Defaults to 1.0.
+    """
 
     name = "shift"
 
@@ -157,7 +255,22 @@ class ShiftOperator(_OperatorBase):
     def propose_inplace(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
     ) -> Undo | None:
-        """Rechoose one assigned block's chain, in place."""
+        """Rechoose one assigned block's chain, in place.
+
+        Parameters
+        ----------
+        schedule : dict of int to Chain
+            The schedule to mutate in place.
+        rng : random.Random
+            The random source.
+        candidates : dict of int to list of Chain
+            The candidate chains per block.
+
+        Returns
+        -------
+        dict of int to Chain or None
+            The previous chain of the touched block, or None when no block can be rechosen.
+        """
         if not schedule:
             return None
         blocks, rechoosable = _index(candidates)
@@ -177,7 +290,16 @@ class ShiftOperator(_OperatorBase):
 
 
 class SwapOperator(_OperatorBase):
-    """Exchange the chains of two blocks."""
+    """Exchange the chains of two blocks.
+
+    Both blocks must already be assigned, so the move leaves the set of assigned blocks
+    unchanged and only exchanges their chains.
+
+    Parameters
+    ----------
+    weight : float, optional
+        The operator's selection weight. Defaults to 0.5.
+    """
 
     name = "swap"
 
@@ -188,7 +310,23 @@ class SwapOperator(_OperatorBase):
     def propose_inplace(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
     ) -> Undo | None:
-        """Exchange two assigned blocks' chains, in place."""
+        """Exchange two assigned blocks' chains, in place.
+
+        Parameters
+        ----------
+        schedule : dict of int to Chain
+            The schedule to mutate in place.
+        rng : random.Random
+            The random source.
+        candidates : dict of int to list of Chain
+            The candidate chains per block.
+
+        Returns
+        -------
+        dict of int to Chain or None
+            The previous chain of each exchanged block, or None when two assigned blocks
+            cannot be found.
+        """
         if len(schedule) < 2:
             return None
         blocks, _ = _index(candidates)
@@ -215,6 +353,13 @@ class LnsOperator(_OperatorBase):
 
     The destroyed blocks are sampled by rejection from the candidate blocks, so the move
     costs O(blocks touched) rather than O(schedule).
+
+    Parameters
+    ----------
+    weight : float, optional
+        The operator's selection weight. Defaults to 0.2.
+    destroy_fraction : float, optional
+        The fraction of the assigned blocks to destroy and repair. Defaults to 0.1.
     """
 
     name = "lns"
@@ -227,7 +372,22 @@ class LnsOperator(_OperatorBase):
     def propose_inplace(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
     ) -> Undo | None:
-        """Rechoose a fraction of the schedule in place."""
+        """Rechoose a fraction of the schedule in place.
+
+        Parameters
+        ----------
+        schedule : dict of int to Chain
+            The schedule to mutate in place.
+        rng : random.Random
+            The random source.
+        candidates : dict of int to list of Chain
+            The candidate chains per block.
+
+        Returns
+        -------
+        dict of int to Chain or None
+            The previous chain per destroyed block, or None when the schedule is empty.
+        """
         if not schedule:
             return None
         blocks, _ = _index(candidates)
@@ -258,6 +418,16 @@ class ClusterOperator(_OperatorBase):
     small connected set from a seed block along the topology and rechooses every block in it.
     Openings and patches are the decision objects in the harvest-adjacency literature, so a
     move along the topology explores coherent patch changes.
+
+    Parameters
+    ----------
+    weight : float, optional
+        The operator's selection weight. Defaults to 0.5.
+    size : int, optional
+        The maximum number of blocks in the cluster. Defaults to 8.
+    neighbours : mapping of int to tuple of int, optional
+        The topological neighbours per block. An empty map leaves every cluster a single
+        block, so the move degrades to a rechoose.
     """
 
     name = "cluster"
@@ -295,7 +465,22 @@ class ClusterOperator(_OperatorBase):
     def propose_inplace(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
     ) -> Undo | None:
-        """Rechoose a connected cluster of blocks, in place."""
+        """Rechoose a connected cluster of blocks, in place.
+
+        Parameters
+        ----------
+        schedule : dict of int to Chain
+            The schedule to mutate in place.
+        rng : random.Random
+            The random source.
+        candidates : dict of int to list of Chain
+            The candidate chains per block.
+
+        Returns
+        -------
+        dict of int to Chain or None
+            The previous chain per touched block, or None when no block can be assigned.
+        """
         blocks, _ = _index(candidates)
         if not blocks:
             return None
@@ -315,14 +500,48 @@ if TYPE_CHECKING:
 
 
 class PatchSource(Protocol):
-    """The patch state a move operator can consult."""
+    """The patch state a move operator can consult.
+
+    The patch model is owned by the evaluator, not by the operator, so an operator reaches it
+    through this narrow interface rather than holding a reference to a mutable model.
+
+    Parameters
+    ----------
+    *args
+        Accepted for protocol compatibility; implementors take no positional arguments.
+    **kwargs
+        Accepted for protocol compatibility; implementors take no keyword arguments.
+    """
 
     def active_patch_model(self) -> PatchModel | None:
-        """Return the patch model the current evaluator is maintaining."""
+        """Return the patch model the current evaluator is maintaining.
+
+        Returns
+        -------
+        PatchModel or None
+            The live model, or None when no patch account is being evaluated.
+        """
 
 
 class MergeOperator(_OperatorBase):
-    """Treat a gap block — the negative space between two patches — to join them."""
+    """Treat a gap block — the negative space between two patches — to join them.
+
+    The negative space between two proximal patches is where a patch target is cheapest to
+    improve: a block that is one criterion short of membership joins two patches instead of
+    scattering harvest. The operator asks the live patch model for such a gap block and tries
+    a bounded number of candidate chains that push it over the membership threshold.
+
+    Parameters
+    ----------
+    optimizer : PatchSource
+        The optimizer, used to reach the live patch model.
+    weight : float, optional
+        The operator's selection weight. Defaults to 0.3.
+    samples : int, optional
+        The number of blocks to test for a gap per proposal. Defaults to 6.
+    chains : int, optional
+        The number of candidate chains to try per gap. Defaults to 8.
+    """
 
     name = "merge"
 
@@ -355,7 +574,22 @@ class MergeOperator(_OperatorBase):
     def propose_inplace(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
     ) -> Undo | None:
-        """Assign a gap block a chain that makes it a member, in place."""
+        """Assign a gap block a chain that makes it a member, in place.
+
+        Parameters
+        ----------
+        schedule : dict of int to Chain
+            The schedule to mutate in place.
+        rng : random.Random
+            The random source.
+        candidates : dict of int to list of Chain
+            The candidate chains per block.
+
+        Returns
+        -------
+        dict of int to Chain or None
+            The previous chain of the gap block, or None when no gap or chain is found.
+        """
         model = self.optimizer.active_patch_model()
         if model is None or not model.groups or model.years <= 0:
             return None
@@ -377,7 +611,22 @@ class MergeOperator(_OperatorBase):
 
 
 class SplitOperator(_OperatorBase):
-    """Untreat an articulation block, splitting its patch."""
+    """Untreat an articulation block, splitting its patch.
+
+    An articulation point sits between two parts of a patch, so clearing it separates them
+    and can move area out of an over-large size class. The operator walks the live patch
+    model for such a block and clears it. The default weight is zero, so the operator ships
+    disabled until a configuration enables it.
+
+    Parameters
+    ----------
+    optimizer : PatchSource
+        The optimizer, used to reach the live patch model.
+    weight : float, optional
+        The operator's selection weight. Defaults to 0.0.
+    samples : int, optional
+        The number of blocks to test for an articulation point. Defaults to 6.
+    """
 
     name = "split"
 
@@ -406,7 +655,22 @@ class SplitOperator(_OperatorBase):
     def propose_inplace(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
     ) -> Undo | None:
-        """Untreat a block that will split its patch, in place."""
+        """Untreat a block that will split its patch, in place.
+
+        Parameters
+        ----------
+        schedule : dict of int to Chain
+            The schedule to mutate in place.
+        rng : random.Random
+            The random source.
+        candidates : dict of int to list of Chain
+            The candidate chains per block (unused: the move clears an assignment).
+
+        Returns
+        -------
+        dict of int to Chain or None
+            The previous chain of the articulation block, or None when none is found.
+        """
         model = self.optimizer.active_patch_model()
         if model is None or not model.groups or model.years <= 0:
             return None
@@ -427,7 +691,14 @@ class SplitOperator(_OperatorBase):
 
 
 class OperatorRegistry:
-    """A weighted set of operators."""
+    """A weighted set of operators.
+
+    Parameters
+    ----------
+    operators : list of Operator, optional
+        The operators to choose between. When None, a default set of toggle, shift, swap and
+        LNS is used.
+    """
 
     def __init__(self, operators: list[Operator] | None = None) -> None:
         """Store the operators (a default set when none is given)."""
@@ -438,15 +709,38 @@ class OperatorRegistry:
         )
 
     def names(self) -> list[str]:
-        """Return the operator names."""
+        """Return the operator names.
+
+        Returns
+        -------
+        list of str
+            The names, in registration order.
+        """
         return [operator.name for operator in self._operators]
 
     def weights(self) -> dict[str, float]:
-        """Return the operator weights by name."""
+        """Return the operator weights by name.
+
+        Returns
+        -------
+        dict of str to float
+            The selection weight per operator name.
+        """
         return {operator.name: operator.weight for operator in self._operators}
 
     def pick(self, rng: random.Random) -> Operator:
-        """Return a weighted-random operator."""
+        """Return a weighted-random operator.
+
+        Parameters
+        ----------
+        rng : random.Random
+            The random source.
+
+        Returns
+        -------
+        Operator
+            The chosen operator.
+        """
         total = sum(operator.weight for operator in self._operators)
         threshold = rng.random() * total
         for operator in self._operators:

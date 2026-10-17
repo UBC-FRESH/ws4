@@ -32,7 +32,21 @@ from .patch_kernels import (
 
 
 def compactness(area_ha: float, perimeter_m: float) -> float:
-    """Return a patch's compactness from 0 to 100 (100 is a circle)."""
+    """Return a patch's compactness from 0 to 100 (100 is a circle).
+
+    Parameters
+    ----------
+    area_ha : float
+        The patch area, in hectares.
+    perimeter_m : float
+        The patch perimeter, in metres.
+
+    Returns
+    -------
+    float
+        The compactness, ``100 * 4 * pi * area / perimeter**2``, capped at 100 and 0 for a
+        degenerate patch.
+    """
     area_m2 = area_ha * 10000.0
     if area_m2 <= 0.0 or perimeter_m <= 0.0:
         return 0.0
@@ -40,7 +54,21 @@ def compactness(area_ha: float, perimeter_m: float) -> float:
 
 
 def class_index(size_classes: Sequence[float], area: float) -> int:
-    """Return the size-class index an area falls in."""
+    """Return the size-class index an area falls in.
+
+    Parameters
+    ----------
+    size_classes : sequence of float
+        The ascending size-class upper bounds, in hectares.
+    area : float
+        The patch area, in hectares.
+
+    Returns
+    -------
+    int
+        The index of the first class whose upper bound is at least ``area``, or the last class
+        when the area exceeds every bound.
+    """
     for index, upper in enumerate(size_classes):
         lower = 0.0 if index == 0 else size_classes[index - 1]
         if lower < area <= upper:

@@ -216,32 +216,62 @@ class TargetWindow:
         return len(self.realized)
 
     def shortfalls(self) -> tuple[float, ...]:
-        """Return each period's shortfall below its minimum (zero when satisfied)."""
+        """Return each period's shortfall below its minimum (zero when satisfied).
+
+        Returns
+        -------
+        tuple of float
+            The shortfall per period.
+        """
         return tuple(
             0.0 if low is None or value >= low else low - value
             for value, low in zip(self.realized, self.minimum, strict=True)
         )
 
     def excesses(self) -> tuple[float, ...]:
-        """Return each period's excess above its maximum (zero when satisfied)."""
+        """Return each period's excess above its maximum (zero when satisfied).
+
+        Returns
+        -------
+        tuple of float
+            The excess per period.
+        """
         return tuple(
             0.0 if high is None or value <= high else value - high
             for value, high in zip(self.realized, self.maximum, strict=True)
         )
 
     def penalties(self) -> tuple[float, ...]:
-        """Return each period's total penalty."""
+        """Return each period's total penalty.
+
+        Returns
+        -------
+        tuple of float
+            The shortfall plus the excess per period.
+        """
         return tuple(
             shortfall + excess
             for shortfall, excess in zip(self.shortfalls(), self.excesses(), strict=True)
         )
 
     def total_penalty(self) -> float:
-        """Return the summed per-period penalty."""
+        """Return the summed per-period penalty.
+
+        Returns
+        -------
+        float
+            The window's total penalty.
+        """
         return sum(self.penalties())
 
     def statuses(self) -> tuple[str, ...]:
-        """Return each period's status: ``ok``, ``below``, or ``above``."""
+        """Return each period's status: ``ok``, ``below``, or ``above``.
+
+        Returns
+        -------
+        tuple of str
+            The status per period.
+        """
         result: list[str] = []
         for shortfall, excess in zip(self.shortfalls(), self.excesses(), strict=True):
             if shortfall > 0.0:
@@ -326,7 +356,18 @@ def period_label(period: int) -> str:
 
 
 def axis_maximum(window: TargetWindow) -> float:
-    """Return a value-axis maximum that fits the realized values and the window."""
+    """Return a value-axis maximum that fits the realized values and the window.
+
+    Parameters
+    ----------
+    window : TargetWindow
+        The window to fit.
+
+    Returns
+    -------
+    float
+        The axis maximum, never zero so a flat profile still has a scale.
+    """
     candidates = [abs(value) for value in window.realized]
     candidates += [value for value in window.minimum if value is not None]
     candidates += [value for value in window.maximum if value is not None]
@@ -493,6 +534,10 @@ class WatchState:
         One window per watched account, for the incumbent.
     point_in_time : tuple of str
         The patch account names; their targets are snapshots read at the period's first year.
+    islands : int
+        The number of islands in the run, shown in the header.
+    blocks : int
+        The number of blocks in the dataset, shown in the header.
     """
 
     label: str
@@ -554,7 +599,22 @@ class WatchState:
 
 
 def render_frame(state: WatchState, optimizer: Optimizer, elapsed: float) -> RenderableType:
-    """Render one frame: header, then the target windows side by side."""
+    """Render one frame: header, then the target windows side by side.
+
+    Parameters
+    ----------
+    state : WatchState
+        The state to paint.
+    optimizer : Optimizer
+        The optimizer the run is searching, used for the dataset size.
+    elapsed : float
+        The seconds since the run started.
+
+    Returns
+    -------
+    rich.console.RenderableType
+        The composable renderable for the frame.
+    """
     windows = state.windows if state.windows else state.current_windows()
     compact = len(windows) > 1
     terms = state.terms()
