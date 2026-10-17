@@ -996,3 +996,15 @@ issue comments.
   `threads` gaps, the dependency pull requests the authorship rewrite closed) and the one settings
   change still needing approval, moving the `v0.1.0` release tag into the rewritten history.
   Dashboard: **GREEN** (seven gates).
+- Carried out the Phase 6 close-out: pull request #81 squash-merged as `f5d6f27`, the branch
+  `feature/p6-performance` deleted, and parent issue #60 closed. The close-out report is
+  `notes/reports/p6-closeout.md`, and its acceptance evidence is the fresh C5 benchmark (0.108 s for
+  the 30-year simulate, 0.685 s for the 3-year simulate with routing, 29 / 39 / 31 ms per year for
+  patch accounts, edge contrast and core area), the incremental move cost (0.003 ms, and 1,006
+  iterations/s on a binding volume-plus-patch workload), and island scaling (6.4x at 8 islands, 15.3x
+  at 32, with parallel multi-start reproducing the serial result exactly). One settings change from the
+  report is still awaiting approval: moving the `v0.1.0` release tag into the rewritten history.
+- Launched Phase 7 (Parity and the analyst workflow): parent issue #82, branch `feature/p7-parity`,
+  and five child tasks (#83 to #87) — the command-line gaps (`--weights` and `--iterations`), the
+  `threads` setting and a scaling re-measurement, a sample estate under `examples/`, the missing
+  notebooks and a concepts section, and patch performance under a dense harvest. Dashboard: **GREEN**.

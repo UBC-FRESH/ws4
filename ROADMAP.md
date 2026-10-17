@@ -17,7 +17,8 @@ exists and the maintainer approves it.
 | P3 Verify | #26 | `feature/p3-verify` | complete |
 | P4 Release and deploy | #36 | `feature/p4-release` | complete |
 | P5 Operate and maintain | #44 | `feature/p5-operate` | complete |
-| P6 Performance and scalability | #60 | `feature/p6-performance` | pr-open |
+| P6 Performance and scalability | #60 | `feature/p6-performance` | complete |
+| P7 Parity and the analyst workflow | #82 | `feature/p7-parity` | active |
 
 ## Lifecycle Map
 
@@ -258,7 +259,7 @@ Goal: keep the project current: triage incoming ideas, review on a cadence, and 
 
 Parent issue: #60
 Branch: `feature/p6-performance`
-Status: pr-open
+Status: complete
 
 Goal: make the simulator, the spatial metrics, and the route model fast enough that the metaheuristic
 optimizer can evaluate thousands of candidate schedules on a C5-class dataset within a practical
@@ -326,6 +327,33 @@ Acceptance criteria:
 - One optimizer objective evaluation on C5 under 50 ms (incremental).
 - Near-linear scaling to 32+ cores; reproducibility preserved.
 
+## Phase 7: Parity and the analyst workflow
+
+Parent issue: #82
+Branch: `feature/p7-parity`
+Status: active
+
+Goal: make the replacement claim checkable and the tool comfortable to use all day: close the gaps the
+Phase 6 close-out recorded, put the workspace in step with the tooling, and extend the documentation
+where a new analyst needs it.
+
+- [ ] P7.1 Close the command-line gaps: `--weights` and `--iterations` (#83)
+- [ ] P7.2 Apply the `threads` setting and re-measure island scaling (#84)
+- [ ] P7.3 Ship a sample estate under `examples/` (#85)
+- [ ] P7.4 Add the patch, route, and sweep notebooks, and a concepts section (#86)
+- [ ] P7.5 Patch performance under a dense harvest (#87)
+
+Deferred from P7, triaged in `notes/backlog.md`:
+
+- (none outstanding.)
+
+Acceptance criteria:
+
+- Both command-line gaps closed, with tests.
+- `threads` applied, and the island scaling measured on an idle host.
+- The sample estate used by at least one guide and one notebook.
+- The docs build and the docstrings gate green, with the dashboard green at every commit.
+
 ## Detailed Next Steps Notes
 
 1. Phase 0 is complete: pull request #8 squash-merged as `97330a8`, the branch deleted, and parent
@@ -357,3 +385,11 @@ Acceptance criteria:
    harness and baseline, route and simulation quick wins, a vectorized simulator core, spatial
    precompute and incremental metrics, incremental objective evaluation, solvers at scale, native
    kernels, and the guardrails.
+
+10. Phase 6 is complete: pull request #81 squash-merged as `f5d6f27`, the branch deleted, and parent
+    issue #60 closed. The close-out report is `notes/reports/p6-closeout.md`, and its acceptance
+    evidence is the C5 benchmark, the incremental move cost, and the island scaling recorded there.
+    Phase 7 (Parity and the analyst workflow) is active on `feature/p7-parity`, parent issue #82, with
+    five tasks (#83 to #87): the command-line gaps, the `threads` setting and a scaling re-measurement,
+    a sample estate, the missing notebooks and a concepts section, and patch performance under a dense
+    harvest.
