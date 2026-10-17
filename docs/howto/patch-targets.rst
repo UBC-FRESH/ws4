@@ -67,13 +67,10 @@ Simulate a schedule and read the openings, which is the reliable way to see the 
    year  patch_count  mean_patch_area  max_patch_area  le5  le10  le50  over
       0          4.0           20.125            50.4    0     1     2     1
 
-.. note::
-
-   Targeting these classes in a **search** currently misprices them: the search's own view of the
-   patch accounts can read zero for a schedule whose openings exist, so its objective and the run's
-   ``report_targets.csv`` disagree with a simulation of the same schedule. The report is the side to
-   trust, and the correction is queued; the patch targets themselves, the topology and the operators
-   below are unaffected.
+A run's ``report_targets.csv`` prices these classes too: the run replays its incumbent through the
+simulator and folds the patch accounts into the values the report reads, so a patch target shows the
+same share the search priced. Simulating the same schedule is the honest cross-check, and the two
+agree.
 
 **3. Target a class.** A size class is a share, so the usual target is a floor on the share of
 harvesting that lands in the class:

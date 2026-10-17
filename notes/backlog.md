@@ -188,11 +188,11 @@ items are enhancements and maintenance.
 - **Command-line gaps found while writing the user docs.** `done` (P7.1, #83). `--weights` is optional
   and documented as accepted-for-compatibility, and `ws4 optimize` takes `--iterations`. Applying a
   per-account factor file is a capability worth having only if a study asks for it; it is not.
-- **A patch target in a search misprices the classes.** `open` (P7.6, #88). Found while shipping the
-  sample estate: the same schedule reports a 62.6% share of openings when simulated and 0% when
-  searched, so any active patch target is mispriced. The configuration's shape (the criterion on two
-  lanes, a zero curve on the natural one) is a suspect, as is a criterion series built before the
-  schedule's treatments. Target: P7.
+- **A patch target in a run's report.** `done` (P7.6, #88). The search priced the patch accounts
+  correctly — a simulation and the incremental evaluator agreed to the hundredth — but `Optimizer.run`
+  replayed its incumbent without passing the patch accounts to the simulation, so the reported share
+  was a missing row: zero, carrying the whole penalty. The report now folds `patch_accounts.csv` into
+  the values it prices, and a simulation of the same schedule agrees with it.
 - **Island scaling past 8 islands.** `open`. The limit is contention rather than BLAS oversubscription
   (P7.2 measured both: pinning the pools changes nothing, and the same 32-island configuration ran at
   13x to 16x while the host's load moved between 4 and 65). A candidate cause worth measuring is the

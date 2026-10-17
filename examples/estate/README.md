@@ -45,7 +45,6 @@ and the areas and everything else still applies. A schedule is a CSV of `block_i
 
 Guides that use this estate: `docs/howto/route-products.rst` and `docs/howto/patch-targets.rst`.
 
-One thing to know if you target patch size classes in a search: the search's own view of the patch
-accounts can differ from a simulation of the same schedule. The report at the end of a run is what to
-trust, and a correction is queued. Simulating the schedule and reading `patch_metrics.csv` is the way
-to see the openings themselves.
+A run's report and a simulation of the same schedule agree on the patch classes: the run folds the
+patch accounts into the values it reports. `patch_metrics.csv` from a simulation is the way to look at
+the openings themselves.

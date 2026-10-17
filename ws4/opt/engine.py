@@ -1054,6 +1054,12 @@ class Optimizer:
             years=self.cfg.years,
             out_dir=out_dir,
             topology_csv=Path(self.cfg.topology_path) if self.cfg.topology_path else None,
+            # The report replays the incumbent, so it needs the same accounts the search priced:
+            # without the patch accounts here, a patch target reported as unmet (a zero share and
+            # its whole penalty) however well the search had done.
+            patch_accounts=self.patch_accounts(),
+            max_opening_ha=self.cfg.max_opening_ha,
+            min_green_up_years=self.cfg.min_green_up_years,
             route_model=model,
             route_accounts=route_accounts,
             duplicate_accounts=duplicate_accounts,
@@ -1061,6 +1067,17 @@ class Optimizer:
             core_buffer_m=self.cfg.core_buffer_m,
             min_core_area_ha=self.cfg.min_core_area_ha,
         )
+        # The patch accounts are not additive, so the simulator reports them in their own file
+        # rather than in the account values. Fold them in, or a patch target would be priced
+        # against a missing row: a zero value carrying its whole penalty.
+        patch_frame = out_dir / "patch_accounts.csv"
+        if patch_frame.is_file():
+            ledger = pd.read_csv(patch_frame)
+            if not ledger.empty:
+                melted = ledger.melt(id_vars="year", var_name="account", value_name="value")
+                values = pd.concat(
+                    [values, melted[["year", "account", "value"]]], ignore_index=True
+                )
         write_report(values, targets, out_dir)
         summary: dict[str, Any] = {
             "incumbent_objective": best_obj,

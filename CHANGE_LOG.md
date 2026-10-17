@@ -1060,3 +1060,20 @@ issue comments.
   estate also gained `tests/test_example_estate.py`, which pins the compile, the openings, the route
   split across both mills, and the patch metrics, and the notebook gallery gained
   `030_sample_estate.ipynb`, executed with its output. Dashboard: **GREEN** (seven gates).
+- P7.6 (fix): a patch target was reported as unmet however well the search had done. The search was
+  right — a simulation of the incumbent and the incremental evaluator agreed to the hundredth (11.87 /
+  16.20 / 71.93 percent across the three classes) — but `Optimizer.run` replays its incumbent through
+  the simulator for the report, and it did not pass the patch accounts to that replay. Patch accounts
+  are not additive, so the simulator keeps them out of the account values; the report therefore priced
+  a patch target against a missing row: a zero share carrying its whole penalty (1.8M in the sample
+  estate's case) while the summary's own objective was zero. The fix passes `patch_accounts` (and the
+  opening and green-up rules, which were missing from the replay for the same reason) to the
+  simulation, and folds `patch_accounts.csv` into the values the report prices, since a patch target's
+  account is not among the additive ones. The sample estate's report now shows the 71.93 percent share
+  the search found, status `met`, penalty zero. Tests: `tests/test_patch_objective.py` gains the
+  regression — a 2 000-iteration run on the sample estate must report a non-zero share with status
+  `met` and an objective at zero — verified to fail with the fix reverted and pass with it. The notes
+  claiming the mispricing in the patch how-to, the estate README and the notebook are replaced by what
+  the run now does. Checking the published figures: nothing needs restating, because the P6 patch
+  numbers came from the benchmark and the watcher, both of which read the search's own values, and no
+  recorded acceptance figure was taken from a run's report. Dashboard: **GREEN** (seven gates).
