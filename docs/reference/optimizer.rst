@@ -198,7 +198,7 @@ Run
 
 .. code-block:: bash
 
-   ws4 optimize --dataset build/compiled --targets targets.yaml --weights weights.yaml \
+   ws4 optimize --dataset build/compiled --targets targets.yaml \
                 --threads 8 --seed 42 --out opt
 
 When a route configuration is given (``OptimizeConfig.route_config_path`` or

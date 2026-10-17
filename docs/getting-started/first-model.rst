@@ -44,7 +44,6 @@ Step 2: search
 
    ws4 optimize --dataset tmp/getting-started/compiled \
                 --targets tmp/getting-started/study.yaml \
-                --weights tmp/getting-started/weights.yaml \
                 --years 5 --time-limit 00:00:05 --seed 1 --threads 1 \
                 --out tmp/getting-started/study
 

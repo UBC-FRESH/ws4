@@ -1008,3 +1008,18 @@ issue comments.
   and five child tasks (#83 to #87) — the command-line gaps (`--weights` and `--iterations`), the
   `threads` setting and a scaling re-measurement, a sample estate under `examples/`, the missing
   notebooks and a concepts section, and patch performance under a dense harvest. Dashboard: **GREEN**.
+- P7.1 (fix): the two command-line gaps the Phase 6 close-out recorded. `ws4 optimize` required a
+  `--weights` file that nothing read, and had no way to set the search budget while `watch` and
+  `calibrate` both take `--iterations`. `--weights` is now optional and documented as accepted for
+  compatibility — the weights that apply are each target's `min_weight` and `max_weight`, which
+  `ws4 calibrate` rescales into a targets file — and `ws4 optimize` gains `--iterations`, defaulting to
+  the 500 the configured default already used, so existing runs are unchanged; the issue proposed
+  defaulting like `watch` (2000), which would have silently lengthened every run. `OptimizeConfig`'s
+  `weights_path` docstring, the reference page, the how-to guides, the FAQ and the limitations page now
+  say the same thing, and every example that passed the no-op flag no longer does. `ws4/cli.py` also
+  gained a `__main__` guard, so `python -m ws4.cli` works without relying on the console script being
+  on `PATH`, which is what the new tests use. Tests: `tests/test_cli.py` covers the framework scripts
+  and now the `ws4` command too, with four checks — optimize runs with no weights file, `--iterations 7`
+  is honoured in `summary.json`, a weights file is still accepted, and the help marks only the dataset,
+  the targets and the output as required. The notebook gallery, the docs and the example commands were
+  re-run. Dashboard: **GREEN** (seven gates).

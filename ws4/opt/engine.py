@@ -81,7 +81,8 @@ class OptimizeConfig:
     targets_path : str
         The YAML file of goal-programming targets.
     weights_path : str
-        The YAML file of target weights, or an empty string.
+        Accepted for compatibility and not read. The weights that apply are each target's own
+        ``min_weight`` and ``max_weight``; ``ws4 calibrate`` rescales them into a targets file.
     years : int
         The horizon in years. The simulation step is one year.
     iterations : int

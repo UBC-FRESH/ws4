@@ -49,10 +49,10 @@ horizon keeps many states alive. Routing is incremental for haul, maintenance, a
 **build** route account, a duplicate account, or edge contrast forces a whole-schedule pass per
 evaluation. Tune without them, then add them. See :doc:`../reference/performance`.
 
-**Why does ``ws4 optimize`` ask for a weights file when the weights are in the targets?**
+**What about the ``--weights`` file?**
 
-Because it currently accepts the file for the record; the weights that matter are each target's
-``min_weight`` and ``max_weight``. That is a wart, and it is on the list to make optional.
+It is optional and kept for compatibility; the weights that apply are each target's
+``min_weight`` and ``max_weight``, and ``ws4 calibrate`` writes a rescaled targets file for you.
 
 **How do I repeat a run exactly?**
 

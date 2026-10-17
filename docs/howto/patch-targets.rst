@@ -73,7 +73,7 @@ harvesting that lands in the class:
 .. code-block:: bash
 
    ws4 optimize --dataset tmp/howto/compiled --targets tmp/howto/patch-targets.yaml \
-                --weights tmp/howto/weights.yaml --years 100 \
+                --years 100 \
                 --topology tmp/howto/topology.csv \
                 --patch-accounts tmp/howto/patches.yaml \
                 --merge-weight 0.3 --split-weight 0.1 \

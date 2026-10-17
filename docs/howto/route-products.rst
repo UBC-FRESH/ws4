@@ -68,7 +68,7 @@ are ordinary targets:
 .. code-block:: bash
 
    ws4 optimize --dataset tmp/howto/compiled --targets tmp/howto/route-targets.yaml \
-                --weights tmp/howto/weights.yaml --years 100 \
+                --years 100 \
                 --route-config tmp/howto/route.yaml \
                 --time-limit 00:05:00 --seed 1 --out tmp/howto/route-run
 

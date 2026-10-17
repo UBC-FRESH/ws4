@@ -185,13 +185,14 @@ items are enhancements and maintenance.
   Target: post-release, if profiling shows it.
 - **Docs for each subsystem.** `done`. The compiled dataset, ForestModelXML, simulator, optimizer,
   spatial, and road pages exist under `docs/reference/`, and the API pages cover the tooling.
-- **Command-line gaps found while writing the user docs.** `open`. `ws4 optimize` requires a
-  `--weights` file that nothing reads, and it has no iteration budget (only `--time-limit`), while
-  `watch` and `calibrate` both take `--iterations`. Either apply the weights file or make the option
-  optional, and add `--iterations`. Target: P7.
-- **`Optimizer.last_account_values()` after a `run`.** `open`. The incremental search path does not
-  populate it, so a script that calls `run` and then reads it gets an empty frame; the run's own
-  `account_values.csv` is the reliable source. Target: P7.
+- **Command-line gaps found while writing the user docs.** `done` (P7.1, #83). `--weights` is optional
+  and documented as accepted-for-compatibility, and `ws4 optimize` takes `--iterations`. Applying a
+  per-account factor file is a capability worth having only if a study asks for it; it is not.
+- **`threads` is documented but not applied.** `open` (P7.2, #84). `OptimizeConfig.threads` claims to
+  set BLAS and worker threads; nothing reads it, and the CLI passes its value to `workers`. Target: P7.
+- **`Optimizer.last_account_values()` after a `run`.** `open` (P7.5, #87). The incremental search path
+  does not populate it, so a script that calls `run` and then reads it gets an empty frame; the run's
+  own `account_values.csv` is the reliable source. Target: P7.
 - **Docstring completeness.** `done`. `scripts/doc_audit.py` is the oracle: it checks every public
   function, method, property, class, and module in `ws4` and `scripts/` for the four rules (a docstring
   exists; every parameter is documented and nothing else; a value-returning callable has a `Returns`

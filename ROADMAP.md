@@ -337,7 +337,7 @@ Goal: make the replacement claim checkable and the tool comfortable to use all d
 Phase 6 close-out recorded, put the workspace in step with the tooling, and extend the documentation
 where a new analyst needs it.
 
-- [ ] P7.1 Close the command-line gaps: `--weights` and `--iterations` (#83)
+- [x] P7.1 Close the command-line gaps: `--weights` and `--iterations` (#83)
 - [ ] P7.2 Apply the `threads` setting and re-measure island scaling (#84)
 - [ ] P7.3 Ship a sample estate under `examples/` (#85)
 - [ ] P7.4 Add the patch, route, and sweep notebooks, and a concepts section (#86)
