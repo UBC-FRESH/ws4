@@ -800,3 +800,10 @@ issue comments.
   tracks, and the patch model keeps only those years. Tests:
   `tests/test_patch_objective.py` (a period-width patch target reads its first year). Dashboard:
   **GREEN**.
+- P6.37 (docs): the time-step model is stated where targets are defined. The **simulation step is one
+  year and is not configurable** (growth, treatments, transitions, road events); the **account** time
+  step is a whole number of years — the period length — set per target by `period_width`, five and ten
+  being the planning convention. `Target` now rejects a `period_width` below one year, and the objective
+  documentation says plainly that an additive account is summed over its period while a patch account (a
+  map snapshot) is read at the period's first year. Tests: `tests/test_optimizer.py`. Dashboard:
+  **GREEN**.

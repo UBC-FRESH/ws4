@@ -38,7 +38,8 @@ class Target:
     max_weight : float
         The weight on the excess above the maximum.
     period_width : int
-        The number of years the account is summed over for this target.
+        The account time step, in whole years: the number of years the account is summed over for
+        this target. One year is the simulation step; five or ten are the planning convention.
     shape : str
         The penalty shape: ``"linear"`` adds the weighted deviation, ``"non_linear"`` adds the
         weighted squared deviation (the weight is applied after squaring, matching the default
@@ -55,9 +56,11 @@ class Target:
     shape: str = "linear"
 
     def __post_init__(self) -> None:
-        """Reject an unknown penalty shape."""
+        """Reject an unknown penalty shape or a period shorter than a year."""
         if self.shape not in {"linear", "non_linear"}:
             raise ValueError(f"unknown penalty shape: {self.shape!r}")
+        if self.period_width < 1:
+            raise ValueError("period_width must be at least one year")
 
     def cell_years(self) -> range:
         """Return the years the target sums the account over.
