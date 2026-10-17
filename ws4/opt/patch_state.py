@@ -141,6 +141,7 @@ class PatchGroupYear:
         self._buf_walk: np.ndarray | None = None
         self._buf_visited: np.ndarray | None = None
         self._buf_target: np.ndarray | None = None
+        self._buf_stale: np.ndarray | None = None
         self._buf_area: np.ndarray | None = None
         self._buf_perim: np.ndarray | None = None
         self._buf_count: np.ndarray | None = None
@@ -160,6 +161,7 @@ class PatchGroupYear:
         self._buf_walk = np.empty(size, dtype=np.int32)
         self._buf_visited = np.zeros(size, dtype=np.int32)
         self._buf_target = np.zeros(size, dtype=np.uint8)
+        self._buf_stale = np.zeros(size, dtype=np.int32)
         self._buf_area = np.empty(size, dtype=np.float64)
         self._buf_perim = np.empty(size, dtype=np.float64)
         self._buf_count = np.empty(size, dtype=np.int64)
@@ -274,35 +276,17 @@ class PatchGroupYear:
                 self.total -= previous * self._area[position]
         if not positions:
             return
-        ptr = self._ptr
-        indices = self._indices
-        stale: set[int] = set()
-        for position in positions:
-            cid = int(self.comp[position])
-            if cid >= 0:
-                stale.add(cid)
-            for edge in range(ptr[position], ptr[position + 1]):
-                neighbour = indices[edge]
-                if self.is_member[neighbour]:
-                    neighbour_cid = int(self.comp[neighbour])
-                    if neighbour_cid >= 0:
-                        stale.add(neighbour_cid)
-        for cid in stale:
-            self._drop_class(cid)
-            self.count_of.pop(cid, None)
-            self.area.pop(cid, None)
-            self.perimeter.pop(cid, None)
-            self.count -= 1
         self._ensure_scratch()
         assert self._buf_stack is not None
         assert self._buf_walk is not None
         assert self._buf_visited is not None
+        assert self._buf_stale is not None
         assert self._buf_area is not None
         assert self._buf_perim is not None
         assert self._buf_count is not None
         self._gen += 2
         base = self.next_id + 1
-        count = label_from_seeds(
+        count, stale_count = label_from_seeds(
             self._v_ptr,
             self._v_indices,
             self._v_lengths,
@@ -319,7 +303,16 @@ class PatchGroupYear:
             self._buf_area,
             self._buf_perim,
             self._buf_count,
+            self._buf_stale,
         )
+        # the kernel reports which component ids the changed blocks and their member neighbours
+        # had, so the drop needs no scan of the neighbourhood here
+        for cid in set(self._buf_stale[:stale_count].tolist()):
+            self._drop_class(cid)
+            self.count_of.pop(cid, None)
+            self.area.pop(cid, None)
+            self.perimeter.pop(cid, None)
+            self.count -= 1
         for offset in range(count):
             cid = base + offset
             self.area[cid] = float(self._buf_area[offset])

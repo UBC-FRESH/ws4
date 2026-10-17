@@ -322,7 +322,8 @@ def label_from_seeds(
     area_out: np.ndarray,
     perim_out: np.ndarray,
     count_out: np.ndarray,
-) -> int:
+    stale_out: np.ndarray,
+) -> tuple[int, int]:
     """Relabel the components holding a changed block or one of its member neighbours.
 
     The seeds are the changed blocks that are members plus their member neighbours, so every
@@ -352,25 +353,38 @@ def label_from_seeds(
         The generation stamp; must exceed any value left in ``visited``.
     area_out, perim_out, count_out : numpy.ndarray
         Scratch, at least as long as the node count, written per rebuilt component.
+    stale_out : numpy.ndarray
+        Scratch, at least as long as the changed set plus its neighbourhood; the component ids the
+        changed blocks and their member neighbours had before the relabel are written here.
 
     Returns
     -------
-    int
-        The number of rebuilt components.
+    tuple of (int, int)
+        The number of rebuilt components, and the number of stale component ids written.
     """
     seeds = 0
+    stale = 0
     for k in range(changed.size):
         block = changed[k]
+        previous = comp[block]
+        if previous >= 0:
+            stale_out[stale] = previous
+            stale += 1
         if member[block] == 1 and visited[block] != gen:
             visited[block] = gen
             stack[seeds] = block
             seeds += 1
         for e in range(ptr[block], ptr[block + 1]):
             other = indices[e]
-            if member[other] == 1 and visited[other] != gen:
-                visited[other] = gen
-                stack[seeds] = other
-                seeds += 1
+            if member[other] == 1:
+                if visited[other] != gen:
+                    visited[other] = gen
+                    stack[seeds] = other
+                    seeds += 1
+                previous = comp[other]
+                if previous >= 0:
+                    stale_out[stale] = previous
+                    stale += 1
     count = 0
     for s in range(seeds):
         start = stack[s]
@@ -403,4 +417,4 @@ def label_from_seeds(
         perim_out[count] = perim
         count_out[count] = members
         count += 1
-    return count
+    return count, stale

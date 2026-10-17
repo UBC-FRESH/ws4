@@ -295,6 +295,7 @@ budget. Plan of record: `notes/design/ws4-performance.md`.
 - [x] P6.28 Compiled-port ceiling measured on realistic components (decision; prototype only)
 - [x] P6.29 Array-backed patch state with a compiled bulk relabel
 - [x] P6.30 Compiled connectivity walks (recovers the single-block regression)
+- [x] P6.31 Stale components reported by the relabel; spanning-forest leaf test measured and rejected
 
 Deferred from P6, triaged in `notes/backlog.md`:
 
