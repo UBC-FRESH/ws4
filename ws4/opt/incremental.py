@@ -76,14 +76,24 @@ class IncrementalObjective:
         self.targets = list(targets)
         self.patch = PatchModel(optimizer, patch_accounts) if patch_accounts else None
         optimizer.set_active_patch_model(self.patch)
-        if self.patch is not None:
-            self.patch.set_focus_years(
-                sorted({year for target in targets for year in target.cell_years()})
-            )
         patch_names = {account.name for account in patch_accounts}
 
         def is_patch(name: str) -> bool:
             return any(name == stem or name.startswith(f"{stem}.") for stem in patch_names)
+
+        if self.patch is not None:
+            # patch statistics are only needed where a patch target reads them (the accounting
+            # points); the simulation is annual but the accounting is periodic
+            self.patch.set_focus_years(
+                sorted(
+                    {
+                        year
+                        for target in self.targets
+                        if is_patch(target.account)
+                        for year in target.cell_years()
+                    }
+                )
+            )
 
         self.accounts: set[str] = {
             target.account for target in self.targets if not is_patch(target.account)

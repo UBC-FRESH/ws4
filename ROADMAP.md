@@ -299,6 +299,7 @@ budget. Plan of record: `notes/design/ws4-performance.md`.
 - [x] P6.32 Binding patch benchmark and the gap/merge operator
 - [x] P6.33 Split operator; volume-floored benchmark corrects the operator claim
 - [x] P6.34 Multiple target windows in `ws4 watch`
+- [x] P6.35 Patch statistics only at the accounting periods (5x on the patch benchmark)
 
 Deferred from P6, triaged in `notes/backlog.md`:
 

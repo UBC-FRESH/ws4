@@ -784,3 +784,11 @@ issue comments.
   summed, since a share is not additive; before that fix the patch window read 379% where the truth
   was ~38% and the target looked satisfied. Tests: `tests/test_watch.py` (one window per account, the
   CLI shows both, and a percentage is averaged). Dashboard: **GREEN**.
+- P6.35 (performance): patch statistics are computed per **accounting period**, not per year. The
+  simulation runs one year at a time but the accounting is periodic, so `PatchModel` now maintains
+  component state only at the years a patch target actually reads (`active_years`, taken from the patch
+  targets' `cell_years()`), instead of every year of the horizon: `reset` builds only those states and
+  `_affected` only looks for changes in them. Everything else is untouched. A patch target at one year
+  of a 50-year horizon now maintains **one** state instead of fifty, and the volume-floored patch
+  benchmark goes from **62 to 310 iterations/s (5x)** with the patch penalty unchanged (27). Tests:
+  `tests/test_patch_objective.py`, `tests/test_patch_state.py`. Dashboard: **GREEN**.

@@ -48,6 +48,9 @@ class PatchModel:
         self.optimizer = optimizer
         self.accounts = tuple(accounts)
         self.years = optimizer.cfg.years
+        # The patch statistics are only needed at the years the patch targets read (the accounting
+        # points), even though the simulation runs by year. Everything else is left untouched.
+        self.active_years: tuple[int, ...] = tuple(range(self.years))
         self.area = optimizer._block_area()
         self.blocks = tuple(self.area)
         self._detailed = load_patch_edges_detailed(Path(optimizer.cfg.topology_path))
@@ -161,7 +164,7 @@ class PatchModel:
         self._undo_values = {}
         self._untouched = {}
         series_by_block = {block: self.series(block, schedule.get(block)) for block in self.blocks}
-        for year in range(self.years):
+        for year in self.active_years:
             for key in self.groups:
                 label = key[0]
                 threshold = key[1]
@@ -182,7 +185,7 @@ class PatchModel:
             for label in self.labels:
                 old_values = old_series[label]
                 new_values = new_series[label]
-                for year in range(self.years):
+                for year in self.active_years:
                     if old_values.get(year, 0.0) != new_values.get(year, 0.0):
                         affected.add(year)
         return affected
@@ -205,14 +208,22 @@ class PatchModel:
         return self._cells(year)
 
     def set_focus_years(self, years: Sequence[int]) -> None:
-        """Record the years the objective reads, so gap moves target them.
+        """Record the years the objective reads, and maintain the states only for those.
+
+        The simulation runs one year at a time but the accounting is periodic, so patch statistics
+        are only needed where a patch target reads them. Restricting the maintained years is the
+        difference between 200 year-states and one per accounting period.
 
         Parameters
         ----------
         years : sequence of int
-            The years the targets are accounted in.
+            The years the patch targets are accounted in.
         """
         self.focus_years = tuple(sorted(set(years)))
+        chosen = self.focus_years or tuple(range(self.years))
+        if chosen != self.active_years:
+            self.active_years = chosen
+            self.states = {}  # rebuilt on the next reset, for the kept years only
 
     def value(self, block: int, chain: Chain | None, label: str, year: int) -> float:
         """Return a block's criterion value in a year under a chain (None is untreated).
