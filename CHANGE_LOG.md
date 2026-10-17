@@ -846,3 +846,15 @@ issue comments.
   definitions are WS4's own: the first-party documentation gives the call signatures but defers the
   formula to an API document that is not available, so it is documented in the reference and easy to
   change. Tests: `tests/test_flow_targets.py`. Dashboard: **GREEN**.
+- P6.42 (fix): the flow-target definitions, corrected to the established ones. `flow: even` is the
+  **percent difference of each period from a reference period** — `sum(|100 * (x_p - x_ref) / x_ref|)`,
+  the reference being the window's final period unless `flow_reference` names another — and
+  `flow: ndy` is the **percent change between consecutive periods**, counting only the declines. P6.41
+  had `even` as a deviation from the mean and `ndy` as an absolute decline between periods: wrong on
+  both counts. Because both divide by a balance, the term is **infinite while that balance is zero**,
+  which is the whole reason for the priming procedure — a run first solves with a linear volume target
+  above the sustainable level so every period carries wood, and only then switches the flow account on.
+  Verified end to end on C5 (50 years; one linear volume target at 1.5M per period, weight 1): with no
+  schedule the term is `inf`; primed it is 102.02 with per-period volumes 1.504 / 1.501 / 1.535 / 1.704
+  / 2.095; with the flow term switched on it falls to **0.00** and the volumes become 1.708 in every
+  period. Tests: `tests/test_flow_targets.py`. Dashboard: **GREEN**.

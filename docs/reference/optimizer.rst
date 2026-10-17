@@ -75,9 +75,19 @@ the same account sets the level.
        maximum: 0
        min_weight: 1.0
 
-``flow.even`` sums ``|period - mean|`` over its window and ``flow.ndy`` sums how much each period falls
-below the one before it; ``flow_start`` and ``flow_end`` (in years) clip the window, defaulting to the
-whole horizon. Both aggregate whole periods, so they are period-level terms rather than per-year cells.
+``flow.even`` is the **percent difference of each period from a reference period**,
+``sum(|100 * (x_p - x_ref) / x_ref|)``, where the reference is the **final period of the window**
+unless ``flow_reference`` names another (the first year of the period to use). ``flow.ndy`` is the
+**percent change between consecutive periods**, ``100 * (x_p - x_{p-1}) / x_{p-1}``, counting only the
+declines. ``flow_start`` and ``flow_end`` (in years) clip the window, defaulting to the whole horizon,
+and ``period_width`` groups the years. Both aggregate whole periods, so they are period-level terms
+rather than per-year cells.
+
+Because both divide by a balance, the term is **infinite while that balance is zero** — for ``even``
+the reference period, for ``ndy`` every period a comparison starts from. That is definitional, and it
+is why a flow account is switched on only *after* the reference period is primed: run first with a
+linear volume target above the sustainable level (weight 1), so that every period carries wood, and
+then add the flow target.
 
 The weights file is accepted by the command line and the configuration. The spatial constraints add a
 weighted penalty to the objective (see :doc:`spatial`): a maximum opening size, a green-up interval,
