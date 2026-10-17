@@ -212,7 +212,13 @@ class TargetWindow:
 
     @property
     def n_periods(self) -> int:
-        """Return the number of periods."""
+        """Return the number of periods.
+
+        Returns
+        -------
+        int
+            The number of accounting periods in the window.
+        """
         return len(self.realized)
 
     def shortfalls(self) -> tuple[float, ...]:

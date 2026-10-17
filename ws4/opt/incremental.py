@@ -213,7 +213,13 @@ class IncrementalObjective:
 
     @property
     def objective(self) -> float:
-        """Return the objective for the current state (periods summed)."""
+        """Return the objective for the current state (periods summed).
+
+        Returns
+        -------
+        float
+            The total weighted penalty.
+        """
         total = 0.0
         for index, target in enumerate(self.targets):
             if target.flow:

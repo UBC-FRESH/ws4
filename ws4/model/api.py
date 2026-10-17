@@ -17,7 +17,14 @@ from ..model.types import CanonicalDatasetManifest
 
 
 class Model:
-    """An in-memory forest model, one DataFrame per matrix table."""
+    """An in-memory forest model, one DataFrame per matrix table.
+
+    Parameters
+    ----------
+    tables : dict of str to pandas.DataFrame, optional
+        The tables by name. A missing table is filled with an empty frame coerced to the
+        schema.
+    """
 
     def __init__(self, tables: dict[str, pd.DataFrame] | None = None) -> None:
         """Initialize from a table map, filling any missing table with an empty frame."""
@@ -29,7 +36,13 @@ class Model:
 
     @classmethod
     def empty(cls) -> Model:
-        """Return a model with every table empty."""
+        """Return a model with every table empty.
+
+        Returns
+        -------
+        Model
+            The empty model.
+        """
         return cls()
 
     @classmethod
@@ -50,7 +63,18 @@ class Model:
         return cls({table.name: pd.read_parquet(dataset_dir / table.file) for table in TABLES})
 
     def table(self, name: str) -> pd.DataFrame:
-        """Return a table by name."""
+        """Return a table by name.
+
+        Parameters
+        ----------
+        name : str
+            The table name.
+
+        Returns
+        -------
+        pandas.DataFrame
+            The table, coerced to the schema.
+        """
         return self.tables[name]
 
     def append(self, name: str, row: dict[str, object]) -> None:

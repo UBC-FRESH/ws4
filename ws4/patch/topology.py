@@ -8,6 +8,17 @@ import pandas as pd
 
 
 def load_block_topology(csv_path: Path) -> pd.DataFrame:
-    """Load a proximal topology edgelist: src_block,dst_block,distance_m (undirected)."""
+    """Load a proximal topology edgelist: src_block,dst_block,distance_m (undirected).
+
+    Parameters
+    ----------
+    csv_path : Path
+        The topology edge list.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The edges, as read.
+    """
     df = pd.read_csv(csv_path)
     return df

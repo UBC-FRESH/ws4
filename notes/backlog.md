@@ -185,7 +185,8 @@ items are enhancements and maintenance.
   Target: post-release, if profiling shows it.
 - **Docs for each subsystem.** `done`. The compiled dataset, ForestModelXML, simulator, optimizer,
   spatial, and road pages exist under `docs/reference/`, and the API pages cover the tooling.
-- **Docstring completeness outside `ws4.opt`.** `open`. A numpydoc pass over all 269 public objects
-  (P6.44) found 37 remaining findings: undocumented dataclass fields in `ws4.model.types` (10),
-  `ws4.io.forest_model_xml` (6), `ws4.sim` (6), `ws4.patch` (5), `ws4.build` (4), and `ws4.roads` (3).
-  The `ws4.opt` findings (56) are fixed. Target: P7.
+- **Docstring completeness.** `done`. `scripts/doc_audit.py` is the oracle: it checks every public
+  function, method, property, class, and module in `ws4` and `scripts/` for the four rules (a docstring
+  exists; every parameter is documented and nothing else; a value-returning callable has a `Returns`
+  section; a section header is preceded by a blank line). It runs as the `docstrings` gate in
+  `scripts/dashboard.py` and as a CI step, with unit tests in `tests/test_doc_audit.py` (P6.45).

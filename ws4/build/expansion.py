@@ -186,6 +186,22 @@ def matching_selects(
 
     A stratum is governed by every select whose statement matches it, not only the
     first; features, products, and treatments accumulate across the matching selects.
+
+    Parameters
+    ----------
+    key : tuple of str
+        The state values of the stratum, in ``variables`` order.
+    variables : sequence of str
+        The state-variable names.
+    selects : sequence of Select
+        The recipe's selects.
+    constants : dict of str to str
+        The constant values available to the statements.
+
+    Returns
+    -------
+    tuple of int
+        The one-based indices of the matching selects.
     """
     base = dict(zip(variables, key, strict=True))
     matched: list[int] = []
@@ -243,7 +259,24 @@ def resolve_value(value: str, state: Mapping[str, str], constants: dict[str, str
 def transition_key(
     key: tuple[str, ...], variables: Sequence[str], treatment: Treatment, constants: dict[str, str]
 ) -> tuple[str, ...]:
-    """Return the state key after a treatment resets its state variables."""
+    """Return the state key after a treatment resets its state variables.
+
+    Parameters
+    ----------
+    key : tuple of str
+        The stratum's state values, in ``variables`` order.
+    variables : sequence of str
+        The state-variable names.
+    treatment : Treatment
+        The treatment applied.
+    constants : dict of str to str
+        The constant values available to the transition expressions.
+
+    Returns
+    -------
+    tuple of str
+        The state values after the transition, in ``variables`` order.
+    """
     state = dict(zip(variables, key, strict=True))
     for name, value in treatment.transition.items():
         state[name] = resolve_value(value, state, constants)

@@ -82,13 +82,6 @@ class Operator(Protocol):
         The operator name, as it appears in the run summary.
     weight : float
         The relative probability of selecting the operator.
-
-    Parameters
-    ----------
-    *args
-        Accepted for protocol compatibility; operators take no positional arguments.
-    **kwargs
-        Accepted for protocol compatibility; operators take no keyword arguments.
     """
 
     name: str
@@ -504,13 +497,6 @@ class PatchSource(Protocol):
 
     The patch model is owned by the evaluator, not by the operator, so an operator reaches it
     through this narrow interface rather than holding a reference to a mutable model.
-
-    Parameters
-    ----------
-    *args
-        Accepted for protocol compatibility; implementors take no positional arguments.
-    **kwargs
-        Accepted for protocol compatibility; implementors take no keyword arguments.
     """
 
     def active_patch_model(self) -> PatchModel | None:

@@ -94,8 +94,8 @@ def default_gates(root: Path, python: str = sys.executable) -> tuple[Gate, ...]:
     Returns
     -------
     tuple of Gate
-        The lint, format, type, test, validator, and docs gates, followed by the seed gates
-        when the project generator is present.
+        The lint, format, type, test, validator, docs, and docstring gates, followed by the
+        seed gates when the project generator is present.
     """
     gates = [
         Gate("lint", (python, "-m", "ruff", "check", "."), "ruff finds no lint errors"),
@@ -111,6 +111,11 @@ def default_gates(root: Path, python: str = sys.executable) -> tuple[Gate, ...]:
             "docs",
             (python, "-m", "sphinx", "-b", "html", "docs", "_build/html", "-W", "-q"),
             "the docs build with warnings as errors",
+        ),
+        Gate(
+            "docstrings",
+            (python, "scripts/doc_audit.py"),
+            "every public docstring documents its parameters and return value",
         ),
     ]
     if (root / "scripts" / "new_project.py").is_file():

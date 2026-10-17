@@ -346,11 +346,23 @@ class PatchLedger:
         self._records.append(row)
 
     def frame(self) -> pd.DataFrame:
-        """Return the patch accounts as a frame, one row per period."""
+        """Return the patch accounts as a frame, one row per period.
+
+        Returns
+        -------
+        pandas.DataFrame
+            One row per accounted period, with the patch sub-account columns.
+        """
         return pd.DataFrame(self._records)
 
     def write(self, out_dir: Path) -> None:
-        """Write ``patch_accounts.csv`` into a run directory."""
+        """Write ``patch_accounts.csv`` into a run directory.
+
+        Parameters
+        ----------
+        out_dir : Path
+            The run directory; it is created when missing.
+        """
         out_dir = Path(out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         self.frame().to_csv(out_dir / "patch_accounts.csv", index=False)

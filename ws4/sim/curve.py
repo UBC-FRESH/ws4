@@ -92,7 +92,18 @@ class CurveTable:
         return cls(table=table, row_of=row_of, age_max=age_max)
 
     def row(self, curve_id: int) -> int | None:
-        """Return a curve's table row, or None when the curve is absent."""
+        """Return a curve's table row, or None when the curve is absent.
+
+        Parameters
+        ----------
+        curve_id : int
+            The curve identifier.
+
+        Returns
+        -------
+        int or None
+            The row in :attr:`table`, or None when the curve is not in the table.
+        """
         return self.row_of.get(int(curve_id))
 
     def at(self, curve_id: int, x: float) -> float | None:

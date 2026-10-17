@@ -890,3 +890,26 @@ issue comments.
   `patch_state.compactness`/`class_index`, `RunLogger`, and `PatchModel.cell_map`. The 37 remaining
   findings are outside `ws4.opt` and are recorded in `notes/backlog.md` for P7. No behaviour changed
   and no test changed: the audit is reproducible with the same numpydoc pass. Dashboard: **GREEN**.
+- P6.45 (tooling): a public-docstring audit and a `docstrings` gate. P6.44 fixed the drift by hand, but
+  nothing would have caught it: the docs gate is `sphinx -W`, which fails on a broken reference and not
+  on a missing `Parameters` section, and `tests/test_api_docstrings.py` (numpydoc) covered only
+  `scripts/`, never the `ws4` package. `scripts/doc_audit.py` is now the oracle for both scopes, with
+  four rules: the docstring exists; every parameter is documented and nothing else is; a callable that
+  returns a value has a `Returns` section; a section header is preceded by a blank line. It encodes the
+  conventions a library cannot know — a dataclass, pydantic model, or plain class may document its
+  constructor arguments under `Attributes`, a `Protocol`'s constructor signature is not its own, a
+  leading-underscore parameter is private, and the Typer command module is skipped because its docstring
+  is the CLI help. Running it against the repository found the **37 remaining findings** that P6.44 had
+  left outside `ws4.opt`: undocumented dataclass fields in `ws4.model.types` (10),
+  `ws4.io.forest_model_xml` (6), `ws4.sim` (6), `ws4.patch` (5), `ws4.build` (4), and `ws4.roads` (3),
+  plus four missing `Returns` sections and one malformed section. All are fixed, so the scope is at zero
+  findings: `ws4.model.types` (every model now lists its fields as attributes), the six
+  `forest_model_xml` dataclasses, `Model.empty`, `Table.required_columns`, `IncrementalObjective`, its
+  `objective` property, `TargetWindow.n_periods`, `Simulator.account_values`, `Simulator.from_dataset`,
+  `write_patch_metrics`, `CurveTable.row`, `PatchLedger.frame`/`write`, `load_block_topology`,
+  `RouteNetwork.destination_names`, `matching_selects`, and `transition_key`. The gate is wired into
+  `scripts/dashboard.py` (so every commit and the dashboard CI job enforce it) and into the CI checks
+  job beside the docs step; a gate was added rather than tightened, and `AGENTS.md` was not changed.
+  Tests: `tests/test_doc_audit.py` makes each code fire on a fixture (`MISSING`, `PARAMS`, `STALE`,
+  `RETURNS`, `SECTION`, `IMPORT`) and asserts the real scope clean, so the gate cannot pass by checking
+  nothing. Dashboard: **GREEN** (seven gates).

@@ -264,7 +264,13 @@ class RouteNetwork:
         )
 
     def destination_names(self) -> tuple[str, ...]:
-        """Return the destination account names, in table order."""
+        """Return the destination account names, in table order.
+
+        Returns
+        -------
+        tuple of str
+            The destination names.
+        """
         return tuple(destination.name for destination in self.destinations)
 
     def _segments_by_id(self) -> dict[int, Segment]:
