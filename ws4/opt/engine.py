@@ -499,9 +499,11 @@ class Optimizer:
     def last_account_values(self) -> pd.DataFrame:
         """Return the account values of the most recent objective evaluation.
 
-        The objective computes an account-values frame for every schedule it scores; this
-        returns the one from the latest call, so a caller can inspect what the optimizer
-        last saw (for example, to watch the target window of an account).
+        The objective computes an account-values frame for every whole-schedule evaluation, and a
+        run records the frame it writes, so this returns what the optimizer last saw — useful for
+        inspecting a result without rereading the run directory. A search driven by per-move deltas
+        does not build a frame per move: after :meth:`run` this holds the incumbent's values, and
+        mid-search a caller reads :meth:`IncrementalObjective.values_frame` instead.
 
         Returns
         -------
@@ -737,9 +739,10 @@ class Optimizer:
         values = self._values_frame(totals)
         if route_accounts:
             route = self._values_frame(route_totals) if route_totals else None
-            return resolve_account_values(values, route, duplicate_accounts)
-        if duplicate_accounts:
-            return resolve_account_values(values, None, duplicate_accounts)
+            values = resolve_account_values(values, route, duplicate_accounts)
+        elif duplicate_accounts:
+            values = resolve_account_values(values, None, duplicate_accounts)
+        self._last_values = values
         return values
 
     def edge_elements(self) -> tuple[EdgeElement, ...]:
@@ -1078,6 +1081,7 @@ class Optimizer:
                 values = pd.concat(
                     [values, melted[["year", "account", "value"]]], ignore_index=True
                 )
+        self._last_values = values
         write_report(values, targets, out_dir)
         summary: dict[str, Any] = {
             "incumbent_objective": best_obj,

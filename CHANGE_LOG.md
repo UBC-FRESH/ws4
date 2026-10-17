@@ -1077,3 +1077,19 @@ issue comments.
   the run now does. Checking the published figures: nothing needs restating, because the P6 patch
   numbers came from the benchmark and the watcher, both of which read the search's own values, and no
   recorded acceptance figure was taken from a run's report. Dashboard: **GREEN** (seven gates).
+- P7.5 (fix, measurement): `Optimizer.last_account_values()` is now populated after a run, on both
+  value paths — the incremental builder recorded nothing, and the full builder was the only one that
+  did — so a caller can read the incumbent's account values without rereading the run directory, with
+  the accessor's docstring saying what it holds mid-search (an `IncrementalObjective`'s
+  `values_frame`). The dense-harvest measurement, recorded in
+  `notes/design/ws4-patch-evaluation-bottleneck.md`, produced a result worth having: on the same C5
+  workload the **patch** run is faster than the volume-only one (60.6 against 25.9 iterations/s),
+  because the patch ramp keeps the schedule sparse (60 treatments against 125) and a move costs what
+  the schedule touches. A 100-iteration profile of the binding case puts the time in
+  `block_criteria_series` (12,636 calls, one per distinct (block, chain) explored, each a Python loop
+  over that block's fragments), `PatchGroupYear.__init__` (20 calls at ~48 ms) and `_chains` — that is,
+  in the setup and the criterion series, **not** in the incremental relabel the earlier work in that
+  note optimised. So the lever is a vectorised series and a lazily built state for the years a search
+  reads; neither is done, and the measurement is the baseline to judge them against, recorded in
+  `notes/backlog.md`. Tests: `tests/test_optimizer.py` asserts the accessor is empty before any
+  evaluation and holds the incumbent's values after a run. Dashboard: **GREEN** (seven gates).

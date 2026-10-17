@@ -428,3 +428,52 @@ Ordered by value over risk.
   area does not; measure separately.
 - Does a compiled port pay? **Answered: yes for the kernel (24.3x measured on real calls), but it
   requires the array-backed state — a dict-marshalling wrapper is only ~2x.** See the kernel section.
+
+## P7.5 the cost of a patch-heavy search, measured again
+
+Two things were asked: populate `Optimizer.last_account_values()` after a run, and measure the dense
+harvest case or say why it cannot be improved. The first is done: the incremental value path and
+`run` both record the frame they build, so a caller can read the incumbent's values without rereading
+the run directory, and a search driven by per-move deltas is pointed at the evaluator's
+`values_frame` for its mid-search state.
+
+The second produced a result worth recording, because it is not the one the earlier note expected.
+Same C5 workload throughout (200 years, 20 periods, a volume floor of 800 000 m3 per period, one
+30-core-equivalent thread, seed 1):
+
+| Configuration | Iterations/s | Incumbent's treatments |
+| --- | ---: | ---: |
+| Volume floor only, no patch target | 25.9 | 125 |
+| Volume floor **plus** a patch ramp (25 / 50 / 75 / 100 %) | 60.6 | 60 |
+
+The patch run is *faster*, and the reason is that the patch ramp keeps the schedule sparse: the cost
+of a move scales with the number of cells the schedule touches, and 60 treatments cost less than 125.
+"Dense harvest is slow" and "patch targets are slow" are therefore two different effects, and the
+earlier 168 iterations/s figure at 4 612 harvested blocks is a dense *and* long run, not a patch-heavy
+short one.
+
+Where the time actually goes, from a 100-iteration profile of the binding case (8.9 s total, top
+entries by internal time):
+
+| Entry | Calls | Internal time |
+| --- | ---: | ---: |
+| `Simulator.block_criteria_series` | 12 636 | 1.36 s |
+| `PatchGroupYear.__init__` | 20 | 0.96 s |
+| `Optimizer._chains` | 12 567 | 0.88 s |
+| a generator expression inside `_chains` | 1 150 586 | 0.71 s |
+| `dict.get` | 2 506 942 | 0.58 s |
+| `array.append` (the patch state) | 2 298 160 | 0.44 s |
+
+Read those against the iteration count rather than the clock: a 100-iteration run pays the whole
+setup, and the setup is the story here. `PatchGroupYear.__init__` is called once per group-year (20
+times, ~48 ms each) and `block_criteria_series` 12 636 times, which is the count of *distinct*
+(block, chain) pairs the search explored — each a Python loop over that block's fragments. So a short
+patch search is dominated by building the states and filling the series cache, and a long one by the
+marginal cost of the pairs it has not seen before.
+
+The lever, if this needs to be faster, is therefore the per-``(block, chain)`` criterion series and
+the group-year construction, not the incremental relabel that the earlier work in this note optimised.
+A vectorised series (one pass over fragments for many blocks, or the compiled kernels extended to the
+series) and a lazily built state for the years a search actually reads are the two candidates; neither
+is done here, and the measurement above is the baseline to judge them against.
+

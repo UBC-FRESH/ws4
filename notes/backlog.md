@@ -198,9 +198,15 @@ items are enhancements and maintenance.
   13x to 16x while the host's load moved between 4 and 65). A candidate cause worth measuring is the
   per-process copies of the dataset and the patch state; a shared or mmapped dataset would cut the
   memory traffic that the 32 processes contend for. Target: after P7.
-- **`Optimizer.last_account_values()` after a `run`.** `open` (P7.5, #87). The incremental search path
-  does not populate it, so a script that calls `run` and then reads it gets an empty frame; the run's
-  own `account_values.csv` is the reliable source. Target: P7.
+- **`Optimizer.last_account_values()` after a `run`.** `done` (P7.5, #87). The incremental value path
+  and `run` both record the frame they build, so the incumbent's values are readable without rereading
+  the run directory.
+- **The per-`(block, chain)` criterion series and the patch state construction.** `open`. P7.5's
+  profile of a binding patch search puts the time in `block_criteria_series` (once per distinct
+  (block, chain) the search explores, a Python loop over that block's fragments) and in
+  `PatchGroupYear.__init__` (once per group-year, ~48 ms), not in the incremental relabel. A vectorised
+  series and a lazily built state for the years a search reads are the candidates, with the recorded
+  measurements as the baseline. Target: after P7.
 - **Docstring completeness.** `done`. `scripts/doc_audit.py` is the oracle: it checks every public
   function, method, property, class, and module in `ws4` and `scripts/` for the four rules (a docstring
   exists; every parameter is documented and nothing else; a value-returning callable has a `Returns`

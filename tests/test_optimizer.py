@@ -593,3 +593,26 @@ def test_the_default_thread_setting_is_one_per_process(tmp_path: Path) -> None:
     Optimizer.from_dataset(tmp_path / "unused", OptimizeConfig(years=1, iterations=0))
 
     assert os.environ["OMP_NUM_THREADS"] == "1"
+
+
+def test_a_run_leaves_the_incumbent_values_readable(tmp_path: Path) -> None:
+    """``last_account_values`` holds the incumbent's values after a run, not an empty frame."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    targets = tmp_path / "targets.yaml"
+    targets.write_text(
+        "targets:\n- account: feature.Volume\n  year: 0\n  minimum: 1\n  period_width: 1\n"
+    )
+    optimizer = Optimizer.from_dataset(
+        dataset, OptimizeConfig(years=3, iterations=20, seed=1, targets_path=str(targets))
+    )
+
+    assert optimizer.last_account_values().empty, "nothing has been evaluated yet"
+
+    optimizer.run(tmp_path / "run")
+
+    values = optimizer.last_account_values()
+    assert not values.empty
+    assert {"year", "account", "value"} <= set(values.columns)
+    assert "feature.Volume" in set(values["account"])
