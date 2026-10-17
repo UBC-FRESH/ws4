@@ -27,6 +27,13 @@ def test_penalty_weights_shortfall_and_excess() -> None:
     assert penalty(25.0, target) == 3.0 * 5.0
 
 
+def test_a_target_period_must_be_at_least_one_year() -> None:
+    """The account period is a whole number of years, never shorter."""
+    with pytest.raises(ValueError, match="period_width"):
+        Target("a", 0, minimum=1.0, period_width=0)
+    assert Target("a", 0, minimum=1.0, period_width=7).cell_years() == range(0, 7)
+
+
 def test_penalty_non_linear_squares_the_deviation() -> None:
     """A non-linear target adds the weight times the squared deviation."""
     target = Target("a", 0, minimum=10.0, min_weight=3.0, shape="non_linear")

@@ -301,6 +301,7 @@ budget. Plan of record: `notes/design/ws4-performance.md`.
 - [x] P6.34 Multiple target windows in `ws4 watch`
 - [x] P6.35 Patch statistics only at the accounting periods (5x on the patch benchmark)
 - [x] P6.36 A period-spanning patch target is read at one year of the period
+- [x] P6.37 State the time-step model (simulation 1 year; account period a whole number of years)
 
 Deferred from P6, triaged in `notes/backlog.md`:
 

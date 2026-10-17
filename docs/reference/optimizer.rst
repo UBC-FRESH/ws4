@@ -10,11 +10,15 @@ Objective
 ---------
 
 A target names one account and the first year of a period, with a ``minimum``, a ``maximum``, or
-both. Treatments are scheduled by year; the **accounting is per period** — with ``period_width``
-(default 1) the account is summed over the period's years and compared to the levels, so a decade
-target is ``period_width: 10``. The penalty is the weighted shortfall below the minimum plus the
-weighted excess above the maximum; the objective is the total penalty (lower is better). Targets load
-from a YAML file:
+both. **The simulation step is one year and is not configurable.** Treatments, growth, transitions and
+road events are all simulated annually; the **account** time step is a whole number of years — the
+period length — and is what ``period_width`` sets (default 1). Five and ten years are the convention
+in forest planning; any whole multiple of a year is accepted. For an additive account (volume, area,
+a count) the account value for the period is the sum of its years, compared to the levels, so a decade
+target is ``period_width: 10``; the penalty is the weighted shortfall below the minimum plus the
+weighted excess above the maximum, and the objective is the total penalty (lower is better). A **patch**
+account is a snapshot of the map rather than an additive quantity, so a patch target is read at the
+first year of its period. Targets load from a YAML file:
 
 .. code-block:: yaml
 
@@ -27,6 +31,11 @@ from a YAML file:
        minimum: 800000
        maximum: 800000
        period_width: 10
+     - account: patch.harvest.10_50.size
+       year: 0
+       minimum: 100
+       min_weight: 10000
+       shape: non_linear
 
 The weights file is accepted by the command line and the configuration. The spatial constraints add a
 weighted penalty to the objective (see :doc:`spatial`): a maximum opening size, a green-up interval,
