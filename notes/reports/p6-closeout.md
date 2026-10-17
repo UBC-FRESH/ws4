@@ -99,7 +99,9 @@ CI runs on pull requests and on pushes to `main`, so this pull request is the br
 
 | Run ID | Head commit | Conclusion | Notes |
 | --- | --- | --- | --- |
-| (posted on #81) | report commit | recorded on the pull request | the branch had no prior CI run by design |
+| 39063312631 | `27b146c` | failure | the first run: 18 documentation warnings. `nbconvert` emits the `ipython3` lexer, which CI's Pygments does not know, and the quickstart notebook drove the CLI with `!` shell magics, which do not lex as Python. Fixed in `cd63be2`. |
+| 39063462855 | `27b146c` | failure | the dashboard job, same cause and same fix. |
+| 39063739874 | `cd63be2` | success | all three jobs: Quality gates, Green dashboard summary, Pre-commit parity. |
 
 ## 5. Deviations
 
@@ -111,6 +113,7 @@ CI runs on pull requests and on pushes to `main`, so this pull request is the br
 | `Optimizer.last_account_values()` is empty after `run` | the incremental search path does not populate it | recorded in `notes/backlog.md`; the run's own `account_values.csv` is the reliable source |
 | Dependency pull requests #57–#59 were closed by the force-push to `main` | dependabot closes a pull request whose base history was rewritten, and deletes its branch | they return on the weekly schedule, or on demand from the Dependabot settings page |
 | The docs build needed a system package | `nbsphinx` requires pandoc | installed on the host and added to the three CI jobs that build the docs |
+| The branch's first two CI runs failed | the notebook gallery as first committed: a lexer name CI's Pygments lacks, and `!` shell magics in the code cells | fixed in `cd63be2` (a subprocess helper instead of magics, and the plain Python lexer named after execution); the next run is green |
 
 ## 6. Next phase
 
