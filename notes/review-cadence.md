@@ -22,7 +22,7 @@ regressions or drift are caught early.
 
 ## First review (2026-10-15)
 
-- **Releases.** P4 released `v0.1.0` (squash merge `a06d0ca`); the artifacts install and run from a
+- **Releases.** P4 released `v0.1.0` (squash merge `d8ecd72`); the artifacts install and run from a
   fresh environment. See `notes/reports/p4-closeout.md`.
 - **Roadmap/backlog.** The MKRF canonical model, the C5 route model and patch accounts, and the
   spatial gaps (core-area rules and edge contrast) are done. The performance and scalability work is
@@ -30,7 +30,7 @@ regressions or drift are caught early.
 - **Open items.** The post-release backlog items are tracked with target phases; nothing is
   release-blocking. The producer's git-annex location log for the MKRF artifacts is still not on
   `origin` (the objects are on `arbutus-s3`).
-- **State.** `main` is `9e4419d`; the dashboard is green; the docs site and the `v0.1.0` release are
+- **State.** `main` is `ed4b530`; the dashboard is green; the docs site and the `v0.1.0` release are
   published. Phase 5 (Operate and maintain) is active on `feature/p5-operate`, parent issue #44.
 - **Actions.** Stand up issue triage (P5.2), dependency maintenance (P5.3), a roadmap/backlog/changelog
   sync checklist (P5.4), a release and patch policy (P5.5), and a maintainer and handover guide (P5.6).

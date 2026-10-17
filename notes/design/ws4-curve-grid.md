@@ -1,6 +1,6 @@
 # Shared age-grid curve table (performance spike)
 
-Status: **spike**, not a phase deliverable. Branch `spike/shared-grid`, off P6 head `42a3ca1`.
+Status: **spike**, not a phase deliverable. Branch `spike/shared-grid`, off P6 head `95ad397`.
 Checkpoint tag `p6-sharedgrid-checkpoint` (green) for one-command rollback.
 
 Owner: whoever runs the spike. This note is the plan of record; keep it current as the work proceeds

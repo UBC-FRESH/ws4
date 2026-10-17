@@ -1,6 +1,6 @@
 # Faster matrix builder (performance spike)
 
-Status: **spike**. Branch `spike/builder-perf`, off P6 head `a00b255`. Checkpoint tag
+Status: **spike**. Branch `spike/builder-perf`, off P6 head `730e30b`. Checkpoint tag
 `p6-builder-checkpoint` for one-command rollback.
 
 Related: `notes/design/ws4-matrix-builder-and-interop.md`, `notes/performance.md`.

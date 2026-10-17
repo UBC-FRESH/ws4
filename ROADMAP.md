@@ -201,7 +201,7 @@ Parent issue: #36
 Branch: `feature/p4-release`
 Status: complete
 
-P4 is complete: pull request #43 squash-merged as `a06d0ca`, the branch deleted, the annotated tag
+P4 is complete: pull request #43 squash-merged as `d8ecd72`, the branch deleted, the annotated tag
 `v0.1.0` created and pushed, the GitHub release `v0.1.0` published with the sdist and the wheel, the
 docs site verified, and the published artifact verified from a fresh install (P4.6). Close-out report:
 `notes/reports/p4-closeout.md`.
@@ -225,7 +225,7 @@ checkout.
   - [x] Verify the published site is reachable and matches the checkout
   - [x] Add the subsystem pages assigned to P4 (simulator, optimizer, spatial, roads)
 - [x] P4.5 Tag the release and publish the artifacts (#41, maintainer approval required)
-  - [x] Create the annotated tag (`v0.1.0` at `a06d0ca`)
+  - [x] Create the annotated tag (`v0.1.0` at `d8ecd72`)
   - [x] Publish the artifacts after approval, and record the locations and commands (the GitHub release
     `v0.1.0`; see `notes/reports/p4-closeout.md`)
 - [x] P4.6 Verify the published release (#42)
@@ -239,7 +239,7 @@ Parent issue: #44
 Branch: `feature/p5-operate`
 Status: complete
 
-P5 is complete: pull request #51 squash-merged as `5f6c704`, the branch deleted, and parent issue #44
+P5 is complete: pull request #51 squash-merged as `a8cb148`, the branch deleted, and parent issue #44
 closed. Delivered the review cadence, issue triage, dependency and security maintenance (Dependabot
 version updates and security updates enabled), the roadmap/backlog/changelog sync checklist, the
 release and patch policy, and the maintainer and handover guide. Close-out report:
@@ -311,6 +311,7 @@ budget. Plan of record: `notes/design/ws4-performance.md`.
 - [x] P6.44 Docs audit: correct the stale page claims and complete the `ws4.opt` docstrings
 - [x] P6.45 Public-docstring audit and the `docstrings` dashboard gate
 - [x] P6.46 Verify the flow definitions against the established specification
+- [x] P6.47 Consolidate the repository's commit authorship and refresh the citations
 
 Deferred from P6, triaged in `notes/backlog.md`:
 
@@ -326,20 +327,20 @@ Acceptance criteria:
 
 ## Detailed Next Steps Notes
 
-1. Phase 0 is complete: pull request #8 squash-merged as `386c643`, the branch deleted, and parent
+1. Phase 0 is complete: pull request #8 squash-merged as `97330a8`, the branch deleted, and parent
    issue #1 closed. The close-out report is `notes/reports/p0-closeout.md`.
-2. Phase 1 is complete: pull request #14 squash-merged as `33ac569`, the branch deleted, and parent
+2. Phase 1 is complete: pull request #14 squash-merged as `a3d182a`, the branch deleted, and parent
    issue #10 closed. The close-out report is `notes/reports/p1-closeout.md`.
-3. Phase 2 is complete: pull request #25 squash-merged as `3e87d46`, the branch deleted, and parent
+3. Phase 2 is complete: pull request #25 squash-merged as `27b6915`, the branch deleted, and parent
    issue #15 closed. The close-out report is `notes/reports/p2-closeout.md`. Five items are deferred and
    listed in the Phase 2 section and tracked in `notes/backlog.md`.
 4. P2 builds the model and the optimization stack. The stack generalizes the lab's FHOPS toolkit into a
    shared solver core; the execution substrate targets the 72-core host and the GPU. See
    `notes/design/ws4-optimization-stack.md` and `notes/design/ws4-matrix-builder-and-interop.md`.
-5. Phase 3 is complete: pull request #35 squash-merged as `83e2d60`, the branch deleted, and parent
+5. Phase 3 is complete: pull request #35 squash-merged as `a8dc018`, the branch deleted, and parent
    issue #26 closed. The close-out report is `notes/reports/p3-closeout.md`, and the verification report
    is `notes/reports/p3-verify.md`.
-6. Phase 4 is complete: pull request #43 squash-merged as `a06d0ca`, the branch deleted, and parent
+6. Phase 4 is complete: pull request #43 squash-merged as `d8ecd72`, the branch deleted, and parent
    issue #36 closed. The annotated tag `v0.1.0` was created and pushed, and the GitHub release
    `v0.1.0` published the sdist and the wheel. The docs site and the published artifact were verified
    (P4.4, P4.6). The close-out report is `notes/reports/p4-closeout.md`.
@@ -348,7 +349,7 @@ Acceptance criteria:
    and core area run inside the optimizer objective). The plan — profiling, bottleneck map, targets, and
    the ordered work packages — is `notes/design/ws4-performance.md`. The implementation is deliberately
    deferred: no optimization work lands before the release merges.
-8. Phase 5 is complete: pull request #51 squash-merged as `5f6c704`, the branch deleted, and parent
+8. Phase 5 is complete: pull request #51 squash-merged as `a8cb148`, the branch deleted, and parent
    issue #44 closed. The close-out report is `notes/reports/p5-closeout.md`.
 9. Phase 6 (Performance and scalability) is active on `feature/p6-performance`, parent issue #60, with
    eight work packages (#61 to #68) from the plan in `notes/design/ws4-performance.md`: the benchmark

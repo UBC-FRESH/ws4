@@ -30,7 +30,7 @@ issue comments.
   math-heuristic layer.
 - Queued the Phase 0 close-out: pull request #8 (`feature/p0-scope-design` into `main`) and the report
   `notes/reports/p0-closeout.md`. Status: awaiting maintainer approval.
-- Completed Phase 0: squash-merged pull request #8 as `386c643`, deleted `feature/p0-scope-design`, and
+- Completed Phase 0: squash-merged pull request #8 as `97330a8`, deleted `feature/p0-scope-design`, and
   closed parent issue #1.
 - Launched Phase 1 (Contracts and prototype) on `feature/p1-contracts-prototype`, parent issue #10, with
   tasks P1.1 (compiled-dataset schema and manifest) and P1.2 (end-to-end prototype).
@@ -54,7 +54,7 @@ issue comments.
 - P1 fix: the `.gitignore` rule `build/` also ignored the `ws4/build/` package, so the compiler was
   never committed. Narrowed the rule to `/build/` and committed `ws4/build/__init__.py` and
   `ws4/build/compiler.py`. This is why CI could not resolve `ws4.build.compiler`.
-- Completed Phase 1: squash-merged pull request #14 as `33ac569`, deleted `feature/p1-contracts-prototype`,
+- Completed Phase 1: squash-merged pull request #14 as `a3d182a`, deleted `feature/p1-contracts-prototype`,
   and closed parent issue #10.
 - Launched Phase 2 (Build) on `feature/p2-build`, parent issue #15, with tasks P2.1 to P2.9 (#16 to #24).
 - P2.1 (in progress): replaced the prototype's minimal recipe parser with a ForestModelXML parser and
@@ -170,7 +170,7 @@ issue comments.
   the optimizer and CI (which installed only `.[geo]` plus the dev requirements) failed on `f22cd6a`. The
   import is now lazy with a clear error, `scipy` is declared in the `opt` extra and the dev requirements,
   and `tests/test_mip.py` skips when it is absent.
-- P2 close-out carried out: pull request #25 squash-merged as `3e87d46`, branch `feature/p2-build`
+- P2 close-out carried out: pull request #25 squash-merged as `27b6915`, branch `feature/p2-build`
   deleted, and parent issue #15 closed. P2 is `complete` in `ROADMAP.md`. Launched P3 (Verify): parent
   issue #26, branch `feature/p3-verify`, task P3.1 (#27).
 - P3: made the repository public and enabled GitHub Pages (`gh api -X PATCH repos/UBC-FRESH/ws4
@@ -235,7 +235,7 @@ issue comments.
 - P3 close-out: queued pull request #35 (`feature/p3-verify` into `main`) and wrote
   `notes/reports/p3-closeout.md`. `ROADMAP.md` marks P3 `pr-open`. `python scripts/dashboard.py`:
   `OVERALL: GREEN`.
-- P3 close-out carried out: pull request #35 squash-merged as `83e2d60`, branch `feature/p3-verify`
+- P3 close-out carried out: pull request #35 squash-merged as `a8dc018`, branch `feature/p3-verify`
   deleted, and parent issue #26 closed. P3 is `complete` in `ROADMAP.md`. Launched P4 (Release and
   deploy): parent issue #36, branch `feature/p4-release`, tasks P4.1 to P4.6 (#37 to #42).
 
@@ -350,7 +350,7 @@ issue comments.
   (P4.5), the docs publish and verification (P4.4), the post-publish verification (P4.6), closing parent
   issue #36, and launching P5, with the exact commands. Set P4 to `pr-open` in `ROADMAP.md`. Status:
   awaiting maintainer approval. CI on the evidence head `4516345` is green.
-- Completed Phase 4 (Release and deploy): squash-merged pull request #43 as `a06d0ca`, deleted the
+- Completed Phase 4 (Release and deploy): squash-merged pull request #43 as `d8ecd72`, deleted the
   branch `feature/p4-release`, and closed parent issue #36. Created and pushed the annotated tag
   `v0.1.0`, and published the GitHub release `v0.1.0` with the sdist (`ws4-0.1.0.tar.gz`) and the wheel
   (`ws4-0.1.0-py3-none-any.whl`), built from a clean checkout of the tag. Verified the published docs
@@ -358,7 +358,7 @@ issue comments.
   published artifact (P4.6): a fresh virtual environment installed the released wheel, and the `ws4`
   command ran build, validate, simulate, report, and optimize end to end; the simulator was
   reproducible (identical `account_values.csv`) and the optimizer reproduced its objective for the same
-  seed. Fixed a stale roads docs line (`9e4419d`).
+  seed. Fixed a stale roads docs line (`ed4b530`).
 - Launched Phase 5 (Operate and maintain) on `feature/p5-operate`, parent issue #44, with tasks P5.1 to
   P5.6 (#45 to #50): a review cadence, issue triage, dependency maintenance, a
   roadmap/backlog/changelog sync, a release and patch policy, and a maintainer and handover guide. The
@@ -386,7 +386,7 @@ issue comments.
   `notes/design/ws4-performance.md`) with its WP0 to WP7 work packages. It names one settings change
   (Dependabot security updates). Status: awaiting maintainer approval. CI on the evidence head
   `880c14a` is green.
-- Completed Phase 5 (Operate and maintain): squash-merged pull request #51 as `5f6c704`, deleted the
+- Completed Phase 5 (Operate and maintain): squash-merged pull request #51 as `a8cb148`, deleted the
   branch `feature/p5-operate`, and closed parent issue #44. Enabled Dependabot security updates
   (version-update pull requests are already open).
 - Launched Phase 6 (Performance and scalability) on `feature/p6-performance`, parent issue #60, with
@@ -939,3 +939,23 @@ issue comments.
   it, a window starting at the horizon having no predecessor, and a two-sided band tolerating a
   percent either way while charging what falls outside it; the idiom test pins that a maximum would
   charge growth. Dashboard: **GREEN**.
+- P6.47 (metadata): the repository's history is rewritten so that every commit is authored **and**
+  committed by the maintainer, who takes responsibility for the work to date. `git filter-branch
+  --env-filter` over `main` and `feature/p6-performance` (103 commits) changed only the author and
+  committer identity: the trees are byte-identical (`git diff` against the pre-rewrite tips is empty),
+  the author and committer dates are preserved, and the commit counts are unchanged (8 on `main`, 95 on
+  the branch). A pre-rewrite backup of both branches is kept locally (`backup-pre-rewrite-main`,
+  `backup-pre-rewrite-feature`) and `refs/original/` holds filter-branch's own copy.
+  Because every SHA changed, the **32 commit citations** in `ROADMAP.md`, `CHANGE_LOG.md`,
+  `notes/reports/p0-p5`, and the `notes/design/` pages were refreshed to the new SHAs; a sweep of every
+  hex token in the tracked files leaves 62 that resolve to a commit and 25 that are run IDs or numeric
+  literals, none of them dangling citations. The 11 `p6*-checkpoint` tags were re-pointed at the
+  rewritten commits with the short SHA in each message refreshed, the tagger set to the maintainer, and
+  the tagger dates preserved.
+  The git identity is now global (`user.name` / `user.email` = the maintainer) with the repository-local
+  override removed; it had been `FRESH Lab Agent <noreply@example.org>`. `.git/config` is not tracked.
+  Two limits are recorded rather than fixed: `v0.1.0` was **not** moved, because a GitHub release is
+  attached to it and moving a release tag needs its own approval (it still points at the pre-rewrite
+  history, which keeps those objects reachable), and issue and pull-request authorship cannot be
+  rewritten server-side — it is already the maintainer's account, and the three open pull requests are
+  the dependency bots'. Dashboard: **GREEN**.

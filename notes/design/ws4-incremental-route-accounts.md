@@ -1,6 +1,6 @@
 # Incremental route accounts in the objective (performance spike)
 
-Status: **spike**. Branch `spike/inc-route-accounts`, off P6 head `9c39e57`. Checkpoint tag
+Status: **spike**. Branch `spike/inc-route-accounts`, off P6 head `a304064`. Checkpoint tag
 `p6-routeinc-checkpoint` for one-command rollback.
 
 Related: `notes/design/ws4-performance.md` (WP4 incremental objective), `notes/performance.md`.

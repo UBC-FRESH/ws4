@@ -1,6 +1,6 @@
 # Faster simulator construction (performance spike)
 
-Status: **spike**. Branch `spike/construction`, off P6 head `7e5c8db`. Checkpoint tag
+Status: **spike**. Branch `spike/construction`, off P6 head `357ac8d`. Checkpoint tag
 `p6-construction-checkpoint` for one-command rollback.
 
 Related: `notes/design/ws4-curve-grid.md` (the age table), `notes/performance.md`.

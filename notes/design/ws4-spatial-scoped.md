@@ -1,6 +1,6 @@
 # Adjacency-scoped spatial constraints (performance spike)
 
-Status: **spike**. Branch `spike/incremental-spatial`, off P6 head `e9cba14`. Checkpoint tag
+Status: **spike**. Branch `spike/incremental-spatial`, off P6 head `b101923`. Checkpoint tag
 `p6-spatial-checkpoint` for one-command rollback.
 
 Related: `notes/design/ws4-performance.md` (WP3/WP5), `notes/performance.md`.

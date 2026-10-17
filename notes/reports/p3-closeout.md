@@ -36,7 +36,7 @@ Settings changes, each with its exact command. Each one runs only after its own 
 ## 2. Workflow compliance
 
 - Parent issue before the branch: parent #26 was created before the branch `feature/p3-verify`.
-- Branch from `main`: merge-base `3e87d46` (the Phase 2 squash merge).
+- Branch from `main`: merge-base `27b6915` (the Phase 2 squash merge).
 - Commit messages that start with task IDs: 13 of 13 (`590c8f7` P3 activation, then P3.1 to P3.8 and
   two plan-expansion commits).
 - Gates for each commit: section 3.

@@ -1,6 +1,6 @@
 # Faster route-record accumulation (performance spike)
 
-Status: **spike**. Branch `spike/route-record`, off P6 head `84c34f4`. Checkpoint tag
+Status: **spike**. Branch `spike/route-record`, off P6 head `c271a79`. Checkpoint tag
 `p6-routerecord-checkpoint` for one-command rollback.
 
 Related: `notes/design/ws4-incremental-route-accounts.md`, `notes/performance.md`.

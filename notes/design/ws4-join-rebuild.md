@@ -1,6 +1,6 @@
 # Fast fragment-to-feature join rebuild (performance spike)
 
-Status: **spike**. Branch `spike/join-rebuild`, off P6 head `6ff31d3`. Checkpoint tag
+Status: **spike**. Branch `spike/join-rebuild`, off P6 head `82812b7`. Checkpoint tag
 `p6-joinrebuild-checkpoint` for one-command rollback.
 
 Related: `notes/design/ws4-curve-grid.md` (the prior spike; it left the join rebuild as the largest

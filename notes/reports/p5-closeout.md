@@ -41,7 +41,7 @@ gh api -X PUT repos/UBC-FRESH/ws4/automated-security-fixes
 ## 2. Workflow compliance
 
 - Parent issue before the branch: parent #44 was created before the branch `feature/p5-operate`.
-- Branch from `main`: merge-base `9e4419d` (the post-release docs fix on `main`).
+- Branch from `main`: merge-base `ed4b530` (the post-release docs fix on `main`).
 - Commit messages that start with task IDs: 4 of 4 (`8d50c5e` P5 activation, `f20fb79` P5.1,
   `cf35356` P5.2, `880c14a` P5.3-P5.6).
 - Gates for each commit: section 3.

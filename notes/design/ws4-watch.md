@@ -1,6 +1,6 @@
 # Live target-window watcher (`ws4 watch`)
 
-Status: **in progress**. Branch `feature/p6-watch`, off P6 head `b725be6`. Checkpoint tag
+Status: **in progress**. Branch `feature/p6-watch`, off P6 head `b80604d`. Checkpoint tag
 `p6-watch-checkpoint` for one-command rollback. Issue: #77.
 
 Related: `notes/design/ws4-optimization-stack.md`, `docs/reference/optimizer.rst`.

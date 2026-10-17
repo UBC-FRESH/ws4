@@ -37,7 +37,7 @@ Settings changes, each with its exact command. Each one runs only after its own 
 - Parent issue before the branch: **deviation.** The branch `feature/p0-scope-design` was created
   before parent issue #1. The issue was created during the close-out, at the maintainer's direction.
   Recorded in section 5.
-- Branch from `main`: merge-base `bf4f08b` (the initial skeleton commit).
+- Branch from `main`: merge-base `8c9c3a8` (the initial skeleton commit).
 - Commit messages that start with task IDs: 5 of 5 (`d0e2f42` P0.1, `41d1a76` P0.2-P0.4, `2711022`
   P0.6, `d12ebec` P0.5, `6f8b296` P0.7).
 - Gates for each commit: section 3.
