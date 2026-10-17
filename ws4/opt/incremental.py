@@ -90,7 +90,7 @@ class IncrementalObjective:
                         year
                         for target in self.targets
                         if is_patch(target.account)
-                        for year in target.cell_years()
+                        for year in tuple(target.cell_years())[:1]
                     }
                 )
             )
@@ -102,9 +102,18 @@ class IncrementalObjective:
         self.assignments: Schedule = {}
         self._contributions: dict[tuple[int, Chain], dict[Cell, float]] = {}
         self._pending_move: tuple[dict[Cell, float], list[int], Schedule] | None = None
+        # A patch account is a snapshot of the map at one point in time, so a patch target is read
+        # at the first year of its period rather than summed across it (the accounting is periodic
+        # while the simulation is annual).
+        self._target_years: list[tuple[int, ...]] = [
+            tuple(target.cell_years())[:1]
+            if is_patch(target.account)
+            else tuple(target.cell_years())
+            for target in self.targets
+        ]
         self._targets_by_cell: dict[Cell, list[int]] = {}
         for index, target in enumerate(self.targets):
-            for year in target.cell_years():
+            for year in self._target_years[index]:
                 self._targets_by_cell.setdefault((year, target.account), []).append(index)
 
     def reset(self, schedule: Schedule) -> None:
@@ -184,9 +193,9 @@ class IncrementalObjective:
     def objective(self) -> float:
         """Return the objective for the current state (periods summed)."""
         total = 0.0
-        for target in self.targets:
+        for index, target in enumerate(self.targets):
             value = sum(
-                self.totals.get((year, target.account), 0.0) for year in target.cell_years()
+                self.totals.get((year, target.account), 0.0) for year in self._target_years[index]
             )
             total += penalty(value, target)
         return total

@@ -792,3 +792,11 @@ issue comments.
   of a 50-year horizon now maintains **one** state instead of fifty, and the volume-floored patch
   benchmark goes from **62 to 310 iterations/s (5x)** with the patch penalty unchanged (27). Tests:
   `tests/test_patch_objective.py`, `tests/test_patch_state.py`. Dashboard: **GREEN**.
+- P6.36 (fix): a patch target spanning a period is read at **one year** of that period. 1 year is the
+  minimum time step in WS4 and the accounting is periodic, so a patch account (a snapshot of the map,
+  unlike a volume or an area) must not be summed across the years of a period: a
+  `period_width=2` patch target was summing a share or a patch count over two years. `IncrementalObjective`
+  now reads a patch target at the first year of its period only, for both the objective and the cells it
+  tracks, and the patch model keeps only those years. Tests:
+  `tests/test_patch_objective.py` (a period-width patch target reads its first year). Dashboard:
+  **GREEN**.

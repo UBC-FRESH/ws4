@@ -11,7 +11,7 @@ import pytest
 from ws4.build.compiler import build_canonical_dataset
 from ws4.opt.engine import OptimizeConfig, Optimizer
 from ws4.opt.incremental import IncrementalObjective
-from ws4.opt.objective import Target, objective
+from ws4.opt.objective import Target, objective, penalty
 from ws4.opt.operators import Schedule
 from ws4.opt.patch import PatchModel
 from ws4.opt.patch_state import PatchGroupYear
@@ -156,6 +156,33 @@ def test_a_gap_is_a_non_member_between_two_components() -> None:
     assert not state.is_gap(state.index[1])  # a member is never a gap
     state.set_value(3, None)
     assert not state.is_gap(state.index[2])  # only one component left to join
+
+
+def test_a_patch_target_is_read_at_one_year_of_its_period(tmp_path: Path) -> None:
+    """A patch account is a snapshot, so a period-width patch target reads its first year only."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    topology = _topology(tmp_path / "topology.csv")
+    patches = _patches(tmp_path / "patches.yaml")
+    optimizer = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(
+            years=2,
+            iterations=1,
+            seed=1,
+            topology_path=str(topology),
+            patch_accounts_path=str(patches),
+        ),
+    )
+    account = "patch.harvest.TOTAL.frequency"
+    target = Target(account, 0, maximum=0.0, period_width=2)
+    evaluator = IncrementalObjective(optimizer, [target], (), optimizer.patch_accounts())
+    evaluator.reset({1: (("CC", 0),)})
+    assert evaluator._target_years == [(0,)]
+    assert evaluator.objective == pytest.approx(
+        penalty(evaluator.totals.get((0, account), 0.0), target)
+    )
 
 
 def test_a_cut_block_is_the_one_that_splits_a_patch() -> None:
