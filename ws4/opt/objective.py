@@ -122,28 +122,29 @@ def penalty(value: float, target: Target) -> float:
     return total
 
 
-def flow_term(
+def flow_values(
     index: Mapping[tuple[int, str], float],
     target: Target,
     years: int,
     pending: Mapping[tuple[int, str], float] | None = None,
-) -> float:
-    """Return a flow target's aggregate over its period window.
+) -> list[float]:
+    """Return a flow target's percent value for each period it compares.
 
-    A flow target constrains the **shape** of the account's profile over the periods, not its level,
-    and is normally targeted at zero with a weight; the level comes from a separate target on the
-    same account. The two kinds differ in what they compare:
+    A flow target constrains the **shape** of the account's profile over the periods, not its level;
+    the level comes from a separate target on the same account, and the flow target itself is
+    normally a narrow band around zero. The two kinds differ in what they compare, and both give one
+    value per period, so the target's minimum, maximum, weights and shape apply period by period:
 
-    * ``even`` is the **percent difference of each period from a reference period**, summed in
-      absolute value: ``sum(|100 * (x_p - x_ref) / x_ref|)``. The reference is the **final period of
-      the window** by default, or ``flow_reference`` (the first year of the period to use).
+    * ``even`` is the **percent difference of each period from a reference period**:
+      ``100 * (x_p - x_ref) / x_ref``. The reference is the **final period of the window** by
+      default, or ``flow_reference`` (the first year of the period to use), and it contributes no
+      value of its own.
     * ``ndy`` (non-declining yield) is the **percent change between consecutive periods**:
-      ``100 * (x_{p+1} - x_p) / x_p``, counting only the declines.
+      ``100 * (x_p - x_{p-1}) / x_{p-1}``, starting from the second period of the window.
 
-    Both divide by a balance that can be zero, so the term is **infinite while that balance is
-    zero** — the ``even`` reference period, and every period an ``ndy`` comparison starts from. A
-    run primes them first, for example with a linear volume target above the sustainable level, so
-    that every period has a positive balance; only then do the ratios have a positive denominator.
+    Both divide by a balance that can be zero, in which case every period that depends on it is
+    infinite. A run primes that balance first, for example with a linear volume target above the
+    sustainable level so that every period has wood, and only then switches the flow account on.
     This is the definitional behaviour, not a defect.
 
     Parameters
@@ -159,9 +160,8 @@ def flow_term(
 
     Returns
     -------
-    float
-        The summed percent difference over the non-reference periods, or infinity when the
-        reference period's balance is zero.
+    list of float
+        One percent value per compared period; empty when the window holds fewer than two periods.
     """
     width = max(1, target.period_width)
     stop = target.flow_end if target.flow_end is not None else years
@@ -178,7 +178,15 @@ def flow_term(
         periods.append(total)
         starts.append(begin)
     if len(periods) < 2:
-        return 0.0
+        return []
+    if target.flow == "ndy":
+        values: list[float] = []
+        for position in range(1, len(periods)):
+            previous = periods[position - 1]
+            values.append(
+                math.inf if previous <= 0.0 else 100.0 * (periods[position] - previous) / previous
+            )
+        return values
     reference = len(periods) - 1
     if target.flow_reference is not None:
         # the period containing that year, clamped to the window
@@ -187,24 +195,45 @@ def flow_term(
             if begin <= target.flow_reference:
                 reference = position
     balance = periods[reference]
-    if target.flow == "even":
-        if balance <= 0.0:
-            return math.inf
-        total_change = 0.0
-        for position, value in enumerate(periods):
-            if position == reference:
-                continue
-            total_change += abs(100.0 * (value - balance) / balance)
-        return total_change
-    # ndy is the consecutive decline, relative to the earlier period of each pair
-    total_change = 0.0
-    for position in range(1, len(periods)):
-        previous = periods[position - 1]
-        if previous <= 0.0:
-            return math.inf
-        change = 100.0 * (periods[position] - previous) / previous
-        total_change += max(0.0, -change)
-    return total_change
+    if balance <= 0.0:
+        # every non-reference period differs from nothing: the whole band is infinite
+        return [math.inf] * (len(periods) - 1)
+    return [
+        100.0 * (value - balance) / balance
+        for position, value in enumerate(periods)
+        if position != reference
+    ]
+
+
+def flow_penalty(
+    index: Mapping[tuple[int, str], float],
+    target: Target,
+    years: int,
+    pending: Mapping[tuple[int, str], float] | None = None,
+) -> float:
+    """Return a flow target's penalty: each period's percent value, priced by the target.
+
+    The target's minimum, maximum, weights and shape are applied **per period**, so a band of
+    ``minimum: -1`` and ``maximum: 1`` gives every period a one-percent-either-way safe range and
+    charges only what falls outside it.
+
+    Parameters
+    ----------
+    index : mapping of (int, str) to float
+        The account values by ``(year, account)``.
+    target : Target
+        A target whose ``flow`` is ``"even"`` or ``"ndy"``.
+    years : int
+        The horizon, in years; the window's end when ``flow_end`` is not set.
+    pending : mapping of (int, str) to float, optional
+        A move's change per cell, added to ``index`` without copying it.
+
+    Returns
+    -------
+    float
+        The summed per-period penalty.
+    """
+    return sum(penalty(value, target) for value in flow_values(index, target, years, pending))
 
 
 def objective(values: pd.DataFrame, targets: Sequence[Target]) -> float:
@@ -227,7 +256,7 @@ def objective(values: pd.DataFrame, targets: Sequence[Target]) -> float:
     total = 0.0
     for target in targets:
         if target.flow:
-            total += penalty(flow_term(index, target, horizon), target)
+            total += flow_penalty(index, target, horizon)
             continue
         value = sum(index.get((year, target.account), 0.0) for year in target.cell_years())
         total += penalty(value, target)
@@ -266,8 +295,12 @@ def objective_terms(
         One penalty per target.
     """
     index = _value_index(values)
+    horizon = max((year for year, _ in index), default=-1) + 1
     penalties: list[float] = []
     for target in targets:
+        if target.flow:
+            penalties.append(flow_penalty(index, target, horizon))
+            continue
         years = list(target.cell_years())
         if point_in_time is not None and point_in_time(target.account):
             years = years[:1]

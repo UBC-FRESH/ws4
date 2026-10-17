@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from .objective import Target, flow_term, penalty
+from .objective import Target, flow_penalty, penalty
 from .operators import Candidates, Chain, Schedule
 from .patch import PatchModel
 
@@ -201,7 +201,7 @@ class IncrementalObjective:
         total = 0.0
         for index, target in enumerate(self.targets):
             if target.flow:
-                total += penalty(flow_term(self.totals, target, self.optimizer.cfg.years), target)
+                total += flow_penalty(self.totals, target, self.optimizer.cfg.years)
                 continue
             value = sum(
                 self.totals.get((year, target.account), 0.0) for year in self._target_years[index]
@@ -236,9 +236,9 @@ class IncrementalObjective:
             target = self.targets[index]
             if target.flow:
                 horizon = self.optimizer.cfg.years
-                before = flow_term(self.totals, target, horizon)
-                after = flow_term(self.totals, target, horizon, pending)
-                total += penalty(after, target) - penalty(before, target)
+                before = flow_penalty(self.totals, target, horizon)
+                after = flow_penalty(self.totals, target, horizon, pending)
+                total += after - before
                 continue
             before = sum(
                 self.totals.get((year, target.account), 0.0) for year in target.cell_years()

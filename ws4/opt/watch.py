@@ -155,7 +155,7 @@ def _period_levels(
     minima: list[float | None] = [None] * max(0, n_periods)
     maxima: list[float | None] = [None] * max(0, n_periods)
     for target in targets:
-        if target.account != account:
+        if target.account != account or target.flow:
             continue
         width = max(1, target.period_width)
         start = target.year
@@ -734,6 +734,7 @@ def run_watch(
     refresh: float = 2.0,
     plain: bool = False,
     console: Console | None = None,
+    initial: Schedule | None = None,
 ) -> dict[str, Any]:
     """Run the search and paint the target window until it stops improving.
 
@@ -755,6 +756,9 @@ def run_watch(
         Print a single final frame instead of a live view.
     console : rich.console.Console or None, optional
         The console to draw on; a new one when omitted.
+    initial : dict or None, optional
+        A starting schedule; it takes precedence over ``warm_start``. Use it to continue from an
+        earlier run, which a flow target needs: its reference period must already carry wood.
 
     Returns
     -------
@@ -787,8 +791,7 @@ def run_watch(
         registry=optimizer.registry,
     )
     rng = random.Random(cfg.seed)
-    initial: Schedule | None = None
-    if cfg.warm_start:
+    if initial is None and cfg.warm_start:
         initial = {block: options[0] for block, options in candidates.items() if options}
 
     started = time.monotonic()

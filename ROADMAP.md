@@ -307,6 +307,7 @@ budget. Plan of record: `notes/design/ws4-performance.md`.
 - [x] P6.40 Number accounting periods from 1 (period 0 is the pre-simulation state)
 - [x] P6.41 Flow targets (`flow: even`, `flow: ndy`)
 - [x] P6.42 Correct the flow definitions (reference-period percent difference; ndy between periods)
+- [x] P6.43 Price flow targets per period; fix the watcher's flow display
 
 Deferred from P6, triaged in `notes/backlog.md`:
 
