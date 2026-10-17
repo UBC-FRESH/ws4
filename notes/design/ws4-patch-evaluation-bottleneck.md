@@ -228,9 +228,25 @@ Over five seeds at 4,000 iterations, weight 0.5 against 0.0:
 | without | 16.4 | 56-69/s |
 | with merge | **14.6** | 67-77/s |
 
-Three seeds improve, one ties, one worsens. The rate rises because a merge move is a single block and
-displaces expensive LNS moves. It is opt-in and not yet a clear win — the next step is to target the
-*class* the objective cares about (and the split side of the same idea) rather than any gap.
+**Correction (P6.33).** That comparison had no volume floor, so a max-patch target was partly
+satisfied by harvesting less. Re-run with an even-flow floor (`product.Yield.managed.Conif` >= 600,000
+per 10-year period) and the **patch penalty measured on its own** (the total is dominated by the volume
+shortfall), at 2,500 iterations on two seeds:
+
+| | patch penalty (mean of 2) |
+| --- | ---: |
+| without | 24 |
+| merge 0.5 | 22 |
+| split 0.5 | 27 |
+
+So the merge effect is within noise once the harvest level is constrained, and the split operator shows
+no benefit on this target. Both are implemented, tested, and off by default. The `1000+` cap is not a
+useful discriminator either: with a volume floor the default operators already reach zero large
+patches.
+
+**Lesson for the next benchmark:** a patch-only target is confounded by the harvest level. Pair it with
+a volume constraint and report the patch term separately, or the operators will look better than they
+are.
 
 ## The compiled kernel: measured on realistic components
 
@@ -358,8 +374,11 @@ Ordered by value over risk.
    anyway. At or below the ~50% break-even, with a repair cost of the same order as the walk it
    replaces, it does not pay. Recorded so nobody has to re-derive it.
 4. **Articulation- and gap-targeted operators**: the merge side is in (`MergeOperator`, `is_gap`,
-   `focus_years`); it needs to target the *class* the objective scores, not any gap, and the split
-   side (`reachable_from` already identifies articulation detaches exactly) is not built yet.
+   `focus_years`) and the split side is in (`SplitOperator`, `is_cut`), both off by default. Measured
+   against a volume-constrained target, neither shows a benefit beyond noise, so the next design step is
+   not "more of the same": it is to make the move target the **class the objective scores** (move a
+   patch out of an over-full class into an under-full one) and to prove it against the volume-floored
+   benchmark described above.
 5. **Consider excluding LNS, or making its destroy set spatially coherent**, for patch targets. LNS
    is what the compiled path is for, and buys about 0.8 objective units on the sample problem; a
    k-hop-ball destroy set would shrink the affected components further.

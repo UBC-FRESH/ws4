@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import random
 
-from ws4.opt.operators import ClusterOperator, MergeOperator, Schedule, restore
+from ws4.opt.operators import ClusterOperator, MergeOperator, Schedule, SplitOperator, restore
 
 
 def _candidates() -> dict[int, list[tuple[tuple[str, int], ...]]]:
@@ -68,3 +68,9 @@ def test_merge_operator_cannot_move_without_a_patch_model() -> None:
     """The merge operator declines when the run has no patch accounts."""
     operator = MergeOperator(_NoPatch())
     assert operator.propose_inplace({}, random.Random(3), _candidates()) is None
+
+
+def test_split_operator_cannot_move_without_a_patch_model() -> None:
+    """The split operator declines when the run has no patch accounts."""
+    operator = SplitOperator(_NoPatch())
+    assert operator.propose_inplace({}, random.Random(4), _candidates()) is None

@@ -133,6 +133,9 @@ def optimize(
     merge_weight: float = typer.Option(
         0.0, "--merge-weight", help="Weight of the patch merge operator (0 disables it)"
     ),
+    split_weight: float = typer.Option(
+        0.0, "--split-weight", help="Weight of the patch split operator (0 disables it)"
+    ),
     patch_accounts: Path = typer.Option(
         None, "--patch-accounts", exists=True, help="Patch size-distribution accounts (YAML)"
     ),
@@ -172,6 +175,7 @@ def optimize(
         cluster_weight=cluster_weight,
         cluster_size=cluster_size,
         merge_weight=merge_weight,
+        split_weight=split_weight,
         patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",
         cooling_mode=cooling_mode,
         cooling_window=cooling_window,

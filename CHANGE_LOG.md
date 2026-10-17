@@ -760,3 +760,17 @@ issue comments.
   rate rises from 56-69 to 67-77 iterations/s because a merge move is a single block and displaces
   expensive LNS moves. Tests: `tests/test_patch_objective.py`, `tests/test_operators.py`.
   Dashboard: **GREEN**.
+- P6.33 (fix): the split operator, and a correction to P6.32. Added `SplitOperator` (`--split-weight`,
+  default 0): it samples a member block that is an **articulation point** of its patch (`is_cut`, the
+  same early-exit test a detach uses, O(degree) in the common case) and untreats it, splitting the
+  patch. Adding it exposed a flaw in the P6.32 benchmark: with no volume floor, a max-patch target is
+  partly satisfied by harvesting less, so the operator comparison was confounded. Re-run with an
+  even-flow floor (`product.Yield.managed.Conif` >= 600,000 per 10-year period) and the **patch penalty
+  reported on its own** (the total is dominated by the volume shortfall): at 2,500 iterations on two
+  seeds the 0-5 count penalty is 24 (mean) without an operator, 22 with merge at 0.5, and 27 with split
+  at 0.5. So the merge effect is within noise once the harvest level is constrained, and the split
+  operator shows no benefit on this target. Both stay implemented, tested, and off by default. The
+  `1000+` cap is not a discriminator either: with a volume floor the default operators already reach
+  zero large patches. Lesson recorded: pair a patch target with a volume constraint and report the patch
+  term separately, or the operators will look better than they are. Tests:
+  `tests/test_patch_objective.py`, `tests/test_operators.py`. Dashboard: **GREEN**.
