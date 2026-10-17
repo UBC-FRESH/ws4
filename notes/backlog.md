@@ -19,13 +19,13 @@ items are enhancements and maintenance.
 - **P5:** broaden `mypy` coverage to `ws4/`.
 - **post-release:** the wider expression library; succession and `produce` semantics; legacy-ingestion
   coverage; a reference replay; the wider operator set and ALNS; the shared solver-core package; the
-  island model and GPU moves; time-boxed MIP subproblems; the tuners and the portfolio layer;
-  incremental routing and spatial metrics for the optimizer objective (see
-  `notes/design/ws4-performance.md`); duplicate and meta accounts and chart output; unit conversion;
-  and the topology stub cleanup.
+  island model and GPU moves; time-boxed MIP subproblems; the tuners and the portfolio layer; duplicate
+  and meta accounts and chart output; unit conversion; and the topology stub cleanup.
 - **Blocked:** the MKRF canonical artifacts' location log is not on `origin` (the objects are on
   `arbutus-s3`); a fresh clone needs the producer to push the git-annex branch.
-- **Deferred:** the block-aggregation cache (not the hot path).
+- **Deferred:** the block-aggregation cache (not the hot path). Native kernels (P6.6) are **adopted**
+  (a numba product-gather kernel, ~1.1× end-to-end, exact parity, Python fallback; CI installs numba).
+  See `notes/design/ws4-performance.md`.
 
 ## Matrix builder (P2.1)
 
@@ -90,7 +90,9 @@ items are enhancements and maintenance.
 - **Succession and track switching during a run.** `done`. A treatment moves the fragment to its
   `new_track` and resets its offset.
 - **Product yields.** `done`. Applying a treatment records the product yield (area times the product
-  curve at the pre-treatment offset) to `product_values.csv`.
+  curve at the pre-treatment offset) to `product_values.csv`, and the year's products are summed into
+  the account values (one row per year and account), so the optimizer scores a target on a `product.*`
+  account.
 - **Route flows.** `done`. With a road network, each produced product is routed to the block's nearest
   destination and written to `route_values.csv` with its length and cost.
 - **Patch metrics over blocks.** `done`. `ws4/patch/metrics.py` groups the disturbed blocks into
@@ -183,3 +185,15 @@ items are enhancements and maintenance.
   Target: post-release, if profiling shows it.
 - **Docs for each subsystem.** `done`. The compiled dataset, ForestModelXML, simulator, optimizer,
   spatial, and road pages exist under `docs/reference/`, and the API pages cover the tooling.
+- **Command-line gaps found while writing the user docs.** `open`. `ws4 optimize` requires a
+  `--weights` file that nothing reads, and it has no iteration budget (only `--time-limit`), while
+  `watch` and `calibrate` both take `--iterations`. Either apply the weights file or make the option
+  optional, and add `--iterations`. Target: P7.
+- **`Optimizer.last_account_values()` after a `run`.** `open`. The incremental search path does not
+  populate it, so a script that calls `run` and then reads it gets an empty frame; the run's own
+  `account_values.csv` is the reliable source. Target: P7.
+- **Docstring completeness.** `done`. `scripts/doc_audit.py` is the oracle: it checks every public
+  function, method, property, class, and module in `ws4` and `scripts/` for the four rules (a docstring
+  exists; every parameter is documented and nothing else; a value-returning callable has a `Returns`
+  section; a section header is preceded by a blank line). It runs as the `docstrings` gate in
+  `scripts/dashboard.py` and as a CI step, with unit tests in `tests/test_doc_audit.py` (P6.45).

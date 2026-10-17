@@ -34,6 +34,28 @@ def test_lookup_table_nests_in_if() -> None:
     assert evaluate_value(text, {"cov": 1}, {}) == "yes"
 
 
+def test_lookup_table_matches_numeric_and_decimal_keys() -> None:
+    """A numeric key matches a decimal candidate numerically; absent keys return empty."""
+    from ws4.io.expressions import evaluate_value
+
+    assert evaluate_value("lookupTable(k,'1.0,2.5','a,b')", {"k": 1}, {}) == "a"
+    assert evaluate_value("lookupTable(k,'1.0,2.5','a,b')", {"k": 2.5}, {}) == "b"
+    assert evaluate_value("lookupTable(k,'1.0,2.5','a,b')", {"k": 9}, {}) == ""
+    assert evaluate_value("lookupTable(k,'x,y','p,q')", {"k": "z"}, {}) == ""
+
+
+def test_lookup_table_caches_the_parsed_literal() -> None:
+    """A repeated call with the same literal object reuses the parsed table."""
+    from ws4.io import expressions
+
+    keys = "a,b,c"
+    values = "1,2,3"
+    expressions._TABLE_CACHE.pop(id(keys), None)
+    assert expressions._lookup_table("b", keys, values) == "2"
+    assert id(keys) in expressions._TABLE_CACHE
+    assert expressions._lookup_table("c", keys, values) == "3"
+
+
 def test_comparisons_and_booleans() -> None:
     """Equality, inequality, and the boolean operators evaluate."""
     row = {"status": "C", "oper": "Operable", "ct": "Y", "au": "2121"}

@@ -40,7 +40,7 @@ Settings changes, each with its exact command. Each one runs only after its own 
 ## 2. Workflow compliance
 
 - Parent issue before the branch: parent #15 was created before the branch `feature/p2-build`.
-- Branch from `main`: merge-base `33ac569` (the Phase 1 squash merge).
+- Branch from `main`: merge-base `a3d182a` (the Phase 1 squash merge).
 - Commit messages that start with task IDs: 36 of 37. `5b4788d` ("sync the dev-workflow tooling and CI
   to the latest release") is a tooling commit with no task ID.
 - Gates for each commit: section 3.

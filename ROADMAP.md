@@ -16,7 +16,8 @@ exists and the maintainer approves it.
 | P2 Build | #15 | `feature/p2-build` | complete |
 | P3 Verify | #26 | `feature/p3-verify` | complete |
 | P4 Release and deploy | #36 | `feature/p4-release` | complete |
-| P5 Operate and maintain | #44 | `feature/p5-operate` | pr-open |
+| P5 Operate and maintain | #44 | `feature/p5-operate` | complete |
+| P6 Performance and scalability | #60 | `feature/p6-performance` | pr-open |
 
 ## Lifecycle Map
 
@@ -200,7 +201,7 @@ Parent issue: #36
 Branch: `feature/p4-release`
 Status: complete
 
-P4 is complete: pull request #43 squash-merged as `a06d0ca`, the branch deleted, the annotated tag
+P4 is complete: pull request #43 squash-merged as `d8ecd72`, the branch deleted, the annotated tag
 `v0.1.0` created and pushed, the GitHub release `v0.1.0` published with the sdist and the wheel, the
 docs site verified, and the published artifact verified from a fresh install (P4.6). Close-out report:
 `notes/reports/p4-closeout.md`.
@@ -224,7 +225,7 @@ checkout.
   - [x] Verify the published site is reachable and matches the checkout
   - [x] Add the subsystem pages assigned to P4 (simulator, optimizer, spatial, roads)
 - [x] P4.5 Tag the release and publish the artifacts (#41, maintainer approval required)
-  - [x] Create the annotated tag (`v0.1.0` at `a06d0ca`)
+  - [x] Create the annotated tag (`v0.1.0` at `d8ecd72`)
   - [x] Publish the artifacts after approval, and record the locations and commands (the GitHub release
     `v0.1.0`; see `notes/reports/p4-closeout.md`)
 - [x] P4.6 Verify the published release (#42)
@@ -236,7 +237,13 @@ checkout.
 
 Parent issue: #44
 Branch: `feature/p5-operate`
-Status: pr-open
+Status: complete
+
+P5 is complete: pull request #51 squash-merged as `a8cb148`, the branch deleted, and parent issue #44
+closed. Delivered the review cadence, issue triage, dependency and security maintenance (Dependabot
+version updates and security updates enabled), the roadmap/backlog/changelog sync checklist, the
+release and patch policy, and the maintainer and handover guide. Close-out report:
+`notes/reports/p5-closeout.md`.
 
 Goal: keep the project current: triage incoming ideas, review on a cadence, and close out cleanly.
 
@@ -247,22 +254,94 @@ Goal: keep the project current: triage incoming ideas, review on a cadence, and 
 - [x] P5.5 Define the release cadence and the patch policy (#49)
 - [x] P5.6 Write the maintainer and handover guide (#50)
 
+## Phase 6: Performance and scalability
+
+Parent issue: #60
+Branch: `feature/p6-performance`
+Status: pr-open
+
+Goal: make the simulator, the spatial metrics, and the route model fast enough that the metaheuristic
+optimizer can evaluate thousands of candidate schedules on a C5-class dataset within a practical
+budget. Plan of record: `notes/design/ws4-performance.md`.
+
+- [x] P6.0 Benchmark harness and baseline (#61)
+- [x] P6.1 Route and simulation quick wins (#62)
+- [x] P6.2 Vectorized simulator core (#63)
+- [x] P6.3 Spatial precompute and incremental metrics (#64)
+- [x] P6.4 Incremental objective evaluation (#65)
+- [x] P6.5 Solvers at scale (#66)
+- [x] P6.6 Native kernels (#67) — adopted (product-gather kernel)
+- [x] P6.7 Guardrails (#68)
+- [x] P6.8 Shared age-grid curve table (#69)
+- [x] P6.9 Fast fragment-to-feature join rebuild (#70)
+- [x] P6.10 Incremental route accounts (#71)
+- [x] P6.11 Faster simulator construction (#72)
+- [x] P6.12 Faster route-record accumulation (#73)
+- [x] P6.13 Adjacency-scoped spatial constraints (#74)
+- [x] P6.14 Faster matrix builder (#75)
+- [x] P6.15 Score product accounts (#76)
+- [x] P6.16 Live target-window watcher (#77)
+- [x] P6.17 Multi-rotation schedules in the optimizer (#78)
+- [x] P6.18 Move-based incremental objective (#79)
+- [x] P6.19 Patch size-distribution targets (#80)
+- [x] P6.20 Topology cluster operator
+- [x] P6.21 Stand-centred opening constraints in the MIP bound
+- [x] P6.22 Adaptive temperature schedule
+- [x] P6.23 Target-weight calibration
+- [x] P6.24 MIP bound on the command line
+- [x] P6.25 Patch-account evaluation bottleneck (profiled; early-exit and label fixes landed)
+- [x] P6.26 Patch accounts: correct the membership and the default search distance
+- [x] P6.27 Make the criterion-series primitive cheap (patch `_affected`)
+- [x] P6.28 Compiled-port ceiling measured on realistic components (decision; prototype only)
+- [x] P6.29 Array-backed patch state with a compiled bulk relabel
+- [x] P6.30 Compiled connectivity walks (recovers the single-block regression)
+- [x] P6.31 Stale components reported by the relabel; spanning-forest leaf test measured and rejected
+- [x] P6.32 Binding patch benchmark and the gap/merge operator
+- [x] P6.33 Split operator; volume-floored benchmark corrects the operator claim
+- [x] P6.34 Multiple target windows in `ws4 watch`
+- [x] P6.35 Patch statistics only at the accounting periods (5x on the patch benchmark)
+- [x] P6.36 A period-spanning patch target is read at one year of the period
+- [x] P6.37 State the time-step model (simulation 1 year; account period a whole number of years)
+- [x] P6.38 Watch the target windows side by side
+- [x] P6.39 Weighted term display, side-by-side windows, and the warm-start/ceiling finding
+- [x] P6.40 Number accounting periods from 1 (period 0 is the pre-simulation state)
+- [x] P6.41 Flow targets (`flow: even`, `flow: ndy`)
+- [x] P6.42 Correct the flow definitions (reference-period percent difference; ndy between periods)
+- [x] P6.43 Price flow targets per period; fix the watcher's flow display
+- [x] P6.44 Docs audit: correct the stale page claims and complete the `ws4.opt` docstrings
+- [x] P6.45 Public-docstring audit and the `docstrings` dashboard gate
+- [x] P6.46 Verify the flow definitions against the established specification
+- [x] P6.47 Consolidate the repository's commit authorship and refresh the citations
+- [x] P6.48 Documentation for human users: getting started, task guides, and an examples gallery
+
+Deferred from P6, triaged in `notes/backlog.md`:
+
+- (none outstanding: P6.6 is decided — adopted as a numba product-gather kernel, ~1.1× end-to-end;
+  see `notes/design/ws4-performance.md` (WP6 status).)
+
+Acceptance criteria:
+
+- C5 30-year `simulate` under 1 s; 3-year `simulate` plus routing under 5 s.
+- Patch accounts, edge contrast, and core area per year under 0.2 s.
+- One optimizer objective evaluation on C5 under 50 ms (incremental).
+- Near-linear scaling to 32+ cores; reproducibility preserved.
+
 ## Detailed Next Steps Notes
 
-1. Phase 0 is complete: pull request #8 squash-merged as `386c643`, the branch deleted, and parent
+1. Phase 0 is complete: pull request #8 squash-merged as `97330a8`, the branch deleted, and parent
    issue #1 closed. The close-out report is `notes/reports/p0-closeout.md`.
-2. Phase 1 is complete: pull request #14 squash-merged as `33ac569`, the branch deleted, and parent
+2. Phase 1 is complete: pull request #14 squash-merged as `a3d182a`, the branch deleted, and parent
    issue #10 closed. The close-out report is `notes/reports/p1-closeout.md`.
-3. Phase 2 is complete: pull request #25 squash-merged as `3e87d46`, the branch deleted, and parent
+3. Phase 2 is complete: pull request #25 squash-merged as `27b6915`, the branch deleted, and parent
    issue #15 closed. The close-out report is `notes/reports/p2-closeout.md`. Five items are deferred and
    listed in the Phase 2 section and tracked in `notes/backlog.md`.
 4. P2 builds the model and the optimization stack. The stack generalizes the lab's FHOPS toolkit into a
    shared solver core; the execution substrate targets the 72-core host and the GPU. See
    `notes/design/ws4-optimization-stack.md` and `notes/design/ws4-matrix-builder-and-interop.md`.
-5. Phase 3 is complete: pull request #35 squash-merged as `83e2d60`, the branch deleted, and parent
+5. Phase 3 is complete: pull request #35 squash-merged as `a8dc018`, the branch deleted, and parent
    issue #26 closed. The close-out report is `notes/reports/p3-closeout.md`, and the verification report
    is `notes/reports/p3-verify.md`.
-6. Phase 4 is complete: pull request #43 squash-merged as `a06d0ca`, the branch deleted, and parent
+6. Phase 4 is complete: pull request #43 squash-merged as `d8ecd72`, the branch deleted, and parent
    issue #36 closed. The annotated tag `v0.1.0` was created and pushed, and the GitHub release
    `v0.1.0` published the sdist and the wheel. The docs site and the published artifact were verified
    (P4.4, P4.6). The close-out report is `notes/reports/p4-closeout.md`.
@@ -271,6 +350,10 @@ Goal: keep the project current: triage incoming ideas, review on a cadence, and 
    and core area run inside the optimizer objective). The plan — profiling, bottleneck map, targets, and
    the ordered work packages — is `notes/design/ws4-performance.md`. The implementation is deliberately
    deferred: no optimization work lands before the release merges.
-8. Phase 5 is active on `feature/p5-operate`, parent issue #44, with six tasks (#45 to #50): a review
-   cadence, issue triage, dependency maintenance, a roadmap/backlog/changelog sync, a release and patch
-   policy, and a maintainer and handover guide. The performance build phase follows P5.
+8. Phase 5 is complete: pull request #51 squash-merged as `a8cb148`, the branch deleted, and parent
+   issue #44 closed. The close-out report is `notes/reports/p5-closeout.md`.
+9. Phase 6 (Performance and scalability) is active on `feature/p6-performance`, parent issue #60, with
+   eight work packages (#61 to #68) from the plan in `notes/design/ws4-performance.md`: the benchmark
+   harness and baseline, route and simulation quick wins, a vectorized simulator core, spatial
+   precompute and incremental metrics, incremental objective evaluation, solvers at scale, native
+   kernels, and the guardrails.

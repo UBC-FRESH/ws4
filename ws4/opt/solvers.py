@@ -13,13 +13,22 @@ import random
 from collections import deque
 from collections.abc import Callable
 
+from .cooling import TemperatureSchedule
 from .core import Problem
-from .operators import Schedule
+from .incremental import IncrementalObjective
+from .operators import Candidates, Chain, OperatorRegistry, Schedule, restore
 
 StepCallback = Callable[[int, float], None]
 
 
-def _signature(before: Schedule, after: Schedule) -> frozenset[tuple[int, tuple[str, int] | None]]:
+def _changed_blocks(before: Schedule, after: Schedule) -> list[int]:
+    """Return the blocks whose assignment differs between two schedules."""
+    changed = [block for block, value in after.items() if before.get(block) != value]
+    changed.extend(block for block in before if block not in after)
+    return changed
+
+
+def _signature(before: Schedule, after: Schedule) -> frozenset[tuple[int, Chain | None]]:
     """Return the set of blocks a move changed, with their new assignment."""
     blocks = set(before) | set(after)
     return frozenset(
@@ -42,6 +51,8 @@ def solve_sa(
     cooling: float,
     on_step: StepCallback | None = None,
     initial: Schedule | None = None,
+    adaptive: bool = False,
+    cooling_window: int = 64,
 ) -> tuple[Schedule, float]:
     """Run simulated annealing.
 
@@ -59,6 +70,12 @@ def solve_sa(
         The geometric cooling factor.
     on_step : callable or None, optional
         Called with ``(iteration, best_objective)`` each iteration.
+    initial : dict or None, optional
+        A starting schedule.
+    adaptive : bool, optional
+        Use the adaptive Aarts-Van Laarhoven schedule instead of the geometric one.
+    cooling_window : int, optional
+        The iterations per temperature when ``adaptive`` is set, capped at half the budget.
 
     Returns
     -------
@@ -68,18 +85,108 @@ def solve_sa(
     current: Schedule = dict(initial) if initial is not None else {}
     current_obj = problem.evaluate(current)
     best, best_obj = dict(current), current_obj
-    temp = temperature
+    schedule = TemperatureSchedule(
+        initial=temperature,
+        cooling=cooling,
+        adaptive=adaptive,
+        window=TemperatureSchedule.effective_window(iterations, cooling_window),
+    )
     for iteration in range(iterations):
+        increase = 0.0
         move = problem.registry.pick(rng).apply(current, rng, problem.candidates)
         if move is not None:
             move_obj = problem.evaluate(move)
+            increase = move_obj - current_obj
             if move_obj <= current_obj or rng.random() < math.exp(
-                (current_obj - move_obj) / max(temp, 1e-9)
+                (current_obj - move_obj) / max(schedule.temperature, 1e-9)
             ):
                 current, current_obj = move, move_obj
                 if move_obj < best_obj:
                     best, best_obj = dict(move), move_obj
-        temp *= cooling
+        schedule.observe(increase, current_obj)
+        _report(on_step, iteration, best_obj)
+    return best, best_obj
+
+
+def solve_sa_delta(
+    evaluator: IncrementalObjective,
+    rng: random.Random,
+    *,
+    iterations: int,
+    temperature: float,
+    cooling: float,
+    candidates: Candidates,
+    registry: OperatorRegistry,
+    initial: Schedule | None = None,
+    on_step: StepCallback | None = None,
+    adaptive: bool = False,
+    cooling_window: int = 64,
+) -> tuple[Schedule, float]:
+    """Run simulated annealing priced by per-move objective deltas.
+
+    The acceptance rule is identical to :func:`solve_sa`, but the objective is updated by
+    the move's exact delta instead of recomputing the whole schedule, so a move costs
+    O(cells the block touches) rather than O(schedule).
+
+    Parameters
+    ----------
+    evaluator : IncrementalObjective
+        The move-based evaluator (it also holds the running state).
+    rng : random.Random
+        The random source.
+    iterations : int
+        The iteration budget.
+    temperature : float
+        The initial temperature.
+    cooling : float
+        The geometric cooling factor.
+    candidates : dict of int to list of tuple of (str, int)
+        The per-block options.
+    registry : OperatorRegistry
+        The move operators.
+    initial : dict or None, optional
+        A starting schedule.
+    on_step : callable or None, optional
+        Called with ``(iteration, best_objective)`` each iteration.
+    adaptive : bool, optional
+        Use the adaptive Aarts-Van Laarhoven schedule instead of the geometric one.
+    cooling_window : int, optional
+        The iterations per temperature when ``adaptive`` is set, capped at half the budget.
+
+    Returns
+    -------
+    tuple of (Schedule, float)
+        The best schedule and its objective.
+    """
+    current: Schedule = dict(initial) if initial is not None else {}
+    evaluator.reset(current)
+    current_obj = evaluator.objective
+    best, best_obj = dict(current), current_obj
+    schedule = TemperatureSchedule(
+        initial=temperature,
+        cooling=cooling,
+        adaptive=adaptive,
+        window=TemperatureSchedule.effective_window(iterations, cooling_window),
+    )
+    for iteration in range(iterations):
+        increase = 0.0
+        operator = registry.pick(rng)
+        undo = operator.propose_inplace(current, rng, candidates)
+        if undo is not None:
+            changed = list(undo)
+            move_obj = current_obj + evaluator.delta(changed, current)
+            increase = move_obj - current_obj
+            if move_obj <= current_obj or rng.random() < math.exp(
+                (current_obj - move_obj) / max(schedule.temperature, 1e-9)
+            ):
+                evaluator.apply(changed, current)
+                current_obj = move_obj
+                if move_obj < best_obj:
+                    best, best_obj = dict(current), move_obj
+            else:
+                restore(current, undo)
+                evaluator.revert()
+        schedule.observe(increase, current_obj)
         _report(on_step, iteration, best_obj)
     return best, best_obj
 
@@ -110,6 +217,8 @@ def solve_tabu(
         The number of candidate moves sampled per iteration.
     on_step : callable or None, optional
         Called with ``(iteration, best_objective)`` each iteration.
+    initial : dict or None, optional
+        A starting schedule. Defaults to the empty schedule.
 
     Returns
     -------
@@ -119,7 +228,7 @@ def solve_tabu(
     current: Schedule = dict(initial) if initial is not None else {}
     current_obj = problem.evaluate(current)
     best, best_obj = dict(current), current_obj
-    tabu: deque[frozenset[tuple[int, tuple[str, int] | None]]] = deque(maxlen=tenure)
+    tabu: deque[frozenset[tuple[int, Chain | None]]] = deque(maxlen=tenure)
     for iteration in range(iterations):
         chosen: Schedule | None = None
         chosen_obj = math.inf
@@ -165,6 +274,8 @@ def solve_ils(
         The number of random moves applied to perturb the incumbent.
     on_step : callable or None, optional
         Called with ``(iteration, best_objective)`` each iteration.
+    initial : dict or None, optional
+        A starting schedule. Defaults to the empty schedule.
 
     Returns
     -------

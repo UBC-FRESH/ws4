@@ -4,11 +4,43 @@
 
 ## Start here
 
-- [Home](index.html): the documentation home for the project.
+- [Home](index.html): the documentation home, with the quick-navigation table.
+- [Getting started](getting-started/index.html): installation, and the two walkthroughs.
+- [Quickstart: the command line](getting-started/quickstart.html): compile, simulate, target, search, watch.
+- [Quickstart: the Python API](getting-started/python-api.html): the same steps as library calls.
+- [Your first model](getting-started/first-model.html): a complete small study, checkable by hand.
+- [How WS4 is put together](getting-started/architecture.html): the layers, the data flow, and the pitfalls.
+
+## Task guides
+
+- [How-to guides](howto/index.html): the task index, with the mode (CLI or API) of each guide.
+- [Prepare a dataset](howto/prepare-a-dataset.html): compile a recipe, ingest a matrix, validate.
+- [Write targets](howto/write-targets.html): accounts, levels, weights, shapes, periods, calibration.
+- [Even flow and non-declining yield](howto/even-flow.html): shape versus level, bands, and priming.
+- [Patch size-distribution targets](howto/patch-targets.html): topology, patch accounts, and the shape-aware operators.
+- [Route products to mills](howto/route-products.html): the network tables, the route configuration, and route accounts.
+- [Watch a run](howto/watch-a-run.html): the live target window, several accounts at once, and `--plain`.
+- [Automate a study](howto/automate-a-study.html): sweeps, in-memory targets, hand-driven solvers, and scaling.
+- [FAQ](howto/faq.html): short answers to the questions that come up first.
+
+## Examples
+
+- [Examples gallery](examples.html): runnable notebooks, rendered with their output.
+
+## Guides
+
+- [Guides](guides/index.html): the deep dives.
+- [Troubleshooting](guides/troubleshooting.html): symptom-first fixes.
+- [Limitations and boundaries](guides/limitations-and-boundaries.html): what WS4 deliberately does not do yet.
+
+## Reference
+
+- [Reference](reference/index.html): the contracts, layer by layer.
 - [Compiled dataset](reference/compiled-dataset.html): the runtime contract, its tables, and its invariants.
 - [ForestModelXML recipe](reference/forestmodelxml.html): the recipe format, the matrix builder, legacy ingestion, and the known gaps.
 - [Simulator](reference/simulator.html): the annual-step engine, its schedule, and its run outputs.
-- [Optimizer](reference/optimizer.html): the objective, the operator registry, the metaheuristics, and the MIP bound.
+- [Optimizer](reference/optimizer.html): the objective and its targets (including even flow and non-declining yield), the operator registry, the metaheuristics, and the MIP bound.
 - [Spatial structure and constraints](reference/spatial.html): the block topology, patch metrics, and opening and green-up rules.
 - [Roads](reference/roads.html): the network tables, shortest-path routing, and the route outputs.
-- [API reference](api/index.html): every public function, with its parameters, types, and return values.
+- [Performance and scale](reference/performance.html): the measured figures, the incremental objective, and how to reproduce the benchmark.
+- [API reference](api/index.html): the repository tooling's public functions, with their parameters, types, and return values. The package API is rendered on the reference pages above.

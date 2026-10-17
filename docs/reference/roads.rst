@@ -110,9 +110,10 @@ command line):
        duplicate_accounts=config.duplicate_accounts,
    )
 
-Open items: the route model runs in the optimizer's inner loop, so each objective evaluation routes
-every scheduled block (a full C5 single-iteration run is minutes). Incremental routing, and the wider
-performance work, are the next effort; see `notes/design/ws4-performance.md`.
+The route model runs in the optimizer's inner loop. Haul, maintenance, and volume route accounts are
+additive over blocks, so a move is priced by a route delta and needs no re-routing; a **build** route
+account, a **duplicate** account, and edge contrast are not additive, so any of them makes an
+evaluation a whole-schedule pass. See `notes/design/ws4-performance.md` for the measurements.
 
 API
 ---

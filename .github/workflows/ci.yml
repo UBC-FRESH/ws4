@@ -45,8 +45,14 @@ jobs:
       - name: Validate workflow surfaces
         run: python scripts/check_workflow.py
 
+      - name: Install pandoc (nbsphinx renders the example notebooks)
+        run: sudo apt-get update && sudo apt-get install -y pandoc
+
       - name: Build docs with warnings as errors
         run: sphinx-build -b html docs _build/html -W
+
+      - name: Audit public docstrings
+        run: python scripts/doc_audit.py
 
   dashboard:
     name: Green dashboard summary
@@ -67,6 +73,9 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[geo]"
           python -m pip install -r requirements-dev.txt
+
+      - name: Install pandoc (nbsphinx renders the example notebooks)
+        run: sudo apt-get update && sudo apt-get install -y pandoc
 
       - name: Run the dashboard
         shell: bash

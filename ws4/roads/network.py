@@ -203,6 +203,8 @@ class RouteNetwork:
     _previous_cache: dict[tuple[int, str], dict[int, tuple[int, int]]] = field(
         default_factory=dict, compare=False, repr=False
     )
+    _segments_cache: dict[int, Segment] | None = field(default=None, compare=False, repr=False)
+    _adjacency_cache: dict[int, list[int]] | None = field(default=None, compare=False, repr=False)
 
     @classmethod
     def from_tables(
@@ -262,20 +264,30 @@ class RouteNetwork:
         )
 
     def destination_names(self) -> tuple[str, ...]:
-        """Return the destination account names, in table order."""
+        """Return the destination account names, in table order.
+
+        Returns
+        -------
+        tuple of str
+            The destination names.
+        """
         return tuple(destination.name for destination in self.destinations)
 
     def _segments_by_id(self) -> dict[int, Segment]:
-        """Return the segments keyed by id."""
-        return {segment.segment_id: segment for segment in self.segments}
+        """Return the segments keyed by id, built once."""
+        if self._segments_cache is None:
+            self._segments_cache = {segment.segment_id: segment for segment in self.segments}
+        return self._segments_cache
 
     def _adjacency(self) -> dict[int, list[int]]:
-        """Return an adjacency map: vertex to the segment ids that touch it."""
-        adjacency: dict[int, list[int]] = {}
-        for segment in self.segments:
-            adjacency.setdefault(segment.from_vertex, []).append(segment.segment_id)
-            adjacency.setdefault(segment.to_vertex, []).append(segment.segment_id)
-        return adjacency
+        """Return an adjacency map: vertex to the segment ids that touch it, built once."""
+        if self._adjacency_cache is None:
+            adjacency: dict[int, list[int]] = {}
+            for segment in self.segments:
+                adjacency.setdefault(segment.from_vertex, []).append(segment.segment_id)
+                adjacency.setdefault(segment.to_vertex, []).append(segment.segment_id)
+            self._adjacency_cache = adjacency
+        return self._adjacency_cache
 
     def _weight(self, segment: Segment, weight: str) -> float:
         """Return a segment's traversal weight for ``length`` or ``haul``."""
@@ -352,15 +364,17 @@ class RouteNetwork:
         source = self.block_vertex.get(block_id)
         if target is None or source is None:
             return None
-        distances, previous = self._shortest(source, _HAUL)
-        if target.vertex not in distances:
+        # The graph is undirected, so the distances from the destination are the distances
+        # to it. Computing from the destination (not the block) makes one Dijkstra serve
+        # every block.
+        distances, previous = self._shortest(target.vertex, _HAUL)
+        if source not in distances:
             return None
         segment_ids: list[int] = []
-        node = target.vertex
-        while node != source and node in previous:
+        node = source
+        while node != target.vertex and node in previous:
             node, segment_id = previous[node]
             segment_ids.append(segment_id)
-        segment_ids.reverse()
         by_id = self._segments_by_id()
         chosen = [by_id[segment_id] for segment_id in segment_ids]
         return Route(
@@ -391,8 +405,8 @@ class RouteNetwork:
         source = self.block_vertex.get(block_id)
         if target is None or source is None:
             return None
-        distances, _ = self._shortest(source, _LENGTH)
-        return distances.get(target.vertex)
+        distances, _ = self._shortest(target.vertex, _LENGTH)
+        return distances.get(source)
 
     def route_cost(self, block_id: int, destination: str) -> float | None:
         """Return the shortest haul cost from a block to a destination.
@@ -413,8 +427,8 @@ class RouteNetwork:
         source = self.block_vertex.get(block_id)
         if target is None or source is None:
             return None
-        distances, _ = self._shortest(source, _HAUL)
-        return distances.get(target.vertex)
+        distances, _ = self._shortest(target.vertex, _HAUL)
+        return distances.get(source)
 
     def nearest_destination(
         self, block_id: int, eligible: Iterable[str] | None = None

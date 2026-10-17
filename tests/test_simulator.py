@@ -55,15 +55,12 @@ def test_run_records_the_dataset_reference(tmp_path: Path) -> None:
     assert len(reference["manifest_sha256"]) == 64
 
 
-def test_curve_evaluation_is_vectorized_per_curve(
+def test_curve_evaluation_uses_the_precomputed_table(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Account values call ``np.interp`` once per curve, not once per fragment."""
+    """Account values gather from the precomputed age table, not per-fragment interpolation."""
     dataset = _dataset(tmp_path)
     simulator = Simulator.from_dataset(dataset)
-    active = simulator.features[
-        simulator.features["track_id"].isin(simulator.fragments["track_id"])
-    ]
     calls: list[int] = []
     real_interp = np.interp
 
@@ -75,8 +72,8 @@ def test_curve_evaluation_is_vectorized_per_curve(
 
     monkeypatch.setattr(np, "interp", counting)
     simulator.account_values(0)
-    assert len(calls) == active["curve_id"].nunique()
-    assert len(calls) < len(simulator.fragments)
+    assert calls == []  # no interpolation at evaluation time
+    assert simulator._curve_table.table.shape[0] == simulator.curves["curve_id"].nunique()
 
 
 def test_a_treatment_records_its_product_yield(tmp_path: Path) -> None:
@@ -89,6 +86,40 @@ def test_a_treatment_records_its_product_yield(tmp_path: Path) -> None:
     # block 1's fragment is 3.0 ha at offset 40; natural_volume(40) = 120 -> 360.
     assert list(products["account"]) == ["product.Volume"]
     assert products["value"].iloc[0] == 360.0
+
+
+def test_simulate_reports_the_product_account(tmp_path: Path) -> None:
+    """A produced product is an account value in the year it is produced."""
+    dataset = _dataset(tmp_path)
+    schedule = _schedule(tmp_path, "cc.csv", [(1, "CC", 0)])
+    values = Simulator.from_dataset(dataset).simulate(pd.read_csv(schedule), years=2)
+    produced = values[values["account"] == "product.Volume"].set_index("year")["value"]
+    assert produced.loc[0] == pytest.approx(360.0)
+    assert 1 not in produced.index  # produced once, in the treatment year
+
+
+def test_simulate_aggregates_products_per_year_and_account(tmp_path: Path) -> None:
+    """Products of a year sum into one account row, matching the per-block trajectories."""
+    dataset = _dataset(tmp_path)
+    schedule = _schedule(tmp_path, "cc.csv", [(1, "CC", 0), (2, "CC", 0)])
+    values = Simulator.from_dataset(dataset).simulate(pd.read_csv(schedule), years=1)
+    rows = values[values["account"] == "product.Volume"]
+    assert not rows[["year", "account"]].duplicated().any()
+    expected = sum(
+        Simulator.from_dataset(dataset)
+        .block_trajectory(block, "CC", 0, 1)
+        .get((0, "product.Volume"), 0.0)
+        for block in (1, 2)
+    )
+    assert rows["value"].sum() == pytest.approx(expected)
+
+
+def test_block_trajectory_includes_the_product_account(tmp_path: Path) -> None:
+    """A block's isolated trajectory reports the product its treatment produces."""
+    dataset = _dataset(tmp_path)
+    trajectory = Simulator.from_dataset(dataset).block_trajectory(1, "CC", 0, 2)
+    assert trajectory[(0, "product.Volume")] == pytest.approx(360.0)
+    assert (1, "product.Volume") not in trajectory
 
 
 def test_patch_metrics_are_written(tmp_path: Path) -> None:
@@ -183,3 +214,47 @@ def test_a_treatment_the_track_does_not_offer_is_skipped(tmp_path: Path) -> None
     assert offered["value"].iloc[0] != baseline["value"].iloc[0]
     # An unoffered treatment leaves the state unchanged.
     pd.testing.assert_frame_equal(missing, baseline)
+
+
+def test_block_chain_matches_block_trajectory(tmp_path: Path) -> None:
+    """A one-event chain is the single-treatment trajectory; an empty chain is no treatment."""
+    dataset = _dataset(tmp_path)
+    simulator = Simulator.from_dataset(dataset)
+    assert simulator.block_chain(1, [("CC", 0)], 4) == simulator.block_trajectory(1, "CC", 0, 4)
+    assert simulator.block_chain(1, [], 4) == simulator.block_trajectory(1, None, 0, 4)
+
+
+def test_block_chain_products_matches_the_chain(tmp_path: Path) -> None:
+    """The product fast path equals the product cells of the block chain."""
+    dataset = _dataset(tmp_path)
+    simulator = Simulator.from_dataset(dataset)
+    events = [("CC", 0)]
+    chain = simulator.block_chain(1, events, 4)
+    products = {
+        cell: value for cell, value in chain.items() if cell[1].startswith("product.") and value
+    }
+    assert simulator.block_chain_products(1, events) == products
+
+
+def test_block_chain_delta_equals_the_simulate_delta(tmp_path: Path) -> None:
+    """A chain of events is additive: its delta equals simulate()'s delta for the same rows."""
+    dataset = _dataset(tmp_path)
+    events = [("CC", 0), ("CC", 2)]
+    rows = pd.DataFrame({"block_id": [1, 1], "treatment": ["CC", "CC"], "period": [0, 2]})
+    values = Simulator.from_dataset(dataset).simulate(rows, 4)
+    base = Simulator.from_dataset(dataset).simulate(rows.head(0), 4)
+    combined = values.set_index(["year", "account"])["value"]
+    baseline = base.set_index(["year", "account"])["value"]
+    simulated = combined.subtract(baseline, fill_value=0.0)
+
+    simulator = Simulator.from_dataset(dataset)
+    chain = simulator.block_chain(1, events, 4)
+    empty = simulator.block_chain(1, [], 4)
+    expected = {
+        cell: chain.get(cell, 0.0) - empty.get(cell, 0.0) for cell in set(chain) | set(empty)
+    }
+    expected = {cell: value for cell, value in expected.items() if value != 0.0}
+    assert expected
+    for cell, value in expected.items():
+        year, account = cell
+        assert simulated.get((year, account), 0.0) == pytest.approx(value)

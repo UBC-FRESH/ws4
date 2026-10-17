@@ -65,17 +65,224 @@ python scripts/benchmark.py --fragments 100000 --years 10 --profile
 ## Space-and-roads baseline (P4)
 
 The spatial and route paths (patch accounts, edge contrast, core area, routing) run inside the
-optimizer's objective and dominate the cost. Measured on the C5 sample:
+optimizer's objective and dominate the cost. Reproduce the C5 scenario with the harness:
 
-| Path | Time |
-| --- | ---: |
-| `simulate` base, 3 years | 3.6 s |
-| `simulate` + edge contrast, 3 years | 6.3 s |
-| `simulate` + routing, 3 years, 300 blocks scheduled | 61 s |
-| `write_patch_metrics` + patch accounts, 1 year | 2.1 s |
-| One optimizer objective evaluation (C5, warm start, routing) | ~13 min |
+```bash
+python scripts/benchmark.py --scenario c5 --sample-dir <sample> \
+    --years 3 --route-blocks 300 --spatial-years 1 --workdir tmp/benchmark
+```
+
+Recorded baseline (C5 sample; the sample is unpacked outside the repository):
+
+| Component | Time | Notes |
+| --- | ---: | --- |
+| Ingest | 0.24 s | 16 174 fragments |
+| `simulate` base, 3 years (empty schedule) | 0.88 s | |
+| `simulate` + edge contrast, 3 years | 3.6 s | |
+| `simulate` + routing, 3 years, 300 blocks | 65.4 s | the dominant cost |
+| Patch accounts, 1 year | 2.2 s | patch metrics + the size-class sub-accounts |
+| One optimizer objective evaluation | 1.3 s | empty schedule; grows with the schedule |
+| Peak memory | 2.8 GiB | |
 
 The dominant hot path is route reconstruction (`RouteNetwork._segments_by_id` rebuilt per route) and
 row-wise `apply_treatments`. The plan to fix this — profiling, bottleneck map, targets, and the
-ordered work packages — is `notes/design/ws4-performance.md`; it is deliberately deferred until after
-the phase 4 initial release.
+ordered work packages — is `notes/design/ws4-performance.md`, and the work is phase 6
+(`feature/p6-performance`).
+
+### P6.1 route and simulation quick wins
+
+WP1 cached the route-network indexes (built once), precomputed the treatment/product/fragment
+lookups, vectorized `apply_treatments` (no pandas `iterrows`), and switched routing to
+**per-destination** shortest paths (the graph is undirected, so one Dijkstra per destination serves
+every block, instead of one per block).
+
+| Component | Before | After |
+| --- | ---: | ---: |
+| `simulate` + routing, 3 years, 300 blocks | 65.4 s | **4.5 s** |
+| Peak memory (same run) | 2.8 GiB | **338 MiB** |
+
+The one remaining WP1 subtask (a single replay in `run` instead of a second replay for the spatial
+metrics) is deferred to WP3, where the spatial pass is restructured for incrementality.
+
+### P6.2 vectorized simulator core
+
+WP2 replaced the per-year pandas merge and groupby in `account_values` with a **precomputed
+fragment-to-feature join** (flat arrays of fragment position, curve id, and label code, rebuilt only
+when a treatment changes a track) and per-curve `numpy.interp` into a positional array.
+
+| Component | Before | After |
+| --- | ---: | ---: |
+| C5 `simulate` base, 30 years | 3.76 s | **0.41 s** |
+| C5 `simulate` base, 3 years | 0.41 s | **0.15 s** |
+
+The C5 benchmark now times simulator construction separately (about 0.6 s: it loads the parquet
+tables and indexes the 130 423 curves), so the component figures exclude it. The current C5 figures:
+base simulate (3 y) 0.16 s, edge contrast (3 y) 3.0 s, routing (3 y, 300 blocks) 3.9 s, patch accounts
+(1 y) 1.9 s, one objective evaluation 1.2 s, peak memory 372 MiB. The edge contrast and patch accounts
+are the WP3 target.
+
+### P6.3 spatial precompute and incremental metrics
+
+WP3 replaced the two spatial hot paths with single passes:
+
+- `block_criteria` (the patch/edge criterion per block) now uses a precomputed per-label join with
+  `numpy.interp` and `np.bincount`, instead of a pandas merge and groupby per label per year.
+- the patch perimeter is one pass over the edges (an edge with exactly one member end is boundary),
+  instead of re-scanning all edges per patch.
+
+| Component (C5) | Before | After | Per year |
+| --- | ---: | ---: | ---: |
+| Edge contrast, 3 years | 3.0 s | 0.31 s | 0.070 s |
+| Patch accounts, 1 year | 1.9 s | 0.25 s | 0.066 s |
+
+Both are well under the 0.2 s-per-year target.
+
+### Parallelism: threads vs processes
+
+The obvious "use the 72 cores" move is thread-level parallelism. Measured on the C5 numeric core, it
+does **not** pay:
+
+| Approach | Time (per year of account values) | vs the current loop |
+| --- | ---: | ---: |
+| Current per-curve `numpy.interp` loop | 5.8 ms | 1.00× |
+| Threads (4 / 8 / 16) over the curve loop | — | **0.35× / 0.29× / 0.23×** (slower) |
+| Fully vectorized multi-curve interpolation (disjoint-domain searchsorted) | 18.0 ms | 0.32× (slower) |
+
+`numpy.interp` holds the GIL and the per-curve work is small, so threads serialize and add overhead;
+the vectorized single pass allocates many full-size temporaries and loses to 1 114 small interps. The
+numeric core is already at the practical numpy floor. Threads do help one GIL-releasing path —
+parallel parquet reads in simulator construction (52.6 ms → 29.6 ms, 1.78×) — but that is ~5% of
+construction, which happens once per run.
+
+The effective parallel lever is therefore **process-level** (the island model in
+`ws4/opt/engine.py`), not threads: independent searches and evaluations run in worker processes, and
+the island model migrates the global elite between episodes. This is recorded so the thread idea is
+not re-tried without cause.
+
+### P6.4 incremental objective evaluation
+
+WP4 first removed the per-evaluation waste: one reusable `Simulator` (reset instead of rebuilt),
+per-curve arrays in `apply_treatments`, a memoized destination choice per (block, product), a route
+ledger summary mode, and a vectorized fragment-to-feature join. Then it made the objective itself
+incremental.
+
+Feature account values are **additive over blocks** (fragments evolve independently), so a schedule's
+account values are the empty-schedule base plus a per-block delta:
+
+```
+values(schedule) = base + sum over scheduled blocks of (treated_block - empty_block)
+```
+
+The optimizer caches the base once and each block's delta (lazily, per assignment), so an evaluation
+is a few hundred dictionary additions rather than a full multi-year re-simulation. Edge contrast and
+route accounts are not additive over blocks, so those configurations fall back to the full
+simulation.
+
+| Metric (C5, 10 years) | Before WP4 | After |
+| --- | ---: | ---: |
+| Warm objective evaluation, empty schedule | 1.29 s | 0.23 s |
+| Warm objective evaluation, 300-block schedule | 3.8 s | **0.0067 s** (6.7 ms) |
+
+Parity with the full simulation holds to floating-point tolerance (cell-wise max difference ~3e-8),
+covered by `tests/test_optimizer.py`. The target (under 50 ms) is met for the account-value objective;
+the route/edge configurations keep the full path.
+
+### Shared age-grid curve table (spike, `spike/shared-grid`)
+
+Every offset is an integer age and every curve breakpoint is an integer, so each curve is precomputed
+at every integer age once (`ws4/sim/curve.py:CurveTable`), turning curve evaluation into a 2-D gather.
+`account_values` uses one gather; `_curve_value`, the patch/edge criteria, and the per-block
+trajectories use the same table (with the `numpy.interp` fallback for a non-integer age).
+
+| Metric (C5) | Before | After |
+| --- | ---: | ---: |
+| `account_values`, per year | ~11.9 ms | **2.33 ms** (5.1×) |
+| Base simulate, 30 years (warm) | 0.376 s | **0.095 s** (3.9×) |
+| Base simulate, 30 years (cold, incl. join build) | 0.376 s | 0.266 s |
+| Construction | 0.52 s | 0.57 s (+~12 MB table) |
+
+Two findings from the spike: an inefficient table build (per-curve masking) made construction slow
+until it was rewritten as one sort-and-slice; and `Simulator.reset` was invalidating the
+fragment-to-feature join on every call, so the empty-schedule simulate paid a 0.13 s rebuild —
+`reset` now invalidates only when the tracks actually changed. Plan and full log:
+`notes/design/ws4-curve-grid.md`.
+
+### Fast fragment-to-feature join rebuild (`spike/join-rebuild`)
+
+The join rebuild that dominated the cold path used `np.unique` over ~210 k **string** labels. Since the
+features table never changes, its side of the join is now precomputed once (sorted feature rows with
+each curve's table row and label code), and a rebuild is a `searchsorted` plus a vectorized expansion.
+
+| Metric (C5) | Before | After |
+| --- | ---: | ---: |
+| One join rebuild | 0.127 s | **0.0045 s** (28×) |
+| Cold 30-year simulate | 0.299 s | **0.129 s** (2.3×) |
+| Warm 30-year simulate | 0.102 s | 0.096 s |
+
+Plan and log: `notes/design/ws4-join-rebuild.md`.
+
+### Incremental route accounts (`spike/inc-route-accounts`)
+
+Route accounts (haul, maintenance, volume) are additive over blocks like feature accounts, so they
+join the incremental objective; only **build** cost is not (charged once per segment across the
+schedule) and keeps the full path. `Simulator.block_route_accounts` computes one block's routed
+accounts in isolation, reusing the summary ledger for consistency.
+
+| Metric (C5, route-target config, 10 y) | Before | After |
+| --- | ---: | ---: |
+| Warm evaluation, 300-block schedule | 93.0 ms | **14.2 ms** (6.5×) |
+| First evaluation (cold, builds the per-block deltas) | 604 ms | 1871 ms |
+
+The first evaluation is slower (it builds the per-block route deltas); a search amortizes it across
+its iterations. Plan and log: `notes/design/ws4-incremental-route-accounts.md`.
+
+### Faster simulator construction (`spike/construction`)
+
+Construction built a per-curve sorted x/y cache (`_curves`) that, after the age table, was used only as
+the non-integer-age fallback. `CurveTable.value` now serves any age (exact at integers, linear between
+them, clamped), so `_curves` is gone.
+
+| Metric (C5) | Before | After |
+| --- | ---: | ---: |
+| Simulator construction | ~0.55 s | **~0.15 s** (3.7×) |
+
+Plan and log: `notes/design/ws4-construction.md`.
+
+### Faster route-record accumulation (`spike/route-record`)
+
+The reporting ledger's `record` did per-segment dict work once per produced product. It now aggregates
+`(volume, count)` per `(year, destination, route)` and does the per-segment pass once per route at
+flush time (volume summed, haul linear in volume, maintenance per record, build once).
+
+| Metric (C5, 3-year, 300-block, collect=True; warm) | Before | After |
+| --- | ---: | ---: |
+| `simulate` + reporting | ~0.78 s | **~0.08 s** (10×) |
+
+Plan and log: `notes/design/ws4-route-record.md`.
+
+### Adjacency-scoped spatial constraints (`spike/incremental-spatial`)
+
+The optimizer's spatial penalty scanned every topology edge on each evaluation (166 ms for a 300-block
+C5 schedule). Only edges incident to a disturbed block can contribute, so an adjacency index lets an
+evaluation scan `schedule x degree` edges instead.
+
+| Metric (C5, 300-block schedule) | Before | After |
+| --- | ---: | ---: |
+| `_spatial_penalty` | 163.7 ms | **13.1 ms** (12.5×) |
+
+Penalties are identical (parity test vs the full-edge computation). Plan and log:
+`notes/design/ws4-spatial-scoped.md`.
+
+### Faster matrix builder (`spike/builder-perf`)
+
+The builder re-parsed the recipe's huge constant `lookupTable(...)` literals on every evaluation (once
+per stratum per attribute). The parsed form is now cached by the identity of the keys string; token
+expansion skips texts with no `%`; and each stratum's matching selects are memoized.
+
+| Metric (MKRF canonical recipe) | Before | After |
+| --- | ---: | ---: |
+| Build, 200-fragment slice | 17.7 s | **2.2 s** (8.1×) |
+| Build, 1 763 fragments (full canonical) | 192.7 s | **21.5 s** (9.0×) |
+
+Outputs are identical (`scripts/acceptance.py` `compare_matrix`: MATCH). Plan and log:
+`notes/design/ws4-builder-perf.md`.

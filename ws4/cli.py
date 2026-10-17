@@ -12,8 +12,11 @@ from rich.table import Table
 from .build.compiler import build_canonical_dataset
 from .build.legacy import ingest_legacy_matrix
 from .model.schema import validate_dataset
+from .opt.calibrate import calibrate as run_calibration
+from .opt.calibrate import write_targets
 from .opt.engine import OptimizeConfig, Optimizer
 from .opt.objective import load_targets
+from .opt.watch import run_watch
 from .patch.edge import load_edge_elements
 from .report import write_report
 from .roads.accounts import load_route_config
@@ -89,8 +92,12 @@ def optimize(
     targets: Path = typer.Option(..., exists=True),
     weights: Path = typer.Option(..., exists=True),
     threads: int = typer.Option(8, min=1),
+    starts: int = typer.Option(1, min=1, help="parallel multi-starts (needs --threads > 1)"),
     time_limit: str = typer.Option("01:00:00", help="HH:MM:SS"),
+    years: int = typer.Option(50, help="Simulation horizon in years"),
     seed: int = typer.Option(42),
+    islands: int = typer.Option(0, help="parallel islands with elite migration (0 = off)"),
+    episodes: int = typer.Option(1, help="island episodes (elite migrations)"),
     out: Path = typer.Option(...),
     topology: Path = typer.Option(None, exists=True, help="Block topology for spatial constraints"),
     route_config: Path = typer.Option(
@@ -110,12 +117,48 @@ def optimize(
     spatial_override: bool = typer.Option(
         False, "--spatial-override", help="Allow schedules that violate the spatial constraints"
     ),
+    lns_weight: float = typer.Option(
+        0.2, "--lns-weight", help="Weight of the LNS operator (0 disables it)"
+    ),
+    lns_destroy: float = typer.Option(
+        0.1, "--lns-destroy", help="Fraction of the schedule an LNS move destroys"
+    ),
+    warm_cache: bool = typer.Option(
+        False, "--warm-cache", help="Precompute every candidate chain's contribution first"
+    ),
+    cluster_weight: float = typer.Option(
+        0.0, "--cluster-weight", help="Weight of the topology cluster operator (0 disables it)"
+    ),
+    cluster_size: int = typer.Option(8, "--cluster-size", help="Blocks per cluster move"),
+    merge_weight: float = typer.Option(
+        0.0, "--merge-weight", help="Weight of the patch merge operator (0 disables it)"
+    ),
+    split_weight: float = typer.Option(
+        0.0, "--split-weight", help="Weight of the patch split operator (0 disables it)"
+    ),
+    patch_accounts: Path = typer.Option(
+        None, "--patch-accounts", exists=True, help="Patch size-distribution accounts (YAML)"
+    ),
+    cooling_mode: str = typer.Option(
+        "geometric", "--cooling-mode", help="Temperature schedule: geometric or adaptive"
+    ),
+    cooling_window: int = typer.Option(
+        64, "--cooling-window", help="Iterations per temperature with the adaptive schedule"
+    ),
+    mip_bound: bool = typer.Option(
+        False, "--mip-bound", help="Record a mixed-integer penalty lower bound in the summary"
+    ),
 ) -> None:
     """Search for a schedule that satisfies the targets and write a summary."""
     cfg = OptimizeConfig(
         threads=threads,
+        workers=threads,
+        starts=starts,
         time_limit=time_limit,
+        years=years,
         seed=seed,
+        islands=islands,
+        episodes=episodes,
         targets_path=str(targets),
         weights_path=str(weights),
         topology_path=str(topology) if topology is not None else "",
@@ -126,6 +169,17 @@ def optimize(
         core_buffer_m=core_buffer_m,
         min_core_area_ha=min_core_area_ha,
         allow_spatial_override=spatial_override,
+        lns_weight=lns_weight,
+        lns_destroy=lns_destroy,
+        warm_cache=warm_cache,
+        cluster_weight=cluster_weight,
+        cluster_size=cluster_size,
+        merge_weight=merge_weight,
+        split_weight=split_weight,
+        patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",
+        cooling_mode=cooling_mode,
+        cooling_window=cooling_window,
+        mip_bound=mip_bound,
     )
     opt = Optimizer.from_dataset(dataset, cfg)
     result = opt.run(out)
@@ -135,6 +189,163 @@ def optimize(
     for k, v in result.items():
         table.add_row(k, str(v))
     print(table)
+
+
+@app.command()
+def watch(
+    dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
+    targets: Path = typer.Option(..., exists=True, help="Targets YAML (levels are per year)"),
+    account: list[str] | None = typer.Option(
+        None,
+        "--account",
+        help="Account to watch; repeat it to watch several, one window each",
+    ),
+    period_width: int = typer.Option(10, "--period-width", help="Years per period"),
+    years: int = typer.Option(50, help="Simulation horizon in years"),
+    iterations: int = typer.Option(2000, help="Search iterations"),
+    metaheuristic: str = typer.Option("sa", help="sa, tabu, or ils"),
+    temperature: float = typer.Option(1000.0, help="Initial SA temperature"),
+    cooling: float = typer.Option(0.99, help="SA cooling factor"),
+    cooling_mode: str = typer.Option(
+        "geometric", "--cooling-mode", help="Temperature schedule: geometric or adaptive"
+    ),
+    cooling_window: int = typer.Option(
+        64, "--cooling-window", help="Iterations per temperature with the adaptive schedule"
+    ),
+    seed: int = typer.Option(1),
+    warm_start: bool = typer.Option(
+        False, "--warm-start", help="Seed each block's first candidate"
+    ),
+    refresh: float = typer.Option(2.0, "--refresh", help="Seconds between repaints (heartbeat)"),
+    plain: bool = typer.Option(False, "--plain", help="Print one final frame (no live view)"),
+    lns_weight: float = typer.Option(
+        0.2, "--lns-weight", help="Weight of the LNS operator (0 disables it)"
+    ),
+    lns_destroy: float = typer.Option(
+        0.1, "--lns-destroy", help="Fraction of the schedule an LNS move destroys"
+    ),
+    warm_cache: bool = typer.Option(
+        False, "--warm-cache", help="Precompute every candidate chain's contribution first"
+    ),
+    islands: int = typer.Option(0, "--islands", help="Parallel islands (0 = single search)"),
+    cluster_weight: float = typer.Option(
+        0.0, "--cluster-weight", help="Weight of the topology cluster operator (0 disables it)"
+    ),
+    cluster_size: int = typer.Option(8, "--cluster-size", help="Blocks per cluster move"),
+    patch_accounts: Path = typer.Option(
+        None, "--patch-accounts", exists=True, help="Patch size-distribution accounts (YAML)"
+    ),
+    route_config: Path = typer.Option(
+        None, "--route-config", exists=True, help="Optional route model and route accounts (YAML)"
+    ),
+    topology: Path = typer.Option(None, exists=True, help="Block topology for spatial constraints"),
+    max_opening_ha: float = typer.Option(None, help="Maximum opening size, in hectares"),
+    min_green_up_years: int = typer.Option(None, help="Green-up interval, in years"),
+    core_buffer_m: float = typer.Option(
+        None, "--core-buffer-m", help="Core-area buffer, in metres"
+    ),
+    min_core_area_ha: float = typer.Option(
+        None, "--min-core-area-ha", help="Minimum core area, in hectares"
+    ),
+) -> None:
+    """Watch realized versus target account values while the search runs."""
+    target_list = load_targets(targets)
+    accounts = tuple(account) if account else tuple(sorted({t.account for t in target_list}))
+    if not accounts:
+        print("[red]No account to watch: pass --account or put a target in the file.[/]")
+        raise typer.Exit(code=1)
+    cfg = OptimizeConfig(
+        seed=seed,
+        years=years,
+        iterations=iterations,
+        metaheuristic=metaheuristic,
+        temperature=temperature,
+        cooling=cooling,
+        warm_start=warm_start,
+        targets_path=str(targets),
+        lns_weight=lns_weight,
+        lns_destroy=lns_destroy,
+        warm_cache=warm_cache,
+        islands=islands,
+        workers=islands,
+        cluster_weight=cluster_weight,
+        cluster_size=cluster_size,
+        patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",
+        topology_path=str(topology) if topology is not None else "",
+        route_config_path=str(route_config) if route_config is not None else "",
+        max_opening_ha=max_opening_ha,
+        min_green_up_years=min_green_up_years,
+        core_buffer_m=core_buffer_m,
+        min_core_area_ha=min_core_area_ha,
+        cooling_mode=cooling_mode,
+        cooling_window=cooling_window,
+    )
+    optimizer = Optimizer.from_dataset(dataset, cfg)
+    summary = run_watch(
+        optimizer,
+        target_list,
+        accounts,
+        period_width=period_width,
+        label=" + ".join(accounts),
+        refresh=refresh,
+        plain=plain,
+    )
+    table = Table(title="Watch summary")
+    table.add_column("key")
+    table.add_column("value")
+    for key, value in summary.items():
+        table.add_row(str(key), f"{value:.4g}" if isinstance(value, float) else str(value))
+    print(table)
+
+
+@app.command()
+def calibrate(
+    dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
+    targets: Path = typer.Option(..., exists=True, help="Targets YAML to calibrate"),
+    out: Path = typer.Option(..., "--out", help="Calibrated targets YAML"),
+    iterations: int = typer.Option(2000, help="Pilot search iterations"),
+    samples: int = typer.Option(32, help="Times the per-term penalties are sampled"),
+    seed: int = typer.Option(42),
+    years: int = typer.Option(50, help="Simulation horizon in years"),
+    topology: Path = typer.Option(None, exists=True, help="Block topology, for patch accounts"),
+    patch_accounts: Path = typer.Option(
+        None, "--patch-accounts", exists=True, help="Patch size-distribution accounts (YAML)"
+    ),
+    warm_start: bool = typer.Option(
+        False, "--warm-start", help="Start the pilot from each block's first candidate"
+    ),
+) -> None:
+    """Balance target weights from a pilot search and write a targets file."""
+    target_list = load_targets(targets)
+    cfg = OptimizeConfig(
+        years=years,
+        iterations=iterations,
+        seed=seed,
+        targets_path=str(targets),
+        topology_path=str(topology) if topology is not None else "",
+        patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",
+    )
+    optimizer = Optimizer.from_dataset(dataset, cfg)
+    calibrated = run_calibration(
+        optimizer,
+        target_list,
+        iterations=iterations,
+        seed=seed,
+        samples=samples,
+        warm_start=warm_start,
+    )
+    write_targets(out, calibrated)
+    table = Table(title="Calibrated weights")
+    table.add_column("account")
+    table.add_column("year")
+    table.add_column("min weight")
+    table.add_column("max weight")
+    for before, after in zip(target_list, calibrated, strict=True):
+        table.add_row(
+            before.account, str(before.year), f"{after.min_weight:.4g}", f"{after.max_weight:.4g}"
+        )
+    print(table)
+    print(f"[bold green]Calibrated targets[/] → {out}")
 
 
 @app.command()

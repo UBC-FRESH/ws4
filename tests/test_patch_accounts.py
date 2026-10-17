@@ -68,6 +68,40 @@ def test_patch_ledger_writes_a_frame() -> None:
     assert "patch.d.TOTAL.area" in frame.columns
 
 
+def test_a_larger_search_distance_makes_patches_larger() -> None:
+    """A wider neighbourhood admits more neighbour edges, so patches only grow.
+
+    Block 1-2 are 5 m apart, 2-3 are 50 m apart, and all three are members: a search distance
+    of 0 joins none, 5 joins (1, 2), and 50 joins the chain into one patch. The patch count can
+    only fall and the area in the larger size class can only rise.
+    """
+    edges = [(1, 2, 10.0, 5.0), (2, 3, 10.0, 50.0)]
+    criteria = {"feature.d": {1: 1.0, 2: 1.0, 3: 1.0}}
+    area = {1: 1.0, 2: 1.0, 3: 1.0}
+    upper = size_class_labels((1.5, float("inf")))[-1]
+
+    def cells(search_distance: float) -> dict[str, float]:
+        account = PatchAccount(
+            name="patch.d",
+            criteria="feature.d",
+            threshold=0.5,
+            size_classes=(1.5, float("inf")),
+            search_distance=search_distance,
+        )
+        ledger = PatchLedger([account], edges, area)
+        ledger.record(0, criteria)
+        return {
+            str(key): float(str(value))
+            for key, value in ledger.frame().to_dict("records")[0].items()
+        }
+
+    results = [cells(distance) for distance in (0.0, 5.0, 50.0)]
+    counts = [result["patch.d.TOTAL.frequency"] for result in results]
+    big = [result[f"patch.d.{upper}.area"] for result in results]
+    assert counts == [3.0, 2.0, 1.0]
+    assert big == [0.0, 2.0, 3.0]
+
+
 def test_load_patch_edges_accepts_the_legacy_columns(tmp_path: Path) -> None:
     """The legacy topology columns are accepted and the sentinel rows dropped."""
     path = tmp_path / "topology.csv"

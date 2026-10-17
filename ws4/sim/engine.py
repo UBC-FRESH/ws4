@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 
 from ..model.schema import dataset_reference
-from ..patch.accounts import PatchAccount, PatchLedger, load_patch_edges
+from ..patch.accounts import PatchAccount, PatchLedger, load_patch_edges, load_patch_edges_detailed
 from ..patch.constraints import (
     core_area_violations,
     green_up_violations,
@@ -33,7 +33,8 @@ from ..roads.accounts import (
     resolve_account_values,
 )
 from ..roads.network import RouteNetwork
-from .curve import curve_value
+from .curve import CurveTable
+from .kernels import HAVE_NUMBA, ProductKernel
 
 
 def _as_int(value: object) -> int:
@@ -66,33 +67,180 @@ class Simulator:
         self.products = pd.read_parquet(self.dataset_dir / "products.parquet")
         self.accounts = pd.read_parquet(self.dataset_dir / "accounts.parquet")
         self.fragments["offset"] = self.fragments["age"].astype(int)
+        self._initial_track = self.fragments["track_id"].to_numpy(copy=True)
+        self._initial_offset = self.fragments["offset"].to_numpy(copy=True)
+        self._arrays: tuple[np.ndarray, np.ndarray, np.ndarray] | None = None
+        self._product_kernel: ProductKernel | None = None
         self._product_values: list[dict[str, object]] = []
         self._route_values: list[dict[str, object]] = []
         self._edge_values: list[dict[str, object]] = []
-        # Cache each curve's sorted x/y arrays for vectorized interpolation.
-        self._curves: dict[int, tuple[np.ndarray, np.ndarray]] = {
-            _as_int(curve_id): (
-                group.sort_values("x")["x"].to_numpy(dtype=float),
-                group.sort_values("x")["y"].to_numpy(dtype=float),
+        # An integer-age table for gather-based evaluation (see :class:`CurveTable`).
+        self._curve_table = CurveTable.from_curves(self.curves)
+        # Index the treatments, products, and fragments once, so a year's treatments do not
+        # index the frames row by row.
+        self._treatment_by_key: dict[tuple[int, str], tuple[int, int]] = {
+            (_as_int(row.track_id), str(row.treatment)): (
+                _as_int(row.new_track),
+                _as_int(row.offset),
             )
-            for curve_id, group in self.curves.groupby("curve_id")
+            for row in self.treatments.itertuples(index=False)
         }
+        self._products_by_key: dict[tuple[int, str], list[tuple[int, str]]] = {}
+        for product in self.products.itertuples(index=False):
+            key = (_as_int(product.track_id), str(product.treatment))
+            self._products_by_key.setdefault(key, []).append(
+                (_as_int(product.curve_id), str(product.label))
+            )
+        self._track_features: dict[int, list[tuple[int, str]]] = {}
+        for feature in self.features.itertuples(index=False):
+            self._track_features.setdefault(_as_int(feature.track_id), []).append(
+                (_as_int(feature.curve_id), str(feature.label))
+            )
+        # The curve table row of the first feature with a given (track, label), so a
+        # criterion series is a gather rather than a per-curve interpolation.
+        self._label_row: dict[tuple[int, str], int] = {}
+        for track, features in self._track_features.items():
+            for curve_id, feature_name in features:
+                row = self._curve_table.row(curve_id)
+                if row is not None:
+                    self._label_row.setdefault((track, feature_name), row)
+        # The fragment-position index is rebuilt lazily (the caller may replace the frame).
+        self._fragments_index_id = -1
+        self._fragments_by_block: dict[int, list[int]] = {}
+        # The fragment-to-feature join is precomputed as arrays and rebuilt only when a
+        # treatment changes a fragment's track (or the frame is replaced).
+        self._join_dirty = True
+        self._join_frame_id = -1
+        self._pair_frag = np.empty(0, dtype=np.int64)
+        self._pair_label = np.empty(0, dtype=np.int64)
+        self._pair_row = np.empty(0, dtype=np.int64)
+        self._labels: list[str] = []
+        # Precompute the feature side of the join once (the features table never changes):
+        # the feature rows sorted by track code, with each curve's table row and the label
+        # code resolved, so a rebuild is only a searchsorted and a vectorized expansion.
+        self._track_ids = np.unique(self.tracks["track_id"].to_numpy(dtype=np.int64))
+        feature_track = self.features["track_id"].to_numpy(dtype=np.int64)
+        feature_curve = self.features["curve_id"].to_numpy(dtype=np.int64)
+        feature_label = self.features["label"].astype(str).to_numpy()
+        label_names, feature_label_code = np.unique(feature_label, return_inverse=True)
+        self._labels = [str(name) for name in label_names]
+        feature_codes = np.searchsorted(self._track_ids, feature_track)
+        self._feature_order = np.argsort(feature_codes, kind="stable")
+        self._feature_per_code = np.bincount(feature_codes, minlength=self._track_ids.size)
+        self._feature_starts = np.zeros(self._track_ids.size, dtype=np.int64)
+        if self._track_ids.size:
+            self._feature_starts[1:] = np.cumsum(self._feature_per_code)[:-1]
+        sorted_curve = feature_curve[self._feature_order]
+        self._sorted_label_code = feature_label_code[self._feature_order]
+        unique_curve, curve_inverse = np.unique(sorted_curve, return_inverse=True)
+        row_lookup = np.zeros(unique_curve.size, dtype=np.int64)
+        for index, curve_id in enumerate(unique_curve):
+            curve_row = self._curve_table.row(int(curve_id))
+            if curve_row is not None:
+                row_lookup[index] = curve_row
+        self._sorted_row = row_lookup[curve_inverse]
+        # Per-label joins for the patch/edge criteria, rebuilt when the frame changes.
+        self._criteria_cache: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+        self._criteria_frame_id = -1
+
+    def _rebuild_join(self) -> None:
+        """Precompute the fragment-to-feature join as flat arrays.
+
+        The join is ``(fragment position, curve row, label code)`` per feature of the
+        fragment's track, so a year's account values are a vectorized gather. The feature
+        side is precomputed once; only the fragment tracks change between rebuilds.
+        """
+        fragment_track = self.fragments["track_id"].to_numpy(dtype=np.int64)
+        fragment_count = fragment_track.size
+        if fragment_count == 0 or self._feature_order.size == 0:
+            self._pair_frag = np.empty(0, dtype=np.int64)
+            self._pair_label = np.empty(0, dtype=np.int64)
+            self._pair_row = np.empty(0, dtype=np.int64)
+            self._join_dirty = False
+            self._join_frame_id = id(self.fragments)
+            return
+        fragment_codes = np.searchsorted(self._track_ids, fragment_track)
+        per_fragment = self._feature_per_code[fragment_codes]
+        pair_frag = np.repeat(np.arange(fragment_count, dtype=np.int64), per_fragment)
+        cumulative = np.cumsum(per_fragment)
+        block_start = cumulative - per_fragment
+        within = np.arange(pair_frag.size, dtype=np.int64) - np.repeat(block_start, per_fragment)
+        feature_rows = self._feature_starts[np.repeat(fragment_codes, per_fragment)] + within
+        self._pair_frag = pair_frag
+        self._pair_row = self._sorted_row[feature_rows]
+        self._pair_label = self._sorted_label_code[feature_rows]
+        self._join_dirty = False
+        self._join_frame_id = id(self.fragments)
+
+    def _block_index(self) -> dict[int, list[int]]:
+        """Return the fragment positions per block, rebuilt when the frame is replaced."""
+        if self._fragments_index_id != id(self.fragments):
+            by_block: dict[int, list[int]] = {}
+            for index, block in enumerate(self.fragments["block_id"].to_numpy()):
+                by_block.setdefault(int(block), []).append(index)
+            self._fragments_by_block = by_block
+            self._fragments_index_id = id(self.fragments)
+        return self._fragments_by_block
+
+    def _curve_value(self, curve_id: int, x: float) -> float:
+        """Evaluate a curve at one point: exact for integer ages, linear between them."""
+        return self._curve_table.value(curve_id, x)
 
     @classmethod
     def from_dataset(cls, dataset_dir: Path) -> Simulator:
-        """Build a simulator that reads the given compiled dataset."""
+        """Build a simulator that reads the given compiled dataset.
+
+        Parameters
+        ----------
+        dataset_dir : Path
+            The compiled dataset directory.
+
+        Returns
+        -------
+        Simulator
+            The simulator for that dataset.
+        """
         return cls(dataset_dir)
 
-    def _treatment(self, track_id: int, label: str) -> pd.Series | None:
-        """Return the treatment row for a track and label, or None.
+    def reset(self) -> None:
+        """Restore the mutable state (tracks and offsets) to the construction state.
 
-        A fragment is operable for a treatment only when its track offers it; this
-        is the block-level intersection rule applied at the fragment.
+        The static caches (curves, feature joins, treatment and product indexes) are kept,
+        so a search can reuse one simulator across evaluations instead of reloading the
+        dataset each time. The join is only invalidated when the tracks actually changed.
         """
-        match = self.treatments[
-            (self.treatments["track_id"] == track_id) & (self.treatments["treatment"] == label)
-        ]
-        return match.iloc[0] if not match.empty else None
+        if not np.array_equal(self.fragments["track_id"].to_numpy(), self._initial_track):
+            self.fragments["track_id"] = self._initial_track
+            self._join_dirty = True
+        self.fragments["offset"] = self._initial_offset
+        self._criteria_frame_id = -1
+        self._invalidate_state()
+
+    def _invalidate_state(self) -> None:
+        """Drop the cached fragment arrays and the prepared kernel after a state change."""
+        self._arrays = None
+        self._product_kernel = None
+
+    def _fragment_arrays(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Return (and cache) the fragments' track, offset, and area arrays.
+
+        The arrays are rebuilt after any state change (a reset, a treatment, or an age
+        step), so a search that prices many blocks reuses one set.
+
+        Returns
+        -------
+        tuple of numpy.ndarray
+            ``(track_id, offset, area_ha)`` as int64, int64, and float64 arrays.
+        """
+        cached = self._arrays
+        if cached is None:
+            cached = (
+                self.fragments["track_id"].to_numpy(dtype=np.int64),
+                self.fragments["offset"].to_numpy(dtype=np.int64),
+                self.fragments["area_ha"].to_numpy(dtype=float),
+            )
+            self._arrays = cached
+        return cached
 
     def apply_treatments(
         self,
@@ -126,23 +274,23 @@ class Simulator:
             The blocks that had at least one fragment treated.
         """
         disturbed: set[int] = set()
-        for _, row in schedule[schedule["period"] == year].iterrows():
-            mask = self.fragments["block_id"] == row["block_id"]
-            for index in self.fragments.index[mask]:
-                track_id = _as_int(self.fragments.at[index, "track_id"])
-                label = str(row["treatment"])
-                treatment = self._treatment(track_id, label)
+        tracks = self.fragments["track_id"].to_numpy(copy=True)
+        offsets = self.fragments["offset"].to_numpy(copy=True)
+        areas = self.fragments["area_ha"].to_numpy(copy=True)
+        by_block = self._block_index()
+        changed = False
+        for row in schedule[schedule["period"] == year].itertuples(index=False):
+            block_id = _as_int(row.block_id)
+            label = str(row.treatment)
+            for index in by_block.get(block_id, []):
+                key = (int(tracks[index]), label)
+                treatment = self._treatment_by_key.get(key)
                 if treatment is None:
                     continue
-                offset = _as_int(self.fragments.at[index, "offset"])
-                area = _as_float(self.fragments.at[index, "area_ha"])
-                produced = self.products[
-                    (self.products["track_id"] == track_id) & (self.products["treatment"] == label)
-                ]
-                block_id = int(row["block_id"])
-                for _, product in produced.iterrows():
-                    value = area * curve_value(self.curves, int(product["curve_id"]), offset)
-                    product_label = str(product["label"])
+                offset = int(offsets[index])
+                area = float(areas[index])
+                for curve_id, product_label in self._products_by_key.get(key, []):
+                    value = area * self._curve_value(curve_id, offset)
                     self._product_values.append(
                         {"year": year, "account": product_label, "value": value}
                     )
@@ -161,42 +309,46 @@ class Simulator:
                                 "haul_cost": route.haul_cost if route is not None else 0.0,
                             }
                         )
-                self.fragments.at[index, "track_id"] = _as_int(treatment["new_track"])
-                self.fragments.at[index, "offset"] = _as_int(treatment["offset"])
-                disturbed.add(int(row["block_id"]))
+                tracks[index] = treatment[0]
+                offsets[index] = treatment[1]
+                changed = True
+                disturbed.add(block_id)
+        if changed:
+            self.fragments["track_id"] = tracks
+            self.fragments["offset"] = offsets
+            self._invalidate_state()
+            self._join_dirty = True
         return disturbed
 
     def account_values(self, year: int) -> list[dict[str, object]]:
         """Compute the feature account values for the current state.
 
-        A feature label may appear on several tracks; the value is summed across them.
-        The curves are evaluated vectorized per curve, then multiplied by area and
-        summed per account label.
+        A feature label may appear on several tracks; the value is the sum of the area
+        times the feature curve at the fragment's offset, over the precomputed join. The
+        curves are evaluated with a single integer-age table gather.
+
+        Parameters
+        ----------
+        year : int
+            The year to label the values with.
+
+        Returns
+        -------
+        list of dict
+            One ``{"year", "account", "value"}`` record per feature account.
         """
-        merged = (
-            self.fragments[["track_id", "area_ha", "offset"]]
-            .merge(self.features[["track_id", "label", "curve_id"]], on="track_id", how="inner")
-            .reset_index(drop=True)
-        )
-        if merged.empty:
+        if self._join_dirty or self._join_frame_id != id(self.fragments):
+            self._rebuild_join()
+        if self._pair_frag.size == 0:
             return []
-        # Assign into a positional array rather than ``.loc`` per curve: a big model has tens
-        # of thousands of curves, and a per-group ``.loc`` setitem dominates the run.
-        yields = np.zeros(len(merged), dtype=float)
-        for curve_id, group in merged.groupby("curve_id"):
-            arrays = self._curves.get(_as_int(curve_id))
-            if arrays is None:
-                continue
-            xs, ys = arrays
-            yields[group.index.to_numpy()] = np.interp(
-                group["offset"].to_numpy(dtype=float), xs, ys
-            )
-        merged["yield"] = yields
-        merged["value"] = merged["area_ha"].astype(float) * merged["yield"]
-        totals = merged.groupby("label")["value"].sum()
+        offsets = self.fragments["offset"].to_numpy(dtype=float)
+        areas = self.fragments["area_ha"].to_numpy(dtype=float)
+        yields = self._curve_table.gather(self._pair_row, offsets[self._pair_frag])
+        values = areas[self._pair_frag] * yields
+        totals = np.bincount(self._pair_label, weights=values, minlength=len(self._labels))
         return [
-            {"year": year, "account": str(label), "value": float(value)}
-            for label, value in totals.items()
+            {"year": year, "account": self._labels[index], "value": float(total)}
+            for index, total in enumerate(totals)
         ]
 
     def block_criteria(self, label: str) -> dict[int, float]:
@@ -216,29 +368,423 @@ class Simulator:
         dict of int to float
             The criterion value per block.
         """
-        features = self.features[self.features["label"] == label]
-        merged = self.fragments[["block_id", "track_id", "area_ha", "offset"]].merge(
-            features[["track_id", "curve_id"]], on="track_id", how="inner"
-        )
-        if merged.empty:
+        pair_frag, pair_row = self._criteria_join(label)
+        if pair_frag.size == 0:
             return {}
-        values = np.zeros(len(merged), dtype=float)
-        for curve_id, group in merged.groupby("curve_id"):
-            arrays = self._curves.get(_as_int(curve_id))
-            if arrays is None:
-                continue
-            xs, ys = arrays
-            values[group.index.to_numpy()] = np.interp(
-                group["offset"].to_numpy(dtype=float), xs, ys
-            )
-        merged = merged.assign(weighted=values * merged["area_ha"].astype(float))
-        grouped = merged.groupby("block_id").agg(
-            weighted=("weighted", "sum"), area=("area_ha", "sum")
-        )
+        offsets = self.fragments["offset"].to_numpy(dtype=float)
+        areas = self.fragments["area_ha"].to_numpy(dtype=float)
+        yields = self._curve_table.gather(pair_row, offsets[pair_frag])
+        frag_area = areas[pair_frag]
+        weighted = frag_area * yields
+        blocks = self.fragments["block_id"].to_numpy(dtype=np.int64)[pair_frag]
+        unique, inverse = np.unique(blocks, return_inverse=True)
+        numerator = np.bincount(inverse, weights=weighted, minlength=unique.size)
+        denominator = np.bincount(inverse, weights=frag_area, minlength=unique.size)
         return {
-            _as_int(block): float(row.weighted / row.area) if row.area > 0.0 else 0.0
-            for block, row in grouped.iterrows()
+            int(block): float(numerator[index] / denominator[index])
+            if denominator[index] > 0.0
+            else 0.0
+            for index, block in enumerate(unique)
         }
+
+    def block_criteria_series(
+        self, block_id: int, events: Sequence[tuple[str, int]], label: str, years: int
+    ) -> dict[int, float]:
+        """Return one block's area-weighted criterion value per year under a chain.
+
+        The criterion is the area-weighted mean of the label's curve over the block's
+        fragments, isolated as in :meth:`block_chain`. A block's value depends only on its
+        own chain, so this is cacheable per ``(block, chain, label)`` and never needs the
+        whole schedule's state. The years are evaluated as one gather over the curve table
+        rather than a curve call per year.
+
+        Parameters
+        ----------
+        block_id : int
+            The block.
+        events : sequence of (str, int)
+            The treatments and the year each is applied.
+        label : str
+            The criterion feature label.
+        years : int
+            The horizon, in years.
+
+        Returns
+        -------
+        dict of int to float
+            The criterion value per year.
+        """
+        positions = self._block_index().get(int(block_id), [])
+        if not positions:
+            return {}
+        by_year = {int(year): str(treatment) for treatment, year in events}
+        arrays_track, arrays_offset, arrays_area = self._fragment_arrays()
+        tracks = arrays_track[positions].astype(np.int64)
+        offsets = arrays_offset[positions].astype(np.int64)
+        areas = arrays_area[positions].astype(np.float64)
+        total_area = float(areas.sum())
+        if total_area <= 0.0 or self._curve_table.table.shape[0] == 0:
+            return dict.fromkeys(range(years), 0.0)
+        count = len(positions)
+        label_row = self._label_row
+        rows = np.zeros((years, count), dtype=np.int64)
+        ages = np.empty((years, count), dtype=np.int64)
+        present = np.zeros((years, count), dtype=bool)
+        current = np.zeros(count, dtype=np.int64)
+        has = np.zeros(count, dtype=bool)
+        for index in range(count):
+            row = label_row.get((int(tracks[index]), label))
+            if row is not None:
+                current[index] = row
+                has[index] = True
+
+        def fill(start: int, stop: int, offset_vec: np.ndarray) -> None:
+            """Record the constant track and the age trajectory over ``[start, stop)``."""
+            if stop <= start:
+                return
+            length = stop - start
+            rows[start:stop] = current
+            ages[start:stop] = offset_vec + np.arange(length, dtype=np.int64)[:, None]
+            present[start:stop] = has
+
+        cursor = 0
+        for event_year, treatment in sorted(by_year.items()):
+            if event_year >= years:
+                break
+            fill(cursor, event_year, offsets)
+            offsets = offsets + (event_year - cursor)
+            for index in range(count):
+                transition = self._treatment_by_key.get((int(tracks[index]), treatment))
+                if transition is not None:
+                    tracks[index] = transition[0]
+                    offsets[index] = transition[1]
+                    row = label_row.get((transition[0], label))
+                    current[index] = 0 if row is None else row
+                    has[index] = row is not None
+            cursor = event_year
+        fill(cursor, years, offsets)
+        values = self._curve_table.gather(rows.reshape(-1), ages.reshape(-1)).reshape(years, count)
+        values[~present] = 0.0
+        series = values @ areas / total_area
+        return {int(step): float(series[step]) for step in range(years)}
+
+    def block_chain(
+        self, block_id: int, events: Sequence[tuple[str, int]], years: int
+    ) -> dict[tuple[int, str], float]:
+        """Return one block's account values over a horizon under a chain of treatments.
+
+        The block's fragments are simulated in isolation: each ``(treatment, year)`` event
+        is applied in its year (a no-op where the fragment's track does not offer it), and
+        every fragment's offset advances one year per step. The result is
+        ``(year, label) -> value``, so a schedule's account values are the empty-schedule
+        base plus a per-block delta. A block may be treated more than once (rotations);
+        events are applied in year order.
+
+        Parameters
+        ----------
+        block_id : int
+            The block.
+        events : sequence of (str, int)
+            The treatments and the year each is applied.
+        years : int
+            The horizon, in years.
+
+        Returns
+        -------
+        dict of (int, str) to float
+            The account value per year and label (non-zero entries only). Feature labels
+            and the product labels produced by the treatments are both included.
+        """
+        positions = self._block_index().get(int(block_id), [])
+        if not positions:
+            return {}
+        by_year = {int(year): str(treatment) for treatment, year in events}
+        arrays_track, arrays_offset, arrays_area = self._fragment_arrays()
+        tracks = arrays_track[positions]
+        offsets = arrays_offset[positions]
+        areas = arrays_area[positions]
+        totals: dict[tuple[int, str], float] = {}
+        for step in range(years):
+            treatment = by_year.get(step)
+            if treatment is not None:
+                for index in range(len(positions)):
+                    current = int(tracks[index])
+                    transition = self._treatment_by_key.get((current, treatment))
+                    if transition is not None:
+                        area = float(areas[index])
+                        offset = int(offsets[index])
+                        for curve_id, product_label in self._products_by_key.get(
+                            (current, treatment), []
+                        ):
+                            value = area * self._curve_value(curve_id, offset)
+                            key = (step, product_label)
+                            totals[key] = totals.get(key, 0.0) + value
+                        tracks[index] = transition[0]
+                        offsets[index] = transition[1]
+            for index in range(len(positions)):
+                area = float(areas[index])
+                offset = int(offsets[index])
+                for curve_id, label in self._track_features.get(int(tracks[index]), ()):
+                    value = area * self._curve_value(curve_id, offset)
+                    key = (step, label)
+                    totals[key] = totals.get(key, 0.0) + value
+            offsets += 1
+        return totals
+
+    def block_chain_products(
+        self, block_id: int, events: Sequence[tuple[str, int]]
+    ) -> dict[tuple[int, str], float]:
+        """Return the product cells a treatment chain makes on a block.
+
+        The value at each event is the fragment area times the product curve at the
+        fragment's offset in that event's year: the fragment ages between events and resets
+        on each treatment. This is the product part of :meth:`block_chain` without stepping
+        every year, so it costs O(fragments x events).
+
+        Parameters
+        ----------
+        block_id : int
+            The block.
+        events : sequence of (str, int)
+            The treatments and the year each is applied.
+
+        Returns
+        -------
+        dict of (int, str) to float
+            The product value per ``(year, label)`` cell (non-zero entries only).
+        """
+        positions = self._block_index().get(int(block_id), [])
+        if not positions or not events:
+            return {}
+        if HAVE_NUMBA:
+            kernel = self._product_kernel
+            if kernel is None:
+                kernel = ProductKernel(self)
+                self._product_kernel = kernel
+            return kernel.products(block_id, events)
+        by_year = {int(year): str(treatment) for treatment, year in events}
+        arrays_track, arrays_offset, arrays_area = self._fragment_arrays()
+        tracks = arrays_track[positions]
+        offsets = arrays_offset[positions]
+        areas = arrays_area[positions]
+        totals: dict[tuple[int, str], float] = {}
+        current = 0
+        for year in sorted(by_year):
+            gap = year - current
+            if gap:
+                offsets = offsets + gap
+                current = year
+            treatment = by_year[year]
+            for index in range(len(positions)):
+                key = (int(tracks[index]), treatment)
+                transition = self._treatment_by_key.get(key)
+                if transition is None:
+                    continue
+                area = float(areas[index])
+                offset = int(offsets[index])
+                for curve_id, product_label in self._products_by_key.get(key, []):
+                    value = area * self._curve_value(curve_id, offset)
+                    cell = (year, product_label)
+                    totals[cell] = totals.get(cell, 0.0) + value
+                tracks[index] = transition[0]
+                offsets[index] = transition[1]
+        return totals
+
+    def block_trajectory(
+        self, block_id: int, treatment: str | None, year: int, years: int
+    ) -> dict[tuple[int, str], float]:
+        """Return one block's account values over a horizon under a single treatment.
+
+        This is :meth:`block_chain` with at most one event; see it for the semantics.
+
+        Parameters
+        ----------
+        block_id : int
+            The block.
+        treatment : str or None
+            The treatment to apply, or None for no treatment.
+        year : int
+            The year to apply the treatment.
+        years : int
+            The horizon, in years.
+
+        Returns
+        -------
+        dict of (int, str) to float
+            The account value per year and label (non-zero entries only).
+        """
+        events: list[tuple[str, int]] = [] if treatment is None else [(str(treatment), int(year))]
+        return self.block_chain(block_id, events, years)
+
+    def block_products(self, block_id: int, treatment: str, year: int) -> dict[str, float]:
+        """Return the product values a treatment makes on a block.
+
+        The value is the fragment area times the product curve at the pre-treatment
+        offset **at the treatment year** (the fragment ages ``year`` steps before the
+        treatment), summed over the block's fragments. This is the product part of
+        :meth:`block_trajectory` without stepping the horizon, so it costs O(fragments)
+        rather than O(fragments x years).
+
+        Parameters
+        ----------
+        block_id : int
+            The block.
+        treatment : str
+            The treatment to apply.
+        year : int
+            The year the treatment is applied.
+
+        Returns
+        -------
+        dict of str to float
+            The product value per product label (non-zero entries only).
+        """
+        positions = self._block_index().get(int(block_id), [])
+        if not positions:
+            return {}
+        tracks = self.fragments["track_id"].to_numpy()
+        offsets = self.fragments["offset"].to_numpy()
+        areas = self.fragments["area_ha"].to_numpy(dtype=float)
+        totals: dict[str, float] = {}
+        for index in positions:
+            key = (int(tracks[index]), str(treatment))
+            if key not in self._treatment_by_key:
+                continue
+            offset = int(offsets[index]) + int(year)
+            area = float(areas[index])
+            for curve_id, product_label in self._products_by_key.get(key, []):
+                value = area * self._curve_value(curve_id, offset)
+                totals[product_label] = totals.get(product_label, 0.0) + value
+        return totals
+
+    def block_route_chain(
+        self,
+        block_id: int,
+        events: Sequence[tuple[str, int]],
+        years: int,
+        route_model: RouteModel,
+        route_accounts: Sequence[RouteAccount],
+    ) -> dict[tuple[int, str], float]:
+        """Return one block's route-account values over a horizon under a treatment chain.
+
+        The block's fragments are simulated in isolation (like :meth:`block_chain`), but its
+        produced products are routed with ``route_model`` and recorded into a fresh summary
+        ledger; the ledger's account values are returned as ``(year, account) -> value``.
+        Route haul, maintenance, and volume are additive over blocks; build cost is not (it
+        is charged once per segment across the whole schedule), so the objective excludes
+        ``build`` accounts from the incremental path.
+
+        Parameters
+        ----------
+        block_id : int
+            The block.
+        events : sequence of (str, int)
+            The treatments and the year each is applied.
+        years : int
+            The horizon, in years.
+        route_model : RouteModel
+            The route model (destinations, eligibility, surplus).
+        route_accounts : sequence of RouteAccount
+            The route accounts to resolve.
+
+        Returns
+        -------
+        dict of (int, str) to float
+            The route account value per year and account (non-zero entries only).
+        """
+        positions = self._block_index().get(int(block_id), [])
+        if not positions or not route_accounts:
+            return {}
+        by_year = {int(year): str(treatment) for treatment, year in events}
+        tracks = self.fragments["track_id"].to_numpy()[positions].astype(np.int64)
+        offsets = self.fragments["offset"].to_numpy()[positions].astype(np.int64)
+        areas = self.fragments["area_ha"].to_numpy()[positions].astype(float)
+        ledger = RouteCostLedger(route_model.network, collect=False)
+        for step in range(years):
+            treatment = by_year.get(step)
+            if treatment is not None:
+                for index in range(len(positions)):
+                    key = (int(tracks[index]), treatment)
+                    transition = self._treatment_by_key.get(key)
+                    if transition is None:
+                        continue
+                    offset = int(offsets[index])
+                    area = float(areas[index])
+                    for curve_id, product_label in self._products_by_key.get(key, []):
+                        value = area * self._curve_value(curve_id, offset)
+                        destination, route = route_model.assign(int(block_id), product_label)
+                        ledger.record(step, int(block_id), product_label, value, destination, route)
+                    tracks[index] = transition[0]
+                    offsets[index] = transition[1]
+            offsets += 1
+        frame = ledger.account_values(route_accounts)
+        return {
+            (int(str(row.year)), str(row.account)): float(str(row.value))
+            for row in frame.itertuples(index=False)
+        }
+
+    def block_route_accounts(
+        self,
+        block_id: int,
+        treatment: str | None,
+        year: int,
+        years: int,
+        route_model: RouteModel,
+        route_accounts: Sequence[RouteAccount],
+    ) -> dict[tuple[int, str], float]:
+        """Return one block's route-account values under a single treatment.
+
+        This is :meth:`block_route_chain` with at most one event; see it for the semantics.
+
+        Parameters
+        ----------
+        block_id : int
+            The block.
+        treatment : str or None
+            The treatment to apply, or None.
+        year : int
+            The year to apply the treatment.
+        years : int
+            The horizon, in years.
+        route_model : RouteModel
+            The route model.
+        route_accounts : sequence of RouteAccount
+            The route accounts to resolve.
+
+        Returns
+        -------
+        dict of (int, str) to float
+            The route account value per year and account (non-zero entries only).
+        """
+        events: list[tuple[str, int]] = [] if treatment is None else [(str(treatment), int(year))]
+        return self.block_route_chain(block_id, events, years, route_model, route_accounts)
+
+    def _criteria_join(self, label: str) -> tuple[np.ndarray, np.ndarray]:
+        """Return the fragment positions and curve-table rows for a feature label."""
+        if self._criteria_frame_id != id(self.fragments):
+            self._criteria_cache = {}
+            self._criteria_frame_id = id(self.fragments)
+        cached = self._criteria_cache.get(label)
+        if cached is not None:
+            return cached
+        feature = self.features[self.features["label"] == label]
+        by_track: dict[int, list[int]] = {}
+        for track, curve in zip(
+            feature["track_id"].to_numpy(), feature["curve_id"].to_numpy(), strict=True
+        ):
+            by_track.setdefault(int(track), []).append(self._curve_table.row(int(curve)) or 0)
+        pair_frag: list[int] = []
+        pair_row: list[int] = []
+        for position, track in enumerate(self.fragments["track_id"].to_numpy()):
+            for row in by_track.get(int(track), ()):
+                pair_frag.append(position)
+                pair_row.append(row)
+        result = (
+            np.asarray(pair_frag, dtype=np.int64),
+            np.asarray(pair_row, dtype=np.int64),
+        )
+        self._criteria_cache[label] = result
+        return result
 
     def simulate(
         self,
@@ -274,7 +820,10 @@ class Simulator:
         Returns
         -------
         pandas.DataFrame
-            The account values, with ``year``, ``account``, and ``value`` columns.
+            The account values, with ``year``, ``account``, and ``value`` columns. Feature
+            and product accounts are both included: a treatment's products are recorded as
+            account values in the year they are produced, so every simulated account is
+            scoreable.
         """
         model = route_model
         if model is None and network is not None:
@@ -288,8 +837,17 @@ class Simulator:
             | {element.attribute2 for element in edge_elements}
         )
         for year in range(years):
+            products_before = len(self._product_values)
             self.apply_treatments(schedule, year, model, ledger)
             records.extend(self.account_values(year))
+            produced: dict[str, float] = {}
+            for record in self._product_values[products_before:]:
+                account = str(record["account"])
+                produced[account] = produced.get(account, 0.0) + float(str(record["value"]))
+            records.extend(
+                {"year": year, "account": account, "value": value}
+                for account, value in produced.items()
+            )
             if edge_elements:
                 criteria = {label: self.block_criteria(label) for label in criteria_labels}
                 for row in edge_values(edge_elements, list(edges), criteria):
@@ -297,6 +855,7 @@ class Simulator:
                     records.append(record)
                     self._edge_values.append(dict(record))
             self.fragments["offset"] = self.fragments["offset"].astype(int) + 1
+            self._invalidate_state()
         return pd.DataFrame(records, columns=["year", "account", "value"])
 
     def run(
@@ -446,16 +1005,41 @@ class Simulator:
         core_buffer_m: float | None = None,
         min_core_area_ha: float | None = None,
     ) -> None:
-        """Replay a schedule and write per-year patch metrics and patch accounts."""
+        """Replay a schedule and write per-year patch metrics and patch accounts.
+
+        Parameters
+        ----------
+        schedule : pandas.DataFrame
+            The schedule, with ``block_id``, ``treatment``, and ``period`` columns.
+        years : int
+            The number of annual steps.
+        topology_csv : Path
+            The block topology edge list.
+        patch_breaks : sequence of float
+            The size-class upper bounds, in hectares, for ``patch_metrics.csv``.
+        out_dir : Path
+            The directory to write the outputs into.
+        max_opening_ha : float or None, optional
+            The maximum opening size, in hectares, for the violation record.
+        min_green_up_years : int or None, optional
+            The green-up interval, for the violation record.
+        patch_accounts : sequence of PatchAccount, optional
+            The patch accounts to accumulate over the run.
+        core_buffer_m : float or None, optional
+            The core-area buffer distance, in metres.
+        min_core_area_ha : float or None, optional
+            The minimum core area, in hectares.
+        """
         out_dir = Path(out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         graph = load_patch_edges(topology_csv)
+        detailed = load_patch_edges_detailed(topology_csv)
         edges = [(source, target) for source, target, _ in graph]
         block_area = {
             _as_int(block): _as_float(area)
             for block, area in self.fragments.groupby("block_id")["area_ha"].sum().items()
         }
-        ledger = PatchLedger(patch_accounts, graph, block_area) if patch_accounts else None
+        ledger = PatchLedger(patch_accounts, detailed, block_area) if patch_accounts else None
         criteria_labels = sorted({account.criteria for account in patch_accounts})
         patch_records: list[dict[str, object]] = []
         schedule_pairs: list[tuple[int, int]] = []
@@ -471,6 +1055,7 @@ class Simulator:
                     {"year": year, **patch_metrics(disturbed, edges, block_area, patch_breaks)}
                 )
             self.fragments["offset"] = self.fragments["offset"].astype(int) + 1
+            self._invalidate_state()
         pd.DataFrame(patch_records).to_csv(out_dir / "patch_metrics.csv", index=False)
         if ledger is not None:
             ledger.write(out_dir)
@@ -479,14 +1064,14 @@ class Simulator:
             or min_green_up_years is not None
             or min_core_area_ha is not None
         ):
-            selected_by_year, harvest_year = schedule_years(schedule_pairs)
+            selected_by_year, disturbance_years = schedule_years(schedule_pairs)
             violations: list[dict[str, object]] = []
             if max_opening_ha is not None:
                 violations.extend(
                     opening_violations(selected_by_year, edges, block_area, max_opening_ha)
                 )
             if min_green_up_years is not None:
-                violations.extend(green_up_violations(harvest_year, edges, min_green_up_years))
+                violations.extend(green_up_violations(disturbance_years, edges, min_green_up_years))
             if min_core_area_ha is not None and core_buffer_m is not None:
                 violations.extend(
                     core_area_violations(

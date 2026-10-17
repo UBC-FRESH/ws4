@@ -15,7 +15,12 @@ extensions: list[str] = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    "sphinxcontrib.mermaid",
+    "nbsphinx",
 ]
+
+# Notebook outputs are committed, so a docs build never executes them.
+nbsphinx_execute = "never"
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 autodoc_member_order = "bysource"

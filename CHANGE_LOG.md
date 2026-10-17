@@ -30,7 +30,7 @@ issue comments.
   math-heuristic layer.
 - Queued the Phase 0 close-out: pull request #8 (`feature/p0-scope-design` into `main`) and the report
   `notes/reports/p0-closeout.md`. Status: awaiting maintainer approval.
-- Completed Phase 0: squash-merged pull request #8 as `386c643`, deleted `feature/p0-scope-design`, and
+- Completed Phase 0: squash-merged pull request #8 as `97330a8`, deleted `feature/p0-scope-design`, and
   closed parent issue #1.
 - Launched Phase 1 (Contracts and prototype) on `feature/p1-contracts-prototype`, parent issue #10, with
   tasks P1.1 (compiled-dataset schema and manifest) and P1.2 (end-to-end prototype).
@@ -54,7 +54,7 @@ issue comments.
 - P1 fix: the `.gitignore` rule `build/` also ignored the `ws4/build/` package, so the compiler was
   never committed. Narrowed the rule to `/build/` and committed `ws4/build/__init__.py` and
   `ws4/build/compiler.py`. This is why CI could not resolve `ws4.build.compiler`.
-- Completed Phase 1: squash-merged pull request #14 as `33ac569`, deleted `feature/p1-contracts-prototype`,
+- Completed Phase 1: squash-merged pull request #14 as `a3d182a`, deleted `feature/p1-contracts-prototype`,
   and closed parent issue #10.
 - Launched Phase 2 (Build) on `feature/p2-build`, parent issue #15, with tasks P2.1 to P2.9 (#16 to #24).
 - P2.1 (in progress): replaced the prototype's minimal recipe parser with a ForestModelXML parser and
@@ -170,7 +170,7 @@ issue comments.
   the optimizer and CI (which installed only `.[geo]` plus the dev requirements) failed on `f22cd6a`. The
   import is now lazy with a clear error, `scipy` is declared in the `opt` extra and the dev requirements,
   and `tests/test_mip.py` skips when it is absent.
-- P2 close-out carried out: pull request #25 squash-merged as `3e87d46`, branch `feature/p2-build`
+- P2 close-out carried out: pull request #25 squash-merged as `27b6915`, branch `feature/p2-build`
   deleted, and parent issue #15 closed. P2 is `complete` in `ROADMAP.md`. Launched P3 (Verify): parent
   issue #26, branch `feature/p3-verify`, task P3.1 (#27).
 - P3: made the repository public and enabled GitHub Pages (`gh api -X PATCH repos/UBC-FRESH/ws4
@@ -235,7 +235,7 @@ issue comments.
 - P3 close-out: queued pull request #35 (`feature/p3-verify` into `main`) and wrote
   `notes/reports/p3-closeout.md`. `ROADMAP.md` marks P3 `pr-open`. `python scripts/dashboard.py`:
   `OVERALL: GREEN`.
-- P3 close-out carried out: pull request #35 squash-merged as `83e2d60`, branch `feature/p3-verify`
+- P3 close-out carried out: pull request #35 squash-merged as `a8dc018`, branch `feature/p3-verify`
   deleted, and parent issue #26 closed. P3 is `complete` in `ROADMAP.md`. Launched P4 (Release and
   deploy): parent issue #36, branch `feature/p4-release`, tasks P4.1 to P4.6 (#37 to #42).
 
@@ -350,7 +350,7 @@ issue comments.
   (P4.5), the docs publish and verification (P4.4), the post-publish verification (P4.6), closing parent
   issue #36, and launching P5, with the exact commands. Set P4 to `pr-open` in `ROADMAP.md`. Status:
   awaiting maintainer approval. CI on the evidence head `4516345` is green.
-- Completed Phase 4 (Release and deploy): squash-merged pull request #43 as `a06d0ca`, deleted the
+- Completed Phase 4 (Release and deploy): squash-merged pull request #43 as `d8ecd72`, deleted the
   branch `feature/p4-release`, and closed parent issue #36. Created and pushed the annotated tag
   `v0.1.0`, and published the GitHub release `v0.1.0` with the sdist (`ws4-0.1.0.tar.gz`) and the wheel
   (`ws4-0.1.0-py3-none-any.whl`), built from a clean checkout of the tag. Verified the published docs
@@ -358,7 +358,7 @@ issue comments.
   published artifact (P4.6): a fresh virtual environment installed the released wheel, and the `ws4`
   command ran build, validate, simulate, report, and optimize end to end; the simulator was
   reproducible (identical `account_values.csv`) and the optimizer reproduced its objective for the same
-  seed. Fixed a stale roads docs line (`9e4419d`).
+  seed. Fixed a stale roads docs line (`ed4b530`).
 - Launched Phase 5 (Operate and maintain) on `feature/p5-operate`, parent issue #44, with tasks P5.1 to
   P5.6 (#45 to #50): a review cadence, issue triage, dependency maintenance, a
   roadmap/backlog/changelog sync, a release and patch policy, and a maintainer and handover guide. The
@@ -386,3 +386,613 @@ issue comments.
   `notes/design/ws4-performance.md`) with its WP0 to WP7 work packages. It names one settings change
   (Dependabot security updates). Status: awaiting maintainer approval. CI on the evidence head
   `880c14a` is green.
+- Completed Phase 5 (Operate and maintain): squash-merged pull request #51 as `a8cb148`, deleted the
+  branch `feature/p5-operate`, and closed parent issue #44. Enabled Dependabot security updates
+  (version-update pull requests are already open).
+- Launched Phase 6 (Performance and scalability) on `feature/p6-performance`, parent issue #60, with
+  work packages P6.0 to P6.7 (#61 to #68) from `notes/design/ws4-performance.md`.
+- P6.0: extended `scripts/benchmark.py` with a `c5` spatial+route scenario (`--scenario c5
+  --sample-dir ... --route-blocks ... --spatial-years ...`) that times ingest, base simulate, edge
+  contrast, routing, patch accounts, and one optimizer objective evaluation, plus `--profile`. Recorded
+  the reproducible baseline in `notes/performance.md`: ingest 0.24 s, base simulate (3 y) 0.88 s, edge
+  contrast 3.6 s, routing (3 y, 300 blocks) 65.4 s, patch accounts 2.2 s, one objective evaluation
+  1.3 s, peak memory 2.8 GiB. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.
+- P6.1: route and simulation quick wins. The route-network indexes are built once; the treatment,
+  product, and fragment lookups are precomputed; `apply_treatments` is vectorized (no pandas
+  `iterrows`); and routing uses per-destination shortest paths (the graph is undirected, so one
+  Dijkstra per destination serves every block). C5 `simulate` + routing (3 years, 300 blocks) fell
+  from 65.4 s to **4.5 s**, and peak memory from 2.8 GiB to **338 MiB**. The single-replay subtask is
+  deferred to WP3. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.
+- P6.2: vectorized simulator core. `account_values` now uses a precomputed fragment-to-feature join
+  (flat arrays of fragment position, curve id, and label code, rebuilt only when a track changes) with
+  per-curve `numpy.interp`, instead of a per-year pandas merge and groupby. C5 `simulate` base fell from
+  3.76 s to **0.41 s** over 30 years (target under 1 s met). The benchmark now times simulator
+  construction separately. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.
+- P6.3: spatial precompute and incremental metrics. `block_criteria` uses a precomputed per-label join
+  with `numpy.interp` and `np.bincount` (no pandas merge/groupby per label per year), and the patch
+  perimeter is a single pass over the edges instead of a per-patch scan. C5 edge contrast fell from
+  3.0 s to **0.31 s** (3 y; 0.070 s/yr) and patch accounts from 1.9 s to **0.25 s** (1 y; 0.066 s/yr),
+  both under the 0.2 s-per-year target. Full-history incrementality and the single replay in `run` move
+  to WP4. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.
+- P6.4 (in progress): incremental objective evaluation. First, the removal of per-evaluation waste:
+  the optimizer reuses one `Simulator` (`Simulator.reset` restores tracks/offsets instead of
+  reconstructing); `apply_treatments` evaluates curves from the precomputed per-curve arrays (the old
+  `curve_value` masked the whole 130 423-row curves frame per product); the route model memoizes the
+  destination choice per (block, product); the route ledger has a summary mode (`collect=False`) that
+  keeps only the per-destination totals the objective needs; and the fragment-to-feature join is
+  rebuilt with a vectorized numpy expansion. C5 warm objective evaluation fell from ~3.8 s to ~0.28 s
+  (300-block schedule, 10 years) and ~1.3 s to ~0.23 s (empty). The delta evaluation (base plus
+  per-block contributions) is the next step. Dashboard result: `python scripts/dashboard.py` reports
+  `OVERALL: GREEN`.
+- P6.4: incremental objective evaluation. Feature account values are additive over blocks, so the
+  objective is the empty-schedule base plus a per-block delta (base and deltas cached, lazily per
+  assignment); edge contrast and route accounts fall back to the full simulation (not additive over
+  blocks). Parity with the full simulation holds to floating-point tolerance. C5 10-year warm
+  evaluation: ~1.29 s to 0.23 s (empty) and ~3.8 s to **6.7 ms** (300-block schedule), meeting the
+  under-50 ms target. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.
+- P6.5: solvers at scale. Added an island model (`OptimizeConfig.islands` / `episodes`, `--islands` /
+  `--episodes`): islands run as parallel processes and, after each episode, the global best schedule is
+  migrated into every island as the next episode's starting point. Deterministic for a given seed
+  (tested), and no worse than a single start. NUMA-aware placement and batched/candidate-level parallel
+  move evaluation remain as future refinements. Dashboard result: `python scripts/dashboard.py` reports
+  `OVERALL: GREEN`.
+- P6.7: guardrails. Added `tests/test_performance.py` (the incremental objective must be strictly faster
+  than a full simulation and must match it on random schedules; the simulator is deterministic), and a
+  user-facing `docs/reference/performance.rst` page with the measured figures, the incremental
+  objective, and the reproduce steps. Dashboard result: `python scripts/dashboard.py` reports
+  `OVERALL: GREEN`.
+- P6.6 (native kernels) is deferred after post-P6 profiling found no loop with a large kernel speedup;
+  numba is not installed in CI. Recorded in the roadmap's "Deferred from P6" list, `notes/backlog.md`,
+  and `notes/design/ws4-performance.md`, with a trigger to revisit. Issue #67 closed as not planned.
+- P6.6 investigation (thread-level parallelism): measured on the C5 numeric core; threads make the
+  curve-evaluation loop **slower** (0.23–0.35×) because `numpy.interp` holds the GIL and the per-curve
+  work is small, and a fully vectorized multi-curve interpolation is also slower (0.32×). Threads help
+  only parallel parquet reads in construction (1.78× on ~5% of construction). The effective parallel
+  lever is process-level (the island model, P6.5). Recorded in `notes/performance.md` so the thread
+  idea is not re-tried without cause.
+- P6.8 (spike, adopted): shared age-grid curve table. Curve breakpoints and offsets are integers, so
+  each curve is precomputed at every integer age once (`ws4/sim/curve.py:CurveTable`) and evaluation is
+  a 2-D gather; `account_values`, `_curve_value`, the patch/edge criteria, and the block trajectories
+  use it (with the `numpy.interp` fallback for a non-integer age). Two adjustments from the spike plan:
+  the table is built with one sort-and-slice (not per-curve masking), and `Simulator.reset` now
+  invalidates the fragment-to-feature join only when the tracks actually changed. A/B vs the checkpoint:
+  `account_values` 12.60 → 2.43 ms/yr (**5.2×**), warm 30-year simulate 0.422 → 0.095 s (**4.4×**), cold
+  30-year simulate 0.397 → 0.261 s (the 0.13 s join rebuild now dominates the cold path). Spike branch
+  `spike/shared-grid` merged to `feature/p6-performance`; plan and log in `notes/design/ws4-curve-grid.md`.
+- P6.9 (spike, adopted): fast fragment-to-feature join rebuild. The rebuild used `np.unique` over ~210 k
+  string labels; the feature side is fixed, so it is now precomputed once (sorted feature rows with each
+  curve's table row and label code) and a rebuild is a `searchsorted` plus a vectorized expansion. A/B vs
+  `p6-joinrebuild-checkpoint`: one rebuild 0.127 → 0.0045 s (**28×**), cold 30-year simulate 0.299 →
+  0.129 s (2.3×). Spike branch `spike/join-rebuild` merged to `feature/p6-performance`; plan and log in
+  `notes/design/ws4-join-rebuild.md`.
+- P6.10 (spike, adopted): incremental route accounts. Haul, maintenance, and volume route accounts are
+  additive over blocks, so they join the incremental objective (`Simulator.block_route_accounts` replays
+  one block's products and routing into a summary ledger); build cost is not additive and keeps the full
+  path. A/B vs `p6-routeinc-checkpoint` (C5, route-target config, 10 years): warm 300-block evaluation
+  93.0 → **14.2 ms** (6.5×); the first evaluation is slower (builds the per-block deltas). Spike branch
+  `spike/inc-route-accounts` merged to `feature/p6-performance`; plan and log in
+  `notes/design/ws4-incremental-route-accounts.md`.
+- P6.11 (spike, adopted): faster simulator construction. The per-curve sorted cache `_curves` was used
+  only as the non-integer-age fallback after the age table landed; `CurveTable.value` now serves every
+  age (exact at integers, linear between, clamped), so `_curves` is removed. A/B vs
+  `p6-construction-checkpoint`: construction ~0.55 → **~0.15 s** (3.7×). Spike branch `spike/construction`
+  merged to `feature/p6-performance`; plan and log in `notes/design/ws4-construction.md`.
+- P6.12 (spike, adopted): faster route-record accumulation. The reporting ledger aggregated
+  (volume, count) per (year, destination, route) and did the per-segment pass once per route at flush
+  time. A/B vs `p6-routerecord-checkpoint` (C5, 3-year, 300-block, collect=True, warm): ~0.78 → **~0.08 s**
+  (~10×), outputs unchanged. Spike branch `spike/route-record` merged to `feature/p6-performance`; plan
+  and log in `notes/design/ws4-route-record.md`.
+- P6.13 (spike, adopted): adjacency-scoped spatial constraints. The optimizer's spatial penalty scanned
+  every topology edge per evaluation; an adjacency index (`_edges_by_block` / `_incident_edges`) now
+  scopes it to the harvested blocks. A/B vs `p6-spatial-checkpoint` (C5, 300-block schedule):
+  `_spatial_penalty` 163.7 → **13.1 ms** (12.5×), penalties identical (parity test). Spike branch
+  `spike/incremental-spatial` merged to `feature/p6-performance`; plan and log in
+  `notes/design/ws4-spatial-scoped.md`.
+- P6.14 (spike, adopted): faster matrix builder. The builder re-parsed the recipe's huge constant
+  `lookupTable(...)` literals on every evaluation; the parsed form is cached by the identity of the keys
+  string, `_expand_tokens` skips texts with no `%`, and each stratum's `matching_selects` is memoized.
+  A/B vs `p6-builder-checkpoint`: 200-fragment slice 17.7 → **2.2 s** (8.1×); canonical MKRF build
+  192.7 → **21.5 s** (9.0×), outputs identical (`compare_matrix`: MATCH). Spike branch `spike/builder-perf`
+  merged to `feature/p6-performance`; plan and log in `notes/design/ws4-builder-perf.md`.
+- P6.15 (fix, adopted): score product accounts. A target on a raw `product.*` account was evaluated
+  against a missing value, because `Simulator.simulate` returned only feature account values and
+  `block_trajectory` (the incremental objective's per-block path) ignored products. A year's produced
+  products are now summed into the account values (one row per year and account), and products are
+  produced in `block_trajectory`, so the incremental and full paths agree cell for cell. On the
+  synthetic fixture a `product.Volume` target of `minimum=1000` now yields a penalty of 640 (the exact
+  shortfall against the 360 produced) rather than 1000. Branch `fix/product-account-objective`.
+  Dashboard on close: **GREEN** (`python scripts/dashboard.py`).
+- P6.16 (feature): live target-window watcher. `ws4 watch` runs the same search and paints the
+  realized-versus-target window of an account in place — the reference target chart: one column per
+  period, the minimum/maximum target band shaded, and the realized value drawn over it, coloured by
+  status (green inside the window, red below the minimum, blue above the maximum). Targets are per
+  year; the view sums them into periods of `--period-width` years. The optimizer now exposes the
+  account values of its latest evaluation (`Optimizer.last_account_values`). `ws4/opt/watch.py` plus
+  the `watch` command; tests in `tests/test_watch.py`. Branch `feature/p6-watch`. Dashboard on close:
+  **GREEN** (`python scripts/dashboard.py`).
+- P6.17 (feature): multi-rotation treatment chains. A block may be treated more than once. The
+  optimizer's schedule is now `dict[block, chain]` (an ordered tuple of events); `candidates()` walks
+  the track transitions to generate the feasible rotations; `Simulator.block_chain` /
+  `block_chain_products` evaluate a chain; the delta evaluator prices a changed block's whole chain;
+  and the spatial (`schedule_years` returns every disturbance year per block, green-up across
+  rotations) and route (`block_route_chain`) paths are chain-aware. Verified: incremental vs full
+  parity 0.000000 for mixed chain schedules (fixture and C5); rotations lift the C5 200-year softwood
+  ceiling from **17.74 to 41.02 Mm3** (0.887 to 2.051 Mm3/period), so a 1.3 Mm3/period even flow is
+  feasible. Branch `feature/p6-optimizer-core` merged to `feature/p6-performance`; plan and log in
+  `notes/design/ws4-optimizer-core.md`. Dashboard on close: **GREEN**.
+- P6.18 refinement (post-merge): the operators now move **in place** — they mutate the schedule and
+  return an undo record, so a rejected move is undone without copying the whole schedule, and the LNS
+  and swap operators sample their blocks by rejection instead of building an O(schedule) list. Warm
+  C5 200-year: overall ~2252 → **2478 iters/s**; the default (LNS weight 0.2) **2259 → 2910** (1.29×).
+  LNS remains the dominant cost (no-LNS ~5613/s), so the operator weights are now configurable
+  (`OptimizeConfig.lns_weight`/`lns_destroy`, and `--lns-weight`/`--lns-destroy` on `ws4 watch` and
+  `ws4 optimize`). Dashboard: **GREEN**.
+- P6.18 (feature): move-based incremental objective. The evaluator keeps the realized totals per
+  `(year, account)` for the target accounts and prices a move by the exact delta it makes, instead of
+  recomputing the whole schedule: ~2,000,000 dict updates per move become a few hundred operations.
+  With a product fast path (`block_products` / `block_chain_products`), a shared operator option index,
+  LNS set membership, and operators that report their changed blocks, C5 (50-year) objective
+  evaluations rose from **2.2 to ~730 per second** (~330x); `ws4 watch` is on the fast path.
+  Correctness: 0 mismatch over a 300-move path comparison; the delta incumbent follows the same
+  trajectory as a full evaluation. Tests in `tests/test_incremental.py`. Dashboard on close: **GREEN**.
+- P6.6 (adopted): native kernels. WP6's `≥5×` acceptance had kept the numba path deferred; it was
+  re-probed with a real kernel and adopted on its merits instead. `ws4/sim/kernels.py` holds an `njit`
+  gather for the per-block product loop, used automatically when numba is installed with a pure-Python
+  fallback and exact parity (`tests/test_kernels.py`; `requirements-dev.txt` installs numba so the CI
+  gate runs). Same-seed A/B: C5 200-year 690.6 → **774.2 iters/s** (**1.12×**), 50-year 2421 → **2658**
+  (1.10×), identical objective. The bigger win in the same change was caching the fragments' numpy
+  arrays (no dependency): 50-year 730 → 1797/s (2.5×), 200-year 312 → 617/s (2×). Evidence in
+  `notes/design/ws4-performance.md` (WP6). Dashboard on close: **GREEN**.
+- P6.17 follow-up (maintainer finding, correctness): two fixes to the even-flow problem. **(1)** The
+  candidate years only offered three points per treatment window (begin/mid/end), so the scheduler
+  could not place a treatment at an arbitrary operable age — several 10-year periods were structurally
+  below the target. Candidates now cover **every year of every window** (later rotations stay sampled,
+  capped). **(2)** Targets were per-year; they are now **periodic** (`Target.period_width`): the account
+  is summed over the period and compared to the period levels, so the accounting is per period while
+  treatments are still scheduled by year. With both, C5 (200-year, 20 periods) even flow reaches a flat
+  **0.800 Mm3 every period** (objective 1), and the move-based objective equals a full simulation.
+  `Target.period_width` is documented in `docs/reference/optimizer.rst`. Dashboard: **GREEN**.
+- P6.17 follow-up (MIP re-validation): the mixed-integer bound anchored each target to a single
+  year, so with periodic targets it constrained only the first year of each period. Fixed to sum the
+  account over the whole period (`option_contributions` accounts every cell of the period; the
+  constraint rows sum the period's deltas). Re-validated on a 20-block rotation-enabled C5 subset
+  (80 options, 20 multi-rotation): the model value of the returned schedule equals a full simulation
+  exactly (0.000), every random schedule respects the bound (0 violations), and the reported optimum
+  is within ~5e-7 relative of the schedule it returns (a mixed-integer solver tolerance). A committed
+  test covers periodic targets (`tests/test_mip.py`). Dashboard: **GREEN**.
+- P6.5 follow-up (island mode): two fixes so the parallel path is actually usable and correct.
+  `_island_search` hardcoded ``warm_start=False`` (each island started from an empty schedule, so it
+  never converged — objective 1.6M vs 64 with the warm start); it now honours the configured warm
+  start. And the CLI never set ``workers`` (only ``threads``, which was dead), so the process pool was
+  unreachable; ``--threads`` now sets the worker count and ``--starts`` was added. Measured on C5
+  (200-year, periodic targets, 20k iterations per search): serial 32.7 s; multi-start x8 / islands x8
+  **40.7 s for 8x the search** (best objective 14.1 vs 63.8); islands x32 53.2 s for 32x. Near-linear
+  wall-clock scaling (~83% at 8 workers). Dashboard: **GREEN**.
+- P6.16 follow-up (watcher islands): `ws4 watch --islands N` runs N islands in parallel and paints
+  the **global** best (each island streams its incumbent over a queue; the parent keeps the minimum).
+  Islands honour the warm start and `--warm-cache`. Convergence measured on C5 (200-year, periodic
+  even flow, 16 independent seeds, 20,000 iterations each — all in parallel, ~42 s wall-clock):
+
+  | budget/island | best-of-1 final | best-of-16 final | iterations to match best-of-1 |
+  | --- | ---: | ---: | ---: |
+  | 2,000 | 1,227,485 | 1,053,039 | 1,700 (1.2x) |
+  | 5,000 | 458,912 | 229,743 | 3,500 (1.4x) |
+  | 20,000 | 66.5 | 14.1 | 12,000 (1.7x) |
+
+  So islands give better solutions faster (~1.2-1.7x fewer iterations, i.e. less wall-clock since
+  they run in parallel) and a better best at the same wall-clock — modest here because the landscape
+  is friendly (most seeds reach the same basin). Tests: `tests/test_watch.py`. Dashboard: **GREEN**.
+- P6.19 (feature): patch size-distribution targets. Patch accounts were reporting-only; the optimizer
+  can now score them. Since they are **non-additive** (a patch spans adjacent blocks), they are priced
+  by a new `PatchModel` (`ws4/opt/patch.py`): each block's criterion series is cached per chain
+  (`Simulator.block_criteria_series`), the adjacency is indexed by block, `patch_account_values_indexed`
+  drops the whole-edge scan (matching `patch_account_values` exactly), and a move recomputes only the
+  years it changes. `--patch-accounts` (YAML) with `--topology` enables targets on sub-accounts such as
+  `patch.harvest.50_150.area`. Measured on C5 (50-year, 5,648 blocks): full patch reset 2.1 s, then
+  **~35 iterations/s** with a patch target, and it optimizes (objective 12.9 -> 11.7 in 400
+  iterations). The state is dynamic (`ws4/opt/patch_state.py`): each year keeps its components, areas,
+  perimeters, and per-size-class sums, and a move only touches the neighbourhood of the moved block —
+  a resize, a merge, a new standalone patch, or a removal/split. `search_distance` (the patch
+  account's topology neighbourhood, in metres) scopes the adjacency. Verified cell-for-cell against the
+  reporting path and the from-scratch computation over random mutation sequences
+  (`tests/test_patch_state.py`, `tests/test_patch_objective.py`). Dashboard: **GREEN**.
+
+## 2026-10-16
+
+- P6.20 (feature): topology cluster operator. Single-block moves rarely reach a harvest-block
+  configuration, so `ClusterOperator` (`--cluster-weight`, `--cluster-size`) proposes one move over a
+  whole topology neighbourhood and lets the search create or break a patch in a single step. On the
+  50-year patch-target problem it reached objective 10.67 at weight 0.5, against 11.60 with the operator
+  off, at about 39 iterations/s. Tests: `tests/test_operators.py`. Dashboard: **GREEN**.
+- P6.21 (feature): stand-centred opening constraints in the MIP bound. `bound_for` accepts a topology
+  and `max_opening_ha`, and `solve_mip` then adds one linear row per stand and year
+  (Gunn and Richards 2005, eq. 6) rather than enumerating adjacency covers; a stand whose own area
+  exceeds the cap is forbidden (the `A_k+` below-zero case). The bound stays a valid lower bound and
+  tightens monotonically as the cap falls: on a 20-block C5 subset over 200 years it is 3,866,245 with
+  no cap, 3,884,505 at 80 ha, 3,890,015 at 60 ha, and 3,951,474 at 30 ha, and each returned schedule
+  re-simulates to within the mixed-integer tolerance of its bound. The optimizer forwards the configured
+  `topology_path` and `max_opening_ha` when `mip_bound` is set. Tests: `tests/test_mip.py`.
+  Dashboard: **GREEN**.
+- P6.22 (feature): adaptive temperature schedule. The search used a geometric schedule
+  (`temperature *= cooling`) whose two constants were fixed at `1000` and `0.99` for every problem, so
+  they had to be re-tuned by trial per instance. `ws4/opt/cooling.py` adds the polynomial-time rule of
+  Aarts and Van Laarhoven (the schedule Lockwood and Moore 1993 chose over the geometric one): the
+  initial temperature is set from the mean uphill move for a target acceptance ratio, and the
+  temperature is then decreased from the observed objective spread. `--cooling-mode adaptive` selects
+  it (`--cooling-window`, default 64, sets the iterations per temperature); `geometric` stays the
+  default. Measured on C5 at equal seeds and iteration budget: on the 200-year even-flow problem the
+  mean objective is **64** against **572** for the shipped geometric constants (its best seed still
+  wins, 14 against 42), and it matches a hand-tuned geometric factor (0.9995, mean 49) with no sweep;
+  on the 50-year patch problem it beats both the shipped and the tuned geometric factors on every seed
+  (mean **10.61** against 11.39 and 11.59; best **9.81** against 11.20). Per-iteration cost is
+  unchanged (about 3,200 and 59 iterations/s); the adaptive schedule is marginally faster because a
+  warmer search rejects fewer moves, and a rejection restores the schedule and reverts the evaluator.
+  Tests: `tests/test_cooling.py`, `tests/test_watch.py`. Dashboard: **GREEN**.
+- P6.23 (feature): target-weight calibration. Targets of different magnitudes unbalance the
+  objective: the largest term dominates and the search freezes before the others are considered
+  (Lockwood and Moore 1993 traced each term as the control parameter fell and rescaled them by hand
+  until they decreased at similar rates). `ws4 calibrate` runs a short pilot search, records the
+  largest penalty each target reaches (`objective_terms` in `ws4/opt/objective.py`), and writes a
+  targets file whose weights are rescaled so the peaks match (`balance_targets`, `ws4/opt/calibrate.py`);
+  a target that never fires keeps its own weights. It matters when the terms differ in magnitude: on
+  C5 with even-flow volume and a patch-size term, the pilot measures the volume peak at 7.7e6 against
+  12.9 for the patch term, so the patch term has no effect on the uncalibrated search; after
+  calibration the search improves **both** realized terms (volume 9.64e6 to 9.33e6, patch 11.06 to
+  9.47). The cost is real: the patch term makes each iteration about 2.3x more expensive, because the
+  moves that alter patches are the ones that cost, so the same 2,000 iterations take 117 s against 52 s.
+  The pilot must match the run's `--warm-start`, or a term that only appears once blocks are harvested
+  never registers. Tests: `tests/test_calibrate.py`. Dashboard: **GREEN**.
+- P6.24 (feature): the mixed-integer bound on the command line. `OptimizeConfig.mip_bound` was
+  reachable only from the API, so `solve_mip` was unusable from a shell. `ws4 optimize --mip-bound`
+  now records the bound, the gap, and the bound status in `summary.json`, and the configured
+  `--topology` and `--max-opening-ha` feed the stand-centred opening constraints into it. The
+  `optimize` command also gained `--years` (it had no horizon option, so it always ran the 50-year
+  default). Tests: `tests/test_optimizer.py`. Dashboard: **GREEN**.
+- P6.25 (performance): the patch-account evaluation bottleneck, profiled and partly fixed. A patch
+  target costs a 30-70x drop in iterations per second against an additive target on C5, and the cost is
+  **graph work on the patch connectivity**, not the objective arithmetic or the criterion curves. Two
+  facts dominate: the member graph is one giant component (4,273 of 4,695 members in the largest year
+  state), and only **4% of members are articulation points**, so 96% of detaches walked the whole
+  component (86% of a single-block move) only to prove it does not split. Fixed an exact early-exit
+  connectivity test (`PatchGroupYear._reachable`: walk from one member-neighbour and stop once the
+  others are all reached), cached the size-class labels, and inlined the per-block value lookup.
+  Single-block moves **37.9 -> 142.5 iterations/s (3.8x)**; the default configuration only 37.2 ->
+  43.2/s because it is dominated by the bulk (LNS) rebuild. The remainder is analysed and prototyped:
+  the bulk rebuild as a numba CSR kernel is **41x faster** (10.98 ms -> 0.269 ms) with identical
+  component areas, and a BFS spanning-tree leaf test proves 65% of detaches cannot split in O(1). The
+  full analysis, measurements, kernel, and an ordered plan are in
+  `notes/design/ws4-patch-evaluation-bottleneck.md`. `cProfile` misattributes this workload by an order
+  of magnitude; the numbers use phase timers. Tests: `tests/test_patch_state.py`,
+  `tests/test_patch_objective.py`. Dashboard: **GREEN**.
+- P6.26 (fix): patch accounts were representing the wrong thing, twice over, and P6.25's measurements
+  were taken on that wrong configuration. An untreated block was priced at criterion `0.0` instead of
+  its inventory series, and `PatchModel.reset` skipped it entirely — so with an empty schedule the
+  optimizer saw **zero patches** where the reporting path saw 262 (26,384.9 ha). Separately,
+  `PatchLedger` ignored `search_distance`, so the report and the optimizer disagreed whenever it was
+  set. Both are fixed, and `PatchAccount.search_distance` now defaults to **0.0**: only blocks that
+  literally touch (their polygons share a vertex) are neighbours. The topology's `DISTANCE` column is
+  the shortest gap between two polygons, so the old `None` default silently joined patches up to 200 m
+  across roads and creeks — mathematically valid, never what a resources analyst wants to express. On
+  the sample dataset the default keeps 28,727 of 68,586 edges and gives a median patch of one block
+  (largest 178 of 2,737 members for `feature.Seral.young`), where the old default collapsed the forest
+  into a single 4,273-block patch. With the representation corrected, single-block patch moves run at
+  **298.9 iterations/s** (against 37.9 originally) and LNS is the whole of the remaining cost (53%
+  `rebuild_local`, 22% `_affected`). Added a monotonicity property test (a larger `search_distance` can
+  only merge patches, never split them), an empty-schedule regression test, and reporting-path parity.
+  `notes/design/ws4-patch-evaluation-bottleneck.md` was rewritten on the corrected configuration.
+  Tests: `tests/test_patch_accounts.py`, `tests/test_patch_objective.py`. Dashboard: **GREEN**.
+- P6.27 (performance): `_affected` was not what it looked like. It compares the old and new criterion
+  series over every year for every changed block, which reads as a comparison cost, but call counters
+  showed `series()` is called 1.25M times per run against only ~11k cache misses: the cost was
+  **constructing** a new chain's series, not comparing series. `Simulator.block_criteria_series` was a
+  Python loop over every year and, inside it, every fragment calling `_curve_value` — 159 us per call.
+  It now fills the horizon in one integer-age gather over the curve table per treatment **event**
+  rather than per year, and runs at **58.7 us (2.7x)**. A per-year numpy version was tried first and was
+  **not** faster: numpy call overhead on a 50-element array (~1.5 us) matches the Python work it
+  replaces, so the vectorisation has to be per event, not per year. Hoisting the per-block series
+  lookup out of the per-year loops in `pending`, `_local_cells` and `reset` (it was redone once per
+  year for a value that already covers every year) went with it. `_affected` 1.84 -> 0.78 s, the
+  default search 41.9 -> **55.7 iterations/s (+33%)**, single-block moves 298.9 -> **387.9 (+30%)**.
+  `rebuild_local` is now the only dominant cost (~62% of a bulk move). Tests:
+  `tests/test_simulator.py`, `tests/test_patch_objective.py`. Dashboard: **GREEN**.
+- P6.28 (decision): the ceiling for the compiled port, measured *before* committing to the refactor.
+  Captured real `rebuild_local` calls from a real search on the corrected touching adjacency, then ran
+  the Python implementation and an equivalent numba kernel on identical inputs (60 bulk calls, 564
+  changed blocks each, ~3,332 members over 12,567 blocks and 57,454 CSR edges). The kernel does the
+  relabel plus area and perimeter in **0.279 ms against 6.768 ms in Python — 24.3x** — with zero area
+  and zero perimeter mismatches. Marshalling the dicts into arrays per call gives 4.9x, and that still
+  excludes writing the result back into the `members` sets, which is roughly half of `rebuild_local`'s
+  work; so a dict-marshalling wrapper is worth about **2x, not 24x**. The port therefore has to make
+  the arrays the source of truth and drop the `members` sets in favour of `comp` + `count` +
+  BFS-on-demand — a simplification of `PatchGroupYear`. The kernel, the design, and the expected end
+  to end (about 56 -> 200+ iterations/s) are in `notes/design/ws4-patch-evaluation-bottleneck.md`.
+  No production code change in this entry; it is the go/no-go measurement. Prototype harness kept out
+  of the repository per the scratch rule. Dashboard: **GREEN**.
+- P6.29 (performance): the patch state is array-backed and the bulk relabel is compiled. `PatchGroupYear`
+  now holds the membership, criterion value and component of each block in `array.array` (Python
+  indexing is about list speed) and hands the numba kernels a **writable zero-copy numpy view**, so a
+  bulk relabel needs no marshalling either way; the `members` sets are gone (a component's size is a
+  count, a merge re-points by walking `comp`, and a split is found by walking from the removed block's
+  member-neighbours, since every resulting piece contains one). New `ws4/opt/patch_kernels.py` holds the
+  two relabels, `label_all` (reset) and `label_from_seeds` (a bulk move). Fresh-process A/B, 600
+  iterations, C5 at 50 years: the default search **30.0 -> 52.2 iterations/s (+70%)**, and the pure
+  single-block path 148.9 -> 113.0 (**-22%**, because the Python walks now do array lookups per edge
+  where the dictionaries did membership tests). Measurement discipline is part of the result: a single
+  process that runs several configurations warms numba and the caches, so its second configuration can
+  read 2-4x faster with no cause, and the in-process numbers in P6.27 and P6.28 are superseded by these
+  one-config-per-process runs. Parity is held cell-for-cell against the from-scratch scan by
+  `tests/test_patch_state.py`. Tests: `tests/test_patch_state.py`, `tests/test_patch_objective.py`.
+  Dashboard: **GREEN**.
+- P6.30 (performance): the connectivity walks are compiled too. P6.29's arrays cost the single-block
+  path 22%, because its walks then did per-edge array lookups where the dictionaries had done
+  membership tests. Those walks — `reachable_from` (the early-exit connectivity test), `component_from`
+  (a split's piece walk) and `piece_aggregate` (a piece's area and perimeter) — are now kernels over
+  the same CSR arrays, with generation-stamped scratch so nothing is cleared between calls, and the
+  `covered` set in `_split` is gone (the first piece's component id is already restamped, so later
+  walks cannot re-traverse it). Fresh-process A/B, three runs each, 600 iterations, C5 at 50 years:
+  the default **29.6 -> 48.1 iterations/s (+62%)** and the single-block path 153.3 -> 141.2 (**-8%**,
+  down from -22%). This supersedes the P6.29 numbers for the walks. Tests:
+  `tests/test_patch_state.py`, `tests/test_patch_objective.py`. Dashboard: **GREEN**.
+- P6.31 (performance): the bulk relabel reports its own stale components. `rebuild_local` still scanned
+  every changed block's neighbourhood in Python (roughly 0.8-1.5 ms of array reads per bulk call) to
+  find which component ids to drop; `label_from_seeds` now records the previous component id of each
+  changed block and member neighbour as it seeds, so the drop is a set over that list and the scan is
+  gone. Also measured the spanning-forest leaf test and decided against it: on the realistic
+  configuration only 50.3% (peak year state) and 43.8% (year 25) of the detaches that take the walk are
+  leaves of a BFS spanning forest, and the other half would need a full component BFS to repair the
+  tree, so it does not pay now that the walks are compiled. Fresh-process A/B, 600 iterations, C5 at 50
+  years: the default search **31.0 -> 56.4 iterations/s (+82% against the dictionary implementation)**,
+  the single-block path unchanged at -8% (it never uses the bulk path). The walks are no longer a
+  measurable cost: the default's time is now `rebuild_local` 43%, criterion `series` lookups 19%,
+  `_affected` 15%, and the whole single-block path 4%. Tests: `tests/test_patch_state.py`,
+  `tests/test_patch_objective.py`. Dashboard: **GREEN**.
+- P6.32 (feature): a binding patch benchmark, and the gap/merge operator. Every earlier patch number
+  was measured against a target satisfied at iteration 0 (`objective=0.000`), so it characterised
+  overhead on a solved problem rather than the cost of optimising patches. With a binding target
+  (`patch.harvest.0_5.frequency <= 60`, year 0) the search drives the penalty from 88 into the low 20s
+  over 4,000 iterations, so the optimizer does optimise patches. Added `MergeOperator`
+  (`--merge-weight`, default 0): it samples a **gap** — a non-member block whose member-neighbours span
+  two or more components, the negative space between proximal patches — and gives it a chain that makes
+  it a member in one of the years the objective reads (new `PatchModel.focus_years`; targeting the
+  objective's years rather than a random year was worth most of the effect). `is_gap` is `O(degree)` and
+  needs no incremental index. Over five seeds at 4,000 iterations the mean final penalty is 16.4
+  without the operator and **14.6** at weight 0.5 (three seeds improve, one ties, one worsens), and the
+  rate rises from 56-69 to 67-77 iterations/s because a merge move is a single block and displaces
+  expensive LNS moves. Tests: `tests/test_patch_objective.py`, `tests/test_operators.py`.
+  Dashboard: **GREEN**.
+- P6.33 (fix): the split operator, and a correction to P6.32. Added `SplitOperator` (`--split-weight`,
+  default 0): it samples a member block that is an **articulation point** of its patch (`is_cut`, the
+  same early-exit test a detach uses, O(degree) in the common case) and untreats it, splitting the
+  patch. Adding it exposed a flaw in the P6.32 benchmark: with no volume floor, a max-patch target is
+  partly satisfied by harvesting less, so the operator comparison was confounded. Re-run with an
+  even-flow floor (`product.Yield.managed.Conif` >= 600,000 per 10-year period) and the **patch penalty
+  reported on its own** (the total is dominated by the volume shortfall): at 2,500 iterations on two
+  seeds the 0-5 count penalty is 24 (mean) without an operator, 22 with merge at 0.5, and 27 with split
+  at 0.5. So the merge effect is within noise once the harvest level is constrained, and the split
+  operator shows no benefit on this target. Both stay implemented, tested, and off by default. The
+  `1000+` cap is not a discriminator either: with a volume floor the default operators already reach
+  zero large patches. Lesson recorded: pair a patch target with a volume constraint and report the patch
+  term separately, or the operators will look better than they are. Tests:
+  `tests/test_patch_objective.py`, `tests/test_operators.py`. Dashboard: **GREEN**.
+- P6.34 (feature): the watcher paints several target windows at once. `ws4 watch` accepted repeated
+  `--account` flags but **summed** them into a single window, which is useless when the accounts have
+  different units (m3 per period and percent of patch area). Each `--account` now gets its own window,
+  with its own axis, title and penalty, so a volume target and a patch size-class target can be watched
+  converging side by side — the view an analyst uses to see that the search is working and how fast.
+  `WatchState.window` became `windows`, and the summary `penalty` is summed across them. A
+  **percentage** account (the patch ``…<class>.size`` shares) is averaged over a period rather than
+  summed, since a share is not additive; before that fix the patch window read 379% where the truth
+  was ~38% and the target looked satisfied. Tests: `tests/test_watch.py` (one window per account, the
+  CLI shows both, and a percentage is averaged). Dashboard: **GREEN**.
+- P6.35 (performance): patch statistics are computed per **accounting period**, not per year. The
+  simulation runs one year at a time but the accounting is periodic, so `PatchModel` now maintains
+  component state only at the years a patch target actually reads (`active_years`, taken from the patch
+  targets' `cell_years()`), instead of every year of the horizon: `reset` builds only those states and
+  `_affected` only looks for changes in them. Everything else is untouched. A patch target at one year
+  of a 50-year horizon now maintains **one** state instead of fifty, and the volume-floored patch
+  benchmark goes from **62 to 310 iterations/s (5x)** with the patch penalty unchanged (27). Tests:
+  `tests/test_patch_objective.py`, `tests/test_patch_state.py`. Dashboard: **GREEN**.
+- P6.36 (fix): a patch target spanning a period is read at **one year** of that period. 1 year is the
+  minimum time step in WS4 and the accounting is periodic, so a patch account (a snapshot of the map,
+  unlike a volume or an area) must not be summed across the years of a period: a
+  `period_width=2` patch target was summing a share or a patch count over two years. `IncrementalObjective`
+  now reads a patch target at the first year of its period only, for both the objective and the cells it
+  tracks, and the patch model keeps only those years. Tests:
+  `tests/test_patch_objective.py` (a period-width patch target reads its first year). Dashboard:
+  **GREEN**.
+- P6.37 (docs): the time-step model is stated where targets are defined. The **simulation step is one
+  year and is not configurable** (growth, treatments, transitions, road events); the **account** time
+  step is a whole number of years — the period length — set per target by `period_width`, five and ten
+  being the planning convention. `Target` now rejects a `period_width` below one year, and the objective
+  documentation says plainly that an additive account is summed over its period while a patch account (a
+  map snapshot) is read at the period's first year. Tests: `tests/test_optimizer.py`. Dashboard:
+  **GREEN**.
+- P6.38 (feature): the watch windows sit side by side. `render_frame` laid the target windows out
+  vertically, so a volume window and a patch window could not be compared directly. They are now laid
+  out in `rich.columns.Columns` (which falls back to stacking by itself on a narrow console), and with
+  more than one window the per-period table drops its shortfall and excess columns so two of them fit
+  the width — that information is in the penalty in each window's title. `window_table` gained a
+  `compact` argument. Tests: `tests/test_watch.py`. Dashboard: **GREEN**.
+- P6.39 (benchmark note): the warm start is level-dependent, and a corrected even-flow ceiling.
+  Watching the 50-year C5 problem showed harvest spiking in the first and last periods. It is not the
+  objective: from a cold start the solver reaches a perfectly flat profile with a penalty of exactly
+  **0** in 10,000 iterations. It is the `--warm-start` schedule, which gives every block a year-0
+  clearcut; whether that helps depends on the target level against the ceiling — far below it (300k
+  against a ~1,500k ceiling) the warm start over-harvests by about 9x and the search spends its budget
+  undoing it (13.3M -> 7.2M in 10,000 iterations), while near the ceiling (1,000k over 200 years) it
+  starts with roughly the right total volume and only has to redistribute. This also corrects an
+  earlier claim of mine that 800k per period is unreachable over 50 years: it is exactly reachable, and
+  the measured cold ceilings are **~1,500k** per 10-year period over 50 years and **~1,000k** over 200
+  — the short horizon is higher because it can liquidate inventory with no terminal constraint. The
+  finding is recorded in `notes/design/ws4-patch-evaluation-bottleneck.md`. No production change.
+  Dashboard: **GREEN**.
+- P6.40 (fix): period indices are numbered as analysts expect. The watcher labelled the accounting
+  periods ``0..N-1``; the established convention reserves **period 0 for the instantaneous
+  pre-simulation state** of the forest (a zero-length period), so the simulated periods are ``1..N``.
+  `period_label` is now the single source of that mapping for the chart ticks and the period table, and
+  the objective documentation states the convention and that a target's `year` is a year, not a period
+  index — a target at `year: 0` with `period_width: 10` is the level for period 1, which covers years 0
+  to 9. Tests: `tests/test_watch.py`. Dashboard: **GREEN**.
+- P6.41 (feature): flow targets — even flow and non-declining yield. Patchworks expresses these as
+  derived accounts (`flow.even.*`, `flow.ndy.*`, built with `addFlowRatioAccount` and a `FlowSpec`)
+  whose target is **zero with a weight**, so the constraint is on the *flow* rather than the level; the
+  level comes from a separate target on the same account, and the C5 scenario script pairs exactly
+  those two. ws4 now has the same as a target flavour: `flow: even` sums `|period - mean|` over the
+  window and `flow: ndy` sums how much each period falls below the one before it, with
+  `flow_start`/`flow_end` (years) clipping the window (default the whole horizon) and `period_width`
+  grouping the years. They are period-level terms, so the objective and the evaluator aggregate whole
+  periods, the evaluator tracks every year of the window, and the move delta recomputes the term from
+  the pending change — the delta still equals a fresh evaluation, including for a flow term. The
+  definitions are WS4's own: the first-party documentation gives the call signatures but defers the
+  formula to an API document that is not available, so it is documented in the reference and easy to
+  change. Tests: `tests/test_flow_targets.py`. Dashboard: **GREEN**.
+- P6.42 (fix): the flow-target definitions, corrected to the established ones. `flow: even` is the
+  **percent difference of each period from a reference period** — `sum(|100 * (x_p - x_ref) / x_ref|)`,
+  the reference being the window's final period unless `flow_reference` names another — and
+  `flow: ndy` is the **percent change between consecutive periods**, counting only the declines. P6.41
+  had `even` as a deviation from the mean and `ndy` as an absolute decline between periods: wrong on
+  both counts. Because both divide by a balance, the term is **infinite while that balance is zero**,
+  which is the whole reason for the priming procedure — a run first solves with a linear volume target
+  above the sustainable level so every period carries wood, and only then switches the flow account on.
+  Verified end to end on C5 (50 years; one linear volume target at 1.5M per period, weight 1): with no
+  schedule the term is `inf`; primed it is 102.02 with per-period volumes 1.504 / 1.501 / 1.535 / 1.704
+  / 2.095; with the flow term switched on it falls to **0.00** and the volumes become 1.708 in every
+  period. Tests: `tests/test_flow_targets.py`. Dashboard: **GREEN**.
+- P6.43 (fix): flow targets are priced **per period**. P6.42 summed a flow target's percent values
+  and applied the band once to the sum, which made a `minimum: -1` / `maximum: 1` band meaningless —
+  nineteen periods of +1% would sum well past 1. The values are now one per period and the target's
+  minimum, maximum, weights and shape apply period by period, which is what makes a
+  one-percent-either-way safe band work. Two display bugs fell out of the same area: the watcher's
+  `Z +` breakdown used the additive pricing for a flow target (printing absurd contributions such as
+  `1.16e+07G`) and the account window merged a flow band into the account's *level* window (a `max 1`
+  column) — a flow target is a percent term, not an account level, so the window now skips it. Verified
+  on C5 (50 years): a 2M linear minimum plus a +-1% band at weight 10000 non-linear converges from a
+  ragged primed profile (2.001 / 0.598 / 1.066 / 1.426 / 1.893 M m3) to
+  2.00 / 1.96 / 1.97 / 1.97 / 1.98 — every period inside the band, and the level found without being
+  specified. `run_watch` also gained an `initial` schedule so a flow run can continue from its primed
+  predecessor. Tests: `tests/test_flow_targets.py`, `tests/test_watch.py`. Dashboard: **GREEN**.
+- P6.44 (docs): audit the API docstrings and the Sphinx pages against the code. The build was already
+  green (`sphinx -W`), but the content had drifted. Fixed on the pages: the even-flow example said
+  "the sum of each period's distance from the mean" (the definition P6.42 superseded); the operator
+  list named four of the seven registered operators and did not say that `cluster`, `merge` and
+  `split` ship at weight zero (a configuration has to enable them); the patch example read
+  `patch.harvest.50_150`, which its own size classes do not produce (`50_250`); a patch move was
+  "tens of milliseconds" against a measured ~3 ms (62 → 310 iterations/s, P6.35); the API section did
+  not render `Target`, `flow_values`, `flow_penalty`, `IncrementalObjective` or `PatchModel` at all;
+  `docs/api/index.rst` claimed the API reference is generated from `scripts/`; and the performance
+  page had no patch-target figure. Docstrings: a numpydoc pass over all 269 public objects found 93
+  incomplete ones. All **56 in `ws4.opt`** are fixed — `OptimizeConfig` (its 40 fields had no
+  `Attributes` section, so the optimizer page rendered the configuration with no field help at all),
+  the seven operators and `OperatorRegistry` (one-line docstrings, no parameters or return value),
+  `TemperatureSchedule.rule`, `Optimizer` and `from_dataset`, `IncrementalObjective`,
+  `solve_mip` (`years`, `opening`), `solve_tabu` and `solve_ils` (`initial`), `watch.render_frame`,
+  `axis_maximum`, `WatchState.islands`/`blocks` and the `TargetWindow` accessors,
+  `patch_state.compactness`/`class_index`, `RunLogger`, and `PatchModel.cell_map`. The 37 remaining
+  findings are outside `ws4.opt` and are recorded in `notes/backlog.md` for P7. No behaviour changed
+  and no test changed: the audit is reproducible with the same numpydoc pass. Dashboard: **GREEN**.
+- P6.45 (tooling): a public-docstring audit and a `docstrings` gate. P6.44 fixed the drift by hand, but
+  nothing would have caught it: the docs gate is `sphinx -W`, which fails on a broken reference and not
+  on a missing `Parameters` section, and `tests/test_api_docstrings.py` (numpydoc) covered only
+  `scripts/`, never the `ws4` package. `scripts/doc_audit.py` is now the oracle for both scopes, with
+  four rules: the docstring exists; every parameter is documented and nothing else is; a callable that
+  returns a value has a `Returns` section; a section header is preceded by a blank line. It encodes the
+  conventions a library cannot know — a dataclass, pydantic model, or plain class may document its
+  constructor arguments under `Attributes`, a `Protocol`'s constructor signature is not its own, a
+  leading-underscore parameter is private, and the Typer command module is skipped because its docstring
+  is the CLI help. Running it against the repository found the **37 remaining findings** that P6.44 had
+  left outside `ws4.opt`: undocumented dataclass fields in `ws4.model.types` (10),
+  `ws4.io.forest_model_xml` (6), `ws4.sim` (6), `ws4.patch` (5), `ws4.build` (4), and `ws4.roads` (3),
+  plus four missing `Returns` sections and one malformed section. All are fixed, so the scope is at zero
+  findings: `ws4.model.types` (every model now lists its fields as attributes), the six
+  `forest_model_xml` dataclasses, `Model.empty`, `Table.required_columns`, `IncrementalObjective`, its
+  `objective` property, `TargetWindow.n_periods`, `Simulator.account_values`, `Simulator.from_dataset`,
+  `write_patch_metrics`, `CurveTable.row`, `PatchLedger.frame`/`write`, `load_block_topology`,
+  `RouteNetwork.destination_names`, `matching_selects`, and `transition_key`. The gate is wired into
+  `scripts/dashboard.py` (so every commit and the dashboard CI job enforce it) and into the CI checks
+  job beside the docs step; a gate was added rather than tightened, and `AGENTS.md` was not changed.
+  Tests: `tests/test_doc_audit.py` makes each code fire on a fixture (`MISSING`, `PARAMS`, `STALE`,
+  `RETURNS`, `SECTION`, `IMPORT`) and asserts the real scope clean, so the gate cannot pass by checking
+  nothing. Dashboard: **GREEN** (seven gates).
+- P6.46 (verify): the flow definitions, checked against the established specification instead of
+  inferred. P6.41–P6.43 chose the formulas from the first-party call signatures, which defer the
+  arithmetic to an API document that was not available; that document is in the extract after all, and
+  it settles every open question. `even()` compares **every period with the final one** (period 0, the
+  state before the simulation, is not compared), and `ndy(low, high, offset)` compares a selected
+  period with the period at that offset — the sample scenario uses offset `-1` over its last periods,
+  so the denominator is the **previous period**, which is what ws4 already did. The accounts are
+  created with a factor of **100**, so the values are percentages, which is also what ws4 did. Two
+  things were wrong, one behavioural and one documentary:
+  **behaviour**, the established window includes its first period, which is measured against the period
+  immediately before the window; ws4 skipped that comparison when the window did not start at the
+  horizon, so the first year of a closing-inventory window was unconstrained. `flow_values` now seeds
+  a non-declining series one period earlier, and a window starting at year 0 still has no predecessor
+  and so contributes no value for its first period.
+  **documentation**, the reference's non-declining example set `maximum: 0`, which charges growth as
+  well as decline. The idiom is a **two-sided percent band**: the value is the percent change from the
+  previous period, so a minimum of `-1` lets a period come in one percent below its predecessor before
+  anything is charged and a maximum of `1` mirrors it, the lower side being the one that usually maps
+  to a policy; the strict closing-inventory form is a minimum of `0` with **no maximum**, which is what
+  the first-party sample does, so growth is free there. The reference now states the verified
+  correspondence, both idioms, and the one presentational difference — `flow_end` is exclusive here
+  while the established argument is inclusive.
+  Tests: `tests/test_flow_targets.py` gains the window's first period compared with the period before
+  it, a window starting at the horizon having no predecessor, and a two-sided band tolerating a
+  percent either way while charging what falls outside it; the idiom test pins that a maximum would
+  charge growth. Dashboard: **GREEN**.
+- P6.47 (metadata): the repository's history is rewritten so that every commit is authored **and**
+  committed by the maintainer, who takes responsibility for the work to date. `git filter-branch
+  --env-filter` over `main` and `feature/p6-performance` (103 commits) changed only the author and
+  committer identity: the trees are byte-identical (`git diff` against the pre-rewrite tips is empty),
+  the author and committer dates are preserved, and the commit counts are unchanged (8 on `main`, 95 on
+  the branch). A pre-rewrite backup of both branches is kept locally (`backup-pre-rewrite-main`,
+  `backup-pre-rewrite-feature`) and `refs/original/` holds filter-branch's own copy.
+  Because every SHA changed, the **32 commit citations** in `ROADMAP.md`, `CHANGE_LOG.md`,
+  `notes/reports/p0-p5`, and the `notes/design/` pages were refreshed to the new SHAs; a sweep of every
+  hex token in the tracked files leaves 62 that resolve to a commit and 25 that are run IDs or numeric
+  literals, none of them dangling citations. The 11 `p6*-checkpoint` tags were re-pointed at the
+  rewritten commits with the short SHA in each message refreshed, the tagger set to the maintainer, and
+  the tagger dates preserved.
+  The git identity is now global (`user.name` / `user.email` = the maintainer) with the repository-local
+  override removed; it had been `FRESH Lab Agent <noreply@example.org>`. `.git/config` is not tracked.
+  Two limits are recorded rather than fixed: `v0.1.0` was **not** moved, because a GitHub release is
+  attached to it and moving a release tag needs its own approval (it still points at the pre-rewrite
+  history, which keeps those objects reachable), and issue and pull-request authorship cannot be
+  rewritten server-side — it is already the maintainer's account, and the three open pull requests are
+  the dependency bots'. Dashboard: **GREEN**.
+- P6.48 (docs): documentation for human users — getting started, task guides, and an examples gallery.
+  The reference pages were contract-shaped and assumed a reader who already knew the tooling; nothing
+  walked a new user from an install to a result. The docs now follow the three-audience framing the
+  sibling project uses: a landing page that says who each section is for, a **Getting started**
+  section (installation; a command-line quickstart; a Python-API quickstart; a complete small study
+  with hand-checkable numbers; how the layers fit together, with a data-flow diagram), **How-to
+  guides** shaped *prerequisites → procedure → troubleshooting* (prepare a dataset, write targets,
+  even flow and non-declining yield, patch size-distribution targets, route products, watch a run,
+  automate a study, FAQ), **Guides** (troubleshooting, limitations and boundaries), and an
+  **Examples gallery** of executed notebooks rendered with their output. Both entry points are
+  first-class: every applicable guide shows the command-line path and the Python path, and the
+  architecture page names what each is for. The notebook gallery lives in `examples/` (three
+  notebooks: an environment check, the quickstart walkthrough, and the even-flow procedure) with its
+  outputs committed, wired into Sphinx through a symlink and `nbsphinx_execute = "never"`; `docs`
+  gains `nbsphinx` and `sphinxcontrib-mermaid`, and the three CI jobs that build the docs install
+  pandoc, which nbsphinx needs (the host was given the same install for local builds).
+  Writing the pages surfaced four inaccuracies, which are fixed here: the route model **is**
+  incremental for haul, maintenance, and volume accounts (only a build account, a duplicate account,
+  or edge contrast forces a whole-schedule evaluation), which the roads and performance pages and the
+  new guides now say; `docs/reference/roads.rst` still called that work "the next effort"; the
+  non-declining example set a maximum of zero, which charges growth; and the API page's claims about
+  evaluating a schedule are now stated precisely. Two command-line gaps are recorded in
+  `notes/backlog.md` rather than papered over: `ws4 optimize` requires a `--weights` file that nothing
+  reads and has no `--iterations`, and `Optimizer.last_account_values()` is empty after `run` on the
+  incremental path. Every command, snippet, and notebook output in the new pages was executed against
+  the repository's own examples, and the numbers shown (340 m3, the ragged-to-flat even-flow profile)
+  are the ones the runs produced. Dashboard: **GREEN**.
+- Queued the Phase 6 close-out: pull request #81 (`feature/p6-performance` into `main`) and the report
+  `notes/reports/p6-closeout.md`. The report recommends the squash merge, deleting the branch, closing
+  parent issue #60, and launching P7 (parity and the analyst workflow). It records the acceptance
+  evidence — 0.108 s for the C5 30-year simulate, 0.685 s for the 3-year simulate with routing, 29 / 39
+  / 31 ms per year for patch accounts, edge contrast, and core area, a 0.003 ms incremental move, and
+  6.4x / 15.3x island throughput at 8 and 32 islands with parallel multi-start reproducing the serial
+  result exactly — plus the deviations (23 spike commits without a task ID, the `--weights` and
+  `threads` gaps, the dependency pull requests the authorship rewrite closed) and the one settings
+  change still needing approval, moving the `v0.1.0` release tag into the rewritten history.
+  Dashboard: **GREEN** (seven gates).

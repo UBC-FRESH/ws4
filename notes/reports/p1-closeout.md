@@ -34,7 +34,7 @@ Settings changes, each with its exact command. Each one runs only after its own 
 ## 2. Workflow compliance
 
 - Parent issue before the branch: parent #10 was created before the branch `feature/p1-contracts-prototype`.
-- Branch from `main`: merge-base `386c643` (the Phase 0 squash merge).
+- Branch from `main`: merge-base `97330a8` (the Phase 0 squash merge).
 - Commit messages that start with task IDs: 4 of 4 (`1eef40d` P1, `7b32404` P1.1, `9b55cb5` P1.2,
   `4c0e72a` P1.3).
 - Gates for each commit: section 3.

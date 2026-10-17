@@ -57,7 +57,7 @@ gh workflow run Docs --ref main
 ## 2. Workflow compliance
 
 - Parent issue before the branch: parent #36 was created before the branch `feature/p4-release`.
-- Branch from `main`: merge-base `83e2d60` (the Phase 3 squash merge).
+- Branch from `main`: merge-base `a8dc018` (the Phase 3 squash merge).
 - Commit messages that start with task IDs: 13 of 13 (`90dbeb9` P4 activation through `4516345`).
 - Gates for each commit: section 3.
 - Roadmap and changelog in step: `ROADMAP.md` (P4 task boxes, the performance-plan pointer) and

@@ -2,14 +2,19 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pandas as pd
 import pytest
+from typer.testing import CliRunner
 from ws4.build.compiler import build_canonical_dataset
+from ws4.cli import app
 from ws4.opt.engine import OptimizeConfig, Optimizer
 from ws4.opt.objective import Target, load_targets, objective, penalty
+from ws4.opt.operators import Schedule
 from ws4.opt.telemetry import RunLogger, read_records
+from ws4.patch.constraints import core_area_penalty, schedule_years, spatial_penalty
 
 _FIXTURE = Path(__file__).resolve().parents[1] / "examples" / "synthetic"
 
@@ -20,6 +25,21 @@ def test_penalty_weights_shortfall_and_excess() -> None:
     assert penalty(15.0, target) == 0.0
     assert penalty(7.0, target) == 2.0 * 3.0
     assert penalty(25.0, target) == 3.0 * 5.0
+
+
+def test_a_target_period_must_be_at_least_one_year() -> None:
+    """The account period is a whole number of years, never shorter."""
+    with pytest.raises(ValueError, match="period_width"):
+        Target("a", 0, minimum=1.0, period_width=0)
+    assert Target("a", 0, minimum=1.0, period_width=7).cell_years() == range(0, 7)
+
+
+def test_penalty_non_linear_squares_the_deviation() -> None:
+    """A non-linear target adds the weight times the squared deviation."""
+    target = Target("a", 0, minimum=10.0, min_weight=3.0, shape="non_linear")
+    assert penalty(7.0, target) == 3.0 * 3.0 * 3.0
+    with pytest.raises(ValueError, match="penalty shape"):
+        Target("a", 0, minimum=1.0, shape="cubic")
 
 
 def test_objective_sums_targets() -> None:
@@ -70,6 +90,55 @@ def test_the_optimizer_resolves_route_accounts(tmp_path: Path) -> None:
     values = pd.read_csv(tmp_path / "opt" / "account_values.csv")
     assert (values["account"] == "route.Mill1.haul").any()
     assert (values["account"] == "route.Total.haul").any()
+
+
+def test_incremental_route_accounts_match_the_full_simulation(tmp_path: Path) -> None:
+    """Route accounts are additive (except build), so the delta matches a full simulation."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    (tmp_path / "segments.csv").write_text(
+        "SEGMENT,FNODE,TNODE,LENGTH,HAUL,BUILD,MAINTAIN\n1,1,2,100.0,10.0,0.0,1.0\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "destinations.csv").write_text(
+        "NODE,ACCOUNT\n2,destination.MILL1\n", encoding="utf-8"
+    )
+    (tmp_path / "linkages.csv").write_text("BLOCK,NODE\n1,1\n2,1\n", encoding="utf-8")
+    (tmp_path / "route.yaml").write_text(
+        "route:\n"
+        "  segments: segments.csv\n"
+        "  destinations: destinations.csv\n"
+        "  linkages: linkages.csv\n"
+        "route_accounts:\n"
+        "  - {destination: destination.MILL1, kind: volume, account: route.vol}\n"
+        "  - {destination: destination.MILL1, kind: haul, account: route.haul}\n"
+        "  - {destination: destination.MILL1, kind: maintain, account: route.maint}\n"
+        "duplicate_accounts:\n"
+        "  - {master: route.haul, target: route.total.haul}\n",
+        encoding="utf-8",
+    )
+    optimizer = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(
+            years=3, iterations=1, seed=1, route_config_path=str(tmp_path / "route.yaml")
+        ),
+    )
+    model, route_accounts, duplicate_accounts = optimizer.route()
+    schedule: Schedule = {1: (("CC", 0),), 2: (("CC", 0),)}
+    incremental = optimizer._incremental_values(schedule, duplicate_accounts, route_accounts)
+    full = optimizer._full_values(schedule, model, route_accounts, duplicate_accounts)
+    joined = (
+        incremental.set_index(["year", "account"])["value"]
+        .to_frame("incremental")
+        .join(full.set_index(["year", "account"])["value"].to_frame("full"), how="outer")
+        .fillna(0.0)
+    )
+    assert (joined["incremental"] - joined["full"]).abs().max() == pytest.approx(0.0, abs=1e-6)
+    # The route accounts are present, not just the feature accounts.
+    assert {"route.vol", "route.haul", "route.maint", "route.total.haul"} <= set(
+        incremental["account"]
+    )
 
 
 def test_load_targets(tmp_path: Path) -> None:
@@ -261,6 +330,47 @@ def test_run_records_the_dataset_reference(tmp_path: Path) -> None:
     assert len(str(reference["manifest_sha256"])) == 64
 
 
+def test_the_scoped_spatial_penalty_matches_the_full_edge_computation(tmp_path: Path) -> None:
+    """Scanning only incident edges gives the same penalty as scanning every edge."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    (tmp_path / "topology.csv").write_text(
+        "src_block,dst_block,length_m\n1,2,100.0\n3,4,100.0\n", encoding="utf-8"
+    )
+    max_opening, green_up, min_core, core_buffer = 3.0, 3, 2.0, 50.0
+    config = OptimizeConfig(
+        years=2,
+        iterations=1,
+        topology_path=str(tmp_path / "topology.csv"),
+        max_opening_ha=max_opening,
+        min_green_up_years=green_up,
+        min_core_area_ha=min_core,
+        core_buffer_m=core_buffer,
+    )
+    optimizer = Optimizer.from_dataset(dataset, config)
+    schedule: Schedule = {1: (("CC", 0),), 2: (("CC", 1),)}
+    frame = optimizer._schedule_frame(schedule)
+    scoped = optimizer._spatial_penalty(frame)
+
+    graph = optimizer._graph()
+    block_area = optimizer._block_area()
+    pairs = [
+        (int(float(str(row.block_id))), int(float(str(row.period))))
+        for row in frame.itertuples(index=False)
+    ]
+    selected_by_year, disturbance_years = schedule_years(pairs)
+    full = spatial_penalty(
+        selected_by_year,
+        disturbance_years,
+        [(source, target) for source, target, _ in graph],
+        block_area,
+        max_opening,
+        green_up,
+    ) + core_area_penalty(selected_by_year, graph, block_area, core_buffer, min_core)
+    assert scoped == pytest.approx(config.spatial_weight * full)
+
+
 def test_optimizer_avoids_a_maximum_opening_violation(tmp_path: Path) -> None:
     """With enforcement, the optimizer does not open adjacent blocks past the cap."""
     dataset, targets = _compile(tmp_path)
@@ -330,3 +440,127 @@ def test_multi_start_is_no_worse_than_single_start(tmp_path: Path) -> None:
     single = Optimizer.from_dataset(dataset, config(1)).run(tmp_path / "s1")
     multi = Optimizer.from_dataset(dataset, config(4)).run(tmp_path / "s4")
     assert multi["incumbent_objective"] <= single["incumbent_objective"]
+
+
+def test_incremental_evaluation_matches_a_full_simulation(tmp_path: Path) -> None:
+    """The base-plus-delta objective equals a full re-simulation, cell for cell."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    optimizer = Optimizer.from_dataset(dataset, OptimizeConfig(years=3, iterations=1, seed=1))
+    targets = [Target("feature.Volume", 0, maximum=1000.0)]
+    options = optimizer.candidates()
+    schedule = {block: choices[0] for block, choices in options.items() if choices}
+    assert schedule  # the fixture offers at least one treatment
+
+    incremental = optimizer._incremental_values(schedule, ())
+    full = optimizer._full_values(schedule, None, (), ())
+    joined = (
+        incremental.set_index(["year", "account"])["value"]
+        .to_frame("incremental")
+        .join(full.set_index(["year", "account"])["value"].to_frame("full"), how="outer")
+        .fillna(0.0)
+    )
+    assert (joined["incremental"] - joined["full"]).abs().max() == pytest.approx(0.0, abs=1e-6)
+    assert optimizer._evaluate(schedule, targets) == pytest.approx(
+        objective(optimizer._full_values(schedule, None, (), ()), targets)
+    )
+
+
+def test_incremental_evaluation_matches_for_the_empty_schedule(tmp_path: Path) -> None:
+    """The empty schedule's incremental objective equals a full simulation."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    optimizer = Optimizer.from_dataset(dataset, OptimizeConfig(years=3, iterations=1, seed=1))
+    targets = [Target("feature.Volume", 0, minimum=0.0)]
+    assert optimizer._evaluate({}, targets) == pytest.approx(
+        objective(optimizer._full_values({}, None, (), ()), targets)
+    )
+
+
+def test_objective_scores_a_product_account_target(tmp_path: Path) -> None:
+    """A target on a raw product account is scored against the produced volume."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    optimizer = Optimizer.from_dataset(dataset, OptimizeConfig(years=1, iterations=1, seed=1))
+    schedule: Schedule = {1: (("CC", 0),)}
+    # Block 1 produces 360; a minimum above it shows the exact shortfall, not a zero value.
+    shortfall = optimizer._evaluate(schedule, [Target("product.Volume", 0, minimum=1000.0)])
+    assert shortfall == pytest.approx(640.0)
+    met = optimizer._evaluate(schedule, [Target("product.Volume", 0, minimum=100.0)])
+    assert met == pytest.approx(0.0)
+
+
+def test_island_search_is_deterministic_and_no_worse_than_a_single_start(tmp_path: Path) -> None:
+    """The island model reproduces its result and does not raise the objective."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    targets = tmp_path / "targets.yaml"
+    targets.write_text(
+        "targets:\n  - account: feature.Volume\n    year: 0\n    maximum: 500\n",
+        encoding="utf-8",
+    )
+
+    def island_config() -> OptimizeConfig:
+        return OptimizeConfig(
+            targets_path=str(targets),
+            seed=1,
+            years=1,
+            iterations=30,
+            islands=2,
+            episodes=2,
+            workers=2,
+        )
+
+    first = Optimizer.from_dataset(dataset, island_config()).run(tmp_path / "i1")
+    second = Optimizer.from_dataset(dataset, island_config()).run(tmp_path / "i2")
+    assert first["incumbent_objective"] == second["incumbent_objective"]
+
+    single = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(targets_path=str(targets), seed=1, years=1, iterations=30),
+    ).run(tmp_path / "s")
+    assert first["incumbent_objective"] <= single["incumbent_objective"] + 1e-9
+
+
+def test_optimize_command_records_a_mip_bound(tmp_path: Path) -> None:
+    """The optimize command records a mixed-integer bound when asked."""
+    pytest.importorskip("scipy")
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    targets = tmp_path / "targets.yaml"
+    targets.write_text(
+        "targets:\n  - account: feature.Volume\n    year: 0\n    maximum: 500\n", encoding="utf-8"
+    )
+    weights = tmp_path / "weights.yaml"
+    weights.write_text("weights: {}\n", encoding="utf-8")
+    out = tmp_path / "opt"
+    result = CliRunner().invoke(
+        app,
+        [
+            "optimize",
+            "--dataset",
+            str(dataset),
+            "--targets",
+            str(targets),
+            "--weights",
+            str(weights),
+            "--out",
+            str(out),
+            "--years",
+            "1",
+            "--time-limit",
+            "00:00:10",
+            "--threads",
+            "1",
+            "--mip-bound",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    summary = json.loads((out / "summary.json").read_text(encoding="utf-8"))
+    assert summary["bound_status"] == "optimal"
+    assert summary["gap"] >= 0.0

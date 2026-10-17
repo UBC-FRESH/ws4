@@ -186,6 +186,22 @@ def matching_selects(
 
     A stratum is governed by every select whose statement matches it, not only the
     first; features, products, and treatments accumulate across the matching selects.
+
+    Parameters
+    ----------
+    key : tuple of str
+        The state values of the stratum, in ``variables`` order.
+    variables : sequence of str
+        The state-variable names.
+    selects : sequence of Select
+        The recipe's selects.
+    constants : dict of str to str
+        The constant values available to the statements.
+
+    Returns
+    -------
+    tuple of int
+        The one-based indices of the matching selects.
     """
     base = dict(zip(variables, key, strict=True))
     matched: list[int] = []
@@ -243,7 +259,24 @@ def resolve_value(value: str, state: Mapping[str, str], constants: dict[str, str
 def transition_key(
     key: tuple[str, ...], variables: Sequence[str], treatment: Treatment, constants: dict[str, str]
 ) -> tuple[str, ...]:
-    """Return the state key after a treatment resets its state variables."""
+    """Return the state key after a treatment resets its state variables.
+
+    Parameters
+    ----------
+    key : tuple of str
+        The stratum's state values, in ``variables`` order.
+    variables : sequence of str
+        The state-variable names.
+    treatment : Treatment
+        The treatment applied.
+    constants : dict of str to str
+        The constant values available to the transition expressions.
+
+    Returns
+    -------
+    tuple of str
+        The state values after the transition, in ``variables`` order.
+    """
     state = dict(zip(variables, key, strict=True))
     for name, value in treatment.transition.items():
         state[name] = resolve_value(value, state, constants)
@@ -272,9 +305,19 @@ def expand_strata(fragment_keys: Sequence[tuple[str, ...]], recipe: Recipe) -> l
     keys: list[tuple[str, ...]] = list(dict.fromkeys(fragment_keys))
     known = set(keys)
     frontier = list(keys)
+    matches: dict[tuple[str, ...], tuple[int, ...]] = {}
+
+    def select_indices(key: tuple[str, ...]) -> tuple[int, ...]:
+        """Return (and memoize) the selects that govern a stratum."""
+        found = matches.get(key)
+        if found is None:
+            found = matching_selects(key, variables, recipe.selects, recipe.constants)
+            matches[key] = found
+        return found
+
     while frontier:
         key = frontier.pop(0)
-        for select_index in matching_selects(key, variables, recipe.selects, recipe.constants):
+        for select_index in select_indices(key):
             for treatment in recipe.selects[select_index - 1].treatments:
                 target = transition_key(key, variables, treatment, recipe.constants)
                 if target not in known:
@@ -282,10 +325,6 @@ def expand_strata(fragment_keys: Sequence[tuple[str, ...]], recipe: Recipe) -> l
                     keys.append(target)
                     frontier.append(target)
     return [
-        Stratum(
-            key=key,
-            track_id=index,
-            select_indices=matching_selects(key, variables, recipe.selects, recipe.constants),
-        )
+        Stratum(key=key, track_id=index, select_indices=select_indices(key))
         for index, key in enumerate(keys, start=1)
     ]
