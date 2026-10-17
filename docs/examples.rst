@@ -16,11 +16,3 @@ resolve.
    examples/000_environment_check
    examples/010_quickstart
    examples/020_even_flow
-
-.. toctree::
-   :maxdepth: 1
-   :hidden:
-
-   examples/000_environment_check
-   examples/010_quickstart
-   examples/020_even_flow
