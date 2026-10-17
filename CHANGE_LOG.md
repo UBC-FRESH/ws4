@@ -959,3 +959,30 @@ issue comments.
   history, which keeps those objects reachable), and issue and pull-request authorship cannot be
   rewritten server-side — it is already the maintainer's account, and the three open pull requests are
   the dependency bots'. Dashboard: **GREEN**.
+- P6.48 (docs): documentation for human users — getting started, task guides, and an examples gallery.
+  The reference pages were contract-shaped and assumed a reader who already knew the tooling; nothing
+  walked a new user from an install to a result. The docs now follow the three-audience framing the
+  sibling project uses: a landing page that says who each section is for, a **Getting started**
+  section (installation; a command-line quickstart; a Python-API quickstart; a complete small study
+  with hand-checkable numbers; how the layers fit together, with a data-flow diagram), **How-to
+  guides** shaped *prerequisites → procedure → troubleshooting* (prepare a dataset, write targets,
+  even flow and non-declining yield, patch size-distribution targets, route products, watch a run,
+  automate a study, FAQ), **Guides** (troubleshooting, limitations and boundaries), and an
+  **Examples gallery** of executed notebooks rendered with their output. Both entry points are
+  first-class: every applicable guide shows the command-line path and the Python path, and the
+  architecture page names what each is for. The notebook gallery lives in `examples/` (three
+  notebooks: an environment check, the quickstart walkthrough, and the even-flow procedure) with its
+  outputs committed, wired into Sphinx through a symlink and `nbsphinx_execute = "never"`; `docs`
+  gains `nbsphinx` and `sphinxcontrib-mermaid`, and the three CI jobs that build the docs install
+  pandoc, which nbsphinx needs (the host was given the same install for local builds).
+  Writing the pages surfaced four inaccuracies, which are fixed here: the route model **is**
+  incremental for haul, maintenance, and volume accounts (only a build account, a duplicate account,
+  or edge contrast forces a whole-schedule evaluation), which the roads and performance pages and the
+  new guides now say; `docs/reference/roads.rst` still called that work "the next effort"; the
+  non-declining example set a maximum of zero, which charges growth; and the API page's claims about
+  evaluating a schedule are now stated precisely. Two command-line gaps are recorded in
+  `notes/backlog.md` rather than papered over: `ws4 optimize` requires a `--weights` file that nothing
+  reads and has no `--iterations`, and `Optimizer.last_account_values()` is empty after `run` on the
+  incremental path. Every command, snippet, and notebook output in the new pages was executed against
+  the repository's own examples, and the numbers shown (340 m3, the ragged-to-flat even-flow profile)
+  are the ones the runs produced. Dashboard: **GREEN**.

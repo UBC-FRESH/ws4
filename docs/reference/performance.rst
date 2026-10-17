@@ -36,8 +36,10 @@ The incremental objective
 
 Feature account values are additive over blocks, so the optimizer evaluates a schedule as the
 empty-schedule base plus a per-block delta (the base and each block's delta are cached). This is
-exact: it matches a full re-simulation to floating-point tolerance. Edge contrast and route accounts
-are not additive over blocks, so a configuration that uses them falls back to the full simulation.
+exact: it matches a full re-simulation to floating-point tolerance. Haul, maintenance, and volume
+route accounts are additive as well, so they are priced by a per-move route delta. Edge contrast, a
+route **build** account, and duplicate accounts are not additive, so a configuration that uses any of
+them falls back to the full simulation.
 
 Patch targets are not additive either: a patch spans adjacent blocks, so the optimizer prices them
 through a patch model instead (a move touches only the components near the moved block). Because the

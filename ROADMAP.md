@@ -312,6 +312,7 @@ budget. Plan of record: `notes/design/ws4-performance.md`.
 - [x] P6.45 Public-docstring audit and the `docstrings` dashboard gate
 - [x] P6.46 Verify the flow definitions against the established specification
 - [x] P6.47 Consolidate the repository's commit authorship and refresh the citations
+- [x] P6.48 Documentation for human users: getting started, task guides, and an examples gallery
 
 Deferred from P6, triaged in `notes/backlog.md`:
 
