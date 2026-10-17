@@ -14,7 +14,20 @@ from typing import Any, TextIO
 
 
 class RunLogger:
-    """Append-only JSONL telemetry for one optimization run."""
+    """Append-only JSONL telemetry for one optimization run.
+
+    The file opens with one run header, then one record per search step. A search is
+    reproducible from the header (the seed and the configuration) and the step records.
+
+    Parameters
+    ----------
+    path : Path
+        The JSONL file to write.
+    run_id : str
+        The run identifier.
+    config : mapping
+        The run configuration to record in the header.
+    """
 
     def __init__(self, path: Path, run_id: str, config: Mapping[str, Any]) -> None:
         """Open the log and write the run header.

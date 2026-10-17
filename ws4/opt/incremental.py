@@ -36,6 +36,22 @@ Cell = tuple[int, str]
 class IncrementalObjective:
     """Exact objective deltas for single-block moves over raw account targets.
 
+    The evaluator holds the running account totals, so a move is priced by its exact delta
+    rather than by recomputing the whole schedule. Patch accounts are not additive, so they
+    are priced separately through a :class:`PatchModel`.
+
+    Parameters
+    ----------
+    optimizer : Optimizer
+        The optimizer that owns the caches this evaluator reuses.
+    targets : sequence of Target
+        The goals.
+    extra_accounts : sequence of str, optional
+        Further accounts to track (for example, accounts a viewer displays); they do not
+        affect the objective.
+    patch_accounts : sequence of PatchAccount, optional
+        Patch size-distribution accounts, priced by a patch model.
+
     Attributes
     ----------
     optimizer : Optimizer
@@ -275,7 +291,13 @@ class IncrementalObjective:
             self.patch.commit(changed, schedule)
 
     def values_frame(self) -> pd.DataFrame:
-        """Return the tracked account values as a frame (``year``, ``account``, ``value``)."""
+        """Return the tracked account values as a frame (``year``, ``account``, ``value``).
+
+        Returns
+        -------
+        pandas.DataFrame
+            One row per tracked ``(year, account)`` cell.
+        """
         rows = [
             {"year": year, "account": account, "value": value}
             for (year, account), value in self.totals.items()

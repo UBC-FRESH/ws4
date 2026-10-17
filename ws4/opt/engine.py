@@ -63,7 +63,96 @@ _ROTATION_SEEDS = 12
 
 @dataclass
 class OptimizeConfig:
-    """Configuration for an optimization run."""
+    """Configuration for an optimization run.
+
+    A configuration is the complete, reproducible description of a run: the objective targets,
+    the horizon and accounting period, the metaheuristic and its schedule, the neighbourhood
+    operator weights, the spatial constraints, and the optional patch and route models. Every
+    stochastic search is seeded from ``seed``.
+
+    Attributes
+    ----------
+    threads : int
+        The number of BLAS and worker threads for single-process work.
+    time_limit : str
+        The wall-clock limit, as ``HH:MM:SS``.
+    seed : int
+        The random seed. A run is reproducible for a given seed.
+    targets_path : str
+        The YAML file of goal-programming targets.
+    weights_path : str
+        The YAML file of target weights, or an empty string.
+    years : int
+        The horizon in years. The simulation step is one year.
+    iterations : int
+        The iteration budget of the search.
+    temperature : float
+        The initial simulated-annealing temperature.
+    cooling : float
+        The geometric cooling factor.
+    cooling_mode : str
+        ``"geometric"`` or ``"adaptive"`` (Aarts and Van Laarhoven).
+    cooling_window : int
+        The iterations per temperature in adaptive mode.
+    metaheuristic : str
+        ``"sa"``, ``"tabu"``, or ``"ils"``.
+    tenure : int
+        The tabu tenure, in iterations.
+    perturbation : int
+        The number of moves per perturbation in iterated local search.
+    starts : int
+        The number of independent starts, keeping the best.
+    workers : int
+        The number of processes used for the starts; 1 runs them serially.
+    islands : int
+        The number of islands in the island model; 0 disables it.
+    episodes : int
+        The number of migration episodes in the island model.
+    warm_start : bool
+        Whether to seed the search from each block's first candidate chain.
+    mip_bound : bool
+        Whether to solve the mixed-integer lower bound and record it in the summary.
+    topology_path : str
+        The block topology edge list, for the spatial and patch models.
+    route_config_path : str
+        The route configuration, for the road model.
+    edge_elements_path : str
+        The edge-contrast element definitions.
+    max_opening_ha : float or None
+        The maximum opening size, in hectares; None disables the rule.
+    min_green_up_years : int or None
+        The green-up interval; None disables the rule.
+    core_buffer_m : float or None
+        The core-area buffer distance, in metres; None disables the rule.
+    min_core_area_ha : float or None
+        The minimum core area, in hectares; None disables the rule.
+    spatial_weight : float
+        The weight on the combined spatial penalty.
+    allow_spatial_override : bool
+        Whether to run with the spatial penalties explicitly disabled.
+    toggle_weight : float
+        The selection weight of the toggle operator.
+    shift_weight : float
+        The selection weight of the shift operator.
+    swap_weight : float
+        The selection weight of the swap operator.
+    lns_weight : float
+        The selection weight of the large-neighbourhood search operator.
+    lns_destroy : float
+        The fraction of the schedule the large-neighbourhood search destroys.
+    cluster_weight : float
+        The selection weight of the cluster operator; 0 disables it and its topology.
+    cluster_size : int
+        The maximum number of blocks in a cluster move.
+    warm_cache : bool
+        Whether to pre-warm the per-block delta cache before the search.
+    patch_accounts_path : str
+        The patch account definitions, enabling the patch size-distribution targets.
+    merge_weight : float
+        The selection weight of the merge operator, which treats gap blocks.
+    split_weight : float
+        The selection weight of the split operator, which clears articulation blocks.
+    """
 
     threads: int = 1
     time_limit: str = "01:00:00"
@@ -113,7 +202,20 @@ class OptimizeConfig:
 
 
 class Optimizer:
-    """A simulated-annealing optimizer over a compiled dataset."""
+    """A simulated-annealing optimizer over a compiled dataset.
+
+    The optimizer owns the search stack for one compiled dataset: the simulator and its
+    caches, the candidate chains per block, the operator registry, and the optional route,
+    edge-contrast, and patch models. It is constructed once per configuration and reused
+    across evaluations.
+
+    Parameters
+    ----------
+    dataset_dir : Path
+        The compiled dataset directory.
+    cfg : OptimizeConfig
+        The run configuration.
+    """
 
     def __init__(self, dataset_dir: Path, cfg: OptimizeConfig) -> None:
         """Store the dataset directory and the run configuration."""
@@ -155,7 +257,20 @@ class Optimizer:
 
     @classmethod
     def from_dataset(cls, dataset_dir: Path, cfg: OptimizeConfig) -> Optimizer:
-        """Build an optimizer that reads the given compiled dataset."""
+        """Build an optimizer that reads the given compiled dataset.
+
+        Parameters
+        ----------
+        dataset_dir : Path
+            The compiled dataset directory.
+        cfg : OptimizeConfig
+            The run configuration.
+
+        Returns
+        -------
+        Optimizer
+            The optimizer for that dataset and configuration.
+        """
         return cls(dataset_dir, cfg)
 
     def route(

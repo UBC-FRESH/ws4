@@ -185,3 +185,7 @@ items are enhancements and maintenance.
   Target: post-release, if profiling shows it.
 - **Docs for each subsystem.** `done`. The compiled dataset, ForestModelXML, simulator, optimizer,
   spatial, and road pages exist under `docs/reference/`, and the API pages cover the tooling.
+- **Docstring completeness outside `ws4.opt`.** `open`. A numpydoc pass over all 269 public objects
+  (P6.44) found 37 remaining findings: undocumented dataclass fields in `ws4.model.types` (10),
+  `ws4.io.forest_model_xml` (6), `ws4.sim` (6), `ws4.patch` (5), `ws4.build` (4), and `ws4.roads` (3).
+  The `ws4.opt` findings (56) are fixed. Target: P7.

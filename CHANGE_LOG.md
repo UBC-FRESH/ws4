@@ -871,3 +871,22 @@ issue comments.
   2.00 / 1.96 / 1.97 / 1.97 / 1.98 — every period inside the band, and the level found without being
   specified. `run_watch` also gained an `initial` schedule so a flow run can continue from its primed
   predecessor. Tests: `tests/test_flow_targets.py`, `tests/test_watch.py`. Dashboard: **GREEN**.
+- P6.44 (docs): audit the API docstrings and the Sphinx pages against the code. The build was already
+  green (`sphinx -W`), but the content had drifted. Fixed on the pages: the even-flow example said
+  "the sum of each period's distance from the mean" (the definition P6.42 superseded); the operator
+  list named four of the seven registered operators and did not say that `cluster`, `merge` and
+  `split` ship at weight zero (a configuration has to enable them); the patch example read
+  `patch.harvest.50_150`, which its own size classes do not produce (`50_250`); a patch move was
+  "tens of milliseconds" against a measured ~3 ms (62 → 310 iterations/s, P6.35); the API section did
+  not render `Target`, `flow_values`, `flow_penalty`, `IncrementalObjective` or `PatchModel` at all;
+  `docs/api/index.rst` claimed the API reference is generated from `scripts/`; and the performance
+  page had no patch-target figure. Docstrings: a numpydoc pass over all 269 public objects found 93
+  incomplete ones. All **56 in `ws4.opt`** are fixed — `OptimizeConfig` (its 40 fields had no
+  `Attributes` section, so the optimizer page rendered the configuration with no field help at all),
+  the seven operators and `OperatorRegistry` (one-line docstrings, no parameters or return value),
+  `TemperatureSchedule.rule`, `Optimizer` and `from_dataset`, `IncrementalObjective`,
+  `solve_mip` (`years`, `opening`), `solve_tabu` and `solve_ils` (`initial`), `watch.render_frame`,
+  `axis_maximum`, `WatchState.islands`/`blocks` and the `TargetWindow` accessors,
+  `patch_state.compactness`/`class_index`, `RunLogger`, and `PatchModel.cell_map`. The 37 remaining
+  findings are outside `ws4.opt` and are recorded in `notes/backlog.md` for P7. No behaviour changed
+  and no test changed: the audit is reproducible with the same numpydoc pass. Dashboard: **GREEN**.

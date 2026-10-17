@@ -27,6 +27,9 @@ segments; a 72-core host):
    * - One optimizer objective evaluation
      - < 50 ms
      - ~7 ms
+   * - One optimizer move with patch targets (200 y, 20 periods)
+     - —
+     - ~3 ms (62 → 310 iterations/s)
 
 The incremental objective
 -------------------------
@@ -35,6 +38,12 @@ Feature account values are additive over blocks, so the optimizer evaluates a sc
 empty-schedule base plus a per-block delta (the base and each block's delta are cached). This is
 exact: it matches a full re-simulation to floating-point tolerance. Edge contrast and route accounts
 are not additive over blocks, so a configuration that uses them falls back to the full simulation.
+
+Patch targets are not additive either: a patch spans adjacent blocks, so the optimizer prices them
+through a patch model instead (a move touches only the components near the moved block). Because the
+simulation is annual while the accounting is periodic, the patch statistics are maintained only at
+the years a patch target reads — the first year of its period — which is what took the patch
+benchmark from 62 to 310 iterations/s.
 
 Reproduce
 ---------

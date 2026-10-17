@@ -211,6 +211,11 @@ def solve_mip(
         The accounted ``(account, year)`` pairs.
     targets : sequence of Target
         The targets.
+    opening : tuple or None, optional
+        The stand-centred opening constraints, as ``(neighbours, areas, cap)``: the adjacency
+        per block, the block areas in hectares, and the maximum opening size. None omits them.
+    years : int, optional
+        The horizon in years, used to index the option variables per year. Defaults to 0.
 
     Returns
     -------

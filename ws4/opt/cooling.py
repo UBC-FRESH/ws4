@@ -101,6 +101,8 @@ class TemperatureSchedule:
         Whether to use the adaptive rule.
     window : int
         The number of iterations per temperature in adaptive mode.
+    rule : AdaptiveCooling
+        The adaptive rule's parameters (the initial acceptance and its decrement).
 
     Attributes
     ----------

@@ -364,7 +364,13 @@ class PatchModel:
         self._untouched = {}
 
     def cell_map(self) -> dict[Cell, float]:
-        """Return the current patch cells as a ``(year, account) -> value`` mapping."""
+        """Return the current patch cells as a ``(year, account) -> value`` mapping.
+
+        Returns
+        -------
+        dict of (int, str) to float
+            The patch account value per ``(year, account)`` cell.
+        """
         result: dict[Cell, float] = {}
         for year, cells in self.values.items():
             for account, value in cells.items():

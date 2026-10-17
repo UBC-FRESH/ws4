@@ -217,6 +217,8 @@ def solve_tabu(
         The number of candidate moves sampled per iteration.
     on_step : callable or None, optional
         Called with ``(iteration, best_objective)`` each iteration.
+    initial : dict or None, optional
+        A starting schedule. Defaults to the empty schedule.
 
     Returns
     -------
@@ -272,6 +274,8 @@ def solve_ils(
         The number of random moves applied to perturb the incumbent.
     on_step : callable or None, optional
         Called with ``(iteration, best_objective)`` each iteration.
+    initial : dict or None, optional
+        A starting schedule. Defaults to the empty schedule.
 
     Returns
     -------
