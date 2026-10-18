@@ -176,8 +176,10 @@ items are enhancements and maintenance.
 
 - **Shapefile/geo extra in CI.** `done`. CI installs `.[geo]`, and `tests/test_fragments.py` covers a
   shapefile read (skipping when geopandas is absent).
-- **Broaden mypy coverage to `ws4/`.** `open`. Type checking covers `scripts/`, `tests/`, and
-  `docs/conf.py` plus transitively imported modules. Target: P5.
+- **Broaden mypy coverage to `ws4/`.** `done` (P9.6, #102). It was never the work that was missing:
+  `mypy ws4` already reported success on all 43 files, and the gate simply did not name them. The
+  `files` list now names `ws4` first, so the gate checks **93 files** where it checked 50, and the
+  backlog item closes with the evidence rather than staying open behind a stale assumption.
 - **Reference-matrix regression tests.** `done`. A self-contained fixture with committed expected tables
   is in `tests/fixtures/matrix/`, compared by `tests/test_matrix_regression.py` (P3.3).
 - **Block-aggregation cost.** `deferred`. The C5 profile shows the per-curve yield evaluation dominates
@@ -210,12 +212,13 @@ items are enhancements and maintenance.
 - **`Optimizer.last_account_values()` after a `run`.** `done` (P7.5, #87). The incremental value path
   and `run` both record the frame they build, so the incumbent's values are readable without rereading
   the run directory.
-- **The per-`(block, chain)` criterion series and the patch state construction.** `open`. P7.5's
-  profile of a binding patch search puts the time in `block_criteria_series` (once per distinct
-  (block, chain) the search explores, a Python loop over that block's fragments) and in
-  `PatchGroupYear.__init__` (once per group-year, ~48 ms), not in the incremental relabel. A vectorised
-  series and a lazily built state for the years a search reads are the candidates, with the recorded
-  measurements as the baseline. Target: after P7.
+- **The per-`(block, chain)` criterion series and the patch state construction.** `done`. Both halves
+  of P7.5's lever have been taken. The series was made 29% cheaper (P8.3: 58.6 -> 41.5 us/call, the C5
+  patch-ramp workload +21%) by removing the copying, the per-segment `arange` and the per-year Python
+  calls, not by vectorising it. The state construction was made 89% cheaper (P9.3: 25.9 -> 2.79 ms per
+  state) by building the year-invariant node order, areas and CSR once per group and sharing them,
+  which is more than the laziness the note suggested. Building *less* of a state stays rejected, with
+  P8.3's reason: the years that get one are already only the accounting points a target reads.
 - **Docstring completeness.** `done`. `scripts/doc_audit.py` is the oracle: it checks every public
   function, method, property, class, and module in `ws4` and `scripts/` for the four rules (a docstring
   exists; every parameter is documented and nothing else; a value-returning callable has a `Returns`

@@ -405,6 +405,8 @@ own copy before doing anything, and the simulator writes to the fragments frame 
 - [x] P9.3 Make the patch-state construction cheaper (#100) — the group topology is shared across years
 - [x] P9.4 Stop rebuilding bounds in every curve gather (#101)
 - [ ] P9.5 Compare WS4's accounts against a reference report (#95, carried from P8)
+- [ ] P9.6 Put the package under the type gate (#102)
+- [ ] P9.7 Check growth against the reference's own yields (#103)
 
 Deferred from P9, triaged in `notes/backlog.md`:
 

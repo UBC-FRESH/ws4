@@ -1331,3 +1331,10 @@ issue comments.
   copy with one value multiplied by 1.5 **fails** naming that cell. The rehearsal exports and a
   one-command runner are beside the workspace as `PARITY.md` + `parity-run.sh`, with the packaged sample
   pre-compiled, so the Windows export is the only thing missing. Dashboard: **GREEN** (seven gates).
+- P9.6 (maintenance, #102): put the package under the strict type gate. `[tool.mypy] files` now names
+  `ws4`, so the `types` gate checks **93 files where it checked 50**; `mypy` reports **success** with no
+  fixes needed, which closes the backlog item that had been open since the P5 triage — the work behind it
+  was already done, and only the file list was missing. Also closed the backlog item for P7.5's lever,
+  both halves of which the phase has now taken (the series 29% cheaper in P8.3, the patch-state
+  construction 89% cheaper in P9.3, with state laziness rejected for P8.3's recorded reason). Dashboard:
+  **GREEN** (seven gates).
