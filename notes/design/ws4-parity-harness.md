@@ -122,3 +122,43 @@ that agrees the rest of the comparison is about treatments rather than about gro
 Until a report exists, the note's earlier section stands: the accounts-parity claim is specified and
 checkable, and **unverified**.
 
+## The sample, packaged
+
+The sample is a C5-class demonstration model extracted from the lab's installer: **139 files across
+nine subdirectories** (274 MB uncompressed, 88 MB zipped) — the model tables under `tracks/`, the
+inventory and topology under `blocks/` and `data/`, the road network under `roads/`, the workbooks
+under `yield/`, the scripts and scenarios under `scripts/` and `analysis/`.
+
+It is packaged for the reference run in the workspace's untracked `tmp/` directory:
+
+- `tmp/c5-sample-for-parity.zip` — the whole `sample/` tree, sha256
+  `cd0aa1f367720b6e63861437fd725660470aadffeb313331f8b5923eb2cde6fa`;
+- `tmp/c5-sample-for-parity.sha256` — a digest for every file it contains, so a copy can be verified
+  rather than assumed.
+
+The files the comparison actually reads are these, and a copy with different digests is a different
+sample:
+
+| File | sha256 (first 16) |
+| --- | --- |
+| `tracks/tracknames.csv` | `b20feef30e104f2c...` |
+| `tracks/strata.csv` | `3709ff3a89947d91...` |
+| `tracks/treatments.csv` | `668d05c5fba9f75a...` |
+| `tracks/blocks.csv` | `0326c3139f2c1af7...` |
+| `tracks/features.csv` | `f4ccd2b81dcdedf8...` |
+| `tracks/products.csv` | `8549cd71aa25580a...` |
+| `tracks/curves.csv` | `f543f2d04e52ca80...` |
+| `blocks/topology_blocks_200r.csv` | `f6d1549efa15e106...` |
+| `blocks/blocks.shp` | `920e185a1d5fc88e...` |
+| `roads/vertices.csv` | `6af6fa0b46f684ce...` |
+| `roads/segments.csv` | `734a5d4b709b6efc...` |
+| `roads/destinations.csv` | `41c03fdee82ca3c3...` |
+| `roads/linkages.csv` | `8050ebd24a2c805a...` |
+| `roads/cost_destination.MILL1.csv` | `a237e9f49ba5c331...` |
+| `roads/cost_destination.MILL2.csv` | `0fe431c98e1f32de...` |
+| `roads/cost_destination.MILL3.csv` | `a237e9f49ba5c331...` |
+
+One key is deliberately not listed: `tracks/protoaccounts.csv`. This sample does not ship one — the
+compiled dataset derives the proto-accounts table — and the matrix comparison treats a reference file
+as optional, comparing only the tables that are present.
+
