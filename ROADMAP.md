@@ -21,7 +21,8 @@ exists and the maintainer approves it.
 | P6 Performance and scalability | #60 | `feature/p6-performance` | complete |
 | P7 Parity and the analyst workflow | #82 | `feature/p7-parity` | complete |
 | P8 Verify the replacement claim | #90 | `feature/p8-verify` | complete |
-| P9 Spatial performance and memory | #97 | `feature/p9-memory` | pr-open |
+| P9 Spatial performance and memory | #97 | `feature/p9-memory` | complete |
+| P11 The derived targets and the sample's own files | #112 | `feature/p11-derived-targets` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -394,7 +395,7 @@ Acceptance criteria:
 
 Parent issue: #97
 Branch: `feature/p9-memory`
-Status: pr-open
+Status: complete
 Pull request: against `main`, carrying Phase 10 with it — Phase 10 was stacked on this branch and merged
 into it (`b512cd9`) when the maintainer approved it, so the two phases reach `main` together.
 
@@ -471,6 +472,40 @@ Acceptance criteria:
 - A complete API-first session runs as a notebook in the gallery, executed, linked from the API pages.
 - A documented command re-executes the notebooks and reports drifted output, and it can fail.
 - Every example states whether it is a command-line session or a library one.
+- The dashboard green at every commit, with the docs and docstrings gates.
+
+## Phase 11: The derived targets and the sample's own files
+
+Parent issue: #112
+Branch: `feature/p11-derived-targets`
+Status: active
+
+Goal: close the gap between the accounts comparison passing and the replacement claim being whole.
+Phase 9 verified WS4's plain account values against the 2026 reference on both of its scenarios and
+named **178 reference targets it could not compare** — ratios, flow constraints, and patch size and
+age-class distributions — because they are derived quantities rather than account values. Those are
+what a spatial model is for. This phase gives them definitions on WS4's side, matches WS4's period
+convention to the reference's, and repairs the three sample-side gaps Phase 9 uncovered.
+
+- [ ] P11.1 Match the reference's period convention (#113)
+- [ ] P11.2 Compare the derived targets: the ratios (#114)
+- [ ] P11.3 Compare the derived targets: the flow constraints (#115)
+- [ ] P11.4 Compare the derived targets: the patch size and age-class distributions (#116)
+- [ ] P11.5 Give the routing parity check the model's mill set (#117)
+- [ ] P11.6 Retarget the growth check for the 2026 sample (#118)
+
+Deferred from P11, triaged in `notes/backlog.md`:
+
+- (none outstanding.)
+
+Acceptance criteria:
+
+- A target written the reference's way means the same thing in WS4, verified against the reference's own
+  period values.
+- Each family of derived targets is either compared and agreeing, or has a measured reason and a
+  recorded definition gap.
+- The routing parity check compares against the model's actual destinations.
+- The growth check reads the 2026 sample's shape and passes on it.
 - The dashboard green at every commit, with the docs and docstrings gates.
 
 ## Detailed Next Steps Notes
@@ -561,4 +596,15 @@ Acceptance criteria:
     run yet; the two phases now reach `main` together. Phase 9's remaining work is closed except its
     close-out, and the next phase is the derived targets the accounts comparison leaves out — the
     reference's ratios, flow constraints and patch-size distributions.
+
+16. Phase 9 is complete: pull request #111 squash-merged as `e48c308`, the branch deleted, and parent
+    issue #97 closed. It landed with Phase 10, which had been stacked on its branch and merged into it
+    (`b512cd9`) — the two phases reached `main` together, as approved. Its close-out report is
+    `notes/reports/p9-closeout.md`; its acceptance evidence is the shared-dataset attempt measured and
+    reverted, island scaling reproducing P8.4 at a recorded load, the patch-state construction 89%
+    cheaper and the curve gather 24% cheaper, the type gate widened to the package, and **the accounts
+    comparison passing on both 2026 scenarios — 1,323 account-period values each** — which is also what
+    found the matrix-builder defect that had been mis-attributing every managed and unmanaged account
+    since the 2019 sample. Phase 11 (The derived targets and the sample's own files) is active on
+    `feature/p11-derived-targets`, parent issue #112, with six tasks (#113 to #118).
 

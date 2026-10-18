@@ -1450,3 +1450,14 @@ issue comments.
   targets — the reference's ratios, flow constraints and patch-size distributions, 178 of them — and the
   three sample-side gaps this phase uncovered: WS4's period convention against the reference's, the
   sample's two-mill set, and the growth check's retargeting.
+- Carried out the Phase 9 close-out: pull request #111 squash-merged as `e48c308`, the branch
+  `feature/p9-memory` deleted, and parent issue #97 closed. As approved, it landed **with Phase 10**,
+  which had been stacked on that branch and merged into it (`b512cd9`), so the two phases reached `main`
+  together. Its evidence is the accounts comparison passing on both 2026 scenarios (1,323 account-period
+  values each) and the matrix-builder defect it found, the shared-dataset attempt measured and reverted,
+  island scaling reproducing P8.4, the patch-state construction 89% cheaper, the curve gather 24%
+  cheaper, and the type gate widened to the package. **Launched Phase 11 (The derived targets and the
+  sample's own files)**: parent issue #112, branch `feature/p11-derived-targets`, six tasks — the period
+  convention (#113), the ratios (#114), the flow constraints (#115), the patch size and age-class
+  distributions (#116), the routing check's mill set (#117), and the growth check's retargeting (#118).
+  Dashboard: **GREEN**.
