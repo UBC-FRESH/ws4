@@ -287,7 +287,8 @@ def read_reference_yields(yield_dir: Path) -> dict[str, list[tuple[float, float]
     """
     curves: dict[str, list[tuple[float, float]]] = {}
     for path in sorted(yield_dir.glob("*.xml")):
-        for element in ET.parse(path).getroot().iter("curve"):
+        root = ET.parse(path).getroot()
+        for element in root.iter("curve"):
             identifier = element.get("id")
             if identifier is None or not _YIELD_CURVE_ID.match(identifier):
                 continue
@@ -297,6 +298,25 @@ def read_reference_yields(yield_dir: Path) -> dict[str, list[tuple[float, float]
             ]
             if points:
                 curves[identifier] = points
+        for table in root.iter("curvetable"):
+            # A 2025-era model states its yields as one table: an age column, then a column
+            # per curve.
+            split = table.get("split", ",")
+            rows = [
+                line.split(split) for line in "".join(table.itertext()).splitlines() if line.strip()
+            ]
+            if len(rows) < 2:
+                continue
+            for column, name in enumerate(rows[0]):
+                if column == 0 or not _YIELD_CURVE_ID.match(name.strip()):
+                    continue
+                points = []
+                for row in rows[1:]:
+                    if column >= len(row) or not row[column].strip():
+                        continue
+                    points.append((float(row[0]), float(row[column])))
+                if points:
+                    curves[name.strip()] = points
     return curves
 
 

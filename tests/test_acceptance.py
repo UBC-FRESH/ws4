@@ -302,7 +302,9 @@ def test_the_accounts_check_skips_without_inputs() -> None:
     assert acc.check_accounts(Path("x"), None).status == "skip"
 
 
-def _yield_fixture(root: Path, curves: dict[str, list[tuple[float, float]]]) -> tuple[Path, Path]:
+def _yield_fixture(
+    root: Path, curves: dict[str, list[tuple[float, float]]], *, table: bool = False
+) -> tuple[Path, Path]:
     """Write a reference yield XML and a compiled dataset holding the same curves.
 
     Parameters
@@ -319,13 +321,25 @@ def _yield_fixture(root: Path, curves: dict[str, list[tuple[float, float]]]) -> 
     """
     yields = root / "yield"
     yields.mkdir(parents=True, exist_ok=True)
-    body = "".join(
-        f'<curve id="{name}">'
-        + "".join(f'<point x="{age:g}" y="{value:g}"/>' for age, value in points)
-        + "</curve>"
-        for name, points in curves.items()
-    )
-    (yields / "sample.xml").write_text(f"<model>{body}</model>")
+    if table:
+        # a 2025-era model states its yields as one table: an age column, then a column per curve
+        ages = sorted({age for points in curves.values() for age, _ in points})
+        by_name = {name: dict(points) for name, points in curves.items()}
+        header = "Age," + ",".join(curves)
+        text_rows = [
+            f"{age:g}," + ",".join(f"{by_name[name].get(age, 0.0):g}" for name in curves)
+            for age in ages
+        ]
+        body = '<curvetable split=",">' + "\n".join([header, *text_rows]) + "</curvetable>"
+        (yields / "sample.xml").write_text(f"<model>{body}</model>")
+    else:
+        body = "".join(
+            f'<curve id="{name}">'
+            + "".join(f'<point x="{age:g}" y="{value:g}"/>' for age, value in points)
+            + "</curve>"
+            for name, points in curves.items()
+        )
+        (yields / "sample.xml").write_text(f"<model>{body}</model>")
 
     dataset = root / "compiled"
     dataset.mkdir(parents=True, exist_ok=True)
@@ -526,3 +540,29 @@ def test_a_distance_table_that_disagrees_is_reported(tmp_path: Path) -> None:
     assert compared == 1
     assert differences
     assert "m against the reference" in differences[0]
+
+
+def test_a_yield_table_is_read_from_a_curvetable(tmp_path: Path) -> None:
+    """A 2025-era model states its yields as one table of ages and curves."""
+    yields, dataset = _yield_fixture(
+        tmp_path,
+        {"Y1.Conif": [(2.0, 8.28), (7.0, 19.99)], "Y1.Decid": [(2.0, 0.0), (7.0, 0.051)]},
+        table=True,
+    )
+    differences, compared, conflicts = acc.compare_yield_curves(yields, dataset)
+    assert differences == []
+    assert compared == 4
+    assert conflicts == 0
+
+
+def test_a_curvetable_value_that_disagrees_is_a_difference(tmp_path: Path) -> None:
+    """A table read for its values is compared like any other curve."""
+    yields, dataset = _yield_fixture(
+        tmp_path, {"Y1.Conif": [(2.0, 8.28), (7.0, 19.99)]}, table=True
+    )
+    (yields / "sample.xml").write_text(
+        '<model><curvetable split=",">Age,Y1.Conif\n2,8.28\n7,99.0\n</curvetable></model>'
+    )
+    differences, _compared, _conflicts = acc.compare_yield_curves(yields, dataset)
+    assert differences
+    assert "Y1.Conif" in differences[0]

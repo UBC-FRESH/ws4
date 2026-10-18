@@ -1595,3 +1595,12 @@ issue comments.
   why. One correction kept: the first run doubled the mill volumes because the configuration had both a
   volume account and an allocation writing the same name — caught by the master guard, once it checked
   every year either side knows. Dashboard: **GREEN**.
+- P11.6 (#118): **the growth check retargeted for the 2026 sample**, which states its yields as one
+  `<curvetable>` — an age column and a column per curve, `Y1.Conif` through `Y9.Decid` — where the 2019
+  sample states a `<curve>` element per stratum and species. The check reads both shapes, so the same
+  comparison runs on either vintage, and on the 2026 sample it reports **959 yield-curve points
+  reproduced** across all eighteen curves. Recorded with it: the 2019 sample's conflict (its matrix
+  holding `0.001` at offset age 7 on the Decid curve where its own artefacts held `0.01`) is **absent
+  from the 2026 data** — 1,399 curves carry `0.01` there and none carries the other value — so that
+  conflict was a property of the 2019 sample's files rather than of the model. Two tests cover the table
+  shape, one for agreement and one for a value that disagrees. Dashboard: **GREEN**.

@@ -500,3 +500,18 @@ had both a volume route account *and* an allocation writing the same account nam
 it because the parts then exceeded the master — which is exactly what the guard is for, once it checks
 every year either side knows about rather than only the master's own.
 
+### The growth check, retargeted for the 2026 sample
+
+The 2019 sample states its yields as one `<curve id="Y1.Conif">` element per stratum and species; the 2026
+sample states the same data as one **table** — `<curvetable split=",">` with an `Age` column and then a
+column per curve, `Y1.Conif` through `Y9.Decid`. The check reads both shapes now, so the same comparison
+runs on either vintage: every value of the reference's own yields against WS4's compiled curves, at a
+tolerance set by the decimals the artefacts print. On the 2026 sample it reports **959 yield-curve points
+reproduced** across all eighteen curves.
+
+One property of the 2019 sample does not carry over, and it is worth recording: there the matrix held
+`0.001` at offset age 7 on the Decid curve where the sample's own artefacts held `0.01`, which the check
+reported as a conflict. The 2026 matrix holds **0.01** — 1,399 curves with that point and none with the
+other value — so that conflict is a property of the 2019 sample's files, not of the model, and the check
+has nothing to report here.
+
