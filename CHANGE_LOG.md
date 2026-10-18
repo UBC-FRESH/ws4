@@ -1167,3 +1167,17 @@ issue comments.
   a deliverable: specify the report the comparison needs, extend the parity harness to check one, and
   document how the reference produces it. Producing the report needs the reference implementation, which
   is outside the repository.
+- P8.5 (investigation): pinned down the sample the parity comparison will run on, and recorded why the
+  newest installer cannot supply it here. The lab's installer carries a C5 demonstration model; the
+  build extracted on 2026-10-14 (from the 2019 installer) is what every C5 figure in the repository was
+  measured against, including the routing parity comparison. A newer installer (inner executable dated
+  2026-07-29) arrived on 2026-10-18, but neither `innoextract` 1.9 (its current release) nor its
+  development build, which supports Inno Setup up to 6.3.3, can read it: both report "unexpected setup
+  loader revision: 2" and a loader checksum mismatch, so it is a protected or non-standard build and its
+  sample has to come from an installed copy. Parity needs the **same** sample on both sides rather than
+  the newest one, so the comparison can proceed on the extracted sample, or on the newer one once it is
+  zipped from the installed Windows copy. The scenario the reference must run is also specified:
+  a **fixed** schedule — blocks, treatments and years pinned in a scenario file — with the account values
+  reported per period, and a no-treatment case first, since that exercises the curves, tracks and strata
+  with no scheduler in the way. Recorded in `notes/design/ws4-parity-harness.md`. Dashboard: **GREEN**
+  (seven gates).
