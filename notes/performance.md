@@ -391,3 +391,41 @@ inherits its parent's memory copy-on-write, but the simulator **writes** to the 
 inherits (`self.fragments["offset"] = ...` on every run), which forces the pages to be copied. So a
 shared or mmapped dataset has to come with a read-only simulation state, or the copying happens anyway.
 
+### P9.1 one copy of the dataset for the pool
+
+P8.4 left the memory hypothesis and one obstacle: every worker loads its own copy of the dataset before
+it can search, and under a forking pool those pages *could* be shared instead. Measured on the C5-class
+sample, what a worker costs to start:
+
+| Step | Time | Peak RSS added |
+| --- | ---: | ---: |
+| `Optimizer.from_dataset` | 7 ms | 0 MB |
+| `optimizer.simulator()` | 195 ms | +63 MB |
+| `optimizer.candidates()` | 539 ms | +90 MB |
+| `optimizer.patch_model()` | 243 ms | +18 MB |
+| **total** | **~0.98 s** | **~170 MB** |
+
+So a 32-island run builds about **5.4 GB** of private state it could be sharing. `Optimizer` now touches
+those caches before it creates a worker pool — `simulator()`, `candidates()`, and the route and edge
+models when configured — so a forked child inherits them copy-on-write instead of loading them.
+
+**The sharing is real, and measured.** A forked child, after the parent preloads, reports:
+
+```
+child: shared 174 MB   private 2 MB
+```
+
+against ~65 MB of private dataset pages when it loads its own. So the pool holds one copy of the dataset
+rather than one per worker, which is what the memory hypothesis in P8.4 wanted.
+
+**What it does not change is wall time**, and that is worth writing down before anyone expects otherwise:
+the workers' loads run *in parallel* today, so sharing them removes work from each process without
+shortening the critical path. Measured at 8 islands and 32 islands with a 200-iteration budget, before
+and after: 3.97/3.42 s against 4.02/3.95 s at 8, and 5.51/6.58 s against 5.76/5.73 s at 32, at loads
+rising from 15 to 19 — overlapping, and said so.
+
+The effect to look for is therefore in the *curve*, not in a single run: less memory traffic per
+iteration should show up as better per-process efficiency under contention, which is exactly what P9.2
+measures. The patch model is deliberately not preloaded: the evaluator builds its own per worker, so
+sharing it needs a change to how the model is owned, and that is a separate question.
+

@@ -1259,3 +1259,16 @@ issue comments.
   shared (#99), make the patch-state construction cheaper (#100), stop rebuilding bounds in every curve
   gather (#101), and the accounts comparison against a reference report (#95, carried from Phase 8 and
   renumbered P9.5 as a sub-issue of the new parent). Dashboard: **GREEN**.
+- P9.1 (performance): one copy of the dataset for the parallel pool. Measured first: a worker costs about
+  **0.98 s and 170 MB** to start on the C5-class sample (`from_dataset` 7 ms, `simulator()` 195 ms and
+  +63 MB, `candidates()` 539 ms and +90 MB, `patch_model()` 243 ms and +18 MB), so a 32-island run builds
+  about 5.4 GB of private state it could be sharing. `Optimizer` now touches those caches before it
+  creates a worker pool, so a **forked child inherits them copy-on-write**: a probe of the child's memory
+  reports **174 MB shared and 2 MB private**, against ~65 MB of private dataset pages when it loads its
+  own. Stated plainly: this does **not** change wall time, because the workers' loads already run in
+  parallel and sharing removes work from each process without shortening the critical path — measured at
+  8 and 32 islands with a 200-iteration budget, before and after, at loads rising from 15 to 19:
+  3.97/3.42 s against 4.02/3.95 s at 8, and 5.51/6.58 s against 5.76/5.73 s at 32, overlapping. The
+  effect it targets is memory traffic, which is what P9.2 measures on the curve. The patch model is
+  deliberately not preloaded: the evaluator builds its own per worker, so sharing it needs a change to
+  ownership rather than a preload, recorded as a separate question. Dashboard: **GREEN** (seven gates).

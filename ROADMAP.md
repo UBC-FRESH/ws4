@@ -400,7 +400,7 @@ of the memory hierarchy — not BLAS, not the per-process setup, not SMT, each e
 and found the concrete reason a shared dataset would not help as things stand: every process loads its
 own copy before doing anything, and the simulator writes to the fragments frame it inherits.
 
-- [ ] P9.1 Share the dataset across worker processes (#98)
+- [x] P9.1 Share the dataset across worker processes (#98)
 - [ ] P9.2 Re-measure island scaling with the dataset shared (#99)
 - [ ] P9.3 Make the patch-state construction cheaper (#100)
 - [ ] P9.4 Stop rebuilding bounds in every curve gather (#101)
