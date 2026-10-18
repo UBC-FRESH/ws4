@@ -12,13 +12,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from .opt.objective import (
-    Target,
-    flow_period_ends,
-    flow_values,
-    penalty,
-    period_value,
-)
+from .opt.objective import Target, flow_series, penalty, period_value
 
 
 def _by_year(values: pd.DataFrame) -> dict[tuple[int, str], float]:
@@ -125,11 +119,10 @@ def target_status(values: pd.DataFrame, targets: list[Target]) -> pd.DataFrame:
     for target in targets:
         if target.flow:
             # A flow target constrains the shape of a profile, so its report is the series itself:
-            # one row per period, exactly as the reference reports it. Reporting the single value a
-            # level target would have made a flow target look met while the search paid for it.
-            for year, value in zip(
-                flow_period_ends(target, horizon), flow_values(index, target, horizon), strict=True
-            ):
+            # one row per period, exactly as the reference reports it, with a zero for the period an
+            # even-flow comparison is made against. Reporting the single value a level target would
+            # have made a flow target look met while the search paid for it.
+            for year, value in sorted(flow_series(index, target, horizon).items()):
                 rows.append(
                     {
                         "account": target.account,

@@ -112,11 +112,13 @@ def test_a_flow_term_groups_and_clips_its_window() -> None:
     one_period = Target("a", 0, period_width=7, flow="even", flow_start=0, flow_end=7)
     assert flow_values(index, one_period, 10) == []  # fewer than two periods: nothing to compare
     rising = Target("a", 0, period_width=3, flow="ndy", flow_start=0, flow_end=7)
-    # the periods end at years 3 and 6 and cover years 1-3 (2+3+4 = 9) then 4-6 (5+6+7 = 18)
-    assert flow_values(index, rising, 10) == pytest.approx([100.0])
+    # account "a" is not a product, so a period's value is its own end year: year 3 holds 4 and
+    # year 6 holds 7, and the change between them is 75%
+    assert flow_values(index, rising, 10) == pytest.approx([75.0])
     falling = {(year, "a"): float(11 - year) for year in range(1, 7)}
     declining = Target("a", 0, period_width=3, flow="ndy", flow_start=0, flow_end=7)
-    assert flow_values(falling, declining, 10) == pytest.approx([-100 / 3])  # 27 then 18
+    # year 3 holds 8 and year 6 holds 5: a 37.5% decline
+    assert flow_values(falling, declining, 10) == pytest.approx([-37.5])
 
 
 def test_a_flow_target_is_rejected_for_unknown_keys() -> None:

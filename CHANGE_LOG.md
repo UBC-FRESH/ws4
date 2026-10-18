@@ -1495,3 +1495,18 @@ issue comments.
   the series belongs to, and twelve flow tests now state the end-labelled convention. What remains is
   mapping the series onto the reference's rows — an `even` series omits its reference period — and the
   comparison, which belongs with the other derived targets. Dashboard: **GREEN**.
+- P11.3 (parity, #115): **the flow constraints compared, and the report bug closed.** The reference's
+  flow definitions come from its own model file: `ndy(periods-9, periods, -1)` over the last ten periods
+  for the two growing-stock features, `even()` over the horizon for the products. Three things had to be
+  right, and the first two were the period convention reaching paths P11.1 had missed: `flow_values`
+  built **start-labelled** periods, and it **summed every account** over each period where a flow on a
+  growing stock is a *level* read at the period's end — the same accumulate/level rule as a target's
+  value. With both fixed, WS4's flow values match the reference's own `targets/flow_*.csv` to four
+  decimals (period 1 at 40.244 on both sides). A third: where a flow's balance is empty the reference
+  reports **0.0** (satisfied) while WS4 priced it infinite; reports and comparisons now carry the
+  reference's reading, and the pricing question is in the backlog with the measurement. And the bug
+  itself: `report_targets.csv` priced a flow target as a level, so a flow target could be reported as met
+  while the search paid for it. It now reports **one row per period**, priced by the same `penalty` the
+  objective uses. The acceptance comparison covers the flows alongside the accounts: **1,383
+  account-period and flow values reproduced on both 2026 scenarios**, with the families it cannot yet
+  compare named — 2 per-mill allocations, 63 patch distributions, 52 ratios. Dashboard: **GREEN**.

@@ -219,15 +219,20 @@ items are enhancements and maintenance.
   state) by building the year-invariant node order, areas and CSR once per group and sharing them,
   which is more than the laziness the note suggested. Building *less* of a state stays rejected, with
   P8.3's reason: the years that get one are already only the accounting points a target reads.
-- **Flow targets in `report_targets.csv`.** `open`. Found while fixing the periodic-target bug (P10.4,
-  #108). `target_status` prices every target as a level target summed over its period, but a target with
-  `flow` set is priced by the objective as a *series* — percent change per period against the reference
-  period (`even`) or the previous one (`ndy`), with the target's bounds applied per period. So a flow
-  target can be reported as met while the search is paying for it. Measured: an `ndy` target with
-  `minimum: -1` on a series that drops 100 -> 60 is priced at **39.00** by `objective` and reported as
-  `met` with **0.00** penalty. Left open deliberately: fixing it means deciding what the report should
-  *show* for a flow target (the period series, or the worst period), which is a design question rather
-  than a one-line fix.
+- **Flow targets in `report_targets.csv`.** `done` (P11.3, #115). A flow target is now reported as the
+  series the reference reports: one row per period, carrying the period's percent value and priced by
+  the same `penalty` the objective uses, with a zero for the period an even-flow comparison is made
+  against — which is what the reference's own report holds. Before this, a flow target was priced as a
+  level target and could be reported as met while the search was paying for it. Measured against the
+  reference's own `targets/flow_*.csv` on both 2026 scenarios: **values matching to four decimals**
+  (period 1 at 40.244 on both sides), and the acceptance check now compares **1,383** account-period and
+  flow values.
+- **A zero flow balance is priced as infinite but reported as satisfied.** `open`, a modelling question.
+  Where a flow's balance is empty — the no-treatment scenario, where nothing is harvested — the
+  objective prices every period as infinite (`flow_penalty`'s documented behaviour) while the reference's
+  report holds **0.0**, i.e. satisfied. A report and the acceptance comparison use the reference's
+  reading; whether the *objective* should too is a decision, since a run with an empty period is
+  currently penalised without bound.
 - **WS4's period convention versus the reference's.** `done` (P11.1, #113). A target now names the year
   its period **ends** on, and it accumulates only if it is a `product.` account; everything else — a
   feature, a patch, a size class's share — is a level read at that year. Pinned from the reference's own
