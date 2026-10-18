@@ -1417,3 +1417,9 @@ issue comments.
   in CI because the notebooks they build carried no kernelspec, where the committed notebooks do, so the
   fixture now sets the same metadata. Both deviations are in the close-out report, and the dashboard is
   **GREEN** again.
+- Fixed the second CI failure on the Phase 10 pull request: the check's tests need a kernel, and the
+  gate jobs had `nbclient` (through `nbsphinx`) but not `ipykernel`, which is what ships the `python3`
+  kernel spec, so they failed with `NoSuchKernel` while the `Notebook outputs` job passed — it installs
+  both explicitly. `requirements-dev.txt` now names `nbclient` and `ipykernel` with the reason, so the
+  suite carries what it needs rather than depending on a transitive dependency. The `Notebook outputs`
+  job itself is **green in CI**; dashboard **GREEN**.
