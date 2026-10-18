@@ -1110,3 +1110,14 @@ issue comments.
   the period clock, and period 0 as the pre-simulation state), and the objective (targets, weights, and
   the three shapes of constraint: a level, a flow, and a map). It is indexed from the home page and the
   agent index, and each page links into the reference for the detail. Dashboard: **GREEN** (seven gates).
+- Queued the Phase 7 close-out: pull request #89 (`feature/p7-parity` into `main`) and the report
+  `notes/reports/p7-closeout.md`. The report recommends the squash merge, deleting the branch, closing
+  parent issue #82, and launching P8 (verify the replacement claim). It records the acceptance evidence
+  — the two command-line gaps closed with four behavioural tests, `threads` applied with the island
+  scaling measured and its load recorded, the sample estate used by two guides and four notebooks, and
+  the dashboard green at every commit — plus the phase's supporting results (the patch-account
+  correction, the dense-harvest measurement and the named bottleneck) and its deviations: the scaling
+  criterion met with a stated limit, `--iterations` defaulting to 500 rather than the 2000 the issue
+  suggested, P7.6 initially misdiagnosed as a search bug when it was the run's report, and the
+  dense-harvest path measured rather than improved. No settings change is pending. Dashboard: **GREEN**
+  (seven gates).

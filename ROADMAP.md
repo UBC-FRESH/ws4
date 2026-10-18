@@ -18,7 +18,7 @@ exists and the maintainer approves it.
 | P4 Release and deploy | #36 | `feature/p4-release` | complete |
 | P5 Operate and maintain | #44 | `feature/p5-operate` | complete |
 | P6 Performance and scalability | #60 | `feature/p6-performance` | complete |
-| P7 Parity and the analyst workflow | #82 | `feature/p7-parity` | active |
+| P7 Parity and the analyst workflow | #82 | `feature/p7-parity` | pr-open |
 
 ## Lifecycle Map
 
@@ -331,7 +331,7 @@ Acceptance criteria:
 
 Parent issue: #82
 Branch: `feature/p7-parity`
-Status: active
+Status: pr-open
 
 Goal: make the replacement claim checkable and the tool comfortable to use all day: close the gaps the
 Phase 6 close-out recorded, put the workspace in step with the tooling, and extend the documentation
