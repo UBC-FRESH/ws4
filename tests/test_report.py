@@ -58,20 +58,35 @@ def test_write_report(tmp_path: Path) -> None:
     assert (tmp_path / "report_targets.csv").is_file()
 
 
-def test_a_periodic_target_is_priced_over_its_period() -> None:
-    """A target that its period's later years carry is met, not below, and carries no penalty."""
-    targets = [
-        Target("a", 0, minimum=25.0, period_width=2),  # 10 + 20 = 30, met
-        Target("a", 0, minimum=35.0, period_width=2),  # 30 < 35, below
-    ]
-    status = target_status(_values(), targets)
-    met, below = status.iloc[0], status.iloc[1]
-    assert met["value"] == 30.0
-    assert met["status"] == "met"
-    assert met["penalty"] == 0.0
-    assert below["value"] == 30.0
-    assert below["status"] == "below"
-    assert below["penalty"] > 0.0
+def test_a_product_target_is_priced_over_its_period() -> None:
+    """A product accumulates: a period's value is the sum of its years, ending at its year."""
+    values = pd.DataFrame({"year": [0, 1], "account": ["product.a"] * 2, "value": [10.0, 20.0]})
+    status = target_status(
+        values,
+        [
+            Target("product.a", 0, minimum=10.0, maximum=10.0, period_width=2),  # years -1..0 -> 10
+            Target("product.a", 1, minimum=30.0, maximum=30.0, period_width=2),  # years 0..1 -> 30
+        ],
+    )
+    first, second = status.iloc[0], status.iloc[1]
+    assert first["value"] == 10.0
+    assert first["status"] == "met"
+    assert second["value"] == 30.0
+    assert second["status"] == "met"
+    off = target_status(values, [Target("product.a", 1, minimum=35.0, period_width=2)])
+    assert off.iloc[0]["value"] == 30.0
+    assert off.iloc[0]["status"] == "below"
+
+
+def test_a_level_target_is_priced_at_its_periods_end() -> None:
+    """A feature is a level: the report reads it at the period's end year, whatever the width."""
+    values = pd.DataFrame({"year": [0, 1], "account": ["feature.a"] * 2, "value": [10.0, 20.0]})
+    met = target_status(values, [Target("feature.a", 1, minimum=20.0, period_width=5)])
+    assert met.iloc[0]["value"] == 20.0
+    assert met.iloc[0]["status"] == "met"
+    off = target_status(values, [Target("feature.a", 1, minimum=25.0, period_width=5)])
+    assert off.iloc[0]["value"] == 20.0
+    assert off.iloc[0]["status"] == "below"
 
 
 def test_a_single_year_target_still_reads_that_year() -> None:

@@ -122,16 +122,29 @@ def test_warm_precomputes_the_candidate_contributions(tmp_path: Path) -> None:
     assert len(evaluator._contributions) == sum(len(chains) for chains in candidates.values())
 
 
-def test_periodic_target_sums_the_account_over_its_period() -> None:
-    """A period-width target scores the account summed over the years of the period."""
+def test_a_product_target_sums_the_account_over_its_period() -> None:
+    """A period ends at its year, and a product accumulates over it."""
     values = pd.DataFrame(
-        {"year": [0, 1, 2, 3], "account": ["a"] * 4, "value": [1.0, 2.0, 3.0, 4.0]}
+        {"year": [0, 1, 2, 3], "account": ["product.a"] * 4, "value": [1.0, 2.0, 3.0, 4.0]}
     )
     periodic = [
-        Target("a", 0, minimum=3.0, maximum=3.0, period_width=2),
-        Target("a", 2, minimum=3.0, maximum=3.0, period_width=2),
+        Target("product.a", 0, minimum=1.0, maximum=1.0, period_width=2),  # years -1..0 -> 1
+        Target("product.a", 2, minimum=5.0, maximum=5.0, period_width=2),  # years 1..2 -> 2 + 3
     ]
-    assert objective(values, periodic) == pytest.approx(4.0)  # |3-3| + |7-3|
+    assert objective(values, periodic) == pytest.approx(0.0)
+    off = [Target("product.a", 2, minimum=7.0, maximum=7.0, period_width=2)]
+    assert objective(values, off) == pytest.approx(2.0)  # the period's total, not one year
+
+
+def test_a_level_target_is_read_at_its_periods_end() -> None:
+    """A feature is a state of the map, so a period's value is the account at its end year."""
+    values = pd.DataFrame(
+        {"year": [0, 1, 2, 3], "account": ["feature.a"] * 4, "value": [1.0, 2.0, 3.0, 4.0]}
+    )
+    targets = [Target("feature.a", 2, minimum=3.0, maximum=3.0, period_width=5)]
+    assert objective(values, targets) == pytest.approx(0.0)  # year 2, whatever the width
+    off = [Target("feature.a", 3, minimum=3.0, maximum=3.0, period_width=5)]
+    assert objective(values, off) == pytest.approx(1.0)  # year 3, not the sum of the window
 
 
 def test_incremental_matches_periodic_targets(tmp_path: Path) -> None:

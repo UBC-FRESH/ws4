@@ -1461,3 +1461,14 @@ issue comments.
   convention (#113), the ratios (#114), the flow constraints (#115), the patch size and age-class
   distributions (#116), the routing check's mill set (#117), and the growth check's retargeting (#118).
   Dashboard: **GREEN**.
+- P11.1 (parity, #113): **WS4's period convention now matches the reference's.** A target names the year
+  its period **ends** on, and it accumulates only if it is a `product.` account; everything else — a
+  feature, a patch, a share — is a level read at that year. Pinned from the reference's own period
+  values, not inferred: an account it reports as **1,921,975.8** for year 10 is the sum of WS4's years
+  1-10 (**1,921,975.7**), where the old start-labelled window summed years 10-19 (1,461,044.0), and its
+  `feature.Area.managed.PL` at year 10 is the level (38,436.2) where WS4 summed ten years of it
+  (384,362.3 — **ten times high**). The objective, the report, the incremental evaluator, the patch
+  accounting points and the MIP bound all follow one rule, `ws4.opt.objective.accumulates`, and the
+  docs that described the old mapping are corrected — including the ones that already said period 0 is
+  the snapshot while the code's window disagreed. The acceptance comparison still passes on both 2026
+  scenarios, **1,323 account-period values each**. Dashboard: **GREEN**.

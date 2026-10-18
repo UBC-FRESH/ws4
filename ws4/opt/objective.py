@@ -83,14 +83,69 @@ class Target:
             raise ValueError("flow_end must be after flow_start")
 
     def cell_years(self) -> range:
-        """Return the years the target sums the account over.
+        """Return the years of the target's period.
+
+        The period **ends** at :attr:`year`, which is the reference implementation's convention:
+        its report labels a period by the year it ends on, so a period it reports as year 10 with
+        width 10 covers years 1-10. Measured against the reference's own period values on the C5
+        sample, a ``product.`` account reported as 1,921,975.8 for year 10 is the sum of WS4's years
+        1-10 (1,921,975.7) and not of years 0-9 or 10-19, and its period 0 is the initial snapshot
+        at year 0 — so a window that reaches back past the horizon contributes nothing, which is
+        what makes the snapshot expressible.
 
         Returns
         -------
         range
-            The years of the target's period.
+            The years of the target's period, ending at :attr:`year`.
         """
-        return range(self.year, self.year + max(1, self.period_width))
+        return range(self.year - max(1, self.period_width) + 1, self.year + 1)
+
+
+#: The prefix of an account that accumulates over a period rather than being read at its end.
+ACCUMULATING_PREFIX = "product."
+
+
+def accumulates(account: str) -> bool:
+    """Return whether an account accumulates over a target's period.
+
+    A ``product.`` account is something produced during the period, so a period's value is the
+    sum of its years. Everything else — the ``feature.`` accounts, the patch accounts, a size
+    class's share — is a level: a state of the map at a point in time, read at the period's end.
+    That is the reference's own convention, and its report writers say the same in their own
+    definitions.
+
+    Parameters
+    ----------
+    account : str
+        The account name.
+
+    Returns
+    -------
+    bool
+        True when the period's value is the sum of its years.
+    """
+    return account.startswith(ACCUMULATING_PREFIX)
+
+
+def period_value(index: Mapping[tuple[int, str], float], target: Target) -> float:
+    """Return a target's value over its period.
+
+    Parameters
+    ----------
+    index : mapping of (int, str) to float
+        The account values by ``(year, account)``.
+    target : Target
+        The target.
+
+    Returns
+    -------
+    float
+        The sum of the account over the target's period when it accumulates, and its value at the
+        period's end year when it does not.
+    """
+    if accumulates(target.account):
+        return sum(index.get((year, target.account), 0.0) for year in target.cell_years())
+    return index.get((target.year, target.account), 0.0)
 
 
 def penalty(value: float, target: Target) -> float:
@@ -266,8 +321,7 @@ def objective(values: pd.DataFrame, targets: Sequence[Target]) -> float:
         if target.flow:
             total += flow_penalty(index, target, horizon)
             continue
-        value = sum(index.get((year, target.account), 0.0) for year in target.cell_years())
-        total += penalty(value, target)
+        total += penalty(period_value(index, target), target)
     return total
 
 
@@ -294,8 +348,8 @@ def objective_terms(
         The targets.
     point_in_time : callable or None, optional
         Returns True for an account that is a snapshot rather than an additive quantity (a patch
-        account); such a target is read at the first year of its period only. Defaults to None
-        (every account is additive).
+        account); such a target is read at its period's end year. Defaults to None, which applies
+        :func:`accumulates`: a ``product.`` account sums its period, everything else is a level.
 
     Returns
     -------
@@ -309,10 +363,11 @@ def objective_terms(
         if target.flow:
             penalties.append(flow_penalty(index, target, horizon))
             continue
-        years = list(target.cell_years())
         if point_in_time is not None and point_in_time(target.account):
-            years = years[:1]
-        value = sum(index.get((year, target.account), 0.0) for year in years)
+            # a caller that knows an account is a level, whatever its name says
+            value = index.get((target.year, target.account), 0.0)
+        else:
+            value = period_value(index, target)
         penalties.append(penalty(value, target))
     return penalties
 

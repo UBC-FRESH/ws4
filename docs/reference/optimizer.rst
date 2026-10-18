@@ -18,7 +18,7 @@ a count) the account value for the period is the sum of its years, compared to t
 target is ``period_width: 10``; the penalty is the weighted shortfall below the minimum plus the
 weighted excess above the maximum, and the objective is the total penalty (lower is better). A **patch**
 account is a snapshot of the map rather than an additive quantity, so a patch target is read at the
-first year of its period. Targets load from a YAML file:
+end year of its period. Targets load from a YAML file:
 
 .. code-block:: yaml
 
@@ -40,7 +40,7 @@ first year of its period. Targets load from a YAML file:
 **Period numbering** follows the established convention: **period 0 is a zero-length period describing
 the instantaneous state of the forest before the simulation starts**, and periods **1 to N** are the
 accounting periods the targets are set on. A target's ``year`` is a year, not a period index: a target
-at ``year: 0`` with ``period_width: 10`` is the level for period 1, which covers years 0 to 9.
+at ``year: 10`` with ``period_width: 10`` is the level for period 1, which covers years 1 to 10.
 
 **Flow targets** express even flow or non-declining yield without pinning the level, which is the
 established way to state them: the flow target is set to zero with a weight, and a separate target on

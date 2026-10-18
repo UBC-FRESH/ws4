@@ -32,7 +32,9 @@ def test_a_target_period_must_be_at_least_one_year() -> None:
     """The account period is a whole number of years, never shorter."""
     with pytest.raises(ValueError, match="period_width"):
         Target("a", 0, minimum=1.0, period_width=0)
-    assert Target("a", 0, minimum=1.0, period_width=7).cell_years() == range(0, 7)
+    # a period ends at its year, which is the reference implementation's convention
+    assert Target("a", 0, minimum=1.0, period_width=7).cell_years() == range(-6, 1)
+    assert Target("a", 10, minimum=1.0, period_width=10).cell_years() == range(1, 11)
 
 
 def test_penalty_non_linear_squares_the_deviation() -> None:

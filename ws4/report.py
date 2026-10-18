@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from .opt.objective import Target, penalty
+from .opt.objective import Target, penalty, period_value
 
 
 def _by_year(values: pd.DataFrame) -> dict[tuple[int, str], float]:
@@ -94,11 +94,11 @@ def target_status(values: pd.DataFrame, targets: list[Target]) -> pd.DataFrame:
     index = _by_year(values)
     rows: list[dict[str, object]] = []
     for target in targets:
-        # A target applies to the account summed over its period, exactly as the objective
-        # prices it (`Target.cell_years()`). Reading only the target's first year reported a
-        # periodic target as unmet — with a penalty the search never applied — whenever the
-        # period's later years carried it over the line.
-        value = sum(index.get((year, target.account), 0.0) for year in target.cell_years())
+        # A target is priced over its period exactly as the objective prices it: the window's sum
+        # for an accumulating account, the period's end value for a level. Reading one year of it
+        # reported a periodic target as unmet — with a penalty the search never applied — whenever
+        # the period's later years carried it over the line.
+        value = period_value(index, target)
         if target.minimum is not None and value < target.minimum:
             status = "below"
         elif target.maximum is not None and value > target.maximum:

@@ -54,7 +54,7 @@ on the right side, which is the usual choice for a share or a flow term.
 **4. Say which years.** ``period_width`` groups years into the period a target reads: ``10`` means a
 decade, ``1`` a single year. Period 0 is the state before the simulation starts, so a target at
 ``year: 0`` with ``period_width: 10`` is the level for the **first accounting period**, covering
-years 0 to 9. Add one target per period you care about, or leave later periods out — but remember
+years 1 to 10. Add one target per period you care about, or leave later periods out — but remember
 that an unconstrained year is free, and a free year will be spent (see
 :doc:`../getting-started/first-model`).
 

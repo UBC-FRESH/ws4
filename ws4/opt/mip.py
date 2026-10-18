@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 
 from ..patch.accounts import load_patch_edges_detailed
-from .objective import Target
+from .objective import Target, accumulates
 from .operators import Candidates, Chain, Schedule
 
 
@@ -100,7 +100,7 @@ def option_contributions(
         The base values per block, the deltas per block-option, and the accounted keys.
     """
     accounted = sorted(
-        {(target.account, year) for target in targets for year in target.cell_years()}
+        {(target.account, year) for target in targets for year in _target_years(target)}
     )
     empty = pd.DataFrame([], columns=["block_id", "treatment", "period"])
     base: dict[int, dict[tuple[str, int], float]] = {}
@@ -264,7 +264,7 @@ def solve_mip(
 
     # value + shortfall >= minimum ; -value + excess >= -maximum.
     for target_index, target in enumerate(targets):
-        target_years = list(target.cell_years())
+        target_years = _target_years(target)
         delta_row = np.zeros(n_vars)
         for key, delta in deltas.items():
             total = sum(delta.get((target.account, year), 0.0) for year in target_years)
@@ -314,6 +314,25 @@ def solve_mip(
         status=status,
         variables=n_x,
     )
+
+
+def _target_years(target: Target) -> list[int]:
+    """Return the years a target's value is read from.
+
+    An accumulating account sums its whole period; a level is read at the period's end year, which
+    is the reference implementation's convention (see :func:`ws4.opt.objective.accumulates`).
+
+    Parameters
+    ----------
+    target : Target
+        The target.
+
+    Returns
+    -------
+    list of int
+        The years the target's value comes from.
+    """
+    return list(target.cell_years()) if accumulates(target.account) else [target.year]
 
 
 def bound_for(

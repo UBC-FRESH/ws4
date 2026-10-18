@@ -228,6 +228,15 @@ items are enhancements and maintenance.
   `met` with **0.00** penalty. Left open deliberately: fixing it means deciding what the report should
   *show* for a flow target (the period series, or the worst period), which is a design question rather
   than a one-line fix.
+- **WS4's period convention versus the reference's.** `done` (P11.1, #113). A target now names the year
+  its period **ends** on, and it accumulates only if it is a `product.` account; everything else — a
+  feature, a patch, a size class's share — is a level read at that year. Pinned from the reference's own
+  period values, not inferred: an account it reports as **1,921,975.8** for year 10 is the sum of WS4's
+  years 1-10 (**1,921,975.7**), where the old start-labelled window summed years 10-19 (1,461,044.0);
+  and its `feature.Area.managed.PL` at year 10 is the level (38,436.2) where WS4 summed ten years of it
+  (**384,362.3**, ten times high). The objective, the report, the incremental evaluator, the patch
+  accounting points and the MIP bound all follow one rule, `ws4.opt.objective.accumulates()`, and the
+  acceptance check states the rule **independently** so the two can disagree.
 - **Docstring completeness.** `done`. `scripts/doc_audit.py` is the oracle: it checks every public
   function, method, property, class, and module in `ws4` and `scripts/` for the four rules (a docstring
   exists; every parameter is documented and nothing else; a value-returning callable has a `Returns`

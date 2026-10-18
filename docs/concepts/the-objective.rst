@@ -22,7 +22,7 @@ Beyond a level, there are two other shapes of constraint:
   priced per period. Paired with a floor, a band around zero finds the highest flat profile an estate
   can sustain without the level ever being stated.
 * a **patch** target constrains the map: the size distribution of patches of a criterion feature. It is
-  read at the first year of its period, priced through a patch model, and it is what makes the search
+  read at the end year of its period, priced through a patch model, and it is what makes the search
   arrange harvesting into openings rather than simply count it.
 
 Weights are the whole tuning story. A weight that is much larger than the others makes its term
