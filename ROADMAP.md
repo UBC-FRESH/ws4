@@ -21,7 +21,7 @@ exists and the maintainer approves it.
 | P6 Performance and scalability | #60 | `feature/p6-performance` | complete |
 | P7 Parity and the analyst workflow | #82 | `feature/p7-parity` | complete |
 | P8 Verify the replacement claim | #90 | `feature/p8-verify` | complete |
-| P9 Spatial performance and memory | #97 | `feature/p9-memory` | active |
+| P9 Spatial performance and memory | #97 | `feature/p9-memory` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -394,7 +394,9 @@ Acceptance criteria:
 
 Parent issue: #97
 Branch: `feature/p9-memory`
-Status: active
+Status: pr-open
+Pull request: against `main`, carrying Phase 10 with it — Phase 10 was stacked on this branch and merged
+into it (`b512cd9`) when the maintainer approved it, so the two phases reach `main` together.
 
 Goal: act on what Phase 8 measured. P8.4 established that island scaling stops being near-linear because
 of the memory hierarchy — not BLAS, not the per-process setup, not SMT, each excluded by measurement —

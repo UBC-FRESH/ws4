@@ -1444,3 +1444,9 @@ issue comments.
   the enclosure found: the library-path notebook the gallery was missing, **`scripts/check_notebooks.py`**
   re-running every example and reporting drifted output, labels naming each example's path, and the fix
   for `report_targets.csv` pricing a periodic target from a single year. Dashboard: **GREEN**.
+- Queued the Phase 9 close-out: the report is `notes/reports/p9-closeout.md`, the roadmap moves P9 to
+  `pr-open`, and its pull request is against `main` carrying Phase 10 with it, since Phase 10 was
+  stacked on this branch and merged into it (`b512cd9`). The report's recommendation is the derived
+  targets — the reference's ratios, flow constraints and patch-size distributions, 178 of them — and the
+  three sample-side gaps this phase uncovered: WS4's period convention against the reference's, the
+  sample's two-mill set, and the growth check's retargeting.
