@@ -1581,3 +1581,17 @@ issue comments.
   exclusive account and duplicates each share into its destination, where WS4 routes each block by
   least cost; that allocation is what #114's route ratios wait on. Recorded in the parity note.
   Dashboard: **GREEN**.
+- P11.2 (#114) closed, with the capability #117 was missing: **a destination allocation**, which
+  partitions a master product across the destinations it is routed to with an account for the
+  remainder — the reference's own shape for its mill products. It partitions exactly (Mill 1 plus Mill 2
+  equals the master's own value, nothing unallocated on this sample), refuses shares that exceed their
+  master, and is tested both ways. Pointing it at the conifer yield made the remaining difference
+  legible and it is a **modelling** difference, not a comparison one: WS4 sends each block's product to
+  its cheapest mill (118,498 / **251,703**), where the reference's near-balanced 54/46 (1,029,670 /
+  892,306) comes from its own exclusive-account allocation under mill minimums. So the route ratios'
+  denominator is a quantity the two tools decide by different rules; comparing the ratio needs the
+  reference's destination policy first, which is its own task. The ratio definitions, the coverage and
+  that blocker are all recorded, and the acceptance check names the 52 ratio targets it leaves out and
+  why. One correction kept: the first run doubled the mill volumes because the configuration had both a
+  volume account and an allocation writing the same name — caught by the master guard, once it checked
+  every year either side knows. Dashboard: **GREEN**.

@@ -174,6 +174,32 @@ class RouteAccount:
 
 
 @dataclass(frozen=True)
+class ProductAllocation:
+    """A master product partitioned across the destinations it is routed to.
+
+    The reference expresses its mill products this way: an account that splits a master product
+    between destinations, with an account for whatever does not move. The shares come from the
+    ledger's routed volumes, so the parts sum back to the master's own value.
+
+    Attributes
+    ----------
+    master : str
+        The product account being partitioned.
+    allocations : tuple of tuple of (str, str)
+        ``(destination, account)`` per share.
+    unallocated : str
+        The account for what the master did not send anywhere, or an empty string for none.
+    factor : float
+        A scaling factor applied to every share (default 1).
+    """
+
+    master: str
+    allocations: tuple[tuple[str, str], ...]
+    unallocated: str = ""
+    factor: float = 1.0
+
+
+@dataclass(frozen=True)
 class DuplicateAccount:
     """A duplicate account (``duplicateAccount(master, target, factor)``).
 
@@ -204,6 +230,8 @@ class RouteConfig:
         The route accounts to resolve.
     duplicate_accounts : tuple of DuplicateAccount
         The duplicate accounts to resolve.
+    product_allocations : tuple of ProductAllocation
+        The master products to partition across their destinations.
     period_width : int
         The planning-period width, in years.
     """
@@ -211,6 +239,7 @@ class RouteConfig:
     model: RouteModel
     route_accounts: tuple[RouteAccount, ...] = ()
     duplicate_accounts: tuple[DuplicateAccount, ...] = ()
+    product_allocations: tuple[ProductAllocation, ...] = ()
     period_width: int = 1
 
 
@@ -267,6 +296,17 @@ def load_route_config(path: Path) -> RouteConfig:
         )
         for item in raw.get("route_accounts", [])
     )
+    product_allocations = tuple(
+        ProductAllocation(
+            master=str(item["master"]),
+            allocations=tuple(
+                (str(pair["destination"]), str(pair["account"])) for pair in item["allocations"]
+            ),
+            unallocated=str(item.get("unallocated", "")),
+            factor=float(item.get("factor", 1.0)),
+        )
+        for item in raw.get("product_allocations", [])
+    )
     duplicate_accounts = tuple(
         DuplicateAccount(
             master=str(item["master"]),
@@ -279,8 +319,75 @@ def load_route_config(path: Path) -> RouteConfig:
         model=model,
         route_accounts=route_accounts,
         duplicate_accounts=duplicate_accounts,
+        product_allocations=product_allocations,
         period_width=int(raw.get("period_width", 1)),
     )
+
+
+def resolve_allocation_values(
+    values: pd.DataFrame,
+    volumes: pd.DataFrame,
+    allocations: Sequence[ProductAllocation],
+) -> pd.DataFrame:
+    """Partition each master product across its destinations, with an account for the rest.
+
+    Parameters
+    ----------
+    values : pandas.DataFrame
+        The account values (``year``, ``account``, ``value``) the partitions are taken from.
+    volumes : pandas.DataFrame
+        The routed volumes (``year``, ``destination``, ``product``, ``volume``).
+    allocations : sequence of ProductAllocation
+        The partitions.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row per year and account for the shares and the unallocated remainder.
+
+    Raises
+    ------
+    ValueError
+        When the routed shares of a master exceed its own value, which would mean the
+        configuration and the routing disagree about what the master is.
+    """
+    if not allocations:
+        return pd.DataFrame(columns=["year", "account", "value"])
+    totals = values.groupby(["year", "account"], as_index=False)["value"].sum()
+    rows: list[dict[str, object]] = []
+    for allocation in allocations:
+        master = totals[totals["account"] == allocation.master]
+        if master.empty:
+            continue
+        moved: dict[int, float] = {int(year): 0.0 for year in master["year"]}
+        for destination, account in allocation.allocations:
+            share = volumes[
+                (volumes["destination"] == destination) & (volumes["product"] == allocation.master)
+            ]
+            for year, volume in zip(share["year"], share["volume"], strict=True):
+                year = int(year)
+                value = float(volume) * allocation.factor
+                moved[year] = moved.get(year, 0.0) + value
+                rows.append({"year": year, "account": account, "value": value})
+        # Check every year either side knows about, not just the master's own: a share routed in a
+        # year the master has no value for is still a share of it.
+        totals_by_year = {
+            int(year): float(value)
+            for year, value in zip(master["year"], master["value"], strict=True)
+        }
+        for year in sorted(set(totals_by_year) | set(moved)):
+            total = totals_by_year.get(year, 0.0)
+            rest = total - moved.get(year, 0.0)
+            if rest < -1e-6:
+                raise ValueError(
+                    f"{allocation.master}: the shares routed in year {year} exceed its own value "
+                    f"({moved[year]:.6f} against {total:.6f})"
+                )
+            if allocation.unallocated:
+                rows.append(
+                    {"year": year, "account": allocation.unallocated, "value": max(rest, 0.0)}
+                )
+    return pd.DataFrame(rows, columns=["year", "account", "value"])
 
 
 def resolve_account_values(
@@ -514,6 +621,22 @@ class RouteCostLedger:
                 "length_m",
                 "haul_cost",
             ],
+        )
+
+    def product_volumes(self) -> pd.DataFrame:
+        """Return the routed volume per year, destination and product.
+
+        Returns
+        -------
+        pandas.DataFrame
+            ``year``, ``destination``, ``product`` and ``volume`` columns.
+        """
+        return pd.DataFrame(
+            [
+                {"year": year, "destination": destination, "product": product, "volume": volume}
+                for (year, destination, product), volume in sorted(self._product_volume.items())
+            ],
+            columns=["year", "destination", "product", "volume"],
         )
 
     def network_table(self) -> pd.DataFrame:

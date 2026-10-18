@@ -27,10 +27,12 @@ from ..patch.edge import EdgeElement, edge_values
 from ..patch.metrics import patch_metrics
 from ..roads.accounts import (
     DuplicateAccount,
+    ProductAllocation,
     RouteAccount,
     RouteCostLedger,
     RouteModel,
     resolve_account_values,
+    resolve_allocation_values,
 )
 from ..roads.network import RouteNetwork
 from .curve import CurveTable
@@ -871,6 +873,7 @@ class Simulator:
         route_model: RouteModel | None = None,
         route_accounts: Sequence[RouteAccount] = (),
         duplicate_accounts: Sequence[DuplicateAccount] = (),
+        product_allocations: Sequence[ProductAllocation] = (),
         max_opening_ha: float | None = None,
         min_green_up_years: int | None = None,
         patch_accounts: Sequence[PatchAccount] = (),
@@ -902,6 +905,9 @@ class Simulator:
             The route accounts to resolve into the account values.
         duplicate_accounts : sequence of DuplicateAccount, optional
             The duplicate accounts to apply to the account values.
+        product_allocations : sequence of ProductAllocation, optional
+            Master products to partition across the destinations they were routed to, with an
+            account for whatever did not move.
         max_opening_ha : float or None, optional
             The maximum opening size. When given, ``spatial_violations.csv`` reports the
             patches over it.
@@ -952,6 +958,14 @@ class Simulator:
             )
         elif duplicate_accounts:
             values = resolve_account_values(values, None, duplicate_accounts)
+        if ledger is not None and product_allocations:
+            # a master product partitioned across the destinations it was routed to, with an account
+            # for the rest: the reference's own shape for its mill products
+            shares = resolve_allocation_values(
+                values, ledger.product_volumes(), product_allocations
+            )
+            if not shares.empty:
+                values = pd.concat([values, shares], ignore_index=True)
         values.to_csv(out_dir / "account_values.csv", index=False)
         pd.DataFrame(self._product_values, columns=["year", "account", "value"]).to_csv(
             out_dir / "product_values.csv", index=False

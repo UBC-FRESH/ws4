@@ -257,3 +257,62 @@ def test_a_cost_account_cannot_name_a_product() -> None:
 
     with pytest.raises(ValueError, match="only be named on a volume account"):
         RouteAccount("10", "haul", "route.mill.haul", product="product.Conif")
+
+
+def test_a_product_allocation_partitions_a_master_across_destinations() -> None:
+    """The shares come from the routed volumes and the rest is the unallocated account."""
+    from ws4.roads.accounts import ProductAllocation, resolve_allocation_values
+
+    values = pd.DataFrame(
+        {"year": [0, 0], "account": ["product.yield", "other"], "value": [100.0, 5.0]}
+    )
+    volumes = pd.DataFrame(
+        {
+            "year": [0, 0],
+            "destination": ["mill1", "mill2"],
+            "product": ["product.yield"] * 2,
+            "volume": [30.0, 45.0],
+        }
+    )
+    shares = resolve_allocation_values(
+        values,
+        volumes,
+        [
+            ProductAllocation(
+                master="product.yield",
+                allocations=(("mill1", "product.mill1"), ("mill2", "product.mill2")),
+                unallocated="product.unallocated",
+            )
+        ],
+    )
+    got = {
+        (account, year): value
+        for account, year, value in zip(
+            shares["account"], shares["year"], shares["value"], strict=True
+        )
+    }
+    assert got[("product.mill1", 0)] == 30.0
+    assert got[("product.mill2", 0)] == 45.0
+    assert got[("product.unallocated", 0)] == 25.0  # 100 - 30 - 45
+
+
+def test_an_allocation_that_exceeds_its_master_is_refused() -> None:
+    """Shares larger than the master would mean the configuration and routing disagree."""
+    from ws4.roads.accounts import ProductAllocation, resolve_allocation_values
+
+    values = pd.DataFrame({"year": [0], "account": ["product.yield"], "value": [10.0]})
+    volumes = pd.DataFrame(
+        {"year": [0], "destination": ["mill1"], "product": ["product.yield"], "volume": [99.0]}
+    )
+    with pytest.raises(ValueError, match="exceed its own value"):
+        resolve_allocation_values(
+            values,
+            volumes,
+            [
+                ProductAllocation(
+                    master="product.yield",
+                    allocations=(("mill1", "product.mill1"),),
+                    unallocated="product.unallocated",
+                )
+            ],
+        )

@@ -469,3 +469,34 @@ an **exclusive** account split between the two mills, and duplicates each mill's
 destination and into the conifer total — which is a *proportional allocation* between destinations rather
 than WS4's per-block least-cost routing. That is the question #114's route ratios now wait on.
 
+### The destination allocation, and the difference that is left
+
+WS4 has the capability now: a route configuration can partition a **master product across the
+destinations it is routed to**, with an account for whatever does not move — which is how the reference
+expresses its mill products. `resolve_allocation_values` takes the shares from the ledger's routed
+volumes and the master's total from the simulated values, so the parts always sum back to the whole;
+shares that exceed their master are refused rather than reported. The configuration, the resolver and
+the pass through `Simulator.run` are tested both ways.
+
+Pointed at the 2026 sample's conifer yield, it partitions exactly — Mill 1 plus Mill 2 equals the
+master's own value for the year, and nothing is left unallocated because every block is linked to a mill
+— and that is what makes the remaining difference legible:
+
+| | Mill 1 | Mill 2 | Unallocated |
+| --- | ---: | ---: | ---: |
+| WS4, by least haul cost per block | 118,498 | **251,703** | 0 |
+| Reference, its own destination policy | **1,029,670** | 892,306 | — |
+
+The split is nearly **opposite**, and it is not a bug in either: WS4 sends each block's product to its
+cheapest mill, and the reference's near-balanced 54/46 is the outcome of its own model — an exclusive
+account allocated under mill minimums and its own cost rules, which is a **planning decision** rather
+than a routing consequence. So `ratio.route.haul.MILL1` still cannot be compared: its denominator is the
+mill product, and the two tools decide that product's split by different rules. The capability is built;
+what is missing for the ratio is the reference's destination policy, which is a modelling question and
+not a comparison one.
+
+One correction worth keeping: the first run of this doubled the mill volumes, because the configuration
+had both a volume route account *and* an allocation writing the same account name. The comparison caught
+it because the parts then exceeded the master — which is exactly what the guard is for, once it checks
+every year either side knows about rather than only the master's own.
+
