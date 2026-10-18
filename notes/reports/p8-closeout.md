@@ -2,28 +2,33 @@
 
 Phase: P8 verify the replacement claim
 Parent issue: #90
-Pull request: not opened yet — the phase is not complete
-Evidence head: `dd2ddbb`, the head that the gates below cover
-Report commit: this draft. Its status is a draft until #95's comparison runs.
+Pull request: #<number>, `feature/p8-verify` into `main`
+Evidence head: `5f282ee`, the head the gates cover, plus the commits that queue this report
+Report commit: the commit that adds this report. Its CI run is posted on the pull request.
 Date: 2026-10-18
-Status: **draft**. Phase 8 has one task open (#95), which needs a reference export from a licensed
-Windows run. Nothing here is queued for approval yet.
+Status: queued for approval. Not merged.
 
-## Why this is a draft
+## Why the phase closes with a task carried forward
 
-Phase 8 exists to demonstrate the replacement claim rather than assert it, and its headline deliverable —
-the accounts comparison — has not run. P8.5's comparison is built, tested and documented, the sample it
-runs on is packaged with digests, and the only missing input is the reference's own export of a schedule
-and its account values. A phase called *verify the replacement claim* should not close before that
-comparison produces a result.
+Phase 8's own acceptance criteria — the four below — are met. P8.5 was added mid-phase, on approval,
+after P8.1 established the gap it closes, and it is **blocked on an input from outside this repository**:
+producing a reference account report needs a licensed Windows run. Holding the phase open for it would
+leave this phase's nine commits unmerged and rebasing against a moving `main` for however long that
+takes, which is the opposite of what the deferred-work mechanism is for.
+
+So #95 is deferred to Phase 9 with its state intact — the comparison is built, tested and documented,
+the sample it runs on is packaged with digests, and only the reference's export is missing — and it is
+re-linked as a sub-issue of the next phase's parent at that launch. The report's section 6 folds it
+back in as a P9 task, so nothing is lost but the artificial coupling of a ready phase to a Monday.
 
 ## Recommendation
 
-Not yet. When #95's comparison has run, this report becomes the close-out and the recommendation will be:
+Approve these actions. The agent carries them out in this order, and reads back each result.
 
-1. Squash-merge the phase's pull request and delete `feature/p8-verify`.
-2. Close parent issue #90 with a closeout comment that cites the merge commit.
-3. Launch P9 (see section 6).
+1. Squash-merge pull request #<number> and delete `feature/p8-verify`.
+2. Move #95 to be a sub-issue of the next phase's parent, keeping it open, and close parent issue #90
+   with a closeout comment that cites the merge commit.
+3. Launch P9 (see section 6) and start its first task.
 
 Settings changes: **none**. No tag, release, repository setting, external account, or host package was
 involved in this phase. (`pypandoc-binary` was installed in an earlier phase's session for the docs
@@ -38,7 +43,7 @@ build; nothing was installed for Phase 8.)
 | The criterion-series work judged against the P7.5 baseline, with the measurement recorded | 58.6 → 41.5 µs per call (−29%) on a stashed/unstashed A/B on the same machine, the C5 patch-ramp workload 60.6 → 73.3 iterations/s (+21%), identical results (53 tests, the routing parity, and the series values for no treatment, one cut and two cuts) (`e263f10`, `c29109b`) | met |
 | Island scaling measured with the host's load recorded, and the memory-traffic question answered | 1 / 4 / 8 / 16 / 18 / 32 islands at loads 5–13: 1,055 → 3,238 → 6,014 → 9,432 → 11,782 → **18,685 iterations/s (17.7× at 55%)**; efficiency is ~56% at 16 islands on 36 physical cores, which rules out BLAS, the per-process setup and SMT by measurement, leaving the memory hierarchy (`dd2ddbb`) | met with a stated limit whose cause is measured |
 | The dashboard green at every commit, with the docs and docstrings gates | seven gates GREEN at the evidence head; **one deviation**: the first P8.3 commit landed with the format gate red because the commit was chained onto a `tail` rather than the dashboard's exit status, fixed by the follow-up `c29109b` | met with a recorded deviation |
-| (added mid-phase) Compare WS4's accounts against a reference report | the `accounts` check, the export specification and the packaged, digest-pinned sample (`4fcecb0`, `2de2323`, `7ef5ecf`); **the comparison has not run** — its input is the reference export | **open** |
+| (added mid-phase, deferred) Compare WS4's accounts against a reference report | the `accounts` check, the export specification and the packaged, digest-pinned sample (`4fcecb0`, `2de2323`, `7ef5ecf`); the comparison has not run because its input is a reference export from a licensed Windows run | **deferred to P9**, carried as task 5 there |
 
 Supporting results:
 
@@ -101,7 +106,7 @@ a pull request — the same shape as the previous phases.
 | --- | --- | --- |
 | The first P8.3 commit landed with the format gate red | the commit was chained onto a `tail` of the dashboard output instead of its exit status — the same mistake as an earlier `sphinx -W` check in this project | fixed by the follow-up `c29109b`; the dashboard is green and the lesson (check the exit code, not the tail) is recorded in the issue comment |
 | The C5 sample is not in the repository, and the newest installer cannot be extracted here | the sample ships inside a lab installer; the 2026-07-29 build is a protected or non-standard Inno build that neither `innoextract` 1.9 nor its development release reads ("unexpected setup loader revision: 2", checksum mismatch) | the extracted 2019 sample is used, and it is packaged in the workspace's untracked `tmp/` with a digest for all 139 files, so a copy can be verified rather than assumed |
-| The accounts-parity claim remains unverified | the reference sample ships no account report, and producing one needs a licensed Windows run | P8.5 built the comparison, specified the export and packaged the sample; the comparison runs when the export arrives |
+| The accounts-parity claim remains unverified | the reference sample ships no account report, and producing one needs a licensed Windows run | P8.5 built the comparison, specified the export and packaged the sample, and is **deferred to P9** rather than holding this phase open; the comparison runs when the export arrives |
 | P8.4 answers the memory question by measurement and reasoning rather than by a shared-dataset change | the change needs a read-only simulation state, which the phase did not have room for | the finding is recorded with the reason, so the next attempt starts from evidence rather than a hypothesis |
 
 ## 6. Next phase
@@ -130,5 +135,3 @@ docs and docstrings gates.
 
 - [ ] Approve as written.
 - [ ] Approve with the changes stated here: <changes>.
-
-(Not offered yet: the phase has an open task and an unborn pull request.)

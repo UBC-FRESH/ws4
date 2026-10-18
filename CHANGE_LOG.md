@@ -1231,3 +1231,17 @@ issue comments.
   inherits (`self.fragments["offset"] = ...`), so a forked worker's copy-on-write pages are copied
   anyway and a shared or mmapped dataset would need a read-only simulation state to help. Recorded in
   `notes/performance.md` and on the performance reference page. Dashboard: **GREEN** (seven gates).
+- Queued the Phase 8 close-out: pull request for `feature/p8-verify` into `main` and the report
+  `notes/reports/p8-closeout.md`. The report records the four acceptance criteria as met — the routing
+  parity comparison (no differences in 37,701 node-and-mill comparisons against the reference's own
+  per-node haul costs), the C5 figures reproduced from documented commands within the noise of a shared
+  host with the one exact count exact, the criterion series made cheaper (58.6 -> 41.5 us per call, the
+  C5 patch-ramp workload 60.6 -> 73.3 iterations/s, identical results), and island scaling re-measured
+  at a recorded load (17.7x at 32 islands, 55% efficiency) with its cause measured as the memory
+  hierarchy after BLAS, the per-process setup and SMT were each excluded by measurement — plus the
+  deviations (the format-gate slip on the first P8.3 commit, the 2026 installer being an unextractable
+  protected Inno build, and P8.4 answering the memory question by measurement rather than by a change)
+  and a P9 recommendation of spatial performance and memory. **#95 is deferred to P9** rather than
+  holding a ready phase open on an external input: the accounts comparison is built, tested and
+  documented, its sample is packaged with digests, and only the reference's export is missing. Dashboard:
+  **GREEN** (seven gates).
