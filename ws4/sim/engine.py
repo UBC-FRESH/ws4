@@ -465,7 +465,7 @@ class Simulator:
             cursor = event_year
         fill(cursor, years, offsets)
         values = self._curve_table.gather(rows.reshape(-1), ages.reshape(-1)).reshape(years, count)
-        if not present.all():          # the common case is every fragment carrying the label
+        if not present.all():  # the common case is every fragment carrying the label
             values[~present] = 0.0
         series = values @ areas / total_area
         return dict(enumerate(series.tolist()))
