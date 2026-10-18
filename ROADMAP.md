@@ -20,7 +20,8 @@ exists and the maintainer approves it.
 | P5 Operate and maintain | #44 | `feature/p5-operate` | complete |
 | P6 Performance and scalability | #60 | `feature/p6-performance` | complete |
 | P7 Parity and the analyst workflow | #82 | `feature/p7-parity` | complete |
-| P8 Verify the replacement claim | #90 | `feature/p8-verify` | pr-open |
+| P8 Verify the replacement claim | #90 | `feature/p8-verify` | complete |
+| P9 Spatial performance and memory | #97 | `feature/p9-memory` | active |
 
 ## Lifecycle Map
 
@@ -361,7 +362,7 @@ Acceptance criteria:
 
 Parent issue: #90
 Branch: `feature/p8-verify`
-Status: pr-open
+Status: complete
 
 Goal: demonstrate the claim the project exists to support — that WS4 is a working replacement for the
 established tool — instead of asserting it, by exercising WS4 against the reference implementation's
@@ -386,6 +387,34 @@ Acceptance criteria:
 - The C5 patch and flow results reproducible from inputs documented in the repository.
 - The criterion-series work judged against the P7.5 baseline, with the measurement recorded.
 - Island scaling measured with the host's load recorded, and the memory-traffic question answered.
+- The dashboard green at every commit, with the docs and docstrings gates.
+
+## Phase 9: Spatial performance and memory
+
+Parent issue: #97
+Branch: `feature/p9-memory`
+Status: active
+
+Goal: act on what Phase 8 measured. P8.4 established that island scaling stops being near-linear because
+of the memory hierarchy — not BLAS, not the per-process setup, not SMT, each excluded by measurement —
+and found the concrete reason a shared dataset would not help as things stand: every process loads its
+own copy before doing anything, and the simulator writes to the fragments frame it inherits.
+
+- [ ] P9.1 Share the dataset across worker processes (#98)
+- [ ] P9.2 Re-measure island scaling with the dataset shared (#99)
+- [ ] P9.3 Make the patch-state construction cheaper (#100)
+- [ ] P9.4 Stop rebuilding bounds in every curve gather (#101)
+- [ ] P9.5 Compare WS4's accounts against a reference report (#95, carried from P8)
+
+Deferred from P9, triaged in `notes/backlog.md`:
+
+- (none outstanding.)
+
+Acceptance criteria:
+
+- The dataset is shared across workers, or there is a measured reason it cannot be.
+- Island scaling re-measured at a recorded load, compared against P8.4's 17.7x at 55% efficiency.
+- The patch-state and curve-gather costs judged against the P8.3 profile, with the measurements recorded.
 - The dashboard green at every commit, with the docs and docstrings gates.
 
 ## Detailed Next Steps Notes
@@ -437,3 +466,13 @@ Acceptance criteria:
     (#91 to #94): a parity harness against the reference outputs, the C5 results reproduced from
     documented inputs, the criterion-series and patch-state performance lever P7.5 named, and island
     scaling on a host whose load is recorded.
+
+12. Phase 8 is complete: pull request #96 squash-merged as `e8b5248`, the branch deleted, and parent
+    issue #90 closed. The close-out report is `notes/reports/p8-closeout.md`, and its acceptance
+    evidence is the routing parity comparison (no differences in 37,701 comparisons against the
+    reference's own per-node haul costs), the C5 figures reproduced from documented commands, the
+    criterion series made 29% cheaper, and island scaling re-measured at a recorded load with its cause
+    measured as the memory hierarchy. **#95 was deferred to Phase 9** rather than holding the phase open
+    on an export from a licensed Windows run, and is renumbered P9.5 as a sub-issue of the new parent.
+    Phase 9 (Spatial performance and memory) is active on `feature/p9-memory`, parent issue #97, with
+    five tasks (#98 to #101 and #95).

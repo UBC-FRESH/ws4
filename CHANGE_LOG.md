@@ -1245,3 +1245,17 @@ issue comments.
   holding a ready phase open on an external input: the accounts comparison is built, tested and
   documented, its sample is packaged with digests, and only the reference's export is missing. Dashboard:
   **GREEN** (seven gates).
+- Carried out the Phase 8 close-out: pull request #96 squash-merged as `e8b5248`, the branch
+  `feature/p8-verify` deleted, and parent issue #90 closed. The close-out report is
+  `notes/reports/p8-closeout.md`; its acceptance evidence is the routing parity comparison (no
+  differences in 37,701 node-and-mill comparisons against the reference implementation's own per-node
+  haul costs), the C5 figures reproduced from documented commands with the one exact count exact, the
+  criterion series made 29% cheaper for +21% on the C5 patch-ramp workload, and island scaling
+  re-measured at a recorded load (17.7x at 32 islands) with its cause measured as the memory hierarchy
+  after BLAS, the per-process setup and SMT were each excluded by measurement. It was the first phase
+  whose pull request was green on its first CI run.
+- Launched Phase 9 (Spatial performance and memory): parent issue #97, branch `feature/p9-memory`, and
+  five child tasks — share the dataset across worker processes (#98), re-measure island scaling with it
+  shared (#99), make the patch-state construction cheaper (#100), stop rebuilding bounds in every curve
+  gather (#101), and the accounts comparison against a reference report (#95, carried from Phase 8 and
+  renumbered P9.5 as a sub-issue of the new parent). Dashboard: **GREEN**.
