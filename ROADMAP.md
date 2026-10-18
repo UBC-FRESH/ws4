@@ -405,9 +405,10 @@ own copy before doing anything, and the simulator writes to the fragments frame 
 - [x] P9.2 Re-measure island scaling with the dataset shared (#99) — measured and rejected; #98 reverted
 - [x] P9.3 Make the patch-state construction cheaper (#100) — the group topology is shared across years
 - [x] P9.4 Stop rebuilding bounds in every curve gather (#101)
-- [ ] P9.5 Compare WS4's accounts against a reference report (#95, carried from P8)
+- [x] P9.5 Compare WS4's accounts against a reference report (#95, carried from P8) — **PASS** on both 2026 scenarios, 1,323 account-period values reproduced
 - [x] P9.6 Put the package under the type gate (#102) — the gate checked 50 files, it now checks 93
 - [x] P9.7 Check growth against the reference's own yields (#103) — 959 yield-curve points reproduced; one conflict in the sample's own files, recorded
+- [x] P9.8 The matrix builder mis-attributes a split block's track (#110) — fixed; 30-45% on every managed/unmanaged account
 
 Deferred from P9, triaged in `notes/backlog.md`:
 

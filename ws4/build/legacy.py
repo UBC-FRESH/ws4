@@ -105,13 +105,30 @@ def ingest_legacy_matrix(matrix_dir: Path, fragments_path: Path, out_dir: Path) 
     else:
         raw = pd.read_parquet(fragments_path)
     block_track = dict(zip(blocks["block_id"].tolist(), blocks["track_id"].tolist(), strict=False))
+    if "TRACK" in raw.columns:
+        # A matrix may split one block into several rows — a managed and an unmanaged portion, each
+        # with its own area on its own track — so the row's own track is the authority. Deriving it
+        # from the block instead leaves the area of one row wearing the track of another, which
+        # mis-attributes whichever features hang off the track (measured on the C5 sample: the
+        # managed/unmanaged split of every feature account).
+        track_ids = raw["TRACK"].astype(int).tolist()
+    elif bool(blocks["block_id"].duplicated().any()):
+        # Without a track column the block-to-track mapping is ambiguous for a split block, and
+        # guessing would silently mis-attribute the features again.
+        raise ValueError(
+            f"{fragments_path.name} needs a TRACK column: {matrix_dir.name}/blocks.csv lists "
+            "some blocks more than once, each on a different track, so a block's track cannot "
+            "be resolved"
+        )
+    else:
+        track_ids = [block_track.get(int(b), 0) for b in raw["BLOCK"]]
     fragments = pd.DataFrame(
         {
             "fragment_id": range(1, len(raw) + 1),
             "block_id": raw["BLOCK"].astype(int),
             "area_ha": raw["AREA_HA"].astype(float),
             "age": raw["F_AGE"].astype(int),
-            "track_id": [block_track.get(int(b), 0) for b in raw["BLOCK"]],
+            "track_id": track_ids,
         }
     )
     tables["fragments"] = fragments

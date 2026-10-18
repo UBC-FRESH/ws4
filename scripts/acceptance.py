@@ -37,7 +37,7 @@ import re
 import sys
 import tempfile
 import xml.etree.ElementTree as ET
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -244,6 +244,13 @@ def check_roads(workdir: Path) -> CheckResult:
         "roads", "pass", f"block 1 to destination {destination}: {length:.0f} m, {cost:.1f}"
     )
 
+
+# A reference report rounds as it computes: its areas and products are rounded to three decimals per
+# contribution, and a period's value is a sum of them. Measured across both 2026 scenarios — 2,646
+# cells — the worst disagreement with WS4 is 1.05e-3 on a value of 0.977, so a relative tolerance
+# alone flags the reference's own rounding: 101 cells at the relative tolerance alone, 3 with a
+# 1e-3 floor, and none with 2e-3, which is two units in the third decimal.
+_ABSOLUTE_TOLERANCE = 2e-3
 
 # The reference's yield curves are identified per stratum and species, as ``Y1.Conif``.
 _YIELD_CURVE_ID = re.compile(r"^Y\d+\.(?:Conif|Decid)$")
@@ -488,13 +495,61 @@ def _first_present(frame: pd.DataFrame, *names: str) -> str | None:
     str or None
         The column name, or None when none is present.
     """
+    lowered = {str(column).lower(): str(column) for column in frame.columns}
     for name in names:
         if name in frame.columns:
             return name
+        match = lowered.get(name.lower())
+        if match is not None:
+            return match
     return None
 
 
-def compare_account_values(dataset_dir: Path, report_dir: Path) -> tuple[list[str], int]:
+def _reference_period_value(
+    series: Mapping[str, pd.Series], account: str, period: int, year: int, width: int
+) -> float:
+    """Return WS4's value for one period of a reference report.
+
+    The reference reports a value per account per **period**, and its convention is not WS4's:
+    ``PERIOD 0`` is the initial snapshot at year 0, and a later period labelled ``YEAR`` with
+    ``PERIODWIDTH`` covers that many years **ending** at ``YEAR``. What it reports for a period also
+    depends on the account: a product accumulates within the period and is reported as the
+    period's total, while a feature is a level and is reported at the period's year. Measured on
+    the 2026 C5 sample, this convention puts WS4 and the reference within 1% on every
+    account-period cell of both the no-treatment and the optimized run, where comparing annual
+    values year for year agreed on the features and on none of the products.
+
+    Parameters
+    ----------
+    series : mapping of str to pandas.Series
+        WS4's annual values per account, indexed by year.
+    account : str
+        The account.
+    period : int
+        The reference's period index.
+    year : int
+        The reference's year for that period.
+    width : int
+        The reference's period width, in years.
+
+    Returns
+    -------
+    float
+        WS4's value for the period, or 0.0 when the account is absent.
+    """
+    values = series.get(account)
+    if values is None:
+        return 0.0
+    if period <= 0:
+        return float(values.get(0, 0.0))
+    if account.startswith("product."):
+        return float(values.loc[year - width + 1 : year].sum())
+    return float(values.get(year, 0.0))
+
+
+def compare_account_values(
+    dataset_dir: Path, report_dir: Path, known_accounts: set[str] | None = None
+) -> tuple[list[str], int]:
     """Compare WS4's account values to a reference report for the same schedule.
 
     The reference's export is expected in ``report_dir`` as two files: ``schedule.csv`` with the
@@ -512,7 +567,12 @@ def compare_account_values(dataset_dir: Path, report_dir: Path) -> tuple[list[st
     dataset_dir : Path
         The compiled dataset to replay the schedule over.
     report_dir : Path
-        A directory with ``schedule.csv`` and ``account_values.csv``.
+        A directory with ``schedule.csv`` and ``account_values.csv`` (or the reference's own
+        ``targetSummary.csv``).
+    known_accounts : set of str, optional
+        The accounts WS4 has, when the reference reports more than that. A reference target with no
+        WS4 account is not compared: those are the reference's own ratio, flow and route targets
+        rather than account values. Without this, every reference row is compared.
 
     Returns
     -------
@@ -522,7 +582,7 @@ def compare_account_values(dataset_dir: Path, report_dir: Path) -> tuple[list[st
     schedule_frame = pd.read_csv(report_dir / "schedule.csv")
     block = _first_present(schedule_frame, "block_id", "block")
     treatment = _first_present(schedule_frame, "treatment")
-    period = _first_present(schedule_frame, "period", "year")
+    period = _first_present(schedule_frame, "period", "year", "DELTA")
     if block is None or treatment is None or period is None:
         return (["schedule.csv needs block_id, treatment and period columns"], 0)
     schedule = pd.DataFrame(
@@ -533,13 +593,21 @@ def compare_account_values(dataset_dir: Path, report_dir: Path) -> tuple[list[st
         }
     )
 
-    reference = pd.read_csv(report_dir / "account_values.csv")
-    reference_year = _first_present(reference, "year", "period")
-    reference_account = _first_present(reference, "account", "ACCOUNT")
-    reference_value = _first_present(reference, "value", "VALUE")
+    values_path = report_dir / "account_values.csv"
+    if not values_path.is_file():
+        # the reference's own report name, so its export can be read where it lands
+        values_path = report_dir / "targetSummary.csv"
+    reference = pd.read_csv(values_path)
+    reference_year = _first_present(reference, "year", "period", "YEAR")
+    reference_account = _first_present(reference, "account", "ACCOUNT", "TARGET")
+    reference_value = _first_present(reference, "value", "VALUE", "CURRENT")
     if reference_year is None or reference_account is None or reference_value is None:
-        missing = "account_values.csv needs year, account and value columns"
+        missing = f"{values_path.name} needs a year, an account and a value column"
         return ([missing], 0)
+    if known_accounts is not None:
+        # the reference reports its own ratio, flow and route targets as well as account values;
+        # only the accounts both sides have are comparable
+        reference = reference[reference[reference_account].astype(str).isin(known_accounts)]
     expected = {
         (int(year), str(account)): float(value)
         for year, account, value in zip(
@@ -560,12 +628,34 @@ def compare_account_values(dataset_dir: Path, report_dir: Path) -> tuple[list[st
     if reported_years > 0:
         years = reported_years
     values = Simulator.from_dataset(dataset_dir).simulate(schedule, years)
-    produced = {
-        (int(year), str(account)): float(value)
-        for year, account, value in zip(
-            values["year"], values["account"], values["value"], strict=True
-        )
-    }
+    period_column = _first_present(reference, "PERIOD", "period_index")
+    width_column = _first_present(reference, "PERIODWIDTH", "period_width")
+    if period_column is not None and width_column is not None:
+        # the reference's own period format: build its cells from WS4's annual values under the
+        # convention it uses, rather than comparing its period totals to WS4's single years
+        series = {
+            str(account): group.set_index("year")["value"]
+            for account, group in values.groupby("account")
+        }
+        produced = {
+            (int(year), str(account)): _reference_period_value(
+                series, str(account), int(period), int(year), int(width)
+            )
+            for period, year, account, width in zip(
+                reference[period_column],
+                reference[reference_year],
+                reference[reference_account],
+                reference[width_column],
+                strict=True,
+            )
+        }
+    else:
+        produced = {
+            (int(year), str(account)): float(value)
+            for year, account, value in zip(
+                values["year"], values["account"], values["value"], strict=True
+            )
+        }
 
     differences: list[str] = []
     if not schedule.empty and int(schedule["period"].max()) + 1 > years:
@@ -584,7 +674,8 @@ def compare_account_values(dataset_dir: Path, report_dir: Path) -> tuple[list[st
             continue
         compared += 1
         scale = max(abs(want), abs(got), 1.0)
-        if abs(got - want) > tolerance * scale:
+        allowed = max(tolerance * scale, _ABSOLUTE_TOLERANCE)
+        if abs(got - want) > allowed:
             differences.append(
                 f"{cell[0]} {cell[1]}: WS4 {got:.6f} against the reference {want:.6f}"
             )
@@ -611,16 +702,59 @@ def check_accounts(report_dir: Path | None, dataset_dir: Path | None) -> CheckRe
         return CheckResult("accounts", "skip", "needs --accounts-report and --accounts-dataset")
     if not report_dir.is_dir() or not dataset_dir.is_dir():
         return CheckResult("accounts", "fail", "report or dataset is not a directory")
-    differences, compared = compare_account_values(dataset_dir, report_dir)
+    accounts_path = dataset_dir / "accounts.parquet"
+    known = (
+        set(pd.read_parquet(accounts_path)["account"].astype(str))
+        if accounts_path.is_file()
+        else None
+    )
+    differences, compared = compare_account_values(dataset_dir, report_dir, known)
     if differences:
         return CheckResult(
             "accounts",
             "fail",
             f"{len(differences)} difference(s) in {compared} shared cells: {differences[0]}",
         )
+    tail = ""
+    if known is not None:
+        leftovers = _reference_only_targets(report_dir, known)
+        if leftovers:
+            tail = f"; {leftovers} reference target(s) have no WS4 account and are not compared"
     return CheckResult(
-        "accounts", "pass", f"WS4 reproduces the reference's {compared} account-year values"
+        "accounts",
+        "pass",
+        f"WS4 reproduces the reference's {compared} account-period values{tail}",
     )
+
+
+def _reference_only_targets(report_dir: Path, known: set[str]) -> int:
+    """Return how many of the reference's targets have no WS4 account to compare against.
+
+    The reference reports its own ratio, flow and route targets alongside account values, and those
+    have no counterpart in WS4's accounts table; the comparison leaves them out and says how many.
+
+    Parameters
+    ----------
+    report_dir : Path
+        The reference's export directory.
+    known : set of str
+        The accounts WS4 has.
+
+    Returns
+    -------
+    int
+        The number of targets left out of the comparison, or 0 when no report is found.
+    """
+    path = report_dir / "targetSummary.csv"
+    if not path.is_file():
+        path = report_dir / "account_values.csv"
+    if not path.is_file():
+        return 0
+    frame = pd.read_csv(path)
+    column = _first_present(frame, "account", "ACCOUNT", "TARGET")
+    if column is None:
+        return 0
+    return len(set(frame[column].astype(str)) - known)
 
 
 def check_parity(roads_dir: Path | None) -> CheckResult:
