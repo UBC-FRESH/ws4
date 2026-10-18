@@ -6,6 +6,9 @@ The command line is the fastest way to run one study. The Python API is the way 
 sweeps over seeds, targets, and weights; custom diagnostics mid-search; results collected into a
 frame; WS4 embedded in something else. This guide is the set of patterns that make that practical.
 
+For a worked session rather than a list of patterns, :doc:`../examples/070_library_path` runs the
+whole of one in the gallery.
+
 Prerequisites
 -------------
 

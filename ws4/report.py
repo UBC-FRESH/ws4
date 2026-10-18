@@ -94,7 +94,11 @@ def target_status(values: pd.DataFrame, targets: list[Target]) -> pd.DataFrame:
     index = _by_year(values)
     rows: list[dict[str, object]] = []
     for target in targets:
-        value = index.get((target.year, target.account), 0.0)
+        # A target applies to the account summed over its period, exactly as the objective
+        # prices it (`Target.cell_years()`). Reading only the target's first year reported a
+        # periodic target as unmet — with a penalty the search never applied — whenever the
+        # period's later years carried it over the line.
+        value = sum(index.get((year, target.account), 0.0) for year in target.cell_years())
         if target.minimum is not None and value < target.minimum:
             status = "below"
         elif target.maximum is not None and value > target.maximum:

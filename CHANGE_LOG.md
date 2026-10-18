@@ -1361,33 +1361,78 @@ issue comments.
   committed with `nbsphinx_execute = "never"` and nothing verifies them), and naming which way in each
   example takes (#107). Phase 9 stays open only for P9.5 (the accounts export); its other six tasks are
   complete. The roadmap records the backlog's capability work as the phase after this one.
-- P9.8 (fix, #110): **the legacy matrix builder mis-attributed a split block's track**, found by the
-  accounts comparison on the 2026 sample and present in the 2019 sample too. `tracks/blocks.csv` has
-  **16,184 rows for 12,567 blocks** — a block is split into a managed and an unmanaged portion, each with
-  its own area on its own track (block 35: 29.4250 ha unmanaged on track 6, 6.1556 ha managed on track
-  15) — but `ingest_legacy_matrix` derived the fragment's track from `dict(zip(block, track))`, a
-  block-keyed dict that keeps one row per block, *while keeping the fragment's own area*. So an area wore
-  another row's track, and every feature account hanging off a track was mis-attributed. Measured against
-  the reference's own values for `feature.Area.managed.PL`: the matrix says **38,436 ha** managed and
-  **42,138 ha** unmanaged; WS4 said **54,367** and **26,207**, with the totals agreeing to 5 ha — the
-  areas were right, their attribution was not. The builder now honours a `TRACK` column in the fragment
-  inventory (emitted by the C5 harness, which builds one fragment per matrix row) and **refuses** an
-  inventory that cannot name the track rather than guessing. Effect on the no-treatment accounts
-  comparison against the 2026 reference: **196 of 756 cells agreeing -> 714 of 756**, and accounts with
-  any difference **27 of 36 -> 2 of 36** (0.02% and 0.013%, both just above the 1e-4 tolerance). Two new
-  tests. The 2019 sample has the same split, so any feature-based C5 output predates this fix; the
-  fragment *count* (16,174) and the routing parity were never affected, which is why the earlier checks
-  passed. Dashboard: **GREEN** (seven gates).
-- P9.5 (#95): **the accounts comparison runs and passes on both 2026 scenarios.** The reference's export
-  arrived (its own report tree: `scenario/schedule.csv` with `DELTA` as the treatment year, and
-  `scenario/targetSummary.csv` with `TARGET`/`PERIOD`/`YEAR`/`PERIODWIDTH`/`CURRENT`), and the check now
-  reads it as it lands — the reference's own file and column names, nothing converted. Three things had
-  to be right: **the reference's periods are not WS4's years** (period 0 is the initial snapshot and a
-  period labelled `YEAR` ends at it, covering years `YEAR-WIDTH+1..YEAR`; products accumulate over the
-  period, features are levels), **its reports round as they compute** (2,646 cells: 101 differ at a
-  relative 1e-4, 3 at a 1e-3 floor, none at 2e-3, which is now the documented floor), and **the matrix
-  builder mis-attributed a split block's track** (P9.8, worth 30-45% on every managed/unmanaged account).
-  Result: `accounts PASS — WS4 reproduces the reference's 1323 account-period values` on both the
-  no-treatment and the optimized run, with 178 reference targets named as having no WS4 account (its
-  ratios, flow constraints and patch-size distributions, which need their own comparison). Dashboard:
-  **GREEN**.
+- Fixed the Phase 10 launch commit: the roadmap tracker row I wrote for P9 said "active (held on the
+  P9.5 export)" where the phase section says `active`, and the workflow validator caught the mismatch on
+  the next run — the launch commit had landed while the dashboard was red because the command chain ran
+  on regardless of the exit status. The tracker row is back to `active`, the holding note stays in the
+  phase section where it belongs, and the dashboard is **GREEN** (seven gates) again. Third time this
+  session a chained command hid an exit status; the chain is the problem, not the tool.
+- P10.1 (docs, #105): **an API-first walkthrough notebook**, `examples/070_library_path.ipynb`, executed
+  and in the gallery. Five of the seven existing examples drive the command line, so the library
+  audience had prose but no worked session; this one runs no `ws4` command anywhere — it compiles the
+  sample estate, opens it with `Model`, simulates two schedules in memory and compares them, runs a
+  search through `Optimizer.run`, reads the target table and the account values back as frames, and
+  checks the run's own numbers against a fresh simulation (largest difference 2.3e-13). Linked from
+  `getting-started/python-api` and `howto/automate-a-study`.
+- P10.3 (docs, #107): every example now says which way in it takes — command line, library, or both — in
+  its own opening paragraph, and the gallery's intro explains the distinction, with `070_library_path`
+  named as the counterpart to `010_quickstart`.
+- P10.4 (fix, #108): **`report_targets.csv` priced a periodic target from one year.** Found by the
+  notebook above, whose output showed the search returning `incumbent_objective 0.0` while the report
+  said `below`: on the sample estate the target's period totals **5,549.86** over years 0-9 where the
+  report read the year-0 row alone, **1,627.14**, and charged a penalty of 3,372.86 the search never
+  applied. `target_status` now sums the account over `target.cell_years()` — the same expression the
+  objective uses — so a target with `period_width > 1` is reported as the search priced it. Three new
+  tests, including one that asserts the report's total penalty equals `objective`'s for the same values.
+  **Recorded rather than fixed, and checked as the task required:** targets with `flow` set are still
+  mis-reported, because `target_status` has no notion of a flow series at all — measured, an `ndy`
+  target with `minimum: -1` over a series dropping 100 -> 60 is priced at **39.00** by the objective and
+  reported as `met` with **0.00**. Left open in `notes/backlog.md` with those numbers, because fixing it
+  means deciding what the report should show for a flow target. Dashboard: **GREEN** (seven gates).
+- P10.2 (verification, #106): **the gallery's outputs are now checked, not trusted.**
+  `scripts/check_notebooks.py` re-runs every example in memory and compares what it produces with what is
+  committed, cell by cell, naming the notebook and the cell when they differ and writing nothing; the
+  remedy is the documented `--refresh`, which re-runs and rewrites. It took **8 minutes** on the eight
+  notebooks, so it is its own CI job rather than part of the dashboard, and it is honest about what it
+  cannot compare: the environment's version banner, durations, rates, memory and absolute paths are
+  normalised and **counted** (a passing run reports `duration x2, elapsed x2, rate x2, version x10`),
+  and cells whose output is a live render can be tagged `no-drift-check` in the notebook itself.
+  Its first run over the eight notebooks: **5 drifted**, and the first catch was this phase's own work —
+  four of them (030, 040, 050, 060) because the P10.4 fix corrected the target values their report tables
+  print (`060`'s `volume_share` 18,744.60 -> 36,352.44), and 010 because a `ws4 watch` progress table
+  prints an elapsed time; the four were refreshed and committed, the fifth masked. The suite now reports
+  **50 cells compared, 0 skipped, 0 drifted**. Seven tests cover a current notebook, a stale one, a
+  tagged cell, the normalisations, a notebook that no longer runs, the per-cell outcome, and the refresh.
+  Dashboard: **GREEN** (seven gates).
+- Queued the Phase 10 close-out: the report is `notes/reports/p10-closeout.md` and the roadmap moves P10
+  to `pr-open`. The pull request is **stacked on `feature/p9-memory`**, because P10 was branched from it
+  and Phase 9 is held open for the P9.5 export: a pull request against `main` would carry P9's unmerged
+  work as well, so the stack shows P10's own four commits and the base can be changed with one command
+  if the maintainer would rather land both at once.
+- Fixed what the Phase 10 pull request's first CI run found, on two jobs. The `Notebook outputs` job
+  reported `000_environment_check` drifted because its banner cell says whether `geopandas` is
+  importable — the environment, not the code — so that cell, the optional-dependency cell and the
+  rendered `ws4 --help` screen are tagged `no-drift-check` **in the notebook**, which is what the tag
+  exists for; the notebook now reports `3 compared, 3 skipped, 0 drifted`. The check's own tests failed
+  in CI because the notebooks they build carried no kernelspec, where the committed notebooks do, so the
+  fixture now sets the same metadata. Both deviations are in the close-out report, and the dashboard is
+  **GREEN** again.
+- Fixed the second CI failure on the Phase 10 pull request: the check's tests need a kernel, and the
+  gate jobs had `nbclient` (through `nbsphinx`) but not `ipykernel`, which is what ships the `python3`
+  kernel spec, so they failed with `NoSuchKernel` while the `Notebook outputs` job passed — it installs
+  both explicitly. `requirements-dev.txt` now names `nbclient` and `ipykernel` with the reason, so the
+  suite carries what it needs rather than depending on a transitive dependency. The `Notebook outputs`
+  job itself is **green in CI**; dashboard **GREEN**.
+- Third CI iteration on the Phase 10 pull request, and a correction to the check's doctrine rather than
+  a workaround: the `ws4 watch` progress table drifted in CI by **one column of padding**. A rich table
+  is drawn to the width of its values, so masking the values is not enough — the check now flattens
+  layout too, removing box-drawing characters and column padding and **counting** them (`layout x5706`
+  on a full run, alongside `duration x2, elapsed x2, rate x2, version x10`). Content is still compared
+  exactly; the width it was rendered at is not. A unit test pins two differently-padded renders of the
+  same content as equal. Locally the suite reports **47 cells compared, 3 skipped, 0 drifted**;
+  dashboard **GREEN**.
+- **Phase 10's pull request is green in CI**: run `39104469800` on `9bcdcfd`, all four jobs — Quality
+  gates, Green dashboard summary, Pre-commit parity, and **Notebook outputs**, the new job whose first
+  outings found the three defects recorded above. The close-out report now carries the four runs in its
+  CI evidence table, including the three failures and what each one turned out to be. The pull request is
+  queued for the maintainer's approval.

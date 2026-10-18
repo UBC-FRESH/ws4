@@ -22,7 +22,7 @@ exists and the maintainer approves it.
 | P7 Parity and the analyst workflow | #82 | `feature/p7-parity` | complete |
 | P8 Verify the replacement claim | #90 | `feature/p8-verify` | complete |
 | P9 Spatial performance and memory | #97 | `feature/p9-memory` | active |
-| P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | active |
+| P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | pr-open |
 
 ## Lifecycle Map
 
@@ -436,20 +436,33 @@ Acceptance criteria:
 
 Parent issue: #104
 Branch: `feature/p10-docs-api`
-Status: active
+Status: pr-open
+Pull request: stacked on `feature/p9-memory`, because Phase 9 is held open for its P9.5 export and
+Phase 10 was branched from it. The stack lands as P9 then P10 unless the maintainer prefers one merge.
 
 Goal: serve the second audience in the gallery, and stop the gallery being able to lie. The prose for
 the Python API exists; the examples do not — five of seven notebooks drive the command line — and the
 notebooks' outputs are committed with ``nbsphinx_execute = "never"``, so nothing checks that what they
 show is what the code does.
 
-- [ ] P10.1 An API-first walkthrough notebook (#105)
-- [ ] P10.2 Prove the gallery's outputs are current (#106)
-- [ ] P10.3 Say which way in each example takes (#107)
+- [x] P10.1 An API-first walkthrough notebook (#105) — `examples/070_library_path`, executed
+- [x] P10.2 Prove the gallery's outputs are current (#106) — `scripts/check_notebooks.py`, its own CI job
+- [x] P10.3 Say which way in each example takes (#107)
+- [x] P10.4 Price a periodic target over its period in the report (#108) — found by P10.1
 
 Deferred from P10, triaged in `notes/backlog.md`:
 
 - (none outstanding.)
+
+Holding on a design question, recorded rather than fixed:
+
+- **Flow targets in `report_targets.csv`** are still mis-reported: `target_status` prices every target as
+  a level target over its period, while the objective prices a `flow` target as a per-period percent
+  series. Measured in P10.4: an `ndy` target with `minimum: -1` over a series dropping 100 -> 60 is
+  priced at **39.00** by the objective and reported as `met` with **0.00**. Fixing it means deciding
+  what the report should show for a flow target, which is a design question; it is in
+  `notes/backlog.md` with the numbers. The sample estate's own targets are level targets, so nothing
+  shipped is affected.
 
 Acceptance criteria:
 

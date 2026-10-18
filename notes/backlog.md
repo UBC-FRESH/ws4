@@ -219,14 +219,15 @@ items are enhancements and maintenance.
   state) by building the year-invariant node order, areas and CSR once per group and sharing them,
   which is more than the laziness the note suggested. Building *less* of a state stays rejected, with
   P8.3's reason: the years that get one are already only the accounting points a target reads.
-- **WS4's own period convention versus the reference's.** `open`, a modelling decision. The
-  reference labels a period by its **end** year and treats period 0 as the initial snapshot, so a target
-  it reports as `YEAR 10, PERIODWIDTH 10` covers years 1-10. WS4's `Target.cell_years()` is
-  `range(year, year + period_width)` — start-labelled — so the same target written in WS4 covers years
-  10-19. The acceptance check translates between the two, which is why the comparison passes, but a study
-  that writes C5-style targets for WS4 and compares them to the reference's reports will be a period out.
-  Deciding this means choosing WS4's convention deliberately: matching the reference, or keeping the
-  start-labelled one and documenting the translation.
+- **Flow targets in `report_targets.csv`.** `open`. Found while fixing the periodic-target bug (P10.4,
+  #108). `target_status` prices every target as a level target summed over its period, but a target with
+  `flow` set is priced by the objective as a *series* — percent change per period against the reference
+  period (`even`) or the previous one (`ndy`), with the target's bounds applied per period. So a flow
+  target can be reported as met while the search is paying for it. Measured: an `ndy` target with
+  `minimum: -1` on a series that drops 100 -> 60 is priced at **39.00** by `objective` and reported as
+  `met` with **0.00** penalty. Left open deliberately: fixing it means deciding what the report should
+  *show* for a flow target (the period series, or the worst period), which is a design question rather
+  than a one-line fix.
 - **Docstring completeness.** `done`. `scripts/doc_audit.py` is the oracle: it checks every public
   function, method, property, class, and module in `ws4` and `scripts/` for the four rules (a docstring
   exists; every parameter is documented and nothing else; a value-returning callable has a `Returns`
