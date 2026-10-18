@@ -11,6 +11,10 @@ The checks verify the build against its acceptance criteria:
   schedule in WS4 and compare the account values per year, which is what isolates the simulation.
 - ``parity``: with ``--roads-sample``, compare WS4's least-haul-cost routes to the reference
   implementation's own ``cost_destination.*.csv`` tables, node by node.
+- ``destinations``: with ``--roads-sample``, ``--accounts-report`` and ``--accounts-dataset``,
+  compare the destination each block's product is sent to against the reference's own exported
+  choice, and the mill products against its ``targets/product_Mill*_Yield_*.csv``. A decision the
+  reference's split forces must match; one it leaves free is measured and reported.
 - ``growth``: with ``--yield-sample`` and ``--yield-dataset``, compare WS4's compiled yield curves
   to the reference's own model curves, point by point: the growth that the whole accounts
   comparison rests on, checkable without a licensed reference run.
@@ -49,6 +53,7 @@ from ws4.model.api import Model
 from ws4.model.schema import validate_dataset
 from ws4.opt.engine import OptimizeConfig, Optimizer
 from ws4.opt.objective import Target, flow_series
+from ws4.roads.accounts import ProductAllocation, RouteModel
 from ws4.roads.network import RouteNetwork, load_route_tables
 from ws4.sim.engine import Simulator
 
@@ -832,8 +837,11 @@ def check_accounts(report_dir: Path | None, dataset_dir: Path | None) -> CheckRe
 # The reference's flow targets, from its own model file (`analysis/C5.pin`): each
 # `addFlowRatioAccount` names the account it constrains and a spec that gives the window.
 # `ndy(periods-9, periods, -1)` is the last ten periods of a twenty-period model, which in
-# 101 to 200; `even()` is the whole horizon. The per-mill forms are left out because their
-# (`product.Mill1.Yield.Conif`) is an *allocation* between destinations WS4 does not make.
+# 101 to 200; `even()` is the whole horizon. The per-mill forms are left out because each one's
+# denominator is that mill's own product, and WS4 splits the conifer master between the mills by a
+# different rule — the least haul cost against the reference's Mill 1 delivery target — so the two
+# flows are not yet the same quantity. What the split is and how far apart the two rules are is in
+# `notes/design/ws4-parity-harness.md` and checked by `check_destinations`.
 _REFERENCE_FLOWS: dict[str, tuple[str, str, int, int]] = {
     "flow.ndy.feature.Yield.Conif": ("feature.Yield.managed.Conif", "ndy", 101, 201),
     "flow.ndy.feature.Yield.Decid": ("feature.Yield.managed.Decid", "ndy", 101, 201),
@@ -983,6 +991,510 @@ def check_parity(roads_dir: Path | None) -> CheckResult:
     )
 
 
+def _short(account: str) -> str:
+    """Return the trailing part of an account name, for a report line."""
+    return account.rsplit(".", 1)[-1]
+
+
+# The reference declares a mill product as an *exclusive split* of a master product, in its
+# own model file: `addExclusiveAccount(master, child)` divides the master among the children,
+# and a child that `duplicateAccount` sends to a destination is a place the wood goes. The
+# split is therefore the policy — which destinations may receive a product, and which account
+# holds what reached none — and it is read from the reference's file rather than transcribed,
+# so what is compared is its own declaration. The conifer master is a split between the two
+# mills; the deciduous master is a split between Mill 2 and the unutilized account, which is
+# why WS4 routing deciduous to Mill 1 at all was wrong rather than merely different.
+#
+# The split is the policy in one more way: where it offers a product a single destination the
+# decision is forced, and where it offers several the choice is free — so the check below requires
+# the first and only measures the second.
+_EXCLUSIVE_ACCOUNT = re.compile(r'addExclusiveAccount\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\)')
+_DUPLICATE_ACCOUNT = re.compile(
+    r'duplicateAccount\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*(-?[0-9.]+)\s*\)'
+)
+
+
+@dataclass(frozen=True)
+class ExclusiveSplit:
+    """One master product's destinations, as the reference declares them.
+
+    Attributes
+    ----------
+    master : str
+        The master product being divided.
+    routed : tuple of (str, str)
+        ``(destination, child account)`` per delivered child, in declaration order.
+    surplus : str
+        The account for what reaches no destination, or an empty string when the reference
+        declares none — which the conifer split does not.
+    """
+
+    master: str
+    routed: tuple[tuple[str, str], ...]
+    surplus: str = ""
+
+    @property
+    def destinations(self) -> tuple[str, ...]:
+        """Return the destinations the master may be sent to, in declaration order.
+
+        Returns
+        -------
+        tuple of str
+            The destination accounts, in the order the reference declares them.
+        """
+        return tuple(destination for destination, _child in self.routed)
+
+
+def read_exclusive_splits(pin_path: Path) -> tuple[ExclusiveSplit, ...]:
+    """Return the reference's exclusive splits, read from its own model file.
+
+    Parameters
+    ----------
+    pin_path : Path
+        The reference's model file, ``analysis/C5.pin``.
+
+    Returns
+    -------
+    tuple of ExclusiveSplit
+        One entry per master product the reference divides, in declaration order.
+    """
+    text = Path(pin_path).read_text(encoding="utf-8", errors="replace")
+    children: dict[str, list[str]] = {}
+    for master, child in _EXCLUSIVE_ACCOUNT.findall(text):
+        children.setdefault(master, []).append(child)
+    delivered: dict[str, str] = {}
+    for child, target, _factor in _DUPLICATE_ACCOUNT.findall(text):
+        if target.startswith("destination."):
+            delivered.setdefault(child, target)
+    splits: list[ExclusiveSplit] = []
+    for master, kids in children.items():
+        routed = tuple((delivered[kid], kid) for kid in kids if kid in delivered)
+        surplus = next((kid for kid in kids if kid not in delivered), "")
+        splits.append(ExclusiveSplit(master=master, routed=routed, surplus=surplus))
+    return tuple(splits)
+
+
+def read_reference_assignment(path: Path, split: ExclusiveSplit) -> pd.DataFrame:
+    """Return the reference's own destination per block and period, in WS4's names.
+
+    Parameters
+    ----------
+    path : Path
+        The reference's ``exclusive_<master>.csv`` table, gzipped or not.
+    split : ExclusiveSplit
+        The master's declared split, which maps its child accounts to destinations.
+
+    Returns
+    -------
+    pandas.DataFrame
+        ``block``, ``period`` and ``destination``, one row per cell of the table. A child the
+        split does not name keeps its own name, so that a declaration failing to cover what the
+        reference exported is reported rather than mapped away.
+    """
+    frame = pd.read_csv(path)
+    block = _first_present(frame, "BLOCK", "block_id", "block")
+    if block is None:
+        return pd.DataFrame(columns=["block", "period", "destination"])
+    periods = [column for column in frame.columns if str(column).startswith("PERIOD")]
+    long = frame.melt(
+        id_vars=block, value_vars=periods, var_name="period", value_name="child"
+    ).rename(columns={block: "block"})
+    long["period"] = long["period"].astype(str).str.replace("PERIOD", "", regex=False).astype(int)
+    long["block"] = long["block"].astype(int)
+    known = {child: destination for destination, child in split.routed}
+    if split.surplus:
+        known.setdefault(split.surplus, split.surplus)
+    long["destination"] = long["child"].map(lambda child: known.get(str(child), str(child)))
+    return long[["block", "period", "destination"]]
+
+
+def _reference_export_dirs(report_dir: Path) -> tuple[Path, ...]:
+    """Return the directories a reference export may keep its files in.
+
+    The reference writes a report tree: a scenario directory holding the schedule, the summary
+    and the exclusive assignments, beside a ``targets`` directory holding one file per target.
+    Depending on which of the two a caller names, the other is one step away, so the directories
+    searched are the given one, its ``scenario`` subdirectory, and its parent.
+
+    Parameters
+    ----------
+    report_dir : Path
+        The export directory the caller named.
+
+    Returns
+    -------
+    tuple of Path
+        The existing candidate directories, nearest first.
+    """
+    candidates = (report_dir, report_dir / "scenario", report_dir.parent)
+    seen: list[Path] = []
+    for candidate in candidates:
+        if candidate.is_dir() and candidate not in seen:
+            seen.append(candidate)
+    return tuple(seen)
+
+
+def _find_export_file(where: Sequence[Path], names: Sequence[str]) -> Path | None:
+    """Return the first of ``names`` found in any of ``where``.
+
+    Parameters
+    ----------
+    where : sequence of Path
+        The directories to search, nearest first.
+    names : sequence of str
+        The file names to look for.
+
+    Returns
+    -------
+    Path or None
+        The path found, or None when none of the names exists.
+    """
+    for directory in where:
+        for name in names:
+            candidate = directory / name
+            if candidate.is_file():
+                return candidate
+    return None
+
+
+def _reference_period_width(where: Sequence[Path]) -> int:
+    """Return the period width the reference's report states, or 1 when it states none.
+
+    Parameters
+    ----------
+    where : sequence of Path
+        The export directories to search, nearest first.
+
+    Returns
+    -------
+    int
+        The width, in years, that the report's own tables state.
+    """
+    for directory in where:
+        targets = directory / "targets"
+        if not targets.is_dir():
+            continue
+        for path in sorted(targets.glob("*.csv")):
+            frame = pd.read_csv(path, nrows=5)
+            column = _first_present(frame, "PERIODWIDTH", "period_width")
+            if column is not None and len(frame):
+                return int(float(frame[column].max()))
+    return 1
+
+
+def check_destinations(
+    roads_dir: Path | None,
+    report_dir: Path | None,
+    dataset_dir: Path | None,
+    workdir: Path,
+) -> CheckResult:
+    """Compare WS4's destination decisions, and the mill products they produce, to the reference's.
+
+    The reference chooses which mill a block's product goes to by search, under its mill
+    delivery targets, and exports the choice per block and period. That choice is the *spatial
+    decision* this phase is about, and it is compared here in two parts, because the model does
+    not leave every decision open:
+
+    - where the reference's own split offers a product **one** destination, the decision is
+      forced, and WS4 must match it — the deciduous master, whose only mill is Mill 2;
+    - where it offers **several**, the destination is a policy choice — the conifer master —
+      and the two choices' agreement is measured and reported rather than required.
+
+    The mill products themselves are then compared period by period against the reference's own
+    ``targets/product_Mill*_Yield_*.csv``, which is what the forced part has to satisfy.
+
+    Parameters
+    ----------
+    roads_dir : Path or None
+        A sample's ``roads`` directory, which also locates its ``analysis/C5.pin``.
+    report_dir : Path or None
+        The reference's export directory, holding ``schedule.csv`` and its tables.
+    dataset_dir : Path or None
+        The compiled dataset to replay the schedule over.
+    workdir : Path
+        A scratch directory for the routed run.
+
+    Returns
+    -------
+    CheckResult
+        ``fail`` when a forced decision disagrees or a forced mill product is outside tolerance,
+        and ``skip`` when any input is missing.
+    """
+    if roads_dir is None or report_dir is None or dataset_dir is None:
+        return CheckResult(
+            "destinations",
+            "skip",
+            "needs --roads-sample, --accounts-report and --accounts-dataset",
+        )
+    if not (roads_dir.is_dir() and report_dir.is_dir() and dataset_dir.is_dir()):
+        return CheckResult(
+            "destinations", "fail", "a route, report or dataset input is not a directory"
+        )
+    pin_path = roads_dir.parent / "analysis" / "C5.pin"
+    if not pin_path.is_file():
+        return CheckResult("destinations", "skip", f"the sample has no model file at {pin_path}")
+    splits = read_exclusive_splits(pin_path)
+    if not splits:
+        return CheckResult("destinations", "skip", "the model declares no exclusive split")
+
+    where = _reference_export_dirs(report_dir)
+    assignments: dict[str, pd.DataFrame] = {}
+    for split in splits:
+        path = _find_export_file(
+            where, (f"exclusive_{split.master}.csv.gz", f"exclusive_{split.master}.csv")
+        )
+        if path is not None:
+            assignments[split.master] = read_reference_assignment(path, split)
+    if not assignments:
+        return CheckResult(
+            "destinations", "skip", f"the export holds no exclusive assignment under {report_dir}"
+        )
+
+    _vertices, segments, destinations, linkages = load_route_tables(roads_dir)
+    network = RouteNetwork.from_tables(segments, destinations, linkages)
+    model = RouteModel(
+        network=network,
+        eligibility={split.master: split.destinations for split in splits},
+        unutilized={split.master: split.surplus for split in splits if split.surplus},
+    )
+
+    schedule_path = _find_export_file(where, ("schedule.csv",))
+    if schedule_path is None:
+        return CheckResult(
+            "destinations", "fail", f"the export holds no schedule.csv under {report_dir}"
+        )
+    schedule_frame = pd.read_csv(schedule_path)
+    block = _first_present(schedule_frame, "block_id", "block")
+    treatment = _first_present(schedule_frame, "treatment")
+    period = _first_present(schedule_frame, "period", "year", "DELTA")
+    if block is None or treatment is None or period is None:
+        return CheckResult(
+            "destinations", "fail", "schedule.csv needs block_id, treatment and period"
+        )
+    schedule = pd.DataFrame(
+        {
+            "block": schedule_frame[block].astype(int),
+            "period": schedule_frame[period].astype(int),
+        }
+    )
+    # `run` reads a schedule whose columns are already WS4's, so the reference's own header is
+    # normalised into a scratch copy rather than made to fit the simulator.
+    normalised = workdir / "schedule-for-ws4.csv"
+    normalised.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(
+        {
+            "block_id": schedule["block"],
+            "treatment": schedule_frame[treatment].astype(str),
+            "period": schedule["period"],
+        }
+    ).to_csv(normalised, index=False)
+    width = max(_reference_period_width(where), 1)
+    schedule["reference_period"] = [
+        0 if year <= 0 else (year - 1) // width + 1 for year in schedule["period"]
+    ]
+
+    unexplained: list[str] = []
+    report: list[str] = []
+    for split in splits:
+        reference = assignments.get(split.master)
+        if reference is None:
+            continue
+        joined = schedule.merge(
+            reference,
+            left_on=["block", "reference_period"],
+            right_on=["block", "period"],
+            how="inner",
+            suffixes=("", "_reference"),
+        )
+        if joined.empty:
+            continue
+        joined["ws4"] = [
+            model.assign(int(one_block), split.master)[0] for one_block in joined["block"]
+        ]
+        # Every decision the reference itself made must be one its declared split admits: this is
+        # what would have caught WS4 sending deciduous wood to Mill 1, an outcome the reference's
+        # model does not give that product at all.
+        admitted = {*split.destinations, split.surplus, ""}
+        for row in joined[~joined["destination"].isin(admitted)].itertuples(index=False):
+            unexplained.append(
+                f"{split.master}: the reference sent block {row.block} in period "
+                f"{row.reference_period} to {row.destination!r}, which its own split does not name"
+            )
+        matched = joined["destination"] == joined["ws4"]
+        if len(split.destinations) <= 1:
+            only = split.destinations[0] if split.destinations else "none"
+            report.append(
+                f"{_short(split.master)} admits one destination ({only}) and WS4 matched the "
+                f"reference on {int(matched.sum()):,} of {len(joined):,} block-periods"
+            )
+        else:
+            report.append(
+                f"{_short(split.master)} is a free choice and WS4 agreed on {int(matched.sum()):,} "
+                f"of {len(joined):,} block-periods ({100 * float(matched.mean()):.1f}%)"
+            )
+    if unexplained:
+        return CheckResult(
+            "destinations",
+            "fail",
+            f"{len(unexplained)} decision(s) outside the reference's own split: {unexplained[0]}",
+        )
+
+    allocations = tuple(
+        ProductAllocation(
+            master=split.master,
+            allocations=split.routed,
+            unallocated=split.surplus,
+        )
+        for split in splits
+        if split.routed
+    )
+    years = _reported_years(where, schedule)
+    values = Simulator.from_dataset(dataset_dir).run(
+        normalised,
+        years=years,
+        out_dir=workdir / "destination-run",
+        route_model=model,
+        product_allocations=allocations,
+    )
+    series = {
+        str(account): group.set_index("year")["value"]
+        for account, group in values.groupby("account")
+    }
+    compared = 0
+    required_difference = 0.0
+    free = ""
+    free_difference = 0.0
+    surplus = ""
+    surplus_difference = 0.0
+    beyond: list[str] = []
+    unavailable: list[str] = []
+    for split in splits:
+        # A split with one destination leaves the reference's own search no choice about the
+        # account, so its value must be reproduced. A split with several leaves the choice free,
+        # and its accounts differ by construction: what is reported there is the policy, not an
+        # error, so it is measured and named rather than failed.
+        required = len(split.destinations) <= 1
+        for _destination, child in split.routed:
+            cells, largest, excess = _compare_mill_product(where, child, series)
+            compared += cells
+            if cells == 0:
+                unavailable.append(child)
+                continue
+            if required:
+                required_difference = max(required_difference, largest)
+                if excess > 0.0:
+                    beyond.append(f"{child} is off by {largest:,.1f}")
+            elif largest > free_difference:
+                free_difference = largest
+                free = child
+        if split.surplus:
+            # what reached no destination is a choice too, and a small one: it is measured, not
+            # required, because the reference's own search is what decides to leave wood unutilized
+            cells, largest, _excess = _compare_mill_product(where, split.surplus, series)
+            compared += cells
+            if cells == 0:
+                unavailable.append(split.surplus)
+            elif largest > surplus_difference:
+                surplus_difference = largest
+                surplus = split.surplus
+    tail = ""
+    if unavailable:
+        tail = f"; no reference table for {', '.join(sorted(set(unavailable)))}"
+    if beyond:
+        return CheckResult(
+            "destinations",
+            "fail",
+            f"a forced mill product disagrees: {beyond[0]} over {compared} period cells",
+        )
+    message = (
+        f"the reference's own model declares {len(splits)} split(s): "
+        + "; ".join(report)
+        + f"; over {compared} period cells the forced mill products differ by at most "
+        f"{required_difference:,.1f}"
+        + (f", the free ones by up to {free_difference:,.1f} on {free}" if free else "")
+        + (f", and what reached no destination by {surplus_difference:,.1f}" if surplus else "")
+        + tail
+    )
+    return CheckResult("destinations", "pass", message)
+
+
+def _reported_years(where: Sequence[Path], schedule: pd.DataFrame) -> int:
+    """Return the horizon the reference reports, which is what its account values cover.
+
+    Parameters
+    ----------
+    where : sequence of Path
+        The export directories to search, nearest first.
+    schedule : pandas.DataFrame
+        The replayed schedule, used when the export states no summary.
+
+    Returns
+    -------
+    int
+        The number of annual steps to simulate.
+    """
+    for name in ("targetSummary.csv", "account_values.csv"):
+        path = _find_export_file(where, (name,))
+        if path is None:
+            continue
+        frame = pd.read_csv(path)
+        year = _first_present(frame, "YEAR", "year", "period")
+        if year is not None and len(frame):
+            return int(frame[year].max()) + 1
+    return max(int(schedule["period"].max()) + 1, 1) if not schedule.empty else 1
+
+
+def _compare_mill_product(
+    where: Sequence[Path], account: str, series: Mapping[str, pd.Series]
+) -> tuple[int, float, float]:
+    """Compare one routed account to the reference's table for it, period by period.
+
+    Parameters
+    ----------
+    where : sequence of Path
+        The export directories to search, nearest first.
+    account : str
+        The routed account, whose table is named after it with dots for underscores.
+    series : mapping of str to pandas.Series
+        WS4's annual values per account.
+
+    Returns
+    -------
+    tuple of (int, float, float)
+        The number of period cells compared, the largest absolute difference, and how far the
+        worst cell is beyond the tolerance the accounts comparison uses — zero when every cell
+        is within it.
+    """
+    path = _find_export_file(where, (f"targets/{account.replace('.', '_')}.csv",))
+    if path is None:
+        path = _find_export_file(where, (f"{account.replace('.', '_')}.csv",))
+    if path is None:
+        return (0, 0.0, 0.0)
+    frame = pd.read_csv(path)
+    period_column = _first_present(frame, "PERIOD", "period_index")
+    year_column = _first_present(frame, "YEAR", "year")
+    width_column = _first_present(frame, "PERIODWIDTH", "period_width")
+    value_column = _first_present(frame, "CURRENT", "value", "VALUE")
+    if None in (period_column, year_column, value_column):
+        return (0, 0.0, 0.0)
+    width = int(float(frame[width_column].max())) if width_column is not None else 1
+    largest = 0.0
+    excess = 0.0
+    compared = 0
+    for one_period, one_year, want in zip(
+        frame[period_column], frame[year_column], frame[value_column], strict=True
+    ):
+        got = _reference_period_value(series, account, int(one_period), int(one_year), width)
+        difference = abs(got - float(want))
+        largest = max(largest, difference)
+        # the same rule the accounts comparison uses: a relative tolerance with an absolute floor,
+        # because a reference report rounds as it computes
+        allowed = max(1e-4 * max(abs(float(want)), abs(got), 1.0), _ABSOLUTE_TOLERANCE)
+        excess = max(excess, difference - allowed)
+        compared += 1
+    return (compared, largest, excess)
+
+
 def check_api(workdir: Path) -> CheckResult:
     """Build a model programmatically and via the file path and compare them.
 
@@ -1097,6 +1609,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             check_roads(workdir),
             check_api(workdir / "api"),
             check_parity(args.roads_sample),
+            check_destinations(
+                args.roads_sample, args.accounts_report, args.accounts_dataset, workdir / "dest"
+            ),
             check_accounts(args.accounts_report, args.accounts_dataset),
             check_growth(args.yield_sample, args.yield_dataset),
         ]

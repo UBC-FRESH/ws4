@@ -566,3 +566,174 @@ def test_a_curvetable_value_that_disagrees_is_a_difference(tmp_path: Path) -> No
     differences, _compared, _conflicts = acc.compare_yield_curves(yields, dataset)
     assert differences
     assert "Y1.Conif" in differences[0]
+
+
+def test_exclusive_splits_are_read_from_the_reference_model(tmp_path: Path) -> None:
+    """A master's destinations and its surplus account come from the reference's own declaration."""
+    pin = tmp_path / "C5.pin"
+    pin.write_text(
+        'control.addExclusiveAccount("product.Yield.managed.Conif", '
+        '"product.Mill1.Yield.Conif");\n'
+        'control.duplicateAccount("product.Mill1.Yield.Conif", "destination.MILL1", 1);\n'
+        'control.duplicateAccount("product.Mill1.Yield.Conif", "route.total.conifer", 1);\n'
+        'control.addExclusiveAccount("product.Yield.managed.Conif", '
+        '"product.Mill2.Yield.Conif");\n'
+        'control.duplicateAccount("product.Mill2.Yield.Conif", "destination.MILL2", 1);\n'
+        'control.addExclusiveAccount("product.Yield.managed.Decid", '
+        '"product.Mill2.Yield.Decid");\n'
+        'control.duplicateAccount("product.Mill2.Yield.Decid", "destination.MILL2", 1);\n'
+        'control.addExclusiveAccount("product.Yield.managed.Decid", '
+        '"product.unutilized.Decid");\n'
+    )
+    splits = acc.read_exclusive_splits(pin)
+    assert [split.master for split in splits] == [
+        "product.Yield.managed.Conif",
+        "product.Yield.managed.Decid",
+    ]
+    conif, decid = splits
+    assert conif.destinations == ("destination.MILL1", "destination.MILL2")
+    assert conif.surplus == ""
+    assert decid.destinations == ("destination.MILL2",)
+    assert decid.surplus == "product.unutilized.Decid"
+
+
+def test_a_reference_assignment_is_read_in_ws4_names(tmp_path: Path) -> None:
+    """The exported choice names child accounts, which the split maps back to destinations."""
+    table = tmp_path / "exclusive_product.Yield.managed.Decid.csv"
+    pd.DataFrame(
+        {
+            "BLOCK": [1, 2],
+            "PERIOD1": ["product.Mill2.Yield.Decid", "product.Mill2.Yield.Decid"],
+            "PERIOD2": ["product.Mill2.Yield.Decid", "product.unutilized.Decid"],
+        }
+    ).to_csv(table, index=False)
+    split = acc.ExclusiveSplit(
+        master="product.Yield.managed.Decid",
+        routed=(("destination.MILL2", "product.Mill2.Yield.Decid"),),
+        surplus="product.unutilized.Decid",
+    )
+    assignment = acc.read_reference_assignment(table, split)
+    assert assignment.to_dict("records") == [
+        {"block": 1, "period": 1, "destination": "destination.MILL2"},
+        {"block": 2, "period": 1, "destination": "destination.MILL2"},
+        {"block": 1, "period": 2, "destination": "destination.MILL2"},
+        {"block": 2, "period": 2, "destination": "product.unutilized.Decid"},
+    ]
+
+
+def test_an_export_is_found_through_its_own_layout(tmp_path: Path) -> None:
+    """The scenario directory and the targets directory are one step from whichever is named."""
+    scenario = tmp_path / "base" / "scenario"
+    targets = tmp_path / "base" / "targets"
+    scenario.mkdir(parents=True)
+    targets.mkdir(parents=True)
+    (scenario / "schedule.csv").write_text("BLOCK,DELTA,TREATMENT\n1,10,CC\n")
+    (targets / "product_Mill1_Yield_Conif.csv").write_text(
+        "PERIOD,YEAR,PERIODWIDTH,CURRENT\n1,10,10,5.0\n"
+    )
+    assert acc._reference_export_dirs(scenario) == (scenario, tmp_path / "base")
+    found = acc._find_export_file(acc._reference_export_dirs(scenario), ("schedule.csv",))
+    assert found == scenario / "schedule.csv"
+    assert acc._reference_period_width(acc._reference_export_dirs(scenario)) == 10
+
+
+def _destination_fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
+    """Write a dataset, a sample and an export for the destination check.
+
+    The split is the fixture's own product, so the allocation has something to partition, and
+    the export carries the reference's own header and its own choice per block and period.
+    """
+    dataset = build_canonical_dataset(
+        FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "dataset"
+    )
+    sample = tmp_path / "sample"
+    roads = sample / "roads"
+    roads.mkdir(parents=True)
+    (roads / "vertices.csv").write_text("vertex_id\n1\n2\n3\n", encoding="utf-8")
+    (roads / "segments.csv").write_text(
+        "segment_id,from_vertex,to_vertex,length_m,haul_cost\n1,1,2,500,0.02\n2,1,3,900,0.03\n",
+        encoding="utf-8",
+    )
+    (roads / "destinations.csv").write_text(
+        "name,vertex_id\ndestination.MILL1,2\ndestination.MILL2,3\n", encoding="utf-8"
+    )
+    (roads / "linkages.csv").write_text("block_id,vertex_id\n1,1\n2,1\n", encoding="utf-8")
+    analysis = sample / "analysis"
+    analysis.mkdir()
+    (analysis / "C5.pin").write_text(
+        'control.addExclusiveAccount("product.Volume", "product.Mill1.Volume");\n'
+        'control.duplicateAccount("product.Mill1.Volume", "destination.MILL1", 1);\n',
+        encoding="utf-8",
+    )
+    report = tmp_path / "report"
+    report.mkdir()
+    (report / "schedule.csv").write_text(
+        "BLOCK,DELTA,AGE,TYPE,TREATMENT\n1,1,41,MANAGED,CC\n", encoding="utf-8"
+    )
+    pd.DataFrame(
+        {
+            "BLOCK": [1],
+            "PERIOD1": ["product.Mill1.Volume"],
+            "PERIOD2": ["product.Mill1.Volume"],
+        }
+    ).to_csv(report / "exclusive_product.Volume.csv", index=False)
+    return dataset, roads, report
+
+
+def test_the_destination_check_reads_a_split_and_measures_a_forced_one(tmp_path: Path) -> None:
+    """A split read from the model routes the product, and the forced one is checked."""
+    dataset, roads, report = _destination_fixture(tmp_path)
+    result = acc.check_destinations(roads, report, dataset, tmp_path / "work")
+    assert result.status == "pass"
+    assert "1 split(s)" in result.detail
+    assert "admits one destination" in result.detail
+    assert "no reference table" in result.detail
+
+
+def test_a_forced_mill_product_that_disagrees_fails_the_check(tmp_path: Path) -> None:
+    """Where the split leaves one destination the mill product is required, not merely measured."""
+    dataset, roads, report = _destination_fixture(tmp_path)
+    targets = report / "targets"
+    targets.mkdir()
+    (targets / "product_Mill1_Volume.csv").write_text(
+        "PERIOD,YEAR,PERIODWIDTH,CURRENT\n1,1,1,0.0\n", encoding="utf-8"
+    )
+    result = acc.check_destinations(roads, report, dataset, tmp_path / "work")
+    assert result.status == "fail"
+    assert "forced mill product disagrees" in result.detail
+
+
+def test_a_reference_choice_outside_its_own_split_fails_the_check(tmp_path: Path) -> None:
+    """A decision the declared split does not name is reported, not silently mapped away."""
+    dataset, roads, report = _destination_fixture(tmp_path)
+    pd.DataFrame(
+        {
+            "BLOCK": [1],
+            "PERIOD1": ["product.Mill3.Volume"],
+            "PERIOD2": ["product.Mill1.Volume"],
+        }
+    ).to_csv(report / "exclusive_product.Volume.csv", index=False)
+    result = acc.check_destinations(roads, report, dataset, tmp_path / "work")
+    assert result.status == "fail"
+    assert "outside the reference's own split" in result.detail
+
+
+def test_the_destination_check_skips_without_its_inputs(tmp_path: Path) -> None:
+    """Every input the comparison needs has a skip, so the tool runs where there is no sample."""
+    assert acc.check_destinations(None, None, None, tmp_path).status == "skip"
+    dataset, _roads, report = _destination_fixture(tmp_path)
+    assert acc.check_destinations(None, report, dataset, tmp_path).status == "skip"
+
+
+def test_an_undeclared_child_keeps_its_own_name(tmp_path: Path) -> None:
+    """An assignment naming a child the split does not declare is kept as it came."""
+    table = tmp_path / "exclusive.csv"
+    pd.DataFrame({"BLOCK": [1], "PERIOD1": ["product.Unheard.Volume"]}).to_csv(table, index=False)
+    split = acc.ExclusiveSplit(
+        master="product.Volume",
+        routed=(("destination.MILL1", "product.Mill1.Volume"),),
+    )
+    assignment = acc.read_reference_assignment(table, split)
+    assert assignment.to_dict("records") == [
+        {"block": 1, "period": 1, "destination": "product.Unheard.Volume"}
+    ]

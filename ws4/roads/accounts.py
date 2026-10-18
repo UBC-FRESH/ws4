@@ -75,13 +75,35 @@ class RouteModel:
     eligibility : mapping of str to sequence of str, optional
         The destination names each product may be sent to. A product absent from the map
         may go to any destination. When present and empty, the product is unutilized.
-    unutilized : str, optional
-        The account name that records surplus product. An empty string disables surplus.
+    unutilized : str or mapping of str to str, optional
+        The account name that records surplus product, either for every product or per
+        product label. The reference declares its surplus per master product — the conifer
+        split has no such account at all, the deciduous split has its own — so a single
+        shared account would file one product's surplus under another's. An empty string,
+        or a product with no entry, disables surplus for that product.
     """
 
     network: RouteNetwork
     eligibility: Mapping[str, Sequence[str]] = field(default_factory=dict)
-    unutilized: str = ""
+    unutilized: str | Mapping[str, str] = ""
+
+    def surplus_account(self, product: str) -> str:
+        """Return the account that records a product's surplus.
+
+        Parameters
+        ----------
+        product : str
+            The product label.
+
+        Returns
+        -------
+        str
+            The surplus account for the product, or an empty string when it has none.
+        """
+        if isinstance(self.unutilized, str):
+            return self.unutilized
+        return str(self.unutilized.get(product, ""))
+
     _assign_cache: dict[tuple[int, str], tuple[str, Route | None]] = field(
         default_factory=dict, compare=False, repr=False
     )
@@ -131,7 +153,7 @@ class RouteModel:
         eligible = self.eligible(product)
         choice = self.network.nearest_destination(block_id, eligible)
         if choice is None:
-            result: tuple[str, Route | None] = (self.unutilized, None)
+            result: tuple[str, Route | None] = (self.surplus_account(product), None)
         else:
             destination = choice[0]
             result = (destination, self.network.route(block_id, destination))
@@ -243,13 +265,20 @@ class RouteConfig:
     period_width: int = 1
 
 
+def _surplus_accounts(raw: object) -> str | dict[str, str]:
+    """Normalise a configuration's surplus account, which may be one name or one per product."""
+    if isinstance(raw, dict):
+        return {str(product): str(account) for product, account in raw.items()}
+    return str(raw)
+
+
 def load_route_config(path: Path) -> RouteConfig:
     """Load a route configuration from YAML.
 
     The file names the four route tables (``segments``, ``destinations``, ``linkages``), an
-    optional ``eligibility`` table, an optional ``unutilized`` account, and lists of
-    ``route_accounts`` and ``duplicate_accounts``. Relative paths resolve against the
-    configuration file's directory.
+    optional ``eligibility`` table, an optional ``unutilized`` account — one name, or a name
+    per product — and lists of ``route_accounts`` and ``duplicate_accounts``. Relative paths
+    resolve against the configuration file's directory.
 
     Parameters
     ----------
@@ -284,7 +313,7 @@ def load_route_config(path: Path) -> RouteConfig:
     model = RouteModel(
         network=network,
         eligibility=eligibility,
-        unutilized=str(route.get("unutilized", "")),
+        unutilized=_surplus_accounts(route.get("unutilized", "")),
     )
     route_accounts = tuple(
         RouteAccount(

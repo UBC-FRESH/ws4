@@ -270,12 +270,18 @@ items are enhancements and maintenance.
   the product of the *treatment* that happened. So WS4 now refuses a product criterion with that reason
   rather than reporting a quiet nought, and the real fix is to evaluate the product on the treatment's
   own timeline. That is 28 of the reference's 63 patch targets.
-- **The reference's destination policy for its mill products.** `open`, a modelling difference found by
-  building the allocation (P11.2/P11.5). WS4 sends each block's product to its cheapest mill
-  (118,498 / 251,703 for the conifer yield over the periods compared); the reference's near-balanced
-  54/46 (1,029,670 / 892,306) comes from its own exclusive-account allocation under mill minimums. The
-  route ratios' denominator is that product, so `ratio.route.haul.MILL1` is comparable only once the two
-  tools decide the split the same way — or once the ratio is defined differently on WS4's side.
+- **The reference's destination policy for its mill products.** `open`, narrowed by P12.2 to one
+  question. What the reference's model declares is now established and implemented: conifer may reach
+  either mill, **deciduous may reach Mill 2 only** (with `product.unutilized.Decid` for what reaches
+  none), the split is exported per block and period, and WS4's rule — those destinations, then the least
+  haul cost — reproduces the reference's own choice on **13,375 of 13,377 deciduous** block-periods (its
+  mill product agreeing to 4 units in 2.78 million) and **12,266 of 13,377 conifer** ones (91.7%). What
+  is left is the reference's **delivery target: Mill 1 is held at 800,000 a period** and Mill 2 takes the
+  remainder, which is why its split is 62/38 rather than WS4's 66/34 (+8.1% / −13.3% on the horizon).
+  Reproducing it means adopting its allocation policy wholesale, which changes where wood goes, so it
+  belongs behind the parity mode below rather than as WS4's only behaviour. The route ratios' denominator
+  is that product, so `ratio.route.haul.MILL1` waits on it — or on the ratio being defined differently on
+  WS4's side.
 - **Docstring completeness.** `done`. `scripts/doc_audit.py` is the oracle: it checks every public
   function, method, property, class, and module in `ws4` and `scripts/` for the four rules (a docstring
   exists; every parameter is documented and nothing else; a value-returning callable has a `Returns`

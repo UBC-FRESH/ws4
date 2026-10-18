@@ -455,50 +455,67 @@ period convention, the patch `shape` metric, and this one.
 
 ### The mill products: the mechanism, and what it exposed
 
-A route account can now name the product whose volume it tracks, so `product.Mill1.Yield.Conif` is
+A route account can name the product whose volume it tracks, so `product.Mill1.Yield.Conif` is
 expressible the way the reference means it — a volume account for one product at one destination, tested
 both ways (the filtered account sums only that product; a *cost* account naming a product is refused
 rather than ignored, because the ledger prices a route and not a tonne of it).
 
-Pointing it at the reference's own numbers exposed the next question rather than closing it. WS4 routes
-**24,349** of `product.Yield.managed.Conif` to Mill 1 over the periods, where the reference reports
-**1,029,670** — and its all-product routed volume is 1.6× the reference's, so the difference is not
-quantity but *attribution*: the products WS4's route model assigns, and the volume it assigns to each,
-are not the reference's. The reference makes this explicit in its model — it marks the conifer yield as
-an **exclusive** account split between the two mills, and duplicates each mill's share into its
-destination and into the conifer total — which is a *proportional allocation* between destinations rather
-than WS4's per-block least-cost routing. That is the question #114's route ratios now wait on.
+The reference divides each master product among its destinations with `addExclusiveAccount`, and exports
+the choice it made per block and per period, so the *decision* is in the export and can be compared
+rather than guessed at. Two things followed, both measured (P12.2):
 
-### The destination allocation, and the difference that is left
+- **The reference's destinations are per master, not per mill.** Conifer may go to Mill 1 or Mill 2;
+  **deciduous may go to Mill 2 only**, with `product.unutilized.Decid` for what reaches none. WS4 routed
+  both products to whichever mill was nearest, so **62.7% of the deciduous area** went to a mill the
+  reference's model does not give it at all — an error, not a policy difference. With the eligibility
+  declared, `product.Mill2.Yield.Decid` agrees with the reference to **4 units in 2.78 million** over 21
+  periods.
+- **What is left is a planning decision, not a routing consequence.** WS4's rule is the reference's
+  declared destinations, then the least haul-cost one. Against the reference's own exported choice that
+  agrees on **12,266 of 13,377 conifer block-periods (91.7%)**; the rest is the reference holding Mill 1
+  at a **delivery target of 800,000 a period** (its own `MINIMUM` and `MAXIMUM` for that target are both
+  800,000, and the achieved value sits on it in 13 of 20 periods) and giving Mill 2 the remainder. Only
+  631 of the reference's 7,257 blocks (8.7%) ever change mill between periods, and those are the ones
+  the target moves.
 
-WS4 has the capability now: a route configuration can partition a **master product across the
-destinations it is routed to**, with an account for whatever does not move — which is how the reference
-expresses its mill products. `resolve_allocation_values` takes the shares from the ledger's routed
-volumes and the master's total from the simulated values, so the parts always sum back to the whole;
-shares that exceed their master are refused rather than reported. The configuration, the resolver and
-the pass through `Simulator.run` are tested both ways.
+The stale comparison this section used to carry — "WS4 routes 24,349 where the reference reports
+1,029,670" — was a single *year* of WS4's against a whole *period* of the reference's, which is the same
+mistake this project keeps finding: the two sides were not being asked the same thing. Over the horizon,
+and over the same periods:
 
-Pointed at the 2026 sample's conifer yield, it partitions exactly — Mill 1 plus Mill 2 equals the
-master's own value for the year, and nothing is left unallocated because every block is linked to a mill
-— and that is what makes the remaining difference legible:
+| conifer yield, periods 1-20 | Mill 1 | Mill 2 |
+| --- | ---: | ---: |
+| Reference, its own destination policy | 15,371,727 | 9,356,805 |
+| WS4, least cost among the reference's own eligible destinations | 16,617,630 | 8,110,900 |
+| difference | +8.1% | −13.3% |
 
-| | Mill 1 | Mill 2 | Unallocated |
-| --- | ---: | ---: | ---: |
-| WS4, by least haul cost per block | 118,498 | **251,703** | 0 |
-| Reference, its own destination policy | **1,029,670** | 892,306 | — |
+### The destination allocation, and what is left of it
 
-The split is nearly **opposite**, and it is not a bug in either: WS4 sends each block's product to its
-cheapest mill, and the reference's near-balanced 54/46 is the outcome of its own model — an exclusive
-account allocated under mill minimums and its own cost rules, which is a **planning decision** rather
-than a routing consequence. So `ratio.route.haul.MILL1` still cannot be compared: its denominator is the
-mill product, and the two tools decide that product's split by different rules. The capability is built;
-what is missing for the ratio is the reference's destination policy, which is a modelling question and
-not a comparison one.
+WS4 has the capability: a route configuration partitions a **master product across the destinations it
+is routed to**, with an account for whatever does not move — which is how the reference expresses its
+mill products. `resolve_allocation_values` takes the shares from the ledger's routed volumes and the
+master's total from the simulated values, so the parts always sum back to the whole; shares that exceed
+their master are refused rather than reported. The surplus account is declarable **per product**, because
+the reference declares one per master: conifer has none, so an unreachable conifer block is dropped
+rather than quietly filed under the deciduous surplus. Measured: none of the 7,257 blocks the reference's
+schedule treats is unreachable from every one of its destinations, so this is not exercised on the 2026
+sample.
 
-One correction worth keeping: the first run of this doubled the mill volumes, because the configuration
-had both a volume route account *and* an allocation writing the same account name. The comparison caught
-it because the parts then exceeded the master — which is exactly what the guard is for, once it checks
-every year either side knows about rather than only the master's own.
+`check_destinations` compares the decision and its consequences in one place: the reference's declared
+splits are read from its own model file (`analysis/C5.pin`, the same source the flow targets come from),
+WS4's model is built from them, and the two decisions are compared block-period by block-period. Where
+the split leaves the reference **one** destination the mill product must be reproduced — and the
+deciduous one is, to four units in 2.78 million — while where it leaves **several** the choice is free
+and only the agreement is measured: 91.7% on conifer, and the conifer mill products differ by up to
+**342,151** a period, which is the delivery target rather than an error. What remains for the route
+ratios is that target: reproducing it means adopting the reference's allocation policy wholesale, which
+changes where wood goes, so it belongs behind the parity mode (#125) rather than as WS4's only
+behaviour.
+
+One correction worth keeping: the first run of the allocation doubled the mill volumes, because the
+configuration had both a volume route account *and* an allocation writing the same account name. The
+comparison caught it because the parts then exceeded the master — which is exactly what the guard is for,
+once it checks every year either side knows about rather than only the master's own.
 
 ### The growth check, retargeted for the 2026 sample
 

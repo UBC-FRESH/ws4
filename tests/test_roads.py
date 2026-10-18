@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-from ws4.roads.accounts import RouteCostLedger, RouteModel
+from ws4.roads.accounts import RouteCostLedger, RouteModel, load_route_config
 from ws4.roads.network import RouteNetwork, load_route_eligibility
 
 
@@ -316,3 +316,49 @@ def test_an_allocation_that_exceeds_its_master_is_refused() -> None:
                 )
             ],
         )
+
+
+def test_a_product_that_cannot_reach_a_destination_goes_to_its_own_surplus() -> None:
+    """The surplus account can be named per product, as the reference declares it."""
+    segments = pd.DataFrame(
+        {"from_vertex": [1], "to_vertex": [2], "length_m": [100.0], "cost": [10.0]}
+    )
+    destinations = pd.DataFrame({"NODE": [2], "ACCOUNT": ["destination.MILL1"]})
+    linkages = pd.DataFrame({"block_id": [1], "vertex_id": [9]})
+    network = RouteNetwork.from_tables(segments, destinations, linkages)
+    model = RouteModel(
+        network,
+        eligibility={"product.Decid": ("destination.MILL2",)},
+        unutilized={"product.Decid": "product.unutilized.Decid"},
+    )
+    # deciduous may only go to MILL2, which this block cannot reach, so it is its own surplus
+    assert model.assign(1, "product.Decid") == ("product.unutilized.Decid", None)
+    assert model.surplus_account("product.Decid") == "product.unutilized.Decid"
+    # a product with no entry has no surplus account in a mapping, so nothing is filed wrongly
+    assert model.surplus_account("product.Conif") == ""
+
+
+def test_a_route_config_states_a_surplus_per_product(tmp_path: Path) -> None:
+    """The configuration accepts one account or a mapping, and keeps both."""
+    for name, frame in (
+        ("segments.csv", {"from_vertex": [1], "to_vertex": [2], "length_m": [10.0], "cost": [1.0]}),
+        ("destinations.csv", {"name": ["destination.MILL1"], "vertex_id": [2]}),
+        ("linkages.csv", {"block_id": [1], "vertex_id": [1]}),
+    ):
+        pd.DataFrame(frame).to_csv(tmp_path / name, index=False)
+    shared = (
+        "route:\n  segments: segments.csv\n  destinations: destinations.csv\n"
+        "  linkages: linkages.csv\n  unutilized: {surplus}\n"
+    )
+    one = tmp_path / "one.yaml"
+    one.write_text(shared.format(surplus="product.Unutilized"), encoding="utf-8")
+    assert load_route_config(one).model.unutilized == "product.Unutilized"
+    many = tmp_path / "many.yaml"
+    many.write_text(
+        "route:\n  segments: segments.csv\n  destinations: destinations.csv\n"
+        "  linkages: linkages.csv\n  unutilized:\n"
+        "    product.Decid: product.unutilized.Decid\n",
+        encoding="utf-8",
+    )
+    model = load_route_config(many).model
+    assert model.surplus_account("product.Decid") == "product.unutilized.Decid"

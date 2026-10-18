@@ -1652,3 +1652,20 @@ issue comments.
   neither a feature nor a product. Two tests cover both refusals; the feature path is unchanged. The real
   fix — the product evaluated on the treatment's own timeline — is in `notes/backlog.md` with this
   measurement. Dashboard: **GREEN**.
+- P12.2 (#122) **the destination decisions are compared, and the mill products with them.** The
+  reference's rule is established from its own model file and its exported decisions:
+  `addExclusiveAccount` divides each master product, so conifer may reach either mill while **deciduous
+  may reach Mill 2 only**. WS4 had been sending **62.7% of the deciduous area** to a mill the reference
+  never uses — an error rather than a policy difference — and with the eligibility declared
+  `product.Mill2.Yield.Decid` agrees with the reference to **4 units in 2.78 million**. WS4's rule is
+  the reference's declared destinations and then the least haul cost, which reproduces the reference's
+  own choice on **12,266 of 13,377 conifer block-periods (91.7%)** and on **13,375 of 13,377 deciduous**
+  ones. What is left is the reference's **delivery target** — Mill 1 held at 800,000 a period with Mill 2
+  taking the remainder, which is the whole of the difference (+8.1% / −13.3% over the horizon) — a
+  planning decision that changes where wood goes, so it is recorded for the parity mode rather than
+  adopted as WS4's only behaviour. The surplus account is now declarable **per product**, as the
+  reference declares it, and a new `destinations` acceptance check reads the splits from
+  `analysis/C5.pin`, compares the decision block-period by block-period and the mill products period by
+  period, requires what the model's own split forces and measures what it leaves free. The stale note
+  that compared one of WS4's *years* against one of the reference's *periods* is corrected. Dashboard:
+  **GREEN**.
