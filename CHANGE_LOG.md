@@ -1409,3 +1409,11 @@ issue comments.
   and Phase 9 is held open for the P9.5 export: a pull request against `main` would carry P9's unmerged
   work as well, so the stack shows P10's own four commits and the base can be changed with one command
   if the maintainer would rather land both at once.
+- Fixed what the Phase 10 pull request's first CI run found, on two jobs. The `Notebook outputs` job
+  reported `000_environment_check` drifted because its banner cell says whether `geopandas` is
+  importable — the environment, not the code — so that cell, the optional-dependency cell and the
+  rendered `ws4 --help` screen are tagged `no-drift-check` **in the notebook**, which is what the tag
+  exists for; the notebook now reports `3 compared, 3 skipped, 0 drifted`. The check's own tests failed
+  in CI because the notebooks they build carried no kernelspec, where the committed notebooks do, so the
+  fixture now sets the same metadata. Both deviations are in the close-out report, and the dashboard is
+  **GREEN** again.

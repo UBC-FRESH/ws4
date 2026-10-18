@@ -38,6 +38,14 @@ def _notebook(
         The notebook path.
     """
     notebook = nbformat.v4.new_notebook()  # type: ignore[no-untyped-call]
+    # without a kernelspec the notebook runs where one is registered for the current interpreter and
+    # fails in CI, which registers none; the committed notebooks carry this metadata for the same
+    # reason, so the tests carry it too
+    notebook["metadata"]["kernelspec"] = {
+        "display_name": "Python 3",
+        "language": "python",
+        "name": "python3",
+    }
     notebook["cells"] = cells
     if tags:
         for cell in notebook["cells"]:
