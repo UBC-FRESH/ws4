@@ -89,26 +89,6 @@ def _apply_thread_limit(threads: int) -> None:
     threadpoolctl.threadpool_limits(limits=max(1, threads))
 
 
-def _preload(optimizer: Optimizer) -> None:
-    """Touch the per-process caches a worker would otherwise build for itself.
-
-    A worker loads the dataset, builds the candidate chains and resolves the route and edge models
-    before it can search; measured on a C5-class sample that is about a second and 170 MB per
-    process. Under a forking start method a child inherits this process's memory copy-on-write, so a
-    worker that needs a page it has not touched shares the parent's instead of loading its own — one
-    copy of the dataset for the pool rather than one per worker.
-
-    Parameters
-    ----------
-    optimizer : Optimizer
-        The optimizer whose caches the workers will use.
-    """
-    optimizer.simulator()
-    optimizer.candidates()
-    optimizer.route()
-    optimizer.edge_elements()
-
-
 _MAX_ROTATIONS = 3
 _MAX_CHAINS = 320
 _CHAIN_STEP = 10
@@ -1000,7 +980,6 @@ class Optimizer:
                 )
                 for start in range(starts)
             ]
-            _preload(self)
             with ProcessPoolExecutor(max_workers=self.cfg.workers) as pool:
                 results = list(pool.map(_run_start, jobs))
             best, best_obj = min(results, key=lambda result: result[1])
@@ -1031,7 +1010,6 @@ class Optimizer:
                 (str(self.dataset_dir), island_config, seed, best if best else None)
                 for seed in seeds
             ]
-            _preload(self)
             with ProcessPoolExecutor(max_workers=islands) as pool:
                 results = list(pool.map(_island_job, jobs))
             for candidate, candidate_obj in results:

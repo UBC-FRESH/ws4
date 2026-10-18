@@ -193,11 +193,20 @@ items are enhancements and maintenance.
   replayed its incumbent without passing the patch accounts to the simulation, so the reported share
   was a missing row: zero, carrying the whole penalty. The report now folds `patch_accounts.csv` into
   the values it prices, and a simulation of the same schedule agrees with it.
-- **Island scaling past 8 islands.** `open`. The limit is contention rather than BLAS oversubscription
-  (P7.2 measured both: pinning the pools changes nothing, and the same 32-island configuration ran at
-  13x to 16x while the host's load moved between 4 and 65). A candidate cause worth measuring is the
-  per-process copies of the dataset and the patch state; a shared or mmapped dataset would cut the
-  memory traffic that the 32 processes contend for. Target: after P7.
+- **Island scaling past 8 islands.** `open`, narrowed by P9.2 (#99). The limit is memory contention
+  rather than BLAS oversubscription (P7.2 measured both: pinning the pools changes nothing, and the
+  same 32-island configuration ran at 13x to 16x while the host's load moved between 4 and 65), and the
+  candidates are fewer than they looked: a preloaded, forked copy of the dataset shares no state a
+  worker uses and costs ~1 s of serial setup, worth about **-12%** at 16 and 32 islands, so it was
+  removed. P9.3 and P9.4 go after the per-iteration costs instead.
+- **One copy of the dataset for the pool, handed over rather than reloaded.** `open`, no throughput
+  claim. A worker builds its own optimiser from the dataset directory (`_island_job`), so the parent's
+  built state — the simulator's frames, the candidate chains, ~170 MB per process — cannot help it
+  without changing what a worker receives. Doing it properly means handing the pool a read-only built
+  state, which is the prerequisite P8.4 named: the simulator writes to the fragments frame it inherits,
+  so the shared part has to be genuinely read-only, and the per-island configuration has to survive the
+  handover. Worth doing only for memory-constrained hosts: on a 754 GB machine the capacity saves
+  nothing, and sharing pages does not reduce bandwidth, since every process reads the same bytes.
 - **`Optimizer.last_account_values()` after a `run`.** `done` (P7.5, #87). The incremental value path
   and `run` both record the frame they build, so the incumbent's values are readable without rereading
   the run directory.

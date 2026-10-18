@@ -1272,3 +1272,18 @@ issue comments.
   effect it targets is memory traffic, which is what P9.2 measures on the curve. The patch model is
   deliberately not preloaded: the evaluator builds its own per worker, so sharing it needs a change to
   ownership rather than a preload, recorded as a separate question. Dashboard: **GREEN** (seven gates).
+- P9.2 (performance, #99): re-measured island scaling and **rejected the P9.1 preload**. A paired,
+  order-alternated comparison (ABBA, three pairs per island count, because a first pass that always ran
+  the control first inherited a host load climbing from 5 to 16 and produced the same ~10% change from
+  load alone) shows the preload costing a median **-12.2%** at 16 islands and **-12.7%** at 32, with the
+  one-island pairs scattering +1.7/-4.4/-8.4% as they should where no pool is created. The cause is
+  measured, not inferred: a worker never uses the parent's state — `_island_job` builds its own
+  `Optimizer.from_dataset(...)` — so the preload shares nothing a worker reads and its **0.789 s** of
+  serial setup lands entirely on the critical path, predicting 10,324 it/s at 16 islands and 16,904 at
+  32 against observed 10,215 and 16,823. P9.1's own probe measured the wrong path: it called the
+  inherited optimiser's methods, which a worker does not do. The preload is **removed**, the control
+  curve reproduces P8.4 (1,089 it/s at one island against 1,055; 18,870 at 32 against 18,685), and the
+  honest conclusion is recorded instead — sharing pages saves capacity this host does not need and
+  cannot reduce the bandwidth contention P8.4 measured, since every process still reads the same bytes.
+  The option that would genuinely share one copy (handing the pool a read-only built state) is in
+  `notes/backlog.md` with no throughput claim. Dashboard: **GREEN** (seven gates).

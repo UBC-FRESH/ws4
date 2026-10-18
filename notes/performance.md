@@ -391,11 +391,13 @@ inherits its parent's memory copy-on-write, but the simulator **writes** to the 
 inherits (`self.fragments["offset"] = ...` on every run), which forces the pages to be copied. So a
 shared or mmapped dataset has to come with a read-only simulation state, or the copying happens anyway.
 
-### P9.1 one copy of the dataset for the pool
+### P9.1/P9.2 sharing the dataset across the pool: measured, and rejected
 
-P8.4 left the memory hypothesis and one obstacle: every worker loads its own copy of the dataset before
-it can search, and under a forking pool those pages *could* be shared instead. Measured on the C5-class
-sample, what a worker costs to start:
+P8.4 left a hypothesis and an obstacle. The hypothesis was the memory hierarchy; the obstacle was that
+every worker builds its own copy of the dataset before it can search, so a forking pool *could* share
+one. This is the cheap version of that attempt, the measurement that judged it, and its removal.
+
+**What a worker costs to start**, measured on the C5-class sample:
 
 | Step | Time | Peak RSS added |
 | --- | ---: | ---: |
@@ -405,27 +407,36 @@ sample, what a worker costs to start:
 | `optimizer.patch_model()` | 243 ms | +18 MB |
 | **total** | **~0.98 s** | **~170 MB** |
 
-So a 32-island run builds about **5.4 GB** of private state it could be sharing. `Optimizer` now touches
-those caches before it creates a worker pool — `simulator()`, `candidates()`, and the route and edge
-models when configured — so a forked child inherits them copy-on-write instead of loading them.
+So a 32-island run builds about **5.4 GB** of private state that looks like it could be shared.
 
-**The sharing is real, and measured.** A forked child, after the parent preloads, reports:
+**The attempt.** `Optimizer` touched those caches before creating a worker pool, on the reasoning that a
+forked child inherits them copy-on-write. The reasoning about fork is correct, and was verified directly
+— a child that calls the *inherited* optimiser's methods reports 174 MB shared and 2 MB private, against
+about 65 MB of private pages when it loads its own. **But that probe measured a path the worker never
+takes.** A worker does not use the parent's optimiser at all: `_island_job` calls
+`Optimizer.from_dataset(Path(dataset_dir), cfg)` and builds its own, caches and all. The parent's work
+is inherited, shared, and unused.
 
-```
-child: shared 174 MB   private 2 MB
-```
+**What that costs, measured.** The preload is a *serial* setup in the parent, and the workers reload
+anyway, so its whole cost lands on the critical path. Measured directly: 0.789 s. Predict against the
+control curve and it lands within ~1% of what the pairs show:
 
-against ~65 MB of private dataset pages when it loads its own. So the pool holds one copy of the dataset
-rather than one per worker, which is what the memory hypothesis in P8.4 wanted.
+| Islands | Search alone | Predicted with the preload | Observed, shared vs control |
+| ---: | ---: | ---: | --- |
+| 16 | 5.41 s -> 11,830 it/s | 6.20 s -> 10,324 it/s | median **-12.2%** over 3 pairs |
+| 32 | 6.78 s -> 18,870 it/s | 7.57 s -> 16,904 it/s | median **-12.7%** over 3 pairs |
 
-**What it does not change is wall time**, and that is worth writing down before anyone expects otherwise:
-the workers' loads run *in parallel* today, so sharing them removes work from each process without
-shortening the critical path. Measured at 8 islands and 32 islands with a 200-iteration budget, before
-and after: 3.97/3.42 s against 4.02/3.95 s at 8, and 5.51/6.58 s against 5.76/5.73 s at 32, at loads
-rising from 15 to 19 — overlapping, and said so.
+Pairs were run with the order alternated (ABBA), because a first pass that always ran the control first
+inherited a host load climbing from 5 to 16 and produced the same ~10% "regression" from load alone —
+a confound worth recording, since it is exactly the artefact this kind of measurement invites. At one
+island, where no pool is created, the paired differences are +1.7%, -4.4% and -8.4%: noise, as they
+should be, and the internal control that says the 16- and 32-island results are not.
 
-The effect to look for is therefore in the *curve*, not in a single run: less memory traffic per
-iteration should show up as better per-process efficiency under contention, which is exactly what P9.2
-measures. The patch model is deliberately not preloaded: the evaluator builds its own per worker, so
-sharing it needs a change to how the model is owned, and that is a separate question.
-
+**Verdict: removed.** It shares nothing a worker uses, and costs about 1 s of serial setup — roughly
+-12% at 16 and 32 islands. The capacity it saves (about 170 MB per worker) is real but worth nothing on
+this host, which has 754 GB of memory and 711 GB free; and capacity is not what P8.4 identified as the
+limit. **Sharing pages does not reduce bandwidth**: every process still reads the same bytes, so the
+bandwidth contention P8.4 measured is untouched by sharing copies. The route that would make the
+workers genuinely share one copy — handing the parent's built state to the pool instead of a dataset
+path — is recorded in `notes/backlog.md` as a memory-constrained-host option, with no claim of a
+throughput win, because the measurement above does not support one.
