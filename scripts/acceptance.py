@@ -473,13 +473,31 @@ def compare_route_costs(roads_dir: Path) -> tuple[list[str], int, list[str]]:
             want = expected.get(node)
             if want is None:
                 continue
-            route = network.route(block, account)
-            got = (
-                route.length_m
-                if sum_length and route is not None
-                else (route.haul_cost if route is not None else 0.0)
-            )
             compared += 1
+            if sum_length:
+                # The table holds the **distance** from the node to the mill, not the cost of the
+                # route WS4 would choose: measured on the 2026 sample, the value it reports for a
+                # node is the shortest path by length (81,098 m) where WS4's least-haul path is
+                # 97,169 m. The like-for-like comparison is therefore WS4's own shortest distance.
+                distance = network.route_length(block, account)
+                if want < 0.0:
+                    if distance is not None:
+                        differences.append(
+                            f"{label}: node {node} is unreachable in the reference,"
+                            f" reachable in WS4 at {distance:.6f} m"
+                        )
+                elif distance is None:
+                    differences.append(
+                        f"{label}: node {node} is reachable in the reference at {want:.6f} m,"
+                        " unreachable in WS4"
+                    )
+                elif abs(distance - want) > 1e-4 * max(abs(want), 1.0):
+                    differences.append(
+                        f"{label}: node {node} {distance:.6f} m against the reference {want:.6f} m"
+                    )
+                continue
+            route = network.route(block, account)
+            got = route.haul_cost if route is not None else 0.0
             if want < 0.0:
                 if route is not None:
                     differences.append(

@@ -502,3 +502,27 @@ def test_a_reference_table_for_a_destination_the_model_lacks_is_skipped(tmp_path
     assert differences == []
     assert compared > 0
     assert skipped == ["MILL3"]
+
+
+def test_a_distance_table_is_compared_against_ws4s_shortest_distance(tmp_path: Path) -> None:
+    """A table of distances asks a different question from a table of haul sums."""
+    roads = _write_roads(tmp_path / "roads", "1,3.0\n2,2.0\n")
+    # the fixture's network is 1,000 m then 2,000 m to the mill, and block 1 is linked to node 1
+    (roads / "cost_destination.MILL1.csv").write_text(
+        "NODE,SUM_LENGTH\n1,3000.0\n", encoding="utf-8"
+    )
+    differences, compared, _skipped = acc.compare_route_costs(roads)
+    assert differences == []
+    assert compared == 1
+
+
+def test_a_distance_table_that_disagrees_is_reported(tmp_path: Path) -> None:
+    """A distance the network does not have is a difference, not silently accepted."""
+    roads = _write_roads(tmp_path / "roads", "1,3.0\n2,2.0\n")
+    (roads / "cost_destination.MILL1.csv").write_text(
+        "NODE,SUM_LENGTH\n1,2500.0\n", encoding="utf-8"
+    )
+    differences, compared, _skipped = acc.compare_route_costs(roads)
+    assert compared == 1
+    assert differences
+    assert "m against the reference" in differences[0]

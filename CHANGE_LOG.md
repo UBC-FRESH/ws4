@@ -1559,3 +1559,15 @@ issue comments.
   maintainer's direction is recorded in the roadmap: **verified parity first**, deliberate divergence
   after, with a parity mode as the home for it — and the traffic-weighted maintenance is in the backlog
   as the first candidate for that divergence. Dashboard: **GREEN**.
+- P11.5 (#117), the routing question: **WS4 now agrees with the reference on all 25,134 routed
+  node-and-mill pairs** of the 2026 sample. The ten remaining "differences" were not routing errors: the
+  2026 sample's table holds `SUM_LENGTH` where the 2019 sample's held `SUM_HAUL`, and for those nodes the
+  reference's value is the **shortest path by distance** (81,098 m) where WS4's least-haul route is
+  97,169 m — measured by weighting the same network three ways, the length-only optimum reproduces the
+  reference's number exactly, while optimising haul or haul-plus-build does not. So the table asks "how
+  far is this node from the mill" and the like-for-like comparison is WS4's own shortest distance; the
+  check now uses `RouteNetwork.route_length` for a distance table, the haul sum for a cost table, and
+  skips a table for a destination the model does not declare, naming it. Two tests pin both branches.
+  The phase's general lesson, recorded in the parity note: when a comparison disagrees, ask first whether
+  the two sides are being asked the same thing — three of this phase's largest differences (the period
+  convention, the patch `shape` metric, and this) were that rather than a defect. Dashboard: **GREEN**.

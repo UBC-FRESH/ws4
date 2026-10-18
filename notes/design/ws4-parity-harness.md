@@ -430,3 +430,26 @@ themselves*: WS4's aggregate young-patch area is 0.92 of the reference's, its pa
 mean patch size 0.96, so the components merge or split differently on the same schedule, and that is what
 is left to chase.
 
+### What the reference's two tables ask
+
+Comparing routing needed one more realisation, and the numbers settle it. The 2019 sample ships
+`cost_destination.<mill>.csv` with `NODE,SUM_HAUL` — the sum of haul rates along the route the reference
+would choose — and WS4's least-haul route reproduces it exactly (37,701 comparisons). The 2026 sample
+ships the same file with `NODE,SUM_LENGTH`, and for the ten nodes where the two disagreed the reference's
+value is the **shortest path by distance**, not the cheapest route:
+
+| Weighting | Haul sum | Length | Build |
+| --- | ---: | ---: | ---: |
+| haul (what WS4 minimises) | 12.36 | 97,169 m | 88,715 |
+| haul + build | 13.83 | 101,947 m | 13,597 |
+| **length only** | 19.25 | **81,098 m** — the reference's number | 300,663 |
+
+So the table answers "how far is this node from the mill", and the like-for-like comparison is WS4's own
+shortest distance (`RouteNetwork.route_length`), not the length of the route it would choose. With that,
+and with the check skipping a table for a destination the model no longer declares, **WS4 agrees with the
+reference on all 25,134 routed node-and-mill pairs** of the 2026 sample.
+
+The general lesson is worth keeping: when a comparison disagrees, the first question is whether the two
+sides are being asked the same thing. Three of this phase's largest "differences" were exactly that — the
+period convention, the patch `shape` metric, and this one.
+
