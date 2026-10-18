@@ -1615,3 +1615,10 @@ issue comments.
   what the aggregates say is what can be said: WS4's young-patch area is 0.92 of the reference's, its
   count 1.03, its mean size 0.96 — the structure within about 8% — while individual cells differ by a
   median 9-18%. Both stops are in the backlog as capabilities. Dashboard: **GREEN**.
+- Queued the Phase 11 close-out: the report is `notes/reports/p11-closeout.md` and the roadmap moves P11
+  to `pr-open`, its pull request against `main` (the branch was cut from `main` after Phase 9 and 10
+  landed, so nothing is stacked). The report's recommendation is **P12 (Spatial decision match)**: a
+  patch criterion that can be a product (28 of the reference's 63 patch targets), the reference's
+  destination policy for its mill products (which the route ratios wait on), the route report's
+  period width, the `attractor` sub-account, a **Patchworks-parity mode** with traffic-weighted
+  maintenance behind it, and a patch-component comparison carried on a new reference export.
