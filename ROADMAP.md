@@ -18,7 +18,8 @@ exists and the maintainer approves it.
 | P4 Release and deploy | #36 | `feature/p4-release` | complete |
 | P5 Operate and maintain | #44 | `feature/p5-operate` | complete |
 | P6 Performance and scalability | #60 | `feature/p6-performance` | complete |
-| P7 Parity and the analyst workflow | #82 | `feature/p7-parity` | pr-open |
+| P7 Parity and the analyst workflow | #82 | `feature/p7-parity` | complete |
+| P8 Verify the replacement claim | #90 | `feature/p8-verify` | active |
 
 ## Lifecycle Map
 
@@ -331,7 +332,7 @@ Acceptance criteria:
 
 Parent issue: #82
 Branch: `feature/p7-parity`
-Status: pr-open
+Status: complete
 
 Goal: make the replacement claim checkable and the tool comfortable to use all day: close the gaps the
 Phase 6 close-out recorded, put the workspace in step with the tooling, and extend the documentation
@@ -354,6 +355,34 @@ Acceptance criteria:
 - `threads` applied, and the island scaling measured on an idle host.
 - The sample estate used by at least one guide and one notebook.
 - The docs build and the docstrings gate green, with the dashboard green at every commit.
+
+## Phase 8: Verify the replacement claim
+
+Parent issue: #90
+Branch: `feature/p8-verify`
+Status: active
+
+Goal: demonstrate the claim the project exists to support — that WS4 is a working replacement for the
+established tool — instead of asserting it, by exercising WS4 against the reference implementation's
+own outputs and against the figures the earlier phases recorded.
+
+- [ ] P8.1 Build a parity harness against the reference outputs (#91)
+- [ ] P8.2 Reproduce the C5 results from documented inputs (#92)
+- [ ] P8.3 Speed up the criterion series and the patch-state construction (#93)
+- [ ] P8.4 Measure island scaling on a controlled host (#94)
+
+Deferred from P8, triaged in `notes/backlog.md`:
+
+- (none outstanding.)
+
+Acceptance criteria:
+
+- A parity comparison a reviewer can run and read, with the differences it found either fixed or
+  explained.
+- The C5 patch and flow results reproducible from inputs documented in the repository.
+- The criterion-series work judged against the P7.5 baseline, with the measurement recorded.
+- Island scaling measured with the host's load recorded, and the memory-traffic question answered.
+- The dashboard green at every commit, with the docs and docstrings gates.
 
 ## Detailed Next Steps Notes
 
@@ -394,3 +423,13 @@ Acceptance criteria:
     five tasks (#83 to #87): the command-line gaps, the `threads` setting and a scaling re-measurement,
     a sample estate, the missing notebooks and a concepts section, and patch performance under a dense
     harvest.
+
+11. Phase 7 is complete: pull request #89 squash-merged as `1dc2c97`, the branch deleted, and parent
+    issue #82 closed. The close-out report is `notes/reports/p7-closeout.md`. Its most valuable result
+    was not a feature: shipping the sample estate exposed that `Optimizer.run` replayed its incumbent
+    without passing the patch accounts, so a patch target was reported as a zero share carrying its
+    whole penalty while the summary's own objective was zero — the search had been right. Phase 8
+    (Verify the replacement claim) is active on `feature/p8-verify`, parent issue #90, with four tasks
+    (#91 to #94): a parity harness against the reference outputs, the C5 results reproduced from
+    documented inputs, the criterion-series and patch-state performance lever P7.5 named, and island
+    scaling on a host whose load is recorded.

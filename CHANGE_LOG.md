@@ -1121,3 +1121,16 @@ issue comments.
   suggested, P7.6 initially misdiagnosed as a search bug when it was the run's report, and the
   dense-harvest path measured rather than improved. No settings change is pending. Dashboard: **GREEN**
   (seven gates).
+- Carried out the Phase 7 close-out: pull request #89 squash-merged as `1dc2c97`, the branch
+  `feature/p7-parity` deleted, and parent issue #82 closed. The close-out report is
+  `notes/reports/p7-closeout.md`, and its acceptance evidence is the two command-line gaps closed with
+  behavioural tests, `threads` applied with the island scaling measured and its load recorded, the
+  sample estate used by two guides and four notebooks, and the dashboard green at every commit. The
+  phase's most valuable result was not a feature: shipping the sample estate exposed that
+  `Optimizer.run` replayed its incumbent without passing the patch accounts, so a patch target was
+  reported as a zero share carrying its whole penalty while the summary's own objective was zero — the
+  search had been right. No settings change was involved.
+- Launched Phase 8 (Verify the replacement claim): parent issue #90, branch `feature/p8-verify`, and
+  four child tasks (#91 to #94) — a parity harness against the reference implementation's outputs, the
+  C5 results reproduced from documented inputs, the criterion-series and patch-state performance lever
+  that P7.5 named, and island scaling measured on a host whose load is recorded. Dashboard: **GREEN**.
