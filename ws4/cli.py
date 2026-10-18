@@ -81,6 +81,7 @@ def simulate(
         duplicate_accounts=config.duplicate_accounts if config is not None else (),
         product_allocations=config.product_allocations if config is not None else (),
         period_width=config.period_width if config is not None else 1,
+        maintenance=config.maintenance if config is not None else None,
         edge_elements=elements,
         core_buffer_m=core_buffer_m,
         min_core_area_ha=min_core_area_ha,

@@ -4,6 +4,16 @@ route:
   linkages: linkages.csv
   eligibility: eligibility.csv
   unutilized: product.Unutilized
+# Parity with the reference is the default: what WS4 computes differently has to be asked for
+# here, one named entry per quantity, so that what a run does is explicit. The one divergence WS4
+# offers is maintenance as a function of the traffic a road carries — nothing at no traffic, then
+# a fixed cost the moment any traffic uses the segment plus a cost proportional to it,
+# `f(x > 0) = b + a * x` — where the reference charges each used road once for the period, which
+# is the `a = 0` case and what parity runs. Uncomment to use it.
+# divergences:
+#   maintenance:
+#     model: traffic
+#     per_volume: 0.01
 route_accounts:
   - {destination: destination.MILL1, kind: haul, account: route.Mill1.haul}
   - {destination: destination.MILL2, kind: haul, account: route.Mill2.haul}

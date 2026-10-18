@@ -434,3 +434,71 @@ def test_a_per_destination_report_measures_the_length_it_built() -> None:
     report = ledger.route_cost_report("10")
     assert report["built_length"].iloc[0] == report["length"].iloc[0] > 0.0
     assert report["build_expense"].iloc[0] > 0.0
+
+
+def test_the_traffic_reading_charges_the_intercept_and_the_traffic() -> None:
+    """Asked for by name, maintenance is nothing at no traffic, then b + a x."""
+    from ws4.roads.accounts import MaintenanceCharge
+
+    network = _network()
+    route = network.route(1, "10")
+    assert route is not None
+    reading = MaintenanceCharge(model="traffic", per_volume=0.5)
+    many = RouteCostLedger(network, maintenance=reading)
+    many.record(0, 1, "product.Yield", 10.0, "10", route)
+    many.record(0, 2, "product.Yield", 90.0, "10", route)
+    # the fixture's two segments each cost 1.0 a year to maintain
+    assert reading.of(1.0, 0.0) == 0.0
+    assert reading.of(1.0, 10.0) == 1.0 + 0.5 * 10.0
+    # 100 of traffic on the same segments: the intercept once each, plus a = 0.5 a unit of it
+    assert many.route_cost_report()["maintain_expense"].iloc[0] == 2 * (1.0 + 0.5 * 100.0)
+    # and the reference's reading ignores the traffic entirely
+    assert MaintenanceCharge().of(1.0, 100.0) == 1.0
+
+
+def test_a_divergence_is_read_from_the_configuration(tmp_path: Path) -> None:
+    """Parity is the default and a divergence is named under `divergences`, one per quantity."""
+    for name, frame in (
+        ("segments.csv", {"from_vertex": [1], "to_vertex": [2], "length_m": [10.0], "cost": [1.0]}),
+        ("destinations.csv", {"name": ["destination.MILL1"], "vertex_id": [2]}),
+        ("linkages.csv", {"block_id": [1], "vertex_id": [1]}),
+    ):
+        pd.DataFrame(frame).to_csv(tmp_path / name, index=False)
+    shared = (
+        "route:\n  segments: segments.csv\n  destinations: destinations.csv\n"
+        "  linkages: linkages.csv\n"
+    )
+    plain = tmp_path / "plain.yaml"
+    plain.write_text(shared, encoding="utf-8")
+    assert load_route_config(plain).maintenance.model == "reference"
+    named = tmp_path / "named.yaml"
+    named.write_text(
+        shared + "divergences:\n  maintenance:\n    model: traffic\n    per_volume: 3.0\n",
+        encoding="utf-8",
+    )
+    maintenance = load_route_config(named).maintenance
+    assert maintenance.model == "traffic"
+    assert maintenance.per_volume == 3.0
+    for body, message in (
+        ("divergences:\n  volume: {}\n", "one divergence to declare"),
+        ("divergences:\n  maintenance:\n    model: affine\n", "is not one WS4 has"),
+    ):
+        path = tmp_path / f"bad{len(body)}.yaml"
+        path.write_text(shared + body, encoding="utf-8")
+        with pytest.raises(ValueError, match=message):
+            load_route_config(path)
+
+
+def test_the_maintenance_account_and_the_report_charge_the_same() -> None:
+    """One charge, read two ways: the account and the report agree, which they did not before."""
+    from ws4.roads.accounts import RouteAccount
+
+    network = _network()
+    pretty = network.route(1, "10")
+    assert pretty is not None
+    ledger = RouteCostLedger(network)
+    ledger.record(1, 1, "product.Yield", 10.0, "10", pretty)
+    ledger.record(1, 2, "product.Yield", 5.0, "10", pretty)
+    account = ledger.account_values([RouteAccount("10", "maintain", "route.maint")])
+    reported = ledger.route_cost_report("10")["maintain_expense"].sum()
+    assert float(account["value"].iloc[0]) == reported > 0.0

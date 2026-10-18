@@ -259,8 +259,11 @@ items are enhancements and maintenance.
   (**384,362.3**, ten times high). The objective, the report, the incremental evaluator, the patch
   accounting points and the MIP bound all follow one rule, `ws4.opt.objective.accumulates()`, and the
   acceptance check states the rule **independently** so the two can disagree.
-- **Road maintenance as a function of the traffic a road carries.** `open`, a deliberate divergence to
-  revisit *after* parity, with a specified shape. Traffic-weighted maintenance is conceptually
+- **Road maintenance as a function of the traffic a road carries.** `done` (P12.5, #125), behind the
+  parity mode. The reading is `f(0) = 0` and `f(x > 0) = b + a x`, chosen by
+  `divergences.maintenance`, and its effect is measured on the 2026 base scenario: +4.2% of the
+  maintenance at `a = 0.001`, +42.4% at 0.01 and ×5.24 at 0.1, with the haul unchanged. The text below
+  is the record of why, kept as written when it was still open. Traffic-weighted maintenance is conceptually
   defensible — it is simply not what the reference does (it charges each used road once for the period),
   and on the 2026 sample WS4's traffic reading was about **170×** the reference's, so parity needs the
   reference's reading (implemented, and the ledger's test pins it: nine times the volume over the same
@@ -273,7 +276,13 @@ items are enhancements and maintenance.
   case, the one WS4 had was in effect a per-use charge with no intercept, and this is the shape a road
   budget actually has: a road that is open at all needs work whether or not it is busy, and a busy road
   needs more.
-- **A Patchworks-parity mode.** `open`, a future feature, and the shape of how WS4 diverges. The current
+- **A Patchworks-parity mode.** `done` (P12.5, #125), in the smallest form that makes a divergence
+  explicit: parity is the default, and what WS4 computes differently is named under the route
+  configuration's `divergences`, one entry per quantity, with an unknown entry refused rather than
+  ignored. It covers one quantity so far — maintenance — and a second is added the same way rather than
+  by building a framework. Quantities that *agree* are not declared at all, because parity is what
+  happens when nothing is named. The text below is the record of why, kept as written when it was
+  still open. The current
   aim is **verified parity first**: match the reference's semantics, and prove it against its own reports.
   From there WS4 is free to redefine anything it computes — as long as the change is justified,
   documented, and self-consistent — and a mode that *enforces* the reference's readings would let a user

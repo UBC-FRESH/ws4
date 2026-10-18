@@ -21,6 +21,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Literal
 
 import pandas as pd
 import yaml
@@ -221,6 +222,60 @@ class RouteAccount:
 
 
 @dataclass(frozen=True)
+class MaintenanceCharge:
+    """What a used road costs to maintain in one year.
+
+    The reference charges each segment it is used on once a period, whatever traffic passes over
+    it: nothing when nothing uses it, and the segment's annual maintenance cost as soon as
+    anything does — ``f(0) = 0`` and ``f(x > 0) = b``. WS4 also offers the affine form the
+    maintainer specified, which is what a road budget actually looks like: nothing at no traffic,
+    then a fixed annual cost the moment any traffic uses the segment, plus a cost proportional to
+    the traffic — ``f(x > 0) = b + a x``. The reference's reading is the ``a = 0`` case, and it is
+    the default, so a divergence has to be asked for by name.
+
+    Attributes
+    ----------
+    model : {"reference", "traffic"}
+        Which reading to use. ``reference`` is the reference's own, and the default.
+    per_volume : float
+        ``a``: the cost per unit of traffic, used by ``traffic`` (default 0).
+    """
+
+    model: Literal["reference", "traffic"] = "reference"
+    per_volume: float = 0.0
+
+    def __post_init__(self) -> None:
+        """Refuse a reading that is not one of the two, rather than falling back to the default."""
+        if self.model not in ("reference", "traffic"):
+            raise ValueError(
+                f"maintenance model {self.model!r} is not one WS4 has: it has the reference's "
+                "'reference' reading and the affine 'traffic' one"
+            )
+
+    def of(self, base: float, volume: float) -> float:
+        """Return what a segment costs to maintain in a year.
+
+        Parameters
+        ----------
+        base : float
+            ``b``: the segment's annual maintenance cost.
+        volume : float
+            ``x``: the traffic the segment carried that year.
+
+        Returns
+        -------
+        float
+            The charge: nothing when nothing used the segment, and otherwise the reference's
+            annual cost with the traffic term on top when it was asked for.
+        """
+        if volume <= 0.0:
+            return 0.0
+        if self.model == "traffic":
+            return base + self.per_volume * volume
+        return base
+
+
+@dataclass(frozen=True)
 class ProductAllocation:
     """A master product partitioned across the destinations it is routed to.
 
@@ -281,6 +336,9 @@ class RouteConfig:
         The master products to partition across their destinations.
     period_width : int
         The planning-period width, in years.
+    maintenance : MaintenanceCharge
+        How a used road's maintenance is charged. The default is the reference's own reading; a
+        divergence from it has to be asked for by name under ``divergences``.
     """
 
     model: RouteModel
@@ -288,6 +346,46 @@ class RouteConfig:
     duplicate_accounts: tuple[DuplicateAccount, ...] = ()
     product_allocations: tuple[ProductAllocation, ...] = ()
     period_width: int = 1
+    maintenance: MaintenanceCharge = field(default_factory=MaintenanceCharge)
+
+
+def _divergences(raw: object) -> MaintenanceCharge:
+    """Read the named divergences from a route configuration.
+
+    Parameters
+    ----------
+    raw : object
+        The configuration's ``divergences`` mapping, or None when it states none.
+
+    Returns
+    -------
+    MaintenanceCharge
+        How maintenance is charged: the reference's reading unless the configuration names the
+        traffic one.
+
+    Raises
+    ------
+    ValueError
+        When a divergence is one WS4 does not have, naming it rather than ignoring it.
+    """
+    if not raw:
+        return MaintenanceCharge()
+    if not isinstance(raw, Mapping):
+        raise ValueError("divergences must be a mapping of names to settings")
+    named = set(raw)
+    if named - {"maintenance"}:
+        unknown = ", ".join(sorted(named - {"maintenance"}))
+        raise ValueError(
+            f"WS4 has one divergence to declare, 'maintenance', and the configuration names "
+            f"{unknown}: a setting WS4 does not apply is refused rather than ignored"
+        )
+    maintenance = raw.get("maintenance") or {}
+    if not isinstance(maintenance, Mapping):
+        raise ValueError("divergences.maintenance must be a mapping of model and per_volume")
+    return MaintenanceCharge(
+        model=str(maintenance.get("model", "reference")),  # type: ignore[arg-type]
+        per_volume=float(maintenance.get("per_volume", 0.0)),
+    )
 
 
 def _surplus_accounts(raw: object) -> str | dict[str, str]:
@@ -304,6 +402,13 @@ def load_route_config(path: Path) -> RouteConfig:
     optional ``eligibility`` table, an optional ``unutilized`` account — one name, or a name
     per product — and lists of ``route_accounts`` and ``duplicate_accounts``. Relative paths
     resolve against the configuration file's directory.
+
+    **Parity is the default and a divergence has to be named.** Everything WS4 computes the way the
+    reference does needs no configuration; what WS4 computes *differently* is asked for under
+    ``divergences``, one named entry per quantity, so that what a run does is explicit rather than
+    implicit. The one entry there is ``maintenance`` — ``model: reference`` (the default, and what
+    parity uses) or ``model: traffic`` with ``per_volume`` for the affine charge — and an entry WS4
+    does not know is refused rather than ignored.
 
     Parameters
     ----------
@@ -373,6 +478,7 @@ def load_route_config(path: Path) -> RouteConfig:
         model=model,
         route_accounts=route_accounts,
         duplicate_accounts=duplicate_accounts,
+        maintenance=_divergences(raw.get("divergences", {})),
         product_allocations=product_allocations,
         period_width=int(raw.get("period_width", 1)),
     )
@@ -526,15 +632,29 @@ class RouteCostLedger:
         the route tables, and the route cost report need. When False, only the
         per-destination totals that :meth:`account_values` needs are kept, so a search can
         evaluate route accounts without the reporting overhead.
+    maintenance : MaintenanceCharge or None, optional
+        How a used road's maintenance is charged. The default is the reference's own reading;
+        a divergence from it has to be asked for by name.
     """
 
-    def __init__(self, network: RouteNetwork, period_width: int = 1, collect: bool = True) -> None:
+    def __init__(
+        self,
+        network: RouteNetwork,
+        period_width: int = 1,
+        collect: bool = True,
+        maintenance: MaintenanceCharge | None = None,
+    ) -> None:
         self.network = network
         self.period_width = period_width
         self.collect = collect
+        self.maintenance = maintenance if maintenance is not None else MaintenanceCharge()
         self._by_id = {segment.segment_id: segment for segment in network.segments}
         self._segments: dict[tuple[int, int], _SegmentState] = {}
         self._by_destination: dict[tuple[int, str, int], _SegmentState] = {}
+        # the segments each destination used, and the traffic it put on each of them, so the
+        # maintenance is charged per segment per period from the traffic (_charge_maintenance)
+        self._dest_segments: dict[tuple[int, str], set[int]] = {}
+        self._traffic: dict[tuple[int, str, int], float] = {}
         self._built: set[int] = set()
         self._first_use: dict[int, int] = {}
         self._year_distance: dict[int, float] = {}
@@ -599,18 +719,23 @@ class RouteCostLedger:
         )
         product_key = (year, destination, str(product))
         self._product_volume[product_key] = self._product_volume.get(product_key, 0.0) + volume
-        totals["maintain"] += route.maintain_cost
+        # The traffic each segment carries for each destination, which is what maintenance is a
+        # function of. Both collecting modes keep it: a search runs with ``collect=False`` and
+        # still prices the maintenance account.
+        for segment_id in route.segment_ids:
+            self._dest_segments.setdefault((year, destination), set()).add(segment_id)
+            carried = (year, destination, segment_id)
+            self._traffic[carried] = self._traffic.get(carried, 0.0) + volume
         if self.collect:
             # Aggregate per (year, destination, route): products of the same block to the
             # same destination share the route, so the per-segment work runs once per route
-            # at flush time. Volume is summed; the record count drives maintenance.
+            # at flush time.
             key = (year, destination, route.segment_ids)
             flow = self._flows.get(key)
             if flow is None:
-                self._flows[key] = [volume, 1.0]
+                self._flows[key] = [volume]
             else:
                 flow[0] += volume
-                flow[1] += 1.0
             return
         for segment_id in route.segment_ids:
             if segment_id not in self._built:
@@ -624,8 +749,17 @@ class RouteCostLedger:
         output needs them; the per-segment work runs once per route rather than once per
         produced product.
         """
-        if not self._flows:
-            return
+        if self._flows:
+            self._materialize()
+        self._charge_maintenance()
+
+    def _materialize(self) -> None:
+        """Fold the aggregated route flows into the per-segment tables.
+
+        Called by every reader, so the per-segment tables are materialized only when an
+        output needs them; the per-segment work runs once per route rather than once per
+        produced product.
+        """
         for (year, destination, segment_ids), flow in self._flows.items():
             volume = flow[0]
             for segment_id in segment_ids:
@@ -645,21 +779,46 @@ class RouteCostLedger:
                 state.volume += volume
                 state.haul_expense += volume * segment.haul_cost
                 state.length = segment.length_m
-                # A road is maintained once for each period it is used, however much traffic passes
-                # over it, so this is set rather than accumulated: the same segment is flushed once
-                # per route, and charging it per use multiplied it by the number of routed flows.
-                state.maintain_expense = segment.maintain_cost
                 per_dest = self._by_destination.setdefault(
                     (year, destination, segment_id), _SegmentState()
                 )
                 per_dest.volume += volume
                 per_dest.haul_expense += volume * segment.haul_cost
                 per_dest.length = segment.length_m
-                per_dest.maintain_expense = segment.maintain_cost
                 if is_new:
                     per_dest.built_length += segment.length_m
                     per_dest.build_expense += segment.build_cost
         self._flows.clear()
+
+    def _charge_maintenance(self) -> None:
+        """Charge each used segment's maintenance once for the period, from the traffic on it.
+
+        Maintenance is a function of the traffic a road carries, so it is charged for a period
+        after every flow of that period is in — not once per route, which is what a per-use
+        charge amounts to, and not per produced product, which is what it used to be. Nothing is
+        charged for a period a segment was not used at all. Setting rather than adding makes this
+        idempotent, which is what lets every reader call it.
+        """
+        for (year, destination), used_segments in self._dest_segments.items():
+            total = 0.0
+            for segment_id in used_segments:
+                traffic = self._traffic.get((year, destination, segment_id), 0.0)
+                charge = self.maintenance.of(self._by_id[segment_id].maintain_cost, traffic)
+                total += charge
+                if self.collect:
+                    per_dest = self._by_destination.get((year, destination, segment_id))
+                    if per_dest is not None:
+                        per_dest.maintain_expense = charge
+            self._dest_totals.setdefault(
+                (year, destination), {"haul": 0.0, "build": 0.0, "maintain": 0.0, "volume": 0.0}
+            )["maintain"] = total
+        if self.collect:
+            # the network-wide figure is a property of the segment, so it is charged from the
+            # traffic every destination put on it, not from one destination's share
+            for (_year, segment_id), state in self._segments.items():
+                state.maintain_expense = self.maintenance.of(
+                    self._by_id[segment_id].maintain_cost, state.volume
+                )
 
     def route_rows(self) -> pd.DataFrame:
         """Return the per-product routing rows.

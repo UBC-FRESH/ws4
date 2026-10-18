@@ -1699,3 +1699,17 @@ issue comments.
   is **refused** with that reason, as the product patch criterion is — the same export that leaves the
   patch components incomparable (#126) is what would make it computable. No shipped configuration asked
   for one. Dashboard: **GREEN**.
+- P12.5 (#125) **parity is the default, and the one divergence WS4 offers is named rather than
+  implicit.** A route configuration's `divergences` block declares what WS4 computes *differently*, one
+  named entry per quantity; everything else is the reference's reading, an unknown entry is refused
+  rather than ignored, and so is a maintenance reading WS4 does not have. The first entry is
+  **traffic-weighted maintenance**: the reference charges each used road once a period (`f(0) = 0`,
+  `f(x > 0) = b`), and WS4 offers the affine form the maintainer specified — `b + a·x` — with the
+  reference's reading as the `a = 0` default. Its effect is **measured** on the 2026 base scenario
+  replayed: the maintenance is +4.2% of parity at `a = 0.001`, +42.4% at 0.01 and ×5.24 at 0.1, with the
+  haul unchanged in all four runs. Two defects came out of making it a reading: maintenance was charged
+  once per *produced product* in the route accounts while the report charged it once per segment per
+  period (**7.0×** apart on MILL 1 — now 1.0000, both through one charge computed after every flow of the
+  period is in), and the optimizer's incremental path now **defers to the full simulation** when a
+  configured route account is `build` or `maintain`, which are charged per segment and cannot be a
+  per-block sum. Dashboard: **GREEN**; acceptance **PASS**; 551 tests; examples 0 drifted.

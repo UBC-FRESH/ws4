@@ -27,7 +27,9 @@ from ..patch.edge import EdgeElement, load_edge_elements
 from ..report import write_report
 from ..roads.accounts import (
     DuplicateAccount,
+    MaintenanceCharge,
     RouteAccount,
+    RouteConfig,
     RouteCostLedger,
     RouteModel,
     load_route_config,
@@ -239,6 +241,11 @@ class OptimizeConfig:
             raise ValueError(f"unknown cooling_mode: {self.cooling_mode!r}")
 
 
+#: The route-account kinds that are charged per segment per period rather than per block, so a
+#: per-block sum over-counts them: build is charged once ever, maintenance once each period used.
+_PER_SEGMENT_ACCOUNT_KINDS = frozenset({"build", "maintain"})
+
+
 class Optimizer:
     """A simulated-annealing optimizer over a compiled dataset.
 
@@ -281,6 +288,7 @@ class Optimizer:
         self._route_cache: (
             tuple[RouteModel | None, tuple[RouteAccount, ...], tuple[DuplicateAccount, ...]] | None
         ) = None
+        self._config_cache: RouteConfig | None = None
         self._edge_cache: tuple[EdgeElement, ...] | None = None
         self._simulator_cache: Simulator | None = None
         self._patch_cache: PatchModel | None = None
@@ -326,14 +334,30 @@ class Optimizer:
         if self._route_cache is None:
             if self.cfg.route_config_path:
                 config = load_route_config(Path(self.cfg.route_config_path))
+                self._config_cache = config
                 self._route_cache = (
                     config.model,
                     config.route_accounts,
                     config.duplicate_accounts,
                 )
             else:
+                self._config_cache = None
                 self._route_cache = (None, (), ())
         return self._route_cache
+
+    def maintenance(self) -> MaintenanceCharge:
+        """Return how the configured run charges a used road's maintenance.
+
+        Returns
+        -------
+        MaintenanceCharge
+            The reading named under the configuration's ``divergences``, or the reference's own
+            when it names none.
+        """
+        self.route()
+        if self._config_cache is None:
+            return MaintenanceCharge()
+        return self._config_cache.maintenance
 
     def candidates(self) -> Candidates:
         """Return the possible treatment chains for each block.
@@ -609,7 +633,11 @@ class Optimizer:
         frame = self._schedule_frame(schedule)
         simulator = self.simulator()
         simulator.reset()
-        ledger = RouteCostLedger(model.network, collect=False) if model is not None else None
+        ledger = (
+            RouteCostLedger(model.network, collect=False, maintenance=self.maintenance())
+            if model is not None
+            else None
+        )
         edges = self._graph() if self.cfg.topology_path else []
         values = simulator.simulate(
             frame,
@@ -727,6 +755,15 @@ class Optimizer:
         route_accounts: tuple[RouteAccount, ...] = (),
     ) -> pd.DataFrame:
         """Return the account values from the base plus per-block feature and route deltas."""
+        model, _accounts, _duplicates = self.route()
+        if model is not None and any(
+            account.kind in _PER_SEGMENT_ACCOUNT_KINDS for account in route_accounts
+        ):
+            # Build and maintenance are charged once per segment per period, not once per block that
+            # uses it — and maintenance is a function of the traffic a segment carries, which no
+            # per-block sum can see. So a configuration that prices either is evaluated by the full
+            # simulation rather than by a per-block delta, which is what makes the two agree.
+            return self._full_values(schedule, model, route_accounts, duplicate_accounts)
         self.simulator().reset()
         totals = dict(self._base_values())
         route_totals: dict[tuple[int, str], float] = {}

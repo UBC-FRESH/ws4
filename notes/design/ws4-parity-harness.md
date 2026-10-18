@@ -607,6 +607,50 @@ cannot stand behind — the same call as the product patch criterion above. The 
 that held it are gone rather than left in as a trap; no shipped configuration asked for one, so nothing
 that worked changed.
 
+### Parity mode, and the one divergence it names
+
+**Parity is the default, and a divergence has to be asked for by name.** Everything WS4 computes the
+way the reference does needs no configuration; what it computes *differently* is declared under a route
+configuration's ``divergences``, one named entry per quantity, so that what a run does is explicit
+rather than implicit — and so that something deliberately different cannot be mistaken for something
+wrong. An entry WS4 does not know is refused rather than ignored, and so is a maintenance reading it
+does not have.
+
+The one divergence declared so far is **maintenance as a function of the traffic a road carries**. The
+reference charges each road it uses once for the period, whatever traffic passes over it — ``f(0) = 0``,
+``f(x > 0) = b``. WS4 offers the affine form the maintainer specified, which is what a road budget
+actually looks like: nothing at no traffic, then a fixed cost the moment any traffic uses the segment,
+plus a cost proportional to the traffic — ``f(x > 0) = b + a x``. The reference's reading is the ``a = 0``
+case and is the default; asking for the other one is what ``divergences.maintenance`` is for.
+
+**Its effect is measured rather than asserted**, on the 2026 base scenario replayed with each reading.
+The maintenance the run charges, summed over both mills, and what it does to the cost:
+
+| ``a`` (cost a unit of traffic) | maintenance | against parity | maintenance and haul |
+| ---: | ---: | ---: | ---: |
+| parity (``a = 0``) | 144,917,367 | — | 300,237,757 |
+| 0.001 | 151,064,075 | +4.2% | 306,384,465 |
+| 0.01 | 206,384,450 | +42.4% | 361,704,840 |
+| 0.1 | 759,588,194 | ×5.24 | 914,908,584 |
+
+So the term is what a user's choice makes it: negligible at a thousandth of a unit of traffic, a material
+part of the cost at a hundredth, and dominant at a tenth. The haul is unchanged in all four runs, which
+is the check that only the reading moved.
+
+**Two things had to be fixed for that to be a reading at all.** Maintenance used to be charged once per
+produced product in the route *accounts* while the route *report* charged it once per segment per period:
+on MILL 1 the account was **7.0 times** the report for the same mill. Both now go through one charge,
+computed after every flow of the period is in — from the traffic, which is what makes it a function of
+the traffic — and MILL 1's account and its report agree to **1.0000**. A destination's report counts a
+shared segment for each destination, so the sum over destinations is not the network-wide figure (1.28
+times it on this run); that is the reference's own per-mill reading rather than an error.
+
+The optimizer's **incremental path** prices route accounts as a per-block sum, which cannot see the
+traffic on a shared road. It now defers to the full simulation whenever a configured route account is one
+of the two that are charged per segment — ``build`` and ``maintain`` — so a search and the report it
+writes price the same thing. The additive accounts (``haul`` and ``volume``) still take the delta path,
+and a test pins both.
+
 ### A patch criterion that is a product: why it is refused
 
 The reference's harvested patches name `product.harvested` as their criterion, and WS4's patch state

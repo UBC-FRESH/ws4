@@ -27,6 +27,7 @@ from ..patch.edge import EdgeElement, edge_values
 from ..patch.metrics import patch_metrics
 from ..roads.accounts import (
     DuplicateAccount,
+    MaintenanceCharge,
     ProductAllocation,
     RouteAccount,
     RouteCostLedger,
@@ -878,6 +879,7 @@ class Simulator:
         duplicate_accounts: Sequence[DuplicateAccount] = (),
         product_allocations: Sequence[ProductAllocation] = (),
         period_width: int = 1,
+        maintenance: MaintenanceCharge | None = None,
         max_opening_ha: float | None = None,
         min_green_up_years: int | None = None,
         patch_accounts: Sequence[PatchAccount] = (),
@@ -915,6 +917,9 @@ class Simulator:
         period_width : int, optional
             The model's planning-period width, in years, which is what the route cost report
             is folded into (default 1, one row per year).
+        maintenance : MaintenanceCharge or None, optional
+            How a used road's maintenance is charged. The default is the reference's own
+            reading; a divergence from it has to be asked for by name.
         max_opening_ha : float or None, optional
             The maximum opening size. When given, ``spatial_violations.csv`` reports the
             patches over it.
@@ -949,7 +954,9 @@ class Simulator:
         if model is None and network is not None:
             model = RouteModel(network)
         ledger = (
-            RouteCostLedger(model.network, period_width=period_width) if model is not None else None
+            RouteCostLedger(model.network, period_width=period_width, maintenance=maintenance)
+            if model is not None
+            else None
         )
         graph = load_patch_edges(topology_csv) if topology_csv is not None else []
 

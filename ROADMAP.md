@@ -533,7 +533,7 @@ not have.
 - [x] P12.2 The reference's destination policy for mill products (#122) — its declared destinations, then least haul cost; the delivery target left to the parity mode
 - [x] P12.3 Report the route accounts over the model's periods (#123) — the report folds into the model's periods, per destination too
 - [x] P12.4 The attractor sub-account as the reference defines it (#124) — established as a per-patch quantile the export does not determine; refused, not faked
-- [ ] P12.5 A Patchworks-parity mode, with traffic-weighted maintenance behind it (#125)
+- [x] P12.5 A Patchworks-parity mode, with traffic-weighted maintenance behind it (#125) — parity by default, one named divergence, its effect measured
 - [ ] P12.6 Compare the patch components against a reference membership export (#126)
 
 Deferred from P12, triaged in `notes/backlog.md`:
