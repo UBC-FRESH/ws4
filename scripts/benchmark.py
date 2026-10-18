@@ -146,11 +146,15 @@ def build_c5_dataset(sample_dir: Path, workdir: Path) -> Path:
     """
     tracks = Path(sample_dir) / "tracks"
     blocks = pd.read_csv(tracks / "blocks.csv")
+    # One fragment per matrix row, and the row's own track goes with it: a block can be split into a
+    # managed and an unmanaged portion, each on a different track, and the features that make an
+    # account managed or unmanaged hang off the track.
     fragments = pd.DataFrame(
         {
             "BLOCK": blocks["BLOCK"].astype(int),
             "AREA_HA": blocks["AREA"].astype(float),
             "F_AGE": blocks["OFFSET"].astype(int),
+            "TRACK": blocks["TRACK"].astype(int),
         }
     )
     fragments_path = workdir / "c5_fragments.csv"

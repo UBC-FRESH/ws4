@@ -1361,3 +1361,20 @@ issue comments.
   committed with `nbsphinx_execute = "never"` and nothing verifies them), and naming which way in each
   example takes (#107). Phase 9 stays open only for P9.5 (the accounts export); its other six tasks are
   complete. The roadmap records the backlog's capability work as the phase after this one.
+- P9.8 (fix, #110): **the legacy matrix builder mis-attributed a split block's track**, found by the
+  accounts comparison on the 2026 sample and present in the 2019 sample too. `tracks/blocks.csv` has
+  **16,184 rows for 12,567 blocks** — a block is split into a managed and an unmanaged portion, each with
+  its own area on its own track (block 35: 29.4250 ha unmanaged on track 6, 6.1556 ha managed on track
+  15) — but `ingest_legacy_matrix` derived the fragment's track from `dict(zip(block, track))`, a
+  block-keyed dict that keeps one row per block, *while keeping the fragment's own area*. So an area wore
+  another row's track, and every feature account hanging off a track was mis-attributed. Measured against
+  the reference's own values for `feature.Area.managed.PL`: the matrix says **38,436 ha** managed and
+  **42,138 ha** unmanaged; WS4 said **54,367** and **26,207**, with the totals agreeing to 5 ha — the
+  areas were right, their attribution was not. The builder now honours a `TRACK` column in the fragment
+  inventory (emitted by the C5 harness, which builds one fragment per matrix row) and **refuses** an
+  inventory that cannot name the track rather than guessing. Effect on the no-treatment accounts
+  comparison against the 2026 reference: **196 of 756 cells agreeing -> 714 of 756**, and accounts with
+  any difference **27 of 36 -> 2 of 36** (0.02% and 0.013%, both just above the 1e-4 tolerance). Two new
+  tests. The 2019 sample has the same split, so any feature-based C5 output predates this fix; the
+  fragment *count* (16,174) and the routing parity were never affected, which is why the earlier checks
+  passed. Dashboard: **GREEN** (seven gates).
