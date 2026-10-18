@@ -1231,7 +1231,7 @@ issue comments.
   inherits (`self.fragments["offset"] = ...`), so a forked worker's copy-on-write pages are copied
   anyway and a shared or mmapped dataset would need a read-only simulation state to help. Recorded in
   `notes/performance.md` and on the performance reference page. Dashboard: **GREEN** (seven gates).
-- Queued the Phase 8 close-out: pull request for `feature/p8-verify` into `main` and the report
+- Queued the Phase 8 close-out: pull request #96 (`feature/p8-verify` into `main`) and the report
   `notes/reports/p8-closeout.md`. The report records the four acceptance criteria as met — the routing
   parity comparison (no differences in 37,701 node-and-mill comparisons against the reference's own
   per-node haul costs), the C5 figures reproduced from documented commands within the noise of a shared

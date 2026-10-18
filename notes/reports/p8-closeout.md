@@ -2,7 +2,7 @@
 
 Phase: P8 verify the replacement claim
 Parent issue: #90
-Pull request: #<number>, `feature/p8-verify` into `main`
+Pull request: #96, `feature/p8-verify` into `main`
 Evidence head: `5f282ee`, the head the gates cover, plus the commits that queue this report
 Report commit: the commit that adds this report. Its CI run is posted on the pull request.
 Date: 2026-10-18
@@ -25,7 +25,7 @@ back in as a P9 task, so nothing is lost but the artificial coupling of a ready 
 
 Approve these actions. The agent carries them out in this order, and reads back each result.
 
-1. Squash-merge pull request #<number> and delete `feature/p8-verify`.
+1. Squash-merge pull request #96 and delete `feature/p8-verify`.
 2. Move #95 to be a sub-issue of the next phase's parent, keeping it open, and close parent issue #90
    with a closeout comment that cites the merge commit.
 3. Launch P9 (see section 6) and start its first task.
@@ -98,7 +98,7 @@ a pull request — the same shape as the previous phases.
 
 | Run ID | Head commit | Conclusion | Notes |
 | --- | --- | --- | --- |
-| (none yet) | — | — | no pull request is open; the phase's first run will be its close-out PR |
+| 39089975716 | `11a10a6` | success | the phase's first run, and green on it: Quality gates, Green dashboard summary, Pre-commit parity. The two traps that failed earlier phases' first runs were pre-empted — no shell magics in the notebooks, no assertion on terminal-wrapped help text — and the acceptance change was covered by tests before it was pushed. |
 
 ## 5. Deviations
 
