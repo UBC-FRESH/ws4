@@ -22,7 +22,7 @@ exists and the maintainer approves it.
 | P7 Parity and the analyst workflow | #82 | `feature/p7-parity` | complete |
 | P8 Verify the replacement claim | #90 | `feature/p8-verify` | complete |
 | P9 Spatial performance and memory | #97 | `feature/p9-memory` | active |
-| P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | pr-open |
+| P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
 
@@ -436,9 +436,9 @@ Acceptance criteria:
 
 Parent issue: #104
 Branch: `feature/p10-docs-api`
-Status: pr-open
-Pull request: stacked on `feature/p9-memory`, because Phase 9 is held open for its P9.5 export and
-Phase 10 was branched from it. The stack lands as P9 then P10 unless the maintainer prefers one merge.
+Status: complete
+Pull request: #109, squash-merged as `b512cd9` into `feature/p9-memory`, the branch it was stacked on.
+It reaches `main` with Phase 9's close-out, since the two are one line of history now.
 
 Goal: serve the second audience in the gallery, and stop the gallery being able to lie. The prose for
 the Python API exists; the examples do not — five of seven notebooks drive the command line — and the
@@ -549,4 +549,14 @@ Acceptance criteria:
     phase: **P10 (Documentation and the API-first workflow)**, parent issue #104, branch
     `feature/p10-docs-api`, tasks #105-#107. The remaining backlog capability work — succession and
     `produce` semantics, legacy-ingestion coverage, account reports — is the phase recorded after it.
+
+15. Phase 10 is complete: pull request #109 squash-merged as `b512cd9`, the branch deleted, and parent
+    issue #104 closed. It delivered the library-path notebook the gallery was missing, a check that
+    re-runs every example and reports output that has drifted from what is committed (its first three CI
+    runs each found a real defect), path labels on every example, and the fix for a report that priced a
+    periodic target from a single year — found by writing the notebook. Its pull request was stacked on
+    `feature/p9-memory` and merged there, because Phase 9 branched it and Phase 9's own close-out has not
+    run yet; the two phases now reach `main` together. Phase 9's remaining work is closed except its
+    close-out, and the next phase is the derived targets the accounts comparison leaves out — the
+    reference's ratios, flow constraints and patch-size distributions.
 

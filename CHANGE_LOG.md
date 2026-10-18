@@ -1436,3 +1436,11 @@ issue comments.
   outings found the three defects recorded above. The close-out report now carries the four runs in its
   CI evidence table, including the three failures and what each one turned out to be. The pull request is
   queued for the maintainer's approval.
+- Carried out the Phase 10 close-out: pull request #109 squash-merged as `b512cd9`, the branch deleted,
+  and parent issue #104 closed. It merged into `feature/p9-memory` rather than `main` because it was
+  stacked there; the conflict with Phase 9's later work (P9.5 and P9.8 touch the roadmap, the changelog,
+  the backlog and the acceptance checks) was resolved by keeping both sides, with the workflow validator
+  and the seven-gate dashboard green on the merged tree and CI green on all four jobs. Phase 10 is what
+  the enclosure found: the library-path notebook the gallery was missing, **`scripts/check_notebooks.py`**
+  re-running every example and reporting drifted output, labels naming each example's path, and the fix
+  for `report_targets.csv` pricing a periodic target from a single year. Dashboard: **GREEN**.
