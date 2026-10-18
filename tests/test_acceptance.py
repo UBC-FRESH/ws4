@@ -5,8 +5,11 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
+from ws4.build.compiler import build_canonical_dataset
 
 import acceptance as acc
+
+FIXTURE: Path = Path(__file__).resolve().parents[1] / "examples" / "synthetic"
 
 
 def _write_compiled(root: Path, labels: list[str]) -> Path:
@@ -113,3 +116,151 @@ def test_main_fails_on_a_bad_case(tmp_path: Path) -> None:
         ]
     )
     assert code == 1
+
+
+def _write_roads(root: Path, reference: str) -> Path:
+    """Write a three-node network whose reference cost table holds ``reference``.
+
+    Parameters
+    ----------
+    root : Path
+        The directory to write into.
+    reference : str
+        The body of ``cost_destination.MILL1.csv``, below its header row.
+
+    Returns
+    -------
+    Path
+        The directory written.
+    """
+    root.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(
+        {
+            "SEGMENT": [1, 2],
+            "FNODE": [1, 2],
+            "TNODE": [2, 3],
+            "LENGTH": [1000.0, 2000.0],
+            "HAUL": [1.0, 2.0],
+            "BUILD": [0.0, 0.0],
+            "MAINTAIN": [0.0, 0.0],
+        }
+    ).to_csv(root / "segments.csv", index=False)
+    pd.DataFrame({"NODE": [3], "ACCOUNT": ["destination.MILL1"]}).to_csv(
+        root / "destinations.csv", index=False
+    )
+    pd.DataFrame({"BLOCK": [1, 2], "NODE": [1, 2]}).to_csv(root / "linkages.csv", index=False)
+    pd.DataFrame({"NODE": [1, 2, 3], "X": [0.0, 1.0, 2.0], "Y": [0.0, 1.0, 2.0]}).to_csv(
+        root / "vertices.csv", index=False
+    )
+    (root / "cost_destination.MILL1.csv").write_text("NODE,SUM_HAUL\n" + reference)
+    return root
+
+
+def test_the_parity_comparison_agrees_when_the_reference_agrees(tmp_path: Path) -> None:
+    """A node the reference cannot reach is one WS4 cannot reach, and the sums match otherwise."""
+    roads = _write_roads(tmp_path / "roads", "1,3.0\n2,2.0\n")
+    differences, compared = acc.compare_route_costs(roads)
+    assert differences == []
+    assert compared == 2
+    assert acc.check_parity(roads).status == "pass"
+
+
+def test_the_parity_comparison_reports_a_difference(tmp_path: Path) -> None:
+    """A reference haul cost that WS4 does not reproduce is a difference, and fails the check."""
+    roads = _write_roads(tmp_path / "roads", "1,99.0\n2,2.0\n")
+    differences, _ = acc.compare_route_costs(roads)
+    assert differences
+    assert "node 1" in differences[0]
+    assert acc.check_parity(roads).status == "fail"
+
+
+def test_the_parity_comparison_reports_a_reachability_disagreement(tmp_path: Path) -> None:
+    """A node the reference calls unreachable but WS4 reaches is a difference."""
+    roads = _write_roads(tmp_path / "roads", "1,3.0\n2,-1\n")
+    differences, _ = acc.compare_route_costs(roads)
+    assert differences
+    assert "unreachable in the reference" in differences[0]
+
+
+def test_the_parity_check_skips_and_rejects(tmp_path: Path) -> None:
+    """No sample means skip; a path that is not a directory is a failure, not a crash."""
+    assert acc.check_parity(None).status == "skip"
+    assert acc.check_parity(tmp_path / "absent").status == "fail"
+
+
+def _write_report(root: Path, dataset: Path, schedule: pd.DataFrame, factor: float = 1.0) -> Path:
+    """Write a reference export produced from WS4 itself, optionally perturbed.
+
+    Parameters
+    ----------
+    root : Path
+        The report directory.
+    dataset : Path
+        The compiled dataset to replay.
+    schedule : pandas.DataFrame
+        The schedule to write and replay.
+    factor : float
+        A multiplier applied to every value, to make the comparison fail on purpose.
+
+    Returns
+    -------
+    Path
+        The report directory written.
+    """
+    from ws4.sim.engine import Simulator
+
+    root.mkdir(parents=True, exist_ok=True)
+    schedule.to_csv(root / "schedule.csv", index=False)
+    years = int(schedule["period"].max()) + 1
+    values = Simulator.from_dataset(dataset).simulate(schedule, years)
+    values = values.assign(value=values["value"] * factor)
+    values.to_csv(root / "account_values.csv", index=False)
+    return root
+
+
+def test_the_accounts_comparison_agrees_with_itself(tmp_path: Path) -> None:
+    """A report WS4 itself produced must reproduce, cell for cell."""
+    dataset = build_canonical_dataset(
+        FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    schedule = pd.DataFrame({"block_id": [1, 2], "treatment": ["CC", "CC"], "period": [0, 1]})
+    report = _write_report(tmp_path / "report", dataset, schedule)
+
+    differences, compared = acc.compare_account_values(dataset, report)
+    assert differences == []
+    assert compared > 0
+    assert acc.check_accounts(report, dataset).status == "pass"
+
+
+def test_the_accounts_comparison_reports_a_difference(tmp_path: Path) -> None:
+    """A value that WS4 does not reproduce is a difference, and fails the check."""
+    dataset = build_canonical_dataset(
+        FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    schedule = pd.DataFrame({"block_id": [1], "treatment": ["CC"], "period": [0]})
+    report = _write_report(tmp_path / "report", dataset, schedule, factor=2.0)
+
+    differences, _ = acc.compare_account_values(dataset, report)
+    assert differences
+    assert acc.check_accounts(report, dataset).status == "fail"
+
+
+def test_the_accounts_comparison_names_a_missing_column(tmp_path: Path) -> None:
+    """A schedule without the columns the comparison needs is reported, not raised."""
+    dataset = build_canonical_dataset(
+        FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    report = tmp_path / "report"
+    report.mkdir()
+    pd.DataFrame({"nope": [1]}).to_csv(report / "schedule.csv", index=False)
+    pd.DataFrame({"nope": [1]}).to_csv(report / "account_values.csv", index=False)
+
+    differences, compared = acc.compare_account_values(dataset, report)
+    assert differences
+    assert compared == 0
+
+
+def test_the_accounts_check_skips_without_inputs() -> None:
+    """Either input missing means skip rather than a spurious failure."""
+    assert acc.check_accounts(None, None).status == "skip"
+    assert acc.check_accounts(Path("x"), None).status == "skip"

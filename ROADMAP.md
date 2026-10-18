@@ -1,3 +1,4 @@
+
 # WS4 Roadmap
 
 This roadmap is the plan of record and the issue tracker map for WS4. Keep it in step with the GitHub
@@ -19,7 +20,7 @@ exists and the maintainer approves it.
 | P5 Operate and maintain | #44 | `feature/p5-operate` | complete |
 | P6 Performance and scalability | #60 | `feature/p6-performance` | complete |
 | P7 Parity and the analyst workflow | #82 | `feature/p7-parity` | complete |
-| P8 Verify the replacement claim | #90 | `feature/p8-verify` | active |
+| P8 Verify the replacement claim | #90 | `feature/p8-verify` | pr-open |
 
 ## Lifecycle Map
 
@@ -360,20 +361,23 @@ Acceptance criteria:
 
 Parent issue: #90
 Branch: `feature/p8-verify`
-Status: active
+Status: pr-open
 
 Goal: demonstrate the claim the project exists to support — that WS4 is a working replacement for the
 established tool — instead of asserting it, by exercising WS4 against the reference implementation's
 own outputs and against the figures the earlier phases recorded.
 
-- [ ] P8.1 Build a parity harness against the reference outputs (#91)
-- [ ] P8.2 Reproduce the C5 results from documented inputs (#92)
-- [ ] P8.3 Speed up the criterion series and the patch-state construction (#93)
-- [ ] P8.4 Measure island scaling on a controlled host (#94)
+- [x] P8.1 Build a parity harness against the reference outputs (#91)
+- [x] P8.2 Reproduce the C5 results from documented inputs (#92)
+- [x] P8.3 Speed up the criterion series and the patch-state construction (#93)
+- [x] P8.4 Measure island scaling on a controlled host (#94)
+- [x] P8.5 Compare WS4's accounts against a reference report (#95)
 
 Deferred from P8, triaged in `notes/backlog.md`:
 
-- (none outstanding.)
+- the accounts comparison against a reference report (#95): built, tested and documented, and blocked on
+  an export from a licensed Windows run. Carried to Phase 9 and re-linked as a sub-issue of its parent
+  at that launch.
 
 Acceptance criteria:
 

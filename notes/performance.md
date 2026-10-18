@@ -327,3 +327,67 @@ islands. The limit is not the BLAS pools (the A/B above) and not the per-process
 load, candidate chains, patch state). It is contention: the machine's load average moved between 4
 and 65 across the session's runs, and the rounds above differ by ±15% at the same setting. A scaling
 figure from this host is only meaningful with its load recorded, which is why both tables carry it.
+
+### P8.2 the C5 figures, reproduced from the documented commands
+
+The Phase 6 acceptance figures were measured interactively, so Phase 8 re-ran them from the commands
+now written in `docs/reference/performance.rst`, on the same 72-core host, at a load average of 4.65
+at the start. The sample is the one the lab maintains, which is not in the repository; that is now
+stated in the documentation, along with what it must contain.
+
+| Figure | Recorded (Phase 6) | Re-run (Phase 8) | Difference |
+| --- | ---: | ---: | --- |
+| C5 30-year `simulate` | 0.108 s | 0.113 s | +5% |
+| C5 3-year `simulate` + routing, 300 blocks | 0.685 s | 0.576 s | -16% |
+| Patch accounts, per year, amortised over 30 years | 29 ms | 28 ms | -3% |
+| Edge contrast, 30 years | 1.157 s | 1.147 / 1.251 s | +-5% |
+| One full objective evaluation | 0.681 s | 0.500 - 0.754 s | within noise |
+| Fragments in the compiled sample | 16 174 | 16 174 | exact |
+| Peak resident memory | 496 MB | 487 - 504 MB | +-3% |
+
+Everything reproduces within the noise of a shared host, and the one count that must be exact is. No
+figure has drifted in a way that needs restating; the timings vary by a few percent between runs at
+the same load, which is the reason each table records the machine and the load it was taken at rather
+than a single number to be trusted to three decimals.
+
+### P8.4 island scaling, measured at a known load
+
+P7.2's scaling figure came from a host whose load moved between 4 and 65, so Phase 8 re-measured it on
+the same binding C5 workload (a volume floor plus a patch ramp, 4,000 iterations per island, one thread
+each) with the load recorded for every run. The machine is two sockets, 18 cores each, two threads per
+core — **36 physical cores** — and the load average sat between 5 and 9 for the runs below except where
+noted.
+
+| Islands | Wall | Throughput | Speedup | Efficiency | Load before -> after |
+| ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 3.79 s | 1,055 it/s | 1.0x | - | 5.0 -> 5.1 |
+| 4 | 4.94 s | 3,238 it/s | 3.1x | 77% | 8.8 -> 8.8 |
+| 8 | 5.32 s | 6,014 it/s | 5.7x | 71% | 5.1 -> 5.6 |
+| 16 | 6.79 s | 9,432 it/s | 8.9x | **56%** | 8.3 -> 9.5 |
+| 18 | 6.11 s | 11,782 it/s | 11.2x | 62% | 9.5 -> 13.2 |
+| 32 | 6.85 s | 18,685 it/s | **17.7x** | 55% | 5.6 -> 10.6 |
+
+Two things fall out of this.
+
+**The criterion is met with a limit, and the limit is memory.** Efficiency is already down to ~56% at
+16 islands — half the physical cores — so the cause is not what the earlier notes suspected:
+
+- **not the BLAS pools**: pinning them changes nothing (P7.2 measured 1 037 against 1 033 iterations/s
+  on one island, and pinned against unpinned rounds overlapping at 32);
+- **not the per-process setup**: it is about 1 s against 4-7 s of search per island here;
+- **not SMT or CPU oversubscription**: 16 processes on 36 physical cores has no sibling sharing at all,
+  and the CPU accounting says each process holds roughly one core (at 32 islands, 185 s of user time
+  against 6.85 s of wall, and the same ~6.3 s of CPU per island as a solo run).
+
+What is left is the memory hierarchy: the per-process rate falls from 1,055 iterations/s solo to about
+584 at 32 islands *while every process stays busy*, which is the signature of bandwidth and
+last-level-cache contention — and with two sockets, of traffic crossing between them. **More islands
+still win in absolute terms** (32 islands do 18,685 iterations/s against 1,055 for one), so the limit is
+about the shape of the curve, not about whether to use the machine.
+
+**A concrete reason a shared dataset would not stay shared.** The obvious next experiment is one copy
+of the dataset for all the workers instead of one each. Worth knowing before trying it: a forked worker
+inherits its parent's memory copy-on-write, but the simulator **writes** to the fragments frame it
+inherits (`self.fragments["offset"] = ...` on every run), which forces the pages to be copied. So a
+shared or mmapped dataset has to come with a read-only simulation state, or the copying happens anyway.
+

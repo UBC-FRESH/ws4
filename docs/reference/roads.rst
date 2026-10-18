@@ -110,6 +110,12 @@ command line):
        duplicate_accounts=config.duplicate_accounts,
    )
 
+The routing is **verified against the reference implementation's own outputs**: its sample ships
+`cost_destination.<mill>.csv` (the summed haul rate per network node), and
+`python scripts/acceptance.py --roads-sample <sample>/roads` compares WS4's least-haul-cost routes to
+it node by node — 37 701 comparisons on the C5-class sample, with no differences.
+`notes/design/ws4-parity-harness.md` records what the comparison covers and what it does not.
+
 The route model runs in the optimizer's inner loop. Haul, maintenance, and volume route accounts are
 additive over blocks, so a move is priced by a route delta and needs no re-routing; a **build** route
 account, a **duplicate** account, and edge contrast are not additive, so any of them makes an

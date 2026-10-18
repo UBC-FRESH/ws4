@@ -7,6 +7,10 @@ The checks verify the build against its acceptance criteria:
 - ``optimizer``: run a small search and check that it meets a target within tolerance.
 - ``roads``: route a product over a small network.
 - ``api``: build a model programmatically and via the file path and check they match.
+- ``accounts``: with ``--accounts-report`` and ``--accounts-dataset``, replay the reference's own
+  schedule in WS4 and compare the account values per year, which is what isolates the simulation.
+- ``parity``: with ``--roads-sample``, compare WS4's least-haul-cost routes to the reference
+  implementation's own ``cost_destination.*.csv`` tables, node by node.
 - ``builder``: for each ``--case`` (a recipe, a fragment inventory, and a reference matrix
   directory), compile the recipe and compare the compiled matrix to the reference tables.
   No case is required; without one the check is skipped.
@@ -38,7 +42,7 @@ from ws4.build.compiler import build_canonical_dataset
 from ws4.model.api import Model
 from ws4.model.schema import validate_dataset
 from ws4.opt.engine import OptimizeConfig, Optimizer
-from ws4.roads.network import RouteNetwork
+from ws4.roads.network import RouteNetwork, load_route_tables
 from ws4.sim.engine import Simulator
 
 Status = Literal["pass", "fail", "skip"]
@@ -235,6 +239,251 @@ def check_roads(workdir: Path) -> CheckResult:
     )
 
 
+def compare_route_costs(roads_dir: Path) -> tuple[list[str], int]:
+    """Compare WS4's least-haul-cost routes to the reference's own per-node haul costs.
+
+    The reference implementation ships ``cost_destination.<mill>.csv`` with ``NODE,SUM_HAUL``: the
+    sum of the segment haul rates from that network node to that mill, and ``-1`` where it cannot
+    reach it. WS4 computes the same quantity from the same tables, so this compares the **routing**
+    rather than the data — a node the reference cannot reach must be one WS4 cannot reach either,
+    and where both reach it the sums must agree. Nodes no block is linked to are not compared, since
+    WS4 routes from blocks.
+
+    Parameters
+    ----------
+    roads_dir : Path
+        A directory with the network tables and the reference's ``cost_destination.*.csv`` files.
+
+    Returns
+    -------
+    tuple of (list of str, int)
+        One line per difference, at most ten, and the number of node-and-mill pairs compared.
+    """
+    _, segments, destinations, linkages = load_route_tables(roads_dir)
+    network = RouteNetwork.from_tables(segments, destinations, linkages)
+    node_column = "NODE" if "NODE" in linkages.columns else "vertex_id"
+    block_column = "BLOCK" if "BLOCK" in linkages.columns else "block_id"
+    account_column = "ACCOUNT" if "ACCOUNT" in destinations.columns else "name"
+    destination_node = "NODE" if "NODE" in destinations.columns else "vertex_id"
+    nodes: dict[int, int] = dict(
+        zip(linkages[block_column].astype(int), linkages[node_column].astype(int), strict=True)
+    )
+    accounts: dict[str, int] = dict(
+        zip(
+            destinations[account_column].astype(str),
+            destinations[destination_node].astype(int),
+            strict=True,
+        )
+    )
+
+    differences: list[str] = []
+    compared = 0
+    for path in sorted(roads_dir.glob("cost_destination.*.csv")):
+        label = path.name[len("cost_destination.") : -len(".csv")]
+        account = next((name for name in accounts if name.rsplit(".", 1)[-1] == label), None)
+        if account is None:
+            differences.append(f"{path.name}: no destination account named for {label}")
+            continue
+        reference = pd.read_csv(path)
+        value_column = "SUM_HAUL" if "SUM_HAUL" in reference.columns else reference.columns[1]
+        expected = {
+            int(node): float(value)
+            for node, value in zip(reference.iloc[:, 0], reference[value_column], strict=True)
+        }
+        for block, node in nodes.items():
+            want = expected.get(node)
+            if want is None:
+                continue
+            route = network.route(block, account)
+            compared += 1
+            if want < 0.0:
+                if route is not None:
+                    differences.append(
+                        f"{label}: node {node} is unreachable in the reference,"
+                        f" reachable in WS4 at {route.haul_cost:.6f}"
+                    )
+            elif route is None:
+                differences.append(
+                    f"{label}: node {node} is reachable in the reference at {want:.6f},"
+                    " unreachable in WS4"
+                )
+            elif abs(route.haul_cost - want) > 1e-6:
+                differences.append(
+                    f"{label}: node {node} haul {route.haul_cost:.6f}"
+                    f" against the reference {want:.6f}"
+                )
+    return differences[:10], compared
+
+
+def _first_present(frame: pd.DataFrame, *names: str) -> str | None:
+    """Return the first of the given column names that the frame has, or None.
+
+    Parameters
+    ----------
+    frame : pandas.DataFrame
+        The frame to look in.
+    *names : str
+        Candidate column names.
+
+    Returns
+    -------
+    str or None
+        The column name, or None when none is present.
+    """
+    for name in names:
+        if name in frame.columns:
+            return name
+    return None
+
+
+def compare_account_values(dataset_dir: Path, report_dir: Path) -> tuple[list[str], int]:
+    """Compare WS4's account values to a reference report for the same schedule.
+
+    The reference's export is expected in ``report_dir`` as two files: ``schedule.csv`` with the
+    block, treatment and year the reference ran, and ``account_values.csv`` with its realized
+    account values per year. The schedule is replayed in WS4 exactly as given — which is the point:
+    the two tools' optimizers choose different schedules, so comparing the *accounts* of one
+    schedule isolates the simulation, and that is what the replacement claim rests on.
+
+    Column names are taken as given where they are unambiguous: the schedule may use
+    ``block_id``/``block``, ``treatment``, and ``period``/``year``; the values may use
+    ``year``/``period``, ``account``, and ``value``.
+
+    Parameters
+    ----------
+    dataset_dir : Path
+        The compiled dataset to replay the schedule over.
+    report_dir : Path
+        A directory with ``schedule.csv`` and ``account_values.csv``.
+
+    Returns
+    -------
+    tuple of (list of str, int)
+        One line per difference, at most ten, and the number of account-year cells compared.
+    """
+    schedule_frame = pd.read_csv(report_dir / "schedule.csv")
+    block = _first_present(schedule_frame, "block_id", "block")
+    treatment = _first_present(schedule_frame, "treatment")
+    period = _first_present(schedule_frame, "period", "year")
+    if block is None or treatment is None or period is None:
+        return (["schedule.csv needs block_id, treatment and period columns"], 0)
+    schedule = pd.DataFrame(
+        {
+            "block_id": schedule_frame[block].astype(int),
+            "treatment": schedule_frame[treatment].astype(str),
+            "period": schedule_frame[period].astype(int),
+        }
+    )
+
+    reference = pd.read_csv(report_dir / "account_values.csv")
+    reference_year = _first_present(reference, "year", "period")
+    reference_account = _first_present(reference, "account", "ACCOUNT")
+    reference_value = _first_present(reference, "value", "VALUE")
+    if reference_year is None or reference_account is None or reference_value is None:
+        missing = "account_values.csv needs year, account and value columns"
+        return ([missing], 0)
+    expected = {
+        (int(year), str(account)): float(value)
+        for year, account, value in zip(
+            reference[reference_year],
+            reference[reference_account],
+            reference[reference_value],
+            strict=True,
+        )
+    }
+
+    years = int(schedule["period"].max()) + 1 if not schedule.empty else 1
+    values = Simulator.from_dataset(dataset_dir).simulate(schedule, years)
+    produced = {
+        (int(year), str(account)): float(value)
+        for year, account, value in zip(
+            values["year"], values["account"], values["value"], strict=True
+        )
+    }
+
+    differences: list[str] = []
+    compared = 0
+    tolerance = 1e-4
+    for cell in sorted(set(expected) | set(produced)):
+        want = expected.get(cell)
+        got = produced.get(cell)
+        if want is None or got is None:
+            side = "the reference" if got is None else "WS4"
+            differences.append(f"{cell[0]} {cell[1]}: only in {side}")
+            continue
+        compared += 1
+        scale = max(abs(want), abs(got), 1.0)
+        if abs(got - want) > tolerance * scale:
+            differences.append(
+                f"{cell[0]} {cell[1]}: WS4 {got:.6f} against the reference {want:.6f}"
+            )
+    return differences[:10], compared
+
+
+def check_accounts(report_dir: Path | None, dataset_dir: Path | None) -> CheckResult:
+    """Compare WS4's accounts to a reference report, when one has been provided.
+
+    Parameters
+    ----------
+    report_dir : Path or None
+        A directory with the reference's ``schedule.csv`` and ``account_values.csv``, or None.
+    dataset_dir : Path or None
+        The compiled dataset to replay that schedule over, or None.
+
+    Returns
+    -------
+    CheckResult
+        ``pass`` when every shared account-year agrees, ``fail`` on the first differences, and
+        ``skip`` when either input is missing.
+    """
+    if report_dir is None or dataset_dir is None:
+        return CheckResult("accounts", "skip", "needs --accounts-report and --accounts-dataset")
+    if not report_dir.is_dir() or not dataset_dir.is_dir():
+        return CheckResult("accounts", "fail", "report or dataset is not a directory")
+    differences, compared = compare_account_values(dataset_dir, report_dir)
+    if differences:
+        return CheckResult(
+            "accounts",
+            "fail",
+            f"{len(differences)} difference(s) in {compared} shared cells: {differences[0]}",
+        )
+    return CheckResult(
+        "accounts", "pass", f"WS4 reproduces the reference's {compared} account-year values"
+    )
+
+
+def check_parity(roads_dir: Path | None) -> CheckResult:
+    """Compare WS4's routing to the reference implementation's own per-node haul costs.
+
+    Parameters
+    ----------
+    roads_dir : Path or None
+        A sample's ``roads`` directory, or None to skip the comparison.
+
+    Returns
+    -------
+    CheckResult
+        ``pass`` when WS4 agrees with every reference value, ``fail`` on the first differences, and
+        ``skip`` when no directory was given.
+    """
+    if roads_dir is None:
+        return CheckResult("parity", "skip", "no --roads-sample given")
+    if not roads_dir.is_dir():
+        return CheckResult("parity", "fail", f"not a directory: {roads_dir}")
+    differences, compared = compare_route_costs(roads_dir)
+    if differences:
+        return CheckResult(
+            "parity",
+            "fail",
+            f"{len(differences)} difference(s) in {compared} comparisons: {differences[0]}",
+        )
+    return CheckResult(
+        "parity",
+        "pass",
+        f"WS4 agrees with the reference on all {compared} routed node-and-mill pairs",
+    )
+
+
 def check_api(workdir: Path) -> CheckResult:
     """Build a model programmatically and via the file path and compare them.
 
@@ -308,6 +557,24 @@ def main(argv: Sequence[str] | None = None) -> int:
         metavar=("RECIPE", "FRAGMENTS", "REFERENCE"),
         help="a builder case: recipe, fragments, and a reference matrix directory",
     )
+    parser.add_argument(
+        "--accounts-report",
+        type=Path,
+        default=None,
+        help="a reference export directory with schedule.csv and account_values.csv",
+    )
+    parser.add_argument(
+        "--accounts-dataset",
+        type=Path,
+        default=None,
+        help="the compiled dataset to replay the reference's schedule over",
+    )
+    parser.add_argument(
+        "--roads-sample",
+        type=Path,
+        default=None,
+        help="a sample's roads directory, to compare WS4's routing to the reference's haul costs",
+    )
     args = parser.parse_args(argv)
     cases = [(Path(r), Path(f), Path(x)) for r, f, x in args.case]
     with tempfile.TemporaryDirectory() as scratch:
@@ -318,6 +585,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             check_optimizer(workdir / "opt-run"),
             check_roads(workdir),
             check_api(workdir / "api"),
+            check_parity(args.roads_sample),
+            check_accounts(args.accounts_report, args.accounts_dataset),
         ]
     print(render(results))
     return 1 if any(result.status == "fail" for result in results) else 0

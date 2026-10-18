@@ -1134,3 +1134,114 @@ issue comments.
   four child tasks (#91 to #94) — a parity harness against the reference implementation's outputs, the
   C5 results reproduced from documented inputs, the criterion-series and patch-state performance lever
   that P7.5 named, and island scaling measured on a host whose load is recorded. Dashboard: **GREEN**.
+- P8.1 (verify): a parity harness against the reference implementation's own outputs. The reference
+  sample ships `cost_destination.<mill>.csv`, the summed haul rate from each network node to each mill
+  (`-1` where it cannot reach one), which is exactly the quantity WS4's route model computes from the
+  same tables — so the comparison tests the **routing**, not the data. `scripts/acceptance.py` gains a
+  `parity` check and a `--roads-sample` option: it loads the reference's network, computes WS4's
+  least-haul-cost route for every block and mill, and compares the sums node by node, treating the
+  reference's `-1` as WS4's no-route and allowing 1e-6. **It found no differences**: on the C5-class
+  sample (36 722 segments, 27 231 vertices, three mills, 12 568 blocks) WS4 agrees with the reference on
+  all **37 701** node-and-mill pairs a block is linked to, including every node the reference marks
+  unreachable. The decision and the limits are in `notes/design/ws4-parity-harness.md`, which states
+  plainly what is **not** covered: the sample ships no account report, so "the same schedule produces
+  the same accounts in both tools" remains undemonstrated — the largest remaining gap in the replacement
+  claim — and build and maintenance costs are not compared against the reference either. Tests:
+  `tests/test_acceptance.py` covers agreement, a wrong haul cost, a reachability disagreement, the skip
+  path, and a path that is not a directory. Dashboard: **GREEN** (seven gates).
+- P8.2 (verify): the C5 figures reproduced from documented commands. The Phase 6 acceptance numbers were
+  measured interactively, against a sample that is not in the repository, so `docs/reference/performance.rst`
+  now names what the sample must contain, gives the three invocations verbatim (30-year, 3-year with
+  routing, and the 30-year spatial run whose per-year figure is the sum divided by the horizon, since a
+  single year carries about 0.3 s of setup), and separates the figures that **travel** — the counts,
+  which a re-run must reproduce exactly — from the ones that do not, which are every timing and need the
+  machine and its load recorded with them. The re-run on the same 72-core host at a load average of 4.65:
+  16 174 fragments exactly; the 30-year simulate 0.113 s against 0.108 recorded; the 3-year simulate with
+  routing 0.576 s against 0.685; patch accounts 28 ms per year against 29; edge contrast 1.147-1.251 s
+  against 1.157; one objective evaluation 0.500-0.754 s against 0.681; peak memory 487-504 MB against
+  496. Everything reproduces within the noise of a shared host and the one exact count is exact, so no
+  recorded figure needs restating. Recorded in `notes/performance.md`. Dashboard: **GREEN** (seven gates).
+- Added P8.5 (#95) to Phase 8: compare WS4's accounts against a reference report. P8.1 established the
+  largest remaining gap in the replacement claim — the reference sample ships no account report, so
+  "the same schedule produces the same accounts in both tools" is undemonstrated — and this task makes it
+  a deliverable: specify the report the comparison needs, extend the parity harness to check one, and
+  document how the reference produces it. Producing the report needs the reference implementation, which
+  is outside the repository.
+- P8.5 (investigation): pinned down the sample the parity comparison will run on, and recorded why the
+  newest installer cannot supply it here. The lab's installer carries a C5 demonstration model; the
+  build extracted on 2026-10-14 (from the 2019 installer) is what every C5 figure in the repository was
+  measured against, including the routing parity comparison. A newer installer (inner executable dated
+  2026-07-29) arrived on 2026-10-18, but neither `innoextract` 1.9 (its current release) nor its
+  development build, which supports Inno Setup up to 6.3.3, can read it: both report "unexpected setup
+  loader revision: 2" and a loader checksum mismatch, so it is a protected or non-standard build and its
+  sample has to come from an installed copy. Parity needs the **same** sample on both sides rather than
+  the newest one, so the comparison can proceed on the extracted sample, or on the newer one once it is
+  zipped from the installed Windows copy. The scenario the reference must run is also specified:
+  a **fixed** schedule — blocks, treatments and years pinned in a scenario file — with the account values
+  reported per period, and a no-treatment case first, since that exercises the curves, tracks and strata
+  with no scheduler in the way. Recorded in `notes/design/ws4-parity-harness.md`. Dashboard: **GREEN**
+  (seven gates).
+- P8.5 (verify): the accounts comparison, ready for the reference's export. `scripts/acceptance.py`
+  gains an `accounts` check with `--accounts-report` and `--accounts-dataset`: it reads the reference's
+  own `schedule.csv` (block, treatment, year, with loose column-name matching) and `account_values.csv`
+  (year, account, value), replays **that schedule** in WS4, and compares every account-year cell both
+  sides report at a relative tolerance of 1e-4 — the tolerance because a reference export is typically
+  rounded where WS4's values are not — reporting an account only one side has as its own kind of
+  difference, since that is the kind of finding the comparison exists for. Replaying the reference's
+  schedule rather than comparing two optimizers' schedules is the design decision: the two searches
+  choose differently, so only a shared schedule makes the accounts comparable, and it isolates the
+  simulation — which is what the replacement claim rests on. The chosen sample is the one already
+  extracted (from the 2019 installer), the same one every C5 figure here was measured against. What
+  remains unverified is stated in `notes/design/ws4-parity-harness.md`, which now carries the export
+  specification and the exact commands, including a no-treatment case to run first. Tests:
+  `tests/test_acceptance.py` covers a report WS4 produced itself reproducing cell for cell, a perturbed
+  value failing, a missing column being reported rather than raised, and the skip path. Dashboard:
+  **GREEN** (seven gates).
+- P8.3 (performance): the criterion series, made cheaper. P7.5's profile had put 64% of a
+  `block_criteria_series` call inside the function body rather than in the numpy it calls, so four
+  mechanical changes went there, none of them altering what is computed: `asarray` instead of `astype`
+  where the fragment arrays already carry the right dtype; one `np.arange(years)` per call instead of
+  one per treatment segment; `dict(enumerate(series.tolist()))` instead of a Python call per year; and
+  the `present` mask applied only when it can matter. Measured on the same machine, minutes apart,
+  with the change stashed and restored, best of three runs of 20,000 calls on the sample estate:
+  **58.6 -> 41.5 us per call (-29%)**, the function's own profile time 0.116 -> 0.055 s (-53%), and on
+  the C5 patch-ramp workload **60.6 -> 73.3 iterations/s (+21%)** (volume-only 25.9 -> 28.2). Results
+  are identical: 53 tests over the patch model, state, accounts, simulator and incremental objective
+  pass unchanged, including the one pinning the estate's deterministic patch search, the routing parity
+  comparison still agrees on all 37,701 node-and-mill pairs, and the series' values were asserted
+  unchanged for no treatment, one cut and two cuts. The lazy-state subtask resolved as **nothing to
+  skip**: the states built are exactly the years a patch target reads, which P6.35 already restricted,
+  so making each state cheaper is a separate question — recorded, with `CurveTable.gather`'s per-call
+  `np.clip`/`iinfo` as the next candidate, in `notes/design/ws4-patch-evaluation-bottleneck.md`.
+  Dashboard: **GREEN** (seven gates).
+- P8.4 (verify): island scaling re-measured at a known load, and the limit identified. P7.2's figure came
+  from a host whose load moved between 4 and 65, so the same binding workload (a volume floor plus a
+  patch ramp, 4,000 iterations per island, one thread each) was re-run with the load recorded every
+  time, on a two-socket 36-physical-core host: 1 island 1,055 iterations/s, 4 islands 3,238 (77%
+  efficiency), 8 islands 6,014 (71%), 16 islands 9,432 (56%), 18 islands 11,782 (62%) and **32 islands
+  18,685 iterations/s = 17.7x at 55%**. Efficiency is already down to ~56% at 16 islands, half the
+  physical cores, which rules out the explanations the earlier notes carried: the BLAS pools are
+  measurably neutral (P7.2), the per-process setup is ~1 s against 4-7 s of search, and 16 processes on
+  36 physical cores share no SMT siblings, while the CPU accounting shows each process holding roughly
+  one core (at 32 islands, 185 s of user time against a 6.85 s wall, and the same CPU per island as a
+  solo run). The limit is therefore the memory hierarchy — bandwidth and last-level-cache contention,
+  with traffic crossing between the two sockets — and more islands still win in absolute terms, so the
+  criterion stays met *with a stated limit*, now with its cause measured rather than suspected. One
+  finding recorded for the obvious next experiment: the simulator **writes** to the fragments frame it
+  inherits (`self.fragments["offset"] = ...`), so a forked worker's copy-on-write pages are copied
+  anyway and a shared or mmapped dataset would need a read-only simulation state to help. Recorded in
+  `notes/performance.md` and on the performance reference page. Dashboard: **GREEN** (seven gates).
+- Queued the Phase 8 close-out: pull request #96 (`feature/p8-verify` into `main`) and the report
+  `notes/reports/p8-closeout.md`. The report records the four acceptance criteria as met — the routing
+  parity comparison (no differences in 37,701 node-and-mill comparisons against the reference's own
+  per-node haul costs), the C5 figures reproduced from documented commands within the noise of a shared
+  host with the one exact count exact, the criterion series made cheaper (58.6 -> 41.5 us per call, the
+  C5 patch-ramp workload 60.6 -> 73.3 iterations/s, identical results), and island scaling re-measured
+  at a recorded load (17.7x at 32 islands, 55% efficiency) with its cause measured as the memory
+  hierarchy after BLAS, the per-process setup and SMT were each excluded by measurement — plus the
+  deviations (the format-gate slip on the first P8.3 commit, the 2026 installer being an unextractable
+  protected Inno build, and P8.4 answering the memory question by measurement rather than by a change)
+  and a P9 recommendation of spatial performance and memory. **#95 is deferred to P9** rather than
+  holding a ready phase open on an external input: the accounts comparison is built, tested and
+  documented, its sample is packaged with digests, and only the reference's export is missing. Dashboard:
+  **GREEN** (seven gates).

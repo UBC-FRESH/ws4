@@ -63,22 +63,53 @@ at 1 037 iterations/s with one thread and 1 033 with eight, and 32 islands ran a
 iterations/s pinned against 12 318 / 15 877 unpinned — overlapping, so the difference is noise.
 
 Parallelism is **process-level**, and the island model is the lever: independent islands, elite
-migration between episodes, a deterministic result for a given seed. What limits it is not the BLAS
-pools but contention on the host: the same 32-island run measured 13x to 16x across rounds while the
-machine's load average moved between 4 and 65, so a scaling figure is only meaningful with the load
-it was taken at.
+migration between episodes, a deterministic result for a given seed. Scaling measured on the binding
+workload (4,000 iterations per island, one thread each) with the host's load recorded for each run:
+
+| Islands | Throughput | Speedup | Efficiency |
+| ---: | ---: | ---: | ---: |
+| 1 | 1,055 iterations/s | 1.0x | - |
+| 8 | 6,014 iterations/s | 5.7x | 71% |
+| 32 | 18,685 iterations/s | **17.7x** | 55% |
+
+The limit is the **memory hierarchy**, not the BLAS pools (pinning them is measurably neutral), not the
+per-process setup (~1 s), and not CPU oversubscription: efficiency is already ~56% at 16 islands on a
+36-physical-core host, and the CPU accounting shows every process holding roughly one core while its
+rate falls. More islands still win in absolute terms, so use them; expect the curve, not the line.
+`notes/performance.md` records the measurements with their loads.
 
 Reproduce
 ---------
 
+The figures above come from ``scripts/benchmark.py`` on a C5-class sample: a model the lab maintains,
+with an established matrix under ``tracks/`` (``tracknames``, ``strata``, ``treatments``, ``blocks``,
+``features``, ``products``, ``protoaccounts``), a fragment/block inventory under ``blocks/``, a
+topology edge list there too, and the four road tables under ``roads/``. It is not in this repository,
+so the commands take its directory:
+
 .. code-block:: bash
 
-   python scripts/benchmark.py --scenario c5 --sample-dir <sample> \
-       --years 3 --route-blocks 300 --spatial-years 1 --workdir tmp/benchmark
-   python scripts/benchmark.py --scenario c5 --sample-dir <sample> --profile
+   SAMPLE=/path/to/c5/sample
+   python scripts/benchmark.py --scenario c5 --sample-dir $SAMPLE \
+       --years 30 --route-blocks 300 --spatial-years 1 --workdir tmp/benchmark
+   python scripts/benchmark.py --scenario c5 --sample-dir $SAMPLE \
+       --years 3  --route-blocks 300 --spatial-years 1 --workdir tmp/benchmark-3y
+   python scripts/benchmark.py --scenario c5 --sample-dir $SAMPLE \
+       --years 30 --route-blocks 300 --spatial-years 30 --workdir tmp/benchmark-spatial
 
-The benchmark times each component (ingest, simulate, edge contrast, routing, patch accounts, one
-objective evaluation) and reports peak memory. The recorded results are in
+The first gives the 30-year ``simulate`` and the other components, the second the 3-year ``simulate``
+with routing, and the third the patch-account figure **amortised** over 30 years — a single year
+carries about 0.3 s of one-off setup (the topology, the block areas, the patch store), which is why the
+per-year figure is the sum divided by the horizon.
+
+Two kinds of figure come out of this, and only one of them travels:
+
+- **Portable:** the counts — 16 174 fragments on this sample, and the table sizes. A re-run must
+  reproduce these exactly, and does.
+- **Host-dependent:** every timing. Reproducing a timing needs a comparable machine and the load it
+  was taken at, which is why the tables above record both.
+
+The recorded results, with the reproducibility check that Phase 8 ran against them, are in
 ``notes/performance.md``; the plan (bottleneck map, targets, and work packages) is
 ``notes/design/ws4-performance.md``.
 
