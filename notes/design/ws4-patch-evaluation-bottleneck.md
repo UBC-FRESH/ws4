@@ -477,3 +477,40 @@ A vectorised series (one pass over fragments for many blocks, or the compiled ke
 series) and a lazily built state for the years a search actually reads are the two candidates; neither
 is done here, and the measurement above is the baseline to judge them against.
 
+### P8.3 the criterion series, made cheaper
+
+P7.5 pointed at `Simulator.block_criteria_series`: called once per distinct `(block, chain)` a search
+explores, each call a Python loop over that block's fragments. A profile of 2,000 calls put **64% of
+the time inside the function body** rather than in the numpy it calls, so the body was where to work.
+Four changes, all mechanical, none of them a change in what is computed:
+
+- the fragment arrays are already `int64`/`float64`, so `astype` was copying where `asarray` takes a
+  view;
+- one `np.arange(years)` per call instead of one per treatment segment;
+- the return value is built with `dict(enumerate(series.tolist()))` rather than a Python call per
+  year;
+- the `present` mask is only applied where it can matter (`if not present.all()`), which is the common
+  case of every fragment carrying the label.
+
+Measured on the same machine, minutes apart, with the change stashed and restored, best of three runs
+of 20,000 calls on the sample estate (100 years, one fragment per block):
+
+| | Before | After | |
+| --- | ---: | ---: | --- |
+| `block_criteria_series` | 58.6 us/call | **41.5 us/call** | -29% |
+| its own time in a 2,000-call profile | 0.116 s | 0.055 s | -53% |
+| C5 patch-ramp workload (20 periods, one thread) | 60.6 iterations/s | **73.3 iterations/s** | +21% |
+| C5 volume-only workload | 25.9 iterations/s | 28.2 iterations/s | +9% |
+
+**Identical results**, which is the point of the change: 53 tests over the patch model, the patch
+state, the patch accounts, the simulator and the incremental objective pass unchanged, including the
+test that pins the sample estate's deterministic patch search; the routing parity comparison still
+reports agreement on all 37,701 node-and-mill pairs; and the series' own values were asserted
+unchanged for an untreated block, one cut, and two cuts.
+
+Two honest notes. The **states need no laziness**: P7.5's profile showed 20 `PatchGroupYear.__init__`
+calls for a 20-period ramp, and those are exactly the years a patch target reads — the accounting-point
+restriction from P6.35 already skips every year nothing reads. Making each state cheaper is a separate
+question. And what is left where the time now goes is `CurveTable.gather`'s `np.clip`, which builds an
+`iinfo` per call (~1.5 us), a candidate if this needs another pass.
+

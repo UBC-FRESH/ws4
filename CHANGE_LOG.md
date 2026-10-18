@@ -1197,3 +1197,20 @@ issue comments.
   `tests/test_acceptance.py` covers a report WS4 produced itself reproducing cell for cell, a perturbed
   value failing, a missing column being reported rather than raised, and the skip path. Dashboard:
   **GREEN** (seven gates).
+- P8.3 (performance): the criterion series, made cheaper. P7.5's profile had put 64% of a
+  `block_criteria_series` call inside the function body rather than in the numpy it calls, so four
+  mechanical changes went there, none of them altering what is computed: `asarray` instead of `astype`
+  where the fragment arrays already carry the right dtype; one `np.arange(years)` per call instead of
+  one per treatment segment; `dict(enumerate(series.tolist()))` instead of a Python call per year; and
+  the `present` mask applied only when it can matter. Measured on the same machine, minutes apart,
+  with the change stashed and restored, best of three runs of 20,000 calls on the sample estate:
+  **58.6 -> 41.5 us per call (-29%)**, the function's own profile time 0.116 -> 0.055 s (-53%), and on
+  the C5 patch-ramp workload **60.6 -> 73.3 iterations/s (+21%)** (volume-only 25.9 -> 28.2). Results
+  are identical: 53 tests over the patch model, state, accounts, simulator and incremental objective
+  pass unchanged, including the one pinning the estate's deterministic patch search, the routing parity
+  comparison still agrees on all 37,701 node-and-mill pairs, and the series' values were asserted
+  unchanged for no treatment, one cut and two cuts. The lazy-state subtask resolved as **nothing to
+  skip**: the states built are exactly the years a patch target reads, which P6.35 already restricted,
+  so making each state cheaper is a separate question — recorded, with `CurveTable.gather`'s per-call
+  `np.clip`/`iinfo` as the next candidate, in `notes/design/ws4-patch-evaluation-bottleneck.md`.
+  Dashboard: **GREEN** (seven gates).

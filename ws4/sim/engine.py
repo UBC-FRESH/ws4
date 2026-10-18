@@ -419,9 +419,9 @@ class Simulator:
             return {}
         by_year = {int(year): str(treatment) for treatment, year in events}
         arrays_track, arrays_offset, arrays_area = self._fragment_arrays()
-        tracks = arrays_track[positions].astype(np.int64)
-        offsets = arrays_offset[positions].astype(np.int64)
-        areas = arrays_area[positions].astype(np.float64)
+        tracks = np.asarray(arrays_track[positions], dtype=np.int64)
+        offsets = np.asarray(arrays_offset[positions], dtype=np.int64)
+        areas = np.asarray(arrays_area[positions], dtype=np.float64)
         total_area = float(areas.sum())
         if total_area <= 0.0 or self._curve_table.table.shape[0] == 0:
             return dict.fromkeys(range(years), 0.0)
@@ -438,13 +438,14 @@ class Simulator:
                 current[index] = row
                 has[index] = True
 
+        steps = np.arange(years, dtype=np.int64)
+
         def fill(start: int, stop: int, offset_vec: np.ndarray) -> None:
             """Record the constant track and the age trajectory over ``[start, stop)``."""
             if stop <= start:
                 return
-            length = stop - start
             rows[start:stop] = current
-            ages[start:stop] = offset_vec + np.arange(length, dtype=np.int64)[:, None]
+            ages[start:stop] = offset_vec + steps[start:stop, None]
             present[start:stop] = has
 
         cursor = 0
@@ -464,9 +465,10 @@ class Simulator:
             cursor = event_year
         fill(cursor, years, offsets)
         values = self._curve_table.gather(rows.reshape(-1), ages.reshape(-1)).reshape(years, count)
-        values[~present] = 0.0
+        if not present.all():          # the common case is every fragment carrying the label
+            values[~present] = 0.0
         series = values @ areas / total_area
-        return {int(step): float(series[step]) for step in range(years)}
+        return dict(enumerate(series.tolist()))
 
     def block_chain(
         self, block_id: int, events: Sequence[tuple[str, int]], years: int
