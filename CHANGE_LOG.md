@@ -1378,3 +1378,16 @@ issue comments.
   tests. The 2019 sample has the same split, so any feature-based C5 output predates this fix; the
   fragment *count* (16,174) and the routing parity were never affected, which is why the earlier checks
   passed. Dashboard: **GREEN** (seven gates).
+- P9.5 (#95): **the accounts comparison runs and passes on both 2026 scenarios.** The reference's export
+  arrived (its own report tree: `scenario/schedule.csv` with `DELTA` as the treatment year, and
+  `scenario/targetSummary.csv` with `TARGET`/`PERIOD`/`YEAR`/`PERIODWIDTH`/`CURRENT`), and the check now
+  reads it as it lands — the reference's own file and column names, nothing converted. Three things had
+  to be right: **the reference's periods are not WS4's years** (period 0 is the initial snapshot and a
+  period labelled `YEAR` ends at it, covering years `YEAR-WIDTH+1..YEAR`; products accumulate over the
+  period, features are levels), **its reports round as they compute** (2,646 cells: 101 differ at a
+  relative 1e-4, 3 at a 1e-3 floor, none at 2e-3, which is now the documented floor), and **the matrix
+  builder mis-attributed a split block's track** (P9.8, worth 30-45% on every managed/unmanaged account).
+  Result: `accounts PASS — WS4 reproduces the reference's 1323 account-period values` on both the
+  no-treatment and the optimized run, with 178 reference targets named as having no WS4 account (its
+  ratios, flow constraints and patch-size distributions, which need their own comparison). Dashboard:
+  **GREEN**.

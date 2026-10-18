@@ -411,3 +411,84 @@ def test_the_growth_check_skips_without_inputs() -> None:
     assert acc.check_growth(None, None).status == "skip"
     assert acc.check_growth(Path("x"), None).status == "skip"
     assert acc.check_growth(None, Path("x")).status == "skip"
+
+
+def _write_period_report(
+    root: Path, dataset: Path, schedule: pd.DataFrame, *, aggregated: bool
+) -> Path:
+    """Write a reference export in the reference's own period format.
+
+    Parameters
+    ----------
+    root : Path
+        The report directory.
+    dataset : Path
+        The compiled dataset to simulate.
+    schedule : pandas.DataFrame
+        The schedule to write and replay.
+    aggregated : bool
+        Whether a product's period value is the period's total (the reference's convention) or the
+        single year's value.
+
+    Returns
+    -------
+    Path
+        The report directory written.
+    """
+    from ws4.sim.engine import Simulator
+
+    root.mkdir(parents=True, exist_ok=True)
+    schedule.to_csv(root / "schedule.csv", index=False)
+    values = Simulator.from_dataset(dataset).simulate(schedule, 21)
+    series = {
+        str(account): group.set_index("year")["value"]
+        for account, group in values.groupby("account")
+    }
+    rows = []
+    for account, annual in series.items():
+        for period, year in ((0, 0), (1, 10), (2, 20)):
+            if period == 0:
+                current = float(annual.get(0, 0.0))
+            elif aggregated and account.startswith("product."):
+                window = annual.loc[year - 9 : year]
+                current = float(window.sum())
+            else:
+                current = float(annual.get(year, 0.0))
+            rows.append(
+                {
+                    "TARGET": account,
+                    "PERIOD": period,
+                    "YEAR": year,
+                    "PERIODWIDTH": 10,
+                    "CURRENT": current,
+                }
+            )
+    pd.DataFrame(rows).to_csv(root / "account_values.csv", index=False)
+    return root
+
+
+def test_the_accounts_comparison_applies_the_reference_period_convention(tmp_path: Path) -> None:
+    """A report in the reference's period format is compared under its own convention."""
+    dataset = build_canonical_dataset(
+        FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    schedule = pd.DataFrame({"block_id": [1, 2], "treatment": ["CC", "CC"], "period": [0, 1]})
+    report = _write_period_report(tmp_path / "period", dataset, schedule, aggregated=True)
+
+    differences, compared = acc.compare_account_values(dataset, report)
+    assert differences == []
+    assert compared >= 6
+    assert acc.check_accounts(report, dataset).status == "pass"
+
+
+def test_period_reports_of_annual_values_are_a_difference(tmp_path: Path) -> None:
+    """A product reported per year rather than per period does not reproduce, and is reported."""
+    dataset = build_canonical_dataset(
+        FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    schedule = pd.DataFrame({"block_id": [1, 2], "treatment": ["CC", "CC"], "period": [0, 1]})
+    report = _write_period_report(tmp_path / "period", dataset, schedule, aggregated=False)
+
+    differences, _compared = acc.compare_account_values(dataset, report)
+    assert differences
+    assert acc.check_accounts(report, dataset).status == "fail"

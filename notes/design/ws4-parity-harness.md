@@ -210,3 +210,53 @@ and so does a value that differs by more than the conflict's own size.
 This is the kind of finding the check exists for. It is also the kind that would otherwise surface on
 Monday as an unexplained account difference.
 
+## The 2026 sample: what arrived, and what it took
+
+The reference's 2026 build runs the model in `sample_2025` (the 2019 sample will not load in it), and it
+writes its own report tree per scenario: `scenario/schedule.csv` (`BLOCK, DELTA, AGE, TYPE, TREATMENT`,
+where `DELTA` is "the time in the future of the proposed treatment" — the year) and
+`scenario/targetSummary.csv` (`TARGET, PERIOD, YEAR, PERIODWIDTH, MINIMUM, MAXIMUM, CURRENT, ...`), plus
+a report per target and family. `null` is the no-treatment case and `base` the optimized one.
+
+**The check now reads that export as it lands.** `scripts/acceptance.py --accounts-report <a scenario's
+report directory> --accounts-dataset <compiled>` takes the reference's own file and column names
+(`targetSummary.csv`, `TARGET`/`YEAR`/`CURRENT`, `BLOCK`/`TREATMENT`/`DELTA`), so nothing is converted
+between the two tools and nothing can be lost in a translation.
+
+**Three things had to be right before the numbers meant anything.**
+
+1. **The reference's periods are not WS4's years.** `PERIOD 0` is the initial snapshot at year 0, and a
+   later period labelled `YEAR` with `PERIODWIDTH` covers that many years **ending** at `YEAR` — period
+   1 is years 1-10. What it reports for a period also depends on the account: a product accumulates
+   within the period and is reported as the period's total, a feature is a level reported at the
+   period's year. Comparing its period totals against WS4's single years made every product account look
+   wrong by an order of magnitude; under its own convention they agree.
+2. **A report rounds as it computes.** Its values are rounded to three decimals per contribution and a
+   period's value is a sum of them, so a relative tolerance alone reports its own arithmetic: across
+   both scenarios' 2,646 cells, 101 cells differ at a relative 1e-4, 3 at a 1e-3 floor, and none at
+   **2e-3** — two units in the third decimal, which is the tolerance the check uses.
+3. **The matrix builder mis-attributed a split block's track** (P9.8, #110): `blocks.csv` lists a block
+   more than once, a managed and an unmanaged portion each with its own area on its own track, and the
+   builder derived the track from a block-keyed dict while keeping the row's area. That alone was worth
+   30-45% on every managed and unmanaged account. It is fixed, and the comparison against the reference
+   is what found it.
+
+**The result, on both scenarios:**
+
+| Scenario | Cells | Reference targets with no WS4 account | Verdict |
+| --- | ---: | ---: | --- |
+| `null` (no treatment) | 1,323 | 178 | **PASS** — every account-period value reproduced |
+| `base` (13,377 treatments) | 1,323 | 178 | **PASS** — every account-period value reproduced |
+
+The 178 are the reference's own ratio, flow and route targets (`ratio_route_haul_MILL1`,
+`flow_even_product_Yield_Conif`, `patch_harvested_10_50_size`, and so on): they are derived quantities
+rather than account values, so they are not compared, and the check says how many it left out.
+
+**What this does not yet cover.** The reference's derived targets — the ratios, the flow constraints,
+the patch size distributions — are exactly what a spatial model is for, and they need their own
+comparison. On this sample the routing parity check also fails on 10 of 25,134 node-and-mill pairs, and
+the reason is visible in the sample rather than in WS4: its `roads/` folder mixes vintages
+(`destinations.csv` lists two mills where three `cost_destination.*.csv` files ship, and MILL3's is dated
+2018 where the others are 2025, with the column renamed from `SUM_HAUL` to `SUM_LENGTH`). The growth
+check finds no `Y<n>` curves in this sample's lookup model and needs retargeting.
+
