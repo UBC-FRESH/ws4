@@ -350,3 +350,29 @@ say which period each value belongs to. `flow_period_ends()` now exposes WS4's o
 and the report uses it; what remains is aligning the omitted period with the reference's row, and then
 the comparison belongs with the other derived targets.
 
+## The patch distributions: the comparison runs, and it disagrees
+
+The reference's own model file defines them: `addPatchTarget("feature.young", "patch.young.<class>", lo,
+hi)` with the classes 0-50, 50-150, 150-250, 250-2500 and 2500-plus hectares, and
+`addPatchTarget("product.harvested", "patch.harvested.<class>", ...)` with 0-10, 10-50, 50-150 and
+150-plus, over `blocks_topology_200r10.csv` at a 100 m search distance. WS4 can express the first family
+today — a patch account needs a criterion, and `feature.young` is one — so the comparison runs:
+
+| Quantity | WS4 / reference, median over the periods |
+| --- | --- |
+| `area` | 0.81 to 1.12 across the four classes |
+| `size` | 0.88 to 1.22 |
+| `frequency` | 0.91 to 1.08 |
+| `shape` | **0.20 to 12.39** |
+
+**What that says.** The areas, sizes and frequencies are within about 10–20% — the same order, so the
+patches are being formed and classed comparably, and the difference is systematic rather than random.
+The **shape** metric is definitional: WS4 reports compactness from 0 to 100 and the reference reports
+something else, on a different scale. Three of the reference's seven sub-quantities have no WS4
+counterpart at all — `blocks`, `freqpercent` and `attractor` — and the reference's last class is labelled
+`2500_plus` where WS4 labels the same class by its upper bound, `2500_9999999`.
+
+**And the second family cannot be configured yet:** the reference's harvested patches use
+`product.harvested` as their criterion, which is a *product* rather than a feature, so WS4 has nothing to
+point a patch account at. That is 28 of the 63 targets.
+

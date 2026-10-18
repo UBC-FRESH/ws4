@@ -1510,3 +1510,15 @@ issue comments.
   objective uses. The acceptance comparison covers the flows alongside the accounts: **1,383
   account-period and flow values reproduced on both 2026 scenarios**, with the families it cannot yet
   compare named — 2 per-mill allocations, 63 patch distributions, 52 ratios. Dashboard: **GREEN**.
+- P11.4 (#116), first measurement: **the patch comparison runs and disagrees.** WS4 can express the
+  reference's `patch.young` family today (a patch account over `feature.young`, classes 0-50 to
+  2500-plus, topology at a 100 m distance), and over 16 cells × 21 periods its **areas, sizes and
+  frequencies are within 10-20%** of the reference's own `targets/patch_young_*.csv` — the same order, so
+  the patches are formed and classed comparably and the difference is systematic rather than random —
+  while its **`shape` is 0.2x to 12.4x** off, which is a definitional difference (WS4 reports
+  compactness 0-100, the reference another quantity) and needs pinning from the reference's numbers
+  before anything is changed. Three of the reference's seven sub-quantities have no WS4 counterpart
+  (`blocks`, `freqpercent`, `attractor`), the open-ended class is labelled `2500_plus` by the reference
+  and `2500_9999999` by WS4, and **the harvested family cannot be configured at all** because its
+  criterion is `product.harvested` — a product, not a feature — which is 28 of the 63 targets. Recorded
+  on the issue with the next subtasks. Dashboard: **GREEN**.
