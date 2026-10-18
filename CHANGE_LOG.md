@@ -1259,3 +1259,194 @@ issue comments.
   shared (#99), make the patch-state construction cheaper (#100), stop rebuilding bounds in every curve
   gather (#101), and the accounts comparison against a reference report (#95, carried from Phase 8 and
   renumbered P9.5 as a sub-issue of the new parent). Dashboard: **GREEN**.
+- P9.1 (performance): one copy of the dataset for the parallel pool. Measured first: a worker costs about
+  **0.98 s and 170 MB** to start on the C5-class sample (`from_dataset` 7 ms, `simulator()` 195 ms and
+  +63 MB, `candidates()` 539 ms and +90 MB, `patch_model()` 243 ms and +18 MB), so a 32-island run builds
+  about 5.4 GB of private state it could be sharing. `Optimizer` now touches those caches before it
+  creates a worker pool, so a **forked child inherits them copy-on-write**: a probe of the child's memory
+  reports **174 MB shared and 2 MB private**, against ~65 MB of private dataset pages when it loads its
+  own. Stated plainly: this does **not** change wall time, because the workers' loads already run in
+  parallel and sharing removes work from each process without shortening the critical path — measured at
+  8 and 32 islands with a 200-iteration budget, before and after, at loads rising from 15 to 19:
+  3.97/3.42 s against 4.02/3.95 s at 8, and 5.51/6.58 s against 5.76/5.73 s at 32, overlapping. The
+  effect it targets is memory traffic, which is what P9.2 measures on the curve. The patch model is
+  deliberately not preloaded: the evaluator builds its own per worker, so sharing it needs a change to
+  ownership rather than a preload, recorded as a separate question. Dashboard: **GREEN** (seven gates).
+- P9.2 (performance, #99): re-measured island scaling and **rejected the P9.1 preload**. A paired,
+  order-alternated comparison (ABBA, three pairs per island count, because a first pass that always ran
+  the control first inherited a host load climbing from 5 to 16 and produced the same ~10% change from
+  load alone) shows the preload costing a median **-12.2%** at 16 islands and **-12.7%** at 32, with the
+  one-island pairs scattering +1.7/-4.4/-8.4% as they should where no pool is created. The cause is
+  measured, not inferred: a worker never uses the parent's state — `_island_job` builds its own
+  `Optimizer.from_dataset(...)` — so the preload shares nothing a worker reads and its **0.789 s** of
+  serial setup lands entirely on the critical path, predicting 10,324 it/s at 16 islands and 16,904 at
+  32 against observed 10,215 and 16,823. P9.1's own probe measured the wrong path: it called the
+  inherited optimiser's methods, which a worker does not do. The preload is **removed**, the control
+  curve reproduces P8.4 (1,089 it/s at one island against 1,055; 18,870 at 32 against 18,685), and the
+  honest conclusion is recorded instead — sharing pages saves capacity this host does not need and
+  cannot reduce the bandwidth contention P8.4 measured, since every process still reads the same bytes.
+  The option that would genuinely share one copy (handing the pool a read-only built state) is in
+  `notes/backlog.md` with no throughput claim. Dashboard: **GREEN** (seven gates).
+- P9.3 (performance, #100): **the patch-state construction, 25.9 ms -> 2.79 ms per state (-89%), and the
+  C5 patch-ramp workload +5.9%** (86.9-88.2 -> 92.7-92.9 iterations/s), with a full 100-group-year
+  reset down from 3.27-3.50 s to 0.68-0.71 s (-80%). Profiling one state on a C5-class group
+  (12,567 blocks, 28,727 edges) showed the time was not in anything per-year: 45 ms of self time in
+  `PatchGroupYear.__init__`, of which 21 ms is 114,908 `array.array.append` calls and 15 ms is 85,288
+  `dict.get` calls — the CSR adjacency marshalling, identical in every year of a group, and read-only
+  to the kernels (`label_all`, `label_from_seeds`, `reachable_from`, `component_from`,
+  `piece_aggregate` take `ptr`/`indices`/`lengths`/`areas` as inputs and write only `comp` and their
+  scratch). So the year-invariant structure is now built once per group by `PatchGroupTopology` and
+  shared through `PatchGroupYear.from_topology`, with the constructor unchanged for callers that hold
+  a `neighbours` mapping; the topologies survive a `reset`, so a search pays once per group. Identical
+  results: the parity and patch-model suites pass unchanged, and a new test runs a shared-topology
+  state and a self-contained one through the same 120 mutations comparing every cell. Dashboard:
+  **GREEN** (seven gates).
+- P9.4 (performance, #101): **the curve gather, addressed flat — 1,133 -> 858 us (-24.3%) on a real
+  C5 call, and the 30-year simulate -6.1%**, with the documented benchmark reporting
+  `simulate_base_seconds` **0.100 s** against P8.2's 0.113 s. Measuring first moved the target: on the
+  C5 simulate gather is **0.0368 s of 0.115 s**, in 30 calls of 205,942 queries, and the cost is not
+  the `np.clip`/`iinfo` P8.3 named (0.26 ms) but numpy's two-array indexing (0.83 ms of the 1.15 ms
+  call), which folds strides and checks bounds per element. `table.ravel()[rows * (age_max + 1) +
+  clipped]` computes the same addresses for -24%. A/B evidence is both implementations alternating in
+  one process. Semantics pinned by two new tests: the clamp at both ends on a curve whose ends differ,
+  and that the result is a copy the table does not alias. The docs' measured-figures header also said
+  5.0k/14k iterations/s at 8/32 islands, contradicting the scaling table lower down the same page; it
+  now carries P8.4's recorded 6.0k/18.7k (5.7x/17.7x) and the 30-year simulate reads ~0.10 s.
+  Dashboard: **GREEN** (seven gates).
+- Phase 9 (Spatial performance and memory) is held **active** on `feature/p9-memory` with its four
+  engineering tasks complete (P9.1-P9.4) and P9.5 outstanding, decided with the maintainer rather than
+  deferring #95 a second time: it needs an export from a licensed Windows run of the reference, and the
+  phase closes when it lands. The roadmap now says so, with what the export must contain and the command
+  that consumes it. The packaged sample Monday's run depends on was re-verified rather than assumed:
+  `c5-sample-for-parity.zip`, 88 MB, sha256 `cd0aa1f3…`, extracted and checked against its 139 per-file
+  digests, all OK. Dashboard: **GREEN** (seven gates).
+- Rehearsed the accounts comparison end to end without a reference, and found a defect in it. The check
+  derived the replay horizon from the schedule's last period, so a reference that reports years its last
+  decision does not reach had every one of them reported as "only in the reference" — a spurious
+  failure. It now replays the horizon the reference's own last reported year sets, and a schedule that
+  decides *beyond* the reported years is reported as a difference in so many words. No test had seen it
+  because the test helper derived the horizon the same wrong way the check did; two new tests cover
+  both directions, and the existing self-agreement test is unchanged. Rehearsed with an export written
+  from WS4's own simulate on the C5 sample (300 blocks, 113 account-year cells): it **passes**, and a
+  copy with one value multiplied by 1.5 **fails** naming that cell. The rehearsal exports and a
+  one-command runner are beside the workspace as `PARITY.md` + `parity-run.sh`, with the packaged sample
+  pre-compiled, so the Windows export is the only thing missing. Dashboard: **GREEN** (seven gates).
+- P9.6 (maintenance, #102): put the package under the strict type gate. `[tool.mypy] files` now names
+  `ws4`, so the `types` gate checks **93 files where it checked 50**; `mypy` reports **success** with no
+  fixes needed, which closes the backlog item that had been open since the P5 triage — the work behind it
+  was already done, and only the file list was missing. Also closed the backlog item for P7.5's lever,
+  both halves of which the phase has now taken (the series 29% cheaper in P8.3, the patch-state
+  construction 89% cheaper in P9.3, with state laziness rejected for P8.3's recorded reason). Dashboard:
+  **GREEN** (seven gates).
+- P9.6 closed (#102): the type gate has been widened in the changelog entry above and the roadmap now
+  ticks it. Dashboard: **GREEN** (seven gates).
+- Recorded the work requested while the P9.5 export is pending: the growth-parity check (#103) next, then
+  an API-first notebook for the examples gallery (all seven are currently CLI-first) and capability work
+  from the backlog's `partial` items. The last two are outside P9's subject, so the roadmap lists them as
+  planned work for their own phase rather than folding them into this one.
+- P9.7 (verification, #103): **growth checked against the reference's own yields, without a licensed
+  reference run** — `scripts/acceptance.py` gains a `growth` check (`--yield-sample`, `--yield-dataset`)
+  that resolves each of the sample's 18 `Y<n>.Conif/Decid` curves to the compiled curve reproducing its
+  ages and compares every point at 5e-3 (the reference's artefacts print two decimals). On the C5 sample:
+  **"WS4 reproduces the reference's 959 yield-curve points, with 7 recorded upstream conflict(s)"** — no
+  missing ages, every value agreeing but one. The conflict is the sample's, not WS4's: at offset age 7
+  the Decid curve is **0.001 in the legacy matrix** WS4 ingests (`tracks/curves.csv`, nine rows) and
+  **0.01 in the same sample's own** `C5_yld.prn` and `ForestModel_C5_strata.xml`, and the matrix holds no
+  0.01 anywhere. It is recorded by name rather than absorbed into the tolerance, so another curve
+  differing at that age still fails; six tests cover pass, a changed value, a missing age, the recorded
+  conflict, a conflict outside it, and the skip. Dashboard: **GREEN** (seven gates).
+- Launched Phase 10 (Documentation and the API-first workflow): parent issue #104, branch
+  `feature/p10-docs-api`, and three tasks — an API-first walkthrough notebook for the gallery (#105),
+  a check that executes the notebooks and reports drifted output (#106, since the gallery's outputs are
+  committed with `nbsphinx_execute = "never"` and nothing verifies them), and naming which way in each
+  example takes (#107). Phase 9 stays open only for P9.5 (the accounts export); its other six tasks are
+  complete. The roadmap records the backlog's capability work as the phase after this one.
+- Fixed the Phase 10 launch commit: the roadmap tracker row I wrote for P9 said "active (held on the
+  P9.5 export)" where the phase section says `active`, and the workflow validator caught the mismatch on
+  the next run — the launch commit had landed while the dashboard was red because the command chain ran
+  on regardless of the exit status. The tracker row is back to `active`, the holding note stays in the
+  phase section where it belongs, and the dashboard is **GREEN** (seven gates) again. Third time this
+  session a chained command hid an exit status; the chain is the problem, not the tool.
+- P10.1 (docs, #105): **an API-first walkthrough notebook**, `examples/070_library_path.ipynb`, executed
+  and in the gallery. Five of the seven existing examples drive the command line, so the library
+  audience had prose but no worked session; this one runs no `ws4` command anywhere — it compiles the
+  sample estate, opens it with `Model`, simulates two schedules in memory and compares them, runs a
+  search through `Optimizer.run`, reads the target table and the account values back as frames, and
+  checks the run's own numbers against a fresh simulation (largest difference 2.3e-13). Linked from
+  `getting-started/python-api` and `howto/automate-a-study`.
+- P10.3 (docs, #107): every example now says which way in it takes — command line, library, or both — in
+  its own opening paragraph, and the gallery's intro explains the distinction, with `070_library_path`
+  named as the counterpart to `010_quickstart`.
+- P10.4 (fix, #108): **`report_targets.csv` priced a periodic target from one year.** Found by the
+  notebook above, whose output showed the search returning `incumbent_objective 0.0` while the report
+  said `below`: on the sample estate the target's period totals **5,549.86** over years 0-9 where the
+  report read the year-0 row alone, **1,627.14**, and charged a penalty of 3,372.86 the search never
+  applied. `target_status` now sums the account over `target.cell_years()` — the same expression the
+  objective uses — so a target with `period_width > 1` is reported as the search priced it. Three new
+  tests, including one that asserts the report's total penalty equals `objective`'s for the same values.
+  **Recorded rather than fixed, and checked as the task required:** targets with `flow` set are still
+  mis-reported, because `target_status` has no notion of a flow series at all — measured, an `ndy`
+  target with `minimum: -1` over a series dropping 100 -> 60 is priced at **39.00** by the objective and
+  reported as `met` with **0.00**. Left open in `notes/backlog.md` with those numbers, because fixing it
+  means deciding what the report should show for a flow target. Dashboard: **GREEN** (seven gates).
+- P10.2 (verification, #106): **the gallery's outputs are now checked, not trusted.**
+  `scripts/check_notebooks.py` re-runs every example in memory and compares what it produces with what is
+  committed, cell by cell, naming the notebook and the cell when they differ and writing nothing; the
+  remedy is the documented `--refresh`, which re-runs and rewrites. It took **8 minutes** on the eight
+  notebooks, so it is its own CI job rather than part of the dashboard, and it is honest about what it
+  cannot compare: the environment's version banner, durations, rates, memory and absolute paths are
+  normalised and **counted** (a passing run reports `duration x2, elapsed x2, rate x2, version x10`),
+  and cells whose output is a live render can be tagged `no-drift-check` in the notebook itself.
+  Its first run over the eight notebooks: **5 drifted**, and the first catch was this phase's own work —
+  four of them (030, 040, 050, 060) because the P10.4 fix corrected the target values their report tables
+  print (`060`'s `volume_share` 18,744.60 -> 36,352.44), and 010 because a `ws4 watch` progress table
+  prints an elapsed time; the four were refreshed and committed, the fifth masked. The suite now reports
+  **50 cells compared, 0 skipped, 0 drifted**. Seven tests cover a current notebook, a stale one, a
+  tagged cell, the normalisations, a notebook that no longer runs, the per-cell outcome, and the refresh.
+  Dashboard: **GREEN** (seven gates).
+- Queued the Phase 10 close-out: the report is `notes/reports/p10-closeout.md` and the roadmap moves P10
+  to `pr-open`. The pull request is **stacked on `feature/p9-memory`**, because P10 was branched from it
+  and Phase 9 is held open for the P9.5 export: a pull request against `main` would carry P9's unmerged
+  work as well, so the stack shows P10's own four commits and the base can be changed with one command
+  if the maintainer would rather land both at once.
+- Fixed what the Phase 10 pull request's first CI run found, on two jobs. The `Notebook outputs` job
+  reported `000_environment_check` drifted because its banner cell says whether `geopandas` is
+  importable — the environment, not the code — so that cell, the optional-dependency cell and the
+  rendered `ws4 --help` screen are tagged `no-drift-check` **in the notebook**, which is what the tag
+  exists for; the notebook now reports `3 compared, 3 skipped, 0 drifted`. The check's own tests failed
+  in CI because the notebooks they build carried no kernelspec, where the committed notebooks do, so the
+  fixture now sets the same metadata. Both deviations are in the close-out report, and the dashboard is
+  **GREEN** again.
+- Fixed the second CI failure on the Phase 10 pull request: the check's tests need a kernel, and the
+  gate jobs had `nbclient` (through `nbsphinx`) but not `ipykernel`, which is what ships the `python3`
+  kernel spec, so they failed with `NoSuchKernel` while the `Notebook outputs` job passed — it installs
+  both explicitly. `requirements-dev.txt` now names `nbclient` and `ipykernel` with the reason, so the
+  suite carries what it needs rather than depending on a transitive dependency. The `Notebook outputs`
+  job itself is **green in CI**; dashboard **GREEN**.
+- Third CI iteration on the Phase 10 pull request, and a correction to the check's doctrine rather than
+  a workaround: the `ws4 watch` progress table drifted in CI by **one column of padding**. A rich table
+  is drawn to the width of its values, so masking the values is not enough — the check now flattens
+  layout too, removing box-drawing characters and column padding and **counting** them (`layout x5706`
+  on a full run, alongside `duration x2, elapsed x2, rate x2, version x10`). Content is still compared
+  exactly; the width it was rendered at is not. A unit test pins two differently-padded renders of the
+  same content as equal. Locally the suite reports **47 cells compared, 3 skipped, 0 drifted**;
+  dashboard **GREEN**.
+- **Phase 10's pull request is green in CI**: run `39104469800` on `9bcdcfd`, all four jobs — Quality
+  gates, Green dashboard summary, Pre-commit parity, and **Notebook outputs**, the new job whose first
+  outings found the three defects recorded above. The close-out report now carries the four runs in its
+  CI evidence table, including the three failures and what each one turned out to be. The pull request is
+  queued for the maintainer's approval.
+- Carried out the Phase 10 close-out: pull request #109 squash-merged as `b512cd9`, the branch deleted,
+  and parent issue #104 closed. It merged into `feature/p9-memory` rather than `main` because it was
+  stacked there; the conflict with Phase 9's later work (P9.5 and P9.8 touch the roadmap, the changelog,
+  the backlog and the acceptance checks) was resolved by keeping both sides, with the workflow validator
+  and the seven-gate dashboard green on the merged tree and CI green on all four jobs. Phase 10 is what
+  the enclosure found: the library-path notebook the gallery was missing, **`scripts/check_notebooks.py`**
+  re-running every example and reporting drifted output, labels naming each example's path, and the fix
+  for `report_targets.csv` pricing a periodic target from a single year. Dashboard: **GREEN**.
+- Queued the Phase 9 close-out: the report is `notes/reports/p9-closeout.md`, the roadmap moves P9 to
+  `pr-open`, and its pull request is against `main` carrying Phase 10 with it, since Phase 10 was
+  stacked on this branch and merged into it (`b512cd9`). The report's recommendation is the derived
+  targets — the reference's ratios, flow constraints and patch-size distributions, 178 of them — and the
+  three sample-side gaps this phase uncovered: WS4's period convention against the reference's, the
+  sample's two-mill set, and the growth check's retargeting.

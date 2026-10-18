@@ -12,3 +12,7 @@ hypothesis>=6.100
 numba>=0.59
 threadpoolctl>=3.1
 pre-commit>=3.7
+# the notebook drift check executes the examples, so the suite needs a kernel: nbclient is the
+# client and ipykernel ships the "python3" kernel spec a test session looks for
+nbclient>=0.10
+ipykernel>=6

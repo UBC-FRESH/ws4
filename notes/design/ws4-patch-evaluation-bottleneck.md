@@ -514,3 +514,94 @@ restriction from P6.35 already skips every year nothing reads. Making each state
 question. And what is left where the time now goes is `CurveTable.gather`'s `np.clip`, which builds an
 `iinfo` per call (~1.5 us), a candidate if this needs another pass.
 
+### P9.3 the group topology, built once instead of once per year
+
+P7.5 put the second-largest single item in a patch-heavy search at `PatchGroupYear.__init__`, about
+48 ms per state. Profiling one state on a C5-class group (12,567 blocks, 28,727 adjacency edges) says
+where it goes, and the answer is not the part that varies by year:
+
+| | Self time |
+| --- | ---: |
+| `PatchGroupYear.__init__` | 45 ms |
+| `array.array.append`, 114,908 calls | 21 ms |
+| `dict.get`, 85,288 calls | 15 ms |
+| the rest of the body | 9 ms |
+
+Those two lines are the CSR adjacency marshalling: for every one of the group's directed edges, a
+`dict` lookup for the neighbour's node index and two appends. **None of it depends on the year.** The
+node order, the block areas and the `ptr`/`indices`/`lengths` arrays are the same in every year of a
+group, and the compiled kernels only *read* them — `label_all`, `label_from_seeds`, `reachable_from`,
+`component_from` and `piece_aggregate` take `ptr`, `indices`, `lengths` and `areas` as inputs and write
+only `comp` and their scratch buffers. So the right fix is the second of the three candidates: share
+the year-invariant structure, rather than try to build less of it.
+
+`PatchGroupTopology` now holds the node order, index, area array, CSR pointers and their numpy views;
+`PatchModel` builds one per (criterion, threshold, search distance) group and every year's state
+reaches it through `PatchGroupYear.from_topology`. The per-year arrays — membership, value, component
+id — stay per state, as they must. `PatchGroupYear`'s constructor is unchanged and builds a topology
+internally, so callers and tests that hold a `neighbours` mapping keep working.
+
+Measured on the binding C5 configuration, minutes apart, with the change stashed and restored:
+
+| | Before | After | |
+| --- | ---: | ---: | --- |
+| One state on a 12,567-block group | 25.9 ms | **2.79 ms** | -89% |
+| The topology, once per group | (per state) | 22.6 ms | - |
+| A full reset, 100 group-years | 3.27-3.50 s | **0.68-0.71 s** | **-80%** |
+| C5 patch-ramp workload (20 periods, one thread) | 86.9-88.2 it/s | **92.7-92.9 it/s** | **+5.9%** |
+
+**Identical results**, which is the condition: the parity suite (the incremental state against the
+from-scratch computation over 300 random mutations, two accounts in a group) passes unchanged, the
+patch-model suite passes, and a new test drives a shared-topology state and a self-contained one
+through the same 120 mutations and compares every cell.
+
+Two things worth stating plainly. The topology survives a `reset` (the model's state dict is cleared,
+the topologies are not), so a search pays it once per group rather than once per reset. And the
+per-state cost that remains — about 2.8 ms — is the per-year membership and component arrays; the
+answer to "make it lazier" is still no, for the reason P8.3 gave: the years that get a state are
+already only the accounting points a target reads.
+
+### P9.4 the curve gather, addressed flat
+
+P8.3 left one thing named on this page: `CurveTable.gather`'s `np.clip`, which builds an `iinfo` per
+call. Measuring first says the `iinfo` is not where the time is. On a real C5 30-year simulate —
+16,174 fragments — the simulate makes **30 gather calls of 205,942 queries each**, and gather is
+**0.0368 s of the 0.115 s** simulate, a third of it. Breaking that call down at its real shape (a
+`(1801, 843)` table, 1,114 distinct rows, ages 0 to 402, and no age needing a clamp at all):
+
+| Step | Time |
+| --- | ---: |
+| `np.clip`, then `.astype(np.int64)` | 0.26 ms |
+| `table[rows, clipped]` — numpy's two-array indexing | **0.83 ms** |
+| the whole call | 1.15 ms |
+
+The dominant cost is the indexing, not the bounds: two index arrays make numpy fold strides and check
+bounds per element, and what is left is a scatter of loads over a 12 MB table. Addressing the table
+**flat** — `table.ravel()[rows * (age_max + 1) + clipped]` — computes the same addresses as one
+multiply and one add, and is measurably cheaper.
+
+Measured with both implementations in one process, alternating (so host load and memory placement fall
+on both), best of 40 rounds of the real captured call and best of 6 of the simulate:
+
+| | Two-array indexing | Flat | |
+| --- | ---: | ---: | --- |
+| gather, 205,942 queries | 1,133 us | **858 us** | **-24.3%** |
+| C5 30-year `simulate` | 0.094 s | **0.088 s** | **-6.1%** |
+
+The documented benchmark command agrees: `simulate_base_seconds` **0.100 s**, against the 0.113 s P8.2
+recorded. Re-confirmed on the shipped code after the typing fix: 1,124 us against 843 us, -25.0%.
+
+**Semantics unchanged, and pinned by tests.** The clamp is the reason gather exists rather than raw
+indexing, so a new test drives ages below zero and far past `age_max` on a curve whose ends differ and
+asserts the endpoint values, and another writes into the result and checks the table is untouched —
+`ravel()` of a contiguous table is a view, so the flat gather must copy, and does. The existing
+`test_gather_matches_at` and the curve-table suite pass unchanged.
+
+Two notes for anyone measuring this later. `.ravel()` copies a non-contiguous table on every call, so if
+a `CurveTable` is ever built from a non-contiguous array the change turns into a 12 MB copy per gather;
+`from_curves` always produces a contiguous one, and the measured calls' tables are contiguous. And the
+first A/B of this change was wrong in the other direction — 2,143 us against 1,150 — because it timed
+the new code in one process against the old in a fresh one, on arrays loaded from disk; the same
+comparison inside a single process shows 880-930 us for either table. Interleaving belongs in the
+harness, not in the hope that the host is quiet.
+

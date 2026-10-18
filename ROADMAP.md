@@ -21,7 +21,8 @@ exists and the maintainer approves it.
 | P6 Performance and scalability | #60 | `feature/p6-performance` | complete |
 | P7 Parity and the analyst workflow | #82 | `feature/p7-parity` | complete |
 | P8 Verify the replacement claim | #90 | `feature/p8-verify` | complete |
-| P9 Spatial performance and memory | #97 | `feature/p9-memory` | active |
+| P9 Spatial performance and memory | #97 | `feature/p9-memory` | pr-open |
+| P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
 
@@ -393,28 +394,83 @@ Acceptance criteria:
 
 Parent issue: #97
 Branch: `feature/p9-memory`
-Status: active
+Status: pr-open
+Pull request: against `main`, carrying Phase 10 with it — Phase 10 was stacked on this branch and merged
+into it (`b512cd9`) when the maintainer approved it, so the two phases reach `main` together.
 
 Goal: act on what Phase 8 measured. P8.4 established that island scaling stops being near-linear because
 of the memory hierarchy — not BLAS, not the per-process setup, not SMT, each excluded by measurement —
 and found the concrete reason a shared dataset would not help as things stand: every process loads its
 own copy before doing anything, and the simulator writes to the fragments frame it inherits.
 
-- [ ] P9.1 Share the dataset across worker processes (#98)
-- [ ] P9.2 Re-measure island scaling with the dataset shared (#99)
-- [ ] P9.3 Make the patch-state construction cheaper (#100)
-- [ ] P9.4 Stop rebuilding bounds in every curve gather (#101)
-- [ ] P9.5 Compare WS4's accounts against a reference report (#95, carried from P8)
+- [x] P9.1 Share the dataset across worker processes (#98)
+- [x] P9.2 Re-measure island scaling with the dataset shared (#99) — measured and rejected; #98 reverted
+- [x] P9.3 Make the patch-state construction cheaper (#100) — the group topology is shared across years
+- [x] P9.4 Stop rebuilding bounds in every curve gather (#101)
+- [x] P9.5 Compare WS4's accounts against a reference report (#95, carried from P8) — **PASS** on both 2026 scenarios, 1,323 account-period values reproduced
+- [x] P9.6 Put the package under the type gate (#102) — the gate checked 50 files, it now checks 93
+- [x] P9.7 Check growth against the reference's own yields (#103) — 959 yield-curve points reproduced; one conflict in the sample's own files, recorded
+- [x] P9.8 The matrix builder mis-attributes a split block's track (#110) — fixed; 30-45% on every managed/unmanaged account
 
 Deferred from P9, triaged in `notes/backlog.md`:
 
 - (none outstanding.)
+
+Holding on an external input:
+
+P9 stays **active** until P9.5 lands, rather than deferring it a second time. It needs an export from a
+licensed Windows run of the reference: `schedule.csv` (one row per decision: block, treatment, year) and
+`account_values.csv` (one row per account per period), replayed in WS4 by
+`python scripts/acceptance.py --accounts-report <export> --accounts-dataset <compiled c5>`. The
+comparison, the export specification and what it does *not* cover are in
+`notes/design/ws4-parity-harness.md`. The sample to run it on is packaged beside the workspace as
+`c5-sample-for-parity.zip` with 139 per-file digests in `c5-sample-for-parity.sha256`; the archive
+verifies against them.
 
 Acceptance criteria:
 
 - The dataset is shared across workers, or there is a measured reason it cannot be.
 - Island scaling re-measured at a recorded load, compared against P8.4's 17.7x at 55% efficiency.
 - The patch-state and curve-gather costs judged against the P8.3 profile, with the measurements recorded.
+- The dashboard green at every commit, with the docs and docstrings gates.
+
+## Phase 10: Documentation and the API-first workflow
+
+Parent issue: #104
+Branch: `feature/p10-docs-api`
+Status: complete
+Pull request: #109, squash-merged as `b512cd9` into `feature/p9-memory`, the branch it was stacked on.
+It reaches `main` with Phase 9's close-out, since the two are one line of history now.
+
+Goal: serve the second audience in the gallery, and stop the gallery being able to lie. The prose for
+the Python API exists; the examples do not — five of seven notebooks drive the command line — and the
+notebooks' outputs are committed with ``nbsphinx_execute = "never"``, so nothing checks that what they
+show is what the code does.
+
+- [x] P10.1 An API-first walkthrough notebook (#105) — `examples/070_library_path`, executed
+- [x] P10.2 Prove the gallery's outputs are current (#106) — `scripts/check_notebooks.py`, its own CI job
+- [x] P10.3 Say which way in each example takes (#107)
+- [x] P10.4 Price a periodic target over its period in the report (#108) — found by P10.1
+
+Deferred from P10, triaged in `notes/backlog.md`:
+
+- (none outstanding.)
+
+Holding on a design question, recorded rather than fixed:
+
+- **Flow targets in `report_targets.csv`** are still mis-reported: `target_status` prices every target as
+  a level target over its period, while the objective prices a `flow` target as a per-period percent
+  series. Measured in P10.4: an `ndy` target with `minimum: -1` over a series dropping 100 -> 60 is
+  priced at **39.00** by the objective and reported as `met` with **0.00**. Fixing it means deciding
+  what the report should show for a flow target, which is a design question; it is in
+  `notes/backlog.md` with the numbers. The sample estate's own targets are level targets, so nothing
+  shipped is affected.
+
+Acceptance criteria:
+
+- A complete API-first session runs as a notebook in the gallery, executed, linked from the API pages.
+- A documented command re-executes the notebooks and reports drifted output, and it can fail.
+- Every example states whether it is a command-line session or a library one.
 - The dashboard green at every commit, with the docs and docstrings gates.
 
 ## Detailed Next Steps Notes
@@ -476,3 +532,33 @@ Acceptance criteria:
     on an export from a licensed Windows run, and is renumbered P9.5 as a sub-issue of the new parent.
     Phase 9 (Spatial performance and memory) is active on `feature/p9-memory`, parent issue #97, with
     five tasks (#98 to #101 and #95).
+
+13. Phase 9 is active on `feature/p9-memory`, parent issue #97: #98 to #101 are complete, #102 (the
+    type gate) landed while #95 waits on the Windows export, and **#103 (growth parity against the
+    reference's own yields) is next** — the reference ships its yield table, so growth can be checked
+    without a licensed machine, and it narrows what the accounts comparison can mean.
+
+    Requested while waiting, in order, after #103: **an API-first notebook** (all seven examples are
+    CLI-first, so the programmatic audience is not yet first-class in the examples gallery), and then
+    **capability work from the backlog's `partial` items** (succession and `produce` semantics,
+    legacy-ingestion coverage, account reports). Both are outside this phase's subject — spatial
+    performance and memory — so they are recorded here as planned and are launched as their own phase
+    rather than folded into P9.
+
+14. Phase 9 is **held open only for P9.5**: every other task in it is complete and closed (#98-#103),
+    and #95 waits on an export from a licensed Windows run of the reference. Rather than leave the
+    waiting time unused, and rather than widen P9's subject, the requested documentation work is its own
+    phase: **P10 (Documentation and the API-first workflow)**, parent issue #104, branch
+    `feature/p10-docs-api`, tasks #105-#107. The remaining backlog capability work — succession and
+    `produce` semantics, legacy-ingestion coverage, account reports — is the phase recorded after it.
+
+15. Phase 10 is complete: pull request #109 squash-merged as `b512cd9`, the branch deleted, and parent
+    issue #104 closed. It delivered the library-path notebook the gallery was missing, a check that
+    re-runs every example and reports output that has drifted from what is committed (its first three CI
+    runs each found a real defect), path labels on every example, and the fix for a report that priced a
+    periodic target from a single year — found by writing the notebook. Its pull request was stacked on
+    `feature/p9-memory` and merged there, because Phase 9 branched it and Phase 9's own close-out has not
+    run yet; the two phases now reach `main` together. Phase 9's remaining work is closed except its
+    close-out, and the next phase is the derived targets the accounts comparison leaves out — the
+    reference's ratios, flow constraints and patch-size distributions.
+

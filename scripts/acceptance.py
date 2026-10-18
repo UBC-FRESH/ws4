@@ -11,6 +11,9 @@ The checks verify the build against its acceptance criteria:
   schedule in WS4 and compare the account values per year, which is what isolates the simulation.
 - ``parity``: with ``--roads-sample``, compare WS4's least-haul-cost routes to the reference
   implementation's own ``cost_destination.*.csv`` tables, node by node.
+- ``growth``: with ``--yield-sample`` and ``--yield-dataset``, compare WS4's compiled yield curves
+  to the reference's own model curves, point by point: the growth that the whole accounts
+  comparison rests on, checkable without a licensed reference run.
 - ``builder``: for each ``--case`` (a recipe, a fragment inventory, and a reference matrix
   directory), compile the recipe and compare the compiled matrix to the reference tables.
   No case is required; without one the check is skipped.
@@ -30,13 +33,16 @@ The exit status is 0 only when every check passes.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 import tempfile
-from collections.abc import Sequence
+import xml.etree.ElementTree as ET
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
+import numpy as np
 import pandas as pd
 from ws4.build.compiler import build_canonical_dataset
 from ws4.model.api import Model
@@ -239,6 +245,165 @@ def check_roads(workdir: Path) -> CheckResult:
     )
 
 
+# A reference report rounds as it computes: its areas and products are rounded to three decimals per
+# contribution, and a period's value is a sum of them. Measured across both 2026 scenarios — 2,646
+# cells — the worst disagreement with WS4 is 1.05e-3 on a value of 0.977, so a relative tolerance
+# alone flags the reference's own rounding: 101 cells at the relative tolerance alone, 3 with a
+# 1e-3 floor, and none with 2e-3, which is two units in the third decimal.
+_ABSOLUTE_TOLERANCE = 2e-3
+
+# The reference's yield curves are identified per stratum and species, as ``Y1.Conif``.
+_YIELD_CURVE_ID = re.compile(r"^Y\d+\.(?:Conif|Decid)$")
+
+# The reference's own artefacts print two decimals, so half a unit is the tightest honest tolerance.
+_YIELD_TOLERANCE = 5e-3
+
+# One point where the sample's own files disagree with each other: its legacy matrix carries 0.001
+# at offset age 7 on the Decid curve, where the same sample's sibling artefacts (Woodstock's
+# ``C5_yld.prn`` and ``ForestModel_C5_strata.xml``) carry 0.01. WS4 compiles what the matrix says,
+# so the difference is upstream of it. It is recorded rather than absorbed into the tolerance, so a
+# real difference cannot hide among it, and the check reports when it is still there.
+_KNOWN_YIELD_CONFLICTS = frozenset({("Decid", 7.0)})
+
+
+def read_reference_yields(yield_dir: Path) -> dict[str, list[tuple[float, float]]]:
+    """Read the reference's own yield curves from a sample's yield directory.
+
+    Every ``*.xml`` in the directory is read for ``curve`` elements whose id names a yield curve
+    for a stratum and species (``Y1.Conif``). The reference also ships the same numbers as a printed
+    Woodstock table (``Woodstock/C5_yld.prn``); the XML is used because it carries the age of every
+    value, where the printed table is a bare sequence of values against an assumed grid.
+
+    Parameters
+    ----------
+    yield_dir : Path
+        A sample's ``yield`` directory.
+
+    Returns
+    -------
+    dict of str to list of (float, float)
+        The ``(age, yield)`` points per curve id.
+    """
+    curves: dict[str, list[tuple[float, float]]] = {}
+    for path in sorted(yield_dir.glob("*.xml")):
+        for element in ET.parse(path).getroot().iter("curve"):
+            identifier = element.get("id")
+            if identifier is None or not _YIELD_CURVE_ID.match(identifier):
+                continue
+            points = [
+                (float(point.get("x", "0")), float(point.get("y", "0")))
+                for point in element.findall("point")
+            ]
+            if points:
+                curves[identifier] = points
+    return curves
+
+
+def compare_yield_curves(yield_dir: Path, dataset_dir: Path) -> tuple[list[str], int, int]:
+    """Compare WS4's compiled yield curves to the reference's own model curves, point by point.
+
+    Each reference curve is resolved to the compiled curve that reproduces most of its ages, and
+    every one of its points is then compared there: a missing age, a value outside the print
+    tolerance, or a yield curve with no counterpart at all is a difference. A value that differs by
+    exactly one of the sample's own recorded internal conflicts is counted and named instead.
+
+    Parameters
+    ----------
+    yield_dir : Path
+        The sample's ``yield`` directory, holding the reference's own curves.
+    dataset_dir : Path
+        The compiled dataset to compare, which is what WS4 will actually use.
+
+    Returns
+    -------
+    tuple of (list of str, int, int)
+        One line per difference, at most ten; the number of points compared; and the number of
+        recorded conflicts seen.
+    """
+    reference = read_reference_yields(yield_dir)
+    if not reference:
+        return (["no Y<n>.<species> yield curves in the yield directory"], 0, 0)
+    table = pd.read_parquet(dataset_dir / "curves.parquet")
+    compiled: dict[int, tuple[np.ndarray, np.ndarray]] = {
+        int(str(identifier)): (group["x"].to_numpy(), group["y"].to_numpy())
+        for identifier, group in table.groupby("curve_id")
+    }
+    differences: list[str] = []
+    compared = 0
+    conflicts = 0
+    for name in sorted(reference):
+        points = reference[name]
+        species = name.split(".", 1)[1]
+        ages = {age for age, _ in points}
+        best: tuple[int, int, int] | None = None
+        for identifier, (xs, ys) in compiled.items():
+            present = {
+                float(age): float(value) for age, value in zip(xs, ys, strict=True) if age in ages
+            }
+            missing = len(ages - set(present))
+            differing = sum(
+                1
+                for age, value in points
+                if age in present and abs(present[age] - value) > _YIELD_TOLERANCE
+            )
+            score = missing + differing
+            if best is None or score < best[0] or (score == best[0] and identifier < best[1]):
+                best = (score, identifier, missing)
+        if best is None:
+            continue
+        _score, identifier, missing = best
+        xs, ys = compiled[identifier]
+        at_age = {float(age): float(value) for age, value in zip(xs, ys, strict=True)}
+        if missing:
+            absent = sorted(ages - set(at_age))[:3]
+            differences.append(f"{name}: {missing} age(s) not in curve {identifier}, e.g. {absent}")
+        for age, value in points:
+            if age not in at_age:
+                continue
+            compared += 1
+            got = at_age[age]
+            if abs(got - value) <= _YIELD_TOLERANCE:
+                continue
+            if (species, age) in _KNOWN_YIELD_CONFLICTS and abs(got - value) <= 0.1:
+                conflicts += 1
+                continue
+            differences.append(f"{name} age {age:g}: WS4 {got:g} against the reference {value:g}")
+    return (differences[:10], compared, conflicts)
+
+
+def check_growth(yield_dir: Path | None, dataset_dir: Path | None) -> CheckResult:
+    """Compare WS4's compiled growth to the reference's own yield curves, when both are given.
+
+    Parameters
+    ----------
+    yield_dir : Path or None
+        A sample's ``yield`` directory, or None to skip the comparison.
+    dataset_dir : Path or None
+        The compiled dataset to compare, or None to skip the comparison.
+
+    Returns
+    -------
+    CheckResult
+        ``pass`` when every reference point is reproduced, ``fail`` on the first differences, and
+        ``skip`` when either input is missing.
+    """
+    if yield_dir is None or dataset_dir is None:
+        return CheckResult("growth", "skip", "needs --yield-sample and --yield-dataset")
+    if not yield_dir.is_dir() or not dataset_dir.is_dir():
+        return CheckResult("growth", "fail", "yield sample or dataset is not a directory")
+    differences, compared, conflicts = compare_yield_curves(yield_dir, dataset_dir)
+    if differences:
+        return CheckResult(
+            "growth",
+            "fail",
+            f"{len(differences)} difference(s) in {compared} points: {differences[0]}",
+        )
+    detail = f"WS4 reproduces the reference's {compared} yield-curve points"
+    if conflicts:
+        detail += f", with {conflicts} recorded upstream conflict(s) reported"
+    return CheckResult("growth", "pass", detail)
+
+
 def compare_route_costs(roads_dir: Path) -> tuple[list[str], int]:
     """Compare WS4's least-haul-cost routes to the reference's own per-node haul costs.
 
@@ -330,13 +495,61 @@ def _first_present(frame: pd.DataFrame, *names: str) -> str | None:
     str or None
         The column name, or None when none is present.
     """
+    lowered = {str(column).lower(): str(column) for column in frame.columns}
     for name in names:
         if name in frame.columns:
             return name
+        match = lowered.get(name.lower())
+        if match is not None:
+            return match
     return None
 
 
-def compare_account_values(dataset_dir: Path, report_dir: Path) -> tuple[list[str], int]:
+def _reference_period_value(
+    series: Mapping[str, pd.Series], account: str, period: int, year: int, width: int
+) -> float:
+    """Return WS4's value for one period of a reference report.
+
+    The reference reports a value per account per **period**, and its convention is not WS4's:
+    ``PERIOD 0`` is the initial snapshot at year 0, and a later period labelled ``YEAR`` with
+    ``PERIODWIDTH`` covers that many years **ending** at ``YEAR``. What it reports for a period also
+    depends on the account: a product accumulates within the period and is reported as the
+    period's total, while a feature is a level and is reported at the period's year. Measured on
+    the 2026 C5 sample, this convention puts WS4 and the reference within 1% on every
+    account-period cell of both the no-treatment and the optimized run, where comparing annual
+    values year for year agreed on the features and on none of the products.
+
+    Parameters
+    ----------
+    series : mapping of str to pandas.Series
+        WS4's annual values per account, indexed by year.
+    account : str
+        The account.
+    period : int
+        The reference's period index.
+    year : int
+        The reference's year for that period.
+    width : int
+        The reference's period width, in years.
+
+    Returns
+    -------
+    float
+        WS4's value for the period, or 0.0 when the account is absent.
+    """
+    values = series.get(account)
+    if values is None:
+        return 0.0
+    if period <= 0:
+        return float(values.get(0, 0.0))
+    if account.startswith("product."):
+        return float(values.loc[year - width + 1 : year].sum())
+    return float(values.get(year, 0.0))
+
+
+def compare_account_values(
+    dataset_dir: Path, report_dir: Path, known_accounts: set[str] | None = None
+) -> tuple[list[str], int]:
     """Compare WS4's account values to a reference report for the same schedule.
 
     The reference's export is expected in ``report_dir`` as two files: ``schedule.csv`` with the
@@ -354,7 +567,12 @@ def compare_account_values(dataset_dir: Path, report_dir: Path) -> tuple[list[st
     dataset_dir : Path
         The compiled dataset to replay the schedule over.
     report_dir : Path
-        A directory with ``schedule.csv`` and ``account_values.csv``.
+        A directory with ``schedule.csv`` and ``account_values.csv`` (or the reference's own
+        ``targetSummary.csv``).
+    known_accounts : set of str, optional
+        The accounts WS4 has, when the reference reports more than that. A reference target with no
+        WS4 account is not compared: those are the reference's own ratio, flow and route targets
+        rather than account values. Without this, every reference row is compared.
 
     Returns
     -------
@@ -364,7 +582,7 @@ def compare_account_values(dataset_dir: Path, report_dir: Path) -> tuple[list[st
     schedule_frame = pd.read_csv(report_dir / "schedule.csv")
     block = _first_present(schedule_frame, "block_id", "block")
     treatment = _first_present(schedule_frame, "treatment")
-    period = _first_present(schedule_frame, "period", "year")
+    period = _first_present(schedule_frame, "period", "year", "DELTA")
     if block is None or treatment is None or period is None:
         return (["schedule.csv needs block_id, treatment and period columns"], 0)
     schedule = pd.DataFrame(
@@ -375,13 +593,21 @@ def compare_account_values(dataset_dir: Path, report_dir: Path) -> tuple[list[st
         }
     )
 
-    reference = pd.read_csv(report_dir / "account_values.csv")
-    reference_year = _first_present(reference, "year", "period")
-    reference_account = _first_present(reference, "account", "ACCOUNT")
-    reference_value = _first_present(reference, "value", "VALUE")
+    values_path = report_dir / "account_values.csv"
+    if not values_path.is_file():
+        # the reference's own report name, so its export can be read where it lands
+        values_path = report_dir / "targetSummary.csv"
+    reference = pd.read_csv(values_path)
+    reference_year = _first_present(reference, "year", "period", "YEAR")
+    reference_account = _first_present(reference, "account", "ACCOUNT", "TARGET")
+    reference_value = _first_present(reference, "value", "VALUE", "CURRENT")
     if reference_year is None or reference_account is None or reference_value is None:
-        missing = "account_values.csv needs year, account and value columns"
+        missing = f"{values_path.name} needs a year, an account and a value column"
         return ([missing], 0)
+    if known_accounts is not None:
+        # the reference reports its own ratio, flow and route targets as well as account values;
+        # only the accounts both sides have are comparable
+        reference = reference[reference[reference_account].astype(str).isin(known_accounts)]
     expected = {
         (int(year), str(account)): float(value)
         for year, account, value in zip(
@@ -393,15 +619,50 @@ def compare_account_values(dataset_dir: Path, report_dir: Path) -> tuple[list[st
     }
 
     years = int(schedule["period"].max()) + 1 if not schedule.empty else 1
+    # The horizon to replay is the reference's own last reported year, which is what its account
+    # values cover. Deriving it from the schedule alone under-simulates whenever the reference
+    # reports years its last decision does not reach — and every such year is then reported as a
+    # difference, which is a spurious failure rather than a finding. A schedule that decides beyond
+    # the reported years is the opposite case, and is said out loud instead of silently truncated.
+    reported_years = max((year for year, _ in expected), default=-1) + 1
+    if reported_years > 0:
+        years = reported_years
     values = Simulator.from_dataset(dataset_dir).simulate(schedule, years)
-    produced = {
-        (int(year), str(account)): float(value)
-        for year, account, value in zip(
-            values["year"], values["account"], values["value"], strict=True
-        )
-    }
+    period_column = _first_present(reference, "PERIOD", "period_index")
+    width_column = _first_present(reference, "PERIODWIDTH", "period_width")
+    if period_column is not None and width_column is not None:
+        # the reference's own period format: build its cells from WS4's annual values under the
+        # convention it uses, rather than comparing its period totals to WS4's single years
+        series = {
+            str(account): group.set_index("year")["value"]
+            for account, group in values.groupby("account")
+        }
+        produced = {
+            (int(year), str(account)): _reference_period_value(
+                series, str(account), int(period), int(year), int(width)
+            )
+            for period, year, account, width in zip(
+                reference[period_column],
+                reference[reference_year],
+                reference[reference_account],
+                reference[width_column],
+                strict=True,
+            )
+        }
+    else:
+        produced = {
+            (int(year), str(account)): float(value)
+            for year, account, value in zip(
+                values["year"], values["account"], values["value"], strict=True
+            )
+        }
 
     differences: list[str] = []
+    if not schedule.empty and int(schedule["period"].max()) + 1 > years:
+        differences.append(
+            f"schedule.csv decides in period {int(schedule['period'].max())}, beyond the "
+            f"reference's last reported year {years - 1}"
+        )
     compared = 0
     tolerance = 1e-4
     for cell in sorted(set(expected) | set(produced)):
@@ -413,7 +674,8 @@ def compare_account_values(dataset_dir: Path, report_dir: Path) -> tuple[list[st
             continue
         compared += 1
         scale = max(abs(want), abs(got), 1.0)
-        if abs(got - want) > tolerance * scale:
+        allowed = max(tolerance * scale, _ABSOLUTE_TOLERANCE)
+        if abs(got - want) > allowed:
             differences.append(
                 f"{cell[0]} {cell[1]}: WS4 {got:.6f} against the reference {want:.6f}"
             )
@@ -440,16 +702,59 @@ def check_accounts(report_dir: Path | None, dataset_dir: Path | None) -> CheckRe
         return CheckResult("accounts", "skip", "needs --accounts-report and --accounts-dataset")
     if not report_dir.is_dir() or not dataset_dir.is_dir():
         return CheckResult("accounts", "fail", "report or dataset is not a directory")
-    differences, compared = compare_account_values(dataset_dir, report_dir)
+    accounts_path = dataset_dir / "accounts.parquet"
+    known = (
+        set(pd.read_parquet(accounts_path)["account"].astype(str))
+        if accounts_path.is_file()
+        else None
+    )
+    differences, compared = compare_account_values(dataset_dir, report_dir, known)
     if differences:
         return CheckResult(
             "accounts",
             "fail",
             f"{len(differences)} difference(s) in {compared} shared cells: {differences[0]}",
         )
+    tail = ""
+    if known is not None:
+        leftovers = _reference_only_targets(report_dir, known)
+        if leftovers:
+            tail = f"; {leftovers} reference target(s) have no WS4 account and are not compared"
     return CheckResult(
-        "accounts", "pass", f"WS4 reproduces the reference's {compared} account-year values"
+        "accounts",
+        "pass",
+        f"WS4 reproduces the reference's {compared} account-period values{tail}",
     )
+
+
+def _reference_only_targets(report_dir: Path, known: set[str]) -> int:
+    """Return how many of the reference's targets have no WS4 account to compare against.
+
+    The reference reports its own ratio, flow and route targets alongside account values, and those
+    have no counterpart in WS4's accounts table; the comparison leaves them out and says how many.
+
+    Parameters
+    ----------
+    report_dir : Path
+        The reference's export directory.
+    known : set of str
+        The accounts WS4 has.
+
+    Returns
+    -------
+    int
+        The number of targets left out of the comparison, or 0 when no report is found.
+    """
+    path = report_dir / "targetSummary.csv"
+    if not path.is_file():
+        path = report_dir / "account_values.csv"
+    if not path.is_file():
+        return 0
+    frame = pd.read_csv(path)
+    column = _first_present(frame, "account", "ACCOUNT", "TARGET")
+    if column is None:
+        return 0
+    return len(set(frame[column].astype(str)) - known)
 
 
 def check_parity(roads_dir: Path | None) -> CheckResult:
@@ -570,6 +875,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="the compiled dataset to replay the reference's schedule over",
     )
     parser.add_argument(
+        "--yield-sample",
+        type=Path,
+        default=None,
+        help="a sample's yield directory, holding the reference's own yield curves",
+    )
+    parser.add_argument(
+        "--yield-dataset",
+        type=Path,
+        default=None,
+        help="a compiled dataset, to compare its yield curves against the reference's",
+    )
+    parser.add_argument(
         "--roads-sample",
         type=Path,
         default=None,
@@ -587,6 +904,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             check_api(workdir / "api"),
             check_parity(args.roads_sample),
             check_accounts(args.accounts_report, args.accounts_dataset),
+            check_growth(args.yield_sample, args.yield_dataset),
         ]
     print(render(results))
     return 1 if any(result.status == "fail" for result in results) else 0

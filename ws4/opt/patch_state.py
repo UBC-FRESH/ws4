@@ -76,6 +76,68 @@ def class_index(size_classes: Sequence[float], area: float) -> int:
     return len(size_classes) - 1
 
 
+class PatchGroupTopology:
+    """The year-invariant structure of one criterion group: node order, adjacency and areas.
+
+    The nodes, their areas and the CSR adjacency do not change from year to year, and building them
+    is what dominates a state's construction — on a C5-class group (12,567 blocks, 28,727 edges),
+    about 23 ms of a 26 ms state, against about 3 ms for the per-year membership and components. One
+    of them is therefore built per (criterion, threshold, search distance) group and shared by every
+    year's state; the adjacency, areas and offsets are read-only to the kernels, so sharing is safe.
+
+    Parameters
+    ----------
+    neighbours : mapping of int to sequence of (int, float)
+        The adjacency ``(neighbour, shared_length)`` per block.
+    block_area : mapping of int to float
+        The area of each block.
+
+    Attributes
+    ----------
+    blocks : tuple of int
+        The dense node order.
+    index : dict of int to int
+        The node index of each block.
+    """
+
+    def __init__(
+        self,
+        neighbours: Mapping[int, Sequence[tuple[int, float]]],
+        block_area: Mapping[int, float],
+    ) -> None:
+        self.neighbours = neighbours
+        self.block_area = block_area
+        self.blocks: tuple[int, ...] = tuple(sorted(set(block_area) | set(neighbours)))
+        self.index: dict[int, int] = {block: i for i, block in enumerate(self.blocks)}
+        size = len(self.blocks)
+        # The per-node and per-edge state lives in array.array: indexing it from Python (the
+        # per-block walks) costs about what a list does, while the compiled kernels get a
+        # writable zero-copy numpy view, so a bulk relabel needs no marshalling either way.
+        self.area = array.array("d", (float(block_area.get(block, 0.0)) for block in self.blocks))
+        ptr = array.array("q", bytes(8 * (size + 1)))
+        indices = array.array("q")
+        lengths = array.array("d")
+        index = self.index
+        append_index = indices.append
+        append_length = lengths.append
+        for position, block in enumerate(self.blocks):
+            for other, shared in neighbours.get(block, ()):
+                neighbour = index.get(other)
+                if neighbour is not None:
+                    append_index(neighbour)
+                    append_length(float(shared))
+            ptr[position + 1] = len(indices)
+        self.ptr = ptr
+        self.indices = indices
+        self.lengths = lengths
+        self.v_area = np.frombuffer(self.area, dtype=np.float64)
+        self.v_ptr = np.frombuffer(self.ptr, dtype=np.int64)
+        self.v_indices = np.frombuffer(self.indices, dtype=np.int64)
+        self.v_lengths = np.frombuffer(self.lengths, dtype=np.float64)
+        for view in (self.v_area, self.v_ptr, self.v_indices, self.v_lengths):
+            view.flags.writeable = True
+
+
 class PatchGroupYear:
     """The patch components and size-class sums of one criterion group in one year.
 
@@ -109,49 +171,75 @@ class PatchGroupYear:
         neighbours: Mapping[int, Sequence[tuple[int, float]]],
         block_area: Mapping[int, float],
     ) -> None:
+        self._build(accounts, threshold, PatchGroupTopology(neighbours, block_area))
+
+    @classmethod
+    def from_topology(
+        cls,
+        accounts: Sequence[PatchAccount],
+        threshold: float,
+        topology: PatchGroupTopology,
+    ) -> PatchGroupYear:
+        """Return a year's state over a group's shared topology.
+
+        Parameters
+        ----------
+        accounts : sequence of PatchAccount
+            The accounts sharing the group's criterion and threshold.
+        threshold : float
+            The criterion value a block must exceed to be a member.
+        topology : PatchGroupTopology
+            The group's year-invariant structure.
+
+        Returns
+        -------
+        PatchGroupYear
+            A state that shares the topology's node order, areas and adjacency.
+        """
+        state = cls.__new__(cls)
+        state._build(accounts, threshold, topology)
+        return state
+
+    def _build(
+        self,
+        accounts: Sequence[PatchAccount],
+        threshold: float,
+        topology: PatchGroupTopology,
+    ) -> None:
+        """Set the year's state up over a group's shared topology.
+
+        Parameters
+        ----------
+        accounts : sequence of PatchAccount
+            The accounts sharing the group's criterion and threshold.
+        threshold : float
+            The criterion value a block must exceed to be a member.
+        topology : PatchGroupTopology
+            The group's year-invariant structure.
+        """
         self.accounts = tuple(accounts)
         self.threshold = threshold
-        self.neighbours = neighbours
-        self.block_area = block_area
-        self.blocks: tuple[int, ...] = tuple(sorted(set(block_area) | set(neighbours)))
-        self.index: dict[int, int] = {block: i for i, block in enumerate(self.blocks)}
+        self.topology = topology
+        self.neighbours = topology.neighbours
+        self.block_area = topology.block_area
+        self.blocks = topology.blocks
+        self.index = topology.index
         size = len(self.blocks)
-        # The per-node and per-edge state lives in array.array: indexing it from Python (the
-        # per-block walks) costs about what a list does, while the compiled kernels get a
-        # writable zero-copy numpy view, so a bulk relabel needs no marshalling either way.
         self.is_member = array.array("b", bytes(size))
         self.value = array.array("d", bytes(8 * size))
         self.comp = array.array("i", [-1] * size)
-        self._area = array.array("d", (float(block_area.get(block, 0.0)) for block in self.blocks))
-        ptr = array.array("q", bytes(8 * (size + 1)))
-        index = array.array("q")
-        length = array.array("d")
-        for position, block in enumerate(self.blocks):
-            for other, shared in neighbours.get(block, ()):
-                neighbour = self.index.get(other)
-                if neighbour is not None:
-                    index.append(neighbour)
-                    length.append(float(shared))
-            ptr[position + 1] = len(index)
-        self._ptr = ptr
-        self._indices = index
-        self._lengths = length
+        self._area = topology.area
+        self._ptr = topology.ptr
+        self._indices = topology.indices
+        self._lengths = topology.lengths
         self._v_member = np.frombuffer(self.is_member, dtype=np.int8)
         self._v_value = np.frombuffer(self.value, dtype=np.float64)
         self._v_comp = np.frombuffer(self.comp, dtype=np.int32)
-        self._v_area = np.frombuffer(self._area, dtype=np.float64)
-        self._v_ptr = np.frombuffer(self._ptr, dtype=np.int64)
-        self._v_indices = np.frombuffer(self._indices, dtype=np.int64)
-        self._v_lengths = np.frombuffer(self._lengths, dtype=np.float64)
-        for view in (
-            self._v_member,
-            self._v_value,
-            self._v_comp,
-            self._v_area,
-            self._v_ptr,
-            self._v_indices,
-            self._v_lengths,
-        ):
+        self._v_area = topology.v_area
+        self._v_ptr = topology.v_ptr
+        self._v_indices = topology.v_indices
+        self._v_lengths = topology.v_lengths
+        for view in (self._v_member, self._v_value, self._v_comp):
             view.flags.writeable = True
         self.count_of: dict[int, int] = {}
         self.area: dict[int, float] = {}

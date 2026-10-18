@@ -176,8 +176,10 @@ items are enhancements and maintenance.
 
 - **Shapefile/geo extra in CI.** `done`. CI installs `.[geo]`, and `tests/test_fragments.py` covers a
   shapefile read (skipping when geopandas is absent).
-- **Broaden mypy coverage to `ws4/`.** `open`. Type checking covers `scripts/`, `tests/`, and
-  `docs/conf.py` plus transitively imported modules. Target: P5.
+- **Broaden mypy coverage to `ws4/`.** `done` (P9.6, #102). It was never the work that was missing:
+  `mypy ws4` already reported success on all 43 files, and the gate simply did not name them. The
+  `files` list now names `ws4` first, so the gate checks **93 files** where it checked 50, and the
+  backlog item closes with the evidence rather than staying open behind a stale assumption.
 - **Reference-matrix regression tests.** `done`. A self-contained fixture with committed expected tables
   is in `tests/fixtures/matrix/`, compared by `tests/test_matrix_regression.py` (P3.3).
 - **Block-aggregation cost.** `deferred`. The C5 profile shows the per-curve yield evaluation dominates
@@ -193,20 +195,39 @@ items are enhancements and maintenance.
   replayed its incumbent without passing the patch accounts to the simulation, so the reported share
   was a missing row: zero, carrying the whole penalty. The report now folds `patch_accounts.csv` into
   the values it prices, and a simulation of the same schedule agrees with it.
-- **Island scaling past 8 islands.** `open`. The limit is contention rather than BLAS oversubscription
-  (P7.2 measured both: pinning the pools changes nothing, and the same 32-island configuration ran at
-  13x to 16x while the host's load moved between 4 and 65). A candidate cause worth measuring is the
-  per-process copies of the dataset and the patch state; a shared or mmapped dataset would cut the
-  memory traffic that the 32 processes contend for. Target: after P7.
+- **Island scaling past 8 islands.** `open`, narrowed by P9.2 (#99). The limit is memory contention
+  rather than BLAS oversubscription (P7.2 measured both: pinning the pools changes nothing, and the
+  same 32-island configuration ran at 13x to 16x while the host's load moved between 4 and 65), and the
+  candidates are fewer than they looked: a preloaded, forked copy of the dataset shares no state a
+  worker uses and costs ~1 s of serial setup, worth about **-12%** at 16 and 32 islands, so it was
+  removed. P9.3 and P9.4 go after the per-iteration costs instead.
+- **One copy of the dataset for the pool, handed over rather than reloaded.** `open`, no throughput
+  claim. A worker builds its own optimiser from the dataset directory (`_island_job`), so the parent's
+  built state — the simulator's frames, the candidate chains, ~170 MB per process — cannot help it
+  without changing what a worker receives. Doing it properly means handing the pool a read-only built
+  state, which is the prerequisite P8.4 named: the simulator writes to the fragments frame it inherits,
+  so the shared part has to be genuinely read-only, and the per-island configuration has to survive the
+  handover. Worth doing only for memory-constrained hosts: on a 754 GB machine the capacity saves
+  nothing, and sharing pages does not reduce bandwidth, since every process reads the same bytes.
 - **`Optimizer.last_account_values()` after a `run`.** `done` (P7.5, #87). The incremental value path
   and `run` both record the frame they build, so the incumbent's values are readable without rereading
   the run directory.
-- **The per-`(block, chain)` criterion series and the patch state construction.** `open`. P7.5's
-  profile of a binding patch search puts the time in `block_criteria_series` (once per distinct
-  (block, chain) the search explores, a Python loop over that block's fragments) and in
-  `PatchGroupYear.__init__` (once per group-year, ~48 ms), not in the incremental relabel. A vectorised
-  series and a lazily built state for the years a search reads are the candidates, with the recorded
-  measurements as the baseline. Target: after P7.
+- **The per-`(block, chain)` criterion series and the patch state construction.** `done`. Both halves
+  of P7.5's lever have been taken. The series was made 29% cheaper (P8.3: 58.6 -> 41.5 us/call, the C5
+  patch-ramp workload +21%) by removing the copying, the per-segment `arange` and the per-year Python
+  calls, not by vectorising it. The state construction was made 89% cheaper (P9.3: 25.9 -> 2.79 ms per
+  state) by building the year-invariant node order, areas and CSR once per group and sharing them,
+  which is more than the laziness the note suggested. Building *less* of a state stays rejected, with
+  P8.3's reason: the years that get one are already only the accounting points a target reads.
+- **Flow targets in `report_targets.csv`.** `open`. Found while fixing the periodic-target bug (P10.4,
+  #108). `target_status` prices every target as a level target summed over its period, but a target with
+  `flow` set is priced by the objective as a *series* — percent change per period against the reference
+  period (`even`) or the previous one (`ndy`), with the target's bounds applied per period. So a flow
+  target can be reported as met while the search is paying for it. Measured: an `ndy` target with
+  `minimum: -1` on a series that drops 100 -> 60 is priced at **39.00** by `objective` and reported as
+  `met` with **0.00** penalty. Left open deliberately: fixing it means deciding what the report should
+  *show* for a flow target (the period series, or the worst period), which is a design question rather
+  than a one-line fix.
 - **Docstring completeness.** `done`. `scripts/doc_audit.py` is the oracle: it checks every public
   function, method, property, class, and module in `ws4` and `scripts/` for the four rules (a docstring
   exists; every parameter is documented and nothing else; a value-returning callable has a `Returns`

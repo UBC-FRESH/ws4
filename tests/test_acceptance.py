@@ -188,7 +188,13 @@ def test_the_parity_check_skips_and_rejects(tmp_path: Path) -> None:
     assert acc.check_parity(tmp_path / "absent").status == "fail"
 
 
-def _write_report(root: Path, dataset: Path, schedule: pd.DataFrame, factor: float = 1.0) -> Path:
+def _write_report(
+    root: Path,
+    dataset: Path,
+    schedule: pd.DataFrame,
+    factor: float = 1.0,
+    horizon: int | None = None,
+) -> Path:
     """Write a reference export produced from WS4 itself, optionally perturbed.
 
     Parameters
@@ -201,6 +207,9 @@ def _write_report(root: Path, dataset: Path, schedule: pd.DataFrame, factor: flo
         The schedule to write and replay.
     factor : float
         A multiplier applied to every value, to make the comparison fail on purpose.
+    horizon : int or None
+        The number of years to report, when a reference reports years its last decision does not
+        reach. Defaults to the year after the schedule's last period.
 
     Returns
     -------
@@ -211,7 +220,7 @@ def _write_report(root: Path, dataset: Path, schedule: pd.DataFrame, factor: flo
 
     root.mkdir(parents=True, exist_ok=True)
     schedule.to_csv(root / "schedule.csv", index=False)
-    years = int(schedule["period"].max()) + 1
+    years = horizon if horizon is not None else int(schedule["period"].max()) + 1
     values = Simulator.from_dataset(dataset).simulate(schedule, years)
     values = values.assign(value=values["value"] * factor)
     values.to_csv(root / "account_values.csv", index=False)
@@ -245,6 +254,33 @@ def test_the_accounts_comparison_reports_a_difference(tmp_path: Path) -> None:
     assert acc.check_accounts(report, dataset).status == "fail"
 
 
+def test_the_accounts_comparison_replays_the_reference_horizon(tmp_path: Path) -> None:
+    """Years the reference reports but decides nothing in are replayed, not called differences."""
+    dataset = build_canonical_dataset(
+        FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    schedule = pd.DataFrame({"block_id": [1], "treatment": ["CC"], "period": [0]})
+    report = _write_report(tmp_path / "report", dataset, schedule, horizon=3)
+
+    differences, compared = acc.compare_account_values(dataset, report)
+    assert differences == []
+    assert compared > 0
+
+
+def test_a_schedule_deciding_past_the_reported_years_is_a_difference(tmp_path: Path) -> None:
+    """A decision in a year the reference never reported cannot be compared, and is said so."""
+    dataset = build_canonical_dataset(
+        FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    schedule = pd.DataFrame({"block_id": [1, 1], "treatment": ["CC", "CC"], "period": [0, 5]})
+    report = _write_report(tmp_path / "report", dataset, schedule, horizon=2)
+
+    differences, _ = acc.compare_account_values(dataset, report)
+    assert any(
+        "beyond the reference's last reported year" in difference for difference in differences
+    )
+
+
 def test_the_accounts_comparison_names_a_missing_column(tmp_path: Path) -> None:
     """A schedule without the columns the comparison needs is reported, not raised."""
     dataset = build_canonical_dataset(
@@ -264,3 +300,195 @@ def test_the_accounts_check_skips_without_inputs() -> None:
     """Either input missing means skip rather than a spurious failure."""
     assert acc.check_accounts(None, None).status == "skip"
     assert acc.check_accounts(Path("x"), None).status == "skip"
+
+
+def _yield_fixture(root: Path, curves: dict[str, list[tuple[float, float]]]) -> tuple[Path, Path]:
+    """Write a reference yield XML and a compiled dataset holding the same curves.
+
+    Parameters
+    ----------
+    root : Path
+        A scratch directory.
+    curves : dict of str to list of (float, float)
+        The ``Y<n>.<species>`` curves to write, as ``(age, yield)`` points.
+
+    Returns
+    -------
+    tuple of (Path, Path)
+        The yield directory and the compiled dataset directory.
+    """
+    yields = root / "yield"
+    yields.mkdir(parents=True, exist_ok=True)
+    body = "".join(
+        f'<curve id="{name}">'
+        + "".join(f'<point x="{age:g}" y="{value:g}"/>' for age, value in points)
+        + "</curve>"
+        for name, points in curves.items()
+    )
+    (yields / "sample.xml").write_text(f"<model>{body}</model>")
+
+    dataset = root / "compiled"
+    dataset.mkdir(parents=True, exist_ok=True)
+    rows = [
+        {"curve_id": index, "x": age, "y": value}
+        for index, points in enumerate(curves.values())
+        for age, value in [(0.0, points[0][1]), *points]
+    ]
+    pd.DataFrame(rows).to_parquet(dataset / "curves.parquet", index=False)
+    return yields, dataset
+
+
+def test_the_yield_comparison_reproduces_the_reference_curves(tmp_path: Path) -> None:
+    """Curves compiled from the reference's own points are reported as a match."""
+    yields, dataset = _yield_fixture(
+        tmp_path,
+        {
+            "Y1.Conif": [(2.0, 8.28), (7.0, 19.99), (12.0, 32.79)],
+            "Y1.Decid": [(2.0, 0.0), (7.0, 0.051), (12.0, 0.17)],
+        },
+    )
+    differences, compared, conflicts = acc.compare_yield_curves(yields, dataset)
+    assert differences == []
+    assert compared == 6
+    assert conflicts == 0
+    assert acc.check_growth(yields, dataset).status == "pass"
+
+
+def test_the_yield_comparison_fails_on_a_changed_value(tmp_path: Path) -> None:
+    """A compiled yield that does not match the reference's is a difference."""
+    yields, dataset = _yield_fixture(tmp_path, {"Y1.Conif": [(2.0, 8.28), (7.0, 19.99)]})
+    table = pd.read_parquet(dataset / "curves.parquet")
+    table.loc[table["x"] == 7.0, "y"] = 25.0
+    table.to_parquet(dataset / "curves.parquet", index=False)
+
+    differences, _compared, _conflicts = acc.compare_yield_curves(yields, dataset)
+    assert differences
+    assert "age 7" in differences[0]
+    assert acc.check_growth(yields, dataset).status == "fail"
+
+
+def test_the_yield_comparison_fails_on_a_missing_age(tmp_path: Path) -> None:
+    """An age the reference defines that the compiled curve lacks is a difference."""
+    yields, dataset = _yield_fixture(tmp_path, {"Y1.Conif": [(2.0, 8.28), (7.0, 19.99)]})
+    (yields / "sample.xml").write_text(
+        '<model><curve id="Y1.Conif">'
+        '<point x="2" y="8.28"/><point x="7" y="19.99"/><point x="40" y="80.0"/>'
+        "</curve></model>"
+    )
+    differences, _compared, _conflicts = acc.compare_yield_curves(yields, dataset)
+    assert any("not in curve" in difference for difference in differences)
+
+
+def test_a_recorded_yield_conflict_is_reported_but_not_a_failure(tmp_path: Path) -> None:
+    """The sample's own Decid disagreement at age 7 is named, not counted against WS4."""
+    yields, dataset = _yield_fixture(tmp_path, {"Y1.Decid": [(7.0, 0.01), (12.0, 0.05)]})
+    table = pd.read_parquet(dataset / "curves.parquet")
+    table.loc[table["x"] == 7.0, "y"] = 0.001
+    table.to_parquet(dataset / "curves.parquet", index=False)
+
+    differences, _compared, conflicts = acc.compare_yield_curves(yields, dataset)
+    assert differences == []
+    assert conflicts == 1
+    result = acc.check_growth(yields, dataset)
+    assert result.status == "pass"
+    assert "recorded upstream conflict" in result.detail
+
+
+def test_a_yield_conflict_outside_the_recorded_one_is_a_failure(tmp_path: Path) -> None:
+    """A different curve differing at the same age is not covered by the recorded conflict."""
+    yields, dataset = _yield_fixture(tmp_path, {"Y1.Conif": [(7.0, 0.01), (12.0, 0.05)]})
+    table = pd.read_parquet(dataset / "curves.parquet")
+    table.loc[table["x"] == 7.0, "y"] = 0.001
+    table.to_parquet(dataset / "curves.parquet", index=False)
+
+    differences, _compared, _conflicts = acc.compare_yield_curves(yields, dataset)
+    assert differences
+    assert acc.check_growth(yields, dataset).status == "fail"
+
+
+def test_the_growth_check_skips_without_inputs() -> None:
+    """Either input missing means skip rather than a spurious failure."""
+    assert acc.check_growth(None, None).status == "skip"
+    assert acc.check_growth(Path("x"), None).status == "skip"
+    assert acc.check_growth(None, Path("x")).status == "skip"
+
+
+def _write_period_report(
+    root: Path, dataset: Path, schedule: pd.DataFrame, *, aggregated: bool
+) -> Path:
+    """Write a reference export in the reference's own period format.
+
+    Parameters
+    ----------
+    root : Path
+        The report directory.
+    dataset : Path
+        The compiled dataset to simulate.
+    schedule : pandas.DataFrame
+        The schedule to write and replay.
+    aggregated : bool
+        Whether a product's period value is the period's total (the reference's convention) or the
+        single year's value.
+
+    Returns
+    -------
+    Path
+        The report directory written.
+    """
+    from ws4.sim.engine import Simulator
+
+    root.mkdir(parents=True, exist_ok=True)
+    schedule.to_csv(root / "schedule.csv", index=False)
+    values = Simulator.from_dataset(dataset).simulate(schedule, 21)
+    series = {
+        str(account): group.set_index("year")["value"]
+        for account, group in values.groupby("account")
+    }
+    rows = []
+    for account, annual in series.items():
+        for period, year in ((0, 0), (1, 10), (2, 20)):
+            if period == 0:
+                current = float(annual.get(0, 0.0))
+            elif aggregated and account.startswith("product."):
+                window = annual.loc[year - 9 : year]
+                current = float(window.sum())
+            else:
+                current = float(annual.get(year, 0.0))
+            rows.append(
+                {
+                    "TARGET": account,
+                    "PERIOD": period,
+                    "YEAR": year,
+                    "PERIODWIDTH": 10,
+                    "CURRENT": current,
+                }
+            )
+    pd.DataFrame(rows).to_csv(root / "account_values.csv", index=False)
+    return root
+
+
+def test_the_accounts_comparison_applies_the_reference_period_convention(tmp_path: Path) -> None:
+    """A report in the reference's period format is compared under its own convention."""
+    dataset = build_canonical_dataset(
+        FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    schedule = pd.DataFrame({"block_id": [1, 2], "treatment": ["CC", "CC"], "period": [0, 1]})
+    report = _write_period_report(tmp_path / "period", dataset, schedule, aggregated=True)
+
+    differences, compared = acc.compare_account_values(dataset, report)
+    assert differences == []
+    assert compared >= 6
+    assert acc.check_accounts(report, dataset).status == "pass"
+
+
+def test_period_reports_of_annual_values_are_a_difference(tmp_path: Path) -> None:
+    """A product reported per year rather than per period does not reproduce, and is reported."""
+    dataset = build_canonical_dataset(
+        FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    schedule = pd.DataFrame({"block_id": [1, 2], "treatment": ["CC", "CC"], "period": [0, 1]})
+    report = _write_period_report(tmp_path / "period", dataset, schedule, aggregated=False)
+
+    differences, _compared = acc.compare_account_values(dataset, report)
+    assert differences
+    assert acc.check_accounts(report, dataset).status == "fail"

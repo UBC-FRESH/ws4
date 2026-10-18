@@ -112,12 +112,25 @@ python scripts/acceptance.py \
     --accounts-dataset tmp/parity/c5_compiled
 ```
 
-The check replays the exported schedule and compares every account-year cell both sides report. It
-uses a **relative tolerance of 1e-4**, because a reference export is typically rounded where WS4's
+The check replays the exported schedule and compares every account-year cell both sides report, over
+the horizon the **reference's own last reported year** sets — not the schedule's last decision, which
+under-simulates whenever a reference reports years its last decision does not reach, and reports every
+one of them as a difference. (A schedule that decides *beyond* the reported years is the opposite case
+and is reported as a difference in so many words.) It uses a **relative tolerance of 1e-4**, because a reference export is typically rounded where WS4's
 values are not; an account that only one side reports is a difference too, and is labelled as such,
 since that is exactly the kind of finding the comparison is for. A **no-treatment schedule** is worth
 running first: with no scheduler in the way it exercises the curves, the tracks and the strata, and if
 that agrees the rest of the comparison is about treatments rather than about growth.
+
+### The check rehearsed against itself
+
+While preparing the Windows run, the comparison was exercised end to end without a reference: an
+export was written from WS4's own simulate on the C5 sample (300 blocks, `schedule.csv` and
+`account_values.csv`), the check was run on it, and then on a copy with one value deliberately
+multiplied. The matching export **passes** — "WS4 reproduces the reference's 113 account-year
+values" — and the perturbed one **fails** with exactly that cell named. This is what caught the
+horizon defect above, which no test had seen because the test helper derived the horizon the same
+wrong way the check did.
 
 Until a report exists, the note's earlier section stands: the accounts-parity claim is specified and
 checkable, and **unverified**.
@@ -161,4 +174,89 @@ sample:
 One key is deliberately not listed: `tracks/protoaccounts.csv`. This sample does not ship one — the
 compiled dataset derives the proto-accounts table — and the matrix comparison treats a reference file
 as optional, comparing only the tables that are present.
+
+## Growth, checked against the reference's own yields
+
+The accounts comparison needs a licensed reference run. Its foundation does not: the sample ships the
+reference's own yield curves, and WS4 compiles yield curves from the same matrix, so growth can be
+compared today. That is worth doing, because it narrows what the Monday result can mean — if the
+growth agrees, a difference in accounts is about treatments, the scheduler and the accounting, not
+about the curves underneath them.
+
+**What is compared.** The reference's `yield/*.xml` holds its model's curves, one per stratum and
+species, as `Y1.Conif` … `Y9.Decid`, each a list of `(x, y)` points. It also ships the same numbers as
+a printed Woodstock table, `Woodstock/C5_yld.prn`; the XML is used because it carries the age of every
+value, where the printed table is a bare sequence of values against an assumed grid. Both files were
+read while building the check and agree, so the XML is a faithful stand-in for the printed table.
+
+**How.** `scripts/acceptance.py --yield-sample <sample>/yield --yield-dataset <compiled>` resolves each
+reference curve to the compiled curve that reproduces most of its ages, then compares every point
+there. A missing age, a value outside **5e-3** — the reference's artefacts print two decimals, so half
+a unit is the tightest honest tolerance — or a yield curve with no counterpart is a difference.
+
+**The result on the C5 sample.** `growth PASS: WS4 reproduces the reference's 959 yield-curve points,
+with 7 recorded upstream conflict(s) reported.` Every one of the 18 curves is covered, no age is
+missing anywhere, and every value agrees but for the conflict below.
+
+**The one conflict, and it is the sample's, not WS4's.** At offset age 7 the Decid curve is
+`0.001` in the legacy matrix (`tracks/curves.csv`, nine rows) that WS4 is given and ingests, and
+`0.01` in the same sample's own `C5_yld.prn` and `ForestModel_C5_strata.xml`. The matrix holds no
+value of exactly `0.01` anywhere, and WS4 compiles what the matrix says, so the difference is upstream
+of it. It affects seven of the eighteen curves (every Decid stratum shares the one curve), the
+magnitude is about 0.009 m³/ha against a curve that peaks at 13.39, and the check **names** it rather
+than absorbing it into the tolerance: a different value at that age on a different curve still fails,
+and so does a value that differs by more than the conflict's own size.
+
+This is the kind of finding the check exists for. It is also the kind that would otherwise surface on
+Monday as an unexplained account difference.
+
+## The 2026 sample: what arrived, and what it took
+
+The reference's 2026 build runs the model in `sample_2025` (the 2019 sample will not load in it), and it
+writes its own report tree per scenario: `scenario/schedule.csv` (`BLOCK, DELTA, AGE, TYPE, TREATMENT`,
+where `DELTA` is "the time in the future of the proposed treatment" — the year) and
+`scenario/targetSummary.csv` (`TARGET, PERIOD, YEAR, PERIODWIDTH, MINIMUM, MAXIMUM, CURRENT, ...`), plus
+a report per target and family. `null` is the no-treatment case and `base` the optimized one.
+
+**The check now reads that export as it lands.** `scripts/acceptance.py --accounts-report <a scenario's
+report directory> --accounts-dataset <compiled>` takes the reference's own file and column names
+(`targetSummary.csv`, `TARGET`/`YEAR`/`CURRENT`, `BLOCK`/`TREATMENT`/`DELTA`), so nothing is converted
+between the two tools and nothing can be lost in a translation.
+
+**Three things had to be right before the numbers meant anything.**
+
+1. **The reference's periods are not WS4's years.** `PERIOD 0` is the initial snapshot at year 0, and a
+   later period labelled `YEAR` with `PERIODWIDTH` covers that many years **ending** at `YEAR` — period
+   1 is years 1-10. What it reports for a period also depends on the account: a product accumulates
+   within the period and is reported as the period's total, a feature is a level reported at the
+   period's year. Comparing its period totals against WS4's single years made every product account look
+   wrong by an order of magnitude; under its own convention they agree.
+2. **A report rounds as it computes.** Its values are rounded to three decimals per contribution and a
+   period's value is a sum of them, so a relative tolerance alone reports its own arithmetic: across
+   both scenarios' 2,646 cells, 101 cells differ at a relative 1e-4, 3 at a 1e-3 floor, and none at
+   **2e-3** — two units in the third decimal, which is the tolerance the check uses.
+3. **The matrix builder mis-attributed a split block's track** (P9.8, #110): `blocks.csv` lists a block
+   more than once, a managed and an unmanaged portion each with its own area on its own track, and the
+   builder derived the track from a block-keyed dict while keeping the row's area. That alone was worth
+   30-45% on every managed and unmanaged account. It is fixed, and the comparison against the reference
+   is what found it.
+
+**The result, on both scenarios:**
+
+| Scenario | Cells | Reference targets with no WS4 account | Verdict |
+| --- | ---: | ---: | --- |
+| `null` (no treatment) | 1,323 | 178 | **PASS** — every account-period value reproduced |
+| `base` (13,377 treatments) | 1,323 | 178 | **PASS** — every account-period value reproduced |
+
+The 178 are the reference's own ratio, flow and route targets (`ratio_route_haul_MILL1`,
+`flow_even_product_Yield_Conif`, `patch_harvested_10_50_size`, and so on): they are derived quantities
+rather than account values, so they are not compared, and the check says how many it left out.
+
+**What this does not yet cover.** The reference's derived targets — the ratios, the flow constraints,
+the patch size distributions — are exactly what a spatial model is for, and they need their own
+comparison. On this sample the routing parity check also fails on 10 of 25,134 node-and-mill pairs, and
+the reason is visible in the sample rather than in WS4: its `roads/` folder mixes vintages
+(`destinations.csv` lists two mills where three `cost_destination.*.csv` files ship, and MILL3's is dated
+2018 where the others are 2025, with the column renamed from `SUM_HAUL` to `SUM_LENGTH`). The growth
+check finds no `Y<n>` curves in this sample's lookup model and needs retargeting.
 

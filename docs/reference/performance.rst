@@ -17,7 +17,7 @@ segments; a 72-core host):
      - Achieved
    * - C5 30-year ``simulate``
      - < 1 s
-     - ~0.11 s (cold, 16 174 fragments)
+     - ~0.10 s (cold, 16 174 fragments)
    * - C5 3-year ``simulate`` + routing (300 blocks)
      - < 5 s
      - ~0.69 s
@@ -29,7 +29,7 @@ segments; a 72-core host):
      - ~0.003 ms against a volume target, ~1 ms per iteration on a binding volume-plus-patch workload
    * - Island throughput at 8 / 32 islands
      - near-linear
-     - 5.0k / 14k iterations/s (4.7x / 13x in one run, up to 15.9k and 16x in another)
+     - 6.0k / 18.7k iterations/s (5.7x / 17.7x, at the loads recorded below)
 
 The incremental objective
 -------------------------
@@ -76,7 +76,13 @@ The limit is the **memory hierarchy**, not the BLAS pools (pinning them is measu
 per-process setup (~1 s), and not CPU oversubscription: efficiency is already ~56% at 16 islands on a
 36-physical-core host, and the CPU accounting shows every process holding roughly one core while its
 rate falls. More islands still win in absolute terms, so use them; expect the curve, not the line.
-`notes/performance.md` records the measurements with their loads.
+One way of attacking it has been measured and rejected. A worker builds its own copy of the dataset, so
+a pool could in principle share one — but a worker builds it from the dataset directory and never uses
+anything its parent built, so preloading the parent's caches shares nothing a worker reads and puts
+about a second of setup on the critical path instead: roughly **-12%** at 16 and 32 islands, measured
+against a paired control. Sharing pages would not have reduced bandwidth in any case, since every
+process still reads the same bytes. `notes/performance.md` records the attempt, the confound that first
+made it look like a regression from load alone, and the numbers, with the loads for each run.
 
 Reproduce
 ---------
