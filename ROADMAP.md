@@ -406,7 +406,7 @@ own copy before doing anything, and the simulator writes to the fragments frame 
 - [x] P9.4 Stop rebuilding bounds in every curve gather (#101)
 - [ ] P9.5 Compare WS4's accounts against a reference report (#95, carried from P8)
 - [x] P9.6 Put the package under the type gate (#102) — the gate checked 50 files, it now checks 93
-- [ ] P9.7 Check growth against the reference's own yields (#103)
+- [x] P9.7 Check growth against the reference's own yields (#103) — 959 yield-curve points reproduced; one conflict in the sample's own files, recorded
 
 Deferred from P9, triaged in `notes/backlog.md`:
 

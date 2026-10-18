@@ -300,3 +300,114 @@ def test_the_accounts_check_skips_without_inputs() -> None:
     """Either input missing means skip rather than a spurious failure."""
     assert acc.check_accounts(None, None).status == "skip"
     assert acc.check_accounts(Path("x"), None).status == "skip"
+
+
+def _yield_fixture(root: Path, curves: dict[str, list[tuple[float, float]]]) -> tuple[Path, Path]:
+    """Write a reference yield XML and a compiled dataset holding the same curves.
+
+    Parameters
+    ----------
+    root : Path
+        A scratch directory.
+    curves : dict of str to list of (float, float)
+        The ``Y<n>.<species>`` curves to write, as ``(age, yield)`` points.
+
+    Returns
+    -------
+    tuple of (Path, Path)
+        The yield directory and the compiled dataset directory.
+    """
+    yields = root / "yield"
+    yields.mkdir(parents=True, exist_ok=True)
+    body = "".join(
+        f'<curve id="{name}">'
+        + "".join(f'<point x="{age:g}" y="{value:g}"/>' for age, value in points)
+        + "</curve>"
+        for name, points in curves.items()
+    )
+    (yields / "sample.xml").write_text(f"<model>{body}</model>")
+
+    dataset = root / "compiled"
+    dataset.mkdir(parents=True, exist_ok=True)
+    rows = [
+        {"curve_id": index, "x": age, "y": value}
+        for index, points in enumerate(curves.values())
+        for age, value in [(0.0, points[0][1]), *points]
+    ]
+    pd.DataFrame(rows).to_parquet(dataset / "curves.parquet", index=False)
+    return yields, dataset
+
+
+def test_the_yield_comparison_reproduces_the_reference_curves(tmp_path: Path) -> None:
+    """Curves compiled from the reference's own points are reported as a match."""
+    yields, dataset = _yield_fixture(
+        tmp_path,
+        {
+            "Y1.Conif": [(2.0, 8.28), (7.0, 19.99), (12.0, 32.79)],
+            "Y1.Decid": [(2.0, 0.0), (7.0, 0.051), (12.0, 0.17)],
+        },
+    )
+    differences, compared, conflicts = acc.compare_yield_curves(yields, dataset)
+    assert differences == []
+    assert compared == 6
+    assert conflicts == 0
+    assert acc.check_growth(yields, dataset).status == "pass"
+
+
+def test_the_yield_comparison_fails_on_a_changed_value(tmp_path: Path) -> None:
+    """A compiled yield that does not match the reference's is a difference."""
+    yields, dataset = _yield_fixture(tmp_path, {"Y1.Conif": [(2.0, 8.28), (7.0, 19.99)]})
+    table = pd.read_parquet(dataset / "curves.parquet")
+    table.loc[table["x"] == 7.0, "y"] = 25.0
+    table.to_parquet(dataset / "curves.parquet", index=False)
+
+    differences, _compared, _conflicts = acc.compare_yield_curves(yields, dataset)
+    assert differences
+    assert "age 7" in differences[0]
+    assert acc.check_growth(yields, dataset).status == "fail"
+
+
+def test_the_yield_comparison_fails_on_a_missing_age(tmp_path: Path) -> None:
+    """An age the reference defines that the compiled curve lacks is a difference."""
+    yields, dataset = _yield_fixture(tmp_path, {"Y1.Conif": [(2.0, 8.28), (7.0, 19.99)]})
+    (yields / "sample.xml").write_text(
+        '<model><curve id="Y1.Conif">'
+        '<point x="2" y="8.28"/><point x="7" y="19.99"/><point x="40" y="80.0"/>'
+        "</curve></model>"
+    )
+    differences, _compared, _conflicts = acc.compare_yield_curves(yields, dataset)
+    assert any("not in curve" in difference for difference in differences)
+
+
+def test_a_recorded_yield_conflict_is_reported_but_not_a_failure(tmp_path: Path) -> None:
+    """The sample's own Decid disagreement at age 7 is named, not counted against WS4."""
+    yields, dataset = _yield_fixture(tmp_path, {"Y1.Decid": [(7.0, 0.01), (12.0, 0.05)]})
+    table = pd.read_parquet(dataset / "curves.parquet")
+    table.loc[table["x"] == 7.0, "y"] = 0.001
+    table.to_parquet(dataset / "curves.parquet", index=False)
+
+    differences, _compared, conflicts = acc.compare_yield_curves(yields, dataset)
+    assert differences == []
+    assert conflicts == 1
+    result = acc.check_growth(yields, dataset)
+    assert result.status == "pass"
+    assert "recorded upstream conflict" in result.detail
+
+
+def test_a_yield_conflict_outside_the_recorded_one_is_a_failure(tmp_path: Path) -> None:
+    """A different curve differing at the same age is not covered by the recorded conflict."""
+    yields, dataset = _yield_fixture(tmp_path, {"Y1.Conif": [(7.0, 0.01), (12.0, 0.05)]})
+    table = pd.read_parquet(dataset / "curves.parquet")
+    table.loc[table["x"] == 7.0, "y"] = 0.001
+    table.to_parquet(dataset / "curves.parquet", index=False)
+
+    differences, _compared, _conflicts = acc.compare_yield_curves(yields, dataset)
+    assert differences
+    assert acc.check_growth(yields, dataset).status == "fail"
+
+
+def test_the_growth_check_skips_without_inputs() -> None:
+    """Either input missing means skip rather than a spurious failure."""
+    assert acc.check_growth(None, None).status == "skip"
+    assert acc.check_growth(Path("x"), None).status == "skip"
+    assert acc.check_growth(None, Path("x")).status == "skip"

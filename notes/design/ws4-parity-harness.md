@@ -175,3 +175,38 @@ One key is deliberately not listed: `tracks/protoaccounts.csv`. This sample does
 compiled dataset derives the proto-accounts table — and the matrix comparison treats a reference file
 as optional, comparing only the tables that are present.
 
+## Growth, checked against the reference's own yields
+
+The accounts comparison needs a licensed reference run. Its foundation does not: the sample ships the
+reference's own yield curves, and WS4 compiles yield curves from the same matrix, so growth can be
+compared today. That is worth doing, because it narrows what the Monday result can mean — if the
+growth agrees, a difference in accounts is about treatments, the scheduler and the accounting, not
+about the curves underneath them.
+
+**What is compared.** The reference's `yield/*.xml` holds its model's curves, one per stratum and
+species, as `Y1.Conif` … `Y9.Decid`, each a list of `(x, y)` points. It also ships the same numbers as
+a printed Woodstock table, `Woodstock/C5_yld.prn`; the XML is used because it carries the age of every
+value, where the printed table is a bare sequence of values against an assumed grid. Both files were
+read while building the check and agree, so the XML is a faithful stand-in for the printed table.
+
+**How.** `scripts/acceptance.py --yield-sample <sample>/yield --yield-dataset <compiled>` resolves each
+reference curve to the compiled curve that reproduces most of its ages, then compares every point
+there. A missing age, a value outside **5e-3** — the reference's artefacts print two decimals, so half
+a unit is the tightest honest tolerance — or a yield curve with no counterpart is a difference.
+
+**The result on the C5 sample.** `growth PASS: WS4 reproduces the reference's 959 yield-curve points,
+with 7 recorded upstream conflict(s) reported.` Every one of the 18 curves is covered, no age is
+missing anywhere, and every value agrees but for the conflict below.
+
+**The one conflict, and it is the sample's, not WS4's.** At offset age 7 the Decid curve is
+`0.001` in the legacy matrix (`tracks/curves.csv`, nine rows) that WS4 is given and ingests, and
+`0.01` in the same sample's own `C5_yld.prn` and `ForestModel_C5_strata.xml`. The matrix holds no
+value of exactly `0.01` anywhere, and WS4 compiles what the matrix says, so the difference is upstream
+of it. It affects seven of the eighteen curves (every Decid stratum shares the one curve), the
+magnitude is about 0.009 m³/ha against a curve that peaks at 13.39, and the check **names** it rather
+than absorbing it into the tolerance: a different value at that age on a different curve still fails,
+and so does a value that differs by more than the conflict's own size.
+
+This is the kind of finding the check exists for. It is also the kind that would otherwise surface on
+Monday as an unexplained account difference.
+

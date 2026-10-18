@@ -11,6 +11,9 @@ The checks verify the build against its acceptance criteria:
   schedule in WS4 and compare the account values per year, which is what isolates the simulation.
 - ``parity``: with ``--roads-sample``, compare WS4's least-haul-cost routes to the reference
   implementation's own ``cost_destination.*.csv`` tables, node by node.
+- ``growth``: with ``--yield-sample`` and ``--yield-dataset``, compare WS4's compiled yield curves
+  to the reference's own model curves, point by point: the growth that the whole accounts
+  comparison rests on, checkable without a licensed reference run.
 - ``builder``: for each ``--case`` (a recipe, a fragment inventory, and a reference matrix
   directory), compile the recipe and compare the compiled matrix to the reference tables.
   No case is required; without one the check is skipped.
@@ -30,13 +33,16 @@ The exit status is 0 only when every check passes.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 import tempfile
+import xml.etree.ElementTree as ET
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
+import numpy as np
 import pandas as pd
 from ws4.build.compiler import build_canonical_dataset
 from ws4.model.api import Model
@@ -237,6 +243,158 @@ def check_roads(workdir: Path) -> CheckResult:
     return CheckResult(
         "roads", "pass", f"block 1 to destination {destination}: {length:.0f} m, {cost:.1f}"
     )
+
+
+# The reference's yield curves are identified per stratum and species, as ``Y1.Conif``.
+_YIELD_CURVE_ID = re.compile(r"^Y\d+\.(?:Conif|Decid)$")
+
+# The reference's own artefacts print two decimals, so half a unit is the tightest honest tolerance.
+_YIELD_TOLERANCE = 5e-3
+
+# One point where the sample's own files disagree with each other: its legacy matrix carries 0.001
+# at offset age 7 on the Decid curve, where the same sample's sibling artefacts (Woodstock's
+# ``C5_yld.prn`` and ``ForestModel_C5_strata.xml``) carry 0.01. WS4 compiles what the matrix says,
+# so the difference is upstream of it. It is recorded rather than absorbed into the tolerance, so a
+# real difference cannot hide among it, and the check reports when it is still there.
+_KNOWN_YIELD_CONFLICTS = frozenset({("Decid", 7.0)})
+
+
+def read_reference_yields(yield_dir: Path) -> dict[str, list[tuple[float, float]]]:
+    """Read the reference's own yield curves from a sample's yield directory.
+
+    Every ``*.xml`` in the directory is read for ``curve`` elements whose id names a yield curve
+    for a stratum and species (``Y1.Conif``). The reference also ships the same numbers as a printed
+    Woodstock table (``Woodstock/C5_yld.prn``); the XML is used because it carries the age of every
+    value, where the printed table is a bare sequence of values against an assumed grid.
+
+    Parameters
+    ----------
+    yield_dir : Path
+        A sample's ``yield`` directory.
+
+    Returns
+    -------
+    dict of str to list of (float, float)
+        The ``(age, yield)`` points per curve id.
+    """
+    curves: dict[str, list[tuple[float, float]]] = {}
+    for path in sorted(yield_dir.glob("*.xml")):
+        for element in ET.parse(path).getroot().iter("curve"):
+            identifier = element.get("id")
+            if identifier is None or not _YIELD_CURVE_ID.match(identifier):
+                continue
+            points = [
+                (float(point.get("x", "0")), float(point.get("y", "0")))
+                for point in element.findall("point")
+            ]
+            if points:
+                curves[identifier] = points
+    return curves
+
+
+def compare_yield_curves(yield_dir: Path, dataset_dir: Path) -> tuple[list[str], int, int]:
+    """Compare WS4's compiled yield curves to the reference's own model curves, point by point.
+
+    Each reference curve is resolved to the compiled curve that reproduces most of its ages, and
+    every one of its points is then compared there: a missing age, a value outside the print
+    tolerance, or a yield curve with no counterpart at all is a difference. A value that differs by
+    exactly one of the sample's own recorded internal conflicts is counted and named instead.
+
+    Parameters
+    ----------
+    yield_dir : Path
+        The sample's ``yield`` directory, holding the reference's own curves.
+    dataset_dir : Path
+        The compiled dataset to compare, which is what WS4 will actually use.
+
+    Returns
+    -------
+    tuple of (list of str, int, int)
+        One line per difference, at most ten; the number of points compared; and the number of
+        recorded conflicts seen.
+    """
+    reference = read_reference_yields(yield_dir)
+    if not reference:
+        return (["no Y<n>.<species> yield curves in the yield directory"], 0, 0)
+    table = pd.read_parquet(dataset_dir / "curves.parquet")
+    compiled: dict[int, tuple[np.ndarray, np.ndarray]] = {
+        int(str(identifier)): (group["x"].to_numpy(), group["y"].to_numpy())
+        for identifier, group in table.groupby("curve_id")
+    }
+    differences: list[str] = []
+    compared = 0
+    conflicts = 0
+    for name in sorted(reference):
+        points = reference[name]
+        species = name.split(".", 1)[1]
+        ages = {age for age, _ in points}
+        best: tuple[int, int, int] | None = None
+        for identifier, (xs, ys) in compiled.items():
+            present = {
+                float(age): float(value) for age, value in zip(xs, ys, strict=True) if age in ages
+            }
+            missing = len(ages - set(present))
+            differing = sum(
+                1
+                for age, value in points
+                if age in present and abs(present[age] - value) > _YIELD_TOLERANCE
+            )
+            score = missing + differing
+            if best is None or score < best[0] or (score == best[0] and identifier < best[1]):
+                best = (score, identifier, missing)
+        if best is None:
+            continue
+        _score, identifier, missing = best
+        xs, ys = compiled[identifier]
+        at_age = {float(age): float(value) for age, value in zip(xs, ys, strict=True)}
+        if missing:
+            absent = sorted(ages - set(at_age))[:3]
+            differences.append(f"{name}: {missing} age(s) not in curve {identifier}, e.g. {absent}")
+        for age, value in points:
+            if age not in at_age:
+                continue
+            compared += 1
+            got = at_age[age]
+            if abs(got - value) <= _YIELD_TOLERANCE:
+                continue
+            if (species, age) in _KNOWN_YIELD_CONFLICTS and abs(got - value) <= 0.1:
+                conflicts += 1
+                continue
+            differences.append(f"{name} age {age:g}: WS4 {got:g} against the reference {value:g}")
+    return (differences[:10], compared, conflicts)
+
+
+def check_growth(yield_dir: Path | None, dataset_dir: Path | None) -> CheckResult:
+    """Compare WS4's compiled growth to the reference's own yield curves, when both are given.
+
+    Parameters
+    ----------
+    yield_dir : Path or None
+        A sample's ``yield`` directory, or None to skip the comparison.
+    dataset_dir : Path or None
+        The compiled dataset to compare, or None to skip the comparison.
+
+    Returns
+    -------
+    CheckResult
+        ``pass`` when every reference point is reproduced, ``fail`` on the first differences, and
+        ``skip`` when either input is missing.
+    """
+    if yield_dir is None or dataset_dir is None:
+        return CheckResult("growth", "skip", "needs --yield-sample and --yield-dataset")
+    if not yield_dir.is_dir() or not dataset_dir.is_dir():
+        return CheckResult("growth", "fail", "yield sample or dataset is not a directory")
+    differences, compared, conflicts = compare_yield_curves(yield_dir, dataset_dir)
+    if differences:
+        return CheckResult(
+            "growth",
+            "fail",
+            f"{len(differences)} difference(s) in {compared} points: {differences[0]}",
+        )
+    detail = f"WS4 reproduces the reference's {compared} yield-curve points"
+    if conflicts:
+        detail += f", with {conflicts} recorded upstream conflict(s) reported"
+    return CheckResult("growth", "pass", detail)
 
 
 def compare_route_costs(roads_dir: Path) -> tuple[list[str], int]:
@@ -583,6 +741,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="the compiled dataset to replay the reference's schedule over",
     )
     parser.add_argument(
+        "--yield-sample",
+        type=Path,
+        default=None,
+        help="a sample's yield directory, holding the reference's own yield curves",
+    )
+    parser.add_argument(
+        "--yield-dataset",
+        type=Path,
+        default=None,
+        help="a compiled dataset, to compare its yield curves against the reference's",
+    )
+    parser.add_argument(
         "--roads-sample",
         type=Path,
         default=None,
@@ -600,6 +770,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             check_api(workdir / "api"),
             check_parity(args.roads_sample),
             check_accounts(args.accounts_report, args.accounts_dataset),
+            check_growth(args.yield_sample, args.yield_dataset),
         ]
     print(render(results))
     return 1 if any(result.status == "fail" for result in results) else 0

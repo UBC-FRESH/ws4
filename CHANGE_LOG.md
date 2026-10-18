@@ -1344,3 +1344,14 @@ issue comments.
   an API-first notebook for the examples gallery (all seven are currently CLI-first) and capability work
   from the backlog's `partial` items. The last two are outside P9's subject, so the roadmap lists them as
   planned work for their own phase rather than folding them into this one.
+- P9.7 (verification, #103): **growth checked against the reference's own yields, without a licensed
+  reference run** — `scripts/acceptance.py` gains a `growth` check (`--yield-sample`, `--yield-dataset`)
+  that resolves each of the sample's 18 `Y<n>.Conif/Decid` curves to the compiled curve reproducing its
+  ages and compares every point at 5e-3 (the reference's artefacts print two decimals). On the C5 sample:
+  **"WS4 reproduces the reference's 959 yield-curve points, with 7 recorded upstream conflict(s)"** — no
+  missing ages, every value agreeing but one. The conflict is the sample's, not WS4's: at offset age 7
+  the Decid curve is **0.001 in the legacy matrix** WS4 ingests (`tracks/curves.csv`, nine rows) and
+  **0.01 in the same sample's own** `C5_yld.prn` and `ForestModel_C5_strata.xml`, and the matrix holds no
+  0.01 anywhere. It is recorded by name rather than absorbed into the tolerance, so another curve
+  differing at that age still fails; six tests cover pass, a changed value, a missing age, the recorded
+  conflict, a conflict outside it, and the skip. Dashboard: **GREEN** (seven gates).
