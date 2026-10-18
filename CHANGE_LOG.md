@@ -1340,3 +1340,7 @@ issue comments.
   **GREEN** (seven gates).
 - P9.6 closed (#102): the type gate has been widened in the changelog entry above and the roadmap now
   ticks it. Dashboard: **GREEN** (seven gates).
+- Recorded the work requested while the P9.5 export is pending: the growth-parity check (#103) next, then
+  an API-first notebook for the examples gallery (all seven are currently CLI-first) and capability work
+  from the backlog's `partial` items. The last two are outside P9's subject, so the roadmap lists them as
+  planned work for their own phase rather than folding them into this one.

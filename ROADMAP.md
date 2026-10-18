@@ -489,3 +489,16 @@ Acceptance criteria:
     on an export from a licensed Windows run, and is renumbered P9.5 as a sub-issue of the new parent.
     Phase 9 (Spatial performance and memory) is active on `feature/p9-memory`, parent issue #97, with
     five tasks (#98 to #101 and #95).
+
+13. Phase 9 is active on `feature/p9-memory`, parent issue #97: #98 to #101 are complete, #102 (the
+    type gate) landed while #95 waits on the Windows export, and **#103 (growth parity against the
+    reference's own yields) is next** — the reference ships its yield table, so growth can be checked
+    without a licensed machine, and it narrows what the accounts comparison can mean.
+
+    Requested while waiting, in order, after #103: **an API-first notebook** (all seven examples are
+    CLI-first, so the programmatic audience is not yet first-class in the examples gallery), and then
+    **capability work from the backlog's `partial` items** (succession and `produce` semantics,
+    legacy-ingestion coverage, account reports). Both are outside this phase's subject — spatial
+    performance and memory — so they are recorded here as planned and are launched as their own phase
+    rather than folded into P9.
+
