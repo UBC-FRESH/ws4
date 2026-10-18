@@ -1472,3 +1472,17 @@ issue comments.
   docs that described the old mapping are corrected — including the ones that already said period 0 is
   the snapshot while the code's window disagreed. The acceptance comparison still passes on both 2026
   scenarios, **1,323 account-period values each**. Dashboard: **GREEN**.
+- Refreshed the example notebooks after P11.1's period-convention change: **13 cells** across five
+  notebooks had genuinely drifted, because a level's accounting year moved from its period's start to
+  its end — the sample estate's patch targets are levels, so their searches now price differently (070
+  schedules 19 blocks where it committed 8; 060's sweep values moved). The remedy is the documented one:
+  `python scripts/check_notebooks.py --refresh`, then a re-check, which now reports **47 cells compared,
+  3 skipped, 0 drifted**. Recorded rather than silently regenerated: the outputs changed because a
+  convention changed, and the check is what caught it.
+- P11.2 (#114): recorded what the reference's ratios divide by — read from its own `addRatioAccount` and
+  `addMetaAccount` calls in `analysis/C5.pin` — and, comparing WS4's route cost report against the
+  reference's own `route/routeCostMILL*.csv`, that they cannot be compared honestly yet: the two reports
+  are **the same table** but WS4's maintenance is **~100×** the reference's, its reported window is a
+  year against the reference's ten, and its routed volume is every product where the reference's mill
+  product is the conifer share. Handed to #117, which is the same subject and the same report. Dashboard:
+  **GREEN**.

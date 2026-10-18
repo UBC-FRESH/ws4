@@ -292,3 +292,32 @@ families need an input WS4 does not ingest (a complete-coverage watershed table,
 the fifth needs route costs and mill volumes exposed as accounts. Which of those WS4 should take on is a
 scoping decision, and the next section states the order this note recommends.
 
+## The route accounts: the same report, different accounting
+
+The reference ships its own route cost report (`route/routeCostMILL<mill>.csv`), and it is the **same
+table** WS4 writes (`route_cost_report.csv`) — the same columns, including the period and year a change
+made WS4's report carry. That makes the comparison direct, and it shows the differences are in the
+*accounting*, not the routing (which agrees apart from the sample's stale third mill):
+
+| Column | Reference, period 1 (year 10, width 10) | WS4, period 1 (year 1, width 1) |
+| --- | ---: | ---: |
+| `LENGTH` | 1,149,647 | 827,926 |
+| `BUILD_EXPENSE` | 3,660,367 | 2,038,700 |
+| `HAUL_EXPENSE` | 11,174,512 | 10,549,815 |
+| `MAINTAIN_EXPENSE` | 1,126,465 | **195,991,566** |
+| `TOTAL` | 15,961,345 | 208,580,081 |
+| `VOLUME` | 1,029,670 | 1,646,192 |
+| `AVERAGEHAULDIST` | **50.3** | **65,261** |
+| `AVERAGEMAINTCOST` | **1.1** | **119.1** |
+
+Three of those are *shape*, not error: the reference reports a ten-year period where WS4's report here is
+per year, and distances are kilometres against metres. Two are not: **maintenance is about a hundred
+times apart** in both the expense and the per-unit cost, and **the volume is 1.6× apart** because WS4's
+route volume is every product routed whereas the reference's mill product is the conifer share.
+
+So the derived **ratios cannot be compared honestly yet**: `ratio.route.haul.MILL1` is
+`route.haul.MILL1 / product.Mill1.Yield.Conif × 10000`, and both of its sides have to mean the same thing
+in both tools first. That reconciliation belongs with the mill-set task, since it is the same subject and
+the same report, and the order it should be done in is: maintenance, then the reporting window, then the
+per-product split of the routed volume (which the ledger already records and only has to expose).
+
