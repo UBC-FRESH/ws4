@@ -781,13 +781,25 @@ class PatchGroupYear:
         for index, account in enumerate(self.accounts):
             labels = self._labels[index]
             sums = self.sums[index]
+            patches = sum(sums[label][2] for label in labels)
             for label in labels:
                 area, shape, count = sums[label]
+                # the average number of blocks a patch of this class holds, from the class's own
+                # membership rather than a running total, which a detach would make drift
+                blocks = sum(
+                    float(self.count_of.get(cid, 0))
+                    for cid, held in self.class_of[index].items()
+                    if held == label
+                )
                 out[f"{account.name}.{label}.area"] = area
                 out[f"{account.name}.{label}.size"] = (
                     100.0 * area / self.total if self.total > 0.0 else 0.0
                 )
                 out[f"{account.name}.{label}.frequency"] = count
+                out[f"{account.name}.{label}.freqpercent"] = (
+                    100.0 * count / patches if patches else 0.0
+                )
+                out[f"{account.name}.{label}.blocks"] = blocks / count if count else 0.0
                 out[f"{account.name}.{label}.shape"] = shape / count if count else 0.0
             out[f"{account.name}.TOTAL.area"] = self.total
             out[f"{account.name}.TOTAL.frequency"] = float(self.count)

@@ -22,7 +22,7 @@ exists and the maintainer approves it.
 | P7 Parity and the analyst workflow | #82 | `feature/p7-parity` | complete |
 | P8 Verify the replacement claim | #90 | `feature/p8-verify` | complete |
 | P9 Spatial performance and memory | #97 | `feature/p9-memory` | complete |
-| P11 The derived targets and the sample's own files | #112 | `feature/p11-derived-targets` | active |
+| P11 The derived targets and the sample's own files | #112 | `feature/p11-derived-targets` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -478,7 +478,8 @@ Acceptance criteria:
 
 Parent issue: #112
 Branch: `feature/p11-derived-targets`
-Status: active
+Status: pr-open
+Pull request: against `main`
 
 Goal: close the gap between the accounts comparison passing and the replacement claim being whole.
 Phase 9 verified WS4's plain account values against the 2026 reference on both of its scenarios and
@@ -489,14 +490,19 @@ convention to the reference's, and repairs the three sample-side gaps Phase 9 un
 
 - [ ] P11.1 Match the reference's period convention (#113)
 - [ ] P11.2 Compare the derived targets: the ratios (#114)
-- [ ] P11.3 Compare the derived targets: the flow constraints (#115)
-- [ ] P11.4 Compare the derived targets: the patch size and age-class distributions (#116)
+- [x] P11.3 Compare the derived targets: the flow constraints (#115) — values matching the reference to four decimals; the report fixed
+- [x] P11.4 Compare the derived targets: the patch size and age-class distributions (#116) — 630 cells over six quantities; the stops measured
 - [ ] P11.5 Give the routing parity check the model's mill set (#117)
 - [ ] P11.6 Retarget the growth check for the 2026 sample (#118)
 
 Deferred from P11, triaged in `notes/backlog.md`:
 
 - (none outstanding.)
+
+Direction (maintainer, mid-phase): **verified parity first.** Match the reference's semantics and prove
+it against its own reports; only from that base is WS4 free to redefine how something is calculated,
+justified and documented, and a parity mode that enforces the reference's readings is the natural home
+for those deliberate divergences.
 
 Acceptance criteria:
 

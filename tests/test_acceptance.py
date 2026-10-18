@@ -159,7 +159,7 @@ def _write_roads(root: Path, reference: str) -> Path:
 def test_the_parity_comparison_agrees_when_the_reference_agrees(tmp_path: Path) -> None:
     """A node the reference cannot reach is one WS4 cannot reach, and the sums match otherwise."""
     roads = _write_roads(tmp_path / "roads", "1,3.0\n2,2.0\n")
-    differences, compared = acc.compare_route_costs(roads)
+    differences, compared, _skipped = acc.compare_route_costs(roads)
     assert differences == []
     assert compared == 2
     assert acc.check_parity(roads).status == "pass"
@@ -168,7 +168,7 @@ def test_the_parity_comparison_agrees_when_the_reference_agrees(tmp_path: Path) 
 def test_the_parity_comparison_reports_a_difference(tmp_path: Path) -> None:
     """A reference haul cost that WS4 does not reproduce is a difference, and fails the check."""
     roads = _write_roads(tmp_path / "roads", "1,99.0\n2,2.0\n")
-    differences, _ = acc.compare_route_costs(roads)
+    differences, _, _ = acc.compare_route_costs(roads)
     assert differences
     assert "node 1" in differences[0]
     assert acc.check_parity(roads).status == "fail"
@@ -177,7 +177,7 @@ def test_the_parity_comparison_reports_a_difference(tmp_path: Path) -> None:
 def test_the_parity_comparison_reports_a_reachability_disagreement(tmp_path: Path) -> None:
     """A node the reference calls unreachable but WS4 reaches is a difference."""
     roads = _write_roads(tmp_path / "roads", "1,3.0\n2,-1\n")
-    differences, _ = acc.compare_route_costs(roads)
+    differences, _, _ = acc.compare_route_costs(roads)
     assert differences
     assert "unreachable in the reference" in differences[0]
 
@@ -302,7 +302,9 @@ def test_the_accounts_check_skips_without_inputs() -> None:
     assert acc.check_accounts(Path("x"), None).status == "skip"
 
 
-def _yield_fixture(root: Path, curves: dict[str, list[tuple[float, float]]]) -> tuple[Path, Path]:
+def _yield_fixture(
+    root: Path, curves: dict[str, list[tuple[float, float]]], *, table: bool = False
+) -> tuple[Path, Path]:
     """Write a reference yield XML and a compiled dataset holding the same curves.
 
     Parameters
@@ -319,13 +321,25 @@ def _yield_fixture(root: Path, curves: dict[str, list[tuple[float, float]]]) -> 
     """
     yields = root / "yield"
     yields.mkdir(parents=True, exist_ok=True)
-    body = "".join(
-        f'<curve id="{name}">'
-        + "".join(f'<point x="{age:g}" y="{value:g}"/>' for age, value in points)
-        + "</curve>"
-        for name, points in curves.items()
-    )
-    (yields / "sample.xml").write_text(f"<model>{body}</model>")
+    if table:
+        # a 2025-era model states its yields as one table: an age column, then a column per curve
+        ages = sorted({age for points in curves.values() for age, _ in points})
+        by_name = {name: dict(points) for name, points in curves.items()}
+        header = "Age," + ",".join(curves)
+        text_rows = [
+            f"{age:g}," + ",".join(f"{by_name[name].get(age, 0.0):g}" for name in curves)
+            for age in ages
+        ]
+        body = '<curvetable split=",">' + "\n".join([header, *text_rows]) + "</curvetable>"
+        (yields / "sample.xml").write_text(f"<model>{body}</model>")
+    else:
+        body = "".join(
+            f'<curve id="{name}">'
+            + "".join(f'<point x="{age:g}" y="{value:g}"/>' for age, value in points)
+            + "</curve>"
+            for name, points in curves.items()
+        )
+        (yields / "sample.xml").write_text(f"<model>{body}</model>")
 
     dataset = root / "compiled"
     dataset.mkdir(parents=True, exist_ok=True)
@@ -492,3 +506,63 @@ def test_period_reports_of_annual_values_are_a_difference(tmp_path: Path) -> Non
     differences, _compared = acc.compare_account_values(dataset, report)
     assert differences
     assert acc.check_accounts(report, dataset).status == "fail"
+
+
+def test_a_reference_table_for_a_destination_the_model_lacks_is_skipped(tmp_path: Path) -> None:
+    """A cost table for a mill the model does not declare is named, not counted as a difference."""
+    roads = _write_roads(tmp_path / "roads", "1,3.0\n2,2.0\n")
+    (roads / "cost_destination.MILL3.csv").write_text("NODE,SUM_HAUL\n1,123.0\n", encoding="utf-8")
+    differences, compared, skipped = acc.compare_route_costs(roads)
+    assert differences == []
+    assert compared > 0
+    assert skipped == ["MILL3"]
+
+
+def test_a_distance_table_is_compared_against_ws4s_shortest_distance(tmp_path: Path) -> None:
+    """A table of distances asks a different question from a table of haul sums."""
+    roads = _write_roads(tmp_path / "roads", "1,3.0\n2,2.0\n")
+    # the fixture's network is 1,000 m then 2,000 m to the mill, and block 1 is linked to node 1
+    (roads / "cost_destination.MILL1.csv").write_text(
+        "NODE,SUM_LENGTH\n1,3000.0\n", encoding="utf-8"
+    )
+    differences, compared, _skipped = acc.compare_route_costs(roads)
+    assert differences == []
+    assert compared == 1
+
+
+def test_a_distance_table_that_disagrees_is_reported(tmp_path: Path) -> None:
+    """A distance the network does not have is a difference, not silently accepted."""
+    roads = _write_roads(tmp_path / "roads", "1,3.0\n2,2.0\n")
+    (roads / "cost_destination.MILL1.csv").write_text(
+        "NODE,SUM_LENGTH\n1,2500.0\n", encoding="utf-8"
+    )
+    differences, compared, _skipped = acc.compare_route_costs(roads)
+    assert compared == 1
+    assert differences
+    assert "m against the reference" in differences[0]
+
+
+def test_a_yield_table_is_read_from_a_curvetable(tmp_path: Path) -> None:
+    """A 2025-era model states its yields as one table of ages and curves."""
+    yields, dataset = _yield_fixture(
+        tmp_path,
+        {"Y1.Conif": [(2.0, 8.28), (7.0, 19.99)], "Y1.Decid": [(2.0, 0.0), (7.0, 0.051)]},
+        table=True,
+    )
+    differences, compared, conflicts = acc.compare_yield_curves(yields, dataset)
+    assert differences == []
+    assert compared == 4
+    assert conflicts == 0
+
+
+def test_a_curvetable_value_that_disagrees_is_a_difference(tmp_path: Path) -> None:
+    """A table read for its values is compared like any other curve."""
+    yields, dataset = _yield_fixture(
+        tmp_path, {"Y1.Conif": [(2.0, 8.28), (7.0, 19.99)]}, table=True
+    )
+    (yields / "sample.xml").write_text(
+        '<model><curvetable split=",">Age,Y1.Conif\n2,8.28\n7,99.0\n</curvetable></model>'
+    )
+    differences, _compared, _conflicts = acc.compare_yield_curves(yields, dataset)
+    assert differences
+    assert "Y1.Conif" in differences[0]

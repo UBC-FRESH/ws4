@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from .objective import Target, flow_penalty, penalty
+from .objective import Target, accumulates, flow_penalty, penalty
 from .operators import Candidates, Chain, Schedule
 from .patch import PatchModel
 
@@ -101,14 +101,7 @@ class IncrementalObjective:
             # patch statistics are only needed where a patch target reads them (the accounting
             # points); the simulation is annual but the accounting is periodic
             self.patch.set_focus_years(
-                sorted(
-                    {
-                        year
-                        for target in self.targets
-                        if is_patch(target.account)
-                        for year in tuple(target.cell_years())[:1]
-                    }
-                )
+                sorted({target.year for target in self.targets if is_patch(target.account)})
             )
 
         self.accounts: set[str] = {
@@ -118,18 +111,19 @@ class IncrementalObjective:
         self.assignments: Schedule = {}
         self._contributions: dict[tuple[int, Chain], dict[Cell, float]] = {}
         self._pending_move: tuple[dict[Cell, float], list[int], Schedule] | None = None
-        # A patch account is a snapshot of the map at one point in time, so a patch target is read
-        # at the first year of its period rather than summed across it (the accounting is periodic
-        # while the simulation is annual). A flow target aggregates whole periods across its window,
-        # so it tracks every year of that window.
+        # A level — a patch account, or any feature — is a state of the map at one point in time,
+        # so a target on one is read at its period's end (the accounting is periodic while the
+        # simulation is annual), which is the reference's convention. An accumulating account sums
+        # its period. A flow target aggregates whole periods across its window, so it tracks every
+        # year of that window.
         horizon = optimizer.cfg.years
 
         def years_for(target: Target) -> tuple[int, ...]:
             if target.flow:
                 stop = target.flow_end if target.flow_end is not None else horizon
                 return tuple(range(target.flow_start, stop))
-            if is_patch(target.account):
-                return tuple(target.cell_years())[:1]
+            if not accumulates(target.account):
+                return (target.year,)
             return tuple(target.cell_years())
 
         self._target_years: list[tuple[int, ...]] = [years_for(target) for target in self.targets]
@@ -262,10 +256,16 @@ class IncrementalObjective:
                 after = flow_penalty(self.totals, target, horizon, pending)
                 total += after - before
                 continue
-            before = sum(
-                self.totals.get((year, target.account), 0.0) for year in target.cell_years()
-            )
-            change = sum(pending.get((year, target.account), 0.0) for year in target.cell_years())
+            if accumulates(target.account):
+                before = sum(
+                    self.totals.get((year, target.account), 0.0) for year in target.cell_years()
+                )
+                change = sum(
+                    pending.get((year, target.account), 0.0) for year in target.cell_years()
+                )
+            else:
+                before = self.totals.get((target.year, target.account), 0.0)
+                change = pending.get((target.year, target.account), 0.0)
             total += penalty(before + change, target) - penalty(before, target)
         return total
 

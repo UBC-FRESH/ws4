@@ -219,15 +219,61 @@ items are enhancements and maintenance.
   state) by building the year-invariant node order, areas and CSR once per group and sharing them,
   which is more than the laziness the note suggested. Building *less* of a state stays rejected, with
   P8.3's reason: the years that get one are already only the accounting points a target reads.
-- **Flow targets in `report_targets.csv`.** `open`. Found while fixing the periodic-target bug (P10.4,
-  #108). `target_status` prices every target as a level target summed over its period, but a target with
-  `flow` set is priced by the objective as a *series* — percent change per period against the reference
-  period (`even`) or the previous one (`ndy`), with the target's bounds applied per period. So a flow
-  target can be reported as met while the search is paying for it. Measured: an `ndy` target with
-  `minimum: -1` on a series that drops 100 -> 60 is priced at **39.00** by `objective` and reported as
-  `met` with **0.00** penalty. Left open deliberately: fixing it means deciding what the report should
-  *show* for a flow target (the period series, or the worst period), which is a design question rather
-  than a one-line fix.
+- **Flow targets in `report_targets.csv`.** `done` (P11.3, #115). A flow target is now reported as the
+  series the reference reports: one row per period, carrying the period's percent value and priced by
+  the same `penalty` the objective uses, with a zero for the period an even-flow comparison is made
+  against — which is what the reference's own report holds. Before this, a flow target was priced as a
+  level target and could be reported as met while the search was paying for it. Measured against the
+  reference's own `targets/flow_*.csv` on both 2026 scenarios: **values matching to four decimals**
+  (period 1 at 40.244 on both sides), and the acceptance check now compares **1,383** account-period and
+  flow values.
+- **A zero flow balance is priced as infinite but reported as satisfied.** `open`, a modelling question.
+  Where a flow's balance is empty — the no-treatment scenario, where nothing is harvested — the
+  objective prices every period as infinite (`flow_penalty`'s documented behaviour) while the reference's
+  report holds **0.0**, i.e. satisfied. A report and the acceptance comparison use the reference's
+  reading; whether the *objective* should too is a decision, since a run with an empty period is
+  currently penalised without bound.
+- **WS4's period convention versus the reference's.** `done` (P11.1, #113). A target now names the year
+  its period **ends** on, and it accumulates only if it is a `product.` account; everything else — a
+  feature, a patch, a size class's share — is a level read at that year. Pinned from the reference's own
+  period values, not inferred: an account it reports as **1,921,975.8** for year 10 is the sum of WS4's
+  years 1-10 (**1,921,975.7**), where the old start-labelled window summed years 10-19 (1,461,044.0);
+  and its `feature.Area.managed.PL` at year 10 is the level (38,436.2) where WS4 summed ten years of it
+  (**384,362.3**, ten times high). The objective, the report, the incremental evaluator, the patch
+  accounting points and the MIP bound all follow one rule, `ws4.opt.objective.accumulates()`, and the
+  acceptance check states the rule **independently** so the two can disagree.
+- **Road maintenance as a function of the traffic a road carries.** `open`, a deliberate divergence to
+  revisit *after* parity, with a specified shape. Traffic-weighted maintenance is conceptually
+  defensible — it is simply not what the reference does (it charges each used road once for the period),
+  and on the 2026 sample WS4's traffic reading was about **170×** the reference's, so parity needs the
+  reference's reading (implemented, and the ledger's test pins it: nine times the volume over the same
+  segments leaves the maintenance unchanged and grows only the haul). The better metric, as specified by
+  the maintainer, has **both** parts: nothing at all for a segment no traffic uses in a year, then a
+  **fixed annual cost the moment any traffic uses it**, plus a **variable cost proportional to the
+  traffic** on top — an affine function with a positive intercept that is zero at zero traffic and jumps
+  to the intercept at any traffic:
+  ``f(x) = 0`` for ``x = 0``, ``f(x) = b + a*x`` for ``x > 0``. The reference's reading is the ``a = 0``
+  case, the one WS4 had was in effect a per-use charge with no intercept, and this is the shape a road
+  budget actually has: a road that is open at all needs work whether or not it is busy, and a busy road
+  needs more.
+- **A Patchworks-parity mode.** `open`, a future feature, and the shape of how WS4 diverges. The current
+  aim is **verified parity first**: match the reference's semantics, and prove it against its own reports.
+  From there WS4 is free to redefine anything it computes — as long as the change is justified,
+  documented, and self-consistent — and a mode that *enforces* the reference's readings would let a user
+  choose which they get. That mode is the natural home for deliberate divergences like traffic-weighted
+  maintenance, and it makes each one explicit rather than implicit.
+- **A patch criterion can only be a feature.** `open`, a capability with measured evidence (P11.4, #116).
+  The reference's harvested patches use `product.harvested` as their criterion — a *product* — and WS4's
+  patch state evaluates a criterion as a feature, so the account is accepted, runs, and produces **every
+  cell zero**. That is 28 of the reference's 63 patch targets, and the silence is the reason to treat it
+  as a capability rather than a comparison fix: a patch criterion that can be a product changes what a
+  criterion *is*.
+- **The reference's destination policy for its mill products.** `open`, a modelling difference found by
+  building the allocation (P11.2/P11.5). WS4 sends each block's product to its cheapest mill
+  (118,498 / 251,703 for the conifer yield over the periods compared); the reference's near-balanced
+  54/46 (1,029,670 / 892,306) comes from its own exclusive-account allocation under mill minimums. The
+  route ratios' denominator is that product, so `ratio.route.haul.MILL1` is comparable only once the two
+  tools decide the split the same way — or once the ratio is defined differently on WS4's side.
 - **Docstring completeness.** `done`. `scripts/doc_audit.py` is the oracle: it checks every public
   function, method, property, class, and module in `ws4` and `scripts/` for the four rules (a docstring
   exists; every parameter is documented and nothing else; a value-returning callable has a `Returns`

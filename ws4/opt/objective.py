@@ -83,14 +83,69 @@ class Target:
             raise ValueError("flow_end must be after flow_start")
 
     def cell_years(self) -> range:
-        """Return the years the target sums the account over.
+        """Return the years of the target's period.
+
+        The period **ends** at :attr:`year`, which is the reference implementation's convention:
+        its report labels a period by the year it ends on, so a period it reports as year 10 with
+        width 10 covers years 1-10. Measured against the reference's own period values on the C5
+        sample, a ``product.`` account reported as 1,921,975.8 for year 10 is the sum of WS4's years
+        1-10 (1,921,975.7) and not of years 0-9 or 10-19, and its period 0 is the initial snapshot
+        at year 0 — so a window that reaches back past the horizon contributes nothing, which is
+        what makes the snapshot expressible.
 
         Returns
         -------
         range
-            The years of the target's period.
+            The years of the target's period, ending at :attr:`year`.
         """
-        return range(self.year, self.year + max(1, self.period_width))
+        return range(self.year - max(1, self.period_width) + 1, self.year + 1)
+
+
+#: The prefix of an account that accumulates over a period rather than being read at its end.
+ACCUMULATING_PREFIX = "product."
+
+
+def accumulates(account: str) -> bool:
+    """Return whether an account accumulates over a target's period.
+
+    A ``product.`` account is something produced during the period, so a period's value is the
+    sum of its years. Everything else — the ``feature.`` accounts, the patch accounts, a size
+    class's share — is a level: a state of the map at a point in time, read at the period's end.
+    That is the reference's own convention, and its report writers say the same in their own
+    definitions.
+
+    Parameters
+    ----------
+    account : str
+        The account name.
+
+    Returns
+    -------
+    bool
+        True when the period's value is the sum of its years.
+    """
+    return account.startswith(ACCUMULATING_PREFIX)
+
+
+def period_value(index: Mapping[tuple[int, str], float], target: Target) -> float:
+    """Return a target's value over its period.
+
+    Parameters
+    ----------
+    index : mapping of (int, str) to float
+        The account values by ``(year, account)``.
+    target : Target
+        The target.
+
+    Returns
+    -------
+    float
+        The sum of the account over the target's period when it accumulates, and its value at the
+        period's end year when it does not.
+    """
+    if accumulates(target.account):
+        return sum(index.get((year, target.account), 0.0) for year in target.cell_years())
+    return index.get((target.year, target.account), 0.0)
 
 
 def penalty(value: float, target: Target) -> float:
@@ -120,6 +175,117 @@ def penalty(value: float, target: Target) -> float:
             deviation *= deviation
         total += target.max_weight * deviation
     return total
+
+
+def flow_period_ends(target: Target, years: int) -> list[int]:
+    """Return the year each of a flow target's periods ends on.
+
+    A flow target constrains the shape of an account's profile, one value per period and in the
+    order :func:`flow_values` returns them. The periods are the ones whose **end** year falls in the
+    target's window, which is the reference implementation's convention and the same one
+    :meth:`Target.cell_years` uses.
+
+    Parameters
+    ----------
+    target : Target
+        A target whose ``flow`` is ``"even"`` or ``"ndy"``.
+    years : int
+        The horizon, in years; the window's end when ``flow_end`` is not set.
+
+    Returns
+    -------
+    list of int
+        The end year of each period of the window, ascending.
+    """
+    width = max(1, target.period_width)
+    stop = target.flow_end if target.flow_end is not None else years
+    # the window is half-open, so a period ending exactly at its end is outside it
+    return [end for end in range(width, stop, width) if end > target.flow_start]
+
+
+def flow_reference_end(target: Target, years: int) -> int:
+    """Return the period an even-flow comparison is made against.
+
+    It is the last period of the window by default, or the period whose window contains
+    ``flow_reference``. That period contributes no value of its own — the reference's own report
+    carries a zero in its row — which is why a series and a period list are not always the same
+    length.
+
+    Parameters
+    ----------
+    target : Target
+        A target whose ``flow`` is ``"even"``.
+    years : int
+        The horizon, in years; the window's end when ``flow_end`` is not set.
+
+    Returns
+    -------
+    int
+        The end year of the reference period, or 0 when the window holds none.
+    """
+    ends = flow_period_ends(target, years)
+    if not ends:
+        return 0
+    if target.flow_reference is None:
+        return ends[-1]
+    width = max(1, target.period_width)
+    for end in ends:
+        if end - width < target.flow_reference <= end:
+            return end
+    return ends[0]
+
+
+def flow_series(
+    index: Mapping[tuple[int, str], float],
+    target: Target,
+    years: int,
+    pending: Mapping[tuple[int, str], float] | None = None,
+) -> dict[int, float]:
+    """Return a flow target's value per period, keyed by the year each period ends on.
+
+    This is what a report needs and what a comparison against a reference report needs: one
+    value per period of the window, with the period an even-flow comparison is made against
+    carrying zero, which is how the reference's own report has it. :func:`flow_values` gives the
+    same values without the periods attached, which is what the objective prices.
+
+    Parameters
+    ----------
+    index : mapping of (int, str) to float
+        The account values by ``(year, account)``.
+    target : Target
+        A target whose ``flow`` is ``"even"`` or ``"ndy"``.
+    years : int
+        The horizon, in years; the window's end when ``flow_end`` is not set.
+    pending : mapping of (int, str) to float, optional
+        A move's change per cell, added to ``index`` without copying it.
+
+    Returns
+    -------
+    dict of int to float
+        The percent value per period end year.
+    """
+
+    def reported(value: float) -> float:
+        """Report a value: a period with nothing to compare against is satisfied.
+
+        Returns
+        -------
+        float
+            The value, or 0.0 where it is not finite.
+        """
+        # The reference's own report holds a zero where the balance it divides by is empty —
+        # measured on the 2026 sample's no-treatment scenario, where every period reports 0.0 —
+        # so a report and a comparison carry a zero. The objective still prices such a period as
+        # infinite (`flow_penalty`), which is its documented behaviour and a separate question.
+        return 0.0 if not math.isfinite(value) else value
+
+    ends = flow_period_ends(target, years)
+    values = [reported(value) for value in flow_values(index, target, years, pending)]
+    if target.flow == "ndy":
+        return dict(zip(ends, values, strict=False))
+    reference = flow_reference_end(target, years)
+    others = [end for end in ends if end != reference]
+    return {**dict(zip(others, values, strict=False)), reference: 0.0}
 
 
 def flow_values(
@@ -165,24 +331,37 @@ def flow_values(
         One percent value per compared period; empty when the window holds fewer than two periods.
     """
     width = max(1, target.period_width)
-    stop = target.flow_end if target.flow_end is not None else years
     account = target.account
-    first = target.flow_start
-    if target.flow == "ndy" and first >= width:
+    # The period grid is anchored at zero and each period **ends** at a multiple of its width, which
+    # is the reference's convention (see `Target.cell_years`): the C5 model's period 1 ends at year
+    # 10 and covers years 1-10, so a window from year 101 to 200 holds the periods ending at 110
+    # through 200. A window that reaches back past year 0 contributes nothing, which is how the
+    # reference's initial snapshot period is expressed.
+    ends = flow_period_ends(target, years)
+    if target.flow == "ndy" and ends and ends[0] - width > 0:
         # A non-declining window includes its first period, which compares with the period before
         # the window, so the series starts one period earlier than the window does.
-        first -= width
+        ends = [ends[0] - width, *ends]
     periods: list[float] = []
-    starts: list[int] = []
-    for begin in range(first, stop, width):
+    accumulating = accumulates(account)
+    for end in ends:
+        # a period's value follows the same rule as a level target's: an accumulating account sums
+        # its years, and a level — which is what a flow on a growing stock constrains — is read at
+        # the period's end. Summing a level over ten years would make the flow ten times its size.
+        if not accumulating:
+            cell = (end, account)
+            total = index.get(cell, 0.0)
+            if pending is not None:
+                total += pending.get(cell, 0.0)
+            periods.append(total)
+            continue
         total = 0.0
-        for year in range(begin, min(begin + width, stop)):
+        for year in range(max(0, end - width + 1), end + 1):
             cell = (year, account)
             total += index.get(cell, 0.0)
             if pending is not None:
                 total += pending.get(cell, 0.0)
         periods.append(total)
-        starts.append(begin)
     if len(periods) < 2:
         return []
     if target.flow == "ndy":
@@ -195,11 +374,8 @@ def flow_values(
         return values
     reference = len(periods) - 1
     if target.flow_reference is not None:
-        # the period containing that year, clamped to the window
-        reference = 0
-        for position, begin in enumerate(starts):
-            if begin <= target.flow_reference:
-                reference = position
+        reference_end = flow_reference_end(target, years)
+        reference = ends.index(reference_end) if reference_end in ends else 0
     balance = periods[reference]
     if balance <= 0.0:
         # every non-reference period differs from nothing: the whole band is infinite
@@ -266,8 +442,7 @@ def objective(values: pd.DataFrame, targets: Sequence[Target]) -> float:
         if target.flow:
             total += flow_penalty(index, target, horizon)
             continue
-        value = sum(index.get((year, target.account), 0.0) for year in target.cell_years())
-        total += penalty(value, target)
+        total += penalty(period_value(index, target), target)
     return total
 
 
@@ -294,8 +469,8 @@ def objective_terms(
         The targets.
     point_in_time : callable or None, optional
         Returns True for an account that is a snapshot rather than an additive quantity (a patch
-        account); such a target is read at the first year of its period only. Defaults to None
-        (every account is additive).
+        account); such a target is read at its period's end year. Defaults to None, which applies
+        :func:`accumulates`: a ``product.`` account sums its period, everything else is a level.
 
     Returns
     -------
@@ -309,10 +484,11 @@ def objective_terms(
         if target.flow:
             penalties.append(flow_penalty(index, target, horizon))
             continue
-        years = list(target.cell_years())
         if point_in_time is not None and point_in_time(target.account):
-            years = years[:1]
-        value = sum(index.get((year, target.account), 0.0) for year in years)
+            # a caller that knows an account is a level, whatever its name says
+            value = index.get((target.year, target.account), 0.0)
+        else:
+            value = period_value(index, target)
         penalties.append(penalty(value, target))
     return penalties
 

@@ -207,3 +207,112 @@ def test_load_route_config_requires_the_tables(tmp_path: Path) -> None:
     path.write_text("route:\n  segments: s.csv\n", encoding="utf-8")
     with pytest.raises(ValueError, match="destinations, linkages"):
         load_route_config(path)
+
+
+def test_maintenance_is_charged_once_however_much_traffic_the_road_carries() -> None:
+    """A road is maintained once in a period, not once per tonne that passes over it."""
+    network = _network()
+    route = network.route(1, "10")
+    assert route is not None
+    one = RouteCostLedger(network)
+    one.record(0, 1, "product.Yield", 10.0, "10", route)
+    ten = RouteCostLedger(network)
+    ten.record(0, 1, "product.Yield", 10.0, "10", route)
+    ten.record(0, 2, "product.Yield", 90.0, "10", route)
+    single = one.route_cost_report()["maintain_expense"].iloc[0]
+    heavier = ten.route_cost_report()["maintain_expense"].iloc[0]
+    assert single > 0.0
+    # nine times the volume over the same segments: the maintenance is the same, and the haul is not
+    assert heavier == single
+    assert (
+        ten.route_cost_report()["haul_expense"].iloc[0]
+        > one.route_cost_report()["haul_expense"].iloc[0]
+    )
+
+
+def test_a_volume_account_can_name_the_product_it_tracks() -> None:
+    """A volume account with a product sums only that product's volume to that destination."""
+    from ws4.roads.accounts import RouteAccount
+
+    network = _network()
+    ledger = RouteCostLedger(network)
+    route = network.route(1, "10")
+    assert route is not None
+    ledger.record(0, 1, "product.Conif", 10.0, "10", route)
+    ledger.record(0, 1, "product.Decid", 4.0, "10", route)
+    accounts = ledger.account_values(
+        [
+            RouteAccount("10", "volume", "product.mill.Conif", product="product.Conif"),
+            RouteAccount("10", "volume", "product.mill.everything"),
+        ]
+    )
+    values = dict(zip(accounts["account"], accounts["value"], strict=True))
+    assert values["product.mill.Conif"] == 10.0
+    assert values["product.mill.everything"] == 14.0
+
+
+def test_a_cost_account_cannot_name_a_product() -> None:
+    """A product on a cost account is refused rather than ignored."""
+    from ws4.roads.accounts import RouteAccount
+
+    with pytest.raises(ValueError, match="only be named on a volume account"):
+        RouteAccount("10", "haul", "route.mill.haul", product="product.Conif")
+
+
+def test_a_product_allocation_partitions_a_master_across_destinations() -> None:
+    """The shares come from the routed volumes and the rest is the unallocated account."""
+    from ws4.roads.accounts import ProductAllocation, resolve_allocation_values
+
+    values = pd.DataFrame(
+        {"year": [0, 0], "account": ["product.yield", "other"], "value": [100.0, 5.0]}
+    )
+    volumes = pd.DataFrame(
+        {
+            "year": [0, 0],
+            "destination": ["mill1", "mill2"],
+            "product": ["product.yield"] * 2,
+            "volume": [30.0, 45.0],
+        }
+    )
+    shares = resolve_allocation_values(
+        values,
+        volumes,
+        [
+            ProductAllocation(
+                master="product.yield",
+                allocations=(("mill1", "product.mill1"), ("mill2", "product.mill2")),
+                unallocated="product.unallocated",
+            )
+        ],
+    )
+    got = {
+        (account, year): value
+        for account, year, value in zip(
+            shares["account"], shares["year"], shares["value"], strict=True
+        )
+    }
+    assert got[("product.mill1", 0)] == 30.0
+    assert got[("product.mill2", 0)] == 45.0
+    assert got[("product.unallocated", 0)] == 25.0  # 100 - 30 - 45
+
+
+def test_an_allocation_that_exceeds_its_master_is_refused() -> None:
+    """Shares larger than the master would mean the configuration and routing disagree."""
+    from ws4.roads.accounts import ProductAllocation, resolve_allocation_values
+
+    values = pd.DataFrame({"year": [0], "account": ["product.yield"], "value": [10.0]})
+    volumes = pd.DataFrame(
+        {"year": [0], "destination": ["mill1"], "product": ["product.yield"], "volume": [99.0]}
+    )
+    with pytest.raises(ValueError, match="exceed its own value"):
+        resolve_allocation_values(
+            values,
+            volumes,
+            [
+                ProductAllocation(
+                    master="product.yield",
+                    allocations=(("mill1", "product.mill1"),),
+                    unallocated="product.unallocated",
+                )
+            ],
+        )

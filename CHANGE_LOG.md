@@ -1461,3 +1461,171 @@ issue comments.
   convention (#113), the ratios (#114), the flow constraints (#115), the patch size and age-class
   distributions (#116), the routing check's mill set (#117), and the growth check's retargeting (#118).
   Dashboard: **GREEN**.
+- P11.1 (parity, #113): **WS4's period convention now matches the reference's.** A target names the year
+  its period **ends** on, and it accumulates only if it is a `product.` account; everything else — a
+  feature, a patch, a share — is a level read at that year. Pinned from the reference's own period
+  values, not inferred: an account it reports as **1,921,975.8** for year 10 is the sum of WS4's years
+  1-10 (**1,921,975.7**), where the old start-labelled window summed years 10-19 (1,461,044.0), and its
+  `feature.Area.managed.PL` at year 10 is the level (38,436.2) where WS4 summed ten years of it
+  (384,362.3 — **ten times high**). The objective, the report, the incremental evaluator, the patch
+  accounting points and the MIP bound all follow one rule, `ws4.opt.objective.accumulates`, and the
+  docs that described the old mapping are corrected — including the ones that already said period 0 is
+  the snapshot while the code's window disagreed. The acceptance comparison still passes on both 2026
+  scenarios, **1,323 account-period values each**. Dashboard: **GREEN**.
+- Refreshed the example notebooks after P11.1's period-convention change: **13 cells** across five
+  notebooks had genuinely drifted, because a level's accounting year moved from its period's start to
+  its end — the sample estate's patch targets are levels, so their searches now price differently (070
+  schedules 19 blocks where it committed 8; 060's sweep values moved). The remedy is the documented one:
+  `python scripts/check_notebooks.py --refresh`, then a re-check, which now reports **47 cells compared,
+  3 skipped, 0 drifted**. Recorded rather than silently regenerated: the outputs changed because a
+  convention changed, and the check is what caught it.
+- P11.2 (#114): recorded what the reference's ratios divide by — read from its own `addRatioAccount` and
+  `addMetaAccount` calls in `analysis/C5.pin` — and, comparing WS4's route cost report against the
+  reference's own `route/routeCostMILL*.csv`, that they cannot be compared honestly yet: the two reports
+  are **the same table** but WS4's maintenance is **~100×** the reference's, its reported window is a
+  year against the reference's ten, and its routed volume is every product where the reference's mill
+  product is the conifer share. Handed to #117, which is the same subject and the same report. Dashboard:
+  **GREEN**.
+- P11.3 (#115), in progress: the flow targets' **windows and reporting**. `flow_values` still built its
+  periods start-labelled — a convention P11.1's sweep had not reached — and with the periods ending at
+  their year WS4 reproduces the reference's own flow values to four decimals (period 1: **40.244** both
+  sides; period 4: −4.435 both). `report_targets.csv` no longer prices a flow target as a level: it
+  emits **one row per period** of the series, priced by the same `penalty` the objective uses, which
+  closes the reporting gap recorded in `notes/backlog.md`. `flow_period_ends()` exposes the period grid
+  the series belongs to, and twelve flow tests now state the end-labelled convention. What remains is
+  mapping the series onto the reference's rows — an `even` series omits its reference period — and the
+  comparison, which belongs with the other derived targets. Dashboard: **GREEN**.
+- P11.3 (parity, #115): **the flow constraints compared, and the report bug closed.** The reference's
+  flow definitions come from its own model file: `ndy(periods-9, periods, -1)` over the last ten periods
+  for the two growing-stock features, `even()` over the horizon for the products. Three things had to be
+  right, and the first two were the period convention reaching paths P11.1 had missed: `flow_values`
+  built **start-labelled** periods, and it **summed every account** over each period where a flow on a
+  growing stock is a *level* read at the period's end — the same accumulate/level rule as a target's
+  value. With both fixed, WS4's flow values match the reference's own `targets/flow_*.csv` to four
+  decimals (period 1 at 40.244 on both sides). A third: where a flow's balance is empty the reference
+  reports **0.0** (satisfied) while WS4 priced it infinite; reports and comparisons now carry the
+  reference's reading, and the pricing question is in the backlog with the measurement. And the bug
+  itself: `report_targets.csv` priced a flow target as a level, so a flow target could be reported as met
+  while the search paid for it. It now reports **one row per period**, priced by the same `penalty` the
+  objective uses. The acceptance comparison covers the flows alongside the accounts: **1,383
+  account-period and flow values reproduced on both 2026 scenarios**, with the families it cannot yet
+  compare named — 2 per-mill allocations, 63 patch distributions, 52 ratios. Dashboard: **GREEN**.
+- P11.4 (#116), first measurement: **the patch comparison runs and disagrees.** WS4 can express the
+  reference's `patch.young` family today (a patch account over `feature.young`, classes 0-50 to
+  2500-plus, topology at a 100 m distance), and over 16 cells × 21 periods its **areas, sizes and
+  frequencies are within 10-20%** of the reference's own `targets/patch_young_*.csv` — the same order, so
+  the patches are formed and classed comparably and the difference is systematic rather than random —
+  while its **`shape` is 0.2x to 12.4x** off, which is a definitional difference (WS4 reports
+  compactness 0-100, the reference another quantity) and needs pinning from the reference's numbers
+  before anything is changed. Three of the reference's seven sub-quantities have no WS4 counterpart
+  (`blocks`, `freqpercent`, `attractor`), the open-ended class is labelled `2500_plus` by the reference
+  and `2500_9999999` by WS4, and **the harvested family cannot be configured at all** because its
+  criterion is `product.harvested` — a product, not a feature — which is 28 of the 63 targets. Recorded
+  on the issue with the next subtasks. Dashboard: **GREEN**.
+- P11.4 (#116), the gap measured: the patch family is **not** off by a scale. Over the periods, WS4's total
+  young-patch **area is 0.92** of the reference's, its **patch count 1.03** and its **mean patch size
+  0.96** — the aggregate structure is within about 8%, so the two agree on how much young forest there is
+  and how it is broken up, and the per-class differences are the distribution moving rather than a
+  misplaced definition. Individually the cells are not close: 5.7% within 1e-4, 28% within 10%, 50%
+  within 20%; `area` differs by a median 14%, `frequency` 9%, `size` 18% and `shape` 83% (a different
+  quantity on a different scale). The next question is which patches **form** in which period, which is a
+  comparison of the components rather than of their sums per class. Recorded on the issue. Dashboard:
+  **GREEN**.
+- P11.4 (#116), the sub-accounts: the reference's own documentation for its patch sub-accounts corrected two
+  readings and closed most of the gap. `blocks` is the **mean number of blocks a patch of the class
+  holds** — which WS4 already held in its state and did not expose — and `freqpercent` is the class's
+  share of all patches; both are now cells, computed from the class's own membership rather than a
+  running total that a detach would make drift, and both are backed by the from-scratch oracle the parity
+  tests check the incremental state against. `shape` is **the same definition** WS4 already has (its
+  compactness is the inverse square), so the difference is which patches form rather than the metric.
+  The comparison now covers **630 cells over six quantities** (was 336 over four), 45% within 10%, with
+  medians of 12% (`area`), 7% (`blocks`), 15% (`size`), 8% (`frequency`) and 3.5% (`freqpercent`). The
+  five `attractor` cells are the only ones it cannot make: the reference reports values of its own for a
+  sub-account WS4 has no counterpart for. What is left is the patches themselves — WS4's aggregate area is
+  0.92 of the reference's, its count 1.03, its mean size 0.96 — so the components merge or split
+  differently on the same schedule. 514 tests pass. Dashboard: **GREEN**.
+- P11.5 (#117), the route accounting: **two fixes worth having.** The ledger charged each used segment's
+  maintenance **per routed flow**, making maintenance a function of traffic — conceptually defensible and
+  not what the reference does, which charges each used road once for the period. Measured on the 2026
+  sample it was about **170×** the reference's per-period figure; with the reference's reading, WS4's
+  maintenance is **1.12** of the reference's and its haul expense 1.05, its built length 1.01 (over the
+  compared periods). The ledger's own test pins it: nine times the volume over the same segments leaves
+  the maintenance unchanged and grows only the haul, and it fails against the old behaviour (checked by
+  stashing the fix). The routing parity check also now compares the quantity the reference's table
+  *holds* — the 2026 sample ships `SUM_LENGTH` where earlier samples shipped `SUM_HAUL` — and skips a
+  reference table for a destination the model does not declare, naming it rather than reporting it as a
+  difference. With both, the 2026 sample's routing disagreement is a real one and precisely stated: **10
+  of 25,134 node-and-mill pairs**, where WS4's route is 97,169 m against the reference's 81,098 m. The
+  maintainer's direction is recorded in the roadmap: **verified parity first**, deliberate divergence
+  after, with a parity mode as the home for it — and the traffic-weighted maintenance is in the backlog
+  as the first candidate for that divergence. Dashboard: **GREEN**.
+- P11.5 (#117), the routing question: **WS4 now agrees with the reference on all 25,134 routed
+  node-and-mill pairs** of the 2026 sample. The ten remaining "differences" were not routing errors: the
+  2026 sample's table holds `SUM_LENGTH` where the 2019 sample's held `SUM_HAUL`, and for those nodes the
+  reference's value is the **shortest path by distance** (81,098 m) where WS4's least-haul route is
+  97,169 m — measured by weighting the same network three ways, the length-only optimum reproduces the
+  reference's number exactly, while optimising haul or haul-plus-build does not. So the table asks "how
+  far is this node from the mill" and the like-for-like comparison is WS4's own shortest distance; the
+  check now uses `RouteNetwork.route_length` for a distance table, the haul sum for a cost table, and
+  skips a table for a destination the model does not declare, naming it. Two tests pin both branches.
+  The phase's general lesson, recorded in the parity note: when a comparison disagrees, ask first whether
+  the two sides are being asked the same thing — three of this phase's largest differences (the period
+  convention, the patch `shape` metric, and this) were that rather than a defect. Dashboard: **GREEN**.
+- P11.5 (#117) / P11.2 (#114): **a route account can name the product whose volume it tracks**, so the
+  reference's mill products are expressible as they mean them — a volume account for one product at one
+  destination. Two tests pin it: the filtered account sums only that product, and a *cost* account naming
+  a product is refused rather than ignored. Pointing it at the reference exposed the next question rather
+  than closing it: WS4 routes **24,349** of `product.Yield.managed.Conif` to Mill 1 where the reference
+  reports **1,029,670**, while WS4's all-product volume is 1.6× the reference's — so the difference is
+  *attribution*, not quantity. The reference allocates the conifer yield between the two mills as an
+  exclusive account and duplicates each share into its destination, where WS4 routes each block by
+  least cost; that allocation is what #114's route ratios wait on. Recorded in the parity note.
+  Dashboard: **GREEN**.
+- P11.2 (#114) closed, with the capability #117 was missing: **a destination allocation**, which
+  partitions a master product across the destinations it is routed to with an account for the
+  remainder — the reference's own shape for its mill products. It partitions exactly (Mill 1 plus Mill 2
+  equals the master's own value, nothing unallocated on this sample), refuses shares that exceed their
+  master, and is tested both ways. Pointing it at the conifer yield made the remaining difference
+  legible and it is a **modelling** difference, not a comparison one: WS4 sends each block's product to
+  its cheapest mill (118,498 / **251,703**), where the reference's near-balanced 54/46 (1,029,670 /
+  892,306) comes from its own exclusive-account allocation under mill minimums. So the route ratios'
+  denominator is a quantity the two tools decide by different rules; comparing the ratio needs the
+  reference's destination policy first, which is its own task. The ratio definitions, the coverage and
+  that blocker are all recorded, and the acceptance check names the 52 ratio targets it leaves out and
+  why. One correction kept: the first run doubled the mill volumes because the configuration had both a
+  volume account and an allocation writing the same name — caught by the master guard, once it checked
+  every year either side knows. Dashboard: **GREEN**.
+- P11.6 (#118): **the growth check retargeted for the 2026 sample**, which states its yields as one
+  `<curvetable>` — an age column and a column per curve, `Y1.Conif` through `Y9.Decid` — where the 2019
+  sample states a `<curve>` element per stratum and species. The check reads both shapes, so the same
+  comparison runs on either vintage, and on the 2026 sample it reports **959 yield-curve points
+  reproduced** across all eighteen curves. Recorded with it: the 2019 sample's conflict (its matrix
+  holding `0.001` at offset age 7 on the Decid curve where its own artefacts held `0.01`) is **absent
+  from the 2026 data** — 1,399 curves carry `0.01` there and none carries the other value — so that
+  conflict was a property of the 2019 sample's files rather than of the model. Two tests cover the table
+  shape, one for agreement and one for a value that disagrees. Dashboard: **GREEN**.
+- P11.4 (#116) closed: **the patch family measured, its sub-accounts closed, and the two places the
+  comparison stops measured rather than assumed.** It covers 630 cells over six quantities (area, blocks,
+  size, shape, frequency, freqpercent) with medians of 12 / 7 / 15 / 8 / 3.5 percent against the
+  reference's own `targets/patch_young_*.csv`. The stops: **the harvested family cannot be configured**
+  (28 of the reference's 63 patch targets — its criterion is `product.harvested`, a product, and WS4's
+  patch state evaluates a criterion as a feature, so the account is accepted, runs, and produces every
+  cell zero, which is a silence worth refusing rather than a comparison fix); and **the components are
+  not in the export** (the reference publishes class aggregates and map images, not patch membership), so
+  what the aggregates say is what can be said: WS4's young-patch area is 0.92 of the reference's, its
+  count 1.03, its mean size 0.96 — the structure within about 8% — while individual cells differ by a
+  median 9-18%. Both stops are in the backlog as capabilities. Dashboard: **GREEN**.
+- Queued the Phase 11 close-out: the report is `notes/reports/p11-closeout.md` and the roadmap moves P11
+  to `pr-open`, its pull request against `main` (the branch was cut from `main` after Phase 9 and 10
+  landed, so nothing is stacked). The report's recommendation is **P12 (Spatial decision match)**: a
+  patch criterion that can be a product (28 of the reference's 63 patch targets), the reference's
+  destination policy for its mill products (which the route ratios wait on), the route report's
+  period width, the `attractor` sub-account, a **Patchworks-parity mode** with traffic-weighted
+  maintenance behind it, and a patch-component comparison carried on a new reference export.
+- Refreshed the example notebooks for the phase's own fixes, and recorded why rather than regenerating them
+  quietly: **020_even_flow**'s series changed because a flow target now means what it should — a level is
+  not summed over its window and a period ends at its year — so that notebook's search genuinely behaves
+  differently; and **050_routes_and_mills**' maintenance column changed because maintenance is charged
+  once per used road rather than per routed flow. Both were caught by the notebook drift check in CI, the
+  remedy is the documented `--refresh`, and the re-check reports **47 cells compared, 3 skipped, 0
+  drifted**.
