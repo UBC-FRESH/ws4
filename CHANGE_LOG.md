@@ -1338,3 +1338,5 @@ issue comments.
   both halves of which the phase has now taken (the series 29% cheaper in P8.3, the patch-state
   construction 89% cheaper in P9.3, with state laziness rejected for P8.3's recorded reason). Dashboard:
   **GREEN** (seven gates).
+- P9.6 closed (#102): the type gate has been widened in the changelog entry above and the roadmap now
+  ticks it. Dashboard: **GREEN** (seven gates).
