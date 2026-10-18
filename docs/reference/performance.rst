@@ -63,10 +63,20 @@ at 1 037 iterations/s with one thread and 1 033 with eight, and 32 islands ran a
 iterations/s pinned against 12 318 / 15 877 unpinned — overlapping, so the difference is noise.
 
 Parallelism is **process-level**, and the island model is the lever: independent islands, elite
-migration between episodes, a deterministic result for a given seed. What limits it is not the BLAS
-pools but contention on the host: the same 32-island run measured 13x to 16x across rounds while the
-machine's load average moved between 4 and 65, so a scaling figure is only meaningful with the load
-it was taken at.
+migration between episodes, a deterministic result for a given seed. Scaling measured on the binding
+workload (4,000 iterations per island, one thread each) with the host's load recorded for each run:
+
+| Islands | Throughput | Speedup | Efficiency |
+| ---: | ---: | ---: | ---: |
+| 1 | 1,055 iterations/s | 1.0x | - |
+| 8 | 6,014 iterations/s | 5.7x | 71% |
+| 32 | 18,685 iterations/s | **17.7x** | 55% |
+
+The limit is the **memory hierarchy**, not the BLAS pools (pinning them is measurably neutral), not the
+per-process setup (~1 s), and not CPU oversubscription: efficiency is already ~56% at 16 islands on a
+36-physical-core host, and the CPU accounting shows every process holding roughly one core while its
+rate falls. More islands still win in absolute terms, so use them; expect the curve, not the line.
+`notes/performance.md` records the measurements with their loads.
 
 Reproduce
 ---------

@@ -1214,3 +1214,20 @@ issue comments.
   so making each state cheaper is a separate question — recorded, with `CurveTable.gather`'s per-call
   `np.clip`/`iinfo` as the next candidate, in `notes/design/ws4-patch-evaluation-bottleneck.md`.
   Dashboard: **GREEN** (seven gates).
+- P8.4 (verify): island scaling re-measured at a known load, and the limit identified. P7.2's figure came
+  from a host whose load moved between 4 and 65, so the same binding workload (a volume floor plus a
+  patch ramp, 4,000 iterations per island, one thread each) was re-run with the load recorded every
+  time, on a two-socket 36-physical-core host: 1 island 1,055 iterations/s, 4 islands 3,238 (77%
+  efficiency), 8 islands 6,014 (71%), 16 islands 9,432 (56%), 18 islands 11,782 (62%) and **32 islands
+  18,685 iterations/s = 17.7x at 55%**. Efficiency is already down to ~56% at 16 islands, half the
+  physical cores, which rules out the explanations the earlier notes carried: the BLAS pools are
+  measurably neutral (P7.2), the per-process setup is ~1 s against 4-7 s of search, and 16 processes on
+  36 physical cores share no SMT siblings, while the CPU accounting shows each process holding roughly
+  one core (at 32 islands, 185 s of user time against a 6.85 s wall, and the same CPU per island as a
+  solo run). The limit is therefore the memory hierarchy — bandwidth and last-level-cache contention,
+  with traffic crossing between the two sockets — and more islands still win in absolute terms, so the
+  criterion stays met *with a stated limit*, now with its cause measured rather than suspected. One
+  finding recorded for the obvious next experiment: the simulator **writes** to the fragments frame it
+  inherits (`self.fragments["offset"] = ...`), so a forked worker's copy-on-write pages are copied
+  anyway and a shared or mmapped dataset would need a read-only simulation state to help. Recorded in
+  `notes/performance.md` and on the performance reference page. Dashboard: **GREEN** (seven gates).
