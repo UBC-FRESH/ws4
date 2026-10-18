@@ -82,7 +82,9 @@ CI runs on pull requests and on pushes to `main`, so this pull request is the br
 
 | Run ID | Head commit | Conclusion | Notes |
 | --- | --- | --- | --- |
-| (posted on #89) | report commit | recorded on the pull request | the phase's six task commits were not covered by CI, since a branch push runs no workflow until a pull request exists |
+| 39081454619 | `53904b8` | failure | the branch's first run: a test in `tests/test_cli.py` asserted on rendered `--help` text, and rich wraps that text to the terminal width, so the option name split across lines in CI and the assertion failed where it passed locally. Fixed in `6b6bded`, by testing the behaviour instead — optimize runs with no weights file at all — which is the stronger form of the same check. |
+| 39081570530 | `2ec9689` | failure | the same cause, on the report commit. |
+| 39083021311 | `6b6bded` | success | all three jobs: Quality gates, Green dashboard summary, Pre-commit parity. |
 
 ## 5. Deviations
 
@@ -92,6 +94,7 @@ CI runs on pull requests and on pushes to `main`, so this pull request is the br
 | `--iterations` defaults to 500, not the 2000 the issue suggested by analogy with `watch` | 500 is what the configured default already used | stated in the issue comment and the changelog: defaulting to 2000 would have silently lengthened every existing run and changed every result |
 | P7.6 was filed as "a patch target in a search misprices the classes" and turned out to be the run's *report*, not the search | I trusted a reported figure over the search's own objective when I first characterised it | corrected in the issue comment with the three-way comparison, and the regression test pins the real behaviour |
 | The dense-harvest path was measured, not improved | the issue allowed either, and the profile named a different bottleneck than the design note had | the measurement, the named bottleneck and two candidates are recorded with a baseline in the design note and the backlog |
+| The branch's first two CI runs failed | a test asserted on rendered help text, which the terminal width wraps — a test of the terminal, not of the command | the assertion was replaced by the behavioural one it duplicated (`6b6bded`); the next run is green |
 
 ## 6. Next phase
 
