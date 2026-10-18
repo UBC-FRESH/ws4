@@ -262,12 +262,14 @@ items are enhancements and maintenance.
   documented, and self-consistent — and a mode that *enforces* the reference's readings would let a user
   choose which they get. That mode is the natural home for deliberate divergences like traffic-weighted
   maintenance, and it makes each one explicit rather than implicit.
-- **A patch criterion can only be a feature.** `open`, a capability with measured evidence (P11.4, #116).
-  The reference's harvested patches use `product.harvested` as their criterion — a *product* — and WS4's
-  patch state evaluates a criterion as a feature, so the account is accepted, runs, and produces **every
-  cell zero**. That is 28 of the reference's 63 patch targets, and the silence is the reason to treat it
-  as a capability rather than a comparison fix: a patch criterion that can be a product changes what a
-  criterion *is*.
+- **A patch criterion that is a product, evaluated on the treatment's own timeline.** `open`, the
+  remaining half of P12.1. The reference's harvested patches name `product.harvested`, and resolving it is
+  not the problem: with the lookup keyed by `(track, treatment, label)` the series is no longer zero, but
+  its values land at the **wrong time** — measured, a block the schedule harvests in year 44 had its
+  product's value appear in year 150, because a product's curve read against a *fragment's age* is not
+  the product of the *treatment* that happened. So WS4 now refuses a product criterion with that reason
+  rather than reporting a quiet nought, and the real fix is to evaluate the product on the treatment's
+  own timeline. That is 28 of the reference's 63 patch targets.
 - **The reference's destination policy for its mill products.** `open`, a modelling difference found by
   building the allocation (P11.2/P11.5). WS4 sends each block's product to its cheapest mill
   (118,498 / 251,703 for the conifer yield over the periods compared); the reference's near-balanced

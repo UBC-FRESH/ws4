@@ -537,3 +537,21 @@ aggregate and differently in detail, and the instrument to say *where* is not in
 The five `attractor` cells are the third: the reference reports values of its own for a sub-account that
 draws the average patch size towards a class, and WS4 has no counterpart.
 
+### A patch criterion that is a product: why it is refused
+
+The reference's harvested patches name `product.harvested` as their criterion, and WS4's patch state
+evaluated a criterion as a feature — so the account was accepted, ran, and produced **every cell zero**.
+P12.1 established what is actually wrong, and it is not the lookup. Resolving a product is a small
+change (`(track, treatment, label)` rather than `(track, label)`, since what a treatment produces depends
+on the treatment) and it was implemented: the series is no longer zero. But its values land at the
+**wrong time** — a block the schedule harvests in year 44 had its product's value appear in year **150** —
+because a product's curve read against a fragment's age is not the same as the product of the treatment
+that happened. A wrong value that looks like a right one is worse than a zero that looks like a zero.
+
+So the criterion is **refused** instead, with the reason: a patch criterion must be a feature, and a
+product names something whose value depends on when it was produced, which the patch state does not
+model. A label that is neither a feature nor a product is refused too, naming the mistake rather than
+returning nought. The product path itself is reverted rather than left in as a trap, and what a real fix
+needs — the product evaluated on the treatment's own timeline rather than the fragment's age — is in
+`notes/backlog.md`.
+

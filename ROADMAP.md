@@ -529,7 +529,7 @@ measured: a patch criterion cannot be a product, the reference's mill products a
 policy rather than WS4's least-cost routing, and the five `attractor` cells report a quantity WS4 does
 not have.
 
-- [ ] P12.1 A patch criterion can be a product (#121)
+- [x] P12.1 A patch criterion can be a product (#121) — refused with its reason measured; the real fix is the treatment's timeline
 - [ ] P12.2 The reference's destination policy for mill products (#122)
 - [ ] P12.3 Report the route accounts over the model's periods (#123)
 - [ ] P12.4 The attractor sub-account as the reference defines it (#124)

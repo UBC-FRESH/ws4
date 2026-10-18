@@ -1641,3 +1641,14 @@ issue comments.
   (#123), the attractor sub-account (#124), a Patchworks-parity mode with traffic-weighted maintenance
   behind it (#125), and a patch-component comparison carried on a new reference export (#126). Dashboard:
   **GREEN**.
+- P12.1 (#121) closed by **refusal, with the reason measured.** The reference's harvested patches name
+  `product.harvested` as their criterion and WS4's patch state evaluated a criterion as a feature, so the
+  account ran and returned **every cell zero**. The lookup was not the problem: keying it by
+  `(track, treatment, label)` rather than `(track, label)` made the series non-zero, but its values landed
+  at the **wrong time** — a block the schedule harvests in year 44 had its product's value appear in year
+  **150**, because a product's curve read against a fragment's age is not the product of the treatment
+  that happened. A wrong value that looks right is worse than a zero that looks like a zero, so the
+  product path is **reverted** and the criterion is **refused** with the reason, as is a label that is
+  neither a feature nor a product. Two tests cover both refusals; the feature path is unchanged. The real
+  fix — the product evaluated on the treatment's own timeline — is in `notes/backlog.md` with this
+  measurement. Dashboard: **GREEN**.
