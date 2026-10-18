@@ -376,3 +376,32 @@ counterpart at all — `blocks`, `freqpercent` and `attractor` — and the refer
 `product.harvested` as their criterion, which is a *product* rather than a feature, so WS4 has nothing to
 point a patch account at. That is 28 of the 63 targets.
 
+### The patch gap, measured
+
+Chasing the 10-20% means asking first whether it is a scale or a distribution, and the aggregates answer
+that: over the periods, WS4's total young-patch **area is 0.92** of the reference's, its **patch count
+1.03**, and its **mean patch size 0.96** — so the two agree on how much young forest there is and how it
+is broken up, and the per-class differences are the distribution moving rather than a misplaced
+definition. Individually, though, the cells are not close:
+
+| Bound on the relative difference | Cells within it |
+| --- | ---: |
+| 1e-4 | 5.7% |
+| 1% | 7.1% |
+| 5% | 16.4% |
+| 10% | 27.7% |
+| 20% | 50.3% |
+| 50% | 74.7% |
+
+| Quantity | Median | 90th percentile |
+| --- | ---: | ---: |
+| `area` | 14% | 34% |
+| `frequency` | 9% | 33% |
+| `size` | 18% | 40% |
+| `shape` | 83% | >1000% |
+
+So: the aggregate structure agrees to within about 8%, the individual class-period cells typically differ
+by 10-30%, and `shape` is a different quantity altogether. The next question is which patches *form* in
+which period — where WS4's components merge or split differently from the reference's on the same
+schedule — and that is a per-period comparison of the components rather than of their sums.
+

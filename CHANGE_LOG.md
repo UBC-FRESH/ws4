@@ -1522,3 +1522,12 @@ issue comments.
   and `2500_9999999` by WS4, and **the harvested family cannot be configured at all** because its
   criterion is `product.harvested` — a product, not a feature — which is 28 of the 63 targets. Recorded
   on the issue with the next subtasks. Dashboard: **GREEN**.
+- P11.4 (#116), the gap measured: the patch family is **not** off by a scale. Over the periods, WS4's total
+  young-patch **area is 0.92** of the reference's, its **patch count 1.03** and its **mean patch size
+  0.96** — the aggregate structure is within about 8%, so the two agree on how much young forest there is
+  and how it is broken up, and the per-class differences are the distribution moving rather than a
+  misplaced definition. Individually the cells are not close: 5.7% within 1e-4, 28% within 10%, 50%
+  within 20%; `area` differs by a median 14%, `frequency` 9%, `size` 18% and `shape` 83% (a different
+  quantity on a different scale). The next question is which patches **form** in which period, which is a
+  comparison of the components rather than of their sums per class. Recorded on the issue. Dashboard:
+  **GREEN**.
