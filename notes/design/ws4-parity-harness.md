@@ -515,3 +515,25 @@ reported as a conflict. The 2026 matrix holds **0.01** — 1,399 curves with tha
 other value — so that conflict is a property of the 2019 sample's files, not of the model, and the check
 has nothing to report here.
 
+### Where the patch comparison ends, and why
+
+The comparison covers the reference's `patch.young` family — **630 cells over six quantities** — and it
+stops there for two reasons, both measured rather than assumed:
+
+**The harvested family cannot be configured.** Its criterion is `product.harvested`, a *product* rather
+than a feature, and WS4's patch state evaluates a criterion as a feature: pointed at a product it runs
+without complaint and produces **every cell zero**, which is exactly the kind of silence worth refusing.
+That is 28 of the reference's 63 patch targets. Making them comparable means letting a patch criterion be
+a product — small, but it changes what a criterion *is*, so it belongs with the destination policy as a
+modelling decision rather than a comparison fix.
+
+**The components are not in the export.** The reference publishes patch *class aggregates* and map
+*images* (`.png`), not patch membership, so a component-level comparison has no oracle. What can be said
+is what the aggregates say: WS4's young-patch area is **0.92** of the reference's, its patch count **1.03**
+and its mean patch size **0.96** — the structure is within about 8% — while the individual class-period
+cells differ by a median of 9% to 18% depending on the quantity. So the components form comparably in
+aggregate and differently in detail, and the instrument to say *where* is not in what the reference ships.
+
+The five `attractor` cells are the third: the reference reports values of its own for a sub-account that
+draws the average patch size towards a class, and WS4 has no counterpart.
+

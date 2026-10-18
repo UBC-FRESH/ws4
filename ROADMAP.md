@@ -490,7 +490,7 @@ convention to the reference's, and repairs the three sample-side gaps Phase 9 un
 - [ ] P11.1 Match the reference's period convention (#113)
 - [ ] P11.2 Compare the derived targets: the ratios (#114)
 - [x] P11.3 Compare the derived targets: the flow constraints (#115) — values matching the reference to four decimals; the report fixed
-- [ ] P11.4 Compare the derived targets: the patch size and age-class distributions (#116)
+- [x] P11.4 Compare the derived targets: the patch size and age-class distributions (#116) — 630 cells over six quantities; the stops measured
 - [ ] P11.5 Give the routing parity check the model's mill set (#117)
 - [ ] P11.6 Retarget the growth check for the 2026 sample (#118)
 

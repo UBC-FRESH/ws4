@@ -1604,3 +1604,14 @@ issue comments.
   from the 2026 data** — 1,399 curves carry `0.01` there and none carries the other value — so that
   conflict was a property of the 2019 sample's files rather than of the model. Two tests cover the table
   shape, one for agreement and one for a value that disagrees. Dashboard: **GREEN**.
+- P11.4 (#116) closed: **the patch family measured, its sub-accounts closed, and the two places the
+  comparison stops measured rather than assumed.** It covers 630 cells over six quantities (area, blocks,
+  size, shape, frequency, freqpercent) with medians of 12 / 7 / 15 / 8 / 3.5 percent against the
+  reference's own `targets/patch_young_*.csv`. The stops: **the harvested family cannot be configured**
+  (28 of the reference's 63 patch targets — its criterion is `product.harvested`, a product, and WS4's
+  patch state evaluates a criterion as a feature, so the account is accepted, runs, and produces every
+  cell zero, which is a silence worth refusing rather than a comparison fix); and **the components are
+  not in the export** (the reference publishes class aggregates and map images, not patch membership), so
+  what the aggregates say is what can be said: WS4's young-patch area is 0.92 of the reference's, its
+  count 1.03, its mean size 0.96 — the structure within about 8% — while individual cells differ by a
+  median 9-18%. Both stops are in the backlog as capabilities. Dashboard: **GREEN**.

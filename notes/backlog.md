@@ -262,6 +262,18 @@ items are enhancements and maintenance.
   documented, and self-consistent — and a mode that *enforces* the reference's readings would let a user
   choose which they get. That mode is the natural home for deliberate divergences like traffic-weighted
   maintenance, and it makes each one explicit rather than implicit.
+- **A patch criterion can only be a feature.** `open`, a capability with measured evidence (P11.4, #116).
+  The reference's harvested patches use `product.harvested` as their criterion — a *product* — and WS4's
+  patch state evaluates a criterion as a feature, so the account is accepted, runs, and produces **every
+  cell zero**. That is 28 of the reference's 63 patch targets, and the silence is the reason to treat it
+  as a capability rather than a comparison fix: a patch criterion that can be a product changes what a
+  criterion *is*.
+- **The reference's destination policy for its mill products.** `open`, a modelling difference found by
+  building the allocation (P11.2/P11.5). WS4 sends each block's product to its cheapest mill
+  (118,498 / 251,703 for the conifer yield over the periods compared); the reference's near-balanced
+  54/46 (1,029,670 / 892,306) comes from its own exclusive-account allocation under mill minimums. The
+  route ratios' denominator is that product, so `ratio.route.haul.MILL1` is comparable only once the two
+  tools decide the split the same way — or once the ratio is defined differently on WS4's side.
 - **Docstring completeness.** `done`. `scripts/doc_audit.py` is the oracle: it checks every public
   function, method, property, class, and module in `ws4` and `scripts/` for the four rules (a docstring
   exists; every parameter is documented and nothing else; a value-returning callable has a `Returns`
