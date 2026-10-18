@@ -21,7 +21,7 @@ exists and the maintainer approves it.
 | P6 Performance and scalability | #60 | `feature/p6-performance` | complete |
 | P7 Parity and the analyst workflow | #82 | `feature/p7-parity` | complete |
 | P8 Verify the replacement claim | #90 | `feature/p8-verify` | complete |
-| P9 Spatial performance and memory | #97 | `feature/p9-memory` | active (held on the P9.5 export) |
+| P9 Spatial performance and memory | #97 | `feature/p9-memory` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | active |
 
 ## Lifecycle Map

@@ -1361,3 +1361,9 @@ issue comments.
   committed with `nbsphinx_execute = "never"` and nothing verifies them), and naming which way in each
   example takes (#107). Phase 9 stays open only for P9.5 (the accounts export); its other six tasks are
   complete. The roadmap records the backlog's capability work as the phase after this one.
+- Fixed the Phase 10 launch commit: the roadmap tracker row I wrote for P9 said "active (held on the
+  P9.5 export)" where the phase section says `active`, and the workflow validator caught the mismatch on
+  the next run — the launch commit had landed while the dashboard was red because the command chain ran
+  on regardless of the exit status. The tracker row is back to `active`, the holding note stays in the
+  phase section where it belongs, and the dashboard is **GREEN** (seven gates) again. Third time this
+  session a chained command hid an exit status; the chain is the problem, not the tool.
