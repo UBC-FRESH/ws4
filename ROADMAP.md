@@ -443,7 +443,7 @@ notebooks' outputs are committed with ``nbsphinx_execute = "never"``, so nothing
 show is what the code does.
 
 - [x] P10.1 An API-first walkthrough notebook (#105) — `examples/070_library_path`, executed
-- [ ] P10.2 Prove the gallery's outputs are current (#106)
+- [x] P10.2 Prove the gallery's outputs are current (#106) — `scripts/check_notebooks.py`, its own CI job
 - [x] P10.3 Say which way in each example takes (#107)
 - [x] P10.4 Price a periodic target over its period in the report (#108) — found by P10.1
 

@@ -13,4 +13,5 @@ Add a page here, with an ``automodule`` entry, whenever you add a module to ``sc
    :maxdepth: 2
 
    check-workflow
+   check-notebooks
    dashboard

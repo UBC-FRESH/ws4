@@ -1389,3 +1389,18 @@ issue comments.
   target with `minimum: -1` over a series dropping 100 -> 60 is priced at **39.00** by the objective and
   reported as `met` with **0.00**. Left open in `notes/backlog.md` with those numbers, because fixing it
   means deciding what the report should show for a flow target. Dashboard: **GREEN** (seven gates).
+- P10.2 (verification, #106): **the gallery's outputs are now checked, not trusted.**
+  `scripts/check_notebooks.py` re-runs every example in memory and compares what it produces with what is
+  committed, cell by cell, naming the notebook and the cell when they differ and writing nothing; the
+  remedy is the documented `--refresh`, which re-runs and rewrites. It took **8 minutes** on the eight
+  notebooks, so it is its own CI job rather than part of the dashboard, and it is honest about what it
+  cannot compare: the environment's version banner, durations, rates, memory and absolute paths are
+  normalised and **counted** (a passing run reports `duration x2, elapsed x2, rate x2, version x10`),
+  and cells whose output is a live render can be tagged `no-drift-check` in the notebook itself.
+  Its first run over the eight notebooks: **5 drifted**, and the first catch was this phase's own work —
+  four of them (030, 040, 050, 060) because the P10.4 fix corrected the target values their report tables
+  print (`060`'s `volume_share` 18,744.60 -> 36,352.44), and 010 because a `ws4 watch` progress table
+  prints an elapsed time; the four were refreshed and committed, the fifth masked. The suite now reports
+  **50 cells compared, 0 skipped, 0 drifted**. Seven tests cover a current notebook, a stale one, a
+  tagged cell, the normalisations, a notebook that no longer runs, the per-cell outcome, and the refresh.
+  Dashboard: **GREEN** (seven gates).
