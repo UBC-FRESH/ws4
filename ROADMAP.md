@@ -21,7 +21,8 @@ exists and the maintainer approves it.
 | P6 Performance and scalability | #60 | `feature/p6-performance` | complete |
 | P7 Parity and the analyst workflow | #82 | `feature/p7-parity` | complete |
 | P8 Verify the replacement claim | #90 | `feature/p8-verify` | complete |
-| P9 Spatial performance and memory | #97 | `feature/p9-memory` | active |
+| P9 Spatial performance and memory | #97 | `feature/p9-memory` | active (held on the P9.5 export) |
+| P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | active |
 
 ## Lifecycle Map
 
@@ -430,6 +431,32 @@ Acceptance criteria:
 - The patch-state and curve-gather costs judged against the P8.3 profile, with the measurements recorded.
 - The dashboard green at every commit, with the docs and docstrings gates.
 
+## Phase 10: Documentation and the API-first workflow
+
+Parent issue: #104
+Branch: `feature/p10-docs-api`
+Status: active
+
+Goal: serve the second audience in the gallery, and stop the gallery being able to lie. The prose for
+the Python API exists; the examples do not — five of seven notebooks drive the command line — and the
+notebooks' outputs are committed with ``nbsphinx_execute = "never"``, so nothing checks that what they
+show is what the code does.
+
+- [ ] P10.1 An API-first walkthrough notebook (#105)
+- [ ] P10.2 Prove the gallery's outputs are current (#106)
+- [ ] P10.3 Say which way in each example takes (#107)
+
+Deferred from P10, triaged in `notes/backlog.md`:
+
+- (none outstanding.)
+
+Acceptance criteria:
+
+- A complete API-first session runs as a notebook in the gallery, executed, linked from the API pages.
+- A documented command re-executes the notebooks and reports drifted output, and it can fail.
+- Every example states whether it is a command-line session or a library one.
+- The dashboard green at every commit, with the docs and docstrings gates.
+
 ## Detailed Next Steps Notes
 
 1. Phase 0 is complete: pull request #8 squash-merged as `97330a8`, the branch deleted, and parent
@@ -501,4 +528,11 @@ Acceptance criteria:
     legacy-ingestion coverage, account reports). Both are outside this phase's subject — spatial
     performance and memory — so they are recorded here as planned and are launched as their own phase
     rather than folded into P9.
+
+14. Phase 9 is **held open only for P9.5**: every other task in it is complete and closed (#98-#103),
+    and #95 waits on an export from a licensed Windows run of the reference. Rather than leave the
+    waiting time unused, and rather than widen P9's subject, the requested documentation work is its own
+    phase: **P10 (Documentation and the API-first workflow)**, parent issue #104, branch
+    `feature/p10-docs-api`, tasks #105-#107. The remaining backlog capability work — succession and
+    `produce` semantics, legacy-ingestion coverage, account reports — is the phase recorded after it.
 

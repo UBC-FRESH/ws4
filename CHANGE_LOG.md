@@ -1355,3 +1355,9 @@ issue comments.
   0.01 anywhere. It is recorded by name rather than absorbed into the tolerance, so another curve
   differing at that age still fails; six tests cover pass, a changed value, a missing age, the recorded
   conflict, a conflict outside it, and the skip. Dashboard: **GREEN** (seven gates).
+- Launched Phase 10 (Documentation and the API-first workflow): parent issue #104, branch
+  `feature/p10-docs-api`, and three tasks — an API-first walkthrough notebook for the gallery (#105),
+  a check that executes the notebooks and reports drifted output (#106, since the gallery's outputs are
+  committed with `nbsphinx_execute = "never"` and nothing verifies them), and naming which way in each
+  example takes (#107). Phase 9 stays open only for P9.5 (the accounts export); its other six tasks are
+  complete. The roadmap records the backlog's capability work as the phase after this one.
