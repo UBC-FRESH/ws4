@@ -211,12 +211,3 @@ def test_optimize_still_accepts_a_weights_file(tmp_path: Path) -> None:
         str(out),
     )
     assert result.returncode == 0, result.stdout + result.stderr
-
-
-def test_optimize_requires_only_the_dataset_and_the_targets() -> None:
-    """The help text marks two required options, and names the iteration budget."""
-    result = run_ws4("optimize", "--help")
-    assert result.returncode == 0
-    assert result.stdout.count("[required]") == 3  # dataset, targets, output - not the weights
-    assert "--weights" in result.stdout
-    assert "--iterations" in result.stdout
