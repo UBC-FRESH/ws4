@@ -405,3 +405,28 @@ by 10-30%, and `shape` is a different quantity altogether. The next question is 
 which period — where WS4's components merge or split differently from the reference's on the same
 schedule — and that is a per-period comparison of the components rather than of their sums.
 
+### The patch sub-accounts, and what each one is
+
+The reference's own documentation for its patch sub-accounts settles what each one means, and it corrected
+two of this note's earlier readings:
+
+| Sub-account | What it is | WS4 |
+| --- | --- | --- |
+| `area` | the total area in the class, in hectares | the same, and agreeing to a median 12% |
+| `blocks` | the **mean number of blocks a patch of the class holds** — not a count of blocks | added, from the class's own membership: median 7% |
+| `size` | the class's **criterion** sum as a percentage of the criterion over all classes | WS4 reports the area share, which is the same thing for a 0/1 criterion: median 15% |
+| `shape` | the perimeter relative to a circle of the same area: 1 or more, higher being more dendritic | **the same definition** — WS4's compactness is its inverse square — so the difference is the patches, not the metric: ~32% once converted |
+| `frequency` | the number of patches in the class | the same: median 8% |
+| `freqpercent` | the class's share of all patches | added: median 3.5% |
+| `attractor` | the account that draws the average patch size towards the class; it is a switch rather than a measurement | not reproduced: the reference reports values of its own for it, and WS4 has no counterpart |
+
+That corrects this note twice over. `shape` is not a different quantity — it is the same one, and what
+differs is which patches form. And `blocks` is a mean per patch, which WS4 already held in its state and
+simply did not expose.
+
+**The comparison now covers 630 cells over six quantities**, 45% of them within 10% of the reference, and
+the five `attractor` cells are the only ones it cannot make. The remaining differences are the *patches
+themselves*: WS4's aggregate young-patch area is 0.92 of the reference's, its patch count 1.03 and its
+mean patch size 0.96, so the components merge or split differently on the same schedule, and that is what
+is left to chase.
+

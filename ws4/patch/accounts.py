@@ -146,22 +146,30 @@ def patch_account_values(
     total_area = sum(patch_area)
     labels = size_class_labels(account.size_classes)
     result: dict[str, float] = {}
-    by_label: dict[str, list[tuple[float, float]]] = {label: [] for label in labels}
+    by_label: dict[str, list[tuple[float, float, int]]] = {label: [] for label in labels}
     for index, area in enumerate(patch_area):
         compactness = _compactness(area, patch_perimeter_length[index])
         for class_index, upper in enumerate(account.size_classes):
             lower = 0.0 if class_index == 0 else account.size_classes[class_index - 1]
             if lower < area <= upper:
-                by_label[labels[class_index]].append((area, compactness))
+                by_label[labels[class_index]].append((area, compactness, len(patches[index])))
                 break
     for label in labels:
         members_in_class = by_label[label]
-        class_area = sum(area for area, _ in members_in_class)
+        class_area = sum(area for area, _, _ in members_in_class)
         result[f"{label}.area"] = class_area
         result[f"{label}.size"] = (100.0 * class_area / total_area) if total_area > 0.0 else 0.0
         result[f"{label}.frequency"] = float(len(members_in_class))
+        result[f"{label}.freqpercent"] = (
+            100.0 * len(members_in_class) / len(patches) if patches else 0.0
+        )
+        result[f"{label}.blocks"] = (
+            sum(blocks for _, _, blocks in members_in_class) / len(members_in_class)
+            if members_in_class
+            else 0.0
+        )
         result[f"{label}.shape"] = (
-            sum(shape for _, shape in members_in_class) / len(members_in_class)
+            sum(shape for _, shape, _ in members_in_class) / len(members_in_class)
             if members_in_class
             else 0.0
         )
@@ -206,6 +214,7 @@ def patch_account_values_indexed(
     component: dict[int, int] = {}
     areas: list[float] = []
     perimeters: list[float] = []
+    blocks_per_patch: list[int] = []
     for start in members:
         if start in component:
             continue
@@ -214,8 +223,10 @@ def patch_account_values_indexed(
         component[start] = index
         area = 0.0
         perimeter = 0.0
+        blocks = 0
         while stack:
             block = stack.pop()
+            blocks += 1
             area += values[block] * block_area.get(block, 0.0)
             for other, length in neighbours.get(block, ()):
                 if other in members:
@@ -226,25 +237,34 @@ def patch_account_values_indexed(
                     perimeter += length
         areas.append(area)
         perimeters.append(perimeter)
+        blocks_per_patch.append(blocks)
     total_area = math.fsum(areas)
     labels = size_class_labels(account.size_classes)
-    by_label: dict[str, list[tuple[float, float]]] = {label: [] for label in labels}
+    by_label: dict[str, list[tuple[float, float, int]]] = {label: [] for label in labels}
     for index, area in enumerate(areas):
         compactness = _compactness(area, perimeters[index])
         for class_index, upper in enumerate(account.size_classes):
             lower = 0.0 if class_index == 0 else account.size_classes[class_index - 1]
             if lower < area <= upper:
-                by_label[labels[class_index]].append((area, compactness))
+                by_label[labels[class_index]].append((area, compactness, blocks_per_patch[index]))
                 break
     result: dict[str, float] = {}
     for label in labels:
         members_in_class = by_label[label]
-        class_area = sum(area for area, _ in members_in_class)
+        class_area = sum(area for area, _, _ in members_in_class)
         result[f"{label}.area"] = class_area
         result[f"{label}.size"] = (100.0 * class_area / total_area) if total_area > 0.0 else 0.0
         result[f"{label}.frequency"] = float(len(members_in_class))
+        result[f"{label}.freqpercent"] = (
+            100.0 * len(members_in_class) / len(areas) if areas else 0.0
+        )
+        result[f"{label}.blocks"] = (
+            sum(blocks for _, _, blocks in members_in_class) / len(members_in_class)
+            if members_in_class
+            else 0.0
+        )
         result[f"{label}.shape"] = (
-            sum(shape for _, shape in members_in_class) / len(members_in_class)
+            sum(shape for _, shape, _ in members_in_class) / len(members_in_class)
             if members_in_class
             else 0.0
         )

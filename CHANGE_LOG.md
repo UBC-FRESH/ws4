@@ -1531,3 +1531,16 @@ issue comments.
   quantity on a different scale). The next question is which patches **form** in which period, which is a
   comparison of the components rather than of their sums per class. Recorded on the issue. Dashboard:
   **GREEN**.
+- P11.4 (#116), the sub-accounts: the reference's own documentation for its patch sub-accounts corrected two
+  readings and closed most of the gap. `blocks` is the **mean number of blocks a patch of the class
+  holds** — which WS4 already held in its state and did not expose — and `freqpercent` is the class's
+  share of all patches; both are now cells, computed from the class's own membership rather than a
+  running total that a detach would make drift, and both are backed by the from-scratch oracle the parity
+  tests check the incremental state against. `shape` is **the same definition** WS4 already has (its
+  compactness is the inverse square), so the difference is which patches form rather than the metric.
+  The comparison now covers **630 cells over six quantities** (was 336 over four), 45% within 10%, with
+  medians of 12% (`area`), 7% (`blocks`), 15% (`size`), 8% (`frequency`) and 3.5% (`freqpercent`). The
+  five `attractor` cells are the only ones it cannot make: the reference reports values of its own for a
+  sub-account WS4 has no counterpart for. What is left is the patches themselves — WS4's aggregate area is
+  0.92 of the reference's, its count 1.03, its mean size 0.96 — so the components merge or split
+  differently on the same schedule. 514 tests pass. Dashboard: **GREEN**.
