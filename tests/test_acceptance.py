@@ -159,7 +159,7 @@ def _write_roads(root: Path, reference: str) -> Path:
 def test_the_parity_comparison_agrees_when_the_reference_agrees(tmp_path: Path) -> None:
     """A node the reference cannot reach is one WS4 cannot reach, and the sums match otherwise."""
     roads = _write_roads(tmp_path / "roads", "1,3.0\n2,2.0\n")
-    differences, compared = acc.compare_route_costs(roads)
+    differences, compared, _skipped = acc.compare_route_costs(roads)
     assert differences == []
     assert compared == 2
     assert acc.check_parity(roads).status == "pass"
@@ -168,7 +168,7 @@ def test_the_parity_comparison_agrees_when_the_reference_agrees(tmp_path: Path) 
 def test_the_parity_comparison_reports_a_difference(tmp_path: Path) -> None:
     """A reference haul cost that WS4 does not reproduce is a difference, and fails the check."""
     roads = _write_roads(tmp_path / "roads", "1,99.0\n2,2.0\n")
-    differences, _ = acc.compare_route_costs(roads)
+    differences, _, _ = acc.compare_route_costs(roads)
     assert differences
     assert "node 1" in differences[0]
     assert acc.check_parity(roads).status == "fail"
@@ -177,7 +177,7 @@ def test_the_parity_comparison_reports_a_difference(tmp_path: Path) -> None:
 def test_the_parity_comparison_reports_a_reachability_disagreement(tmp_path: Path) -> None:
     """A node the reference calls unreachable but WS4 reaches is a difference."""
     roads = _write_roads(tmp_path / "roads", "1,3.0\n2,-1\n")
-    differences, _ = acc.compare_route_costs(roads)
+    differences, _, _ = acc.compare_route_costs(roads)
     assert differences
     assert "unreachable in the reference" in differences[0]
 
@@ -492,3 +492,13 @@ def test_period_reports_of_annual_values_are_a_difference(tmp_path: Path) -> Non
     differences, _compared = acc.compare_account_values(dataset, report)
     assert differences
     assert acc.check_accounts(report, dataset).status == "fail"
+
+
+def test_a_reference_table_for_a_destination_the_model_lacks_is_skipped(tmp_path: Path) -> None:
+    """A cost table for a mill the model does not declare is named, not counted as a difference."""
+    roads = _write_roads(tmp_path / "roads", "1,3.0\n2,2.0\n")
+    (roads / "cost_destination.MILL3.csv").write_text("NODE,SUM_HAUL\n1,123.0\n", encoding="utf-8")
+    differences, compared, skipped = acc.compare_route_costs(roads)
+    assert differences == []
+    assert compared > 0
+    assert skipped == ["MILL3"]

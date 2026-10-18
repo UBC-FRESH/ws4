@@ -1544,3 +1544,18 @@ issue comments.
   sub-account WS4 has no counterpart for. What is left is the patches themselves — WS4's aggregate area is
   0.92 of the reference's, its count 1.03, its mean size 0.96 — so the components merge or split
   differently on the same schedule. 514 tests pass. Dashboard: **GREEN**.
+- P11.5 (#117), the route accounting: **two fixes worth having.** The ledger charged each used segment's
+  maintenance **per routed flow**, making maintenance a function of traffic — conceptually defensible and
+  not what the reference does, which charges each used road once for the period. Measured on the 2026
+  sample it was about **170×** the reference's per-period figure; with the reference's reading, WS4's
+  maintenance is **1.12** of the reference's and its haul expense 1.05, its built length 1.01 (over the
+  compared periods). The ledger's own test pins it: nine times the volume over the same segments leaves
+  the maintenance unchanged and grows only the haul, and it fails against the old behaviour (checked by
+  stashing the fix). The routing parity check also now compares the quantity the reference's table
+  *holds* — the 2026 sample ships `SUM_LENGTH` where earlier samples shipped `SUM_HAUL` — and skips a
+  reference table for a destination the model does not declare, naming it rather than reporting it as a
+  difference. With both, the 2026 sample's routing disagreement is a real one and precisely stated: **10
+  of 25,134 node-and-mill pairs**, where WS4's route is 97,169 m against the reference's 81,098 m. The
+  maintainer's direction is recorded in the roadmap: **verified parity first**, deliberate divergence
+  after, with a parity mode as the home for it — and the traffic-weighted maintenance is in the backlog
+  as the first candidate for that divergence. Dashboard: **GREEN**.

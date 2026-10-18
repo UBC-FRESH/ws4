@@ -444,7 +444,7 @@ class RouteCostLedger:
         if not self._flows:
             return
         for (year, destination, segment_ids), flow in self._flows.items():
-            volume, count = flow[0], flow[1]
+            volume = flow[0]
             for segment_id in segment_ids:
                 segment = self._by_id[segment_id]
                 is_new = segment_id not in self._built
@@ -462,14 +462,17 @@ class RouteCostLedger:
                 state.volume += volume
                 state.haul_expense += volume * segment.haul_cost
                 state.length = segment.length_m
-                state.maintain_expense += segment.maintain_cost * count
+                # A road is maintained once for each period it is used, however much traffic passes
+                # over it, so this is set rather than accumulated: the same segment is flushed once
+                # per route, and charging it per use multiplied it by the number of routed flows.
+                state.maintain_expense = segment.maintain_cost
                 per_dest = self._by_destination.setdefault(
                     (year, destination, segment_id), _SegmentState()
                 )
                 per_dest.volume += volume
                 per_dest.haul_expense += volume * segment.haul_cost
                 per_dest.length = segment.length_m
-                per_dest.maintain_expense += segment.maintain_cost * count
+                per_dest.maintain_expense = segment.maintain_cost
                 if is_new:
                     per_dest.build_expense += segment.build_cost
         self._flows.clear()

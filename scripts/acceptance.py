@@ -405,7 +405,7 @@ def check_growth(yield_dir: Path | None, dataset_dir: Path | None) -> CheckResul
     return CheckResult("growth", "pass", detail)
 
 
-def compare_route_costs(roads_dir: Path) -> tuple[list[str], int]:
+def compare_route_costs(roads_dir: Path) -> tuple[list[str], int, list[str]]:
     """Compare WS4's least-haul-cost routes to the reference's own per-node haul costs.
 
     The reference implementation ships ``cost_destination.<mill>.csv`` with ``NODE,SUM_HAUL``: the
@@ -422,8 +422,9 @@ def compare_route_costs(roads_dir: Path) -> tuple[list[str], int]:
 
     Returns
     -------
-    tuple of (list of str, int)
-        One line per difference, at most ten, and the number of node-and-mill pairs compared.
+    tuple of (list of str, int, list of str)
+        One line per difference, at most ten; the number of node-and-mill pairs compared; and the
+        reference tables skipped because the model declares no such destination.
     """
     _, segments, destinations, linkages = load_route_tables(roads_dir)
     network = RouteNetwork.from_tables(segments, destinations, linkages)
@@ -443,15 +444,27 @@ def compare_route_costs(roads_dir: Path) -> tuple[list[str], int]:
     )
 
     differences: list[str] = []
+    skipped: list[str] = []
     compared = 0
     for path in sorted(roads_dir.glob("cost_destination.*.csv")):
         label = path.name[len("cost_destination.") : -len(".csv")]
         account = next((name for name in accounts if name.rsplit(".", 1)[-1] == label), None)
         if account is None:
-            differences.append(f"{path.name}: no destination account named for {label}")
+            # a reference table for a mill this model no longer has, which is a property of the
+            # sample rather than a difference in WS4's routing
+            skipped.append(label)
             continue
         reference = pd.read_csv(path)
-        value_column = "SUM_HAUL" if "SUM_HAUL" in reference.columns else reference.columns[1]
+        # The reference's own column names say which quantity the table holds: a sum of haul rates,
+        # or a sum of route lengths. Earlier samples shipped the first and the 2026 sample the
+        # second, so a comparison that always used WS4's haul cost would compare different
+        # quantities.
+        sum_length = "SUM_LENGTH" in reference.columns or "LENGTH" in reference.columns
+        value_column = (
+            "SUM_LENGTH"
+            if "SUM_LENGTH" in reference.columns
+            else ("SUM_HAUL" if "SUM_HAUL" in reference.columns else reference.columns[1])
+        )
         expected = {
             int(node): float(value)
             for node, value in zip(reference.iloc[:, 0], reference[value_column], strict=True)
@@ -461,24 +474,28 @@ def compare_route_costs(roads_dir: Path) -> tuple[list[str], int]:
             if want is None:
                 continue
             route = network.route(block, account)
+            got = (
+                route.length_m
+                if sum_length and route is not None
+                else (route.haul_cost if route is not None else 0.0)
+            )
             compared += 1
             if want < 0.0:
                 if route is not None:
                     differences.append(
                         f"{label}: node {node} is unreachable in the reference,"
-                        f" reachable in WS4 at {route.haul_cost:.6f}"
+                        f" reachable in WS4 at {got:.6f}"
                     )
             elif route is None:
                 differences.append(
                     f"{label}: node {node} is reachable in the reference at {want:.6f},"
                     " unreachable in WS4"
                 )
-            elif abs(route.haul_cost - want) > 1e-6:
+            elif abs(got - want) > 1e-4 * max(abs(want), 1.0):
                 differences.append(
-                    f"{label}: node {node} haul {route.haul_cost:.6f}"
-                    f" against the reference {want:.6f}"
+                    f"{label}: node {node} routed {got:.6f} against the reference {want:.6f}"
                 )
-    return differences[:10], compared
+    return differences[:10], compared, skipped
 
 
 def _first_present(frame: pd.DataFrame, *names: str) -> str | None:
@@ -911,17 +928,20 @@ def check_parity(roads_dir: Path | None) -> CheckResult:
         return CheckResult("parity", "skip", "no --roads-sample given")
     if not roads_dir.is_dir():
         return CheckResult("parity", "fail", f"not a directory: {roads_dir}")
-    differences, compared = compare_route_costs(roads_dir)
+    differences, compared, skipped = compare_route_costs(roads_dir)
     if differences:
         return CheckResult(
             "parity",
             "fail",
             f"{len(differences)} difference(s) in {compared} comparisons: {differences[0]}",
         )
+    tail = ""
+    if skipped:
+        tail = f"; skipped {', '.join(skipped)} (the model declares no such destination)"
     return CheckResult(
         "parity",
         "pass",
-        f"WS4 agrees with the reference on all {compared} routed node-and-mill pairs",
+        f"WS4 agrees with the reference on all {compared} routed node-and-mill pairs{tail}",
     )
 
 

@@ -498,6 +498,11 @@ Deferred from P11, triaged in `notes/backlog.md`:
 
 - (none outstanding.)
 
+Direction (maintainer, mid-phase): **verified parity first.** Match the reference's semantics and prove
+it against its own reports; only from that base is WS4 free to redefine how something is calculated,
+justified and documented, and a parity mode that enforces the reference's readings is the natural home
+for those deliberate divergences.
+
 Acceptance criteria:
 
 - A target written the reference's way means the same thing in WS4, verified against the reference's own

@@ -207,3 +207,24 @@ def test_load_route_config_requires_the_tables(tmp_path: Path) -> None:
     path.write_text("route:\n  segments: s.csv\n", encoding="utf-8")
     with pytest.raises(ValueError, match="destinations, linkages"):
         load_route_config(path)
+
+
+def test_maintenance_is_charged_once_however_much_traffic_the_road_carries() -> None:
+    """A road is maintained once in a period, not once per tonne that passes over it."""
+    network = _network()
+    route = network.route(1, "10")
+    assert route is not None
+    one = RouteCostLedger(network)
+    one.record(0, 1, "product.Yield", 10.0, "10", route)
+    ten = RouteCostLedger(network)
+    ten.record(0, 1, "product.Yield", 10.0, "10", route)
+    ten.record(0, 2, "product.Yield", 90.0, "10", route)
+    single = one.route_cost_report()["maintain_expense"].iloc[0]
+    heavier = ten.route_cost_report()["maintain_expense"].iloc[0]
+    assert single > 0.0
+    # nine times the volume over the same segments: the maintenance is the same, and the haul is not
+    assert heavier == single
+    assert (
+        ten.route_cost_report()["haul_expense"].iloc[0]
+        > one.route_cost_report()["haul_expense"].iloc[0]
+    )
