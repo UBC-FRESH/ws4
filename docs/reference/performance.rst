@@ -71,14 +71,35 @@ it was taken at.
 Reproduce
 ---------
 
+The figures above come from ``scripts/benchmark.py`` on a C5-class sample: a model the lab maintains,
+with an established matrix under ``tracks/`` (``tracknames``, ``strata``, ``treatments``, ``blocks``,
+``features``, ``products``, ``protoaccounts``), a fragment/block inventory under ``blocks/``, a
+topology edge list there too, and the four road tables under ``roads/``. It is not in this repository,
+so the commands take its directory:
+
 .. code-block:: bash
 
-   python scripts/benchmark.py --scenario c5 --sample-dir <sample> \
-       --years 3 --route-blocks 300 --spatial-years 1 --workdir tmp/benchmark
-   python scripts/benchmark.py --scenario c5 --sample-dir <sample> --profile
+   SAMPLE=/path/to/c5/sample
+   python scripts/benchmark.py --scenario c5 --sample-dir $SAMPLE \
+       --years 30 --route-blocks 300 --spatial-years 1 --workdir tmp/benchmark
+   python scripts/benchmark.py --scenario c5 --sample-dir $SAMPLE \
+       --years 3  --route-blocks 300 --spatial-years 1 --workdir tmp/benchmark-3y
+   python scripts/benchmark.py --scenario c5 --sample-dir $SAMPLE \
+       --years 30 --route-blocks 300 --spatial-years 30 --workdir tmp/benchmark-spatial
 
-The benchmark times each component (ingest, simulate, edge contrast, routing, patch accounts, one
-objective evaluation) and reports peak memory. The recorded results are in
+The first gives the 30-year ``simulate`` and the other components, the second the 3-year ``simulate``
+with routing, and the third the patch-account figure **amortised** over 30 years — a single year
+carries about 0.3 s of one-off setup (the topology, the block areas, the patch store), which is why the
+per-year figure is the sum divided by the horizon.
+
+Two kinds of figure come out of this, and only one of them travels:
+
+- **Portable:** the counts — 16 174 fragments on this sample, and the table sizes. A re-run must
+  reproduce these exactly, and does.
+- **Host-dependent:** every timing. Reproducing a timing needs a comparable machine and the load it
+  was taken at, which is why the tables above record both.
+
+The recorded results, with the reproducibility check that Phase 8 ran against them, are in
 ``notes/performance.md``; the plan (bottleneck map, targets, and work packages) is
 ``notes/design/ws4-performance.md``.
 

@@ -367,9 +367,10 @@ established tool — instead of asserting it, by exercising WS4 against the refe
 own outputs and against the figures the earlier phases recorded.
 
 - [x] P8.1 Build a parity harness against the reference outputs (#91)
-- [ ] P8.2 Reproduce the C5 results from documented inputs (#92)
+- [x] P8.2 Reproduce the C5 results from documented inputs (#92)
 - [ ] P8.3 Speed up the criterion series and the patch-state construction (#93)
 - [ ] P8.4 Measure island scaling on a controlled host (#94)
+- [ ] P8.5 Compare WS4's accounts against a reference report (#95)
 
 Deferred from P8, triaged in `notes/backlog.md`:
 

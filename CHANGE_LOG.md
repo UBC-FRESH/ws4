@@ -1149,3 +1149,21 @@ issue comments.
   claim — and build and maintenance costs are not compared against the reference either. Tests:
   `tests/test_acceptance.py` covers agreement, a wrong haul cost, a reachability disagreement, the skip
   path, and a path that is not a directory. Dashboard: **GREEN** (seven gates).
+- P8.2 (verify): the C5 figures reproduced from documented commands. The Phase 6 acceptance numbers were
+  measured interactively, against a sample that is not in the repository, so `docs/reference/performance.rst`
+  now names what the sample must contain, gives the three invocations verbatim (30-year, 3-year with
+  routing, and the 30-year spatial run whose per-year figure is the sum divided by the horizon, since a
+  single year carries about 0.3 s of setup), and separates the figures that **travel** — the counts,
+  which a re-run must reproduce exactly — from the ones that do not, which are every timing and need the
+  machine and its load recorded with them. The re-run on the same 72-core host at a load average of 4.65:
+  16 174 fragments exactly; the 30-year simulate 0.113 s against 0.108 recorded; the 3-year simulate with
+  routing 0.576 s against 0.685; patch accounts 28 ms per year against 29; edge contrast 1.147-1.251 s
+  against 1.157; one objective evaluation 0.500-0.754 s against 0.681; peak memory 487-504 MB against
+  496. Everything reproduces within the noise of a shared host and the one exact count is exact, so no
+  recorded figure needs restating. Recorded in `notes/performance.md`. Dashboard: **GREEN** (seven gates).
+- Added P8.5 (#95) to Phase 8: compare WS4's accounts against a reference report. P8.1 established the
+  largest remaining gap in the replacement claim — the reference sample ships no account report, so
+  "the same schedule produces the same accounts in both tools" is undemonstrated — and this task makes it
+  a deliverable: specify the report the comparison needs, extend the parity harness to check one, and
+  document how the reference produces it. Producing the report needs the reference implementation, which
+  is outside the repository.

@@ -327,3 +327,26 @@ islands. The limit is not the BLAS pools (the A/B above) and not the per-process
 load, candidate chains, patch state). It is contention: the machine's load average moved between 4
 and 65 across the session's runs, and the rounds above differ by ±15% at the same setting. A scaling
 figure from this host is only meaningful with its load recorded, which is why both tables carry it.
+
+### P8.2 the C5 figures, reproduced from the documented commands
+
+The Phase 6 acceptance figures were measured interactively, so Phase 8 re-ran them from the commands
+now written in `docs/reference/performance.rst`, on the same 72-core host, at a load average of 4.65
+at the start. The sample is the one the lab maintains, which is not in the repository; that is now
+stated in the documentation, along with what it must contain.
+
+| Figure | Recorded (Phase 6) | Re-run (Phase 8) | Difference |
+| --- | ---: | ---: | --- |
+| C5 30-year `simulate` | 0.108 s | 0.113 s | +5% |
+| C5 3-year `simulate` + routing, 300 blocks | 0.685 s | 0.576 s | -16% |
+| Patch accounts, per year, amortised over 30 years | 29 ms | 28 ms | -3% |
+| Edge contrast, 30 years | 1.157 s | 1.147 / 1.251 s | +-5% |
+| One full objective evaluation | 0.681 s | 0.500 - 0.754 s | within noise |
+| Fragments in the compiled sample | 16 174 | 16 174 | exact |
+| Peak resident memory | 496 MB | 487 - 504 MB | +-3% |
+
+Everything reproduces within the noise of a shared host, and the one count that must be exact is. No
+figure has drifted in a way that needs restating; the timings vary by a few percent between runs at
+the same load, which is the reason each table records the machine and the load it was taken at rather
+than a single number to be trusted to three decimals.
+
