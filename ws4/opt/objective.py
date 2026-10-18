@@ -177,6 +177,32 @@ def penalty(value: float, target: Target) -> float:
     return total
 
 
+def flow_period_ends(target: Target, years: int) -> list[int]:
+    """Return the year each of a flow target's periods ends on.
+
+    A flow target constrains the shape of an account's profile, one value per period and in the
+    order :func:`flow_values` returns them. The periods are the ones whose **end** year falls in the
+    target's window, which is the reference implementation's convention and the same one
+    :meth:`Target.cell_years` uses.
+
+    Parameters
+    ----------
+    target : Target
+        A target whose ``flow`` is ``"even"`` or ``"ndy"``.
+    years : int
+        The horizon, in years; the window's end when ``flow_end`` is not set.
+
+    Returns
+    -------
+    list of int
+        The end year of each period of the window, ascending.
+    """
+    width = max(1, target.period_width)
+    stop = target.flow_end if target.flow_end is not None else years
+    # the window is half-open, so a period ending exactly at its end is outside it
+    return [end for end in range(width, stop, width) if end > target.flow_start]
+
+
 def flow_values(
     index: Mapping[tuple[int, str], float],
     target: Target,
@@ -220,24 +246,26 @@ def flow_values(
         One percent value per compared period; empty when the window holds fewer than two periods.
     """
     width = max(1, target.period_width)
-    stop = target.flow_end if target.flow_end is not None else years
     account = target.account
-    first = target.flow_start
-    if target.flow == "ndy" and first >= width:
+    # The period grid is anchored at zero and each period **ends** at a multiple of its width, which
+    # is the reference's convention (see `Target.cell_years`): the C5 model's period 1 ends at year
+    # 10 and covers years 1-10, so a window from year 101 to 200 holds the periods ending at 110
+    # through 200. A window that reaches back past year 0 contributes nothing, which is how the
+    # reference's initial snapshot period is expressed.
+    ends = flow_period_ends(target, years)
+    if target.flow == "ndy" and ends and ends[0] - width > 0:
         # A non-declining window includes its first period, which compares with the period before
         # the window, so the series starts one period earlier than the window does.
-        first -= width
+        ends = [ends[0] - width, *ends]
     periods: list[float] = []
-    starts: list[int] = []
-    for begin in range(first, stop, width):
+    for end in ends:
         total = 0.0
-        for year in range(begin, min(begin + width, stop)):
+        for year in range(max(0, end - width + 1), end + 1):
             cell = (year, account)
             total += index.get(cell, 0.0)
             if pending is not None:
                 total += pending.get(cell, 0.0)
         periods.append(total)
-        starts.append(begin)
     if len(periods) < 2:
         return []
     if target.flow == "ndy":
@@ -250,10 +278,10 @@ def flow_values(
         return values
     reference = len(periods) - 1
     if target.flow_reference is not None:
-        # the period containing that year, clamped to the window
+        # the period whose window contains that year, clamped to the window
         reference = 0
-        for position, begin in enumerate(starts):
-            if begin <= target.flow_reference:
+        for position, end in enumerate(ends):
+            if end - width < target.flow_reference <= end:
                 reference = position
     balance = periods[reference]
     if balance <= 0.0:

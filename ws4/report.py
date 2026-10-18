@@ -12,7 +12,13 @@ from pathlib import Path
 
 import pandas as pd
 
-from .opt.objective import Target, penalty, period_value
+from .opt.objective import (
+    Target,
+    flow_period_ends,
+    flow_values,
+    penalty,
+    period_value,
+)
 
 
 def _by_year(values: pd.DataFrame) -> dict[tuple[int, str], float]:
@@ -75,6 +81,28 @@ def ratio_account(
     return pd.DataFrame(rows, columns=["year", "account", "value"])
 
 
+def _status(value: float, target: Target) -> str:
+    """Return whether a value is within a target's bounds.
+
+    Parameters
+    ----------
+    value : float
+        The target's value for the period.
+    target : Target
+        The target.
+
+    Returns
+    -------
+    str
+        ``met``, ``below`` or ``above``.
+    """
+    if target.minimum is not None and value < target.minimum:
+        return "below"
+    if target.maximum is not None and value > target.maximum:
+        return "above"
+    return "met"
+
+
 def target_status(values: pd.DataFrame, targets: list[Target]) -> pd.DataFrame:
     """Report each target's value, bounds, and whether it was met.
 
@@ -92,19 +120,34 @@ def target_status(values: pd.DataFrame, targets: list[Target]) -> pd.DataFrame:
         ``maximum``, ``penalty``, and ``status`` (``met``, ``below``, or ``above``).
     """
     index = _by_year(values)
+    horizon = max((year for year, _ in index), default=-1) + 1
     rows: list[dict[str, object]] = []
     for target in targets:
+        if target.flow:
+            # A flow target constrains the shape of a profile, so its report is the series itself:
+            # one row per period, exactly as the reference reports it. Reporting the single value a
+            # level target would have made a flow target look met while the search paid for it.
+            for year, value in zip(
+                flow_period_ends(target, horizon), flow_values(index, target, horizon), strict=True
+            ):
+                rows.append(
+                    {
+                        "account": target.account,
+                        "year": year,
+                        "value": value,
+                        "minimum": target.minimum,
+                        "maximum": target.maximum,
+                        "penalty": penalty(value, target),
+                        "status": _status(value, target),
+                    }
+                )
+            continue
         # A target is priced over its period exactly as the objective prices it: the window's sum
         # for an accumulating account, the period's end value for a level. Reading one year of it
         # reported a periodic target as unmet — with a penalty the search never applied — whenever
         # the period's later years carried it over the line.
         value = period_value(index, target)
-        if target.minimum is not None and value < target.minimum:
-            status = "below"
-        elif target.maximum is not None and value > target.maximum:
-            status = "above"
-        else:
-            status = "met"
+        status = _status(value, target)
         rows.append(
             {
                 "account": target.account,

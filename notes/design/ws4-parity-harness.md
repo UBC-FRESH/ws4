@@ -321,3 +321,32 @@ in both tools first. That reconciliation belongs with the mill-set task, since i
 the same report, and the order it should be done in is: maintenance, then the reporting window, then the
 per-product split of the routed volume (which the ledger already records and only has to expose).
 
+## The flow targets: the values already match, the reporting is what was wrong
+
+The reference declares four flow accounts in its model file, all scaled by 100 and applied per period:
+
+| Reference account | Account it constrains | Window |
+| --- | --- | --- |
+| `flow.ndy.feature.Yield.Conif` / `.Decid` | `feature.Yield.managed.Conif` / `.Decid` | `ndy(periods-9, periods, -1)` — the last ten periods |
+| `flow.even.product.Yield.Conif` / `.Decid` | `product.Yield.managed.Conif` / `.Decid` | `even()` — the whole horizon |
+| `flow.even.product.Yield.Conif.Mill1` / `.Mill2` | the same account per mill | as above |
+
+Comparing them needed one fix, and it was a convention fix: **`flow_values` built its periods
+start-labelled**, which P11.1's sweep had not reached. With the periods ending at their year — the same
+convention as `Target.cell_years()` — WS4's flow values reproduce the reference's to four decimals:
+
+| Period | Year | Reference | WS4 |
+| ---: | ---: | ---: | ---: |
+| 1 | 10 | 40.244 | **40.244** |
+| 2 | 20 | 6.086 | **6.086** |
+| 3 | 30 | 2.722 | **2.723** |
+| 4 | 40 | −4.435 | **−4.435** |
+
+**What is still open, and it is reporting rather than arithmetic.** A flow series does not have one value
+per period of its window: ``even`` omits its **reference period** (which contributes no value of its
+own) and ``ndy`` needs the period before its window only as a base. So a report that emits one row per
+period — which is what the reference's `targetSummary.csv` does, with a zero for the snapshot — has to
+say which period each value belongs to. `flow_period_ends()` now exposes WS4's own period grid for that,
+and the report uses it; what remains is aligning the omitted period with the reference's row, and then
+the comparison belongs with the other derived targets.
+

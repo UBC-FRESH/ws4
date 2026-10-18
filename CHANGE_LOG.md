@@ -1486,3 +1486,12 @@ issue comments.
   year against the reference's ten, and its routed volume is every product where the reference's mill
   product is the conifer share. Handed to #117, which is the same subject and the same report. Dashboard:
   **GREEN**.
+- P11.3 (#115), in progress: the flow targets' **windows and reporting**. `flow_values` still built its
+  periods start-labelled — a convention P11.1's sweep had not reached — and with the periods ending at
+  their year WS4 reproduces the reference's own flow values to four decimals (period 1: **40.244** both
+  sides; period 4: −4.435 both). `report_targets.csv` no longer prices a flow target as a level: it
+  emits **one row per period** of the series, priced by the same `penalty` the objective uses, which
+  closes the reporting gap recorded in `notes/backlog.md`. `flow_period_ends()` exposes the period grid
+  the series belongs to, and twelve flow tests now state the end-labelled convention. What remains is
+  mapping the series onto the reference's rows — an `even` series omits its reference period — and the
+  comparison, which belongs with the other derived targets. Dashboard: **GREEN**.
