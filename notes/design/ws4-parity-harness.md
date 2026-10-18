@@ -260,3 +260,35 @@ the reason is visible in the sample rather than in WS4: its `roads/` folder mixe
 2018 where the others are 2025, with the column renamed from `SUM_HAUL` to `SUM_LENGTH`). The growth
 check finds no `Y<n>` curves in this sample's lookup model and needs retargeting.
 
+## The derived targets: what the reference means by each
+
+The reference declares every derived account in its own model file (`analysis/C5.pin`), so none of them
+has to be guessed at. Read from there, with the scale factor each applies:
+
+| Reference account | Numerator | Denominator | Scale |
+| --- | --- | --- | --- |
+| `ratio.VQO.<code>` | `feature.VQO.<code>` | `total.feature.VQO.<code>` | — |
+| `ratio.ECA.Recovery.<ws>` | `feature.ECA.Recovery` | a per-watershed area from a shapefile summary | `100 / area_ha` |
+| `ratio.route.build` | `route.total.build` | `route.total.conifer` | `10000` |
+| `ratio.route.maint` | `route.total.maint` | `route.total.conifer` | `10000` |
+| `ratio.route.haul.MILL1` | `route.haul.MILL1` | `product.Mill1.Yield.Conif` | `10000` |
+| `ratio.route.haul.MILL2` | `route.haul.MILL2` | `product.Mill2.Yield.Conif` | `10000` |
+| `ratio.route.current.<ws>` | `route.current.<ws>` | the watershed's area | `1000 / area_ha` |
+| `ratio.route.recent.<ws>` | `route.recent.<ws>` | the watershed's area | `1000 / area_ha` |
+| `ratio.route.lifetime.<ws>` | `route.lifetime.<ws>` | the watershed's area | `1000 / area_ha` |
+
+**Which of them WS4 can compute today, and what each is missing:**
+
+| Family | WS4 has | Missing |
+| --- | --- | --- |
+| `ratio.ECA.Recovery.<ws>` | the numerator (`feature.ECA.Recovery` is a WS4 account) | **the watershed**: the areas come from a *complete-coverage* shapefile (`../data/fragments.shp`, `WATER_CODE`) that includes non-forest land, and each block's watershed comes from the same source. Neither is in the block matrix WS4 ingests |
+| `ratio.VQO.<code>` | nothing on either side | the `feature.VQO.<code>` features are **not in the matrix at all** — the VQO zones are a model layer, not a block attribute |
+| `ratio.route.build`, `.maint` | WS4 computes route build and maintenance costs, and routes conifer to the mills | those costs are not *accounts* in its compiled set, and `route.total.conifer` has no WS4 counterpart |
+| `ratio.route.haul.MILL1/2` | WS4 computes a least-haul-cost route per block and mill, and routes the volume | `route.haul.MILL1` and `product.Mill1.Yield.Conif` are not accounts WS4 reports |
+| `ratio.route.current/recent/lifetime.<ws>` | route build age classes exist in its route model | the watershed assignment and areas, as above |
+
+So the ratios are **not** a case of adding a division to something WS4 already produces: four of the five
+families need an input WS4 does not ingest (a complete-coverage watershed table, or the VQO zones), and
+the fifth needs route costs and mill volumes exposed as accounts. Which of those WS4 should take on is a
+scoping decision, and the next section states the order this note recommends.
+
