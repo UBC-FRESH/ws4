@@ -1134,3 +1134,18 @@ issue comments.
   four child tasks (#91 to #94) — a parity harness against the reference implementation's outputs, the
   C5 results reproduced from documented inputs, the criterion-series and patch-state performance lever
   that P7.5 named, and island scaling measured on a host whose load is recorded. Dashboard: **GREEN**.
+- P8.1 (verify): a parity harness against the reference implementation's own outputs. The reference
+  sample ships `cost_destination.<mill>.csv`, the summed haul rate from each network node to each mill
+  (`-1` where it cannot reach one), which is exactly the quantity WS4's route model computes from the
+  same tables — so the comparison tests the **routing**, not the data. `scripts/acceptance.py` gains a
+  `parity` check and a `--roads-sample` option: it loads the reference's network, computes WS4's
+  least-haul-cost route for every block and mill, and compares the sums node by node, treating the
+  reference's `-1` as WS4's no-route and allowing 1e-6. **It found no differences**: on the C5-class
+  sample (36 722 segments, 27 231 vertices, three mills, 12 568 blocks) WS4 agrees with the reference on
+  all **37 701** node-and-mill pairs a block is linked to, including every node the reference marks
+  unreachable. The decision and the limits are in `notes/design/ws4-parity-harness.md`, which states
+  plainly what is **not** covered: the sample ships no account report, so "the same schedule produces
+  the same accounts in both tools" remains undemonstrated — the largest remaining gap in the replacement
+  claim — and build and maintenance costs are not compared against the reference either. Tests:
+  `tests/test_acceptance.py` covers agreement, a wrong haul cost, a reachability disagreement, the skip
+  path, and a path that is not a directory. Dashboard: **GREEN** (seven gates).

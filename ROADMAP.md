@@ -366,7 +366,7 @@ Goal: demonstrate the claim the project exists to support — that WS4 is a work
 established tool — instead of asserting it, by exercising WS4 against the reference implementation's
 own outputs and against the figures the earlier phases recorded.
 
-- [ ] P8.1 Build a parity harness against the reference outputs (#91)
+- [x] P8.1 Build a parity harness against the reference outputs (#91)
 - [ ] P8.2 Reproduce the C5 results from documented inputs (#92)
 - [ ] P8.3 Speed up the criterion series and the patch-state construction (#93)
 - [ ] P8.4 Measure island scaling on a controlled host (#94)

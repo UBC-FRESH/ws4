@@ -113,3 +113,73 @@ def test_main_fails_on_a_bad_case(tmp_path: Path) -> None:
         ]
     )
     assert code == 1
+
+
+def _write_roads(root: Path, reference: str) -> Path:
+    """Write a three-node network whose reference cost table holds ``reference``.
+
+    Parameters
+    ----------
+    root : Path
+        The directory to write into.
+    reference : str
+        The body of ``cost_destination.MILL1.csv``, below its header row.
+
+    Returns
+    -------
+    Path
+        The directory written.
+    """
+    root.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(
+        {
+            "SEGMENT": [1, 2],
+            "FNODE": [1, 2],
+            "TNODE": [2, 3],
+            "LENGTH": [1000.0, 2000.0],
+            "HAUL": [1.0, 2.0],
+            "BUILD": [0.0, 0.0],
+            "MAINTAIN": [0.0, 0.0],
+        }
+    ).to_csv(root / "segments.csv", index=False)
+    pd.DataFrame({"NODE": [3], "ACCOUNT": ["destination.MILL1"]}).to_csv(
+        root / "destinations.csv", index=False
+    )
+    pd.DataFrame({"BLOCK": [1, 2], "NODE": [1, 2]}).to_csv(root / "linkages.csv", index=False)
+    pd.DataFrame({"NODE": [1, 2, 3], "X": [0.0, 1.0, 2.0], "Y": [0.0, 1.0, 2.0]}).to_csv(
+        root / "vertices.csv", index=False
+    )
+    (root / "cost_destination.MILL1.csv").write_text("NODE,SUM_HAUL\n" + reference)
+    return root
+
+
+def test_the_parity_comparison_agrees_when_the_reference_agrees(tmp_path: Path) -> None:
+    """A node the reference cannot reach is one WS4 cannot reach, and the sums match otherwise."""
+    roads = _write_roads(tmp_path / "roads", "1,3.0\n2,2.0\n")
+    differences, compared = acc.compare_route_costs(roads)
+    assert differences == []
+    assert compared == 2
+    assert acc.check_parity(roads).status == "pass"
+
+
+def test_the_parity_comparison_reports_a_difference(tmp_path: Path) -> None:
+    """A reference haul cost that WS4 does not reproduce is a difference, and fails the check."""
+    roads = _write_roads(tmp_path / "roads", "1,99.0\n2,2.0\n")
+    differences, _ = acc.compare_route_costs(roads)
+    assert differences
+    assert "node 1" in differences[0]
+    assert acc.check_parity(roads).status == "fail"
+
+
+def test_the_parity_comparison_reports_a_reachability_disagreement(tmp_path: Path) -> None:
+    """A node the reference calls unreachable but WS4 reaches is a difference."""
+    roads = _write_roads(tmp_path / "roads", "1,3.0\n2,-1\n")
+    differences, _ = acc.compare_route_costs(roads)
+    assert differences
+    assert "unreachable in the reference" in differences[0]
+
+
+def test_the_parity_check_skips_and_rejects(tmp_path: Path) -> None:
+    """No sample means skip; a path that is not a directory is a failure, not a crash."""
+    assert acc.check_parity(None).status == "skip"
+    assert acc.check_parity(tmp_path / "absent").status == "fail"

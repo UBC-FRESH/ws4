@@ -7,6 +7,8 @@ The checks verify the build against its acceptance criteria:
 - ``optimizer``: run a small search and check that it meets a target within tolerance.
 - ``roads``: route a product over a small network.
 - ``api``: build a model programmatically and via the file path and check they match.
+- ``parity``: with ``--roads-sample``, compare WS4's least-haul-cost routes to the reference
+  implementation's own ``cost_destination.*.csv`` tables, node by node.
 - ``builder``: for each ``--case`` (a recipe, a fragment inventory, and a reference matrix
   directory), compile the recipe and compare the compiled matrix to the reference tables.
   No case is required; without one the check is skipped.
@@ -38,7 +40,7 @@ from ws4.build.compiler import build_canonical_dataset
 from ws4.model.api import Model
 from ws4.model.schema import validate_dataset
 from ws4.opt.engine import OptimizeConfig, Optimizer
-from ws4.roads.network import RouteNetwork
+from ws4.roads.network import RouteNetwork, load_route_tables
 from ws4.sim.engine import Simulator
 
 Status = Literal["pass", "fail", "skip"]
@@ -235,6 +237,114 @@ def check_roads(workdir: Path) -> CheckResult:
     )
 
 
+def compare_route_costs(roads_dir: Path) -> tuple[list[str], int]:
+    """Compare WS4's least-haul-cost routes to the reference's own per-node haul costs.
+
+    The reference implementation ships ``cost_destination.<mill>.csv`` with ``NODE,SUM_HAUL``: the
+    sum of the segment haul rates from that network node to that mill, and ``-1`` where it cannot
+    reach it. WS4 computes the same quantity from the same tables, so this compares the **routing**
+    rather than the data — a node the reference cannot reach must be one WS4 cannot reach either,
+    and where both reach it the sums must agree. Nodes no block is linked to are not compared, since
+    WS4 routes from blocks.
+
+    Parameters
+    ----------
+    roads_dir : Path
+        A directory with the network tables and the reference's ``cost_destination.*.csv`` files.
+
+    Returns
+    -------
+    tuple of (list of str, int)
+        One line per difference, at most ten, and the number of node-and-mill pairs compared.
+    """
+    _, segments, destinations, linkages = load_route_tables(roads_dir)
+    network = RouteNetwork.from_tables(segments, destinations, linkages)
+    node_column = "NODE" if "NODE" in linkages.columns else "vertex_id"
+    block_column = "BLOCK" if "BLOCK" in linkages.columns else "block_id"
+    account_column = "ACCOUNT" if "ACCOUNT" in destinations.columns else "name"
+    destination_node = "NODE" if "NODE" in destinations.columns else "vertex_id"
+    nodes: dict[int, int] = dict(
+        zip(linkages[block_column].astype(int), linkages[node_column].astype(int), strict=True)
+    )
+    accounts: dict[str, int] = dict(
+        zip(
+            destinations[account_column].astype(str),
+            destinations[destination_node].astype(int),
+            strict=True,
+        )
+    )
+
+    differences: list[str] = []
+    compared = 0
+    for path in sorted(roads_dir.glob("cost_destination.*.csv")):
+        label = path.name[len("cost_destination.") : -len(".csv")]
+        account = next((name for name in accounts if name.rsplit(".", 1)[-1] == label), None)
+        if account is None:
+            differences.append(f"{path.name}: no destination account named for {label}")
+            continue
+        reference = pd.read_csv(path)
+        value_column = "SUM_HAUL" if "SUM_HAUL" in reference.columns else reference.columns[1]
+        expected = {
+            int(node): float(value)
+            for node, value in zip(reference.iloc[:, 0], reference[value_column], strict=True)
+        }
+        for block, node in nodes.items():
+            want = expected.get(node)
+            if want is None:
+                continue
+            route = network.route(block, account)
+            compared += 1
+            if want < 0.0:
+                if route is not None:
+                    differences.append(
+                        f"{label}: node {node} is unreachable in the reference,"
+                        f" reachable in WS4 at {route.haul_cost:.6f}"
+                    )
+            elif route is None:
+                differences.append(
+                    f"{label}: node {node} is reachable in the reference at {want:.6f},"
+                    " unreachable in WS4"
+                )
+            elif abs(route.haul_cost - want) > 1e-6:
+                differences.append(
+                    f"{label}: node {node} haul {route.haul_cost:.6f}"
+                    f" against the reference {want:.6f}"
+                )
+    return differences[:10], compared
+
+
+def check_parity(roads_dir: Path | None) -> CheckResult:
+    """Compare WS4's routing to the reference implementation's own per-node haul costs.
+
+    Parameters
+    ----------
+    roads_dir : Path or None
+        A sample's ``roads`` directory, or None to skip the comparison.
+
+    Returns
+    -------
+    CheckResult
+        ``pass`` when WS4 agrees with every reference value, ``fail`` on the first differences, and
+        ``skip`` when no directory was given.
+    """
+    if roads_dir is None:
+        return CheckResult("parity", "skip", "no --roads-sample given")
+    if not roads_dir.is_dir():
+        return CheckResult("parity", "fail", f"not a directory: {roads_dir}")
+    differences, compared = compare_route_costs(roads_dir)
+    if differences:
+        return CheckResult(
+            "parity",
+            "fail",
+            f"{len(differences)} difference(s) in {compared} comparisons: {differences[0]}",
+        )
+    return CheckResult(
+        "parity",
+        "pass",
+        f"WS4 agrees with the reference on all {compared} routed node-and-mill pairs",
+    )
+
+
 def check_api(workdir: Path) -> CheckResult:
     """Build a model programmatically and via the file path and compare them.
 
@@ -308,6 +418,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         metavar=("RECIPE", "FRAGMENTS", "REFERENCE"),
         help="a builder case: recipe, fragments, and a reference matrix directory",
     )
+    parser.add_argument(
+        "--roads-sample",
+        type=Path,
+        default=None,
+        help="a sample's roads directory, to compare WS4's routing to the reference's haul costs",
+    )
     args = parser.parse_args(argv)
     cases = [(Path(r), Path(f), Path(x)) for r, f, x in args.case]
     with tempfile.TemporaryDirectory() as scratch:
@@ -318,6 +434,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             check_optimizer(workdir / "opt-run"),
             check_roads(workdir),
             check_api(workdir / "api"),
+            check_parity(args.roads_sample),
         ]
     print(render(results))
     return 1 if any(result.status == "fail" for result in results) else 0
