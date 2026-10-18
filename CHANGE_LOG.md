@@ -1313,3 +1313,10 @@ issue comments.
   5.0k/14k iterations/s at 8/32 islands, contradicting the scaling table lower down the same page; it
   now carries P8.4's recorded 6.0k/18.7k (5.7x/17.7x) and the 30-year simulate reads ~0.10 s.
   Dashboard: **GREEN** (seven gates).
+- Phase 9 (Spatial performance and memory) is held **active** on `feature/p9-memory` with its four
+  engineering tasks complete (P9.1-P9.4) and P9.5 outstanding, decided with the maintainer rather than
+  deferring #95 a second time: it needs an export from a licensed Windows run of the reference, and the
+  phase closes when it lands. The roadmap now says so, with what the export must contain and the command
+  that consumes it. The packaged sample Monday's run depends on was re-verified rather than assumed:
+  `c5-sample-for-parity.zip`, 88 MB, sha256 `cd0aa1f3…`, extracted and checked against its 139 per-file
+  digests, all OK. Dashboard: **GREEN** (seven gates).

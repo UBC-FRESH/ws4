@@ -410,6 +410,17 @@ Deferred from P9, triaged in `notes/backlog.md`:
 
 - (none outstanding.)
 
+Holding on an external input:
+
+P9 stays **active** until P9.5 lands, rather than deferring it a second time. It needs an export from a
+licensed Windows run of the reference: `schedule.csv` (one row per decision: block, treatment, year) and
+`account_values.csv` (one row per account per period), replayed in WS4 by
+`python scripts/acceptance.py --accounts-report <export> --accounts-dataset <compiled c5>`. The
+comparison, the export specification and what it does *not* cover are in
+`notes/design/ws4-parity-harness.md`. The sample to run it on is packaged beside the workspace as
+`c5-sample-for-parity.zip` with 139 per-file digests in `c5-sample-for-parity.sha256`; the archive
+verifies against them.
+
 Acceptance criteria:
 
 - The dataset is shared across workers, or there is a measured reason it cannot be.
