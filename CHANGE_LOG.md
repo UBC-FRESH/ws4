@@ -1423,3 +1423,11 @@ issue comments.
   both explicitly. `requirements-dev.txt` now names `nbclient` and `ipykernel` with the reason, so the
   suite carries what it needs rather than depending on a transitive dependency. The `Notebook outputs`
   job itself is **green in CI**; dashboard **GREEN**.
+- Third CI iteration on the Phase 10 pull request, and a correction to the check's doctrine rather than
+  a workaround: the `ws4 watch` progress table drifted in CI by **one column of padding**. A rich table
+  is drawn to the width of its values, so masking the values is not enough — the check now flattens
+  layout too, removing box-drawing characters and column padding and **counting** them (`layout x5706`
+  on a full run, alongside `duration x2, elapsed x2, rate x2, version x10`). Content is still compared
+  exactly; the width it was rendered at is not. A unit test pins two differently-padded renders of the
+  same content as equal. Locally the suite reports **47 cells compared, 3 skipped, 0 drifted**;
+  dashboard **GREEN**.

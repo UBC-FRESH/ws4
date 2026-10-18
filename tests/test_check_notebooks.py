@@ -153,3 +153,12 @@ def test_refresh_writes_the_run_outputs_back(tmp_path: Path) -> None:
     refreshed = nbformat.read(path, as_version=4)  # type: ignore[no-untyped-call]
     text = "".join(refreshed.cells[0]["outputs"][0]["text"])
     assert "hello" in text
+
+
+def test_the_width_a_table_is_drawn_at_is_not_drift() -> None:
+    """Two renders of the same content, padded differently, compare equal."""
+    counts: dict[str, int] = {}
+    wide = "| iteration 200/200   eval/s   seed 1   sa              |"
+    narrow = "| iteration 200/200   eval/s   seed 1   sa             |"
+    assert check.normalise(wide, counts) == check.normalise(narrow, counts)
+    assert counts.get("layout", 0) > 0

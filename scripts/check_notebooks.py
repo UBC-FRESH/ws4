@@ -13,9 +13,11 @@ What it cannot compare, and what it does about it:
   and a path reports the machine's layout. Those are normalised away, and the number of times each
   normalisation fired is printed, so nothing is smoothed silently.
 - **Time and rate.** A duration or a throughput depends on the host, not on the code.
-- **Terminal rendering.** ANSI escapes are stripped, and cells whose output is a live render
-  rather than a result can be tagged ``no-drift-check`` in the notebook itself, which is visible in
-  the source rather than hidden here. The count of skipped cells is reported.
+- **Terminal rendering.** ANSI escapes are stripped, and so is the layout: box-drawing characters
+  and column padding are removed, because a table is drawn to the width of its values. A cell whose
+  output is an environment report rather than a result can be tagged ``no-drift-check`` in the
+  notebook itself, which is visible in the source rather than hidden here. The count of skipped
+  cells, and of every normalisation applied, is reported.
 
 Everything else is compared exactly. If the check reports drift, either the notebook is stale
 (re-run it and commit the new outputs) or something changed that the example should have caught.
@@ -61,6 +63,11 @@ _NORMALISATIONS: tuple[tuple[str, re.Pattern[str], str], ...] = (
     # a progress table prints the elapsed time as a bare number, with no unit to key on
     ("elapsed", re.compile(r"(elapsed\s*[|│]\s*)[\d.]+"), r"\1<elapsed>"),
 )
+
+# Rich terminal output draws a box around its values, so the padding depends on how wide those
+# values render and on the terminal the notebook was run in. The content is the claim.
+_BOX_DRAWING = re.compile(r"[\u2500-\u257f]")
+_PADDING = re.compile(r" {2,}")
 
 #: A cell tagged with this is not compared: its output is a live render or an environment report.
 SKIP_TAG = "no-drift-check"
@@ -135,12 +142,15 @@ def normalise(text: str, counts: dict[str, int]) -> str:
     Returns
     -------
     str
-        The normalised text: ANSI stripped, trailing whitespace removed, unstable values masked.
+        The normalised text: rendering stripped, layout flattened, unstable values masked.
     """
     masked = _ANSI.sub("", text)
     for name, pattern, replacement in _NORMALISATIONS:
         masked, fired = pattern.subn(replacement, masked)
         counts[name] = counts.get(name, 0) + fired
+    masked, boxes = _BOX_DRAWING.subn(" ", masked)
+    masked, padding = _PADDING.subn(" ", masked)
+    counts["layout"] = counts.get("layout", 0) + boxes + padding
     return "\n".join(line.rstrip() for line in masked.splitlines()).strip("\n")
 
 
