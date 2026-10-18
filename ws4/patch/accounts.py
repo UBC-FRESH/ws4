@@ -13,11 +13,15 @@ sub-accounts:
     The mean compactness of the patches in the class, 0 to 100 (100 is a circle).
 ``frequency``
     The number of patches in the size class.
-``attractor``
-    A flag that draws the average patch size toward the class; its value mimics ``size``.
 
 The block contribution to a patch is its criterion value times its area, so a half
 disturbed block contributes half its area.
+
+``attractor`` is the sixth sub-account the reference reports, and **WS4 refuses it**: what the
+reference reports there is a per-patch size statistic that its own exported tables do not
+determine (P12.4). WS4 used to write a ``1.0`` flag for it, which is not a value — see
+``notes/design/ws4-parity-harness.md``, "The attractor sub-account", and the refusal in
+:func:`load_patch_accounts`.
 """
 
 from __future__ import annotations
@@ -48,8 +52,6 @@ class PatchAccount:
         The criterion value a block must exceed to join a patch.
     size_classes : tuple of float
         The size-class upper bounds, in hectares, ascending. The last may be ``inf``.
-    attractor : int or None
-        The index of the class an attractor sub-account is defined for, or None.
     search_distance : float or None
         The topology search distance, in metres: only edges whose endpoints are no further apart
         than it join a patch. The default ``0.0`` joins only blocks that literally touch (their
@@ -60,7 +62,6 @@ class PatchAccount:
     criteria: str
     threshold: float = 0.0
     size_classes: tuple[float, ...] = DEFAULT_SIZE_CLASSES
-    attractor: int | None = None
     search_distance: float | None = 0.0
 
 
@@ -175,9 +176,6 @@ def patch_account_values(
         )
     result["TOTAL.area"] = total_area
     result["TOTAL.frequency"] = float(len(patches))
-    if account.attractor is not None:
-        label = labels[account.attractor]
-        result[f"{label}.attractor"] = 1.0
     return result
 
 
@@ -270,17 +268,42 @@ def patch_account_values_indexed(
         )
     result["TOTAL.area"] = total_area
     result["TOTAL.frequency"] = float(len(areas))
-    if account.attractor is not None:
-        label = labels[account.attractor]
-        result[f"{label}.attractor"] = 1.0
     return result
+
+
+def _refuse_attractor(account: str) -> None:
+    """Refuse an ``attractor`` sub-account, with what was measured about it.
+
+    Parameters
+    ----------
+    account : str
+        The account's name, for the message.
+
+    Raises
+    ------
+    ValueError
+        Always: WS4 does not report this sub-account.
+    """
+    raise ValueError(
+        f"{account}: the attractor sub-account is refused. What the reference reports for it is "
+        "a per-patch size statistic that its own exported tables do not determine: it is zero "
+        "exactly when the class holds no patches, and it tracks a fraction of the class's mean "
+        "patch area — 0.52 to 0.69 within one class, falling to 0.015 in the largest — which no "
+        "product or ratio of the reported area, blocks, size, shape, frequency and freqpercent "
+        "reproduces (a log-linear fit against all six leaves a 9% median and a 58% worst "
+        "residual). The class's size share, which one reading of the reference's documentation "
+        "has it mimic, is 0.26 to 2.57 times its value cell by cell. So WS4 reports no number it "
+        "cannot stand behind, and keeps no flag: what is missing is the per-patch distribution, "
+        "the same export the patch-component comparison waits on."
+    )
 
 
 def load_patch_accounts(path: Path) -> tuple[PatchAccount, ...]:
     """Load patch account definitions from YAML.
 
     The file is a mapping with an ``accounts`` list; each entry has ``name``, ``criteria``,
-    and any of ``threshold``, ``size_classes``, and ``attractor``.
+    and any of ``threshold``, ``size_classes``, and ``search_distance``. An ``attractor``
+    entry is refused rather than ignored: see :func:`_refuse_attractor`.
 
     Parameters
     ----------
@@ -298,6 +321,8 @@ def load_patch_accounts(path: Path) -> tuple[PatchAccount, ...]:
     entries = raw.get("accounts", []) if isinstance(raw, dict) else []
     accounts: list[PatchAccount] = []
     for entry in entries:
+        if "attractor" in entry:
+            _refuse_attractor(str(entry.get("name", "a patch account")))
         classes = tuple(float(value) for value in entry.get("size_classes", DEFAULT_SIZE_CLASSES))
         raw_distance = entry.get("search_distance", 0.0)
         accounts.append(
@@ -306,7 +331,6 @@ def load_patch_accounts(path: Path) -> tuple[PatchAccount, ...]:
                 criteria=str(entry["criteria"]),
                 threshold=float(entry.get("threshold", 0.0)),
                 size_classes=classes,
-                attractor=entry.get("attractor"),
                 search_distance=None if raw_distance is None else float(raw_distance),
             )
         )

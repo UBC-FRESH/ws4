@@ -441,17 +441,17 @@ two of this note's earlier readings:
 | `shape` | the perimeter relative to a circle of the same area: 1 or more, higher being more dendritic | **the same definition** — WS4's compactness is its inverse square — so the difference is the patches, not the metric: ~32% once converted |
 | `frequency` | the number of patches in the class | the same: median 8% |
 | `freqpercent` | the class's share of all patches | added: median 3.5% |
-| `attractor` | the account that draws the average patch size towards the class; it is a switch rather than a measurement | not reproduced: the reference reports values of its own for it, and WS4 has no counterpart |
+| `attractor` | a per-patch size statistic (P12.4): zero exactly when the class holds no patches, and otherwise a fraction of the class's **mean patch area** that falls as the class grows | **refused**: the reference's own exported tables do not determine it, and WS4's old `1.0` flag was not a value |
 
 That corrects this note twice over. `shape` is not a different quantity — it is the same one, and what
 differs is which patches form. And `blocks` is a mean per patch, which WS4 already held in its state and
 simply did not expose.
 
-**The comparison now covers 630 cells over six quantities**, 45% of them within 10% of the reference, and
-the five `attractor` cells are the only ones it cannot make. The remaining differences are the *patches
-themselves*: WS4's aggregate young-patch area is 0.92 of the reference's, its patch count 1.03 and its
-mean patch size 0.96, so the components merge or split differently on the same schedule, and that is what
-is left to chase.
+**The comparison now covers 630 cells over six quantities**, 45% of them within 10% of the reference,
+and the `attractor` is the one sub-account it does not make — because the quantity is not in the export,
+which is the next section. The remaining differences are the *patches themselves*: WS4's aggregate
+young-patch area is 0.92 of the reference's, its patch count 1.03 and its mean patch size 0.96, so the
+components merge or split differently on the same schedule, and that is what is left to chase.
 
 ### What the reference's two tables ask
 
@@ -574,8 +574,38 @@ and its mean patch size **0.96** — the structure is within about 8% — while 
 cells differ by a median of 9% to 18% depending on the quantity. So the components form comparably in
 aggregate and differently in detail, and the instrument to say *where* is not in what the reference ships.
 
-The five `attractor` cells are the third: the reference reports values of its own for a sub-account that
-draws the average patch size towards a class, and WS4 has no counterpart.
+The `attractor` is the third, and P12.4 is what it is: the next section.
+
+### The attractor sub-account: what the reference's own values say, and why it is refused
+
+The reference reports a sixth sub-account per size class, `attractor`, and WS4 used to write a `1.0` for
+it whenever an account declared one — a flag, not a value. P12.4 established what the reference's values
+are, from its own numbers across both scenarios and all eight classes (360 cells), and the answer is that
+**the reference's export does not determine them**:
+
+- It is a **per-class landscape quantity, not a flag**: it is zero in exactly the cells where the class
+  holds no patches, and non-zero everywhere else — checked over the no-treatment scenario, where the
+  young classes empty out by period 10, and the optimised one.
+- It is **not the class's mean patch size**: the class whose bounds are 50 to 150 hectares reports values
+  of 15.7 to 21.3, and a mean of a class bounded below by 50 cannot be below 50. Nor is it the class's
+  `size` share: the ratio of the two ranges from **0.26 to 2.57** cell by cell, so the reading that one
+  set of the reference's documentation invites — "a flag that draws the average patch size toward the
+  class; its value mimics `size`" — is contradicted by the values.
+- It is **not a function of the sub-accounts the export publishes**. A log-linear fit of the attractor
+  against `area`, `blocks`, `size`, `shape`, `frequency` and `freqpercent` leaves a **9% median and a 58%
+  worst** relative residual: the attractor carries information the other five do not.
+- What it *does* look like is a lower quantile of the class's patch sizes: within the `young.0_50` class
+  it sits at a stable **0.52 to 0.69** of the class's mean patch area, and that fraction falls as the
+  class grows — **0.015** in the largest class. A per-patch distribution is exactly what the reference
+  does not ship, the same gap that leaves the patch components incomparable (#126).
+- Its target carries the class's own size range as `MINIMUM`/`MAXIMUM`, and **278 of the 360 cells sit
+  outside it** with a `SUMMARY` of 0 — so the reference's own report does not evaluate it as an objective
+  term, which is consistent with the reading that it guides a search rather than measuring a landscape.
+
+So WS4 **refuses** an `attractor` sub-account, naming that reason, rather than reporting a number it
+cannot stand behind — the same call as the product patch criterion above. The `1.0` flag and the field
+that held it are gone rather than left in as a trap; no shipped configuration asked for one, so nothing
+that worked changed.
 
 ### A patch criterion that is a product: why it is refused
 

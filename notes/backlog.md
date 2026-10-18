@@ -159,8 +159,8 @@ items are enhancements and maintenance.
   the optimizer's inner loop, so each evaluation routes every scheduled block (a future
   incrementality optimization), and core-area and edge-contrast rules. Target: post-release.
 - **Patch accounts.** `done`. `ws4/patch/accounts.py` implements the patch size-class sub-accounts
-  (area, size, shape, frequency, attractor) over the block topology for a criteria feature and a
-  threshold; the criteria value per block is derived from a feature curve
+  (area, size, shape, frequency, blocks, freqpercent) over the block topology for a criteria feature and
+  a threshold; the criteria value per block is derived from a feature curve
   (`Simulator.block_criteria`), and the simulator writes `patch_accounts.csv`. The topology loader
   accepts the established `BLOCK1,BLOCK2,DISTANCE,LENGTH` columns with the `-9999` sentinel.
 - **Account types and reports.** `partial`. `ws4/report.py` summarizes accounts, evaluates a ratio
@@ -287,6 +287,16 @@ items are enhancements and maintenance.
   the product of the *treatment* that happened. So WS4 now refuses a product criterion with that reason
   rather than reporting a quiet nought, and the real fix is to evaluate the product on the treatment's
   own timeline. That is 28 of the reference's 63 patch targets.
+- **The reference's patch `attractor` sub-account.** `open`, blocked on the same export as the patch
+  components. P12.4 (#124) established from the reference's own 360 values that it is a per-class
+  landscape quantity (zero exactly when the class is empty), that it is **not** the class's mean patch
+  size, **not** its `size` share (the ratio runs 0.26 to 2.57 cell by cell), and **not** a function of the
+  six sub-accounts the export publishes (a log-linear fit leaves a 9% median and a 58% worst residual).
+  What it looks like is a lower quantile of the class's patch sizes — within one class it holds a stable
+  0.52 to 0.69 of the class's mean patch area, falling to 0.015 in the largest. So WS4 refuses an
+  `attractor` sub-account with that reason rather than reporting a `1.0` flag that was not a value, and
+  the quantity becomes computable when the per-patch distribution arrives — the export the patch
+  components wait on too (#126).
 - **The reference's destination policy for its mill products.** `open`, narrowed by P12.2 to one
   question. What the reference's model declares is now established and implemented: conifer may reach
   either mill, **deciduous may reach Mill 2 only** (with `product.unutilized.Decid` for what reaches

@@ -532,7 +532,7 @@ not have.
 - [x] P12.1 A patch criterion can be a product (#121) — refused with its reason measured; the real fix is the treatment's timeline
 - [x] P12.2 The reference's destination policy for mill products (#122) — its declared destinations, then least haul cost; the delivery target left to the parity mode
 - [x] P12.3 Report the route accounts over the model's periods (#123) — the report folds into the model's periods, per destination too
-- [ ] P12.4 The attractor sub-account as the reference defines it (#124)
+- [x] P12.4 The attractor sub-account as the reference defines it (#124) — established as a per-patch quantile the export does not determine; refused, not faked
 - [ ] P12.5 A Patchworks-parity mode, with traffic-weighted maintenance behind it (#125)
 - [ ] P12.6 Compare the patch components against a reference membership export (#126)
 

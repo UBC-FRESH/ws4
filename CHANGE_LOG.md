@@ -1685,3 +1685,17 @@ issue comments.
   and `BUILTLENGTH` was the defect above. One quantity is left unexplained and recorded as such: what the
   reference's `LENGTH` counts, where WS4 is 2.6× and 3.3× and maintenance is consistent with it on both
   sides. Dashboard: **GREEN**; acceptance **PASS**, `destinations` and `accounts` included.
+- P12.4 (#124) **the patch `attractor` sub-account is established, and refused rather than faked.**
+  WS4 wrote a `1.0` flag for it whenever an account declared one. From the reference's own 360 values
+  across both scenarios and all eight classes, what it reports is a **per-class landscape quantity**: zero
+  in exactly the cells where the class holds no patches, and otherwise a lower quantile of the class's
+  patch sizes — within one class a stable 0.52 to 0.69 of the class's mean patch area, falling to 0.015 in
+  the largest. It is **not** the class's mean patch size (a class bounded below by 50 reports 15.7),
+  **not** its `size` share (the ratio runs 0.26 to 2.57 cell by cell, which contradicts the reading the
+  documentation invites), and **not** a function of the six sub-accounts the export publishes (a
+  log-linear fit leaves a 9% median and a 58% worst residual). Its target carries the class's size range
+  and 278 of 360 values sit outside it with a `SUMMARY` of 0, so the reference's own report does not
+  evaluate it as an objective term. So the flag and its field are **removed**, and an `attractor` setting
+  is **refused** with that reason, as the product patch criterion is — the same export that leaves the
+  patch components incomparable (#126) is what would make it computable. No shipped configuration asked
+  for one. Dashboard: **GREEN**.

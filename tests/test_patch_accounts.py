@@ -184,3 +184,34 @@ def test_edge_elements_load_and_evaluate(tmp_path: Path) -> None:
         {"feature.Seral.old": {1: 1.0}, "feature.Seral.young": {2: 1.0}},
     )
     assert records == [{"account": "feature.Edge.OldYoung", "value": 300.0}]
+
+
+def test_the_attractor_sub_account_is_not_reported() -> None:
+    """The attractor is refused, so no account value carries a fabricated flag for it."""
+    account = PatchAccount(name="patch.opening", criteria="feature.young")
+    values = patch_account_values(
+        account,
+        {1: 1.0, 2: 1.0},
+        [(1, 2, 10.0)],
+        {1: 30.0, 2: 30.0},
+    )
+    assert not [key for key in values if key.endswith(".attractor")]
+    assert values["50_150.area"] == 60.0
+
+
+def test_a_configuration_asking_for_the_attractor_is_refused(tmp_path: Path) -> None:
+    """The setting is refused with the measured reason rather than ignored or faked."""
+    from ws4.patch.accounts import load_patch_accounts
+
+    path = tmp_path / "patches.yaml"
+    path.write_text(
+        "accounts:\n"
+        "  - name: patch.opening\n"
+        "    criteria: feature.young\n"
+        "    threshold: 0.5\n"
+        "    size_classes: [50.0, .inf]\n"
+        "    attractor: 0\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="attractor sub-account is refused"):
+        load_patch_accounts(path)
