@@ -1367,3 +1367,25 @@ issue comments.
   on regardless of the exit status. The tracker row is back to `active`, the holding note stays in the
   phase section where it belongs, and the dashboard is **GREEN** (seven gates) again. Third time this
   session a chained command hid an exit status; the chain is the problem, not the tool.
+- P10.1 (docs, #105): **an API-first walkthrough notebook**, `examples/070_library_path.ipynb`, executed
+  and in the gallery. Five of the seven existing examples drive the command line, so the library
+  audience had prose but no worked session; this one runs no `ws4` command anywhere — it compiles the
+  sample estate, opens it with `Model`, simulates two schedules in memory and compares them, runs a
+  search through `Optimizer.run`, reads the target table and the account values back as frames, and
+  checks the run's own numbers against a fresh simulation (largest difference 2.3e-13). Linked from
+  `getting-started/python-api` and `howto/automate-a-study`.
+- P10.3 (docs, #107): every example now says which way in it takes — command line, library, or both — in
+  its own opening paragraph, and the gallery's intro explains the distinction, with `070_library_path`
+  named as the counterpart to `010_quickstart`.
+- P10.4 (fix, #108): **`report_targets.csv` priced a periodic target from one year.** Found by the
+  notebook above, whose output showed the search returning `incumbent_objective 0.0` while the report
+  said `below`: on the sample estate the target's period totals **5,549.86** over years 0-9 where the
+  report read the year-0 row alone, **1,627.14**, and charged a penalty of 3,372.86 the search never
+  applied. `target_status` now sums the account over `target.cell_years()` — the same expression the
+  objective uses — so a target with `period_width > 1` is reported as the search priced it. Three new
+  tests, including one that asserts the report's total penalty equals `objective`'s for the same values.
+  **Recorded rather than fixed, and checked as the task required:** targets with `flow` set are still
+  mis-reported, because `target_status` has no notion of a flow series at all — measured, an `ndy`
+  target with `minimum: -1` over a series dropping 100 -> 60 is priced at **39.00** by the objective and
+  reported as `met` with **0.00**. Left open in `notes/backlog.md` with those numbers, because fixing it
+  means deciding what the report should show for a flow target. Dashboard: **GREEN** (seven gates).

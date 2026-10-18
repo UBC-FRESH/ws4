@@ -7,7 +7,9 @@ It is the path to take when a study has to be automated: parameter sweeps, custo
 integrating WS4 with another tool, or resuming a run to inspect it.
 
 Every snippet below was run against the two-block example in ``examples/synthetic``, and the output
-shown is the output it produced.
+shown is the output it produced. For a complete session with its real output — compiling the sample
+estate, simulating in memory, searching, and checking the result — see the
+:doc:`library-path example <../examples/070_library_path>` in the gallery.
 
 Compile a dataset
 -----------------

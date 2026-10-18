@@ -442,13 +442,24 @@ the Python API exists; the examples do not — five of seven notebooks drive the
 notebooks' outputs are committed with ``nbsphinx_execute = "never"``, so nothing checks that what they
 show is what the code does.
 
-- [ ] P10.1 An API-first walkthrough notebook (#105)
+- [x] P10.1 An API-first walkthrough notebook (#105) — `examples/070_library_path`, executed
 - [ ] P10.2 Prove the gallery's outputs are current (#106)
-- [ ] P10.3 Say which way in each example takes (#107)
+- [x] P10.3 Say which way in each example takes (#107)
+- [x] P10.4 Price a periodic target over its period in the report (#108) — found by P10.1
 
 Deferred from P10, triaged in `notes/backlog.md`:
 
 - (none outstanding.)
+
+Holding on a design question, recorded rather than fixed:
+
+- **Flow targets in `report_targets.csv`** are still mis-reported: `target_status` prices every target as
+  a level target over its period, while the objective prices a `flow` target as a per-period percent
+  series. Measured in P10.4: an `ndy` target with `minimum: -1` over a series dropping 100 -> 60 is
+  priced at **39.00** by the objective and reported as `met` with **0.00**. Fixing it means deciding
+  what the report should show for a flow target, which is a design question; it is in
+  `notes/backlog.md` with the numbers. The sample estate's own targets are level targets, so nothing
+  shipped is affected.
 
 Acceptance criteria:
 

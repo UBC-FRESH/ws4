@@ -5,7 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
-from ws4.opt.objective import Target
+import pytest
+from ws4.opt.objective import Target, objective
 from ws4.report import account_summary, ratio_account, target_status, write_report
 
 
@@ -55,3 +56,37 @@ def test_write_report(tmp_path: Path) -> None:
     write_report(_values(), [Target("a", 0, minimum=5.0)], tmp_path)
     assert (tmp_path / "report_accounts.csv").is_file()
     assert (tmp_path / "report_targets.csv").is_file()
+
+
+def test_a_periodic_target_is_priced_over_its_period() -> None:
+    """A target that its period's later years carry is met, not below, and carries no penalty."""
+    targets = [
+        Target("a", 0, minimum=25.0, period_width=2),  # 10 + 20 = 30, met
+        Target("a", 0, minimum=35.0, period_width=2),  # 30 < 35, below
+    ]
+    status = target_status(_values(), targets)
+    met, below = status.iloc[0], status.iloc[1]
+    assert met["value"] == 30.0
+    assert met["status"] == "met"
+    assert met["penalty"] == 0.0
+    assert below["value"] == 30.0
+    assert below["status"] == "below"
+    assert below["penalty"] > 0.0
+
+
+def test_a_single_year_target_still_reads_that_year() -> None:
+    """The one-year case is the period sum of a single year, unchanged."""
+    status = target_status(_values(), [Target("a", 1, minimum=25.0)]).iloc[0]
+    assert status["value"] == 20.0
+    assert status["status"] == "below"
+
+
+def test_the_reported_penalty_matches_the_objective_for_a_periodic_target() -> None:
+    """The report prices a periodic target exactly as the objective does."""
+    targets = [
+        Target("a", 0, minimum=25.0, period_width=2),  # 10 + 20 = 30, met
+        Target("b", 0, maximum=4.0, period_width=2),  # 5 + 5 = 10, above
+    ]
+    reported = float(target_status(_values(), targets)["penalty"].sum())
+    assert reported == pytest.approx(objective(_values(), targets))
+    assert reported > 0.0
