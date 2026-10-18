@@ -1,0 +1,8 @@
+# Patch size classes over fresh openings: the seral feature is 1 while an opening is under forty
+# years old, so a patch is a group of adjacent fresh cutovers.
+accounts:
+  - name: patch.opening
+    criteria: feature.Seral.regen
+    threshold: 0.5
+    size_classes: [10.0, 50.0, 150.0, 400.0, .inf]
+    search_distance: 0.0

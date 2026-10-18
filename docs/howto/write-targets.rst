@@ -63,7 +63,7 @@ that an unconstrained year is free, and a free year will be spent (see
 .. code-block:: bash
 
    ws4 optimize --dataset tmp/howto/compiled --targets tmp/howto/targets.yaml \
-                --weights tmp/howto/weights.yaml --years 100 --time-limit 00:02:00 \
+                --years 100 --time-limit 00:02:00 \
                 --seed 1 --out tmp/howto/run
 
 ``report_targets.csv`` in the run directory has one row per target: the realized value, the bounds,
@@ -81,7 +81,7 @@ rescaled so the peaks are comparable:
                  --out tmp/howto/calibrated.yaml --years 100 --iterations 2000
 
    ws4 optimize --dataset tmp/howto/compiled --targets tmp/howto/calibrated.yaml \
-                --weights tmp/howto/weights.yaml --years 100 --time-limit 00:05:00 \
+                --years 100 --time-limit 00:05:00 \
                 --seed 1 --out tmp/howto/run
 
 **7. The same in Python.** Targets are ``Target`` objects, and a YAML file is just a loader for
@@ -117,5 +117,6 @@ Troubleshooting
   satisfied. ``ws4 calibrate`` reports the peaks it observed, which shows you what fired.
 * **A target is always ``below``** — it may be infeasible. Try it alone, with the other targets
   removed; if it is still below, the estate cannot deliver it in those years.
-* **``ws4 optimize`` requires a ``--weights`` file** — currently the file is accepted for the record,
-  and the weights that matter are the ``min_weight`` and ``max_weight`` fields above.
+* **The search ignores a weights file** — ``--weights`` is optional and kept for compatibility. The
+  weights that apply are the ``min_weight`` and ``max_weight`` fields above; ``ws4 calibrate`` writes
+  them into a targets file for you.

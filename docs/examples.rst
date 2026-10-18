@@ -16,3 +16,7 @@ resolve.
    examples/000_environment_check
    examples/010_quickstart
    examples/020_even_flow
+   examples/030_sample_estate
+   examples/040_patch_targets
+   examples/050_routes_and_mills
+   examples/060_parameter_sweep

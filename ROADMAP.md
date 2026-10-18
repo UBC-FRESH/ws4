@@ -18,7 +18,7 @@ exists and the maintainer approves it.
 | P4 Release and deploy | #36 | `feature/p4-release` | complete |
 | P5 Operate and maintain | #44 | `feature/p5-operate` | complete |
 | P6 Performance and scalability | #60 | `feature/p6-performance` | complete |
-| P7 Parity and the analyst workflow | #82 | `feature/p7-parity` | active |
+| P7 Parity and the analyst workflow | #82 | `feature/p7-parity` | pr-open |
 
 ## Lifecycle Map
 
@@ -331,17 +331,18 @@ Acceptance criteria:
 
 Parent issue: #82
 Branch: `feature/p7-parity`
-Status: active
+Status: pr-open
 
 Goal: make the replacement claim checkable and the tool comfortable to use all day: close the gaps the
 Phase 6 close-out recorded, put the workspace in step with the tooling, and extend the documentation
 where a new analyst needs it.
 
-- [ ] P7.1 Close the command-line gaps: `--weights` and `--iterations` (#83)
-- [ ] P7.2 Apply the `threads` setting and re-measure island scaling (#84)
-- [ ] P7.3 Ship a sample estate under `examples/` (#85)
-- [ ] P7.4 Add the patch, route, and sweep notebooks, and a concepts section (#86)
-- [ ] P7.5 Patch performance under a dense harvest (#87)
+- [x] P7.1 Close the command-line gaps: `--weights` and `--iterations` (#83)
+- [x] P7.2 Apply the `threads` setting and re-measure island scaling (#84)
+- [x] P7.3 Ship a sample estate under `examples/` (#85)
+- [x] P7.6 A patch target in a search misprices the classes (#88)
+- [x] P7.4 Add the patch, route, and sweep notebooks, and a concepts section (#86)
+- [x] P7.5 Patch performance under a dense harvest (#87)
 
 Deferred from P7, triaged in `notes/backlog.md`:
 

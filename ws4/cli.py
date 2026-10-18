@@ -90,10 +90,15 @@ def simulate(
 def optimize(
     dataset: Path = typer.Option(..., exists=True),
     targets: Path = typer.Option(..., exists=True),
-    weights: Path = typer.Option(..., exists=True),
-    threads: int = typer.Option(8, min=1),
+    weights: Path | None = typer.Option(
+        None,
+        exists=True,
+        help="Accepted for compatibility; the weights that apply are each target's own",
+    ),
+    threads: int = typer.Option(8, min=1, help="Worker processes, and BLAS threads each"),
     starts: int = typer.Option(1, min=1, help="parallel multi-starts (needs --threads > 1)"),
     time_limit: str = typer.Option("01:00:00", help="HH:MM:SS"),
+    iterations: int = typer.Option(500, min=1, help="Search iterations"),
     years: int = typer.Option(50, help="Simulation horizon in years"),
     seed: int = typer.Option(42),
     islands: int = typer.Option(0, help="parallel islands with elite migration (0 = off)"),
@@ -155,12 +160,13 @@ def optimize(
         workers=threads,
         starts=starts,
         time_limit=time_limit,
+        iterations=iterations,
         years=years,
         seed=seed,
         islands=islands,
         episodes=episodes,
         targets_path=str(targets),
-        weights_path=str(weights),
+        weights_path=str(weights) if weights is not None else "",
         topology_path=str(topology) if topology is not None else "",
         route_config_path=str(route_config) if route_config is not None else "",
         edge_elements_path=str(edge_elements) if edge_elements is not None else "",
@@ -389,3 +395,7 @@ def validate(dataset: Path = typer.Option(..., exists=True)) -> None:
         table.add_row(problem.code, problem.where, problem.message)
     print(table)
     raise typer.Exit(code=1)
+
+
+if __name__ == "__main__":
+    app()

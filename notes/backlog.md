@@ -185,13 +185,28 @@ items are enhancements and maintenance.
   Target: post-release, if profiling shows it.
 - **Docs for each subsystem.** `done`. The compiled dataset, ForestModelXML, simulator, optimizer,
   spatial, and road pages exist under `docs/reference/`, and the API pages cover the tooling.
-- **Command-line gaps found while writing the user docs.** `open`. `ws4 optimize` requires a
-  `--weights` file that nothing reads, and it has no iteration budget (only `--time-limit`), while
-  `watch` and `calibrate` both take `--iterations`. Either apply the weights file or make the option
-  optional, and add `--iterations`. Target: P7.
-- **`Optimizer.last_account_values()` after a `run`.** `open`. The incremental search path does not
-  populate it, so a script that calls `run` and then reads it gets an empty frame; the run's own
-  `account_values.csv` is the reliable source. Target: P7.
+- **Command-line gaps found while writing the user docs.** `done` (P7.1, #83). `--weights` is optional
+  and documented as accepted-for-compatibility, and `ws4 optimize` takes `--iterations`. Applying a
+  per-account factor file is a capability worth having only if a study asks for it; it is not.
+- **A patch target in a run's report.** `done` (P7.6, #88). The search priced the patch accounts
+  correctly — a simulation and the incremental evaluator agreed to the hundredth — but `Optimizer.run`
+  replayed its incumbent without passing the patch accounts to the simulation, so the reported share
+  was a missing row: zero, carrying the whole penalty. The report now folds `patch_accounts.csv` into
+  the values it prices, and a simulation of the same schedule agrees with it.
+- **Island scaling past 8 islands.** `open`. The limit is contention rather than BLAS oversubscription
+  (P7.2 measured both: pinning the pools changes nothing, and the same 32-island configuration ran at
+  13x to 16x while the host's load moved between 4 and 65). A candidate cause worth measuring is the
+  per-process copies of the dataset and the patch state; a shared or mmapped dataset would cut the
+  memory traffic that the 32 processes contend for. Target: after P7.
+- **`Optimizer.last_account_values()` after a `run`.** `done` (P7.5, #87). The incremental value path
+  and `run` both record the frame they build, so the incumbent's values are readable without rereading
+  the run directory.
+- **The per-`(block, chain)` criterion series and the patch state construction.** `open`. P7.5's
+  profile of a binding patch search puts the time in `block_criteria_series` (once per distinct
+  (block, chain) the search explores, a Python loop over that block's fragments) and in
+  `PatchGroupYear.__init__` (once per group-year, ~48 ms), not in the incremental relabel. A vectorised
+  series and a lazily built state for the years a search reads are the candidates, with the recorded
+  measurements as the baseline. Target: after P7.
 - **Docstring completeness.** `done`. `scripts/doc_audit.py` is the oracle: it checks every public
   function, method, property, class, and module in `ws4` and `scripts/` for the four rules (a docstring
   exists; every parameter is documented and nothing else; a value-returning callable has a `Returns`

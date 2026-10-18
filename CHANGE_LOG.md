@@ -1008,3 +1008,116 @@ issue comments.
   and five child tasks (#83 to #87) — the command-line gaps (`--weights` and `--iterations`), the
   `threads` setting and a scaling re-measurement, a sample estate under `examples/`, the missing
   notebooks and a concepts section, and patch performance under a dense harvest. Dashboard: **GREEN**.
+- P7.1 (fix): the two command-line gaps the Phase 6 close-out recorded. `ws4 optimize` required a
+  `--weights` file that nothing read, and had no way to set the search budget while `watch` and
+  `calibrate` both take `--iterations`. `--weights` is now optional and documented as accepted for
+  compatibility — the weights that apply are each target's `min_weight` and `max_weight`, which
+  `ws4 calibrate` rescales into a targets file — and `ws4 optimize` gains `--iterations`, defaulting to
+  the 500 the configured default already used, so existing runs are unchanged; the issue proposed
+  defaulting like `watch` (2000), which would have silently lengthened every run. `OptimizeConfig`'s
+  `weights_path` docstring, the reference page, the how-to guides, the FAQ and the limitations page now
+  say the same thing, and every example that passed the no-op flag no longer does. `ws4/cli.py` also
+  gained a `__main__` guard, so `python -m ws4.cli` works without relying on the console script being
+  on `PATH`, which is what the new tests use. Tests: `tests/test_cli.py` covers the framework scripts
+  and now the `ws4` command too, with four checks — optimize runs with no weights file, `--iterations 7`
+  is honoured in `summary.json`, a weights file is still accepted, and the help marks only the dataset,
+  the targets and the output as required. The notebook gallery, the docs and the example commands were
+  re-run. Dashboard: **GREEN** (seven gates).
+- P7.2 (fix): apply the `threads` setting, and re-measure the island scaling with it in place.
+  `OptimizeConfig.threads` was documented as the number of BLAS and worker threads and read by nothing;
+  it is now applied wherever an optimizer is built, which covers the parent and every worker process.
+  Two mechanisms are needed because the obvious one does not work: the environment variables cover
+  libraries loaded later and are inherited by children, but a **forked worker inherits its parent's
+  already-initialised BLAS**, so setting them in the child is too late; `threadpoolctl` retunes the
+  pools already loaded in the process, which is what pins a worker. It joins the `opt` extra and
+  `requirements-dev.txt`; without it the environment is still set and the configuration still records
+  the request. The default of one thread per process is measured, not assumed: a single island ran at
+  1 037 iterations/s with one thread and 1 033 with eight, and 32 islands ran at 13 660 and 14 385
+  pinned against 12 318 and 15 877 unpinned, so BLAS parallelism neither helps nor hurts the search
+  and a pool of one-thread processes cannot oversubscribe the machine. **The scaling limit is not
+  BLAS**: the same 32-island configuration reaches 13x to 16x while the host's load average moved
+  between 4 and 65 during the session, so the criterion stays "met with a stated limit" — now with the
+  limit diagnosed, both tables carrying the load they were taken at, and a follow-up recorded for a
+  shared or mmapped dataset to cut the memory traffic the processes contend for. `threads` also has a
+  CLI help string and a docstring that say what it does. Tests: `tests/test_optimizer.py` adds two —
+  the setting limits the pools and the environment of the process it runs in, and the default is one
+  thread per process. Dashboard: **GREEN** (seven gates).
+- P7.3 (docs, examples): a sample estate under `examples/estate`, so the guides and the notebooks stop
+  depending on a two-block toy or on files the reader has to supply. It is a 64-block 8 x 8 grid: one
+  clearcut treatment that can be applied more than once (so a rotation is possible), a seral feature
+  that marks fresh openings for the patch accounts, the grid topology, a road network with two mills at
+  opposite ends (so the least-haul-cost destination differs across the estate), the route
+  configuration with per-mill haul and volume accounts plus the duplicate that totals them, a patch
+  account with five size classes, and a README that says what each file is for and how to run each
+  use. Verified end to end: build and validate, a simulation that forms four openings (80.5 ha, the
+  largest 50.4 ha) and splits its 8,793 m3 between both mills by haul cost, and a 20,000-iteration
+  search that schedules 57 blocks over rotations. **The shipping exposed a real defect**: the search's
+  own view of the patch accounts reads zero for a schedule whose openings exist, so its objective and
+  the run's `report_targets.csv` disagree with a simulation of the same schedule (0% against a 62.6%
+  share, a 1.8M penalty that a simulation does not charge). That is filed as P7.6 (#88) with the
+  evidence and a suspicion about where the criterion series is built, the patch how-to states it
+  plainly and points readers at the simulation and the run report, and the README repeats it. The
+  estate also gained `tests/test_example_estate.py`, which pins the compile, the openings, the route
+  split across both mills, and the patch metrics, and the notebook gallery gained
+  `030_sample_estate.ipynb`, executed with its output. Dashboard: **GREEN** (seven gates).
+- P7.6 (fix): a patch target was reported as unmet however well the search had done. The search was
+  right — a simulation of the incumbent and the incremental evaluator agreed to the hundredth (11.87 /
+  16.20 / 71.93 percent across the three classes) — but `Optimizer.run` replays its incumbent through
+  the simulator for the report, and it did not pass the patch accounts to that replay. Patch accounts
+  are not additive, so the simulator keeps them out of the account values; the report therefore priced
+  a patch target against a missing row: a zero share carrying its whole penalty (1.8M in the sample
+  estate's case) while the summary's own objective was zero. The fix passes `patch_accounts` (and the
+  opening and green-up rules, which were missing from the replay for the same reason) to the
+  simulation, and folds `patch_accounts.csv` into the values the report prices, since a patch target's
+  account is not among the additive ones. The sample estate's report now shows the 71.93 percent share
+  the search found, status `met`, penalty zero. Tests: `tests/test_patch_objective.py` gains the
+  regression — a 2 000-iteration run on the sample estate must report a non-zero share with status
+  `met` and an objective at zero — verified to fail with the fix reverted and pass with it. The notes
+  claiming the mispricing in the patch how-to, the estate README and the notebook are replaced by what
+  the run now does. Checking the published figures: nothing needs restating, because the P6 patch
+  numbers came from the benchmark and the watcher, both of which read the search's own values, and no
+  recorded acceptance figure was taken from a run's report. Dashboard: **GREEN** (seven gates).
+- P7.5 (fix, measurement): `Optimizer.last_account_values()` is now populated after a run, on both
+  value paths — the incremental builder recorded nothing, and the full builder was the only one that
+  did — so a caller can read the incumbent's account values without rereading the run directory, with
+  the accessor's docstring saying what it holds mid-search (an `IncrementalObjective`'s
+  `values_frame`). The dense-harvest measurement, recorded in
+  `notes/design/ws4-patch-evaluation-bottleneck.md`, produced a result worth having: on the same C5
+  workload the **patch** run is faster than the volume-only one (60.6 against 25.9 iterations/s),
+  because the patch ramp keeps the schedule sparse (60 treatments against 125) and a move costs what
+  the schedule touches. A 100-iteration profile of the binding case puts the time in
+  `block_criteria_series` (12,636 calls, one per distinct (block, chain) explored, each a Python loop
+  over that block's fragments), `PatchGroupYear.__init__` (20 calls at ~48 ms) and `_chains` — that is,
+  in the setup and the criterion series, **not** in the incremental relabel the earlier work in that
+  note optimised. So the lever is a vectorised series and a lazily built state for the years a search
+  reads; neither is done, and the measurement is the baseline to judge them against, recorded in
+  `notes/backlog.md`. Tests: `tests/test_optimizer.py` asserts the accessor is empty before any
+  evaluation and holds the incumbent's values after a run. Dashboard: **GREEN** (seven gates).
+- P7.4 (docs): the patch, route and sweep notebooks, and a concepts section. The gallery gains three
+  executed notebooks. `040_patch_targets` sets a ramp on the 50-150 ha class over the sample estate
+  with the shape-aware operators weighted, and shows the search meeting 25 and 50 percent at 63.8
+  percent, falling short of 75 (which a squared miss at weight 2000 prices at 249 340), and holding the
+  shares steady across the horizon because the 40-year rotation keeps refreshing the openings into the
+  same class — the P7.6 fix is what makes its report agree with the search. `050_routes_and_mills`
+  routes a schedule over the estate's two mills, reads the volume and haul split per destination and
+  the route accounts in the values, then constrains the haul cost in a search. `060_parameter_sweep`
+  sweeps the volume floor and collects the objective, the treatments, the realized volume and the patch
+  status into a frame, which is the automation pattern the how-to describes. All three drive the CLI
+  through a small subprocess helper rather than shell magic, so they run headless and lex as Python.
+  A **Concepts** section joins the documentation, in the role the sibling project's textbook plays:
+  four pages on the model (fragments, blocks, strata, tracks, treatments, rotations), the simulation
+  (the annual step, the age-grid curves, operability windows), the accounting (the year clock against
+  the period clock, and period 0 as the pre-simulation state), and the objective (targets, weights, and
+  the three shapes of constraint: a level, a flow, and a map). It is indexed from the home page and the
+  agent index, and each page links into the reference for the detail. Dashboard: **GREEN** (seven gates).
+- Queued the Phase 7 close-out: pull request #89 (`feature/p7-parity` into `main`) and the report
+  `notes/reports/p7-closeout.md`. The report recommends the squash merge, deleting the branch, closing
+  parent issue #82, and launching P8 (verify the replacement claim). It records the acceptance evidence
+  — the two command-line gaps closed with four behavioural tests, `threads` applied with the island
+  scaling measured and its load recorded, the sample estate used by two guides and four notebooks, and
+  the dashboard green at every commit — plus the phase's supporting results (the patch-account
+  correction, the dense-harvest measurement and the named bottleneck) and its deviations: the scaling
+  criterion met with a stated limit, `--iterations` defaulting to 500 rather than the 2000 the issue
+  suggested, P7.6 initially misdiagnosed as a search bug when it was the run's report, and the
+  dense-harvest path measured rather than improved. No settings change is pending. Dashboard: **GREEN**
+  (seven gates).

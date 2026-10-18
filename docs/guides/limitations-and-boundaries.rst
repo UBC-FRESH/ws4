@@ -83,9 +83,11 @@ no distributed execution.
 **No sample estate ships with the repository.** The examples use a small synthetic landscape so the
 arithmetic stays checkable. Load your own model to see realistic behaviour.
 
-**Some command-line gaps.** ``ws4 optimize`` asks for a ``--weights`` file that is currently accepted
-for the record rather than read, and it has no iteration budget (use ``--time-limit``). Both are on
-the list to fix; the weights that matter are each target's ``min_weight`` and ``max_weight``.
+**A weights file is not applied.** ``ws4 optimize`` accepts ``--weights`` for compatibility and does
+not read it: the weights that apply are each target's ``min_weight`` and ``max_weight``. Applying a
+per-account factor file is a capability nobody has asked for yet; the option is optional, so the
+trap of a required no-op flag is gone. One settings gap remains tracked: ``threads`` is documented
+but not applied.
 
 Documentation
 -------------

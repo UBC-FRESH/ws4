@@ -198,7 +198,7 @@ Run
 
 .. code-block:: bash
 
-   ws4 optimize --dataset build/compiled --targets targets.yaml --weights weights.yaml \
+   ws4 optimize --dataset build/compiled --targets targets.yaml \
                 --threads 8 --seed 42 --out opt
 
 When a route configuration is given (``OptimizeConfig.route_config_path`` or
@@ -249,6 +249,10 @@ on the sub-accounts:
        search_distance: 200.0
 
 Targets then read ``patch.harvest.50_250.area``, ``…size``, ``…frequency``, or ``…shape``.
+
+Patch accounts are not additive, so the simulator reports them in ``patch_accounts.csv`` rather than in
+the account values. A run's ``report_targets.csv`` folds them back in before pricing the targets, so a
+patch target's status and penalty are the same ones the search saw.
 
 ``search_distance`` (metres) is how far apart two blocks may be and still be neighbours. It
 defaults to ``0``, which joins only blocks that literally touch (their polygons share a vertex);

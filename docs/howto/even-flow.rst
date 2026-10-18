@@ -40,7 +40,7 @@ definitional, not a bug. Run first with only a linear floor, so every period car
 .. code-block:: bash
 
    ws4 optimize --dataset tmp/howto/compiled --targets tmp/howto/level.yaml \
-                --weights tmp/howto/weights.yaml --years 100 --time-limit 00:01:00 \
+                --years 100 --time-limit 00:01:00 \
                 --seed 1 --out tmp/howto/primed
 
 On a 400-block generated estate, 20,000 iterations of the floor alone leave a **ragged** profile —
@@ -75,7 +75,7 @@ with a weight high enough that the shape is worth more than the level.
 .. code-block:: bash
 
    ws4 optimize --dataset tmp/howto/compiled --targets tmp/howto/level-and-flow.yaml \
-                --weights tmp/howto/weights.yaml --years 100 --time-limit 00:01:00 \
+                --years 100 --time-limit 00:01:00 \
                 --seed 1 --out tmp/howto/even
 
 Continuing from the primed schedule for a further 20,000 iterations flattens it, and the flow

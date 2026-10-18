@@ -152,7 +152,6 @@ it found:
    printf 'weights: {}\n' > tmp/getting-started/weights.yaml
    ws4 optimize --dataset tmp/getting-started/compiled \
                 --targets tmp/getting-started/targets.yaml \
-                --weights tmp/getting-started/weights.yaml \
                 --years 5 --time-limit 00:00:05 --seed 1 --threads 1 \
                 --out tmp/getting-started/opt
 
@@ -174,9 +173,9 @@ target report, and the telemetry log. The summary here is:
    which meets the floor, and no treatment can beat a penalty of zero. On a two-block landscape that
    is the whole answer — the point of the walkthrough is the plumbing, not the search.
 
-   ``--weights`` is currently accepted and unused: weights belong to each target
-   (``min_weight`` and ``max_weight``), and ``ws4 calibrate`` rescales them for you
-   (see :doc:`../howto/write-targets`).
+   Weights belong to each target (``min_weight`` and ``max_weight``), and ``ws4 calibrate``
+   rescales them for you (see :doc:`../howto/write-targets`). ``ws4 optimize`` also accepts a
+   ``--weights`` file, kept for compatibility; it is not read.
 
 Watch a search
 --------------

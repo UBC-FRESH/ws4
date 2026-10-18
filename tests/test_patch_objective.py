@@ -311,3 +311,45 @@ def test_a_patch_target_is_scored(tmp_path: Path) -> None:
     evaluator = IncrementalObjective(optimizer, [target], (), optimizer.patch_accounts())
     evaluator.reset(schedule)
     assert evaluator.objective == pytest.approx(expected)
+
+
+def test_a_run_reports_the_patch_accounts_it_priced(tmp_path: Path) -> None:
+    """A run's report shows the patch values the search priced, not a missing row.
+
+    The report replays the incumbent through the simulator, and the simulator keeps the patch
+    accounts out of the account values because they are not additive. Without folding them back in,
+    a patch target that the search met is reported as a zero share carrying its whole penalty.
+    """
+    estate = Path(__file__).resolve().parents[1] / "examples" / "estate"
+    dataset = build_canonical_dataset(
+        estate / "recipe.xml", estate / "fragments.csv", tmp_path / "compiled"
+    )
+    targets_path = tmp_path / "targets.yaml"
+    targets_path.write_text(
+        "targets:\n"
+        "- account: patch.opening.50_150.size\n"
+        "  year: 0\n"
+        "  minimum: 30\n"
+        "  min_weight: 2000\n"
+        "  shape: non_linear\n"
+        "  period_width: 10\n"
+    )
+    config = OptimizeConfig(
+        years=100,
+        iterations=2_000,
+        seed=1,
+        topology_path=str(estate / "topology.csv"),
+        patch_accounts_path=str(estate / "patches.yaml"),
+        targets_path=str(targets_path),
+        merge_weight=0.5,
+        split_weight=0.2,
+        cluster_weight=0.3,
+        threads=1,
+    )
+    summary = Optimizer.from_dataset(dataset, config).run(tmp_path / "run")
+
+    reported = pd.read_csv(tmp_path / "run" / "report_targets.csv").iloc[0]
+    assert reported["account"] == "patch.opening.50_150.size"
+    assert reported["value"] > 0.0, "the incumbent's openings should be reported, not a missing row"
+    assert reported["status"] == "met"
+    assert summary["incumbent_objective"] == pytest.approx(0.0, abs=1.0)

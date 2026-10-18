@@ -11,6 +11,14 @@
 - [Your first model](getting-started/first-model.html): a complete small study, checkable by hand.
 - [How WS4 is put together](getting-started/architecture.html): the layers, the data flow, and the pitfalls.
 
+## Concepts
+
+- [Concepts](concepts/index.html): what the model is, in the order the ideas depend on each other.
+- [The model](concepts/the-model.html): fragments, blocks, strata, tracks, treatments, rotations.
+- [The simulation](concepts/the-simulation.html): the annual step, curves, and operability windows.
+- [The accounting](concepts/the-accounting.html): years against periods, and what period 0 is.
+- [The objective](concepts/the-objective.html): targets, weights, and the three shapes of constraint.
+
 ## Task guides
 
 - [How-to guides](howto/index.html): the task index, with the mode (CLI or API) of each guide.

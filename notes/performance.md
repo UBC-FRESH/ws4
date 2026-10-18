@@ -286,3 +286,44 @@ expansion skips texts with no `%`; and each stratum's matching selects are memoi
 
 Outputs are identical (`scripts/acceptance.py` `compare_matrix`: MATCH). Plan and log:
 `notes/design/ws4-builder-perf.md`.
+
+### P7.2 the `threads` setting, applied and measured
+
+`OptimizeConfig.threads` was documented as "the number of BLAS and worker threads for single-process
+work" and nothing read it: the command line passed its value to `workers` and the field itself had no
+effect. It is now applied wherever an optimizer is built, which is the parent and every worker
+process. Two mechanisms are needed. The environment (`OMP_NUM_THREADS`, `OPENBLAS_NUM_THREADS`,
+`MKL_NUM_THREADS`, `NUMEXPR_NUM_THREADS`, `VECLIB_MAXIMUM_THREADS`) covers libraries loaded later and
+is inherited by children, but a **forked worker inherits its parent's already-initialised BLAS**, so
+setting the environment in the child is too late to matter; `threadpoolctl` retunes the pools already
+loaded in the process, which is what actually pins a worker. It is now in the `opt` extra and in
+`requirements-dev.txt`; without it the environment is still set and the configuration still records
+the request.
+
+Does pinning matter? No, and that is worth recording so nobody re-tries it:
+
+| Measurement (C5-class binding workload, 4 000 iterations/island) | BLAS threads per process | Throughput |
+| --- | ---: | ---: |
+| One island | 1 | 1 037 iterations/s |
+| One island | 8 | 1 033 iterations/s |
+| 32 islands, round 1 | 1 | 13 660 iterations/s |
+| 32 islands, round 1 | 64 (effectively unpinned) | 12 318 iterations/s |
+| 32 islands, round 2 | 1 | 14 385 iterations/s |
+| 32 islands, round 2 | 64 | 15 877 iterations/s |
+
+The pinned and unpinned rounds overlap, so the search neither gains nor loses from BLAS parallelism —
+consistent with the earlier finding that the curve loop holds the GIL.
+
+Island scaling, measured at a host load average of 3.9 (essentially idle) at the start:
+
+| Islands | Wall | Throughput | Speedup |
+| ---: | ---: | ---: | ---: |
+| 1 | 3.769 s | 1 061 iterations/s | 1.0x |
+| 8 | 6.395 s | 5 004 iterations/s | 4.7x |
+| 32 | 9.193 s | 13 924 iterations/s | 13.1x |
+
+So the criterion "near-linear scaling to 32+ cores" stands as met **with a limit**: 13x to 16x on 32
+islands. The limit is not the BLAS pools (the A/B above) and not the per-process setup (~1 s: dataset
+load, candidate chains, patch state). It is contention: the machine's load average moved between 4
+and 65 across the session's runs, and the rounds above differ by ±15% at the same setting. A scaling
+figure from this host is only meaningful with its load recorded, which is why both tables carry it.

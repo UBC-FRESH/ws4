@@ -1,11 +1,14 @@
-"""Integration tests: run the framework command-line tools in subprocesses.
+"""Integration tests: run the command-line tools in subprocesses.
 
 These tests exercise the same entry points that CI and the pre-commit hooks call, so a
-broken import or a broken exit status shows up here even when the unit tests pass.
+broken import or a broken exit status shows up here even when the unit tests pass. The
+first half drives the framework scripts in ``scripts/``; the second half drives the
+``ws4`` command itself.
 """
 
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -73,3 +76,138 @@ def test_dashboard_rejects_an_unknown_option() -> None:
     """The dashboard exits with status 2 on an option it does not know."""
     result = run_script("dashboard.py", "--bogus")
     assert result.returncode == 2
+
+
+def run_ws4(*args: str) -> subprocess.CompletedProcess[str]:
+    """Run the ``ws4`` command line in a subprocess.
+
+    Parameters
+    ----------
+    *args : str
+        Arguments passed to the command.
+
+    Returns
+    -------
+    subprocess.CompletedProcess of str
+        The finished process, with its captured output.
+    """
+    return subprocess.run(
+        [sys.executable, "-m", "ws4.cli", *args],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def build_example(tmp_path: Path) -> Path:
+    """Compile the synthetic example into a scratch directory.
+
+    Parameters
+    ----------
+    tmp_path : Path
+        The scratch directory.
+
+    Returns
+    -------
+    Path
+        The compiled dataset directory.
+    """
+    out = tmp_path / "compiled"
+    result = run_ws4(
+        "build",
+        "--xml",
+        "examples/synthetic/recipe.xml",
+        "--fragments",
+        "examples/synthetic/fragments.csv",
+        "--out",
+        str(out),
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    return out
+
+
+def test_optimize_runs_without_a_weights_file(tmp_path: Path) -> None:
+    """The weights file is optional: the weights that apply are each target's own."""
+    dataset = build_example(tmp_path)
+    targets = tmp_path / "targets.yaml"
+    targets.write_text(
+        "targets:\n- account: feature.Volume\n  year: 0\n  minimum: 700\n  period_width: 1\n"
+    )
+    out = tmp_path / "run"
+    result = run_ws4(
+        "optimize",
+        "--dataset",
+        str(dataset),
+        "--targets",
+        str(targets),
+        "--years",
+        "5",
+        "--time-limit",
+        "00:00:05",
+        "--threads",
+        "1",
+        "--out",
+        str(out),
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (out / "summary.json").is_file()
+    assert (out / "schedule.csv").is_file()
+
+
+def test_optimize_honours_the_iteration_budget(tmp_path: Path) -> None:
+    """``--iterations`` sets the search budget, as it does for watch and calibrate."""
+    dataset = build_example(tmp_path)
+    targets = tmp_path / "targets.yaml"
+    targets.write_text(
+        "targets:\n- account: feature.Volume\n  year: 0\n  minimum: 700\n  period_width: 1\n"
+    )
+    out = tmp_path / "run"
+    result = run_ws4(
+        "optimize",
+        "--dataset",
+        str(dataset),
+        "--targets",
+        str(targets),
+        "--years",
+        "5",
+        "--iterations",
+        "7",
+        "--threads",
+        "1",
+        "--out",
+        str(out),
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    summary = json.loads((out / "summary.json").read_text())
+    assert summary["iterations"] == 7
+
+
+def test_optimize_still_accepts_a_weights_file(tmp_path: Path) -> None:
+    """A weights file passed for compatibility is accepted and ignored."""
+    dataset = build_example(tmp_path)
+    targets = tmp_path / "targets.yaml"
+    targets.write_text(
+        "targets:\n- account: feature.Volume\n  year: 0\n  minimum: 700\n  period_width: 1\n"
+    )
+    weights = tmp_path / "weights.yaml"
+    weights.write_text("weights: {}\n")
+    out = tmp_path / "run"
+    result = run_ws4(
+        "optimize",
+        "--dataset",
+        str(dataset),
+        "--targets",
+        str(targets),
+        "--weights",
+        str(weights),
+        "--years",
+        "5",
+        "--iterations",
+        "5",
+        "--threads",
+        "1",
+        "--out",
+        str(out),
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
