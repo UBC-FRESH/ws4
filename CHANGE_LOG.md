@@ -1622,3 +1622,10 @@ issue comments.
   destination policy for its mill products (which the route ratios wait on), the route report's
   period width, the `attractor` sub-account, a **Patchworks-parity mode** with traffic-weighted
   maintenance behind it, and a patch-component comparison carried on a new reference export.
+- Refreshed the example notebooks for the phase's own fixes, and recorded why rather than regenerating them
+  quietly: **020_even_flow**'s series changed because a flow target now means what it should — a level is
+  not summed over its window and a period ends at its year — so that notebook's search genuinely behaves
+  differently; and **050_routes_and_mills**' maintenance column changed because maintenance is charged
+  once per used road rather than per routed flow. Both were caught by the notebook drift check in CI, the
+  remedy is the documented `--refresh`, and the re-check reports **47 cells compared, 3 skipped, 0
+  drifted**.
