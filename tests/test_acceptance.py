@@ -188,7 +188,13 @@ def test_the_parity_check_skips_and_rejects(tmp_path: Path) -> None:
     assert acc.check_parity(tmp_path / "absent").status == "fail"
 
 
-def _write_report(root: Path, dataset: Path, schedule: pd.DataFrame, factor: float = 1.0) -> Path:
+def _write_report(
+    root: Path,
+    dataset: Path,
+    schedule: pd.DataFrame,
+    factor: float = 1.0,
+    horizon: int | None = None,
+) -> Path:
     """Write a reference export produced from WS4 itself, optionally perturbed.
 
     Parameters
@@ -201,6 +207,9 @@ def _write_report(root: Path, dataset: Path, schedule: pd.DataFrame, factor: flo
         The schedule to write and replay.
     factor : float
         A multiplier applied to every value, to make the comparison fail on purpose.
+    horizon : int or None
+        The number of years to report, when a reference reports years its last decision does not
+        reach. Defaults to the year after the schedule's last period.
 
     Returns
     -------
@@ -211,7 +220,7 @@ def _write_report(root: Path, dataset: Path, schedule: pd.DataFrame, factor: flo
 
     root.mkdir(parents=True, exist_ok=True)
     schedule.to_csv(root / "schedule.csv", index=False)
-    years = int(schedule["period"].max()) + 1
+    years = horizon if horizon is not None else int(schedule["period"].max()) + 1
     values = Simulator.from_dataset(dataset).simulate(schedule, years)
     values = values.assign(value=values["value"] * factor)
     values.to_csv(root / "account_values.csv", index=False)
@@ -243,6 +252,33 @@ def test_the_accounts_comparison_reports_a_difference(tmp_path: Path) -> None:
     differences, _ = acc.compare_account_values(dataset, report)
     assert differences
     assert acc.check_accounts(report, dataset).status == "fail"
+
+
+def test_the_accounts_comparison_replays_the_reference_horizon(tmp_path: Path) -> None:
+    """Years the reference reports but decides nothing in are replayed, not called differences."""
+    dataset = build_canonical_dataset(
+        FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    schedule = pd.DataFrame({"block_id": [1], "treatment": ["CC"], "period": [0]})
+    report = _write_report(tmp_path / "report", dataset, schedule, horizon=3)
+
+    differences, compared = acc.compare_account_values(dataset, report)
+    assert differences == []
+    assert compared > 0
+
+
+def test_a_schedule_deciding_past_the_reported_years_is_a_difference(tmp_path: Path) -> None:
+    """A decision in a year the reference never reported cannot be compared, and is said so."""
+    dataset = build_canonical_dataset(
+        FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    schedule = pd.DataFrame({"block_id": [1, 1], "treatment": ["CC", "CC"], "period": [0, 5]})
+    report = _write_report(tmp_path / "report", dataset, schedule, horizon=2)
+
+    differences, _ = acc.compare_account_values(dataset, report)
+    assert any(
+        "beyond the reference's last reported year" in difference for difference in differences
+    )
 
 
 def test_the_accounts_comparison_names_a_missing_column(tmp_path: Path) -> None:

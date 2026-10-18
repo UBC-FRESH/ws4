@@ -393,6 +393,14 @@ def compare_account_values(dataset_dir: Path, report_dir: Path) -> tuple[list[st
     }
 
     years = int(schedule["period"].max()) + 1 if not schedule.empty else 1
+    # The horizon to replay is the reference's own last reported year, which is what its account
+    # values cover. Deriving it from the schedule alone under-simulates whenever the reference
+    # reports years its last decision does not reach — and every such year is then reported as a
+    # difference, which is a spurious failure rather than a finding. A schedule that decides beyond
+    # the reported years is the opposite case, and is said out loud instead of silently truncated.
+    reported_years = max((year for year, _ in expected), default=-1) + 1
+    if reported_years > 0:
+        years = reported_years
     values = Simulator.from_dataset(dataset_dir).simulate(schedule, years)
     produced = {
         (int(year), str(account)): float(value)
@@ -402,6 +410,11 @@ def compare_account_values(dataset_dir: Path, report_dir: Path) -> tuple[list[st
     }
 
     differences: list[str] = []
+    if not schedule.empty and int(schedule["period"].max()) + 1 > years:
+        differences.append(
+            f"schedule.csv decides in period {int(schedule['period'].max())}, beyond the "
+            f"reference's last reported year {years - 1}"
+        )
     compared = 0
     tolerance = 1e-4
     for cell in sorted(set(expected) | set(produced)):

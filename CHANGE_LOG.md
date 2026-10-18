@@ -1320,3 +1320,14 @@ issue comments.
   that consumes it. The packaged sample Monday's run depends on was re-verified rather than assumed:
   `c5-sample-for-parity.zip`, 88 MB, sha256 `cd0aa1f3…`, extracted and checked against its 139 per-file
   digests, all OK. Dashboard: **GREEN** (seven gates).
+- Rehearsed the accounts comparison end to end without a reference, and found a defect in it. The check
+  derived the replay horizon from the schedule's last period, so a reference that reports years its last
+  decision does not reach had every one of them reported as "only in the reference" — a spurious
+  failure. It now replays the horizon the reference's own last reported year sets, and a schedule that
+  decides *beyond* the reported years is reported as a difference in so many words. No test had seen it
+  because the test helper derived the horizon the same wrong way the check did; two new tests cover
+  both directions, and the existing self-agreement test is unchanged. Rehearsed with an export written
+  from WS4's own simulate on the C5 sample (300 blocks, 113 account-year cells): it **passes**, and a
+  copy with one value multiplied by 1.5 **fails** naming that cell. The rehearsal exports and a
+  one-command runner are beside the workspace as `PARITY.md` + `parity-run.sh`, with the packaged sample
+  pre-compiled, so the Windows export is the only thing missing. Dashboard: **GREEN** (seven gates).

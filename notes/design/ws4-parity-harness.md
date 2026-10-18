@@ -112,12 +112,25 @@ python scripts/acceptance.py \
     --accounts-dataset tmp/parity/c5_compiled
 ```
 
-The check replays the exported schedule and compares every account-year cell both sides report. It
-uses a **relative tolerance of 1e-4**, because a reference export is typically rounded where WS4's
+The check replays the exported schedule and compares every account-year cell both sides report, over
+the horizon the **reference's own last reported year** sets — not the schedule's last decision, which
+under-simulates whenever a reference reports years its last decision does not reach, and reports every
+one of them as a difference. (A schedule that decides *beyond* the reported years is the opposite case
+and is reported as a difference in so many words.) It uses a **relative tolerance of 1e-4**, because a reference export is typically rounded where WS4's
 values are not; an account that only one side reports is a difference too, and is labelled as such,
 since that is exactly the kind of finding the comparison is for. A **no-treatment schedule** is worth
 running first: with no scheduler in the way it exercises the curves, the tracks and the strata, and if
 that agrees the rest of the comparison is about treatments rather than about growth.
+
+### The check rehearsed against itself
+
+While preparing the Windows run, the comparison was exercised end to end without a reference: an
+export was written from WS4's own simulate on the C5 sample (300 blocks, `schedule.csv` and
+`account_values.csv`), the check was run on it, and then on a copy with one value deliberately
+multiplied. The matching export **passes** — "WS4 reproduces the reference's 113 account-year
+values" — and the perturbed one **fails** with exactly that cell named. This is what caught the
+horizon defect above, which no test had seen because the test helper derived the horizon the same
+wrong way the check did.
 
 Until a report exists, the note's earlier section stands: the accounts-parity claim is specified and
 checkable, and **unverified**.
