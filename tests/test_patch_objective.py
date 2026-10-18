@@ -353,3 +353,31 @@ def test_a_run_reports_the_patch_accounts_it_priced(tmp_path: Path) -> None:
     assert reported["value"] > 0.0, "the incumbent's openings should be reported, not a missing row"
     assert reported["status"] == "met"
     assert summary["incumbent_objective"] == pytest.approx(0.0, abs=1.0)
+
+
+def test_every_year_of_a_group_shares_one_topology(tmp_path: Path) -> None:
+    """The node order, areas and adjacency are built once per group, not once per group-year."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    topology = _topology(tmp_path / "topology.csv")
+    patches = _patches(tmp_path / "patches.yaml")
+    optimizer = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(
+            years=3,
+            iterations=1,
+            seed=1,
+            warm_start=True,
+            topology_path=str(topology),
+            patch_accounts_path=str(patches),
+        ),
+    )
+    model = PatchModel(optimizer, optimizer.patch_accounts())
+    candidates = optimizer.candidates()
+    model.reset({block: chains[0] for block, chains in candidates.items() if chains})
+    assert len(model._topologies) == len(model.groups)
+    for key in model.groups:
+        states = [state for (group, _year), state in model.states.items() if group == key]
+        assert len(states) == 3
+        assert all(state.topology is states[0].topology for state in states)

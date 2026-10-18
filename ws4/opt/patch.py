@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING
 
 from ..patch.accounts import PatchAccount, load_patch_edges_detailed
 from .operators import Chain, Schedule
-from .patch_state import PatchGroupYear
+from .patch_state import PatchGroupTopology, PatchGroupYear
 
 if TYPE_CHECKING:
     from .engine import Optimizer
@@ -55,6 +55,9 @@ class PatchModel:
         self.blocks = tuple(self.area)
         self._detailed = load_patch_edges_detailed(Path(optimizer.cfg.topology_path))
         self._adjacency: dict[float | None, dict[int, tuple[tuple[int, float], ...]]] = {}
+        # one year-invariant node order, area array and CSR adjacency per group, shared by every
+        # year's state: building them is most of a state's construction and none of it is per-year
+        self._topologies: dict[GroupKey, PatchGroupTopology] = {}
         grouped: dict[tuple[str, float, float | None], list[PatchAccount]] = {}
         for account in self.accounts:
             key = (account.criteria, account.threshold, account.search_distance)
@@ -138,7 +141,11 @@ class PatchModel:
         """Return (building once) a group's state for a year."""
         state = self.states.get((key, year))
         if state is None:
-            state = PatchGroupYear(self.groups[key], key[1], self.adjacency(key[2]), self.area)
+            topology = self._topologies.get(key)
+            if topology is None:
+                topology = PatchGroupTopology(self.adjacency(key[2]), self.area)
+                self._topologies[key] = topology
+            state = PatchGroupYear.from_topology(self.groups[key], key[1], topology)
             self.states[(key, year)] = state
         return state
 

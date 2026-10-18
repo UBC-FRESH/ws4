@@ -10,7 +10,7 @@ import math
 import random
 
 import pytest
-from ws4.opt.patch_state import PatchGroupYear
+from ws4.opt.patch_state import PatchGroupTopology, PatchGroupYear
 from ws4.patch.accounts import PatchAccount, patch_account_values_indexed
 
 
@@ -97,3 +97,26 @@ def test_incremental_state_handles_two_accounts_in_a_group() -> None:
             }
             for key, val in expected.items():
                 assert got[key] == pytest.approx(val, abs=1e-9)
+
+
+def test_a_state_over_a_shared_topology_matches_one_built_from_scratch() -> None:
+    """A state built over a shared topology is indistinguishable from a self-contained one."""
+    rng = random.Random(7)
+    neighbours, block_area = _grid(5, 5, rng)
+    account = PatchAccount(
+        name="patch.p", criteria="c", threshold=0.5, size_classes=(2.0, 10.0, 40.0, math.inf)
+    )
+    topology = PatchGroupTopology(neighbours, block_area)
+    shared = PatchGroupYear.from_topology([account], 0.5, topology)
+    own = PatchGroupYear([account], 0.5, neighbours, block_area)
+    assert shared._ptr is topology.ptr
+    assert shared._v_area is topology.v_area
+    for _ in range(120):
+        block = rng.randrange(25)
+        value = rng.choice([None, 0.2, 0.55, 1.0, 1.6])
+        shared.set_value(block, value)
+        own.set_value(block, value)
+        for key, expected in own.cells().items():
+            assert shared.cells()[key] == pytest.approx(expected, abs=1e-9), (
+                f"block {block} key {key}"
+            )

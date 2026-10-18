@@ -1287,3 +1287,17 @@ issue comments.
   cannot reduce the bandwidth contention P8.4 measured, since every process still reads the same bytes.
   The option that would genuinely share one copy (handing the pool a read-only built state) is in
   `notes/backlog.md` with no throughput claim. Dashboard: **GREEN** (seven gates).
+- P9.3 (performance, #100): **the patch-state construction, 25.9 ms -> 2.79 ms per state (-89%), and the
+  C5 patch-ramp workload +5.9%** (86.9-88.2 -> 92.7-92.9 iterations/s), with a full 100-group-year
+  reset down from 3.27-3.50 s to 0.68-0.71 s (-80%). Profiling one state on a C5-class group
+  (12,567 blocks, 28,727 edges) showed the time was not in anything per-year: 45 ms of self time in
+  `PatchGroupYear.__init__`, of which 21 ms is 114,908 `array.array.append` calls and 15 ms is 85,288
+  `dict.get` calls — the CSR adjacency marshalling, identical in every year of a group, and read-only
+  to the kernels (`label_all`, `label_from_seeds`, `reachable_from`, `component_from`,
+  `piece_aggregate` take `ptr`/`indices`/`lengths`/`areas` as inputs and write only `comp` and their
+  scratch). So the year-invariant structure is now built once per group by `PatchGroupTopology` and
+  shared through `PatchGroupYear.from_topology`, with the constructor unchanged for callers that hold
+  a `neighbours` mapping; the topologies survive a `reset`, so a search pays once per group. Identical
+  results: the parity and patch-model suites pass unchanged, and a new test runs a shared-topology
+  state and a self-contained one through the same 120 mutations comparing every cell. Dashboard:
+  **GREEN** (seven gates).

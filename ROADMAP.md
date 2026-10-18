@@ -402,7 +402,7 @@ own copy before doing anything, and the simulator writes to the fragments frame 
 
 - [x] P9.1 Share the dataset across worker processes (#98)
 - [x] P9.2 Re-measure island scaling with the dataset shared (#99) — measured and rejected; #98 reverted
-- [ ] P9.3 Make the patch-state construction cheaper (#100)
+- [x] P9.3 Make the patch-state construction cheaper (#100) — the group topology is shared across years
 - [ ] P9.4 Stop rebuilding bounds in every curve gather (#101)
 - [ ] P9.5 Compare WS4's accounts against a reference report (#95, carried from P8)
 
