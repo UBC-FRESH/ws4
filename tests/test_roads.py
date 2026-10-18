@@ -228,3 +228,32 @@ def test_maintenance_is_charged_once_however_much_traffic_the_road_carries() -> 
         ten.route_cost_report()["haul_expense"].iloc[0]
         > one.route_cost_report()["haul_expense"].iloc[0]
     )
+
+
+def test_a_volume_account_can_name_the_product_it_tracks() -> None:
+    """A volume account with a product sums only that product's volume to that destination."""
+    from ws4.roads.accounts import RouteAccount
+
+    network = _network()
+    ledger = RouteCostLedger(network)
+    route = network.route(1, "10")
+    assert route is not None
+    ledger.record(0, 1, "product.Conif", 10.0, "10", route)
+    ledger.record(0, 1, "product.Decid", 4.0, "10", route)
+    accounts = ledger.account_values(
+        [
+            RouteAccount("10", "volume", "product.mill.Conif", product="product.Conif"),
+            RouteAccount("10", "volume", "product.mill.everything"),
+        ]
+    )
+    values = dict(zip(accounts["account"], accounts["value"], strict=True))
+    assert values["product.mill.Conif"] == 10.0
+    assert values["product.mill.everything"] == 14.0
+
+
+def test_a_cost_account_cannot_name_a_product() -> None:
+    """A product on a cost account is refused rather than ignored."""
+    from ws4.roads.accounts import RouteAccount
+
+    with pytest.raises(ValueError, match="only be named on a volume account"):
+        RouteAccount("10", "haul", "route.mill.haul", product="product.Conif")

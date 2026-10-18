@@ -153,12 +153,24 @@ class RouteAccount:
         The name to add the value into.
     factor : float
         A scaling factor, applied to the value (default 1; use -1 to subtract).
+    product : str or None
+        The product a ``volume`` account tracks, or None for every product routed there. A cost
+        account cannot name a product: the ledger prices a route, not a tonne of it.
     """
 
     destination: str
     kind: str
     account: str
     factor: float = 1.0
+    product: str | None = None
+
+    def __post_init__(self) -> None:
+        """Refuse a product on a cost account, rather than ignoring it."""
+        if self.product is not None and self.kind != "volume":
+            raise ValueError(
+                f"{self.account}: a product can only be named on a volume account, not a "
+                f"{self.kind} one"
+            )
 
 
 @dataclass(frozen=True)
@@ -251,6 +263,7 @@ def load_route_config(path: Path) -> RouteConfig:
             kind=str(item["kind"]),
             account=str(item["account"]),
             factor=float(item.get("factor", 1.0)),
+            product=item.get("product"),
         )
         for item in raw.get("route_accounts", [])
     )
@@ -367,6 +380,8 @@ class RouteCostLedger:
         self._year_volume: dict[int, float] = {}
         self._dest_totals: dict[tuple[int, str], dict[str, float]] = {}
         self._flows: dict[tuple[int, str, tuple[int, ...]], list[float]] = {}
+        # the volume per destination and product, so an account can name the product it tracks
+        self._product_volume: dict[tuple[int, str, str], float] = {}
         self._route_rows: list[dict[str, object]] = []
 
     def record(
@@ -416,6 +431,8 @@ class RouteCostLedger:
         )
         totals["volume"] += volume
         totals["haul"] += volume * route.haul_cost
+        product_key = (year, destination, str(product))
+        self._product_volume[product_key] = self._product_volume.get(product_key, 0.0) + volume
         totals["maintain"] += route.maintain_cost
         if self.collect:
             # Aggregate per (year, destination, route): products of the same block to the
@@ -607,6 +624,14 @@ class RouteCostLedger:
         rows: list[dict[str, object]] = []
         self._flush()
         for account in route_accounts:
+            if account.product is not None:
+                for (year, destination, product), volume in self._product_volume.items():
+                    if destination != account.destination or product != account.product:
+                        continue
+                    rows.append(
+                        {"year": year, "account": account.account, "value": volume * account.factor}
+                    )
+                continue
             for (year, destination), totals in self._dest_totals.items():
                 if destination != account.destination:
                     continue

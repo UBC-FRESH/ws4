@@ -453,3 +453,19 @@ The general lesson is worth keeping: when a comparison disagrees, the first ques
 sides are being asked the same thing. Three of this phase's largest "differences" were exactly that — the
 period convention, the patch `shape` metric, and this one.
 
+### The mill products: the mechanism, and what it exposed
+
+A route account can now name the product whose volume it tracks, so `product.Mill1.Yield.Conif` is
+expressible the way the reference means it — a volume account for one product at one destination, tested
+both ways (the filtered account sums only that product; a *cost* account naming a product is refused
+rather than ignored, because the ledger prices a route and not a tonne of it).
+
+Pointing it at the reference's own numbers exposed the next question rather than closing it. WS4 routes
+**24,349** of `product.Yield.managed.Conif` to Mill 1 over the periods, where the reference reports
+**1,029,670** — and its all-product routed volume is 1.6× the reference's, so the difference is not
+quantity but *attribution*: the products WS4's route model assigns, and the volume it assigns to each,
+are not the reference's. The reference makes this explicit in its model — it marks the conifer yield as
+an **exclusive** account split between the two mills, and duplicates each mill's share into its
+destination and into the conifer total — which is a *proportional allocation* between destinations rather
+than WS4's per-block least-cost routing. That is the question #114's route ratios now wait on.
+

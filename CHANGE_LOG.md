@@ -1571,3 +1571,13 @@ issue comments.
   The phase's general lesson, recorded in the parity note: when a comparison disagrees, ask first whether
   the two sides are being asked the same thing — three of this phase's largest differences (the period
   convention, the patch `shape` metric, and this) were that rather than a defect. Dashboard: **GREEN**.
+- P11.5 (#117) / P11.2 (#114): **a route account can name the product whose volume it tracks**, so the
+  reference's mill products are expressible as they mean them — a volume account for one product at one
+  destination. Two tests pin it: the filtered account sums only that product, and a *cost* account naming
+  a product is refused rather than ignored. Pointing it at the reference exposed the next question rather
+  than closing it: WS4 routes **24,349** of `product.Yield.managed.Conif` to Mill 1 where the reference
+  reports **1,029,670**, while WS4's all-product volume is 1.6× the reference's — so the difference is
+  *attribution*, not quantity. The reference allocates the conifer yield between the two mills as an
+  exclusive account and duplicates each share into its destination, where WS4 routes each block by
+  least cost; that allocation is what #114's route ratios wait on. Recorded in the parity note.
+  Dashboard: **GREEN**.
