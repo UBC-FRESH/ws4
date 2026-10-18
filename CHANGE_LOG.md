@@ -1431,3 +1431,8 @@ issue comments.
   exactly; the width it was rendered at is not. A unit test pins two differently-padded renders of the
   same content as equal. Locally the suite reports **47 cells compared, 3 skipped, 0 drifted**;
   dashboard **GREEN**.
+- **Phase 10's pull request is green in CI**: run `39104469800` on `9bcdcfd`, all four jobs — Quality
+  gates, Green dashboard summary, Pre-commit parity, and **Notebook outputs**, the new job whose first
+  outings found the three defects recorded above. The close-out report now carries the four runs in its
+  CI evidence table, including the three failures and what each one turned out to be. The pull request is
+  queued for the maintainer's approval.

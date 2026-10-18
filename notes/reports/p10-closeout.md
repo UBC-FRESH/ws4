@@ -80,7 +80,13 @@ the `opt` extra and the notebook tooling.
 
 | Run ID | Head commit | Conclusion | Notes |
 | --- | --- | --- | --- |
-| (see the pull request) | `0b0c54c` | (see the pull request) | The first run of the `Notebook outputs` job: it had never run before this pull request. |
+| `39104469800` | `9bcdcfd` | **success** | All four jobs green: **Quality gates**, **Green dashboard summary**, **Pre-commit parity**, and **Notebook outputs** — the last being this phase's new job, and this phase's pull request being its first. |
+| `39103477447` | `95ff5f3` | failure | Only `Notebook outputs`, on one column of padding in a `ws4 watch` table; the three gate jobs were green. |
+| `39102779086` | `f7cc6d0` | failure | `Notebook outputs` green for the first time; the gate jobs failed with `NoSuchKernel: python3`. |
+| `39102026256` | `2026065` | failure | The first run: `000_environment_check` drifted on an environment report, and the check's tests had no kernel. |
+
+The three failures are in section 5 with their causes and remedies. The evidence head is `9bcdcfd`; the
+commit that records this report follows it and re-runs the same jobs.
 
 ## 5. Deviations
 
