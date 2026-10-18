@@ -22,7 +22,7 @@ exists and the maintainer approves it.
 | P7 Parity and the analyst workflow | #82 | `feature/p7-parity` | complete |
 | P8 Verify the replacement claim | #90 | `feature/p8-verify` | complete |
 | P9 Spatial performance and memory | #97 | `feature/p9-memory` | active |
-| P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | active |
+| P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | pr-open |
 
 ## Lifecycle Map
 
@@ -435,7 +435,9 @@ Acceptance criteria:
 
 Parent issue: #104
 Branch: `feature/p10-docs-api`
-Status: active
+Status: pr-open
+Pull request: stacked on `feature/p9-memory`, because Phase 9 is held open for its P9.5 export and
+Phase 10 was branched from it. The stack lands as P9 then P10 unless the maintainer prefers one merge.
 
 Goal: serve the second audience in the gallery, and stop the gallery being able to lie. The prose for
 the Python API exists; the examples do not — five of seven notebooks drive the command line — and the

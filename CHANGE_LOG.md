@@ -1404,3 +1404,8 @@ issue comments.
   **50 cells compared, 0 skipped, 0 drifted**. Seven tests cover a current notebook, a stale one, a
   tagged cell, the normalisations, a notebook that no longer runs, the per-cell outcome, and the refresh.
   Dashboard: **GREEN** (seven gates).
+- Queued the Phase 10 close-out: the report is `notes/reports/p10-closeout.md` and the roadmap moves P10
+  to `pr-open`. The pull request is **stacked on `feature/p9-memory`**, because P10 was branched from it
+  and Phase 9 is held open for the P9.5 export: a pull request against `main` would carry P9's unmerged
+  work as well, so the stack shows P10's own four commits and the base can be changed with one command
+  if the maintainer would rather land both at once.
