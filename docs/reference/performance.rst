@@ -17,7 +17,7 @@ segments; a 72-core host):
      - Achieved
    * - C5 30-year ``simulate``
      - < 1 s
-     - ~0.11 s (cold, 16 174 fragments)
+     - ~0.10 s (cold, 16 174 fragments)
    * - C5 3-year ``simulate`` + routing (300 blocks)
      - < 5 s
      - ~0.69 s
@@ -29,7 +29,7 @@ segments; a 72-core host):
      - ~0.003 ms against a volume target, ~1 ms per iteration on a binding volume-plus-patch workload
    * - Island throughput at 8 / 32 islands
      - near-linear
-     - 5.0k / 14k iterations/s (4.7x / 13x in one run, up to 15.9k and 16x in another)
+     - 6.0k / 18.7k iterations/s (5.7x / 17.7x, at the loads recorded below)
 
 The incremental objective
 -------------------------

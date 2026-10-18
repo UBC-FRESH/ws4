@@ -1301,3 +1301,15 @@ issue comments.
   results: the parity and patch-model suites pass unchanged, and a new test runs a shared-topology
   state and a self-contained one through the same 120 mutations comparing every cell. Dashboard:
   **GREEN** (seven gates).
+- P9.4 (performance, #101): **the curve gather, addressed flat — 1,133 -> 858 us (-24.3%) on a real
+  C5 call, and the 30-year simulate -6.1%**, with the documented benchmark reporting
+  `simulate_base_seconds` **0.100 s** against P8.2's 0.113 s. Measuring first moved the target: on the
+  C5 simulate gather is **0.0368 s of 0.115 s**, in 30 calls of 205,942 queries, and the cost is not
+  the `np.clip`/`iinfo` P8.3 named (0.26 ms) but numpy's two-array indexing (0.83 ms of the 1.15 ms
+  call), which folds strides and checks bounds per element. `table.ravel()[rows * (age_max + 1) +
+  clipped]` computes the same addresses for -24%. A/B evidence is both implementations alternating in
+  one process. Semantics pinned by two new tests: the clamp at both ends on a curve whose ends differ,
+  and that the result is a copy the table does not alias. The docs' measured-figures header also said
+  5.0k/14k iterations/s at 8/32 islands, contradicting the scaling table lower down the same page; it
+  now carries P8.4's recorded 6.0k/18.7k (5.7x/17.7x) and the 30-year simulate reads ~0.10 s.
+  Dashboard: **GREEN** (seven gates).

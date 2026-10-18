@@ -561,3 +561,47 @@ per-state cost that remains — about 2.8 ms — is the per-year membership and 
 answer to "make it lazier" is still no, for the reason P8.3 gave: the years that get a state are
 already only the accounting points a target reads.
 
+### P9.4 the curve gather, addressed flat
+
+P8.3 left one thing named on this page: `CurveTable.gather`'s `np.clip`, which builds an `iinfo` per
+call. Measuring first says the `iinfo` is not where the time is. On a real C5 30-year simulate —
+16,174 fragments — the simulate makes **30 gather calls of 205,942 queries each**, and gather is
+**0.0368 s of the 0.115 s** simulate, a third of it. Breaking that call down at its real shape (a
+`(1801, 843)` table, 1,114 distinct rows, ages 0 to 402, and no age needing a clamp at all):
+
+| Step | Time |
+| --- | ---: |
+| `np.clip`, then `.astype(np.int64)` | 0.26 ms |
+| `table[rows, clipped]` — numpy's two-array indexing | **0.83 ms** |
+| the whole call | 1.15 ms |
+
+The dominant cost is the indexing, not the bounds: two index arrays make numpy fold strides and check
+bounds per element, and what is left is a scatter of loads over a 12 MB table. Addressing the table
+**flat** — `table.ravel()[rows * (age_max + 1) + clipped]` — computes the same addresses as one
+multiply and one add, and is measurably cheaper.
+
+Measured with both implementations in one process, alternating (so host load and memory placement fall
+on both), best of 40 rounds of the real captured call and best of 6 of the simulate:
+
+| | Two-array indexing | Flat | |
+| --- | ---: | ---: | --- |
+| gather, 205,942 queries | 1,133 us | **858 us** | **-24.3%** |
+| C5 30-year `simulate` | 0.094 s | **0.088 s** | **-6.1%** |
+
+The documented benchmark command agrees: `simulate_base_seconds` **0.100 s**, against the 0.113 s P8.2
+recorded. Re-confirmed on the shipped code after the typing fix: 1,124 us against 843 us, -25.0%.
+
+**Semantics unchanged, and pinned by tests.** The clamp is the reason gather exists rather than raw
+indexing, so a new test drives ages below zero and far past `age_max` on a curve whose ends differ and
+asserts the endpoint values, and another writes into the result and checks the table is untouched —
+`ravel()` of a contiguous table is a view, so the flat gather must copy, and does. The existing
+`test_gather_matches_at` and the curve-table suite pass unchanged.
+
+Two notes for anyone measuring this later. `.ravel()` copies a non-contiguous table on every call, so if
+a `CurveTable` is ever built from a non-contiguous array the change turns into a 12 MB copy per gather;
+`from_curves` always produces a contiguous one, and the measured calls' tables are contiguous. And the
+first A/B of this change was wrong in the other direction — 2,143 us against 1,150 — because it timed
+the new code in one process against the old in a fresh one, on arrays loaded from disk; the same
+comparison inside a single process shows 880-930 us for either table. Interleaving belongs in the
+harness, not in the hope that the host is quiet.
+

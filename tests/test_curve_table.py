@@ -61,6 +61,24 @@ def test_gather_matches_at() -> None:
     assert list(values) == [50.0, 5.0]
 
 
+def test_gather_clamps_at_both_ends() -> None:
+    """The vectorized gather clamps an out-of-range age to the table's ends."""
+    ramp = pd.DataFrame({"curve_id": [4, 4], "x": [0.0, 10.0], "y": [1.0, 21.0]})
+    table = CurveTable.from_curves(ramp)
+    rows = np.array([0, 0, 0, 0], dtype=np.int64)
+    ages = np.array([-5.0, 0.0, 10.0, 99.0])
+    assert table.gather(rows, ages).tolist() == [1.0, 1.0, 21.0, 21.0]
+
+
+def test_gather_returns_values_independent_of_the_table() -> None:
+    """The gather copies, so writing to the result cannot corrupt the table."""
+    table = CurveTable.from_curves(_tiny())
+    rows = np.array([0, 0], dtype=np.int64)
+    values = table.gather(rows, np.array([5.0, 10.0]))
+    values[:] = -1.0
+    assert table.gather(rows, np.array([5.0, 10.0])).tolist() == [50.0, 100.0]
+
+
 def test_the_table_matches_curve_value_on_a_real_dataset() -> None:
     """The table equals ``curve_value`` for integer ages on the fixture's curves."""
     curves = pd.DataFrame(
