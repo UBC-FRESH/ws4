@@ -5,8 +5,11 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
+from ws4.build.compiler import build_canonical_dataset
 
 import acceptance as acc
+
+FIXTURE: Path = Path(__file__).resolve().parents[1] / "examples" / "synthetic"
 
 
 def _write_compiled(root: Path, labels: list[str]) -> Path:
@@ -183,3 +186,81 @@ def test_the_parity_check_skips_and_rejects(tmp_path: Path) -> None:
     """No sample means skip; a path that is not a directory is a failure, not a crash."""
     assert acc.check_parity(None).status == "skip"
     assert acc.check_parity(tmp_path / "absent").status == "fail"
+
+
+def _write_report(root: Path, dataset: Path, schedule: pd.DataFrame, factor: float = 1.0) -> Path:
+    """Write a reference export produced from WS4 itself, optionally perturbed.
+
+    Parameters
+    ----------
+    root : Path
+        The report directory.
+    dataset : Path
+        The compiled dataset to replay.
+    schedule : pandas.DataFrame
+        The schedule to write and replay.
+    factor : float
+        A multiplier applied to every value, to make the comparison fail on purpose.
+
+    Returns
+    -------
+    Path
+        The report directory written.
+    """
+    from ws4.sim.engine import Simulator
+
+    root.mkdir(parents=True, exist_ok=True)
+    schedule.to_csv(root / "schedule.csv", index=False)
+    years = int(schedule["period"].max()) + 1
+    values = Simulator.from_dataset(dataset).simulate(schedule, years)
+    values = values.assign(value=values["value"] * factor)
+    values.to_csv(root / "account_values.csv", index=False)
+    return root
+
+
+def test_the_accounts_comparison_agrees_with_itself(tmp_path: Path) -> None:
+    """A report WS4 itself produced must reproduce, cell for cell."""
+    dataset = build_canonical_dataset(
+        FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    schedule = pd.DataFrame({"block_id": [1, 2], "treatment": ["CC", "CC"], "period": [0, 1]})
+    report = _write_report(tmp_path / "report", dataset, schedule)
+
+    differences, compared = acc.compare_account_values(dataset, report)
+    assert differences == []
+    assert compared > 0
+    assert acc.check_accounts(report, dataset).status == "pass"
+
+
+def test_the_accounts_comparison_reports_a_difference(tmp_path: Path) -> None:
+    """A value that WS4 does not reproduce is a difference, and fails the check."""
+    dataset = build_canonical_dataset(
+        FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    schedule = pd.DataFrame({"block_id": [1], "treatment": ["CC"], "period": [0]})
+    report = _write_report(tmp_path / "report", dataset, schedule, factor=2.0)
+
+    differences, _ = acc.compare_account_values(dataset, report)
+    assert differences
+    assert acc.check_accounts(report, dataset).status == "fail"
+
+
+def test_the_accounts_comparison_names_a_missing_column(tmp_path: Path) -> None:
+    """A schedule without the columns the comparison needs is reported, not raised."""
+    dataset = build_canonical_dataset(
+        FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    report = tmp_path / "report"
+    report.mkdir()
+    pd.DataFrame({"nope": [1]}).to_csv(report / "schedule.csv", index=False)
+    pd.DataFrame({"nope": [1]}).to_csv(report / "account_values.csv", index=False)
+
+    differences, compared = acc.compare_account_values(dataset, report)
+    assert differences
+    assert compared == 0
+
+
+def test_the_accounts_check_skips_without_inputs() -> None:
+    """Either input missing means skip rather than a spurious failure."""
+    assert acc.check_accounts(None, None).status == "skip"
+    assert acc.check_accounts(Path("x"), None).status == "skip"

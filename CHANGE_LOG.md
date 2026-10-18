@@ -1181,3 +1181,19 @@ issue comments.
   reported per period, and a no-treatment case first, since that exercises the curves, tracks and strata
   with no scheduler in the way. Recorded in `notes/design/ws4-parity-harness.md`. Dashboard: **GREEN**
   (seven gates).
+- P8.5 (verify): the accounts comparison, ready for the reference's export. `scripts/acceptance.py`
+  gains an `accounts` check with `--accounts-report` and `--accounts-dataset`: it reads the reference's
+  own `schedule.csv` (block, treatment, year, with loose column-name matching) and `account_values.csv`
+  (year, account, value), replays **that schedule** in WS4, and compares every account-year cell both
+  sides report at a relative tolerance of 1e-4 — the tolerance because a reference export is typically
+  rounded where WS4's values are not — reporting an account only one side has as its own kind of
+  difference, since that is the kind of finding the comparison exists for. Replaying the reference's
+  schedule rather than comparing two optimizers' schedules is the design decision: the two searches
+  choose differently, so only a shared schedule makes the accounts comparable, and it isolates the
+  simulation — which is what the replacement claim rests on. The chosen sample is the one already
+  extracted (from the 2019 installer), the same one every C5 figure here was measured against. What
+  remains unverified is stated in `notes/design/ws4-parity-harness.md`, which now carries the export
+  specification and the exact commands, including a no-treatment case to run first. Tests:
+  `tests/test_acceptance.py` covers a report WS4 produced itself reproducing cell for cell, a perturbed
+  value failing, a missing column being reported rather than raised, and the skip path. Dashboard:
+  **GREEN** (seven gates).

@@ -88,3 +88,37 @@ claim is ultimately about, and it avoids comparing two different searches. A no-
 worth including as the first case, since it exercises the curves, the tracks and the strata with no
 scheduler in the way at all.
 
+## What to export, and how to check it
+
+The comparison is built. `scripts/acceptance.py` can replay a reference's own schedule in WS4 and
+compare the accounts, so all that is missing is one export from a licensed reference run.
+
+Export, from a single run of the C5 sample:
+
+1. **`schedule.csv`** — what the reference actually did: one row per decision with a block, a
+   treatment and a year. Column names are matched loosely (`block_id`/`block`, `treatment`,
+   `period`/`year`), so the reference's own header is fine.
+2. **`account_values.csv`** — the realized account values for that same run, one row per account per
+   year (`year`, `account`, `value`; the same loose matching applies).
+
+Then check them:
+
+```bash
+# once: compile the sample into a dataset WS4 can replay over
+python scripts/benchmark.py --scenario c5 --sample-dir <sample> --years 3 --workdir tmp/parity
+
+python scripts/acceptance.py \
+    --accounts-report <the export directory> \
+    --accounts-dataset tmp/parity/c5_compiled
+```
+
+The check replays the exported schedule and compares every account-year cell both sides report. It
+uses a **relative tolerance of 1e-4**, because a reference export is typically rounded where WS4's
+values are not; an account that only one side reports is a difference too, and is labelled as such,
+since that is exactly the kind of finding the comparison is for. A **no-treatment schedule** is worth
+running first: with no scheduler in the way it exercises the curves, the tracks and the strata, and if
+that agrees the rest of the comparison is about treatments rather than about growth.
+
+Until a report exists, the note's earlier section stands: the accounts-parity claim is specified and
+checkable, and **unverified**.
+
