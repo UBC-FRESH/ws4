@@ -111,6 +111,13 @@ class RouteModel:
     def eligible(self, product: str) -> tuple[str, ...]:
         """Return the destinations a product may be sent to.
 
+        A map that names products is also the list of what the model delivers: a product it does
+        not name is routed nowhere, because a configuration that says where wood goes is saying
+        what the wood is. Leaving a product out otherwise puts areas, sera classes and volume
+        classes on the road beside the yield — which is what WS4 did until the route report made
+        its volume 2.3 times the reference's for exactly that reason. A model with no map at all
+        delivers every product to every destination, which is what it did before there was a map.
+
         Parameters
         ----------
         product : str
@@ -119,12 +126,30 @@ class RouteModel:
         Returns
         -------
         tuple of str
-            The eligible destination names; all destinations when the product has no
-            entry, or an empty tuple when the product is explicitly unutilized.
+            The destinations the product may be sent to: what the map names for it; nothing when
+            the map names other products but not this one, or when the product is explicitly
+            unutilized; and every destination when there is no map.
         """
         if product in self.eligibility:
             return tuple(self.eligibility[product])
+        if self.eligibility:
+            return ()
         return self.network.destination_names()
+
+    def delivers(self, product: str) -> bool:
+        """Return whether a product is routed at all.
+
+        Parameters
+        ----------
+        product : str
+            The product label.
+
+        Returns
+        -------
+        bool
+            True when the product has at least one destination it may be sent to.
+        """
+        return bool(self.eligible(product))
 
     def assign(self, block_id: int, product: str) -> tuple[str, Route | None]:
         """Choose a destination for a block's product.
@@ -518,6 +543,8 @@ class RouteCostLedger:
         self._flows: dict[tuple[int, str, tuple[int, ...]], list[float]] = {}
         # the volume per destination and product, so an account can name the product it tracks
         self._product_volume: dict[tuple[int, str, str], float] = {}
+        # the volume-weighted distance per destination per year, which the report needs per mill
+        self._dest_distance: dict[tuple[int, str], float] = {}
         self._route_rows: list[dict[str, object]] = []
 
     def record(
@@ -567,6 +594,9 @@ class RouteCostLedger:
         )
         totals["volume"] += volume
         totals["haul"] += volume * route.haul_cost
+        self._dest_distance[(year, destination)] = (
+            self._dest_distance.get((year, destination), 0.0) + volume * route.length_m
+        )
         product_key = (year, destination, str(product))
         self._product_volume[product_key] = self._product_volume.get(product_key, 0.0) + volume
         totals["maintain"] += route.maintain_cost
@@ -627,6 +657,7 @@ class RouteCostLedger:
                 per_dest.length = segment.length_m
                 per_dest.maintain_expense = segment.maintain_cost
                 if is_new:
+                    per_dest.built_length += segment.length_m
                     per_dest.build_expense += segment.build_cost
         self._flows.clear()
 
@@ -796,8 +827,24 @@ class RouteCostLedger:
                 )
         return pd.DataFrame(rows, columns=["year", "account", "value"])
 
-    def route_cost_report(self) -> pd.DataFrame:
-        """Return the route cost report: one row per period.
+    def route_cost_report(self, destination: str | None = None) -> pd.DataFrame:
+        """Return the route cost report: one row per period of the model.
+
+        The report is folded into the model's own periods, so its rows are the reference's: a
+        period is labelled by the year it **ends** at and carries the model's period width, and
+        the years within it are summed. What a period holds is a sum for the extensive columns —
+        length, built length, the expenses, the volume — while the averages are recomputed from
+        those sums rather than averaged, which is what makes them mean the same thing in a
+        ten-year period as in a one-year one.
+
+        With the default period width of one this is one row per year, unchanged.
+
+        Parameters
+        ----------
+        destination : str or None, optional
+            A destination account to report on alone, which is how the reference ships this
+            report — one table per mill. None reports the whole network, where a shared segment
+            is counted once rather than once per destination it carries wood for.
 
         Returns
         -------
@@ -806,38 +853,77 @@ class RouteCostLedger:
             established command-line tokens when written by :meth:`write`.
         """
         self._flush()
-        periods = sorted({year for year, _ in self._segments} | set(self._year_volume))
-        rows: list[dict[str, float]] = []
-        for period in periods:
-            length = built_length = build = haul = maintain = 0.0
-            for (year, _segment_id), state in self._segments.items():
-                if year != period:
-                    continue
-                length += state.length
-                built_length += state.built_length
-                build += state.build_expense
-                haul += state.haul_expense
-                maintain += state.maintain_expense
-            volume = self._year_volume.get(period, 0.0)
-            average_distance = (
-                self._year_distance.get(period, 0.0) / volume if volume > 0.0 else 0.0
+        width = max(int(self.period_width), 1)
+        states = (
+            ((year, state) for (year, _segment_id), state in self._segments.items())
+            if destination is None
+            else (
+                (year, state)
+                for (year, one, _segment_id), state in self._by_destination.items()
+                if one == destination
             )
+        )
+        length: dict[int, float] = {}
+        built_length: dict[int, float] = {}
+        build: dict[int, float] = {}
+        haul: dict[int, float] = {}
+        maintain: dict[int, float] = {}
+        for year, state in states:
+            length[year] = length.get(year, 0.0) + state.length
+            built_length[year] = built_length.get(year, 0.0) + state.built_length
+            build[year] = build.get(year, 0.0) + state.build_expense
+            haul[year] = haul.get(year, 0.0) + state.haul_expense
+            maintain[year] = maintain.get(year, 0.0) + state.maintain_expense
+        if destination is None:
+            volume = self._year_volume
+            distance = self._year_distance
+        else:
+            volume = {
+                year: totals["volume"]
+                for (year, one), totals in self._dest_totals.items()
+                if one == destination
+            }
+            distance = {
+                year: value
+                for (year, one), value in self._dest_distance.items()
+                if one == destination
+            }
+        # a period's years, from the year they end at: period 1 is years 1..width, and period 0 is
+        # the initial snapshot at year 0, which is how the reference labels its own first row
+        periods: dict[int, list[int]] = {}
+        for year in sorted(set(length) | set(volume)):
+            periods.setdefault(0 if year <= 0 else (year - 1) // width + 1, []).append(year)
+        rows: list[dict[str, float]] = []
+        for period, years in sorted(periods.items()):
+            period_length = sum(length.get(year, 0.0) for year in years)
+            period_built_length = sum(built_length.get(year, 0.0) for year in years)
+            period_build = sum(build.get(year, 0.0) for year in years)
+            period_haul = sum(haul.get(year, 0.0) for year in years)
+            period_maintain = sum(maintain.get(year, 0.0) for year in years)
+            period_volume = sum(volume.get(year, 0.0) for year in years)
+            period_distance = sum(distance.get(year, 0.0) for year in years)
             rows.append(
                 {
+                    # a period is labelled by the year it ends at, as the reference labels its own;
+                    # a run that stops inside a period covers only the years it simulated
                     "period": period,
-                    "year": period,
+                    "year": period * width,
                     "period_width": self.period_width,
-                    "length": length,
-                    "built_length": built_length,
-                    "build_expense": build,
-                    "haul_expense": haul,
-                    "maintain_expense": maintain,
-                    "total": build + haul + maintain,
-                    "volume": volume,
-                    "average_haul_distance": average_distance,
-                    "average_build_cost": build / volume if volume else 0.0,
-                    "average_haul_cost": haul / volume if volume else 0.0,
-                    "average_maintain_cost": maintain / volume if volume else 0.0,
+                    "length": period_length,
+                    "built_length": period_built_length,
+                    "build_expense": period_build,
+                    "haul_expense": period_haul,
+                    "maintain_expense": period_maintain,
+                    "total": period_build + period_haul + period_maintain,
+                    "volume": period_volume,
+                    "average_haul_distance": (
+                        period_distance / period_volume if period_volume > 0.0 else 0.0
+                    ),
+                    "average_build_cost": (period_build / period_volume if period_volume else 0.0),
+                    "average_haul_cost": (period_haul / period_volume if period_volume else 0.0),
+                    "average_maintain_cost": (
+                        period_maintain / period_volume if period_volume else 0.0
+                    ),
                 }
             )
         return pd.DataFrame(rows, columns=list(_ROUTE_COST_COLUMNS))
@@ -849,8 +935,8 @@ class RouteCostLedger:
         ----------
         out_dir : Path
             The run directory. The method writes ``route_values.csv``,
-            ``network_table.csv``, the route cost report, and a route table per
-            destination.
+            ``network_table.csv``, the route cost report, and a route table and a route cost
+            report per destination.
         """
         out_dir = Path(out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -863,7 +949,13 @@ class RouteCostLedger:
             out_dir / "route_cost_report.csv", index=False
         )
         for destination in self.network.destination_names():
+            safe = destination.replace("/", "_")
             table = self.route_table(destination)
             if not table.empty:
-                safe = destination.replace("/", "_")
                 table.to_csv(out_dir / f"route_table.{safe}.csv", index=False)
+            # the reference ships this report one table per mill, so WS4 does too
+            per_destination = self.route_cost_report(destination)
+            if not per_destination.empty:
+                per_destination.rename(columns=_ROUTE_COST_LABELS).to_csv(
+                    out_dir / f"route_cost_report.{safe}.csv", index=False
+                )

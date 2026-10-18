@@ -258,3 +258,29 @@ def test_block_chain_delta_equals_the_simulate_delta(tmp_path: Path) -> None:
     for cell, value in expected.items():
         year, account = cell
         assert simulated.get((year, account), 0.0) == pytest.approx(value)
+
+
+def test_the_run_writes_the_route_report_in_the_models_periods(tmp_path: Path) -> None:
+    """The period width a run is given is the width its route report states, per destination too."""
+    dataset = _dataset(tmp_path)
+    segments = pd.DataFrame(
+        {"from_vertex": [1], "to_vertex": [2], "length_m": [100.0], "cost": [10.0]}
+    )
+    destinations = pd.DataFrame({"NODE": [2], "ACCOUNT": ["destination.MILL1"]})
+    linkages = pd.DataFrame({"block_id": [1, 2], "vertex_id": [1, 2]})
+    network = RouteNetwork.from_tables(segments, destinations, linkages)
+    schedule = _schedule(tmp_path, "cc.csv", [(1, "CC", 1), (2, "CC", 7)])
+    out = tmp_path / "periods"
+    Simulator.from_dataset(dataset).run(
+        schedule, years=12, out_dir=out, network=network, period_width=5
+    )
+    report = pd.read_csv(out / "route_cost_report.csv")
+    routes = pd.read_csv(out / "route_values.csv")
+    assert set(report["PERIODWIDTH"]) == {5}
+    assert list(report["PERIOD"]) == [1, 2]
+    assert list(report["YEAR"]) == [5, 10]
+    assert report["VOLUME"].sum() == routes["volume"].sum()
+    per_destination = pd.read_csv(out / "route_cost_report.destination.MILL1.csv")
+    assert list(per_destination["PERIOD"]) == [1, 2]
+    assert per_destination["BUILTLENGTH"].iloc[0] > 0.0
+    assert per_destination["BUILTLENGTH"].iloc[1] == 0.0  # built once

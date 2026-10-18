@@ -94,7 +94,11 @@ items are enhancements and maintenance.
   the account values (one row per year and account), so the optimizer scores a target on a `product.*`
   account.
 - **Route flows.** `done`. With a road network, each produced product is routed to the block's nearest
-  destination and written to `route_values.csv` with its length and cost.
+  eligible destination and written to `route_values.csv` with its length and cost. What is *delivered*
+  is what an eligibility map names: a product the map does not name is routed nowhere, because a
+  configuration that says where wood goes is saying what the wood is (P12.3, #123 — it had been routing
+  the areas, the sera classes and the volume classes to the mills beside the yield, which made the route
+  report's volume 2.26× the reference's).
 - **Patch metrics over blocks.** `done`. `ws4/patch/metrics.py` groups the disturbed blocks into
   connected patches over the topology and reports the count, mean size, largest opening, and size-class
   distribution; the simulator writes `patch_metrics.csv` when given a topology.
@@ -162,7 +166,20 @@ items are enhancements and maintenance.
 - **Account types and reports.** `partial`. `ws4/report.py` summarizes accounts, evaluates a ratio
   account, reports target status, and writes `report_accounts.csv` / `report_targets.csv`. Open:
   duplicate and meta accounts, and chart output. Target: post-release.
-- **Unit conversion (map vs report units).** `open`. Target: post-release.
+- **Unit conversion (map vs report units).** `open`. Target: post-release. One instance is measured and
+  in the route report: WS4 reports `AVERAGEHAULDIST` in **metres** and the reference in **kilometres**, so
+  the column reads 1,200× apart when it is 1.2× (P12.3, #123) — converting WS4's own column is a decision
+  about its report rather than about the comparison, so it is left for this item rather than done quietly
+  under a parity task.
+- **What the reference's route report `LENGTH` counts.** `open`, and the one quantity of P12.3's
+  comparison left unexplained. It is a segment-set quantity — the length of the distinct road in use
+  during a period — and WS4 reports **2.6×** the reference's for MILL 1 and **3.3×** for MILL 2 over the
+  twenty periods, where maintenance is *consistent with* it on both sides (1.17 a metre in WS4 against
+  0.98 in the reference) and the haul expense is *lower* while more road is in use. So the two runs use
+  **different roads**, not different amounts of wood: WS4 routes over the whole planned network (11,606 km
+  of 36,721 segments) while the reference's search builds roads as it goes. The candidate explanation —
+  that its report counts only the roads its own run has opened — is unverified, and is recorded as a
+  candidate rather than asserted.
 
 ## Programmatic model API (P2.9)
 

@@ -292,34 +292,57 @@ families need an input WS4 does not ingest (a complete-coverage watershed table,
 the fifth needs route costs and mill volumes exposed as accounts. Which of those WS4 should take on is a
 scoping decision, and the next section states the order this note recommends.
 
-## The route accounts: the same report, different accounting
+## The route accounts: the same report, in the reference's own periods
 
 The reference ships its own route cost report (`route/routeCostMILL<mill>.csv`), and it is the **same
-table** WS4 writes (`route_cost_report.csv`) — the same columns, including the period and year a change
-made WS4's report carry. That makes the comparison direct, and it shows the differences are in the
-*accounting*, not the routing (which agrees apart from the sample's stale third mill):
+table** WS4 writes — the same columns, and now the same rows. P12.3 gave the report the model's period
+width, so a period is labelled by the year it ends at and carries that width, the extensive columns are
+summed over the period's years, and the averages are recomputed from those sums — which is what the
+reference's own arithmetic does: its `AVERAGEHAULCOST` is `HAUL_EXPENSE / VOLUME` to four decimals. WS4
+writes the report **per destination** as well now, which is how the reference ships it (one table per
+mill), and a period width of one still leaves one row per year, so nothing about the older report moved.
 
-| Column | Reference, period 1 (year 10, width 10) | WS4, period 1 (year 1, width 1) |
+Compared over the twenty periods of the 2026 base scenario, same schedule and same periods:
+
+| Column | MILL 1: reference / WS4 | MILL 2: reference / WS4 |
 | --- | ---: | ---: |
-| `LENGTH` | 1,149,647 | 827,926 |
-| `BUILD_EXPENSE` | 3,660,367 | 2,038,700 |
-| `HAUL_EXPENSE` | 11,174,512 | 10,549,815 |
-| `MAINTAIN_EXPENSE` | 1,126,465 | **195,991,566** |
-| `TOTAL` | 15,961,345 | 208,580,081 |
-| `VOLUME` | 1,029,670 | 1,646,192 |
-| `AVERAGEHAULDIST` | **50.3** | **65,261** |
-| `AVERAGEMAINTCOST` | **1.1** | **119.1** |
+| `VOLUME` | 15,371,727 / 16,617,632 (+8.1%) | 12,135,638 / 10,889,737 (−10.3%) |
+| `TOTAL` | 187,025,907 / 150,580,419 | 180,525,485 / 161,730,453 |
+| `BUILTLENGTH` | 1,440,618 / 1,713,065 | 1,926,641 / 2,211,294 |
+| `HAUL_EXPENSE` | 138,919,438 / 88,248,589 | 112,074,151 / 67,071,801 |
+| `LENGTH` | 18,757,567 / 49,207,309 | 27,277,007 / 90,145,237 |
+| `MAINTAIN_EXPENSE` | 18,433,382 / 57,381,362 | 26,982,130 / 87,536,005 |
+| `AVERAGEHAULDIST` | 877 / 1,075,870 | 1,023 / 1,236,013 |
 
-Three of those are *shape*, not error: the reference reports a ten-year period where WS4's report here is
-per year, and distances are kilometres against metres. Two are not: **maintenance is about a hundred
-times apart** in both the expense and the per-unit cost, and **the volume is 1.6× apart** because WS4's
-route volume is every product routed whereas the reference's mill product is the conifer share.
+**Three of those are explained, and they were the three worth fixing.**
 
-So the derived **ratios cannot be compared honestly yet**: `ratio.route.haul.MILL1` is
-`route.haul.MILL1 / product.Mill1.Yield.Conif × 10000`, and both of its sides have to mean the same thing
-in both tools first. That reconciliation belongs with the mill-set task, since it is the same subject and
-the same report, and the order it should be done in is: maintenance, then the reporting window, then the
-per-product split of the routed volume (which the ledger already records and only has to expose).
+1. **`VOLUME` is now the same quantity on both sides**, to within the destination policy. It is the
+   delivered wood, not the delivered wood *and* the areas: WS4 had been routing **27 products** to the
+   mills — `product.Area.managed.PL`, the `product.vph.*` classes, `product.total.Yield` — because a
+   product with no entry in the eligibility map went to every destination. The report is what made it
+   visible: its volume was **2.26 times** the reference's, and once a map that names products became the
+   list of what is *delivered*, the two differ by the 8% and 10% that #122 measured in the destination
+   decision itself.
+2. **`AVERAGEHAULDIST` is a unit.** WS4 counts metres and the reference kilometres: per period WS4
+   reports 53,794 m for MILL 1 against the reference's 43.9, so 1.2× rather than the 1,200× a raw ratio
+   of the column suggests. The 1.2 is the same routing difference the other rows carry. Converting WS4's
+   own column is a decision about its report rather than about the comparison, and is in
+   `notes/backlog.md`.
+3. **`BUILTLENGTH` was zero in the per-destination report**, because the per-destination state recorded a
+   segment's build expense and never its built length. Writing the report per destination is what
+   exposed it.
+
+**One quantity is not explained: `LENGTH`, and what follows from it.** It is a segment-set quantity —
+the length of the distinct road in use during a period, independent of how much wood travels it — so the
+routed-product fix did not move it (49,207,309 before and after), and WS4 reports 2.6× the reference's
+for MILL 1 and 3.3× for MILL 2. Maintenance is *consistent with* it on both sides rather than a separate
+difference (1.17 a metre in WS4, 0.98 in the reference), and the haul expense being *lower* than the
+reference's while more road is in use says the two runs use **different roads**, not different amounts of
+wood. WS4's own figure is a property of the network it routes over (11,606 km of 36,721 segments) and is
+well inside it. What the reference's `LENGTH` counts is not established from its own tables; the
+candidate — that its report counts only the roads its own run has opened, where WS4 routes over the
+whole planned network — is **unverified**, and is recorded as such in `notes/backlog.md` rather than
+asserted.
 
 ## The flow targets: the values already match, the reporting is what was wrong
 

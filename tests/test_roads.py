@@ -82,7 +82,7 @@ def test_two_destinations_can_share_a_vertex() -> None:
 
 
 def test_eligibility_restricts_the_destination() -> None:
-    """A product only routes to an eligible destination."""
+    """A product only routes to an eligible destination, and a map says what is delivered."""
     segments = pd.DataFrame(
         {
             "from_vertex": [1, 1],
@@ -99,8 +99,13 @@ def test_eligibility_restricts_the_destination() -> None:
     # MILL2 is farther, but the product may only go there.
     model = RouteModel(network, eligibility={"product.Decid": ("destination.MILL2",)})
     assert model.assign(1, "product.Decid")[0] == "destination.MILL2"
-    # An unlisted product may go to either; the nearest wins.
-    assert model.assign(1, "product.Conif")[0] == "destination.MILL1"
+    # A product the map does not name is not delivered at all, rather than sent anywhere: a
+    # configuration that says where wood goes is saying what the wood is.
+    assert model.eligible("product.Conif") == ()
+    assert not model.delivers("product.Conif")
+    # With no map at all, every product may go to either destination and the nearest wins.
+    open_model = RouteModel(network)
+    assert open_model.assign(1, "product.Conif")[0] == "destination.MILL1"
 
 
 def test_load_route_eligibility(tmp_path: Path) -> None:
@@ -362,3 +367,70 @@ def test_a_route_config_states_a_surplus_per_product(tmp_path: Path) -> None:
     )
     model = load_route_config(many).model
     assert model.surplus_account("product.Decid") == "product.unutilized.Decid"
+
+
+def test_the_route_report_is_folded_into_the_models_periods() -> None:
+    """A period width folds the years into the report's rows, the way the reference labels them."""
+    network = _network()
+    ledger = RouteCostLedger(network, period_width=10)
+    route = network.route(1, "10")
+    assert route is not None
+    for year in range(1, 21):
+        ledger.record(year, 1, "product.Yield", 10.0, "10", route)
+    report = ledger.route_cost_report()
+    assert list(report["period"]) == [1, 2]
+    assert list(report["year"]) == [10, 20]
+    assert set(report["period_width"]) == {10}
+    # the extensive columns are summed over the ten years, the averages are recomputed from them
+    assert report["volume"].sum() == 200.0
+    assert report["length"].sum() == 2 * 10 * 300.0
+    first = report.iloc[0]
+    assert first["volume"] == 100.0
+    assert abs(first["average_haul_cost"] - first["haul_expense"] / 100.0) < 1e-9
+    # the per-year report of a one-year model is unchanged by the folding
+    yearly = RouteCostLedger(network, period_width=1)
+    for year in range(1, 4):
+        yearly.record(year, 1, "product.Yield", 10.0, "10", route)
+    plain = yearly.route_cost_report()
+    assert list(plain["period"]) == [1, 2, 3]
+    assert list(plain["year"]) == [1, 2, 3]
+
+
+def test_a_run_that_stops_inside_a_period_covers_only_the_years_it_simulated() -> None:
+    """The period keeps the reference's label; what it holds is what the run actually simulated."""
+    network = _network()
+    ledger = RouteCostLedger(network, period_width=10)
+    route = network.route(1, "10")
+    assert route is not None
+    for year in range(1, 15):
+        ledger.record(year, 1, "product.Yield", 10.0, "10", route)
+    report = ledger.route_cost_report()
+    assert list(report["period"]) == [1, 2]
+    assert list(report["year"]) == [10, 20]
+    assert report["volume"].iloc[1] == 40.0  # four years of the second period
+
+
+def test_a_destination_can_be_reported_on_alone() -> None:
+    """The report is per destination when one is named, which is how the reference ships it."""
+    network = _network()
+    ledger = RouteCostLedger(network, period_width=10)
+    route = network.route(1, "10")
+    assert route is not None
+    ledger.record(1, 1, "product.Yield", 10.0, "10", route)
+    mine = ledger.route_cost_report("10")
+    assert list(mine["period"]) == [1]
+    assert mine["volume"].iloc[0] == 10.0
+    # a destination nothing was routed to has no periods at all, rather than zero rows
+    assert ledger.route_cost_report("11").empty
+
+
+def test_a_per_destination_report_measures_the_length_it_built() -> None:
+    """The per-destination state records the built length, as the network-wide state does."""
+    network = _network()
+    ledger = RouteCostLedger(network)
+    route = network.route(1, "10")
+    assert route is not None
+    ledger.record(1, 1, "product.Yield", 10.0, "10", route)
+    report = ledger.route_cost_report("10")
+    assert report["built_length"].iloc[0] == report["length"].iloc[0] > 0.0
+    assert report["build_expense"].iloc[0] > 0.0

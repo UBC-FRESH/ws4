@@ -296,7 +296,7 @@ class Simulator:
                     self._product_values.append(
                         {"year": year, "account": product_label, "value": value}
                     )
-                    if route_model is not None:
+                    if route_model is not None and route_model.delivers(product_label):
                         destination, route = route_model.assign(block_id, product_label)
                         if ledger is not None:
                             ledger.record(year, block_id, product_label, value, destination, route)
@@ -716,8 +716,11 @@ class Simulator:
                     area = float(areas[index])
                     for curve_id, product_label in self._products_by_key.get(key, []):
                         value = area * self._curve_value(curve_id, offset)
-                        destination, route = route_model.assign(int(block_id), product_label)
-                        ledger.record(step, int(block_id), product_label, value, destination, route)
+                        if route_model.delivers(product_label):
+                            destination, route = route_model.assign(int(block_id), product_label)
+                            ledger.record(
+                                step, int(block_id), product_label, value, destination, route
+                            )
                     tracks[index] = transition[0]
                     offsets[index] = transition[1]
             offsets += 1
@@ -874,6 +877,7 @@ class Simulator:
         route_accounts: Sequence[RouteAccount] = (),
         duplicate_accounts: Sequence[DuplicateAccount] = (),
         product_allocations: Sequence[ProductAllocation] = (),
+        period_width: int = 1,
         max_opening_ha: float | None = None,
         min_green_up_years: int | None = None,
         patch_accounts: Sequence[PatchAccount] = (),
@@ -908,6 +912,9 @@ class Simulator:
         product_allocations : sequence of ProductAllocation, optional
             Master products to partition across the destinations they were routed to, with an
             account for whatever did not move.
+        period_width : int, optional
+            The model's planning-period width, in years, which is what the route cost report
+            is folded into (default 1, one row per year).
         max_opening_ha : float or None, optional
             The maximum opening size. When given, ``spatial_violations.csv`` reports the
             patches over it.
@@ -941,7 +948,9 @@ class Simulator:
         model = route_model
         if model is None and network is not None:
             model = RouteModel(network)
-        ledger = RouteCostLedger(model.network) if model is not None else None
+        ledger = (
+            RouteCostLedger(model.network, period_width=period_width) if model is not None else None
+        )
         graph = load_patch_edges(topology_csv) if topology_csv is not None else []
 
         values = self.simulate(

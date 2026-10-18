@@ -1669,3 +1669,19 @@ issue comments.
   period, requires what the model's own split forces and measures what it leaves free. The stale note
   that compared one of WS4's *years* against one of the reference's *periods* is corrected. Dashboard:
   **GREEN**.
+- P12.3 (#123) **the route cost report is folded into the model's periods, and the model's period
+  width now reaches it.** `period_width` was a route-configuration setting that nothing used; it is
+  wired through `Simulator.run` to the ledger, and a period is labelled by the year it ends at and
+  carries that width, as the reference labels its own. The extensive columns are summed over the period's
+  years and the averages recomputed from those sums — the reference's own arithmetic — and a width of one
+  leaves the report exactly as it was, so nothing older moved. The report is **per destination** as well
+  now, which is how the reference ships it, and writing it that way exposed a real defect: the
+  per-destination state recorded a segment's build expense and never its built length. Compared over the
+  twenty periods of the base scenario, three of the differences are explained: `VOLUME` is now the same
+  quantity on both sides (8% and 10% apart, which is #122's destination policy) because a map that names
+  products is now also what is *delivered* — WS4 had been routing **27 products** to the mills beside the
+  yield, areas and volume classes among them, and 2.26× the reference's volume was the symptom;
+  `AVERAGEHAULDIST` is a **unit** (WS4 counts metres, the reference kilometres, so 1.2× reads as 1,200×);
+  and `BUILTLENGTH` was the defect above. One quantity is left unexplained and recorded as such: what the
+  reference's `LENGTH` counts, where WS4 is 2.6× and 3.3× and maintenance is consistent with it on both
+  sides. Dashboard: **GREEN**; acceptance **PASS**, `destinations` and `accounts` included.
