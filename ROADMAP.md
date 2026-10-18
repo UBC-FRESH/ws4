@@ -22,7 +22,8 @@ exists and the maintainer approves it.
 | P7 Parity and the analyst workflow | #82 | `feature/p7-parity` | complete |
 | P8 Verify the replacement claim | #90 | `feature/p8-verify` | complete |
 | P9 Spatial performance and memory | #97 | `feature/p9-memory` | complete |
-| P11 The derived targets and the sample's own files | #112 | `feature/p11-derived-targets` | pr-open |
+| P11 The derived targets and the sample's own files | #112 | `feature/p11-derived-targets` | complete |
+| P12 Spatial decision match | #120 | `feature/p12-spatial-decisions` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -478,8 +479,8 @@ Acceptance criteria:
 
 Parent issue: #112
 Branch: `feature/p11-derived-targets`
-Status: pr-open
-Pull request: against `main`
+Status: complete
+Pull request: #119, squash-merged as `0d34412`.
 
 Goal: close the gap between the accounts comparison passing and the replacement claim being whole.
 Phase 9 verified WS4's plain account values against the 2026 reference on both of its scenarios and
@@ -488,12 +489,12 @@ age-class distributions — because they are derived quantities rather than acco
 what a spatial model is for. This phase gives them definitions on WS4's side, matches WS4's period
 convention to the reference's, and repairs the three sample-side gaps Phase 9 uncovered.
 
-- [ ] P11.1 Match the reference's period convention (#113)
-- [ ] P11.2 Compare the derived targets: the ratios (#114)
+- [x] P11.1 Match the reference's period convention (#113)
+- [x] P11.2 Compare the derived targets: the ratios (#114)
 - [x] P11.3 Compare the derived targets: the flow constraints (#115) — values matching the reference to four decimals; the report fixed
 - [x] P11.4 Compare the derived targets: the patch size and age-class distributions (#116) — 630 cells over six quantities; the stops measured
-- [ ] P11.5 Give the routing parity check the model's mill set (#117)
-- [ ] P11.6 Retarget the growth check for the 2026 sample (#118)
+- [x] P11.5 Give the routing parity check the model's mill set (#117)
+- [x] P11.6 Retarget the growth check for the 2026 sample (#118)
 
 Deferred from P11, triaged in `notes/backlog.md`:
 
@@ -512,6 +513,41 @@ Acceptance criteria:
   recorded definition gap.
 - The routing parity check compares against the model's actual destinations.
 - The growth check reads the 2026 sample's shape and passes on it.
+- The dashboard green at every commit, with the docs and docstrings gates.
+
+## Phase 12: Spatial decision match
+
+Parent issue: #120
+Branch: `feature/p12-spatial-decisions`
+Status: active
+
+Goal: take the replacement claim from "the account values and the routes match" to "the **spatial
+decisions** match". Phase 11 verified the values — 1,383 account-period and flow values reproduced on
+both 2026 scenarios, routing parity on all 25,134 pairs, 959 yield-curve points, and a patch family
+compared over 630 cells — and named the places where the reference makes a decision WS4 does not, each
+measured: a patch criterion cannot be a product, the reference's mill products are allocated by its own
+policy rather than WS4's least-cost routing, and the five `attractor` cells report a quantity WS4 does
+not have.
+
+- [ ] P12.1 A patch criterion can be a product (#121)
+- [ ] P12.2 The reference's destination policy for mill products (#122)
+- [ ] P12.3 Report the route accounts over the model's periods (#123)
+- [ ] P12.4 The attractor sub-account as the reference defines it (#124)
+- [ ] P12.5 A Patchworks-parity mode, with traffic-weighted maintenance behind it (#125)
+- [ ] P12.6 Compare the patch components against a reference membership export (#126)
+
+Deferred from P12, triaged in `notes/backlog.md`:
+
+- (none outstanding.)
+
+Acceptance criteria:
+
+- The reference's harvested patch family is compared, or has a measured reason it cannot be.
+- The mill products' split is decided the same way in both tools, and the route ratios compared.
+- The route report states the model's period width, and its columns are comparable per period.
+- The attractor is reported as the reference defines it, or the difference is measured.
+- A parity mode exists that enforces the reference's readings, with each deliberate divergence named and
+  its effect documented.
 - The dashboard green at every commit, with the docs and docstrings gates.
 
 ## Detailed Next Steps Notes
@@ -613,4 +649,15 @@ Acceptance criteria:
     found the matrix-builder defect that had been mis-attributing every managed and unmanaged account
     since the 2019 sample. Phase 11 (The derived targets and the sample's own files) is active on
     `feature/p11-derived-targets`, parent issue #112, with six tasks (#113 to #118).
+
+17. Phase 11 is complete: pull request #119 squash-merged as `0d34412`, the branch deleted, and parent
+    issue #112 closed. Its close-out report is `notes/reports/p11-closeout.md`; its acceptance evidence is
+    the period convention matched to the reference's (products were 24% low and features ten times high
+    before it), the flow constraints negotiated and their reporting bug closed, **routing parity on all
+    25,134 node-and-mill pairs** of the 2026 sample, a patch family compared over 630 cells across six
+    quantities, 959 yield-curve points reproduced from either vintage's shape, and two WS4 defects fixed
+    along the way — the matrix builder's track attribution and road maintenance charged per routed flow
+    rather than once per used road. Three capabilities it could not reach are named with measurements and
+    are the substance of Phase 12 (**Spatial decision match**), active on
+    `feature/p12-spatial-decisions`, parent issue #120, with six tasks (#121 to #126).
 

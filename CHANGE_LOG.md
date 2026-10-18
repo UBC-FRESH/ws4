@@ -1629,3 +1629,15 @@ issue comments.
   once per used road rather than per routed flow. Both were caught by the notebook drift check in CI, the
   remedy is the documented `--refresh`, and the re-check reports **47 cells compared, 3 skipped, 0
   drifted**.
+- Carried out the Phase 11 close-out: pull request #119 squash-merged as `0d34412`, the branch
+  `feature/p11-derived-targets` deleted, and parent issue #112 closed. The close-out report is
+  `notes/reports/p11-closeout.md`; its acceptance evidence is the period convention matched to the
+  reference's, the flow constraints and their reporting bug, routing parity on all 25,134 node-and-mill
+  pairs, a patch family compared over 630 cells, and the growth check reading either vintage's shape —
+  along with two WS4 defects fixed on the way (the matrix builder's track attribution and road
+  maintenance charged per routed flow). **Launched Phase 12 (Spatial decision match)**: parent issue #120,
+  branch `feature/p12-spatial-decisions`, six tasks — a patch criterion that can be a product (#121), the
+  reference's destination policy for mill products (#122), the route report over the model's periods
+  (#123), the attractor sub-account (#124), a Patchworks-parity mode with traffic-weighted maintenance
+  behind it (#125), and a patch-component comparison carried on a new reference export (#126). Dashboard:
+  **GREEN**.
