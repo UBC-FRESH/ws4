@@ -17,6 +17,7 @@ import pandas as pd
 from ..io.expressions import ExpressionError, evaluate_value
 from ..io.forest_model_xml import Attribute, Recipe, Retention, parse_recipe
 from ..io.fragments import read_fragments
+from ..model.checks import unique_product_rows
 from ..model.schema import MANIFEST_NAME, SCHEMA_VERSION, TABLES, coerce_to_schema
 from ..model.types import CanonicalDatasetManifest
 from .expansion import (
@@ -506,8 +507,12 @@ def build_canonical_dataset(xml_path: Path, fragments_path: Path, out_dir: Path)
         ),
         "curves": pd.DataFrame(curve_rows, columns=["curve_id", "x", "y"]),
         "features": pd.DataFrame(feature_rows, columns=["track_id", "label", "curve_id"]),
-        "products": pd.DataFrame(
-            product_rows, columns=["track_id", "treatment", "label", "curve_id"]
+        # A product row is recorded once per treated fragment, so an exact duplicate multiplies
+        # the account. The recipe declares products per select and several selects can resolve to
+        # one track; identical rows are redundant, while a repeated key with a different curve is a
+        # component to be summed and is kept.
+        "products": unique_product_rows(
+            pd.DataFrame(product_rows, columns=["track_id", "treatment", "label", "curve_id"])
         ),
         "protoaccounts": pd.DataFrame(
             protoaccount_rows, columns=["group", "attribute", "account", "sum"]

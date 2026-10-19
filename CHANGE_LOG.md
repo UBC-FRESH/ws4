@@ -1848,3 +1848,17 @@ issue comments.
   (9,999.96 ha treated), where the unseeded run stops at **15,758.97**; the corrected five-year targets
   reach **0.00** too. Both seeded runs report `time_limit_reached: false`. The report is
   `notes/reports/p14-closeout.md`; the 4× curve it exposes is left to P16.2. Dashboard: **GREEN**.
+- P16.2 **the product table cannot multiply an account, and the simulator names a dataset that lets
+  it.** The 4× `product.Treated.managed.FT` was not a 4.0 curve — its curve is the single point
+  `(0, 1.0)`. It is a repeated product row: `compiled_ft/products.parquet` has **4,947,045 rows
+  against 3,431,580 distinct `(track_id, treatment, label, curve_id)` keys**, so 1,515,465 rows are
+  exact duplicates, and the key `(16, FT, product.Treated.managed.FT)` appears four times. The
+  simulator records every row once per treated fragment, so the produced area read **186,568.7 ha
+  against 46,642.2** with the repeats dropped — exactly 4.0000×. A repeated key is not always a
+  defect: 85,532 keys carry different curves, the per-AU components of the `HarvestedVolume`, `Yield`
+  and `SpeciesProp` families, and those are a sum. The builder now drops only rows identical in key
+  *and* curve (`ws4.model.checks.unique_product_rows`), and `Simulator.from_dataset` warns with the
+  count and affected labels for a dataset compiled before the rule; it also warns when an area-shaped
+  product's curve exceeds 1.0. The earlier "the curve is 4.0" finding was wrong and is corrected in
+  the untracked notes. Tests: `tests/test_dataset_checks.py` (six cases, including a recipe that
+  declares the same product twice and a dataset that repeats a row). Dashboard: **GREEN**.

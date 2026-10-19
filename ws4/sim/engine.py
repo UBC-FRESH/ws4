@@ -9,12 +9,14 @@ fragment's offset age by one year. A schedule replays deterministically.
 from __future__ import annotations
 
 import json
+import warnings
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from ..model.checks import area_products_with_rate_curves, duplicate_product_keys
 from ..model.schema import dataset_reference
 from ..patch.accounts import PatchAccount, PatchLedger, load_patch_edges, load_patch_edges_detailed
 from ..patch.constraints import (
@@ -75,6 +77,7 @@ class Simulator:
         self.features = pd.read_parquet(self.dataset_dir / "features.parquet")
         self.products = pd.read_parquet(self.dataset_dir / "products.parquet")
         self.accounts = pd.read_parquet(self.dataset_dir / "accounts.parquet")
+        self._warn_on_dataset_defects()
         self.fragments["offset"] = self.fragments["age"].astype(int)
         self._initial_track = self.fragments["track_id"].to_numpy(copy=True)
         self._initial_offset = self.fragments["offset"].to_numpy(copy=True)
@@ -206,6 +209,42 @@ class Simulator:
     def _curve_value(self, curve_id: int, x: float) -> float:
         """Evaluate a curve at one point: exact for integer ages, linear between them."""
         return self._curve_table.value(curve_id, x)
+
+    def _warn_on_dataset_defects(self) -> None:
+        """Warn when the product table would multiply or misname an account.
+
+        A product row is recorded once per treated fragment, so an exact repeat multiplies its
+        account. A repeated key with more than one curve is a sum of components and is left alone.
+        An area-shaped label whose curve exceeds 1.0 is not a share of the block, so its account is
+        not hectares.
+        """
+        duplicates = duplicate_product_keys(self.products)
+        if not duplicates.empty:
+            redundant = int((duplicates["rows"] - duplicates["curves"]).sum())
+            affected = duplicates.loc[duplicates["rows"] > duplicates["curves"], "label"].unique()
+            if redundant and len(affected):
+                labels = ", ".join(sorted(str(label) for label in affected)[:5])
+                warnings.warn(
+                    f"{self.dataset_dir.name}: {redundant} redundant product rows across "
+                    f"{len(duplicates)} repeated keys; a row is recorded once per treated "
+                    "fragment, "
+                    f"so an exact repeat multiplies the account. Labels: {labels}. "
+                    "Recompile with a "
+                    "builder that drops exact duplicate rows.",
+                    UserWarning,
+                    stacklevel=3,
+                )
+        rate_curves = area_products_with_rate_curves(self.products, self.curves)
+        if not rate_curves.empty:
+            labels = ", ".join(sorted(str(label) for label in rate_curves["label"].unique())[:5])
+            warnings.warn(
+                f"{self.dataset_dir.name}: {len(rate_curves)} area-shaped product rows have a "
+                "curve "
+                f"above 1.0 (max {float(rate_curves['max_y'].max()):.3f}); their account is not a "
+                f"share of the block. Labels: {labels}.",
+                UserWarning,
+                stacklevel=3,
+            )
 
     @classmethod
     def from_dataset(cls, dataset_dir: Path) -> Simulator:
