@@ -26,7 +26,7 @@ exists and the maintainer approves it.
 | P12 Spatial decision match | #120 | `feature/p12-spatial-decisions` | complete |
 | P13 The reference's remaining readings | #128 | `feature/p13-reference-readings` | active |
 | P14 Optimizer search for aggregate targets | #133 | `feature/p14-optimizer-seeding` | active |
-| P15 A spread-connectivity account | #138 | `feature/p15-spread-connectivity` | active |
+| P15 A spread-connectivity account | #138 | `feature/p15-spread-connectivity` | complete |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -620,7 +620,7 @@ Acceptance criteria:
 
 Parent issue: #138
 Branch: `feature/p15-spread-connectivity`
-Status: complete — squash-merged as `f22a026` (pull request #139), branch deleted, issue closed
+Status: complete
 
 Goal: a spatial account that measures **how fragmented the fuel body a fire could run through is**, so a
 fuel-treatment schedule can be optimized against fire-spread response inside WS4. The patch-size
