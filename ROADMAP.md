@@ -27,6 +27,7 @@ exists and the maintainer approves it.
 | P13 The reference's remaining readings | #128 | `feature/p13-reference-readings` | active |
 | P14 Optimizer search for aggregate targets | #133 | `feature/p14-optimizer-seeding` | complete |
 | P15 A spread-connectivity account | #138 | `feature/p15-spread-connectivity` | complete |
+| P16 The bridge at the same footprint | #141 | `feature/p16-bridge-matched` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -646,6 +647,35 @@ What the bridge cannot yet settle, and the phase reports rather than claims:
   component was a boundary corridor common to all three patterns);
 - an orientation-aware measure needs anisotropic rates and a burn duration, which is a fire model
   rather than an account.
+
+## Phase 16: The bridge at the same footprint
+
+Parent issue: #141
+Branch: `feature/p16-bridge-matched`
+Status: active
+
+Goal: close the two gaps P15 left. First, the bridge ranking was measured on a different
+intervention: the fire model treats 177,088 ha of whole scheduled blocks, while WS4's FT product
+reaches about 46,600 ha of managed fragments. Repeat the fire model on the WS4-treated masks across
+five seeds and report whether the ranking survives. Second, the product table can carry the same
+`(track, treatment, label)` key more than once; the simulator records every row, so the account is
+multiplied — 4.0000 times for `product.Treated.managed.FT` in the TSA23 FT dataset, and two to four
+times for the SpeciesProp, Yield and HarvestedVolume families. Make the builder emit one row per key
+and curve, and make the loader say so when a dataset does not.
+
+- [ ] P16.1 Run the fire model on the WS4-treated masks across five seeds — delegated to the thesis
+  environment; the prompt is `tmp/ws4-bridge-matched-footprint-prompt.md` (untracked), and the
+  matched-footprint ranking is reported per seed with the treated area recorded.
+- [x] P16.2 One product row per `(track, treatment, label)` and curve, and a loader that names a
+  dataset that repeats one — the builder drops exact duplicates and keeps a repeated key with
+  different curves (a sum of components); `Simulator.from_dataset` warns with the count and the
+  affected labels; `ws4/model/checks.py` and `tests/test_dataset_checks.py` pin both.
+- [x] P16.3 Record the account's final scope — the compartment over the fast edges, direction in the
+  cone, and the orientation limit, in `docs/reference/spatial.rst` and the design note.
+
+Acceptance: the matched-footprint ranking across seeds, a dataset with a repeated product row that
+cannot be simulated without a named warning, a fresh compile with no repeated row, and the dashboard
+green.
 
 ## Detailed Next Steps Notes
 

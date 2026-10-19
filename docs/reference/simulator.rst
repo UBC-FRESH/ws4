@@ -67,6 +67,23 @@ writes:
   ``opening``, ``green_up``, or ``core_area``), when a maximum opening size, a green-up interval, or
   a core-area rule is given.
 
+Dataset integrity warnings
+--------------------------
+
+A compiled dataset can be internally inconsistent in a way that makes an account *wrong* rather than
+missing. ``Simulator.from_dataset`` warns, naming the dataset and the affected labels, in two cases:
+
+- **A repeated product row.** The product table is keyed by ``(track_id, treatment, label)`` and every
+  row is recorded once per treated fragment, so two identical rows multiply the account. The builder
+  now emits one row per key and curve; a dataset compiled before that rule carries the repeat and
+  should be recompiled. A repeated key with *different* curves is a sum of components and is left
+  alone.
+- **An area-shaped product whose curve exceeds 1.0.** A label containing ``Area`` or ``Treated`` should
+  yield a share of the block; a curve above 1.0 means the account is not hectares. This one is
+  advisory: WS4 reports what the dataset says.
+
+Neither warning changes a value. They exist so a multiplied account cannot pass as hectares.
+
 API
 ---
 
