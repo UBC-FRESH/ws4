@@ -47,24 +47,32 @@ corridor no treatment touches, so the account read the map, not the pattern. `pe
 *reversed* the ranking, because a thin barrier only shortens the runs that cross it while scattered
 treatment shortens every run.
 
-The compartment reading, on the same edges and bearing, reproduces the fire ranking:
+The compartment reading, on the same edges and bearing, orders the patterns as the fire model did:
 
-| pattern | fire mean (ha) | largest compartment (ha) | area-weighted mean (ha) |
+| pattern | fire mean (ha, 177k treated) | largest compartment (ha) | area-weighted mean (ha) |
 | --- | ---: | ---: | ---: |
-| barrier | 19,640 | **82,800** | **25,675** |
-| clumped | 19,870 | **104,600** | **31,604** |
-| random | 20,298 | **187,173** | **46,419** |
+| barrier | 19,640 | **82,874** | **25,697** |
+| clumped | 19,870 | **105,020** | **32,250** |
+| random | 20,298 | **196,767** | **50,281** |
 
-The fire outcome is escape-dominated — 393 ha mean burned per ignition but a p90 near 38,000 ha — so
-compartment size, not the average local run, is the quantity that governs it.
+**That agreement does not survive a matched footprint, and the validation is withdrawn.** The published
+fire runs treat 177,088 ha of whole scheduled blocks (17.9% of the model); WS4's FT product reaches
+~54,000 ha (5.5%). Rerunning the instance's own fire model on the WS4-treated masks across five seeds
+gives the *reverse* mean order (clumped 22,775 < random 22,816 < barrier 22,861 ha), with a largest mean
+gap of **86 ha (0.38%)** against a seed-to-seed range of **~3,400 ha (15%)**, and the ranking flips
+across seeds. At the area WS4 can actually treat, the arrangement effect is inside noise. The full
+table is `notes/reports/p16-bridge-matched.md`.
 
-**Caveats, recorded rather than buried.** The ordering of `largest_component` holds from a 60° to a 90°
-cone; the *magnitude* depends on how near the cone is to the percolation threshold (at 60° the barrier's
-giant compartment is 8.9% of the untreated area against random's 20.0%; at 90° they are 93.7% and 94.7%).
-At 45° or narrower the map is below threshold and the ranking flips. The bridge also compares different
-footprints: its fire model treats 177,088 ha of whole scheduled blocks, while WS4's FT product is only
-producible on managed fragments and reaches ~46,600 ha. The fire spread between patterns is only 3%, and
-one stochastic seed. This is evidence for the compartment as a proxy, not a proof of a general law.
+So the account is a **defined fragmentation metric**, not a validated fire-response proxy. What
+survives is the computation and the oracle below; what does not is the claim that its ordering predicts
+the fire model at the intervention this estate model can deliver.
+
+**Caveats, recorded rather than buried.** The ordering of `largest_component` on the *fixed* landscape
+holds from a 60° to a 90° cone; the *magnitude* depends on how near the cone is to the percolation
+threshold (at 60° the barrier's giant compartment is 8.9% of the untreated area against random's
+20.0%; at 90° they are 93.7% and 94.7%). At 45° or narrower the map is below threshold and the ordering
+flips. The fire spread at the original footprint is only 3%, on one seed, and the matched rerun shows
+that it is smaller than the seed noise at 5.5% treatment.
 
 **Direction is in the cone, not in the traversal.** A full-span band lying along the wind fragments an
 undirected graph just as much as one across it. The account can say *how fragmented the fast-edge fuel

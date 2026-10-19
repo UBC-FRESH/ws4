@@ -8,6 +8,12 @@ Report commit: the commit that adds this report. Its CI run is posted on the pul
 Date: 2026-10-19
 Status: approved for merge. The report commit's CI is the last gate.
 
+> **Correction (P16.1, 2026-10-19).** The instance-level acceptance below compared the compartment
+> computed on the WS4-treated set with a fire outcome produced by a 3.3× larger treatment. A
+> matched-footprint rerun on five seeds withdraws that validation: the fire ranking is not stable and
+> the mean order reverses. The account remains a defined fragmentation metric; its fire-response
+> validation does not hold. See `p16-bridge-matched.md`.
+
 ## Recommendation
 
 Approve these actions. The agent carries them out in this order, and reads back each result.
