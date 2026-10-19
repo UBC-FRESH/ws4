@@ -1787,7 +1787,7 @@ issue comments.
   `--time-limit 00:00:05` the run stops with `time_limit_reached: true` in 6.4 seconds (the bound is the
   *search*; the final simulation and report follow it), and at `--time-limit 01:00:00` it spends the
   budget in 7.5 seconds with `false`. Dashboard: **GREEN** (573 tests).
-- P15.1 (#NNN) **a spread-connectivity account, and the synthetic oracle that the patch-size account
+- P15.1 **a spread-connectivity account, and the synthetic oracle that the patch-size account
   cannot pass.** `ws4/spread/accounts.py` measures how far a fire could run through the untreated
   blocks: the topology is undirected and carries no bearings, so the account supplies a **bearing** (the
   wind) and a **tolerance cone**, orients each transmitting edge downwind, and computes three
@@ -1803,7 +1803,7 @@ issue comments.
   symmetric on a regular lattice and loses the signal; and a four-neighbour lattice lets a 60-degree
   cone select only northward edges, degenerating every compartment into a corridor. Dashboard: **GREEN**
   (578 tests). The TSA23 bridge oracle is not on this machine, so that reproduction is the maintainer's.
-- P15.2 (#NNN) **the spread-connectivity account is wired into a run and the optimizer.** A run
+- P15.2 **the spread-connectivity account is wired into a run and the optimizer.** A run
   computes it per year from the topology and a block-coordinate table, adds it to `account_values.csv`
   and writes `spread_metrics.csv`; the optimizer prices it on the whole-schedule rail (the move-based
   evaluator declines, since a graph property of the landscape has no per-block delta) and folds the
@@ -1814,7 +1814,7 @@ issue comments.
   the criterion mapping, which for a **product** criterion holds only the blocks that produced, so the
   landscape came out empty and every sub-account read zero. The landscape is now the blocks the bearing
   can be read for, and a block with no criterion value is untreated. Dashboard: **GREEN** (579 tests).
-- P15.3 (#NNN) **the bridge instance replaced the account's definition, and the docs now say what it can
+- P15.3 **the bridge instance replaced the account's definition, and the docs now say what it can
   and cannot measure.** The TSA23 bridge inputs were on the shared drive, so the test was run rather
   than left to the maintainer. The patch-size result reproduced exactly (`agree: False`, 40.2 / 23.1 /
   26.0% in the 400+ ha class), and the **directed** account that P15.1 pinned failed on the real
