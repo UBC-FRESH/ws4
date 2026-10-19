@@ -1775,3 +1775,15 @@ issue comments.
   34,800, below) against seeded 50,750 (penalty 0, met), with the haul at 507,500 exactly on the
   ceiling.** The TSA23 instance is not on this machine, so its reproduction is left to the maintainer.
   Dashboard: **GREEN** (570 tests).
+- P14.2 (#136) **`--time-limit` now does what it says.** It was declared on `OptimizeConfig`, exposed
+  on `optimize` and `watch`, and read by nothing, so a run presented as time-bounded was bounded only by
+  its iteration count. A `HH:MM:SS` limit is now parsed once when the search starts
+  (`parse_time_limit`), shared as a `time.monotonic` deadline with every solver
+  (`solve_sa`, `solve_sa_delta`, `solve_tabu`, `solve_ils`, each checking `expired` at the top of its
+  loop), and reported in the run's summary as `time_limit_reached`. The clock starts in **both** paths
+  that run a search: `search()` and the single-start path in `run()`, which does not go through it. A
+  malformed or non-positive limit is **refused** rather than ignored, since being ignored is the defect.
+  Measured through the CLI on the synthetic instance with `--iterations 1000000`: at
+  `--time-limit 00:00:05` the run stops with `time_limit_reached: true` in 6.4 seconds (the bound is the
+  *search*; the final simulation and report follow it), and at `--time-limit 01:00:00` it spends the
+  budget in 7.5 seconds with `false`. Dashboard: **GREEN** (573 tests).

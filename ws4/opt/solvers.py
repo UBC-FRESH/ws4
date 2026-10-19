@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import math
 import random
+import time
 from collections import deque
 from collections.abc import Callable
 
@@ -42,6 +43,55 @@ def _report(on_step: StepCallback | None, iteration: int, objective: float) -> N
         on_step(iteration, objective)
 
 
+def parse_time_limit(text: str) -> float | None:
+    """Return a time limit in seconds, or None when the text states no limit.
+
+    Parameters
+    ----------
+    text : str
+        The limit as ``HH:MM:SS``, or an empty string for none.
+
+    Returns
+    -------
+    float or None
+        The limit in seconds, or None when the text is empty.
+
+    Raises
+    ------
+    ValueError
+        When the text is not ``HH:MM:SS``, or states a limit of zero or less — which would stop a
+        run before it started rather than bound it.
+    """
+    if not text.strip():
+        return None
+    parts = text.strip().split(":")
+    if len(parts) != 3 or not all(part.isdigit() for part in parts):
+        raise ValueError(f"a time limit is HH:MM:SS, and {text!r} is not")
+    hours, minutes, seconds = (int(part) for part in parts)
+    if minutes > 59 or seconds > 59:
+        raise ValueError(f"a time limit is HH:MM:SS, and {text!r} has no such minutes or seconds")
+    total = float(hours * 3600 + minutes * 60 + seconds)
+    if total <= 0.0:
+        raise ValueError(f"a time limit of {text!r} would stop a run before it started")
+    return total
+
+
+def expired(deadline: float | None) -> bool:
+    """Return whether a deadline has passed.
+
+    Parameters
+    ----------
+    deadline : float or None
+        A :func:`time.monotonic` value, or None for no deadline.
+
+    Returns
+    -------
+    bool
+        True when the deadline is set and has been reached.
+    """
+    return deadline is not None and time.monotonic() >= deadline
+
+
 def solve_sa(
     problem: Problem,
     rng: random.Random,
@@ -53,6 +103,7 @@ def solve_sa(
     initial: Schedule | None = None,
     adaptive: bool = False,
     cooling_window: int = 64,
+    deadline: float | None = None,
 ) -> tuple[Schedule, float]:
     """Run simulated annealing.
 
@@ -64,6 +115,9 @@ def solve_sa(
         The random source.
     iterations : int
         The iteration budget.
+    deadline : float or None, optional
+        A :func:`time.monotonic` value to stop at, or None to run the budget out. A run stopped by
+        the clock is not reproducible from its seed, which is why the budget is the default bound.
     temperature : float
         The initial temperature.
     cooling : float
@@ -92,6 +146,8 @@ def solve_sa(
         window=TemperatureSchedule.effective_window(iterations, cooling_window),
     )
     for iteration in range(iterations):
+        if expired(deadline):
+            break
         increase = 0.0
         move = problem.registry.pick(rng).apply(current, rng, problem.candidates)
         if move is not None:
@@ -121,6 +177,7 @@ def solve_sa_delta(
     on_step: StepCallback | None = None,
     adaptive: bool = False,
     cooling_window: int = 64,
+    deadline: float | None = None,
 ) -> tuple[Schedule, float]:
     """Run simulated annealing priced by per-move objective deltas.
 
@@ -136,6 +193,9 @@ def solve_sa_delta(
         The random source.
     iterations : int
         The iteration budget.
+    deadline : float or None, optional
+        A :func:`time.monotonic` value to stop at, or None to run the budget out. A run stopped by
+        the clock is not reproducible from its seed, which is why the budget is the default bound.
     temperature : float
         The initial temperature.
     cooling : float
@@ -169,6 +229,8 @@ def solve_sa_delta(
         window=TemperatureSchedule.effective_window(iterations, cooling_window),
     )
     for iteration in range(iterations):
+        if expired(deadline):
+            break
         increase = 0.0
         operator = registry.pick(rng)
         undo = operator.propose_inplace(current, rng, candidates)
@@ -200,6 +262,7 @@ def solve_tabu(
     samples: int = 8,
     on_step: StepCallback | None = None,
     initial: Schedule | None = None,
+    deadline: float | None = None,
 ) -> tuple[Schedule, float]:
     """Run tabu search: pick the best non-tabu move each iteration.
 
@@ -211,6 +274,9 @@ def solve_tabu(
         The random source.
     iterations : int
         The iteration budget.
+    deadline : float or None, optional
+        A :func:`time.monotonic` value to stop at, or None to run the budget out. A run stopped by
+        the clock is not reproducible from its seed, which is why the budget is the default bound.
     tenure : int
         The tabu list length.
     samples : int
@@ -230,6 +296,8 @@ def solve_tabu(
     best, best_obj = dict(current), current_obj
     tabu: deque[frozenset[tuple[int, Chain | None]]] = deque(maxlen=tenure)
     for iteration in range(iterations):
+        if expired(deadline):
+            break
         chosen: Schedule | None = None
         chosen_obj = math.inf
         for _ in range(samples):
@@ -259,6 +327,7 @@ def solve_ils(
     perturbation: int,
     on_step: StepCallback | None = None,
     initial: Schedule | None = None,
+    deadline: float | None = None,
 ) -> tuple[Schedule, float]:
     """Run iterated local search: perturb, then accept an improvement.
 
@@ -270,6 +339,9 @@ def solve_ils(
         The random source.
     iterations : int
         The iteration budget.
+    deadline : float or None, optional
+        A :func:`time.monotonic` value to stop at, or None to run the budget out. A run stopped by
+        the clock is not reproducible from its seed, which is why the budget is the default bound.
     perturbation : int
         The number of random moves applied to perturb the incumbent.
     on_step : callable or None, optional
@@ -286,6 +358,8 @@ def solve_ils(
     current_obj = problem.evaluate(current)
     best, best_obj = dict(current), current_obj
     for iteration in range(iterations):
+        if expired(deadline):
+            break
         candidate = dict(current)
         for _ in range(perturbation):
             move = problem.registry.pick(rng).apply(candidate, rng, problem.candidates)

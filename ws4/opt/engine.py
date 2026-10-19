@@ -12,6 +12,7 @@ import json
 import math
 import os
 import random
+import time
 from collections.abc import Callable, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict, dataclass, replace
@@ -55,7 +56,14 @@ from .operators import (
 )
 from .patch import PatchModel
 from .seeding import greedy_schedule
-from .solvers import solve_ils, solve_sa, solve_sa_delta, solve_tabu
+from .solvers import (
+    expired,
+    parse_time_limit,
+    solve_ils,
+    solve_sa,
+    solve_sa_delta,
+    solve_tabu,
+)
 from .telemetry import RunLogger
 
 
@@ -275,6 +283,8 @@ class Optimizer:
         self.dataset_dir = Path(dataset_dir)
         self.cfg = cfg
         self._graph_cache: list[tuple[int, int, float]] | None = None
+        # the wall-clock bound on the search, set when it starts and shared by every worker
+        self._deadline: float | None = None
         self._edges_by_block_cache: dict[int, list[tuple[int, int, float]]] | None = None
         self.registry = OperatorRegistry(
             [
@@ -986,6 +996,7 @@ class Optimizer:
                 tenure=self.cfg.tenure,
                 on_step=on_step,
                 initial=initial,
+                deadline=self._deadline,
             )
         if self.cfg.metaheuristic == "ils":
             return solve_ils(
@@ -995,6 +1006,7 @@ class Optimizer:
                 perturbation=self.cfg.perturbation,
                 on_step=on_step,
                 initial=initial,
+                deadline=self._deadline,
             )
         evaluator = self.delta_evaluator(targets)
         if evaluator is not None:
@@ -1009,6 +1021,7 @@ class Optimizer:
                 candidates=candidates,
                 registry=self.registry,
                 initial=initial,
+                deadline=self._deadline,
                 on_step=on_step,
                 adaptive=self.cfg.cooling_mode == "adaptive",
                 cooling_window=self.cfg.cooling_window,
@@ -1022,6 +1035,7 @@ class Optimizer:
             on_step=on_step,
             initial=initial,
             adaptive=self.cfg.cooling_mode == "adaptive",
+            deadline=self._deadline,
             cooling_window=self.cfg.cooling_window,
         )
 
@@ -1040,6 +1054,21 @@ class Optimizer:
             return False
         return (self.cfg.islands > 1) or (self.cfg.starts > 1)
 
+    def _start_clock(self) -> None:
+        """Set the wall-clock bound the search must finish within, from the configuration.
+
+        Read once, when the search starts, and shared by every worker, so the limit bounds the
+        search rather than each start of it. An empty limit, or a configuration that states none,
+        leaves the clock unset and the iteration budget as the only bound.
+
+        Raises
+        ------
+        ValueError
+            When the configured limit is not ``HH:MM:SS``, or states zero or less.
+        """
+        seconds = parse_time_limit(self.cfg.time_limit)
+        self._deadline = time.monotonic() + seconds if seconds is not None else None
+
     def search(self) -> tuple[Schedule, float, list[Target]]:
         """Run the search and return the incumbent.
 
@@ -1054,6 +1083,7 @@ class Optimizer:
             The best schedule, its objective, and the targets.
         """
         targets = load_targets(Path(self.cfg.targets_path)) if self.cfg.targets_path else []
+        self._start_clock()
         if self.cfg.islands > 1 and self.cfg.workers > 1:
             best, best_obj = self._island_search()
             return best, best_obj, targets
@@ -1124,6 +1154,7 @@ class Optimizer:
             run_id=f"{self.cfg.metaheuristic}-{self.cfg.seed}",
             config=asdict(self.cfg),
         )
+        self._start_clock()
         if self._use_pool():
             best, best_obj, targets = self.search()
         else:
@@ -1179,6 +1210,7 @@ class Optimizer:
             "blocks_scheduled": len(best),
             "operators": self.registry.names(),
             "status": "ok",
+            "time_limit_reached": bool(expired(self._deadline)),
             "dataset": dataset_reference(self.dataset_dir),
         }
         if self.cfg.mip_bound:
