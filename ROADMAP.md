@@ -26,6 +26,7 @@ exists and the maintainer approves it.
 | P12 Spatial decision match | #120 | `feature/p12-spatial-decisions` | complete |
 | P13 The reference's remaining readings | #128 | `feature/p13-reference-readings` | active |
 | P14 Optimizer search for aggregate targets | #133 | `feature/p14-optimizer-seeding` | active |
+| P15 A spread-connectivity account | #138 | `feature/p15-spread-connectivity` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -614,6 +615,26 @@ Acceptance criteria:
 - The mechanism names no model, no account label, and no treatment.
 - No regression in the parity acceptance checks, and `python scripts/dashboard.py` green.
 - The TSA23 instance is not on this machine, so that criterion is left to the maintainer with the recipe.
+
+## Phase 15: A spread-connectivity account
+
+Parent issue: #138
+Branch: `feature/p15-spread-connectivity`
+Status: active
+
+Goal: a spatial account that measures **connectivity along a spread direction**, so a fuel-treatment
+schedule can be optimized against fire-spread response inside WS4. The patch-size accounts cannot carry
+it: on equal-area patterns a wind-perpendicular barrier burns least (19,640 ha) yet has the largest
+large-patch share (40.2%), so a large-patch target penalizes the arrangement that works. The barrier wins
+by breaking connectivity perpendicular to the wind.
+
+- [ ] P15.1 The spread-connectivity account and its synthetic oracle
+- [ ] P15.2 Wire it into the simulator and the optimizer
+- [ ] P15.3 Document it, and state what the bridge test still has to confirm
+
+Acceptance: a synthetic test where a directed barrier **reduces** `largest_component` while **increasing**
+the largest treated patch — the size account fails that ranking, the connectivity account passes it.
+The TSA23 bridge oracle is not on this machine and is left to the maintainer.
 
 ## Detailed Next Steps Notes
 
