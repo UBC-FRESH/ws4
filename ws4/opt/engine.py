@@ -22,7 +22,12 @@ from typing import Any
 import pandas as pd
 
 from ..model.schema import dataset_reference
-from ..patch.accounts import PatchAccount, load_patch_accounts, load_patch_edges
+from ..patch.accounts import (
+    PatchAccount,
+    load_patch_accounts,
+    load_patch_edges,
+    load_patch_edges_detailed,
+)
 from ..patch.constraints import core_area_penalty, schedule_years, spatial_penalty
 from ..patch.edge import EdgeElement, load_edge_elements
 from ..report import write_report
@@ -37,6 +42,12 @@ from ..roads.accounts import (
     resolve_account_values,
 )
 from ..sim.engine import Simulator
+from ..spread.accounts import (
+    Point,
+    SpreadAccount,
+    load_block_coordinates,
+    load_spread_accounts,
+)
 from .core import Problem
 from .incremental import IncrementalObjective
 from .mip import bound_for
@@ -202,6 +213,12 @@ class OptimizeConfig:
         Whether to pre-warm the per-block delta cache before the search.
     patch_accounts_path : str
         The patch account definitions, enabling the patch size-distribution targets.
+    spread_accounts_path : str
+        A YAML file of spread-connectivity account definitions; needs ``topology_path`` for the
+        adjacency and ``block_coordinates_path`` for the bearings.
+    block_coordinates_path : str
+        A CSV of block centroids (a block id, an ``x`` and a ``y``), read for the spread accounts'
+        bearings.
     merge_weight : float
         The selection weight of the merge operator, which treats gap blocks.
     split_weight : float
@@ -247,6 +264,8 @@ class OptimizeConfig:
     cluster_size: int = 8
     warm_cache: bool = False
     patch_accounts_path: str = ""
+    spread_accounts_path: str = ""
+    block_coordinates_path: str = ""
     merge_weight: float = 0.0
     split_weight: float = 0.0
 
@@ -306,6 +325,10 @@ class Optimizer:
             tuple[RouteModel | None, tuple[RouteAccount, ...], tuple[DuplicateAccount, ...]] | None
         ) = None
         self._config_cache: RouteConfig | None = None
+        self._spread_cache: tuple[SpreadAccount, ...] | None = None
+        self._spread_topology_cache: (
+            tuple[list[tuple[int, int, float]], dict[int, Point]] | None
+        ) = None
         self._edge_cache: tuple[EdgeElement, ...] | None = None
         self._simulator_cache: Simulator | None = None
         self._patch_cache: PatchModel | None = None
@@ -572,6 +595,49 @@ class Optimizer:
             self._patch_accounts_cache = load_patch_accounts(Path(self.cfg.patch_accounts_path))
         return self._patch_accounts_cache
 
+    def spread_accounts(self) -> tuple[SpreadAccount, ...]:
+        """Return the spread-connectivity accounts the configuration names, loaded once.
+
+        Returns
+        -------
+        tuple of SpreadAccount
+            The definitions, or an empty tuple when the configuration names none.
+        """
+        if self._spread_cache is None:
+            self._spread_cache = (
+                load_spread_accounts(Path(self.cfg.spread_accounts_path))
+                if self.cfg.spread_accounts_path
+                else ()
+            )
+        return self._spread_cache
+
+    def spread_topology(
+        self,
+    ) -> tuple[list[tuple[int, int, float]], dict[int, Point]]:
+        """Return the spread edges with their distances and the block centroids, loaded once.
+
+        Returns
+        -------
+        tuple of (list of (int, int, float), dict of int to tuple of float)
+            The ``(src, dst, distance_m)`` edges of the configured topology, and the ``(x, y)``
+            centroid per block. Both are empty when the configuration names no spread accounts.
+        """
+        if self._spread_topology_cache is None:
+            if not self.spread_accounts() or not self.cfg.topology_path:
+                self._spread_topology_cache = ([], {})
+            else:
+                detailed = load_patch_edges_detailed(Path(self.cfg.topology_path))
+                edges = [
+                    (source, target, distance) for source, target, _length, distance in detailed
+                ]
+                points = (
+                    load_block_coordinates(Path(self.cfg.block_coordinates_path))
+                    if self.cfg.block_coordinates_path
+                    else {}
+                )
+                self._spread_topology_cache = (edges, points)
+        return self._spread_topology_cache
+
     def patch_model(self) -> PatchModel | None:
         """Return the patch model when patch accounts are configured, built once.
 
@@ -630,13 +696,20 @@ class Optimizer:
             The evaluator, or None when the configuration needs whole-schedule values.
         """
         model, route_accounts, duplicate_accounts = self.route()
-        if duplicate_accounts or self.edge_elements():
+        if duplicate_accounts or self.edge_elements() or self.spread_accounts():
             return None
         if route_accounts and (model is None or any(a.kind == "build" for a in route_accounts)):
             return None
         patch_accounts = self.patch_accounts()
         if patch_accounts and not self.cfg.topology_path:
             raise ValueError("patch accounts need a topology (set topology_path)")
+        if self.spread_accounts() and (
+            not self.cfg.topology_path or not self.cfg.block_coordinates_path
+        ):
+            raise ValueError(
+                "spread accounts need a topology and block coordinates (set topology_path and "
+                "block_coordinates_path)"
+            )
         return IncrementalObjective(self, targets, extra_accounts, patch_accounts)
 
     def _full_values(
@@ -656,12 +729,16 @@ class Optimizer:
             else None
         )
         edges = self._graph() if self.cfg.topology_path else []
+        spread_edges, spread_points = self.spread_topology()
         values = simulator.simulate(
             frame,
             self.cfg.years,
             route_model=model,
             ledger=ledger,
             edge_elements=self.edge_elements(),
+            spread_accounts=self.spread_accounts(),
+            spread_edges=spread_edges,
+            spread_points=spread_points,
             edges=edges,
         )
         if ledger is not None and route_accounts:
@@ -1185,12 +1262,21 @@ class Optimizer:
             route_accounts=route_accounts,
             duplicate_accounts=duplicate_accounts,
             edge_elements=self.edge_elements(),
+            spread_accounts=self.spread_accounts(),
+            block_coordinates=(
+                Path(self.cfg.block_coordinates_path) if self.cfg.block_coordinates_path else None
+            ),
             core_buffer_m=self.cfg.core_buffer_m,
             min_core_area_ha=self.cfg.min_core_area_ha,
         )
         # The patch accounts are not additive, so the simulator reports them in their own file
         # rather than in the account values. Fold them in, or a patch target would be priced
         # against a missing row: a zero value carrying its whole penalty.
+        spread_frame = out_dir / "spread_metrics.csv"
+        if spread_frame.is_file():
+            measured = pd.read_csv(spread_frame)
+            if not measured.empty:
+                values = pd.concat([values, measured], ignore_index=True)
         patch_frame = out_dir / "patch_accounts.csv"
         if patch_frame.is_file():
             ledger = pd.read_csv(patch_frame)

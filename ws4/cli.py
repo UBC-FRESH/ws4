@@ -152,6 +152,15 @@ def optimize(
     patch_accounts: Path = typer.Option(
         None, "--patch-accounts", exists=True, help="Patch size-distribution accounts (YAML)"
     ),
+    spread_accounts: Path = typer.Option(
+        None,
+        "--spread-accounts",
+        exists=True,
+        help="Spread-connectivity accounts (YAML); needs --topology and --block-coordinates",
+    ),
+    block_coordinates: Path = typer.Option(
+        None, "--block-coordinates", exists=True, help="Block centroids (CSV: block, x, y)"
+    ),
     cooling_mode: str = typer.Option(
         "geometric", "--cooling-mode", help="Temperature schedule: geometric or adaptive"
     ),
@@ -192,6 +201,8 @@ def optimize(
         merge_weight=merge_weight,
         split_weight=split_weight,
         patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",
+        spread_accounts_path=str(spread_accounts) if spread_accounts is not None else "",
+        block_coordinates_path=str(block_coordinates) if block_coordinates is not None else "",
         cooling_mode=cooling_mode,
         cooling_window=cooling_window,
         mip_bound=mip_bound,
@@ -255,6 +266,15 @@ def watch(
     patch_accounts: Path = typer.Option(
         None, "--patch-accounts", exists=True, help="Patch size-distribution accounts (YAML)"
     ),
+    spread_accounts: Path = typer.Option(
+        None,
+        "--spread-accounts",
+        exists=True,
+        help="Spread-connectivity accounts (YAML); needs --topology and --block-coordinates",
+    ),
+    block_coordinates: Path = typer.Option(
+        None, "--block-coordinates", exists=True, help="Block centroids (CSV: block, x, y)"
+    ),
     route_config: Path = typer.Option(
         None, "--route-config", exists=True, help="Optional route model and route accounts (YAML)"
     ),
@@ -292,6 +312,8 @@ def watch(
         cluster_weight=cluster_weight,
         cluster_size=cluster_size,
         patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",
+        spread_accounts_path=str(spread_accounts) if spread_accounts is not None else "",
+        block_coordinates_path=str(block_coordinates) if block_coordinates is not None else "",
         topology_path=str(topology) if topology is not None else "",
         route_config_path=str(route_config) if route_config is not None else "",
         max_opening_ha=max_opening_ha,
@@ -332,6 +354,15 @@ def calibrate(
     patch_accounts: Path = typer.Option(
         None, "--patch-accounts", exists=True, help="Patch size-distribution accounts (YAML)"
     ),
+    spread_accounts: Path = typer.Option(
+        None,
+        "--spread-accounts",
+        exists=True,
+        help="Spread-connectivity accounts (YAML); needs --topology and --block-coordinates",
+    ),
+    block_coordinates: Path = typer.Option(
+        None, "--block-coordinates", exists=True, help="Block centroids (CSV: block, x, y)"
+    ),
     warm_start: bool = typer.Option(
         False, "--warm-start", help="Start the pilot from each block's first candidate"
     ),
@@ -345,6 +376,8 @@ def calibrate(
         targets_path=str(targets),
         topology_path=str(topology) if topology is not None else "",
         patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",
+        spread_accounts_path=str(spread_accounts) if spread_accounts is not None else "",
+        block_coordinates_path=str(block_coordinates) if block_coordinates is not None else "",
     )
     optimizer = Optimizer.from_dataset(dataset, cfg)
     calibrated = run_calibration(

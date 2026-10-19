@@ -1787,3 +1787,54 @@ issue comments.
   `--time-limit 00:00:05` the run stops with `time_limit_reached: true` in 6.4 seconds (the bound is the
   *search*; the final simulation and report follow it), and at `--time-limit 01:00:00` it spends the
   budget in 7.5 seconds with `false`. Dashboard: **GREEN** (573 tests).
+- P15.1 **a spread-connectivity account, and the synthetic oracle that the patch-size account
+  cannot pass.** `ws4/spread/accounts.py` measures how far a fire could run through the untreated
+  blocks: the topology is undirected and carries no bearings, so the account supplies a **bearing** (the
+  wind) and a **tolerance cone**, orients each transmitting edge downwind, and computes three
+  sub-accounts — `largest_component` (the area reachable from one ignition), `percolation_reach` (the
+  mean reachable area over untreated blocks) and `edge_cut` (the share of downwind edges leaving the
+  untreated set that the treatment stops) — plus `TOTAL.area` and `TOTAL.blocks`. The oracle is a
+  seven-by-seven eight-neighbour lattice with the treatment as the middle **row** or the middle
+  **column**, same area, one connected band either way: a patch-size account reports the **same** largest
+  patch for both, while the connectivity account separates them **90 against 190 ha** (largest
+  component), **42 against 94 ha** (percolation reach) and **20% against 12.5%** (edge cut). Three
+  modelling errors were caught by that oracle and are recorded in the module: undirected reachability
+  made a band along the wind look as good as one across it; a 90-degree cone makes the measure
+  symmetric on a regular lattice and loses the signal; and a four-neighbour lattice lets a 60-degree
+  cone select only northward edges, degenerating every compartment into a corridor. Dashboard: **GREEN**
+  (578 tests). The TSA23 bridge oracle is not on this machine, so that reproduction is the maintainer's.
+- P15.2 **the spread-connectivity account is wired into a run and the optimizer.** A run
+  computes it per year from the topology and a block-coordinate table, adds it to `account_values.csv`
+  and writes `spread_metrics.csv`; the optimizer prices it on the whole-schedule rail (the move-based
+  evaluator declines, since a graph property of the landscape has no per-block delta) and folds the
+  run's own CSV into `report_targets.csv`. Declarable as `--spread-accounts` (YAML) with
+  `--block-coordinates` (CSV of `block,x,y`) on `optimize`, `watch` and `calibrate`, and as
+  `OptimizeConfig.spread_accounts_path` / `block_coordinates_path` in the API. One design flaw was
+  caught by the end-to-end test and is worth recording: the account derived its *untreated* set from
+  the criterion mapping, which for a **product** criterion holds only the blocks that produced, so the
+  landscape came out empty and every sub-account read zero. The landscape is now the blocks the bearing
+  can be read for, and a block with no criterion value is untreated. Dashboard: **GREEN** (579 tests).
+- P15.3 **the bridge instance replaced the account's definition, and the docs now say what it can
+  and cannot measure.** The TSA23 bridge inputs were on the shared drive, so the test was run rather
+  than left to the maintainer. The patch-size result reproduced exactly (`agree: False`, 40.2 / 23.1 /
+  26.0% in the 400+ ha class), and the **directed** account that P15.1 pinned failed on the real
+  instance: at bearing 225° and a 60° cone its `largest_component` was **3,390.6 ha for all three
+  patterns** — a boundary corridor no treatment touches — and its `percolation_reach` **reversed** the
+  ranking (barrier 44.6, clumped 44.3, random 43.0 ha), because a thin barrier only shortens the runs
+  that cross it while scattered treatment shortens every run. The reading that does reproduce the fire
+  ranking is the **undirected compartment** over the fast edges: largest **82,800 / 104,600 / 187,173
+  ha** and area-weighted mean **25,675 / 31,604 / 46,419 ha** against **19,640 / 19,870 / 20,298 ha**
+  burned. The account is redefined accordingly: `largest_component` is now the largest connected set of
+  untreated blocks over the within-cone edges, `percolation_reach` is its area-weighted mean
+  (`sum(area**2)/sum(area)`), and `edge_cut` is removed — it is dominated by treated-edge contact and
+  scored random highest on the real map. The oracle no longer claims a direction: it pins that a
+  **full-span** band (row or column) cuts the 490 ha lattice to 210 ha while a **partial** band leaves
+  450 ha, that a 20° cone fragments the map into 70 ha columns, and that the patch account cannot rank
+  the two full bands. The module, package and design notes record the failed directed reading and the
+  bridge caveats: the fire side treats 177,088 ha of whole blocks against WS4's ~46,600 ha of managed
+  fragments, the fire spread is 3% on one seed, and the ordering holds from a 60° to 90° cone while the
+  magnitude depends on the percolation threshold. Documentation: a *Spread connectivity* section in
+  `docs/reference/spatial.rst` with the API entries, `spread_metrics.csv` in
+  `docs/reference/simulator.rst`, and the targeting section in `docs/reference/optimizer.rst`.
+  Dashboard: **GREEN** (579 tests, 7 gates). The bridge's footprint mismatch and the 4× FT curve remain
+  open for the maintainer (see `tmp/bridge-finding.md`).

@@ -26,6 +26,7 @@ exists and the maintainer approves it.
 | P12 Spatial decision match | #120 | `feature/p12-spatial-decisions` | complete |
 | P13 The reference's remaining readings | #128 | `feature/p13-reference-readings` | active |
 | P14 Optimizer search for aggregate targets | #133 | `feature/p14-optimizer-seeding` | active |
+| P15 A spread-connectivity account | #138 | `feature/p15-spread-connectivity` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -614,6 +615,37 @@ Acceptance criteria:
 - The mechanism names no model, no account label, and no treatment.
 - No regression in the parity acceptance checks, and `python scripts/dashboard.py` green.
 - The TSA23 instance is not on this machine, so that criterion is left to the maintainer with the recipe.
+
+## Phase 15: A spread-connectivity account
+
+Parent issue: #138
+Branch: `feature/p15-spread-connectivity`
+Status: active
+
+Goal: a spatial account that measures **how fragmented the fuel body a fire could run through is**, so a
+fuel-treatment schedule can be optimized against fire-spread response inside WS4. The patch-size
+accounts cannot carry it: on equal-area patterns a wind-perpendicular barrier burns least (19,640 ha)
+yet has the largest large-patch share (40.2%), so a large-patch target penalizes the arrangement that
+works.
+
+- [x] P15.1 The spread-connectivity account and its synthetic oracle — the compartment over the fast edges, an oracle where the patch-size account is blind (same largest patch) while a full-span band fragments (210 ha) and a partial one does not (450 ha), and the rework that followed running the real bridge instance
+- [x] P15.2 Wire it into the simulator and the optimizer — per-year in a run, whole-schedule in the optimizer, and declarable from the CLI
+- [x] P15.3 Document it, and state what the bridge test still has to confirm — `docs/reference/spatial.rst`, `simulator.rst`, `optimizer.rst`, and the design note
+
+Acceptance: a synthetic test where the patch-size account cannot rank two equal-area full-span bands,
+while the compartment measure separates a full-span band from a partial one; **and** the bridge instance,
+where the largest compartment reproduces the fire model's ranking (barrier 82,800 < clumped 104,600 <
+random 187,173 ha against 19,640 < 19,870 < 20,298 ha burned).
+
+What the bridge cannot yet settle, and the phase reports rather than claims:
+
+- the fire model treats 177,088 ha of whole scheduled blocks, while WS4's FT product reaches ~46,600 ha
+  of managed fragments — the two sides are not the same intervention;
+- the fire spread between patterns is 3%, on one stochastic seed;
+- the directed reading that the first oracle pinned does not survive the real map (its largest
+  component was a boundary corridor common to all three patterns);
+- an orientation-aware measure needs anisotropic rates and a burn duration, which is a fire model
+  rather than an account.
 
 ## Detailed Next Steps Notes
 

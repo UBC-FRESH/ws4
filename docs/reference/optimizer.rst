@@ -273,6 +273,42 @@ year of each period), because the simulation is annual while the accounting is p
 200-year, 20-period benchmark with a volume floor and a patch ramp that change alone took the search
 from 62 to 310 iterations/s.
 
+Spread connectivity
+-------------------
+
+Spread-connectivity accounts (how fragmented the fuel body a fire could run through is — see
+:doc:`spatial`) are **non-additive** for the same reason patch accounts are: a compartment is a
+property of the whole landscape, and no per-block delta can see it. When one is configured,
+``delta_evaluator`` declines and every move is priced by a full re-simulation, so this is the slowest
+spatial target to search against.
+
+Give ``--spread-accounts`` (a YAML of definitions) with ``--block-coordinates`` (a CSV of
+``block,x,y``), and set targets on the sub-accounts:
+
+.. code-block:: yaml
+
+   # spread.yaml
+   accounts:
+     - name: spread.ft
+       criteria: product.Treated.managed.FT
+       bearing: 225
+       tolerance: 60
+       search_distance: null
+
+.. code-block:: yaml
+
+   # targets.yaml
+   targets:
+     - account: spread.ft.largest_component
+       year: 200
+       maximum: 50000
+       max_weight: 1.0
+
+A run writes ``spread_metrics.csv``, and ``report_targets.csv`` folds it back in before pricing the
+targets, so the status and penalty are the ones a re-simulation gives. The option is on ``optimize``,
+``watch`` and ``calibrate``. ``bearing`` is the direction the fire travels (the wind direction), in
+degrees clockwise from north; ``tolerance`` is the half-width of the fast-edge cone.
+
 Calibrate
 ---------
 
