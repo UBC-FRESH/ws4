@@ -177,3 +177,30 @@ slot in: the dZ loop is a handful of vectorised array ops.
   cover every year of every operability window (rotations sampled), and `Target` is **periodic**
   (`period_width`) so the account is summed over the period — accounting per period, treatments by
   year. Result: C5 200-year even flow is a flat 0.800 Mm3 every period (objective 1), delta == full.
+
+
+## Seeding the search by construction
+
+A target that needs hundreds of moves is unreachable by operators that move one block at a time: on the
+TSA23 fuel-treatment instance a trivial greedy reaches penalty 0 where the search reaches 335 hectares of
+a 16,000 hectare floor. `ws4/opt/seeding.py` is that greedy, generalised.
+
+**What it does.** For every candidate chain it asks
+`IncrementalObjective.contribution(block, chain)` — the per-chain cell deltas the incremental evaluator
+already caches — and prices the candidate twice: the penalty it removes from the target accounts with a
+`minimum`, and the value it adds to those with a `maximum`. The cells are read by `target_cells`, which
+mirrors the objective's own convention (an accumulating account sums its period, a level is read at the
+period's end, a flow spans its window), so a schedule is built against what the search is *scored* on
+rather than against a second reading of it. Candidates are then taken in order of penalty removed per
+unit of ceiling spent, **skipping** any that would breach a ceiling, until nothing fits.
+
+**Why a ceiling is respected and nothing else is.** The model is goal programming: no bound is enforced,
+and the search may soften any of them. The seed respects the ceilings anyway because the alternative is
+already known to be bad — seeding every block's first chain (`warm_start`) blows the budget, which is
+measurably worse than not seeding at all on a cost-constrained instance. Everything else is left to the
+search.
+
+**Why the evaluator is required.** The ranking needs per-chain contributions, which only
+`delta_evaluator` provides. A configuration it cannot price (duplicate accounts, a build route account,
+edge contrast) makes `greedy_schedule` **raise**, naming the reason: a quiet empty schedule would read as
+"no block is worth treating", which is the one thing it cannot mean.

@@ -54,6 +54,7 @@ from .operators import (
     ToggleOperator,
 )
 from .patch import PatchModel
+from .seeding import greedy_schedule
 from .solvers import solve_ils, solve_sa, solve_sa_delta, solve_tabu
 from .telemetry import RunLogger
 
@@ -150,6 +151,11 @@ class OptimizeConfig:
         The number of migration episodes in the island model.
     warm_start : bool
         Whether to seed the search from each block's first candidate chain.
+    greedy_seed : bool
+        Whether to seed the search from a schedule built by construction instead: candidates
+        ranked by the penalty they remove from the declared floors per unit of the declared
+        ceilings, taken in that order while no ceiling is breached. Unlike ``warm_start`` it
+        reads the targets, so it respects a budget rather than ignoring it.
     mip_bound : bool
         Whether to solve the mixed-integer lower bound and record it in the summary.
     topology_path : str
@@ -213,6 +219,7 @@ class OptimizeConfig:
     islands: int = 0
     episodes: int = 1
     warm_start: bool = False
+    greedy_seed: bool = False
     mip_bound: bool = False
     topology_path: str = ""
     route_config_path: str = ""
@@ -897,6 +904,43 @@ class Optimizer:
             )
         return self.cfg.spatial_weight * penalty
 
+    def greedy_schedule(self, targets: Sequence[Target] | None = None) -> Schedule:
+        """Return a schedule built by construction against the run's targets, or an empty one.
+
+        A starting point for the search rather than a result: candidate chains are ranked by the
+        penalty they remove from the declared floors per unit of the declared ceilings, and taken in
+        that order while no ceiling is breached. See :func:`ws4.opt.seeding.greedy_schedule`.
+
+        Parameters
+        ----------
+        targets : sequence of Target or None, optional
+            The targets to build against, or None to load the run's own.
+
+        Returns
+        -------
+        Schedule
+            The block-to-chain mapping, empty when the run declares no floor or has no evaluator.
+        """
+        goals = (
+            list(targets)
+            if targets is not None
+            else load_targets(Path(self.cfg.targets_path))
+            if self.cfg.targets_path
+            else []
+        )
+        evaluator = self.delta_evaluator(goals)
+        if evaluator is None:
+            # A quiet empty schedule would read as "no block is worth treating", which is the one
+            # thing this cannot mean: the evaluator is missing because the configuration extends or
+            # rewrites the account values (duplicate accounts, a build account, edge contrast), and
+            # a caller that asked for a seed has to know which.
+            raise ValueError(
+                "a greedy seed needs the move-based objective evaluator, and this configuration "
+                "has none: it declares duplicate accounts, a build route account, or edge "
+                "contrast, each of which rewrites or extends the account values"
+            )
+        return greedy_schedule(evaluator, self.candidates())
+
     def _solve(
         self,
         seed: int,
@@ -928,6 +972,10 @@ class Optimizer:
             registry=self.registry,
         )
         rng = random.Random(seed)
+        if initial is None and self.cfg.greedy_seed:
+            evaluator = self.delta_evaluator(targets)
+            if evaluator is not None:
+                initial = greedy_schedule(evaluator, candidates)
         if initial is None and self.cfg.warm_start:
             initial = {block: options[0] for block, options in candidates.items() if options}
         if self.cfg.metaheuristic == "tabu":

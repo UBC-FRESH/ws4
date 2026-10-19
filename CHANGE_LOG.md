@@ -1760,3 +1760,18 @@ issue comments.
   a declared maximum of 650,000 with no violation reported), and WS4's rule is already 91.7% of the way
   there; the mechanism stays as the capability the reference declares, with the measurement recorded.
   Dashboard: **GREEN**.
+- P14.1 (#134) **an initial schedule built by construction, for aggregate targets under a ceiling.**
+  `ws4/opt/seeding.py` ranks every candidate chain by the penalty it removes from the declared floors
+  per unit of the declared ceilings, takes them in that order, and **skips any that would push a ceiling
+  past its maximum** — so the seed is not worse than the schedule the search already rejects, which is
+  what separates it from `warm_start` (every block's first chain, ceiling ignored). It reads the targets
+  (`minimum` is a floor, `maximum` a ceiling), so it names no account, model or treatment, and it is
+  offered as `OptimizeConfig.greedy_seed`, `Optimizer.greedy_schedule()`, and `--seed-greedy` on both
+  `optimize` and `watch`. The evaluator's per-chain contribution is now public
+  (`IncrementalObjective.contribution`) because that is what makes the ranking cheap; a configuration
+  the evaluator cannot price — duplicate accounts, a build account, edge contrast — is **refused with its
+  reason** rather than answered with a quiet empty schedule. Measured end to end through the CLI on a
+  60-block synthetic instance with a 30-block floor and a 35-block ceiling: **unseeded 8,700 (penalty
+  34,800, below) against seeded 50,750 (penalty 0, met), with the haul at 507,500 exactly on the
+  ceiling.** The TSA23 instance is not on this machine, so its reproduction is left to the maintainer.
+  Dashboard: **GREEN** (570 tests).

@@ -25,6 +25,7 @@ exists and the maintainer approves it.
 | P11 The derived targets and the sample's own files | #112 | `feature/p11-derived-targets` | complete |
 | P12 Spatial decision match | #120 | `feature/p12-spatial-decisions` | complete |
 | P13 The reference's remaining readings | #128 | `feature/p13-reference-readings` | active |
+| P14 Optimizer search for aggregate targets | #133 | `feature/p14-optimizer-seeding` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -583,6 +584,34 @@ Acceptance criteria:
   measurement, and the route ratios are compared or their remaining gap named.
 - The route report states its distance in a unit it names.
 - The dashboard green at every commit, with the docs and docstrings gates.
+
+## Phase 14: Optimizer search for aggregate targets
+
+Parent issue: #133
+Branch: `feature/p14-optimizer-seeding`
+Status: active
+
+A second phase is active while P13's last item (the route report's distance unit) waits on a maintainer
+decision: the maintainer directed this work, and it is not P13's subject.
+
+Goal: make the optimizer find **aggregate, narrow-window treatment targets** — a treatment offered on few
+blocks in few years, a floor on a product account, and a ceiling on a cost account. On the TSA23
+fuel-treatment instance a trivial greedy reaches **penalty 0** where `ws4 optimize` reaches **15,758**
+with 335 ha treated against a 16,000 ha floor and a $200M ceiling, because the generic operators move one
+random block at a time and ~290 treatment moves are a needle in a haystack. `warm_start=True` seeds every
+block's first candidate chain, which ignores the ceiling and over-schedules. One measured defect is in the
+way: `--time-limit` is accepted and never read.
+
+- [x] P14.1 A greedy, constraint-aware initial schedule (#134) — implemented, refused loudly where it cannot price, and measured: 8,700 against 50,750 on a synthetic floor-and-ceiling instance
+
+Acceptance criteria:
+
+- On a small synthetic model with an aggregate account floor and a cost-account ceiling, the optimizer
+  reaches the floor without breaching the ceiling where the current behaviour does not, and a test
+  exercises exactly that, failing at the commit before the change.
+- The mechanism names no model, no account label, and no treatment.
+- No regression in the parity acceptance checks, and `python scripts/dashboard.py` green.
+- The TSA23 instance is not on this machine, so that criterion is left to the maintainer with the recipe.
 
 ## Detailed Next Steps Notes
 
