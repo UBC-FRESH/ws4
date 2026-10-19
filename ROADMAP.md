@@ -25,7 +25,7 @@ exists and the maintainer approves it.
 | P11 The derived targets and the sample's own files | #112 | `feature/p11-derived-targets` | complete |
 | P12 Spatial decision match | #120 | `feature/p12-spatial-decisions` | complete |
 | P13 The reference's remaining readings | #128 | `feature/p13-reference-readings` | active |
-| P14 Optimizer search for aggregate targets | #133 | `feature/p14-optimizer-seeding` | active |
+| P14 Optimizer search for aggregate targets | #133 | `feature/p14-optimizer-seeding` | complete |
 | P15 A spread-connectivity account | #138 | `feature/p15-spread-connectivity` | complete |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
@@ -590,7 +590,7 @@ Acceptance criteria:
 
 Parent issue: #133
 Branch: `feature/p14-optimizer-seeding`
-Status: active
+Status: complete
 
 A second phase is active while P13's last item (the route report's distance unit) waits on a maintainer
 decision: the maintainer directed this work, and it is not P13's subject.
@@ -783,3 +783,11 @@ What the bridge cannot yet settle, and the phase reports rather than claims:
     the fire spread is 3% on one seed; the ordering holds from a 60° to a 90° cone and flips at 45°; and
     the FT product's curve still reads 4.0. Those are the subject of the proposed P16 (the bridge at the
     same footprint, the load-time 4× check, and the account's final shape).
+20. Phase 14 is complete: pull requests #135 (`809cc1d`) and #137 (`cc37fde`) merged, and parent issue
+    #133 closed. Its close-out report is `notes/reports/p14-closeout.md`. The criteria that the phase
+    had deferred are now measured on the TSA23 instance: with `--seed-greedy` the run reaches **penalty
+    0.00** at **$199,999,193** against the $200,000,000 ceiling (9,999.96 ha treated), where unseeded it
+    stops at **15,758.97**; the corrected five-year targets, both bounds on the cost account, reach
+    **0.00** as well. Both seeded runs report `time_limit_reached: false`, so the budget did not cut
+    them. The v1 floor is read through a dataset curve that reports 4× the treated hectares; that is a
+    compile defect, recorded in the report and left to P16.2's load-time guard.

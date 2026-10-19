@@ -1838,3 +1838,13 @@ issue comments.
   `docs/reference/simulator.rst`, and the targeting section in `docs/reference/optimizer.rst`.
   Dashboard: **GREEN** (579 tests, 7 gates). The bridge's footprint mismatch and the 4× FT curve remain
   open for the maintainer (see `tmp/bridge-finding.md`).
+- Docs workflow repair: `docs/examples/070_library_path.ipynb` declared its Pygments lexer as
+  `ipython3`, an alias registered by the third-party `ipython_pygments_lexers` package that the Docs
+  workflow does not install. The notebook has no IPython magics, so its `language_info.pygments_lexer`
+  is now `python3`, a core Pygments lexer; the workflow's `-W` build no longer treats six unknown-lexer
+  warnings as errors. The workflow had been red on `main` since `e48c308` (2026-10-18).
+- P14 close-out: the instance criterion the phase deferred is measured on the TSA23 instance. With
+  `--seed-greedy` the run reaches **penalty 0.00** at **$199,999,193** against the $200,000,000 ceiling
+  (9,999.96 ha treated), where the unseeded run stops at **15,758.97**; the corrected five-year targets
+  reach **0.00** too. Both seeded runs report `time_limit_reached: false`. The report is
+  `notes/reports/p14-closeout.md`; the 4× curve it exposes is left to P16.2. Dashboard: **GREEN**.
