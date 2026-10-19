@@ -1,7 +1,7 @@
 # Phase close-out report: P12, spatial decision match
 
 Phase issue: #120. Branch: `feature/p12-spatial-decisions`. Roadmap: `ROADMAP.md`, "Phase 12: Spatial
-decision match". Parent pull request: the phase's own.
+decision match". Phase pull request: **#127**.
 
 P11 verified that the **values** match — 1,383 account-period and flow values reproduced on both 2026
 scenarios, routing parity on all 25,134 node-and-mill pairs, 959 yield-curve points, a patch family
