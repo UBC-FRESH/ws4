@@ -134,6 +134,75 @@ contributes the shared edge length. The per-block attribute values come from fea
 them, for example a minimum on ``feature.Edge.OldYoung``). ``load_edge_elements`` loads the
 specifications from CSV.
 
+Spread connectivity
+-------------------
+
+A **spread-connectivity account** measures how fragmented the fuel body a fire could run through is
+(``ws4.spread.accounts``). It exists because the patch accounts can point the wrong way: on the TSA23
+bridge instance a wind-perpendicular barrier burned least of three equal-area patterns while having the
+*largest* large-patch share. A patch target penalizes the arrangement that works.
+
+The account needs a **block topology** and a table of **block coordinates** (``block,x,y``, in metres),
+because the topology carries distances but no bearings. Each account names a criterion, a **bearing**
+(degrees clockwise from north — the direction the fire travels, which is the wind direction) and a
+**tolerance**. An edge lying within the tolerance of the bearing and no longer than ``search_distance``
+is *fast*; a treated block transmits nothing. The fast edges are then traversed as an **undirected**
+graph: a fire goes around an obstacle as well as through it, so what confines it is the connected fuel
+body, not a one-way corridor.
+
+.. code-block:: yaml
+
+   # spread.yaml
+   accounts:
+     - name: spread.ft
+       criteria: product.Treated.managed.FT
+       bearing: 225
+       tolerance: 60
+       search_distance: null
+
+Two sub-accounts, both lower-is-better and both in hectares:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 22 78
+
+   * - Sub-account
+     - Meaning
+   * - ``largest_component``
+     - The area of the largest connected set of untreated blocks over the fast edges: the fuel body a
+       fire can wander through from one ignition.
+   * - ``percolation_reach``
+     - The area-weighted mean compartment area, ``sum(area**2) / sum(area)``: what a random hectare
+       sees.
+
+The account also reports ``TOTAL.area`` and ``TOTAL.blocks`` for the untreated set. The landscape is
+every block with a coordinate, not only the blocks the criterion mentions: a *product* criterion holds
+only the blocks that produced in the period, and every other block is untreated fuel.
+
+.. code-block:: python
+
+   from ws4.spread.accounts import SpreadAccount
+
+   account = SpreadAccount(
+       name="spread.ft", criteria="product.Treated.managed.FT", bearing=225, tolerance=60
+   )
+   Simulator.from_dataset(dataset).run(
+       schedule,
+       years,
+       out_dir,
+       topology_csv=topology,
+       spread_accounts=[account],
+       block_coordinates=coordinates,
+   )
+
+**What the measure can and cannot say.** Direction lives in the cone (which edges are fast), not in the
+traversal. A full-span band along the wind fragments the fuel body just as much as one across it, which
+the synthetic oracle pins deliberately. Separating those two needs anisotropic spread rates and a burn
+duration — a fire model, not an account. On the TSA23 bridge instance the largest compartment does
+reproduce the fire model's ranking (82,800 / 104,600 / 187,173 ha for barrier, clumped and random,
+against 19,640 / 19,870 / 20,298 ha burned); the ordering holds from a 60° to a 90° cone, and the
+magnitude depends on how near the cone sits to the percolation threshold.
+
 Enforcement in the optimizer
 ----------------------------
 
@@ -193,3 +262,14 @@ API
 
 .. autoclass:: ws4.patch.accounts.PatchLedger
    :members:
+
+.. autoclass:: ws4.spread.accounts.SpreadAccount
+   :members:
+
+.. autofunction:: ws4.spread.accounts.spread_account_values
+
+.. autofunction:: ws4.spread.accounts.transmitting_edges
+
+.. autofunction:: ws4.spread.accounts.load_spread_accounts
+
+.. autofunction:: ws4.spread.accounts.load_block_coordinates

@@ -1814,3 +1814,27 @@ issue comments.
   the criterion mapping, which for a **product** criterion holds only the blocks that produced, so the
   landscape came out empty and every sub-account read zero. The landscape is now the blocks the bearing
   can be read for, and a block with no criterion value is untreated. Dashboard: **GREEN** (579 tests).
+- P15.3 (#NNN) **the bridge instance replaced the account's definition, and the docs now say what it can
+  and cannot measure.** The TSA23 bridge inputs were on the shared drive, so the test was run rather
+  than left to the maintainer. The patch-size result reproduced exactly (`agree: False`, 40.2 / 23.1 /
+  26.0% in the 400+ ha class), and the **directed** account that P15.1 pinned failed on the real
+  instance: at bearing 225° and a 60° cone its `largest_component` was **3,390.6 ha for all three
+  patterns** — a boundary corridor no treatment touches — and its `percolation_reach` **reversed** the
+  ranking (barrier 44.6, clumped 44.3, random 43.0 ha), because a thin barrier only shortens the runs
+  that cross it while scattered treatment shortens every run. The reading that does reproduce the fire
+  ranking is the **undirected compartment** over the fast edges: largest **82,800 / 104,600 / 187,173
+  ha** and area-weighted mean **25,675 / 31,604 / 46,419 ha** against **19,640 / 19,870 / 20,298 ha**
+  burned. The account is redefined accordingly: `largest_component` is now the largest connected set of
+  untreated blocks over the within-cone edges, `percolation_reach` is its area-weighted mean
+  (`sum(area**2)/sum(area)`), and `edge_cut` is removed — it is dominated by treated-edge contact and
+  scored random highest on the real map. The oracle no longer claims a direction: it pins that a
+  **full-span** band (row or column) cuts the 490 ha lattice to 210 ha while a **partial** band leaves
+  450 ha, that a 20° cone fragments the map into 70 ha columns, and that the patch account cannot rank
+  the two full bands. The module, package and design notes record the failed directed reading and the
+  bridge caveats: the fire side treats 177,088 ha of whole blocks against WS4's ~46,600 ha of managed
+  fragments, the fire spread is 3% on one seed, and the ordering holds from a 60° to 90° cone while the
+  magnitude depends on the percolation threshold. Documentation: a *Spread connectivity* section in
+  `docs/reference/spatial.rst` with the API entries, `spread_metrics.csv` in
+  `docs/reference/simulator.rst`, and the targeting section in `docs/reference/optimizer.rst`.
+  Dashboard: **GREEN** (579 tests, 7 gates). The bridge's footprint mismatch and the 4× FT curve remain
+  open for the maintainer (see `tmp/bridge-finding.md`).

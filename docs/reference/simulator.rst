@@ -61,6 +61,8 @@ writes:
   distribution (see :doc:`spatial`);
 - ``patch_accounts.csv`` — per-year patch accounts, when ``patch_accounts`` are given;
 - ``edge_metrics.csv`` — per-year edge contrast accounts, when ``edge_elements`` are given;
+- ``spread_metrics.csv`` — per-year spread-connectivity accounts, when ``spread_accounts`` and
+  ``block_coordinates`` are given (see :doc:`spatial`);
 - ``spatial_violations.csv`` — ``kind,year,area_ha,limit,block_a,block_b,years`` (``kind`` is
   ``opening``, ``green_up``, or ``core_area``), when a maximum opening size, a green-up interval, or
   a core-area rule is given.

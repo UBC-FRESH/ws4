@@ -622,19 +622,30 @@ Parent issue: #138
 Branch: `feature/p15-spread-connectivity`
 Status: active
 
-Goal: a spatial account that measures **connectivity along a spread direction**, so a fuel-treatment
-schedule can be optimized against fire-spread response inside WS4. The patch-size accounts cannot carry
-it: on equal-area patterns a wind-perpendicular barrier burns least (19,640 ha) yet has the largest
-large-patch share (40.2%), so a large-patch target penalizes the arrangement that works. The barrier wins
-by breaking connectivity perpendicular to the wind.
+Goal: a spatial account that measures **how fragmented the fuel body a fire could run through is**, so a
+fuel-treatment schedule can be optimized against fire-spread response inside WS4. The patch-size
+accounts cannot carry it: on equal-area patterns a wind-perpendicular barrier burns least (19,640 ha)
+yet has the largest large-patch share (40.2%), so a large-patch target penalizes the arrangement that
+works.
 
-- [x] P15.1 The spread-connectivity account and its synthetic oracle — the account computed, and an oracle where the patch-size account is blind (same largest patch) and connectivity separates the patterns 90 against 190 ha
+- [x] P15.1 The spread-connectivity account and its synthetic oracle — the compartment over the fast edges, an oracle where the patch-size account is blind (same largest patch) while a full-span band fragments (210 ha) and a partial one does not (450 ha), and the rework that followed running the real bridge instance
 - [x] P15.2 Wire it into the simulator and the optimizer — per-year in a run, whole-schedule in the optimizer, and declarable from the CLI
-- [ ] P15.3 Document it, and state what the bridge test still has to confirm
+- [x] P15.3 Document it, and state what the bridge test still has to confirm — `docs/reference/spatial.rst`, `simulator.rst`, `optimizer.rst`, and the design note
 
-Acceptance: a synthetic test where a directed barrier **reduces** `largest_component` while **increasing**
-the largest treated patch — the size account fails that ranking, the connectivity account passes it.
-The TSA23 bridge oracle is not on this machine and is left to the maintainer.
+Acceptance: a synthetic test where the patch-size account cannot rank two equal-area full-span bands,
+while the compartment measure separates a full-span band from a partial one; **and** the bridge instance,
+where the largest compartment reproduces the fire model's ranking (barrier 82,800 < clumped 104,600 <
+random 187,173 ha against 19,640 < 19,870 < 20,298 ha burned).
+
+What the bridge cannot yet settle, and the phase reports rather than claims:
+
+- the fire model treats 177,088 ha of whole scheduled blocks, while WS4's FT product reaches ~46,600 ha
+  of managed fragments — the two sides are not the same intervention;
+- the fire spread between patterns is 3%, on one stochastic seed;
+- the directed reading that the first oracle pinned does not survive the real map (its largest
+  component was a boundary corridor common to all three patterns);
+- an orientation-aware measure needs anisotropic rates and a burn duration, which is a fire model
+  rather than an account.
 
 ## Detailed Next Steps Notes
 

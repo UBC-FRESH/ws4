@@ -1,15 +1,22 @@
-"""The synthetic oracle: a directed barrier that beats the patch-size account.
+"""The synthetic oracle: what fragments a fuel body, and what does not.
 
-The bridge test's finding, in miniature. Seven-by-seven blocks; the treatment is either the
-middle **row** or the middle **column**, at the same area and as one connected band. The wind is
-from the south, so spread travels northward (bearing 0):
+The bridge test's finding, in miniature. Seven-by-seven blocks at 10 ha, wind from the south (spread
+bearing 0) in a 60-degree cone, so northward and diagonal edges are fast and east-west edges are
+not.
 
-- the **row** band lies across the wind: every northward path crosses it, so it is a barrier;
-- the **column** band lies along the wind: a fire runs up either side of it, so it is no barrier.
+Three patterns at the same treated area:
 
- Both are one connected band, so a patch-size account sees the **same** largest patch and cannot
-tell them
-apart. The connectivity account must prefer the row band on every measure.
+- the middle **row**, a band spanning the west-east width;
+- the middle **column**, a band spanning the south-north height;
+- a **partial** band: four blocks of the middle row, open at both ends.
+
+The patch-size account sees the two full bands as the same largest patch and cannot rank them. The
+connectivity account must see *both* full bands as cutting the fuel body in half — 210 ha against
+490 ha untreated — and the partial band as leaving it whole. That is the honest claim: a span along
+the wind fragments the fast graph just as much as one across it, because the traversal is
+undirected. Direction lives in the cone (which edges are fast), not in the traversal; and a narrower
+cone that drops the diagonals fragments the map into columns, which is why the default lets a fire
+go around.
 """
 
 from __future__ import annotations
@@ -59,15 +66,21 @@ def _lattice_edges() -> list[tuple[int, int, float]]:
     return edges
 
 
-def _band(row_band: bool) -> dict[int, float]:
-    """Return the criterion values of a band across the middle, by row or by column."""
+def _band(row_band: bool, partial: bool = False) -> dict[int, float]:
+    """Return the criterion values of a band through the middle, by row or by column.
+
+    A partial band covers only the middle four columns of the middle row, leaving both ends open.
+    """
     middle_row = _ROWS // 2
     middle_column = _COLUMNS // 2
     values: dict[int, float] = {}
     for block in _POINTS:
         row = (block - 1) // _COLUMNS
         column = (block - 1) % _COLUMNS
-        in_band = row == middle_row if row_band else column == middle_column
+        if row_band:
+            in_band = row == middle_row and (not partial or 1 <= column <= 4)
+        else:
+            in_band = column == middle_column
         values[block] = 1.0 if in_band else 0.0
     return values
 
@@ -101,57 +114,48 @@ def _connectivity(values: dict[int, float], **settings: object) -> dict[str, flo
     return spread_account_values(account, values, _lattice_edges(), _POINTS, _areas())
 
 
-def test_a_barrier_reduces_connectivity_while_the_patches_are_identical() -> None:
-    """The oracle: the patch-size account cannot rank the patterns, and connectivity can."""
-    barrier = _band(row_band=True)
-    alongside = _band(row_band=False)
-
-    # the treatment is the same area either way, and one connected band either way
-    assert sum(barrier.values()) == sum(alongside.values())
-    assert _largest_patch(barrier) == _largest_patch(alongside)
-
-    across = _connectivity(barrier)
-    along = _connectivity(alongside)
-
-    # the barrier is strictly better on every connectivity measure
-    assert across["spread.fire.largest_component"] < along["spread.fire.largest_component"]
-    assert across["spread.fire.percolation_reach"] < along["spread.fire.percolation_reach"]
-    assert across["spread.fire.edge_cut"] > along["spread.fire.edge_cut"]
-
-    # The arithmetic, checkable by hand on the seven-by-seven lattice. A block below the row band
-    # reaches only the three rows beneath it; the largest such reach is nine blocks (its column, the
-    # two either side of it, and one row back), which is 90 ha. The column band leaves a fire free
-    # to
-    # run up the six-block half it starts in, reaching nineteen blocks, 190 ha.
-    assert across["spread.fire.largest_component"] == 9 * _AREA
-    assert along["spread.fire.largest_component"] == 19 * _AREA
-    # of the 70 spread edges leaving untreated blocks, the row band stops the 14 that cross it, and
-    # the column band stops only the 8 that run into it from the column in front
-    assert across["spread.fire.edge_cut"] == pytest.approx(100.0 * 14 / 70)
-    assert along["spread.fire.edge_cut"] == pytest.approx(100.0 * 8 / 64)
+def test_the_patch_account_cannot_tell_the_two_full_bands_apart() -> None:
+    """The premise: same treated area, one connected band, and the same largest patch."""
+    across = _band(row_band=True)
+    along = _band(row_band=False)
+    assert sum(across.values()) == sum(along.values())
+    assert _largest_patch(across) == _largest_patch(along)
 
 
-def test_the_direction_is_what_makes_a_band_a_barrier() -> None:
-    """Turn the wind along the row band and the same band stops being one."""
-    barrier = _band(row_band=True)
-    northward = _connectivity(barrier, bearing=0.0)
-    eastward = _connectivity(barrier, bearing=90.0)
-    assert northward["spread.fire.largest_component"] < eastward["spread.fire.largest_component"]
-    assert northward["spread.fire.edge_cut"] > eastward["spread.fire.edge_cut"]
+def test_a_full_span_fragments_the_fuel_body_and_a_partial_band_does_not() -> None:
+    """The oracle: compartment size sees whether the band spans the landscape."""
+    control = dict.fromkeys(_POINTS, 0.0)
+    across = _connectivity(_band(row_band=True))
+    along = _connectivity(_band(row_band=False))
+    partial = _connectivity(_band(row_band=True, partial=True))
+
+    # the untreated body is the whole lattice, 490 ha in 49 blocks
+    assert _connectivity(control)["spread.fire.largest_component"] == _ROWS * _COLUMNS * _AREA
+    assert _connectivity(control)["spread.fire.percolation_reach"] == _ROWS * _COLUMNS * _AREA
+
+    # either full span cuts the 7-by-7 body into two halves of three rows or three columns
+    assert across["spread.fire.largest_component"] == 3 * _ROWS * _AREA
+    assert along["spread.fire.largest_component"] == 3 * _ROWS * _AREA
+    assert across["spread.fire.percolation_reach"] == 3 * _ROWS * _AREA
+    assert along["spread.fire.percolation_reach"] == 3 * _ROWS * _AREA
+    assert across["spread.fire.TOTAL.blocks"] == 42.0
+    assert along["spread.fire.TOTAL.blocks"] == 42.0
+
+    # open both ends and the fire walks around it: 45 blocks left, all in one compartment
+    assert partial["spread.fire.largest_component"] == 45 * _AREA
+    assert partial["spread.fire.percolation_reach"] == 45 * _AREA
+    assert partial["spread.fire.TOTAL.blocks"] == 45.0
 
 
-def test_a_full_half_plane_cone_loses_the_direction_on_a_regular_lattice() -> None:
-    """The reason the default is 60: at 90 every edge transmits, and the lattice is symmetric."""
-    barrier = _band(row_band=True)
-    alongside = _band(row_band=False)
-    wide = {"tolerance": 90.0}
-    # every edge transmits, so both bands separate the same number of blocks and the measure
-    # can no longer tell them apart
-    assert _connectivity(barrier, **wide)["spread.fire.largest_component"] == pytest.approx(
-        _connectivity(alongside, **wide)["spread.fire.largest_component"]
+def test_a_narrow_cone_fragments_the_lattice_into_columns() -> None:
+    """A twenty-degree cone keeps only the northward edges, so each column is its own body."""
+    control = dict.fromkeys(_POINTS, 0.0)
+    assert _connectivity(control, tolerance=20.0)["spread.fire.largest_component"] == (
+        _ROWS * _AREA
     )
-    assert _connectivity(barrier, **wide)["spread.fire.edge_cut"] == pytest.approx(
-        _connectivity(alongside, **wide)["spread.fire.edge_cut"]
+    # a row band still cuts every column, leaving three rows on each side
+    assert _connectivity(_band(row_band=True), tolerance=20.0)["spread.fire.largest_component"] == (
+        3 * _AREA
     )
 
 
@@ -163,9 +167,9 @@ def test_the_cone_and_the_hop_are_real_parameters() -> None:
         SpreadAccount(name="spread.fire", criteria="feature.treated", bearing=float("inf"))
     barrier = _band(row_band=True)
     short = _connectivity(barrier, search_distance=50.0)
-    # no edge is that short, so nothing transmits and nothing is cut
-    assert short["spread.fire.edge_cut"] == 0.0
+    # no edge is that short, so every untreated block is its own compartment
     assert short["spread.fire.largest_component"] == _AREA
+    assert short["spread.fire.TOTAL.blocks"] == 42.0
 
 
 def test_an_empty_landscape_reports_nothing_rather_than_failing() -> None:
@@ -175,7 +179,7 @@ def test_an_empty_landscape_reports_nothing_rather_than_failing() -> None:
     assert cells["spread.fire.largest_component"] == 0.0
     assert cells["spread.fire.percolation_reach"] == 0.0
     assert cells["spread.fire.TOTAL.blocks"] == 0.0
-    assert cells["spread.fire.edge_cut"] == 0.0
+    assert cells["spread.fire.TOTAL.area"] == 0.0
 
 
 # --- wiring: the account inside a run and the optimizer -------------------------------------------
@@ -236,7 +240,6 @@ def test_a_run_writes_the_spread_accounts_and_the_optimizer_can_target_them(tmp_
     assert set(measured["account"]) == {
         "spread.fire.largest_component",
         "spread.fire.percolation_reach",
-        "spread.fire.edge_cut",
         "spread.fire.TOTAL.area",
         "spread.fire.TOTAL.blocks",
     }
