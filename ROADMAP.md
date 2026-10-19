@@ -27,7 +27,7 @@ exists and the maintainer approves it.
 | P13 The reference's remaining readings | #128 | `feature/p13-reference-readings` | active |
 | P14 Optimizer search for aggregate targets | #133 | `feature/p14-optimizer-seeding` | complete |
 | P15 A spread-connectivity account | #138 | `feature/p15-spread-connectivity` | complete |
-| P16 The bridge at the same footprint | #141 | `feature/p16-bridge-matched` | active |
+| P16 The bridge at the same footprint | #141 | `feature/p16-bridge-matched` | complete |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -634,9 +634,11 @@ works.
 - [x] P15.3 Document it, and state what the bridge test still has to confirm — `docs/reference/spatial.rst`, `simulator.rst`, `optimizer.rst`, and the design note
 
 Acceptance: a synthetic test where the patch-size account cannot rank two equal-area full-span bands,
-while the compartment measure separates a full-span band from a partial one; **and** the bridge instance,
-where the largest compartment reproduces the fire model's ranking (barrier 82,800 < clumped 104,600 <
-random 187,173 ha against 19,640 < 19,870 < 20,298 ha burned).
+while the compartment measure separates a full-span band from a partial one. The bridge clause is
+**withdrawn**: the compartment did order the patterns as the fire model did at its original 177,088 ha
+treatment, but a matched-footprint rerun at the ~54,000 ha WS4 can treat reverses the mean order and
+finds the gaps inside seed noise (P16.1, `notes/reports/p16-bridge-matched.md`). The account remains a
+defined fragmentation metric with no demonstrated fire-response relationship at that footprint.
 
 What the bridge cannot yet settle, and the phase reports rather than claims:
 
@@ -652,7 +654,7 @@ What the bridge cannot yet settle, and the phase reports rather than claims:
 
 Parent issue: #141
 Branch: `feature/p16-bridge-matched`
-Status: active
+Status: complete
 
 Goal: close the two gaps P15 left. First, the bridge ranking was measured on a different
 intervention: the fire model treats 177,088 ha of whole scheduled blocks, while WS4's FT product
@@ -663,9 +665,11 @@ multiplied — 4.0000 times for `product.Treated.managed.FT` in the TSA23 FT dat
 times for the SpeciesProp, Yield and HarvestedVolume families. Make the builder emit one row per key
 and curve, and make the loader say so when a dataset does not.
 
-- [ ] P16.1 Run the fire model on the WS4-treated masks across five seeds — delegated to the thesis
-  environment; the prompt is `tmp/ws4-bridge-matched-footprint-prompt.md` (untracked), and the
-  matched-footprint ranking is reported per seed with the treated area recorded.
+- [x] P16.1 Run the fire model on the WS4-treated masks across five seeds — done locally with the
+  instance's own functions: five seeds per pattern, 54,368 / 55,837 / 53,697 ha treated. The published
+  ranking **does not survive**; the mean order reverses and the largest gap (0.38%) is inside the seed
+  range (15%). Report: `notes/reports/p16-bridge-matched.md`. Independent confirmation is requested in
+  `UBC-FRESH/femic-tsa23-instance` #11.
 - [x] P16.2 One product row per `(track, treatment, label)` and curve, and a loader that names a
   dataset that repeats one — the builder drops exact duplicates and keeps a repeated key with
   different curves (a sum of components); `Simulator.from_dataset` warns with the count and the
@@ -821,3 +825,11 @@ green.
     **0.00** as well. Both seeded runs report `time_limit_reached: false`, so the budget did not cut
     them. The v1 floor is read through a dataset curve that reports 4× the treated hectares; that is a
     compile defect, recorded in the report and left to P16.2's load-time guard.
+21. Phase 16 is complete: pull request #142 (`P16.2`) merged as `8f0f6d4`, the documentation pull request
+    that carries this note and the reports merged, and parent issue #141 closed. The matched-footprint
+    rerun (P16.1) is a **negative** result: at the ~54,000 ha WS4 can treat, the fire model's ranking is
+    not stable across five seeds (mean order clumped < random < barrier, the reverse of the published
+    order, with a 0.38% gap against a 15% seed range), so the P15 bridge validation is withdrawn and
+    the account stands as a fragmentation metric, not a fire-response proxy. P16.2 fixed the real 4×
+    cause — 1,515,465 exact duplicate product rows, not a 4.0 curve — in the builder and in the loader
+    warning. Reports: `notes/reports/p16-bridge-matched.md` and `notes/reports/p16-closeout.md`.

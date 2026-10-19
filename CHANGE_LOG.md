@@ -1862,3 +1862,23 @@ issue comments.
   product's curve exceeds 1.0. The earlier "the curve is 4.0" finding was wrong and is corrected in
   the untracked notes. Tests: `tests/test_dataset_checks.py` (six cases, including a recipe that
   declares the same product twice and a dataset that repeats a row). Dashboard: **GREEN**.
+- P16.1 **the bridge ranking does not survive a matched footprint, and the compartment's validation is
+  withdrawn.** Reusing the instance's own fire model (50 ignitions, 480 min, wind 225°, **ROS × 0.3** —
+  the setting that produced the published JSONs, confirmed by reproducing `19640.448328143004` exactly
+  with the original mask), the three patterns were rerun on the WS4-treated masks with the duplicate
+  product rows dropped: **54,368 / 55,837 / 53,697 ha**, about 5.5% of the 988,816 ha model, against
+  17.9% for the published patterns, five seeds each. The published ranking (barrier 19,640 < clumped
+  19,870 < random 20,298 ha) does not hold: seeds 1–2 order barrier, clumped, random; seeds 3–4 order
+  clumped, random, barrier; seed 5 orders barrier, random, clumped. Over the seeds the mean ranks
+  **clumped 22,775 < random 22,816 < barrier 22,861 ha**, the reverse of the published order, with a
+  largest mean gap of **86 ha (0.38%)** against a seed-to-seed range of **~3,400 ha (15%)**; the p90
+  orders the same way. So the arrangement effect at 5.5% treatment is inside noise, and P15's claim that
+  the compartment reproduces the ranking — made against a 3.3× larger fire-side footprint — is
+  withdrawn. The account remains a defined fragmentation metric; its fire-response validation does not
+  hold. Report: `notes/reports/p16-bridge-matched.md`; the thesis-side independent rerun is
+  `UBC-FRESH/femic-tsa23-instance` #11. Dashboard: **GREEN**.
+- P16 close-out: parent issue #141 closed. P16.2 was merged as `8f0f6d4` (pull request #142), P16.1 is
+  the negative matched-footprint result above, and P16.3 is the account's scope recorded in
+  `docs/reference/spatial.rst` and `notes/design/ws4-spatial-accounts.md`. The report is
+  `notes/reports/p16-closeout.md`. No new phase is proposed: the result is a paper-scope decision, and
+  the next WS4 item (P13's route-report `LENGTH`) waits on the maintainer.

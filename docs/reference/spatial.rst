@@ -198,10 +198,16 @@ only the blocks that produced in the period, and every other block is untreated 
 **What the measure can and cannot say.** Direction lives in the cone (which edges are fast), not in the
 traversal. A full-span band along the wind fragments the fuel body just as much as one across it, which
 the synthetic oracle pins deliberately. Separating those two needs anisotropic spread rates and a burn
-duration — a fire model, not an account. On the TSA23 bridge instance the largest compartment does
-reproduce the fire model's ranking (82,800 / 104,600 / 187,173 ha for barrier, clumped and random,
-against 19,640 / 19,870 / 20,298 ha burned); the ordering holds from a 60° to a 90° cone, and the
-magnitude depends on how near the cone sits to the percolation threshold.
+duration — a fire model, not an account.
+
+On the TSA23 bridge instance the largest compartment orders the three equal-area patterns as the fire
+model did at its original 177,088 ha treatment (82,874 / 105,020 / 196,767 ha against 19,640 / 19,870 /
+20,298 ha burned). **That comparison does not survive a matched footprint.** When the fire model is run
+on the ~54,000 ha WS4 can actually treat, the ranking flips across seeds and the largest mean gap
+(0.38%) is far inside the seed noise (15%). The account is therefore a fragmentation measure with **no
+demonstrated relationship** to this fire model at the intervention WS4 can represent; the report is
+`notes/reports/p16-bridge-matched.md`. The ordering of the compartment itself holds from a 60° to a 90°
+cone, with a magnitude that depends on how near the cone sits to the percolation threshold.
 
 Enforcement in the optimizer
 ----------------------------
