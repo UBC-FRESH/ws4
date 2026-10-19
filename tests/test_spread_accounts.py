@@ -14,6 +14,9 @@ apart. The connectivity account must prefer the row band on every measure.
 
 from __future__ import annotations
 
+from pathlib import Path
+
+import pandas as pd
 import pytest
 from ws4.patch.accounts import PatchAccount, patch_account_values
 from ws4.spread.accounts import SpreadAccount, spread_account_values
@@ -173,3 +176,94 @@ def test_an_empty_landscape_reports_nothing_rather_than_failing() -> None:
     assert cells["spread.fire.percolation_reach"] == 0.0
     assert cells["spread.fire.TOTAL.blocks"] == 0.0
     assert cells["spread.fire.edge_cut"] == 0.0
+
+
+# --- wiring: the account inside a run and the optimizer -------------------------------------------
+
+
+def _run_fixture(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
+    """Write a small lattice dataset, topology, coordinates and a one-treatment schedule."""
+    from ws4.build.compiler import build_canonical_dataset
+
+    fragments = tmp_path / "fragments.csv"
+    rows = ["BLOCK,AREA_HA,F_AGE,AU,IFM"]
+    rows.extend(f"{block},{_AREA},{50 if block % 2 else 45},1,unmanaged" for block in range(1, 50))
+    fragments.write_text("\n".join(rows) + "\n", encoding="utf-8")
+    dataset = build_canonical_dataset(
+        Path(__file__).resolve().parents[1] / "examples" / "synthetic" / "recipe.xml",
+        fragments,
+        tmp_path / "compiled",
+    )
+    topology = tmp_path / "topology.csv"
+    links = [f"{source},{target},{distance}" for source, target, distance in _lattice_edges()]
+    topology.write_text("src_block,dst_block,distance_m\n" + "\n".join(links) + "\n")
+    coordinates = tmp_path / "coordinates.csv"
+    coordinates.write_text(
+        "block,x,y\n"
+        + "\n".join(f"{block},{x},{y}" for block, (x, y) in sorted(_POINTS.items()))
+        + "\n"
+    )
+    accounts = tmp_path / "spread.yaml"
+    accounts.write_text(
+        "accounts:\n"
+        "  - name: spread.fire\n"
+        "    criteria: product.Volume\n"
+        "    threshold: 0.5\n"
+        "    bearing: 0\n"
+    )
+    return dataset, topology, coordinates, accounts
+
+
+def test_a_run_writes_the_spread_accounts_and_the_optimizer_can_target_them(tmp_path: Path) -> None:
+    """The account reaches the run outputs per period, and a target on it is priced."""
+    from ws4.opt.engine import OptimizeConfig, Optimizer
+    from ws4.sim.engine import Simulator
+    from ws4.spread.accounts import load_spread_accounts
+
+    dataset, topology, coordinates, accounts = _run_fixture(tmp_path)
+    schedule = tmp_path / "schedule.csv"
+    schedule.write_text("block_id,treatment,period\n1,CC,0\n", encoding="utf-8")
+    out = tmp_path / "run"
+    Simulator.from_dataset(dataset).run(
+        schedule,
+        years=2,
+        out_dir=out,
+        topology_csv=topology,
+        spread_accounts=load_spread_accounts(accounts),
+        block_coordinates=coordinates,
+    )
+    measured = pd.read_csv(out / "spread_metrics.csv")
+    assert set(measured["account"]) == {
+        "spread.fire.largest_component",
+        "spread.fire.percolation_reach",
+        "spread.fire.edge_cut",
+        "spread.fire.TOTAL.area",
+        "spread.fire.TOTAL.blocks",
+    }
+    assert sorted(measured["year"].unique()) == [0, 1]
+    values = pd.read_csv(out / "account_values.csv")
+    assert (values["account"] == "spread.fire.largest_component").any()
+
+    targets = tmp_path / "targets.yaml"
+    targets.write_text(
+        "targets:\n  - account: spread.fire.largest_component\n    year: 1\n    maximum: 0\n",
+        encoding="utf-8",
+    )
+    config = OptimizeConfig(
+        years=2,
+        iterations=3,
+        seed=1,
+        targets_path=str(targets),
+        topology_path=str(topology),
+        spread_accounts_path=str(accounts),
+        block_coordinates_path=str(coordinates),
+    )
+    optimizer = Optimizer.from_dataset(dataset, config)
+    # a graph property of the landscape has no per-block delta, so the move-based path declines
+    assert optimizer.delta_evaluator([]) is None
+    summary = optimizer.run(tmp_path / "opt")
+    assert summary["status"] == "ok"
+    report = pd.read_csv(tmp_path / "opt" / "report_targets.csv")
+    row = report[report["account"] == "spread.fire.largest_component"]
+    assert not row.empty
+    assert float(row["value"].iloc[0]) > 0.0  # year 1 treats nothing, so the lattice is untreated

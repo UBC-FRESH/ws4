@@ -1803,3 +1803,14 @@ issue comments.
   symmetric on a regular lattice and loses the signal; and a four-neighbour lattice lets a 60-degree
   cone select only northward edges, degenerating every compartment into a corridor. Dashboard: **GREEN**
   (578 tests). The TSA23 bridge oracle is not on this machine, so that reproduction is the maintainer's.
+- P15.2 (#NNN) **the spread-connectivity account is wired into a run and the optimizer.** A run
+  computes it per year from the topology and a block-coordinate table, adds it to `account_values.csv`
+  and writes `spread_metrics.csv`; the optimizer prices it on the whole-schedule rail (the move-based
+  evaluator declines, since a graph property of the landscape has no per-block delta) and folds the
+  run's own CSV into `report_targets.csv`. Declarable as `--spread-accounts` (YAML) with
+  `--block-coordinates` (CSV of `block,x,y`) on `optimize`, `watch` and `calibrate`, and as
+  `OptimizeConfig.spread_accounts_path` / `block_coordinates_path` in the API. One design flaw was
+  caught by the end-to-end test and is worth recording: the account derived its *untreated* set from
+  the criterion mapping, which for a **product** criterion holds only the blocks that produced, so the
+  landscape came out empty and every sub-account read zero. The landscape is now the blocks the bearing
+  can be read for, and a block with no criterion value is untreated. Dashboard: **GREEN** (579 tests).

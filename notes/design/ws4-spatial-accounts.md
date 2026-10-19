@@ -38,9 +38,19 @@ synthetic lattice, each of which would have shipped a plausible number:
    every compartment degenerates into a one-block-wide corridor. The oracle uses eight neighbours, which
    is also how a fire spreads.
 
-**The account is not yet wired into a run or the optimizer** (P15.2). When it is, it will ride the
-whole-schedule rail the edge-contrast account uses rather than the incremental one: it is a graph property
-of the whole landscape, and no per-block delta can see it.
+**It is wired, and it rides the whole-schedule rail.** A run computes the account per year from the
+topology plus a block-coordinate table (a CSV of `block, x, y`, read for the bearings), adds the cells to
+`account_values.csv`, and writes `spread_metrics.csv` beside `edge_metrics.csv`. The optimizer prices it
+through a full re-simulation: `delta_evaluator` declines when a spread account is configured, because a
+graph property of the whole landscape has no per-block delta, and the run folds its own
+`spread_metrics.csv` back into `report_targets.csv`. It is declarable as `--spread-accounts` plus
+`--block-coordinates` on `optimize`, `watch` and `calibrate`.
+
+**The landscape is every block with a coordinate, not the blocks the criterion mentions.** This is not a
+detail: a *product* criterion holds only the blocks that produced in the period, so taking the untreated
+set from that mapping leaves an empty landscape and every sub-account reads zero. The end-to-end test
+caught exactly that, and it is why `spread_account_values` iterates the points it is given and treats a
+block with no criterion value as untreated.
 
 ## What the synthetic oracle asserts
 

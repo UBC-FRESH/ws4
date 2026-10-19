@@ -9,7 +9,7 @@ fragment's offset age by one year. A schedule replays deterministically.
 from __future__ import annotations
 
 import json
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 import numpy as np
@@ -36,6 +36,12 @@ from ..roads.accounts import (
     resolve_allocation_values,
 )
 from ..roads.network import RouteNetwork
+from ..spread.accounts import (
+    Point,
+    SpreadAccount,
+    load_block_coordinates,
+    spread_account_values,
+)
 from .curve import CurveTable
 from .kernels import HAVE_NUMBA, ProductKernel
 
@@ -77,6 +83,7 @@ class Simulator:
         self._product_values: list[dict[str, object]] = []
         self._route_values: list[dict[str, object]] = []
         self._edge_values: list[dict[str, object]] = []
+        self._spread_values: list[dict[str, object]] = []
         # An integer-age table for gather-based evaluation (see :class:`CurveTable`).
         self._curve_table = CurveTable.from_curves(self.curves)
         # Index the treatments, products, and fragments once, so a year's treatments do not
@@ -236,6 +243,20 @@ class Simulator:
         """Drop the cached fragment arrays and the prepared kernel after a state change."""
         self._arrays = None
         self._product_kernel = None
+
+    def _spread_block_area(self) -> dict[int, float]:
+        """Return each block's whole area, which is what a patch contribution is weighted by.
+
+        Returns
+        -------
+        dict of int to float
+            The area per block, in hectares, summed over its fragments.
+        """
+        grouped = self.fragments.groupby("block_id")["area_ha"].sum()
+        areas = grouped.to_numpy(dtype=float)
+        return {
+            int(block): float(areas[index]) for index, block in enumerate(grouped.index.to_numpy())
+        }
 
     def _fragment_arrays(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Return (and cache) the fragments' track, offset, and area arrays.
@@ -948,6 +969,9 @@ class Simulator:
         ledger: RouteCostLedger | None = None,
         edge_elements: Sequence[EdgeElement] = (),
         edges: Sequence[tuple[int, int, float]] = (),
+        spread_accounts: Sequence[SpreadAccount] = (),
+        spread_edges: Sequence[tuple[int, int, float]] = (),
+        spread_points: Mapping[int, Point] | None = None,
     ) -> pd.DataFrame:
         """Replay a schedule and return the account values, without writing files.
 
@@ -969,6 +993,14 @@ class Simulator:
             value per element per year is added to the account values.
         edges : sequence of (int, int, float), optional
             The adjacency edges ``(src, dst, shared_length)`` for the edge contrast.
+        spread_accounts : sequence of SpreadAccount, optional
+            Spread-connectivity accounts to compute per year. They need ``spread_edges`` and
+            ``spread_points``, and are appended to the account values like the edge accounts.
+        spread_edges : sequence of (int, int, float), optional
+            The topology edges with their distances ``(src, dst, distance_m)``, which is what a
+            spread bearing is read from.
+        spread_points : mapping of int to tuple of float or None, optional
+            The ``(x, y)`` centroid of each block in metres.
 
         Returns
         -------
@@ -985,9 +1017,12 @@ class Simulator:
         self._product_values = []
         self._route_values = []
         self._edge_values = []
+        self._spread_values = []
+        spread_labels = sorted({account.criteria for account in spread_accounts})
         criteria_labels = sorted(
             {element.attribute1 for element in edge_elements}
             | {element.attribute2 for element in edge_elements}
+            | set(spread_labels)
         )
         for year in range(years):
             products_before = len(self._product_values)
@@ -1001,6 +1036,20 @@ class Simulator:
                 {"year": year, "account": account, "value": value}
                 for account, value in produced.items()
             )
+            if spread_accounts and spread_points:
+                spread_criteria = {label: self.block_criteria(label) for label in spread_labels}
+                for spread in spread_accounts:
+                    cells = spread_account_values(
+                        spread,
+                        spread_criteria.get(spread.criteria, {}),
+                        list(spread_edges),
+                        spread_points,
+                        self._spread_block_area(),
+                    )
+                    for account, value in cells.items():
+                        record = {"year": year, "account": account, "value": value}
+                        records.append(record)
+                        self._spread_values.append(dict(record))
             if edge_elements:
                 criteria = {label: self.block_criteria(label) for label in criteria_labels}
                 for row in edge_values(edge_elements, list(edges), criteria):
@@ -1030,6 +1079,8 @@ class Simulator:
         patch_accounts: Sequence[PatchAccount] = (),
         patch_membership: bool = False,
         edge_elements: Sequence[EdgeElement] = (),
+        spread_accounts: Sequence[SpreadAccount] = (),
+        block_coordinates: Path | None = None,
         core_buffer_m: float | None = None,
         min_core_area_ha: float | None = None,
     ) -> pd.DataFrame:
@@ -1078,6 +1129,13 @@ class Simulator:
         patch_membership : bool, optional
             When True and patch accounts are given, ``patch_membership.csv`` is written as well:
             which blocks formed which patch, in which period.
+        spread_accounts : sequence of SpreadAccount, optional
+            Spread-connectivity accounts. When given with a topology and a coordinate table,
+            they are computed per year, added to the account values, and written to
+            ``spread_metrics.csv``.
+        block_coordinates : Path or None, optional
+            A CSV of block centroids (a block id, an ``x`` and a ``y``), which a spread bearing
+            is read from. Required with ``spread_accounts``.
         edge_elements : sequence of EdgeElement, optional
             Edge contrast elements. When given with a topology, an edge contrast account
             value per element per year is added to the account values and written to
@@ -1108,6 +1166,21 @@ class Simulator:
             else None
         )
         graph = load_patch_edges(topology_csv) if topology_csv is not None else []
+        spread_edges: list[tuple[int, int, float]] = []
+        points: dict[int, Point] = {}
+        if spread_accounts:
+            if topology_csv is None:
+                raise ValueError("spread accounts need a topology (set topology_csv)")
+            if block_coordinates is None:
+                raise ValueError(
+                    "spread accounts need a bearing, and a bearing needs block coordinates "
+                    "(set block_coordinates)"
+                )
+            spread_edges = [
+                (source, target, distance)
+                for source, target, _length, distance in load_patch_edges_detailed(topology_csv)
+            ]
+            points = load_block_coordinates(block_coordinates)
 
         values = self.simulate(
             schedule,
@@ -1115,6 +1188,9 @@ class Simulator:
             route_model=model,
             ledger=ledger,
             edge_elements=edge_elements,
+            spread_accounts=spread_accounts,
+            spread_edges=spread_edges,
+            spread_points=points,
             edges=graph,
         )
         if ledger is not None and route_accounts:
@@ -1138,6 +1214,10 @@ class Simulator:
         if edge_elements:
             pd.DataFrame(self._edge_values, columns=["year", "account", "value"]).to_csv(
                 out_dir / "edge_metrics.csv", index=False
+            )
+        if spread_accounts:
+            pd.DataFrame(self._spread_values, columns=["year", "account", "value"]).to_csv(
+                out_dir / "spread_metrics.csv", index=False
             )
         if ledger is not None:
             ledger.write(out_dir)

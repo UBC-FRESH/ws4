@@ -629,7 +629,7 @@ large-patch share (40.2%), so a large-patch target penalizes the arrangement tha
 by breaking connectivity perpendicular to the wind.
 
 - [x] P15.1 The spread-connectivity account and its synthetic oracle — the account computed, and an oracle where the patch-size account is blind (same largest patch) and connectivity separates the patterns 90 against 190 ha
-- [ ] P15.2 Wire it into the simulator and the optimizer
+- [x] P15.2 Wire it into the simulator and the optimizer — per-year in a run, whole-schedule in the optimizer, and declarable from the CLI
 - [ ] P15.3 Document it, and state what the bridge test still has to confirm
 
 Acceptance: a synthetic test where a directed barrier **reduces** `largest_component` while **increasing**

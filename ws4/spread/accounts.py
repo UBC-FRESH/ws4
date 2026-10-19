@@ -43,6 +43,7 @@ from __future__ import annotations
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 
 #: A block's coordinate, in metres, as ``(x, y)`` east and north.
 Point = tuple[float, float]
@@ -90,6 +91,86 @@ class SpreadAccount:
             )
         if not math.isfinite(self.bearing):
             raise ValueError(f"{self.name}: a spread bearing is a finite number of degrees")
+
+
+def load_spread_accounts(path: Path) -> tuple[SpreadAccount, ...]:
+    """Load spread-connectivity account definitions from YAML.
+
+    The file is a mapping with an ``accounts`` list; each entry has ``name``, ``criteria``, and
+    any of ``threshold``, ``bearing``, ``tolerance`` and ``search_distance``. A
+    ``search_distance`` of ``null`` considers every edge.
+
+    Parameters
+    ----------
+    path : Path
+        The YAML file.
+
+    Returns
+    -------
+    tuple of SpreadAccount
+        The definitions.
+    """
+    import yaml
+
+    raw = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
+    entries = raw.get("accounts", []) if isinstance(raw, dict) else []
+    accounts: list[SpreadAccount] = []
+    for entry in entries:
+        distance = entry.get("search_distance", 500.0)
+        accounts.append(
+            SpreadAccount(
+                name=str(entry["name"]),
+                criteria=str(entry["criteria"]),
+                threshold=float(entry.get("threshold", 0.5)),
+                bearing=float(entry.get("bearing", 225.0)),
+                tolerance=float(entry.get("tolerance", 60.0)),
+                search_distance=None if distance is None else float(distance),
+            )
+        )
+    return tuple(accounts)
+
+
+def load_block_coordinates(path: Path) -> dict[int, Point]:
+    """Load block centroids from a CSV, in metres.
+
+    The table carries a block id and an ``x`` and a ``y`` column; the names are matched loosely,
+    so a table with ``BLOCK,X,Y`` or ``block_id,easting,northing`` reads the same way.
+
+    Parameters
+    ----------
+    path : Path
+        The CSV file.
+
+    Returns
+    -------
+    dict of int to tuple of float
+        The ``(x, y)`` centroid per block.
+
+    Raises
+    ------
+    ValueError
+        When the table has no block id, ``x`` or ``y`` column.
+    """
+    import pandas as pd
+
+    frame = pd.read_csv(path)
+    lowered = {str(column).strip().lower(): column for column in frame.columns}
+
+    def pick(*names: str) -> str | None:
+        return next((lowered[name] for name in names if name in lowered), None)
+
+    block = pick("block", "block_id", "src_block", "id")
+    east = pick("x", "easting", "east", "centroid_x", "xc")
+    north = pick("y", "northing", "north", "centroid_y", "yc")
+    if block is None or east is None or north is None:
+        raise ValueError(
+            f"{Path(path).name} needs a block id, an x and a y column, and has "
+            f"{list(frame.columns)}"
+        )
+    return {
+        int(one_block): (float(one_x), float(one_y))
+        for one_block, one_x, one_y in zip(frame[block], frame[east], frame[north], strict=True)
+    }
 
 
 def bearing_of(source: Point, target: Point) -> float:
@@ -219,7 +300,9 @@ def spread_account_values(
     account : SpreadAccount
         The account definition.
     values : mapping of int to float
-        The criterion value per block; a block is treated when it exceeds the threshold.
+        The criterion value per block; a block is treated when it exceeds the threshold. A block
+        absent from the mapping has no criterion value and is untreated — which matters for a
+        *product* criterion, where only the blocks that produced in the period appear.
     edges : sequence of (int, int, float)
         The topology edges ``(src, dst, distance_m)``.
     points : mapping of int to tuple of float
@@ -233,8 +316,19 @@ def spread_account_values(
         ``largest_component``, ``percolation_reach`` and ``edge_cut``, keyed by the account name,
         plus ``TOTAL.area`` and ``TOTAL.blocks`` for the untreated set.
     """
-    treated = {block for block, value in values.items() if value > account.threshold}
-    untreated = [block for block in values if block not in treated]
+    # the landscape is every block the bearing can be read for, not only the blocks the criterion
+    # happens to mention: a product criterion names the blocks that produced this period, and every
+    # other block is untreated fuel
+    if not points:
+        return {
+            f"{account.name}.largest_component": 0.0,
+            f"{account.name}.percolation_reach": 0.0,
+            f"{account.name}.edge_cut": 0.0,
+            f"{account.name}.TOTAL.area": 0.0,
+            f"{account.name}.TOTAL.blocks": 0.0,
+        }
+    treated = {block for block in points if values.get(block, 0.0) > account.threshold}
+    untreated = [block for block in points if block not in treated]
     adjacency: dict[int, list[int]] = {}
     leaving = 0
     blocked = 0
