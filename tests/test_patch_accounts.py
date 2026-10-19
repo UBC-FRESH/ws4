@@ -215,3 +215,27 @@ def test_a_configuration_asking_for_the_attractor_is_refused(tmp_path: Path) -> 
     )
     with pytest.raises(ValueError, match="attractor sub-account is refused"):
         load_patch_accounts(path)
+
+
+def test_the_patches_a_criterion_forms_are_stated() -> None:
+    """The components are the structure the sub-accounts aggregate: blocks, area, and class."""
+    from ws4.patch.accounts import patch_components
+
+    account = PatchAccount(name="patch.opening", criteria="feature.young")
+    components = patch_components(
+        account,
+        {1: 1.0, 2: 1.0, 3: 1.0},
+        [(1, 2, 10.0), (2, 3, 10.0)],
+        {1: 30.0, 2: 30.0, 3: 100.0},
+        period=7,
+    )
+    assert len(components) == 1
+    one = components[0]
+    assert one.blocks == (1, 2, 3)
+    assert one.area == 160.0
+    assert one.klass == "150_250"
+    assert one.period == 7
+    # a patch whose area falls in no class is stated with none, rather than in a wrong one
+    empty = patch_components(account, {1: 1.0}, [], {1: 0.0})
+    assert empty[0].area == 0.0
+    assert empty[0].klass == ""

@@ -1713,3 +1713,17 @@ issue comments.
   period is in), and the optimizer's incremental path now **defers to the full simulation** when a
   configured route account is `build` or `maintain`, which are charged per segment and cannot be a
   per-block sum. Dashboard: **GREEN**; acceptance **PASS**; 551 tests; examples 0 drifted.
+- P12.6 (#126) **the patch component comparison is built and tested, and the class aggregates are
+  recorded as the ceiling.** WS4 can now state its own components — `patch_membership.csv`, one row per
+  member block of every patch, written beside `patch_accounts.csv` on a run — and
+  `compare_patch_components` compares two listings over their **partitions** rather than their labels:
+  two listings agree on a period when every patch on one side is exactly a patch on the other, and a
+  patch spanning more than one on the other side is reported as a merge with an example and the block
+  counts. It is tested against a listing with a **known** difference, so it can fail, and the new
+  `patchcomponents` acceptance check runs it against a listing under the export's `patch` directory. The
+  reference cannot supply one: every report group of the 2026 export was read — `patch/` holds four
+  *Target table* reports (the class sub-accounts in another shape), `harvest/maps/` is `MapReport`
+  images, `nta/` is aggregates, `scenario/` holds block attributes and no patch attribute — and the
+  maintainer has confirmed the export is everything Patchworks can produce. So the check **skips with
+  that reason on every run**, which is the honest statement of the ceiling, and the listing's
+  specification is in `notes/design/ws4-parity-harness.md`. Dashboard: **GREEN**.

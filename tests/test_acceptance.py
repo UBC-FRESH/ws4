@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
+import pytest
 from ws4.build.compiler import build_canonical_dataset
 
 import acceptance as acc
@@ -737,3 +738,169 @@ def test_an_undeclared_child_keeps_its_own_name(tmp_path: Path) -> None:
     assert assignment.to_dict("records") == [
         {"block": 1, "period": 1, "destination": "product.Unheard.Volume"}
     ]
+
+
+def _listing(root: Path, name: str, rows: list[tuple[int, str, int, int]]) -> Path:
+    """Write a patch component listing: year, account, patch, block."""
+    path = root / name
+    pd.DataFrame(rows, columns=["year", "account", "patch", "block"]).to_csv(path, index=False)
+    return path
+
+
+def test_two_listings_that_partition_alike_agree(tmp_path: Path) -> None:
+    """The comparison is over the partition, so the patch ids need not agree."""
+    theirs = _listing(
+        tmp_path,
+        "theirs.csv",
+        [(10, "patch.young", 7, 1), (10, "patch.young", 7, 2), (10, "patch.young", 9, 3)],
+    )
+    ours = _listing(
+        tmp_path,
+        "ours.csv",
+        [(10, "patch.young", 0, 1), (10, "patch.young", 0, 2), (10, "patch.young", 4, 3)],
+    )
+    assert acc.compare_patch_components(theirs, ours) == ([], 1)
+
+
+def test_a_patch_that_merges_what_the_other_splits_is_reported(tmp_path: Path) -> None:
+    """The known difference the comparison exists to state, in both directions."""
+    theirs = _listing(
+        tmp_path,
+        "theirs.csv",
+        [(10, "patch.young", 7, 1), (10, "patch.young", 7, 2), (10, "patch.young", 9, 3)],
+    )
+    merged = _listing(
+        tmp_path,
+        "merged.csv",
+        [(10, "patch.young", 0, 1), (10, "patch.young", 0, 2), (10, "patch.young", 0, 3)],
+    )
+    differences, compared = acc.compare_patch_components(theirs, merged)
+    assert compared == 1
+    assert len(differences) == 1
+    assert "merging one way" in differences[0]
+    # WS4's single patch spans two of the reference's, and the block count says how many blocks
+    assert "WS4's patch 0 is 2 of the reference's" in differences[0]
+    assert "over 3 blocks" in differences[0]
+    # and the same partition read the other way reports the other direction
+    back, _ = acc.compare_patch_components(merged, theirs)
+    assert "the reference's patch 0 is 2 of WS4's" in back[0]
+
+
+def test_a_listing_is_read_under_either_tools_names(tmp_path: Path) -> None:
+    """A listing from another tool is comparable as it stands, and a missing column is named."""
+    path = tmp_path / "reference.csv"
+    path.write_text("PERIOD,ACCOUNT,PATCH_ID,BLOCK_ID\n1,patch.young,3,17\n", encoding="utf-8")
+    frame = acc.read_patch_listing(path)
+    assert frame.to_dict("records") == [
+        {"year": 1, "account": "patch.young", "patch": 3, "block": 17}
+    ]
+    bad = tmp_path / "bad.csv"
+    bad.write_text("YEAR,ACCOUNT\n1,patch.young\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="needs a patch column"):
+        acc.read_patch_listing(bad)
+
+
+def test_the_patch_targets_and_topology_are_read_from_the_model(tmp_path: Path) -> None:
+    """The reference's own model states the criteria, the classes, and the topology to read."""
+    pin = tmp_path / "C5.pin"
+    pin.write_text(
+        'control.inputTopology("../blocks/blocks_topology_200r10.csv", 100d);\n'
+        'control.addPatchTarget("feature.young", "patch.young.0_50", 0.0, 50.0);\n'
+        'control.addPatchTarget("feature.young", "patch.young.50_150", 50.0, 150.0);\n'
+        'control.addPatchTarget("product.harvested", "patch.harvested.0_10", 0.0, 10.0);\n',
+        encoding="utf-8",
+    )
+    assert acc.read_patch_targets(pin) == (
+        ("patch.young", "feature.young", (50.0, 150.0)),
+        ("patch.harvested", "product.harvested", (10.0,)),
+    )
+    assert acc.read_patch_topology(pin) == ("../blocks/blocks_topology_200r10.csv", 100.0)
+
+
+def test_the_component_check_states_the_ceiling_rather_than_implying_one(tmp_path: Path) -> None:
+    """With no listing in the export, the check says so and names the evidence."""
+    report = tmp_path / "report"
+    (report / "patch").mkdir(parents=True)
+    (report / "patch" / "youngPatchSize.csv").write_text("PERIOD,YEAR\n1,10\n", encoding="utf-8")
+    assert acc.check_patch_components(None, None, None, tmp_path).status == "skip"
+    result = acc.check_patch_components(tmp_path, report, tmp_path, tmp_path)
+    assert result.status == "skip"
+    assert "states no patch membership" in result.detail
+    assert "class aggregates" in result.detail
+
+
+def _patch_export(tmp_path: Path) -> tuple[Path, Path, Path]:
+    """Write a dataset, a sample with a pin, and an export, for the component check."""
+    dataset = build_canonical_dataset(
+        FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    sample = tmp_path / "sample"
+    roads = sample / "roads"
+    roads.mkdir(parents=True)
+    (roads / "vertices.csv").write_text("vertex_id\n1\n2\n", encoding="utf-8")
+    (roads / "segments.csv").write_text(
+        "segment_id,from_vertex,to_vertex,length_m,haul_cost\n1,1,2,500,0.02\n", encoding="utf-8"
+    )
+    (roads / "destinations.csv").write_text(
+        "name,vertex_id\ndestination.MILL1,2\n", encoding="utf-8"
+    )
+    (roads / "linkages.csv").write_text("block_id,vertex_id\n1,1\n2,1\n", encoding="utf-8")
+    (sample / "blocks").mkdir()
+    pd.DataFrame({"BLOCK1": [1], "BLOCK2": [2], "DISTANCE": [10.0], "LENGTH": [10.0]}).to_csv(
+        sample / "blocks" / "topology.csv", index=False
+    )
+    analysis = sample / "analysis"
+    analysis.mkdir()
+    (analysis / "C5.pin").write_text(
+        'control.inputTopology("../blocks/topology.csv", 100d);\n'
+        'control.addPatchTarget("feature.Volume", "patch.opening.0_50", 0.0, 50.0);\n',
+        encoding="utf-8",
+    )
+    report = tmp_path / "export"
+    (report / "patch").mkdir(parents=True)
+    (report / "schedule.csv").write_text(
+        "BLOCK,DELTA,AGE,TYPE,TREATMENT\n1,1,41,MANAGED,CC\n2,1,61,MANAGED,CC\n", encoding="utf-8"
+    )
+    (report / "targetSummary.csv").write_text(
+        "TARGET,PERIOD,YEAR,CURRENT\npatch.opening.TOTAL.area,1,1,0.0\n", encoding="utf-8"
+    )
+    return dataset, roads, report
+
+
+def test_the_component_check_runs_against_a_listing_and_can_fail(tmp_path: Path) -> None:
+    """The whole instrument: WS4's own components, a listing beside them, and a difference."""
+    from ws4.patch.accounts import PatchAccount
+    from ws4.sim.engine import Simulator
+
+    dataset, roads, report = _patch_export(tmp_path)
+    own = tmp_path / "own"
+    schedule = tmp_path / "ws4-schedule.csv"
+    pd.DataFrame({"block_id": [1, 2], "treatment": ["CC", "CC"], "period": [1, 1]}).to_csv(
+        schedule, index=False
+    )
+    Simulator.from_dataset(dataset).run(
+        schedule,
+        years=2,
+        out_dir=own,
+        topology_csv=tmp_path / "sample" / "blocks" / "topology.csv",
+        patch_accounts=(
+            PatchAccount(
+                name="patch.opening",
+                criteria="feature.Volume",
+                threshold=0.5,
+                search_distance=100.0,
+            ),
+        ),
+        patch_membership=True,
+    )
+    mine = pd.read_csv(own / "patch_membership.csv")
+    assert not mine.empty
+    listing = report / "patch" / "patch_membership.csv"
+    # a listing that is WS4's own partition is what the check should pass
+    listing.write_text(mine.to_csv(index=False), encoding="utf-8")
+    assert acc.check_patch_components(roads, report, dataset, tmp_path / "same").status == "pass"
+    # and one missing a block is a difference, whichever patch that block was in
+    listing.write_text(mine.iloc[1:].to_csv(index=False), encoding="utf-8")
+    result = acc.check_patch_components(roads, report, dataset, tmp_path / "short")
+    assert result.status == "fail"
+    assert "listing only" in result.detail

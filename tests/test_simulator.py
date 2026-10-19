@@ -284,3 +284,38 @@ def test_the_run_writes_the_route_report_in_the_models_periods(tmp_path: Path) -
     assert list(per_destination["PERIOD"]) == [1, 2]
     assert per_destination["BUILTLENGTH"].iloc[0] > 0.0
     assert per_destination["BUILTLENGTH"].iloc[1] == 0.0  # built once
+
+
+def test_a_run_states_which_blocks_formed_which_patch(tmp_path: Path) -> None:
+    """A run states the membership beside the accounts, which is what a comparison reads."""
+    from ws4.patch.accounts import PatchAccount
+
+    dataset = _dataset(tmp_path)
+    topology = tmp_path / "topology.csv"
+    pd.DataFrame({"BLOCK1": [1], "BLOCK2": [2], "DISTANCE": [10.0], "LENGTH": [10.0]}).to_csv(
+        topology, index=False
+    )
+    schedule = _schedule(tmp_path, "cc.csv", [(1, "CC", 0), (2, "CC", 0)])
+    out = tmp_path / "membership"
+    Simulator.from_dataset(dataset).run(
+        schedule,
+        years=2,
+        out_dir=out,
+        topology_csv=topology,
+        patch_accounts=(
+            PatchAccount(name="patch.opening", criteria="feature.Volume", threshold=0.0),
+        ),
+    )
+    membership = pd.read_csv(out / "patch_membership.csv")
+    assert list(membership.columns) == [
+        "period",
+        "year",
+        "account",
+        "class",
+        "patch",
+        "block",
+        "area_ha",
+    ]
+    assert set(membership["account"]) == {"patch.opening"}
+    assert set(membership["block"]) == {1, 2}
+    assert membership["area_ha"].iloc[0] > 0.0

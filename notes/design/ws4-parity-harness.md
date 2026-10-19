@@ -651,6 +651,44 @@ of the two that are charged per segment — ``build`` and ``maintain`` — so a 
 writes price the same thing. The additive accounts (``haul`` and ``volume``) still take the delta path,
 and a test pins both.
 
+### The patch components: the listing, and why the aggregates are the ceiling
+
+P11 compared the patch **class aggregates** and they agree to about 8% — WS4's young-patch area 0.92 of
+the reference's, its patch count 1.03, its mean patch size 0.96 — while the individual class-period cells
+differ by a median 9% to 18%. That says the components form comparably in aggregate and differently in
+detail, and it cannot say **where**. Saying where needs patch **membership**: which blocks formed which
+patch, in which period.
+
+**The reference does not ship it, and this is now established rather than assumed.** Every report group
+of the 2026 export was read: `patch/` holds four reports whose `Source` is *Target table*
+(`youngPatchSize`, `youngPatchFreq`, `harvestPatchSize`, `harvestPatchFreq`) — the same class
+sub-accounts in a different shape — `harvest/maps/` is `MapReport` output, images with a field list and
+no data, `nta/` carries aggregates, and `scenario/` holds block *attributes* (availability, the
+schedule) but no patch attribute. The maintainer has confirmed that everything Patchworks can export has
+been exported. So the aggregate comparison is the **ceiling**, and the note says so rather than implying
+more was checked than was.
+
+**The specification, for the day a listing exists.** A component listing is one row per member block of
+every patch:
+
+``period``, ``year``, ``account``, ``class``, ``patch``, ``block``, ``area_ha``
+
+Only ``year``, ``account``, ``patch`` and ``block`` are compared, and a tool's own names are read as
+they come. ``patch`` is each tool's own id and the two **never need to agree**: what is compared is the
+**partition** — which blocks are together — so a listing from another tool is comparable as it stands.
+The reference's own ``addPatchTarget`` declarations say which accounts and size classes to form, and its
+``inputTopology`` says which topology and search distance to form them over, so WS4 can form the same
+components from the same schedule. WS4 writes the listing as ``patch_membership.csv`` beside
+``patch_accounts.csv`` on a run.
+
+**The instrument is built and tested.** ``compare_patch_components`` compares two listings over their
+partitions: two listings agree on a period when every patch on one side is exactly a patch on the other,
+and a patch spanning more than one on the other side is a *merge* against it, reported with an example
+and the block counts. It is tested against a listing with a **known** difference — a merge and its
+reverse — so it can fail, and the ``patchcomponents`` acceptance check runs it against a listing found
+under the export's ``patch`` directory, skipping with the reason above when there is none. On every
+acceptance run today that skip is the visible statement of the ceiling.
+
 ### A patch criterion that is a product: why it is refused
 
 The reference's harvested patches name `product.harvested` as their criterion, and WS4's patch state

@@ -883,6 +883,7 @@ class Simulator:
         max_opening_ha: float | None = None,
         min_green_up_years: int | None = None,
         patch_accounts: Sequence[PatchAccount] = (),
+        patch_membership: bool = False,
         edge_elements: Sequence[EdgeElement] = (),
         core_buffer_m: float | None = None,
         min_core_area_ha: float | None = None,
@@ -929,6 +930,9 @@ class Simulator:
         patch_accounts : sequence of PatchAccount, optional
             Patch account definitions. When given with a topology, ``patch_accounts.csv``
             is written.
+        patch_membership : bool, optional
+            When True and patch accounts are given, ``patch_membership.csv`` is written as well:
+            which blocks formed which patch, in which period.
         edge_elements : sequence of EdgeElement, optional
             Edge contrast elements. When given with a topology, an edge contrast account
             value per element per year is added to the account values and written to
@@ -1016,6 +1020,7 @@ class Simulator:
                 max_opening_ha=max_opening_ha,
                 min_green_up_years=min_green_up_years,
                 patch_accounts=patch_accounts,
+                patch_membership=True,
                 core_buffer_m=core_buffer_m,
                 min_core_area_ha=min_core_area_ha,
             )
@@ -1034,6 +1039,7 @@ class Simulator:
         max_opening_ha: float | None = None,
         min_green_up_years: int | None = None,
         patch_accounts: Sequence[PatchAccount] = (),
+        patch_membership: bool = False,
         core_buffer_m: float | None = None,
         min_core_area_ha: float | None = None,
     ) -> None:
@@ -1057,6 +1063,10 @@ class Simulator:
             The green-up interval, for the violation record.
         patch_accounts : sequence of PatchAccount, optional
             The patch accounts to accumulate over the run.
+        patch_membership : bool, optional
+            When True and patch accounts are given, ``patch_membership.csv`` is written as well:
+            which blocks formed which patch, in which period. A run wants it; a search prices the
+            accounts alone.
         core_buffer_m : float or None, optional
             The core-area buffer distance, in metres.
         min_core_area_ha : float or None, optional
@@ -1071,7 +1081,11 @@ class Simulator:
             _as_int(block): _as_float(area)
             for block, area in self.fragments.groupby("block_id")["area_ha"].sum().items()
         }
-        ledger = PatchLedger(patch_accounts, detailed, block_area) if patch_accounts else None
+        ledger = (
+            PatchLedger(patch_accounts, detailed, block_area, membership=patch_membership)
+            if patch_accounts
+            else None
+        )
         criteria_labels = sorted({account.criteria for account in patch_accounts})
         patch_records: list[dict[str, object]] = []
         schedule_pairs: list[tuple[int, int]] = []

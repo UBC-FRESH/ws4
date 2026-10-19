@@ -11,6 +11,9 @@ The checks verify the build against its acceptance criteria:
   schedule in WS4 and compare the account values per year, which is what isolates the simulation.
 - ``parity``: with ``--roads-sample``, compare WS4's least-haul-cost routes to the reference
   implementation's own ``cost_destination.*.csv`` tables, node by node.
+- ``patchcomponents``: with ``--roads-sample``, ``--accounts-report`` and ``--accounts-dataset``,
+  compare WS4's patch components to the reference's, when its export can state membership. It cannot
+  today, and the check says so rather than implying a comparison was made.
 - ``destinations``: with ``--roads-sample``, ``--accounts-report`` and ``--accounts-dataset``,
   compare the destination each block's product is sent to against the reference's own exported
   choice, and the mill products against its ``targets/product_Mill*_Yield_*.csv``. A decision the
@@ -53,6 +56,7 @@ from ws4.model.api import Model
 from ws4.model.schema import validate_dataset
 from ws4.opt.engine import OptimizeConfig, Optimizer
 from ws4.opt.objective import Target, flow_series
+from ws4.patch.accounts import PatchAccount
 from ws4.roads.accounts import ProductAllocation, RouteModel
 from ws4.roads.network import RouteNetwork, load_route_tables
 from ws4.sim.engine import Simulator
@@ -1258,7 +1262,7 @@ def check_destinations(
         unutilized={split.master: split.surplus for split in splits if split.surplus},
     )
 
-    schedule_path = _find_export_file(where, ("schedule.csv",))
+    schedule_path = _ws4_schedule(report_dir, where, workdir)
     if schedule_path is None:
         return CheckResult(
             "destinations", "fail", f"the export holds no schedule.csv under {report_dir}"
@@ -1277,17 +1281,7 @@ def check_destinations(
             "period": schedule_frame[period].astype(int),
         }
     )
-    # `run` reads a schedule whose columns are already WS4's, so the reference's own header is
-    # normalised into a scratch copy rather than made to fit the simulator.
-    normalised = workdir / "schedule-for-ws4.csv"
-    normalised.parent.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame(
-        {
-            "block_id": schedule["block"],
-            "treatment": schedule_frame[treatment].astype(str),
-            "period": schedule["period"],
-        }
-    ).to_csv(normalised, index=False)
+
     width = max(_reference_period_width(where), 1)
     schedule["reference_period"] = [
         0 if year <= 0 else (year - 1) // width + 1 for year in schedule["period"]
@@ -1350,7 +1344,7 @@ def check_destinations(
     )
     years = _reported_years(where, schedule)
     values = Simulator.from_dataset(dataset_dir).run(
-        normalised,
+        schedule_path,
         years=years,
         out_dir=workdir / "destination-run",
         route_model=model,
@@ -1495,6 +1489,347 @@ def _compare_mill_product(
     return (compared, largest, excess)
 
 
+# A patch **component listing** is the document the component comparison reads: one row per member
+# block of every patch, with the period it was formed in. This is the specification of it, and it is
+# what WS4 writes as ``patch_membership.csv``:
+#
+#   ``period``, ``year``, ``account``, ``class``, ``patch``, ``block``, ``area_ha``
+#
+# Only ``year``, ``account``, ``patch`` and ``block`` are compared. ``patch`` is each tool's own id
+# and the two never need to agree: what is compared is the **partition** — which blocks are together
+# — not the labels, so a listing from another tool is comparable as it stands. A listing that states
+# which criterion each patch was formed on (WS4 puts it in ``account``, and the reference would name
+# it its own way) is compared per account, one account at a time.
+_PATCH_MEMBERSHIP_NAMES = ("patch_membership.csv",)
+_PATCH_TARGET = re.compile(
+    r'addPatchTarget\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*([0-9.]+)\s*,\s*([0-9.]+)\s*\)'
+)
+_PATCH_TOPOLOGY = re.compile(r'inputTopology\(\s*"([^"]+)"\s*,\s*([0-9.]+)d?\s*\)')
+
+
+def read_patch_targets(pin_path: Path) -> tuple[tuple[str, str, tuple[float, ...]], ...]:
+    """Return the patch accounts the reference declares, with their criterion and size classes.
+
+    The reference declares one target per size class, named ``<account>.<class>``, so an account's
+    classes are the bounds its targets state.
+
+    Parameters
+    ----------
+    pin_path : Path
+        The reference's model file, ``analysis/C5.pin``.
+
+    Returns
+    -------
+    tuple of (str, str, tuple of float)
+        ``(account, criterion label, size-class upper bounds)`` per patch account, in declaration
+        order.
+    """
+    text = Path(pin_path).read_text(encoding="utf-8", errors="replace")
+    declarations: dict[str, list[tuple[float, float]]] = {}
+    criteria: dict[str, str] = {}
+    for criterion, name, low, high in _PATCH_TARGET.findall(text):
+        account = name.rsplit(".", 1)[0]
+        declarations.setdefault(account, []).append((float(low), float(high)))
+        criteria[account] = criterion
+    return tuple(
+        (account, criteria[account], tuple(sorted(upper for _low, upper in bounds)))
+        for account, bounds in declarations.items()
+    )
+
+
+def read_patch_topology(pin_path: Path) -> tuple[str, float] | None:
+    """Return the topology path and search distance the reference's model declares.
+
+    Parameters
+    ----------
+    pin_path : Path
+        The reference's model file, ``analysis/C5.pin``.
+
+    Returns
+    -------
+    tuple of (str, float) or None
+        The path as the model states it, relative to the model's directory, and the search
+        distance in metres; None when it declares no topology.
+    """
+    text = Path(pin_path).read_text(encoding="utf-8", errors="replace")
+    found = _PATCH_TOPOLOGY.search(text)
+    if found is None:
+        return None
+    return (found.group(1), float(found.group(2)))
+
+
+def read_patch_listing(path: Path) -> pd.DataFrame:
+    """Read a patch component listing, under either tool's column names.
+
+    Parameters
+    ----------
+    path : Path
+        The listing.
+
+    Returns
+    -------
+    pandas.DataFrame
+        ``year``, ``account``, ``patch`` and ``block``.
+
+    Raises
+    ------
+    ValueError
+        When the listing is missing one of the four columns a comparison needs.
+    """
+    frame = pd.read_csv(path)
+    columns: dict[str, str] = {}
+    for wanted, candidates in (
+        ("year", ("year", "YEAR", "period", "PERIOD")),
+        ("account", ("account", "ACCOUNT", "criterion", "CRITERION")),
+        ("patch", ("patch", "PATCH", "patch_id", "PATCH_ID")),
+        ("block", ("block", "BLOCK", "block_id", "BLOCK_ID")),
+    ):
+        found = _first_present(frame, *candidates)
+        if found is None:
+            raise ValueError(f"{path.name} needs a {wanted} column")
+        columns[found] = wanted
+    frame = frame.rename(columns=columns)
+    result = frame[["year", "account", "patch", "block"]].copy()
+    result["year"] = result["year"].astype(int)
+    return result
+
+
+def compare_patch_components(reference: Path, mine: Path) -> tuple[list[str], int]:
+    """Compare two patch component listings: which blocks formed which patch, where.
+
+    The comparison is over the **partition**, not the labels: two listings agree on a period when
+    every patch on one side is exactly a patch on the other, however the ids are numbered. A patch
+    that spans more than one patch on the other side is a *merge* against it, and is reported with
+    an example, because that is the difference a component comparison exists to state.
+
+    Parameters
+    ----------
+    reference : Path
+        The reference's listing, or the listing to compare against.
+    mine : Path
+        WS4's listing.
+
+    Returns
+    -------
+    tuple of (list of str, int)
+        One line per difference, at most ten, and the number of year-and-account cells compared.
+    """
+    theirs = read_patch_listing(reference)
+    ours = read_patch_listing(mine)
+    differences: list[str] = []
+    compared = 0
+    for account in sorted(set(theirs["account"]) & set(ours["account"])):
+        one = theirs[theirs["account"] == account]
+        other = ours[ours["account"] == account]
+        for year in sorted(set(one["year"]) & set(other["year"])):
+            left = one[one["year"] == year]
+            right = other[other["year"] == year]
+            compared += 1
+            left_of = dict(zip(left["block"], left["patch"], strict=True))
+            right_of = dict(zip(right["block"], right["patch"], strict=True))
+            shared = set(left_of) & set(right_of)
+            if not shared:
+                differences.append(f"{account} year {year}: the two listings share no block")
+                continue
+            left_span: dict[int, set[int]] = {}
+            right_span: dict[int, set[int]] = {}
+            for block in shared:
+                left_span.setdefault(int(left_of[block]), set()).add(int(right_of[block]))
+                right_span.setdefault(int(right_of[block]), set()).add(int(left_of[block]))
+            merges_left = sorted(key for key, value in left_span.items() if len(value) > 1)
+            merges_right = sorted(key for key, value in right_span.items() if len(value) > 1)
+            only = len(set(left_of) ^ set(right_of))
+            if not (merges_left or merges_right or only):
+                continue
+            example = ""
+            if merges_left:
+                key = merges_left[0]
+                blocks = sum(1 for block in left_of if left_of[block] == key)
+                example = (
+                    f"; the reference's patch {key} is {len(left_span[key])} of WS4's, "
+                    f"over {blocks} blocks"
+                )
+            elif merges_right:
+                key = merges_right[0]
+                blocks = sum(1 for block in right_of if right_of[block] == key)
+                example = (
+                    f"; WS4's patch {key} is {len(right_span[key])} of the reference's, "
+                    f"over {blocks} blocks"
+                )
+            differences.append(
+                f"{account} year {year}: {len(left_span)} against {len(right_span)} patches, "
+                f"{len(merges_left)} merging one way and {len(merges_right)} the other, "
+                f"{only} block(s) in one listing only{example}"
+            )
+    return differences[:10], compared
+
+
+def find_patch_listing(where: Sequence[Path]) -> Path | None:
+    """Return a reference patch component listing, if the export ships one.
+
+    Parameters
+    ----------
+    where : sequence of Path
+        The export directories to search, nearest first.
+
+    Returns
+    -------
+    Path or None
+        The listing's path, or None when the export states no membership. The reference's own
+        reports carry class aggregates and map images; a listing is looked for under its ``patch``
+        directory, by the names this specification names.
+    """
+    for directory in where:
+        for name in _PATCH_MEMBERSHIP_NAMES:
+            candidate = directory / "patch" / name
+            if candidate.is_file():
+                return candidate
+        for pattern in ("patch/*membership*.csv", "patch/*Membership*.csv"):
+            found = sorted(directory.glob(pattern))
+            if found:
+                return found[0]
+    return None
+
+
+def _ws4_schedule(report_dir: Path, where: Sequence[Path], workdir: Path) -> Path | None:
+    """Return the reference's schedule as a file WS4's run reads, or None when there is none.
+
+    The reference writes ``BLOCK,DELTA,AGE,TYPE,TREATMENT``; a run reads ``block_id``,
+    ``treatment`` and ``period``. The two are the same three columns under different names, so the
+    schedule is normalised into a scratch copy rather than made to fit either tool.
+
+    Parameters
+    ----------
+    report_dir : Path
+        The export directory the caller named, for the message when there is none.
+    where : sequence of Path
+        The export directories to search, nearest first.
+    workdir : Path
+        A scratch directory to write the normalised schedule into.
+
+    Returns
+    -------
+    Path or None
+        The normalised schedule, or None when the export holds no schedule.
+    """
+    found = _find_export_file(where, ("schedule.csv",))
+    if found is None:
+        return None
+    frame = pd.read_csv(found)
+    block = _first_present(frame, "block_id", "block", "BLOCK")
+    treatment = _first_present(frame, "treatment", "TREATMENT")
+    period = _first_present(frame, "period", "year", "DELTA")
+    if block is None or treatment is None or period is None:
+        return None
+    workdir.mkdir(parents=True, exist_ok=True)
+    normalised = workdir / "schedule-for-ws4.csv"
+    pd.DataFrame(
+        {
+            "block_id": frame[block].astype(int),
+            "treatment": frame[treatment].astype(str),
+            "period": frame[period].astype(int),
+        }
+    ).to_csv(normalised, index=False)
+    return normalised
+
+
+def check_patch_components(
+    roads_dir: Path | None,
+    report_dir: Path | None,
+    dataset_dir: Path | None,
+    workdir: Path,
+) -> CheckResult:
+    """Compare WS4's patch components to the reference's, when its export can state them.
+
+    The reference ships patch *class aggregates* and map images, not membership — checked over
+    every report group of the 2026 export: ``patch/`` holds four reports over target tables,
+    ``harvest/maps/`` is images with a field list, and the ``nta`` reports are aggregates. So this
+    check states what it can and skips with that reason rather than implying a comparison was made.
+    The listing it reads is specified in ``notes/design/ws4-parity-harness.md``, and
+    ``compare_patch_components`` is the comparison itself, tested against a known difference.
+
+    Parameters
+    ----------
+    roads_dir : Path or None
+        A sample's ``roads`` directory, which also locates its ``analysis/C5.pin``.
+    report_dir : Path or None
+        The reference's export directory.
+    dataset_dir : Path or None
+        The compiled dataset to replay the schedule over, for WS4's own listing.
+    workdir : Path
+        A scratch directory.
+
+    Returns
+    -------
+    CheckResult
+        ``pass`` when the two partitions agree, ``fail`` when they differ, and ``skip`` with the
+        reason when the reference states no membership.
+    """
+    if roads_dir is None or report_dir is None or dataset_dir is None:
+        return CheckResult(
+            "patchcomponents",
+            "skip",
+            "needs --roads-sample, --accounts-report and --accounts-dataset",
+        )
+    where = _reference_export_dirs(report_dir)
+    listing = find_patch_listing(where)
+    if listing is None:
+        return CheckResult(
+            "patchcomponents",
+            "skip",
+            "the reference's export states no patch membership — its patch reports are class "
+            "aggregates and its maps are images — so the class aggregates are the ceiling; the "
+            "listing this would read is specified in notes/design/ws4-parity-harness.md",
+        )
+    pin_path = roads_dir.parent / "analysis" / "C5.pin"
+    if not pin_path.is_file():
+        return CheckResult("patchcomponents", "skip", f"the sample has no model file at {pin_path}")
+    topology = read_patch_topology(pin_path)
+    if topology is None:
+        return CheckResult("patchcomponents", "skip", "the model declares no patch topology")
+    relative, distance = topology
+    topology_path = (pin_path.parent / relative).resolve()
+    if not topology_path.is_file():
+        return CheckResult("patchcomponents", "skip", f"no topology at {topology_path}")
+    accounts = read_patch_targets(pin_path)
+    if not accounts:
+        return CheckResult("patchcomponents", "skip", "the model declares no patch target")
+    schedule = _ws4_schedule(report_dir, where, workdir)
+    if schedule is None:
+        return CheckResult("patchcomponents", "skip", "the export holds no schedule to replay")
+    out = workdir / "patch-components"
+    Simulator.from_dataset(dataset_dir).run(
+        schedule,
+        years=_reported_years(where, pd.DataFrame({"period": [0]})),
+        out_dir=out,
+        topology_csv=topology_path,
+        patch_accounts=tuple(
+            PatchAccount(
+                name=account,
+                criteria=criterion,
+                threshold=0.5,
+                size_classes=classes,
+                search_distance=distance,
+            )
+            for account, criterion, classes in accounts
+        ),
+        patch_membership=True,
+    )
+    differences, compared = compare_patch_components(listing, out / "patch_membership.csv")
+    if differences:
+        return CheckResult(
+            "patchcomponents",
+            "fail",
+            f"{len(differences)} difference(s) in {compared} period-and-account cells: "
+            f"{differences[0]}",
+        )
+    return CheckResult(
+        "patchcomponents",
+        "pass",
+        f"WS4 forms the reference's own components over {compared} period-and-account cells",
+    )
+
+
 def check_api(workdir: Path) -> CheckResult:
     """Build a model programmatically and via the file path and compare them.
 
@@ -1611,6 +1946,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             check_parity(args.roads_sample),
             check_destinations(
                 args.roads_sample, args.accounts_report, args.accounts_dataset, workdir / "dest"
+            ),
+            check_patch_components(
+                args.roads_sample, args.accounts_report, args.accounts_dataset, workdir / "patches"
             ),
             check_accounts(args.accounts_report, args.accounts_dataset),
             check_growth(args.yield_sample, args.yield_dataset),
