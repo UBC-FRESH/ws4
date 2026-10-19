@@ -297,25 +297,17 @@ items are enhancements and maintenance.
   documented, and self-consistent — and a mode that *enforces* the reference's readings would let a user
   choose which they get. That mode is the natural home for deliberate divergences like traffic-weighted
   maintenance, and it makes each one explicit rather than implicit.
-- **A patch criterion that is a product, evaluated on the treatment's own timeline.** `open`, the
-  remaining half of P12.1. The reference's harvested patches name `product.harvested`, and resolving it is
-  not the problem: with the lookup keyed by `(track, treatment, label)` the series is no longer zero, but
-  its values land at the **wrong time** — measured, a block the schedule harvests in year 44 had its
-  product's value appear in year 150, because a product's curve read against a *fragment's age* is not
-  the product of the *treatment* that happened. So WS4 now refuses a product criterion with that reason
-  rather than reporting a quiet nought, and the real fix is to evaluate the product on the treatment's
-  own timeline. That is 28 of the reference's 63 patch targets.
-- **Patch membership, and so the patch components and the `attractor`.** `open`, and **not obtainable
-  from this reference**: blocked, with the evidence rather than an expectation. Every report group of the
-  2026 export was read — `patch/` holds four *Target table* reports (the class sub-accounts in another
-  shape), `harvest/maps/` is `MapReport` images with a field list, `nta/` is aggregates, and `scenario/`
-  holds block attributes but no patch attribute — and the maintainer has confirmed that everything
-  Patchworks can export has been exported. So the class aggregates are the **ceiling** for patch
-  structure. The instrument for when one arrives is built and tested: ``patch_membership.csv`` states
-  WS4's own components on a run, ``compare_patch_components`` compares two listings over their partitions
-  (ids never need to agree; a merge is reported with an example), and the ``patchcomponents`` acceptance
-  check runs it against a listing under the export's ``patch`` directory, skipping with that reason on
-  every run today. The listing's specification is in `notes/design/ws4-parity-harness.md`.
+- **A patch criterion that is a product, evaluated on the treatment's own timeline.** `done` (P13.1,
+  #129). A product's curve is a **window over the pre-treatment track's age** (curve 91 is 1.0 on ages
+  150–424 and 570–844 — the CC window the treatments table states), the product is produced **in the year
+  of its treatment**, and a criterion is its area-weighted mean as a share of the **block**, not of the
+  area the treatment covered. `block_criteria` and `block_criteria_series` both compute that as a flow,
+  kept as per-year state. The harvested family is compared and agrees in aggregate — area **0.92** of the
+  reference's over the horizon, count **1.48** — the same quality and the same shape as the young family,
+  so the criterion is accepted and 28 of the reference's 63 patch targets are comparable. Two facts it
+  took to get there are recorded in the parity note: the normalisation (the treated area instead of the
+  block's put the family at 1.38×, the unmanaged fraction) and the period convention (the reference
+  **sums a patch account within a period**, which the harness now does too).
 - **The reference's patch `attractor` sub-account.** `open`, blocked on the same export as the patch
   components, and on the same terms: not obtainable from this reference. P12.4 (#124) established from the reference's own 360 values that it is a per-class
   landscape quantity (zero exactly when the class is empty), that it is **not** the class's mean patch

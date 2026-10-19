@@ -89,6 +89,17 @@ class Simulator:
             for row in self.treatments.itertuples(index=False)
         }
         self._products_by_key: dict[tuple[int, str], list[tuple[int, str]]] = {}
+        # The labels the products table holds, which are not features: their curves are windows
+        # over a track's age rather than levels at a fragment's own age, and the product is produced
+        # in the year its treatment is applied.
+        # What each block produced in the year last applied, and over how much area, per product
+        # label. A product criterion is read from this rather than from the feature join, which
+        # holds no product at all; it is per-year state, so a reset clears it with the tracks too.
+        self._produced: dict[str, dict[int, float]] = {}
+        self._produced_area: dict[str, dict[int, float]] = {}
+        self._product_labels: set[str] = {
+            str(record.label) for record in self.products.itertuples(index=False)
+        }
         for product in self.products.itertuples(index=False):
             key = (_as_int(product.track_id), str(product.treatment))
             self._products_by_key.setdefault(key, []).append(
@@ -217,6 +228,8 @@ class Simulator:
             self._join_dirty = True
         self.fragments["offset"] = self._initial_offset
         self._criteria_frame_id = -1
+        self._produced.clear()
+        self._produced_area.clear()
         self._invalidate_state()
 
     def _invalidate_state(self) -> None:
@@ -277,6 +290,11 @@ class Simulator:
             The blocks that had at least one fragment treated.
         """
         disturbed: set[int] = set()
+        # What a product criterion reads is *this* year's production, so it starts empty each year:
+        # left to accumulate, a criterion would select every block ever harvested rather than the
+        # ones harvested now, which is a different patch.
+        self._produced.clear()
+        self._produced_area.clear()
         tracks = self.fragments["track_id"].to_numpy(copy=True)
         offsets = self.fragments["offset"].to_numpy(copy=True)
         areas = self.fragments["area_ha"].to_numpy(copy=True)
@@ -297,6 +315,10 @@ class Simulator:
                     self._product_values.append(
                         {"year": year, "account": product_label, "value": value}
                     )
+                    produced = self._produced.setdefault(product_label, {})
+                    produced[block_id] = produced.get(block_id, 0.0) + value
+                    covered = self._produced_area.setdefault(product_label, {})
+                    covered[block_id] = covered.get(block_id, 0.0) + area
                     if route_model is not None and route_model.delivers(product_label):
                         destination, route = route_model.assign(block_id, product_label)
                         if ledger is not None:
@@ -355,22 +377,47 @@ class Simulator:
         ]
 
     def block_criteria(self, label: str) -> dict[int, float]:
-        """Return the per-block value of a feature label, area-weighted.
+        """Return the per-block value of a criterion label.
 
-        The value is the area-weighted mean of the feature curve over the block's
-        fragments, so a half disturbed block has a criterion value of 0.5. This is the
-        patch membership criterion of the patch accounts (see ``ws4.patch.accounts``).
+        A **feature** is a level: the area-weighted mean of its curve over the block's fragments,
+        so a half disturbed block has a value of 0.5. A **product** is a flow: what the block
+        produced in the year last applied, because a product's curve is the window over a track's
+        age in which its treatment may be applied, and what it yields is produced in the year of
+        the treatment. A
+        product is not a feature, and asking the feature join for one returns nothing at all — which
+        is how a harvested patch criterion once produced every cell zero. Both are the patch
+        membership criterion of the patch accounts (see ``ws4.patch.accounts``).
 
         Parameters
         ----------
         label : str
-            The feature label (for example ``feature.Seral.young``).
+            The criterion label: a feature (for example ``feature.Seral.young``) or a product (for
+            example ``product.harvested``).
 
         Returns
         -------
         dict of int to float
             The criterion value per block.
         """
+        if label in self._product_labels:
+            # A criterion is a share of the **block**, so the denominator is the block's whole area,
+            # not the area the treatment happened to cover: a block whose managed portion was
+            # treated
+            # and whose unmanaged portion was not has a criterion of the managed share, and its
+            # contribution to a patch is that share of its area. Dividing by the treated area
+            # instead
+            # made every treated block count as wholly harvested, which put the harvested family at
+            # 1.38 times the reference's area — the unmanaged fraction, to the third decimal.
+            produced = self._produced.get(label, {})
+            areas = self.fragments["area_ha"].to_numpy(dtype=float)
+            blocks = self.fragments["block_id"].to_numpy(dtype=np.int64)
+            unique, inverse = np.unique(blocks, return_inverse=True)
+            whole = np.bincount(inverse, weights=areas, minlength=unique.size)
+            by_block = {int(block): float(whole[index]) for index, block in enumerate(unique)}
+            return {
+                block: (value / by_block[block]) if by_block.get(block, 0.0) > 0.0 else 0.0
+                for block, value in produced.items()
+            }
         pair_frag, pair_row = self._criteria_join(label)
         if pair_frag.size == 0:
             return {}
@@ -429,6 +476,38 @@ class Simulator:
         if total_area <= 0.0 or self._curve_table.table.shape[0] == 0:
             return dict.fromkeys(range(years), 0.0)
         count = len(positions)
+        if label in self._product_labels:
+            # A product is not a feature. A feature's curve is a level read at the fragment's own
+            # age; a product's curve is the window over the **track's** age in which its treatment
+            # may be applied, and the product is produced **in the year the treatment is applied**.
+            # So a product criterion is a flow, computed here the way `apply_treatments` computes
+            # the product accounts — same lookup, same curve, same year — rather than a level at the
+            # fragment's age, which once put a block's harvested value ten years after it was
+            # harvested. Reading it as a level is not a small error but a different quantity.
+            flow = np.zeros(years, dtype=np.float64)
+            cursor = 0
+            for event_year, treatment in sorted(by_year.items()):
+                if event_year >= years:
+                    break
+                if event_year > cursor:
+                    offsets = offsets + (event_year - cursor)
+                    cursor = event_year
+                produced = 0.0
+                covered = 0.0
+                for index in range(count):
+                    key = (int(tracks[index]), treatment)
+                    transition = self._treatment_by_key.get(key)
+                    if transition is None:
+                        continue
+                    offset = int(offsets[index])
+                    for curve_id, product_label in self._products_by_key.get(key, []):
+                        if product_label == label:
+                            produced += float(areas[index]) * self._curve_value(curve_id, offset)
+                            covered += float(areas[index])
+                    tracks[index] = transition[0]
+                    offsets[index] = transition[1]
+                flow[event_year] = produced / covered if covered > 0.0 else 0.0
+            return dict(enumerate(flow.tolist()))
         label_row = self._label_row
         rows = np.zeros((years, count), dtype=np.int64)
         ages = np.empty((years, count), dtype=np.int64)

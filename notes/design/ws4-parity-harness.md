@@ -689,21 +689,41 @@ reverse — so it can fail, and the ``patchcomponents`` acceptance check runs it
 under the export's ``patch`` directory, skipping with the reason above when there is none. On every
 acceptance run today that skip is the visible statement of the ceiling.
 
-### A patch criterion that is a product: why it is refused
+### A patch criterion that is a product: the mechanism, and the family compared
 
-The reference's harvested patches name `product.harvested` as their criterion, and WS4's patch state
-evaluated a criterion as a feature — so the account was accepted, ran, and produced **every cell zero**.
-P12.1 established what is actually wrong, and it is not the lookup. Resolving a product is a small
-change (`(track, treatment, label)` rather than `(track, label)`, since what a treatment produces depends
-on the treatment) and it was implemented: the series is no longer zero. But its values land at the
-**wrong time** — a block the schedule harvests in year 44 had its product's value appear in year **150** —
-because a product's curve read against a fragment's age is not the same as the product of the treatment
-that happened. A wrong value that looks like a right one is worse than a zero that looks like a zero.
+The reference's harvested patches name `product.harvested` as their criterion. WS4 evaluated a criterion
+as a feature, so the account ran and produced **every cell zero**; a label that is neither a feature nor a
+product is refused. P12.1 established that the lookup is not the problem, and P13.1 established what is:
 
-So the criterion is **refused** instead, with the reason: a patch criterion must be a feature, and a
-product names something whose value depends on when it was produced, which the patch state does not
-model. A label that is neither a feature nor a product is refused too, naming the mistake rather than
-returning nought. The product path itself is reverted rather than left in as a trap, and what a real fix
-needs — the product evaluated on the treatment's own timeline rather than the fragment's age — is in
-`notes/backlog.md`.
+**A product's curve is not a level.** The legacy `products.csv` states
+`TRACK,TREATMENT,LABEL,FUTURE,ADJUST,METHOD,CURVE`, and for `product.harvested` on the 2026 sample:
+
+- the `TRACK` is the track the treatment is applied **on** — all 1,248 tracks it is stated on are
+  CC-treatment tracks. An earlier attempt keyed the product on the track the treatment moves the block
+  *to*, which is why its key was never found;
+- the `CURVE` is a **window over that track's age**, not a yield: curve 91 is 1.0 on ages 150–424 and
+  570–844 and nothing outside, exactly the CC availability window the `treatments` table states;
+- `FUTURE` is 0, so the product is produced **in the year the treatment is applied**, at the age then.
+
+**What WS4 computes.** `block_criteria` answers for a product as a **flow** — the curve's area-weighted
+mean over the fragments the treatment applied to, in that year, over the **block's own area** — and
+`block_criteria_series` computes the same for an arbitrary chain. Both are per-year state, so a criterion
+selects this year's harvest rather than every block ever harvested. Three readings had to be right for the
+numbers to mean anything, and each was caught by measurement: keying the product (1,248 of 1,248 tracks
+are treatment tracks), the normalisation (dividing by the *treated* area instead of the block's put the
+family at **1.38×** the reference's area — the unmanaged fraction, to the third decimal), and the period
+(the criterion is per year, and the reference **sums its patch accounts within a period**).
+
+**The harvested family is now compared, and agrees in aggregate.** Over the horizon, with the reference's
+own period convention:
+
+| quantity | reference | WS4 | ratio |
+| --- | ---: | ---: | ---: |
+| harvested patch area | 135,355 ha | 124,095 ha | **0.92** |
+| harvested patch count | 4,745 | 7,035 | 1.48 |
+
+That is the same quality of agreement the young family reaches — 0.92 and 1.03 — and the same shape of
+difference: the aggregate agrees to about 8% and **which patches form** differs, in both families. So the
+criterion is **accepted**, its 28 patch targets are comparable, and the components remain the ceiling
+#126 established.
 

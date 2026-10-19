@@ -570,7 +570,7 @@ further items cannot be closed against this reference and are recorded rather th
 **membership** (the ceiling P12.6 established) and what its route report **`LENGTH`** counts, where two
 more readings of the export have been ruled out.
 
-- [ ] P13.1 A patch criterion that is a product, on the treatment's own timeline (#129)
+- [x] P13.1 A patch criterion that is a product, on the treatment's own timeline (#129) — the mechanism implemented and the harvested family compared, agreeing in aggregate (area 0.92, count 1.48) and accepted; 28 of the reference's 63 patch targets are now comparable
 
 Acceptance criteria:
 

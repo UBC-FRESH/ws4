@@ -319,3 +319,37 @@ def test_a_run_states_which_blocks_formed_which_patch(tmp_path: Path) -> None:
     assert set(membership["account"]) == {"patch.opening"}
     assert set(membership["block"]) == {1, 2}
     assert membership["area_ha"].iloc[0] > 0.0
+
+
+def test_a_product_criterion_is_a_flow_in_the_treatment_year(tmp_path: Path) -> None:
+    """A product is produced in the year its treatment is applied; a feature is a level."""
+    dataset = _dataset(tmp_path)
+    simulator = Simulator.from_dataset(dataset)
+    product = simulator.block_criteria_series(1, (("CC", 2),), "product.Volume", 6)
+    assert product[2] > 0.0
+    assert all(product[year] == 0.0 for year in (0, 1, 3, 4, 5)), product
+    # a feature read over the same chain is a level, non-zero in the years after the treatment too
+    feature = simulator.block_criteria_series(1, (("CC", 2),), "feature.Volume", 6)
+    assert feature[2] > 0.0
+    assert feature[4] > 0.0
+
+
+def test_block_criteria_answers_for_a_product_in_the_year_it_is_produced(tmp_path: Path) -> None:
+    """A product criterion is this year's production, and nothing before or after it."""
+    dataset = _dataset(tmp_path)
+    simulator = Simulator.from_dataset(dataset)
+    assert simulator.block_criteria("product.Volume") == {}
+    table = pd.DataFrame({"block_id": [1], "treatment": ["CC"], "period": [0]})
+    simulator.apply_treatments(table, 0)
+    produced = simulator.block_criteria("product.Volume")
+    assert set(produced) == {1}
+    # the criterion is a share of the *block*: the curve's area-weighted mean over the fragments the
+    # treatment applied to, over the block's own area. The fixture's block 1 is a single treated
+    # fragment of 3 hectares, so the denominator is its own area and the criterion is the yield the
+    # routed-volume test pins at 360 over it — while for the reference's 0/1 harvested indicator,
+    # and
+    # a block whose unmanaged portion was not treated, it is the share that was harvested.
+    assert produced[1] == pytest.approx(120.0)
+    # the next year produces nothing more, so the criterion is a flow rather than a level
+    simulator.apply_treatments(table.assign(period=1), 1)
+    assert simulator.block_criteria("product.Volume") == {}
