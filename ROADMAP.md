@@ -603,7 +603,7 @@ block's first candidate chain, which ignores the ceiling and over-schedules. One
 way: `--time-limit` is accepted and never read.
 
 - [x] P14.1 A greedy, constraint-aware initial schedule (#134)
-- [ ] P14.2 Make --time-limit do what it says (#136) — implemented, refused loudly where it cannot price, and measured: 8,700 against 50,750 on a synthetic floor-and-ceiling instance
+- [x] P14.2 Make --time-limit do what it says (#136) — enforced in the four solvers, refused when malformed, and reported as `time_limit_reached` — implemented, refused loudly where it cannot price, and measured: 8,700 against 50,750 on a synthetic floor-and-ceiling instance
 
 Acceptance criteria:
 

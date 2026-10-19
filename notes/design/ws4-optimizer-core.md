@@ -204,3 +204,16 @@ search.
 `delta_evaluator` provides. A configuration it cannot price (duplicate accounts, a build route account,
 edge contrast) makes `greedy_schedule` **raise**, naming the reason: a quiet empty schedule would read as
 "no block is worth treating", which is the one thing it cannot mean.
+
+
+## Bounding a search: a budget, and a clock
+
+The iteration budget is the bound that makes a run reproducible: the same seed and the same count give
+the same schedule on any machine. A wall-clock limit does not — the same command gives a different
+answer under a different load — which is why it is a convenience and the budget stays the default.
+`--time-limit` is that convenience, read once when the search starts and shared by every worker, so it
+bounds the **search** rather than each start of it: the simulation and the report that follow a run are
+outside it, and a run cut by the clock is still a run, with its schedules, accounts and reports written.
+Whether the clock stopped it is in the summary as `time_limit_reached`. A limit that is not `HH:MM:SS`,
+or that is zero or less, is refused rather than ignored, because ignoring it is exactly what the option
+did before it was read.
