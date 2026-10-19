@@ -82,11 +82,19 @@ class RouteModel:
         split has no such account at all, the deciduous split has its own — so a single
         shared account would file one product's surplus under another's. An empty string,
         or a product with no entry, disables surplus for that product.
+    delivery : sequence of DeliveryTarget, optional
+        The volumes destinations must receive each year. A run fills them before it routes,
+        from the blocks nearest each destination, and leaves every other block to the cost
+        rule, which is how the reference's mill products are split.
     """
 
     network: RouteNetwork
     eligibility: Mapping[str, Sequence[str]] = field(default_factory=dict)
     unutilized: str | Mapping[str, str] = ""
+    delivery: Sequence[DeliveryTarget] = ()
+    # what a run has decided for the year it is simulating, by (block, product); a delivery target
+    # fills its volume this way, and everything else is left to the cost rule
+    _overrides: dict[tuple[int, str], str] = field(default_factory=dict, compare=False, repr=False)
 
     def surplus_account(self, product: str) -> str:
         """Return the account that records a product's surplus.
@@ -152,6 +160,17 @@ class RouteModel:
         """
         return bool(self.eligible(product))
 
+    def set_overrides(self, overrides: Mapping[tuple[int, str], str]) -> None:
+        """Replace the destinations a run has decided, dropping the choices cached before them.
+
+        Parameters
+        ----------
+        overrides : mapping of (int, str) to str
+            The destination per ``(block, product)`` this year, or an empty mapping for none.
+        """
+        self._overrides = dict(overrides)
+        self._assign_cache.clear()
+
     def assign(self, block_id: int, product: str) -> tuple[str, Route | None]:
         """Choose a destination for a block's product.
 
@@ -172,6 +191,9 @@ class RouteModel:
         tuple of (str, Route or None)
             The chosen destination name, and its route (None for surplus).
         """
+        decided = self._overrides.get((block_id, product))
+        if decided is not None:
+            return (decided, self.network.route(block_id, decided))
         key = (block_id, product)
         cached = self._assign_cache.get(key)
         if cached is not None:
@@ -219,6 +241,32 @@ class RouteAccount:
                 f"{self.account}: a product can only be named on a volume account, not a "
                 f"{self.kind} one"
             )
+
+
+@dataclass(frozen=True)
+class DeliveryTarget:
+    """A volume a destination must receive each year, and the rule that fills it.
+
+    The reference declares these per mill with ``setMinimumAnnual`` — 80,000 a year for Mill 1 on
+    the 2026 sample — and its own report states them per period as that figure times the period
+    width, which is why a ten-year period reads 800,000. Its achieved volume sits *just above*
+    most periods (802,887; 804,388; 818,537), which is what filling a volume from whole blocks looks
+    like, and WS4's own least-haul-cost rule takes no notice of it: it sends every block to the
+    cheapest mill, so its split is 66/34 where the reference's is 62/38.
+
+    Attributes
+    ----------
+    destination : str
+        The destination account the volume goes to.
+    product : str
+        The product label the volume is measured in.
+    per_year : float
+        The volume of that product the destination receives each year.
+    """
+
+    destination: str
+    product: str
+    per_year: float
 
 
 @dataclass(frozen=True)
@@ -336,6 +384,9 @@ class RouteConfig:
         The master products to partition across their destinations.
     period_width : int
         The planning-period width, in years.
+    delivery : tuple of DeliveryTarget
+        The volumes destinations must receive each year, which is how the reference's mill products
+        are split.
     maintenance : MaintenanceCharge
         How a used road's maintenance is charged. The default is the reference's own reading; a
         divergence from it has to be asked for by name under ``divergences``.
@@ -346,6 +397,7 @@ class RouteConfig:
     duplicate_accounts: tuple[DuplicateAccount, ...] = ()
     product_allocations: tuple[ProductAllocation, ...] = ()
     period_width: int = 1
+    delivery: tuple[DeliveryTarget, ...] = ()
     maintenance: MaintenanceCharge = field(default_factory=MaintenanceCharge)
 
 
@@ -474,6 +526,15 @@ def load_route_config(path: Path) -> RouteConfig:
         )
         for item in raw.get("duplicate_accounts", [])
     )
+    delivery = tuple(
+        DeliveryTarget(
+            destination=str(item["destination"]),
+            product=str(item["product"]),
+            per_year=float(item["per_year"]),
+        )
+        for item in raw.get("delivery", [])
+    )
+    model.delivery = delivery
     return RouteConfig(
         model=model,
         route_accounts=route_accounts,

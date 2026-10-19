@@ -1749,3 +1749,14 @@ issue comments.
   reference's over the horizon and its patch count **1.48** — the young family's quality (0.92 and 1.03)
   and shape, aggregate agreeing and components differing. So the criterion is **accepted** and 28 of the
   reference's 63 patch targets are comparable. Dashboard: **GREEN**.
+- P13.2 (#131) **the reference's delivery target is implemented, and measured not to close the mill
+  split.** The reference declares its mill volumes as annual minima (`setMinimumAnnual(..., 80000)`,
+  which its report states as 800,000 over a ten-year period), so a route configuration can now declare
+  a `DeliveryTarget(destination, product, per_year)`, a run fills it each year from the blocks nearest
+  that destination by haul cost, and a search defers to a full simulation when one is declared. Imposing
+  it moved the split the **wrong way** — Mill 1's conifer from 16,617,632 (1.081 of the reference's) to
+  18,613,128 (1.211) — because WS4's cost rule already sends more than the minimum, so a floor only adds.
+  The reference's numbers are a search outcome under **soft bounds** (its Mill 2 reaches 892,306 against
+  a declared maximum of 650,000 with no violation reported), and WS4's rule is already 91.7% of the way
+  there; the mechanism stays as the capability the reference declares, with the measurement recorded.
+  Dashboard: **GREEN**.

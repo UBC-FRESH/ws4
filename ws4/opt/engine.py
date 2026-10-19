@@ -756,13 +756,15 @@ class Optimizer:
     ) -> pd.DataFrame:
         """Return the account values from the base plus per-block feature and route deltas."""
         model, _accounts, _duplicates = self.route()
-        if model is not None and any(
-            account.kind in _PER_SEGMENT_ACCOUNT_KINDS for account in route_accounts
+        if model is not None and (
+            model.delivery
+            or any(account.kind in _PER_SEGMENT_ACCOUNT_KINDS for account in route_accounts)
         ):
-            # Build and maintenance are charged once per segment per period, not once per block that
-            # uses it — and maintenance is a function of the traffic a segment carries, which no
-            # per-block sum can see. So a configuration that prices either is evaluated by the full
-            # simulation rather than by a per-block delta, which is what makes the two agree.
+            # Three things a per-block sum cannot see: build and maintenance, which are charged once
+            # per segment per period rather than once per block that uses it, maintenance's traffic
+            # term, and a delivery target, which is a volume for a whole year's blocks. So a
+            # configuration that declares any of them is evaluated by the full simulation instead,
+            # which is what makes the search and the run it reports agree.
             return self._full_values(schedule, model, route_accounts, duplicate_accounts)
         self.simulator().reset()
         totals = dict(self._base_values())

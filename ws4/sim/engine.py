@@ -258,6 +258,70 @@ class Simulator:
             self._arrays = cached
         return cached
 
+    def _delivery_overrides(
+        self, schedule: pd.DataFrame, year: int, route_model: RouteModel
+    ) -> dict[tuple[int, str], str]:
+        """Return what a year's delivery targets decide, for the blocks nearest each of them.
+
+        The reference declares an annual volume a mill must receive (``setMinimumAnnual``), and its
+        own report states a period's figure as that annual volume times the period width — 80,000
+        a year reads 800,000 over ten. Its achieved volume sits *just above* the figure in most
+        periods, which is what filling a volume from whole blocks looks like. So each target takes
+        the blocks that can reach it, **nearest first by haul cost**, until it has its volume;
+        every block it does not take is left to the cost rule.
+
+        Parameters
+        ----------
+        schedule : pandas.DataFrame
+            The schedule, with ``block_id``, ``treatment`` and ``period`` columns.
+        year : int
+            The year the treatments are applied in.
+        route_model : RouteModel
+            The route model, whose delivery targets are filled.
+
+        Returns
+        -------
+        dict of (int, str) to str
+            The destination per ``(block, product)`` the targets decide.
+        """
+        overrides: dict[tuple[int, str], str] = {}
+        tracks, offsets, areas = self._fragment_arrays()
+        tracks = np.asarray(tracks)
+        offsets = np.asarray(offsets)
+        areas = np.asarray(areas)
+        by_block = self._block_index()
+        rows = list(schedule[schedule["period"] == year].itertuples(index=False))
+        for delivery in route_model.delivery:
+            if delivery.destination not in route_model.eligible(delivery.product):
+                continue
+            candidates: list[tuple[float, int, float]] = []
+            for row in rows:
+                block_id = _as_int(row.block_id)
+                label = str(row.treatment)
+                route = route_model.network.route(block_id, delivery.destination)
+                if route is None:
+                    continue
+                produced = 0.0
+                for index in by_block.get(block_id, []):
+                    key = (int(tracks[index]), label)
+                    if self._treatment_by_key.get(key) is None:
+                        continue
+                    offset = int(offsets[index])
+                    area = float(areas[index])
+                    for curve_id, product_label in self._products_by_key.get(key, []):
+                        if product_label == delivery.product:
+                            produced += area * self._curve_value(curve_id, offset)
+                if produced > 0.0:
+                    candidates.append((route.haul_cost, block_id, produced))
+            candidates.sort()
+            filled = 0.0
+            for _cost, block_id, produced in candidates:
+                if filled >= delivery.per_year:
+                    break
+                overrides[(block_id, delivery.product)] = delivery.destination
+                filled += produced
+        return overrides
+
     def apply_treatments(
         self,
         schedule: pd.DataFrame,
@@ -289,6 +353,8 @@ class Simulator:
         set of int
             The blocks that had at least one fragment treated.
         """
+        if route_model is not None and route_model.delivery:
+            route_model.set_overrides(self._delivery_overrides(schedule, year, route_model))
         disturbed: set[int] = set()
         # What a product criterion reads is *this* year's production, so it starts empty each year:
         # left to accumulate, a criterion would select every block ever harvested rather than the
