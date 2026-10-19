@@ -144,15 +144,30 @@ class IncrementalObjective:
         self.totals = {cell: value for cell, value in base.items() if cell[1] in self.accounts}
         self.assignments = dict(schedule)
         for block, assignment in schedule.items():
-            for cell, value in self._contribution(block, assignment).items():
+            for cell, value in self.contribution(block, assignment).items():
                 self.totals[cell] = self.totals.get(cell, 0.0) + value
         if self.patch is not None:
             self.patch.reset(schedule)
             for cell, value in self.patch.cell_map().items():
                 self.totals[cell] = self.totals.get(cell, 0.0) + value
 
-    def _contribution(self, block: int, chain: Chain) -> dict[Cell, float]:
-        """Return (and cache) a chain's tracked-cell contribution (feature, product, route)."""
+    def contribution(self, block: int, chain: Chain) -> dict[Cell, float]:
+        """Return (and cache) a chain's tracked-cell contribution (feature, product, route).
+
+        Parameters
+        ----------
+        block : int
+            The block.
+        chain : tuple of (str, int)
+            The treatment chain.
+
+        Returns
+        -------
+        dict of (int, str) to float
+            The value this chain would add to each tracked cell, relative to leaving the block
+            untreated. Cached, so a caller may ask repeatedly, which is what a schedule built by
+            construction needs.
+        """
         key = (block, chain)
         cached = self._contributions.get(key)
         if cached is not None:
@@ -181,7 +196,7 @@ class IncrementalObjective:
         """
         for block, chains in candidates.items():
             for chain in chains:
-                self._contribution(block, chain)
+                self.contribution(block, chain)
 
     def revert(self) -> None:
         """Undo a move's patch changes that were not committed."""
@@ -195,10 +210,10 @@ class IncrementalObjective:
             old = self.assignments.get(block)
             new = schedule.get(block)
             if new is not None:
-                for cell, value in self._contribution(block, new).items():
+                for cell, value in self.contribution(block, new).items():
                     pending[cell] = pending.get(cell, 0.0) + value
             if old is not None:
-                for cell, value in self._contribution(block, old).items():
+                for cell, value in self.contribution(block, old).items():
                     pending[cell] = pending.get(cell, 0.0) - value
         if self.patch is not None:
             for cell, value in self.patch.pending(changed, schedule).items():

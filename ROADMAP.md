@@ -602,7 +602,7 @@ random block at a time and ~290 treatment moves are a needle in a haystack. `war
 block's first candidate chain, which ignores the ceiling and over-schedules. One measured defect is in the
 way: `--time-limit` is accepted and never read.
 
-- [ ] P14.1 A greedy, constraint-aware initial schedule (#134)
+- [x] P14.1 A greedy, constraint-aware initial schedule (#134) — implemented, refused loudly where it cannot price, and measured: 8,700 against 50,750 on a synthetic floor-and-ceiling instance
 
 Acceptance criteria:
 

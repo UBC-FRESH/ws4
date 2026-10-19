@@ -134,6 +134,11 @@ def optimize(
     warm_cache: bool = typer.Option(
         False, "--warm-cache", help="Precompute every candidate chain's contribution first"
     ),
+    seed_greedy: bool = typer.Option(
+        False,
+        "--seed-greedy",
+        help="Seed the search with a schedule built from the declared targets and ceilings",
+    ),
     cluster_weight: float = typer.Option(
         0.0, "--cluster-weight", help="Weight of the topology cluster operator (0 disables it)"
     ),
@@ -181,6 +186,7 @@ def optimize(
         lns_weight=lns_weight,
         lns_destroy=lns_destroy,
         warm_cache=warm_cache,
+        greedy_seed=seed_greedy,
         cluster_weight=cluster_weight,
         cluster_size=cluster_size,
         merge_weight=merge_weight,
@@ -236,6 +242,11 @@ def watch(
     warm_cache: bool = typer.Option(
         False, "--warm-cache", help="Precompute every candidate chain's contribution first"
     ),
+    seed_greedy: bool = typer.Option(
+        False,
+        "--seed-greedy",
+        help="Seed the search with a schedule built from the declared targets and ceilings",
+    ),
     islands: int = typer.Option(0, "--islands", help="Parallel islands (0 = single search)"),
     cluster_weight: float = typer.Option(
         0.0, "--cluster-weight", help="Weight of the topology cluster operator (0 disables it)"
@@ -275,6 +286,7 @@ def watch(
         lns_weight=lns_weight,
         lns_destroy=lns_destroy,
         warm_cache=warm_cache,
+        greedy_seed=seed_greedy,
         islands=islands,
         workers=islands,
         cluster_weight=cluster_weight,
