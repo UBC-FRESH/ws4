@@ -578,8 +578,9 @@ def _reference_period_value(
     The reference reports a value per account per **period**, and its convention is not WS4's:
     ``PERIOD 0`` is the initial snapshot at year 0, and a later period labelled ``YEAR`` with
     ``PERIODWIDTH`` covers that many years **ending** at ``YEAR``. What it reports for a period also
-    depends on the account: a product accumulates within the period and is reported as the
-    period's total, while a feature is a level and is reported at the period's year. Measured on
+    depends on the account: a product — and a patch account, which the reference's own field list
+    describes as "the sum of ... values in this period" — accumulates within the period and is
+    reported as its total, while a feature is a level reported at the period's year. Measured on
     the 2026 C5 sample, this convention puts WS4 and the reference within 1% on every
     account-period cell of both the no-treatment and the optimized run, where comparing annual
     values year for year agreed on the features and on none of the products.
@@ -607,7 +608,10 @@ def _reference_period_value(
         return 0.0
     if period <= 0:
         return float(values.get(0, 0.0))
-    if account.startswith("product."):
+    if account.startswith(("product.", "patch.")):
+        # a product, and a patch account, accumulate within the period and are reported as its
+        # total: the reference's own field list says so ("the sum of ... values in this period"),
+        # and measured on the harvested family a level reading is 25 times too small
         return float(values.loc[year - width + 1 : year].sum())
     return float(values.get(year, 0.0))
 

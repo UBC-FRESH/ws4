@@ -383,28 +383,33 @@ def test_every_year_of_a_group_shares_one_topology(tmp_path: Path) -> None:
         assert all(state.topology is states[0].topology for state in states)
 
 
-def test_a_patch_criterion_that_is_a_product_is_refused(tmp_path: Path) -> None:
-    """A product cannot be a patch criterion, and saying so beats a series of zeros."""
+def test_a_patch_criterion_that_is_a_product_is_accepted(tmp_path: Path) -> None:
+    """A product is a criterion like a feature is, and its patches are formed from the flow."""
     dataset = build_canonical_dataset(
         _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
     )
     topology = _topology(tmp_path / "topology.csv")
     optimizer = Optimizer.from_dataset(
         dataset,
-        OptimizeConfig(years=1, iterations=1, seed=1, topology_path=str(topology)),
+        OptimizeConfig(years=2, iterations=1, seed=1, topology_path=str(topology)),
     )
-    with pytest.raises(ValueError, match="must be a feature"):
-        PatchModel(
-            optimizer,
-            [
-                PatchAccount(
-                    name="patch.harvested",
-                    criteria="product.Volume",
-                    threshold=0.5,
-                    size_classes=(10.0, 50.0, float("inf")),
-                )
-            ],
-        )
+    model = PatchModel(
+        optimizer,
+        [
+            PatchAccount(
+                name="patch.harvested",
+                criteria="product.Volume",
+                threshold=0.5,
+                size_classes=(10.0, 50.0, float("inf")),
+                search_distance=100.0,
+            )
+        ],
+    )
+    series = model.series(1, (("CC", 0),))
+    values = series["product.Volume"]
+    # a flow: produced in the year of its treatment, nothing before or after
+    assert values[0] > 0.0
+    assert values[1] == 0.0
 
 
 def test_a_patch_criterion_the_dataset_does_not_have_is_refused(tmp_path: Path) -> None:

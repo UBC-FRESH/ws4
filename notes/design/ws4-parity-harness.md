@@ -689,38 +689,41 @@ reverse — so it can fail, and the ``patchcomponents`` acceptance check runs it
 under the export's ``patch`` directory, skipping with the reason above when there is none. On every
 acceptance run today that skip is the visible statement of the ceiling.
 
-### A patch criterion that is a product: the mechanism, and what is still open
+### A patch criterion that is a product: the mechanism, and the family compared
 
-The reference's harvested patches name `product.harvested` as their criterion, and the patch state
-evaluates a criterion as a feature — so the account was accepted, ran, and produced **every cell zero**;
-a label that is neither a feature nor a product is refused too. P12.1 established that the lookup is not
-the problem, and P13.1 established what is:
+The reference's harvested patches name `product.harvested` as their criterion. WS4 evaluated a criterion
+as a feature, so the account ran and produced **every cell zero**; a label that is neither a feature nor a
+product is refused. P12.1 established that the lookup is not the problem, and P13.1 established what is:
 
-**A product's curve is not a level.** The legacy `products.csv` states `TRACK,TREATMENT,LABEL,FUTURE,
-ADJUST,METHOD,CURVE`, and for `product.harvested` on the 2026 sample:
+**A product's curve is not a level.** The legacy `products.csv` states
+`TRACK,TREATMENT,LABEL,FUTURE,ADJUST,METHOD,CURVE`, and for `product.harvested` on the 2026 sample:
 
-- the `TRACK` is the track the treatment is applied **on** — all 1,248 tracks the harvested product is
-  stated on are CC-treatment tracks (an earlier attempt looked the product up under the track the
-  treatment moves the block *to*, which is why its key was never found);
+- the `TRACK` is the track the treatment is applied **on** — all 1,248 tracks it is stated on are
+  CC-treatment tracks. An earlier attempt keyed the product on the track the treatment moves the block
+  *to*, which is why its key was never found;
 - the `CURVE` is a **window over that track's age**, not a yield: curve 91 is 1.0 on ages 150–424 and
-  570–844, nothing outside, which is exactly the CC availability window the `treatments` table states
-  for those tracks;
-- `FUTURE` is 0, so the product is produced **in the year the treatment is applied**, and the value is
-  the curve at the age *then*.
+  570–844 and nothing outside, exactly the CC availability window the `treatments` table states;
+- `FUTURE` is 0, so the product is produced **in the year the treatment is applied**, at the age then.
 
-**What WS4 does now.** `block_criteria` answers for a product as well as a feature: a feature is a level,
-the area-weighted mean of its curve at the fragment's own age; a product is a **flow**, the area-weighted
-mean of the curve over the fragments the treatment applied to **in that year**, which is the same
-computation the product accounts use and is kept as per-year state. `block_criteria_series` computes the
-same quantity for an arbitrary chain, so the patch model can read it. Both normalise as a feature does,
-which is what makes a criterion a share of a block rather than an area — the first attempt omitted that
-and the harvested areas came out about forty times too large.
+**What WS4 computes.** `block_criteria` answers for a product as a **flow** — the curve's area-weighted
+mean over the fragments the treatment applied to, in that year, over the **block's own area** — and
+`block_criteria_series` computes the same for an arbitrary chain. Both are per-year state, so a criterion
+selects this year's harvest rather than every block ever harvested. Three readings had to be right for the
+numbers to mean anything, and each was caught by measurement: keying the product (1,248 of 1,248 tracks
+are treatment tracks), the normalisation (dividing by the *treated* area instead of the block's put the
+family at **1.38×** the reference's area — the unmanaged fraction, to the third decimal), and the period
+(the criterion is per year, and the reference **sums its patch accounts within a period**).
 
-**What the comparison measured.** The harvested family is compared for the first time, and its **timing
-and shape are right** — a flow in the harvest year and nothing elsewhere. What differs is **which blocks
-qualify**: WS4 forms patches holding **0.11 to 0.16** of the reference's area, over 0.11 to 0.17 of its
-patch count, in every size class. WS4 applies a treatment whose age window the block may be outside of —
-the reference's own search would have chosen a block it could treat, and WS4's replay applies what the
-schedule says — which is the candidate explanation and is **unverified**. So the criterion is **refused
-again**, with that reason, rather than reported: its values are right in time and shape and wrong in
-selection, which is the kind of wrong that looks right.
+**The harvested family is now compared, and agrees in aggregate.** Over the horizon, with the reference's
+own period convention:
+
+| quantity | reference | WS4 | ratio |
+| --- | ---: | ---: | ---: |
+| harvested patch area | 135,355 ha | 124,095 ha | **0.92** |
+| harvested patch count | 4,745 | 7,035 | 1.48 |
+
+That is the same quality of agreement the young family reaches — 0.92 and 1.03 — and the same shape of
+difference: the aggregate agrees to about 8% and **which patches form** differs, in both families. So the
+criterion is **accepted**, its 28 patch targets are comparable, and the components remain the ceiling
+#126 established.
+

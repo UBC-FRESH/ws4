@@ -400,12 +400,22 @@ class Simulator:
             The criterion value per block.
         """
         if label in self._product_labels:
-            # the same reading as a feature: the curve's area-weighted mean over the fragments it
-            # applies to, which is what makes a criterion a share of a block rather than an area
+            # A criterion is a share of the **block**, so the denominator is the block's whole area,
+            # not the area the treatment happened to cover: a block whose managed portion was
+            # treated
+            # and whose unmanaged portion was not has a criterion of the managed share, and its
+            # contribution to a patch is that share of its area. Dividing by the treated area
+            # instead
+            # made every treated block count as wholly harvested, which put the harvested family at
+            # 1.38 times the reference's area — the unmanaged fraction, to the third decimal.
             produced = self._produced.get(label, {})
-            covered = self._produced_area.get(label, {})
+            areas = self.fragments["area_ha"].to_numpy(dtype=float)
+            blocks = self.fragments["block_id"].to_numpy(dtype=np.int64)
+            unique, inverse = np.unique(blocks, return_inverse=True)
+            whole = np.bincount(inverse, weights=areas, minlength=unique.size)
+            by_block = {int(block): float(whole[index]) for index, block in enumerate(unique)}
             return {
-                block: (value / covered[block]) if covered.get(block, 0.0) > 0.0 else 0.0
+                block: (value / by_block[block]) if by_block.get(block, 0.0) > 0.0 else 0.0
                 for block, value in produced.items()
             }
         pair_frag, pair_row = self._criteria_join(label)

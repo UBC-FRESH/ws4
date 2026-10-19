@@ -1739,3 +1739,13 @@ issue comments.
   harvest year, nothing elsewhere — while the areas are **0.11 to 0.16×** the reference's over 0.11 to
   0.17× its patch count, so *which blocks qualify* differs; the criterion is refused again with that
   measurement and the unverified age-window explanation rather than reported. Dashboard: **GREEN**.
+- P13.1 (#129, continued) **the harvested patch family is compared and agrees.** The criterion's
+  mechanism is a flow — a product's curve is a window over the pre-treatment track's age, and what it
+  yields is produced in the year of its treatment — and a criterion is that as a share of the **block**.
+  Two further readings had to be right, each caught by measurement: dividing by the *treated* area
+  instead of the block's put the family at **1.38×** the reference's area (the unmanaged fraction, to the
+  third decimal), and the reference **sums its patch accounts within a period**, which its own field list
+  states and which the harness now does too. With both, WS4's harvested patch area is **0.92** of the
+  reference's over the horizon and its patch count **1.48** — the young family's quality (0.92 and 1.03)
+  and shape, aggregate agreeing and components differing. So the criterion is **accepted** and 28 of the
+  reference's 63 patch targets are comparable. Dashboard: **GREEN**.

@@ -343,10 +343,12 @@ def test_block_criteria_answers_for_a_product_in_the_year_it_is_produced(tmp_pat
     simulator.apply_treatments(table, 0)
     produced = simulator.block_criteria("product.Volume")
     assert set(produced) == {1}
-    # the criterion is the curve's area-weighted mean over the fragments the treatment applied to:
-    # for the fixture's yield product that is the yield, which the routed-volume test pins at 360
-    # over the block's 3 hectares, and for the reference's 0/1 harvested indicator it is the share
-    # of the block that was harvested
+    # the criterion is a share of the *block*: the curve's area-weighted mean over the fragments the
+    # treatment applied to, over the block's own area. The fixture's block 1 is a single treated
+    # fragment of 3 hectares, so the denominator is its own area and the criterion is the yield the
+    # routed-volume test pins at 360 over it — while for the reference's 0/1 harvested indicator,
+    # and
+    # a block whose unmanaged portion was not treated, it is the share that was harvested.
     assert produced[1] == pytest.approx(120.0)
     # the next year produces nothing more, so the criterion is a flow rather than a level
     simulator.apply_treatments(table.assign(period=1), 1)
