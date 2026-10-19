@@ -181,6 +181,15 @@ items are enhancements and maintenance.
   that its report counts only the roads its own run has opened — is unverified, and is recorded as a
   candidate rather than asserted.
 
+  Two more readings have since been ruled out from the export itself.
+  `scenario/route_destination.MILL*.csv` lists 26,905 rows per mill whose segments sum to **6.6 million
+  metres** — 7.4 times the report's mean period `LENGTH` — so those rows walk the **reachable** network
+  rather than the road a period used. And a period's `LENGTH` is neither the cumulative `BUILTLENGTH` nor
+  monotone in it: `LENGTH` falls from 1,149,647 to 741,466 across periods while the build only grows, and
+  1,149,647 is exactly the period's build plus an initial **417,574 metres** that no table in the export
+  states. So `LENGTH` is a per-period quantity over a road set the export does not list, which is why it
+  is the one column P12 could not settle.
+
 ## Programmatic model API (P2.9)
 
 - **Model object and operations.** `done`. `ws4/model/api.py` holds one DataFrame per matrix table with
