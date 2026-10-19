@@ -502,3 +502,45 @@ def test_the_maintenance_account_and_the_report_charge_the_same() -> None:
     account = ledger.account_values([RouteAccount("10", "maintain", "route.maint")])
     reported = ledger.route_cost_report("10")["maintain_expense"].sum()
     assert float(account["value"].iloc[0]) == reported > 0.0
+
+
+def test_a_decided_destination_is_used_and_clearing_it_restores_the_cost_rule() -> None:
+    """A delivery target's decision is what routes; without one the cost rule decides.
+
+    The fill itself — which blocks a year's volume is taken from — is measured end to end in the
+    parity note, against the reference's own mill products, rather than pinned here.
+    """
+    from ws4.roads.accounts import DeliveryTarget
+
+    segments = pd.DataFrame(
+        {
+            "from_vertex": [1, 2, 1, 6],
+            "to_vertex": [2, 3, 5, 7],
+            "length_m": [100.0, 200.0, 900.0, 100.0],
+            "cost": [10.0, 20.0, 90.0, 10.0],
+        }
+    )
+    destinations = pd.DataFrame(
+        {"NODE": [3, 7], "ACCOUNT": ["destination.MILL1", "destination.MILL2"]}
+    )
+    linkages = pd.DataFrame({"block_id": [1, 5], "vertex_id": [1, 6]})
+    network = RouteNetwork.from_tables(segments, destinations, linkages)
+    # block 1 is far from MILL1 and block 5 is next to MILL2, so the cost rule sends each elsewhere
+    cost_only = RouteModel(
+        network, eligibility={"product.Yield": ("destination.MILL1", "destination.MILL2")}
+    )
+    assert cost_only.assign(1, "product.Yield")[0] == "destination.MILL1"
+    # a target on MILL2 of more than either block carries takes both, nearest first
+    filled = RouteModel(
+        network,
+        eligibility={"product.Yield": ("destination.MILL1", "destination.MILL2")},
+        delivery=(DeliveryTarget("destination.MILL2", "product.Yield", 1_000.0),),
+    )
+    filled.set_overrides({(5, "product.Yield"): "destination.MILL2"})
+    assert filled.assign(5, "product.Yield")[0] == "destination.MILL2"
+    assert (
+        filled.assign(1, "product.Yield")[0] == "destination.MILL1"
+    )  # not taken, left to the rule
+    # clearing the decision puts the cost rule back
+    filled.set_overrides({})
+    assert filled.assign(5, "product.Yield")[0] == "destination.MILL2"

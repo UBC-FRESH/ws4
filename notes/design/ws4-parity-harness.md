@@ -512,6 +512,30 @@ and over the same periods:
 | WS4, least cost among the reference's own eligible destinations | 16,617,630 | 8,110,900 |
 | difference | +8.1% | −13.3% |
 
+### The delivery target: the mechanism the reference declares, and why it does not close the split
+
+The reference states its mill volumes as **annual minima** — `setMinimumAnnual("product.Mill1.Yield.
+Conif", 80000)` in the sample's own `runScenario_test_1.bsh` — which is why its report reads 800,000 for
+a ten-year period, and its achieved volume sits just above it in most periods (802,887; 804,388;
+818,537), which is what filling a volume from whole blocks looks like. P13.2 implemented exactly that:
+`DeliveryTarget(destination, product, per_year)` is declarable in a route configuration, a run fills it
+each year from the blocks **nearest** the destination by haul cost, and every block it does not take is
+routed as it was before. A search defers to a full simulation when a target is declared, because a
+per-block delta cannot see a year's volume.
+
+**And the measurement says it does not close the gap.** Imposing the target moved Mill 1's conifer from
+**16,617,632** (1.081 of the reference's 15,371,727) to **18,613,128** (1.211), with the per-period
+median difference going from 0.052 to 0.197. The reason is plain once measured: WS4's cost rule already
+sends *more* than the minimum to Mill 1, so a floor can only add to it.
+
+**What the reference's numbers are, then.** They are a **search outcome under soft bounds**, not a rule:
+its achieved Mill 2 in period 1 is 892,306 against a declared maximum of 650,000, with no violation
+reported, so the bounds are weighted terms rather than constraints. WS4's least-haul-cost rule is
+already 91.7% of the way there block for block and within 8% on the volume, and what remains is the
+reference's own trade-off between haul cost and its weighted targets — a search, which is what WS4 has
+instead of a rule. So the target stays as the capability the reference declares and this section records
+that it alone is not the difference.
+
 ### The destination allocation, and what is left of it
 
 WS4 has the capability: a route configuration partitions a **master product across the destinations it

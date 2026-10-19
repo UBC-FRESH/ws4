@@ -318,18 +318,19 @@ items are enhancements and maintenance.
   `attractor` sub-account with that reason rather than reporting a `1.0` flag that was not a value, and
   the quantity would become computable from a per-patch distribution — the membership listing above,
   which this reference cannot state (#126).
-- **The reference's destination policy for its mill products.** `open`, narrowed by P12.2 to one
-  question. What the reference's model declares is now established and implemented: conifer may reach
-  either mill, **deciduous may reach Mill 2 only** (with `product.unutilized.Decid` for what reaches
-  none), the split is exported per block and period, and WS4's rule — those destinations, then the least
-  haul cost — reproduces the reference's own choice on **13,375 of 13,377 deciduous** block-periods (its
-  mill product agreeing to 4 units in 2.78 million) and **12,266 of 13,377 conifer** ones (91.7%). What
-  is left is the reference's **delivery target: Mill 1 is held at 800,000 a period** and Mill 2 takes the
-  remainder, which is why its split is 62/38 rather than WS4's 66/34 (+8.1% / −13.3% on the horizon).
-  Reproducing it means adopting its allocation policy wholesale, which changes where wood goes, so it
-  belongs behind the parity mode below rather than as WS4's only behaviour. The route ratios' denominator
-  is that product, so `ratio.route.haul.MILL1` waits on it — or on the ratio being defined differently on
-  WS4's side.
+- **The reference's destination policy for its mill products.** `open`, and narrowed again by P13.2,
+  which implemented the mechanism the reference declares and **measured that it does not close the
+  gap**. The mechanism is a **delivery target** — `setMinimumAnnual(product.Mill1.Yield.Conif, 80000)`
+  in the sample's own `runScenario_test_1.bsh`, which is why its report states 800,000 over a ten-year
+  period — declarable in a route config and filled each year from the blocks nearest the destination.
+  Imposing it moved the split the **wrong way**: Mill 1's conifer went from 16,617,632 (1.081 of the
+  reference's) to 18,613,128 (1.211), because WS4's cost rule *already* sends more than the minimum to
+  Mill 1, so a floor only adds. What the reference's numbers actually show is a **search outcome under
+  soft bounds**: its achieved Mill 2 in period 1 is 892,306 against a declared maximum of 650,000, with
+  no violation reported. So what is left is not a rule to implement but the reference's own trade-off
+  between haul cost and its weighted targets, and WS4's least-cost rule is already 91.7% of the way
+  there block for block. The mechanism stays — it is the reference's own declaration, and a useful
+  capability — with the measurement that it alone does not reproduce the split.
 - **Docstring completeness.** `done`. `scripts/doc_audit.py` is the oracle: it checks every public
   function, method, property, class, and module in `ws4` and `scripts/` for the four rules (a docstring
   exists; every parameter is documented and nothing else; a value-returning callable has a `Returns`
