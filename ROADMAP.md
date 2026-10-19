@@ -654,6 +654,18 @@ Acceptance criteria:
     since the 2019 sample. Phase 11 (The derived targets and the sample's own files) is active on
     `feature/p11-derived-targets`, parent issue #112, with six tasks (#113 to #118).
 
+18. Phase 12 is complete: pull request #127 squash-merged as `35e96a9`, the branch deleted, and parent
+    issue #120 closed. Its close-out report is `notes/reports/p12-closeout.md`; its acceptance evidence is
+    the destination decisions compared block-period by block-period for the first time (the reference's
+    splits read from its own model, deciduous matching to **4 units in 2.78 million** and conifer to
+    **91.7%** of block-periods), the route report folded into the model's periods and written per
+    destination, `period_width` wired through at last, and a parity mode that names its one deliberate
+    divergence and measures it (**+4.2%**, **+42.4%** and **×5.24** of parity). Four things were refused
+    or limited with the measurement that says why — a product patch criterion whose values land ten years
+    late, the attractor, the patch components, and the single route-report column `LENGTH` — and two more
+    WS4 defects were found on the way: **27 products were being routed to the mills as wood**, and road
+    maintenance was charged 7.0× in the route accounts of what the report charged. The deferred items are
+    triaged in `notes/backlog.md` and are the subject of Phase 13.
 17. Phase 11 is complete: pull request #119 squash-merged as `0d34412`, the branch deleted, and parent
     issue #112 closed. Its close-out report is `notes/reports/p11-closeout.md`; its acceptance evidence is
     the period convention matched to the reference's (products were 24% low and features ten times high
