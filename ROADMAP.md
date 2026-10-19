@@ -620,7 +620,7 @@ Acceptance criteria:
 
 Parent issue: #138
 Branch: `feature/p15-spread-connectivity`
-Status: active
+Status: complete — squash-merged as `f22a026` (pull request #139), branch deleted, issue closed
 
 Goal: a spatial account that measures **how fragmented the fuel body a fire could run through is**, so a
 fuel-treatment schedule can be optimized against fire-spread response inside WS4. The patch-size
@@ -770,3 +770,16 @@ What the bridge cannot yet settle, and the phase reports rather than claims:
     WS4 defects were found on the way: **27 products were being routed to the mills as wood**, and road
     maintenance was charged 7.0× in the route accounts of what the report charged. The deferred items are
     triaged in `notes/backlog.md` and are the subject of Phase 13.
+19. Phase 15 is complete: pull request #139 squash-merged as `f22a026`, the branch deleted, and parent
+    issue #138 closed. Its close-out report is `notes/reports/p15-closeout.md`. The acceptance evidence
+    is the synthetic oracle (a full-span band cuts the 490 ha lattice to 210 ha, a partial band leaves
+    450 ha, and the patch account cannot rank the two full bands) and the TSA23 bridge instance, where
+    the **compartment** reading reproduced the fire ranking — largest 82,800 / 104,600 / 187,173 ha and
+    area-weighted mean 25,675 / 31,604 / 46,419 ha against 19,640 / 19,870 / 20,298 ha burned — after
+    the phase's first, **directed** definition was measured to read a boundary corridor (3,390.6 ha
+    identical for all three patterns) and to reverse the mean. The account is wired into a run and the
+    optimizer and documented in `docs/reference/spatial.rst`. Four limits are recorded rather than
+    claimed: the bridge treats 177,088 ha of whole blocks against WS4's ~46,600 ha of managed fragments;
+    the fire spread is 3% on one seed; the ordering holds from a 60° to a 90° cone and flips at 45°; and
+    the FT product's curve still reads 4.0. Those are the subject of the proposed P16 (the bridge at the
+    same footprint, the load-time 4× check, and the account's final shape).
