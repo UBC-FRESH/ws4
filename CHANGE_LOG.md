@@ -1641,3 +1641,89 @@ issue comments.
   (#123), the attractor sub-account (#124), a Patchworks-parity mode with traffic-weighted maintenance
   behind it (#125), and a patch-component comparison carried on a new reference export (#126). Dashboard:
   **GREEN**.
+- P12.1 (#121) closed by **refusal, with the reason measured.** The reference's harvested patches name
+  `product.harvested` as their criterion and WS4's patch state evaluated a criterion as a feature, so the
+  account ran and returned **every cell zero**. The lookup was not the problem: keying it by
+  `(track, treatment, label)` rather than `(track, label)` made the series non-zero, but its values landed
+  at the **wrong time** — a block the schedule harvests in year 44 had its product's value appear in year
+  **150**, because a product's curve read against a fragment's age is not the product of the treatment
+  that happened. A wrong value that looks right is worse than a zero that looks like a zero, so the
+  product path is **reverted** and the criterion is **refused** with the reason, as is a label that is
+  neither a feature nor a product. Two tests cover both refusals; the feature path is unchanged. The real
+  fix — the product evaluated on the treatment's own timeline — is in `notes/backlog.md` with this
+  measurement. Dashboard: **GREEN**.
+- P12.2 (#122) **the destination decisions are compared, and the mill products with them.** The
+  reference's rule is established from its own model file and its exported decisions:
+  `addExclusiveAccount` divides each master product, so conifer may reach either mill while **deciduous
+  may reach Mill 2 only**. WS4 had been sending **62.7% of the deciduous area** to a mill the reference
+  never uses — an error rather than a policy difference — and with the eligibility declared
+  `product.Mill2.Yield.Decid` agrees with the reference to **4 units in 2.78 million**. WS4's rule is
+  the reference's declared destinations and then the least haul cost, which reproduces the reference's
+  own choice on **12,266 of 13,377 conifer block-periods (91.7%)** and on **13,375 of 13,377 deciduous**
+  ones. What is left is the reference's **delivery target** — Mill 1 held at 800,000 a period with Mill 2
+  taking the remainder, which is the whole of the difference (+8.1% / −13.3% over the horizon) — a
+  planning decision that changes where wood goes, so it is recorded for the parity mode rather than
+  adopted as WS4's only behaviour. The surplus account is now declarable **per product**, as the
+  reference declares it, and a new `destinations` acceptance check reads the splits from
+  `analysis/C5.pin`, compares the decision block-period by block-period and the mill products period by
+  period, requires what the model's own split forces and measures what it leaves free. The stale note
+  that compared one of WS4's *years* against one of the reference's *periods* is corrected. Dashboard:
+  **GREEN**.
+- P12.3 (#123) **the route cost report is folded into the model's periods, and the model's period
+  width now reaches it.** `period_width` was a route-configuration setting that nothing used; it is
+  wired through `Simulator.run` to the ledger, and a period is labelled by the year it ends at and
+  carries that width, as the reference labels its own. The extensive columns are summed over the period's
+  years and the averages recomputed from those sums — the reference's own arithmetic — and a width of one
+  leaves the report exactly as it was, so nothing older moved. The report is **per destination** as well
+  now, which is how the reference ships it, and writing it that way exposed a real defect: the
+  per-destination state recorded a segment's build expense and never its built length. Compared over the
+  twenty periods of the base scenario, three of the differences are explained: `VOLUME` is now the same
+  quantity on both sides (8% and 10% apart, which is #122's destination policy) because a map that names
+  products is now also what is *delivered* — WS4 had been routing **27 products** to the mills beside the
+  yield, areas and volume classes among them, and 2.26× the reference's volume was the symptom;
+  `AVERAGEHAULDIST` is a **unit** (WS4 counts metres, the reference kilometres, so 1.2× reads as 1,200×);
+  and `BUILTLENGTH` was the defect above. One quantity is left unexplained and recorded as such: what the
+  reference's `LENGTH` counts, where WS4 is 2.6× and 3.3× and maintenance is consistent with it on both
+  sides. Dashboard: **GREEN**; acceptance **PASS**, `destinations` and `accounts` included.
+- P12.4 (#124) **the patch `attractor` sub-account is established, and refused rather than faked.**
+  WS4 wrote a `1.0` flag for it whenever an account declared one. From the reference's own 360 values
+  across both scenarios and all eight classes, what it reports is a **per-class landscape quantity**: zero
+  in exactly the cells where the class holds no patches, and otherwise a lower quantile of the class's
+  patch sizes — within one class a stable 0.52 to 0.69 of the class's mean patch area, falling to 0.015 in
+  the largest. It is **not** the class's mean patch size (a class bounded below by 50 reports 15.7),
+  **not** its `size` share (the ratio runs 0.26 to 2.57 cell by cell, which contradicts the reading the
+  documentation invites), and **not** a function of the six sub-accounts the export publishes (a
+  log-linear fit leaves a 9% median and a 58% worst residual). Its target carries the class's size range
+  and 278 of 360 values sit outside it with a `SUMMARY` of 0, so the reference's own report does not
+  evaluate it as an objective term. So the flag and its field are **removed**, and an `attractor` setting
+  is **refused** with that reason, as the product patch criterion is — the same export that leaves the
+  patch components incomparable (#126) is what would make it computable. No shipped configuration asked
+  for one. Dashboard: **GREEN**.
+- P12.5 (#125) **parity is the default, and the one divergence WS4 offers is named rather than
+  implicit.** A route configuration's `divergences` block declares what WS4 computes *differently*, one
+  named entry per quantity; everything else is the reference's reading, an unknown entry is refused
+  rather than ignored, and so is a maintenance reading WS4 does not have. The first entry is
+  **traffic-weighted maintenance**: the reference charges each used road once a period (`f(0) = 0`,
+  `f(x > 0) = b`), and WS4 offers the affine form the maintainer specified — `b + a·x` — with the
+  reference's reading as the `a = 0` default. Its effect is **measured** on the 2026 base scenario
+  replayed: the maintenance is +4.2% of parity at `a = 0.001`, +42.4% at 0.01 and ×5.24 at 0.1, with the
+  haul unchanged in all four runs. Two defects came out of making it a reading: maintenance was charged
+  once per *produced product* in the route accounts while the report charged it once per segment per
+  period (**7.0×** apart on MILL 1 — now 1.0000, both through one charge computed after every flow of the
+  period is in), and the optimizer's incremental path now **defers to the full simulation** when a
+  configured route account is `build` or `maintain`, which are charged per segment and cannot be a
+  per-block sum. Dashboard: **GREEN**; acceptance **PASS**; 551 tests; examples 0 drifted.
+- P12.6 (#126) **the patch component comparison is built and tested, and the class aggregates are
+  recorded as the ceiling.** WS4 can now state its own components — `patch_membership.csv`, one row per
+  member block of every patch, written beside `patch_accounts.csv` on a run — and
+  `compare_patch_components` compares two listings over their **partitions** rather than their labels:
+  two listings agree on a period when every patch on one side is exactly a patch on the other, and a
+  patch spanning more than one on the other side is reported as a merge with an example and the block
+  counts. It is tested against a listing with a **known** difference, so it can fail, and the new
+  `patchcomponents` acceptance check runs it against a listing under the export's `patch` directory. The
+  reference cannot supply one: every report group of the 2026 export was read — `patch/` holds four
+  *Target table* reports (the class sub-accounts in another shape), `harvest/maps/` is `MapReport`
+  images, `nta/` is aggregates, `scenario/` holds block attributes and no patch attribute — and the
+  maintainer has confirmed the export is everything Patchworks can produce. So the check **skips with
+  that reason on every run**, which is the honest statement of the ceiling, and the listing's
+  specification is in `notes/design/ws4-parity-harness.md`. Dashboard: **GREEN**.

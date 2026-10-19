@@ -13,11 +13,15 @@ sub-accounts:
     The mean compactness of the patches in the class, 0 to 100 (100 is a circle).
 ``frequency``
     The number of patches in the size class.
-``attractor``
-    A flag that draws the average patch size toward the class; its value mimics ``size``.
 
 The block contribution to a patch is its criterion value times its area, so a half
 disturbed block contributes half its area.
+
+``attractor`` is the sixth sub-account the reference reports, and **WS4 refuses it**: what the
+reference reports there is a per-patch size statistic that its own exported tables do not
+determine (P12.4). WS4 used to write a ``1.0`` flag for it, which is not a value — see
+``notes/design/ws4-parity-harness.md``, "The attractor sub-account", and the refusal in
+:func:`load_patch_accounts`.
 """
 
 from __future__ import annotations
@@ -48,8 +52,6 @@ class PatchAccount:
         The criterion value a block must exceed to join a patch.
     size_classes : tuple of float
         The size-class upper bounds, in hectares, ascending. The last may be ``inf``.
-    attractor : int or None
-        The index of the class an attractor sub-account is defined for, or None.
     search_distance : float or None
         The topology search distance, in metres: only edges whose endpoints are no further apart
         than it join a patch. The default ``0.0`` joins only blocks that literally touch (their
@@ -60,7 +62,6 @@ class PatchAccount:
     criteria: str
     threshold: float = 0.0
     size_classes: tuple[float, ...] = DEFAULT_SIZE_CLASSES
-    attractor: int | None = None
     search_distance: float | None = 0.0
 
 
@@ -96,6 +97,29 @@ def _compactness(area_ha: float, perimeter_m: float) -> float:
     if area_m2 <= 0.0 or perimeter_m <= 0.0:
         return 0.0
     return min(100.0, 100.0 * 4.0 * math.pi * area_m2 / (perimeter_m * perimeter_m))
+
+
+def _size_class_index(area: float, size_classes: Sequence[float]) -> int | None:
+    """Return the index of the size class an area falls in, or None when it falls in none.
+
+    Parameters
+    ----------
+    area : float
+        The patch's area, in hectares.
+    size_classes : sequence of float
+        The class upper bounds, ascending.
+
+    Returns
+    -------
+    int or None
+        The class index, or None for an area no class contains — a zero area, or one above the
+        last bound when that bound is finite.
+    """
+    for class_index, upper in enumerate(size_classes):
+        lower = 0.0 if class_index == 0 else size_classes[class_index - 1]
+        if lower < area <= upper:
+            return class_index
+    return None
 
 
 def patch_account_values(
@@ -149,11 +173,9 @@ def patch_account_values(
     by_label: dict[str, list[tuple[float, float, int]]] = {label: [] for label in labels}
     for index, area in enumerate(patch_area):
         compactness = _compactness(area, patch_perimeter_length[index])
-        for class_index, upper in enumerate(account.size_classes):
-            lower = 0.0 if class_index == 0 else account.size_classes[class_index - 1]
-            if lower < area <= upper:
-                by_label[labels[class_index]].append((area, compactness, len(patches[index])))
-                break
+        class_index = _size_class_index(area, account.size_classes)
+        if class_index is not None:
+            by_label[labels[class_index]].append((area, compactness, len(patches[index])))
     for label in labels:
         members_in_class = by_label[label]
         class_area = sum(area for area, _, _ in members_in_class)
@@ -175,9 +197,6 @@ def patch_account_values(
         )
     result["TOTAL.area"] = total_area
     result["TOTAL.frequency"] = float(len(patches))
-    if account.attractor is not None:
-        label = labels[account.attractor]
-        result[f"{label}.attractor"] = 1.0
     return result
 
 
@@ -243,11 +262,9 @@ def patch_account_values_indexed(
     by_label: dict[str, list[tuple[float, float, int]]] = {label: [] for label in labels}
     for index, area in enumerate(areas):
         compactness = _compactness(area, perimeters[index])
-        for class_index, upper in enumerate(account.size_classes):
-            lower = 0.0 if class_index == 0 else account.size_classes[class_index - 1]
-            if lower < area <= upper:
-                by_label[labels[class_index]].append((area, compactness, blocks_per_patch[index]))
-                break
+        class_index = _size_class_index(area, account.size_classes)
+        if class_index is not None:
+            by_label[labels[class_index]].append((area, compactness, blocks_per_patch[index]))
     result: dict[str, float] = {}
     for label in labels:
         members_in_class = by_label[label]
@@ -270,17 +287,42 @@ def patch_account_values_indexed(
         )
     result["TOTAL.area"] = total_area
     result["TOTAL.frequency"] = float(len(areas))
-    if account.attractor is not None:
-        label = labels[account.attractor]
-        result[f"{label}.attractor"] = 1.0
     return result
+
+
+def _refuse_attractor(account: str) -> None:
+    """Refuse an ``attractor`` sub-account, with what was measured about it.
+
+    Parameters
+    ----------
+    account : str
+        The account's name, for the message.
+
+    Raises
+    ------
+    ValueError
+        Always: WS4 does not report this sub-account.
+    """
+    raise ValueError(
+        f"{account}: the attractor sub-account is refused. What the reference reports for it is "
+        "a per-patch size statistic that its own exported tables do not determine: it is zero "
+        "exactly when the class holds no patches, and it tracks a fraction of the class's mean "
+        "patch area — 0.52 to 0.69 within one class, falling to 0.015 in the largest — which no "
+        "product or ratio of the reported area, blocks, size, shape, frequency and freqpercent "
+        "reproduces (a log-linear fit against all six leaves a 9% median and a 58% worst "
+        "residual). The class's size share, which one reading of the reference's documentation "
+        "has it mimic, is 0.26 to 2.57 times its value cell by cell. So WS4 reports no number it "
+        "cannot stand behind, and keeps no flag: what is missing is the per-patch distribution, "
+        "the same export the patch-component comparison waits on."
+    )
 
 
 def load_patch_accounts(path: Path) -> tuple[PatchAccount, ...]:
     """Load patch account definitions from YAML.
 
     The file is a mapping with an ``accounts`` list; each entry has ``name``, ``criteria``,
-    and any of ``threshold``, ``size_classes``, and ``attractor``.
+    and any of ``threshold``, ``size_classes``, and ``search_distance``. An ``attractor``
+    entry is refused rather than ignored: see :func:`_refuse_attractor`.
 
     Parameters
     ----------
@@ -298,6 +340,8 @@ def load_patch_accounts(path: Path) -> tuple[PatchAccount, ...]:
     entries = raw.get("accounts", []) if isinstance(raw, dict) else []
     accounts: list[PatchAccount] = []
     for entry in entries:
+        if "attractor" in entry:
+            _refuse_attractor(str(entry.get("name", "a patch account")))
         classes = tuple(float(value) for value in entry.get("size_classes", DEFAULT_SIZE_CLASSES))
         raw_distance = entry.get("search_distance", 0.0)
         accounts.append(
@@ -306,11 +350,85 @@ def load_patch_accounts(path: Path) -> tuple[PatchAccount, ...]:
                 criteria=str(entry["criteria"]),
                 threshold=float(entry.get("threshold", 0.0)),
                 size_classes=classes,
-                attractor=entry.get("attractor"),
                 search_distance=None if raw_distance is None else float(raw_distance),
             )
         )
     return tuple(accounts)
+
+
+@dataclass(frozen=True)
+class PatchComponent:
+    """One patch: the blocks it holds and what it measures.
+
+    Attributes
+    ----------
+    account : str
+        The patch account's name.
+    period : int
+        The year the patch was formed in.
+    blocks : tuple of int
+        The member blocks, ascending.
+    area : float
+        The patch's area, in hectares: its member blocks' criterion-weighted areas.
+    klass : str
+        The size class the patch falls in, or an empty string when no class contains it.
+    """
+
+    account: str
+    period: int
+    blocks: tuple[int, ...]
+    area: float
+    klass: str
+
+
+def patch_components(
+    account: PatchAccount,
+    values: Mapping[int, float],
+    edges: Sequence[tuple[int, int, float]],
+    block_area: Mapping[int, float],
+    period: int = 0,
+) -> tuple[PatchComponent, ...]:
+    """Return the patches a criterion forms, one entry per patch.
+
+    This is the structure the sub-account values are aggregates of, stated so it can be compared:
+    which blocks formed a patch, how large it is, and which size class it falls in. WS4's patch
+    member ids are its own — they are arbitrary, and two tools' ids never need to agree for their
+    partitions to be comparable.
+
+    Parameters
+    ----------
+    account : PatchAccount
+        The account definition: its criteria, threshold, and size classes.
+    values : mapping of int to float
+        The criterion value per block.
+    edges : sequence of (int, int, float)
+        The adjacency edges ``(src, dst, shared_length)``.
+    block_area : mapping of int to float
+        The area of each block.
+    period : int, optional
+        The year the patches were formed in (default 0).
+
+    Returns
+    -------
+    tuple of PatchComponent
+        One entry per patch, with its member blocks ascending.
+    """
+    members = {block for block, value in values.items() if value > account.threshold}
+    labels = size_class_labels(account.size_classes)
+    components: list[PatchComponent] = []
+    for patch in connected_patches(members, [(source, target) for source, target, _ in edges]):
+        area = sum(values.get(block, 0.0) * block_area.get(block, 0.0) for block in patch)
+        index = _size_class_index(area, account.size_classes)
+        components.append(
+            PatchComponent(
+                account=account.name,
+                period=period,
+                blocks=tuple(sorted(patch)),
+                area=area,
+                klass=labels[index] if index is not None else "",
+            )
+        )
+    return tuple(components)
 
 
 @dataclass
@@ -328,14 +446,20 @@ class PatchLedger:
         The area of each block.
     period_width : int, optional
         The planning-period width, in years.
+    membership : bool, optional
+        When True, also keep which blocks formed which patch, and write it beside the accounts.
+        A run wants it — the membership is what a component comparison reads — while a search
+        prices the accounts alone, and keeping it costs a second pass over the topology a period.
     """
 
     accounts: Sequence[PatchAccount]
     edges: Sequence[tuple[int, int, float, float]]
     block_area: Mapping[int, float]
     period_width: int = 1
+    membership: bool = False
     _records: list[dict[str, float]] = field(default_factory=list)
     _by_account: list[list[tuple[int, int, float]]] = field(init=False, default_factory=list)
+    _components: list[PatchComponent] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         """Keep, per account, only the edges within that account's search distance."""
@@ -363,6 +487,10 @@ class PatchLedger:
             values = criteria.get(account.criteria, {})
             for key, value in patch_account_values(account, values, edges, self.block_area).items():
                 row[f"{account.name}.{key}"] = value
+            if self.membership:
+                self._components.extend(
+                    patch_components(account, values, edges, self.block_area, year)
+                )
         self._records.append(row)
 
     def frame(self) -> pd.DataFrame:
@@ -375,8 +503,37 @@ class PatchLedger:
         """
         return pd.DataFrame(self._records)
 
+    def membership_frame(self) -> pd.DataFrame:
+        """Return the patch membership: one row per member block of every patch.
+
+        Returns
+        -------
+        pandas.DataFrame
+            ``period``, ``year``, ``account``, ``class``, ``patch``, ``block`` and ``area_ha``,
+            where a patch's area is repeated on each of its members' rows. The patch ids are
+            WS4's own and mean nothing to another tool: what two listings are compared on is the
+            partition, not the labels.
+        """
+        rows: list[dict[str, object]] = []
+        for index, component in enumerate(self._components):
+            for block in component.blocks:
+                rows.append(
+                    {
+                        "period": component.period,
+                        "year": component.period,
+                        "account": component.account,
+                        "class": component.klass,
+                        "patch": index,
+                        "block": block,
+                        "area_ha": component.area,
+                    }
+                )
+        return pd.DataFrame(
+            rows, columns=["period", "year", "account", "class", "patch", "block", "area_ha"]
+        )
+
     def write(self, out_dir: Path) -> None:
-        """Write ``patch_accounts.csv`` into a run directory.
+        """Write ``patch_accounts.csv``, and ``patch_membership.csv`` when it was kept, into a run.
 
         Parameters
         ----------
@@ -386,6 +543,8 @@ class PatchLedger:
         out_dir = Path(out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         self.frame().to_csv(out_dir / "patch_accounts.csv", index=False)
+        if self.membership:
+            self.membership_frame().to_csv(out_dir / "patch_membership.csv", index=False)
 
 
 def load_patch_edges_detailed(

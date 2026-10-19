@@ -27,6 +27,7 @@ from ..patch.edge import EdgeElement, edge_values
 from ..patch.metrics import patch_metrics
 from ..roads.accounts import (
     DuplicateAccount,
+    MaintenanceCharge,
     ProductAllocation,
     RouteAccount,
     RouteCostLedger,
@@ -296,7 +297,7 @@ class Simulator:
                     self._product_values.append(
                         {"year": year, "account": product_label, "value": value}
                     )
-                    if route_model is not None:
+                    if route_model is not None and route_model.delivers(product_label):
                         destination, route = route_model.assign(block_id, product_label)
                         if ledger is not None:
                             ledger.record(year, block_id, product_label, value, destination, route)
@@ -716,8 +717,11 @@ class Simulator:
                     area = float(areas[index])
                     for curve_id, product_label in self._products_by_key.get(key, []):
                         value = area * self._curve_value(curve_id, offset)
-                        destination, route = route_model.assign(int(block_id), product_label)
-                        ledger.record(step, int(block_id), product_label, value, destination, route)
+                        if route_model.delivers(product_label):
+                            destination, route = route_model.assign(int(block_id), product_label)
+                            ledger.record(
+                                step, int(block_id), product_label, value, destination, route
+                            )
                     tracks[index] = transition[0]
                     offsets[index] = transition[1]
             offsets += 1
@@ -874,9 +878,12 @@ class Simulator:
         route_accounts: Sequence[RouteAccount] = (),
         duplicate_accounts: Sequence[DuplicateAccount] = (),
         product_allocations: Sequence[ProductAllocation] = (),
+        period_width: int = 1,
+        maintenance: MaintenanceCharge | None = None,
         max_opening_ha: float | None = None,
         min_green_up_years: int | None = None,
         patch_accounts: Sequence[PatchAccount] = (),
+        patch_membership: bool = False,
         edge_elements: Sequence[EdgeElement] = (),
         core_buffer_m: float | None = None,
         min_core_area_ha: float | None = None,
@@ -908,6 +915,12 @@ class Simulator:
         product_allocations : sequence of ProductAllocation, optional
             Master products to partition across the destinations they were routed to, with an
             account for whatever did not move.
+        period_width : int, optional
+            The model's planning-period width, in years, which is what the route cost report
+            is folded into (default 1, one row per year).
+        maintenance : MaintenanceCharge or None, optional
+            How a used road's maintenance is charged. The default is the reference's own
+            reading; a divergence from it has to be asked for by name.
         max_opening_ha : float or None, optional
             The maximum opening size. When given, ``spatial_violations.csv`` reports the
             patches over it.
@@ -917,6 +930,9 @@ class Simulator:
         patch_accounts : sequence of PatchAccount, optional
             Patch account definitions. When given with a topology, ``patch_accounts.csv``
             is written.
+        patch_membership : bool, optional
+            When True and patch accounts are given, ``patch_membership.csv`` is written as well:
+            which blocks formed which patch, in which period.
         edge_elements : sequence of EdgeElement, optional
             Edge contrast elements. When given with a topology, an edge contrast account
             value per element per year is added to the account values and written to
@@ -941,7 +957,11 @@ class Simulator:
         model = route_model
         if model is None and network is not None:
             model = RouteModel(network)
-        ledger = RouteCostLedger(model.network) if model is not None else None
+        ledger = (
+            RouteCostLedger(model.network, period_width=period_width, maintenance=maintenance)
+            if model is not None
+            else None
+        )
         graph = load_patch_edges(topology_csv) if topology_csv is not None else []
 
         values = self.simulate(
@@ -1000,6 +1020,7 @@ class Simulator:
                 max_opening_ha=max_opening_ha,
                 min_green_up_years=min_green_up_years,
                 patch_accounts=patch_accounts,
+                patch_membership=True,
                 core_buffer_m=core_buffer_m,
                 min_core_area_ha=min_core_area_ha,
             )
@@ -1018,6 +1039,7 @@ class Simulator:
         max_opening_ha: float | None = None,
         min_green_up_years: int | None = None,
         patch_accounts: Sequence[PatchAccount] = (),
+        patch_membership: bool = False,
         core_buffer_m: float | None = None,
         min_core_area_ha: float | None = None,
     ) -> None:
@@ -1041,6 +1063,10 @@ class Simulator:
             The green-up interval, for the violation record.
         patch_accounts : sequence of PatchAccount, optional
             The patch accounts to accumulate over the run.
+        patch_membership : bool, optional
+            When True and patch accounts are given, ``patch_membership.csv`` is written as well:
+            which blocks formed which patch, in which period. A run wants it; a search prices the
+            accounts alone.
         core_buffer_m : float or None, optional
             The core-area buffer distance, in metres.
         min_core_area_ha : float or None, optional
@@ -1055,7 +1081,11 @@ class Simulator:
             _as_int(block): _as_float(area)
             for block, area in self.fragments.groupby("block_id")["area_ha"].sum().items()
         }
-        ledger = PatchLedger(patch_accounts, detailed, block_area) if patch_accounts else None
+        ledger = (
+            PatchLedger(patch_accounts, detailed, block_area, membership=patch_membership)
+            if patch_accounts
+            else None
+        )
         criteria_labels = sorted({account.criteria for account in patch_accounts})
         patch_records: list[dict[str, object]] = []
         schedule_pairs: list[tuple[int, int]] = []

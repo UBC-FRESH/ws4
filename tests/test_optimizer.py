@@ -96,7 +96,12 @@ def test_the_optimizer_resolves_route_accounts(tmp_path: Path) -> None:
 
 
 def test_incremental_route_accounts_match_the_full_simulation(tmp_path: Path) -> None:
-    """Route accounts are additive (except build), so the delta matches a full simulation."""
+    """A per-block delta agrees with a full simulation, for the accounts that are per-block sums.
+
+    The configuration also prices the maintenance, which is charged once per segment per period and
+    so is not a per-block sum: that account is what makes the incremental path defer to the full
+    simulation, and this is the check that the deferral agrees with it.
+    """
     dataset = build_canonical_dataset(
         _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
     )
@@ -618,3 +623,46 @@ def test_a_run_leaves_the_incumbent_values_readable(tmp_path: Path) -> None:
     assert not values.empty
     assert {"year", "account", "value"} <= set(values.columns)
     assert "feature.Volume" in set(values["account"])
+
+
+def test_the_incremental_route_path_prices_the_additive_accounts(tmp_path: Path) -> None:
+    """With only per-block sums configured, the delta is the path taken and it agrees."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    (tmp_path / "segments.csv").write_text(
+        "SEGMENT,FNODE,TNODE,LENGTH,HAUL,BUILD,MAINTAIN\n1,1,2,100.0,10.0,0.0,1.0\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "destinations.csv").write_text(
+        "NODE,ACCOUNT\n2,destination.MILL1\n", encoding="utf-8"
+    )
+    (tmp_path / "linkages.csv").write_text("BLOCK,NODE\n1,1\n2,1\n", encoding="utf-8")
+    (tmp_path / "route.yaml").write_text(
+        "route:\n"
+        "  segments: segments.csv\n"
+        "  destinations: destinations.csv\n"
+        "  linkages: linkages.csv\n"
+        "route_accounts:\n"
+        "  - {destination: destination.MILL1, kind: volume, account: route.vol}\n"
+        "  - {destination: destination.MILL1, kind: haul, account: route.haul}\n",
+        encoding="utf-8",
+    )
+    optimizer = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(
+            years=3, iterations=1, seed=1, route_config_path=str(tmp_path / "route.yaml")
+        ),
+    )
+    model, route_accounts, duplicate_accounts = optimizer.route()
+    schedule: Schedule = {1: (("CC", 0),), 2: (("CC", 0),)}
+    incremental = optimizer._incremental_values(schedule, duplicate_accounts, route_accounts)
+    full = optimizer._full_values(schedule, model, route_accounts, duplicate_accounts)
+    joined = (
+        incremental.set_index(["year", "account"])["value"]
+        .to_frame("incremental")
+        .join(full.set_index(["year", "account"])["value"].to_frame("full"), how="outer")
+        .fillna(0.0)
+    )
+    assert (joined["incremental"] - joined["full"]).abs().max() == pytest.approx(0.0, abs=1e-6)
+    assert (joined["incremental"] > 0.0).any()

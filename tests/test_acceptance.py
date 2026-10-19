@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
+import pytest
 from ws4.build.compiler import build_canonical_dataset
 
 import acceptance as acc
@@ -566,3 +567,340 @@ def test_a_curvetable_value_that_disagrees_is_a_difference(tmp_path: Path) -> No
     differences, _compared, _conflicts = acc.compare_yield_curves(yields, dataset)
     assert differences
     assert "Y1.Conif" in differences[0]
+
+
+def test_exclusive_splits_are_read_from_the_reference_model(tmp_path: Path) -> None:
+    """A master's destinations and its surplus account come from the reference's own declaration."""
+    pin = tmp_path / "C5.pin"
+    pin.write_text(
+        'control.addExclusiveAccount("product.Yield.managed.Conif", '
+        '"product.Mill1.Yield.Conif");\n'
+        'control.duplicateAccount("product.Mill1.Yield.Conif", "destination.MILL1", 1);\n'
+        'control.duplicateAccount("product.Mill1.Yield.Conif", "route.total.conifer", 1);\n'
+        'control.addExclusiveAccount("product.Yield.managed.Conif", '
+        '"product.Mill2.Yield.Conif");\n'
+        'control.duplicateAccount("product.Mill2.Yield.Conif", "destination.MILL2", 1);\n'
+        'control.addExclusiveAccount("product.Yield.managed.Decid", '
+        '"product.Mill2.Yield.Decid");\n'
+        'control.duplicateAccount("product.Mill2.Yield.Decid", "destination.MILL2", 1);\n'
+        'control.addExclusiveAccount("product.Yield.managed.Decid", '
+        '"product.unutilized.Decid");\n'
+    )
+    splits = acc.read_exclusive_splits(pin)
+    assert [split.master for split in splits] == [
+        "product.Yield.managed.Conif",
+        "product.Yield.managed.Decid",
+    ]
+    conif, decid = splits
+    assert conif.destinations == ("destination.MILL1", "destination.MILL2")
+    assert conif.surplus == ""
+    assert decid.destinations == ("destination.MILL2",)
+    assert decid.surplus == "product.unutilized.Decid"
+
+
+def test_a_reference_assignment_is_read_in_ws4_names(tmp_path: Path) -> None:
+    """The exported choice names child accounts, which the split maps back to destinations."""
+    table = tmp_path / "exclusive_product.Yield.managed.Decid.csv"
+    pd.DataFrame(
+        {
+            "BLOCK": [1, 2],
+            "PERIOD1": ["product.Mill2.Yield.Decid", "product.Mill2.Yield.Decid"],
+            "PERIOD2": ["product.Mill2.Yield.Decid", "product.unutilized.Decid"],
+        }
+    ).to_csv(table, index=False)
+    split = acc.ExclusiveSplit(
+        master="product.Yield.managed.Decid",
+        routed=(("destination.MILL2", "product.Mill2.Yield.Decid"),),
+        surplus="product.unutilized.Decid",
+    )
+    assignment = acc.read_reference_assignment(table, split)
+    assert assignment.to_dict("records") == [
+        {"block": 1, "period": 1, "destination": "destination.MILL2"},
+        {"block": 2, "period": 1, "destination": "destination.MILL2"},
+        {"block": 1, "period": 2, "destination": "destination.MILL2"},
+        {"block": 2, "period": 2, "destination": "product.unutilized.Decid"},
+    ]
+
+
+def test_an_export_is_found_through_its_own_layout(tmp_path: Path) -> None:
+    """The scenario directory and the targets directory are one step from whichever is named."""
+    scenario = tmp_path / "base" / "scenario"
+    targets = tmp_path / "base" / "targets"
+    scenario.mkdir(parents=True)
+    targets.mkdir(parents=True)
+    (scenario / "schedule.csv").write_text("BLOCK,DELTA,TREATMENT\n1,10,CC\n")
+    (targets / "product_Mill1_Yield_Conif.csv").write_text(
+        "PERIOD,YEAR,PERIODWIDTH,CURRENT\n1,10,10,5.0\n"
+    )
+    assert acc._reference_export_dirs(scenario) == (scenario, tmp_path / "base")
+    found = acc._find_export_file(acc._reference_export_dirs(scenario), ("schedule.csv",))
+    assert found == scenario / "schedule.csv"
+    assert acc._reference_period_width(acc._reference_export_dirs(scenario)) == 10
+
+
+def _destination_fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
+    """Write a dataset, a sample and an export for the destination check.
+
+    The split is the fixture's own product, so the allocation has something to partition, and
+    the export carries the reference's own header and its own choice per block and period.
+    """
+    dataset = build_canonical_dataset(
+        FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "dataset"
+    )
+    sample = tmp_path / "sample"
+    roads = sample / "roads"
+    roads.mkdir(parents=True)
+    (roads / "vertices.csv").write_text("vertex_id\n1\n2\n3\n", encoding="utf-8")
+    (roads / "segments.csv").write_text(
+        "segment_id,from_vertex,to_vertex,length_m,haul_cost\n1,1,2,500,0.02\n2,1,3,900,0.03\n",
+        encoding="utf-8",
+    )
+    (roads / "destinations.csv").write_text(
+        "name,vertex_id\ndestination.MILL1,2\ndestination.MILL2,3\n", encoding="utf-8"
+    )
+    (roads / "linkages.csv").write_text("block_id,vertex_id\n1,1\n2,1\n", encoding="utf-8")
+    analysis = sample / "analysis"
+    analysis.mkdir()
+    (analysis / "C5.pin").write_text(
+        'control.addExclusiveAccount("product.Volume", "product.Mill1.Volume");\n'
+        'control.duplicateAccount("product.Mill1.Volume", "destination.MILL1", 1);\n',
+        encoding="utf-8",
+    )
+    report = tmp_path / "report"
+    report.mkdir()
+    (report / "schedule.csv").write_text(
+        "BLOCK,DELTA,AGE,TYPE,TREATMENT\n1,1,41,MANAGED,CC\n", encoding="utf-8"
+    )
+    pd.DataFrame(
+        {
+            "BLOCK": [1],
+            "PERIOD1": ["product.Mill1.Volume"],
+            "PERIOD2": ["product.Mill1.Volume"],
+        }
+    ).to_csv(report / "exclusive_product.Volume.csv", index=False)
+    return dataset, roads, report
+
+
+def test_the_destination_check_reads_a_split_and_measures_a_forced_one(tmp_path: Path) -> None:
+    """A split read from the model routes the product, and the forced one is checked."""
+    dataset, roads, report = _destination_fixture(tmp_path)
+    result = acc.check_destinations(roads, report, dataset, tmp_path / "work")
+    assert result.status == "pass"
+    assert "1 split(s)" in result.detail
+    assert "admits one destination" in result.detail
+    assert "no reference table" in result.detail
+
+
+def test_a_forced_mill_product_that_disagrees_fails_the_check(tmp_path: Path) -> None:
+    """Where the split leaves one destination the mill product is required, not merely measured."""
+    dataset, roads, report = _destination_fixture(tmp_path)
+    targets = report / "targets"
+    targets.mkdir()
+    (targets / "product_Mill1_Volume.csv").write_text(
+        "PERIOD,YEAR,PERIODWIDTH,CURRENT\n1,1,1,0.0\n", encoding="utf-8"
+    )
+    result = acc.check_destinations(roads, report, dataset, tmp_path / "work")
+    assert result.status == "fail"
+    assert "forced mill product disagrees" in result.detail
+
+
+def test_a_reference_choice_outside_its_own_split_fails_the_check(tmp_path: Path) -> None:
+    """A decision the declared split does not name is reported, not silently mapped away."""
+    dataset, roads, report = _destination_fixture(tmp_path)
+    pd.DataFrame(
+        {
+            "BLOCK": [1],
+            "PERIOD1": ["product.Mill3.Volume"],
+            "PERIOD2": ["product.Mill1.Volume"],
+        }
+    ).to_csv(report / "exclusive_product.Volume.csv", index=False)
+    result = acc.check_destinations(roads, report, dataset, tmp_path / "work")
+    assert result.status == "fail"
+    assert "outside the reference's own split" in result.detail
+
+
+def test_the_destination_check_skips_without_its_inputs(tmp_path: Path) -> None:
+    """Every input the comparison needs has a skip, so the tool runs where there is no sample."""
+    assert acc.check_destinations(None, None, None, tmp_path).status == "skip"
+    dataset, _roads, report = _destination_fixture(tmp_path)
+    assert acc.check_destinations(None, report, dataset, tmp_path).status == "skip"
+
+
+def test_an_undeclared_child_keeps_its_own_name(tmp_path: Path) -> None:
+    """An assignment naming a child the split does not declare is kept as it came."""
+    table = tmp_path / "exclusive.csv"
+    pd.DataFrame({"BLOCK": [1], "PERIOD1": ["product.Unheard.Volume"]}).to_csv(table, index=False)
+    split = acc.ExclusiveSplit(
+        master="product.Volume",
+        routed=(("destination.MILL1", "product.Mill1.Volume"),),
+    )
+    assignment = acc.read_reference_assignment(table, split)
+    assert assignment.to_dict("records") == [
+        {"block": 1, "period": 1, "destination": "product.Unheard.Volume"}
+    ]
+
+
+def _listing(root: Path, name: str, rows: list[tuple[int, str, int, int]]) -> Path:
+    """Write a patch component listing: year, account, patch, block."""
+    path = root / name
+    pd.DataFrame(rows, columns=["year", "account", "patch", "block"]).to_csv(path, index=False)
+    return path
+
+
+def test_two_listings_that_partition_alike_agree(tmp_path: Path) -> None:
+    """The comparison is over the partition, so the patch ids need not agree."""
+    theirs = _listing(
+        tmp_path,
+        "theirs.csv",
+        [(10, "patch.young", 7, 1), (10, "patch.young", 7, 2), (10, "patch.young", 9, 3)],
+    )
+    ours = _listing(
+        tmp_path,
+        "ours.csv",
+        [(10, "patch.young", 0, 1), (10, "patch.young", 0, 2), (10, "patch.young", 4, 3)],
+    )
+    assert acc.compare_patch_components(theirs, ours) == ([], 1)
+
+
+def test_a_patch_that_merges_what_the_other_splits_is_reported(tmp_path: Path) -> None:
+    """The known difference the comparison exists to state, in both directions."""
+    theirs = _listing(
+        tmp_path,
+        "theirs.csv",
+        [(10, "patch.young", 7, 1), (10, "patch.young", 7, 2), (10, "patch.young", 9, 3)],
+    )
+    merged = _listing(
+        tmp_path,
+        "merged.csv",
+        [(10, "patch.young", 0, 1), (10, "patch.young", 0, 2), (10, "patch.young", 0, 3)],
+    )
+    differences, compared = acc.compare_patch_components(theirs, merged)
+    assert compared == 1
+    assert len(differences) == 1
+    assert "merging one way" in differences[0]
+    # WS4's single patch spans two of the reference's, and the block count says how many blocks
+    assert "WS4's patch 0 is 2 of the reference's" in differences[0]
+    assert "over 3 blocks" in differences[0]
+    # and the same partition read the other way reports the other direction
+    back, _ = acc.compare_patch_components(merged, theirs)
+    assert "the reference's patch 0 is 2 of WS4's" in back[0]
+
+
+def test_a_listing_is_read_under_either_tools_names(tmp_path: Path) -> None:
+    """A listing from another tool is comparable as it stands, and a missing column is named."""
+    path = tmp_path / "reference.csv"
+    path.write_text("PERIOD,ACCOUNT,PATCH_ID,BLOCK_ID\n1,patch.young,3,17\n", encoding="utf-8")
+    frame = acc.read_patch_listing(path)
+    assert frame.to_dict("records") == [
+        {"year": 1, "account": "patch.young", "patch": 3, "block": 17}
+    ]
+    bad = tmp_path / "bad.csv"
+    bad.write_text("YEAR,ACCOUNT\n1,patch.young\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="needs a patch column"):
+        acc.read_patch_listing(bad)
+
+
+def test_the_patch_targets_and_topology_are_read_from_the_model(tmp_path: Path) -> None:
+    """The reference's own model states the criteria, the classes, and the topology to read."""
+    pin = tmp_path / "C5.pin"
+    pin.write_text(
+        'control.inputTopology("../blocks/blocks_topology_200r10.csv", 100d);\n'
+        'control.addPatchTarget("feature.young", "patch.young.0_50", 0.0, 50.0);\n'
+        'control.addPatchTarget("feature.young", "patch.young.50_150", 50.0, 150.0);\n'
+        'control.addPatchTarget("product.harvested", "patch.harvested.0_10", 0.0, 10.0);\n',
+        encoding="utf-8",
+    )
+    assert acc.read_patch_targets(pin) == (
+        ("patch.young", "feature.young", (50.0, 150.0)),
+        ("patch.harvested", "product.harvested", (10.0,)),
+    )
+    assert acc.read_patch_topology(pin) == ("../blocks/blocks_topology_200r10.csv", 100.0)
+
+
+def test_the_component_check_states_the_ceiling_rather_than_implying_one(tmp_path: Path) -> None:
+    """With no listing in the export, the check says so and names the evidence."""
+    report = tmp_path / "report"
+    (report / "patch").mkdir(parents=True)
+    (report / "patch" / "youngPatchSize.csv").write_text("PERIOD,YEAR\n1,10\n", encoding="utf-8")
+    assert acc.check_patch_components(None, None, None, tmp_path).status == "skip"
+    result = acc.check_patch_components(tmp_path, report, tmp_path, tmp_path)
+    assert result.status == "skip"
+    assert "states no patch membership" in result.detail
+    assert "class aggregates" in result.detail
+
+
+def _patch_export(tmp_path: Path) -> tuple[Path, Path, Path]:
+    """Write a dataset, a sample with a pin, and an export, for the component check."""
+    dataset = build_canonical_dataset(
+        FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    sample = tmp_path / "sample"
+    roads = sample / "roads"
+    roads.mkdir(parents=True)
+    (roads / "vertices.csv").write_text("vertex_id\n1\n2\n", encoding="utf-8")
+    (roads / "segments.csv").write_text(
+        "segment_id,from_vertex,to_vertex,length_m,haul_cost\n1,1,2,500,0.02\n", encoding="utf-8"
+    )
+    (roads / "destinations.csv").write_text(
+        "name,vertex_id\ndestination.MILL1,2\n", encoding="utf-8"
+    )
+    (roads / "linkages.csv").write_text("block_id,vertex_id\n1,1\n2,1\n", encoding="utf-8")
+    (sample / "blocks").mkdir()
+    pd.DataFrame({"BLOCK1": [1], "BLOCK2": [2], "DISTANCE": [10.0], "LENGTH": [10.0]}).to_csv(
+        sample / "blocks" / "topology.csv", index=False
+    )
+    analysis = sample / "analysis"
+    analysis.mkdir()
+    (analysis / "C5.pin").write_text(
+        'control.inputTopology("../blocks/topology.csv", 100d);\n'
+        'control.addPatchTarget("feature.Volume", "patch.opening.0_50", 0.0, 50.0);\n',
+        encoding="utf-8",
+    )
+    report = tmp_path / "export"
+    (report / "patch").mkdir(parents=True)
+    (report / "schedule.csv").write_text(
+        "BLOCK,DELTA,AGE,TYPE,TREATMENT\n1,1,41,MANAGED,CC\n2,1,61,MANAGED,CC\n", encoding="utf-8"
+    )
+    (report / "targetSummary.csv").write_text(
+        "TARGET,PERIOD,YEAR,CURRENT\npatch.opening.TOTAL.area,1,1,0.0\n", encoding="utf-8"
+    )
+    return dataset, roads, report
+
+
+def test_the_component_check_runs_against_a_listing_and_can_fail(tmp_path: Path) -> None:
+    """The whole instrument: WS4's own components, a listing beside them, and a difference."""
+    from ws4.patch.accounts import PatchAccount
+    from ws4.sim.engine import Simulator
+
+    dataset, roads, report = _patch_export(tmp_path)
+    own = tmp_path / "own"
+    schedule = tmp_path / "ws4-schedule.csv"
+    pd.DataFrame({"block_id": [1, 2], "treatment": ["CC", "CC"], "period": [1, 1]}).to_csv(
+        schedule, index=False
+    )
+    Simulator.from_dataset(dataset).run(
+        schedule,
+        years=2,
+        out_dir=own,
+        topology_csv=tmp_path / "sample" / "blocks" / "topology.csv",
+        patch_accounts=(
+            PatchAccount(
+                name="patch.opening",
+                criteria="feature.Volume",
+                threshold=0.5,
+                search_distance=100.0,
+            ),
+        ),
+        patch_membership=True,
+    )
+    mine = pd.read_csv(own / "patch_membership.csv")
+    assert not mine.empty
+    listing = report / "patch" / "patch_membership.csv"
+    # a listing that is WS4's own partition is what the check should pass
+    listing.write_text(mine.to_csv(index=False), encoding="utf-8")
+    assert acc.check_patch_components(roads, report, dataset, tmp_path / "same").status == "pass"
+    # and one missing a block is a difference, whichever patch that block was in
+    listing.write_text(mine.iloc[1:].to_csv(index=False), encoding="utf-8")
+    result = acc.check_patch_components(roads, report, dataset, tmp_path / "short")
+    assert result.status == "fail"
+    assert "listing only" in result.detail

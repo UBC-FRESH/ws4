@@ -803,6 +803,4 @@ class PatchGroupYear:
                 out[f"{account.name}.{label}.shape"] = shape / count if count else 0.0
             out[f"{account.name}.TOTAL.area"] = self.total
             out[f"{account.name}.TOTAL.frequency"] = float(self.count)
-            if account.attractor is not None:
-                out[f"{account.name}.{labels[account.attractor]}.attractor"] = 1.0
         return out

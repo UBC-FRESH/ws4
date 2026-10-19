@@ -381,3 +381,44 @@ def test_every_year_of_a_group_shares_one_topology(tmp_path: Path) -> None:
         states = [state for (group, _year), state in model.states.items() if group == key]
         assert len(states) == 3
         assert all(state.topology is states[0].topology for state in states)
+
+
+def test_a_patch_criterion_that_is_a_product_is_refused(tmp_path: Path) -> None:
+    """A product cannot be a patch criterion, and saying so beats a series of zeros."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    topology = _topology(tmp_path / "topology.csv")
+    optimizer = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(years=1, iterations=1, seed=1, topology_path=str(topology)),
+    )
+    with pytest.raises(ValueError, match="must be a feature"):
+        PatchModel(
+            optimizer,
+            [
+                PatchAccount(
+                    name="patch.harvested",
+                    criteria="product.Volume",
+                    threshold=0.5,
+                    size_classes=(10.0, 50.0, float("inf")),
+                )
+            ],
+        )
+
+
+def test_a_patch_criterion_the_dataset_does_not_have_is_refused(tmp_path: Path) -> None:
+    """A label that is neither names the mistake rather than returning nought."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    topology = _topology(tmp_path / "topology.csv")
+    optimizer = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(years=1, iterations=1, seed=1, topology_path=str(topology)),
+    )
+    with pytest.raises(ValueError, match="neither a feature nor a product"):
+        PatchModel(
+            optimizer,
+            [PatchAccount(name="patch.nope", criteria="feature.Nonexistent", threshold=0.5)],
+        )

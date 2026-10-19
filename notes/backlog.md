@@ -94,7 +94,11 @@ items are enhancements and maintenance.
   the account values (one row per year and account), so the optimizer scores a target on a `product.*`
   account.
 - **Route flows.** `done`. With a road network, each produced product is routed to the block's nearest
-  destination and written to `route_values.csv` with its length and cost.
+  eligible destination and written to `route_values.csv` with its length and cost. What is *delivered*
+  is what an eligibility map names: a product the map does not name is routed nowhere, because a
+  configuration that says where wood goes is saying what the wood is (P12.3, #123 — it had been routing
+  the areas, the sera classes and the volume classes to the mills beside the yield, which made the route
+  report's volume 2.26× the reference's).
 - **Patch metrics over blocks.** `done`. `ws4/patch/metrics.py` groups the disturbed blocks into
   connected patches over the topology and reports the count, mean size, largest opening, and size-class
   distribution; the simulator writes `patch_metrics.csv` when given a topology.
@@ -155,14 +159,36 @@ items are enhancements and maintenance.
   the optimizer's inner loop, so each evaluation routes every scheduled block (a future
   incrementality optimization), and core-area and edge-contrast rules. Target: post-release.
 - **Patch accounts.** `done`. `ws4/patch/accounts.py` implements the patch size-class sub-accounts
-  (area, size, shape, frequency, attractor) over the block topology for a criteria feature and a
-  threshold; the criteria value per block is derived from a feature curve
+  (area, size, shape, frequency, blocks, freqpercent) over the block topology for a criteria feature and
+  a threshold; the criteria value per block is derived from a feature curve
   (`Simulator.block_criteria`), and the simulator writes `patch_accounts.csv`. The topology loader
   accepts the established `BLOCK1,BLOCK2,DISTANCE,LENGTH` columns with the `-9999` sentinel.
 - **Account types and reports.** `partial`. `ws4/report.py` summarizes accounts, evaluates a ratio
   account, reports target status, and writes `report_accounts.csv` / `report_targets.csv`. Open:
   duplicate and meta accounts, and chart output. Target: post-release.
-- **Unit conversion (map vs report units).** `open`. Target: post-release.
+- **Unit conversion (map vs report units).** `open`. Target: post-release. One instance is measured and
+  in the route report: WS4 reports `AVERAGEHAULDIST` in **metres** and the reference in **kilometres**, so
+  the column reads 1,200× apart when it is 1.2× (P12.3, #123) — converting WS4's own column is a decision
+  about its report rather than about the comparison, so it is left for this item rather than done quietly
+  under a parity task.
+- **What the reference's route report `LENGTH` counts.** `open`, and the one quantity of P12.3's
+  comparison left unexplained. It is a segment-set quantity — the length of the distinct road in use
+  during a period — and WS4 reports **2.6×** the reference's for MILL 1 and **3.3×** for MILL 2 over the
+  twenty periods, where maintenance is *consistent with* it on both sides (1.17 a metre in WS4 against
+  0.98 in the reference) and the haul expense is *lower* while more road is in use. So the two runs use
+  **different roads**, not different amounts of wood: WS4 routes over the whole planned network (11,606 km
+  of 36,721 segments) while the reference's search builds roads as it goes. The candidate explanation —
+  that its report counts only the roads its own run has opened — is unverified, and is recorded as a
+  candidate rather than asserted.
+
+  Two more readings have since been ruled out from the export itself.
+  `scenario/route_destination.MILL*.csv` lists 26,905 rows per mill whose segments sum to **6.6 million
+  metres** — 7.4 times the report's mean period `LENGTH` — so those rows walk the **reachable** network
+  rather than the road a period used. And a period's `LENGTH` is neither the cumulative `BUILTLENGTH` nor
+  monotone in it: `LENGTH` falls from 1,149,647 to 741,466 across periods while the build only grows, and
+  1,149,647 is exactly the period's build plus an initial **417,574 metres** that no table in the export
+  states. So `LENGTH` is a per-period quantity over a road set the export does not list, which is why it
+  is the one column P12 could not settle.
 
 ## Programmatic model API (P2.9)
 
@@ -242,8 +268,11 @@ items are enhancements and maintenance.
   (**384,362.3**, ten times high). The objective, the report, the incremental evaluator, the patch
   accounting points and the MIP bound all follow one rule, `ws4.opt.objective.accumulates()`, and the
   acceptance check states the rule **independently** so the two can disagree.
-- **Road maintenance as a function of the traffic a road carries.** `open`, a deliberate divergence to
-  revisit *after* parity, with a specified shape. Traffic-weighted maintenance is conceptually
+- **Road maintenance as a function of the traffic a road carries.** `done` (P12.5, #125), behind the
+  parity mode. The reading is `f(0) = 0` and `f(x > 0) = b + a x`, chosen by
+  `divergences.maintenance`, and its effect is measured on the 2026 base scenario: +4.2% of the
+  maintenance at `a = 0.001`, +42.4% at 0.01 and ×5.24 at 0.1, with the haul unchanged. The text below
+  is the record of why, kept as written when it was still open. Traffic-weighted maintenance is conceptually
   defensible — it is simply not what the reference does (it charges each used road once for the period),
   and on the 2026 sample WS4's traffic reading was about **170×** the reference's, so parity needs the
   reference's reading (implemented, and the ledger's test pins it: nine times the volume over the same
@@ -256,24 +285,59 @@ items are enhancements and maintenance.
   case, the one WS4 had was in effect a per-use charge with no intercept, and this is the shape a road
   budget actually has: a road that is open at all needs work whether or not it is busy, and a busy road
   needs more.
-- **A Patchworks-parity mode.** `open`, a future feature, and the shape of how WS4 diverges. The current
+- **A Patchworks-parity mode.** `done` (P12.5, #125), in the smallest form that makes a divergence
+  explicit: parity is the default, and what WS4 computes differently is named under the route
+  configuration's `divergences`, one entry per quantity, with an unknown entry refused rather than
+  ignored. It covers one quantity so far — maintenance — and a second is added the same way rather than
+  by building a framework. Quantities that *agree* are not declared at all, because parity is what
+  happens when nothing is named. The text below is the record of why, kept as written when it was
+  still open. The current
   aim is **verified parity first**: match the reference's semantics, and prove it against its own reports.
   From there WS4 is free to redefine anything it computes — as long as the change is justified,
   documented, and self-consistent — and a mode that *enforces* the reference's readings would let a user
   choose which they get. That mode is the natural home for deliberate divergences like traffic-weighted
   maintenance, and it makes each one explicit rather than implicit.
-- **A patch criterion can only be a feature.** `open`, a capability with measured evidence (P11.4, #116).
-  The reference's harvested patches use `product.harvested` as their criterion — a *product* — and WS4's
-  patch state evaluates a criterion as a feature, so the account is accepted, runs, and produces **every
-  cell zero**. That is 28 of the reference's 63 patch targets, and the silence is the reason to treat it
-  as a capability rather than a comparison fix: a patch criterion that can be a product changes what a
-  criterion *is*.
-- **The reference's destination policy for its mill products.** `open`, a modelling difference found by
-  building the allocation (P11.2/P11.5). WS4 sends each block's product to its cheapest mill
-  (118,498 / 251,703 for the conifer yield over the periods compared); the reference's near-balanced
-  54/46 (1,029,670 / 892,306) comes from its own exclusive-account allocation under mill minimums. The
-  route ratios' denominator is that product, so `ratio.route.haul.MILL1` is comparable only once the two
-  tools decide the split the same way — or once the ratio is defined differently on WS4's side.
+- **A patch criterion that is a product, evaluated on the treatment's own timeline.** `open`, the
+  remaining half of P12.1. The reference's harvested patches name `product.harvested`, and resolving it is
+  not the problem: with the lookup keyed by `(track, treatment, label)` the series is no longer zero, but
+  its values land at the **wrong time** — measured, a block the schedule harvests in year 44 had its
+  product's value appear in year 150, because a product's curve read against a *fragment's age* is not
+  the product of the *treatment* that happened. So WS4 now refuses a product criterion with that reason
+  rather than reporting a quiet nought, and the real fix is to evaluate the product on the treatment's
+  own timeline. That is 28 of the reference's 63 patch targets.
+- **Patch membership, and so the patch components and the `attractor`.** `open`, and **not obtainable
+  from this reference**: blocked, with the evidence rather than an expectation. Every report group of the
+  2026 export was read — `patch/` holds four *Target table* reports (the class sub-accounts in another
+  shape), `harvest/maps/` is `MapReport` images with a field list, `nta/` is aggregates, and `scenario/`
+  holds block attributes but no patch attribute — and the maintainer has confirmed that everything
+  Patchworks can export has been exported. So the class aggregates are the **ceiling** for patch
+  structure. The instrument for when one arrives is built and tested: ``patch_membership.csv`` states
+  WS4's own components on a run, ``compare_patch_components`` compares two listings over their partitions
+  (ids never need to agree; a merge is reported with an example), and the ``patchcomponents`` acceptance
+  check runs it against a listing under the export's ``patch`` directory, skipping with that reason on
+  every run today. The listing's specification is in `notes/design/ws4-parity-harness.md`.
+- **The reference's patch `attractor` sub-account.** `open`, blocked on the same export as the patch
+  components, and on the same terms: not obtainable from this reference. P12.4 (#124) established from the reference's own 360 values that it is a per-class
+  landscape quantity (zero exactly when the class is empty), that it is **not** the class's mean patch
+  size, **not** its `size` share (the ratio runs 0.26 to 2.57 cell by cell), and **not** a function of the
+  six sub-accounts the export publishes (a log-linear fit leaves a 9% median and a 58% worst residual).
+  What it looks like is a lower quantile of the class's patch sizes — within one class it holds a stable
+  0.52 to 0.69 of the class's mean patch area, falling to 0.015 in the largest. So WS4 refuses an
+  `attractor` sub-account with that reason rather than reporting a `1.0` flag that was not a value, and
+  the quantity would become computable from a per-patch distribution — the membership listing above,
+  which this reference cannot state (#126).
+- **The reference's destination policy for its mill products.** `open`, narrowed by P12.2 to one
+  question. What the reference's model declares is now established and implemented: conifer may reach
+  either mill, **deciduous may reach Mill 2 only** (with `product.unutilized.Decid` for what reaches
+  none), the split is exported per block and period, and WS4's rule — those destinations, then the least
+  haul cost — reproduces the reference's own choice on **13,375 of 13,377 deciduous** block-periods (its
+  mill product agreeing to 4 units in 2.78 million) and **12,266 of 13,377 conifer** ones (91.7%). What
+  is left is the reference's **delivery target: Mill 1 is held at 800,000 a period** and Mill 2 takes the
+  remainder, which is why its split is 62/38 rather than WS4's 66/34 (+8.1% / −13.3% on the horizon).
+  Reproducing it means adopting its allocation policy wholesale, which changes where wood goes, so it
+  belongs behind the parity mode below rather than as WS4's only behaviour. The route ratios' denominator
+  is that product, so `ratio.route.haul.MILL1` waits on it — or on the ratio being defined differently on
+  WS4's side.
 - **Docstring completeness.** `done`. `scripts/doc_audit.py` is the oracle: it checks every public
   function, method, property, class, and module in `ws4` and `scripts/` for the four rules (a docstring
   exists; every parameter is documented and nothing else; a value-returning callable has a `Returns`

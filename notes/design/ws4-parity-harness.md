@@ -292,34 +292,57 @@ families need an input WS4 does not ingest (a complete-coverage watershed table,
 the fifth needs route costs and mill volumes exposed as accounts. Which of those WS4 should take on is a
 scoping decision, and the next section states the order this note recommends.
 
-## The route accounts: the same report, different accounting
+## The route accounts: the same report, in the reference's own periods
 
 The reference ships its own route cost report (`route/routeCostMILL<mill>.csv`), and it is the **same
-table** WS4 writes (`route_cost_report.csv`) — the same columns, including the period and year a change
-made WS4's report carry. That makes the comparison direct, and it shows the differences are in the
-*accounting*, not the routing (which agrees apart from the sample's stale third mill):
+table** WS4 writes — the same columns, and now the same rows. P12.3 gave the report the model's period
+width, so a period is labelled by the year it ends at and carries that width, the extensive columns are
+summed over the period's years, and the averages are recomputed from those sums — which is what the
+reference's own arithmetic does: its `AVERAGEHAULCOST` is `HAUL_EXPENSE / VOLUME` to four decimals. WS4
+writes the report **per destination** as well now, which is how the reference ships it (one table per
+mill), and a period width of one still leaves one row per year, so nothing about the older report moved.
 
-| Column | Reference, period 1 (year 10, width 10) | WS4, period 1 (year 1, width 1) |
+Compared over the twenty periods of the 2026 base scenario, same schedule and same periods:
+
+| Column | MILL 1: reference / WS4 | MILL 2: reference / WS4 |
 | --- | ---: | ---: |
-| `LENGTH` | 1,149,647 | 827,926 |
-| `BUILD_EXPENSE` | 3,660,367 | 2,038,700 |
-| `HAUL_EXPENSE` | 11,174,512 | 10,549,815 |
-| `MAINTAIN_EXPENSE` | 1,126,465 | **195,991,566** |
-| `TOTAL` | 15,961,345 | 208,580,081 |
-| `VOLUME` | 1,029,670 | 1,646,192 |
-| `AVERAGEHAULDIST` | **50.3** | **65,261** |
-| `AVERAGEMAINTCOST` | **1.1** | **119.1** |
+| `VOLUME` | 15,371,727 / 16,617,632 (+8.1%) | 12,135,638 / 10,889,737 (−10.3%) |
+| `TOTAL` | 187,025,907 / 150,580,419 | 180,525,485 / 161,730,453 |
+| `BUILTLENGTH` | 1,440,618 / 1,713,065 | 1,926,641 / 2,211,294 |
+| `HAUL_EXPENSE` | 138,919,438 / 88,248,589 | 112,074,151 / 67,071,801 |
+| `LENGTH` | 18,757,567 / 49,207,309 | 27,277,007 / 90,145,237 |
+| `MAINTAIN_EXPENSE` | 18,433,382 / 57,381,362 | 26,982,130 / 87,536,005 |
+| `AVERAGEHAULDIST` | 877 / 1,075,870 | 1,023 / 1,236,013 |
 
-Three of those are *shape*, not error: the reference reports a ten-year period where WS4's report here is
-per year, and distances are kilometres against metres. Two are not: **maintenance is about a hundred
-times apart** in both the expense and the per-unit cost, and **the volume is 1.6× apart** because WS4's
-route volume is every product routed whereas the reference's mill product is the conifer share.
+**Three of those are explained, and they were the three worth fixing.**
 
-So the derived **ratios cannot be compared honestly yet**: `ratio.route.haul.MILL1` is
-`route.haul.MILL1 / product.Mill1.Yield.Conif × 10000`, and both of its sides have to mean the same thing
-in both tools first. That reconciliation belongs with the mill-set task, since it is the same subject and
-the same report, and the order it should be done in is: maintenance, then the reporting window, then the
-per-product split of the routed volume (which the ledger already records and only has to expose).
+1. **`VOLUME` is now the same quantity on both sides**, to within the destination policy. It is the
+   delivered wood, not the delivered wood *and* the areas: WS4 had been routing **27 products** to the
+   mills — `product.Area.managed.PL`, the `product.vph.*` classes, `product.total.Yield` — because a
+   product with no entry in the eligibility map went to every destination. The report is what made it
+   visible: its volume was **2.26 times** the reference's, and once a map that names products became the
+   list of what is *delivered*, the two differ by the 8% and 10% that #122 measured in the destination
+   decision itself.
+2. **`AVERAGEHAULDIST` is a unit.** WS4 counts metres and the reference kilometres: per period WS4
+   reports 53,794 m for MILL 1 against the reference's 43.9, so 1.2× rather than the 1,200× a raw ratio
+   of the column suggests. The 1.2 is the same routing difference the other rows carry. Converting WS4's
+   own column is a decision about its report rather than about the comparison, and is in
+   `notes/backlog.md`.
+3. **`BUILTLENGTH` was zero in the per-destination report**, because the per-destination state recorded a
+   segment's build expense and never its built length. Writing the report per destination is what
+   exposed it.
+
+**One quantity is not explained: `LENGTH`, and what follows from it.** It is a segment-set quantity —
+the length of the distinct road in use during a period, independent of how much wood travels it — so the
+routed-product fix did not move it (49,207,309 before and after), and WS4 reports 2.6× the reference's
+for MILL 1 and 3.3× for MILL 2. Maintenance is *consistent with* it on both sides rather than a separate
+difference (1.17 a metre in WS4, 0.98 in the reference), and the haul expense being *lower* than the
+reference's while more road is in use says the two runs use **different roads**, not different amounts of
+wood. WS4's own figure is a property of the network it routes over (11,606 km of 36,721 segments) and is
+well inside it. What the reference's `LENGTH` counts is not established from its own tables; the
+candidate — that its report counts only the roads its own run has opened, where WS4 routes over the
+whole planned network — is **unverified**, and is recorded as such in `notes/backlog.md` rather than
+asserted.
 
 ## The flow targets: the values already match, the reporting is what was wrong
 
@@ -418,17 +441,17 @@ two of this note's earlier readings:
 | `shape` | the perimeter relative to a circle of the same area: 1 or more, higher being more dendritic | **the same definition** — WS4's compactness is its inverse square — so the difference is the patches, not the metric: ~32% once converted |
 | `frequency` | the number of patches in the class | the same: median 8% |
 | `freqpercent` | the class's share of all patches | added: median 3.5% |
-| `attractor` | the account that draws the average patch size towards the class; it is a switch rather than a measurement | not reproduced: the reference reports values of its own for it, and WS4 has no counterpart |
+| `attractor` | a per-patch size statistic (P12.4): zero exactly when the class holds no patches, and otherwise a fraction of the class's **mean patch area** that falls as the class grows | **refused**: the reference's own exported tables do not determine it, and WS4's old `1.0` flag was not a value |
 
 That corrects this note twice over. `shape` is not a different quantity — it is the same one, and what
 differs is which patches form. And `blocks` is a mean per patch, which WS4 already held in its state and
 simply did not expose.
 
-**The comparison now covers 630 cells over six quantities**, 45% of them within 10% of the reference, and
-the five `attractor` cells are the only ones it cannot make. The remaining differences are the *patches
-themselves*: WS4's aggregate young-patch area is 0.92 of the reference's, its patch count 1.03 and its
-mean patch size 0.96, so the components merge or split differently on the same schedule, and that is what
-is left to chase.
+**The comparison now covers 630 cells over six quantities**, 45% of them within 10% of the reference,
+and the `attractor` is the one sub-account it does not make — because the quantity is not in the export,
+which is the next section. The remaining differences are the *patches themselves*: WS4's aggregate
+young-patch area is 0.92 of the reference's, its patch count 1.03 and its mean patch size 0.96, so the
+components merge or split differently on the same schedule, and that is what is left to chase.
 
 ### What the reference's two tables ask
 
@@ -455,50 +478,67 @@ period convention, the patch `shape` metric, and this one.
 
 ### The mill products: the mechanism, and what it exposed
 
-A route account can now name the product whose volume it tracks, so `product.Mill1.Yield.Conif` is
+A route account can name the product whose volume it tracks, so `product.Mill1.Yield.Conif` is
 expressible the way the reference means it — a volume account for one product at one destination, tested
 both ways (the filtered account sums only that product; a *cost* account naming a product is refused
 rather than ignored, because the ledger prices a route and not a tonne of it).
 
-Pointing it at the reference's own numbers exposed the next question rather than closing it. WS4 routes
-**24,349** of `product.Yield.managed.Conif` to Mill 1 over the periods, where the reference reports
-**1,029,670** — and its all-product routed volume is 1.6× the reference's, so the difference is not
-quantity but *attribution*: the products WS4's route model assigns, and the volume it assigns to each,
-are not the reference's. The reference makes this explicit in its model — it marks the conifer yield as
-an **exclusive** account split between the two mills, and duplicates each mill's share into its
-destination and into the conifer total — which is a *proportional allocation* between destinations rather
-than WS4's per-block least-cost routing. That is the question #114's route ratios now wait on.
+The reference divides each master product among its destinations with `addExclusiveAccount`, and exports
+the choice it made per block and per period, so the *decision* is in the export and can be compared
+rather than guessed at. Two things followed, both measured (P12.2):
 
-### The destination allocation, and the difference that is left
+- **The reference's destinations are per master, not per mill.** Conifer may go to Mill 1 or Mill 2;
+  **deciduous may go to Mill 2 only**, with `product.unutilized.Decid` for what reaches none. WS4 routed
+  both products to whichever mill was nearest, so **62.7% of the deciduous area** went to a mill the
+  reference's model does not give it at all — an error, not a policy difference. With the eligibility
+  declared, `product.Mill2.Yield.Decid` agrees with the reference to **4 units in 2.78 million** over 21
+  periods.
+- **What is left is a planning decision, not a routing consequence.** WS4's rule is the reference's
+  declared destinations, then the least haul-cost one. Against the reference's own exported choice that
+  agrees on **12,266 of 13,377 conifer block-periods (91.7%)**; the rest is the reference holding Mill 1
+  at a **delivery target of 800,000 a period** (its own `MINIMUM` and `MAXIMUM` for that target are both
+  800,000, and the achieved value sits on it in 13 of 20 periods) and giving Mill 2 the remainder. Only
+  631 of the reference's 7,257 blocks (8.7%) ever change mill between periods, and those are the ones
+  the target moves.
 
-WS4 has the capability now: a route configuration can partition a **master product across the
-destinations it is routed to**, with an account for whatever does not move — which is how the reference
-expresses its mill products. `resolve_allocation_values` takes the shares from the ledger's routed
-volumes and the master's total from the simulated values, so the parts always sum back to the whole;
-shares that exceed their master are refused rather than reported. The configuration, the resolver and
-the pass through `Simulator.run` are tested both ways.
+The stale comparison this section used to carry — "WS4 routes 24,349 where the reference reports
+1,029,670" — was a single *year* of WS4's against a whole *period* of the reference's, which is the same
+mistake this project keeps finding: the two sides were not being asked the same thing. Over the horizon,
+and over the same periods:
 
-Pointed at the 2026 sample's conifer yield, it partitions exactly — Mill 1 plus Mill 2 equals the
-master's own value for the year, and nothing is left unallocated because every block is linked to a mill
-— and that is what makes the remaining difference legible:
+| conifer yield, periods 1-20 | Mill 1 | Mill 2 |
+| --- | ---: | ---: |
+| Reference, its own destination policy | 15,371,727 | 9,356,805 |
+| WS4, least cost among the reference's own eligible destinations | 16,617,630 | 8,110,900 |
+| difference | +8.1% | −13.3% |
 
-| | Mill 1 | Mill 2 | Unallocated |
-| --- | ---: | ---: | ---: |
-| WS4, by least haul cost per block | 118,498 | **251,703** | 0 |
-| Reference, its own destination policy | **1,029,670** | 892,306 | — |
+### The destination allocation, and what is left of it
 
-The split is nearly **opposite**, and it is not a bug in either: WS4 sends each block's product to its
-cheapest mill, and the reference's near-balanced 54/46 is the outcome of its own model — an exclusive
-account allocated under mill minimums and its own cost rules, which is a **planning decision** rather
-than a routing consequence. So `ratio.route.haul.MILL1` still cannot be compared: its denominator is the
-mill product, and the two tools decide that product's split by different rules. The capability is built;
-what is missing for the ratio is the reference's destination policy, which is a modelling question and
-not a comparison one.
+WS4 has the capability: a route configuration partitions a **master product across the destinations it
+is routed to**, with an account for whatever does not move — which is how the reference expresses its
+mill products. `resolve_allocation_values` takes the shares from the ledger's routed volumes and the
+master's total from the simulated values, so the parts always sum back to the whole; shares that exceed
+their master are refused rather than reported. The surplus account is declarable **per product**, because
+the reference declares one per master: conifer has none, so an unreachable conifer block is dropped
+rather than quietly filed under the deciduous surplus. Measured: none of the 7,257 blocks the reference's
+schedule treats is unreachable from every one of its destinations, so this is not exercised on the 2026
+sample.
 
-One correction worth keeping: the first run of this doubled the mill volumes, because the configuration
-had both a volume route account *and* an allocation writing the same account name. The comparison caught
-it because the parts then exceeded the master — which is exactly what the guard is for, once it checks
-every year either side knows about rather than only the master's own.
+`check_destinations` compares the decision and its consequences in one place: the reference's declared
+splits are read from its own model file (`analysis/C5.pin`, the same source the flow targets come from),
+WS4's model is built from them, and the two decisions are compared block-period by block-period. Where
+the split leaves the reference **one** destination the mill product must be reproduced — and the
+deciduous one is, to four units in 2.78 million — while where it leaves **several** the choice is free
+and only the agreement is measured: 91.7% on conifer, and the conifer mill products differ by up to
+**342,151** a period, which is the delivery target rather than an error. What remains for the route
+ratios is that target: reproducing it means adopting the reference's allocation policy wholesale, which
+changes where wood goes, so it belongs behind the parity mode (#125) rather than as WS4's only
+behaviour.
+
+One correction worth keeping: the first run of the allocation doubled the mill volumes, because the
+configuration had both a volume route account *and* an allocation writing the same account name. The
+comparison caught it because the parts then exceeded the master — which is exactly what the guard is for,
+once it checks every year either side knows about rather than only the master's own.
 
 ### The growth check, retargeted for the 2026 sample
 
@@ -534,6 +574,136 @@ and its mean patch size **0.96** — the structure is within about 8% — while 
 cells differ by a median of 9% to 18% depending on the quantity. So the components form comparably in
 aggregate and differently in detail, and the instrument to say *where* is not in what the reference ships.
 
-The five `attractor` cells are the third: the reference reports values of its own for a sub-account that
-draws the average patch size towards a class, and WS4 has no counterpart.
+The `attractor` is the third, and P12.4 is what it is: the next section.
+
+### The attractor sub-account: what the reference's own values say, and why it is refused
+
+The reference reports a sixth sub-account per size class, `attractor`, and WS4 used to write a `1.0` for
+it whenever an account declared one — a flag, not a value. P12.4 established what the reference's values
+are, from its own numbers across both scenarios and all eight classes (360 cells), and the answer is that
+**the reference's export does not determine them**:
+
+- It is a **per-class landscape quantity, not a flag**: it is zero in exactly the cells where the class
+  holds no patches, and non-zero everywhere else — checked over the no-treatment scenario, where the
+  young classes empty out by period 10, and the optimised one.
+- It is **not the class's mean patch size**: the class whose bounds are 50 to 150 hectares reports values
+  of 15.7 to 21.3, and a mean of a class bounded below by 50 cannot be below 50. Nor is it the class's
+  `size` share: the ratio of the two ranges from **0.26 to 2.57** cell by cell, so the reading that one
+  set of the reference's documentation invites — "a flag that draws the average patch size toward the
+  class; its value mimics `size`" — is contradicted by the values.
+- It is **not a function of the sub-accounts the export publishes**. A log-linear fit of the attractor
+  against `area`, `blocks`, `size`, `shape`, `frequency` and `freqpercent` leaves a **9% median and a 58%
+  worst** relative residual: the attractor carries information the other five do not.
+- What it *does* look like is a lower quantile of the class's patch sizes: within the `young.0_50` class
+  it sits at a stable **0.52 to 0.69** of the class's mean patch area, and that fraction falls as the
+  class grows — **0.015** in the largest class. A per-patch distribution is exactly what the reference
+  does not ship, the same gap that leaves the patch components incomparable (#126).
+- Its target carries the class's own size range as `MINIMUM`/`MAXIMUM`, and **278 of the 360 cells sit
+  outside it** with a `SUMMARY` of 0 — so the reference's own report does not evaluate it as an objective
+  term, which is consistent with the reading that it guides a search rather than measuring a landscape.
+
+So WS4 **refuses** an `attractor` sub-account, naming that reason, rather than reporting a number it
+cannot stand behind — the same call as the product patch criterion above. The `1.0` flag and the field
+that held it are gone rather than left in as a trap; no shipped configuration asked for one, so nothing
+that worked changed.
+
+### Parity mode, and the one divergence it names
+
+**Parity is the default, and a divergence has to be asked for by name.** Everything WS4 computes the
+way the reference does needs no configuration; what it computes *differently* is declared under a route
+configuration's ``divergences``, one named entry per quantity, so that what a run does is explicit
+rather than implicit — and so that something deliberately different cannot be mistaken for something
+wrong. An entry WS4 does not know is refused rather than ignored, and so is a maintenance reading it
+does not have.
+
+The one divergence declared so far is **maintenance as a function of the traffic a road carries**. The
+reference charges each road it uses once for the period, whatever traffic passes over it — ``f(0) = 0``,
+``f(x > 0) = b``. WS4 offers the affine form the maintainer specified, which is what a road budget
+actually looks like: nothing at no traffic, then a fixed cost the moment any traffic uses the segment,
+plus a cost proportional to the traffic — ``f(x > 0) = b + a x``. The reference's reading is the ``a = 0``
+case and is the default; asking for the other one is what ``divergences.maintenance`` is for.
+
+**Its effect is measured rather than asserted**, on the 2026 base scenario replayed with each reading.
+The maintenance the run charges, summed over both mills, and what it does to the cost:
+
+| ``a`` (cost a unit of traffic) | maintenance | against parity | maintenance and haul |
+| ---: | ---: | ---: | ---: |
+| parity (``a = 0``) | 144,917,367 | — | 300,237,757 |
+| 0.001 | 151,064,075 | +4.2% | 306,384,465 |
+| 0.01 | 206,384,450 | +42.4% | 361,704,840 |
+| 0.1 | 759,588,194 | ×5.24 | 914,908,584 |
+
+So the term is what a user's choice makes it: negligible at a thousandth of a unit of traffic, a material
+part of the cost at a hundredth, and dominant at a tenth. The haul is unchanged in all four runs, which
+is the check that only the reading moved.
+
+**Two things had to be fixed for that to be a reading at all.** Maintenance used to be charged once per
+produced product in the route *accounts* while the route *report* charged it once per segment per period:
+on MILL 1 the account was **7.0 times** the report for the same mill. Both now go through one charge,
+computed after every flow of the period is in — from the traffic, which is what makes it a function of
+the traffic — and MILL 1's account and its report agree to **1.0000**. A destination's report counts a
+shared segment for each destination, so the sum over destinations is not the network-wide figure (1.28
+times it on this run); that is the reference's own per-mill reading rather than an error.
+
+The optimizer's **incremental path** prices route accounts as a per-block sum, which cannot see the
+traffic on a shared road. It now defers to the full simulation whenever a configured route account is one
+of the two that are charged per segment — ``build`` and ``maintain`` — so a search and the report it
+writes price the same thing. The additive accounts (``haul`` and ``volume``) still take the delta path,
+and a test pins both.
+
+### The patch components: the listing, and why the aggregates are the ceiling
+
+P11 compared the patch **class aggregates** and they agree to about 8% — WS4's young-patch area 0.92 of
+the reference's, its patch count 1.03, its mean patch size 0.96 — while the individual class-period cells
+differ by a median 9% to 18%. That says the components form comparably in aggregate and differently in
+detail, and it cannot say **where**. Saying where needs patch **membership**: which blocks formed which
+patch, in which period.
+
+**The reference does not ship it, and this is now established rather than assumed.** Every report group
+of the 2026 export was read: `patch/` holds four reports whose `Source` is *Target table*
+(`youngPatchSize`, `youngPatchFreq`, `harvestPatchSize`, `harvestPatchFreq`) — the same class
+sub-accounts in a different shape — `harvest/maps/` is `MapReport` output, images with a field list and
+no data, `nta/` carries aggregates, and `scenario/` holds block *attributes* (availability, the
+schedule) but no patch attribute. The maintainer has confirmed that everything Patchworks can export has
+been exported. So the aggregate comparison is the **ceiling**, and the note says so rather than implying
+more was checked than was.
+
+**The specification, for the day a listing exists.** A component listing is one row per member block of
+every patch:
+
+``period``, ``year``, ``account``, ``class``, ``patch``, ``block``, ``area_ha``
+
+Only ``year``, ``account``, ``patch`` and ``block`` are compared, and a tool's own names are read as
+they come. ``patch`` is each tool's own id and the two **never need to agree**: what is compared is the
+**partition** — which blocks are together — so a listing from another tool is comparable as it stands.
+The reference's own ``addPatchTarget`` declarations say which accounts and size classes to form, and its
+``inputTopology`` says which topology and search distance to form them over, so WS4 can form the same
+components from the same schedule. WS4 writes the listing as ``patch_membership.csv`` beside
+``patch_accounts.csv`` on a run.
+
+**The instrument is built and tested.** ``compare_patch_components`` compares two listings over their
+partitions: two listings agree on a period when every patch on one side is exactly a patch on the other,
+and a patch spanning more than one on the other side is a *merge* against it, reported with an example
+and the block counts. It is tested against a listing with a **known** difference — a merge and its
+reverse — so it can fail, and the ``patchcomponents`` acceptance check runs it against a listing found
+under the export's ``patch`` directory, skipping with the reason above when there is none. On every
+acceptance run today that skip is the visible statement of the ceiling.
+
+### A patch criterion that is a product: why it is refused
+
+The reference's harvested patches name `product.harvested` as their criterion, and WS4's patch state
+evaluated a criterion as a feature — so the account was accepted, ran, and produced **every cell zero**.
+P12.1 established what is actually wrong, and it is not the lookup. Resolving a product is a small
+change (`(track, treatment, label)` rather than `(track, label)`, since what a treatment produces depends
+on the treatment) and it was implemented: the series is no longer zero. But its values land at the
+**wrong time** — a block the schedule harvests in year 44 had its product's value appear in year **150** —
+because a product's curve read against a fragment's age is not the same as the product of the treatment
+that happened. A wrong value that looks like a right one is worse than a zero that looks like a zero.
+
+So the criterion is **refused** instead, with the reason: a patch criterion must be a feature, and a
+product names something whose value depends on when it was produced, which the patch state does not
+model. A label that is neither a feature nor a product is refused too, naming the mistake rather than
+returning nought. The product path itself is reverted rather than left in as a trap, and what a real fix
+needs — the product evaluated on the treatment's own timeline rather than the fragment's age — is in
+`notes/backlog.md`.
 

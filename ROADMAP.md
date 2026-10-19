@@ -23,7 +23,7 @@ exists and the maintainer approves it.
 | P8 Verify the replacement claim | #90 | `feature/p8-verify` | complete |
 | P9 Spatial performance and memory | #97 | `feature/p9-memory` | complete |
 | P11 The derived targets and the sample's own files | #112 | `feature/p11-derived-targets` | complete |
-| P12 Spatial decision match | #120 | `feature/p12-spatial-decisions` | active |
+| P12 Spatial decision match | #120 | `feature/p12-spatial-decisions` | complete |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -519,7 +519,9 @@ Acceptance criteria:
 
 Parent issue: #120
 Branch: `feature/p12-spatial-decisions`
-Status: active
+Status: complete
+
+Close-out report: `notes/reports/p12-closeout.md`.
 
 Goal: take the replacement claim from "the account values and the routes match" to "the **spatial
 decisions** match". Phase 11 verified the values — 1,383 account-period and flow values reproduced on
@@ -529,16 +531,18 @@ measured: a patch criterion cannot be a product, the reference's mill products a
 policy rather than WS4's least-cost routing, and the five `attractor` cells report a quantity WS4 does
 not have.
 
-- [ ] P12.1 A patch criterion can be a product (#121)
-- [ ] P12.2 The reference's destination policy for mill products (#122)
-- [ ] P12.3 Report the route accounts over the model's periods (#123)
-- [ ] P12.4 The attractor sub-account as the reference defines it (#124)
-- [ ] P12.5 A Patchworks-parity mode, with traffic-weighted maintenance behind it (#125)
-- [ ] P12.6 Compare the patch components against a reference membership export (#126)
+- [x] P12.1 A patch criterion can be a product (#121) — refused with its reason measured; the real fix is the treatment's timeline
+- [x] P12.2 The reference's destination policy for mill products (#122) — its declared destinations, then least haul cost; the delivery target left to the parity mode
+- [x] P12.3 Report the route accounts over the model's periods (#123) — the report folds into the model's periods, per destination too
+- [x] P12.4 The attractor sub-account as the reference defines it (#124) — established as a per-patch quantile the export does not determine; refused, not faked
+- [x] P12.5 A Patchworks-parity mode, with traffic-weighted maintenance behind it (#125) — parity by default, one named divergence, its effect measured
+- [x] P12.6 Compare the patch components against a reference membership export (#126) — the comparison is built and tested, WS4 states its own components, and the class aggregates are recorded as the ceiling: the reference cannot export membership
 
 Deferred from P12, triaged in `notes/backlog.md`:
 
-- (none outstanding.)
+- The patch criterion on the treatment's own timeline, patch membership (the ceiling: this reference
+  cannot state it), the reference's Mill 1 delivery target, what its route report `LENGTH` counts, and
+  the route report's distance unit. Each names its blocker.
 
 Acceptance criteria:
 

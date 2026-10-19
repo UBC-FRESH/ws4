@@ -66,6 +66,27 @@ class PatchModel:
             key: tuple(value) for key, value in grouped.items()
         }
         self.labels = sorted({account.criteria for account in self.accounts})
+        # A criterion must be a feature. Pointed at a product the patch state used to produce a
+        # series of zeros in silence, and resolving one is not simply a lookup: what a treatment
+        # produces depends on when it is applied, and a product's curve read against a fragment's
+        # age puts its value at the wrong time — measured, a block harvested in year 44 had its
+        # product's value appear in year 150. Refusing beats reporting a quiet nought.
+        simulator = optimizer.simulator()
+        features = set(simulator.features["label"].astype(str))
+        products = set(simulator.products["label"].astype(str))
+        for label in self.labels:
+            if label in features:
+                continue
+            if label in products:
+                raise ValueError(
+                    f"a patch criterion must be a feature: {label!r} is a product, and what a "
+                    "treatment produces depends on when it is applied, which the patch state "
+                    "does not model — its values would be silently wrong in time"
+                )
+            raise ValueError(
+                f"a patch criterion must be a label the dataset has: {label!r} is neither a "
+                "feature nor a product"
+            )
         self._series: dict[tuple[int, Chain], dict[str, dict[int, float]]] = {}
         self.assignments: Schedule = {}
         self.focus_years: tuple[int, ...] = ()
