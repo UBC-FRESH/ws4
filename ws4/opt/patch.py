@@ -66,11 +66,17 @@ class PatchModel:
             key: tuple(value) for key, value in grouped.items()
         }
         self.labels = sorted({account.criteria for account in self.accounts})
-        # A criterion must be a feature. Pointed at a product the patch state used to produce a
-        # series of zeros in silence, and resolving one is not simply a lookup: what a treatment
-        # produces depends on when it is applied, and a product's curve read against a fragment's
-        # age puts its value at the wrong time — measured, a block harvested in year 44 had its
-        # product's value appear in year 150. Refusing beats reporting a quiet nought.
+        # A criterion must be a feature. A product is not one, and the difference is not a lookup:
+        # a product's curve is the window over a **track's** age in which its treatment may be
+        # applied, and what it yields is produced **in the year of the treatment** — a flow, not a
+        # level. P13.1 implemented exactly that, in `block_criteria` and `block_criteria_series`,
+        # from the same computation the product accounts use; the harvested family was then compared
+        # against the reference for the first time, and its values are right in time and shape — a
+        # flow in the harvest year, nothing elsewhere. What differs is which blocks qualify: WS4's
+        # own replay of the reference's schedule harvests blocks outside the treatment's age window,
+        # and the patches it forms hold about a ninth of the reference's area. That is a measured
+        # gap in selection rather than a mechanism WS4 lacks, and a value wrong in selection looks
+        # as right as one that is not, so the criterion is refused until it is understood.
         simulator = optimizer.simulator()
         features = set(simulator.features["label"].astype(str))
         products = set(simulator.products["label"].astype(str))
@@ -79,9 +85,14 @@ class PatchModel:
                 continue
             if label in products:
                 raise ValueError(
-                    f"a patch criterion must be a feature: {label!r} is a product, and what a "
-                    "treatment produces depends on when it is applied, which the patch state "
-                    "does not model — its values would be silently wrong in time"
+                    f"a patch criterion must be a feature: {label!r} is a product. Its value is a "
+                    "flow in the year of its treatment, which WS4 now computes from the same "
+                    "lookup "
+                    "the product accounts use, but the patches it forms hold about a ninth of the "
+                    "reference's area: WS4's replay harvests blocks outside the treatment's age "
+                    "window. The values are right in time and shape and wrong in selection, which "
+                    "is the kind of wrong that looks right, so the criterion is refused until that "
+                    "is understood"
                 )
             raise ValueError(
                 f"a patch criterion must be a label the dataset has: {label!r} is neither a "

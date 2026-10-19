@@ -1727,3 +1727,15 @@ issue comments.
   maintainer has confirmed the export is everything Patchworks can produce. So the check **skips with
   that reason on every run**, which is the honest statement of the ceiling, and the listing's
   specification is in `notes/design/ws4-parity-harness.md`. Dashboard: **GREEN**.
+- P13.1 (#129) **the product patch criterion's mechanism is established and implemented, and the
+  harvested family is compared for the first time.** A product's curve is not a level: the legacy
+  `products.csv` states `TRACK,TREATMENT,LABEL,FUTURE,ADJUST,METHOD,CURVE`, the track is the track the
+  treatment is applied *on* (all 1,248 tracks the harvested product is stated on are CC-treatment
+  tracks), the curve is a **window over that track's age** (curve 91 is 1.0 on ages 150–424 and 570–844 —
+  the CC window the treatments table states), and `FUTURE` is 0, so the product is produced **in the year
+  of its treatment**. `block_criteria` and `block_criteria_series` now answer for a product as a **flow**
+  normalised as a feature criterion is, from the same computation the product accounts use, kept as
+  per-year state. The harvested family is compared and its **timing and shape are right** — a flow in the
+  harvest year, nothing elsewhere — while the areas are **0.11 to 0.16×** the reference's over 0.11 to
+  0.17× its patch count, so *which blocks qualify* differs; the criterion is refused again with that
+  measurement and the unverified age-window explanation rather than reported. Dashboard: **GREEN**.

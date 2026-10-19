@@ -689,21 +689,38 @@ reverse — so it can fail, and the ``patchcomponents`` acceptance check runs it
 under the export's ``patch`` directory, skipping with the reason above when there is none. On every
 acceptance run today that skip is the visible statement of the ceiling.
 
-### A patch criterion that is a product: why it is refused
+### A patch criterion that is a product: the mechanism, and what is still open
 
-The reference's harvested patches name `product.harvested` as their criterion, and WS4's patch state
-evaluated a criterion as a feature — so the account was accepted, ran, and produced **every cell zero**.
-P12.1 established what is actually wrong, and it is not the lookup. Resolving a product is a small
-change (`(track, treatment, label)` rather than `(track, label)`, since what a treatment produces depends
-on the treatment) and it was implemented: the series is no longer zero. But its values land at the
-**wrong time** — a block the schedule harvests in year 44 had its product's value appear in year **150** —
-because a product's curve read against a fragment's age is not the same as the product of the treatment
-that happened. A wrong value that looks like a right one is worse than a zero that looks like a zero.
+The reference's harvested patches name `product.harvested` as their criterion, and the patch state
+evaluates a criterion as a feature — so the account was accepted, ran, and produced **every cell zero**;
+a label that is neither a feature nor a product is refused too. P12.1 established that the lookup is not
+the problem, and P13.1 established what is:
 
-So the criterion is **refused** instead, with the reason: a patch criterion must be a feature, and a
-product names something whose value depends on when it was produced, which the patch state does not
-model. A label that is neither a feature nor a product is refused too, naming the mistake rather than
-returning nought. The product path itself is reverted rather than left in as a trap, and what a real fix
-needs — the product evaluated on the treatment's own timeline rather than the fragment's age — is in
-`notes/backlog.md`.
+**A product's curve is not a level.** The legacy `products.csv` states `TRACK,TREATMENT,LABEL,FUTURE,
+ADJUST,METHOD,CURVE`, and for `product.harvested` on the 2026 sample:
 
+- the `TRACK` is the track the treatment is applied **on** — all 1,248 tracks the harvested product is
+  stated on are CC-treatment tracks (an earlier attempt looked the product up under the track the
+  treatment moves the block *to*, which is why its key was never found);
+- the `CURVE` is a **window over that track's age**, not a yield: curve 91 is 1.0 on ages 150–424 and
+  570–844, nothing outside, which is exactly the CC availability window the `treatments` table states
+  for those tracks;
+- `FUTURE` is 0, so the product is produced **in the year the treatment is applied**, and the value is
+  the curve at the age *then*.
+
+**What WS4 does now.** `block_criteria` answers for a product as well as a feature: a feature is a level,
+the area-weighted mean of its curve at the fragment's own age; a product is a **flow**, the area-weighted
+mean of the curve over the fragments the treatment applied to **in that year**, which is the same
+computation the product accounts use and is kept as per-year state. `block_criteria_series` computes the
+same quantity for an arbitrary chain, so the patch model can read it. Both normalise as a feature does,
+which is what makes a criterion a share of a block rather than an area — the first attempt omitted that
+and the harvested areas came out about forty times too large.
+
+**What the comparison measured.** The harvested family is compared for the first time, and its **timing
+and shape are right** — a flow in the harvest year and nothing elsewhere. What differs is **which blocks
+qualify**: WS4 forms patches holding **0.11 to 0.16** of the reference's area, over 0.11 to 0.17 of its
+patch count, in every size class. WS4 applies a treatment whose age window the block may be outside of —
+the reference's own search would have chosen a block it could treat, and WS4's replay applies what the
+schedule says — which is the candidate explanation and is **unverified**. So the criterion is **refused
+again**, with that reason, rather than reported: its values are right in time and shape and wrong in
+selection, which is the kind of wrong that looks right.
