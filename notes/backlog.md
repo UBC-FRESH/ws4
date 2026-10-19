@@ -336,3 +336,11 @@ items are enhancements and maintenance.
   exists; every parameter is documented and nothing else; a value-returning callable has a `Returns`
   section; a section header is preceded by a blank line). It runs as the `docstrings` gate in
   `scripts/dashboard.py` and as a CI step, with unit tests in `tests/test_doc_audit.py` (P6.45).
+- **The TSA23 FT dataset's product table.** `open`. `runtime/ws4/compiled_ft` repeats product rows:
+  1,515,465 exact duplicates against 3,431,580 distinct `(track_id, treatment, label, curve_id)` keys,
+  up to four rows per key. WS4 records every row once per treated fragment, so
+  `product.Treated.managed.FT` reads 4.0000× the treated hectares and the
+  `SpeciesProp`/`Yield`/`HarvestedVolume` families 2–4×. The builder drops exact duplicates from P16.2
+  onward and the loader warns on a dataset compiled before that; the dataset itself must be recompiled
+  to take the fix. Until then `product.FuelTreatmentCost / 20,000` is the clean hectares measure.
+  Target: P16.
