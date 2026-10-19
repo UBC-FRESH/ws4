@@ -1787,3 +1787,19 @@ issue comments.
   `--time-limit 00:00:05` the run stops with `time_limit_reached: true` in 6.4 seconds (the bound is the
   *search*; the final simulation and report follow it), and at `--time-limit 01:00:00` it spends the
   budget in 7.5 seconds with `false`. Dashboard: **GREEN** (573 tests).
+- P15.1 (#NNN) **a spread-connectivity account, and the synthetic oracle that the patch-size account
+  cannot pass.** `ws4/spread/accounts.py` measures how far a fire could run through the untreated
+  blocks: the topology is undirected and carries no bearings, so the account supplies a **bearing** (the
+  wind) and a **tolerance cone**, orients each transmitting edge downwind, and computes three
+  sub-accounts — `largest_component` (the area reachable from one ignition), `percolation_reach` (the
+  mean reachable area over untreated blocks) and `edge_cut` (the share of downwind edges leaving the
+  untreated set that the treatment stops) — plus `TOTAL.area` and `TOTAL.blocks`. The oracle is a
+  seven-by-seven eight-neighbour lattice with the treatment as the middle **row** or the middle
+  **column**, same area, one connected band either way: a patch-size account reports the **same** largest
+  patch for both, while the connectivity account separates them **90 against 190 ha** (largest
+  component), **42 against 94 ha** (percolation reach) and **20% against 12.5%** (edge cut). Three
+  modelling errors were caught by that oracle and are recorded in the module: undirected reachability
+  made a band along the wind look as good as one across it; a 90-degree cone makes the measure
+  symmetric on a regular lattice and loses the signal; and a four-neighbour lattice lets a 60-degree
+  cone select only northward edges, degenerating every compartment into a corridor. Dashboard: **GREEN**
+  (578 tests). The TSA23 bridge oracle is not on this machine, so that reproduction is the maintainer's.

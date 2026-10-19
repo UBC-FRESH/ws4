@@ -628,7 +628,7 @@ it: on equal-area patterns a wind-perpendicular barrier burns least (19,640 ha) 
 large-patch share (40.2%), so a large-patch target penalizes the arrangement that works. The barrier wins
 by breaking connectivity perpendicular to the wind.
 
-- [ ] P15.1 The spread-connectivity account and its synthetic oracle
+- [x] P15.1 The spread-connectivity account and its synthetic oracle — the account computed, and an oracle where the patch-size account is blind (same largest patch) and connectivity separates the patterns 90 against 190 ha
 - [ ] P15.2 Wire it into the simulator and the optimizer
 - [ ] P15.3 Document it, and state what the bridge test still has to confirm
 
