@@ -23,11 +23,12 @@
         <button data-tab="legend" class="active">Legend</button>
         <button data-tab="targets">Targets</button>
         <button data-tab="reports">Reports</button>
+        <button data-tab="comparison">Compare</button>
       </nav>
       <div class="sidebar-body">
       <section id="tab-legend">
         <h2>Layers</h2>
-        <label><input type="checkbox" id="show-treated" checked> <span class="swatch treated"></span> Treated in the year <b id="n-treated">0</b></label>
+        <label><input type="checkbox" id="show-treated" checked> <span class="swatch treated"></span> <span id="treated-label">Treated in the year</span> <b id="n-treated">0</b></label>
         <label><input type="checkbox" id="show-untreated" checked> <span class="swatch untreated"></span> Untreated <b id="n-untreated">0</b></label>
         <p class="hint">Click a block for its attributes. Wheel to zoom; drag to pan.</p>
         <div id="detail" class="detail"></div>
@@ -62,6 +63,32 @@
         <h2>Reports</h2>
         <ul id="reports"></ul>
         <div id="report-preview"></div>
+      </section>
+      <section id="tab-comparison" hidden>
+        <h2>Compare runs</h2>
+        <div class="compare-runs">
+          <label>A <select id="compare-a"></select></label>
+          <label>B <select id="compare-b"></select></label>
+        </div>
+        <p class="hint">The map shows the selected year:
+          <span class="compare-swatch compare-a"></span> A only,
+          <span class="compare-swatch compare-b"></span> B only,
+          <span class="compare-swatch compare-both"></span> both.
+          Use the year control above.</p>
+        <p id="compare-summary" class="hint">choose two runs</p>
+        <h2>Target status</h2>
+        <p id="compare-targets-empty" class="hint">no targets configured</p>
+        <div class="table-wrap"><table id="compare-targets" hidden>
+          <thead><tr><th>Account</th><th>Year</th><th>Min</th><th>Max</th><th>A</th><th>B</th><th>Δ B−A</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+        <h2>Accounts · year <span id="compare-year">0</span></h2>
+        <input id="compare-filter" type="search" placeholder="filter accounts" autocomplete="off">
+        <p id="compare-accounts-empty" class="hint"></p>
+        <div class="table-wrap"><table id="compare-accounts" hidden>
+          <thead><tr><th>Account</th><th>A</th><th>B</th><th>Δ B−A</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
       </section>
       </div>
       <section id="chat-panel" class="chat">

@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], yearChosen: false, chatSession: null, chatBusy: false };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false };
 
 const $ = (id) => document.getElementById(id);
 const statusLine = (text) => { $('status').textContent = text; };
@@ -91,15 +91,31 @@ function render(refit = true) {
   for (const feature of state.features) {
     const geometry = feature.geometry;
     const properties = feature.properties ?? {};
-    let isTreated = Boolean(properties.treated);
-    if (state.live.active) {
-      const chain = state.live.schedule.get(String(properties.block_id));
-      isTreated = chain
-        ? chain.some((event) => Number(event[1]) === Number(state.year))
-        : false;
+    let isTreated;
+    let klass;
+    if (state.compareView && state.compare) {
+      const flags = state.compare.blocks.get(String(properties.block_id)) ?? {};
+      const inA = Boolean(flags.a);
+      const inB = Boolean(flags.b);
+      isTreated = inA || inB;
+      klass = inA && inB
+        ? 'compare-both treated'
+        : inA
+          ? 'compare-a treated'
+          : inB
+            ? 'compare-b treated'
+            : 'untreated';
+    } else {
+      isTreated = Boolean(properties.treated);
+      if (state.live.active) {
+        const chain = state.live.schedule.get(String(properties.block_id));
+        isTreated = chain
+          ? chain.some((event) => Number(event[1]) === Number(state.year))
+          : false;
+      }
+      klass = isTreated ? 'treated' : 'untreated';
     }
-    const klass = isTreated ? 'treated' : 'untreated';
-    const group = groups[klass];
+    const group = groups[isTreated ? 'treated' : 'untreated'];
     if (geometry?.type === 'Point') {
       const [cx, cy] = base.project(geometry.coordinates);
       const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -128,6 +144,9 @@ function render(refit = true) {
   viewport.append(groups.untreated, groups.treated);
   $('n-treated').textContent = treated.toLocaleString();
   $('n-untreated').textContent = untreated.toLocaleString();
+  $('treated-label').textContent = state.compareView && state.compare
+    ? 'Treated in A or B'
+    : 'Treated in the year';
   $('scale').textContent = `year ${state.year} · 1 px ≈ ${Math.round(1 / base.scale)} m`;
   applyVisibility();
 }
@@ -152,6 +171,233 @@ async function loadMap() {
   }
 }
 
+function compareNumber(value) {
+  return Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+function accountTotals(rows) {
+  const totals = new Map();
+  for (const row of rows) {
+    const name = String(row.account);
+    totals.set(name, (totals.get(name) ?? 0) + Number(row.value));
+  }
+  return totals;
+}
+
+function syncCompareRuns() {
+  const options = [...$('run').options].map((option) => ({ value: option.value, label: option.textContent }));
+  if (!options.length) return;
+  for (const id of ['compare-a', 'compare-b']) {
+    const select = $(id);
+    const current = select.value;
+    select.replaceChildren();
+    for (const option of options) {
+      const element = document.createElement('option');
+      element.value = option.value;
+      element.textContent = option.label;
+      select.append(element);
+    }
+    if (options.some((option) => option.value === current)) select.value = current;
+  }
+  const a = $('compare-a');
+  const b = $('compare-b');
+  if (!state.compareInitialized) {
+    a.value = options.some((option) => option.value === state.run) ? state.run : options[0].value;
+    const candidates = options.filter((option) => option.value !== a.value);
+    const web = candidates.filter((option) => option.value.startsWith('web-'));
+    const preferredB = web[web.length - 1]
+      ?? candidates[candidates.length - 1]
+      ?? options[0];
+    b.value = preferredB ? preferredB.value : a.value;
+    state.compareInitialized = true;
+    return;
+  }
+  if (!options.some((option) => option.value === a.value)) {
+    a.value = options.some((option) => option.value === state.run) ? state.run : options[0].value;
+  }
+  if (!options.some((option) => option.value === b.value) || b.value === a.value) {
+    const other = options.find((option) => option.value !== a.value);
+    b.value = other ? other.value : a.value;
+  }
+}
+
+function clearCompareView() {
+  if (!state.compareView) return;
+  state.compareView = false;
+  state.compare = null;
+  $('treated-label').textContent = 'Treated in the year';
+  if (state.features.length) {
+    if (state.live.active) render(false); else loadMap();
+  }
+}
+
+function renderCompareTargets(rowsA, rowsB) {
+  const table = $('compare-targets');
+  const empty = $('compare-targets-empty');
+  const body = table.querySelector('tbody');
+  body.replaceChildren();
+  const keyOf = (row) => `${row.account}|${row.year}`;
+  const byB = new Map(rowsB.map((row) => [keyOf(row), row]));
+  const byConfig = new Map(state.targets.map((row) => [keyOf(row), row]));
+  const keys = [...new Set([...rowsA.map(keyOf), ...rowsB.map(keyOf)])].sort();
+  if (!keys.length) {
+    table.hidden = true;
+    empty.hidden = false;
+    empty.textContent = 'no targets configured';
+    return;
+  }
+  empty.hidden = true;
+  table.hidden = false;
+  for (const key of keys) {
+    const a = rowsA.find((row) => keyOf(row) === key);
+    const b = byB.get(key);
+    const config = byConfig.get(key);
+    const tr = document.createElement('tr');
+    const account = document.createElement('td');
+    account.className = 'account';
+    account.textContent = a?.account ?? b?.account ?? '';
+    account.title = account.textContent;
+    tr.append(account);
+    const year = document.createElement('td');
+    year.className = 'num';
+    year.textContent = String(a?.year ?? b?.year ?? '');
+    tr.append(year);
+    for (const bound of [config?.minimum, config?.maximum]) {
+      const td = document.createElement('td');
+      td.className = 'num';
+      td.textContent = bound === null || bound === undefined ? '—' : compareNumber(bound);
+      tr.append(td);
+    }
+    for (const row of [a, b]) {
+      const td = document.createElement('td');
+      td.className = `num ${row?.status ?? ''}`;
+      td.textContent = row ? `${compareNumber(row.value)} · ${row.status}` : '—';
+      tr.append(td);
+    }
+    const delta = document.createElement('td');
+    delta.className = 'num';
+    const value = (b?.value ?? 0) - (a?.value ?? 0);
+    delta.textContent = `${value > 0 ? '+' : ''}${compareNumber(value)}`;
+    if (value > 0) delta.classList.add('compare-delta-positive');
+    if (value < 0) delta.classList.add('compare-delta-negative');
+    tr.append(delta);
+    body.append(tr);
+  }
+}
+
+function renderCompareAccounts() {
+  const table = $('compare-accounts');
+  const empty = $('compare-accounts-empty');
+  const body = table.querySelector('tbody');
+  body.replaceChildren();
+  const query = $('compare-filter').value.trim().toLowerCase();
+  const rows = state.compareAccounts
+    .filter((row) => row.name.toLowerCase().includes(query))
+    .slice(0, 200);
+  if (!rows.length) {
+    table.hidden = true;
+    empty.hidden = false;
+    empty.textContent = state.compareAccounts.length
+      ? 'no accounts match the filter'
+      : 'no account values at this year';
+    return;
+  }
+  empty.hidden = true;
+  table.hidden = false;
+  for (const row of rows) {
+    const tr = document.createElement('tr');
+    const account = document.createElement('td');
+    account.className = 'account';
+    account.textContent = row.name;
+    account.title = row.name;
+    tr.append(account);
+    for (const value of [row.a, row.b]) {
+      const td = document.createElement('td');
+      td.className = 'num';
+      td.textContent = compareNumber(value);
+      tr.append(td);
+    }
+    const delta = document.createElement('td');
+    delta.className = 'num';
+    delta.textContent = `${row.delta > 0 ? '+' : ''}${compareNumber(row.delta)}`;
+    if (row.delta > 0) delta.classList.add('compare-delta-positive');
+    if (row.delta < 0) delta.classList.add('compare-delta-negative');
+    tr.append(delta);
+    body.append(tr);
+  }
+}
+
+async function loadComparison() {
+  const runA = $('compare-a').value;
+  const runB = $('compare-b').value;
+  if (!runA || !runB) {
+    $('compare-summary').textContent = 'choose two runs';
+    return;
+  }
+  const token = ++state.compareToken;
+  state.compareView = true;
+  $('compare-summary').textContent = 'loading…';
+  try {
+    const [mapA, mapB, accountsA, accountsB, targetsA, targetsB] = await Promise.all([
+      api(`api/runs/${encodeURIComponent(runA)}/map?year=${state.year}`),
+      api(`api/runs/${encodeURIComponent(runB)}/map?year=${state.year}`),
+      api(`api/runs/${encodeURIComponent(runA)}/accounts?year=${state.year}`),
+      api(`api/runs/${encodeURIComponent(runB)}/accounts?year=${state.year}`),
+      api(`api/runs/${encodeURIComponent(runA)}/targets`),
+      api(`api/runs/${encodeURIComponent(runB)}/targets`),
+    ]);
+    if (token !== state.compareToken) return;
+    state.features = mapA.features ?? [];
+    const blocks = new Map();
+    for (const feature of mapA.features ?? []) {
+      const block = String(feature.properties?.block_id);
+      blocks.set(block, { a: Boolean(feature.properties?.treated), b: false });
+    }
+    for (const feature of mapB.features ?? []) {
+      const block = String(feature.properties?.block_id);
+      const flags = blocks.get(block) ?? { a: false, b: false };
+      flags.b = Boolean(feature.properties?.treated);
+      blocks.set(block, flags);
+    }
+    let aOnly = 0, bOnly = 0, both = 0, neither = 0;
+    for (const flags of blocks.values()) {
+      if (flags.a && flags.b) both += 1;
+      else if (flags.a) aOnly += 1;
+      else if (flags.b) bOnly += 1;
+      else neither += 1;
+    }
+    state.compare = { a: runA, b: runB, blocks };
+    render(true);
+    $('compare-summary').textContent =
+      `year ${state.year} · A only ${aOnly.toLocaleString()} · B only ${bOnly.toLocaleString()} · both ${both.toLocaleString()} · neither ${neither.toLocaleString()}`
+      + (accountsB.length ? '' : ' · B has no account values at this year');
+    $('compare-year').textContent = state.year;
+    renderCompareTargets(targetsA, targetsB);
+    const totalsA = accountTotals(accountsA);
+    const totalsB = accountTotals(accountsB);
+    const names = new Set([...totalsA.keys(), ...totalsB.keys()]);
+    state.compareAccounts = [...names]
+      .map((name) => {
+        const a = totalsA.get(name) ?? 0;
+        const b = totalsB.get(name) ?? 0;
+        return { name, a, b, delta: b - a };
+      })
+      .filter((row) => row.a !== 0 || row.b !== 0)
+      .sort((left, right) => Math.abs(right.delta) - Math.abs(left.delta)
+        || left.name.localeCompare(right.name));
+    renderCompareAccounts();
+    statusLine(`${state.features.length.toLocaleString()} blocks · ${runA} vs ${runB} · year ${state.year}`);
+  } catch (error) {
+    if (token !== state.compareToken) return;
+    state.compareView = false;
+    state.compare = null;
+    $('compare-summary').textContent = `comparison unavailable: ${error.message}`;
+    $('compare-targets').hidden = true;
+    $('compare-accounts').hidden = true;
+    $('treated-label').textContent = 'Treated in the year';
+  }
+}
+
 async function loadPeriods() {
   const body = await api(`api/runs/${encodeURIComponent(state.run)}/periods`);
   const slider = $('year');
@@ -168,7 +414,7 @@ async function loadPeriods() {
 
 function applySkin(skin) {
   state.skin = skin;
-  const panels = new Set(skin.panels ?? ['legend', 'targets', 'reports']);
+  const panels = new Set(skin.panels ?? ['legend', 'targets', 'reports', 'comparison']);
   for (const button of document.querySelectorAll('nav.tabs button')) {
     button.hidden = !panels.has(button.dataset.tab);
   }
@@ -598,6 +844,7 @@ async function fillRuns(summary, preferred) {
   if (!chosen) return false;
   select.value = chosen.id;
   state.run = chosen.id;
+  syncCompareRuns();
   return true;
 }
 
@@ -897,9 +1144,16 @@ function showDetail(block) {
   const feature = state.features.find((candidate) => String(candidate.properties?.block_id) === String(block));
   if (!feature) return;
   const properties = feature.properties ?? {};
-  $('detail').innerHTML = `<b>Block ${properties.block_id}</b><br>` +
-    `treated: ${properties.treated ? 'yes' : 'no'}<br>` +
-    `treatments: ${(properties.treatments ?? []).join(', ') || '—'}`;
+  if (state.compareView && state.compare) {
+    const flags = state.compare.blocks.get(String(block)) ?? { a: false, b: false };
+    $('detail').innerHTML = `<b>Block ${properties.block_id}</b><br>` +
+      `A: ${flags.a ? 'treated' : '—'} · B: ${flags.b ? 'treated' : '—'}<br>` +
+      `A only: ${flags.a && !flags.b ? 'yes' : 'no'} · B only: ${flags.b && !flags.a ? 'yes' : 'no'}`;
+  } else {
+    $('detail').innerHTML = `<b>Block ${properties.block_id}</b><br>` +
+      `treated: ${properties.treated ? 'yes' : 'no'}<br>` +
+      `treatments: ${(properties.treatments ?? []).join(', ') || '—'}`;
+  }
 }
 
 function wireSplitter() {
@@ -1050,20 +1304,36 @@ function wireControls() {
     await loadPeriods();
     await loadTargets();
     await loadReports();
-    await loadMap();
+    syncCompareRuns();
+    $('compare-a').value = state.run;
+    if ($('compare-b').value === state.run) {
+      const other = [...$('compare-b').options].find((option) => option.value !== state.run);
+      if (other) $('compare-b').value = other.value;
+    }
+    if (state.compareView) {
+      await loadComparison();
+    } else {
+      await loadMap();
+    }
   });
   $('year').addEventListener('input', (event) => {
     state.yearChosen = true;
     state.year = Number(event.target.value);
     $('year-label').textContent = state.year;
   });
-  $('year').addEventListener('change', () => { if (state.live.active) render(false); else loadMap(); });
+  $('year').addEventListener('change', () => {
+    if (state.compareView) { loadComparison(); return; }
+    if (state.live.active) render(false); else loadMap();
+  });
   $('skin').addEventListener('change', async (event) => {
     const skins = await api('api/skins');
     const skin = skins.find((candidate) => candidate.id === event.target.value);
     if (skin) { applySkin(skin); await loadTargets(); }
   });
   $('save-targets').addEventListener('click', saveTargets);
+  $('compare-a').addEventListener('change', loadComparison);
+  $('compare-b').addEventListener('change', loadComparison);
+  $('compare-filter').addEventListener('input', renderCompareAccounts);
   $('chat-form').addEventListener('submit', sendChat);
   $('chat-new').addEventListener('click', newChat);
   $('chat-input').addEventListener('keydown', (event) => {
@@ -1077,7 +1347,14 @@ function wireControls() {
   for (const button of document.querySelectorAll('nav.tabs button')) {
     button.addEventListener('click', () => {
       for (const other of document.querySelectorAll('nav.tabs button')) other.classList.toggle('active', other === button);
-      for (const name of ['legend', 'targets', 'reports']) $(`tab-${name}`).hidden = name !== button.dataset.tab;
+      const tab = button.dataset.tab;
+      for (const name of ['legend', 'targets', 'reports', 'comparison']) $(`tab-${name}`).hidden = name !== tab;
+      if (tab === 'comparison') {
+        syncCompareRuns();
+        loadComparison();
+      } else if (state.compareView) {
+        clearCompareView();
+      }
     });
   }
   const svg = $('map');
@@ -1133,6 +1410,7 @@ async function start() {
     if (!preferred) { statusLine('no runs found'); return; }
     select.value = preferred.id;
     state.run = preferred.id;
+    syncCompareRuns();
     await loadSkins();
     await loadAgent();
     await loadPeriods();

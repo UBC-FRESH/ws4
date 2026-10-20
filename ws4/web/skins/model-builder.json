@@ -1,8 +1,17 @@
 {
   "id": "model-builder",
   "title": "Model builder",
-  "panels": ["legend", "reports"],
-  "layers": ["blocks", "treatments"],
-  "actions": ["export"],
+  "panels": [
+    "legend",
+    "reports",
+    "comparison"
+  ],
+  "layers": [
+    "blocks",
+    "treatments"
+  ],
+  "actions": [
+    "export"
+  ],
   "read_only": false
 }

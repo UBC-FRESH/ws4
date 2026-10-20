@@ -1,8 +1,17 @@
 {
   "id": "scenario-browser",
   "title": "Scenario browser",
-  "panels": ["legend", "reports"],
-  "layers": ["blocks", "treatments"],
-  "actions": ["export"],
+  "panels": [
+    "legend",
+    "reports",
+    "comparison"
+  ],
+  "layers": [
+    "blocks",
+    "treatments"
+  ],
+  "actions": [
+    "export"
+  ],
   "read_only": true
 }
