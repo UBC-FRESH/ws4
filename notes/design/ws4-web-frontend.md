@@ -77,6 +77,12 @@ data: {"summary": "summary.json", "status": "ok"}
 Events are emitted from the search's own telemetry, throttled to at most 2 Hz, and the stream closes
 with `done` or `error`. The stream never computes a value the run did not write.
 
+A finished run's ``/events`` returns **204**, not a short stream that EventSource reconnects to.
+The proxy in front of a hosted instance may buffer or drop an SSE response; a completed run then
+turns into a reconnect loop, and each retry holds a worker thread. 204 is the protocol's "stop
+reconnecting" signal; the status poll reads the summary. Live streams also close after ten minutes
+and reconnect, using the same replay path that rebuilds the map.
+
 ## The skin manifest
 
 A skin is a JSON document, not a route or a fork:

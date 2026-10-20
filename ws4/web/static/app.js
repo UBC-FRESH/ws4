@@ -435,13 +435,18 @@ async function loadSkins() {
   try {
     const skins = await api('api/skins');
     const select = $('skin');
+    const current = select.value;
+    // reloading on a run change must not append a second set of options or reset the choice
+    select.replaceChildren();
     for (const skin of skins) {
       const option = document.createElement('option');
       option.value = skin.id;
       option.textContent = skin.title;
       select.append(option);
     }
-    const preferred = skins.find((skin) => skin.id === 'scenario-analyst') ?? skins[0];
+    const preferred = skins.find((skin) => skin.id === current)
+      ?? skins.find((skin) => skin.id === 'scenario-analyst')
+      ?? skins[0];
     if (preferred) {
       select.value = preferred.id;
       applySkin(preferred);
@@ -1107,7 +1112,13 @@ async function showReport(name) {
   const preview = $('report-preview');
   const url = `api/runs/${encodeURIComponent(state.run)}/reports/${encodeURIComponent(name)}`;
   if (!name.toLowerCase().endsWith('.csv')) {
-    preview.innerHTML = `<a href="${url}" target="_blank">open ${name}</a>`;
+    // the report name comes from the filesystem; never interpolate it into markup
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = `open ${name}`;
+    preview.replaceChildren(link);
     return;
   }
   try {
