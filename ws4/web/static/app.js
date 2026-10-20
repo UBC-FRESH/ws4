@@ -373,9 +373,10 @@ async function loadTargets() {
 
 async function saveTargets() {
   const rows = state.targets.map((row) => ({ ...row }));
-  for (const input of document.querySelectorAll('#targets-table input')) {
+  for (const input of document.querySelectorAll('#targets-table input[data-field]')) {
     const index = Number(input.dataset.index);
     const field = input.dataset.field;
+    if (!rows[index] || !field) continue;
     rows[index][field] = input.value === '' ? null : Number(input.value);
   }
   try {
