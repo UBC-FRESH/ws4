@@ -101,6 +101,11 @@ def create_app(
     agent_model: str = "opencode-go/deepseek-v4.1-flash",
     agent_cwd: Path | None = None,
     agent_timeout: float = 600.0,
+    topology: Path | None = None,
+    patch_accounts: Path | None = None,
+    spread_accounts: Path | None = None,
+    block_coordinates: Path | None = None,
+    route_config: Path | None = None,
 ) -> FastAPI:
     """Create the WS4 read API.
 
@@ -130,6 +135,16 @@ def create_app(
         The directory the agent runs in. None uses the service's working directory.
     agent_timeout : float, optional
         Seconds one chat turn may run before the endpoint gives up.
+    topology : Path or None, optional
+        Block topology handed to web-started searches, so they can write patch membership.
+    patch_accounts : Path or None, optional
+        Patch account definitions handed to web-started searches.
+    spread_accounts : Path or None, optional
+        Spread-connectivity accounts handed to web-started searches.
+    block_coordinates : Path or None, optional
+        Block centroids used by the spread accounts.
+    route_config : Path or None, optional
+        Route model and accounts handed to web-started searches.
 
     Returns
     -------
@@ -140,6 +155,13 @@ def create_app(
     runs_root = Path(runs).resolve()
     geometry_path = Path(geometry).resolve() if geometry is not None else None
     targets_path = Path(targets).resolve() if targets is not None else None
+    topology_path = Path(topology).resolve() if topology is not None else None
+    patch_accounts_path = Path(patch_accounts).resolve() if patch_accounts is not None else None
+    spread_accounts_path = Path(spread_accounts).resolve() if spread_accounts is not None else None
+    block_coordinates_path = (
+        Path(block_coordinates).resolve() if block_coordinates is not None else None
+    )
+    route_config_path = Path(route_config).resolve() if route_config is not None else None
     agent_working_directory = Path(agent_cwd).resolve() if agent_cwd is not None else Path.cwd()
     app = FastAPI(title="WS4", version="0.1.0")
 
@@ -179,6 +201,15 @@ def create_app(
         if not path.is_file():
             raise HTTPException(status_code=404, detail=f"the run has no {name}")
         return pd.read_csv(path)
+
+    geometry_cache: list[dict[str, Any]] | None = None
+
+    def base_features() -> list[dict[str, Any]]:
+        """Return the configured geometry once, parsed; the map copies only the properties."""
+        nonlocal geometry_cache
+        if geometry_cache is None:
+            geometry_cache = _geometry_features(geometry_path) if geometry_path is not None else []
+        return geometry_cache
 
     @app.get("/", response_class=HTMLResponse)
     def index() -> HTMLResponse:
@@ -236,6 +267,15 @@ def create_app(
         ]
         if time_limit:
             command.extend(["--time-limit", time_limit])
+        for flag, path in (
+            ("--topology", topology_path),
+            ("--patch-accounts", patch_accounts_path),
+            ("--spread-accounts", spread_accounts_path),
+            ("--block-coordinates", block_coordinates_path),
+            ("--route-config", route_config_path),
+        ):
+            if path is not None:
+                command.extend([flag, str(path)])
         return command
 
     @app.post("/api/runs")
@@ -920,13 +960,13 @@ def create_app(
                 }
         else:
             year = 0 if year is None else year
-        features = _geometry_features(geometry_path)
-        for feature in features:
-            properties = feature.get("properties", {})
-            block = properties.get("block_id")
-            if block is None:
+        features: list[dict[str, Any]] = []
+        for base in base_features():
+            properties = dict(base.get("properties", {}))
+            block_value = properties.get("block_id")
+            if block_value is None:
                 continue
-            number = int(block)
+            number = int(block_value)
             if layer == "patches":
                 patch = patches_by_block.get(number)
                 properties["treatments"] = [patch["patch_account"]] if patch else []
@@ -944,6 +984,9 @@ def create_app(
                 properties["treatments"] = []
                 properties["treated"] = False
                 properties["current"] = False
+            features.append(
+                {"type": "Feature", "geometry": base.get("geometry"), "properties": properties}
+            )
         return {
             "type": "FeatureCollection",
             "features": features,

@@ -2043,3 +2043,13 @@ issue comments.
   `run-dated3` gives 16 current and 1,155 earlier blocks; `run-harvested-flow` shows 16 patch blocks
   in four classes, and unchecking 0–10 leaves five. Dashboard result: `python scripts/dashboard.py`
   reports `OVERALL: GREEN` on all seven gates.
+- P18.2 block geometry: the map now draws the source `blocks.shp` stand polygons, simplified to a
+  5 m tolerance (12,567 polygons, 13.6 MB GeoJSON) instead of centroids. The service parses the
+  geometry once and each layer request reuses it; paths keep a boundary stroke, current treatments
+  are solid red, earlier cumulative treatments use a diagonal hatch, and patch classes keep their
+  distinct fills. Live schedule updates touch only the blocks in the diff rather than rebuilding all
+  paths. The source `COMPART` value is shown in the block detail. Web-run startup also accepts
+  `--topology`/`--patch-accounts`/`--spread-accounts`/`--block-coordinates`/`--route-config`, so a
+  configured run can write patch membership. Browser check: 12,567 paths, no circles, 1.3 s first
+  render, live updates from 0 to 224 treated blocks with no console errors. Dashboard result:
+  `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.

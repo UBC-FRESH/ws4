@@ -135,6 +135,52 @@ def test_the_map_returns_the_treated_blocks_for_the_year(tmp_path: Path) -> None
     assert body["features"][1]["properties"]["treated"] is False
 
 
+def test_the_map_serves_simplified_block_polygons_and_compartments(tmp_path: Path) -> None:
+    """A polygon layer keeps its geometry and source compartment; the cached base is not mutated."""
+    client, _ = _app(tmp_path)
+    geometry = tmp_path / "polygons.geojson"
+    geometry.write_text(
+        json.dumps(
+            {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "properties": {"block_id": 1, "compartment": "ACR"},
+                        "geometry": {
+                            "type": "Polygon",
+                            "coordinates": [[[1, 0], [1.5, 0], [1.5, 0.5], [1, 0.5], [1, 0]]],
+                        },
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": {"block_id": 2, "compartment": "HEC"},
+                        "geometry": {
+                            "type": "Polygon",
+                            "coordinates": [[[2, 0], [2.5, 0], [2.5, 0.5], [2, 0.5], [2, 0]]],
+                        },
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    app = create_app(
+        dataset=tmp_path / "dataset",
+        runs=tmp_path / "runs",
+        targets=tmp_path / "targets.yaml",
+        geometry=geometry,
+    )
+    client = TestClient(app)
+    treated = client.get("/api/runs/run1/map", params={"year": 0}).json()
+    assert treated["features"][0]["geometry"]["type"] == "Polygon"
+    assert treated["features"][0]["properties"]["compartment"] == "ACR"
+    assert treated["features"][0]["properties"]["treated"] is True
+    blocks = client.get("/api/runs/run1/map", params={"year": 0, "layer": "blocks"}).json()
+    assert blocks["features"][0]["properties"]["treated"] is False
+    assert blocks["features"][1]["properties"]["compartment"] == "HEC"
+
+
 def test_periods_come_from_the_runs_schedule(tmp_path: Path) -> None:
     """The period control gets the run's own range, not a guessed horizon."""
     client, _ = _app(tmp_path)
@@ -342,6 +388,46 @@ def test_starting_a_run_passes_the_island_count_to_the_cli(
     assert isinstance(command, list)
     assert command[command.index("--starts") + 1] == "4"
     assert command[command.index("--threads") + 1] == "4"
+
+
+def test_starting_a_run_passes_the_spatial_inputs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Topology and patch accounts reach the CLI, which is what makes patch membership."""
+    _app(tmp_path)
+    topology = tmp_path / "topology.csv"
+    topology.write_text("src,dst,length\n1,2,10\n", encoding="utf-8")
+    patches_path = tmp_path / "patches.yaml"
+    patches_path.write_text("accounts: []\n", encoding="utf-8")
+    client = TestClient(
+        create_app(
+            dataset=tmp_path / "dataset",
+            runs=tmp_path / "runs",
+            targets=tmp_path / "targets.yaml",
+            allow_runs=True,
+            topology=topology,
+            patch_accounts=patches_path,
+        )
+    )
+    captured: dict[str, object] = {}
+
+    class FakePopen:
+        pid = 123
+
+        def poll(self) -> int | None:
+            return None
+
+    def fake_popen(command: list[str], stdout: object = None, stderr: object = None) -> FakePopen:
+        captured["command"] = command
+        return FakePopen()
+
+    monkeypatch.setattr("ws4.web.app.subprocess.Popen", fake_popen)
+    response = client.post("/api/runs", json={"iterations": 1})
+    assert response.status_code == 200
+    command = captured["command"]
+    assert isinstance(command, list)
+    assert command[command.index("--topology") + 1] == str(topology)
+    assert command[command.index("--patch-accounts") + 1] == str(patches_path)
 
 
 def test_a_finished_run_closes_the_event_stream(tmp_path: Path) -> None:

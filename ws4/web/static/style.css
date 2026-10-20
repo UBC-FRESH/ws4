@@ -139,3 +139,15 @@ circle.compare-both, path.compare-both { fill:#6b4c9a; }
 .layer-swatch { width:.55rem; height:.55rem; border-radius:.15rem; flex:none; }
 .block.current { fill:var(--treated); }
 .block.past { fill:#d9a066; }
+path.block { stroke:rgba(23,35,45,.28); stroke-width:.35; }
+.layer-legend { display:flex; flex-wrap:wrap; align-items:center; gap:.3rem; margin:.2rem 0 .1rem;
+                font-size:.72rem; color:var(--muted); }
+.layer-swatch.current { background:var(--treated); }
+.layer-swatch.past { background:repeating-linear-gradient(45deg, #f0d2b0 0 3px, #a96f3c 3px 4.5px); }
+path.block.untreated { fill:var(--untreated); fill-opacity:.5; }
+path.block.treated { fill:var(--treated); }
+path.block.current { fill:var(--treated); }
+path.block.past { fill:url(#earlier-hatch); }
+path.block.compare-a { fill:#c0392b; }
+path.block.compare-b { fill:#1f6feb; }
+path.block.compare-both { fill:#6b4c9a; }

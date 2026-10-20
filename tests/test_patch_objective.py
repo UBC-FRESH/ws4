@@ -348,6 +348,10 @@ def test_a_run_reports_the_patch_accounts_it_priced(tmp_path: Path) -> None:
     )
     summary = Optimizer.from_dataset(dataset, config).run(tmp_path / "run")
 
+    membership = pd.read_csv(tmp_path / "run" / "patch_membership.csv")
+    assert not membership.empty
+    assert {"period", "block", "patch", "class", "area_ha"}.issubset(membership.columns)
+
     reported = pd.read_csv(tmp_path / "run" / "report_targets.csv").iloc[0]
     assert reported["account"] == "patch.opening.50_150.size"
     assert reported["value"] > 0.0, "the incumbent's openings should be reported, not a missing row"

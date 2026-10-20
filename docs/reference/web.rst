@@ -17,6 +17,9 @@ is passed; no authentication is provided in this cut. Starting a search is a sep
 ``POST /api/runs`` is refused unless ``--allow-runs`` is given, and the command is composed by the
 service from the dataset and targets it was started with — the request body can choose only the
 iteration count, the seed, the horizon, the number of parallel islands and an optional time limit.
+The service may also be started with ``--topology``, ``--patch-accounts``, ``--spread-accounts``,
+``--block-coordinates`` and ``--route-config``; those inputs are handed to every search it starts, so
+a web-started optimizer run can write the same patch membership and spatial reports as the CLI.
 The islands are independent starts in a process pool: ``islands: 8`` uses eight workers, and the
 run's summary is the best of them. The iteration count is **per island**, so a bounded run of
 ``iterations: 1000`` with eight islands performs up to eight thousand iterations in total.
@@ -112,6 +115,9 @@ The Legend tab builds a grouped tree from ``GET /api/runs/{run}/layers`` and the
   distinguishes the current period (red) from earlier ones (tan).
 - **Patch size class** comes from ``patch_membership.csv``. A run without a schedule still gets a
   period range from the patch membership, or from its account values, so a simulate run can be read.
+- **Current treatment** is a solid fill; **earlier** cumulative treatments use a diagonal hatch.
+  Patch classes are distinct solid colours. Polygon boundaries stay stroked, so the stand mosaic is
+  visible at every zoom.
 - **Roads** and **spread compartments** are shown as unavailable for now. Runs do not write road
   segment geometry or compartment membership, and the service will not invent them; the reason is
   returned by ``/layers`` and shown in the tree.
@@ -120,9 +126,32 @@ Geometry
 --------
 
 The compiled dataset carries block attributes and areas but not polygons. ``--geometry`` names a
-GeoJSON file of block points or polygons with a ``block_id`` property; the map joins on it. Without
-one, the map endpoint refuses with a 409 that names the missing option rather than returning an empty
-map.
+GeoJSON file of block points or **simplified block polygons** with a ``block_id`` property; the map
+joins on it. Without one, the map endpoint refuses with a 409 that names the missing option rather
+than returning an empty map.
+
+The browser shell renders polygons as SVG paths with their boundaries visible, so the stand mosaic
+is not reduced to points. The service parses the geometry once and reuses it for every layer; the
+response carries the polygon geometry and the source properties. A ``compartment`` property, when
+present, is shown in the block detail.
+
+Prepare a simplified polygon layer from the source ``blocks.shp`` with the ``geo`` extra:
+
+.. code-block:: python
+
+   import geopandas as gpd
+   import pandas as pd
+
+   frame = gpd.read_file("blocks.shp")
+   frame["block_id"] = pd.to_numeric(frame["BLOCK"], errors="coerce").astype(int)
+   frame["compartment"] = frame["COMPART"].astype(str)
+   frame = frame[["block_id", "compartment", "geometry"]]
+   frame["geometry"] = frame.geometry.simplify(5.0, preserve_topology=True)
+   frame.to_file("blocks_polygons.geojson", driver="GeoJSON")
+
+The 5 m tolerance keeps the stand boundaries while cutting the vertex count by roughly two thirds;
+the coordinates stay in the source projection. Pass the resulting file to ``--geometry``. A point
+layer remains valid.
 
 Skins
 -----
