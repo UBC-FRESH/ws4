@@ -2081,3 +2081,9 @@ issue comments.
   MapLibre and a stability stopping criterion are recorded in `notes/backlog.md`. No settings, tag or
   release changes. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven
   gates.
+- P19 started on `feature/p19-spatial-layers` (parent issue #161): model spread-compartment
+  membership, the run's used-road geometry/use, a stability stopping criterion and map scale. The
+  P18 close-out and backlog record the source-layers boundary.
+- P19.1: the simulator writes `spread_membership.csv` (the untreated blocks of every spread
+  compartment, largest first); the service serves it as `layer=compartments` and the web layer tree
+  colours the components by area class with the account selector and the period's treated breaks.

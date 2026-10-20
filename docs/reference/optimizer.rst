@@ -304,10 +304,11 @@ Give ``--spread-accounts`` (a YAML of definitions) with ``--block-coordinates`` 
        maximum: 50000
        max_weight: 1.0
 
-A run writes ``spread_metrics.csv``, and ``report_targets.csv`` folds it back in before pricing the
-targets, so the status and penalty are the ones a re-simulation gives. The option is on ``optimize``,
-``watch`` and ``calibrate``. ``bearing`` is the direction the fire travels (the wind direction), in
-degrees clockwise from north; ``tolerance`` is the half-width of the fast-edge cone.
+A run writes ``spread_metrics.csv`` (and, when block coordinates are available,
+``spread_membership.csv`` for the map), and ``report_targets.csv`` folds the metrics back in before
+pricing the targets, so the status and penalty are the ones a re-simulation gives. The option is on
+``optimize``, ``watch`` and ``calibrate``. ``bearing`` is the direction the fire travels (the wind
+direction), in degrees clockwise from north; ``tolerance`` is the half-width of the fast-edge cone.
 
 Calibrate
 ---------

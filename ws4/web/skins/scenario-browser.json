@@ -10,7 +10,8 @@
     "blocks",
     "treatments",
     "patches",
-    "roads"
+    "roads",
+    "compartments"
   ],
   "actions": [
     "export"

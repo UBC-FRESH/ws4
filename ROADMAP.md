@@ -30,6 +30,7 @@ exists and the maintainer approves it.
 | P16 The bridge at the same footprint | #141 | `feature/p16-bridge-matched` | complete |
 | P17 Roads opened to the period | #145 | `feature/p17-opened-roads` | complete |
 | P18 A graphical web front end | #146 | `feature/p18-web-frontend` | complete |
+| P19 Model-derived spatial layers and map scale | #161 | `feature/p19-spatial-layers` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -773,6 +774,31 @@ horizon; a target edit round-trips and a re-solve matches the CLI's penalty; a r
 run's CSV; the reviewer skin cannot edit; the CLI is unchanged without the extra; the dashboard is
 green; the design is recorded before the first UI line. Close-out report:
 `notes/reports/p18-closeout.md`; the model-derived layers are recorded in `notes/backlog.md`.
+
+## Phase 19: Model-derived spatial layers and map scale
+
+Parent issue: #161
+Branch: `feature/p19-spatial-layers`
+Status: active
+
+Goal: finish the model-derived spatial layers the P18 close-out deferred, and keep the map usable at
+scale. The source polygons, source compartments and source access roads already ship; this phase adds
+what the model produces.
+
+- [x] P19.1 **Spread-compartment membership.** Write `spread_membership.csv` from the
+  spread-connectivity account (year, account, compartment, class, block, area, component area); serve
+  it as `layer=compartments`; add the model spread layer to the layer tree with class checkboxes and
+  an account selector. This is the account independently reproduced in thesis #13.
+- [ ] P19.2 **The run's used-road geometry/use.** Write the route model's segment geometry and the
+  period's opened/used segments; serve a used-roads overlay distinct from the source access layer.
+- [ ] P19.3 **Stability stopping criterion.** Stop a continuous search after a configurable number of
+  iterations without incumbent improvement; expose it in the player and record it in the summary.
+- [ ] P19.4 **Map scale.** Move the polygon/road shell to MapLibre (or an equivalent) when the
+  feature count or a basemap demands it, with the layer tree contracts unchanged.
+
+Acceptance: a spread run writes the membership and the layer renders it; a route run writes segment
+geometry/use; a stability stop writes the usual summary and names the criterion; the dashboard is
+green on every merge; source layers are never mislabelled as model layers.
 
 ## Detailed Next Steps Notes
 

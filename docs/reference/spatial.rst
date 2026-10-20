@@ -179,6 +179,13 @@ The account also reports ``TOTAL.area`` and ``TOTAL.blocks`` for the untreated s
 every block with a coordinate, not only the blocks the criterion mentions: a *product* criterion holds
 only the blocks that produced in the period, and every other block is untreated fuel.
 
+The simulator also writes ``spread_membership.csv`` beside the metrics when the same inputs are given.
+It has one row per untreated block and year: ``year,account,compartment,compartment_class,block,area_ha,compartment_area_ha``.
+Components are numbered from the largest, so compartment 0 is the fuel body a fire can wander through
+from one ignition; ``compartment_class`` is the component area class (0–10, 10–50, 50–150, 150+ ha).
+The web map serves this file as the **Spread compartments** layer, with treated breaks drawn
+separately; it is a model layer, not a source attribute.
+
 .. code-block:: python
 
    from ws4.spread.accounts import SpreadAccount
@@ -276,6 +283,8 @@ API
    :members:
 
 .. autofunction:: ws4.spread.accounts.spread_account_values
+
+.. autofunction:: ws4.spread.accounts.compartment_class
 
 .. autofunction:: ws4.spread.accounts.transmitting_edges
 

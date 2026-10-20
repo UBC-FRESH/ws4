@@ -259,6 +259,7 @@ def test_the_layers_endpoint_names_what_the_run_can_draw(tmp_path: Path) -> None
     assert patches["treatments"] is False
     assert patches["patches"] is True
     assert patches["patch_classes"] == ["0_10", "10_50"]
+    assert patches["compartments"] is False
     assert patches["patch_accounts"] == ["patch.harvested"]
     assert patches["roads"] is False
 
@@ -313,6 +314,34 @@ def test_inactive_targets_are_kept_in_the_json_and_reported(tmp_path: Path) -> N
     realized = client.get("/api/runs/run1/targets").json()
     assert realized[0]["active"] is False
     assert realized[0]["status"] == "inactive"
+
+
+def test_the_model_spread_compartments_layer(tmp_path: Path) -> None:
+    """A run's spread membership is served as a layer, with treated breaks marked separately."""
+    client, _ = _app(tmp_path)
+    run = tmp_path / "runs" / "run1"
+    (run / "spread_membership.csv").write_text(
+        "year,account,compartment,compartment_class,block,area_ha,compartment_area_ha\n"
+        "1,spread.fire,0,10_50,1,5.0,20.0\n",
+        encoding="utf-8",
+    )
+    layers = client.get("/api/runs/run1/layers").json()
+    assert layers["compartments"] is True
+    assert layers["compartment_accounts"] == ["spread.fire"]
+    assert layers["compartment_classes"] == ["10_50"]
+    body = client.get("/api/runs/run1/map", params={"year": 1, "layer": "compartments"}).json()
+    assert body["account"] == "spread.fire"
+    first, second = body["features"]
+    assert first["properties"]["treated"] is False
+    assert first["properties"]["compartment"] == 0
+    assert first["properties"]["compartment_class"] == "10_50"
+    # block 2 is treated in period 1, so it is a break rather than a compartment member
+    assert second["properties"]["treated"] is True
+    assert second["properties"]["compartment"] is None
+    assert (
+        client.get("/api/runs/run2/map", params={"year": 1, "layer": "compartments"}).status_code
+        == 404
+    )
 
 
 def test_a_source_road_layer_is_served_for_the_overlay(tmp_path: Path) -> None:

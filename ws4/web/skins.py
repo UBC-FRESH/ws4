@@ -17,7 +17,7 @@ from typing import Any
 PANELS = frozenset({"legend", "targets", "reports", "comparison"})
 
 #: The layer families the map can offer.
-LAYERS = frozenset({"blocks", "treatments", "patches", "roads"})
+LAYERS = frozenset({"blocks", "treatments", "patches", "compartments", "roads"})
 
 #: The actions a skin may enable.
 ACTIONS = frozenset({"edit_targets", "save_targets", "export"})
