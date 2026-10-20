@@ -1,95 +1,79 @@
-# P17 first measurement: opened roads change the build, not yet the length
+# P17: roads dated to the period — and the reporting bug that hid the result
 
-The mechanism is in: a network can start from the roads that exist (zero build cost), route only over
-opened segments, and open a planned path when a block first needs it. On the 2026 sample, 10 years with
-`period_width = 10` (so the table below is the reference's period 1), `destination.MILL1`:
+Routing now runs over the roads that exist in a period, opens a planned path when a block first needs
+it, and charges the build once. The first comparison with the reference exposed a **reporting** defect
+that had been attributed to routing: the period report was summing the annual distinct road lengths.
+The corrected accounting puts WS4's road use *below* the reference's, and leaves maintenance as the
+open discrepancy.
 
-| quantity | reference | WS4 planned (before) | WS4 dated (after) | after / reference |
-| --- | ---: | ---: | ---: | ---: |
-| `LENGTH` (m) | 1,149,647 | 3,071,421 | 2,931,907 | **2.55** |
-| `BUILTLENGTH` (m) | 732,073 | 730,679 | 386,352 | **0.53** |
-| `BUILD_EXPENSE` | 3,660,367 | 2,022,647 | 1,931,761 | **0.53** |
-| `HAUL_EXPENSE` | 11,174,512 | 6,266,806 | 6,294,644 | **0.56** |
-| `MAINTAIN_EXPENSE` | 1,126,465 | 3,516,625 | 3,622,033 | **3.22** |
-| `VOLUME` | 1,029,670 | 1,042,261 | — | ≈1.01 |
+## The accounting bug
 
-The planned run is `tmp/parity2025/run-period`; the dated run is `tmp/parity2025/run-dated`, built from
-`route-dated.yaml` (`initial_roads: existing`). Both use the same schedule and eligibility.
+`RouteCostLedger.route_cost_report` folds years into the model's periods. It treated `LENGTH` as an
+extensive column and summed the annual distinct lengths. With `period_width = 10`, a road used in nine
+years counted nine times. The reference reports the **distinct road used at any time in the period**,
+counted once; its period `LENGTH` is a segment-set quantity, not a sum of annual sets.
 
-## What the change achieved
+The corrected report unions the segment ids over the period and sums their lengths once.
+`BUILTLENGTH` was already correct in effect (a road is built once), and the expenses and volume remain
+sums. Two tests changed: `test_the_route_report_is_folded_into_the_models_periods` now asserts that a
+route used in all ten years is 300 m, not 3,000.
 
-- The build is charged in the period the road opens, and an existing road is not counted as built: the
-  per-period build expense falls from 2.02M to 1.93M and the built length from 731k to 386k.
-- A route now prefers an opened road to a shorter unopened one, and the cache is invalidated when the
-  network grows (`tests/test_roads_opened.py`).
+## Period 1, `destination.MILL1`, 2026 sample
 
-## What it did not achieve
+Ten years, `period_width = 10`, so this is the reference's period 1. The schedule's first treatment
+period is 1, so WS4's years 1–9 carry wood; the reference's period covers years 1–10.
 
-`LENGTH` is still **2.55×** the reference. Dating the roads moved it only 4.5%. The reason is the
-**choice of roads**, not their availability:
+| quantity | reference | WS4 dated, corrected | ratio |
+| --- | ---: | ---: | ---: |
+| `LENGTH` (m) | 1,149,647 | **882,027** | **0.77** |
+| `BUILTLENGTH` (m) | 732,073 | 386,352 | 0.53 |
+| `BUILD_EXPENSE` | 3,660,367 | 1,931,761 | 0.53 |
+| `HAUL_EXPENSE` | 11,174,512 | 6,294,644 | 0.56 |
+| `MAINTAIN_EXPENSE` | 1,126,465 | 3,622,033 | **3.22** |
+| `VOLUME` | 1,029,670 | 1,024,809 | 1.00 |
 
-- The existing set is dense — 24,273 zero-build-cost segments, 4.42M m inside the connected network. A
-  least-haul router uses 2.9M m of it in period 1.
-- The reference reports 1.15M m of road in use, of which 732k is built in that period; its solve uses a
-  **compact** network, not every existing spur. Its haul expense is 1.8× WS4's, so it is trading haul
-  for road.
-- WS4's router prices haul only. With no road target in the objective it takes the cheapest haul path
-  regardless of how much road that opens — which is what the reference does *when no road target is
-  active*, but over a network it has built, not over the full existing GIS network.
+Before the fix the same run reported `LENGTH` 2,931,907 (2.55×) — the summed annual sets. The 2.55×
+figure in the earlier version of this note was that artifact.
 
-## The next lever, named
+## What the road dating achieved
 
-Matching `LENGTH` needs one of:
+- A route uses an opened road rather than a shorter unopened one; the build is charged in the period the
+  road opens; existing roads are not counted as built.
+- The candidate-network test in the scenario export settles the availability question: the reference's
+  own solution uses **22,901 of the sample's 24,273 zero-build segments** (union of
+  `scenario/route_destination.MILL{1,2}.csv`: 31,612 segments, 8.8M m). Restricting WS4 to exactly that
+  set changed `BUILTLENGTH`/`BUILD_EXPENSE` little and did not close the (then apparent) `LENGTH` gap —
+  consistent with the gap being the aggregation, not the network.
 
-1. **A road-aware route choice** — price the build of a new segment in the path (and, when a road
-   target is active, the maintenance/disturbance it implies), which is the reference's trade-off.
-2. **An initial-set fit** — determine which zero-build-cost segments the reference's model actually
-   starts with. The sample's `BUILD = 0` set (4.42M m) is far larger than the 1.15M m the reference uses
-   in period 1, so either its model's road table is a subset or its solve deliberately uses a subset.
+## The remaining discrepancy: maintenance
 
-The second is a data question and can be tested from the export; the first is a modelling change with a
-measurable trade-off. Neither is asserted here; the measurement says where the gap lives.
+WS4 charges maintenance once per used segment **per year**; the report sums the period's years. The
+reference's period-1 maintenance (1,126,465) is almost exactly its period `LENGTH` (1,149,647), which is
+what a **once-per-period** charge per metre looks like. WS4's figure is 3.22× the reference's while its
+distinct road use is *lower*; the next task is to establish the reference's charging period and rate from
+its own tables before changing the model. That is P17.5, re-scoped from "joint assignment" (the LENGTH
+evidence no longer supports that hypothesis) to **the maintenance charge and the build/haul balance**.
+
+## Files
+
+- `tests/test_roads_opened.py` — six cases for opened roads, build-once, cache invalidation.
+- `tmp/parity2025/run-dated2` — the corrected 10-year run (untracked).
+- `tmp/parity2025/route-dated.yaml` — `initial_roads: existing`.
 
 ## Reproduce
 
 ```bash
 cd tmp/parity2025
-# route-dated.yaml is route.yaml with "initial_roads: existing"
 python - <<'PY'
 from pathlib import Path
 from ws4.sim.engine import Simulator
 from ws4.roads.accounts import load_route_config
 cfg = load_route_config(Path("route-dated.yaml"))
 sim = Simulator.from_dataset(Path("c5_compiled"))
-sim.run(Path("schedule-for-ws4.csv"), years=10, out_dir=Path("run-dated"),
+sim.run(Path("schedule-for-ws4.csv"), years=10, out_dir=Path("run-dated2"),
         route_model=cfg.model, route_accounts=cfg.route_accounts,
         duplicate_accounts=cfg.duplicate_accounts,
         product_allocations=cfg.product_allocations,
         period_width=cfg.period_width, maintenance=cfg.maintenance)
 PY
 ```
-
-## The reference's own solution road set
-
-The scenario export carries the road set of the reference's solution in
-`scenarios/base/scenario/route_destination.MILL{1,2}.csv.gz` (`SEGMENT,FNODE,TNODE,FIXED`):
-
-| | segments | length (m) | zero-build segments | planned segments |
-| --- | ---: | ---: | ---: | ---: |
-| MILL 1 | 26,905 | 6,585,444 | 20,934 (3,615,205 m) | 5,971 (2,970,239 m) |
-| MILL 2 | 26,905 | 6,624,381 | 20,949 (3,626,217 m) | 5,956 (2,998,163 m) |
-| union | 31,612 | 8,802,088 | 22,901 | 8,711 (4,697,015 m) |
-
-All rows carry `FIXED = false`.
-
-This settles one of the two levers: **the initial set is not the gap.** The solution's existing-road
-set is 22,901 of the sample's 24,273 zero-build-cost segments (94%), so starting from the zero-build
-set is close to the reference's own available network. What differs is the **per-period selection**:
-the reference's `LENGTH` (1.15M in period 1) is a subset of this 6.6M m set, while WS4's independent
-least-haul paths use 2.9M in the same period.
-
-The plausible cause is the **coupling of assignments**. The reference solves block-to-mill assignment
-jointly, so blocks share the road they use; WS4 chooses each block's least-haul route independently,
-and independent shortest paths fan out over parallel roads. The next test is a joint assignment
-(min-cost flow, or a shared-path heuristic) against the current independent routing, with `LENGTH`
-and haul as the two quantities — not another initial-set variant.

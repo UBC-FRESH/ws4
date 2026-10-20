@@ -381,9 +381,11 @@ def test_the_route_report_is_folded_into_the_models_periods() -> None:
     assert list(report["period"]) == [1, 2]
     assert list(report["year"]) == [10, 20]
     assert set(report["period_width"]) == {10}
-    # the extensive columns are summed over the ten years, the averages are recomputed from them
+    # volume and the expenses are summed; LENGTH is the distinct road used in the period, so a
+    # route used in all ten years is 300 m, not 3,000
     assert report["volume"].sum() == 200.0
-    assert report["length"].sum() == 2 * 10 * 300.0
+    assert report["length"].sum() == 2 * 300.0
+    assert report.iloc[0]["length"] == 300.0
     first = report.iloc[0]
     assert first["volume"] == 100.0
     assert abs(first["average_haul_cost"] - first["haul_expense"] / 100.0) < 1e-9

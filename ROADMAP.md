@@ -709,12 +709,12 @@ not all built then).
   period; an opened road preferred over a cheaper unopened one.
 - [x] P17.4 Measure and record — the per-period ratios and the early build spike against the reference.
 
-- [ ] P17.5 The road-choice lever — the dated run leaves `LENGTH` at 2.55× the reference. The scenario
-  export settles the initial-set question: the reference's own solution uses 22,901 of the 24,273
-  zero-build segments, so availability is not the gap. Its per-period road use is smaller because the
-  assignment is solved jointly and shares road, while WS4 picks each block's least-haul path
-  independently. Test a joint assignment (min-cost flow or a shared-path heuristic) against the current
-  routing, and a road-aware path cost, with `LENGTH` and haul as the two measures.
+- [ ] P17.5 The maintenance charge — the accounting fix (below) puts WS4's distinct road use at
+  **0.77×** the reference's, not 2.55×; the earlier joint-assignment hypothesis is withdrawn. What
+  remains is `MAINTAIN_EXPENSE` at **3.22×** while road use is lower: WS4 charges maintenance per used
+  segment per year and sums the period, while the reference's period charge is almost exactly its period
+  `LENGTH`, which looks like once per period. Establish the reference's charging period and rate from
+  its own tables, then either fix the model or record the divergence by name.
 
 Acceptance: the tests fail on whole-network routing and pass on opened routing; the 2026 `LENGTH` ratio
 moves toward 1 with an early `BUILTLENGTH` spike; the remaining gap is measured; dashboard green. **The
