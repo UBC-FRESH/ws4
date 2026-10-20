@@ -445,5 +445,41 @@ def validate(dataset: Path = typer.Option(..., exists=True)) -> None:
     raise typer.Exit(code=1)
 
 
+@app.command()
+def serve(
+    dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
+    runs: Path = typer.Option(..., exists=True, help="Directory holding run directories"),
+    targets: Path | None = typer.Option(None, "--targets", help="Targets YAML to read and replace"),
+    geometry: Path | None = typer.Option(
+        None, "--geometry", help="GeoJSON of block points or polygons"
+    ),
+    host: str = typer.Option("127.0.0.1", help="Bind address"),
+    port: int = typer.Option(8000, help="Bind port"),
+    root_path: str = typer.Option(
+        "", "--root-path", help="URL prefix when served behind a proxy, e.g. /user/me/proxy/8000"
+    ),
+    allow_remote: bool = typer.Option(
+        False, "--allow-remote", help="Allow a non-loopback bind (no authentication is provided)"
+    ),
+) -> None:
+    """Serve the read-only web API over a dataset and its runs (needs the ``web`` extra)."""
+    if host not in {"127.0.0.1", "localhost", "::1"} and not allow_remote:
+        raise typer.BadParameter("refusing a non-loopback bind without --allow-remote")
+    try:
+        from .web.app import create_app
+    except ImportError as error:
+        raise typer.BadParameter(
+            "the web extra is not installed: pip install 'ws4[web]'"
+        ) from error
+    import uvicorn
+
+    uvicorn.run(
+        create_app(dataset=dataset, runs=runs, targets=targets, geometry=geometry),
+        host=host,
+        port=port,
+        root_path=root_path,
+    )
+
+
 if __name__ == "__main__":
     app()

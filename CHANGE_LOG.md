@@ -1932,3 +1932,12 @@ issue comments.
   routes in metres), which closes P13's last item — the route report's distance unit. Reports:
   `notes/reports/p17-tradeoff.md` and `p17-opened-roads.md`. P13 and P17 are complete. Dashboard:
   **GREEN**.
+- P18.1 **the optional web service, and the front-end design.** `ws4[web]` (FastAPI + uvicorn) serves
+  the artefacts a run already wrote: the dataset manifest and runs (`/api/summary`), a run's summary,
+  its account values, its reports, and a treatment layer joined to a GeoJSON geometry file; the targets
+  YAML is readable and replaceable, with the optimizer's own loader as the validator (an invalid edit is
+  a 422 and the file is left unchanged). The bind is loopback-only unless `--allow-remote` is passed.
+  The design — the artefact contract, the SSE contract, the skin manifests, and the MapLibre interface
+  — is `notes/design/ws4-web-frontend.md`; the API is `docs/reference/web.rst`. The core install is
+  unchanged; the service is an extra, imported lazily by `ws4 serve`. Tests: `tests/test_web.py`
+  (seven cases). Dashboard: **GREEN**.

@@ -29,7 +29,7 @@ exists and the maintainer approves it.
 | P15 A spread-connectivity account | #138 | `feature/p15-spread-connectivity` | complete |
 | P16 The bridge at the same footprint | #141 | `feature/p16-bridge-matched` | complete |
 | P17 Roads opened to the period | #145 | `feature/p17-opened-roads` | complete |
-| P18 A graphical web front end | #146 | `feature/p18-web-frontend` | planned |
+| P18 A graphical web front end | #146 | `feature/p18-web-frontend` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -729,7 +729,7 @@ but moves `LENGTH` only 4.5%, so P17.5 is the remaining lever and the phase stay
 
 Parent issue: #146
 Branch: `feature/p18-web-frontend`
-Status: planned
+Status: active
 
 Goal: a browser front end over the same artefacts the CLI writes — the compiled dataset, the schedule,
 the account values, the route, patch and spread reports, the run summary — with a map, a period selector,
@@ -738,7 +738,7 @@ manifests over one application, not forks. The reference UI's layout is the insp
 grouped legends, a period strip, and Legend/Targets/Reports/Comparisons tabs; treatment maps separate the
 current period from the cumulative total.
 
-- [ ] P18.1 The service surface — optional `ws4[web]` (FastAPI), artefacts as the contract, SSE for live
+- [x] P18.1 The service surface — optional `ws4[web]` (FastAPI), artefacts as the contract, SSE for live
   incumbent values, targets round-tripping the optimizer's own YAML.
 - [ ] P18.2 The map shell — MapLibre, layer tree, period control, blocks/treatments/spatial accounts, road
   layers split built/used/planned.

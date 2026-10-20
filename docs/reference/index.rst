@@ -26,6 +26,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - The network tables, least-cost routing, and the route accounts.
    * - :doc:`performance`
      - The measured figures and how to reproduce them.
+   * - :doc:`web`
+     - The optional HTTP service over a run's artefacts, and the browser front end's contract.
 
 .. toctree::
    :maxdepth: 2
@@ -38,3 +40,4 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    spatial
    roads
    performance
+   web

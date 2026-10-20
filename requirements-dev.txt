@@ -16,3 +16,6 @@ pre-commit>=3.7
 # client and ipykernel ships the "python3" kernel spec a test session looks for
 nbclient>=0.10
 ipykernel>=6
+fastapi>=0.110
+uvicorn>=0.29
+httpx>=0.27
