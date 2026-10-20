@@ -28,6 +28,7 @@ exists and the maintainer approves it.
 | P14 Optimizer search for aggregate targets | #133 | `feature/p14-optimizer-seeding` | complete |
 | P15 A spread-connectivity account | #138 | `feature/p15-spread-connectivity` | complete |
 | P16 The bridge at the same footprint | #141 | `feature/p16-bridge-matched` | complete |
+| P17 Roads opened to the period | #145 | `feature/p17-opened-roads` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -680,6 +681,41 @@ and curve, and make the loader say so when a dataset does not.
 Acceptance: the matched-footprint ranking across seeds, a dataset with a repeated product row that
 cannot be simulated without a named warning, a fresh compile with no repeated row, and the dashboard
 green.
+
+## Phase 17: Roads opened to the period
+
+Parent issue: #145
+Branch: `feature/p17-opened-roads`
+Status: active
+
+Goal: route each period over the roads that exist in it. The reference routes only through segments
+built on or before the current period and builds new ones during the solve to reach the blocks it
+selects; WS4 routes over the whole planned network, using 2.6× (MILL 1) and 3.3× (MILL 2) the road the
+reference reports while hauling cheaper. Per-segment parity is not required, but the accounting —
+`LENGTH`, `BUILTLENGTH`, build expense, maintenance and haul — should match as closely as the model
+allows. **A build unit cost of 0 is a hard-coded trigger to build in period 1**, not a marker of an
+existing road. The model therefore starts with no opened segment, opens a planned segment when a
+selected block first needs it, and books a zero-cost segment's build at the first period it is needed;
+the initial open set is a parameter fitted against the reference's period 1 (`LENGTH` 1,149,647,
+`BUILTLENGTH` 732,073, `BUILD_EXPENSE` 3,660,367 — so the 24,273 zero-cost segments totaling 4.4M m are
+not all built then).
+
+- [x] P17.1 Openness and routing — an opened set initialised from the existing segments; routes over it;
+  the least-haul full-network path opens planned segments on demand; caches keyed by the open version.
+- [x] P17.2 Accounting — `BUILTLENGTH` charged when opened, `LENGTH` over opened segments used,
+  maintenance once per used segment per period; the 2026 sample compared per period.
+- [x] P17.3 Tests — a synthetic existing road plus a block beyond it; one build charged once, reused next
+  period; an opened road preferred over a cheaper unopened one.
+- [x] P17.4 Measure and record — the per-period ratios and the early build spike against the reference.
+
+- [ ] P17.5 The road-choice lever — the dated run leaves `LENGTH` at 2.55× the reference because the
+  existing set is dense and the router prices haul only. Price new-road build in the route choice, or fit
+  the initial set to the reference's 1.15M m, and measure which moves `LENGTH`.
+
+Acceptance: the tests fail on whole-network routing and pass on opened routing; the 2026 `LENGTH` ratio
+moves toward 1 with an early `BUILTLENGTH` spike; the remaining gap is measured; dashboard green. **The
+first measurement is in `notes/reports/p17-opened-roads.md`:** dating halves the period-1 build expense
+but moves `LENGTH` only 4.5%, so P17.5 is the remaining lever and the phase stays active.
 
 ## Detailed Next Steps Notes
 

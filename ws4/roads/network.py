@@ -180,6 +180,31 @@ def load_route_eligibility(path: Path) -> dict[str, tuple[str, ...]]:
     return {product: tuple(names) for product, names in eligible.items()}
 
 
+def existing_segments(segments: pd.DataFrame) -> set[int]:
+    """Return the segment ids that carry no build cost — the roads that exist at period 1.
+
+    Analysts encode an existing road as a zero build cost, which the reference makes available in
+    period 1 at no expense. Such a segment is open from the start and is **not** counted as built
+    length; only the cost-bearing segments opened later are.
+
+    Parameters
+    ----------
+    segments : pandas.DataFrame
+        The segment table, with ``segment_id``/``SEGMENT`` and ``build_cost``/``BUILD``.
+
+    Returns
+    -------
+    set of int
+        The segment ids whose build cost is zero.
+    """
+    existing: set[int] = set()
+    for index, row in enumerate(segments.itertuples(index=False)):
+        segment_id = _as_int(_get(row, "segment_id", "SEGMENT", default=index))
+        if _as_float(_get(row, "build_cost", "BUILD", default=0.0)) == 0.0:
+            existing.add(segment_id)
+    return existing
+
+
 @dataclass
 class RouteNetwork:
     """A road network with least-cost routing between blocks and destinations.
@@ -192,19 +217,25 @@ class RouteNetwork:
         The destinations, identified by account name.
     block_vertex : mapping of int to int
         The single vertex each block is assigned to.
+    opened : set of int or None
+        The segments open in the current period. ``None`` means every segment is open, which is
+        the whole-planned-network behaviour; a set means only those segments are routable, and
+        :meth:`open_segments` grows it.
     """
 
     segments: tuple[Segment, ...]
     destinations: tuple[Destination, ...]
     block_vertex: Mapping[int, int]
-    _distance_cache: dict[tuple[int, str], dict[int, float]] = field(
+    _distance_cache: dict[tuple[int, str, int], dict[int, float]] = field(
         default_factory=dict, compare=False, repr=False
     )
-    _previous_cache: dict[tuple[int, str], dict[int, tuple[int, int]]] = field(
+    _previous_cache: dict[tuple[int, str, int], dict[int, tuple[int, int]]] = field(
         default_factory=dict, compare=False, repr=False
     )
     _segments_cache: dict[int, Segment] | None = field(default=None, compare=False, repr=False)
     _adjacency_cache: dict[int, list[int]] | None = field(default=None, compare=False, repr=False)
+    opened: set[int] | None = field(default=None, compare=False, repr=False)
+    _open_version: int = field(default=0, compare=False, repr=False)
 
     @classmethod
     def from_tables(
@@ -212,6 +243,8 @@ class RouteNetwork:
         segments: pd.DataFrame,
         destinations: pd.DataFrame,
         linkages: pd.DataFrame,
+        *,
+        initial_open: set[int] | None = None,
     ) -> RouteNetwork:
         """Build a network from the segments, destinations, and linkages tables.
 
@@ -226,6 +259,11 @@ class RouteNetwork:
             ``vertex_id``.
         linkages : pandas.DataFrame
             The block-to-vertex table (``BLOCK``/``block_id``, ``NODE``/``vertex_id``).
+        initial_open : set of int or None, optional
+            The segments open before the run. ``None`` (the default) opens every segment, which
+            is the whole-network behaviour WS4 had before roads were dated. An empty set starts
+            with no road. :func:`existing_segments` returns the usual set: the segments whose
+            build cost is 0, which the reference makes available at period 1 at null cost.
 
         Returns
         -------
@@ -257,10 +295,12 @@ class RouteNetwork:
             _as_int(_get(row, "block_id", "BLOCK")): _as_int(_get(row, "vertex_id", "NODE"))
             for row in linkages.itertuples(index=False)
         }
+        opened = None if initial_open is None else set(initial_open)
         return cls(
             segments=tuple(built),
             destinations=tuple(built_destinations),
             block_vertex=block_vertex,
+            opened=opened,
         )
 
     def destination_names(self) -> tuple[str, ...]:
@@ -289,12 +329,41 @@ class RouteNetwork:
             self._adjacency_cache = adjacency
         return self._adjacency_cache
 
+    def open_segments(self, segment_ids: Sequence[int]) -> tuple[int, ...]:
+        """Open planned segments, and forget the routes computed before they were open.
+
+        A segment is opened once; opening an already-open segment is a no-op. The open set is
+        a per-run piece of state, so a network with ``opened = None`` (every segment open) is
+        left unchanged.
+
+        Parameters
+        ----------
+        segment_ids : sequence of int
+            The segments to open.
+
+        Returns
+        -------
+        tuple of int
+            The segments that were not already open, in input order.
+        """
+        if self.opened is None:
+            return ()
+        newly = tuple(
+            segment_id for segment_id in dict.fromkeys(segment_ids) if segment_id not in self.opened
+        )
+        if newly:
+            self.opened.update(newly)
+            self._open_version += 1
+            self._distance_cache.clear()
+            self._previous_cache.clear()
+        return newly
+
     def _weight(self, segment: Segment, weight: str) -> float:
         """Return a segment's traversal weight for ``length`` or ``haul``."""
         return segment.length_m if weight == _LENGTH else segment.haul_cost
 
     def _shortest(
-        self, source: int, weight: str
+        self, source: int, weight: str, open_only: bool = True
     ) -> tuple[dict[int, float], dict[int, tuple[int, int]]]:
         """Return shortest distances and predecessors from a source.
 
@@ -304,6 +373,9 @@ class RouteNetwork:
             The source vertex.
         weight : {"length", "haul"}
             The traversal weight.
+        open_only : bool, optional
+            When true (the default) traverse only the opened segments; when false, the whole
+            planned network, which is how a block is reached before its road is built.
 
         Returns
         -------
@@ -311,9 +383,11 @@ class RouteNetwork:
             The distance to each reachable vertex, and, for each vertex, the incoming
             ``(previous_vertex, segment_id)``.
         """
-        cached = self._distance_cache.get((source, weight))
+        version = self._open_version if open_only else -1
+        key = (source, weight, version)
+        cached = self._distance_cache.get(key)
         if cached is not None:
-            return cached, self._previous_cache[(source, weight)]
+            return cached, self._previous_cache[key]
         by_id = self._segments_by_id()
         adjacency = self._adjacency()
         distances: dict[int, float] = {source: 0.0}
@@ -324,6 +398,8 @@ class RouteNetwork:
             if distance > distances.get(node, float("inf")):
                 continue
             for segment_id in adjacency.get(node, []):
+                if open_only and self.opened is not None and segment_id not in self.opened:
+                    continue
                 segment = by_id[segment_id]
                 neighbour = (
                     segment.to_vertex if segment.from_vertex == node else segment.from_vertex
@@ -333,8 +409,8 @@ class RouteNetwork:
                     distances[neighbour] = candidate
                     previous[neighbour] = (node, segment_id)
                     heapq.heappush(queue, (candidate, neighbour))
-        self._distance_cache[(source, weight)] = distances
-        self._previous_cache[(source, weight)] = previous
+        self._distance_cache[key] = distances
+        self._previous_cache[key] = previous
         return distances, previous
 
     def _destination(self, name: str) -> Destination | None:
@@ -344,7 +420,9 @@ class RouteNetwork:
                 return destination
         return None
 
-    def route(self, block_id: int, destination: str) -> Route | None:
+    def route(
+        self, block_id: int, destination: str, *, open_only: bool = True
+    ) -> Route | None:
         """Return the least-haul-cost route from a block to a destination.
 
         Parameters
@@ -353,6 +431,9 @@ class RouteNetwork:
             The block.
         destination : str
             The destination account name.
+        open_only : bool, optional
+            When true (the default) route over opened segments only; when false, over the whole
+            planned network, which is how a block is reached before its road is built.
 
         Returns
         -------
@@ -367,7 +448,7 @@ class RouteNetwork:
         # The graph is undirected, so the distances from the destination are the distances
         # to it. Computing from the destination (not the block) makes one Dijkstra serve
         # every block.
-        distances, previous = self._shortest(target.vertex, _HAUL)
+        distances, previous = self._shortest(target.vertex, _HAUL, open_only=open_only)
         if source not in distances:
             return None
         segment_ids: list[int] = []
@@ -386,7 +467,9 @@ class RouteNetwork:
             maintain_cost=sum(segment.maintain_cost for segment in chosen),
         )
 
-    def route_length(self, block_id: int, destination: str) -> float | None:
+    def route_length(
+        self, block_id: int, destination: str, *, open_only: bool = True
+    ) -> float | None:
         """Return the shortest route length (metres) from a block to a destination.
 
         Parameters
@@ -395,6 +478,9 @@ class RouteNetwork:
             The block.
         destination : str
             The destination account name.
+        open_only : bool, optional
+            When true (the default) route over opened segments only; when false, over the whole
+            planned network.
 
         Returns
         -------
@@ -405,10 +491,12 @@ class RouteNetwork:
         source = self.block_vertex.get(block_id)
         if target is None or source is None:
             return None
-        distances, _ = self._shortest(target.vertex, _LENGTH)
+        distances, _ = self._shortest(target.vertex, _LENGTH, open_only=open_only)
         return distances.get(source)
 
-    def route_cost(self, block_id: int, destination: str) -> float | None:
+    def route_cost(
+        self, block_id: int, destination: str, *, open_only: bool = True
+    ) -> float | None:
         """Return the shortest haul cost from a block to a destination.
 
         Parameters
@@ -417,6 +505,9 @@ class RouteNetwork:
             The block.
         destination : str
             The destination account name.
+        open_only : bool, optional
+            When true (the default) route over opened segments only; when false, over the whole
+            planned network.
 
         Returns
         -------
@@ -427,11 +518,15 @@ class RouteNetwork:
         source = self.block_vertex.get(block_id)
         if target is None or source is None:
             return None
-        distances, _ = self._shortest(target.vertex, _HAUL)
+        distances, _ = self._shortest(target.vertex, _HAUL, open_only=open_only)
         return distances.get(source)
 
     def nearest_destination(
-        self, block_id: int, eligible: Iterable[str] | None = None
+        self,
+        block_id: int,
+        eligible: Iterable[str] | None = None,
+        *,
+        open_only: bool = True,
     ) -> tuple[str, float] | None:
         """Return the least-haul-cost destination for a block, or None.
 
@@ -442,6 +537,9 @@ class RouteNetwork:
         eligible : iterable of str, optional
             The destination names the block's product may be sent to. When omitted, every
             destination is eligible.
+        open_only : bool, optional
+            When true (the default) consider opened segments only; when false, the whole planned
+            network.
 
         Returns
         -------
@@ -455,10 +553,10 @@ class RouteNetwork:
         for destination in self.destinations:
             if allowed is not None and destination.name not in allowed:
                 continue
-            cost = self.route_cost(block_id, destination.name)
+            cost = self.route_cost(block_id, destination.name, open_only=open_only)
             if cost is None or cost >= best_cost:
                 continue
-            length = self.route_length(block_id, destination.name)
+            length = self.route_length(block_id, destination.name, open_only=open_only)
             best = (destination.name, length if length is not None else 0.0)
             best_cost = cost
         return best

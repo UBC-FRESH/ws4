@@ -26,7 +26,7 @@ from typing import Literal
 import pandas as pd
 import yaml
 
-from .network import Route, RouteNetwork, load_route_eligibility
+from .network import Route, RouteNetwork, existing_segments, load_route_eligibility
 
 # The report column order of the established Route Cost Report.
 _ROUTE_COST_COLUMNS: tuple[str, ...] = (
@@ -193,20 +193,56 @@ class RouteModel:
         """
         decided = self._overrides.get((block_id, product))
         if decided is not None:
-            return (decided, self.network.route(block_id, decided))
+            return (decided, self._route_or_build(block_id, decided))
         key = (block_id, product)
         cached = self._assign_cache.get(key)
         if cached is not None:
             return cached
         eligible = self.eligible(product)
         choice = self.network.nearest_destination(block_id, eligible)
+        if choice is None and self.network.opened is not None:
+            # no opened road reaches the block: choose over the planned network, which is the
+            # path its access will be built along
+            choice = self.network.nearest_destination(block_id, eligible, open_only=False)
         if choice is None:
             result: tuple[str, Route | None] = (self.surplus_account(product), None)
         else:
             destination = choice[0]
-            result = (destination, self.network.route(block_id, destination))
+            result = (destination, self._route_or_build(block_id, destination))
         self._assign_cache[key] = result
         return result
+
+    def _route_or_build(self, block_id: int, destination: str) -> Route | None:
+        """Return a route over the opened roads, opening the planned path when none exists.
+
+        A block the opened network does not reach is accessed along its least-haul path over the
+        whole planned network; that path's segments are opened, and the route over the planned
+        path is returned so every segment it opens is also used and charged. Later blocks see the
+        opened segments and are routed over them, which is what makes the road set grow instead
+        of being rebuilt.
+
+        Parameters
+        ----------
+        block_id : int
+            The block.
+        destination : str
+            The destination account name.
+
+        Returns
+        -------
+        Route or None
+            The route, or None when the destination is not linked or no planned path exists.
+        """
+        route = self.network.route(block_id, destination)
+        if route is not None or self.network.opened is None:
+            return route
+        planned = self.network.route(block_id, destination, open_only=False)
+        if planned is None:
+            return None
+        if self.network.open_segments(planned.segment_ids):
+            # a choice cached before the network grew may no longer be the least-cost one
+            self._assign_cache.clear()
+        return planned
 
 
 @dataclass(frozen=True)
@@ -452,7 +488,9 @@ def load_route_config(path: Path) -> RouteConfig:
 
     The file names the four route tables (``segments``, ``destinations``, ``linkages``), an
     optional ``eligibility`` table, an optional ``unutilized`` account — one name, or a name
-    per product — and lists of ``route_accounts`` and ``duplicate_accounts``. Relative paths
+    per product — and lists of ``route_accounts`` and ``duplicate_accounts``. ``initial_roads``
+    is ``all`` (the default, the whole planned network) or ``existing`` (the zero-build-cost
+    roads open at period 1, the rest opened on demand). Relative paths
     resolve against the configuration file's directory.
 
     **Parity is the default and a divergence has to be named.** Everything WS4 computes the way the
@@ -488,7 +526,15 @@ def load_route_config(path: Path) -> RouteConfig:
     segments = pd.read_csv(resolve(route["segments"]))
     destinations = pd.read_csv(resolve(route["destinations"]))
     linkages = pd.read_csv(resolve(route["linkages"]))
-    network = RouteNetwork.from_tables(segments, destinations, linkages)
+    initial_roads = str(route.get("initial_roads", "all")).lower()
+    if initial_roads not in ("all", "existing"):
+        raise ValueError(
+            f"route.initial_roads is 'all' or 'existing', and {initial_roads!r} is neither"
+        )
+    initial_open = existing_segments(segments) if initial_roads == "existing" else None
+    network = RouteNetwork.from_tables(
+        segments, destinations, linkages, initial_open=initial_open
+    )
     eligibility = (
         load_route_eligibility(resolve(route["eligibility"])) if route.get("eligibility") else {}
     )
@@ -716,7 +762,9 @@ class RouteCostLedger:
         # maintenance is charged per segment per period from the traffic (_charge_maintenance)
         self._dest_segments: dict[tuple[int, str], set[int]] = {}
         self._traffic: dict[tuple[int, str, int], float] = {}
-        self._built: set[int] = set()
+        # the roads that exist at the start are already built: they are open from period 1 and
+        # are not counted as built length or charged a build expense
+        self._built: set[int] = set(network.opened) if network.opened is not None else set()
         self._first_use: dict[int, int] = {}
         self._year_distance: dict[int, float] = {}
         self._year_volume: dict[int, float] = {}
