@@ -29,7 +29,7 @@ exists and the maintainer approves it.
 | P15 A spread-connectivity account | #138 | `feature/p15-spread-connectivity` | complete |
 | P16 The bridge at the same footprint | #141 | `feature/p16-bridge-matched` | complete |
 | P17 Roads opened to the period | #145 | `feature/p17-opened-roads` | complete |
-| P18 A graphical web front end | #146 | `feature/p18-web-frontend` | active |
+| P18 A graphical web front end | #146 | `feature/p18-web-frontend` | complete |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -729,7 +729,7 @@ but moves `LENGTH` only 4.5%, so P17.5 is the remaining lever and the phase stay
 
 Parent issue: #146
 Branch: `feature/p18-web-frontend`
-Status: active
+Status: complete
 
 Goal: a browser front end over the same artefacts the CLI writes — the compiled dataset, the schedule,
 the account values, the route, patch and spread reports, the run summary — with a map, a period selector,
@@ -740,7 +740,7 @@ current period from the cumulative total.
 
 - [x] P18.1 The service surface — optional `ws4[web]` (FastAPI), artefacts as the contract, SSE for live
   incumbent values, targets round-tripping the optimizer's own YAML.
-- [ ] P18.2 The map shell — **first cut live**: a dependency-free SVG shell over the service, with a run
+- [x] P18.2 The map shell — **first cut live**: a dependency-free SVG shell over the service, with a run
   selector, year control from the schedule, treated/untreated layers with counts, click selection,
   wheel-zoom/pan, and the Legend/Targets/Reports tabs. **First slice of the layer tree:** current and
   cumulative treatments, patch size classes from `patch_membership.csv`, and a grouped tree that
@@ -768,10 +768,11 @@ current period from the cumulative total.
   A-only/B-only/both, the target table shows each run's period value and status, and the account
   table is sorted by absolute delta and filterable.
 
-Acceptance: a session loads a dataset and run, shows the three layer families and moves through the
+Acceptance: a session loads a dataset and run, shows the source-layered families and moves through the
 horizon; a target edit round-trips and a re-solve matches the CLI's penalty; a report renders from the
-run's CSV; the reviewer skin cannot edit; the CLI is unchanged without the extra; the dashboard is green;
-the design is recorded before the first UI line.
+run's CSV; the reviewer skin cannot edit; the CLI is unchanged without the extra; the dashboard is
+green; the design is recorded before the first UI line. Close-out report:
+`notes/reports/p18-closeout.md`; the model-derived layers are recorded in `notes/backlog.md`.
 
 ## Detailed Next Steps Notes
 

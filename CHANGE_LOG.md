@@ -2074,3 +2074,10 @@ issue comments.
   run's used-road subset and model spread-compartment membership remain named follow-ups. Browser
   check: ticking the overlay drew 36,721 lines with no console errors; unticking cleared them.
   Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
+- P18 phase complete. The optional web service, live player, map/layer tree with simplified source
+  polygons, source base colours and source access roads, active targets, standard/builder reports,
+  four skins, comparison and the embedded local assistant are merged. The close-out report is
+  `notes/reports/p18-closeout.md`; the run's used-road subset, model spread-compartment membership,
+  MapLibre and a stability stopping criterion are recorded in `notes/backlog.md`. No settings, tag or
+  release changes. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven
+  gates.

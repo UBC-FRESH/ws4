@@ -6,7 +6,7 @@ Pull requests: #151 (service, shell and targets), #152 (live player, reports and
 review fixes), #154 (comparison), #155 (layer tree), #156 (block polygons and patterns), #157 (source
 base colours), #158 (active targets and reports), #159 (source roads), and the documentation pull
 request that adds this report
-Evidence head: PENDING
+Evidence head: `d439172`, plus the report commit
 Date: 2026-10-20
 Status: closing.
 
@@ -101,8 +101,8 @@ Status: closing.
 | #156 `54d2f14` | green |
 | #157 `a41a17d` | green |
 | #158 `8189c5a` | green |
-| #159 PENDING | green before merge |
-| close-out head PENDING | dashboard and CI green |
+| #159 `d439172` | green before and after merge |
+| close-out head (this report) | dashboard and CI green |
 
 ## 7. Follow-ups not shipped
 
