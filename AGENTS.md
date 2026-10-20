@@ -122,6 +122,16 @@ Record the result in the changelog entry for the milestone.
 
 ## Project-specific rules
 
+- **Check the cross-repository threads on a cadence.** The other agent works asynchronously in
+  `UBC-FRESH/femic-tsa23-instance`, and GitHub is the shared channel. At session start, after each
+  completed task, and before reporting a phase closed, read the new issues and comments in **both**
+  `UBC-FRESH/ws4` and `UBC-FRESH/femic-tsa23-instance`, and reply in the thread rather than relying on
+  the maintainer to relay. `gh issue view --comments` fails on these repositories (the Projects-classic
+  deprecation breaks the GraphQL query); use
+  `gh api 'repos/UBC-FRESH/ws4/issues/comments?sort=updated&direction=desc&per_page=20'` and the same
+  for `femic-tsa23-instance`, plus `gh api 'repos/<owner>/<repo>/issues?state=all&sort=updated&direction=desc'`
+  for newly opened ones. Reason: the maintainer should not have to prompt each check.
+
 - **Spatial structure is part of the model, not a post-processing step.** Fragments, adjacency, and
   access constraints participate in simulation and optimization. Reason: the project exists to make
   spatial relationships first-class.
