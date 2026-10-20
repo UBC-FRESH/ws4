@@ -5,6 +5,7 @@
 body { margin:0; font:14px/1.45 system-ui, sans-serif; color:var(--ink); background:var(--bg); height:100vh; display:flex; flex-direction:column; }
 header { display:flex; gap:1.2rem; align-items:center; padding:.55rem .9rem; background:var(--panel); border-bottom:1px solid var(--line); }
 header strong { font-size:1.05rem; letter-spacing:.04em; }
+.build { color:var(--muted); font-size:.72rem; }
 header label { display:flex; gap:.4rem; align-items:center; color:var(--muted); }
 header select { max-width:16rem; }
 header .year { flex:1; }

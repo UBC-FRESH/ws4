@@ -171,7 +171,7 @@ def test_targets_json_round_trip_and_an_empty_list_is_refused(tmp_path: Path) ->
     rows = client.get("/api/targets.json").json()
     assert rows[0]["account"] == "feature.Volume"
     rows[0]["maximum"] = 100.0
-    response = client.put("/api/targets.json", json=rows)
+    response = client.post("/api/targets.json", json=rows)
     assert response.status_code == 200
     after = client.get("/api/targets.json").json()
     assert after[0]["maximum"] == 100.0
@@ -235,6 +235,15 @@ def test_the_status_endpoint_reports_a_finished_run(tmp_path: Path) -> None:
     assert status["status"] == "done"
     assert status["running"] is False
     assert status["summary"]["status"] == "ok"
+
+
+def test_targets_are_also_saveable_with_post(tmp_path: Path) -> None:
+    """The proxy-facing alias: POST saves the same document as PUT."""
+    client, _ = _app(tmp_path)
+    rows = client.get("/api/targets.json").json()
+    rows[0]["maximum"] = 321.0
+    assert client.post("/api/targets.json", json=rows).status_code == 200
+    assert client.get("/api/targets.json").json()[0]["maximum"] == 321.0
 
 
 def test_an_unknown_run_is_a_named_404(tmp_path: Path) -> None:

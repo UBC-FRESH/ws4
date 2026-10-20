@@ -305,6 +305,11 @@ def create_app(
             raise HTTPException(status_code=404, detail=f"no skin named {skin_id!r}")
         return skin.row()
 
+    @app.get("/api/ping")
+    def ping(source: str = Query(default="")) -> dict[str, str]:
+        """Return a liveness marker; the client calls it when an action begins."""
+        return {"ok": "true", "source": source}
+
     @app.get("/api/summary")
     def summary() -> dict[str, Any]:
         """Return the dataset manifest and the runs found under the configured root."""
@@ -470,6 +475,7 @@ def create_app(
         return targets_path.read_text(encoding="utf-8")
 
     @app.put("/api/targets")
+    @app.post("/api/targets")
     def put_targets(body: Annotated[str, Body(media_type="text/yaml")]) -> dict[str, Any]:
         """Validate and replace the targets YAML."""
         return {"targets": _write_targets(body)}
@@ -480,6 +486,7 @@ def create_app(
         return _target_rows()
 
     @app.put("/api/targets.json")
+    @app.post("/api/targets.json")
     def put_targets_json(
         rows: Annotated[list[dict[str, Any]], Body()],
     ) -> dict[str, Any]:

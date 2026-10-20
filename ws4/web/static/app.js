@@ -39,6 +39,12 @@ function bounds(features) {
 
 function fit(features) {
   const box = bounds(features);
+  document.addEventListener('click', (event) => {
+    const button = event.target.closest('#start-run');
+    if (!button || button.disabled) return;
+    event.preventDefault();
+    startRun();
+  });
   const svg = $('map');
   const width = svg.clientWidth || 800;
   const height = svg.clientHeight || 600;
@@ -374,7 +380,7 @@ async function saveTargets() {
   }
   try {
     const response = await fetch('api/targets.json', {
-      method: 'PUT',
+      method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(rows),
     });
@@ -492,6 +498,7 @@ async function pollRun(id) {
 }
 
 async function startRun() {
+  fetch('api/ping?source=startRun').catch(() => {});
   const status = $('run-status');
   $('start-run').disabled = true;
   $('start-run').textContent = 'Running…';
@@ -501,7 +508,8 @@ async function startRun() {
   if (!saved) {
     $('start-run').disabled = false;
     $('start-run').textContent = 'Run search';
-    showRun('targets not saved — see the message below', false);
+    const reason = $('targets-status').textContent || 'no reason given';
+    showRun(`targets not saved: ${reason}`, false);
     return;
   }
   const iterations = Number($('run-iterations')?.value || 500);
@@ -673,7 +681,6 @@ function wireControls() {
     if (skin) { applySkin(skin); await loadTargets(); }
   });
   $('save-targets').addEventListener('click', saveTargets);
-  $('start-run').addEventListener('click', startRun);
   $('show-treated').addEventListener('change', applyVisibility);
   $('show-untreated').addEventListener('change', applyVisibility);
   for (const button of document.querySelectorAll('nav.tabs button')) {
