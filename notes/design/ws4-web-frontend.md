@@ -109,9 +109,11 @@ manifests ship: `model-builder`, `scenario-analyst`, `scenario-browser`, `review
 ## Targets
 
 A table and a chart, per account and period: minimum, maximum, weights, shape, and an active toggle.
-The realized value comes from the incumbent (`accounts` events). Saving writes the same YAML the
-optimizer reads; the PUT validates it by loading it through `load_targets`, so an invalid edit is
-refused in the UI exactly as the CLI would refuse it.
+A watched card spans the run's **whole horizon**, not only the periods that carry a target: the
+realized series is drawn for every year, and the band appears only where a target sets a minimum or
+maximum. The realized value comes from the incumbent; saving writes the same YAML the optimizer reads,
+and the PUT validates it by loading it through `load_targets`, so an invalid edit is refused in the UI
+exactly as the CLI would refuse it.
 
 ## Reports
 
@@ -119,6 +121,34 @@ Standard reports are rendered from the run's CSVs: account summary, route cost p
 distribution, spread accounts. A user-defined report is a YAML list of accounts and periods; it selects
 columns from `account_values.csv`, never recomputes. Export is the file the run wrote (CSV/PNG), plus a
 rendered table.
+
+## Parallel islands
+
+The player sends `islands` (one to 64) with the start request. The service passes it as the CLI's
+`--starts` and `--threads`, so a browser run uses the machine rather than one core. Each worker writes
+`step`, `targets` and `schedule` records directly to its own `telemetry-<island>.jsonl`, with the
+`island` label and a flush per record. A single parent writer was the bottleneck at eight islands: the
+workers ran at thousands of steps a second while the displayed counter advanced at hundreds. Writing
+locally, and merging the worker files into the canonical `telemetry.jsonl` only after the search,
+removes that queue. The event stream follows the worker files, picks the island with the lowest
+objective, sends its schedule (a `reset` event when the best island changes) and reports the aggregate
+step count in `total`. Pause and stop reach every worker through the same control file, and the
+parent's absolute deadline is passed into each worker so a time-limited run stops all of them.
+
+## Chat agent
+
+The lower-left panel is an embedded coding agent, not a canned help window. It calls the installed
+`opencode` CLI with `--model <agent-model> --format json --auto` and a preamble naming the workspace,
+dataset, targets and the run/year the UI is showing. The CLI owns provider authentication; the
+service never reads the key. The endpoint parses the CLI's JSON events into the reply text and a short
+list of tool actions, and returns the OpenCode session id so the next turn continues the conversation.
+The panel is a thin renderer: escaped markdown, action chips, a New button that drops the session.
+
+The permission is explicit (`--allow-agent`, off by default) because the agent has the service user's
+shell and filesystem and auto-approves its tools. This is a local-operator feature; a shared or remote
+deployment needs an authenticating proxy and a separate decision. The model is a service setting
+(`--agent-model`, default `opencode-go/deepseek-v4.1-flash`) and the working directory is
+`--agent-cwd` (default: where the service was started).
 
 ## Testing
 

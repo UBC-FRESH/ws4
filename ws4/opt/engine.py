@@ -13,7 +13,7 @@ import math
 import os
 import random
 import time
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
@@ -48,6 +48,7 @@ from ..spread.accounts import (
     load_block_coordinates,
     load_spread_accounts,
 )
+from .control import RunControl
 from .core import Problem
 from .incremental import IncrementalObjective
 from .mip import bound_for
@@ -135,6 +136,10 @@ class OptimizeConfig:
         is NumPy-heavy, so oversubscribing the pools costs more than it buys.
     time_limit : str
         The wall-clock limit, as ``HH:MM:SS``.
+    control_path : str
+        A JSON file the search polls: ``{"action": "pause"}`` holds it between iterations and
+        ``{"action": "stop"}`` makes it return its best schedule and write its summary. Empty when
+        the run has no control file.
     seed : int
         The random seed. A run is reproducible for a given seed.
     targets_path : str
@@ -229,6 +234,7 @@ class OptimizeConfig:
     time_limit: str = "01:00:00"
     seed: int = 42
     targets_path: str = ""
+    control_path: str = ""
     weights_path: str = ""
     years: int = 50
     iterations: int = 500
@@ -1032,7 +1038,13 @@ class Optimizer:
         self,
         seed: int,
         on_step: Callable[[int, float], None] | None = None,
+        on_snapshot: Callable[
+            [int, Mapping[tuple[int, str], float], Mapping[int, Sequence[tuple[str, int]]]],
+            None,
+        ]
+        | None = None,
         initial: Schedule | None = None,
+        deadline: float | None = None,
     ) -> tuple[Schedule, float]:
         """Run one metaheuristic start with the given seed.
 
@@ -1042,9 +1054,15 @@ class Optimizer:
             The seed for this start.
         on_step : callable or None, optional
             Called with ``(iteration, best_objective)`` each iteration.
+        on_snapshot : callable or None, optional
+            Called with ``(iteration, realized cells, incumbent schedule)`` on the snapshot
+            interval, for a live target view and an animated map.
         initial : Schedule or None, optional
             A starting schedule (for example a migrated elite). When omitted, the warm
             start seeds the search with each block's first candidate.
+        deadline : float or None, optional
+            An absolute ``time.monotonic()`` deadline, shared by a parent and its workers. When
+            omitted, the optimizer's own clock (``_deadline``) applies.
 
         Returns
         -------
@@ -1052,6 +1070,7 @@ class Optimizer:
             The best schedule and its objective.
         """
         targets = load_targets(Path(self.cfg.targets_path)) if self.cfg.targets_path else []
+        control = RunControl(Path(self.cfg.control_path)) if self.cfg.control_path else None
         candidates = self.candidates()
         problem = Problem(
             evaluate=lambda schedule: self._evaluate(schedule, targets),
@@ -1059,6 +1078,7 @@ class Optimizer:
             registry=self.registry,
         )
         rng = random.Random(seed)
+        limit = self._deadline if deadline is None else deadline
         if initial is None and self.cfg.greedy_seed:
             evaluator = self.delta_evaluator(targets)
             if evaluator is not None:
@@ -1072,8 +1092,9 @@ class Optimizer:
                 iterations=self.cfg.iterations,
                 tenure=self.cfg.tenure,
                 on_step=on_step,
+                control=control,
                 initial=initial,
-                deadline=self._deadline,
+                deadline=limit,
             )
         if self.cfg.metaheuristic == "ils":
             return solve_ils(
@@ -1083,7 +1104,7 @@ class Optimizer:
                 perturbation=self.cfg.perturbation,
                 on_step=on_step,
                 initial=initial,
-                deadline=self._deadline,
+                deadline=limit,
             )
         evaluator = self.delta_evaluator(targets)
         if evaluator is not None:
@@ -1098,8 +1119,10 @@ class Optimizer:
                 candidates=candidates,
                 registry=self.registry,
                 initial=initial,
-                deadline=self._deadline,
+                deadline=limit,
                 on_step=on_step,
+                control=control,
+                on_snapshot=on_snapshot,
                 adaptive=self.cfg.cooling_mode == "adaptive",
                 cooling_window=self.cfg.cooling_window,
             )
@@ -1110,9 +1133,10 @@ class Optimizer:
             temperature=self.cfg.temperature,
             cooling=self.cfg.cooling,
             on_step=on_step,
+            control=control,
             initial=initial,
             adaptive=self.cfg.cooling_mode == "adaptive",
-            deadline=self._deadline,
+            deadline=limit,
             cooling_window=self.cfg.cooling_window,
         )
 
@@ -1146,13 +1170,19 @@ class Optimizer:
         seconds = parse_time_limit(self.cfg.time_limit)
         self._deadline = time.monotonic() + seconds if seconds is not None else None
 
-    def search(self) -> tuple[Schedule, float, list[Target]]:
+    def search(self, out_dir: Path | None = None) -> tuple[Schedule, float, list[Target]]:
         """Run the search and return the incumbent.
 
         When ``islands`` is set (and there is more than one), the islands run in parallel
         for ``episodes`` rounds, and the global best schedule is migrated into every island
         as the next round's starting point. Otherwise the starts run independently (serially
-        or across a process pool).
+        or across a process pool). A process-pool worker writes its own telemetry under
+        ``out_dir``, so a fast search does not funnel every island through one writer.
+
+        Parameters
+        ----------
+        out_dir : Path or None, optional
+            The run directory; workers write ``telemetry-<island>.jsonl`` beside the summary.
 
         Returns
         -------
@@ -1162,15 +1192,19 @@ class Optimizer:
         targets = load_targets(Path(self.cfg.targets_path)) if self.cfg.targets_path else []
         self._start_clock()
         if self.cfg.islands > 1 and self.cfg.workers > 1:
-            best, best_obj = self._island_search()
+            best, best_obj = self._island_search(out_dir)
             return best, best_obj, targets
         starts = max(1, self.cfg.starts)
         if self.cfg.workers > 1 and starts > 1:
+            worker_dir = str(out_dir) if out_dir is not None else ""
             jobs = [
                 (
                     str(self.dataset_dir),
                     replace(self.cfg, starts=1, workers=1),
                     self.cfg.seed + start,
+                    f"start-{start}",
+                    self._deadline,
+                    worker_dir,
                 )
                 for start in range(starts)
             ]
@@ -1185,8 +1219,13 @@ class Optimizer:
                     best, best_obj = candidate, candidate_obj
         return best, best_obj, targets
 
-    def _island_search(self) -> tuple[Schedule, float]:
+    def _island_search(self, out_dir: Path | None = None) -> tuple[Schedule, float]:
         """Run the island model: parallel islands with elite migration.
+
+        Parameters
+        ----------
+        out_dir : Path or None, optional
+            The run directory; each island writes its own telemetry file.
 
         Returns
         -------
@@ -1197,12 +1236,21 @@ class Optimizer:
         episodes = max(1, self.cfg.episodes)
         island_config = replace(self.cfg, islands=1, starts=1, workers=1, episodes=1)
         seeds = [self.cfg.seed + index for index in range(islands)]
+        worker_dir = str(out_dir) if out_dir is not None else ""
         best: Schedule = {}
         best_obj = math.inf
-        for _episode in range(episodes):
+        for episode in range(episodes):
             jobs = [
-                (str(self.dataset_dir), island_config, seed, best if best else None)
-                for seed in seeds
+                (
+                    str(self.dataset_dir),
+                    island_config,
+                    seed,
+                    best if best else None,
+                    f"episode-{episode}-island-{index}",
+                    self._deadline,
+                    worker_dir,
+                )
+                for index, seed in enumerate(seeds)
             ]
             with ProcessPoolExecutor(max_workers=islands) as pool:
                 results = list(pool.map(_island_job, jobs))
@@ -1230,18 +1278,36 @@ class Optimizer:
             out_dir / "telemetry.jsonl",
             run_id=f"{self.cfg.metaheuristic}-{self.cfg.seed}",
             config=asdict(self.cfg),
+            auto_flush=not self._use_pool(),
         )
         self._start_clock()
-        if self._use_pool():
-            best, best_obj, targets = self.search()
+        pool_search = self._use_pool()
+        if pool_search:
+            best, best_obj, targets = self.search(out_dir=out_dir)
         else:
             best, best_obj = {}, math.inf
             for start in range(max(1, self.cfg.starts)):
-                candidate, candidate_obj = self._solve(self.cfg.seed + start, on_step=logger.step)
+
+                def snapshot(
+                    iteration: int,
+                    totals: Mapping[tuple[int, str], float],
+                    schedule: Mapping[int, Sequence[tuple[str, int]]],
+                ) -> None:
+                    """Write the live target cells and the schedule's movement."""
+                    logger.targets(iteration, totals)
+                    logger.schedule(iteration, schedule)
+
+                candidate, candidate_obj = self._solve(
+                    self.cfg.seed + start,
+                    on_step=logger.step,
+                    on_snapshot=snapshot,
+                )
                 if candidate_obj < best_obj:
                     best, best_obj = candidate, candidate_obj
             targets = load_targets(Path(self.cfg.targets_path)) if self.cfg.targets_path else []
         logger.close()
+        if pool_search:
+            _merge_worker_telemetry(out_dir)
 
         schedule_path = out_dir / "schedule.csv"
         self._schedule_frame(best).to_csv(schedule_path, index=False)
@@ -1315,7 +1381,122 @@ class Optimizer:
         return summary
 
 
-def _run_start(job: tuple[str, OptimizeConfig, int]) -> tuple[Schedule, float]:
+def _worker_logger(out_dir: str, island: str, cfg: OptimizeConfig) -> RunLogger | None:
+    """Open a worker's own telemetry file, or return None for a search without a run directory.
+
+    Parameters
+    ----------
+    out_dir : str
+        The run directory; empty means no file.
+    island : str
+        The worker's label, used in the file name.
+    cfg : OptimizeConfig
+        The worker configuration written in the header.
+
+    Returns
+    -------
+    RunLogger or None
+        The worker's logger.
+    """
+    if not out_dir:
+        return None
+    return RunLogger(
+        Path(out_dir) / f"telemetry-{island}.jsonl",
+        run_id=island,
+        config=asdict(cfg),
+    )
+
+
+def _solve_with_logger(
+    optimizer: Optimizer,
+    seed: int,
+    island: str,
+    deadline: float | None,
+    out_dir: str,
+    initial: Schedule | None = None,
+) -> tuple[Schedule, float]:
+    """Solve one worker and write its telemetry directly, without a parent queue.
+
+    Parameters
+    ----------
+    optimizer : Optimizer
+        The worker's optimizer.
+    seed : int
+        The start's seed.
+    island : str
+        The worker's label.
+    deadline : float or None
+        The parent's absolute deadline.
+    out_dir : str
+        The run directory.
+    initial : Schedule or None, optional
+        A migrated elite for an island episode.
+
+    Returns
+    -------
+    tuple of (Schedule, float)
+        The best schedule and its objective.
+    """
+    logger = _worker_logger(out_dir, island, optimizer.cfg)
+    try:
+        if logger is None:
+            return optimizer._solve(seed, initial=initial, deadline=deadline)
+
+        def on_step(iteration: int, objective: float) -> None:
+            logger.step(iteration, objective, island=island)
+
+        def on_snapshot(
+            iteration: int,
+            totals: Mapping[tuple[int, str], float],
+            schedule: Mapping[int, Sequence[tuple[str, int]]],
+        ) -> None:
+            logger.targets(iteration, totals, island=island)
+            logger.schedule(iteration, schedule, island=island)
+
+        return optimizer._solve(
+            seed,
+            on_step=on_step,
+            on_snapshot=on_snapshot,
+            initial=initial,
+            deadline=deadline,
+        )
+    finally:
+        if logger is not None:
+            logger.close()
+
+
+def _merge_worker_telemetry(out_dir: Path) -> None:
+    """Append the workers' records to the run's canonical ``telemetry.jsonl``.
+
+    The live reader follows the worker files while the search runs; this merge is for the
+    post-run artifact. It writes a temporary file and replaces the header-only log atomically,
+    so a reader never sees a half-merged file.
+
+    Parameters
+    ----------
+    out_dir : Path
+        The run directory.
+    """
+    target = out_dir / "telemetry.jsonl"
+    worker_files = sorted(out_dir.glob("telemetry-*.jsonl"))
+    if not worker_files:
+        return
+    header = target.read_text(encoding="utf-8") if target.is_file() else ""
+    temporary = out_dir / "telemetry.merged.jsonl"
+    with temporary.open("w", encoding="utf-8") as sink:
+        sink.write(header)
+        for source in worker_files:
+            with source.open(encoding="utf-8") as handle:
+                for line in handle:
+                    if line.startswith('{"type": "run"'):
+                        continue
+                    sink.write(line)
+    os.replace(temporary, target)
+
+
+def _run_start(
+    job: tuple[str, OptimizeConfig, int, str, float | None, str],
+) -> tuple[Schedule, float]:
     """Run one start in a worker process.
 
     Top-level so it is picklable by the process pool.
@@ -1323,19 +1504,20 @@ def _run_start(job: tuple[str, OptimizeConfig, int]) -> tuple[Schedule, float]:
     Parameters
     ----------
     job : tuple
-        ``(dataset_dir, config, seed)``.
+        ``(dataset_dir, config, seed, island, deadline, out_dir)``.
 
     Returns
     -------
     tuple of (Schedule, float)
         The best schedule and its objective for that start.
     """
-    dataset_dir, cfg, seed = job
-    return Optimizer.from_dataset(Path(dataset_dir), cfg)._solve(seed)
+    dataset_dir, cfg, seed, island, deadline, out_dir = job
+    optimizer = Optimizer.from_dataset(Path(dataset_dir), cfg)
+    return _solve_with_logger(optimizer, seed, island, deadline, out_dir)
 
 
 def _island_job(
-    job: tuple[str, OptimizeConfig, int, Schedule | None],
+    job: tuple[str, OptimizeConfig, int, Schedule | None, str, float | None, str],
 ) -> tuple[Schedule, float]:
     """Run one island episode in a worker process.
 
@@ -1344,13 +1526,14 @@ def _island_job(
     Parameters
     ----------
     job : tuple
-        ``(dataset_dir, config, seed, initial)``, where ``initial`` is the migrated elite
-        (or None on the first episode).
+        ``(dataset_dir, config, seed, initial, island, deadline, out_dir)``, where ``initial``
+        is the migrated elite (or None on the first episode).
 
     Returns
     -------
     tuple of (Schedule, float)
         The island's best schedule and its objective.
     """
-    dataset_dir, cfg, seed, initial = job
-    return Optimizer.from_dataset(Path(dataset_dir), cfg)._solve(seed, initial=initial)
+    dataset_dir, cfg, seed, initial, island, deadline, out_dir = job
+    optimizer = Optimizer.from_dataset(Path(dataset_dir), cfg)
+    return _solve_with_logger(optimizer, seed, island, deadline, out_dir, initial=initial)

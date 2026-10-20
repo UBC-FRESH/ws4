@@ -4,11 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css">
+  <link rel="stylesheet" href="static/style.css?v=27">
 </head>
 <body>
   <header>
-    <strong>WS4</strong>
+    <strong>WS4</strong><span class="build">v27</span>
+    <label>Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Year
       <input id="year" type="range" min="0" max="0" step="1" value="0">
@@ -17,39 +18,74 @@
     <span id="status">loading…</span>
   </header>
   <main>
-    <aside>
+    <aside id="sidebar">
       <nav class="tabs">
         <button data-tab="legend" class="active">Legend</button>
         <button data-tab="targets">Targets</button>
         <button data-tab="reports">Reports</button>
       </nav>
+      <div class="sidebar-body">
       <section id="tab-legend">
         <h2>Layers</h2>
-        <label><input type="checkbox" id="show-treated" checked> Treated in the year <b id="n-treated">0</b></label>
-        <label><input type="checkbox" id="show-untreated" checked> Untreated <b id="n-untreated">0</b></label>
+        <label><input type="checkbox" id="show-treated" checked> <span class="swatch treated"></span> Treated in the year <b id="n-treated">0</b></label>
+        <label><input type="checkbox" id="show-untreated" checked> <span class="swatch untreated"></span> Untreated <b id="n-untreated">0</b></label>
         <p class="hint">Click a block for its attributes. Wheel to zoom; drag to pan.</p>
         <div id="detail" class="detail"></div>
       </section>
       <section id="tab-targets" hidden>
         <h2>Targets</h2>
         <p id="targets-empty" class="hint">no targets file is configured</p>
-        <table id="targets-table" hidden>
-          <thead><tr><th>Account</th><th>Year</th><th>Min</th><th>Max</th><th>Min w</th><th>Max w</th><th>Realized</th></tr></thead>
+        <div id="watch-panel" class="watch"></div>
+        <div class="table-wrap"><table id="targets-table" hidden>
+          <thead><tr><th>Account</th><th>Year</th><th>Min</th><th>Max</th><th>Min w</th><th>Max w</th></tr></thead>
           <tbody></tbody>
-        </table>
+        </table></div>
         <button id="save-targets" hidden>Save targets</button>
+        <div class="run-row">
+          <label>Max iters <input id="run-iterations" type="number" value="0" min="0" step="1" title="0 = until stopped"></label>
+          <label>Time <input id="run-time-limit" type="text" placeholder="HH:MM:SS" size="9"></label>
+          <label>Years <input id="run-years" type="number" value="50" min="1" step="1"></label>
+          <label>Islands <input id="run-islands" type="number" value="8" min="1" max="64" step="1" title="parallel independent searches; 1 = one core"></label>
+          <label>Seed <input id="run-seed" type="number" value="1" step="1"></label>
+          <button id="start-run">▶ Play</button>
+          <button id="stop-run" hidden>⏹ Stop</button>
+        </div>
+        <div id="run-panel" hidden>
+          <span class="pulse"></span>
+          <span id="run-detail">idle</span>
+          <svg id="spark" width="140" height="26" aria-label="objective trajectory"></svg>
+        </div>
+        <p id="run-status" class="hint"></p>
         <p id="targets-status" class="hint"></p>
       </section>
       <section id="tab-reports" hidden>
         <h2>Reports</h2>
         <ul id="reports"></ul>
+        <div id="report-preview"></div>
+      </section>
+      </div>
+      <section id="chat-panel" class="chat">
+        <div class="chat-head">
+          <span>Assistant</span>
+          <span id="chat-model" class="chat-model">checking…</span>
+          <button id="chat-new" type="button" title="Start a new conversation">New</button>
+        </div>
+        <div id="chat-log" class="chat-log">
+          <p class="hint">Ask about WS4, a run, or what to do next. The assistant can read the repository and run commands when the service allows it.</p>
+        </div>
+        <form id="chat-form" class="chat-form">
+          <textarea id="chat-input" rows="2" placeholder="Ask WS4…" spellcheck="false"></textarea>
+          <button id="chat-send" type="submit">Send</button>
+        </form>
+        <p id="chat-status" class="hint"></p>
       </section>
     </aside>
+    <div id="splitter" title="Drag to resize the panel"></div>
     <div id="map-wrap">
       <svg id="map" xmlns="http://www.w3.org/2000/svg"><g id="viewport"></g></svg>
       <div class="scale" id="scale"></div>
     </div>
   </main>
-  <script type="module" src="static/app.js"></script>
+  <script type="module" src="static/app.js?v=27"></script>
 </body>
 </html>

@@ -1959,3 +1959,64 @@ issue comments.
   maximum and weights, saves through that path, and shows the realized value from the selected run's
   own `account_values.csv` with a met/below/above status. Remaining: the active toggle and the resolve
   action. Tests: ten service cases. Dashboard: **GREEN**.
+- P18.4–P18.5 **reports and skins, first cut.** The Reports tab lists the run's own report files and
+  renders a CSV in a table (first 200 rows) while HTML/PNG reports open directly — nothing is
+  recomputed in the browser. Four skin manifests (`model-builder`, `scenario-analyst`,
+  `scenario-browser`, `reviewer`) are checked against a panel/layer/action registry when the service
+  starts; an unknown name is refused by name, a duplicate id is refused, and a read-only skin may not
+  carry a mutating action. `/api/skins` exposes them, and the shell applies a skin by hiding panels and
+  disabling the target editor; the rule lives on the server. Tests: `tests/test_web_skins.py` (four
+  cases) and the service cases (fifteen total). Dashboard: **GREEN**.
+- P18.3 **the live run.** `POST /api/runs` starts a search with the configured dataset and targets —
+  **refused unless the service was started with `--allow-runs`** — and the command is composed by the
+  service, so the request body can choose only iterations, seed and horizon (both bounded). The run is
+  spawned as the CLI subprocess, keeping the design rule that a search cannot take the service down;
+  its console goes to the run directory. `GET /api/runs/{run}/events` replays `telemetry.jsonl` as SSE
+  `progress` events and closes with `done` (the run's own summary) or `error`. The Targets panel gains
+  Iterations/Seed and **Run search**; on completion the run list, periods, targets, reports and map
+  refresh onto the new run. Verified end to end: a 5-iteration run produced its summary and the stream
+  delivered each step. Tests: the read-only refusal, the no-targets refusal, and the SSE replay
+  (eighteen service cases). Dashboard: **GREEN**.
+- P18.3 **realized target values use the target's period, not a single year.** The web UI had compared
+  a target against the account's value at the target's end year, so a ten-year product flow was read as
+  one year (15,130 against a 1.2M floor instead of 1.89M). `GET /api/runs/{run}/targets` now computes
+  each target's realized value with the optimizer's own `period_value` — a product sums its period, a
+  feature reads the period's end — and the live `targets` SSE event is transformed the same way, so the
+  table, the window cards and the live updates all read the quantity the optimizer prices. Tests cover
+  the product sum and the feature level. The demo targets are now the reference's own period-1 levels
+  for `product.Yield.managed.Conif` (1.2M) and `feature.Yield.managed.Conif` (8,318,543.5); both are
+  above their exact levels, which is the honest status for a run that does not meet them.
+- P18.3 **the search is a player: play, pause, stop, and continuous by default.** The optimizer now
+  polls a control file (`ws4/opt/control.py`) every sixty-fourth iteration: `pause` holds the loop and
+  `stop` breaks it, so the best schedule is returned and the run writes its usual schedule and summary
+  instead of being killed. `--control-file` exposes it; the service writes `control.json`, starts a
+  **continuous** run (a very large budget, 24-hour safety) unless iterations are given, and exposes
+  `POST /api/runs/{run}/control` plus a `paused` flag in status. The UI's Run search is now
+  **Play/Pause + Stop**, with max iterations 0 meaning until stopped and an optional `HH:MM:SS` limit.
+  The SSE stream is **coalesced** to one progress record, one targets snapshot and the merged schedule
+  diff per poll — a fast solver had been emitting hundreds of events per second and constantly
+  re-laying out the panel, which also made the pause button unclickable. Tests: the control file and
+  poll interval, the pause/resume/stop endpoint and status. Verified in the browser: Play → Pause
+  (Resume) → Stop, with the run ending in `done` and its summary written.
+
+## 2026-10-20
+
+- P18.3–P18.5: the targets table, the report preview, the four checked skins and the live player are
+  on `feature/p18-reports-skins`. The player starts a continuous search by default, pauses/resumes and
+  stops through the run's `control.json`, and keeps the selected year when the run finishes.
+- Target watchers span the run's whole horizon: a point per period, the target band only where a
+  target exists, and the realized value folded by the target's own period rule (a product sums its
+  period; a feature is a level at the period's end). The live targets event carries the tracked
+  accounts' yearly series, so the card updates while the search runs. The default year follows the
+  first target.
+- P18.5 live runs use parallel islands (`islands` on the start request). Each worker writes its own
+  `telemetry-<island>.jsonl`; the canonical `telemetry.jsonl` is merged after the search. This
+  removed a single-writer bottleneck that made an eight-island run display hundreds of iterations a
+  second while the solver was doing thousands. The event stream follows the best island, resets the
+  map when that island changes, and reports the aggregate step count. The shared absolute deadline
+  now reaches the workers, so a time-limited parallel run stops all of them.
+- Added the embedded assistant in the lower-left panel: `POST /api/chat` runs one turn through the
+  installed OpenCode CLI with the configured model (`--agent-model`), keeps the CLI's own login, and
+  returns the reply, tool actions and session id. `--allow-agent` is a separate, off-by-default
+  permission because the agent has the service user's shell and filesystem; the docs name the risk.
+- Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.

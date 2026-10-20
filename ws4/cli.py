@@ -101,6 +101,9 @@ def optimize(
     threads: int = typer.Option(8, min=1, help="Worker processes, and BLAS threads each"),
     starts: int = typer.Option(1, min=1, help="parallel multi-starts (needs --threads > 1)"),
     time_limit: str = typer.Option("01:00:00", help="HH:MM:SS"),
+    control_file: Path | None = typer.Option(
+        None, "--control-file", help="JSON file that can pause or stop the search"
+    ),
     iterations: int = typer.Option(500, min=1, help="Search iterations"),
     years: int = typer.Option(50, help="Simulation horizon in years"),
     seed: int = typer.Option(42),
@@ -177,6 +180,7 @@ def optimize(
         workers=threads,
         starts=starts,
         time_limit=time_limit,
+        control_path=str(control_file) if control_file is not None else "",
         iterations=iterations,
         years=years,
         seed=seed,
@@ -461,6 +465,22 @@ def serve(
     allow_remote: bool = typer.Option(
         False, "--allow-remote", help="Allow a non-loopback bind (no authentication is provided)"
     ),
+    allow_runs: bool = typer.Option(
+        False, "--allow-runs", help="Allow the UI to start a search with the configured targets"
+    ),
+    allow_agent: bool = typer.Option(
+        False,
+        "--allow-agent",
+        help="Allow the embedded OpenCode chat agent (it can run commands and edit files)",
+    ),
+    agent_model: str = typer.Option(
+        "opencode-go/deepseek-v4.1-flash",
+        "--agent-model",
+        help="Provider/model the chat agent runs (the OpenCode CLI's own login is used)",
+    ),
+    agent_cwd: Path | None = typer.Option(
+        None, "--agent-cwd", help="Working directory for the chat agent (default: the service's)"
+    ),
 ) -> None:
     """Serve the read-only web API over a dataset and its runs (needs the ``web`` extra)."""
     if host not in {"127.0.0.1", "localhost", "::1"} and not allow_remote:
@@ -474,7 +494,16 @@ def serve(
     import uvicorn
 
     uvicorn.run(
-        create_app(dataset=dataset, runs=runs, targets=targets, geometry=geometry),
+        create_app(
+            dataset=dataset,
+            runs=runs,
+            targets=targets,
+            geometry=geometry,
+            allow_runs=allow_runs,
+            allow_agent=allow_agent,
+            agent_model=agent_model,
+            agent_cwd=agent_cwd,
+        ),
         host=host,
         port=port,
         root_path=root_path,

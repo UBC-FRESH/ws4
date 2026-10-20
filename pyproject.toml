@@ -50,7 +50,7 @@ ws4 = "ws4.cli:app"
 include = ["ws4*"]
 
 [tool.setuptools.package-data]
-"ws4.web" = ["static/*"]
+"ws4.web" = ["static/*", "skins/*"]
 
 # Tool configuration for the green dashboard (scripts/dashboard.py). Each gate configured
 # here is also a CI check and a pre-commit hook.

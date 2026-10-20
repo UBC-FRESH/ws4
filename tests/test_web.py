@@ -8,6 +8,7 @@ the missing artefact rather than return an empty map.
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 
 import pandas as pd
@@ -49,7 +50,10 @@ def _app(tmp_path: Path, *, with_geometry: bool = True) -> tuple[TestClient, Pat
     (run / "report.csv").write_text("a,b\n1,2\n", encoding="utf-8")
     targets = tmp_path / "targets.yaml"
     targets.write_text(
-        "targets:\n  - account: feature.Volume\n    year: 0\n    minimum: 0\n", encoding="utf-8"
+        "targets:\n"
+        "  - account: feature.Volume\n    year: 0\n    minimum: 0\n"
+        "  - account: product.Yield\n    year: 1\n    period_width: 2\n    minimum: 0\n",
+        encoding="utf-8",
     )
     geometry = tmp_path / "geometry.geojson"
     geometry.write_text(
@@ -171,11 +175,311 @@ def test_targets_json_round_trip_and_an_empty_list_is_refused(tmp_path: Path) ->
     rows = client.get("/api/targets.json").json()
     assert rows[0]["account"] == "feature.Volume"
     rows[0]["maximum"] = 100.0
-    response = client.put("/api/targets.json", json=rows)
+    response = client.post("/api/targets.json", json=rows)
     assert response.status_code == 200
     after = client.get("/api/targets.json").json()
     assert after[0]["maximum"] == 100.0
     assert client.put("/api/targets.json", json=[]).status_code == 422
+
+
+def test_the_skins_endpoint_returns_the_checked_manifests(tmp_path: Path) -> None:
+    """The service exposes the four skins and a named 404 for an unknown one."""
+    client, _ = _app(tmp_path)
+    skins = client.get("/api/skins").json()
+    assert {skin["id"] for skin in skins} == {
+        "model-builder",
+        "scenario-analyst",
+        "scenario-browser",
+        "reviewer",
+    }
+    assert client.get("/api/skins/reviewer").json()["read_only"] is True
+    assert client.get("/api/skins/nope").status_code == 404
+
+
+def test_starting_a_run_is_refused_unless_the_service_allows_it(tmp_path: Path) -> None:
+    """The read-only default is a refusal, not a silent start."""
+    client, _ = _app(tmp_path)
+    response = client.post("/api/runs", json={"iterations": 10})
+    assert response.status_code == 403
+    assert "--allow-runs" in response.json()["detail"]
+
+
+def test_starting_a_run_needs_a_targets_file(tmp_path: Path) -> None:
+    """A service without targets cannot compose the command, and says so."""
+    dataset = tmp_path / "dataset"
+    dataset.mkdir()
+    runs = tmp_path / "runs"
+    runs.mkdir()
+    client = TestClient(create_app(dataset=dataset, runs=runs, allow_runs=True))
+    assert client.post("/api/runs", json={"iterations": 10}).status_code == 422
+
+
+def _runs_client(tmp_path: Path) -> TestClient:
+    """Build the fixture with search-starting enabled."""
+    _app(tmp_path)
+    return TestClient(
+        create_app(
+            dataset=tmp_path / "dataset",
+            runs=tmp_path / "runs",
+            targets=tmp_path / "targets.yaml",
+            allow_runs=True,
+        )
+    )
+
+
+def test_starting_a_run_bounds_the_island_count(tmp_path: Path) -> None:
+    """An island count outside one to sixty-four is refused before any process starts."""
+    client = _runs_client(tmp_path)
+    assert client.post("/api/runs", json={"iterations": 1, "islands": 0}).status_code == 422
+    assert client.post("/api/runs", json={"iterations": 1, "islands": 65}).status_code == 422
+
+
+def test_starting_a_run_passes_the_island_count_to_the_cli(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The service turns ``islands`` into parallel starts and one BLAS thread per worker."""
+    client = _runs_client(tmp_path)
+    captured: dict[str, object] = {}
+
+    class FakePopen:
+        pid = 123
+
+        def poll(self) -> int | None:
+            return None
+
+    def fake_popen(command: list[str], stdout: object = None, stderr: object = None) -> FakePopen:
+        captured["command"] = command
+        return FakePopen()
+
+    monkeypatch.setattr("ws4.web.app.subprocess.Popen", fake_popen)
+    response = client.post("/api/runs", json={"iterations": 1, "islands": 4})
+    assert response.status_code == 200
+    assert response.json()["islands"] == 4
+    command = captured["command"]
+    assert isinstance(command, list)
+    assert command[command.index("--starts") + 1] == "4"
+    assert command[command.index("--threads") + 1] == "4"
+
+
+def test_a_finished_run_does_not_replay_its_history(tmp_path: Path) -> None:
+    """A completed run closes with its summary instead of flooding the client with every step."""
+    client, _ = _app(tmp_path)
+    run = tmp_path / "runs" / "run1"
+    (run / "telemetry.jsonl").write_text(
+        '{"type": "step", "iteration": 1, "objective": 10.0}\n', encoding="utf-8"
+    )
+    body = client.get("/api/runs/run1/events").text
+    assert "event: started" in body
+    assert "event: done" in body
+    assert "event: progress" not in body
+
+
+def test_a_live_run_streams_the_best_island_and_its_schedule(tmp_path: Path) -> None:
+    """The stream follows the lowest objective, counts every island's steps, and resets the map."""
+    client, _ = _app(tmp_path)
+    run = tmp_path / "runs" / "run2"
+    records = [
+        {"type": "step", "island": "start-0", "iteration": 10, "objective": 10.0},
+        {"type": "schedule", "island": "start-0", "iteration": 10, "changed": [[1, [["CC", 0]]]]},
+        {"type": "step", "island": "start-1", "iteration": 9, "objective": 5.0},
+        {"type": "schedule", "island": "start-1", "iteration": 9, "changed": [[2, [["CT", 0]]]]},
+        {
+            "type": "targets",
+            "island": "start-1",
+            "iteration": 9,
+            "values": [{"year": 0, "account": "feature.Volume", "value": 11.0}],
+        },
+        {"type": "step", "island": "start-0", "iteration": 20, "objective": 7.0},
+        {"type": "schedule", "island": "start-0", "iteration": 20, "changed": [[3, [["CC", 0]]]]},
+    ]
+    for island, start_index, end_index in (("start-0", 0, 3), ("start-1", 3, 6)):
+        (run / f"telemetry-{island}.jsonl").write_text(
+            "\n".join(json.dumps(record) for record in records[start_index:end_index]) + "\n",
+            encoding="utf-8",
+        )
+    body = client.get("/api/runs/run2/events").text
+    assert "event: progress" in body
+    assert '"total": 3' in body
+    assert "event: schedule" in body
+    assert '"reset": true' in body
+    # the best island is start-1, so its block is the one in the reset map
+    assert '"island": "start-1"' in body
+    assert '[[2,[["CT",0]]]]' in body.replace(" ", "")
+    assert "event: targets" in body
+    assert '"series"' in body
+    assert "event: error" in body
+
+
+def test_status_reports_the_best_step_across_islands(tmp_path: Path) -> None:
+    """A parallel run's status is the lowest objective, not whichever worker wrote last."""
+    client, _ = _app(tmp_path)
+    run = tmp_path / "runs" / "run2"
+    (run / "telemetry.jsonl").write_text(
+        '{"type": "step", "island": "start-0", "iteration": 10, "objective": 9.0}\n'
+        '{"type": "step", "island": "start-1", "iteration": 8, "objective": 4.0}\n'
+        '{"type": "step", "island": "start-0", "iteration": 20, "objective": 6.0}\n',
+        encoding="utf-8",
+    )
+    step = client.get("/api/runs/run2/status").json()["last_step"]
+    assert step["objective"] == 4.0
+    assert step["island"] == "start-1"
+
+
+def test_the_status_endpoint_reports_a_finished_run(tmp_path: Path) -> None:
+    """A run with account values is done; a bare directory has no status to claim."""
+    client, _ = _app(tmp_path)
+    status = client.get("/api/runs/run1/status").json()
+    assert status["status"] == "done"
+    assert status["running"] is False
+    assert status["summary"]["status"] == "ok"
+
+
+def _chat_client(tmp_path: Path) -> TestClient:
+    """Build the same fixture with the optional agent enabled."""
+    _app(tmp_path)
+    return TestClient(
+        create_app(
+            dataset=tmp_path / "dataset",
+            runs=tmp_path / "runs",
+            targets=tmp_path / "targets.yaml",
+            geometry=tmp_path / "geometry.geojson",
+            allow_agent=True,
+            agent_model="test/chat-model",
+            agent_cwd=tmp_path,
+            agent_timeout=5.0,
+        )
+    )
+
+
+def test_the_chat_agent_is_disabled_by_default(tmp_path: Path) -> None:
+    """Embedding a shell-capable agent is an explicit opt-in, and the refusal names the flag."""
+    client, _ = _app(tmp_path)
+    info = client.get("/api/agent").json()
+    assert info["enabled"] is False
+    response = client.post("/api/chat", json={"message": "hello"})
+    assert response.status_code == 403
+    assert "--allow-agent" in response.json()["detail"]
+
+
+def test_the_chat_agent_validates_its_inputs(tmp_path: Path) -> None:
+    """An empty message and a malformed session are refused before a process is spawned."""
+    client = _chat_client(tmp_path)
+    assert client.post("/api/chat", json={"message": "  "}).status_code == 422
+    bad = client.post("/api/chat", json={"message": "hi", "session": "not-a-session"})
+    assert bad.status_code == 422
+    assert "ses" in bad.json()["detail"]
+
+
+def test_the_chat_agent_returns_text_tools_and_the_session(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The endpoint parses the CLI's JSON events and continues the same session next turn."""
+    client = _chat_client(tmp_path)
+    captured: dict[str, object] = {}
+    stdout = "\n".join(
+        [
+            json.dumps(
+                {
+                    "type": "tool_use",
+                    "sessionID": "ses_test",
+                    "part": {
+                        "tool": "shell",
+                        "state": {"input": {"command": "ls ws4"}, "title": "shell"},
+                    },
+                }
+            ),
+            json.dumps(
+                {
+                    "type": "text",
+                    "sessionID": "ses_test",
+                    "part": {"text": "**hello** from ws4"},
+                }
+            ),
+        ]
+    )
+
+    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        captured["command"] = command
+        captured["cwd"] = kwargs.get("cwd")
+        return subprocess.CompletedProcess(command, 0, stdout, "")
+
+    monkeypatch.setattr("ws4.web.app.shutil.which", lambda name: "/usr/bin/opencode")
+    monkeypatch.setattr("ws4.web.app.subprocess.run", fake_run)
+    response = client.post("/api/chat", json={"message": "hi", "run": "run1", "year": 3})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["reply"] == "**hello** from ws4"
+    assert body["session"] == "ses_test"
+    assert body["actions"] == [{"tool": "shell", "summary": "ls ws4"}]
+    command = captured["command"]
+    assert isinstance(command, list)
+    assert "--model" in command
+    assert "test/chat-model" in command
+    assert "--auto" in command
+    assert "--session" not in command
+    assert "run1" in command[-1]
+    assert "The year open in the UI is 3." in command[-1]
+    assert "User: hi" in command[-1]
+    assert captured["cwd"] == str(tmp_path)
+
+    response = client.post("/api/chat", json={"message": "again", "session": "ses_test"})
+    assert response.status_code == 200
+    command = captured["command"]
+    assert isinstance(command, list)
+    assert "--session" in command
+    assert "ses_test" in command
+
+
+def test_the_chat_agent_reports_a_missing_cli(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A service without the CLI says so instead of crashing on a file-not-found error."""
+    client = _chat_client(tmp_path)
+    monkeypatch.setattr("ws4.web.app.shutil.which", lambda name: None)
+    response = client.post("/api/chat", json={"message": "hi"})
+    assert response.status_code == 503
+    assert "PATH" in response.json()["detail"]
+
+
+def test_the_agent_info_names_the_configured_model(tmp_path: Path) -> None:
+    """The panel can show the actual model and working directory rather than guessing."""
+    client = _chat_client(tmp_path)
+    info = client.get("/api/agent").json()
+    assert info["enabled"] is True
+    assert info["model"] == "test/chat-model"
+    assert info["cwd"] == str(tmp_path)
+
+
+def test_targets_are_also_saveable_with_post(tmp_path: Path) -> None:
+    """The proxy-facing alias: POST saves the same document as PUT."""
+    client, _ = _app(tmp_path)
+    rows = client.get("/api/targets.json").json()
+    rows[0]["maximum"] = 321.0
+    assert client.post("/api/targets.json", json=rows).status_code == 200
+    assert client.get("/api/targets.json").json()[0]["maximum"] == 321.0
+
+
+def test_the_realized_target_value_uses_the_targets_period(tmp_path: Path) -> None:
+    """A product sums its period; a feature reads its end year, as the optimizer does."""
+    client, _ = _app(tmp_path)
+    rows = client.get("/api/runs/run1/targets").json()
+    by_account = {row["account"]: row for row in rows}
+    assert by_account["feature.Volume"]["value"] == 10.0
+    assert by_account["feature.Volume"]["status"] == "met"
+    assert by_account["product.Yield"]["value"] == 5.0
+
+
+def test_a_run_can_be_paused_resumed_and_stopped(tmp_path: Path) -> None:
+    """The control endpoint writes the file the solver polls, and status reports the pause."""
+    client, _ = _app(tmp_path)
+    run = tmp_path / "runs" / "run1"
+    paused = client.post("/api/runs/run1/control", json={"action": "pause"})
+    assert paused.status_code == 200
+    assert json.loads((run / "control.json").read_text(encoding="utf-8")) == {"action": "pause"}
+    assert client.get("/api/runs/run1/status").json()["paused"] is True
+    client.post("/api/runs/run1/control", json={"action": "run"})
+    assert client.get("/api/runs/run1/status").json()["paused"] is False
+    assert client.post("/api/runs/run1/control", json={"action": "explode"}).status_code == 422
 
 
 def test_an_unknown_run_is_a_named_404(tmp_path: Path) -> None:

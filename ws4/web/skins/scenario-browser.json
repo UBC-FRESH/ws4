@@ -1,0 +1,8 @@
+{
+  "id": "scenario-browser",
+  "title": "Scenario browser",
+  "panels": ["legend", "reports"],
+  "layers": ["blocks", "treatments"],
+  "actions": ["export"],
+  "read_only": true
+}
