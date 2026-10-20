@@ -742,8 +742,11 @@ current period from the cumulative total.
   incumbent values, targets round-tripping the optimizer's own YAML.
 - [ ] P18.2 The map shell — **first cut live**: a dependency-free SVG shell over the service, with a run
   selector, year control from the schedule, treated/untreated layers with counts, click selection,
-  wheel-zoom/pan, and the Legend/Targets/Reports tabs. Remaining: the patch/compartment/road layer
-  families and the grouped layer tree; then the MapLibre swap when a basemap is needed.
+  wheel-zoom/pan, and the Legend/Targets/Reports tabs. **First slice of the layer tree:** current and
+  cumulative treatments, patch size classes from `patch_membership.csv`, and a grouped tree that
+  names roads and spread compartments as unavailable. Remaining: write road segment geometry/use and
+  compartment membership artifacts, then wire those families; then the MapLibre swap when a basemap
+  is needed.
 - [ ] P18.3 Targets — **live**: a table per account and period with editable min/max/weights, a save
   that validates through the optimizer's loader, the realized value from the selected run's own CSV
   with a met/below/above status, and a **Run search** action that starts the optimizer behind

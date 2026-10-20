@@ -8,7 +8,9 @@
   ],
   "layers": [
     "blocks",
-    "treatments"
+    "treatments",
+    "patches",
+    "roads"
   ],
   "actions": [],
   "read_only": true

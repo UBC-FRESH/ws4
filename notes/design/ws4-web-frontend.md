@@ -112,6 +112,20 @@ manifests ship: `model-builder`, `scenario-analyst`, `scenario-browser`, `review
   the reference uses (period 1 ends at year 10). The UI shows both the period and its year range.
 - Selecting a block opens its attributes; selecting a patch or compartment filters the accounts to it.
 
+## Map layers
+
+The Legend tab is a tree, not two fixed checkboxes. It asks ``/api/runs/{run}/layers`` what the run
+can draw and builds the controls from that answer. **Current treatment** and **cumulative through
+year** use ``schedule.csv``; cumulative paints the current period red and earlier periods tan.
+**Patch size class** uses ``patch_membership.csv`` (period, account, class, patch, block, area) and
+colors by class, with a checkbox per class. A run with no schedule still gets a period range from its
+patch membership or account values.
+
+**Roads** and **spread compartments** are named as unavailable rather than drawn from a guess: the
+run outputs carry no road segment geometry and no compartment membership. The next step is a CLI
+artifact (segment geometry/use and a compartment membership file), after which the same tree and map
+can render them.
+
 ## Targets
 
 A table and a chart, per account and period: minimum, maximum, weights, shape, and an active toggle.

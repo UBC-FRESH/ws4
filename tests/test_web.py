@@ -147,7 +147,90 @@ def test_the_map_refuses_without_geometry_and_for_an_unknown_layer(tmp_path: Pat
     response = client.get("/api/runs/run1/map", params={"year": 0})
     assert response.status_code == 409
     assert "--geometry" in response.json()["detail"]
-    assert client.get("/api/runs/run1/map", params={"layer": "patches"}).status_code == 422
+    assert client.get("/api/runs/run1/map", params={"layer": "raster"}).status_code == 422
+
+
+def _patch_run(tmp_path: Path) -> Path:
+    """Create a simulate-style run whose spatial artifact is patch membership, not a schedule."""
+    run = tmp_path / "runs" / "run-patches"
+    run.mkdir()
+    (run / "account_values.csv").write_text(
+        "year,account,value\n0,feature.Volume,1.0\n1,feature.Volume,2.0\n", encoding="utf-8"
+    )
+    (run / "patch_membership.csv").write_text(
+        "period,year,account,class,patch,block,area_ha\n"
+        "1,1,patch.harvested,0_10,0,1,5.0\n"
+        "1,1,patch.harvested,10_50,1,2,20.0\n"
+        "2,2,patch.harvested,0_10,0,2,6.0\n",
+        encoding="utf-8",
+    )
+    return run
+
+
+def test_periods_fall_back_to_patch_membership_or_accounts(tmp_path: Path) -> None:
+    """A run with no schedule still has a real period range for the map control."""
+    client, _ = _app(tmp_path)
+    _patch_run(tmp_path)
+    assert client.get("/api/runs/run-patches/periods").json() == {
+        "min": 1,
+        "max": 2,
+        "values": [1, 2],
+    }
+
+
+def test_the_layers_endpoint_names_what_the_run_can_draw(tmp_path: Path) -> None:
+    """Availability and patch classes come from the run's own files."""
+    client, _ = _app(tmp_path)
+    _patch_run(tmp_path)
+    scheduled = client.get("/api/runs/run1/layers").json()
+    assert scheduled["treatments"] is True
+    assert scheduled["cumulative"] is True
+    assert scheduled["patches"] is False
+    assert scheduled["patch_classes"] == []
+    patches = client.get("/api/runs/run-patches/layers").json()
+    assert patches["treatments"] is False
+    assert patches["patches"] is True
+    assert patches["patch_classes"] == ["0_10", "10_50"]
+    assert patches["patch_accounts"] == ["patch.harvested"]
+    assert patches["roads"] is False
+
+
+def test_the_cumulative_layer_marks_current_and_earlier_treatments(tmp_path: Path) -> None:
+    """Cumulative is the schedule up to the year, with the current period distinguished."""
+    client, _ = _app(tmp_path)
+    body = client.get("/api/runs/run1/map", params={"year": 1, "layer": "cumulative"}).json()
+    first, second = body["features"]
+    assert first["properties"]["treated"] is True
+    assert first["properties"]["current"] is False
+    assert first["properties"]["treatments"] == ["CC"]
+    assert second["properties"]["current"] is True
+    assert second["properties"]["treatments"] == ["CT"]
+
+
+def test_the_patch_layer_joins_membership_to_the_geometry(tmp_path: Path) -> None:
+    """The patch layer carries the class, patch id and area for the selected year."""
+    client, _ = _app(tmp_path)
+    _patch_run(tmp_path)
+    body = client.get("/api/runs/run-patches/map", params={"year": 1, "layer": "patches"}).json()
+    assert body["patch_classes"] == ["0_10", "10_50"]
+    first, second = body["features"]
+    assert first["properties"]["treated"] is True
+    assert first["properties"]["patch"] == 0
+    assert first["properties"]["patch_class"] == "0_10"
+    assert first["properties"]["patch_area_ha"] == 5.0
+    assert first["properties"]["patch_account"] == "patch.harvested"
+    assert second["properties"]["patch_class"] == "10_50"
+    later = client.get("/api/runs/run-patches/map", params={"year": 2, "layer": "patches"}).json()
+    assert later["features"][0]["properties"]["treated"] is False
+    assert later["features"][1]["properties"]["patch"] == 0
+
+
+def test_the_map_refuses_the_patch_layer_without_membership(tmp_path: Path) -> None:
+    """A scheduled run without patch membership names the missing file."""
+    client, _ = _app(tmp_path)
+    response = client.get("/api/runs/run1/map", params={"year": 0, "layer": "patches"})
+    assert response.status_code == 404
+    assert "patch_membership.csv" in response.json()["detail"]
 
 
 def test_targets_round_trip_and_an_invalid_document_is_refused(tmp_path: Path) -> None:

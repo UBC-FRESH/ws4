@@ -68,8 +68,13 @@ Endpoints
      - The run's report files and their sizes.
    * - ``GET /api/runs/{run}/reports/{name}``
      - One report file; a name the run does not hold is a 404.
-   * - ``GET /api/runs/{run}/map?year=&layer=treatments``
-     - A GeoJSON ``FeatureCollection`` of the blocks treated in the year, joined to ``--geometry``.
+   * - ``GET /api/runs/{run}/map?year=&layer=``
+     - A GeoJSON ``FeatureCollection`` joined to ``--geometry``. ``treatments`` is the selected
+       period, ``cumulative`` marks current and earlier treatments, ``patches`` carries the year's
+       patch membership, and ``blocks`` is the bare geometry.
+   * - ``GET /api/runs/{run}/layers``
+     - The layers the run can actually draw (treatments, cumulative, patches), its patch classes
+       and accounts, and the named reasons roads/compartments are unavailable.
    * - ``GET /api/targets``
      - The targets YAML as written.
    * - ``PUT /api/targets``
@@ -97,6 +102,19 @@ Endpoints
        cannot leave a stream holding a thread.
    * - ``GET /api/skins``, ``/api/skins/{id}``
      - The checked skin manifests.
+
+Layers
+------
+
+The Legend tab builds a grouped tree from ``GET /api/runs/{run}/layers`` and the run's own files:
+
+- **Current treatment** and **cumulative through year** come from ``schedule.csv``; cumulative
+  distinguishes the current period (red) from earlier ones (tan).
+- **Patch size class** comes from ``patch_membership.csv``. A run without a schedule still gets a
+  period range from the patch membership, or from its account values, so a simulate run can be read.
+- **Roads** and **spread compartments** are shown as unavailable for now. Runs do not write road
+  segment geometry or compartment membership, and the service will not invent them; the reason is
+  returned by ``/layers`` and shown in the tree.
 
 Geometry
 --------
