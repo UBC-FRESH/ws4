@@ -1986,3 +1986,15 @@ issue comments.
   the product sum and the feature level. The demo targets are now the reference's own period-1 levels
   for `product.Yield.managed.Conif` (1.2M) and `feature.Yield.managed.Conif` (8,318,543.5); both are
   above their exact levels, which is the honest status for a run that does not meet them.
+- P18.3 **the search is a player: play, pause, stop, and continuous by default.** The optimizer now
+  polls a control file (`ws4/opt/control.py`) every sixty-fourth iteration: `pause` holds the loop and
+  `stop` breaks it, so the best schedule is returned and the run writes its usual schedule and summary
+  instead of being killed. `--control-file` exposes it; the service writes `control.json`, starts a
+  **continuous** run (a very large budget, 24-hour safety) unless iterations are given, and exposes
+  `POST /api/runs/{run}/control` plus a `paused` flag in status. The UI's Run search is now
+  **Play/Pause + Stop**, with max iterations 0 meaning until stopped and an optional `HH:MM:SS` limit.
+  The SSE stream is **coalesced** to one progress record, one targets snapshot and the merged schedule
+  diff per poll — a fast solver had been emitting hundreds of events per second and constantly
+  re-laying out the panel, which also made the pause button unclickable. Tests: the control file and
+  poll interval, the pause/resume/stop endpoint and status. Verified in the browser: Play → Pause
+  (Resume) → Stop, with the run ending in `done` and its summary written.

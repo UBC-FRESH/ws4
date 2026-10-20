@@ -16,7 +16,14 @@ The bind is ``127.0.0.1`` by default and a non-loopback address is refused unles
 is passed; no authentication is provided in this cut. Starting a search is a separate permission:
 ``POST /api/runs`` is refused unless ``--allow-runs`` is given, and the command is composed by the
 service from the dataset and targets it was started with — the request body can choose only the
-iteration count, the seed and the horizon.
+iteration count, the seed, the horizon and an optional time limit.
+
+A run is a **player**: the browser's Play starts a continuous search (or one bounded by the
+iterations or time entered), Pause writes ``{"action": "pause"}`` to the run's control file, and Stop
+writes ``{"action": "stop"}``. The optimizer polls that file every sixty-fourth iteration, so a stop
+still produces the usual schedule and summary rather than a killed process. The event stream is
+coalesced to one progress record, one targets snapshot and the merged schedule diff per poll, which
+keeps a fast search from flooding the page.
 
 Behind a proxy
 ---------------
@@ -67,7 +74,12 @@ Endpoints
        ``period_value`` rule: a product sums its years, a feature reads the period's end.
    * - ``POST /api/runs``
      - Start a search with the configured dataset and targets. **Refused unless the service was started
-       with ``--allow-runs``**; iterations and years are bounded.
+       with ``--allow-runs``**; iterations and years are bounded. With no ``iterations`` (or ``0``) the
+       run is **continuous** until stopped, with a 24-hour safety limit; a positive ``iterations`` is the
+       stopping criterion.
+   * - ``POST /api/runs/{run}/control``
+     - ``{"action": "pause" | "run" | "stop"}``. The search polls its ``control.json`` every 64
+       iterations: pause holds it, and stop returns its best schedule so the run writes its summary.
    * - ``GET /api/runs/{run}/events``
      - SSE: one ``progress`` event per telemetry step, then ``done`` with the run's own summary, or
        ``error``.

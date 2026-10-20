@@ -66,11 +66,11 @@ circle.untreated { fill:var(--untreated); fill-opacity:.55; }
 .swatch { display:inline-block; width:.6rem; height:.6rem; border-radius:50%; margin:0 .15rem; }
 .swatch.treated { background:var(--treated); }
 .swatch.untreated { background:var(--untreated); opacity:.6; }
-.account-value { color:var(--muted); font-size:.68rem; margin-left:1.1rem; }
+.account-value { color:var(--muted); font-size:.68rem; margin-left:1.1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .window-card { border:1px solid var(--line); border-radius:.4rem; padding:.35rem .45rem; margin:.35rem 0; }
 .window-title { display:flex; justify-content:space-between; gap:.5rem; font-size:.76rem; margin-bottom:.15rem; }
 .window-title .name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
-.window-badge { flex:none; font-variant-numeric:tabular-nums; }
+.window-badge { flex:none; white-space:nowrap; font-variant-numeric:tabular-nums; }
 .window-badge.met { color:var(--untreated); }
 .window-badge.below { color:var(--treated); }
 .window-badge.above { color:#b45309; }

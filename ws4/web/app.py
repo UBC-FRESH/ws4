@@ -308,6 +308,10 @@ def create_app(
                 ticks += 1
                 if ticks % 20 == 0:
                     yield ": keepalive\n\n"
+                step: dict[str, Any] | None = None
+                targets: dict[str, Any] | None = None
+                schedule: dict[int, Any] = {}
+                schedule_iteration = 0
                 if telemetry.is_file():
                     lines = telemetry.read_text(encoding="utf-8").splitlines()
                     for line in lines[seen:]:
@@ -315,31 +319,45 @@ def create_app(
                             record = json.loads(line)
                         except json.JSONDecodeError:
                             continue
-                        if record.get("type") == "step":
-                            yield f"event: progress\ndata: {json.dumps(record)}\n\n"
-                        elif record.get("type") == "targets":
-                            payload = record
-                            if targets_path is not None and targets_path.is_file():
-                                index = {
-                                    (int(item["year"]), str(item["account"])): float(item["value"])
-                                    for item in record.get("values", [])
-                                }
-                                payload = {
-                                    "type": "targets",
-                                    "iteration": record.get("iteration"),
-                                    "values": [
-                                        {
-                                            "account": target.account,
-                                            "year": target.year,
-                                            "value": period_value(index, target),
-                                        }
-                                        for target in load_targets(targets_path)
-                                    ],
-                                }
-                            yield f"event: targets\ndata: {json.dumps(payload)}\n\n"
-                        elif record.get("type") == "schedule":
-                            yield f"event: schedule\ndata: {json.dumps(record)}\n\n"
+                        kind = record.get("type")
+                        if kind == "step":
+                            step = record
+                        elif kind == "targets":
+                            targets = record
+                        elif kind == "schedule":
+                            schedule_iteration = int(record.get("iteration", 0))
+                            for block, chain in record.get("changed", []):
+                                schedule[int(block)] = chain
                     seen = len(lines)
+                if schedule:
+                    payload = {
+                        "type": "schedule",
+                        "iteration": schedule_iteration,
+                        "changed": [[block, chain] for block, chain in sorted(schedule.items())],
+                    }
+                    yield f"event: schedule\ndata: {json.dumps(payload)}\n\n"
+                if targets is not None:
+                    payload = targets
+                    if targets_path is not None and targets_path.is_file():
+                        index = {
+                            (int(item["year"]), str(item["account"])): float(item["value"])
+                            for item in targets.get("values", [])
+                        }
+                        payload = {
+                            "type": "targets",
+                            "iteration": targets.get("iteration"),
+                            "values": [
+                                {
+                                    "account": target.account,
+                                    "year": target.year,
+                                    "value": period_value(index, target),
+                                }
+                                for target in load_targets(targets_path)
+                            ],
+                        }
+                    yield f"event: targets\ndata: {json.dumps(payload)}\n\n"
+                if step is not None:
+                    yield f"event: progress\ndata: {json.dumps(step)}\n\n"
                 summary = directory / "summary.json"
                 if summary.is_file():
                     yield f"event: done\ndata: {summary.read_text(encoding='utf-8').strip()}\n\n"
