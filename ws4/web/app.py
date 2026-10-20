@@ -106,6 +106,7 @@ def create_app(
     spread_accounts: Path | None = None,
     block_coordinates: Path | None = None,
     route_config: Path | None = None,
+    roads: Path | None = None,
 ) -> FastAPI:
     """Create the WS4 read API.
 
@@ -145,6 +146,8 @@ def create_app(
         Block centroids used by the spread accounts.
     route_config : Path or None, optional
         Route model and accounts handed to web-started searches.
+    roads : Path or None, optional
+        A GeoJSON line layer of the source access roads, drawn as an optional map overlay.
 
     Returns
     -------
@@ -162,6 +165,7 @@ def create_app(
         Path(block_coordinates).resolve() if block_coordinates is not None else None
     )
     route_config_path = Path(route_config).resolve() if route_config is not None else None
+    roads_path = Path(roads).resolve() if roads is not None else None
     agent_working_directory = Path(agent_cwd).resolve() if agent_cwd is not None else Path.cwd()
     app = FastAPI(title="WS4", version="0.1.0")
 
@@ -203,6 +207,14 @@ def create_app(
         return pd.read_csv(path)
 
     geometry_cache: list[dict[str, Any]] | None = None
+    road_cache: list[dict[str, Any]] | None = None
+
+    def road_features() -> list[dict[str, Any]]:
+        """Return the source road lines once, parsed; the overlay is not run-specific."""
+        nonlocal road_cache
+        if road_cache is None:
+            road_cache = _geometry_features(roads_path) if roads_path is not None else []
+        return road_cache
 
     def base_features() -> list[dict[str, Any]]:
         """Return the configured geometry once, parsed; the map copies only the properties."""
@@ -768,6 +780,15 @@ def create_app(
             raise HTTPException(status_code=502, detail=detail[:500])
         return {"reply": reply, "session": session_id, "actions": actions[-12:]}
 
+    @app.get("/api/roads")
+    def roads_geojson() -> dict[str, Any]:
+        """Return the configured source access-road lines for the map overlay."""
+        if roads_path is None or not roads_path.is_file():
+            raise HTTPException(
+                status_code=404, detail="no source road layer is configured (--roads)"
+            )
+        return {"type": "FeatureCollection", "features": road_features()}
+
     @app.get("/api/skins")
     def skin_list() -> list[dict[str, Any]]:
         """Return the skin manifests, checked when the service started."""
@@ -913,12 +934,16 @@ def create_app(
             "treatments": schedule,
             "cumulative": schedule,
             "patches": patches,
-            "roads": False,
+            "roads": roads_path is not None and roads_path.is_file(),
             "compartments": False,
             "patch_classes": patch_classes,
             "patch_accounts": patch_accounts,
             "base_attributes": base_attributes,
-            "roads_reason": "no route geometry is written by a run",
+            "roads_reason": (
+                ""
+                if roads_path is not None and roads_path.is_file()
+                else "no source road layer is configured (--roads)"
+            ),
             "compartments_reason": "no compartment membership artifact is written by a run",
         }
 

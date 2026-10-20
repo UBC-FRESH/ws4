@@ -748,8 +748,9 @@ current period from the cumulative total.
   simplified source `blocks.shp` layer, with boundary strokes, solid/hatched fills and per-patch
   colours; the service caches the geometry, and live schedules update only the changed blocks.
   Source attributes (compartment, THEME2, THEME5, MartStrata, LMU) drive an optional base-colour
-  mode with a category legend. Remaining: write road segment geometry/use and model compartment
-  membership, then wire those families; then the MapLibre swap when a basemap is needed.
+  mode with a category legend. An optional **source access-road overlay** reads `--roads` and draws
+  the access network. Remaining: the run's used-road subset and model spread-compartment membership;
+  then the MapLibre swap when a basemap is needed.
 - [x] P18.3 Targets — **live**: a table per account and period with editable min/max/weights, a save
   that validates through the optimizer's loader, the realized value from the selected run's own CSV
   with a met/below/above status, and a **Run search** action that starts the optimizer behind
