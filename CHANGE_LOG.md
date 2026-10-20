@@ -2081,3 +2081,6 @@ issue comments.
   MapLibre and a stability stopping criterion are recorded in `notes/backlog.md`. No settings, tag or
   release changes. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven
   gates.
+- P19 started on `feature/p19-spatial-layers` (parent issue #161): model spread-compartment
+  membership, the run's used-road geometry/use, a stability stopping criterion and map scale. The
+  P18 close-out and backlog record the source-layers boundary.
