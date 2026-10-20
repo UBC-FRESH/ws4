@@ -296,6 +296,40 @@ def test_parallel_multi_start_matches_the_serial_result(tmp_path: Path) -> None:
     ).read_text()
 
 
+def test_parallel_starts_write_tagged_telemetry(tmp_path: Path) -> None:
+    """A process-pool search forwards every start's steps to the run's single telemetry file."""
+    dataset, targets = _compile(tmp_path)
+    summary = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(targets_path=targets, seed=1, years=1, iterations=8, starts=2, workers=2),
+    ).run(tmp_path / "telemetry")
+    assert summary["starts"] == 2
+    records = read_records(tmp_path / "telemetry" / "telemetry.jsonl")
+    steps = [record for record in records if record["type"] == "step"]
+    assert {record.get("island") for record in steps} == {"start-0", "start-1"}
+    assert sum(1 for record in steps if record.get("island") == "start-0") == 8
+    assert sum(1 for record in steps if record.get("island") == "start-1") == 8
+
+
+def test_parallel_workers_share_the_caller_time_limit(tmp_path: Path) -> None:
+    """The worker processes see the parent's deadline, not an unbounded per-start budget."""
+    dataset, targets = _compile(tmp_path)
+    summary = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(
+            targets_path=targets,
+            seed=1,
+            years=1,
+            iterations=1_000_000,
+            starts=2,
+            workers=2,
+            time_limit="00:00:01",
+        ),
+    ).run(tmp_path / "limited")
+    # a million iterations per worker would take hours; the shared deadline is what stops it
+    assert summary["time_limit_reached"] is True
+
+
 def test_same_seed_reproduces_the_same_result(tmp_path: Path) -> None:
     """The same seed reproduces the same objective and the same schedule."""
     dataset, targets = _compile(tmp_path)

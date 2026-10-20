@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), windowValues: new Map(), runPaused: false, live: { active: false, schedule: new Map() }, history: [] };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], yearChosen: false, chatSession: null, chatBusy: false };
 
 const $ = (id) => document.getElementById(id);
 const statusLine = (text) => { $('status').textContent = text; };
@@ -155,9 +155,13 @@ async function loadMap() {
 async function loadPeriods() {
   const body = await api(`api/runs/${encodeURIComponent(state.run)}/periods`);
   const slider = $('year');
-  slider.min = body.min ?? 0;
-  slider.max = body.max ?? 0;
-  state.year = Number(slider.min);
+  const low = Number(body.min ?? 0);
+  const high = Number(body.max ?? 0);
+  const wanted = Number.isFinite(state.year) ? state.year : low;
+  slider.min = low;
+  slider.max = high;
+  // keep the analyst's year across a run finishing; only clamp it into the new horizon
+  state.year = Math.min(Math.max(wanted, low), high);
   slider.value = state.year;
   $('year-label').textContent = state.year;
 }
@@ -253,46 +257,89 @@ function renderWatchPanel() {
   }
   const svgNS = 'http://www.w3.org/2000/svg';
   for (const [account, rows] of groups) {
-    rows.sort((left, right) => left.year - right.year);
-    const values = rows.map((row) => state.windowValues.get(`${row.year}|${row.account}`));
+    const targetsByYear = new Map(rows.map((row) => [Number(row.year), row]));
+    const series = state.series.get(account) ?? new Map();
+    const periodWidth = Number(rows[0].period_width ?? 1);
+    const accumulating = account.startsWith('product.');
+    const cellYears = [];
+    for (const row of rows) {
+      const rowWidth = Math.max(1, Number(row.period_width ?? periodWidth));
+      for (let year = Number(row.year) - rowWidth + 1; year <= Number(row.year); year += 1) {
+        if (year >= 0) cellYears.push(year);
+      }
+    }
+    const rawYears = [...series.keys()];
+    const lowYear = rawYears.length ? Math.min(...rawYears, ...cellYears) : Math.min(...cellYears);
+    const highYear = rawYears.length ? Math.max(...rawYears, ...cellYears) : Math.max(...cellYears);
+    const years = [...new Set([
+      ...rawYears,
+      ...cellYears,
+      ...rows.map((row) => Number(row.year)),
+      ...[...state.windowValues.keys()]
+        .filter((key) => key.endsWith(`|${account}`))
+        .map((key) => Number(key.split('|')[0])),
+    ])].filter((year) => year >= lowYear && year <= highYear).sort((left, right) => left - right);
+    if (!years.length) continue;
+    const valueAt = (year) => {
+      const live = state.windowValues.get(`${year}|${account}`);
+      if (live !== undefined) return Number(live);
+      if (!accumulating) return series.has(year) ? Number(series.get(year)) : undefined;
+      const windowWidth = Math.max(1, Number(targetsByYear.get(year)?.period_width ?? periodWidth));
+      let total = 0;
+      let found = false;
+      for (let offset = 0; offset < windowWidth; offset += 1) {
+        const value = series.get(year - offset);
+        if (value !== undefined) { total += Number(value); found = true; }
+      }
+      return found ? total : 0;
+    };
+    const values = years.map(valueAt);
+    const latestTarget = rows.reduce((left, right) => (Number(left.year) >= Number(right.year) ? left : right));
+    const latestValue = state.windowValues.get(`${latestTarget.year}|${account}`) ?? valueAt(Number(latestTarget.year));
     const card = document.createElement('div');
     card.className = 'window-card';
+    if (periodWidth > 1) card.title = `${account}: ${accumulating ? 'sum' : 'level'} over a ${periodWidth}-year period`;
     const title = document.createElement('div');
     title.className = 'window-title';
     const name = document.createElement('span');
     name.className = 'name';
     name.textContent = account;
     name.title = account;
-    const latest = rows.map((row, index) => ({ row, value: values[index] }))
-                       .filter((entry) => entry.value !== undefined).pop();
     const badge = document.createElement('span');
     badge.className = 'window-badge';
-    if (latest) {
-      badge.textContent = `${Number(latest.value).toLocaleString(undefined, { maximumFractionDigits: 1 })} · ${statusOf(latest.row, latest.value)}`;
-      badge.classList.add(statusOf(latest.row, latest.value));
+    if (latestValue !== undefined) {
+      const status = statusOf(latestTarget, latestValue);
+      badge.textContent = `${Number(latestValue).toLocaleString(undefined, { maximumFractionDigits: 1 })}${status ? ` · ${status}` : ''}`;
+      if (status) badge.classList.add(status);
     } else {
       badge.textContent = '—';
     }
     title.append(name, badge);
     card.append(title);
-    const width = 320, height = 88, left = 34, right = 8, top = 8, bottom = 18;
+    const width = 320, height = 92, left = 34, right = 8, top = 8, bottom = 22;
     let low = Infinity, high = -Infinity;
-    rows.forEach((row, index) => {
-      const value = values[index];
-      for (const bound of [row.minimum, row.maximum, value]) {
+    for (const row of rows) {
+      for (const bound of [row.minimum, row.maximum]) {
         if (bound !== null && bound !== undefined && Number.isFinite(Number(bound))) {
           low = Math.min(low, Number(bound));
           high = Math.max(high, Number(bound));
         }
       }
-    });
+    }
+    for (const value of values) {
+      if (value !== undefined && Number.isFinite(Number(value))) {
+        low = Math.min(low, Number(value));
+        high = Math.max(high, Number(value));
+      }
+    }
     if (!Number.isFinite(low) || !Number.isFinite(high)) { low = 0; high = 1; }
     if (low === high) { low -= 0.5; high += 0.5; }
     const pad = (high - low) * 0.12;
     const domainLow = low - pad, domainHigh = high + pad;
-    const x = (index) => (rows.length === 1
+    const step = years.length > 1 ? (width - left - right) / (years.length - 1) : 0;
+    const x = (index) => (years.length === 1
       ? left + (width - left - right) / 2
-      : left + (index / (rows.length - 1)) * (width - left - right));
+      : left + index * step);
     const y = (value) => top + (1 - (value - domainLow) / (domainHigh - domainLow)) * (height - top - bottom);
     const svg = document.createElementNS(svgNS, 'svg');
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
@@ -302,8 +349,10 @@ function renderWatchPanel() {
     axis.setAttribute('y1', height - bottom); axis.setAttribute('y2', height - bottom);
     axis.setAttribute('class', 'window-axis');
     svg.append(axis);
-    rows.forEach((row, index) => {
-      const bandWidth = Math.max(10, Math.min(18, (width - left - right) / Math.max(rows.length, 1) * 0.55));
+    const bandWidth = Math.max(4, Math.min(16, step * 0.6 || 12));
+    rows.forEach((row) => {
+      const index = years.indexOf(Number(row.year));
+      if (index < 0) return;
       if (row.minimum !== null && row.maximum !== null) {
         const band = document.createElementNS(svgNS, 'rect');
         band.setAttribute('x', x(index) - bandWidth / 2);
@@ -312,29 +361,17 @@ function renderWatchPanel() {
         band.setAttribute('height', Math.max(1, y(row.minimum) - y(row.maximum)));
         band.setAttribute('class', 'window-band');
         svg.append(band);
-      } else if (row.minimum !== null) {
+      } else if (row.minimum !== null || row.maximum !== null) {
+        const bound = row.minimum ?? row.maximum;
         const line = document.createElementNS(svgNS, 'line');
         line.setAttribute('x1', x(index) - bandWidth / 2); line.setAttribute('x2', x(index) + bandWidth / 2);
-        line.setAttribute('y1', y(row.minimum)); line.setAttribute('y2', y(row.minimum));
-        line.setAttribute('class', 'window-bound'); svg.append(line);
-      } else if (row.maximum !== null) {
-        const line = document.createElementNS(svgNS, 'line');
-        line.setAttribute('x1', x(index) - bandWidth / 2); line.setAttribute('x2', x(index) + bandWidth / 2);
-        line.setAttribute('y1', y(row.maximum)); line.setAttribute('y2', y(row.maximum));
-        line.setAttribute('class', 'window-bound'); svg.append(line);
-      }
-      if (rows.length <= 6 || index === 0 || index === rows.length - 1) {
-        const label = document.createElementNS(svgNS, 'text');
-        label.setAttribute('x', x(index));
-        label.setAttribute('y', height - 5);
-        label.setAttribute('text-anchor', 'middle');
-        label.setAttribute('class', 'window-label');
-        label.textContent = String(row.year);
-        svg.append(label);
+        line.setAttribute('y1', y(bound)); line.setAttribute('y2', y(bound));
+        line.setAttribute('class', 'window-bound');
+        svg.append(line);
       }
     });
-    const defined = rows.map((row, index) => ({ index, value: values[index] }))
-                        .filter((entry) => entry.value !== undefined);
+    const defined = values.map((value, index) => ({ value, index }))
+                          .filter((entry) => entry.value !== undefined);
     if (defined.length > 1) {
       const line = document.createElementNS(svgNS, 'polyline');
       line.setAttribute('points', defined.map((entry) => `${x(entry.index)},${y(entry.value)}`).join(' '));
@@ -345,13 +382,26 @@ function renderWatchPanel() {
       const dot = document.createElementNS(svgNS, 'circle');
       dot.setAttribute('cx', x(entry.index));
       dot.setAttribute('cy', y(entry.value));
-      dot.setAttribute('r', 2.6);
-      dot.setAttribute('class', `window-dot ${statusOf(rows[entry.index], entry.value)}`);
+      dot.setAttribute('r', years.length > 40 ? 1.4 : 2.2);
+      const year = years[entry.index];
+      const target = targetsByYear.get(year);
+      dot.setAttribute('class', `window-dot ${target ? statusOf(target, entry.value) : ''}`);
       const tip = document.createElementNS(svgNS, 'title');
-      tip.textContent = `${rows[entry.index].year}: ${Number(entry.value).toLocaleString()} (${statusOf(rows[entry.index], entry.value)})`;
+      tip.textContent = `${year}: ${Number(entry.value).toLocaleString()}${target ? ` (${statusOf(target, entry.value)})` : ''}`;
       dot.append(tip);
       svg.append(dot);
     }
+    const labelEvery = Math.max(1, Math.ceil(years.length / 6));
+    years.forEach((year, index) => {
+      if (index % labelEvery && index !== years.length - 1) return;
+      const label = document.createElementNS(svgNS, 'text');
+      label.setAttribute('x', x(index));
+      label.setAttribute('y', height - 6);
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('class', 'window-label');
+      label.textContent = String(year);
+      svg.append(label);
+    });
     card.append(svg);
     panel.append(card);
   }
@@ -423,6 +473,15 @@ async function loadTargets() {
     empty.hidden = true;
     table.hidden = false;
     button.hidden = false;
+    if (!state.yearChosen) {
+      const slider = $('year');
+      const low = Number(slider.min || 0);
+      const high = Number(slider.max || 0);
+      const first = Number(rows[0].year);
+      state.year = Math.min(Math.max(first, low), high);
+      slider.value = state.year;
+      $('year-label').textContent = state.year;
+    }
     const body = table.querySelector('tbody');
     body.replaceChildren();
     const keys = rows.map((row) => `${row.year}|${row.account}`);
@@ -431,10 +490,16 @@ async function loadTargets() {
       saveWatched();
     }
     const values = {};
+    state.series = new Map();
     try {
       const realized = await api(`api/runs/${encodeURIComponent(state.run)}/targets`);
       for (const item of realized) {
         (values[item.year] ??= {})[item.account] = item.value;
+      }
+      const all = await api(`api/runs/${encodeURIComponent(state.run)}/accounts`);
+      for (const item of all) {
+        if (!state.series.has(item.account)) state.series.set(item.account, new Map());
+        state.series.get(item.account).set(Number(item.year), Number(item.value));
       }
     } catch { /* no realized values for this run */ }
     rows.forEach((row, index) => {
@@ -594,6 +659,7 @@ async function finishRun(id) {
 }
 
 async function pollRun(id) {
+  if (id !== runWatch.id) return;
   try {
     const status = await api(`api/runs/${encodeURIComponent(id)}/status`);
     state.runPaused = Boolean(status.paused);
@@ -607,9 +673,11 @@ async function pollRun(id) {
     }
     if (!status.running) { await finishRun(id); return; }
     const step = status.last_step;
+    const shown = state.live.total || step?.total || step?.iteration;
+    const island = step?.island ? ` · ${step.island}` : '';
     const progress = step
-      ? `iteration ${step.iteration} · objective ${Number(step.objective).toFixed(2)}`
-      : 'waiting for the first step…';
+      ? `${Number(shown).toLocaleString()} iterations · best ${Number(step.objective).toFixed(2)}${island}`
+      : (runWatch.islands > 1 ? `starting ${runWatch.islands} islands…` : 'waiting for the first step…');
     showRun(`run ${id} · ${progress} · ${elapsed()}`, true);
   } catch (error) {
     showRun(`run ${id} · status unavailable: ${error.message}`, true);
@@ -651,6 +719,7 @@ async function stopRun() {
 }
 
 async function startRun() {
+  stopRunWatch();
   const status = $('run-status');
   $('start-run').disabled = true;
   showRun('saving targets…', true);
@@ -667,9 +736,10 @@ async function startRun() {
   const timeLimit = ($('run-time-limit')?.value || '').trim();
   const seed = Number($('run-seed')?.value || 1);
   const years = Number($('run-years')?.value || 50);
+  const islands = Number($('run-islands')?.value || 1);
   status.textContent = '';
-  runWatch = { id: null, timer: null, source: null, started: Date.now(), done: false };
-  state.live = { active: true, schedule: new Map() };
+  runWatch = { id: null, timer: null, source: null, started: Date.now(), done: false, islands: 1 };
+  state.live = { active: true, schedule: new Map(), total: 0 };
   state.runPaused = false;
   state.history = [];
   drawSpark();
@@ -680,7 +750,7 @@ async function startRun() {
     const response = await fetch('api/runs', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ iterations, time_limit: timeLimit, seed, years }),
+      body: JSON.stringify({ iterations, time_limit: timeLimit, seed, years, islands }),
       signal: controller.signal,
     });
     window.clearTimeout(timer);
@@ -690,6 +760,7 @@ async function startRun() {
     }
     const run = await response.json();
     runWatch.id = run.id;
+    runWatch.islands = Number(run.islands || 1);
     $('start-run').disabled = false;
     $('start-run').textContent = '⏸ Pause';
     $('stop-run').hidden = false;
@@ -697,9 +768,10 @@ async function startRun() {
     runWatch.timer = setInterval(() => pollRun(run.id), 2000);
     const events = new EventSource(`api/runs/${encodeURIComponent(run.id)}/events`);
     runWatch.source = events;
-    events.addEventListener('started', () => showRun(`run ${run.id} · connected · ${elapsed()}`, true));
+    events.addEventListener('started', () => showRun(`run ${run.id} · ${run.islands ?? 1} island${Number(run.islands ?? 1) === 1 ? '' : 's'} · connected · ${elapsed()}`, true));
     events.addEventListener('schedule', (event) => {
       const payload = JSON.parse(event.data);
+      if (payload.reset) state.live.schedule = new Map();
       for (const [block, chain] of payload.changed ?? []) {
         state.live.schedule.set(String(block), chain);
       }
@@ -707,12 +779,15 @@ async function startRun() {
     });
     events.addEventListener('progress', (event) => {
       const step = JSON.parse(event.data);
-      state.history.push({ iteration: step.iteration, objective: Number(step.objective) });
+      state.live.total = Number(step.total ?? step.iteration);
+      state.history.push({ iteration: step.total ?? step.iteration, objective: Number(step.objective) });
       if (state.history.length > 2000) state.history.shift();
       drawSpark();
       if (!state.runPaused) {
+        const shown = step.total ?? step.iteration;
+        const island = step.island ? ` · ${step.island}` : '';
         showRun(
-          `run ${run.id} · iteration ${step.iteration} · objective ${Number(step.objective).toFixed(2)} · ${elapsed()}`,
+          `run ${run.id} · ${Number(shown).toLocaleString()} iterations · best ${Number(step.objective).toFixed(2)}${island} · ${elapsed()}`,
           true,
         );
       }
@@ -849,17 +924,129 @@ function wireSplitter() {
   });
 }
 
+function renderMarkdown(text) {
+  const escapes = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  const escape = (value) => String(value).replace(/[&<>"']/g, (character) => escapes[character]);
+  return String(text).split('```').map((piece, index) => {
+    if (index % 2 === 1) {
+      const body = piece.replace(/^[^\n]*\n/, '');
+      return `<pre><code>${escape(body)}</code></pre>`;
+    }
+    return escape(piece)
+      .replace(/`([^`\n]+)`/g, '<code>$1</code>')
+      .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+      .replace(/\n/g, '<br>');
+  }).join('');
+}
+
+function appendChat(role, text) {
+  const log = $('chat-log');
+  const hint = log.querySelector('.hint');
+  if (hint) hint.remove();
+  const bubble = document.createElement('div');
+  bubble.className = `chat-msg ${role}`;
+  if (role === 'agent') bubble.innerHTML = renderMarkdown(text); else bubble.textContent = text;
+  log.append(bubble);
+  log.scrollTop = log.scrollHeight;
+  return bubble;
+}
+
+async function sendChat(event) {
+  if (event?.preventDefault) event.preventDefault();
+  if (state.chatBusy) return;
+  const input = $('chat-input');
+  const message = input.value.trim();
+  if (!message) return;
+  state.chatBusy = true;
+  $('chat-send').disabled = true;
+  appendChat('user', message);
+  input.value = '';
+  const thinking = appendChat('agent', 'thinking…');
+  thinking.classList.add('thinking');
+  $('chat-status').textContent = '';
+  try {
+    const response = await fetch('api/chat', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        message,
+        session: state.chatSession || null,
+        run: state.run || null,
+        year: state.year,
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.detail || `chat failed (${response.status})`);
+    state.chatSession = payload.session || state.chatSession;
+    thinking.classList.remove('thinking');
+    thinking.innerHTML = renderMarkdown(payload.reply || '(no reply)');
+    if (Array.isArray(payload.actions) && payload.actions.length) {
+      const row = document.createElement('div');
+      row.className = 'chat-actions';
+      for (const action of payload.actions) {
+        const chip = document.createElement('span');
+        chip.className = 'chat-action';
+        chip.textContent = `${action.tool}${action.summary ? `: ${action.summary}` : ''}`;
+        chip.title = chip.textContent;
+        row.append(chip);
+      }
+      thinking.append(row);
+    }
+  } catch (error) {
+    thinking.classList.remove('thinking');
+    thinking.classList.add('error');
+    thinking.textContent = `chat unavailable: ${error.message}`;
+  } finally {
+    state.chatBusy = false;
+    $('chat-send').disabled = false;
+    input.focus();
+    $('chat-log').scrollTop = $('chat-log').scrollHeight;
+  }
+}
+
+function newChat() {
+  state.chatSession = null;
+  const log = $('chat-log');
+  log.replaceChildren();
+  const hint = document.createElement('p');
+  hint.className = 'hint';
+  hint.textContent = 'New conversation. The assistant can read the repository and run commands when the service allows it.';
+  log.append(hint);
+  $('chat-status').textContent = '';
+  $('chat-input').focus();
+}
+
+async function loadAgent() {
+  try {
+    const info = await api('api/agent');
+    const model = info.model ? String(info.model).split('/').pop() : 'agent';
+    $('chat-model').textContent = info.enabled ? model : 'disabled';
+    if (!info.enabled) {
+      $('chat-input').disabled = true;
+      $('chat-send').disabled = true;
+      $('chat-status').textContent = 'restart with --allow-agent to enable the assistant';
+    } else if (!info.available) {
+      $('chat-status').textContent = 'opencode is not on the service PATH';
+    }
+  } catch {
+    $('chat-model').textContent = 'unavailable';
+  }
+}
+
 function wireControls() {
   wireSplitter();
   $('run').addEventListener('change', async (event) => {
     state.run = event.target.value;
     await loadSkins();
+    await loadAgent();
     await loadPeriods();
     await loadTargets();
     await loadReports();
     await loadMap();
   });
   $('year').addEventListener('input', (event) => {
+    state.yearChosen = true;
     state.year = Number(event.target.value);
     $('year-label').textContent = state.year;
   });
@@ -870,6 +1057,14 @@ function wireControls() {
     if (skin) { applySkin(skin); await loadTargets(); }
   });
   $('save-targets').addEventListener('click', saveTargets);
+  $('chat-form').addEventListener('submit', sendChat);
+  $('chat-new').addEventListener('click', newChat);
+  $('chat-input').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      $('chat-form').requestSubmit();
+    }
+  });
   $('show-treated').addEventListener('change', applyVisibility);
   $('show-untreated').addEventListener('change', applyVisibility);
   for (const button of document.querySelectorAll('nav.tabs button')) {
@@ -932,6 +1127,7 @@ async function start() {
     select.value = preferred.id;
     state.run = preferred.id;
     await loadSkins();
+    await loadAgent();
     await loadPeriods();
     await loadTargets();
     await loadReports();

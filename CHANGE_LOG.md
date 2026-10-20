@@ -1998,3 +1998,23 @@ issue comments.
   re-laying out the panel, which also made the pause button unclickable. Tests: the control file and
   poll interval, the pause/resume/stop endpoint and status. Verified in the browser: Play → Pause
   (Resume) → Stop, with the run ending in `done` and its summary written.
+
+## 2026-10-20
+
+- P18.3–P18.5: the targets table, the report preview, the four checked skins and the live player are
+  on `feature/p18-reports-skins`. The player starts a continuous search by default, pauses/resumes and
+  stops through the run's `control.json`, and keeps the selected year when the run finishes.
+- Target watchers span the run's whole horizon: a point per period, the target band only where a
+  target exists, and the realized value folded by the target's own period rule (a product sums its
+  period; a feature is a level at the period's end). The default year follows the first target.
+- P18.5 live runs use parallel islands (`islands` on the start request). Each worker writes its own
+  `telemetry-<island>.jsonl`; the canonical `telemetry.jsonl` is merged after the search. This
+  removed a single-writer bottleneck that made an eight-island run display hundreds of iterations a
+  second while the solver was doing thousands. The event stream follows the best island, resets the
+  map when that island changes, and reports the aggregate step count. The shared absolute deadline
+  now reaches the workers, so a time-limited parallel run stops all of them.
+- Added the embedded assistant in the lower-left panel: `POST /api/chat` runs one turn through the
+  installed OpenCode CLI with the configured model (`--agent-model`), keeps the CLI's own login, and
+  returns the reply, tool actions and session id. `--allow-agent` is a separate, off-by-default
+  permission because the agent has the service user's shell and filesystem; the docs name the risk.
+- Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.

@@ -468,6 +468,19 @@ def serve(
     allow_runs: bool = typer.Option(
         False, "--allow-runs", help="Allow the UI to start a search with the configured targets"
     ),
+    allow_agent: bool = typer.Option(
+        False,
+        "--allow-agent",
+        help="Allow the embedded OpenCode chat agent (it can run commands and edit files)",
+    ),
+    agent_model: str = typer.Option(
+        "opencode-go/deepseek-v4.1-flash",
+        "--agent-model",
+        help="Provider/model the chat agent runs (the OpenCode CLI's own login is used)",
+    ),
+    agent_cwd: Path | None = typer.Option(
+        None, "--agent-cwd", help="Working directory for the chat agent (default: the service's)"
+    ),
 ) -> None:
     """Serve the read-only web API over a dataset and its runs (needs the ``web`` extra)."""
     if host not in {"127.0.0.1", "localhost", "::1"} and not allow_remote:
@@ -487,6 +500,9 @@ def serve(
             targets=targets,
             geometry=geometry,
             allow_runs=allow_runs,
+            allow_agent=allow_agent,
+            agent_model=agent_model,
+            agent_cwd=agent_cwd,
         ),
         host=host,
         port=port,

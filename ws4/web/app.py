@@ -9,6 +9,8 @@ holds no model state and computes no value the CLI cannot reproduce. See
 from __future__ import annotations
 
 import json
+import math
+import os
 import shutil
 import subprocess
 import sys
@@ -38,6 +40,31 @@ def _run_directory(root: Path, name: str) -> Path:
     if candidate.parent != root or not candidate.is_dir():
         raise HTTPException(status_code=404, detail=f"no run named {name!r} under {root}")
     return candidate
+
+
+def _telemetry_files(directory: Path) -> list[Path]:
+    """Return the files a live reader should follow.
+
+    A parallel run writes one ``telemetry-<island>.jsonl`` per worker; the canonical
+    ``telemetry.jsonl`` is merged only after the search. Following the worker files while the
+    run is live avoids reading the same records twice once the merge lands, and a historical
+    run with only the canonical file still works.
+
+    Parameters
+    ----------
+    directory : Path
+        The run directory.
+
+    Returns
+    -------
+    list of Path
+        Existing telemetry files, in a stable order.
+    """
+    workers = sorted(directory.glob("telemetry-*.jsonl"))
+    if workers:
+        return workers
+    merged = directory / "telemetry.jsonl"
+    return [merged] if merged.is_file() else []
 
 
 def _geometry_features(path: Path) -> list[dict[str, Any]]:
@@ -70,6 +97,10 @@ def create_app(
     targets: Path | None = None,
     geometry: Path | None = None,
     allow_runs: bool = False,
+    allow_agent: bool = False,
+    agent_model: str = "opencode-go/deepseek-v4.1-flash",
+    agent_cwd: Path | None = None,
+    agent_timeout: float = 600.0,
 ) -> FastAPI:
     """Create the WS4 read API.
 
@@ -88,6 +119,17 @@ def create_app(
     allow_runs : bool, optional
         When true, ``POST /api/runs`` may start a search with the configured dataset and targets.
         False (the default) keeps the service read-only apart from the targets file.
+    allow_agent : bool, optional
+        When true, ``POST /api/chat`` may run one turn through the OpenCode CLI. The agent can
+        read and change files and run commands as the service user, so this is off by default and
+        belongs only on a loopback or otherwise trusted service.
+    agent_model : str, optional
+        The provider/model handed to ``opencode run``. The CLI's own authentication is used;
+        WS4 does not read or store the key.
+    agent_cwd : Path or None, optional
+        The directory the agent runs in. None uses the service's working directory.
+    agent_timeout : float, optional
+        Seconds one chat turn may run before the endpoint gives up.
 
     Returns
     -------
@@ -98,6 +140,7 @@ def create_app(
     runs_root = Path(runs).resolve()
     geometry_path = Path(geometry).resolve() if geometry is not None else None
     targets_path = Path(targets).resolve() if targets is not None else None
+    agent_working_directory = Path(agent_cwd).resolve() if agent_cwd is not None else Path.cwd()
     app = FastAPI(title="WS4", version="0.1.0")
 
     @app.middleware("http")
@@ -157,7 +200,12 @@ def create_app(
     processes: dict[str, subprocess.Popen[bytes]] = {}
 
     def _run_command(
-        out: Path, iterations: int, seed: int, years: int, time_limit: str
+        out: Path,
+        iterations: int,
+        seed: int,
+        years: int,
+        time_limit: str,
+        islands: int,
     ) -> list[str]:
         """Return the CLI command for a web-started search; only known options are passed."""
         if targets_path is None:
@@ -181,6 +229,10 @@ def create_app(
             str(years),
             "--control-file",
             str(out / "control.json"),
+            "--starts",
+            str(islands),
+            "--threads",
+            str(islands),
         ]
         if time_limit:
             command.extend(["--time-limit", time_limit])
@@ -200,9 +252,13 @@ def create_app(
         iterations = 1_000_000_000 if continuous else requested
         seed = int(payload.get("seed", 1))
         years = int(payload.get("years", 50))
+        requested_islands = payload.get("islands", 1)
+        islands = 1 if requested_islands is None else int(requested_islands)
         time_limit = str(payload.get("time_limit", "") or "")
         if not 1 <= iterations <= 1_000_000_000 or not 1 <= years <= 1000:
             raise HTTPException(status_code=422, detail="iterations or years are out of range")
+        if not 1 <= islands <= 64:
+            raise HTTPException(status_code=422, detail="islands must be between 1 and 64")
         if continuous and not time_limit:
             time_limit = "24:00:00"
         run_id = f"web-{datetime.now():%Y%m%d-%H%M%S}-{seed}"
@@ -211,7 +267,7 @@ def create_app(
             raise HTTPException(status_code=409, detail=f"run {run_id!r} already exists")
         out.mkdir(parents=True)
         (out / "control.json").write_text('{"action": "run"}\n', encoding="utf-8")
-        command = _run_command(out, iterations, seed, years, time_limit)
+        command = _run_command(out, iterations, seed, years, time_limit, islands)
         console = (out / "console.log").open("wb")
         processes[run_id] = subprocess.Popen(command, stdout=console, stderr=subprocess.STDOUT)
         return {
@@ -220,6 +276,7 @@ def create_app(
             "continuous": continuous,
             "seed": seed,
             "years": years,
+            "islands": islands,
             "time_limit": time_limit,
         }
 
@@ -240,24 +297,41 @@ def create_app(
         }
 
     def _last_step(directory: Path) -> dict[str, Any] | None:
-        """Return the last telemetry step, reading only the file's tail."""
-        path = directory / "telemetry.jsonl"
-        if not path.is_file():
-            return None
-        with path.open("rb") as handle:
-            handle.seek(0, 2)
-            size = handle.tell()
-            handle.seek(max(0, size - 8192))
-            tail = handle.read().decode("utf-8", errors="replace").splitlines()
-        for line in reversed(tail):
-            try:
-                record = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            if record.get("type") == "step":
-                step: dict[str, Any] = record
-                return step
-        return None
+        """Return the last telemetry step, searching backwards in chunks.
+
+        A merged schedule diff can be far larger than a fixed tail window, so the search walks
+        backwards until it finds a step or has read two megabytes.
+        """
+        chunk = 65536
+        best: dict[str, Any] | None = None
+        best_objective = math.inf
+        for path in _telemetry_files(directory):
+            with path.open("rb") as handle:
+                handle.seek(0, 2)
+                position = handle.tell()
+                tail = b""
+                while position > 0 and len(tail) < 2_000_000:
+                    size = min(chunk, position)
+                    position -= size
+                    handle.seek(position)
+                    tail = handle.read(size) + tail
+                    lines = tail.splitlines()
+                    candidates = lines if position == 0 else lines[1:]
+                    for line in reversed(candidates):
+                        try:
+                            record = json.loads(line)
+                        except json.JSONDecodeError:
+                            continue
+                        if record.get("type") != "step":
+                            continue
+                        try:
+                            objective = float(record.get("objective", "inf"))
+                        except (TypeError, ValueError):
+                            continue
+                        if best is None or objective < best_objective:
+                            best = record
+                            best_objective = objective
+        return best
 
     @app.get("/api/runs/{run}/status")
     def run_status(run: str) -> dict[str, Any]:
@@ -294,70 +368,194 @@ def create_app(
             "summary": summary,
         }
 
+    def _target_event(record: dict[str, Any]) -> dict[str, Any]:
+        """Fold one telemetry targets record over each target's period for the live panel."""
+        if targets_path is None or not targets_path.is_file():
+            return record
+        index = {
+            (int(item["year"]), str(item["account"])): float(item["value"])
+            for item in record.get("values", [])
+        }
+        payload: dict[str, Any] = {
+            "type": "targets",
+            "iteration": record.get("iteration"),
+            "values": [
+                {
+                    "account": target.account,
+                    "year": target.year,
+                    "value": period_value(index, target),
+                }
+                for target in load_targets(targets_path)
+            ],
+        }
+        if record.get("island") is not None:
+            payload["island"] = record["island"]
+        return payload
+
     @app.get("/api/runs/{run}/events")
     def run_events(run: str) -> StreamingResponse:
-        """Stream the run's telemetry as SSE: progress per step, then done or error."""
+        """Stream the run's telemetry as SSE.
+
+        A parallel search reports several islands. This stream keeps each island's schedule
+        apart, follows the island with the lowest objective, and resets the client's map when
+        that island changes. Progress is the best step seen, with ``total`` counting every
+        island's steps so the panel reports the aggregate rate rather than one worker's.
+        """
         directory = run_dir(run)
 
         def stream() -> Iterator[str]:
             yield f"event: started\ndata: {json.dumps({'id': run})}\n\n"
-            telemetry = directory / "telemetry.jsonl"
-            seen = 0
+            summary = directory / "summary.json"
+            if summary.is_file():
+                yield f"event: done\ndata: {summary.read_text(encoding='utf-8').strip()}\n\n"
+                return
+            schedules: dict[str, dict[int, Any]] = {}
+            latest_targets: dict[str, dict[str, Any]] = {}
+            best_step: dict[str, Any] | None = None
+            best_island = ""
+            best_objective = math.inf
+            total = 0
+
+            def apply(record: dict[str, Any]) -> None:
+                """Fold one telemetry record into the stream's state."""
+                nonlocal best_step, best_island, best_objective, total
+                kind = record.get("type")
+                island = str(record.get("island", "") or "")
+                if kind == "step":
+                    total += 1
+                    value = record.get("objective")
+                    if not isinstance(value, (int, float, str)):
+                        return
+                    try:
+                        objective = float(value)
+                    except ValueError:
+                        return
+                    if objective < best_objective:
+                        best_objective = objective
+                        best_island = island
+                        best_step = record
+                elif kind == "targets":
+                    latest_targets[island] = record
+                elif kind == "schedule":
+                    schedule = schedules.setdefault(island, {})
+                    for block, chain in record.get("changed", []):
+                        schedule[int(block)] = chain
+
+            offsets: dict[Path, int] = {}
+            pending: dict[Path, str] = {}
+
+            def new_records() -> Iterator[dict[str, Any]]:
+                """Yield records appended since the previous poll, including new worker files."""
+                for path in _telemetry_files(directory):
+                    if path not in offsets:
+                        offsets[path] = 0
+                        pending[path] = ""
+                    with path.open("rb") as handle:
+                        handle.seek(offsets[path])
+                        chunk = handle.read()
+                        offsets[path] = handle.tell()
+                    text = pending[path] + chunk.decode("utf-8", errors="replace")
+                    lines = text.split("\n")
+                    pending[path] = lines.pop()
+                    for line in lines:
+                        try:
+                            yield json.loads(line)
+                        except json.JSONDecodeError:
+                            continue
+
+            # replay what exists so a client that connects mid-run gets the current schedule
+            for record in new_records():
+                apply(record)
+            emitted_island = best_island
+            emitted_step: dict[str, Any] | None = None
+            emitted_total = total
+            if best_step is not None:
+                payload = dict(best_step)
+                payload["total"] = total
+                yield f"event: progress\ndata: {json.dumps(payload)}\n\n"
+                emitted_step = best_step
+            if best_island in latest_targets:
+                yield (
+                    "event: targets\ndata: "
+                    + json.dumps(_target_event(latest_targets[best_island]))
+                    + "\n\n"
+                )
+            if schedules.get(best_island):
+                payload = {
+                    "type": "schedule",
+                    "iteration": 0,
+                    "reset": True,
+                    "changed": [
+                        [block, chain] for block, chain in sorted(schedules[best_island].items())
+                    ],
+                }
+                yield f"event: schedule\ndata: {json.dumps(payload)}\n\n"
+            if processes.get(run) is None:
+                yield (
+                    "event: error\ndata: "
+                    + json.dumps({"detail": "the run is not live and has no summary"})
+                    + "\n\n"
+                )
+                return
             ticks = 0
             while True:
                 ticks += 1
                 if ticks % 20 == 0:
                     yield ": keepalive\n\n"
-                step: dict[str, Any] | None = None
-                targets: dict[str, Any] | None = None
-                schedule: dict[int, Any] = {}
-                schedule_iteration = 0
-                if telemetry.is_file():
-                    lines = telemetry.read_text(encoding="utf-8").splitlines()
-                    for line in lines[seen:]:
-                        try:
-                            record = json.loads(line)
-                        except json.JSONDecodeError:
-                            continue
-                        kind = record.get("type")
-                        if kind == "step":
-                            step = record
-                        elif kind == "targets":
-                            targets = record
-                        elif kind == "schedule":
-                            schedule_iteration = int(record.get("iteration", 0))
-                            for block, chain in record.get("changed", []):
-                                schedule[int(block)] = chain
-                    seen = len(lines)
-                if schedule:
+                changed: dict[int, Any] = {}
+                targets_to_emit: dict[str, Any] | None = None
+                best_changed = False
+                for record in new_records():
+                    island = str(record.get("island", "") or "")
+                    before = best_island
+                    apply(record)
+                    if best_island != before:
+                        best_changed = True
+                    if record.get("type") == "schedule" and island == best_island:
+                        for block, chain in record.get("changed", []):
+                            changed[int(block)] = chain
+                    elif record.get("type") == "targets" and island == best_island:
+                        targets_to_emit = record
+                if best_changed or best_island != emitted_island:
+                    schedules_for_best = schedules.get(best_island, {})
                     payload = {
                         "type": "schedule",
-                        "iteration": schedule_iteration,
-                        "changed": [[block, chain] for block, chain in sorted(schedule.items())],
+                        "iteration": 0,
+                        "reset": True,
+                        "changed": [
+                            [block, chain] for block, chain in sorted(schedules_for_best.items())
+                        ],
                     }
                     yield f"event: schedule\ndata: {json.dumps(payload)}\n\n"
-                if targets is not None:
-                    payload = targets
-                    if targets_path is not None and targets_path.is_file():
-                        index = {
-                            (int(item["year"]), str(item["account"])): float(item["value"])
-                            for item in targets.get("values", [])
-                        }
-                        payload = {
-                            "type": "targets",
-                            "iteration": targets.get("iteration"),
-                            "values": [
-                                {
-                                    "account": target.account,
-                                    "year": target.year,
-                                    "value": period_value(index, target),
-                                }
-                                for target in load_targets(targets_path)
-                            ],
-                        }
-                    yield f"event: targets\ndata: {json.dumps(payload)}\n\n"
-                if step is not None:
-                    yield f"event: progress\ndata: {json.dumps(step)}\n\n"
+                    emitted_island = best_island
+                    if best_island in latest_targets:
+                        yield (
+                            "event: targets\ndata: "
+                            + json.dumps(_target_event(latest_targets[best_island]))
+                            + "\n\n"
+                        )
+                        targets_to_emit = None
+                elif changed:
+                    payload = {
+                        "type": "schedule",
+                        "iteration": 0,
+                        "changed": [[block, chain] for block, chain in sorted(changed.items())],
+                    }
+                    yield f"event: schedule\ndata: {json.dumps(payload)}\n\n"
+                if targets_to_emit is not None:
+                    yield (
+                        "event: targets\ndata: "
+                        + json.dumps(_target_event(targets_to_emit))
+                        + "\n\n"
+                    )
+                if best_step is not None and (
+                    best_step is not emitted_step or total != emitted_total
+                ):
+                    payload = dict(best_step)
+                    payload["total"] = total
+                    yield f"event: progress\ndata: {json.dumps(payload)}\n\n"
+                    emitted_step = best_step
+                    emitted_total = total
                 summary = directory / "summary.json"
                 if summary.is_file():
                     yield f"event: done\ndata: {summary.read_text(encoding='utf-8').strip()}\n\n"
@@ -373,6 +571,147 @@ def create_app(
                 time.sleep(0.5)
 
         return StreamingResponse(stream(), media_type="text/event-stream")
+
+    @app.get("/api/agent")
+    def agent_info() -> dict[str, Any]:
+        """Report whether the embedded agent is enabled, and which model it would run."""
+        return {
+            "enabled": allow_agent,
+            "model": agent_model,
+            "cwd": str(agent_working_directory),
+            "available": shutil.which("opencode") is not None,
+            "timeout": agent_timeout,
+        }
+
+    @app.post("/api/chat")
+    def chat(body: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Run one chat turn through the local OpenCode coding agent.
+
+        The agent uses the installed CLI's own authentication and model configuration. It runs
+        with the service user's permissions in ``agent_working_directory``; the caller must have
+        enabled ``allow_agent``. The reply is the agent's text, with the tools it used summarised
+        so the panel can show that something actually ran.
+        """
+        if not allow_agent:
+            raise HTTPException(
+                status_code=403,
+                detail="the chat agent is disabled; start the service with --allow-agent",
+            )
+        payload = body or {}
+        message = str(payload.get("message", "") or "").strip()
+        if not message:
+            raise HTTPException(status_code=422, detail="the message is empty")
+        if len(message) > 20_000:
+            raise HTTPException(status_code=422, detail="the message is too long")
+        session = str(payload.get("session", "") or "").strip()
+        if session and not session.startswith("ses"):
+            raise HTTPException(
+                status_code=422,
+                detail="a chat session must be an OpenCode session id starting with 'ses'",
+            )
+        run = str(payload.get("run", "") or "").strip()
+        year = payload.get("year")
+        executable = shutil.which("opencode")
+        if executable is None:
+            raise HTTPException(
+                status_code=503,
+                detail="opencode is not on PATH; install the CLI or put it on the service PATH",
+            )
+        context = [
+            "You are the WS4 assistant embedded in the WS4 web UI.",
+            f"The workspace is {agent_working_directory}.",
+            f"The compiled dataset is {dataset}.",
+            f"Run outputs live in {runs_root}.",
+        ]
+        if targets_path is not None:
+            context.append(f"The targets file is {targets_path}.")
+        if run:
+            context.append(f"The run open in the UI is {run}.")
+        if isinstance(year, int):
+            context.append(f"The year open in the UI is {year}.")
+        context.append(
+            "You may read the repository, run ws4 commands, and edit files when the user asks. "
+            "The user sees the reply in a narrow chat panel: keep it compact and concrete, use "
+            "short code blocks, and say what you ran. Do not print credentials."
+        )
+        prompt = "\n".join(context) + "\n\nUser: " + message
+        command = [executable, "run", "--model", agent_model, "--format", "json", "--auto"]
+        if session:
+            command.extend(["--session", session])
+        command.append(prompt)
+        environment = dict(os.environ)
+        for name in ("OPENCODE_SESSION_ID", "OPENCODE_TERMINAL"):
+            environment.pop(name, None)
+        try:
+            completed = subprocess.run(
+                command,
+                cwd=str(agent_working_directory),
+                capture_output=True,
+                text=True,
+                timeout=agent_timeout,
+                check=False,
+                env=environment,
+            )
+        except subprocess.TimeoutExpired as error:
+            raise HTTPException(
+                status_code=504,
+                detail=f"the agent did not answer within {agent_timeout:g} seconds",
+            ) from error
+        except OSError as error:
+            raise HTTPException(
+                status_code=503, detail=f"could not start opencode: {error}"
+            ) from error
+        session_id = session
+        texts: list[str] = []
+        actions: list[dict[str, str]] = []
+        errors: list[str] = []
+        for line in completed.stdout.splitlines():
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(event, dict):
+                continue
+            candidate = event.get("sessionID")
+            if isinstance(candidate, str) and candidate.startswith("ses"):
+                session_id = candidate
+            part = event.get("part")
+            if not isinstance(part, dict):
+                continue
+            if event.get("type") == "text":
+                text = part.get("text")
+                if isinstance(text, str) and text.strip():
+                    texts.append(text.strip())
+            elif event.get("type") == "tool_use":
+                tool = part.get("tool")
+                state = part.get("state")
+                summary = ""
+                if isinstance(state, dict):
+                    title = state.get("title")
+                    if isinstance(title, str):
+                        summary = title
+                    inputs = state.get("input")
+                    if isinstance(inputs, dict):
+                        for key in ("command", "filePath", "path", "pattern", "url", "description"):
+                            value = inputs.get(key)
+                            if isinstance(value, str) and value.strip():
+                                summary = value.strip()
+                                break
+                if isinstance(tool, str):
+                    action = {"tool": tool, "summary": summary[:160]}
+                    if action not in actions:
+                        actions.append(action)
+            elif event.get("type") == "error":
+                failure = event.get("error")
+                if isinstance(failure, dict) and isinstance(failure.get("message"), str):
+                    errors.append(failure["message"])
+        reply = "\n\n".join(texts).strip()
+        if not reply:
+            detail = (
+                errors[-1] if errors else (completed.stderr.strip() or "the agent returned no text")
+            )
+            raise HTTPException(status_code=502, detail=detail[:500])
+        return {"reply": reply, "session": session_id, "actions": actions[-12:]}
 
     @app.get("/api/skins")
     def skin_list() -> list[dict[str, Any]]:
