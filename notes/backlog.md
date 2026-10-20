@@ -344,3 +344,16 @@ items are enhancements and maintenance.
   onward and the loader warns on a dataset compiled before that; the dataset itself must be recompiled
   to take the fix. Until then `product.FuelTreatmentCost / 20,000` is the clean hectares measure.
   Target: P16.
+
+## P18 follow-ups (not shipped)
+
+- **Model spread-compartment membership.** The source `COMPART` field is a base colour; the per-year
+  spread-connectivity compartments the #13 account measures still need a `spread_membership.csv`
+  artifact and a map layer. The account itself was independently reproduced on the thesis side.
+- **The run's used-road subset.** `--roads` draws the source access network, not the route model's
+  opened/used segments. A segment-geometry/use artifact is needed for that overlay.
+- **MapLibre and a basemap** when polygon counts or raster layers outgrow the dependency-free SVG shell.
+- **A stability stopping criterion** (stop after N iterations without improvement); the player offers
+  iterations and time only.
+- **Shared embedded assistant.** The local OpenCode assistant is behind `--allow-agent`; a shared
+  deployment needs authentication and a deliberate decision about shell/filesystem access.
