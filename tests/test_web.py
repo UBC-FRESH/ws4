@@ -221,7 +221,8 @@ def test_the_events_stream_replays_telemetry_and_ends_on_the_summary(tmp_path: P
         '{"type": "run", "run_id": "r1"}\n'
         '{"type": "step", "iteration": 1, "objective": 10.0}\n'
         '{"type": "schedule", "iteration": 1, "changed": [[1, [["CC", 0]]]]}\n'
-        '{"type": "targets", "iteration": 1, "values": [{"year": 0, "account": "feature.Volume", "value": 10.0}]}\n',
+        '{"type": "targets", "iteration": 1, "values": '
+        '[{"year": 0, "account": "feature.Volume", "value": 10.0}]}\n',
         encoding="utf-8",
     )
     body = client.get("/api/runs/run1/events").text
@@ -252,13 +253,26 @@ def test_targets_are_also_saveable_with_post(tmp_path: Path) -> None:
 
 
 def test_the_realized_target_value_uses_the_targets_period(tmp_path: Path) -> None:
-    """A product sums its period; a feature reads its end year. The optimizer's rule is the source."""
+    """A product sums its period; a feature reads its end year, as the optimizer does."""
     client, _ = _app(tmp_path)
     rows = client.get("/api/runs/run1/targets").json()
     by_account = {row["account"]: row for row in rows}
     assert by_account["feature.Volume"]["value"] == 10.0
     assert by_account["feature.Volume"]["status"] == "met"
     assert by_account["product.Yield"]["value"] == 5.0
+
+
+def test_a_run_can_be_paused_resumed_and_stopped(tmp_path: Path) -> None:
+    """The control endpoint writes the file the solver polls, and status reports the pause."""
+    client, _ = _app(tmp_path)
+    run = tmp_path / "runs" / "run1"
+    paused = client.post("/api/runs/run1/control", json={"action": "pause"})
+    assert paused.status_code == 200
+    assert json.loads((run / "control.json").read_text(encoding="utf-8")) == {"action": "pause"}
+    assert client.get("/api/runs/run1/status").json()["paused"] is True
+    client.post("/api/runs/run1/control", json={"action": "run"})
+    assert client.get("/api/runs/run1/status").json()["paused"] is False
+    assert client.post("/api/runs/run1/control", json={"action": "explode"}).status_code == 422
 
 
 def test_an_unknown_run_is_a_named_404(tmp_path: Path) -> None:

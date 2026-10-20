@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=18">
+  <link rel="stylesheet" href="static/style.css?v=19">
 </head>
 <body>
   <header>
-    <strong>WS4</strong><span class="build">v18</span>
+    <strong>WS4</strong><span class="build">v19</span>
     <label>Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Year
@@ -41,10 +41,12 @@
         </table></div>
         <button id="save-targets" hidden>Save targets</button>
         <div class="run-row">
-          <label>Iterations <input id="run-iterations" type="number" value="500" min="1" step="1"></label>
+          <label>Max iters <input id="run-iterations" type="number" value="0" min="0" step="1" title="0 = until stopped"></label>
+          <label>Time <input id="run-time-limit" type="text" placeholder="HH:MM:SS" size="9"></label>
           <label>Years <input id="run-years" type="number" value="50" min="1" step="1"></label>
           <label>Seed <input id="run-seed" type="number" value="1" step="1"></label>
-          <button id="start-run">Run search</button>
+          <button id="start-run">▶ Play</button>
+          <button id="stop-run" hidden>⏹ Stop</button>
         </div>
         <div id="run-panel" hidden>
           <span class="pulse"></span>
@@ -66,6 +68,6 @@
       <div class="scale" id="scale"></div>
     </div>
   </main>
-  <script type="module" src="static/app.js?v=18"></script>
+  <script type="module" src="static/app.js?v=19"></script>
 </body>
 </html>

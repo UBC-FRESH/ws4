@@ -48,6 +48,7 @@ from ..spread.accounts import (
     load_block_coordinates,
     load_spread_accounts,
 )
+from .control import RunControl
 from .core import Problem
 from .incremental import IncrementalObjective
 from .mip import bound_for
@@ -135,6 +136,10 @@ class OptimizeConfig:
         is NumPy-heavy, so oversubscribing the pools costs more than it buys.
     time_limit : str
         The wall-clock limit, as ``HH:MM:SS``.
+    control_path : str
+        A JSON file the search polls: ``{"action": "pause"}`` holds it between iterations and
+        ``{"action": "stop"}`` makes it return its best schedule and write its summary. Empty when
+        the run has no control file.
     seed : int
         The random seed. A run is reproducible for a given seed.
     targets_path : str
@@ -229,6 +234,7 @@ class OptimizeConfig:
     time_limit: str = "01:00:00"
     seed: int = 42
     targets_path: str = ""
+    control_path: str = ""
     weights_path: str = ""
     years: int = 50
     iterations: int = 500
@@ -1060,6 +1066,7 @@ class Optimizer:
             The best schedule and its objective.
         """
         targets = load_targets(Path(self.cfg.targets_path)) if self.cfg.targets_path else []
+        control = RunControl(Path(self.cfg.control_path)) if self.cfg.control_path else None
         candidates = self.candidates()
         problem = Problem(
             evaluate=lambda schedule: self._evaluate(schedule, targets),
@@ -1080,6 +1087,7 @@ class Optimizer:
                 iterations=self.cfg.iterations,
                 tenure=self.cfg.tenure,
                 on_step=on_step,
+                control=control,
                 initial=initial,
                 deadline=self._deadline,
             )
@@ -1108,6 +1116,7 @@ class Optimizer:
                 initial=initial,
                 deadline=self._deadline,
                 on_step=on_step,
+                control=control,
                 on_snapshot=on_snapshot,
                 adaptive=self.cfg.cooling_mode == "adaptive",
                 cooling_window=self.cfg.cooling_window,
@@ -1119,6 +1128,7 @@ class Optimizer:
             temperature=self.cfg.temperature,
             cooling=self.cfg.cooling,
             on_step=on_step,
+            control=control,
             initial=initial,
             adaptive=self.cfg.cooling_mode == "adaptive",
             deadline=self._deadline,

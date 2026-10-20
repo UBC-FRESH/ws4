@@ -14,6 +14,7 @@ import time
 from collections import deque
 from collections.abc import Callable, Mapping, Sequence
 
+from .control import RunControl
 from .cooling import TemperatureSchedule
 from .core import Problem
 from .incremental import IncrementalObjective
@@ -40,6 +41,33 @@ def _signature(before: Schedule, after: Schedule) -> frozenset[tuple[int, Chain 
     return frozenset(
         (block, after.get(block)) for block in blocks if before.get(block) != after.get(block)
     )
+
+
+def _stopped(control: RunControl | None, iteration: int) -> bool:
+    """Return whether the control file asks the search to stop, waiting while it is paused.
+
+    The file is polled every sixty-fourth iteration, which is often enough for a person to see and
+    cheap enough not to dominate a move; a missing or invalid file means "run".
+
+    Parameters
+    ----------
+    control : RunControl or None
+        The run's control file, or None when it has none.
+    iteration : int
+        The current iteration index.
+
+    Returns
+    -------
+    bool
+        True when the search should stop.
+    """
+    if control is None or iteration % 64:
+        return False
+    action = control.action()
+    while action == "pause":
+        time.sleep(0.2)
+        action = control.action()
+    return action == "stop"
 
 
 def _report(on_step: StepCallback | None, iteration: int, objective: float) -> None:
@@ -105,6 +133,7 @@ def solve_sa(
     temperature: float,
     cooling: float,
     on_step: StepCallback | None = None,
+    control: RunControl | None = None,
     initial: Schedule | None = None,
     adaptive: bool = False,
     cooling_window: int = 64,
@@ -129,6 +158,9 @@ def solve_sa(
         The geometric cooling factor.
     on_step : callable or None, optional
         Called with ``(iteration, best_objective)`` each iteration.
+    control : RunControl or None, optional
+        A polled control file; the search holds while it says ``pause`` and returns its best
+        schedule when it says ``stop``.
     initial : dict or None, optional
         A starting schedule.
     adaptive : bool, optional
@@ -151,7 +183,7 @@ def solve_sa(
         window=TemperatureSchedule.effective_window(iterations, cooling_window),
     )
     for iteration in range(iterations):
-        if expired(deadline):
+        if expired(deadline) or _stopped(control, iteration):
             break
         increase = 0.0
         move = problem.registry.pick(rng).apply(current, rng, problem.candidates)
@@ -180,6 +212,7 @@ def solve_sa_delta(
     registry: OperatorRegistry,
     initial: Schedule | None = None,
     on_step: StepCallback | None = None,
+    control: RunControl | None = None,
     on_snapshot: SnapshotCallback | None = None,
     adaptive: bool = False,
     cooling_window: int = 64,
@@ -214,6 +247,9 @@ def solve_sa_delta(
         A starting schedule.
     on_step : callable or None, optional
         Called with ``(iteration, best_objective)`` each iteration.
+    control : RunControl or None, optional
+        A polled control file; the search holds while it says ``pause`` and returns its best
+        schedule when it says ``stop``.
     on_snapshot : callable or None, optional
         Called with ``(iteration, realized cells, incumbent schedule)`` every twentieth iteration
         and on the last one, which is what a live target view and an animated map read.
@@ -238,7 +274,7 @@ def solve_sa_delta(
         window=TemperatureSchedule.effective_window(iterations, cooling_window),
     )
     for iteration in range(iterations):
-        if expired(deadline):
+        if expired(deadline) or _stopped(control, iteration):
             break
         increase = 0.0
         operator = registry.pick(rng)
@@ -272,6 +308,7 @@ def solve_tabu(
     tenure: int,
     samples: int = 8,
     on_step: StepCallback | None = None,
+    control: RunControl | None = None,
     initial: Schedule | None = None,
     deadline: float | None = None,
 ) -> tuple[Schedule, float]:
@@ -294,6 +331,9 @@ def solve_tabu(
         The number of candidate moves sampled per iteration.
     on_step : callable or None, optional
         Called with ``(iteration, best_objective)`` each iteration.
+    control : RunControl or None, optional
+        A polled control file; the search holds while it says ``pause`` and returns its best
+        schedule when it says ``stop``.
     initial : dict or None, optional
         A starting schedule. Defaults to the empty schedule.
 
@@ -307,7 +347,7 @@ def solve_tabu(
     best, best_obj = dict(current), current_obj
     tabu: deque[frozenset[tuple[int, Chain | None]]] = deque(maxlen=tenure)
     for iteration in range(iterations):
-        if expired(deadline):
+        if expired(deadline) or _stopped(control, iteration):
             break
         chosen: Schedule | None = None
         chosen_obj = math.inf
@@ -337,6 +377,7 @@ def solve_ils(
     iterations: int,
     perturbation: int,
     on_step: StepCallback | None = None,
+    control: RunControl | None = None,
     initial: Schedule | None = None,
     deadline: float | None = None,
 ) -> tuple[Schedule, float]:
@@ -357,6 +398,9 @@ def solve_ils(
         The number of random moves applied to perturb the incumbent.
     on_step : callable or None, optional
         Called with ``(iteration, best_objective)`` each iteration.
+    control : RunControl or None, optional
+        A polled control file; the search holds while it says ``pause`` and returns its best
+        schedule when it says ``stop``.
     initial : dict or None, optional
         A starting schedule. Defaults to the empty schedule.
 
@@ -369,7 +413,7 @@ def solve_ils(
     current_obj = problem.evaluate(current)
     best, best_obj = dict(current), current_obj
     for iteration in range(iterations):
-        if expired(deadline):
+        if expired(deadline) or _stopped(control, iteration):
             break
         candidate = dict(current)
         for _ in range(perturbation):

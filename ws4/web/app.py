@@ -156,11 +156,13 @@ def create_app(
 
     processes: dict[str, subprocess.Popen[bytes]] = {}
 
-    def _run_command(out: Path, iterations: int, seed: int, years: int) -> list[str]:
+    def _run_command(
+        out: Path, iterations: int, seed: int, years: int, time_limit: str
+    ) -> list[str]:
         """Return the CLI command for a web-started search; only known options are passed."""
         if targets_path is None:
             raise HTTPException(status_code=422, detail="the service was started without --targets")
-        return [
+        command = [
             sys.executable,
             "-m",
             "ws4.cli",
@@ -177,7 +179,12 @@ def create_app(
             str(seed),
             "--years",
             str(years),
+            "--control-file",
+            str(out / "control.json"),
         ]
+        if time_limit:
+            command.extend(["--time-limit", time_limit])
+        return command
 
     @app.post("/api/runs")
     def start_run(body: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -188,20 +195,49 @@ def create_app(
                 detail="this service is read-only; start it with --allow-runs to run a search",
             )
         payload = body or {}
-        iterations = int(payload.get("iterations", 500))
+        requested = int(payload.get("iterations", 0) or 0)
+        continuous = bool(payload.get("continuous", requested <= 0))
+        iterations = 1_000_000_000 if continuous else requested
         seed = int(payload.get("seed", 1))
         years = int(payload.get("years", 50))
-        if not 1 <= iterations <= 1_000_000 or not 1 <= years <= 1000:
+        time_limit = str(payload.get("time_limit", "") or "")
+        if not 1 <= iterations <= 1_000_000_000 or not 1 <= years <= 1000:
             raise HTTPException(status_code=422, detail="iterations or years are out of range")
+        if continuous and not time_limit:
+            time_limit = "24:00:00"
         run_id = f"web-{datetime.now():%Y%m%d-%H%M%S}-{seed}"
         out = runs_root / run_id
         if out.exists():
             raise HTTPException(status_code=409, detail=f"run {run_id!r} already exists")
-        command = _run_command(out, iterations, seed, years)
         out.mkdir(parents=True)
+        (out / "control.json").write_text('{"action": "run"}\n', encoding="utf-8")
+        command = _run_command(out, iterations, seed, years, time_limit)
         console = (out / "console.log").open("wb")
         processes[run_id] = subprocess.Popen(command, stdout=console, stderr=subprocess.STDOUT)
-        return {"id": run_id, "iterations": iterations, "seed": seed, "years": years}
+        return {
+            "id": run_id,
+            "iterations": iterations,
+            "continuous": continuous,
+            "seed": seed,
+            "years": years,
+            "time_limit": time_limit,
+        }
+
+    @app.post("/api/runs/{run}/control")
+    def control_run(run: str, body: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Pause, resume or stop a running search through its control file."""
+        directory = run_dir(run)
+        action = str((body or {}).get("action", "run"))
+        if action not in {"run", "pause", "stop"}:
+            raise HTTPException(status_code=422, detail=f"unknown control action {action!r}")
+        path = directory / "control.json"
+        path.write_text(json.dumps({"action": action}) + "\n", encoding="utf-8")
+        process = processes.get(run)
+        return {
+            "id": run,
+            "action": action,
+            "running": process is not None and process.poll() is None,
+        }
 
     def _last_step(directory: Path) -> dict[str, Any] | None:
         """Return the last telemetry step, reading only the file's tail."""
@@ -239,10 +275,20 @@ def create_app(
             state = "failed"
         else:
             state = "running"
+        control_path = directory / "control.json"
+        paused = False
+        if control_path.is_file():
+            try:
+                paused = (
+                    json.loads(control_path.read_text(encoding="utf-8")).get("action") == "pause"
+                )
+            except ValueError:
+                paused = False
         return {
             "id": run,
             "status": state,
             "running": state == "running",
+            "paused": paused,
             "pid": process.pid if process is not None else None,
             "last_step": _last_step(directory),
             "summary": summary,

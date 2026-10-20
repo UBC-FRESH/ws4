@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), windowValues: new Map(), live: { active: false, schedule: new Map() }, history: [] };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), windowValues: new Map(), runPaused: false, live: { active: false, schedule: new Map() }, history: [] };
 
 const $ = (id) => document.getElementById(id);
 const statusLine = (text) => { $('status').textContent = text; };
@@ -43,7 +43,13 @@ function fit(features) {
     const button = event.target.closest('#start-run');
     if (!button || button.disabled) return;
     event.preventDefault();
-    startRun();
+    if (state.live.active) togglePause(); else startRun();
+  });
+  document.addEventListener('click', (event) => {
+    const stop = event.target.closest('#stop-run');
+    if (!stop || stop.disabled) return;
+    event.preventDefault();
+    stopRun();
   });
   const svg = $('map');
   const width = svg.clientWidth || 800;
@@ -573,8 +579,9 @@ async function finishRun(id) {
   runWatch.done = true;
   stopRunWatch();
   state.live.active = false;
-  $('start-run').disabled = false;
-  $('start-run').textContent = 'Run search';
+  $('start-run').textContent = '▶ Play';
+  $('stop-run').hidden = true;
+  state.runPaused = false;
   showRun(`run ${id} · done`, false);
   $('run-status').textContent = '';
   try {
@@ -589,10 +596,12 @@ async function finishRun(id) {
 async function pollRun(id) {
   try {
     const status = await api(`api/runs/${encodeURIComponent(id)}/status`);
+    state.runPaused = Boolean(status.paused);
+    $('start-run').textContent = state.runPaused ? '▶ Resume' : '⏸ Pause';
     if (status.status === 'failed') {
       stopRunWatch();
-      $('start-run').disabled = false;
-      $('start-run').textContent = 'Run search';
+      $('start-run').textContent = '▶ Play';
+      $('stop-run').hidden = true;
       showRun(`run ${id} · the search exited without a summary — see console.log`, false);
       return;
     }
@@ -607,27 +616,61 @@ async function pollRun(id) {
   }
 }
 
+async function togglePause() {
+  if (!runWatch.id) return;
+  const action = state.runPaused ? 'run' : 'pause';
+  try {
+    await fetch(`api/runs/${encodeURIComponent(runWatch.id)}/control`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action }),
+    });
+    state.runPaused = !state.runPaused;
+    $('start-run').textContent = state.runPaused ? '▶ Resume' : '⏸ Pause';
+    showRun(`run ${runWatch.id} · ${state.runPaused ? 'paused' : 'running'} · ${elapsed()}`, true);
+  } catch (error) {
+    showRun(`run ${runWatch.id} · control failed: ${error.message}`, true);
+  }
+}
+
+async function stopRun() {
+  if (!runWatch.id) return;
+  $('stop-run').disabled = true;
+  try {
+    await fetch(`api/runs/${encodeURIComponent(runWatch.id)}/control`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: 'stop' }),
+    });
+    showRun(`run ${runWatch.id} · stopping…`, true);
+  } catch (error) {
+    showRun(`run ${runWatch.id} · stop failed: ${error.message}`, true);
+  } finally {
+    window.setTimeout(() => { $('stop-run').disabled = false; }, 1000);
+  }
+}
+
 async function startRun() {
-  fetch('api/ping?source=startRun').catch(() => {});
   const status = $('run-status');
   $('start-run').disabled = true;
-  $('start-run').textContent = 'Running…';
   showRun('saving targets…', true);
   let saved = false;
   try { saved = await saveTargets(); } catch (error) { saved = false; }
   if (!saved) {
     $('start-run').disabled = false;
-    $('start-run').textContent = 'Run search';
+    $('start-run').textContent = '▶ Play';
     const reason = $('targets-status').textContent || 'no reason given';
     showRun(`targets not saved: ${reason}`, false);
     return;
   }
-  const iterations = Number($('run-iterations')?.value || 500);
+  const iterations = Number($('run-iterations')?.value || 0);
+  const timeLimit = ($('run-time-limit')?.value || '').trim();
   const seed = Number($('run-seed')?.value || 1);
   const years = Number($('run-years')?.value || 50);
   status.textContent = '';
   runWatch = { id: null, timer: null, source: null, started: Date.now(), done: false };
   state.live = { active: true, schedule: new Map() };
+  state.runPaused = false;
   state.history = [];
   drawSpark();
   showRun('posting the run request…', true);
@@ -637,7 +680,7 @@ async function startRun() {
     const response = await fetch('api/runs', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ iterations, seed, years }),
+      body: JSON.stringify({ iterations, time_limit: timeLimit, seed, years }),
       signal: controller.signal,
     });
     window.clearTimeout(timer);
@@ -647,6 +690,9 @@ async function startRun() {
     }
     const run = await response.json();
     runWatch.id = run.id;
+    $('start-run').disabled = false;
+    $('start-run').textContent = '⏸ Pause';
+    $('stop-run').hidden = false;
     pollRun(run.id);
     runWatch.timer = setInterval(() => pollRun(run.id), 2000);
     const events = new EventSource(`api/runs/${encodeURIComponent(run.id)}/events`);
@@ -664,10 +710,12 @@ async function startRun() {
       state.history.push({ iteration: step.iteration, objective: Number(step.objective) });
       if (state.history.length > 2000) state.history.shift();
       drawSpark();
-      showRun(
-        `run ${run.id} · iteration ${step.iteration} · objective ${Number(step.objective).toFixed(2)} · ${elapsed()}`,
-        true,
-      );
+      if (!state.runPaused) {
+        showRun(
+          `run ${run.id} · iteration ${step.iteration} · objective ${Number(step.objective).toFixed(2)} · ${elapsed()}`,
+          true,
+        );
+      }
     });
     events.addEventListener('targets', (event) => {
       const payload = JSON.parse(event.data);
@@ -679,7 +727,8 @@ async function startRun() {
     window.clearTimeout(timer);
     state.live.active = false;
     $('start-run').disabled = false;
-    $('start-run').textContent = 'Run search';
+    $('start-run').textContent = '▶ Play';
+    $('stop-run').hidden = true;
     const reason = error.name === 'AbortError' ? 'the request timed out after 20 s' : error.message;
     showRun(`not started: ${reason}`, false);
   }

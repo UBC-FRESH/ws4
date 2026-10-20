@@ -101,6 +101,9 @@ def optimize(
     threads: int = typer.Option(8, min=1, help="Worker processes, and BLAS threads each"),
     starts: int = typer.Option(1, min=1, help="parallel multi-starts (needs --threads > 1)"),
     time_limit: str = typer.Option("01:00:00", help="HH:MM:SS"),
+    control_file: Path | None = typer.Option(
+        None, "--control-file", help="JSON file that can pause or stop the search"
+    ),
     iterations: int = typer.Option(500, min=1, help="Search iterations"),
     years: int = typer.Option(50, help="Simulation horizon in years"),
     seed: int = typer.Option(42),
@@ -177,6 +180,7 @@ def optimize(
         workers=threads,
         starts=starts,
         time_limit=time_limit,
+        control_path=str(control_file) if control_file is not None else "",
         iterations=iterations,
         years=years,
         seed=seed,
