@@ -1967,3 +1967,13 @@ issue comments.
   carry a mutating action. `/api/skins` exposes them, and the shell applies a skin by hiding panels and
   disabling the target editor; the rule lives on the server. Tests: `tests/test_web_skins.py` (four
   cases) and the service cases (fifteen total). Dashboard: **GREEN**.
+- P18.3 **the live run.** `POST /api/runs` starts a search with the configured dataset and targets —
+  **refused unless the service was started with `--allow-runs`** — and the command is composed by the
+  service, so the request body can choose only iterations, seed and horizon (both bounded). The run is
+  spawned as the CLI subprocess, keeping the design rule that a search cannot take the service down;
+  its console goes to the run directory. `GET /api/runs/{run}/events` replays `telemetry.jsonl` as SSE
+  `progress` events and closes with `done` (the run's own summary) or `error`. The Targets panel gains
+  Iterations/Seed and **Run search**; on completion the run list, periods, targets, reports and map
+  refresh onto the new run. Verified end to end: a 5-iteration run produced its summary and the stream
+  delivered each step. Tests: the read-only refusal, the no-targets refusal, and the SSE replay
+  (eighteen service cases). Dashboard: **GREEN**.

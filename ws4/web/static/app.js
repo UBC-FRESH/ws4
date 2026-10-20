@@ -267,8 +267,68 @@ async function saveTargets() {
     }
     $('targets-status').textContent = `saved ${rows.length} targets`;
     await loadTargets();
+    return true;
   } catch (error) {
     $('targets-status').textContent = `not saved: ${error.message}`;
+    return false;
+  }
+}
+
+async function fillRuns(summary, preferred) {
+  const select = $('run');
+  select.replaceChildren();
+  for (const run of summary.runs ?? []) {
+    const option = document.createElement('option');
+    option.value = run.id;
+    option.textContent = `${run.id} (${run.kind ?? 'run'})`;
+    select.append(option);
+  }
+  const chosen = (summary.runs ?? []).find((run) => run.id === preferred) ?? (summary.runs ?? [])[0];
+  if (!chosen) return false;
+  select.value = chosen.id;
+  state.run = chosen.id;
+  return true;
+}
+
+async function startRun() {
+  const status = $('run-status');
+  if (!(await saveTargets())) { status.textContent = 'targets not saved; not starting'; return; }
+  const iterations = Number($('run-iterations').value || 500);
+  const seed = Number($('run-seed').value || 1);
+  const years = Number($('year').max || 50);
+  status.textContent = 'starting…';
+  try {
+    const response = await fetch('api/runs', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ iterations, seed, years }),
+    });
+    if (!response.ok) {
+      const detail = (await response.json()).detail ?? response.statusText;
+      throw new Error(detail);
+    }
+    const run = await response.json();
+    status.textContent = `run ${run.id}: starting`;
+    const events = new EventSource(`api/runs/${encodeURIComponent(run.id)}/events`);
+    events.addEventListener('progress', (event) => {
+      const step = JSON.parse(event.data);
+      status.textContent = `run ${run.id}: iteration ${step.iteration}, objective ${Number(step.objective).toFixed(2)}`;
+    });
+    events.addEventListener('done', async () => {
+      events.close();
+      status.textContent = `run ${run.id}: done`;
+      const summary = await api('api/summary');
+      if (await fillRuns(summary, run.id)) {
+        await loadPeriods(); await loadTargets(); await loadReports(); await loadMap();
+      }
+    });
+    events.addEventListener('error', (event) => {
+      if (status.textContent.endsWith('done')) return;
+      status.textContent = `run ${run.id}: stream closed`;
+      events.close();
+    });
+  } catch (error) {
+    status.textContent = `not started: ${error.message}`;
   }
 }
 
@@ -378,6 +438,7 @@ function wireControls() {
     if (skin) { applySkin(skin); await loadTargets(); }
   });
   $('save-targets').addEventListener('click', saveTargets);
+  $('start-run').addEventListener('click', startRun);
   $('show-treated').addEventListener('change', applyVisibility);
   $('show-untreated').addEventListener('change', applyVisibility);
   for (const button of document.querySelectorAll('nav.tabs button')) {

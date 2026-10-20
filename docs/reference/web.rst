@@ -13,7 +13,10 @@ reads. The service computes no value the CLI cannot reproduce.
              --geometry blocks.geojson
 
 The bind is ``127.0.0.1`` by default and a non-loopback address is refused unless ``--allow-remote``
-is passed; no authentication is provided in this cut.
+is passed; no authentication is provided in this cut. Starting a search is a separate permission:
+``POST /api/runs`` is refused unless ``--allow-runs`` is given, and the command is composed by the
+service from the dataset and targets it was started with — the request body can choose only the
+iteration count, the seed and the horizon.
 
 Behind a proxy
 ---------------
@@ -57,6 +60,16 @@ Endpoints
    * - ``PUT /api/targets``
      - Validate with the optimizer's loader and replace the YAML; an invalid document is refused and
        the file is left unchanged.
+   * - ``GET/PUT /api/targets.json``
+     - The parsed targets as JSON, for an editor that does not parse YAML.
+   * - ``POST /api/runs``
+     - Start a search with the configured dataset and targets. **Refused unless the service was started
+       with ``--allow-runs``**; iterations and years are bounded.
+   * - ``GET /api/runs/{run}/events``
+     - SSE: one ``progress`` event per telemetry step, then ``done`` with the run's own summary, or
+       ``error``.
+   * - ``GET /api/skins``, ``/api/skins/{id}``
+     - The checked skin manifests.
 
 Geometry
 --------

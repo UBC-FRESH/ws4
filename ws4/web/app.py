@@ -10,14 +10,19 @@ from __future__ import annotations
 
 import json
 import shutil
+import subprocess
+import sys
 import tempfile
+import time
+from collections.abc import Iterator
+from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Any
 
 import pandas as pd
 import yaml
 from fastapi import Body, FastAPI, HTTPException, Query
-from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
+from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from ..opt.objective import load_targets
@@ -63,6 +68,7 @@ def create_app(
     runs: Path,
     targets: Path | None = None,
     geometry: Path | None = None,
+    allow_runs: bool = False,
 ) -> FastAPI:
     """Create the WS4 read API.
 
@@ -78,6 +84,9 @@ def create_app(
     geometry : Path or None, optional
         A GeoJSON file of block polygons or points, joined on ``block_id``. Without it the map
         endpoint refuses with the missing artefact named.
+    allow_runs : bool, optional
+        When true, ``POST /api/runs`` may start a search with the configured dataset and targets.
+        False (the default) keeps the service read-only apart from the targets file.
 
     Returns
     -------
@@ -131,6 +140,90 @@ def create_app(
     def health() -> dict[str, str]:
         """Return a liveness probe."""
         return {"status": "ok"}
+
+    processes: dict[str, subprocess.Popen[bytes]] = {}
+
+    def _run_command(out: Path, iterations: int, seed: int, years: int) -> list[str]:
+        """Return the CLI command for a web-started search; only known options are passed."""
+        if targets_path is None:
+            raise HTTPException(status_code=422, detail="the service was started without --targets")
+        return [
+            sys.executable,
+            "-m",
+            "ws4.cli",
+            "optimize",
+            "--dataset",
+            str(dataset),
+            "--targets",
+            str(targets_path),
+            "--out",
+            str(out),
+            "--iterations",
+            str(iterations),
+            "--seed",
+            str(seed),
+            "--years",
+            str(years),
+        ]
+
+    @app.post("/api/runs")
+    def start_run(body: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Start a search with the configured dataset and targets, when ``allow_runs`` is set."""
+        if not allow_runs:
+            raise HTTPException(
+                status_code=403,
+                detail="this service is read-only; start it with --allow-runs to run a search",
+            )
+        payload = body or {}
+        iterations = int(payload.get("iterations", 500))
+        seed = int(payload.get("seed", 1))
+        years = int(payload.get("years", 50))
+        if not 1 <= iterations <= 1_000_000 or not 1 <= years <= 1000:
+            raise HTTPException(status_code=422, detail="iterations or years are out of range")
+        run_id = f"web-{datetime.now():%Y%m%d-%H%M%S}-{seed}"
+        out = runs_root / run_id
+        if out.exists():
+            raise HTTPException(status_code=409, detail=f"run {run_id!r} already exists")
+        command = _run_command(out, iterations, seed, years)
+        out.mkdir(parents=True)
+        console = (out / "console.log").open("wb")
+        processes[run_id] = subprocess.Popen(command, stdout=console, stderr=subprocess.STDOUT)
+        return {"id": run_id, "iterations": iterations, "seed": seed, "years": years}
+
+    @app.get("/api/runs/{run}/events")
+    def run_events(run: str) -> StreamingResponse:
+        """Stream the run's telemetry as SSE: progress per step, then done or error."""
+        directory = run_dir(run)
+
+        def stream() -> Iterator[str]:
+            telemetry = directory / "telemetry.jsonl"
+            seen = 0
+            while True:
+                if telemetry.is_file():
+                    lines = telemetry.read_text(encoding="utf-8").splitlines()
+                    for line in lines[seen:]:
+                        try:
+                            record = json.loads(line)
+                        except json.JSONDecodeError:
+                            continue
+                        if record.get("type") == "step":
+                            yield f"event: progress\ndata: {json.dumps(record)}\n\n"
+                    seen = len(lines)
+                summary = directory / "summary.json"
+                if summary.is_file():
+                    yield f"event: done\ndata: {summary.read_text(encoding='utf-8').strip()}\n\n"
+                    return
+                process = processes.get(run)
+                if process is not None and process.poll() is not None:
+                    yield (
+                        "event: error\ndata: "
+                        + json.dumps({"detail": "the search exited without a summary"})
+                        + "\n\n"
+                    )
+                    return
+                time.sleep(0.5)
+
+        return StreamingResponse(stream(), media_type="text/event-stream")
 
     @app.get("/api/skins")
     def skin_list() -> list[dict[str, Any]]:

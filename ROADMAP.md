@@ -744,10 +744,11 @@ current period from the cumulative total.
   selector, year control from the schedule, treated/untreated layers with counts, click selection,
   wheel-zoom/pan, and the Legend/Targets/Reports tabs. Remaining: the patch/compartment/road layer
   families and the grouped layer tree; then the MapLibre swap when a basemap is needed.
-- [ ] P18.3 Targets — **first cut live**: a table per account and period with editable min/max/weights,
-  a save that validates through the optimizer's loader, and the realized value from the selected run's
-  own CSV with a met/below/above status. Remaining: the active toggle and the resolve action, which
-  needs the streaming run surface.
+- [ ] P18.3 Targets — **live**: a table per account and period with editable min/max/weights, a save
+  that validates through the optimizer's loader, the realized value from the selected run's own CSV
+  with a met/below/above status, and a **Run search** action that starts the optimizer behind
+  ``--allow-runs``, streams progress over SSE, and refreshes the run when the summary lands. Remaining:
+  the active toggle.
 - [ ] P18.4 Reports — **first cut live**: the report tree from the run directory, a CSV preview table,
   and direct links for HTML/PNG. Remaining: the named standard reports (account summary, route cost,
   patch/spread) and user-defined definitions with export.

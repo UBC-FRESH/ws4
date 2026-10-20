@@ -39,3 +39,6 @@ circle.untreated { fill:var(--untreated); fill-opacity:.55; }
 #report-preview table { border-collapse:collapse; font-size:.72rem; }
 #report-preview th, #report-preview td { border-bottom:1px solid var(--line); padding:.15rem .3rem; white-space:nowrap; }
 #report-preview th { position:sticky; top:0; background:var(--panel); }
+.run-row { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin-top:.5rem; }
+.run-row input { width:4.5rem; }
+.run-row button { padding:.3rem .7rem; }

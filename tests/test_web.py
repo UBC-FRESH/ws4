@@ -192,6 +192,38 @@ def test_the_skins_endpoint_returns_the_checked_manifests(tmp_path: Path) -> Non
     assert client.get("/api/skins/nope").status_code == 404
 
 
+def test_starting_a_run_is_refused_unless_the_service_allows_it(tmp_path: Path) -> None:
+    """The read-only default is a refusal, not a silent start."""
+    client, _ = _app(tmp_path)
+    response = client.post("/api/runs", json={"iterations": 10})
+    assert response.status_code == 403
+    assert "--allow-runs" in response.json()["detail"]
+
+
+def test_starting_a_run_needs_a_targets_file(tmp_path: Path) -> None:
+    """A service without targets cannot compose the command, and says so."""
+    dataset = tmp_path / "dataset"
+    dataset.mkdir()
+    runs = tmp_path / "runs"
+    runs.mkdir()
+    client = TestClient(create_app(dataset=dataset, runs=runs, allow_runs=True))
+    assert client.post("/api/runs", json={"iterations": 10}).status_code == 422
+
+
+def test_the_events_stream_replays_telemetry_and_ends_on_the_summary(tmp_path: Path) -> None:
+    """SSE emits each step and closes with the run's own summary."""
+    client, _ = _app(tmp_path)
+    run = tmp_path / "runs" / "run1"
+    (run / "telemetry.jsonl").write_text(
+        '{"type": "run", "run_id": "r1"}\n{"type": "step", "iteration": 1, "objective": 10.0}\n',
+        encoding="utf-8",
+    )
+    body = client.get("/api/runs/run1/events").text
+    assert "event: progress" in body
+    assert '"iteration": 1' in body
+    assert "event: done" in body
+
+
 def test_an_unknown_run_is_a_named_404(tmp_path: Path) -> None:
     """A missing run is a 404 that names it."""
     client, _ = _app(tmp_path)

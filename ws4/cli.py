@@ -461,6 +461,9 @@ def serve(
     allow_remote: bool = typer.Option(
         False, "--allow-remote", help="Allow a non-loopback bind (no authentication is provided)"
     ),
+    allow_runs: bool = typer.Option(
+        False, "--allow-runs", help="Allow the UI to start a search with the configured targets"
+    ),
 ) -> None:
     """Serve the read-only web API over a dataset and its runs (needs the ``web`` extra)."""
     if host not in {"127.0.0.1", "localhost", "::1"} and not allow_remote:
@@ -474,7 +477,13 @@ def serve(
     import uvicorn
 
     uvicorn.run(
-        create_app(dataset=dataset, runs=runs, targets=targets, geometry=geometry),
+        create_app(
+            dataset=dataset,
+            runs=runs,
+            targets=targets,
+            geometry=geometry,
+            allow_runs=allow_runs,
+        ),
         host=host,
         port=port,
         root_path=root_path,
