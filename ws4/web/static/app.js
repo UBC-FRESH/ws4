@@ -141,12 +141,97 @@ async function loadPeriods() {
   $('year-label').textContent = state.year;
 }
 
+function numberInput(value, field, index) {
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.step = 'any';
+  input.value = value ?? '';
+  input.dataset.field = field;
+  input.dataset.index = index;
+  return input;
+}
+
 async function loadTargets() {
+  const empty = $('targets-empty');
+  const table = $('targets-table');
+  const button = $('save-targets');
   try {
-    const response = await fetch('api/targets');
-    $('targets').textContent = response.ok ? await response.text() : 'no targets file is configured';
-  } catch {
-    $('targets').textContent = 'no targets file is configured';
+    const rows = await api('api/targets.json');
+    state.targets = rows;
+    if (!rows.length) {
+      empty.hidden = false;
+      table.hidden = true;
+      button.hidden = true;
+      return;
+    }
+    empty.hidden = true;
+    table.hidden = false;
+    button.hidden = false;
+    const body = table.querySelector('tbody');
+    body.replaceChildren();
+    const values = {};
+    for (const year of [...new Set(rows.map((row) => row.year))]) {
+      try {
+        const accounts = await api(`api/runs/${encodeURIComponent(state.run)}/accounts?year=${year}`);
+        values[year] = Object.fromEntries(accounts.map((row) => [row.account, row.value]));
+      } catch { values[year] = {}; }
+    }
+    rows.forEach((row, index) => {
+      const tr = document.createElement('tr');
+      const account = document.createElement('td');
+      account.className = 'account';
+      account.textContent = row.account;
+      account.title = row.account;
+      tr.append(account);
+      const year = document.createElement('td');
+      year.textContent = row.year;
+      tr.append(year);
+      for (const field of ['minimum', 'maximum', 'min_weight', 'max_weight']) {
+        const td = document.createElement('td');
+        td.append(numberInput(row[field], field, index));
+        tr.append(td);
+      }
+      const realized = document.createElement('td');
+      const value = values[row.year]?.[row.account];
+      let status = '—';
+      if (value !== undefined) {
+        if (row.minimum !== null && value < row.minimum) status = 'below';
+        else if (row.maximum !== null && value > row.maximum) status = 'above';
+        else status = 'met';
+      }
+      realized.textContent = value === undefined ? '—' : `${value.toLocaleString()} · ${status}`;
+      tr.append(realized);
+      body.append(tr);
+    });
+  } catch (error) {
+    empty.hidden = false;
+    empty.textContent = `targets unavailable: ${error.message}`;
+    table.hidden = true;
+    button.hidden = true;
+  }
+}
+
+async function saveTargets() {
+  const rows = state.targets.map((row) => ({ ...row }));
+  for (const input of document.querySelectorAll('#targets-table input')) {
+    const index = Number(input.dataset.index);
+    const field = input.dataset.field;
+    rows[index][field] = input.value === '' ? null : Number(input.value);
+  }
+  try {
+    const response = await fetch('api/targets.json', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(rows),
+    });
+    if (!response.ok) {
+      const detail = (await response.json()).detail ?? response.statusText;
+      throw new Error(detail);
+    }
+    $('targets-status').textContent = `saved ${rows.length} targets`;
+    await loadTargets();
+  } catch (error) {
+    $('targets-status').textContent = `not saved: ${error.message}`;
   }
 }
 
@@ -183,6 +268,7 @@ function wireControls() {
   $('run').addEventListener('change', async (event) => {
     state.run = event.target.value;
     await loadPeriods();
+    await loadTargets();
     await loadReports();
     await loadMap();
   });
@@ -191,6 +277,7 @@ function wireControls() {
     $('year-label').textContent = state.year;
   });
   $('year').addEventListener('change', () => loadMap());
+  $('save-targets').addEventListener('click', saveTargets);
   $('show-treated').addEventListener('change', applyVisibility);
   $('show-untreated').addEventListener('change', applyVisibility);
   for (const button of document.querySelectorAll('nav.tabs button')) {

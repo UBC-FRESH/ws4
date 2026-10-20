@@ -1952,3 +1952,10 @@ issue comments.
   is relative. A run directory with `account_values.csv` but no `summary.json` is listed as a
   `simulate` run; a directory with neither is not offered. Tests: nine service cases. Dashboard:
   **GREEN**.
+- P18.3 **the targets panel, first cut.** The service exposes the parsed targets as JSON
+  (`GET/PUT /api/targets.json`) so the browser needs no YAML parser; a PUT is serialized to YAML and
+  validated with the optimizer's own `load_targets`, so an invalid edit is refused exactly as the CLI
+  would refuse it. The Targets tab renders a table per account and period with editable minimum,
+  maximum and weights, saves through that path, and shows the realized value from the selected run's
+  own `account_values.csv` with a met/below/above status. Remaining: the active toggle and the resolve
+  action. Tests: ten service cases. Dashboard: **GREEN**.

@@ -744,7 +744,10 @@ current period from the cumulative total.
   selector, year control from the schedule, treated/untreated layers with counts, click selection,
   wheel-zoom/pan, and the Legend/Targets/Reports tabs. Remaining: the patch/compartment/road layer
   families and the grouped layer tree; then the MapLibre swap when a basemap is needed.
-- [ ] P18.3 Targets — per-account, per-period min/max/weights, active toggle, realized values live.
+- [ ] P18.3 Targets — **first cut live**: a table per account and period with editable min/max/weights,
+  a save that validates through the optimizer's loader, and the realized value from the selected run's
+  own CSV with a met/below/above status. Remaining: the active toggle and the resolve action, which
+  needs the streaming run surface.
 - [ ] P18.4 Reports — standard reports from the run's CSVs, user-defined definitions, CSV/PNG/HTML export.
 - [ ] P18.5 Skins — four manifests; a skin cannot enable what the service does not expose.
 - [ ] P18.6 Comparison — two runs side by side, map and account deltas, target status.

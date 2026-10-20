@@ -12,7 +12,7 @@ import json
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 import pandas as pd
 import yaml
@@ -241,6 +241,46 @@ def create_app(
             properties["treated"] = bool(treatments)
         return {"type": "FeatureCollection", "features": features, "year": year, "layer": layer}
 
+    def _target_rows() -> list[dict[str, Any]]:
+        """Return the targets as rows the browser can edit."""
+        if targets_path is None or not targets_path.is_file():
+            return []
+        return [
+            {
+                "account": target.account,
+                "year": target.year,
+                "period_width": target.period_width,
+                "minimum": target.minimum,
+                "maximum": target.maximum,
+                "min_weight": target.min_weight,
+                "max_weight": target.max_weight,
+            }
+            for target in load_targets(targets_path)
+        ]
+
+    def _write_targets(document: str) -> int:
+        """Validate a targets document with the optimizer's loader, then replace the file."""
+        if targets_path is None:
+            raise HTTPException(status_code=404, detail="the service was started without --targets")
+        parsed = yaml.safe_load(document)
+        if not isinstance(parsed, dict) or not parsed.get("targets"):
+            raise HTTPException(
+                status_code=422,
+                detail="the targets document needs a non-empty 'targets' list",
+            )
+        with tempfile.NamedTemporaryFile(
+            "w", suffix=".yaml", dir=targets_path.parent, delete=False, encoding="utf-8"
+        ) as handle:
+            handle.write(document)
+            candidate = Path(handle.name)
+        try:
+            targets = load_targets(candidate)
+        except Exception as error:  # the loader's message is the refusal the CLI would give
+            candidate.unlink(missing_ok=True)
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        shutil.move(str(candidate), targets_path)
+        return len(targets)
+
     @app.get("/api/targets", response_class=PlainTextResponse)
     def get_targets() -> str:
         """Return the targets YAML as written."""
@@ -251,27 +291,23 @@ def create_app(
         return targets_path.read_text(encoding="utf-8")
 
     @app.put("/api/targets")
-    def put_targets(body: str = Body(..., media_type="text/yaml")) -> dict[str, Any]:
-        """Validate and replace the targets YAML with the optimizer's own loader."""
-        if targets_path is None:
-            raise HTTPException(status_code=404, detail="the service was started without --targets")
-        document = yaml.safe_load(body)
-        if not isinstance(document, dict) or not document.get("targets"):
-            raise HTTPException(
-                status_code=422,
-                detail="the targets document needs a non-empty 'targets' list",
-            )
-        with tempfile.NamedTemporaryFile(
-            "w", suffix=".yaml", dir=targets_path.parent, delete=False, encoding="utf-8"
-        ) as handle:
-            handle.write(body)
-            candidate = Path(handle.name)
-        try:
-            parsed = load_targets(candidate)
-        except Exception as error:  # the loader's message is the refusal the CLI would give
-            candidate.unlink(missing_ok=True)
-            raise HTTPException(status_code=422, detail=str(error)) from error
-        shutil.move(str(candidate), targets_path)
-        return {"targets": len(parsed)}
+    def put_targets(body: Annotated[str, Body(media_type="text/yaml")]) -> dict[str, Any]:
+        """Validate and replace the targets YAML."""
+        return {"targets": _write_targets(body)}
+
+    @app.get("/api/targets.json")
+    def get_targets_json() -> list[dict[str, Any]]:
+        """Return the parsed targets, for an editor that does not parse YAML."""
+        return _target_rows()
+
+    @app.put("/api/targets.json")
+    def put_targets_json(
+        rows: Annotated[list[dict[str, Any]], Body()],
+    ) -> dict[str, Any]:
+        """Validate and replace the targets from a JSON list, writing the optimizer's YAML."""
+        if not rows:
+            raise HTTPException(status_code=422, detail="the targets list is empty")
+        document = yaml.safe_dump({"targets": rows}, sort_keys=False)
+        return {"targets": _write_targets(document)}
 
     return app

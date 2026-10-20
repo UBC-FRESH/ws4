@@ -29,3 +29,9 @@ svg#map.dragging { cursor:grabbing; }
 circle.block { stroke:rgba(0,0,0,.15); stroke-width:.4; }
 circle.treated { fill:var(--treated); }
 circle.untreated { fill:var(--untreated); fill-opacity:.55; }
+#targets-table { width:100%; border-collapse:collapse; font-size:.78rem; }
+#targets-table th, #targets-table td { border-bottom:1px solid var(--line); padding:.2rem .25rem; text-align:left; }
+#targets-table th { color:var(--muted); font-weight:600; }
+#targets-table input { width:4.2rem; font-size:.78rem; padding:.1rem .2rem; }
+#targets-table td.account { max-width:9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#save-targets { margin-top:.5rem; padding:.3rem .7rem; }

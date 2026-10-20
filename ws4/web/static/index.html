@@ -32,7 +32,13 @@
       </section>
       <section id="tab-targets" hidden>
         <h2>Targets</h2>
-        <pre id="targets">no targets file is configured</pre>
+        <p id="targets-empty" class="hint">no targets file is configured</p>
+        <table id="targets-table" hidden>
+          <thead><tr><th>Account</th><th>Year</th><th>Min</th><th>Max</th><th>Min w</th><th>Max w</th><th>Realized</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <button id="save-targets" hidden>Save targets</button>
+        <p id="targets-status" class="hint"></p>
       </section>
       <section id="tab-reports" hidden>
         <h2>Reports</h2>

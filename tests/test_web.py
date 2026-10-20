@@ -165,6 +165,19 @@ def test_targets_round_trip_and_an_invalid_document_is_refused(tmp_path: Path) -
     assert targets.read_text(encoding="utf-8") == replacement
 
 
+def test_targets_json_round_trip_and_an_empty_list_is_refused(tmp_path: Path) -> None:
+    """The editor reads and writes the parsed targets; the YAML remains the storage."""
+    client, _ = _app(tmp_path)
+    rows = client.get("/api/targets.json").json()
+    assert rows[0]["account"] == "feature.Volume"
+    rows[0]["maximum"] = 100.0
+    response = client.put("/api/targets.json", json=rows)
+    assert response.status_code == 200
+    after = client.get("/api/targets.json").json()
+    assert after[0]["maximum"] == 100.0
+    assert client.put("/api/targets.json", json=[]).status_code == 422
+
+
 def test_an_unknown_run_is_a_named_404(tmp_path: Path) -> None:
     """A missing run is a 404 that names it."""
     client, _ = _app(tmp_path)
