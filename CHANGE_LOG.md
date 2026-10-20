@@ -2027,3 +2027,10 @@ issue comments.
   are rebuilt and keeps the analyst's choice across run changes, and a non-CSV report name is built
   with `textContent`, closing the filesystem-name markup finding. Dashboard result:
   `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
+- P18.6: added the **Compare** tab. Two completed runs are read through the existing `map?year`,
+  `accounts?year` and `targets` endpoints; the map colors blocks treated only in A, only in B and in
+  both at the selected year, the target table shows both period values and statuses, and the account
+  table lists the B − A delta sorted by absolute change with a filter. All four skins expose the
+  panel. Browser check: `run-dated3` vs `web-20261020-160641-1` at year 9 gave 15 A-only, 47 B-only
+  and 1 both blocks, 2 target rows and 60 account rows with no console errors. Dashboard result:
+  `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.

@@ -128,6 +128,18 @@ distribution, spread accounts. A user-defined report is a YAML list of accounts 
 columns from `account_values.csv`, never recomputes. Export is the file the run wrote (CSV/PNG), plus a
 rendered table.
 
+## Comparison
+
+The Compare tab holds two run selectors, A and B, independent of the header's current run. The map
+is the base geometry plus a per-block membership built from the two ``map?year=`` responses; A-only,
+B-only and both are separate classes, and the legend's treated label switches to "A or B". The target
+table joins both ``targets`` responses to the configured minimum and maximum; the account table uses
+the year's account rows and sorts the union by ``|B − A|``, filters by name and caps the render at 200
+rows. Comparison is a client-side reader: no new service state, no recomputation, and the same
+``period_value`` contract. A run whose horizon is shorter than the selected year contributes no map
+blocks and is named in the summary when it has no account values at that year. The comparison panel
+is part of every shipped skin, including the read-only reviewer.
+
 ## Parallel islands
 
 The player sends `islands` (one to 64) with the start request. The service passes it as the CLI's
