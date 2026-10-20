@@ -66,8 +66,25 @@ GeoJSON file of block points or polygons with a ``block_id`` property; the map j
 one, the map endpoint refuses with a 409 that names the missing option rather than returning an empty
 map.
 
-Skins and the front end
------------------------
+Skins
+-----
+
+Four manifests ship: ``model-builder``, ``scenario-analyst``, ``scenario-browser`` and ``reviewer``.
+They are served at ``/api/skins`` (and ``/api/skins/{id}``). A manifest selects panels, layer families
+and actions; an unknown panel, layer or action is refused by name when the service starts, and a
+read-only skin may not carry a mutating action. The browser applies the manifest by hiding panels and
+disabling the target editor; the rule lives on the server, so a client cannot enable what the manifest
+does not list.
+
+Reports
+-------
+
+``GET /api/runs/{run}/reports`` lists the report files a run wrote. The application renders a CSV in a
+table (first 200 rows) and opens HTML/PNG reports directly. Standard reports are the run's own files;
+nothing is recomputed in the browser.
+
+Front end
+---------
 
 The browser application and the four skin manifests (model builder, scenario analyst, scenario
 browser, reviewer) are specified in ``notes/design/ws4-web-frontend.md``. A skin is a JSON manifest

@@ -35,3 +35,7 @@ circle.untreated { fill:var(--untreated); fill-opacity:.55; }
 #targets-table input { width:4.2rem; font-size:.78rem; padding:.1rem .2rem; }
 #targets-table td.account { max-width:9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 #save-targets { margin-top:.5rem; padding:.3rem .7rem; }
+#report-preview { margin-top:.6rem; overflow:auto; max-height:55vh; }
+#report-preview table { border-collapse:collapse; font-size:.72rem; }
+#report-preview th, #report-preview td { border-bottom:1px solid var(--line); padding:.15rem .3rem; white-space:nowrap; }
+#report-preview th { position:sticky; top:0; background:var(--panel); }

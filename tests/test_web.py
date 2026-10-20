@@ -178,6 +178,20 @@ def test_targets_json_round_trip_and_an_empty_list_is_refused(tmp_path: Path) ->
     assert client.put("/api/targets.json", json=[]).status_code == 422
 
 
+def test_the_skins_endpoint_returns_the_checked_manifests(tmp_path: Path) -> None:
+    """The service exposes the four skins and a named 404 for an unknown one."""
+    client, _ = _app(tmp_path)
+    skins = client.get("/api/skins").json()
+    assert {skin["id"] for skin in skins} == {
+        "model-builder",
+        "scenario-analyst",
+        "scenario-browser",
+        "reviewer",
+    }
+    assert client.get("/api/skins/reviewer").json()["read_only"] is True
+    assert client.get("/api/skins/nope").status_code == 404
+
+
 def test_an_unknown_run_is_a_named_404(tmp_path: Path) -> None:
     """A missing run is a 404 that names it."""
     client, _ = _app(tmp_path)

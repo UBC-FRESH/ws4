@@ -1,0 +1,8 @@
+{
+  "id": "model-builder",
+  "title": "Model builder",
+  "panels": ["legend", "reports"],
+  "layers": ["blocks", "treatments"],
+  "actions": ["export"],
+  "read_only": false
+}

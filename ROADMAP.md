@@ -748,8 +748,13 @@ current period from the cumulative total.
   a save that validates through the optimizer's loader, and the realized value from the selected run's
   own CSV with a met/below/above status. Remaining: the active toggle and the resolve action, which
   needs the streaming run surface.
-- [ ] P18.4 Reports — standard reports from the run's CSVs, user-defined definitions, CSV/PNG/HTML export.
-- [ ] P18.5 Skins — four manifests; a skin cannot enable what the service does not expose.
+- [ ] P18.4 Reports — **first cut live**: the report tree from the run directory, a CSV preview table,
+  and direct links for HTML/PNG. Remaining: the named standard reports (account summary, route cost,
+  patch/spread) and user-defined definitions with export.
+- [ ] P18.5 Skins — **first cut live**: four checked manifests (`model-builder`, `scenario-analyst`,
+  `scenario-browser`, `reviewer`), served at `/api/skins`, a selector in the shell, panel/layer hiding,
+  and the read-only rule enforced in the loader (a read-only skin cannot carry a mutating action). The
+  comparison panel remains P18.6.
 - [ ] P18.6 Comparison — two runs side by side, map and account deltas, target status.
 
 Acceptance: a session loads a dataset and run, shows the three layer families and moves through the

@@ -1959,3 +1959,11 @@ issue comments.
   maximum and weights, saves through that path, and shows the realized value from the selected run's
   own `account_values.csv` with a met/below/above status. Remaining: the active toggle and the resolve
   action. Tests: ten service cases. Dashboard: **GREEN**.
+- P18.4–P18.5 **reports and skins, first cut.** The Reports tab lists the run's own report files and
+  renders a CSV in a table (first 200 rows) while HTML/PNG reports open directly — nothing is
+  recomputed in the browser. Four skin manifests (`model-builder`, `scenario-analyst`,
+  `scenario-browser`, `reviewer`) are checked against a panel/layer/action registry when the service
+  starts; an unknown name is refused by name, a duplicate id is refused, and a read-only skin may not
+  carry a mutating action. `/api/skins` exposes them, and the shell applies a skin by hiding panels and
+  disabling the target editor; the rule lives on the server. Tests: `tests/test_web_skins.py` (four
+  cases) and the service cases (fifteen total). Dashboard: **GREEN**.

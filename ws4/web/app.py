@@ -21,6 +21,7 @@ from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 from ..opt.objective import load_targets
+from .skins import load_skins
 
 _REPORT_SUFFIXES = {".csv", ".html", ".png", ".json", ".txt"}
 
@@ -88,6 +89,7 @@ def create_app(
     geometry_path = Path(geometry).resolve() if geometry is not None else None
     targets_path = Path(targets).resolve() if targets is not None else None
     app = FastAPI(title="WS4", version="0.1.0")
+    skins = load_skins(Path(__file__).with_name("skins"))
     static_dir = Path(__file__).with_name("static")
     if static_dir.is_dir():
         app.mount("/static", StaticFiles(directory=static_dir), name="static")
@@ -114,17 +116,34 @@ def create_app(
         return pd.read_csv(path)
 
     @app.get("/", response_class=HTMLResponse)
-    def index() -> str:
+    def index() -> HTMLResponse:
         """Return the browser application (a dependency-free shell until the map library lands)."""
         page = static_dir / "index.html"
         if not page.is_file():
-            return "<h1>WS4</h1><p>The browser application is not installed.</p>"
-        return page.read_text(encoding="utf-8")
+            return HTMLResponse("<h1>WS4</h1><p>The browser application is not installed.</p>")
+        # the shell must never be stale: a cached index with a new script (or the reverse) is a bug
+        return HTMLResponse(
+            page.read_text(encoding="utf-8"),
+            headers={"Cache-Control": "no-store, must-revalidate"},
+        )
 
     @app.get("/health")
     def health() -> dict[str, str]:
         """Return a liveness probe."""
         return {"status": "ok"}
+
+    @app.get("/api/skins")
+    def skin_list() -> list[dict[str, Any]]:
+        """Return the skin manifests, checked when the service started."""
+        return [skin.row() for skin in skins.values()]
+
+    @app.get("/api/skins/{skin_id}")
+    def skin_one(skin_id: str) -> dict[str, Any]:
+        """Return one skin manifest, or a named 404."""
+        skin = skins.get(skin_id)
+        if skin is None:
+            raise HTTPException(status_code=404, detail=f"no skin named {skin_id!r}")
+        return skin.row()
 
     @app.get("/api/summary")
     def summary() -> dict[str, Any]:

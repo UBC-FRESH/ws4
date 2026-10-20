@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [] };
 
 const $ = (id) => document.getElementById(id);
 const statusLine = (text) => { $('status').textContent = text; };
@@ -141,6 +141,42 @@ async function loadPeriods() {
   $('year-label').textContent = state.year;
 }
 
+function applySkin(skin) {
+  state.skin = skin;
+  const panels = new Set(skin.panels ?? ['legend', 'targets', 'reports']);
+  for (const button of document.querySelectorAll('nav.tabs button')) {
+    button.hidden = !panels.has(button.dataset.tab);
+  }
+  const active = document.querySelector('nav.tabs button.active');
+  if (active && active.hidden) {
+    const first = [...document.querySelectorAll('nav.tabs button')].find((button) => !button.hidden);
+    if (first) first.click();
+  }
+  $('show-treated').closest('label').hidden = !(skin.layers ?? []).includes('treatments');
+  $('show-untreated').closest('label').hidden = !(skin.layers ?? []).includes('blocks');
+  const readOnly = Boolean(skin.read_only) || !(skin.actions ?? []).includes('edit_targets');
+  $('save-targets').hidden = readOnly || !document.querySelector('#targets-table:not([hidden])');
+  for (const input of document.querySelectorAll('#targets-table input')) input.disabled = readOnly;
+}
+
+async function loadSkins() {
+  try {
+    const skins = await api('api/skins');
+    const select = $('skin');
+    for (const skin of skins) {
+      const option = document.createElement('option');
+      option.value = skin.id;
+      option.textContent = skin.title;
+      select.append(option);
+    }
+    const preferred = skins.find((skin) => skin.id === 'scenario-analyst') ?? skins[0];
+    if (preferred) {
+      select.value = preferred.id;
+      applySkin(preferred);
+    }
+  } catch { /* the application still works without skins */ }
+}
+
 function numberInput(value, field, index) {
   const input = document.createElement('input');
   input.type = 'number';
@@ -203,6 +239,7 @@ async function loadTargets() {
       tr.append(realized);
       body.append(tr);
     });
+    if (state.skin) applySkin(state.skin);
   } catch (error) {
     empty.hidden = false;
     empty.textContent = `targets unavailable: ${error.message}`;
@@ -235,10 +272,67 @@ async function saveTargets() {
   }
 }
 
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let quoted = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+    if (quoted) {
+      if (character === '"') {
+        if (text[index + 1] === '"') { field += '"'; index += 1; } else quoted = false;
+      } else field += character;
+    } else if (character === '"') quoted = true;
+    else if (character === ',') { row.push(field); field = ''; }
+    else if (character === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+    else if (character !== '\r') field += character;
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+function renderReport(rows) {
+  const preview = $('report-preview');
+  preview.replaceChildren();
+  if (!rows.length) { preview.textContent = 'the report is empty'; return; }
+  const table = document.createElement('table');
+  const head = document.createElement('thead');
+  const header = document.createElement('tr');
+  for (const name of rows[0]) {
+    const cell = document.createElement('th'); cell.textContent = name; header.append(cell);
+  }
+  head.append(header); table.append(head);
+  const body = document.createElement('tbody');
+  for (const row of rows.slice(1, 201)) {
+    const tr = document.createElement('tr');
+    for (const value of row) { const cell = document.createElement('td'); cell.textContent = value; tr.append(cell); }
+    body.append(tr);
+  }
+  table.append(body); preview.append(table);
+}
+
+async function showReport(name) {
+  const preview = $('report-preview');
+  const url = `api/runs/${encodeURIComponent(state.run)}/reports/${encodeURIComponent(name)}`;
+  if (!name.toLowerCase().endsWith('.csv')) {
+    preview.innerHTML = `<a href="${url}" target="_blank">open ${name}</a>`;
+    return;
+  }
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(response.statusText);
+    renderReport(parseCsv(await response.text()));
+  } catch (error) {
+    preview.textContent = `report unavailable: ${error.message}`;
+  }
+}
+
 async function loadReports() {
   if (!state.run) return;
   const list = $('reports');
   list.replaceChildren();
+  $('report-preview').replaceChildren();
   try {
     const body = await api(`api/runs/${encodeURIComponent(state.run)}/reports`);
     for (const report of body) {
@@ -246,7 +340,7 @@ async function loadReports() {
       const link = document.createElement('a');
       link.href = `api/runs/${encodeURIComponent(state.run)}/reports/${encodeURIComponent(report.name)}`;
       link.textContent = report.name;
-      link.target = '_blank';
+      link.addEventListener('click', (event) => { event.preventDefault(); showReport(report.name); });
       item.append(link);
       list.append(item);
     }
@@ -267,6 +361,7 @@ function showDetail(block) {
 function wireControls() {
   $('run').addEventListener('change', async (event) => {
     state.run = event.target.value;
+    await loadSkins();
     await loadPeriods();
     await loadTargets();
     await loadReports();
@@ -277,6 +372,11 @@ function wireControls() {
     $('year-label').textContent = state.year;
   });
   $('year').addEventListener('change', () => loadMap());
+  $('skin').addEventListener('change', async (event) => {
+    const skins = await api('api/skins');
+    const skin = skins.find((candidate) => candidate.id === event.target.value);
+    if (skin) { applySkin(skin); await loadTargets(); }
+  });
   $('save-targets').addEventListener('click', saveTargets);
   $('show-treated').addEventListener('change', applyVisibility);
   $('show-untreated').addEventListener('change', applyVisibility);
