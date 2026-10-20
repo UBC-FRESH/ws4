@@ -709,12 +709,15 @@ not all built then).
   period; an opened road preferred over a cheaper unopened one.
 - [x] P17.4 Measure and record — the per-period ratios and the early build spike against the reference.
 
-- [ ] P17.5 The maintenance charge — the accounting fix (below) puts WS4's distinct road use at
-  **0.77×** the reference's, not 2.55×; the earlier joint-assignment hypothesis is withdrawn. What
-  remains is `MAINTAIN_EXPENSE` at **3.22×** while road use is lower: WS4 charges maintenance per used
-  segment per year and sums the period, while the reference's period charge is almost exactly its period
-  `LENGTH`, which looks like once per period. Establish the reference's charging period and rate from
-  its own tables, then either fix the model or record the divergence by name.
+- [x] P17.5 The maintenance charge — the ledger charged it per year and the report summed the period;
+  the reference charges once per period. Charging once over the period's union gives **1,052,489**
+  against the reference's 1,126,465 (0.93×), where the per-year sum was 3,622,033 (3.22×). The charge is
+  booked in the first year of the period in which the segment is used.
+- [ ] P17.6 The road/haul trade-off — with the accounting definitions matched, WS4 builds and uses less
+  road (`LENGTH` 0.77×, `BUILTLENGTH` 0.53×) and hauls for less (0.56×) for the same volume. Explain
+  and measure the difference: is it the reference's road-cost-aware solve, its candidate network, or
+  the block-to-mill assignment? Decide whether to price road in WS4's objective or record the
+  divergence by name.
 
 Acceptance: the tests fail on whole-network routing and pass on opened routing; the 2026 `LENGTH` ratio
 moves toward 1 with an early `BUILTLENGTH` spike; the remaining gap is measured; dashboard green. **The

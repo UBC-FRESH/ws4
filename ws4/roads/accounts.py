@@ -898,34 +898,62 @@ class RouteCostLedger:
         self._flows.clear()
 
     def _charge_maintenance(self) -> None:
-        """Charge each used segment's maintenance once for the period, from the traffic on it.
+        """Charge each used segment's maintenance once per period, from the traffic on it.
 
-        Maintenance is a function of the traffic a road carries, so it is charged for a period
-        after every flow of that period is in — not once per route, which is what a per-use
-        charge amounts to, and not per produced product, which is what it used to be. Nothing is
-        charged for a period a segment was not used at all. Setting rather than adding makes this
-        idempotent, which is what lets every reader call it.
+        The reference charges a used segment once a period, whatever traffic passes over it:
+        nothing when nothing uses it, and the segment's annual maintenance cost as soon as
+        anything does. The charge is booked in the first year of the period in which the segment
+        is used, so a period's row carries one charge rather than one per year; the report's
+        period sums are then the reference's. Nothing is charged for a period a segment was not
+        used at all. Setting rather than adding makes this idempotent, which is what lets every
+        reader call it.
         """
-        for (year, destination), used_segments in self._dest_segments.items():
-            total = 0.0
-            for segment_id in used_segments:
-                traffic = self._traffic.get((year, destination, segment_id), 0.0)
-                charge = self.maintenance.of(self._by_id[segment_id].maintain_cost, traffic)
-                total += charge
-                if self.collect:
-                    per_dest = self._by_destination.get((year, destination, segment_id))
-                    if per_dest is not None:
-                        per_dest.maintain_expense = charge
+        width = max(int(self.period_width), 1)
+
+        def period_of(year: int) -> int:
+            return 0 if year <= 0 else (year - 1) // width + 1
+
+        for state in self._by_destination.values():
+            state.maintain_expense = 0.0
+        for totals in self._dest_totals.values():
+            totals["maintain"] = 0.0
+        traffic: dict[tuple[int, str, int], float] = {}
+        first_year: dict[tuple[int, str, int], int] = {}
+        for (year, destination, segment_id), volume in self._traffic.items():
+            key = (period_of(year), destination, segment_id)
+            traffic[key] = traffic.get(key, 0.0) + volume
+            if key not in first_year or year < first_year[key]:
+                first_year[key] = year
+        for key, volume in traffic.items():
+            _period, destination, segment_id = key
+            year = first_year[key]
+            charge = self.maintenance.of(self._by_id[segment_id].maintain_cost, volume)
             self._dest_totals.setdefault(
                 (year, destination), {"haul": 0.0, "build": 0.0, "maintain": 0.0, "volume": 0.0}
-            )["maintain"] = total
+            )["maintain"] += charge
+            if self.collect:
+                per_dest = self._by_destination.get((year, destination, segment_id))
+                if per_dest is not None:
+                    per_dest.maintain_expense = charge
         if self.collect:
             # the network-wide figure is a property of the segment, so it is charged from the
             # traffic every destination put on it, not from one destination's share
-            for (_year, segment_id), state in self._segments.items():
-                state.maintain_expense = self.maintenance.of(
-                    self._by_id[segment_id].maintain_cost, state.volume
-                )
+            for state in self._segments.values():
+                state.maintain_expense = 0.0
+            segment_traffic: dict[tuple[int, int], float] = {}
+            segment_year: dict[tuple[int, int], int] = {}
+            for (year, _destination, segment_id), volume in self._traffic.items():
+                segment_key = (period_of(year), segment_id)
+                segment_traffic[segment_key] = segment_traffic.get(segment_key, 0.0) + volume
+                if segment_key not in segment_year or year < segment_year[segment_key]:
+                    segment_year[segment_key] = year
+            for segment_key, volume in segment_traffic.items():
+                _period, segment_id = segment_key
+                charged = self._segments.get((segment_year[segment_key], segment_id))
+                if charged is not None:
+                    charged.maintain_expense = self.maintenance.of(
+                        self._by_id[segment_id].maintain_cost, volume
+                    )
 
     def route_rows(self) -> pd.DataFrame:
         """Return the per-product routing rows.
