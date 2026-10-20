@@ -108,3 +108,25 @@ circle.untreated { fill:var(--untreated); fill-opacity:.55; }
 .window-dot.above { fill:#d97706; }
 .window-axis { stroke:var(--line); }
 .window-label { fill:var(--muted); font-size:8px; }
+.compare-runs { display:flex; flex-wrap:wrap; gap:.35rem 1rem; margin:.35rem 0 .5rem; }
+.compare-runs label { gap:.3rem; }
+.compare-runs select { max-width:12rem; }
+.compare-swatch { display:inline-block; width:.55rem; height:.55rem; border-radius:.15rem; margin:0 .12rem; vertical-align:middle; }
+.compare-swatch.compare-a { background:#c0392b; }
+.compare-swatch.compare-b { background:#1f6feb; }
+.compare-swatch.compare-both { background:#6b4c9a; }
+circle.compare-a, path.compare-a { fill:#c0392b; }
+circle.compare-b, path.compare-b { fill:#1f6feb; }
+circle.compare-both, path.compare-both { fill:#6b4c9a; }
+#compare-targets, #compare-accounts { width:100%; border-collapse:collapse; font-size:.74rem; }
+#compare-targets th, #compare-targets td,
+#compare-accounts th, #compare-accounts td { border-bottom:1px solid var(--line); padding:.15rem .25rem; text-align:left; }
+#compare-targets th, #compare-accounts th { color:var(--muted); font-weight:600; }
+#compare-targets td.num, #compare-accounts td.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+#compare-accounts td.account { max-width:9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#compare-targets td.met { color:var(--untreated); }
+#compare-targets td.below { color:var(--treated); }
+#compare-targets td.above { color:#b45309; }
+.compare-delta-positive { color:#1f6feb; }
+.compare-delta-negative { color:#c0392b; }
+#compare-filter { width:100%; margin:.2rem 0 .4rem; padding:.25rem .35rem; border:1px solid var(--line); border-radius:.35rem; font:inherit; font-size:.8rem; }

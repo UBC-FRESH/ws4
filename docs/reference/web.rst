@@ -116,6 +116,17 @@ read-only skin may not carry a mutating action. The browser applies the manifest
 disabling the target editor; the rule lives on the server, so a client cannot enable what the manifest
 does not list.
 
+Comparison
+----------
+
+The **Compare** tab reads two completed runs through the existing reader endpoints:
+``/api/runs/{run}/map?year=``, ``/api/runs/{run}/accounts?year=`` and
+``/api/runs/{run}/targets``. At the selected year the map colors blocks treated only in A, only in
+B, and in both; the target table shows each target's period value and status for both runs, and the
+account table lists the per-account delta ``B − A``, sorted by absolute change and filterable. The
+server computes nothing new: the target values use the same ``period_value`` rule, and a run with no
+values at the year is named rather than silently shown as zero everywhere.
+
 Chat agent
 ----------
 

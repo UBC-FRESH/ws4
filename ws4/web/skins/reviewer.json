@@ -1,8 +1,15 @@
 {
   "id": "reviewer",
   "title": "Reviewer",
-  "panels": ["targets", "reports"],
-  "layers": ["blocks", "treatments"],
+  "panels": [
+    "targets",
+    "reports",
+    "comparison"
+  ],
+  "layers": [
+    "blocks",
+    "treatments"
+  ],
   "actions": [],
   "read_only": true
 }

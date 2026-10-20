@@ -756,7 +756,10 @@ current period from the cumulative total.
   `scenario-browser`, `reviewer`), served at `/api/skins`, a selector in the shell, panel/layer hiding,
   and the read-only rule enforced in the loader (a read-only skin cannot carry a mutating action). The
   comparison panel remains P18.6.
-- [ ] P18.6 Comparison — two runs side by side, map and account deltas, target status.
+- [x] P18.6 Comparison — two runs side by side, map and account deltas, target status. The Compare
+  tab reads both runs through the existing map, accounts and targets endpoints; the map colors
+  A-only/B-only/both, the target table shows each run's period value and status, and the account
+  table is sorted by absolute delta and filterable.
 
 Acceptance: a session loads a dataset and run, shows the three layer families and moves through the
 horizon; a target edit round-trips and a re-solve matches the CLI's penalty; a report renders from the

@@ -1,8 +1,20 @@
 {
   "id": "scenario-analyst",
   "title": "Scenario analyst",
-  "panels": ["legend", "targets", "reports"],
-  "layers": ["blocks", "treatments"],
-  "actions": ["edit_targets", "save_targets", "export"],
+  "panels": [
+    "legend",
+    "targets",
+    "reports",
+    "comparison"
+  ],
+  "layers": [
+    "blocks",
+    "treatments"
+  ],
+  "actions": [
+    "edit_targets",
+    "save_targets",
+    "export"
+  ],
   "read_only": false
 }
