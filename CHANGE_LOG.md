@@ -2034,3 +2034,12 @@ issue comments.
   panel. Browser check: `run-dated3` vs `web-20261020-160641-1` at year 9 gave 15 A-only, 47 B-only
   and 1 both blocks, 2 target rows and 60 account rows with no console errors. Dashboard result:
   `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
+- P18.2 first slice: the Legend tab is now a grouped layer tree. It reads
+  `/api/runs/{run}/layers` and offers current treatment, cumulative through year (current red,
+  earlier tan), and patch size classes from `patch_membership.csv`, with a checkbox per class. A run
+  with no schedule gets its period range from patch membership or account values, so
+  `run-harvested-flow` is readable. Roads and spread compartments are shown as unavailable with the
+  reason: run outputs carry no segment geometry or compartment membership. Browser check: year 9 of
+  `run-dated3` gives 16 current and 1,155 earlier blocks; `run-harvested-flow` shows 16 patch blocks
+  in four classes, and unchecking 0–10 leaves five. Dashboard result: `python scripts/dashboard.py`
+  reports `OVERALL: GREEN` on all seven gates.

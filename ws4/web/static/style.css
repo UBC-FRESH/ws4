@@ -130,3 +130,12 @@ circle.compare-both, path.compare-both { fill:#6b4c9a; }
 .compare-delta-positive { color:#1f6feb; }
 .compare-delta-negative { color:#c0392b; }
 #compare-filter { width:100%; margin:.2rem 0 .4rem; padding:.25rem .35rem; border:1px solid var(--line); border-radius:.35rem; font:inherit; font-size:.8rem; }
+.layer-tree { display:flex; flex-direction:column; gap:.35rem; margin:.3rem 0 .5rem; }
+.layer-group { border:1px solid var(--line); border-radius:.4rem; padding:.3rem .4rem; }
+.layer-group-title { font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:.15rem; }
+.layer-option { display:flex; align-items:center; gap:.35rem; font-size:.8rem; margin:.1rem 0; }
+.layer-option.disabled { color:var(--muted); }
+.layer-option .hint { margin-left:auto; font-size:.68rem; }
+.layer-swatch { width:.55rem; height:.55rem; border-radius:.15rem; flex:none; }
+.block.current { fill:var(--treated); }
+.block.past { fill:#d9a066; }

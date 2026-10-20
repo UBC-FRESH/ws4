@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [] };
 
 const $ = (id) => document.getElementById(id);
 const statusLine = (text) => { $('status').textContent = text; };
@@ -93,6 +93,7 @@ function render(refit = true) {
     const properties = feature.properties ?? {};
     let isTreated;
     let klass;
+    let fill = null;
     if (state.compareView && state.compare) {
       const flags = state.compare.blocks.get(String(properties.block_id)) ?? {};
       const inA = Boolean(flags.a);
@@ -105,6 +106,16 @@ function render(refit = true) {
           : inB
             ? 'compare-b treated'
             : 'untreated';
+    } else if (state.layerMode === 'patches' && state.layers?.patches) {
+      const patchClass = properties.patch_class;
+      isTreated = Boolean(properties.treated) && state.patchClasses.has(patchClass);
+      klass = isTreated ? 'patch-block treated' : 'untreated';
+      if (isTreated) fill = patchColor(patchClass);
+    } else if (state.layerMode === 'cumulative' && state.layers?.cumulative) {
+      isTreated = Boolean(properties.treated);
+      klass = isTreated
+        ? (properties.current ? 'current treated' : 'past treated')
+        : 'untreated';
     } else {
       isTreated = Boolean(properties.treated);
       if (state.live.active) {
@@ -123,6 +134,7 @@ function render(refit = true) {
       circle.setAttribute('cy', cy.toFixed(1));
       circle.setAttribute('r', '2.2');
       circle.setAttribute('class', `block ${klass}`);
+      if (fill) circle.style.fill = fill;
       circle.dataset.block = properties.block_id;
       circles.push(circle);
       group.append(circle);
@@ -135,6 +147,7 @@ function render(refit = true) {
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('d', d);
       path.setAttribute('class', `block ${klass}`);
+      if (fill) path.style.fill = fill;
       path.dataset.block = properties.block_id;
       paths.push(path);
       group.append(path);
@@ -144,9 +157,7 @@ function render(refit = true) {
   viewport.append(groups.untreated, groups.treated);
   $('n-treated').textContent = treated.toLocaleString();
   $('n-untreated').textContent = untreated.toLocaleString();
-  $('treated-label').textContent = state.compareView && state.compare
-    ? 'Treated in A or B'
-    : 'Treated in the year';
+  $('treated-label').textContent = layerLabel();
   $('scale').textContent = `year ${state.year} · 1 px ≈ ${Math.round(1 / base.scale)} m`;
   applyVisibility();
 }
@@ -161,11 +172,20 @@ function applyVisibility() {
 async function loadMap() {
   if (!state.run) return;
   statusLine('loading map…');
+  const layer = state.layerMode === 'patches' && state.layers?.patches
+    ? 'patches'
+    : state.layerMode === 'cumulative' && state.layers?.cumulative
+      ? 'cumulative'
+      : state.layers && !state.layers.treatments
+        ? 'blocks'
+        : 'treatments';
   try {
-    const body = await api(`api/runs/${encodeURIComponent(state.run)}/map?year=${state.year}`);
+    const body = await api(
+      `api/runs/${encodeURIComponent(state.run)}/map?year=${state.year}&layer=${layer}`,
+    );
     state.features = body.features ?? [];
     render();
-    statusLine(`${state.features.length.toLocaleString()} blocks · year ${state.year}`);
+    statusLine(`${state.features.length.toLocaleString()} blocks · ${layer} · year ${state.year}`);
   } catch (error) {
     statusLine(`map unavailable: ${error.message}`);
   }
@@ -225,7 +245,7 @@ function clearCompareView() {
   if (!state.compareView) return;
   state.compareView = false;
   state.compare = null;
-  $('treated-label').textContent = 'Treated in the year';
+  $('treated-label').textContent = layerLabel();
   if (state.features.length) {
     if (state.live.active) render(false); else loadMap();
   }
@@ -394,7 +414,152 @@ async function loadComparison() {
     $('compare-summary').textContent = `comparison unavailable: ${error.message}`;
     $('compare-targets').hidden = true;
     $('compare-accounts').hidden = true;
-    $('treated-label').textContent = 'Treated in the year';
+    $('treated-label').textContent = layerLabel();
+  }
+}
+
+const PATCH_COLORS = { '0_10': '#f2c14e', '10_50': '#f78154', '50_150': '#9b5de5', '150_9999999': '#3a86ff' };
+const PATCH_FALLBACK = ['#f2c14e', '#f78154', '#9b5de5', '#3a86ff', '#00bbf9', '#00f5d4'];
+
+function patchColor(klass) {
+  if (PATCH_COLORS[klass]) return PATCH_COLORS[klass];
+  const index = Math.max(0, state.patchCatalog.indexOf(klass));
+  return PATCH_FALLBACK[index % PATCH_FALLBACK.length];
+}
+
+function patchLabel(klass) {
+  const labels = { '0_10': '0–10 ha', '10_50': '10–50 ha', '50_150': '50–150 ha', '150_9999999': '150+ ha' };
+  return labels[klass] ?? String(klass).replaceAll('_', '–');
+}
+
+function layerLabel() {
+  if (state.compareView && state.compare) return 'Treated in A or B';
+  if (state.layerMode === 'cumulative') return 'Treated through the year';
+  if (state.layerMode === 'patches') return 'Patches in the year';
+  return 'Treated in the year';
+}
+
+function renderLayerTree() {
+  const tree = $('layer-tree');
+  if (!tree) return;
+  tree.replaceChildren();
+  const info = state.layers;
+  if (!info) return;
+  const layers = state.skin?.layers ?? ['blocks', 'treatments', 'patches', 'roads'];
+  const group = (title) => {
+    const box = document.createElement('div');
+    box.className = 'layer-group';
+    const heading = document.createElement('div');
+    heading.className = 'layer-group-title';
+    heading.textContent = title;
+    box.append(heading);
+    tree.append(box);
+    return box;
+  };
+  const modeGroup = group('Colour by');
+  const addMode = (value, label, enabled) => {
+    const wrapper = document.createElement('label');
+    wrapper.className = `layer-option${enabled ? '' : ' disabled'}`;
+    const input = document.createElement('input');
+    input.type = 'radio';
+    input.name = 'layer-mode';
+    input.value = value;
+    input.checked = state.layerMode === value;
+    input.disabled = !enabled;
+    input.addEventListener('change', () => {
+      state.layerMode = value;
+      renderLayerTree();
+      loadMap();
+    });
+    const text = document.createElement('span');
+    text.textContent = label;
+    wrapper.append(input, text);
+    modeGroup.append(wrapper);
+  };
+  addMode('current', 'Current treatment', Boolean(info.treatments) && layers.includes('treatments'));
+  addMode('cumulative', 'Cumulative through year', Boolean(info.cumulative) && layers.includes('treatments'));
+  addMode('patches', 'Patch size class', Boolean(info.patches) && layers.includes('patches'));
+  if (info.patches && layers.includes('patches') && state.patchCatalog.length) {
+    const patchGroup = group('Patch size classes');
+    for (const klass of state.patchCatalog) {
+      const wrapper = document.createElement('label');
+      wrapper.className = 'layer-option';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.checked = state.patchClasses.has(klass);
+      input.addEventListener('change', () => {
+        if (input.checked) state.patchClasses.add(klass); else state.patchClasses.delete(klass);
+        render(false);
+      });
+      const swatch = document.createElement('span');
+      swatch.className = 'layer-swatch';
+      swatch.style.background = patchColor(klass);
+      const text = document.createElement('span');
+      text.textContent = patchLabel(klass);
+      wrapper.append(input, swatch, text);
+      patchGroup.append(wrapper);
+    }
+  }
+  if (!info.roads || !info.compartments) {
+    const unavailable = group('Not written by this run');
+    for (const [label, available, reason] of [
+      ['Used roads', info.roads, info.roads_reason],
+      ['Spread compartments', info.compartments, info.compartments_reason],
+    ]) {
+      if (available) continue;
+      const wrapper = document.createElement('label');
+      wrapper.className = 'layer-option disabled';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.disabled = true;
+      const text = document.createElement('span');
+      text.textContent = label;
+      const why = document.createElement('span');
+      why.className = 'hint';
+      why.textContent = reason ?? 'unavailable';
+      wrapper.append(input, text, why);
+      unavailable.append(wrapper);
+    }
+  }
+  if (!info.treatments && !info.patches) {
+    const note = document.createElement('p');
+    note.className = 'hint';
+    note.textContent = 'only the block geometry is available';
+    tree.append(note);
+  }
+}
+
+async function loadLayers() {
+  const hint = $('layers-hint');
+  try {
+    const info = await api(`api/runs/${encodeURIComponent(state.run)}/layers`);
+    state.layers = info;
+    state.patchCatalog = [...(info.patch_classes ?? [])].sort(
+      (left, right) => parseInt(left, 10) - parseInt(right, 10),
+    );
+    state.patchClasses = new Set(state.patchCatalog);
+    if (state.layerMode === 'patches' && !info.patches) {
+      state.layerMode = info.treatments ? 'current' : 'patches';
+    }
+    if (state.layerMode === 'cumulative' && !info.cumulative) {
+      state.layerMode = info.patches ? 'patches' : 'current';
+    }
+    if (state.layerMode === 'current' && !info.treatments) {
+      state.layerMode = info.patches ? 'patches' : 'current';
+    }
+    renderLayerTree();
+    const available = [];
+    if (info.treatments) available.push('treatments');
+    if (info.patches) available.push('patches');
+    hint.textContent = available.length
+      ? `available: ${available.join(', ')}`
+      : 'this run has no treatment or patch artifact';
+  } catch (error) {
+    state.layers = null;
+    state.patchCatalog = [];
+    state.patchClasses = new Set();
+    renderLayerTree();
+    hint.textContent = `layers unavailable: ${error.message}`;
   }
 }
 
@@ -429,6 +594,7 @@ function applySkin(skin) {
   $('save-targets').hidden = readOnly || !document.querySelector('#targets-table:not([hidden])');
   $('start-run').hidden = Boolean(skin.read_only);
   for (const input of document.querySelectorAll('#targets-table input')) input.disabled = readOnly;
+  renderLayerTree();
 }
 
 async function loadSkins() {
@@ -911,7 +1077,7 @@ async function finishRun(id) {
   try {
     const summary = await api('api/summary');
     if (await fillRuns(summary, id)) {
-      await loadPeriods(); await loadTargets(); await loadReports(); await loadMap();
+      await loadPeriods(); await loadLayers(); await loadTargets(); await loadReports(); await loadMap();
     }
   } catch { /* the run is done; a refresh failure is not fatal */ }
   window.setTimeout(() => { $('run-panel').hidden = true; }, 6000);
@@ -1160,6 +1326,15 @@ function showDetail(block) {
     $('detail').innerHTML = `<b>Block ${properties.block_id}</b><br>` +
       `A: ${flags.a ? 'treated' : '—'} · B: ${flags.b ? 'treated' : '—'}<br>` +
       `A only: ${flags.a && !flags.b ? 'yes' : 'no'} · B only: ${flags.b && !flags.a ? 'yes' : 'no'}`;
+  } else if (state.layerMode === 'patches' && state.layers?.patches) {
+    $('detail').innerHTML = `<b>Block ${properties.block_id}</b><br>` +
+      `patch: ${properties.patch ?? '—'} · class: ${properties.patch_class ?? '—'}<br>` +
+      `area: ${properties.patch_area_ha === null || properties.patch_area_ha === undefined ? '—' : Number(properties.patch_area_ha).toLocaleString()} ha` +
+      ` · account: ${properties.patch_account ?? '—'}`;
+  } else if (state.layerMode === 'cumulative' && state.layers?.cumulative) {
+    $('detail').innerHTML = `<b>Block ${properties.block_id}</b><br>` +
+      `current: ${properties.current ? 'yes' : 'no'} · earlier: ${properties.treated && !properties.current ? 'yes' : 'no'}<br>` +
+      `treatments to date: ${(properties.treatments ?? []).join(', ') || '—'}`;
   } else {
     $('detail').innerHTML = `<b>Block ${properties.block_id}</b><br>` +
       `treated: ${properties.treated ? 'yes' : 'no'}<br>` +
@@ -1313,6 +1488,7 @@ function wireControls() {
     await loadSkins();
     await loadAgent();
     await loadPeriods();
+    await loadLayers();
     await loadTargets();
     await loadReports();
     syncCompareRuns();
@@ -1425,6 +1601,7 @@ async function start() {
     await loadSkins();
     await loadAgent();
     await loadPeriods();
+    await loadLayers();
     await loadTargets();
     await loadReports();
     await loadMap();

@@ -814,12 +814,50 @@ def create_app(
 
     @app.get("/api/runs/{run}/periods")
     def periods(run: str) -> dict[str, Any]:
-        """Return the schedule's periods, so the period control has the run's own range."""
-        schedule = read_csv(run_dir(run), "schedule.csv")
-        if schedule.empty:
-            return {"min": 0, "max": 0, "values": []}
-        values = sorted({int(value) for value in schedule["period"].astype("int64").tolist()})
-        return {"min": values[0], "max": values[-1], "values": values}
+        """Return the run's periods from its schedule, patch membership or account values."""
+        directory = run_dir(run)
+        for name, column in (
+            ("schedule.csv", "period"),
+            ("patch_membership.csv", "year"),
+            ("account_values.csv", "year"),
+        ):
+            if not (directory / name).is_file():
+                continue
+            frame = read_csv(directory, name)
+            if frame.empty:
+                continue
+            values = sorted({int(value) for value in frame[column].astype("int64").tolist()})
+            if values:
+                return {"min": values[0], "max": values[-1], "values": values}
+        return {"min": 0, "max": 0, "values": []}
+
+    @app.get("/api/runs/{run}/layers")
+    def layer_info(run: str) -> dict[str, Any]:
+        """Return the map layers this run can actually draw, and the patch classes it has."""
+        directory = run_dir(run)
+        schedule = (directory / "schedule.csv").is_file()
+        patches = (directory / "patch_membership.csv").is_file()
+        patch_classes: list[str] = []
+        patch_accounts: list[str] = []
+        if patches:
+            frame = read_csv(directory, "patch_membership.csv")
+            if not frame.empty:
+                if "class" in frame:
+                    patch_classes = sorted({str(value) for value in frame["class"].dropna()})
+                if "account" in frame:
+                    patch_accounts = sorted({str(value) for value in frame["account"].dropna()})
+        return {
+            "blocks": True,
+            "treatments": schedule,
+            "cumulative": schedule,
+            "patches": patches,
+            "roads": False,
+            "compartments": False,
+            "patch_classes": patch_classes,
+            "patch_accounts": patch_accounts,
+            "roads_reason": "no route geometry is written by a run",
+            "compartments_reason": "no compartment membership artifact is written by a run",
+        }
 
     @app.get("/api/runs/{run}/map")
     def map_features(
@@ -827,38 +865,92 @@ def create_app(
         year: int | None = Query(default=None),
         layer: str = Query(default="treatments"),
     ) -> dict[str, Any]:
-        """Return a GeoJSON FeatureCollection of every block, with the year's treatment flags.
+        """Return a GeoJSON FeatureCollection of every block for one map layer.
 
-        The layer is the base geometry; ``treated`` and ``treatments`` are properties on each
-        feature, so the client can style and toggle without a second request. An unsupported
-        layer name is refused by name.
+        ``treatments`` is the selected period, ``cumulative`` marks current and earlier
+        treatments, ``patches`` colors the selected year's patch membership, and ``blocks`` is
+        the bare geometry. The layer is the base geometry; the properties carry the flags the
+        client needs, so a layer change is one request and no second join.
         """
         directory = run_dir(run)
-        if layer not in ("treatments", "blocks"):
+        if layer not in ("treatments", "cumulative", "patches", "blocks"):
             raise HTTPException(status_code=422, detail=f"unknown layer {layer!r}")
         if geometry_path is None or not geometry_path.is_file():
             raise HTTPException(
                 status_code=409,
                 detail="no geometry layer is configured; start the service with --geometry",
             )
-        schedule = read_csv(directory, "schedule.csv")
-        if year is None:
-            year = int(schedule["period"].min()) if not schedule.empty else 0
-        treated = schedule[schedule["period"] == year]
-        treatments_by_block = {
-            int(str(block)): sorted({str(value) for value in group["treatment"]})
-            for block, group in treated.groupby("block_id")
-        }
+        treatments_by_block: dict[int, list[str]] = {}
+        current: set[int] = set()
+        patches_by_block: dict[int, dict[str, Any]] = {}
+        patch_classes: list[str] = []
+        if layer == "patches":
+            if not (directory / "patch_membership.csv").is_file():
+                raise HTTPException(status_code=404, detail="the run has no patch_membership.csv")
+            frame = read_csv(directory, "patch_membership.csv")
+            if year is None:
+                year = int(frame["year"].min()) if not frame.empty else 0
+            selected = frame[frame["year"] == year]
+            for row in selected.to_dict(orient="records"):
+                block = int(row["block"])
+                patches_by_block[block] = {
+                    "patch": int(row["patch"]),
+                    "patch_class": str(row["class"]),
+                    "patch_area_ha": float(row["area_ha"]),
+                    "patch_account": str(row["account"]),
+                }
+            patch_classes = sorted({str(value) for value in frame["class"].dropna()})
+        elif layer in ("treatments", "cumulative"):
+            if not (directory / "schedule.csv").is_file():
+                raise HTTPException(status_code=404, detail="the run has no schedule.csv")
+            schedule = read_csv(directory, "schedule.csv")
+            if year is None:
+                year = int(schedule["period"].min()) if not schedule.empty else 0
+            selected = schedule[
+                schedule["period"] <= year if layer == "cumulative" else schedule["period"] == year
+            ]
+            for block_id, group in selected.groupby("block_id"):
+                treatments_by_block[int(float(str(block_id)))] = sorted(
+                    {str(value) for value in group["treatment"]}
+                )
+            if layer == "cumulative":
+                current = {
+                    int(value)
+                    for value in schedule[schedule["period"] == year]["block_id"].astype("int64")
+                }
+        else:
+            year = 0 if year is None else year
         features = _geometry_features(geometry_path)
         for feature in features:
             properties = feature.get("properties", {})
             block = properties.get("block_id")
             if block is None:
                 continue
-            treatments = treatments_by_block.get(int(block), [])
-            properties["treatments"] = treatments
-            properties["treated"] = bool(treatments)
-        return {"type": "FeatureCollection", "features": features, "year": year, "layer": layer}
+            number = int(block)
+            if layer == "patches":
+                patch = patches_by_block.get(number)
+                properties["treatments"] = [patch["patch_account"]] if patch else []
+                properties["treated"] = patch is not None
+                properties["patch"] = patch["patch"] if patch else None
+                properties["patch_class"] = patch["patch_class"] if patch else None
+                properties["patch_area_ha"] = patch["patch_area_ha"] if patch else None
+                properties["patch_account"] = patch["patch_account"] if patch else None
+            elif layer in ("treatments", "cumulative"):
+                treatments = treatments_by_block.get(number, [])
+                properties["treatments"] = treatments
+                properties["treated"] = bool(treatments)
+                properties["current"] = number in current if layer == "cumulative" else True
+            else:
+                properties["treatments"] = []
+                properties["treated"] = False
+                properties["current"] = False
+        return {
+            "type": "FeatureCollection",
+            "features": features,
+            "year": year,
+            "layer": layer,
+            "patch_classes": patch_classes,
+        }
 
     def _realized_rows(directory: Path) -> list[dict[str, Any]]:
         """Return each target's realized period value, computed by the optimizer's own rule."""

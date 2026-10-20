@@ -9,7 +9,9 @@
   ],
   "layers": [
     "blocks",
-    "treatments"
+    "treatments",
+    "patches",
+    "roads"
   ],
   "actions": [
     "edit_targets",
