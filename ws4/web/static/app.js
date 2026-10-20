@@ -504,9 +504,9 @@ async function startRun() {
     showRun('targets not saved — see the message below', false);
     return;
   }
-  const iterations = Number($('run-iterations').value || 500);
-  const seed = Number($('run-seed').value || 1);
-  const years = Number($('run-years').value || 50);
+  const iterations = Number($('run-iterations')?.value || 500);
+  const seed = Number($('run-seed')?.value || 1);
+  const years = Number($('run-years')?.value || 50);
   status.textContent = '';
   runWatch = { id: null, timer: null, source: null, started: Date.now(), done: false };
   state.live = { active: true, schedule: new Map() };
@@ -716,6 +716,10 @@ function wireControls() {
 }
 
 async function start() {
+  if (!$('run-years') || !$('start-run') || !$('watch-panel')) {
+    statusLine('this page is an older build — hard-reload (Ctrl-Shift-R) once');
+    return;
+  }
   wireControls();
   loadWatched();
   try {
