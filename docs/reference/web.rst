@@ -78,6 +78,9 @@ Endpoints
    * - ``GET /api/runs/{run}/layers``
      - The layers the run can actually draw (treatments, cumulative, patches), its patch classes
        and accounts, and the named reasons roads/compartments are unavailable.
+   * - ``GET /api/roads``
+     - The configured source access-road lines as a GeoJSON ``FeatureCollection`` for the map
+       overlay; a service started without ``--roads`` returns a named 404.
    * - ``GET /api/targets``
      - The targets YAML as written.
    * - ``PUT /api/targets``
@@ -122,9 +125,10 @@ The Legend tab builds a grouped tree from ``GET /api/runs/{run}/layers`` and the
   MartStrata or LMU. The select shows a colour legend for the categories; the map colours every
   block by the chosen source field. This is a static, source-derived view, not a model computation,
   and every layer keeps the same polygon geometry.
-- **Roads** and **spread compartments** are shown as unavailable for now. Runs do not write road
-  segment geometry or compartment membership, and the service will not invent them; the reason is
-  returned by ``/layers`` and shown in the tree.
+- **Access roads (source)** is an optional overlay from ``--roads``, a GeoJSON of the source
+  access-line layer. It is a static source network, not the run's used-road subset; the run's
+  route-model geometry remains a follow-up. **Spread compartments** are still named unavailable:
+  runs do not write compartment membership, and the service will not invent it.
 
 Geometry
 --------

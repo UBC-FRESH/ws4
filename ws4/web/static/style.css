@@ -166,3 +166,4 @@ path.block.compare-both { fill:#6b4c9a; }
 #report-export { font-size:.78rem; padding:.25rem .4rem; border:1px solid var(--line); border-radius:.3rem; }
 #standard-reports { padding-left:1rem; margin:.2rem 0 .5rem; }
 #standard-reports a { color:#1f6feb; }
+.road { fill:none; stroke:#4c5661; stroke-width:.55; opacity:.55; pointer-events:none; }

@@ -475,6 +475,9 @@ def serve(
     route_config: Path | None = typer.Option(
         None, "--route-config", exists=True, help="Route model and accounts for new runs"
     ),
+    roads: Path | None = typer.Option(
+        None, "--roads", exists=True, help="GeoJSON access-road lines for the map overlay"
+    ),
     host: str = typer.Option("127.0.0.1", help="Bind address"),
     port: int = typer.Option(8000, help="Bind port"),
     root_path: str = typer.Option(
@@ -526,6 +529,7 @@ def serve(
             spread_accounts=spread_accounts,
             block_coordinates=block_coordinates,
             route_config=route_config,
+            roads=roads,
         ),
         host=host,
         port=port,

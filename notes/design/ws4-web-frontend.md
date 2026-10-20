@@ -121,10 +121,11 @@ year** use ``schedule.csv``; cumulative paints the current period red and earlie
 colors by class, with a checkbox per class. A run with no schedule still gets a period range from its
 patch membership or account values.
 
-**Roads** and **spread compartments** are named as unavailable rather than drawn from a guess: the
-run outputs carry no road segment geometry and no compartment membership. The next step is a CLI
-artifact (segment geometry/use and a compartment membership file), after which the same tree and map
-can render them.
+**Access roads (source)** is an optional overlay from a GeoJSON line layer given to ``--roads``.
+It is the source access network, styled as thin lines and fetched lazily when the analyst ticks the
+box; it is not the run's used-road subset. The route-model used-road geometry and the spread
+compartment membership are still named follow-ups: the run outputs carry no segment geometry or
+compartment membership, and the service will not invent them.
 
 The configured geometry may be the source stand polygon layer, simplified (5 m here) and stripped
 to ``block_id``, ``compartment`` and geometry. The service parses it once; each map request copies the
