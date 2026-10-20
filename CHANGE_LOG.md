@@ -1909,3 +1909,14 @@ issue comments.
   road use is lower — P17.5 is re-scoped to the maintenance charging period and rate. Tests updated
   (`tests/test_roads.py` asserts a route used in ten years is 300 m, not 3,000). Report:
   `notes/reports/p17-opened-roads.md`. Dashboard: **GREEN**.
+- P17.5 **maintenance is charged once per period, not once per year.** The ledger charged each used
+  segment in every year and the report summed the period's years; the reference charges a used segment
+  once a period. Charging once over the period's union gives **1,052,489** against the reference's
+  **1,126,465 (0.93×)**, where the per-year sum was 3,622,033 (3.22×). The charge is booked in the first
+  year of the period in which the segment is used, so an annual route account still carries a value and
+  a period sums it once. With this, the **accounting definitions match** the reference: distinct road
+  per period, maintenance once per period, volume summed, builds charged once. What remains is
+  **behaviour**: WS4 builds and uses less road (`LENGTH` 0.77×, `BUILTLENGTH` 0.53×, `BUILD_EXPENSE`
+  0.53×) and hauls for less (0.56×) while moving the same volume (1.00×) — the reference's road/haul
+  trade-off, now a modelling difference rather than a reporting artifact. Report:
+  `notes/reports/p17-opened-roads.md`; the remaining question is P17.6. Dashboard: **GREEN**.

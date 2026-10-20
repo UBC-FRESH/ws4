@@ -45,14 +45,30 @@ figure in the earlier version of this note was that artifact.
   set changed `BUILTLENGTH`/`BUILD_EXPENSE` little and did not close the (then apparent) `LENGTH` gap —
   consistent with the gap being the aggregation, not the network.
 
-## The remaining discrepancy: maintenance
+## Maintenance: the same defect, now charged per period
 
-WS4 charges maintenance once per used segment **per year**; the report sums the period's years. The
-reference's period-1 maintenance (1,126,465) is almost exactly its period `LENGTH` (1,149,647), which is
-what a **once-per-period** charge per metre looks like. WS4's figure is 3.22× the reference's while its
-distinct road use is *lower*; the next task is to establish the reference's charging period and rate from
-its own tables before changing the model. That is P17.5, re-scoped from "joint assignment" (the LENGTH
-evidence no longer supports that hypothesis) to **the maintenance charge and the build/haul balance**.
+The ledger charged each used segment's maintenance in **every year** and the report summed the period's
+years; the reference charges a used segment **once a period**. Charging once, over the period's union,
+gives **1,052,489** against the reference's **1,126,465 (0.93×)**, where the per-year sum was 3,622,033
+(3.22×). The charge is booked in the first year of the period in which the segment is used, so an
+annual route account still carries a value and a period sums it once.
+
+## Where that leaves the comparison
+
+| quantity | reference | WS4 | ratio |
+| --- | ---: | ---: | ---: |
+| `LENGTH` | 1,149,647 | 882,027 | 0.77 |
+| `MAINTAIN_EXPENSE` | 1,126,465 | 1,052,489 | 0.93 |
+| `VOLUME` | 1,029,670 | 1,024,809 | 1.00 |
+| `BUILTLENGTH` | 732,073 | 386,352 | 0.53 |
+| `BUILD_EXPENSE` | 3,660,367 | 1,931,761 | 0.53 |
+| `HAUL_EXPENSE` | 11,174,512 | 6,294,644 | 0.56 |
+
+The **accounting definitions now match**: distinct road per period, maintenance once per period,
+volume summed, builds charged once. The remaining differences are **behaviour**: WS4 builds and uses
+less road and hauls for less while moving the same volume. That is the reference's road/haul trade-off,
+now a modelling difference to explain rather than a reporting artifact. The candidate-network test
+already showed the availability set is not the cause; the difference is which roads the solve chooses.
 
 ## Files
 
