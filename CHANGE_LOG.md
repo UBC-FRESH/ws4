@@ -1882,3 +1882,18 @@ issue comments.
   `docs/reference/spatial.rst` and `notes/design/ws4-spatial-accounts.md`. The report is
   `notes/reports/p16-closeout.md`. No new phase is proposed: the result is a paper-scope decision, and
   the next WS4 item (P13's route-report `LENGTH`) waits on the maintainer.
+- P17.1–P17.4 **roads dated to the period.** `RouteNetwork` carries an opened set: a network built with
+  `initial_open` set to the zero-build-cost segments starts from the roads that exist, routes only over
+  opened segments, and opens a planned path when a block first needs it. Existing roads are treated as
+  already built, so they are not counted as `BUILTLENGTH`; planned roads are charged in the period they
+  open. A route prefers an opened road to a shorter unopened one, and the Dijkstra and assignment caches
+  are invalidated when the set grows. Declarable as `route.initial_roads: existing|all` in a route
+  config (default `all`, the pre-P17 behaviour). Tests: `tests/test_roads_opened.py` (six cases).
+  **The first 2026 measurement is a partial success and is recorded rather than claimed:** period 1
+  (`tmp/parity2025/run-dated`, MILL1) moves `BUILTLENGTH` from 730,679 to 386,352 and `BUILD_EXPENSE`
+  from 2.02M to 1.93M against the reference's 732,073 / 3.66M, but `LENGTH` moves only 4.5% (3.07M to
+  2.93M) and remains **2.55×** the reference's 1,149,647. The cause is the road *choice*: the existing
+  set is dense (4.42M m) and the router prices haul only, while the reference's solve uses a compact
+  network and trades haul for road (its haul expense is 1.8× WS4's). P17.5 names the two levers — a
+  road-aware route cost, or fitting the initial set — and the phase stays active. Report:
+  `notes/reports/p17-opened-roads.md`. Dashboard: **GREEN**.
