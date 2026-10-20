@@ -14,16 +14,17 @@ import subprocess
 import sys
 import tempfile
 import time
-from collections.abc import Iterator
+from collections.abc import Awaitable, Callable, Iterator
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Any
 
 import pandas as pd
 import yaml
-from fastapi import Body, FastAPI, HTTPException, Query
+from fastapi import Body, FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.responses import Response
 
 from ..opt.objective import load_targets
 from .skins import load_skins
@@ -98,6 +99,18 @@ def create_app(
     geometry_path = Path(geometry).resolve() if geometry is not None else None
     targets_path = Path(targets).resolve() if targets is not None else None
     app = FastAPI(title="WS4", version="0.1.0")
+
+    @app.middleware("http")
+    async def no_cache_static(
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
+        """Serve the shell's assets uncached: a stale script beside a new page is a bug."""
+        response = await call_next(request)
+        if request.url.path.startswith("/static/"):
+            response.headers["Cache-Control"] = "no-store, must-revalidate"
+        return response
+
     skins = load_skins(Path(__file__).with_name("skins"))
     static_dir = Path(__file__).with_name("static")
     if static_dir.is_dir():
