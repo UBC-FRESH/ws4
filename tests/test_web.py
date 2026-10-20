@@ -23,8 +23,15 @@ def _app(tmp_path: Path, *, with_geometry: bool = True) -> tuple[TestClient, Pat
     dataset = tmp_path / "dataset"
     dataset.mkdir()
     (dataset / "manifest.json").write_text('{"schema_version": "0.1"}', encoding="utf-8")
+    (tmp_path / "runs" / "not-a-run").mkdir(parents=True)
     run = tmp_path / "runs" / "run1"
     run.mkdir(parents=True)
+    simulated = tmp_path / "runs" / "run2"
+    simulated.mkdir()
+    (simulated / "account_values.csv").write_text(
+        "year,account,value\n0,feature.Volume,3.0\n", encoding="utf-8"
+    )
+    (simulated / "schedule.csv").write_text("block_id,treatment,period\n2,CT,1\n", encoding="utf-8")
     (run / "summary.json").write_text('{"status": "ok", "objective": 0.0}', encoding="utf-8")
     pd.DataFrame(
         [
@@ -76,8 +83,8 @@ def test_the_landing_page_lists_the_dataset_and_its_runs(tmp_path: Path) -> None
     response = client.get("/")
     assert response.status_code == 200
     assert "WS4" in response.text
-    assert "dataset" in response.text
-    assert "run1" in response.text
+    assert 'id="run"' in response.text  # the application shell, not a server-rendered list
+    assert client.get("/static/app.js").status_code == 200
     assert client.get("/health").json() == {"status": "ok"}
 
 
@@ -87,7 +94,8 @@ def test_summary_lists_the_dataset_and_its_runs(tmp_path: Path) -> None:
     body = client.get("/api/summary").json()
     assert body["dataset"] == "dataset"
     assert body["manifest"]["schema_version"] == "0.1"
-    assert [entry["id"] for entry in body["runs"]] == ["run1"]
+    assert [entry["id"] for entry in body["runs"]] == ["run1", "run2"]
+    assert body["runs"][1]["kind"] == "simulate"
     assert body["runs"][0]["summary"]["status"] == "ok"
 
 
@@ -117,8 +125,16 @@ def test_the_map_returns_the_treated_blocks_for_the_year(tmp_path: Path) -> None
     client, _ = _app(tmp_path)
     body = client.get("/api/runs/run1/map", params={"year": 0}).json()
     assert body["type"] == "FeatureCollection"
-    assert [feature["properties"]["block_id"] for feature in body["features"]] == [1]
+    assert [feature["properties"]["block_id"] for feature in body["features"]] == [1, 2]
     assert body["features"][0]["properties"]["treatments"] == ["CC"]
+    assert body["features"][0]["properties"]["treated"] is True
+    assert body["features"][1]["properties"]["treated"] is False
+
+
+def test_periods_come_from_the_runs_schedule(tmp_path: Path) -> None:
+    """The period control gets the run's own range, not a guessed horizon."""
+    client, _ = _app(tmp_path)
+    assert client.get("/api/runs/run1/periods").json() == {"min": 0, "max": 1, "values": [0, 1]}
 
 
 def test_the_map_refuses_without_geometry_and_for_an_unknown_layer(tmp_path: Path) -> None:

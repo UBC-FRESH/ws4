@@ -98,8 +98,10 @@ manifests ship: `model-builder`, `scenario-analyst`, `scenario-browser`, `review
 
 ## Map and period control
 
-- Layers are grouped with visibility, opacity and a legend: blocks by a feature/product criterion;
+- Layers are grouped with visibility and a legend: blocks by a feature/product criterion;
   treatments (current period vs cumulative); patches; spread compartments; roads by built/used/planned.
+  The first cut renders block points or polygons from the configured GeoJSON with treated/untreated
+  classes; the additional layer families reuse the same map endpoint once their artefacts are joined.
 - The period control is the model's own: years are folded by `period_width`, and the label is the period
   the reference uses (period 1 ends at year 10). The UI shows both the period and its year range.
 - Selecting a block opens its attributes; selecting a patch or compartment filters the accounts to it.
@@ -130,8 +132,10 @@ rendered table.
 
 ## Decisions
 
-1. **Stack:** TypeScript + Vite + MapLibre; FastAPI + uvicorn as an extra. No mandatory dependency for
-   the CLI.
+1. **Stack:** FastAPI + uvicorn as an extra, with a **dependency-free browser shell** for the first cut
+   (vanilla ES modules and SVG), so the service has no Node build and CI needs no JavaScript toolchain.
+   MapLibre + a basemap is the target when WebGL, raster basemaps or large layer counts are needed;
+   the shell's layer/tree/period contracts are written so that swap does not change the API.
 2. **The service is a reader.** A run is started by invoking the CLI; the service does not import the
    optimizer into the request process, so a crash in a search cannot take the UI down.
 3. **Targets are the optimizer's YAML**, not a parallel JSON model.

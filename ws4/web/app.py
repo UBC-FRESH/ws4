@@ -8,7 +8,6 @@ holds no model state and computes no value the CLI cannot reproduce. See
 
 from __future__ import annotations
 
-import html
 import json
 import shutil
 import tempfile
@@ -19,6 +18,7 @@ import pandas as pd
 import yaml
 from fastapi import Body, FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 
 from ..opt.objective import load_targets
 
@@ -88,9 +88,24 @@ def create_app(
     geometry_path = Path(geometry).resolve() if geometry is not None else None
     targets_path = Path(targets).resolve() if targets is not None else None
     app = FastAPI(title="WS4", version="0.1.0")
+    static_dir = Path(__file__).with_name("static")
+    if static_dir.is_dir():
+        app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
     def run_dir(name: str) -> Path:
         return _run_directory(runs_root, name)
+
+    def run_entries() -> list[Path]:
+        """Return the directories that are runs: a summary or the simulator's account values."""
+        return [
+            directory
+            for directory in (sorted(runs_root.iterdir()) if runs_root.is_dir() else [])
+            if directory.is_dir()
+            and (
+                (directory / "summary.json").is_file()
+                or (directory / "account_values.csv").is_file()
+            )
+        ]
 
     def read_csv(run: Path, name: str) -> pd.DataFrame:
         path = run / name
@@ -100,30 +115,11 @@ def create_app(
 
     @app.get("/", response_class=HTMLResponse)
     def index() -> str:
-        """Return a minimal landing page until the browser application lands (P18.2)."""
-        found = []
-        for directory in sorted(runs_root.iterdir()) if runs_root.is_dir() else []:
-            if not directory.is_dir():
-                continue
-            name = html.escape(directory.name)
-            found.append(
-                f'<li><a href="api/runs/{name}/summary">{name}</a>'
-                f' &middot; <a href="api/runs/{name}/accounts">accounts</a>'
-                f' &middot; <a href="api/runs/{name}/reports">reports</a></li>'
-            )
-        listing = "".join(found) or "<li>no runs found</li>"
-        return f"""<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>WS4</title>
-<style>body{{font-family:system-ui,sans-serif;max-width:52rem;margin:3rem auto;line-height:1.5}}
-code{{background:#f2f2f2;padding:.1rem .3rem}}</style></head>
-<body><h1>WS4</h1>
-<p>Dataset: <code>{html.escape(dataset.name)}</code></p>
-<h2>Runs</h2><ul>{listing}</ul>
-<h2>API</h2>
-<p><a href="api/summary">api/summary</a> &middot; <a href="docs">OpenAPI docs</a>
-&middot; <a href="health">health</a></p>
-<p>The browser front end is P18.2; this page is the service's landing page.</p>
-</body></html>"""
+        """Return the browser application (a dependency-free shell until the map library lands)."""
+        page = static_dir / "index.html"
+        if not page.is_file():
+            return "<h1>WS4</h1><p>The browser application is not installed.</p>"
+        return page.read_text(encoding="utf-8")
 
     @app.get("/health")
     def health() -> dict[str, str]:
@@ -138,14 +134,15 @@ code{{background:#f2f2f2;padding:.1rem .3rem}}</style></head>
         if manifest_path.is_file():
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         found = []
-        for directory in sorted(runs_root.iterdir()) if runs_root.is_dir() else []:
-            if not directory.is_dir():
-                continue
-            entry: dict[str, Any] = {"id": directory.name}
+        for directory in run_entries():
             summary_path = directory / "summary.json"
             if summary_path.is_file():
-                entry["summary"] = json.loads(summary_path.read_text(encoding="utf-8"))
-            found.append(entry)
+                kind = "search"
+                summary = json.loads(summary_path.read_text(encoding="utf-8"))
+            else:
+                kind = "simulate"
+                summary = {"status": "ok", "kind": kind}
+            found.append({"id": directory.name, "kind": kind, "summary": summary})
         return {"dataset": dataset.name, "manifest": manifest, "runs": found}
 
     @app.get("/api/runs/{run}/summary")
@@ -153,10 +150,12 @@ code{{background:#f2f2f2;padding:.1rem .3rem}}</style></head>
         """Return a run's ``summary.json``."""
         directory = run_dir(run)
         path = directory / "summary.json"
-        if not path.is_file():
-            raise HTTPException(status_code=404, detail=f"run {run!r} has no summary.json")
-        document: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
-        return document
+        if path.is_file():
+            document: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
+            return document
+        if (directory / "account_values.csv").is_file():
+            return {"status": "ok", "kind": "simulate"}
+        raise HTTPException(status_code=404, detail=f"run {run!r} has no summary.json")
 
     @app.get("/api/runs/{run}/accounts")
     def accounts(
@@ -194,19 +193,29 @@ code{{background:#f2f2f2;padding:.1rem .3rem}}</style></head>
             raise HTTPException(status_code=404, detail=f"run {run!r} has no report {name!r}")
         return FileResponse(path)
 
+    @app.get("/api/runs/{run}/periods")
+    def periods(run: str) -> dict[str, Any]:
+        """Return the schedule's periods, so the period control has the run's own range."""
+        schedule = read_csv(run_dir(run), "schedule.csv")
+        if schedule.empty:
+            return {"min": 0, "max": 0, "values": []}
+        values = sorted({int(value) for value in schedule["period"].astype("int64").tolist()})
+        return {"min": values[0], "max": values[-1], "values": values}
+
     @app.get("/api/runs/{run}/map")
     def map_features(
         run: str,
         year: int | None = Query(default=None),
         layer: str = Query(default="treatments"),
     ) -> dict[str, Any]:
-        """Return a GeoJSON FeatureCollection for a run and a year.
+        """Return a GeoJSON FeatureCollection of every block, with the year's treatment flags.
 
-        The only layer in this first cut is ``treatments``: the blocks the schedule treats in the
-        year, as properties on the geometry. Unsupported layer names are refused by name.
+        The layer is the base geometry; ``treated`` and ``treatments`` are properties on each
+        feature, so the client can style and toggle without a second request. An unsupported
+        layer name is refused by name.
         """
         directory = run_dir(run)
-        if layer != "treatments":
+        if layer not in ("treatments", "blocks"):
             raise HTTPException(status_code=422, detail=f"unknown layer {layer!r}")
         if geometry_path is None or not geometry_path.is_file():
             raise HTTPException(
@@ -217,21 +226,20 @@ code{{background:#f2f2f2;padding:.1rem .3rem}}</style></head>
         if year is None:
             year = int(schedule["period"].min()) if not schedule.empty else 0
         treated = schedule[schedule["period"] == year]
-        treatments = treated.groupby("block_id")["treatment"].apply(
-            lambda values: sorted(set(values))
-        )
+        treatments_by_block = {
+            int(str(block)): sorted({str(value) for value in group["treatment"]})
+            for block, group in treated.groupby("block_id")
+        }
         features = _geometry_features(geometry_path)
-        selected = []
         for feature in features:
-            block = feature.get("properties", {}).get("block_id")
+            properties = feature.get("properties", {})
+            block = properties.get("block_id")
             if block is None:
                 continue
-            row = treatments.get(int(block))
-            if row is None:
-                continue
-            feature["properties"]["treatments"] = list(row)
-            selected.append(feature)
-        return {"type": "FeatureCollection", "features": selected, "year": year, "layer": layer}
+            treatments = treatments_by_block.get(int(block), [])
+            properties["treatments"] = treatments
+            properties["treated"] = bool(treatments)
+        return {"type": "FeatureCollection", "features": features, "year": year, "layer": layer}
 
     @app.get("/api/targets", response_class=PlainTextResponse)
     def get_targets() -> str:

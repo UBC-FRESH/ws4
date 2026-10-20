@@ -1941,3 +1941,14 @@ issue comments.
   — is `notes/design/ws4-web-frontend.md`; the API is `docs/reference/web.rst`. The core install is
   unchanged; the service is an extra, imported lazily by `ws4 serve`. Tests: `tests/test_web.py`
   (seven cases). Dashboard: **GREEN**.
+- P18.2 **the browser shell, first cut.** The service now serves a dependency-free application
+  (`ws4/web/static/`) over its own artefacts: a run selector, a year control taken from the schedule,
+  treated/untreated layers with counts, click selection, wheel-zoom/pan, and the Legend/Targets/Reports
+  tabs. `GET /api/runs/{run}/periods` supplies the run's period range, and `/map` returns **every**
+  block with `treated` and `treatments` properties so the client styles and toggles without a second
+  request. `Simulator.run` now records the schedule it replayed in the run directory (guarded when the
+  run is written into the schedule's own directory), which is what the map joins against. The static
+  files ship in the wheel (`package-data`). It works at `/` and under a proxy prefix because every URL
+  is relative. A run directory with `account_values.csv` but no `summary.json` is listed as a
+  `simulate` run; a directory with neither is not offered. Tests: nine service cases. Dashboard:
+  **GREEN**.

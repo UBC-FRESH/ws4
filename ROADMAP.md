@@ -740,8 +740,10 @@ current period from the cumulative total.
 
 - [x] P18.1 The service surface — optional `ws4[web]` (FastAPI), artefacts as the contract, SSE for live
   incumbent values, targets round-tripping the optimizer's own YAML.
-- [ ] P18.2 The map shell — MapLibre, layer tree, period control, blocks/treatments/spatial accounts, road
-  layers split built/used/planned.
+- [ ] P18.2 The map shell — **first cut live**: a dependency-free SVG shell over the service, with a run
+  selector, year control from the schedule, treated/untreated layers with counts, click selection,
+  wheel-zoom/pan, and the Legend/Targets/Reports tabs. Remaining: the patch/compartment/road layer
+  families and the grouped layer tree; then the MapLibre swap when a basemap is needed.
 - [ ] P18.3 Targets — per-account, per-period min/max/weights, active toggle, realized values live.
 - [ ] P18.4 Reports — standard reports from the run's CSVs, user-defined definitions, CSV/PNG/HTML export.
 - [ ] P18.5 Skins — four manifests; a skin cannot enable what the service does not expose.
