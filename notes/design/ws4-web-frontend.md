@@ -131,9 +131,11 @@ to ``block_id``, ``compartment`` and geometry. The service parses it once; each 
 properties and reuses the geometry. SVG paths carry a thin boundary stroke, current treatments are
 solid, earlier cumulative treatments are a diagonal hatch, and patch classes use distinct fills. A
 live schedule updates only the blocks named in the schedule diff instead of rebuilding all twelve
-thousand paths, so the polygon layer stays usable during a search. A source ``compartment`` property
-is shown in the block detail; the model-derived spread compartments remain a separate, pending
-artifact.
+thousand paths, so the polygon layer stays usable during a search. The source attributes
+(``compartment``, ``THEME2``, ``THEME5``, ``MartStrata``, ``LMU``) drive an optional base-colour mode:
+a select chooses the field and a scrollable legend maps its categories to hues. The source
+``compartment`` is also shown in the block detail; the model-derived spread compartments remain a
+separate, pending artifact.
 
 ## Targets
 

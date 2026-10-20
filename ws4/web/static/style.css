@@ -151,3 +151,7 @@ path.block.past { fill:url(#earlier-hatch); }
 path.block.compare-a { fill:#c0392b; }
 path.block.compare-b { fill:#1f6feb; }
 path.block.compare-both { fill:#6b4c9a; }
+.base-legend { max-height:10rem; overflow:auto; margin-top:.25rem; border-top:1px solid var(--line); padding-top:.2rem; }
+.base-legend-row { display:flex; align-items:center; gap:.35rem; font-size:.73rem; padding:.05rem 0; }
+.base-swatch { width:.6rem; height:.6rem; border-radius:.15rem; flex:none; }
+#layer-tree select { font:inherit; font-size:.78rem; max-width:11rem; }
