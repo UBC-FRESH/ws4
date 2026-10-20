@@ -2020,3 +2020,10 @@ issue comments.
   returns the reply, tool actions and session id. `--allow-agent` is a separate, off-by-default
   permission because the agent has the service user's shell and filesystem; the docs name the risk.
 - Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
+- P18.5 follow-up from the Codex review and a live-service incident: a finished run's
+  `/api/runs/{run}/events` now returns 204 so an EventSource stops reconnecting (a buffering proxy
+  had turned a completed run into 342 open connections and exhausted the service's thread pool);
+  live streams close after ten minutes and reconnect. The skin selector is cleared before its options
+  are rebuilt and keeps the analyst's choice across run changes, and a non-CSV report name is built
+  with `textContent`, closing the filesystem-name markup finding. Dashboard result:
+  `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.

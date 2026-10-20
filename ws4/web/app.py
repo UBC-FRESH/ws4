@@ -396,15 +396,21 @@ def create_app(
         return payload
 
     @app.get("/api/runs/{run}/events")
-    def run_events(run: str) -> StreamingResponse:
+    def run_events(run: str) -> Response:
         """Stream the run's telemetry as SSE.
 
         A parallel search reports several islands. This stream keeps each island's schedule
         apart, follows the island with the lowest objective, and resets the client's map when
         that island changes. Progress is the best step seen, with ``total`` counting every
         island's steps so the panel reports the aggregate rate rather than one worker's.
+
+        A finished run returns **204 No Content**. An EventSource stops reconnecting on 204,
+        so a browser behind a buffering proxy cannot turn a completed run into an endless
+        stream of retries; the panel's status poll reads the summary instead.
         """
         directory = run_dir(run)
+        if (directory / "summary.json").is_file():
+            return Response(status_code=204)
 
         def stream() -> Iterator[str]:
             yield f"event: started\ndata: {json.dumps({'id': run})}\n\n"
@@ -505,6 +511,11 @@ def create_app(
                 ticks += 1
                 if ticks % 20 == 0:
                     yield ": keepalive\n\n"
+                # a browser behind a proxy can leave a half-open stream behind; end it and let
+                # EventSource reconnect (the replay rebuilds the map) instead of holding a thread
+                if ticks >= 1200:
+                    yield ": reconnecting\n\n"
+                    return
                 changed: dict[int, Any] = {}
                 targets_to_emit: dict[str, Any] | None = None
                 best_changed = False

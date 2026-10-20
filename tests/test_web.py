@@ -261,17 +261,12 @@ def test_starting_a_run_passes_the_island_count_to_the_cli(
     assert command[command.index("--threads") + 1] == "4"
 
 
-def test_a_finished_run_does_not_replay_its_history(tmp_path: Path) -> None:
-    """A completed run closes with its summary instead of flooding the client with every step."""
+def test_a_finished_run_closes_the_event_stream(tmp_path: Path) -> None:
+    """A completed run returns 204, which tells EventSource to stop reconnecting."""
     client, _ = _app(tmp_path)
-    run = tmp_path / "runs" / "run1"
-    (run / "telemetry.jsonl").write_text(
-        '{"type": "step", "iteration": 1, "objective": 10.0}\n', encoding="utf-8"
-    )
-    body = client.get("/api/runs/run1/events").text
-    assert "event: started" in body
-    assert "event: done" in body
-    assert "event: progress" not in body
+    response = client.get("/api/runs/run1/events")
+    assert response.status_code == 204
+    assert response.content == b""
 
 
 def test_a_live_run_streams_the_best_island_and_its_schedule(tmp_path: Path) -> None:

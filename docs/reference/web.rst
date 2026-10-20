@@ -89,8 +89,12 @@ Endpoints
      - ``{"action": "pause" | "run" | "stop"}``. The search polls its ``control.json`` every 64
        iterations: pause holds it, and stop returns its best schedule so the run writes its summary.
    * - ``GET /api/runs/{run}/events``
-     - SSE: one ``progress`` event per telemetry step, then ``done`` with the run's own summary, or
-       ``error``.
+     - SSE: coalesced ``progress``, ``targets`` and ``schedule`` events, then ``done`` with the run's
+       own summary, or ``error``. For parallel runs it follows the best island and reports the
+       aggregate step count; a ``targets`` event carries the folded period values and the tracked
+       accounts' yearly series. A finished run returns **204 No Content**, which stops an EventSource
+       from reconnecting; a live stream closes after ten minutes and reconnects, so a lost browser
+       cannot leave a stream holding a thread.
    * - ``GET /api/skins``, ``/api/skins/{id}``
      - The checked skin manifests.
 
