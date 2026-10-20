@@ -215,13 +215,26 @@ def test_the_events_stream_replays_telemetry_and_ends_on_the_summary(tmp_path: P
     client, _ = _app(tmp_path)
     run = tmp_path / "runs" / "run1"
     (run / "telemetry.jsonl").write_text(
-        '{"type": "run", "run_id": "r1"}\n{"type": "step", "iteration": 1, "objective": 10.0}\n',
+        '{"type": "run", "run_id": "r1"}\n'
+        '{"type": "step", "iteration": 1, "objective": 10.0}\n'
+        '{"type": "schedule", "iteration": 1, "changed": [[1, [["CC", 0]]]]}\n',
         encoding="utf-8",
     )
     body = client.get("/api/runs/run1/events").text
+    assert "event: started" in body
     assert "event: progress" in body
     assert '"iteration": 1' in body
+    assert "event: schedule" in body
     assert "event: done" in body
+
+
+def test_the_status_endpoint_reports_a_finished_run(tmp_path: Path) -> None:
+    """A run with account values is done; a bare directory has no status to claim."""
+    client, _ = _app(tmp_path)
+    status = client.get("/api/runs/run1/status").json()
+    assert status["status"] == "done"
+    assert status["running"] is False
+    assert status["summary"]["status"] == "ok"
 
 
 def test_an_unknown_run_is_a_named_404(tmp_path: Path) -> None:

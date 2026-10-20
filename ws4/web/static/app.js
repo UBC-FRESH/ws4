@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [] };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), watchCells: new Map(), live: { active: false, schedule: new Map() }, history: [] };
 
 const $ = (id) => document.getElementById(id);
 const statusLine = (text) => { $('status').textContent = text; };
@@ -60,12 +60,15 @@ function applyView() {
   $('viewport').setAttribute('transform', `translate(${state.view.x} ${state.view.y}) scale(${state.view.s})`);
 }
 
-function render() {
-  const base = fit(state.features);
-  if (!base) return;
-  state.base = base;
-  state.view = { s: 1, x: 0, y: 0 };
-  applyView();
+function render(refit = true) {
+  if (refit || !state.base) {
+    const base = fit(state.features);
+    if (!base) return;
+    state.base = base;
+    state.view = { s: 1, x: 0, y: 0 };
+    applyView();
+  }
+  const base = state.base;
   const viewport = $('viewport');
   viewport.replaceChildren();
   const groups = { treated: document.createElementNS('http://www.w3.org/2000/svg', 'g'),
@@ -76,7 +79,13 @@ function render() {
   for (const feature of state.features) {
     const geometry = feature.geometry;
     const properties = feature.properties ?? {};
-    const isTreated = Boolean(properties.treated);
+    let isTreated = Boolean(properties.treated);
+    if (state.live.active) {
+      const chain = state.live.schedule.get(String(properties.block_id));
+      isTreated = chain
+        ? chain.some((event) => Number(event[1]) === Number(state.year))
+        : false;
+    }
     const klass = isTreated ? 'treated' : 'untreated';
     const group = groups[klass];
     if (geometry?.type === 'Point') {
@@ -156,6 +165,7 @@ function applySkin(skin) {
   $('show-untreated').closest('label').hidden = !(skin.layers ?? []).includes('blocks');
   const readOnly = Boolean(skin.read_only) || !(skin.actions ?? []).includes('edit_targets');
   $('save-targets').hidden = readOnly || !document.querySelector('#targets-table:not([hidden])');
+  $('start-run').hidden = Boolean(skin.read_only);
   for (const input of document.querySelectorAll('#targets-table input')) input.disabled = readOnly;
 }
 
@@ -187,11 +197,100 @@ function numberInput(value, field, index) {
   return input;
 }
 
+function loadWatched() {
+  try {
+    const raw = window.localStorage.getItem('ws4.watched');
+    if (raw !== null) state.watched = new Set(JSON.parse(raw));
+  } catch { /* a private window may refuse storage */ }
+}
+
+function saveWatched() {
+  try { window.localStorage.setItem('ws4.watched', JSON.stringify([...state.watched])); } catch { /* ignore */ }
+}
+
+function makeMini() {
+  const mini = document.createElement('span');
+  mini.className = 'mini';
+  const band = document.createElement('span');
+  band.className = 'mini-band';
+  const marker = document.createElement('span');
+  marker.className = 'mini-marker';
+  mini.append(band, marker);
+  return { mini, band, marker };
+}
+
+function renderWatchPanel() {
+  const panel = $('watch-panel');
+  panel.replaceChildren();
+  state.watchCells = new Map();
+  const rows = state.targets.filter((row) => state.watched.has(`${row.year}|${row.account}`));
+  if (!rows.length) {
+    panel.textContent = 'no targets selected — tick Watch in the table';
+    return;
+  }
+  for (const row of rows) {
+    const item = document.createElement('div');
+    item.className = 'watch-item';
+    const name = document.createElement('span');
+    name.className = 'watch-name';
+    name.textContent = `${row.account} · ${row.year}`;
+    name.title = row.account;
+    const { mini, band, marker } = makeMini();
+    const text = document.createElement('span');
+    text.className = 'mini-text';
+    item.append(name, mini, text);
+    panel.append(item);
+    const key = `${row.year}|${row.account}`;
+    const entry = { row, text, band, marker, value: state.targetCells.get(key)?.value };
+    state.watchCells.set(key, entry);
+    paintTarget(entry, entry.value);
+  }
+}
+
+function paintTarget(entry, value) {
+  entry.value = value;
+  const row = entry.row;
+  if (value === undefined || value === null) {
+    entry.text.textContent = '—';
+    entry.band.style.display = 'none';
+    entry.marker.style.display = 'none';
+    return;
+  }
+  const low = row.minimum ?? Math.min(0, value);
+  const high = row.maximum ?? Math.max(value, low + 1);
+  const span = Math.max(high - low, Math.abs(value) * 0.2, 1e-9);
+  const left = (edge) => `${Math.min(100, Math.max(0, ((edge - low) / span) * 100))}%`;
+  entry.band.style.display = '';
+  entry.marker.style.display = '';
+  entry.band.style.left = left(Math.max(low, Math.min(high, value) - span * 0.02));
+  entry.band.style.width = `${Math.max(0, Math.min(100, ((high - low) / span) * 100))}%`;
+  entry.marker.style.left = left(value);
+  let status = 'met';
+  if (row.minimum !== null && value < row.minimum) status = 'below';
+  else if (row.maximum !== null && value > row.maximum) status = 'above';
+  entry.text.textContent = `${Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 })} · ${status}`;
+}
+
+function updateLiveTargets(values, iteration) {
+  let painted = 0;
+  for (const item of values) {
+    const key = `${item.year}|${item.account}`;
+    const entry = state.targetCells.get(key);
+    if (entry) { paintTarget(entry, Number(item.value)); painted += 1; }
+    const watched = state.watchCells.get(key);
+    if (watched) paintTarget(watched, Number(item.value));
+  }
+  if (painted && iteration !== undefined) {
+    $('run-status').textContent = `live target state at iteration ${iteration} (${painted} cells)`;
+  }
+}
+
 async function loadTargets() {
   const empty = $('targets-empty');
   const table = $('targets-table');
   const button = $('save-targets');
   try {
+    state.targetCells = new Map();
     const rows = await api('api/targets.json');
     state.targets = rows;
     if (!rows.length) {
@@ -214,6 +313,18 @@ async function loadTargets() {
     }
     rows.forEach((row, index) => {
       const tr = document.createElement('tr');
+      const key = `${row.year}|${row.account}`;
+      const watch = document.createElement('td');
+      const box = document.createElement('input');
+      box.type = 'checkbox';
+      box.checked = state.watched.has(key);
+      box.addEventListener('change', () => {
+        if (box.checked) state.watched.add(key); else state.watched.delete(key);
+        saveWatched();
+        renderWatchPanel();
+      });
+      watch.append(box);
+      tr.append(watch);
       const account = document.createElement('td');
       account.className = 'account';
       account.textContent = row.account;
@@ -228,17 +339,23 @@ async function loadTargets() {
         tr.append(td);
       }
       const realized = document.createElement('td');
-      const value = values[row.year]?.[row.account];
-      let status = '—';
-      if (value !== undefined) {
-        if (row.minimum !== null && value < row.minimum) status = 'below';
-        else if (row.maximum !== null && value > row.maximum) status = 'above';
-        else status = 'met';
-      }
-      realized.textContent = value === undefined ? '—' : `${value.toLocaleString()} · ${status}`;
+      const { mini, band, marker } = makeMini();
+      const text = document.createElement('span');
+      text.className = 'mini-text';
+      realized.append(mini, text);
       tr.append(realized);
+      state.targetCells.set(`${row.year}|${row.account}`, {
+        row, text, band, marker, value: values[row.year]?.[row.account],
+      });
       body.append(tr);
     });
+    const keys = rows.map((row) => `${row.year}|${row.account}`);
+    if (state.watched.size === 0 && window.localStorage.getItem('ws4.watched') === null) {
+      for (const key of keys.slice(0, 8)) state.watched.add(key);
+      saveWatched();
+    }
+    for (const entry of state.targetCells.values()) paintTarget(entry, entry.value);
+    renderWatchPanel();
     if (state.skin) applySkin(state.skin);
   } catch (error) {
     empty.hidden = false;
@@ -290,13 +407,104 @@ async function fillRuns(summary, preferred) {
   return true;
 }
 
+let runWatch = { id: null, timer: null, source: null, started: 0, done: false };
+
+function drawSpark() {
+  const svg = $('spark');
+  if (!svg) return;
+  svg.replaceChildren();
+  const data = state.history;
+  if (data.length < 2) return;
+  const low = Math.min(...data.map((point) => point.objective));
+  const high = Math.max(...data.map((point) => point.objective));
+  const span = Math.max(high - low, 1e-9);
+  const points = data
+    .map((point, index) => `${(index / (data.length - 1)) * 138 + 1},${24 - ((point.objective - low) / span) * 22}`)
+    .join(' ');
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  line.setAttribute('points', points);
+  line.setAttribute('fill', 'none');
+  line.setAttribute('stroke', '#2f7d4f');
+  line.setAttribute('stroke-width', '1.2');
+  svg.append(line);
+}
+
+let repaintPending = false;
+function scheduleRepaint() {
+  if (repaintPending) return;
+  repaintPending = true;
+  window.requestAnimationFrame(() => { repaintPending = false; if (state.features.length) render(false); });
+}
+
+function showRun(text, live) {
+  $('run-panel').hidden = false;
+  $('run-detail').textContent = text;
+  $('run-panel').style.borderColor = live ? '#b7d7c2' : '#d9e2ec';
+}
+
+function stopRunWatch() {
+  if (runWatch.timer) { clearInterval(runWatch.timer); runWatch.timer = null; }
+  if (runWatch.source) { runWatch.source.close(); runWatch.source = null; }
+}
+
+function elapsed() {
+  const seconds = Math.max(0, Math.round((Date.now() - runWatch.started) / 1000));
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+}
+
+async function finishRun(id) {
+  if (runWatch.done) return;
+  runWatch.done = true;
+  stopRunWatch();
+  state.live.active = false;
+  $('start-run').disabled = false;
+  $('start-run').textContent = 'Run search';
+  showRun(`run ${id} · done`, false);
+  $('run-status').textContent = '';
+  try {
+    const summary = await api('api/summary');
+    if (await fillRuns(summary, id)) {
+      await loadPeriods(); await loadTargets(); await loadReports(); await loadMap();
+    }
+  } catch { /* the run is done; a refresh failure is not fatal */ }
+  window.setTimeout(() => { $('run-panel').hidden = true; }, 6000);
+}
+
+async function pollRun(id) {
+  try {
+    const status = await api(`api/runs/${encodeURIComponent(id)}/status`);
+    if (status.status === 'failed') {
+      stopRunWatch();
+      $('start-run').disabled = false;
+      $('start-run').textContent = 'Run search';
+      showRun(`run ${id} · the search exited without a summary — see console.log`, false);
+      return;
+    }
+    if (!status.running) { await finishRun(id); return; }
+    const step = status.last_step;
+    const progress = step
+      ? `iteration ${step.iteration} · objective ${Number(step.objective).toFixed(2)}`
+      : 'waiting for the first step…';
+    showRun(`run ${id} · ${progress} · ${elapsed()}`, true);
+  } catch (error) {
+    showRun(`run ${id} · status unavailable: ${error.message}`, true);
+  }
+}
+
 async function startRun() {
   const status = $('run-status');
   if (!(await saveTargets())) { status.textContent = 'targets not saved; not starting'; return; }
   const iterations = Number($('run-iterations').value || 500);
   const seed = Number($('run-seed').value || 1);
-  const years = Number($('year').max || 50);
-  status.textContent = 'starting…';
+  const years = Number($('run-years').value || 50);
+  status.textContent = '';
+  $('start-run').disabled = true;
+  $('start-run').textContent = 'Running…';
+  runWatch = { id: null, timer: null, source: null, started: Date.now(), done: false };
+  state.live = { active: true, schedule: new Map() };
+  state.history = [];
+  drawSpark();
+  showRun('starting the search…', true);
   try {
     const response = await fetch('api/runs', {
       method: 'POST',
@@ -308,27 +516,40 @@ async function startRun() {
       throw new Error(detail);
     }
     const run = await response.json();
-    status.textContent = `run ${run.id}: starting`;
+    runWatch.id = run.id;
+    pollRun(run.id);
+    runWatch.timer = setInterval(() => pollRun(run.id), 2000);
     const events = new EventSource(`api/runs/${encodeURIComponent(run.id)}/events`);
+    runWatch.source = events;
+    events.addEventListener('started', () => showRun(`run ${run.id} · connected · ${elapsed()}`, true));
+    events.addEventListener('schedule', (event) => {
+      const payload = JSON.parse(event.data);
+      for (const [block, chain] of payload.changed ?? []) {
+        state.live.schedule.set(String(block), chain);
+      }
+      scheduleRepaint();
+    });
     events.addEventListener('progress', (event) => {
       const step = JSON.parse(event.data);
-      status.textContent = `run ${run.id}: iteration ${step.iteration}, objective ${Number(step.objective).toFixed(2)}`;
+      state.history.push({ iteration: step.iteration, objective: Number(step.objective) });
+      if (state.history.length > 2000) state.history.shift();
+      drawSpark();
+      showRun(
+        `run ${run.id} · iteration ${step.iteration} · objective ${Number(step.objective).toFixed(2)} · ${elapsed()}`,
+        true,
+      );
     });
-    events.addEventListener('done', async () => {
-      events.close();
-      status.textContent = `run ${run.id}: done`;
-      const summary = await api('api/summary');
-      if (await fillRuns(summary, run.id)) {
-        await loadPeriods(); await loadTargets(); await loadReports(); await loadMap();
-      }
+    events.addEventListener('targets', (event) => {
+      const payload = JSON.parse(event.data);
+      updateLiveTargets(payload.values ?? [], payload.iteration);
     });
-    events.addEventListener('error', (event) => {
-      if (status.textContent.endsWith('done')) return;
-      status.textContent = `run ${run.id}: stream closed`;
-      events.close();
-    });
+    events.addEventListener('done', () => finishRun(run.id));
+    events.addEventListener('error', () => { /* the poll decides; the proxy may buffer SSE */ });
   } catch (error) {
-    status.textContent = `not started: ${error.message}`;
+    state.live.active = false;
+    $('start-run').disabled = false;
+    $('start-run').textContent = 'Run search';
+    showRun(`not started: ${error.message}`, false);
   }
 }
 
@@ -431,7 +652,7 @@ function wireControls() {
     state.year = Number(event.target.value);
     $('year-label').textContent = state.year;
   });
-  $('year').addEventListener('change', () => loadMap());
+  $('year').addEventListener('change', () => { if (state.live.active) render(false); else loadMap(); });
   $('skin').addEventListener('change', async (event) => {
     const skins = await api('api/skins');
     const skin = skins.find((candidate) => candidate.id === event.target.value);
@@ -482,6 +703,7 @@ function wireControls() {
 
 async function start() {
   wireControls();
+  loadWatched();
   try {
     const summary = await api('api/summary');
     const select = $('run');

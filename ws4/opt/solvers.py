@@ -12,7 +12,7 @@ import math
 import random
 import time
 from collections import deque
-from collections.abc import Callable
+from collections.abc import Callable, Mapping, Sequence
 
 from .cooling import TemperatureSchedule
 from .core import Problem
@@ -20,6 +20,11 @@ from .incremental import IncrementalObjective
 from .operators import Candidates, Chain, OperatorRegistry, Schedule, restore
 
 StepCallback = Callable[[int, float], None]
+
+#: Called with (iteration, realized cells) on a snapshot interval.
+SnapshotCallback = Callable[
+    [int, Mapping[tuple[int, str], float], Mapping[int, Sequence[tuple[str, int]]]], None
+]
 
 
 def _changed_blocks(before: Schedule, after: Schedule) -> list[int]:
@@ -175,6 +180,7 @@ def solve_sa_delta(
     registry: OperatorRegistry,
     initial: Schedule | None = None,
     on_step: StepCallback | None = None,
+    on_snapshot: SnapshotCallback | None = None,
     adaptive: bool = False,
     cooling_window: int = 64,
     deadline: float | None = None,
@@ -208,6 +214,9 @@ def solve_sa_delta(
         A starting schedule.
     on_step : callable or None, optional
         Called with ``(iteration, best_objective)`` each iteration.
+    on_snapshot : callable or None, optional
+        Called with ``(iteration, realized cells, incumbent schedule)`` every twentieth iteration
+        and on the last one, which is what a live target view and an animated map read.
     adaptive : bool, optional
         Use the adaptive Aarts-Van Laarhoven schedule instead of the geometric one.
     cooling_window : int, optional
@@ -250,6 +259,8 @@ def solve_sa_delta(
                 evaluator.revert()
         schedule.observe(increase, current_obj)
         _report(on_step, iteration, best_obj)
+        if on_snapshot is not None and (iteration % 20 == 0 or iteration == iterations - 1):
+            on_snapshot(iteration, evaluator.totals, evaluator.assignments)
     return best, best_obj
 
 

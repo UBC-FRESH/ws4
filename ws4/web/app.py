@@ -190,15 +190,65 @@ def create_app(
         processes[run_id] = subprocess.Popen(command, stdout=console, stderr=subprocess.STDOUT)
         return {"id": run_id, "iterations": iterations, "seed": seed, "years": years}
 
+    def _last_step(directory: Path) -> dict[str, Any] | None:
+        """Return the last telemetry step, reading only the file's tail."""
+        path = directory / "telemetry.jsonl"
+        if not path.is_file():
+            return None
+        with path.open("rb") as handle:
+            handle.seek(0, 2)
+            size = handle.tell()
+            handle.seek(max(0, size - 8192))
+            tail = handle.read().decode("utf-8", errors="replace").splitlines()
+        for line in reversed(tail):
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if record.get("type") == "step":
+                step: dict[str, Any] = record
+                return step
+        return None
+
+    @app.get("/api/runs/{run}/status")
+    def run_status(run: str) -> dict[str, Any]:
+        """Return whether a run is live, its last telemetry step, and its summary when written."""
+        directory = run_dir(run)
+        process = processes.get(run)
+        summary_path = directory / "summary.json"
+        summary = (
+            json.loads(summary_path.read_text(encoding="utf-8")) if summary_path.is_file() else None
+        )
+        has_accounts = (directory / "account_values.csv").is_file()
+        if summary is not None or has_accounts:
+            state = "done"
+        elif process is not None and process.poll() is not None:
+            state = "failed"
+        else:
+            state = "running"
+        return {
+            "id": run,
+            "status": state,
+            "running": state == "running",
+            "pid": process.pid if process is not None else None,
+            "last_step": _last_step(directory),
+            "summary": summary,
+        }
+
     @app.get("/api/runs/{run}/events")
     def run_events(run: str) -> StreamingResponse:
         """Stream the run's telemetry as SSE: progress per step, then done or error."""
         directory = run_dir(run)
 
         def stream() -> Iterator[str]:
+            yield f"event: started\ndata: {json.dumps({'id': run})}\n\n"
             telemetry = directory / "telemetry.jsonl"
             seen = 0
+            ticks = 0
             while True:
+                ticks += 1
+                if ticks % 20 == 0:
+                    yield ": keepalive\n\n"
                 if telemetry.is_file():
                     lines = telemetry.read_text(encoding="utf-8").splitlines()
                     for line in lines[seen:]:
@@ -208,6 +258,10 @@ def create_app(
                             continue
                         if record.get("type") == "step":
                             yield f"event: progress\ndata: {json.dumps(record)}\n\n"
+                        elif record.get("type") == "targets":
+                            yield f"event: targets\ndata: {json.dumps(record)}\n\n"
+                        elif record.get("type") == "schedule":
+                            yield f"event: schedule\ndata: {json.dumps(record)}\n\n"
                     seen = len(lines)
                 summary = directory / "summary.json"
                 if summary.is_file():

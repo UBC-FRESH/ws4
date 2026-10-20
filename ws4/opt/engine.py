@@ -13,7 +13,7 @@ import math
 import os
 import random
 import time
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
@@ -1032,6 +1032,11 @@ class Optimizer:
         self,
         seed: int,
         on_step: Callable[[int, float], None] | None = None,
+        on_snapshot: Callable[
+            [int, Mapping[tuple[int, str], float], Mapping[int, Sequence[tuple[str, int]]]],
+            None,
+        ]
+        | None = None,
         initial: Schedule | None = None,
     ) -> tuple[Schedule, float]:
         """Run one metaheuristic start with the given seed.
@@ -1042,6 +1047,9 @@ class Optimizer:
             The seed for this start.
         on_step : callable or None, optional
             Called with ``(iteration, best_objective)`` each iteration.
+        on_snapshot : callable or None, optional
+            Called with ``(iteration, realized cells, incumbent schedule)`` on the snapshot
+            interval, for a live target view and an animated map.
         initial : Schedule or None, optional
             A starting schedule (for example a migrated elite). When omitted, the warm
             start seeds the search with each block's first candidate.
@@ -1100,6 +1108,7 @@ class Optimizer:
                 initial=initial,
                 deadline=self._deadline,
                 on_step=on_step,
+                on_snapshot=on_snapshot,
                 adaptive=self.cfg.cooling_mode == "adaptive",
                 cooling_window=self.cfg.cooling_window,
             )
@@ -1237,7 +1246,21 @@ class Optimizer:
         else:
             best, best_obj = {}, math.inf
             for start in range(max(1, self.cfg.starts)):
-                candidate, candidate_obj = self._solve(self.cfg.seed + start, on_step=logger.step)
+
+                def snapshot(
+                    iteration: int,
+                    totals: Mapping[tuple[int, str], float],
+                    schedule: Mapping[int, Sequence[tuple[str, int]]],
+                ) -> None:
+                    """Write the live target cells and the schedule's movement."""
+                    logger.targets(iteration, totals)
+                    logger.schedule(iteration, schedule)
+
+                candidate, candidate_obj = self._solve(
+                    self.cfg.seed + start,
+                    on_step=logger.step,
+                    on_snapshot=snapshot,
+                )
                 if candidate_obj < best_obj:
                     best, best_obj = candidate, candidate_obj
             targets = load_targets(Path(self.cfg.targets_path)) if self.cfg.targets_path else []
