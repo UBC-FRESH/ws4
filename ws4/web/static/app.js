@@ -383,7 +383,7 @@ async function saveTargets() {
       throw new Error(detail);
     }
     $('targets-status').textContent = `saved ${rows.length} targets`;
-    await loadTargets();
+    loadTargets().catch(() => { /* the run does not depend on the table refresh */ });
     return true;
   } catch (error) {
     $('targets-status').textContent = `not saved: ${error.message}`;
@@ -493,24 +493,36 @@ async function pollRun(id) {
 
 async function startRun() {
   const status = $('run-status');
-  if (!(await saveTargets())) { status.textContent = 'targets not saved; not starting'; return; }
+  $('start-run').disabled = true;
+  $('start-run').textContent = 'Running…';
+  showRun('saving targets…', true);
+  let saved = false;
+  try { saved = await saveTargets(); } catch (error) { saved = false; }
+  if (!saved) {
+    $('start-run').disabled = false;
+    $('start-run').textContent = 'Run search';
+    showRun('targets not saved — see the message below', false);
+    return;
+  }
   const iterations = Number($('run-iterations').value || 500);
   const seed = Number($('run-seed').value || 1);
   const years = Number($('run-years').value || 50);
   status.textContent = '';
-  $('start-run').disabled = true;
-  $('start-run').textContent = 'Running…';
   runWatch = { id: null, timer: null, source: null, started: Date.now(), done: false };
   state.live = { active: true, schedule: new Map() };
   state.history = [];
   drawSpark();
-  showRun('starting the search…', true);
+  showRun('posting the run request…', true);
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), 20000);
   try {
     const response = await fetch('api/runs', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ iterations, seed, years }),
+      signal: controller.signal,
     });
+    window.clearTimeout(timer);
     if (!response.ok) {
       const detail = (await response.json()).detail ?? response.statusText;
       throw new Error(detail);
@@ -546,10 +558,12 @@ async function startRun() {
     events.addEventListener('done', () => finishRun(run.id));
     events.addEventListener('error', () => { /* the poll decides; the proxy may buffer SSE */ });
   } catch (error) {
+    window.clearTimeout(timer);
     state.live.active = false;
     $('start-run').disabled = false;
     $('start-run').textContent = 'Run search';
-    showRun(`not started: ${error.message}`, false);
+    const reason = error.name === 'AbortError' ? 'the request timed out after 20 s' : error.message;
+    showRun(`not started: ${reason}`, false);
   }
 }
 
