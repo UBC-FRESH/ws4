@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), watchCells: new Map(), live: { active: false, schedule: new Map() }, history: [] };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), windowValues: new Map(), live: { active: false, schedule: new Map() }, history: [] };
 
 const $ = (id) => document.getElementById(id);
 const statusLine = (text) => { $('status').textContent = text; };
@@ -225,31 +225,129 @@ function makeMini() {
   return { mini, band, marker };
 }
 
+function statusOf(row, value) {
+  if (value === undefined || value === null) return 'unknown';
+  if (row.minimum !== null && value < row.minimum) return 'below';
+  if (row.maximum !== null && value > row.maximum) return 'above';
+  return 'met';
+}
+
 function renderWatchPanel() {
   const panel = $('watch-panel');
   panel.replaceChildren();
-  state.watchCells = new Map();
-  const rows = state.targets.filter((row) => state.watched.has(`${row.year}|${row.account}`));
-  if (!rows.length) {
-    panel.textContent = 'no targets selected — tick Watch in the table';
+  const watched = state.targets.filter((row) => state.watched.has(`${row.year}|${row.account}`));
+  if (!watched.length) {
+    panel.textContent = 'no targets selected — tick a target in the table below';
     return;
   }
-  for (const row of rows) {
-    const item = document.createElement('div');
-    item.className = 'watch-item';
+  const groups = new Map();
+  for (const row of watched) {
+    if (!groups.has(row.account)) groups.set(row.account, []);
+    groups.get(row.account).push(row);
+  }
+  const svgNS = 'http://www.w3.org/2000/svg';
+  for (const [account, rows] of groups) {
+    rows.sort((left, right) => left.year - right.year);
+    const values = rows.map((row) => state.windowValues.get(`${row.year}|${row.account}`));
+    const card = document.createElement('div');
+    card.className = 'window-card';
+    const title = document.createElement('div');
+    title.className = 'window-title';
     const name = document.createElement('span');
-    name.className = 'watch-name';
-    name.textContent = `${row.account} · ${row.year}`;
-    name.title = row.account;
-    const { mini, band, marker } = makeMini();
-    const text = document.createElement('span');
-    text.className = 'mini-text';
-    item.append(name, mini, text);
-    panel.append(item);
-    const key = `${row.year}|${row.account}`;
-    const entry = { row, text, band, marker, value: state.targetCells.get(key)?.value };
-    state.watchCells.set(key, entry);
-    paintTarget(entry, entry.value);
+    name.className = 'name';
+    name.textContent = account;
+    name.title = account;
+    const latest = rows.map((row, index) => ({ row, value: values[index] }))
+                       .filter((entry) => entry.value !== undefined).pop();
+    const badge = document.createElement('span');
+    badge.className = 'window-badge';
+    if (latest) {
+      badge.textContent = `${Number(latest.value).toLocaleString(undefined, { maximumFractionDigits: 1 })} · ${statusOf(latest.row, latest.value)}`;
+      badge.classList.add(statusOf(latest.row, latest.value));
+    } else {
+      badge.textContent = '—';
+    }
+    title.append(name, badge);
+    card.append(title);
+    const width = 320, height = 88, left = 34, right = 8, top = 8, bottom = 18;
+    let low = Infinity, high = -Infinity;
+    rows.forEach((row, index) => {
+      const value = values[index];
+      for (const bound of [row.minimum, row.maximum, value]) {
+        if (bound !== null && bound !== undefined && Number.isFinite(Number(bound))) {
+          low = Math.min(low, Number(bound));
+          high = Math.max(high, Number(bound));
+        }
+      }
+    });
+    if (!Number.isFinite(low) || !Number.isFinite(high)) { low = 0; high = 1; }
+    if (low === high) { low -= 0.5; high += 0.5; }
+    const pad = (high - low) * 0.12;
+    const domainLow = low - pad, domainHigh = high + pad;
+    const x = (index) => (rows.length === 1
+      ? left + (width - left - right) / 2
+      : left + (index / (rows.length - 1)) * (width - left - right));
+    const y = (value) => top + (1 - (value - domainLow) / (domainHigh - domainLow)) * (height - top - bottom);
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    svg.setAttribute('class', 'window-svg');
+    const axis = document.createElementNS(svgNS, 'line');
+    axis.setAttribute('x1', left); axis.setAttribute('x2', width - right);
+    axis.setAttribute('y1', height - bottom); axis.setAttribute('y2', height - bottom);
+    axis.setAttribute('class', 'window-axis');
+    svg.append(axis);
+    rows.forEach((row, index) => {
+      const bandWidth = Math.max(10, Math.min(18, (width - left - right) / Math.max(rows.length, 1) * 0.55));
+      if (row.minimum !== null && row.maximum !== null) {
+        const band = document.createElementNS(svgNS, 'rect');
+        band.setAttribute('x', x(index) - bandWidth / 2);
+        band.setAttribute('y', y(row.maximum));
+        band.setAttribute('width', bandWidth);
+        band.setAttribute('height', Math.max(1, y(row.minimum) - y(row.maximum)));
+        band.setAttribute('class', 'window-band');
+        svg.append(band);
+      } else if (row.minimum !== null) {
+        const line = document.createElementNS(svgNS, 'line');
+        line.setAttribute('x1', x(index) - bandWidth / 2); line.setAttribute('x2', x(index) + bandWidth / 2);
+        line.setAttribute('y1', y(row.minimum)); line.setAttribute('y2', y(row.minimum));
+        line.setAttribute('class', 'window-bound'); svg.append(line);
+      } else if (row.maximum !== null) {
+        const line = document.createElementNS(svgNS, 'line');
+        line.setAttribute('x1', x(index) - bandWidth / 2); line.setAttribute('x2', x(index) + bandWidth / 2);
+        line.setAttribute('y1', y(row.maximum)); line.setAttribute('y2', y(row.maximum));
+        line.setAttribute('class', 'window-bound'); svg.append(line);
+      }
+      if (rows.length <= 6 || index === 0 || index === rows.length - 1) {
+        const label = document.createElementNS(svgNS, 'text');
+        label.setAttribute('x', x(index));
+        label.setAttribute('y', height - 5);
+        label.setAttribute('text-anchor', 'middle');
+        label.setAttribute('class', 'window-label');
+        label.textContent = String(row.year);
+        svg.append(label);
+      }
+    });
+    const defined = rows.map((row, index) => ({ index, value: values[index] }))
+                        .filter((entry) => entry.value !== undefined);
+    if (defined.length > 1) {
+      const line = document.createElementNS(svgNS, 'polyline');
+      line.setAttribute('points', defined.map((entry) => `${x(entry.index)},${y(entry.value)}`).join(' '));
+      line.setAttribute('class', 'window-line');
+      svg.append(line);
+    }
+    for (const entry of defined) {
+      const dot = document.createElementNS(svgNS, 'circle');
+      dot.setAttribute('cx', x(entry.index));
+      dot.setAttribute('cy', y(entry.value));
+      dot.setAttribute('r', 2.6);
+      dot.setAttribute('class', `window-dot ${statusOf(rows[entry.index], entry.value)}`);
+      const tip = document.createElementNS(svgNS, 'title');
+      tip.textContent = `${rows[entry.index].year}: ${Number(entry.value).toLocaleString()} (${statusOf(rows[entry.index], entry.value)})`;
+      dot.append(tip);
+      svg.append(dot);
+    }
+    card.append(svg);
+    panel.append(card);
   }
 }
 
@@ -290,11 +388,12 @@ function updateLiveTargets(values, iteration) {
   let painted = 0;
   for (const item of values) {
     const key = `${item.year}|${item.account}`;
+    const value = Number(item.value);
+    if (state.watched.has(key)) { state.windowValues.set(key, value); painted += 1; }
     const entry = state.targetCells.get(key);
-    if (entry) { paintTarget(entry, Number(item.value)); painted += 1; }
-    const watched = state.watchCells.get(key);
-    if (watched) paintTarget(watched, Number(item.value));
+    if (entry) paintTarget(entry, value);
   }
+  if (painted) renderWatchPanel();
   if (painted && iteration !== undefined) {
     $('run-status').textContent = `live target state at iteration ${iteration} (${painted} cells)`;
   }
@@ -306,6 +405,7 @@ async function loadTargets() {
   const button = $('save-targets');
   try {
     state.targetCells = new Map();
+    state.windowValues = new Map();
     const rows = await api('api/targets.json');
     state.targets = rows;
     if (!rows.length) {
@@ -366,6 +466,10 @@ async function loadTargets() {
       body.append(tr);
     });
     for (const entry of state.targetCells.values()) paintTarget(entry, entry.value);
+    for (const row of rows) {
+      const value = values[row.year]?.[row.account];
+      if (value !== undefined) state.windowValues.set(`${row.year}|${row.account}`, Number(value));
+    }
     renderWatchPanel();
     if (state.skin) applySkin(state.skin);
   } catch (error) {
