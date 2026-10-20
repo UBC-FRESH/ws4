@@ -1932,3 +1932,30 @@ issue comments.
   routes in metres), which closes P13's last item — the route report's distance unit. Reports:
   `notes/reports/p17-tradeoff.md` and `p17-opened-roads.md`. P13 and P17 are complete. Dashboard:
   **GREEN**.
+- P18.1 **the optional web service, and the front-end design.** `ws4[web]` (FastAPI + uvicorn) serves
+  the artefacts a run already wrote: the dataset manifest and runs (`/api/summary`), a run's summary,
+  its account values, its reports, and a treatment layer joined to a GeoJSON geometry file; the targets
+  YAML is readable and replaceable, with the optimizer's own loader as the validator (an invalid edit is
+  a 422 and the file is left unchanged). The bind is loopback-only unless `--allow-remote` is passed.
+  The design — the artefact contract, the SSE contract, the skin manifests, and the MapLibre interface
+  — is `notes/design/ws4-web-frontend.md`; the API is `docs/reference/web.rst`. The core install is
+  unchanged; the service is an extra, imported lazily by `ws4 serve`. Tests: `tests/test_web.py`
+  (seven cases). Dashboard: **GREEN**.
+- P18.2 **the browser shell, first cut.** The service now serves a dependency-free application
+  (`ws4/web/static/`) over its own artefacts: a run selector, a year control taken from the schedule,
+  treated/untreated layers with counts, click selection, wheel-zoom/pan, and the Legend/Targets/Reports
+  tabs. `GET /api/runs/{run}/periods` supplies the run's period range, and `/map` returns **every**
+  block with `treated` and `treatments` properties so the client styles and toggles without a second
+  request. `Simulator.run` now records the schedule it replayed in the run directory (guarded when the
+  run is written into the schedule's own directory), which is what the map joins against. The static
+  files ship in the wheel (`package-data`). It works at `/` and under a proxy prefix because every URL
+  is relative. A run directory with `account_values.csv` but no `summary.json` is listed as a
+  `simulate` run; a directory with neither is not offered. Tests: nine service cases. Dashboard:
+  **GREEN**.
+- P18.3 **the targets panel, first cut.** The service exposes the parsed targets as JSON
+  (`GET/PUT /api/targets.json`) so the browser needs no YAML parser; a PUT is serialized to YAML and
+  validated with the optimizer's own `load_targets`, so an invalid edit is refused exactly as the CLI
+  would refuse it. The Targets tab renders a table per account and period with editable minimum,
+  maximum and weights, saves through that path, and shows the realized value from the selected run's
+  own `account_values.csv` with a met/below/above status. Remaining: the active toggle and the resolve
+  action. Tests: ten service cases. Dashboard: **GREEN**.

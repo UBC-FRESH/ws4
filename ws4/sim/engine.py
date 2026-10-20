@@ -9,6 +9,7 @@ fragment's offset age by one year. A schedule replays deterministically.
 from __future__ import annotations
 
 import json
+import shutil
 import warnings
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -1291,6 +1292,11 @@ class Simulator:
         (out_dir / "dataset.json").write_text(
             json.dumps(dataset_reference(self.dataset_dir), indent=2) + "\n", encoding="utf-8"
         )
+        # a run records the schedule it replayed, as it records the dataset it read; a run written
+        # into the schedule's own directory already holds it
+        recorded_schedule = out_dir / "schedule.csv"
+        if Path(schedule_csv).resolve() != recorded_schedule.resolve():
+            shutil.copyfile(schedule_csv, recorded_schedule)
         return values
 
     def write_patch_metrics(

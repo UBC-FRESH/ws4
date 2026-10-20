@@ -35,6 +35,7 @@ dependencies = [
 [project.optional-dependencies]
 geo = ["geopandas>=0.14", "pyogrio>=0.9", "shapely>=2.0", "rtree>=1.0"]
 opt = ["numba>=0.59", "networkx>=3.2", "ray>=2.9", "scipy>=1.11", "threadpoolctl>=3.1"]
+web = ["fastapi>=0.110", "uvicorn>=0.29"]
 
 [project.urls]
 Homepage = "https://github.com/UBC-FRESH/ws4"
@@ -47,6 +48,9 @@ ws4 = "ws4.cli:app"
 
 [tool.setuptools.packages.find]
 include = ["ws4*"]
+
+[tool.setuptools.package-data]
+"ws4.web" = ["static/*"]
 
 # Tool configuration for the green dashboard (scripts/dashboard.py). Each gate configured
 # here is also a CI check and a pre-commit hook.

@@ -29,7 +29,7 @@ exists and the maintainer approves it.
 | P15 A spread-connectivity account | #138 | `feature/p15-spread-connectivity` | complete |
 | P16 The bridge at the same footprint | #141 | `feature/p16-bridge-matched` | complete |
 | P17 Roads opened to the period | #145 | `feature/p17-opened-roads` | complete |
-| P18 A graphical web front end | #146 | `feature/p18-web-frontend` | planned |
+| P18 A graphical web front end | #146 | `feature/p18-web-frontend` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -729,7 +729,7 @@ but moves `LENGTH` only 4.5%, so P17.5 is the remaining lever and the phase stay
 
 Parent issue: #146
 Branch: `feature/p18-web-frontend`
-Status: planned
+Status: active
 
 Goal: a browser front end over the same artefacts the CLI writes — the compiled dataset, the schedule,
 the account values, the route, patch and spread reports, the run summary — with a map, a period selector,
@@ -738,11 +738,16 @@ manifests over one application, not forks. The reference UI's layout is the insp
 grouped legends, a period strip, and Legend/Targets/Reports/Comparisons tabs; treatment maps separate the
 current period from the cumulative total.
 
-- [ ] P18.1 The service surface — optional `ws4[web]` (FastAPI), artefacts as the contract, SSE for live
+- [x] P18.1 The service surface — optional `ws4[web]` (FastAPI), artefacts as the contract, SSE for live
   incumbent values, targets round-tripping the optimizer's own YAML.
-- [ ] P18.2 The map shell — MapLibre, layer tree, period control, blocks/treatments/spatial accounts, road
-  layers split built/used/planned.
-- [ ] P18.3 Targets — per-account, per-period min/max/weights, active toggle, realized values live.
+- [ ] P18.2 The map shell — **first cut live**: a dependency-free SVG shell over the service, with a run
+  selector, year control from the schedule, treated/untreated layers with counts, click selection,
+  wheel-zoom/pan, and the Legend/Targets/Reports tabs. Remaining: the patch/compartment/road layer
+  families and the grouped layer tree; then the MapLibre swap when a basemap is needed.
+- [ ] P18.3 Targets — **first cut live**: a table per account and period with editable min/max/weights,
+  a save that validates through the optimizer's loader, and the realized value from the selected run's
+  own CSV with a met/below/above status. Remaining: the active toggle and the resolve action, which
+  needs the streaming run surface.
 - [ ] P18.4 Reports — standard reports from the run's CSVs, user-defined definitions, CSV/PNG/HTML export.
 - [ ] P18.5 Skins — four manifests; a skin cannot enable what the service does not expose.
 - [ ] P18.6 Comparison — two runs side by side, map and account deltas, target status.
