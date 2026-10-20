@@ -1,6 +1,7 @@
 :root { --ink:#1f2933; --muted:#616e7c; --line:#d9e2ec; --bg:#f7f9fb; --panel:#fff;
         --treated:#c0392b; --untreated:#2f7d4f; }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin:0; font:14px/1.45 system-ui, sans-serif; color:var(--ink); background:var(--bg); height:100vh; display:flex; flex-direction:column; }
 header { display:flex; gap:1.2rem; align-items:center; padding:.55rem .9rem; background:var(--panel); border-bottom:1px solid var(--line); }
 header strong { font-size:1.05rem; letter-spacing:.04em; }
