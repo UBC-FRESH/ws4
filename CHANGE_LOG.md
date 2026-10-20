@@ -1920,3 +1920,15 @@ issue comments.
   0.53×) and hauls for less (0.56×) while moving the same volume (1.00×) — the reference's road/haul
   trade-off, now a modelling difference rather than a reporting artifact. Report:
   `notes/reports/p17-opened-roads.md`; the remaining question is P17.6. Dashboard: **GREEN**.
+- P17.6 **the road/haul trade-off is a model difference, not an accounting one, and the last P13 item
+  is closed.** With the period accounting matched, the 2026 period-1 decomposition says: build cost
+  **per metre is identical** (5.00 both) — the reference builds 1.9× the length; WS4 hauls **22%
+  farther** (61.4 against 50.3 km) but on roads costing **0.46× per unit-km**, for a net haul of 0.56×;
+  road use and maintenance are close (0.77× and 0.93×). WS4 minimises haul over the roads that exist;
+  the reference solves the road set and the block-to-mill assignment jointly under its targets. The
+  divergence is named in the parity mode (*road selection and haul routing*) rather than tuned with an
+  uncalibrated road price: a weight fitted to one period would be an artifact, not the reference's
+  objective. `AVERAGEHAULDIST` is now reported in **kilometres** (the reference's unit; the model still
+  routes in metres), which closes P13's last item — the route report's distance unit. Reports:
+  `notes/reports/p17-tradeoff.md` and `p17-opened-roads.md`. P13 and P17 are complete. Dashboard:
+  **GREEN**.

@@ -388,6 +388,8 @@ def test_the_route_report_is_folded_into_the_models_periods() -> None:
     assert report.iloc[0]["length"] == 300.0
     # maintenance is once per segment per period, not once per year: two segments, 1.0 each
     assert report.iloc[0]["maintain_expense"] == 2.0
+    # the average distance is reported in kilometres, the reference's unit (300 m / 100 units)
+    assert abs(report.iloc[0]["average_haul_distance"] - 0.3) < 1e-12
     first = report.iloc[0]
     assert first["volume"] == 100.0
     assert abs(first["average_haul_cost"] - first["haul_expense"] / 100.0) < 1e-9

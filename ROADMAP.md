@@ -24,11 +24,11 @@ exists and the maintainer approves it.
 | P9 Spatial performance and memory | #97 | `feature/p9-memory` | complete |
 | P11 The derived targets and the sample's own files | #112 | `feature/p11-derived-targets` | complete |
 | P12 Spatial decision match | #120 | `feature/p12-spatial-decisions` | complete |
-| P13 The reference's remaining readings | #128 | `feature/p13-reference-readings` | active |
+| P13 The reference's remaining readings | #128 | `feature/p13-reference-readings` | complete |
 | P14 Optimizer search for aggregate targets | #133 | `feature/p14-optimizer-seeding` | complete |
 | P15 A spread-connectivity account | #138 | `feature/p15-spread-connectivity` | complete |
 | P16 The bridge at the same footprint | #141 | `feature/p16-bridge-matched` | complete |
-| P17 Roads opened to the period | #145 | `feature/p17-opened-roads` | active |
+| P17 Roads opened to the period | #145 | `feature/p17-opened-roads` | complete |
 | P18 A graphical web front end | #146 | `feature/p18-web-frontend` | planned |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
@@ -564,7 +564,7 @@ Acceptance criteria:
 
 Parent issue: #128
 Branch: `feature/p13-reference-readings`
-Status: active
+Status: complete
 
 Goal: close the parity items P12 deferred — each one either implemented, or refused again with a sharper
 measurement. They are the places where the reference's reading is known to differ *and* the comparison is
@@ -687,7 +687,7 @@ green.
 
 Parent issue: #145
 Branch: `feature/p17-opened-roads`
-Status: active
+Status: complete
 
 Goal: route each period over the roads that exist in it. The reference routes only through segments
 built on or before the current period and builds new ones during the solve to reach the blocks it
@@ -713,11 +713,12 @@ not all built then).
   the reference charges once per period. Charging once over the period's union gives **1,052,489**
   against the reference's 1,126,465 (0.93×), where the per-year sum was 3,622,033 (3.22×). The charge is
   booked in the first year of the period in which the segment is used.
-- [ ] P17.6 The road/haul trade-off — with the accounting definitions matched, WS4 builds and uses less
-  road (`LENGTH` 0.77×, `BUILTLENGTH` 0.53×) and hauls for less (0.56×) for the same volume. Explain
-  and measure the difference: is it the reference's road-cost-aware solve, its candidate network, or
-  the block-to-mill assignment? Decide whether to price road in WS4's objective or record the
-  divergence by name.
+- [x] P17.6 The road/haul trade-off — measured: build cost **per metre is identical** (5.00 both), the
+  reference builds 1.9× more; WS4 hauls 22% farther but on roads 0.46× the cost per unit-km. It is a
+  **model-objective difference** (WS4 minimises haul over roads that exist; the reference solves the
+  road set and assignment jointly), recorded as the second named divergence rather than tuned with an
+  uncalibrated road price. Report: `notes/reports/p17-tradeoff.md`. The route report's
+  `AVERAGEHAULDIST` is now in kilometres, closing the last P13 item.
 
 Acceptance: the tests fail on whole-network routing and pass on opened routing; the 2026 `LENGTH` ratio
 moves toward 1 with an early `BUILTLENGTH` spike; the remaining gap is measured; dashboard green. **The
@@ -903,3 +904,17 @@ the design is recorded before the first UI line.
     the account stands as a fragmentation metric, not a fire-response proxy. P16.2 fixed the real 4×
     cause — 1,515,465 exact duplicate product rows, not a 4.0 curve — in the builder and in the loader
     warning. Reports: `notes/reports/p16-bridge-matched.md` and `notes/reports/p16-closeout.md`.
+22. Phase 13 is complete: parent issue #128 closed. P13.1 and P13.2 were merged earlier (#130, #132);
+    the two items that remained — what the route report's `LENGTH` counts and its distance unit — were
+    resolved by P17: `LENGTH` is the **distinct road used in the period, counted once**, and
+    `AVERAGEHAULDIST` is reported in kilometres, the reference's unit. Patch membership and the
+    reference's per-segment road construction remain named as unverifiable/not required. Report:
+    `notes/reports/p13-closeout.md`.
+23. Phase 17 is complete: parent issue #145 closed. Pull requests #147 (opened roads), #148 (period
+    `LENGTH`), #149 (period maintenance) and the report pull request merged. The accounting definitions
+    now match the reference — `LENGTH` 0.77×, maintenance 0.93×, volume 1.00× — after two period-quantity
+    defects were found and fixed (annual distinct lengths summed; maintenance charged per year). The
+    remaining difference is a **model-objective** one, named: the reference builds 1.9× more road at the
+    same cost per metre and hauls 22% farther at 0.46× the cost per unit-km, because its solve chooses
+    the road set and the assignment jointly. Reports: `p17-opened-roads.md`, `p17-tradeoff.md`,
+    `p17-closeout.md`. Next: P18.
