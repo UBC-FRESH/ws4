@@ -1097,11 +1097,13 @@ class RouteCostLedger:
         """Return the route cost report: one row per period of the model.
 
         The report is folded into the model's own periods, so its rows are the reference's: a
-        period is labelled by the year it **ends** at and carries the model's period width, and
-        the years within it are summed. What a period holds is a sum for the extensive columns —
-        length, built length, the expenses, the volume — while the averages are recomputed from
-        those sums rather than averaged, which is what makes them mean the same thing in a
-        ten-year period as in a one-year one.
+        period is labelled by the year it **ends** at and carries the model's period width. The
+        expenses and the volume are summed over the period's years. ``LENGTH`` is the length of
+        the **distinct** road used at any time in the period, counted once — a road used in five
+        of the period's ten years is one road, not five — which is the reference's reading of the
+        column. ``BUILTLENGTH`` is the length first built in the period, also counted once. The
+        averages are recomputed from those figures rather than averaged, which is what makes them
+        mean the same thing in a ten-year period as in a one-year one.
 
         With the default period width of one this is one row per year, unchanged.
 
@@ -1121,21 +1123,24 @@ class RouteCostLedger:
         self._flush()
         width = max(int(self.period_width), 1)
         states = (
-            ((year, state) for (year, _segment_id), state in self._segments.items())
+            ((year, segment_id, state) for (year, segment_id), state in self._segments.items())
             if destination is None
             else (
-                (year, state)
-                for (year, one, _segment_id), state in self._by_destination.items()
+                (year, segment_id, state)
+                for (year, one, segment_id), state in self._by_destination.items()
                 if one == destination
             )
         )
-        length: dict[int, float] = {}
+        # LENGTH is a segment-set quantity: the distinct road in use at any time in the period,
+        # counted once. Summing the annual figures would count a road once per year it was used,
+        # which is what made WS4's period LENGTH 2.6 times the reference's.
+        used_segments: dict[int, set[int]] = {}
         built_length: dict[int, float] = {}
         build: dict[int, float] = {}
         haul: dict[int, float] = {}
         maintain: dict[int, float] = {}
-        for year, state in states:
-            length[year] = length.get(year, 0.0) + state.length
+        for year, segment_id, state in states:
+            used_segments.setdefault(year, set()).add(segment_id)
             built_length[year] = built_length.get(year, 0.0) + state.built_length
             build[year] = build.get(year, 0.0) + state.build_expense
             haul[year] = haul.get(year, 0.0) + state.haul_expense
@@ -1157,11 +1162,14 @@ class RouteCostLedger:
         # a period's years, from the year they end at: period 1 is years 1..width, and period 0 is
         # the initial snapshot at year 0, which is how the reference labels its own first row
         periods: dict[int, list[int]] = {}
-        for year in sorted(set(length) | set(volume)):
+        for year in sorted(set(used_segments) | set(volume)):
             periods.setdefault(0 if year <= 0 else (year - 1) // width + 1, []).append(year)
         rows: list[dict[str, float]] = []
         for period, years in sorted(periods.items()):
-            period_length = sum(length.get(year, 0.0) for year in years)
+            period_segments: set[int] = set()
+            for year in years:
+                period_segments |= used_segments.get(year, set())
+            period_length = sum(self._by_id[segment_id].length_m for segment_id in period_segments)
             period_built_length = sum(built_length.get(year, 0.0) for year in years)
             period_build = sum(build.get(year, 0.0) for year in years)
             period_haul = sum(haul.get(year, 0.0) for year in years)

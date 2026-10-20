@@ -1897,3 +1897,15 @@ issue comments.
   network and trades haul for road (its haul expense is 1.8× WS4's). P17.5 names the two levers — a
   road-aware route cost, or fitting the initial set — and the phase stays active. Report:
   `notes/reports/p17-opened-roads.md`. Dashboard: **GREEN**.
+- P17.2 correction **the route report was summing `LENGTH` across the period's years.** The period
+  report treated `LENGTH` as an extensive column, so with `period_width = 10` a road used in nine years
+  counted nine times: MILL1 period 1 read 2,931,907 m. The reference reports the **distinct road used at
+  any time in the period**, counted once. The report now unions the segment ids over the period and sums
+  their lengths once; the expenses and volume remain sums, and `BUILTLENGTH` was already a one-time
+  quantity. Corrected period 1: **882,027 m against the reference's 1,149,647 (0.77×)**, not 2.55×.
+  `BUILTLENGTH` 386,352 (0.53×), `BUILD_EXPENSE` 1.93M (0.53×), `HAUL_EXPENSE` 6.29M (0.56×), `VOLUME`
+  1.02M (1.00×). The 2.55× figure, and the joint-assignment hypothesis built on it, were artifacts of
+  the aggregation and are withdrawn. The remaining discrepancy is `MAINTAIN_EXPENSE` at **3.22×** while
+  road use is lower — P17.5 is re-scoped to the maintenance charging period and rate. Tests updated
+  (`tests/test_roads.py` asserts a route used in ten years is 300 m, not 3,000). Report:
+  `notes/reports/p17-opened-roads.md`. Dashboard: **GREEN**.
