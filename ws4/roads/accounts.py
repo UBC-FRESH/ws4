@@ -1131,7 +1131,8 @@ class RouteCostLedger:
         of the period's ten years is one road, not five — which is the reference's reading of the
         column. ``BUILTLENGTH`` is the length first built in the period, also counted once. The
         averages are recomputed from those figures rather than averaged, which is what makes them
-        mean the same thing in a ten-year period as in a one-year one.
+        mean the same thing in a ten-year period as in a one-year one. ``AVERAGEHAULDIST`` is in
+        kilometres, the reference's unit, while the model routes in metres.
 
         With the default period width of one this is one row per year, unchanged.
 
@@ -1218,8 +1219,9 @@ class RouteCostLedger:
                     "maintain_expense": period_maintain,
                     "total": period_build + period_haul + period_maintain,
                     "volume": period_volume,
+                    # the reference reports this column in kilometres; the model routes in metres
                     "average_haul_distance": (
-                        period_distance / period_volume if period_volume > 0.0 else 0.0
+                        period_distance / period_volume / 1000.0 if period_volume > 0.0 else 0.0
                     ),
                     "average_build_cost": (period_build / period_volume if period_volume else 0.0),
                     "average_haul_cost": (period_haul / period_volume if period_volume else 0.0),
