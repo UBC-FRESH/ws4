@@ -118,6 +118,10 @@ The Legend tab builds a grouped tree from ``GET /api/runs/{run}/layers`` and the
 - **Current treatment** is a solid fill; **earlier** cumulative treatments use a diagonal hatch.
   Patch classes are distinct solid colours. Polygon boundaries stay stroked, so the stand mosaic is
   visible at every zoom.
+- **Base colour** is a presentation choice over the source attributes: compartment, THEME2, THEME5,
+  MartStrata or LMU. The select shows a colour legend for the categories; the map colours every
+  block by the chosen source field. This is a static, source-derived view, not a model computation,
+  and every layer keeps the same polygon geometry.
 - **Roads** and **spread compartments** are shown as unavailable for now. Runs do not write road
   segment geometry or compartment membership, and the service will not invent them; the reason is
   returned by ``/layers`` and shown in the tree.
@@ -144,8 +148,12 @@ Prepare a simplified polygon layer from the source ``blocks.shp`` with the ``geo
 
    frame = gpd.read_file("blocks.shp")
    frame["block_id"] = pd.to_numeric(frame["BLOCK"], errors="coerce").astype(int)
-   frame["compartment"] = frame["COMPART"].astype(str)
-   frame = frame[["block_id", "compartment", "geometry"]]
+   frame["compartment"] = frame["COMPART"].fillna("").astype(str)
+   frame["theme2"] = frame["THEME2"].fillna("").astype(str)
+   frame["theme5"] = frame["THEME5"].fillna("").astype(str)
+   frame["strata"] = frame["MartStrata"].fillna(-1).astype(int).astype(str)
+   frame["lmu"] = frame["LMU"].fillna("").astype(str)
+   frame = frame[["block_id", "compartment", "theme2", "theme5", "strata", "lmu", "geometry"]]
    frame["geometry"] = frame.geometry.simplify(5.0, preserve_topology=True)
    frame.to_file("blocks_polygons.geojson", driver="GeoJSON")
 

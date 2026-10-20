@@ -886,6 +886,27 @@ def create_app(
                     patch_classes = sorted({str(value) for value in frame["class"].dropna()})
                 if "account" in frame:
                     patch_accounts = sorted({str(value) for value in frame["account"].dropna()})
+        base_attributes: list[dict[str, Any]] = []
+        if geometry_path is not None:
+            labels = (
+                ("compartment", "Compartment"),
+                ("theme2", "THEME2"),
+                ("theme5", "THEME5"),
+                ("strata", "MartStrata"),
+                ("lmu", "LMU"),
+            )
+            values: dict[str, set[str]] = {name: set() for name, _ in labels}
+            for feature in base_features():
+                properties = feature.get("properties", {})
+                for name, _ in labels:
+                    value = properties.get(name)
+                    if value is not None and str(value) != "":
+                        values[name].add(str(value))
+            for name, label in labels:
+                if values[name]:
+                    base_attributes.append(
+                        {"name": name, "label": label, "values": sorted(values[name])}
+                    )
         return {
             "blocks": True,
             "treatments": schedule,
@@ -895,6 +916,7 @@ def create_app(
             "compartments": False,
             "patch_classes": patch_classes,
             "patch_accounts": patch_accounts,
+            "base_attributes": base_attributes,
             "roads_reason": "no route geometry is written by a run",
             "compartments_reason": "no compartment membership artifact is written by a run",
         }

@@ -146,7 +146,14 @@ def test_the_map_serves_simplified_block_polygons_and_compartments(tmp_path: Pat
                 "features": [
                     {
                         "type": "Feature",
-                        "properties": {"block_id": 1, "compartment": "ACR"},
+                        "properties": {
+                            "block_id": 1,
+                            "compartment": "ACR",
+                            "theme2": "Y7",
+                            "theme5": "SEFA",
+                            "strata": "0",
+                            "lmu": "A",
+                        },
                         "geometry": {
                             "type": "Polygon",
                             "coordinates": [[[1, 0], [1.5, 0], [1.5, 0.5], [1, 0.5], [1, 0]]],
@@ -154,7 +161,14 @@ def test_the_map_serves_simplified_block_polygons_and_compartments(tmp_path: Pat
                     },
                     {
                         "type": "Feature",
-                        "properties": {"block_id": 2, "compartment": "HEC"},
+                        "properties": {
+                            "block_id": 2,
+                            "compartment": "HEC",
+                            "theme2": "Y6",
+                            "theme5": "SW",
+                            "strata": "1",
+                            "lmu": "B",
+                        },
                         "geometry": {
                             "type": "Polygon",
                             "coordinates": [[[2, 0], [2.5, 0], [2.5, 0.5], [2, 0.5], [2, 0]]],
@@ -179,6 +193,13 @@ def test_the_map_serves_simplified_block_polygons_and_compartments(tmp_path: Pat
     blocks = client.get("/api/runs/run1/map", params={"year": 0, "layer": "blocks"}).json()
     assert blocks["features"][0]["properties"]["treated"] is False
     assert blocks["features"][1]["properties"]["compartment"] == "HEC"
+    layers = client.get("/api/runs/run1/layers").json()
+    attributes = {item["name"]: item["values"] for item in layers["base_attributes"]}
+    assert attributes["compartment"] == ["ACR", "HEC"]
+    assert attributes["theme2"] == ["Y6", "Y7"]
+    assert attributes["theme5"] == ["SEFA", "SW"]
+    assert attributes["strata"] == ["0", "1"]
+    assert attributes["lmu"] == ["A", "B"]
 
 
 def test_periods_come_from_the_runs_schedule(tmp_path: Path) -> None:
@@ -233,6 +254,7 @@ def test_the_layers_endpoint_names_what_the_run_can_draw(tmp_path: Path) -> None
     assert scheduled["cumulative"] is True
     assert scheduled["patches"] is False
     assert scheduled["patch_classes"] == []
+    assert scheduled["base_attributes"] == []
     patches = client.get("/api/runs/run-patches/layers").json()
     assert patches["treatments"] is False
     assert patches["patches"] is True

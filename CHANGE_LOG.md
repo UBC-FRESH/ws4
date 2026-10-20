@@ -2053,3 +2053,10 @@ issue comments.
   configured run can write patch membership. Browser check: 12,567 paths, no circles, 1.3 s first
   render, live updates from 0 to 224 treated blocks with no console errors. Dashboard result:
   `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
+- P18.2 base colours: the stand polygons now support a source-attribute base mode — compartment,
+  THEME2, THEME5, MartStrata or LMU — selected from the layer tree, with a scrollable category
+  legend and a deterministic hue per value. The base view is static and source-derived; no model
+  value is recomputed, and the treatment/cumulative/patch modes keep their fills and hatch. The
+  block detail lists the source attributes. Browser check: 30 compartments and 10 THEME5 classes
+  render as coloured polygon mosaics; switching back to "Off" restores the current-treatment map.
+  Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.

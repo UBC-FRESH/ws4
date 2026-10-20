@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], blockElements: new Map() };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], baseAttributes: [], baseAttribute: '', blockElements: new Map() };
 
 const $ = (id) => document.getElementById(id);
 const statusLine = (text) => { $('status').textContent = text; };
@@ -118,6 +118,10 @@ function render(refit = true) {
         ? (properties.current ? 'current treated' : 'past treated')
         : 'untreated';
       if (isTreated && !properties.current) fill = 'url(#earlier-hatch)';
+    } else if (state.layerMode === 'base' && state.baseAttribute) {
+      isTreated = false;
+      klass = 'base untreated';
+      fill = baseColor(state.baseAttribute, properties[state.baseAttribute]);
     } else {
       isTreated = Boolean(properties.treated);
       if (state.live.active) {
@@ -162,7 +166,11 @@ function render(refit = true) {
   viewport.append(groups.untreated, groups.treated);
   $('n-treated').textContent = treated.toLocaleString();
   $('n-untreated').textContent = untreated.toLocaleString();
+  const baseMode = state.layerMode === 'base' && Boolean(state.baseAttribute);
   $('treated-label').textContent = layerLabel();
+  const skinHasTreatments = state.skin?.layers ? state.skin.layers.includes('treatments') : true;
+  $('treated-label').closest('label').hidden = baseMode || !skinHasTreatments;
+  $('untreated-label').textContent = baseMode ? 'Blocks' : 'Untreated';
   $('scale').textContent = `year ${state.year} · 1 px ≈ ${Math.round(1 / base.scale)} m`;
   applyVisibility();
 }
@@ -213,7 +221,7 @@ async function loadMap() {
     ? 'patches'
     : state.layerMode === 'cumulative' && state.layers?.cumulative
       ? 'cumulative'
-      : state.layers && !state.layers.treatments
+      : state.layerMode === 'base' || (state.layers && !state.layers.treatments)
         ? 'blocks'
         : 'treatments';
   try {
@@ -469,7 +477,23 @@ function patchLabel(klass) {
   return labels[klass] ?? String(klass).replaceAll('_', '–');
 }
 
+function baseAttributeInfo(name) {
+  return state.baseAttributes.find((attribute) => attribute.name === name);
+}
+
+function baseColor(name, value) {
+  const info = baseAttributeInfo(name);
+  if (!info) return '#d9d9d9';
+  const index = info.values.indexOf(String(value));
+  if (index < 0) return '#d9d9d9';
+  return `hsl(${Math.round((index * 137.508) % 360)} 55% 62%)`;
+}
+
 function layerLabel() {
+  if (state.layerMode === 'base' && state.baseAttribute) {
+    const info = baseAttributeInfo(state.baseAttribute);
+    return `Base: ${info?.label ?? state.baseAttribute}`;
+  }
   if (state.compareView && state.compare) return 'Treated in A or B';
   if (state.layerMode === 'cumulative') return 'Treated through the year';
   if (state.layerMode === 'patches') return 'Patches in the year';
@@ -505,6 +529,7 @@ function renderLayerTree() {
     input.disabled = !enabled;
     input.addEventListener('change', () => {
       state.layerMode = value;
+      state.baseAttribute = '';
       renderLayerTree();
       loadMap();
     });
@@ -516,7 +541,7 @@ function renderLayerTree() {
   addMode('current', 'Current treatment', Boolean(info.treatments) && layers.includes('treatments'));
   addMode('cumulative', 'Cumulative through year', Boolean(info.cumulative) && layers.includes('treatments'));
   addMode('patches', 'Patch size class', Boolean(info.patches) && layers.includes('patches'));
-  if (info.cumulative && layers.includes('treatments')) {
+  if (info.cumulative && layers.includes('treatments') && state.layerMode === 'cumulative') {
     const legend = document.createElement('div');
     legend.className = 'layer-legend';
     const current = document.createElement('span');
@@ -545,6 +570,56 @@ function renderLayerTree() {
       text.textContent = patchLabel(klass);
       wrapper.append(input, swatch, text);
       patchGroup.append(wrapper);
+    }
+  }
+  if (state.baseAttributes.length && layers.includes('blocks')) {
+    const baseGroup = group('Base colour');
+    const wrapper = document.createElement('label');
+    wrapper.className = 'layer-option';
+    const select = document.createElement('select');
+    select.id = 'base-attribute';
+    const none = document.createElement('option');
+    none.value = '';
+    none.textContent = 'Off';
+    select.append(none);
+    for (const attribute of state.baseAttributes) {
+      const option = document.createElement('option');
+      option.value = attribute.name;
+      option.textContent = attribute.label;
+      select.append(option);
+    }
+    select.value = state.layerMode === 'base' ? state.baseAttribute : '';
+    select.addEventListener('change', () => {
+      if (select.value) {
+        state.baseAttribute = select.value;
+        state.layerMode = 'base';
+      } else {
+        state.baseAttribute = '';
+        state.layerMode = info.treatments ? 'current' : info.patches ? 'patches' : 'current';
+      }
+      renderLayerTree();
+      loadMap();
+    });
+    wrapper.append(select);
+    baseGroup.append(wrapper);
+    if (state.layerMode === 'base' && state.baseAttribute) {
+      const attribute = baseAttributeInfo(state.baseAttribute);
+      if (attribute) {
+        const legend = document.createElement('div');
+        legend.className = 'base-legend';
+        for (const value of attribute.values) {
+          const row = document.createElement('div');
+          row.className = 'base-legend-row';
+          const swatch = document.createElement('span');
+          swatch.className = 'base-swatch';
+          swatch.style.background = baseColor(attribute.name, value);
+          const text = document.createElement('span');
+          text.textContent = String(value);
+          row.append(swatch, text);
+          legend.append(row);
+        }
+        baseGroup.append(legend);
+      }
     }
   }
   if (!info.roads || !info.compartments) {
@@ -585,14 +660,23 @@ async function loadLayers() {
       (left, right) => parseInt(left, 10) - parseInt(right, 10),
     );
     state.patchClasses = new Set(state.patchCatalog);
-    if (state.layerMode === 'patches' && !info.patches) {
-      state.layerMode = info.treatments ? 'current' : 'patches';
+    state.baseAttributes = info.base_attributes ?? [];
+    if (!state.baseAttributes.some((attribute) => attribute.name === state.baseAttribute)) {
+      state.baseAttribute = '';
     }
-    if (state.layerMode === 'cumulative' && !info.cumulative) {
-      state.layerMode = info.patches ? 'patches' : 'current';
-    }
-    if (state.layerMode === 'current' && !info.treatments) {
-      state.layerMode = info.patches ? 'patches' : 'current';
+    const fallback = info.treatments
+      ? 'current'
+      : info.patches
+        ? 'patches'
+        : state.baseAttributes.length
+          ? 'base'
+          : 'current';
+    if (state.layerMode === 'patches' && !info.patches) state.layerMode = fallback;
+    if (state.layerMode === 'cumulative' && !info.cumulative) state.layerMode = fallback;
+    if (state.layerMode === 'current' && !info.treatments) state.layerMode = fallback;
+    if (state.layerMode === 'base') {
+      if (!state.baseAttribute) state.baseAttribute = state.baseAttributes[0]?.name ?? '';
+      if (!state.baseAttribute) state.layerMode = fallback;
     }
     renderLayerTree();
     const available = [];
@@ -1395,6 +1479,15 @@ function showDetail(block) {
     const line = document.createElement('div');
     line.textContent = `compartment: ${properties.compartment}`;
     $('detail').append(line);
+  }
+  for (const attribute of state.baseAttributes) {
+    if (attribute.name === 'compartment') continue;
+    const value = properties[attribute.name];
+    if (value !== undefined && value !== null && value !== '') {
+      const line = document.createElement('div');
+      line.textContent = `${attribute.label}: ${value}`;
+      $('detail').append(line);
+    }
   }
 }
 
