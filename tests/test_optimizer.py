@@ -12,7 +12,8 @@ from typer.testing import CliRunner
 from ws4.build.compiler import build_canonical_dataset
 from ws4.cli import app
 from ws4.opt.engine import OptimizeConfig, Optimizer
-from ws4.opt.objective import Target, load_targets, objective, penalty
+from ws4.opt.incremental import IncrementalObjective
+from ws4.opt.objective import Target, load_targets, objective, objective_terms, penalty
 from ws4.opt.operators import Schedule
 from ws4.opt.telemetry import RunLogger, read_records
 from ws4.patch.constraints import core_area_penalty, schedule_years, spatial_penalty
@@ -35,6 +36,33 @@ def test_a_target_period_must_be_at_least_one_year() -> None:
     # a period ends at its year, which is the reference implementation's convention
     assert Target("a", 0, minimum=1.0, period_width=7).cell_years() == range(-6, 1)
     assert Target("a", 10, minimum=1.0, period_width=10).cell_years() == range(1, 11)
+
+
+def test_inactive_targets_are_kept_and_not_priced(tmp_path: Path) -> None:
+    """An inactive target round-trips from YAML but contributes no objective term."""
+    path = tmp_path / "targets.yaml"
+    path.write_text(
+        "targets:\n  - account: a\n    year: 0\n    minimum: 10\n    active: false\n",
+        encoding="utf-8",
+    )
+    targets = load_targets(path)
+    assert targets[0].active is False
+    values = pd.DataFrame({"year": [0], "account": ["a"], "value": [0.0]})
+    assert objective(values, targets) == 0.0
+    assert objective_terms(values, targets) == [0.0]
+
+
+def test_the_incremental_evaluator_skips_inactive_targets(tmp_path: Path) -> None:
+    """The move evaluator does not watch or price a target the file marks inactive."""
+    dataset, targets_path = _compile(tmp_path)
+    optimizer = Optimizer.from_dataset(
+        dataset, OptimizeConfig(targets_path=targets_path, years=1, iterations=5)
+    )
+    evaluator = IncrementalObjective(
+        optimizer, [Target("feature.Volume", 0, minimum=500.0, active=False)]
+    )
+    assert evaluator.targets == []
+    assert evaluator.objective == 0.0
 
 
 def test_penalty_non_linear_squares_the_deviation() -> None:

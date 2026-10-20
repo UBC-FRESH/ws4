@@ -56,6 +56,9 @@ class Target:
     flow_reference : int or None
         The first year of the flow term's reference period, or None for the final period of the
         window. Every other period is measured as a percent difference from it.
+    active : bool
+        Whether the search prices this target. An inactive target stays in the file and is
+        reported, but its penalty is not part of the objective.
     """
 
     account: str
@@ -70,6 +73,7 @@ class Target:
     flow_start: int = 0
     flow_end: int | None = None
     flow_reference: int | None = None
+    active: bool = True
 
     def __post_init__(self) -> None:
         """Reject an unknown penalty shape, flow type, or a period shorter than a year."""
@@ -439,6 +443,8 @@ def objective(values: pd.DataFrame, targets: Sequence[Target]) -> float:
     horizon = max((year for year, _ in index), default=-1) + 1
     total = 0.0
     for target in targets:
+        if not target.active:
+            continue
         if target.flow:
             total += flow_penalty(index, target, horizon)
             continue
@@ -481,6 +487,9 @@ def objective_terms(
     horizon = max((year for year, _ in index), default=-1) + 1
     penalties: list[float] = []
     for target in targets:
+        if not target.active:
+            penalties.append(0.0)
+            continue
         if target.flow:
             penalties.append(flow_penalty(index, target, horizon))
             continue
@@ -551,7 +560,8 @@ def load_targets(path: Path) -> list[Target]:
     ``year``, and any of ``minimum``, ``maximum``, ``min_weight``, ``max_weight``,
     ``period_width`` (years per period; the account is summed over them), ``shape``
     (``linear`` or ``non_linear``), and the flow keys ``flow`` (``even`` or ``ndy``),
-    ``flow_start`` and ``flow_end`` (the flow window, in years).
+    ``flow_start`` and ``flow_end`` (the flow window, in years), and ``active`` (default true;
+    an inactive target is kept and reported but not priced).
 
     Parameters
     ----------
@@ -581,6 +591,7 @@ def load_targets(path: Path) -> list[Target]:
             flow_reference=(
                 int(entry["flow_reference"]) if entry.get("flow_reference") is not None else None
             ),
+            active=bool(entry.get("active", True)),
         )
         for entry in entries
     ]

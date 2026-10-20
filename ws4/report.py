@@ -117,6 +117,19 @@ def target_status(values: pd.DataFrame, targets: list[Target]) -> pd.DataFrame:
     horizon = max((year for year, _ in index), default=-1) + 1
     rows: list[dict[str, object]] = []
     for target in targets:
+        if not target.active:
+            rows.append(
+                {
+                    "account": target.account,
+                    "year": target.year,
+                    "value": 0.0,
+                    "minimum": target.minimum,
+                    "maximum": target.maximum,
+                    "penalty": 0.0,
+                    "status": "inactive",
+                }
+            )
+            continue
         if target.flow:
             # A flow target constrains the shape of a profile, so its report is the series itself:
             # one row per period, exactly as the reference reports it, with a zero for the period an

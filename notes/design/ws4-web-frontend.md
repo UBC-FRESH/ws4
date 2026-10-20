@@ -139,19 +139,23 @@ separate, pending artifact.
 
 ## Targets
 
-A table and a chart, per account and period: minimum, maximum, weights, shape, and an active toggle.
-A watched card spans the run's **whole horizon**, not only the periods that carry a target: the
-realized series is drawn for every year, and the band appears only where a target sets a minimum or
-maximum. The realized value comes from the incumbent; saving writes the same YAML the optimizer reads,
-and the PUT validates it by loading it through `load_targets`, so an invalid edit is refused in the UI
-exactly as the CLI would refuse it.
+A table and a chart, per account and period: minimum, maximum, weights, shape, and an **On** toggle.
+The toggle writes ``active`` into the same YAML the optimizer reads; an inactive target remains in the
+file and is reported as ``inactive``, but the objective and the incremental evaluator skip it, and the
+watched card shows ``off``. A watched card spans the run's **whole horizon**, not only the periods
+that carry a target: the realized series is drawn for every year, and the band appears only where a
+target sets a minimum or maximum. The realized value comes from the incumbent; saving writes the same
+YAML the optimizer reads, and the PUT validates it by loading it through `load_targets`, so an invalid
+edit is refused in the UI exactly as the CLI would refuse it.
 
 ## Reports
 
-Standard reports are rendered from the run's CSVs: account summary, route cost per destination, patch
-distribution, spread accounts. A user-defined report is a YAML list of accounts and periods; it selects
-columns from `account_values.csv`, never recomputes. Export is the file the run wrote (CSV/PNG), plus a
-rendered table.
+The Reports tab groups the named standard reports that the run actually wrote: account summary,
+target status, route cost overall and per destination, patch accounts/metrics, spread metrics, edge
+contrast, the road network and the schedule. The full file list stays below the named list. The
+**Build a report** form selects accounts and a year range from ``account_values.csv``, renders the
+rows, and exports exactly those rows as a CSV download; it reads the run's values and recomputes
+nothing.
 
 ## Comparison
 

@@ -89,7 +89,7 @@ class IncrementalObjective:
             non-additive, so they are priced separately).
         """
         self.optimizer = optimizer
-        self.targets = list(targets)
+        self.targets = [target for target in targets if target.active]
         self.patch = PatchModel(optimizer, patch_accounts) if patch_accounts else None
         optimizer.set_active_patch_model(self.patch)
         patch_names = {account.name for account in patch_accounts}

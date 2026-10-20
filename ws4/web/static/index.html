@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=33">
+  <link rel="stylesheet" href="static/style.css?v=34">
 </head>
 <body>
   <header>
-    <strong>WS4</strong><span class="build">v33</span>
+    <strong>WS4</strong><span class="build">v34</span>
     <label>Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Year
@@ -40,7 +40,7 @@
         <p id="targets-empty" class="hint">no targets file is configured</p>
         <div id="watch-panel" class="watch"></div>
         <div class="table-wrap"><table id="targets-table" hidden>
-          <thead><tr><th>Account</th><th>Year</th><th>Min</th><th>Max</th><th>Min w</th><th>Max w</th></tr></thead>
+          <thead><tr><th>On</th><th>Account</th><th>Year</th><th>Min</th><th>Max</th><th>Min w</th><th>Max w</th></tr></thead>
           <tbody></tbody>
         </table></div>
         <button id="save-targets" hidden>Save targets</button>
@@ -62,7 +62,20 @@
         <p id="targets-status" class="hint"></p>
       </section>
       <section id="tab-reports" hidden>
-        <h2>Reports</h2>
+        <h2>Standard reports</h2>
+        <ul id="standard-reports"></ul>
+        <p id="standard-reports-empty" class="hint">no standard reports for this run</p>
+        <h2>Build a report</h2>
+        <div class="report-builder">
+          <label>Accounts <input id="report-accounts" list="account-names" placeholder="comma-separated; blank = all"></label>
+          <datalist id="account-names"></datalist>
+          <label>From <input id="report-from" type="number" min="0" step="1"></label>
+          <label>To <input id="report-to" type="number" min="0" step="1"></label>
+          <button id="build-report" type="button">Build</button>
+          <a id="report-export" hidden>Export CSV</a>
+        </div>
+        <p id="report-build-status" class="hint"></p>
+        <h2>All files</h2>
         <ul id="reports"></ul>
         <div id="report-preview"></div>
       </section>
@@ -123,6 +136,6 @@
       <div class="scale" id="scale"></div>
     </div>
   </main>
-  <script type="module" src="static/app.js?v=33"></script>
+  <script type="module" src="static/app.js?v=34"></script>
 </body>
 </html>

@@ -156,6 +156,8 @@ def write_targets(path: Path, targets: Sequence[Target]) -> Path:
         entry["max_weight"] = target.max_weight
         if target.period_width != 1:
             entry["period_width"] = target.period_width
+        if not target.active:
+            entry["active"] = False
         entries.append(entry)
     destination = Path(path)
     destination.write_text(yaml.safe_dump({"targets": entries}, sort_keys=False), encoding="utf-8")
