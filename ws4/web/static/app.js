@@ -440,7 +440,14 @@ function paintTarget(entry, value) {
   entry.text.textContent = `${Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 })} · ${status}`;
 }
 
-function updateLiveTargets(values, iteration) {
+function updateLiveTargets(values, iteration, series = []) {
+  const liveSeries = new Map();
+  for (const item of series) {
+    const account = String(item.account);
+    if (!liveSeries.has(account)) liveSeries.set(account, new Map());
+    liveSeries.get(account).set(Number(item.year), Number(item.value));
+  }
+  for (const [account, years] of liveSeries) state.series.set(account, years);
   let painted = 0;
   for (const item of values) {
     const key = `${item.year}|${item.account}`;
@@ -794,7 +801,7 @@ async function startRun() {
     });
     events.addEventListener('targets', (event) => {
       const payload = JSON.parse(event.data);
-      updateLiveTargets(payload.values ?? [], payload.iteration);
+      updateLiveTargets(payload.values ?? [], payload.iteration, payload.series ?? []);
     });
     events.addEventListener('done', () => finishRun(run.id));
     events.addEventListener('error', () => { /* the poll decides; the proxy may buffer SSE */ });

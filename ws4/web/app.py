@@ -369,7 +369,7 @@ def create_app(
         }
 
     def _target_event(record: dict[str, Any]) -> dict[str, Any]:
-        """Fold one telemetry targets record over each target's period for the live panel."""
+        """Fold a telemetry targets record over each target's period, keeping its year series."""
         if targets_path is None or not targets_path.is_file():
             return record
         index = {
@@ -387,6 +387,9 @@ def create_app(
                 }
                 for target in load_targets(targets_path)
             ],
+            # the optimizer's snapshot already holds every year of the tracked accounts; the
+            # panel uses these as the live series behind the period-target value
+            "series": record.get("values", []),
         }
         if record.get("island") is not None:
             payload["island"] = record["island"]

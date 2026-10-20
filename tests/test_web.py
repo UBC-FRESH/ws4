@@ -306,6 +306,7 @@ def test_a_live_run_streams_the_best_island_and_its_schedule(tmp_path: Path) -> 
     assert '"island": "start-1"' in body
     assert '[[2,[["CT",0]]]]' in body.replace(" ", "")
     assert "event: targets" in body
+    assert '"series"' in body
     assert "event: error" in body
 
 

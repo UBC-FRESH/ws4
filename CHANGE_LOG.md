@@ -2006,7 +2006,9 @@ issue comments.
   stops through the run's `control.json`, and keeps the selected year when the run finishes.
 - Target watchers span the run's whole horizon: a point per period, the target band only where a
   target exists, and the realized value folded by the target's own period rule (a product sums its
-  period; a feature is a level at the period's end). The default year follows the first target.
+  period; a feature is a level at the period's end). The live targets event carries the tracked
+  accounts' yearly series, so the card updates while the search runs. The default year follows the
+  first target.
 - P18.5 live runs use parallel islands (`islands` on the start request). Each worker writes its own
   `telemetry-<island>.jsonl`; the canonical `telemetry.jsonl` is merged after the search. This
   removed a single-writer bottleneck that made an eight-island run display hundreds of iterations a
