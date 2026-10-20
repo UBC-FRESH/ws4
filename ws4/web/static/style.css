@@ -11,7 +11,7 @@ header select { max-width:16rem; }
 header .year { flex:1; }
 header input[type=range] { flex:1; min-width:8rem; }
 #status { color:var(--muted); font-variant-numeric:tabular-nums; }
-main { flex:1; display:grid; grid-template-columns:19rem 1fr; min-height:0; }
+main { flex:1; display:grid; grid-template-columns:var(--panel-width,28rem) 6px 1fr; min-height:0; }
 aside { background:var(--panel); border-right:1px solid var(--line); padding:.6rem; overflow:auto; }
 nav.tabs { display:flex; gap:.25rem; margin-bottom:.6rem; }
 nav.tabs button { border:1px solid var(--line); background:#eef2f6; padding:.25rem .55rem; border-radius:.35rem; cursor:pointer; }
@@ -31,11 +31,11 @@ svg#map.dragging { cursor:grabbing; }
 circle.block { stroke:rgba(0,0,0,.15); stroke-width:.4; }
 circle.treated { fill:var(--treated); }
 circle.untreated { fill:var(--untreated); fill-opacity:.55; }
-#targets-table { width:100%; border-collapse:collapse; font-size:.78rem; }
-#targets-table th, #targets-table td { border-bottom:1px solid var(--line); padding:.2rem .25rem; text-align:left; }
+#targets-table { width:100%; border-collapse:collapse; font-size:.74rem; }
+#targets-table th, #targets-table td { border-bottom:1px solid var(--line); padding:.15rem .2rem; text-align:left; }
 #targets-table th { color:var(--muted); font-weight:600; }
-#targets-table input { width:4.2rem; font-size:.78rem; padding:.1rem .2rem; }
-#targets-table td.account { max-width:9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#targets-table input[type=number] { width:3.2rem; font-size:.74rem; padding:.1rem .15rem; }
+#targets-table td.account { max-width:8rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 #save-targets { margin-top:.5rem; padding:.3rem .7rem; }
 #report-preview { margin-top:.6rem; overflow:auto; max-height:55vh; }
 #report-preview table { border-collapse:collapse; font-size:.72rem; }
@@ -48,12 +48,19 @@ circle.untreated { fill:var(--untreated); fill-opacity:.55; }
              border:1px solid #b7d7c2; background:#eef8f1; border-radius:.4rem; font-size:.82rem; }
 .pulse { width:.6rem; height:.6rem; border-radius:50%; background:#2f7d4f; animation:pulse 1.2s infinite; flex:none; }
 @keyframes pulse { 0% { opacity:.35; transform:scale(.8); } 50% { opacity:1; transform:scale(1.15); } 100% { opacity:.35; transform:scale(.8); } }
-.mini { position:relative; display:inline-block; width:3.6rem; height:.55rem; margin-right:.35rem; vertical-align:middle; background:#eef2f6; border-radius:.3rem; }
+.mini { position:relative; display:inline-block; overflow:hidden; width:3.6rem; height:.55rem; margin-right:.35rem; vertical-align:middle; background:#eef2f6; border-radius:.3rem; }
 .mini-band { position:absolute; top:0; bottom:0; background:#b7d7c2; border-radius:.3rem; }
 .mini-marker { position:absolute; top:-.15rem; width:2px; height:.85rem; background:#1f2933; transform:translateX(-1px); }
 .mini-text { font-variant-numeric:tabular-nums; }
-.watch { display:grid; grid-template-columns:1fr; gap:.25rem; margin:.4rem 0 .6rem; }
-.watch-item { display:flex; align-items:center; gap:.4rem; padding:.2rem .35rem; border:1px solid var(--line);
+.watch { display:grid; grid-template-columns:1fr; gap:.25rem; margin:.4rem 0 .6rem; min-width:0; }
+.watch-item { display:flex; flex-wrap:wrap; align-items:center; gap:.15rem .4rem; min-width:0; padding:.2rem .35rem; border:1px solid var(--line);
               border-radius:.35rem; font-size:.78rem; }
-.watch-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.watch-name { flex:1 1 100%; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 #spark { flex:none; background:#fff; border:1px solid var(--line); border-radius:.3rem; }
+#splitter { cursor:col-resize; background:var(--line); }
+#splitter:hover, #splitter.dragging { background:#b7c4d1; }
+.table-wrap { overflow-x:auto; }
+.swatch { display:inline-block; width:.6rem; height:.6rem; border-radius:50%; margin:0 .15rem; }
+.swatch.treated { background:var(--treated); }
+.swatch.untreated { background:var(--untreated); opacity:.6; }
+.account-value { color:var(--muted); font-size:.68rem; margin-left:1.1rem; }

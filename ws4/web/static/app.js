@@ -122,7 +122,7 @@ function render(refit = true) {
   viewport.append(groups.untreated, groups.treated);
   $('n-treated').textContent = treated.toLocaleString();
   $('n-untreated').textContent = untreated.toLocaleString();
-  $('scale').textContent = `${base.scale.toFixed(4)} px/m · ${state.year}`;
+  $('scale').textContent = `year ${state.year} · 1 px ≈ ${Math.round(1 / base.scale)} m`;
   applyVisibility();
 }
 
@@ -258,19 +258,28 @@ function paintTarget(entry, value) {
   const row = entry.row;
   if (value === undefined || value === null) {
     entry.text.textContent = '—';
-    entry.band.style.display = 'none';
-    entry.marker.style.display = 'none';
+    if (entry.band) entry.band.style.display = 'none';
+    if (entry.marker) entry.marker.style.display = 'none';
     return;
   }
   const low = row.minimum ?? Math.min(0, value);
   const high = row.maximum ?? Math.max(value, low + 1);
-  const span = Math.max(high - low, Math.abs(value) * 0.2, 1e-9);
-  const left = (edge) => `${Math.min(100, Math.max(0, ((edge - low) / span) * 100))}%`;
-  entry.band.style.display = '';
-  entry.marker.style.display = '';
-  entry.band.style.left = left(Math.max(low, Math.min(high, value) - span * 0.02));
-  entry.band.style.width = `${Math.max(0, Math.min(100, ((high - low) / span) * 100))}%`;
-  entry.marker.style.left = left(value);
+  const width = Math.max(high - low, Math.abs(value) * 0.2, 1e-9);
+  const domainLow = low - width * 0.05;
+  const domainHigh = high + width * 0.05;
+  const position = (edge) => {
+    const ratio = (edge - domainLow) / (domainHigh - domainLow);
+    return `${Math.min(100, Math.max(0, ratio * 100))}%`;
+  };
+  if (entry.band) {
+    entry.band.style.display = '';
+    entry.band.style.left = position(low);
+    entry.band.style.width = `${Math.max(0, Math.min(100, ((high - low) / (domainHigh - domainLow)) * 100))}%`;
+  }
+  if (entry.marker) {
+    entry.marker.style.display = '';
+    entry.marker.style.left = position(value);
+  }
   let status = 'met';
   if (row.minimum !== null && value < row.minimum) status = 'below';
   else if (row.maximum !== null && value > row.maximum) status = 'above';
@@ -310,6 +319,11 @@ async function loadTargets() {
     button.hidden = false;
     const body = table.querySelector('tbody');
     body.replaceChildren();
+    const keys = rows.map((row) => `${row.year}|${row.account}`);
+    if (state.watched.size === 0 && window.localStorage.getItem('ws4.watched') === null) {
+      for (const key of keys.slice(0, 8)) state.watched.add(key);
+      saveWatched();
+    }
     const values = {};
     for (const year of [...new Set(rows.map((row) => row.year))]) {
       try {
@@ -320,21 +334,23 @@ async function loadTargets() {
     rows.forEach((row, index) => {
       const tr = document.createElement('tr');
       const key = `${row.year}|${row.account}`;
-      const watch = document.createElement('td');
+      const account = document.createElement('td');
+      account.className = 'account';
       const box = document.createElement('input');
       box.type = 'checkbox';
       box.checked = state.watched.has(key);
+      box.title = 'watch this target';
       box.addEventListener('change', () => {
         if (box.checked) state.watched.add(key); else state.watched.delete(key);
         saveWatched();
         renderWatchPanel();
       });
-      watch.append(box);
-      tr.append(watch);
-      const account = document.createElement('td');
-      account.className = 'account';
-      account.textContent = row.account;
-      account.title = row.account;
+      const label = document.createElement('span');
+      label.textContent = row.account;
+      label.title = row.account;
+      const valueLine = document.createElement('div');
+      valueLine.className = 'account-value';
+      account.append(box, label, valueLine);
       tr.append(account);
       const year = document.createElement('td');
       year.textContent = row.year;
@@ -344,22 +360,11 @@ async function loadTargets() {
         td.append(numberInput(row[field], field, index));
         tr.append(td);
       }
-      const realized = document.createElement('td');
-      const { mini, band, marker } = makeMini();
-      const text = document.createElement('span');
-      text.className = 'mini-text';
-      realized.append(mini, text);
-      tr.append(realized);
       state.targetCells.set(`${row.year}|${row.account}`, {
-        row, text, band, marker, value: values[row.year]?.[row.account],
+        row, text: valueLine, band: null, marker: null, value: values[row.year]?.[row.account],
       });
       body.append(tr);
     });
-    const keys = rows.map((row) => `${row.year}|${row.account}`);
-    if (state.watched.size === 0 && window.localStorage.getItem('ws4.watched') === null) {
-      for (const key of keys.slice(0, 8)) state.watched.add(key);
-      saveWatched();
-    }
     for (const entry of state.targetCells.values()) paintTarget(entry, entry.value);
     renderWatchPanel();
     if (state.skin) applySkin(state.skin);
@@ -662,7 +667,37 @@ function showDetail(block) {
     `treatments: ${(properties.treatments ?? []).join(', ') || '—'}`;
 }
 
+function wireSplitter() {
+  const splitter = $('splitter');
+  const sidebar = $('sidebar');
+  if (!splitter || !sidebar) return;
+  const root = document.documentElement;
+  try {
+    const saved = window.localStorage.getItem('ws4.sidebar');
+    if (saved) root.style.setProperty('--panel-width', saved);
+  } catch { /* ignore */ }
+  let drag = null;
+  splitter.addEventListener('pointerdown', (event) => {
+    drag = { x: event.clientX, width: sidebar.getBoundingClientRect().width };
+    splitter.setPointerCapture(event.pointerId);
+    splitter.classList.add('dragging');
+  });
+  splitter.addEventListener('pointermove', (event) => {
+    if (!drag) return;
+    const width = Math.max(220, Math.min(window.innerWidth * 0.6, drag.width + (event.clientX - drag.x)));
+    root.style.setProperty('--panel-width', `${Math.round(width)}px`);
+  });
+  splitter.addEventListener('pointerup', () => {
+    if (!drag) return;
+    drag = null;
+    splitter.classList.remove('dragging');
+    try { window.localStorage.setItem('ws4.sidebar', root.style.getPropertyValue('--panel-width')); } catch { /* ignore */ }
+    if (state.features.length) render();
+  });
+}
+
 function wireControls() {
+  wireSplitter();
   $('run').addEventListener('change', async (event) => {
     state.run = event.target.value;
     await loadSkins();
@@ -743,6 +778,7 @@ async function start() {
     if (!preferred) { statusLine('no runs found'); return; }
     select.value = preferred.id;
     state.run = preferred.id;
+    await loadSkins();
     await loadPeriods();
     await loadTargets();
     await loadReports();
