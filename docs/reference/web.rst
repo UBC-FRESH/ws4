@@ -62,6 +62,9 @@ Endpoints
        the file is left unchanged.
    * - ``GET/PUT /api/targets.json``
      - The parsed targets as JSON, for an editor that does not parse YAML.
+   * - ``GET /api/runs/{run}/targets``
+     - Each target's realized value over the target's own period — the optimizer's
+       ``period_value`` rule: a product sums its years, a feature reads the period's end.
    * - ``POST /api/runs``
      - Start a search with the configured dataset and targets. **Refused unless the service was started
        with ``--allow-runs``**; iterations and years are bounded.

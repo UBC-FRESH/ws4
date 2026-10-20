@@ -11,7 +11,7 @@ header select { max-width:16rem; }
 header .year { flex:1; }
 header input[type=range] { flex:1; min-width:8rem; }
 #status { color:var(--muted); font-variant-numeric:tabular-nums; }
-main { flex:1; display:grid; grid-template-columns:var(--panel-width,28rem) 6px 1fr; min-height:0; }
+main { flex:1; display:grid; grid-template-columns:var(--panel-width,30rem) 6px 1fr; min-height:0; }
 aside { background:var(--panel); border-right:1px solid var(--line); padding:.6rem; overflow:auto; }
 nav.tabs { display:flex; gap:.25rem; margin-bottom:.6rem; }
 nav.tabs button { border:1px solid var(--line); background:#eef2f6; padding:.25rem .55rem; border-radius:.35rem; cursor:pointer; }
@@ -34,7 +34,7 @@ circle.untreated { fill:var(--untreated); fill-opacity:.55; }
 #targets-table { width:100%; border-collapse:collapse; font-size:.74rem; }
 #targets-table th, #targets-table td { border-bottom:1px solid var(--line); padding:.15rem .2rem; text-align:left; }
 #targets-table th { color:var(--muted); font-weight:600; }
-#targets-table input[type=number] { width:3.6rem; font-size:.74rem; padding:.1rem .15rem; }
+#targets-table input[type=number] { width:4.1rem; font-size:.74rem; padding:.1rem .15rem; }
 #targets-table input[type=number]::-webkit-outer-spin-button,
 #targets-table input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
 #targets-table input[type=number] { -moz-appearance:textfield; }

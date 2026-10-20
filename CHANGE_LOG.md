@@ -1977,3 +1977,12 @@ issue comments.
   refresh onto the new run. Verified end to end: a 5-iteration run produced its summary and the stream
   delivered each step. Tests: the read-only refusal, the no-targets refusal, and the SSE replay
   (eighteen service cases). Dashboard: **GREEN**.
+- P18.3 **realized target values use the target's period, not a single year.** The web UI had compared
+  a target against the account's value at the target's end year, so a ten-year product flow was read as
+  one year (15,130 against a 1.2M floor instead of 1.89M). `GET /api/runs/{run}/targets` now computes
+  each target's realized value with the optimizer's own `period_value` — a product sums its period, a
+  feature reads the period's end — and the live `targets` SSE event is transformed the same way, so the
+  table, the window cards and the live updates all read the quantity the optimizer prices. Tests cover
+  the product sum and the feature level. The demo targets are now the reference's own period-1 levels
+  for `product.Yield.managed.Conif` (1.2M) and `feature.Yield.managed.Conif` (8,318,543.5); both are
+  above their exact levels, which is the honest status for a run that does not meet them.

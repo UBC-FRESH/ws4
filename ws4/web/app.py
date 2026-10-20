@@ -26,7 +26,7 @@ from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Str
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import Response
 
-from ..opt.objective import load_targets
+from ..opt.objective import load_targets, period_value
 from .skins import load_skins
 
 _REPORT_SUFFIXES = {".csv", ".html", ".png", ".json", ".txt"}
@@ -272,7 +272,25 @@ def create_app(
                         if record.get("type") == "step":
                             yield f"event: progress\ndata: {json.dumps(record)}\n\n"
                         elif record.get("type") == "targets":
-                            yield f"event: targets\ndata: {json.dumps(record)}\n\n"
+                            payload = record
+                            if targets_path is not None and targets_path.is_file():
+                                index = {
+                                    (int(item["year"]), str(item["account"])): float(item["value"])
+                                    for item in record.get("values", [])
+                                }
+                                payload = {
+                                    "type": "targets",
+                                    "iteration": record.get("iteration"),
+                                    "values": [
+                                        {
+                                            "account": target.account,
+                                            "year": target.year,
+                                            "value": period_value(index, target),
+                                        }
+                                        for target in load_targets(targets_path)
+                                    ],
+                                }
+                            yield f"event: targets\ndata: {json.dumps(payload)}\n\n"
                         elif record.get("type") == "schedule":
                             yield f"event: schedule\ndata: {json.dumps(record)}\n\n"
                     seen = len(lines)
@@ -425,6 +443,36 @@ def create_app(
             properties["treated"] = bool(treatments)
         return {"type": "FeatureCollection", "features": features, "year": year, "layer": layer}
 
+    def _realized_rows(directory: Path) -> list[dict[str, Any]]:
+        """Return each target's realized period value, computed by the optimizer's own rule."""
+        if targets_path is None or not targets_path.is_file():
+            return []
+        values = read_csv(directory, "account_values.csv")
+        index: dict[tuple[int, str], float] = {}
+        for year, account, value in zip(
+            values["year"], values["account"], values["value"], strict=True
+        ):
+            key = (int(year), str(account))
+            index[key] = index.get(key, 0.0) + float(value)
+        rows: list[dict[str, Any]] = []
+        for target in load_targets(targets_path):
+            value = period_value(index, target)
+            status = "met"
+            if target.minimum is not None and value < target.minimum:
+                status = "below"
+            elif target.maximum is not None and value > target.maximum:
+                status = "above"
+            rows.append(
+                {
+                    "account": target.account,
+                    "year": target.year,
+                    "period_width": target.period_width,
+                    "value": value,
+                    "status": status,
+                }
+            )
+        return rows
+
     def _target_rows() -> list[dict[str, Any]]:
         """Return the targets as rows the browser can edit."""
         if targets_path is None or not targets_path.is_file():
@@ -484,6 +532,11 @@ def create_app(
     def get_targets_json() -> list[dict[str, Any]]:
         """Return the parsed targets, for an editor that does not parse YAML."""
         return _target_rows()
+
+    @app.get("/api/runs/{run}/targets")
+    def run_targets(run: str) -> list[dict[str, Any]]:
+        """Return the run's realized value for each target, over the target's own period."""
+        return _realized_rows(run_dir(run))
 
     @app.put("/api/targets.json")
     @app.post("/api/targets.json")

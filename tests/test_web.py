@@ -49,7 +49,10 @@ def _app(tmp_path: Path, *, with_geometry: bool = True) -> tuple[TestClient, Pat
     (run / "report.csv").write_text("a,b\n1,2\n", encoding="utf-8")
     targets = tmp_path / "targets.yaml"
     targets.write_text(
-        "targets:\n  - account: feature.Volume\n    year: 0\n    minimum: 0\n", encoding="utf-8"
+        "targets:\n"
+        "  - account: feature.Volume\n    year: 0\n    minimum: 0\n"
+        "  - account: product.Yield\n    year: 1\n    period_width: 2\n    minimum: 0\n",
+        encoding="utf-8",
     )
     geometry = tmp_path / "geometry.geojson"
     geometry.write_text(
@@ -217,7 +220,8 @@ def test_the_events_stream_replays_telemetry_and_ends_on_the_summary(tmp_path: P
     (run / "telemetry.jsonl").write_text(
         '{"type": "run", "run_id": "r1"}\n'
         '{"type": "step", "iteration": 1, "objective": 10.0}\n'
-        '{"type": "schedule", "iteration": 1, "changed": [[1, [["CC", 0]]]]}\n',
+        '{"type": "schedule", "iteration": 1, "changed": [[1, [["CC", 0]]]]}\n'
+        '{"type": "targets", "iteration": 1, "values": [{"year": 0, "account": "feature.Volume", "value": 10.0}]}\n',
         encoding="utf-8",
     )
     body = client.get("/api/runs/run1/events").text
@@ -225,6 +229,7 @@ def test_the_events_stream_replays_telemetry_and_ends_on_the_summary(tmp_path: P
     assert "event: progress" in body
     assert '"iteration": 1' in body
     assert "event: schedule" in body
+    assert "event: targets" in body
     assert "event: done" in body
 
 
@@ -244,6 +249,16 @@ def test_targets_are_also_saveable_with_post(tmp_path: Path) -> None:
     rows[0]["maximum"] = 321.0
     assert client.post("/api/targets.json", json=rows).status_code == 200
     assert client.get("/api/targets.json").json()[0]["maximum"] == 321.0
+
+
+def test_the_realized_target_value_uses_the_targets_period(tmp_path: Path) -> None:
+    """A product sums its period; a feature reads its end year. The optimizer's rule is the source."""
+    client, _ = _app(tmp_path)
+    rows = client.get("/api/runs/run1/targets").json()
+    by_account = {row["account"]: row for row in rows}
+    assert by_account["feature.Volume"]["value"] == 10.0
+    assert by_account["feature.Volume"]["status"] == "met"
+    assert by_account["product.Yield"]["value"] == 5.0
 
 
 def test_an_unknown_run_is_a_named_404(tmp_path: Path) -> None:

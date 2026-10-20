@@ -425,12 +425,12 @@ async function loadTargets() {
       saveWatched();
     }
     const values = {};
-    for (const year of [...new Set(rows.map((row) => row.year))]) {
-      try {
-        const accounts = await api(`api/runs/${encodeURIComponent(state.run)}/accounts?year=${year}`);
-        values[year] = Object.fromEntries(accounts.map((row) => [row.account, row.value]));
-      } catch { values[year] = {}; }
-    }
+    try {
+      const realized = await api(`api/runs/${encodeURIComponent(state.run)}/targets`);
+      for (const item of realized) {
+        (values[item.year] ??= {})[item.account] = item.value;
+      }
+    } catch { /* no realized values for this run */ }
     rows.forEach((row, index) => {
       const tr = document.createElement('tr');
       const key = `${row.year}|${row.account}`;
