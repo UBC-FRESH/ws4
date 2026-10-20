@@ -68,3 +68,28 @@ sim.run(Path("schedule-for-ws4.csv"), years=10, out_dir=Path("run-dated"),
         period_width=cfg.period_width, maintenance=cfg.maintenance)
 PY
 ```
+
+## The reference's own solution road set
+
+The scenario export carries the road set of the reference's solution in
+`scenarios/base/scenario/route_destination.MILL{1,2}.csv.gz` (`SEGMENT,FNODE,TNODE,FIXED`):
+
+| | segments | length (m) | zero-build segments | planned segments |
+| --- | ---: | ---: | ---: | ---: |
+| MILL 1 | 26,905 | 6,585,444 | 20,934 (3,615,205 m) | 5,971 (2,970,239 m) |
+| MILL 2 | 26,905 | 6,624,381 | 20,949 (3,626,217 m) | 5,956 (2,998,163 m) |
+| union | 31,612 | 8,802,088 | 22,901 | 8,711 (4,697,015 m) |
+
+All rows carry `FIXED = false`.
+
+This settles one of the two levers: **the initial set is not the gap.** The solution's existing-road
+set is 22,901 of the sample's 24,273 zero-build-cost segments (94%), so starting from the zero-build
+set is close to the reference's own available network. What differs is the **per-period selection**:
+the reference's `LENGTH` (1.15M in period 1) is a subset of this 6.6M m set, while WS4's independent
+least-haul paths use 2.9M in the same period.
+
+The plausible cause is the **coupling of assignments**. The reference solves block-to-mill assignment
+jointly, so blocks share the road they use; WS4 chooses each block's least-haul route independently,
+and independent shortest paths fan out over parallel roads. The next test is a joint assignment
+(min-cost flow, or a shared-path heuristic) against the current independent routing, with `LENGTH`
+and haul as the two quantities — not another initial-set variant.

@@ -532,9 +532,7 @@ def load_route_config(path: Path) -> RouteConfig:
             f"route.initial_roads is 'all' or 'existing', and {initial_roads!r} is neither"
         )
     initial_open = existing_segments(segments) if initial_roads == "existing" else None
-    network = RouteNetwork.from_tables(
-        segments, destinations, linkages, initial_open=initial_open
-    )
+    network = RouteNetwork.from_tables(segments, destinations, linkages, initial_open=initial_open)
     eligibility = (
         load_route_eligibility(resolve(route["eligibility"])) if route.get("eligibility") else {}
     )

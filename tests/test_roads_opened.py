@@ -1,9 +1,10 @@
 """Opened-network routing: roads exist from the period they are built.
 
-The reference routes only through roads built on or before the current period and opens the rest to
-reach the blocks it selects. These tests pin the mechanism: a planned segment opens when a block first
-needs it, an opened road is preferred to a shorter unopened one, the route cache is invalidated when the
-network grows, and the build is charged once — in the period it was opened.
+The reference routes only through roads built on or before the current period and opens the
+rest to reach the blocks it selects. These tests pin the mechanism: a planned segment opens
+when a block first needs it, an opened road is preferred to a shorter unopened one, the route
+cache is invalidated when the network grows, and the build is charged once in the period it
+was opened.
 """
 
 from __future__ import annotations
@@ -28,9 +29,7 @@ _LINKAGES = pd.DataFrame({"block_id": [1, 2], "vertex_id": [1, 1]})
 
 def _network(opened: set[int] | None) -> RouteNetwork:
     """Return the two-segment network with the given initial open set."""
-    return RouteNetwork.from_tables(
-        _SEGMENTS, _DESTINATIONS, _LINKAGES, initial_open=opened
-    )
+    return RouteNetwork.from_tables(_SEGMENTS, _DESTINATIONS, _LINKAGES, initial_open=opened)
 
 
 def test_a_block_beyond_the_opened_network_opens_its_path_once() -> None:
@@ -62,11 +61,13 @@ def test_an_opened_road_is_preferred_over_a_shorter_unopened_one() -> None:
     )
     destinations = pd.DataFrame({"dest_id": ["mill"], "vertex_id": [2]})
     linkages = pd.DataFrame({"block_id": [1], "vertex_id": [1]})
-    network = RouteNetwork.from_tables(
-        segments, destinations, linkages, initial_open={0}
-    )
-    assert network.route(1, "mill").segment_ids == (0,)
-    assert network.route(1, "mill", open_only=False).segment_ids == (1, 2)
+    network = RouteNetwork.from_tables(segments, destinations, linkages, initial_open={0})
+    opened_route = network.route(1, "mill")
+    assert opened_route is not None
+    assert opened_route.segment_ids == (0,)
+    planned_route = network.route(1, "mill", open_only=False)
+    assert planned_route is not None
+    assert planned_route.segment_ids == (1, 2)
 
     model = RouteModel(network)
     _, route = model.assign(1, "product.Volume")
@@ -89,12 +90,14 @@ def test_opening_a_segment_invalidates_the_cached_route() -> None:
     )
     destinations = pd.DataFrame({"dest_id": ["mill"], "vertex_id": [2]})
     linkages = pd.DataFrame({"block_id": [1], "vertex_id": [1]})
-    network = RouteNetwork.from_tables(
-        segments, destinations, linkages, initial_open={0}
-    )
-    assert network.route(1, "mill").length_m == 100.0
+    network = RouteNetwork.from_tables(segments, destinations, linkages, initial_open={0})
+    before = network.route(1, "mill")
+    assert before is not None
+    assert before.length_m == 100.0
     network.open_segments([1, 2])
-    assert network.route(1, "mill").length_m == 60.0
+    after = network.route(1, "mill")
+    assert after is not None
+    assert after.length_m == 60.0
 
 
 def test_the_build_is_charged_once_and_existing_road_is_not_built_length() -> None:

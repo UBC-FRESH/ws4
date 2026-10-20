@@ -420,9 +420,7 @@ class RouteNetwork:
                 return destination
         return None
 
-    def route(
-        self, block_id: int, destination: str, *, open_only: bool = True
-    ) -> Route | None:
+    def route(self, block_id: int, destination: str, *, open_only: bool = True) -> Route | None:
         """Return the least-haul-cost route from a block to a destination.
 
         Parameters
