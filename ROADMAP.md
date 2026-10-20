@@ -670,8 +670,8 @@ and curve, and make the loader say so when a dataset does not.
 - [x] P16.1 Run the fire model on the WS4-treated masks across five seeds — done locally with the
   instance's own functions: five seeds per pattern, 54,368 / 55,837 / 53,697 ha treated. The published
   ranking **does not survive**; the mean order reverses and the largest gap (0.38%) is inside the seed
-  range (15%). Report: `notes/reports/p16-bridge-matched.md`. Independent confirmation is requested in
-  `UBC-FRESH/femic-tsa23-instance` #11.
+  range (15%). Report: `notes/reports/p16-bridge-matched.md`. The independent rerun in
+  `UBC-FRESH/femic-tsa23-instance` #11 reproduces all fifteen values to four decimals.
 - [x] P16.2 One product row per `(track, treatment, label)` and curve, and a loader that names a
   dataset that repeats one — the builder drops exact duplicates and keeps a repeated key with
   different curves (a sum of components); `Simulator.from_dataset` warns with the count and the

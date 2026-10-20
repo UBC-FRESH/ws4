@@ -79,4 +79,6 @@ not predict this process; that is the finding.
 
 - `/tmp/opencode/ft/matched_run_dedup.py` and `matched_dedup.log` (untracked, local);
 - per-run JSON and `matched_summary.csv` in `/tmp/opencode/ft/matched_dedup/`;
-- the thesis-side reproduction is requested in `UBC-FRESH/femic-tsa23-instance` #11.
+- the thesis-side reproduction is **confirmed**: the independent rerun in
+  `UBC-FRESH/femic-tsa23-instance` #11 reproduced all fifteen values to four decimals, including the
+  p90 means, from a different runner and process.
