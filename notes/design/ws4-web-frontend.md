@@ -106,7 +106,7 @@ manifests ship: `model-builder`, `scenario-analyst`, `scenario-browser`, `review
 
 - Layers are grouped with visibility and a legend: blocks by a feature/product criterion;
   treatments (current period vs cumulative); patches; spread compartments; roads by built/used/planned.
-  The first cut renders block points or polygons from the configured GeoJSON with treated/untreated
+  The first cut renders block polygons (or points) from the configured GeoJSON with treated/untreated
   classes; the additional layer families reuse the same map endpoint once their artefacts are joined.
 - The period control is the model's own: years are folded by `period_width`, and the label is the period
   the reference uses (period 1 ends at year 10). The UI shows both the period and its year range.
@@ -125,6 +125,15 @@ patch membership or account values.
 run outputs carry no road segment geometry and no compartment membership. The next step is a CLI
 artifact (segment geometry/use and a compartment membership file), after which the same tree and map
 can render them.
+
+The configured geometry may be the source stand polygon layer, simplified (5 m here) and stripped
+to ``block_id``, ``compartment`` and geometry. The service parses it once; each map request copies the
+properties and reuses the geometry. SVG paths carry a thin boundary stroke, current treatments are
+solid, earlier cumulative treatments are a diagonal hatch, and patch classes use distinct fills. A
+live schedule updates only the blocks named in the schedule diff instead of rebuilding all twelve
+thousand paths, so the polygon layer stays usable during a search. A source ``compartment`` property
+is shown in the block detail; the model-derived spread compartments remain a separate, pending
+artifact.
 
 ## Targets
 

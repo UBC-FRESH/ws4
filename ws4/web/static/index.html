@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=31">
+  <link rel="stylesheet" href="static/style.css?v=32">
 </head>
 <body>
   <header>
-    <strong>WS4</strong><span class="build">v31</span>
+    <strong>WS4</strong><span class="build">v32</span>
     <label>Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Year
@@ -111,10 +111,18 @@
     </aside>
     <div id="splitter" title="Drag to resize the panel"></div>
     <div id="map-wrap">
-      <svg id="map" xmlns="http://www.w3.org/2000/svg"><g id="viewport"></g></svg>
+      <svg id="map" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="earlier-hatch" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)">
+            <rect width="7" height="7" fill="#f0d2b0"></rect>
+            <line x1="0" y1="0" x2="0" y2="7" stroke="#a96f3c" stroke-width="1.4"></line>
+          </pattern>
+        </defs>
+        <g id="viewport"></g>
+      </svg>
       <div class="scale" id="scale"></div>
     </div>
   </main>
-  <script type="module" src="static/app.js?v=31"></script>
+  <script type="module" src="static/app.js?v=32"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [] };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], blockElements: new Map() };
 
 const $ = (id) => document.getElementById(id);
 const statusLine = (text) => { $('status').textContent = text; };
@@ -83,6 +83,7 @@ function render(refit = true) {
   const base = state.base;
   const viewport = $('viewport');
   viewport.replaceChildren();
+  state.blockElements = new Map();
   const groups = { treated: document.createElementNS('http://www.w3.org/2000/svg', 'g'),
                    untreated: document.createElementNS('http://www.w3.org/2000/svg', 'g') };
   let treated = 0, untreated = 0;
@@ -116,6 +117,7 @@ function render(refit = true) {
       klass = isTreated
         ? (properties.current ? 'current treated' : 'past treated')
         : 'untreated';
+      if (isTreated && !properties.current) fill = 'url(#earlier-hatch)';
     } else {
       isTreated = Boolean(properties.treated);
       if (state.live.active) {
@@ -136,6 +138,7 @@ function render(refit = true) {
       circle.setAttribute('class', `block ${klass}`);
       if (fill) circle.style.fill = fill;
       circle.dataset.block = properties.block_id;
+      state.blockElements.set(String(properties.block_id), circle);
       circles.push(circle);
       group.append(circle);
     } else if (geometry?.type === 'Polygon' || geometry?.type === 'MultiPolygon') {
@@ -146,9 +149,11 @@ function render(refit = true) {
       }).join(' ') + ' Z').join(' ');
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('d', d);
+      path.setAttribute('fill-rule', 'evenodd');
       path.setAttribute('class', `block ${klass}`);
       if (fill) path.style.fill = fill;
       path.dataset.block = properties.block_id;
+      state.blockElements.set(String(properties.block_id), path);
       paths.push(path);
       group.append(path);
     }
@@ -167,6 +172,38 @@ function applyVisibility() {
   const showUntreated = $('show-untreated').checked;
   for (const element of document.querySelectorAll('#viewport .treated')) element.style.display = showTreated ? '' : 'none';
   for (const element of document.querySelectorAll('#viewport .untreated')) element.style.display = showUntreated ? '' : 'none';
+}
+
+function resetLiveMap() {
+  if (!state.blockElements.size) return;
+  for (const element of state.blockElements.values()) {
+    element.setAttribute('class', 'block untreated');
+    element.style.fill = '';
+  }
+  $('n-treated').textContent = '0';
+  $('n-untreated').textContent = state.features.length.toLocaleString();
+  applyVisibility();
+}
+
+function updateLiveBlocks(blocks) {
+  if (!state.live.active || state.layerMode !== 'current' || !state.blockElements.size) return;
+  for (const block of blocks) {
+    const element = state.blockElements.get(String(block));
+    if (!element) continue;
+    const chain = state.live.schedule.get(String(block));
+    const treated = chain
+      ? chain.some((event) => Number(event[1]) === Number(state.year))
+      : false;
+    element.setAttribute('class', `block ${treated ? 'treated' : 'untreated'}`);
+  }
+  let treated = 0;
+  for (const feature of state.features) {
+    const chain = state.live.schedule.get(String(feature.properties?.block_id));
+    if (chain?.some((event) => Number(event[1]) === Number(state.year))) treated += 1;
+  }
+  $('n-treated').textContent = treated.toLocaleString();
+  $('n-untreated').textContent = (state.features.length - treated).toLocaleString();
+  applyVisibility();
 }
 
 async function loadMap() {
@@ -479,6 +516,16 @@ function renderLayerTree() {
   addMode('current', 'Current treatment', Boolean(info.treatments) && layers.includes('treatments'));
   addMode('cumulative', 'Cumulative through year', Boolean(info.cumulative) && layers.includes('treatments'));
   addMode('patches', 'Patch size class', Boolean(info.patches) && layers.includes('patches'));
+  if (info.cumulative && layers.includes('treatments')) {
+    const legend = document.createElement('div');
+    legend.className = 'layer-legend';
+    const current = document.createElement('span');
+    current.className = 'layer-swatch current';
+    const past = document.createElement('span');
+    past.className = 'layer-swatch past';
+    legend.append(current, document.createTextNode(' current · '), past, document.createTextNode(' earlier'));
+    modeGroup.append(legend);
+  }
   if (info.patches && layers.includes('patches') && state.patchCatalog.length) {
     const patchGroup = group('Patch size classes');
     for (const klass of state.patchCatalog) {
@@ -1168,6 +1215,7 @@ async function startRun() {
   // a live search always has a schedule; the map must follow it, not a previous patch/cumulative view
   state.layerMode = 'current';
   renderLayerTree();
+  resetLiveMap();
   state.runPaused = false;
   state.history = [];
   drawSpark();
@@ -1203,7 +1251,7 @@ async function startRun() {
       for (const [block, chain] of payload.changed ?? []) {
         state.live.schedule.set(String(block), chain);
       }
-      scheduleRepaint();
+      updateLiveBlocks((payload.changed ?? []).map(([block]) => block));
     });
     events.addEventListener('progress', (event) => {
       const step = JSON.parse(event.data);
@@ -1342,6 +1390,11 @@ function showDetail(block) {
     $('detail').innerHTML = `<b>Block ${properties.block_id}</b><br>` +
       `treated: ${properties.treated ? 'yes' : 'no'}<br>` +
       `treatments: ${(properties.treatments ?? []).join(', ') || '—'}`;
+  }
+  if (properties.compartment !== undefined && properties.compartment !== null) {
+    const line = document.createElement('div');
+    line.textContent = `compartment: ${properties.compartment}`;
+    $('detail').append(line);
   }
 }
 

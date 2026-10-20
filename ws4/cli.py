@@ -457,6 +457,24 @@ def serve(
     geometry: Path | None = typer.Option(
         None, "--geometry", help="GeoJSON of block points or polygons"
     ),
+    topology: Path | None = typer.Option(
+        None, "--topology", exists=True, help="Block topology for patch membership on new runs"
+    ),
+    patch_accounts: Path | None = typer.Option(
+        None, "--patch-accounts", exists=True, help="Patch accounts for new runs"
+    ),
+    spread_accounts: Path | None = typer.Option(
+        None,
+        "--spread-accounts",
+        exists=True,
+        help="Spread accounts for new runs; needs --topology and --block-coordinates",
+    ),
+    block_coordinates: Path | None = typer.Option(
+        None, "--block-coordinates", exists=True, help="Block centroids for spread accounts"
+    ),
+    route_config: Path | None = typer.Option(
+        None, "--route-config", exists=True, help="Route model and accounts for new runs"
+    ),
     host: str = typer.Option("127.0.0.1", help="Bind address"),
     port: int = typer.Option(8000, help="Bind port"),
     root_path: str = typer.Option(
@@ -503,6 +521,11 @@ def serve(
             allow_agent=allow_agent,
             agent_model=agent_model,
             agent_cwd=agent_cwd,
+            topology=topology,
+            patch_accounts=patch_accounts,
+            spread_accounts=spread_accounts,
+            block_coordinates=block_coordinates,
+            route_config=route_config,
         ),
         host=host,
         port=port,
