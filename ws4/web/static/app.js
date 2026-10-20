@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], baseAttributes: [], baseAttribute: '', blockElements: new Map() };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, blockElements: new Map() };
 
 const $ = (id) => document.getElementById(id);
 const statusLine = (text) => { $('status').textContent = text; };
@@ -69,7 +69,33 @@ function fit(features) {
 }
 
 function applyView() {
-  $('viewport').setAttribute('transform', `translate(${state.view.x} ${state.view.y}) scale(${state.view.s})`);
+  const transform = `translate(${state.view.x} ${state.view.y}) scale(${state.view.s})`;
+  $('viewport').setAttribute('transform', transform);
+  $('roads-layer').setAttribute('transform', transform);
+}
+
+function renderRoads() {
+  const layer = $('roads-layer');
+  layer.replaceChildren();
+  if (!state.showRoads || !state.base || !state.roads.length) return;
+  for (const feature of state.roads) {
+    const geometry = feature.geometry;
+    const lines = geometry?.type === 'LineString'
+      ? [geometry.coordinates]
+      : geometry?.type === 'MultiLineString'
+        ? geometry.coordinates
+        : [];
+    for (const line of lines) {
+      const points = line.map(([x, y]) => {
+        const [px, py] = state.base.project([x, y]);
+        return `${px.toFixed(1)},${py.toFixed(1)}`;
+      }).join(' ');
+      const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+      polyline.setAttribute('points', points);
+      polyline.setAttribute('class', 'road');
+      layer.append(polyline);
+    }
+  }
 }
 
 function render(refit = true) {
@@ -173,6 +199,7 @@ function render(refit = true) {
   $('untreated-label').textContent = baseMode ? 'Blocks' : 'Untreated';
   $('scale').textContent = `year ${state.year} · 1 px ≈ ${Math.round(1 / base.scale)} m`;
   applyVisibility();
+  if (refit) renderRoads();
 }
 
 function applyVisibility() {
@@ -622,6 +649,33 @@ function renderLayerTree() {
       }
     }
   }
+  if (info.roads) {
+    const overlay = group('Overlays');
+    const wrapper = document.createElement('label');
+    wrapper.className = 'layer-option';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.id = 'show-roads';
+    input.checked = state.showRoads;
+    input.addEventListener('change', async () => {
+      state.showRoads = input.checked;
+      if (state.showRoads && !state.roads.length) {
+        try {
+          const body = await api('api/roads');
+          state.roads = body.features ?? [];
+        } catch (error) {
+          $('layers-hint').textContent = `roads unavailable: ${error.message}`;
+          state.showRoads = false;
+          input.checked = false;
+        }
+      }
+      renderRoads();
+    });
+    const text = document.createElement('span');
+    text.textContent = 'Access roads (source)';
+    wrapper.append(input, text);
+    overlay.append(wrapper);
+  }
   if (!info.roads || !info.compartments) {
     const unavailable = group('Not written by this run');
     for (const [label, available, reason] of [
@@ -661,6 +715,11 @@ async function loadLayers() {
     );
     state.patchClasses = new Set(state.patchCatalog);
     state.baseAttributes = info.base_attributes ?? [];
+    if (!info.roads) {
+      state.showRoads = false;
+      state.roads = [];
+      renderRoads();
+    }
     if (!state.baseAttributes.some((attribute) => attribute.name === state.baseAttribute)) {
       state.baseAttribute = '';
     }

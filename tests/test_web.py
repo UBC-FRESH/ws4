@@ -315,6 +315,49 @@ def test_inactive_targets_are_kept_in_the_json_and_reported(tmp_path: Path) -> N
     assert realized[0]["status"] == "inactive"
 
 
+def test_a_source_road_layer_is_served_for_the_overlay(tmp_path: Path) -> None:
+    """The optional access-road lines are a separate, run-independent GeoJSON layer."""
+    _app(tmp_path)
+    roads = tmp_path / "roads.geojson"
+    roads.write_text(
+        json.dumps(
+            {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "properties": {"access_id": 7, "road_type": "T", "length_m": 120.0},
+                        "geometry": {"type": "LineString", "coordinates": [[1, 0], [2, 0]]},
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    client = TestClient(
+        create_app(
+            dataset=tmp_path / "dataset",
+            runs=tmp_path / "runs",
+            targets=tmp_path / "targets.yaml",
+            geometry=tmp_path / "geometry.geojson",
+            roads=roads,
+        )
+    )
+    layers = client.get("/api/runs/run1/layers").json()
+    assert layers["roads"] is True
+    assert layers["roads_reason"] == ""
+    body = client.get("/api/roads").json()
+    assert body["type"] == "FeatureCollection"
+    assert body["features"][0]["geometry"]["type"] == "LineString"
+    assert body["features"][0]["properties"]["road_type"] == "T"
+
+    plain = tmp_path / "plain"
+    plain.mkdir()
+    without, _ = _app(plain)
+    assert without.get("/api/roads").status_code == 404
+    assert without.get("/api/runs/run1/layers").json()["roads"] is False
+
+
 def test_targets_round_trip_and_an_invalid_document_is_refused(tmp_path: Path) -> None:
     """A valid edit replaces the YAML; an invalid one leaves it unchanged."""
     client, targets = _app(tmp_path)

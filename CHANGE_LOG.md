@@ -2068,3 +2068,9 @@ issue comments.
   reported it `inactive`, and its watched card read `off`; the builder produced 10 rows for
   `feature.Yield.managed.Conif` over years 0–9 and enabled the CSV download. Dashboard result:
   `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
+- P18.2 source road overlay: `serve --roads` accepts a GeoJSON line layer of the source access
+  network; `/api/roads` serves it and the Legend tree adds a lazy **Access roads (source)** overlay.
+  The overlay is 36,721 lines (7.3 MB GeoJSON), off by default, and renders as thin source lines; the
+  run's used-road subset and model spread-compartment membership remain named follow-ups. Browser
+  check: ticking the overlay drew 36,721 lines with no console errors; unticking cleared them.
+  Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
