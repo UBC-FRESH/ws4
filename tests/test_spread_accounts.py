@@ -147,6 +147,43 @@ def test_a_full_span_fragments_the_fuel_body_and_a_partial_band_does_not() -> No
     assert partial["spread.fire.TOTAL.blocks"] == 45.0
 
 
+def test_membership_lists_untreated_components_and_their_classes() -> None:
+    """The membership names the blocks of each untreated component, largest first."""
+    account = SpreadAccount(
+        name="spread.fire", criteria="feature.treated", bearing=0.0, search_distance=None
+    )
+    rows: list[dict[str, object]] = []
+    spread_account_values(
+        account, _band(row_band=True), _lattice_edges(), _POINTS, _areas(), membership=rows
+    )
+    assert len(rows) == 42
+    assert {row["account"] for row in rows} == {"spread.fire"}
+    assert all(row["compartment_class"] == "150_9999999" for row in rows)
+    assert min(int(str(row["compartment"])) for row in rows) == 0
+    assert sum(float(str(row["area_ha"])) for row in rows) == pytest.approx(42 * _AREA)
+    components = {int(str(row["compartment"])) for row in rows}
+    assert len(components) == 2
+    # the largest component is index 0
+    largest = [row for row in rows if int(str(row["compartment"])) == 0]
+    assert len(largest) == 21
+    # a short hop isolates every block into a 10 ha component
+    isolated: list[dict[str, object]] = []
+    short = SpreadAccount(
+        name="spread.fire", criteria="feature.treated", bearing=0.0, search_distance=50.0
+    )
+    cells = spread_account_values(
+        short,
+        dict.fromkeys(_POINTS, 0.0),
+        _lattice_edges(),
+        _POINTS,
+        _areas(),
+        membership=isolated,
+    )
+    assert cells["spread.fire.largest_component"] == _AREA
+    assert len(isolated) == _ROWS * _COLUMNS
+    assert all(row["compartment_class"] == "0_10" for row in isolated)
+
+
 def test_a_narrow_cone_fragments_the_lattice_into_columns() -> None:
     """A twenty-degree cone keeps only the northward edges, so each column is its own body."""
     control = dict.fromkeys(_POINTS, 0.0)
@@ -236,6 +273,13 @@ def test_a_run_writes_the_spread_accounts_and_the_optimizer_can_target_them(tmp_
         spread_accounts=load_spread_accounts(accounts),
         block_coordinates=coordinates,
     )
+    membership = pd.read_csv(out / "spread_membership.csv")
+    assert not membership.empty
+    assert {"year", "account", "compartment", "compartment_class", "block", "area_ha"}.issubset(
+        membership.columns
+    )
+    assert sorted(membership["year"].unique().tolist()) == [0, 1]
+
     measured = pd.read_csv(out / "spread_metrics.csv")
     assert set(measured["account"]) == {
         "spread.fire.largest_component",

@@ -785,7 +785,7 @@ Goal: finish the model-derived spatial layers the P18 close-out deferred, and ke
 scale. The source polygons, source compartments and source access roads already ship; this phase adds
 what the model produces.
 
-- [ ] P19.1 **Spread-compartment membership.** Write `spread_membership.csv` from the
+- [x] P19.1 **Spread-compartment membership.** Write `spread_membership.csv` from the
   spread-connectivity account (year, account, compartment, class, block, area, component area); serve
   it as `layer=compartments`; add the model spread layer to the layer tree with class checkboxes and
   an account selector. This is the account independently reproduced in thesis #13.

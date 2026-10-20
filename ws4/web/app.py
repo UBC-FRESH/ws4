@@ -908,6 +908,20 @@ def create_app(
                     patch_classes = sorted({str(value) for value in frame["class"].dropna()})
                 if "account" in frame:
                     patch_accounts = sorted({str(value) for value in frame["account"].dropna()})
+        compartments = (directory / "spread_membership.csv").is_file()
+        compartment_classes: list[str] = []
+        compartment_accounts: list[str] = []
+        if compartments:
+            frame = read_csv(directory, "spread_membership.csv")
+            if not frame.empty:
+                if "compartment_class" in frame:
+                    compartment_classes = sorted(
+                        {str(value) for value in frame["compartment_class"].dropna()}
+                    )
+                if "account" in frame:
+                    compartment_accounts = sorted(
+                        {str(value) for value in frame["account"].dropna()}
+                    )
         base_attributes: list[dict[str, Any]] = []
         if geometry_path is not None:
             labels = (
@@ -935,16 +949,18 @@ def create_app(
             "cumulative": schedule,
             "patches": patches,
             "roads": roads_path is not None and roads_path.is_file(),
-            "compartments": False,
+            "compartments": compartments,
             "patch_classes": patch_classes,
             "patch_accounts": patch_accounts,
+            "compartment_classes": compartment_classes,
+            "compartment_accounts": compartment_accounts,
             "base_attributes": base_attributes,
             "roads_reason": (
                 ""
                 if roads_path is not None and roads_path.is_file()
                 else "no source road layer is configured (--roads)"
             ),
-            "compartments_reason": "no compartment membership artifact is written by a run",
+            "compartments_reason": ("" if compartments else "the run has no spread_membership.csv"),
         }
 
     @app.get("/api/runs/{run}/map")
@@ -952,16 +968,18 @@ def create_app(
         run: str,
         year: int | None = Query(default=None),
         layer: str = Query(default="treatments"),
+        account: str | None = Query(default=None),
     ) -> dict[str, Any]:
         """Return a GeoJSON FeatureCollection of every block for one map layer.
 
         ``treatments`` is the selected period, ``cumulative`` marks current and earlier
-        treatments, ``patches`` colors the selected year's patch membership, and ``blocks`` is
-        the bare geometry. The layer is the base geometry; the properties carry the flags the
-        client needs, so a layer change is one request and no second join.
+        treatments, ``patches`` colors the selected year's patch membership, ``compartments``
+        is the model spread-compartment membership (optionally for one ``account``), and
+        ``blocks`` is the bare geometry. The layer is the base geometry; the properties carry
+        the flags the client needs, so a layer change is one request and no second join.
         """
         directory = run_dir(run)
-        if layer not in ("treatments", "cumulative", "patches", "blocks"):
+        if layer not in ("treatments", "cumulative", "patches", "compartments", "blocks"):
             raise HTTPException(status_code=422, detail=f"unknown layer {layer!r}")
         if geometry_path is None or not geometry_path.is_file():
             raise HTTPException(
@@ -972,7 +990,39 @@ def create_app(
         current: set[int] = set()
         patches_by_block: dict[int, dict[str, Any]] = {}
         patch_classes: list[str] = []
-        if layer == "patches":
+        compartments_by_block: dict[int, dict[str, Any]] = {}
+        compartment_classes: list[str] = []
+        compartment_accounts: list[str] = []
+        current_treatments: dict[int, list[str]] = {}
+        if layer == "compartments":
+            if not (directory / "spread_membership.csv").is_file():
+                raise HTTPException(status_code=404, detail="the run has no spread_membership.csv")
+            frame = read_csv(directory, "spread_membership.csv")
+            compartment_accounts = sorted({str(value) for value in frame["account"].dropna()})
+            if account is None or account not in compartment_accounts:
+                account = compartment_accounts[0] if compartment_accounts else ""
+            if year is None:
+                year = int(frame["year"].min()) if not frame.empty else 0
+            selected = frame[(frame["year"] == year) & (frame["account"] == account)]
+            for row in selected.to_dict(orient="records"):
+                block = int(row["block"])
+                compartments_by_block[block] = {
+                    "compartment": int(row["compartment"]),
+                    "compartment_class": str(row["compartment_class"]),
+                    "compartment_area_ha": float(row["compartment_area_ha"]),
+                    "area_ha": float(row["area_ha"]),
+                }
+            compartment_classes = sorted(
+                {str(value) for value in frame["compartment_class"].dropna()}
+            )
+            if (directory / "schedule.csv").is_file():
+                schedule = read_csv(directory, "schedule.csv")
+                current_rows = schedule[schedule["period"] == year]
+                for block_id, group in current_rows.groupby("block_id"):
+                    current_treatments[int(float(str(block_id)))] = sorted(
+                        {str(value) for value in group["treatment"]}
+                    )
+        elif layer == "patches":
             if not (directory / "patch_membership.csv").is_file():
                 raise HTTPException(status_code=404, detail="the run has no patch_membership.csv")
             frame = read_csv(directory, "patch_membership.csv")
@@ -1015,7 +1065,20 @@ def create_app(
             if block_value is None:
                 continue
             number = int(block_value)
-            if layer == "patches":
+            if layer == "compartments":
+                compartment = compartments_by_block.get(number)
+                treatments = current_treatments.get(number, [])
+                properties["treatments"] = treatments
+                properties["treated"] = bool(treatments)
+                properties["current"] = bool(treatments)
+                properties["compartment"] = compartment["compartment"] if compartment else None
+                properties["compartment_class"] = (
+                    compartment["compartment_class"] if compartment else None
+                )
+                properties["compartment_area_ha"] = (
+                    compartment["compartment_area_ha"] if compartment else None
+                )
+            elif layer == "patches":
                 patch = patches_by_block.get(number)
                 properties["treatments"] = [patch["patch_account"]] if patch else []
                 properties["treated"] = patch is not None
@@ -1041,6 +1104,9 @@ def create_app(
             "year": year,
             "layer": layer,
             "patch_classes": patch_classes,
+            "compartment_classes": compartment_classes,
+            "compartment_accounts": compartment_accounts,
+            "account": account if layer == "compartments" else None,
         }
 
     def _realized_rows(directory: Path) -> list[dict[str, Any]]:

@@ -63,6 +63,9 @@ writes:
 - ``edge_metrics.csv`` — per-year edge contrast accounts, when ``edge_elements`` are given;
 - ``spread_metrics.csv`` — per-year spread-connectivity accounts, when ``spread_accounts`` and
   ``block_coordinates`` are given (see :doc:`spatial`);
+- ``spread_membership.csv`` — the untreated blocks of every spread compartment, with the account,
+  compartment index, area class, block area and component area, when the same inputs are given; the
+  largest component is index 0;
 - ``spatial_violations.csv`` — ``kind,year,area_ha,limit,block_a,block_b,years`` (``kind`` is
   ``opening``, ``green_up``, or ``core_area``), when a maximum opening size, a green-up interval, or
   a core-area rule is given.

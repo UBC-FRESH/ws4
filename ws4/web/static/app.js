@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, blockElements: new Map() };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, blockElements: new Map() };
 
 const $ = (id) => document.getElementById(id);
 const statusLine = (text) => { $('status').textContent = text; };
@@ -144,6 +144,16 @@ function render(refit = true) {
         ? (properties.current ? 'current treated' : 'past treated')
         : 'untreated';
       if (isTreated && !properties.current) fill = 'url(#earlier-hatch)';
+    } else if (state.layerMode === 'compartments' && state.layers?.compartments) {
+      if (properties.treated) {
+        isTreated = true;
+        klass = 'current treated';
+      } else {
+        const compartmentClass = properties.compartment_class;
+        isTreated = Boolean(compartmentClass) && state.selectedCompartments.has(compartmentClass);
+        klass = isTreated ? 'compartment treated' : 'untreated';
+        if (isTreated) fill = compartmentColor(compartmentClass);
+      }
     } else if (state.layerMode === 'base' && state.baseAttribute) {
       isTreated = false;
       klass = 'base untreated';
@@ -248,13 +258,17 @@ async function loadMap() {
     ? 'patches'
     : state.layerMode === 'cumulative' && state.layers?.cumulative
       ? 'cumulative'
-      : state.layerMode === 'base' || (state.layers && !state.layers.treatments)
-        ? 'blocks'
-        : 'treatments';
+      : state.layerMode === 'compartments' && state.layers?.compartments
+        ? 'compartments'
+        : state.layerMode === 'base' || (state.layers && !state.layers.treatments)
+          ? 'blocks'
+          : 'treatments';
   try {
-    const body = await api(
-      `api/runs/${encodeURIComponent(state.run)}/map?year=${state.year}&layer=${layer}`,
-    );
+    let query = `api/runs/${encodeURIComponent(state.run)}/map?year=${state.year}&layer=${layer}`;
+    if (layer === 'compartments') {
+      query += `&account=${encodeURIComponent(state.compartmentAccount)}`;
+    }
+    const body = await api(query);
     state.features = body.features ?? [];
     render();
     statusLine(`${state.features.length.toLocaleString()} blocks · ${layer} · year ${state.year}`);
@@ -516,7 +530,24 @@ function baseColor(name, value) {
   return `hsl(${Math.round((index * 137.508) % 360)} 55% 62%)`;
 }
 
+const COMPARTMENT_COLORS = {
+  '0_10': '#8dd3c7',
+  '10_50': '#80b1d3',
+  '50_150': '#bc80bd',
+  '150_9999999': '#fb8072',
+};
+
+function compartmentColor(klass) {
+  return COMPARTMENT_COLORS[klass] ?? '#d9d9d9';
+}
+
+function compartmentLabel(klass) {
+  const labels = { '0_10': '0–10 ha', '10_50': '10–50 ha', '50_150': '50–150 ha', '150_9999999': '150+ ha' };
+  return labels[klass] ?? String(klass).replaceAll('_', '–');
+}
+
 function layerLabel() {
+  if (state.layerMode === 'compartments') return 'Spread compartments';
   if (state.layerMode === 'base' && state.baseAttribute) {
     const info = baseAttributeInfo(state.baseAttribute);
     return `Base: ${info?.label ?? state.baseAttribute}`;
@@ -568,6 +599,7 @@ function renderLayerTree() {
   addMode('current', 'Current treatment', Boolean(info.treatments) && layers.includes('treatments'));
   addMode('cumulative', 'Cumulative through year', Boolean(info.cumulative) && layers.includes('treatments'));
   addMode('patches', 'Patch size class', Boolean(info.patches) && layers.includes('patches'));
+  addMode('compartments', 'Spread compartments', Boolean(info.compartments) && layers.includes('compartments'));
   if (info.cumulative && layers.includes('treatments') && state.layerMode === 'cumulative') {
     const legend = document.createElement('div');
     legend.className = 'layer-legend';
@@ -622,7 +654,13 @@ function renderLayerTree() {
         state.layerMode = 'base';
       } else {
         state.baseAttribute = '';
-        state.layerMode = info.treatments ? 'current' : info.patches ? 'patches' : 'current';
+        state.layerMode = info.treatments
+          ? 'current'
+          : info.patches
+            ? 'patches'
+            : info.compartments
+              ? 'compartments'
+              : 'current';
       }
       renderLayerTree();
       loadMap();
@@ -676,6 +714,46 @@ function renderLayerTree() {
     wrapper.append(input, text);
     overlay.append(wrapper);
   }
+  if (info.compartments && layers.includes('compartments')) {
+    const compartmentGroup = group('Spread compartments');
+    if (state.compartmentAccounts.length > 1) {
+      const wrapper = document.createElement('label');
+      wrapper.className = 'layer-option';
+      const select = document.createElement('select');
+      for (const account of state.compartmentAccounts) {
+        const option = document.createElement('option');
+        option.value = account;
+        option.textContent = account;
+        select.append(option);
+      }
+      select.value = state.compartmentAccount;
+      select.addEventListener('change', () => {
+        state.compartmentAccount = select.value;
+        loadMap();
+      });
+      wrapper.append(select);
+      compartmentGroup.append(wrapper);
+    }
+    for (const klass of state.compartmentClasses) {
+      const wrapper = document.createElement('label');
+      wrapper.className = 'layer-option';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.checked = state.selectedCompartments.has(klass);
+      input.addEventListener('change', () => {
+        if (input.checked) state.selectedCompartments.add(klass);
+        else state.selectedCompartments.delete(klass);
+        render(false);
+      });
+      const swatch = document.createElement('span');
+      swatch.className = 'layer-swatch';
+      swatch.style.background = compartmentColor(klass);
+      const text = document.createElement('span');
+      text.textContent = compartmentLabel(klass);
+      wrapper.append(input, swatch, text);
+      compartmentGroup.append(wrapper);
+    }
+  }
   if (!info.roads || !info.compartments) {
     const unavailable = group('Not written by this run');
     for (const [label, available, reason] of [
@@ -714,6 +792,14 @@ async function loadLayers() {
       (left, right) => parseInt(left, 10) - parseInt(right, 10),
     );
     state.patchClasses = new Set(state.patchCatalog);
+    state.compartmentAccounts = info.compartment_accounts ?? [];
+    state.compartmentClasses = [...(info.compartment_classes ?? [])].sort(
+      (left, right) => parseInt(left, 10) - parseInt(right, 10),
+    );
+    state.selectedCompartments = new Set(state.compartmentClasses);
+    if (!state.compartmentAccounts.includes(state.compartmentAccount)) {
+      state.compartmentAccount = state.compartmentAccounts[0] ?? '';
+    }
     state.baseAttributes = info.base_attributes ?? [];
     if (!info.roads) {
       state.showRoads = false;
@@ -727,12 +813,15 @@ async function loadLayers() {
       ? 'current'
       : info.patches
         ? 'patches'
-        : state.baseAttributes.length
-          ? 'base'
-          : 'current';
+        : info.compartments
+          ? 'compartments'
+          : state.baseAttributes.length
+            ? 'base'
+            : 'current';
     if (state.layerMode === 'patches' && !info.patches) state.layerMode = fallback;
     if (state.layerMode === 'cumulative' && !info.cumulative) state.layerMode = fallback;
     if (state.layerMode === 'current' && !info.treatments) state.layerMode = fallback;
+    if (state.layerMode === 'compartments' && !info.compartments) state.layerMode = fallback;
     if (state.layerMode === 'base') {
       if (!state.baseAttribute) state.baseAttribute = state.baseAttributes[0]?.name ?? '';
       if (!state.baseAttribute) state.layerMode = fallback;
@@ -741,9 +830,10 @@ async function loadLayers() {
     const available = [];
     if (info.treatments) available.push('treatments');
     if (info.patches) available.push('patches');
+    if (info.compartments) available.push('compartments');
     hint.textContent = available.length
       ? `available: ${available.join(', ')}`
-      : 'this run has no treatment or patch artifact';
+      : 'this run has no treatment, patch or compartment artifact';
   } catch (error) {
     state.layers = null;
     state.patchCatalog = [];
@@ -1654,6 +1744,12 @@ function showDetail(block) {
     $('detail').innerHTML = `<b>Block ${properties.block_id}</b><br>` +
       `current: ${properties.current ? 'yes' : 'no'} · earlier: ${properties.treated && !properties.current ? 'yes' : 'no'}<br>` +
       `treatments to date: ${(properties.treatments ?? []).join(', ') || '—'}`;
+  } else if (state.layerMode === 'compartments' && state.layers?.compartments) {
+    $('detail').innerHTML = `<b>Block ${properties.block_id}</b><br>` +
+      `break: ${properties.treated ? 'yes' : 'no'} · compartment: ${properties.compartment ?? '—'}<br>` +
+      `class: ${properties.compartment_class ? compartmentLabel(properties.compartment_class) : '—'}` +
+      ` · area: ${properties.compartment_area_ha === null || properties.compartment_area_ha === undefined ? '—' : Number(properties.compartment_area_ha).toLocaleString()} ha` +
+      ` · treatments: ${(properties.treatments ?? []).join(', ') || '—'}`;
   } else {
     $('detail').innerHTML = `<b>Block ${properties.block_id}</b><br>` +
       `treated: ${properties.treated ? 'yes' : 'no'}<br>` +

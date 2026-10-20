@@ -259,12 +259,35 @@ def transmitting_edges(
     return selected
 
 
+def compartment_class(area: float) -> str:
+    """Return the size class of a spread compartment, in hectares.
+
+    Parameters
+    ----------
+    area : float
+        The compartment area.
+
+    Returns
+    -------
+    str
+        ``0_10``, ``10_50``, ``50_150`` or ``150_9999999``.
+    """
+    if area <= 10.0:
+        return "0_10"
+    if area <= 50.0:
+        return "10_50"
+    if area <= 150.0:
+        return "50_150"
+    return "150_9999999"
+
+
 def spread_account_values(
     account: SpreadAccount,
     values: Mapping[int, float],
     edges: Sequence[tuple[int, int, float]],
     points: Mapping[int, Point],
     block_area: Mapping[int, float],
+    membership: list[dict[str, object]] | None = None,
 ) -> dict[str, float]:
     """Compute one period's spread-connectivity sub-accounts.
 
@@ -282,6 +305,9 @@ def spread_account_values(
         The ``(x, y)`` centroid of each block, in metres, which is where an edge's bearing is read.
     block_area : mapping of int to float
         The area of each block, in hectares.
+    membership : list of dict or None, optional
+        When given, receives one row per untreated block: the account, compartment index,
+        compartment class and area, block, and block area. The largest compartment is index 0.
 
     Returns
     -------
@@ -308,9 +334,10 @@ def spread_account_values(
         adjacency.setdefault(source, []).append(target)
         adjacency.setdefault(target, []).append(source)
     remaining = set(untreated)
-    areas: list[float] = []
+    components: list[tuple[list[int], float]] = []
     while remaining:
         start = remaining.pop()
+        blocks = [start]
         area = block_area.get(start, 0.0)
         stack = [start]
         while stack:
@@ -319,11 +346,28 @@ def spread_account_values(
                 if other in remaining:
                     remaining.remove(other)
                     area += block_area.get(other, 0.0)
+                    blocks.append(other)
                     stack.append(other)
-        areas.append(area)
+        components.append((blocks, area))
+    components.sort(key=lambda component: (-component[1], min(component[0])))
+    areas = [area for _, area in components]
     largest = max(areas) if areas else 0.0
     total = math.fsum(areas)
     weighted = math.fsum(area * area for area in areas) / total if total else 0.0
+    if membership is not None:
+        for index, (blocks, area) in enumerate(components):
+            label = compartment_class(area)
+            for block in blocks:
+                membership.append(
+                    {
+                        "account": account.name,
+                        "compartment": index,
+                        "compartment_area_ha": area,
+                        "compartment_class": label,
+                        "block": block,
+                        "area_ha": block_area.get(block, 0.0),
+                    }
+                )
     return {
         f"{account.name}.largest_component": largest,
         f"{account.name}.percolation_reach": weighted,

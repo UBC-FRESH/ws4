@@ -118,6 +118,11 @@ The Legend tab builds a grouped tree from ``GET /api/runs/{run}/layers`` and the
   distinguishes the current period (red) from earlier ones (tan).
 - **Patch size class** comes from ``patch_membership.csv``. A run without a schedule still gets a
   period range from the patch membership, or from its account values, so a simulate run can be read.
+- **Spread compartments** comes from ``spread_membership.csv``: the untreated blocks grouped into
+  connected components over the run's fast edges. The layer colours each component by its area class
+  (0–10, 10–50, 50–150, 150+ ha), numbers the largest component 0, and draws the period's treated
+  blocks as breaks. When the run has more than one spread account, the layer tree offers the account
+  selector. This is a **model** layer, not the source ``COMPART`` base colour.
 - **Current treatment** is a solid fill; **earlier** cumulative treatments use a diagonal hatch.
   Patch classes are distinct solid colours. Polygon boundaries stay stroked, so the stand mosaic is
   visible at every zoom.
@@ -127,8 +132,8 @@ The Legend tab builds a grouped tree from ``GET /api/runs/{run}/layers`` and the
   and every layer keeps the same polygon geometry.
 - **Access roads (source)** is an optional overlay from ``--roads``, a GeoJSON of the source
   access-line layer. It is a static source network, not the run's used-road subset; the run's
-  route-model geometry remains a follow-up. **Spread compartments** are still named unavailable:
-  runs do not write compartment membership, and the service will not invent it.
+  route-model geometry remains a follow-up. A run without ``spread_membership.csv`` still names
+  **Spread compartments** as unavailable rather than inventing membership.
 
 Geometry
 --------

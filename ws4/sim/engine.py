@@ -88,6 +88,7 @@ class Simulator:
         self._route_values: list[dict[str, object]] = []
         self._edge_values: list[dict[str, object]] = []
         self._spread_values: list[dict[str, object]] = []
+        self._spread_membership: list[dict[str, object]] = []
         # An integer-age table for gather-based evaluation (see :class:`CurveTable`).
         self._curve_table = CurveTable.from_curves(self.curves)
         # Index the treatments, products, and fragments once, so a year's treatments do not
@@ -1058,6 +1059,7 @@ class Simulator:
         self._route_values = []
         self._edge_values = []
         self._spread_values = []
+        self._spread_membership = []
         spread_labels = sorted({account.criteria for account in spread_accounts})
         criteria_labels = sorted(
             {element.attribute1 for element in edge_elements}
@@ -1079,13 +1081,18 @@ class Simulator:
             if spread_accounts and spread_points:
                 spread_criteria = {label: self.block_criteria(label) for label in spread_labels}
                 for spread in spread_accounts:
+                    membership: list[dict[str, object]] = []
                     cells = spread_account_values(
                         spread,
                         spread_criteria.get(spread.criteria, {}),
                         list(spread_edges),
                         spread_points,
                         self._spread_block_area(),
+                        membership=membership,
                     )
+                    for row in membership:
+                        row["year"] = year
+                        self._spread_membership.append(row)
                     for account, value in cells.items():
                         record = {"year": year, "account": account, "value": value}
                         records.append(record)
@@ -1259,6 +1266,19 @@ class Simulator:
             pd.DataFrame(self._spread_values, columns=["year", "account", "value"]).to_csv(
                 out_dir / "spread_metrics.csv", index=False
             )
+            if self._spread_membership:
+                pd.DataFrame(
+                    self._spread_membership,
+                    columns=[
+                        "year",
+                        "account",
+                        "compartment",
+                        "compartment_class",
+                        "block",
+                        "area_ha",
+                        "compartment_area_ha",
+                    ],
+                ).to_csv(out_dir / "spread_membership.csv", index=False)
         if ledger is not None:
             ledger.write(out_dir)
         elif self._route_values:
