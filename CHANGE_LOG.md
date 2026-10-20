@@ -2060,3 +2060,11 @@ issue comments.
   block detail lists the source attributes. Browser check: 30 compartments and 10 THEME5 classes
   render as coloured polygon mosaics; switching back to "Off" restores the current-treatment map.
   Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
+- P18.3/P18.4: targets have an **active** flag. The web table's On checkbox writes it to the same
+  YAML; `Target.active` defaults true, the objective and the incremental evaluator skip inactive
+  targets, and the target report calls them `inactive` without a penalty. The Reports tab now groups
+  the named standard reports the run wrote and adds a Build a report form over accounts and years
+  with a CSV export. Browser check: toggling the product target off saved `active: false`, the run
+  reported it `inactive`, and its watched card read `off`; the builder produced 10 rows for
+  `feature.Yield.managed.Conif` over years 0–9 and enabled the CSV download. Dashboard result:
+  `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.

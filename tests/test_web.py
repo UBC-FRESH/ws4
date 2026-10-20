@@ -301,6 +301,20 @@ def test_the_map_refuses_the_patch_layer_without_membership(tmp_path: Path) -> N
     assert "patch_membership.csv" in response.json()["detail"]
 
 
+def test_inactive_targets_are_kept_in_the_json_and_reported(tmp_path: Path) -> None:
+    """The editor can round-trip an inactive target; the run reports it as inactive."""
+    client, targets = _app(tmp_path)
+    targets.write_text(
+        "targets:\n  - account: feature.Volume\n    year: 0\n    minimum: 100\n    active: false\n",
+        encoding="utf-8",
+    )
+    rows = client.get("/api/targets.json").json()
+    assert rows[0]["active"] is False
+    realized = client.get("/api/runs/run1/targets").json()
+    assert realized[0]["active"] is False
+    assert realized[0]["status"] == "inactive"
+
+
 def test_targets_round_trip_and_an_invalid_document_is_refused(tmp_path: Path) -> None:
     """A valid edit replaces the YAML; an invalid one leaves it unchanged."""
     client, targets = _app(tmp_path)

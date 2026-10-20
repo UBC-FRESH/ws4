@@ -750,18 +750,18 @@ current period from the cumulative total.
   Source attributes (compartment, THEME2, THEME5, MartStrata, LMU) drive an optional base-colour
   mode with a category legend. Remaining: write road segment geometry/use and model compartment
   membership, then wire those families; then the MapLibre swap when a basemap is needed.
-- [ ] P18.3 Targets — **live**: a table per account and period with editable min/max/weights, a save
+- [x] P18.3 Targets — **live**: a table per account and period with editable min/max/weights, a save
   that validates through the optimizer's loader, the realized value from the selected run's own CSV
   with a met/below/above status, and a **Run search** action that starts the optimizer behind
-  ``--allow-runs``, streams progress over SSE, and refreshes the run when the summary lands. Remaining:
-  the active toggle.
-- [ ] P18.4 Reports — **first cut live**: the report tree from the run directory, a CSV preview table,
-  and direct links for HTML/PNG. Remaining: the named standard reports (account summary, route cost,
-  patch/spread) and user-defined definitions with export.
-- [ ] P18.5 Skins — **first cut live**: four checked manifests (`model-builder`, `scenario-analyst`,
+  ``--allow-runs``, streams progress over SSE, and refreshes the run when the summary lands. The
+  **On** toggle writes ``active`` to the YAML; an inactive target is reported as ``inactive`` but not
+  priced by the objective or the incremental evaluator.
+- [x] P18.4 Reports — **live**: the report tree from the run directory, a CSV preview table, direct
+  links for HTML/PNG, a named standard-report list (account/target/route/patch/spread/network/
+  schedule), and a **Build a report** form over accounts and years with a CSV export.
+- [x] P18.5 Skins — **live**: four checked manifests (`model-builder`, `scenario-analyst`,
   `scenario-browser`, `reviewer`), served at `/api/skins`, a selector in the shell, panel/layer hiding,
-  and the read-only rule enforced in the loader (a read-only skin cannot carry a mutating action). The
-  comparison panel remains P18.6.
+  and the read-only rule enforced in the loader (a read-only skin cannot carry a mutating action).
 - [x] P18.6 Comparison — two runs side by side, map and account deltas, target status. The Compare
   tab reads both runs through the existing map, accounts and targets endpoints; the map colors
   A-only/B-only/both, the target table shows each run's period value and status, and the account

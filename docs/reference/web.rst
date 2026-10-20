@@ -206,8 +206,16 @@ Reports
 -------
 
 ``GET /api/runs/{run}/reports`` lists the report files a run wrote. The application renders a CSV in a
-table (first 200 rows) and opens HTML/PNG reports directly. Standard reports are the run's own files;
-nothing is recomputed in the browser.
+table (first 200 rows) and opens HTML/PNG reports directly. The Reports tab groups the named
+**standard reports** when present — account summary, target status, route cost (overall and per
+destination), patch accounts and metrics, spread metrics, edge contrast, the road network and the
+schedule — and keeps the full file list below them. Nothing is recomputed in the browser.
+
+The **Build a report** form selects accounts (comma-separated, or blank for all) and a year range
+from the run's own ``account_values.csv``, renders the rows, and exports the same rows as a CSV
+download. A target's **On** checkbox is written through the same save as the bounds: an inactive
+target stays in the YAML, is shown as ``inactive`` in the target report, and is not priced. The
+target table and watched cards use the same active flag.
 
 Front end
 ---------

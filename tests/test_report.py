@@ -37,6 +37,13 @@ def test_ratio_account() -> None:
     assert ratio.loc[1] == 4.0  # 20 / 5
 
 
+def test_an_inactive_target_is_reported_without_a_penalty() -> None:
+    """An inactive target stays in the report, marked inactive, with no penalty."""
+    status = target_status(_values(), [Target("a", 0, minimum=50.0, active=False)]).iloc[0]
+    assert status["status"] == "inactive"
+    assert status["penalty"] == 0.0
+
+
 def test_target_status() -> None:
     """Each target reports its value and whether it was met."""
     targets = [

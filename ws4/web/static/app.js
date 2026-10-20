@@ -784,6 +784,7 @@ function makeMini() {
 }
 
 function statusOf(row, value) {
+  if (row.active === false) return 'off';
   if (value === undefined || value === null) return 'unknown';
   if (row.minimum !== null && value < row.minimum) return 'below';
   if (row.maximum !== null && value > row.maximum) return 'above';
@@ -958,6 +959,12 @@ function renderWatchPanel() {
 function paintTarget(entry, value) {
   entry.value = value;
   const row = entry.row;
+  if (row.active === false) {
+    entry.text.textContent = 'off';
+    if (entry.band) entry.band.style.display = 'none';
+    if (entry.marker) entry.marker.style.display = 'none';
+    return;
+  }
   if (value === undefined || value === null) {
     entry.text.textContent = '—';
     if (entry.band) entry.band.style.display = 'none';
@@ -1018,6 +1025,7 @@ async function loadTargets() {
     state.targetCells = new Map();
     state.windowValues = new Map();
     const rows = await api('api/targets.json');
+    rows.forEach((row) => { row.active = row.active !== false; });
     state.targets = rows;
     if (!rows.length) {
       empty.hidden = false;
@@ -1059,7 +1067,22 @@ async function loadTargets() {
     } catch { /* no realized values for this run */ }
     rows.forEach((row, index) => {
       const tr = document.createElement('tr');
+      tr.classList.toggle('inactive', row.active === false);
       const key = `${row.year}|${row.account}`;
+      const on = document.createElement('td');
+      const onBox = document.createElement('input');
+      onBox.type = 'checkbox';
+      onBox.checked = row.active !== false;
+      onBox.title = 'price this target';
+      onBox.addEventListener('change', () => {
+        row.active = onBox.checked;
+        tr.classList.toggle('inactive', !row.active);
+        const entry = state.targetCells.get(key);
+        if (entry) paintTarget(entry, entry.value);
+        renderWatchPanel();
+      });
+      on.append(onBox);
+      tr.append(on);
       const account = document.createElement('td');
       account.className = 'account';
       const box = document.createElement('input');
@@ -1411,6 +1434,7 @@ function renderReport(rows) {
 
 async function showReport(name) {
   const preview = $('report-preview');
+  $('report-export').hidden = true;
   const url = `api/runs/${encodeURIComponent(state.run)}/reports/${encodeURIComponent(name)}`;
   if (!name.toLowerCase().endsWith('.csv')) {
     // the report name comes from the filesystem; never interpolate it into markup
@@ -1431,13 +1455,59 @@ async function showReport(name) {
   }
 }
 
+const STANDARD_REPORTS = [
+  ['report_accounts.csv', 'Account summary'],
+  ['report_targets.csv', 'Target status'],
+  ['route_cost_report.csv', 'Route cost'],
+  ['patch_accounts.csv', 'Patch accounts'],
+  ['patch_metrics.csv', 'Patch metrics'],
+  ['spread_metrics.csv', 'Spread metrics'],
+  ['edge_metrics.csv', 'Edge contrast'],
+  ['network_table.csv', 'Road network'],
+  ['schedule.csv', 'Schedule'],
+  ['account_values.csv', 'Account values'],
+  ['product_values.csv', 'Product values'],
+];
+
+function csvCell(value) {
+  const text = String(value ?? '');
+  return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+}
+
 async function loadReports() {
   if (!state.run) return;
   const list = $('reports');
+  const standard = $('standard-reports');
+  const empty = $('standard-reports-empty');
   list.replaceChildren();
+  standard.replaceChildren();
   $('report-preview').replaceChildren();
+  $('report-export').hidden = true;
+  $('report-build-status').textContent = '';
   try {
     const body = await api(`api/runs/${encodeURIComponent(state.run)}/reports`);
+    const byName = new Map(body.map((report) => [report.name, report]));
+    const definitions = [...STANDARD_REPORTS];
+    for (const report of body) {
+      if (report.name.startsWith('route_cost_report.destination.')) {
+        const suffix = report.name.slice('route_cost_report.destination.'.length, -4);
+        definitions.push([report.name, `Route cost · ${suffix}`]);
+      }
+    }
+    let shown = 0;
+    for (const [name, label] of definitions) {
+      if (!byName.has(name)) continue;
+      const item = document.createElement('li');
+      const link = document.createElement('a');
+      link.href = `api/runs/${encodeURIComponent(state.run)}/reports/${encodeURIComponent(name)}`;
+      link.textContent = label;
+      link.title = name;
+      link.addEventListener('click', (event) => { event.preventDefault(); showReport(name); });
+      item.append(link);
+      standard.append(item);
+      shown += 1;
+    }
+    empty.hidden = shown > 0;
     for (const report of body) {
       const item = document.createElement('li');
       const link = document.createElement('a');
@@ -1447,8 +1517,63 @@ async function loadReports() {
       item.append(link);
       list.append(item);
     }
+    const slider = $('year');
+    $('report-from').value = slider.min || 0;
+    $('report-to').value = slider.max || 0;
+    const accounts = await api(`api/runs/${encodeURIComponent(state.run)}/accounts`);
+    const names = [...new Set(accounts.map((row) => String(row.account)))].sort();
+    const datalist = $('account-names');
+    datalist.replaceChildren();
+    for (const name of names) {
+      const option = document.createElement('option');
+      option.value = name;
+      datalist.append(option);
+    }
   } catch (error) {
     list.textContent = `reports unavailable: ${error.message}`;
+  }
+}
+
+async function buildReport() {
+  const status = $('report-build-status');
+  const exportLink = $('report-export');
+  const preview = $('report-preview');
+  status.textContent = 'building…';
+  exportLink.hidden = true;
+  try {
+    const rows = await api(`api/runs/${encodeURIComponent(state.run)}/accounts`);
+    const wanted = $('report-accounts').value
+      .split(',')
+      .map((name) => name.trim())
+      .filter(Boolean);
+    const from = $('report-from').value === '' ? -Infinity : Number($('report-from').value);
+    const to = $('report-to').value === '' ? Infinity : Number($('report-to').value);
+    const filtered = rows.filter((row) => {
+      const account = String(row.account);
+      const matches = wanted.length === 0
+        || wanted.some((name) => account === name || account.startsWith(`${name}.`));
+      const year = Number(row.year);
+      return matches && year >= from && year <= to;
+    });
+    if (!filtered.length) {
+      preview.textContent = 'no matching account values';
+      status.textContent = '';
+      return;
+    }
+    const table = [
+      ['year', 'account', 'value'],
+      ...filtered.map((row) => [row.year, row.account, row.value]),
+    ];
+    renderReport(table);
+    const csv = table.map((row) => row.map(csvCell).join(',')).join('\n');
+    if (exportLink.href.startsWith('blob:')) URL.revokeObjectURL(exportLink.href);
+    exportLink.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    exportLink.download = `${state.run}-report.csv`;
+    exportLink.hidden = false;
+    status.textContent = `${filtered.length.toLocaleString()} rows`;
+  } catch (error) {
+    preview.textContent = `report unavailable: ${error.message}`;
+    status.textContent = '';
   }
 }
 
@@ -1667,6 +1792,7 @@ function wireControls() {
     if (skin) { applySkin(skin); await loadTargets(); }
   });
   $('save-targets').addEventListener('click', saveTargets);
+  $('build-report').addEventListener('click', buildReport);
   $('compare-a').addEventListener('change', loadComparison);
   $('compare-b').addEventListener('change', loadComparison);
   $('compare-filter').addEventListener('input', renderCompareAccounts);

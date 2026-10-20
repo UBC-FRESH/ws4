@@ -34,6 +34,18 @@ the later years.
        minimum: 100000
        period_width: 10
 
+An **inactive** target is kept in the file and reported, but the search does not price it. Use
+``active: false`` to park a target while you compare alternatives, or the **On** checkbox in the web
+targets table:
+
+.. code-block:: yaml
+
+     - account: feature.Volume.managed
+       year: 0
+       minimum: 100000
+       period_width: 10
+       active: false
+
 **2. Decide the weights.** ``min_weight`` and ``max_weight`` say how much a deviation costs.
 Defaults are ``1.0``. A weight much larger than the others makes its term dominate, which is
 sometimes exactly what you want (a hard constraint you never want violated) and sometimes the bug
@@ -100,7 +112,7 @@ them:
 
    Target(account='product.Harvested.CC', year=0, minimum=30000, maximum=None, min_weight=1.0,
           max_weight=1.0, period_width=10, shape='linear', flow='', flow_start=0, flow_end=None,
-          flow_reference=None)
+          flow_reference=None, active=True)
 
 In-memory targets are what the incremental evaluator takes
 (:doc:`../getting-started/python-api`), so a script can build targets in a loop and price them

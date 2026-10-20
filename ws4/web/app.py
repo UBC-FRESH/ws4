@@ -426,6 +426,7 @@ def create_app(
                     "value": period_value(index, target),
                 }
                 for target in load_targets(targets_path)
+                if target.active
             ],
             # the optimizer's snapshot already holds every year of the tracked accounts; the
             # panel uses these as the live series behind the period-target value
@@ -1031,11 +1032,13 @@ def create_app(
         rows: list[dict[str, Any]] = []
         for target in load_targets(targets_path):
             value = period_value(index, target)
-            status = "met"
-            if target.minimum is not None and value < target.minimum:
-                status = "below"
-            elif target.maximum is not None and value > target.maximum:
-                status = "above"
+            status = "inactive"
+            if target.active:
+                status = "met"
+                if target.minimum is not None and value < target.minimum:
+                    status = "below"
+                elif target.maximum is not None and value > target.maximum:
+                    status = "above"
             rows.append(
                 {
                     "account": target.account,
@@ -1043,6 +1046,7 @@ def create_app(
                     "period_width": target.period_width,
                     "value": value,
                     "status": status,
+                    "active": target.active,
                 }
             )
         return rows
@@ -1060,6 +1064,7 @@ def create_app(
                 "maximum": target.maximum,
                 "min_weight": target.min_weight,
                 "max_weight": target.max_weight,
+                "active": target.active,
             }
             for target in load_targets(targets_path)
         ]
