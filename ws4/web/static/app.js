@@ -1165,6 +1165,9 @@ async function startRun() {
   status.textContent = '';
   runWatch = { id: null, timer: null, source: null, started: Date.now(), done: false, islands: 1 };
   state.live = { active: true, schedule: new Map(), total: 0 };
+  // a live search always has a schedule; the map must follow it, not a previous patch/cumulative view
+  state.layerMode = 'current';
+  renderLayerTree();
   state.runPaused = false;
   state.history = [];
   drawSpark();
