@@ -65,7 +65,11 @@ table is `notes/reports/p16-bridge-matched.md`.
 
 So the account is a **defined fragmentation metric**, not a validated fire-response proxy. What
 survives is the computation and the oracle below; what does not is the claim that its ordering predicts
-the fire model at the intervention this estate model can deliver.
+the fire model at the intervention this estate model can deliver. A separate bounded-footprint case
+(1,877 blocks, 20,019 ha, ~20% treated, three equal-area patterns) does not rescue it either: the
+compartment's largest values there are **23 / 94 / 6 ha** at a 60° cone and **49 / 105 / 10 ha** at 90°
+(barrier / clumped / random), so the order is not barrier < clumped < random at any cone width, nor
+undirected.
 
 **Caveats, recorded rather than buried.** The ordering of `largest_component` on the *fixed* landscape
 holds from a 60° to a 90° cone; the *magnitude* depends on how near the cone is to the percolation

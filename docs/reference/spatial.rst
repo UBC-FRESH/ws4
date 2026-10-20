@@ -206,7 +206,10 @@ model did at its original 177,088 ha treatment (82,874 / 105,020 / 196,767 ha ag
 on the ~54,000 ha WS4 can actually treat, the ranking flips across seeds and the largest mean gap
 (0.38%) is far inside the seed noise (15%). The account is therefore a fragmentation measure with **no
 demonstrated relationship** to this fire model at the intervention WS4 can represent; the report is
-`notes/reports/p16-bridge-matched.md`. The ordering of the compartment itself holds from a 60° to a 90°
+`notes/reports/p16-bridge-matched.md`. A bounded, 20%-treated study footprint does not restore the
+ordering either: there the largest compartment reads 23 / 94 / 6 ha at a 60° cone and 49 / 105 / 10 ha
+at 90° (barrier / clumped / random), so no cone width produces barrier < clumped < random. The
+ordering of the compartment itself holds from a 60° to a 90°
 cone, with a magnitude that depends on how near the cone sits to the percolation threshold.
 
 Enforcement in the optimizer
