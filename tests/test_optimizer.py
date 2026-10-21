@@ -8,9 +8,11 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+import yaml
 from typer.testing import CliRunner
 from ws4.build.compiler import build_canonical_dataset
 from ws4.cli import app
+from ws4.opt.calibrate import write_targets
 from ws4.opt.core import Problem
 from ws4.opt.engine import OptimizeConfig, Optimizer, load_schedule_csv
 from ws4.opt.incremental import IncrementalObjective
@@ -110,6 +112,60 @@ def test_a_target_period_must_be_at_least_one_year() -> None:
     # a period ends at its year, which is the reference implementation's convention
     assert Target("a", 0, minimum=1.0, period_width=7).cell_years() == range(-6, 1)
     assert Target("a", 10, minimum=1.0, period_width=10).cell_years() == range(1, 11)
+
+
+def test_periods_are_the_primary_target_index() -> None:
+    """A period and its width derive the end year and the years in the period."""
+    first = Target("a", period=1, period_width=10, minimum=1.0)
+    assert first.year == 10
+    assert first.cell_years() == range(1, 11)
+    second = Target("a", period=2, period_width=10, minimum=1.0)
+    assert second.year == 20
+    assert second.cell_years() == range(11, 21)
+    snapshot = Target("a", period=0, period_width=10, minimum=1.0)
+    assert snapshot.year == 0
+    assert snapshot.cell_years() == range(0, 0)
+
+
+def test_flow_periods_are_converted_to_the_internal_year_window() -> None:
+    """Inclusive period windows become the years the flow helpers read."""
+    target = Target(
+        "a",
+        period=1,
+        period_width=10,
+        flow="even",
+        flow_start_period=1,
+        flow_end_period=10,
+    )
+    assert target.flow_start == 0
+    assert target.flow_end == 101
+
+
+def test_period_targets_round_trip_through_yaml(tmp_path: Path) -> None:
+    """The YAML file writes periods, not years, and loads them back."""
+    path = tmp_path / "targets.yaml"
+    path.write_text(
+        "targets:\n"
+        "  - account: a\n"
+        "    period: 2\n"
+        "    period_width: 10\n"
+        "    minimum: 5\n"
+        "    flow: even\n"
+        "    flow_start_period: 1\n"
+        "    flow_end_period: 4\n",
+        encoding="utf-8",
+    )
+    targets = load_targets(path)
+    assert targets[0].period == 2
+    assert targets[0].year == 20
+    assert targets[0].flow_start == 0
+    assert targets[0].flow_end == 41
+    out = tmp_path / "written.yaml"
+    write_targets(out, targets)
+    written = yaml.safe_load(out.read_text(encoding="utf-8"))["targets"][0]
+    assert written["period"] == 2
+    assert "year" not in written
+    assert written["flow_end_period"] == 4
 
 
 def test_inactive_targets_are_kept_and_not_priced(tmp_path: Path) -> None:

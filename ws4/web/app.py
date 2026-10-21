@@ -518,6 +518,7 @@ def create_app(
             "values": [
                 {
                     "account": target.account,
+                    "period": target.period,
                     "year": target.year,
                     "value": period_value(index, target),
                 }
@@ -1273,6 +1274,7 @@ def create_app(
             rows.append(
                 {
                     "account": target.account,
+                    "period": target.period,
                     "year": target.year,
                     "period_width": target.period_width,
                     "value": value,
@@ -1289,6 +1291,7 @@ def create_app(
         return [
             {
                 "account": target.account,
+                "period": target.period,
                 "year": target.year,
                 "period_width": target.period_width,
                 "minimum": target.minimum,

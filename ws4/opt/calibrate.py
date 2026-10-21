@@ -147,7 +147,11 @@ def write_targets(path: Path, targets: Sequence[Target]) -> Path:
     """
     entries: list[dict[str, object]] = []
     for target in targets:
-        entry: dict[str, object] = {"account": target.account, "year": target.year}
+        entry: dict[str, object] = {"account": target.account}
+        if target.period is not None:
+            entry["period"] = target.period
+        else:
+            entry["year"] = target.year
         if target.minimum is not None:
             entry["minimum"] = target.minimum
         if target.maximum is not None:
@@ -156,6 +160,22 @@ def write_targets(path: Path, targets: Sequence[Target]) -> Path:
         entry["max_weight"] = target.max_weight
         if target.period_width != 1:
             entry["period_width"] = target.period_width
+        if target.shape != "linear":
+            entry["shape"] = target.shape
+        if target.flow:
+            entry["flow"] = target.flow
+            if target.flow_start_period is not None:
+                entry["flow_start_period"] = target.flow_start_period
+            else:
+                entry["flow_start"] = target.flow_start
+            if target.flow_end_period is not None:
+                entry["flow_end_period"] = target.flow_end_period
+            elif target.flow_end is not None:
+                entry["flow_end"] = target.flow_end
+            if target.flow_reference_period is not None:
+                entry["flow_reference_period"] = target.flow_reference_period
+            elif target.flow_reference is not None:
+                entry["flow_reference"] = target.flow_reference
         if not target.active:
             entry["active"] = False
         entries.append(entry)

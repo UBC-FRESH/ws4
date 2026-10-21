@@ -121,6 +121,7 @@ def target_status(values: pd.DataFrame, targets: list[Target]) -> pd.DataFrame:
             rows.append(
                 {
                     "account": target.account,
+                    "period": target.period,
                     "year": target.year,
                     "value": 0.0,
                     "minimum": target.minimum,
@@ -139,6 +140,11 @@ def target_status(values: pd.DataFrame, targets: list[Target]) -> pd.DataFrame:
                 rows.append(
                     {
                         "account": target.account,
+                        "period": (
+                            year // max(1, target.period_width)
+                            if year % max(1, target.period_width) == 0
+                            else None
+                        ),
                         "year": year,
                         "value": value,
                         "minimum": target.minimum,
@@ -157,6 +163,7 @@ def target_status(values: pd.DataFrame, targets: list[Target]) -> pd.DataFrame:
         rows.append(
             {
                 "account": target.account,
+                "period": target.period,
                 "year": target.year,
                 "value": value,
                 "minimum": target.minimum,

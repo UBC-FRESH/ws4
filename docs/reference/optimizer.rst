@@ -9,38 +9,39 @@ result is reproducible.
 Objective
 ---------
 
-A target names one account and the first year of a period, with a ``minimum``, a ``maximum``, or
-both. **The simulation step is one year and is not configurable.** Treatments, growth, transitions and
-road events are all simulated annually; the **account** time step is a whole number of years — the
-period length — and is what ``period_width`` sets (default 1). Five and ten years are the convention
-in forest planning; any whole multiple of a year is accepted. For an additive account (volume, area,
-a count) the account value for the period is the sum of its years, compared to the levels, so a decade
-target is ``period_width: 10``; the penalty is the weighted shortfall below the minimum plus the
-weighted excess above the maximum, and the objective is the total penalty (lower is better). A **patch**
-account is a snapshot of the map rather than an additive quantity, so a patch target is read at the
-end year of its period. Targets load from a YAML file:
+A target names one account and one accounting **period**, with a ``minimum``, a ``maximum``, or both.
+**The simulation step is one year and is not configurable.** Treatments, growth, transitions and road
+events are all simulated annually; the **account** time step is a whole number of years — the period
+length — and is what ``period_width`` sets (default 1). Five and ten years are the convention in forest
+planning; any whole multiple of a year is accepted. For an additive account (volume, area, a count) the
+account value for the period is the sum of its years, compared to the levels, so a decade target is
+``period_width: 10``; the penalty is the weighted shortfall below the minimum plus the weighted excess
+above the maximum, and the objective is the total penalty (lower is better). A **patch** account is a
+snapshot of the map rather than an additive quantity, so a patch target is read at the end year of its
+period. Targets load from a YAML file:
 
 .. code-block:: yaml
 
    targets:
      - account: feature.Volume
-       year: 0
+       period: 0
        maximum: 500
      - account: product.Yield.managed.Conif
-       year: 0
+       period: 1
        minimum: 800000
        maximum: 800000
        period_width: 10
      - account: patch.harvest.10_50.size
-       year: 0
+       period: 1
        minimum: 100
        min_weight: 10000
        shape: non_linear
 
-**Period numbering** follows the established convention: **period 0 is a zero-length period describing
-the instantaneous state of the forest before the simulation starts**, and periods **1 to N** are the
-accounting periods the targets are set on. A target's ``year`` is a year, not a period index: a target
-at ``year: 10`` with ``period_width: 10`` is the level for period 1, which covers years 1 to 10.
+**Period numbering** follows the established convention: **period 0 is the instantaneous snapshot at
+year 0**, and periods **1 to N** are the accounting periods the targets are set on. A target at
+``period: 1`` with ``period_width: 10`` is the level for years 1 to 10; period 2 is years 11 to 20,
+and so on. ``year`` remains accepted for older target files, but it is the period's end year and is
+derived from the period when the period is given.
 
 **Flow targets** express even flow or non-declining yield without pinning the level, which is the
 established way to state them: the flow target is set to zero with a weight, and a separate target on
@@ -51,13 +52,13 @@ the same account sets the level.
    targets:
      # the level
      - account: product.Yield.managed.Conif
-       year: 0
+       period: 1
        minimum: 900000
        maximum: 1400000
        period_width: 10
      # even flow: every period is compared with the reference period, here the final one
      - account: product.Yield.managed.Conif
-       year: 0
+       period: 1
        flow: even
        period_width: 10
        minimum: 0
@@ -68,11 +69,11 @@ the same account sets the level.
      # and rise 1% above it, before a penalty is charged. A minimum of 0 instead of -1 allows no
      # decline at all, and leaving the maximum out makes growth free.
      - account: product.Yield.managed.Conif
-       year: 0
+       period: 1
        flow: ndy
        period_width: 10
-       flow_start: 150
-       flow_end: 200
+       flow_start_period: 16
+       flow_end_period: 19
        minimum: -1
        maximum: 1
        min_weight: 1.0
@@ -80,10 +81,10 @@ the same account sets the level.
 
 ``flow.even`` gives each period its **percent difference from a reference period**,
 ``100 * (x_p - x_ref) / x_ref``, where the reference is the **final period of the window** unless
-``flow_reference`` names another (the first year of the period to use); the reference period itself
-contributes no value. ``flow.ndy`` gives each period the **percent change from the one before it**,
-``100 * (x_p - x_{p-1}) / x_{p-1}``. ``flow_start`` and ``flow_end`` (in years) clip the window,
-defaulting to the whole horizon, and ``period_width`` groups the years.
+``flow_reference_period`` names another; the reference period itself contributes no value.
+``flow.ndy`` gives each period the **percent change from the one before it**,
+``100 * (x_p - x_{p-1}) / x_{p-1}``. ``flow_start_period`` and ``flow_end_period`` (inclusive) clip
+the window, defaulting to the whole horizon, and ``period_width`` sets the years per period.
 
 Both definitions were checked against the established implementation: its specification describes
 comparing every period with the final one for even flow and comparing a selected period with an
@@ -104,12 +105,12 @@ are worth copying:
   growth as well.
 - **Every period of a non-declining window is compared, including the first**, which is measured
   against the period immediately before the window. An even-flow window compares to its reference
-  instead, so its first period is an ordinary member of the band. A window that starts at year 0 has
+  instead, so its first period is an ordinary member of the band. A window that starts at period 0 has
   no period before it, so its first period contributes no value.
 
-One difference is presentational: ``flow_end`` is **exclusive** here, while the established argument
-names the last period to compare **inclusively**. A ten-period window that ends at year 200 is
-``flow_end: 200`` here and a final period of 190 there.
+``flow_end_period`` is **inclusive**; the legacy year-based ``flow_end`` key remains **exclusive**.
+A ten-period window covering periods 1 to 10 is ``flow_end_period: 10`` (or legacy
+``flow_end: 101``).
 
 The target's minimum, maximum, weights and shape are applied **period by period**, so
 ``minimum: -1`` with ``maximum: 1`` is a one-percent-either-way safe band that the scheduler is free
@@ -120,12 +121,12 @@ to move inside:
    targets:
      # pull the level up; a minimum only, so it never pins the level
      - account: product.Yield.managed.Conif
-       year: 0
+       period: 1
        minimum: 2000000
        period_width: 10
      # hold the profile flat: +-1% of the final period, and far from free outside that
      - account: product.Yield.managed.Conif
-       year: 0
+       period: 1
        flow: even
        period_width: 10
        minimum: -1
@@ -306,7 +307,8 @@ Give ``--spread-accounts`` (a YAML of definitions) with ``--block-coordinates`` 
    # targets.yaml
    targets:
      - account: spread.ft.largest_component
-       year: 200
+       period: 20
+       period_width: 10
        maximum: 50000
        max_weight: 1.0
 

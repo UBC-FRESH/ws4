@@ -1351,7 +1351,7 @@ async function loadTargets() {
       account.append(box, label, valueLine);
       tr.append(account);
       const year = document.createElement('td');
-      year.textContent = row.year;
+      year.textContent = row.period ?? row.year;
       tr.append(year);
       for (const field of ['minimum', 'maximum', 'min_weight', 'max_weight']) {
         const td = document.createElement('td');

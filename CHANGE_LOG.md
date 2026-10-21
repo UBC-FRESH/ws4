@@ -2111,5 +2111,10 @@ issue comments.
   `--spatial-weight`; the initial schedule is serial-start only. The optimizer summary records the
   initial schedule path.
 - Added exactness tests: a random spatial walk, the spatial delta SA, and the
-  core-area rule match a fresh whole-schedule evaluation on the synthetic fixture. Full suite:
-  655 passed.
+  core-area rule match a fresh whole-schedule evaluation on the synthetic fixture.
+- Targets are indexed by accounting period in the target file: `period: 1` is the first
+  accounting period (years 1 to `period_width`), and `period: 0` is the initial snapshot. `year` and
+  the year-based flow keys remain accepted for older files; a period key takes precedence. Flow
+  windows gained inclusive `flow_start_period`/`flow_end_period` and `flow_reference_period`.
+  Reports and the web target table now carry the period beside the derived year. Full suite: 658
+  passed; dashboard GREEN.
