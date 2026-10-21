@@ -1902,6 +1902,54 @@ function wireSplitter() {
   });
 }
 
+function wireChatSplitter() {
+  const splitter = $('chat-splitter');
+  const chat = $('chat-panel');
+  const sidebar = $('sidebar');
+  if (!splitter || !chat || !sidebar) return;
+  const root = document.documentElement;
+  const defaultHeight = 240;
+  try {
+    const saved = window.localStorage.getItem('ws4.chat-height');
+    if (saved) root.style.setProperty('--chat-height', saved);
+  } catch { /* ignore */ }
+  let drag = null;
+  splitter.addEventListener('pointerdown', (event) => {
+    drag = { y: event.clientY, height: chat.getBoundingClientRect().height };
+    splitter.setPointerCapture(event.pointerId);
+    splitter.classList.add('dragging');
+    event.preventDefault();
+  });
+  splitter.addEventListener('pointermove', (event) => {
+    if (!drag) return;
+    const available = sidebar.getBoundingClientRect().height - 160;
+    const height = Math.max(128, Math.min(Math.max(128, available), drag.height - (event.clientY - drag.y)));
+    root.style.setProperty('--chat-height', `${Math.round(height)}px`);
+  });
+  splitter.addEventListener('pointerup', () => {
+    if (!drag) return;
+    drag = null;
+    splitter.classList.remove('dragging');
+    try { window.localStorage.setItem('ws4.chat-height', root.style.getPropertyValue('--chat-height')); } catch { /* ignore */ }
+  });
+  splitter.addEventListener('pointercancel', () => {
+    drag = null;
+    splitter.classList.remove('dragging');
+  });
+  splitter.addEventListener('dblclick', () => {
+    root.style.setProperty('--chat-height', `${defaultHeight}px`);
+    try { window.localStorage.setItem('ws4.chat-height', `${defaultHeight}px`); } catch { /* ignore */ }
+  });
+  const clamp = () => {
+    const available = Math.max(128, sidebar.getBoundingClientRect().height - 160);
+    if (chat.getBoundingClientRect().height > available) {
+      root.style.setProperty('--chat-height', `${Math.round(available)}px`);
+    }
+  };
+  window.addEventListener('resize', clamp);
+  clamp();
+}
+
 function renderMarkdown(text) {
   const escapes = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
   const escape = (value) => String(value).replace(/[&<>"']/g, (character) => escapes[character]);
@@ -2014,6 +2062,7 @@ async function loadAgent() {
 
 function wireControls() {
   wireSplitter();
+  wireChatSplitter();
   $('run').addEventListener('change', async (event) => {
     state.run = event.target.value;
     await loadSkins();
