@@ -106,6 +106,9 @@ Status: closing.
 
 ## 7. Follow-ups not shipped
 
+> **Status note (2026-10-21):** all four follow-ups below were delivered by P19. See
+> `notes/reports/p19-closeout.md`; the P18 report is retained as the historical snapshot.
+
 1. **Model-derived spread-compartment membership.** The source `COMPART` field gives a compartment
    base colour, but not the per-year spread-connectivity components the #13 account measures. A
    `spread_membership.csv` artifact and a `compartments` map layer are the follow-up.
