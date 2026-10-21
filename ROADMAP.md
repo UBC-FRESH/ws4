@@ -795,6 +795,9 @@ what the model produces.
   iterations without incumbent improvement; expose it in the player and record it in the summary.
 - [ ] P19.4 **Map scale.** Move the polygon/road shell to MapLibre (or an equivalent) when the
   feature count or a basemap demands it, with the layer tree contracts unchanged.
+- [ ] P19.5 **Period map control.** Fold years by the targets' ``period_width``, label the map with
+  the period and its year range, send the period range to the current/cumulative layers, and page
+  with left/right arrow keys. This is the period control the P18 design named.
 
 Acceptance: a spread run writes the membership and the layer renders it; a route run writes segment
 geometry/use; a stability stop writes the usual summary and names the criterion; the dashboard is
