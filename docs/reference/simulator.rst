@@ -51,8 +51,8 @@ Outputs
 
 When the simulator is given a road network (the Python API, ``Simulator.run(..., network=...)`` or
 ``route_model=...``), ``RouteCostLedger.write`` also writes ``route_values.csv``,
-``network_table.csv``, ``route_table.<destination>.csv``, and ``route_cost_report.csv`` — see
-:doc:`roads`.
+``network_table.csv``, ``route_table.<destination>.csv``, ``route_cost_report.csv``, and — when the
+vertices table carries coordinates — ``used_roads.csv`` for the map overlay; see :doc:`roads`.
 
 When the simulator is given a block topology (``Simulator.run(..., topology_csv=...)``), it also
 writes:

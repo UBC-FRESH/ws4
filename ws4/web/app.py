@@ -789,6 +789,44 @@ def create_app(
             )
         return {"type": "FeatureCollection", "features": road_features()}
 
+    @app.get("/api/runs/{run}/used-roads")
+    def used_roads_geojson(run: str, year: int | None = Query(default=None)) -> dict[str, Any]:
+        """Return the run's used road segments for one year, as GeoJSON LineStrings."""
+        directory = run_dir(run)
+        path = directory / "used_roads.csv"
+        if not path.is_file():
+            raise HTTPException(status_code=404, detail="the run has no used_roads.csv")
+        frame = read_csv(directory, "used_roads.csv")
+        if frame.empty:
+            return {"type": "FeatureCollection", "year": year or 0, "features": []}
+        if year is None:
+            year = int(frame["period"].min())
+        selected = frame[frame["period"] == year]
+        features: list[dict[str, Any]] = []
+        for row in selected.to_dict(orient="records"):
+            features.append(
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [
+                            [float(row["x1"]), float(row["y1"])],
+                            [float(row["x2"]), float(row["y2"])],
+                        ],
+                    },
+                    "properties": {
+                        "period": int(row["period"]),
+                        "segment_id": int(row["segment_id"]),
+                        "from_vertex": int(row["from_vertex"]),
+                        "to_vertex": int(row["to_vertex"]),
+                        "volume": float(row["volume"]),
+                        "built_length": float(row["built_length"]),
+                        "first_use": int(row["first_use"]),
+                    },
+                }
+            )
+        return {"type": "FeatureCollection", "year": year, "features": features}
+
     @app.get("/api/skins")
     def skin_list() -> list[dict[str, Any]]:
         """Return the skin manifests, checked when the service started."""
@@ -909,6 +947,7 @@ def create_app(
                 if "account" in frame:
                     patch_accounts = sorted({str(value) for value in frame["account"].dropna()})
         compartments = (directory / "spread_membership.csv").is_file()
+        used_roads = (directory / "used_roads.csv").is_file()
         compartment_classes: list[str] = []
         compartment_accounts: list[str] = []
         if compartments:
@@ -949,6 +988,7 @@ def create_app(
             "cumulative": schedule,
             "patches": patches,
             "roads": roads_path is not None and roads_path.is_file(),
+            "used_roads": used_roads,
             "compartments": compartments,
             "patch_classes": patch_classes,
             "patch_accounts": patch_accounts,
@@ -960,6 +1000,7 @@ def create_app(
                 if roads_path is not None and roads_path.is_file()
                 else "no source road layer is configured (--roads)"
             ),
+            "used_roads_reason": ("" if used_roads else "the run has no used_roads.csv"),
             "compartments_reason": ("" if compartments else "the run has no spread_membership.csv"),
         }
 

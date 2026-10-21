@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, blockElements: new Map() };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map() };
 
 const $ = (id) => document.getElementById(id);
 const statusLine = (text) => { $('status').textContent = text; };
@@ -74,11 +74,9 @@ function applyView() {
   $('roads-layer').setAttribute('transform', transform);
 }
 
-function renderRoads() {
+function drawRoads(features, klass) {
   const layer = $('roads-layer');
-  layer.replaceChildren();
-  if (!state.showRoads || !state.base || !state.roads.length) return;
-  for (const feature of state.roads) {
+  for (const feature of features) {
     const geometry = feature.geometry;
     const lines = geometry?.type === 'LineString'
       ? [geometry.coordinates]
@@ -92,9 +90,36 @@ function renderRoads() {
       }).join(' ');
       const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
       polyline.setAttribute('points', points);
-      polyline.setAttribute('class', 'road');
+      polyline.setAttribute('class', klass);
       layer.append(polyline);
     }
+  }
+}
+
+function renderRoads() {
+  const layer = $('roads-layer');
+  layer.replaceChildren();
+  if (!state.base) return;
+  if (state.showRoads && state.roads.length) drawRoads(state.roads, 'road');
+  if (state.showUsedRoads && state.usedRoads.length) drawRoads(state.usedRoads, 'road used');
+}
+
+async function loadUsedRoads() {
+  if (!state.layers?.used_roads) {
+    state.usedRoads = [];
+    renderRoads();
+    return;
+  }
+  try {
+    const body = await api(`api/runs/${encodeURIComponent(state.run)}/used-roads?year=${state.year}`);
+    state.usedRoads = body.features ?? [];
+    renderRoads();
+  } catch (error) {
+    state.usedRoads = [];
+    state.showUsedRoads = false;
+    renderRoads();
+    renderLayerTree();
+    $('layers-hint').textContent = `used roads unavailable: ${error.message}`;
   }
 }
 
@@ -272,6 +297,7 @@ async function loadMap() {
     state.features = body.features ?? [];
     render();
     statusLine(`${state.features.length.toLocaleString()} blocks · ${layer} · year ${state.year}`);
+    if (state.showUsedRoads) loadUsedRoads();
   } catch (error) {
     statusLine(`map unavailable: ${error.message}`);
   }
@@ -687,32 +713,51 @@ function renderLayerTree() {
       }
     }
   }
-  if (info.roads) {
+  if (info.roads || info.used_roads) {
     const overlay = group('Overlays');
-    const wrapper = document.createElement('label');
-    wrapper.className = 'layer-option';
-    const input = document.createElement('input');
-    input.type = 'checkbox';
-    input.id = 'show-roads';
-    input.checked = state.showRoads;
-    input.addEventListener('change', async () => {
-      state.showRoads = input.checked;
-      if (state.showRoads && !state.roads.length) {
-        try {
-          const body = await api('api/roads');
-          state.roads = body.features ?? [];
-        } catch (error) {
-          $('layers-hint').textContent = `roads unavailable: ${error.message}`;
-          state.showRoads = false;
-          input.checked = false;
+    if (info.roads) {
+      const wrapper = document.createElement('label');
+      wrapper.className = 'layer-option';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.id = 'show-roads';
+      input.checked = state.showRoads;
+      input.addEventListener('change', async () => {
+        state.showRoads = input.checked;
+        if (state.showRoads && !state.roads.length) {
+          try {
+            const body = await api('api/roads');
+            state.roads = body.features ?? [];
+          } catch (error) {
+            $('layers-hint').textContent = `roads unavailable: ${error.message}`;
+            state.showRoads = false;
+            input.checked = false;
+          }
         }
-      }
-      renderRoads();
-    });
-    const text = document.createElement('span');
-    text.textContent = 'Access roads (source)';
-    wrapper.append(input, text);
-    overlay.append(wrapper);
+        renderRoads();
+      });
+      const text = document.createElement('span');
+      text.textContent = 'Access roads (source)';
+      wrapper.append(input, text);
+      overlay.append(wrapper);
+    }
+    if (info.used_roads) {
+      const usedWrapper = document.createElement('label');
+      usedWrapper.className = 'layer-option';
+      const usedInput = document.createElement('input');
+      usedInput.type = 'checkbox';
+      usedInput.id = 'show-used-roads';
+      usedInput.checked = state.showUsedRoads;
+      usedInput.addEventListener('change', () => {
+        state.showUsedRoads = usedInput.checked;
+        if (state.showUsedRoads) loadUsedRoads();
+        else renderRoads();
+      });
+      const usedText = document.createElement('span');
+      usedText.textContent = 'Used roads (run)';
+      usedWrapper.append(usedInput, usedText);
+      overlay.append(usedWrapper);
+    }
   }
   if (info.compartments && layers.includes('compartments')) {
     const compartmentGroup = group('Spread compartments');
@@ -754,10 +799,10 @@ function renderLayerTree() {
       compartmentGroup.append(wrapper);
     }
   }
-  if (!info.roads || !info.compartments) {
+  if (!info.roads || !info.compartments || !info.used_roads) {
     const unavailable = group('Not written by this run');
     for (const [label, available, reason] of [
-      ['Used roads', info.roads, info.roads_reason],
+      ['Used roads (run)', info.used_roads, info.used_roads_reason],
       ['Spread compartments', info.compartments, info.compartments_reason],
     ]) {
       if (available) continue;
@@ -806,6 +851,11 @@ async function loadLayers() {
       state.roads = [];
       renderRoads();
     }
+    if (!info.used_roads) {
+      state.showUsedRoads = false;
+      state.usedRoads = [];
+      renderRoads();
+    }
     if (!state.baseAttributes.some((attribute) => attribute.name === state.baseAttribute)) {
       state.baseAttribute = '';
     }
@@ -831,6 +881,7 @@ async function loadLayers() {
     if (info.treatments) available.push('treatments');
     if (info.patches) available.push('patches');
     if (info.compartments) available.push('compartments');
+    if (info.used_roads) available.push('used roads');
     hint.textContent = available.length
       ? `available: ${available.join(', ')}`
       : 'this run has no treatment, patch or compartment artifact';
@@ -1940,6 +1991,7 @@ function wireControls() {
   $('year').addEventListener('change', () => {
     if (state.compareView) { loadComparison(); return; }
     if (state.live.active) render(false); else loadMap();
+    if (state.showUsedRoads) loadUsedRoads();
   });
   $('skin').addEventListener('change', async (event) => {
     const skins = await api('api/skins');

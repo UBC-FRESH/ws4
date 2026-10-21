@@ -170,6 +170,37 @@ def test_duplicate_accounts_copy_and_scale() -> None:
     assert lookup["route.total"] == 50.0
 
 
+def test_used_roads_carry_the_vertex_geometry(tmp_path: Path) -> None:
+    """A route run can write the used segments with the geometry its vertices table holds."""
+    segments = pd.DataFrame(
+        {
+            "segment_id": [10, 11],
+            "from_vertex": [1, 2],
+            "to_vertex": [2, 3],
+            "length_m": [100.0, 200.0],
+            "haul_cost": [10.0, 20.0],
+        }
+    )
+    destinations = pd.DataFrame({"NODE": [3], "ACCOUNT": ["destination.MILL1"]})
+    linkages = pd.DataFrame({"BLOCK": [1], "NODE": [1]})
+    vertices = pd.DataFrame({"NODE": [1, 2, 3], "X": [0.0, 100.0, 300.0], "Y": [0.0, 0.0, 50.0]})
+    network = RouteNetwork.from_tables(segments, destinations, linkages, vertices=vertices)
+    route = network.route(1, "destination.MILL1")
+    assert route is not None
+    ledger = RouteCostLedger(network)
+    ledger.record(0, 1, "product.Yield", 10.0, "destination.MILL1", route)
+    ledger.record(1, 1, "product.Yield", 10.0, "destination.MILL1", route)
+    used = ledger.used_roads()
+    assert len(used) == 4
+    assert set(used["period"]) == {0, 1}
+    first = used.iloc[0]
+    assert (first["x1"], first["y1"], first["x2"], first["y2"]) == (0.0, 0.0, 100.0, 0.0)
+    ledger.write(tmp_path)
+    written = pd.read_csv(tmp_path / "used_roads.csv")
+    assert len(written) == 4
+    assert {"period", "segment_id", "x1", "y1", "x2", "y2"}.issubset(written.columns)
+
+
 def test_load_route_config(tmp_path: Path) -> None:
     """A route config loads the network, eligibility, and accounts."""
     from ws4.roads.accounts import load_route_config
@@ -181,6 +212,7 @@ def test_load_route_config(tmp_path: Path) -> None:
         "NODE,ACCOUNT\n2,destination.MILL1\n", encoding="utf-8"
     )
     (tmp_path / "linkages.csv").write_text("BLOCK,NODE\n1,1\n", encoding="utf-8")
+    (tmp_path / "vertices.csv").write_text("NODE,X,Y\n1,0.0,0.0\n2,100.0,0.0\n", encoding="utf-8")
     (tmp_path / "eligibility.csv").write_text(
         "product,destination\nproduct.Decid,destination.MILL1\n", encoding="utf-8"
     )
@@ -199,6 +231,7 @@ def test_load_route_config(tmp_path: Path) -> None:
     )
     config = load_route_config(config_path)
     assert config.model.network.destination_names() == ("destination.MILL1",)
+    assert config.model.network.vertex_coordinates[1] == (0.0, 0.0)
     assert config.model.eligible("product.Decid") == ("destination.MILL1",)
     assert config.route_accounts[0].account == "route.Mill1.haul"
     assert config.duplicate_accounts[0].target == "route.Total.haul"

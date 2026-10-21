@@ -316,6 +316,30 @@ def test_inactive_targets_are_kept_in_the_json_and_reported(tmp_path: Path) -> N
     assert realized[0]["status"] == "inactive"
 
 
+def test_the_run_used_roads_overlay(tmp_path: Path) -> None:
+    """A route run's used segments are served for one year, with their geometry."""
+    client, _ = _app(tmp_path)
+    run = tmp_path / "runs" / "run1"
+    (run / "used_roads.csv").write_text(
+        "period,segment_id,from_vertex,to_vertex,x1,y1,x2,y2,volume,built_length,first_use\n"
+        "1,10,1,2,0.0,0.0,100.0,0.0,10.0,100.0,1\n"
+        "2,11,2,3,100.0,0.0,300.0,50.0,5.0,200.0,2\n",
+        encoding="utf-8",
+    )
+    layers = client.get("/api/runs/run1/layers").json()
+    assert layers["used_roads"] is True
+    assert layers["used_roads_reason"] == ""
+    body = client.get("/api/runs/run1/used-roads", params={"year": 1}).json()
+    assert body["year"] == 1
+    assert len(body["features"]) == 1
+    feature = body["features"][0]
+    assert feature["geometry"]["coordinates"] == [[0.0, 0.0], [100.0, 0.0]]
+    assert feature["properties"]["segment_id"] == 10
+    second = client.get("/api/runs/run1/used-roads", params={"year": 2}).json()
+    assert second["features"][0]["geometry"]["coordinates"] == [[100.0, 0.0], [300.0, 50.0]]
+    assert client.get("/api/runs/run2/used-roads", params={"year": 1}).status_code == 404
+
+
 def test_the_model_spread_compartments_layer(tmp_path: Path) -> None:
     """A run's spread membership is served as a layer, with treated breaks marked separately."""
     client, _ = _app(tmp_path)

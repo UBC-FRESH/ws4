@@ -2087,3 +2087,6 @@ issue comments.
 - P19.1: the simulator writes `spread_membership.csv` (the untreated blocks of every spread
   compartment, largest first); the service serves it as `layer=compartments` and the web layer tree
   colours the components by area class with the account selector and the period's treated breaks.
+- P19.2: route runs write `used_roads.csv` with the used segments' vertex geometry (when the
+  vertices table has coordinates); the service serves the year's used roads as a GeoJSON overlay
+  and the web layer tree draws it distinctly from the source access layer.

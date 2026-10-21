@@ -217,6 +217,9 @@ class RouteNetwork:
         The destinations, identified by account name.
     block_vertex : mapping of int to int
         The single vertex each block is assigned to.
+    vertex_coordinates : mapping of int to tuple of float
+        The ``(x, y)`` coordinate of each vertex, when the ``vertices`` table carries ``X`` and
+        ``Y``. Used to write a run's used-road geometry.
     opened : set of int or None
         The segments open in the current period. ``None`` means every segment is open, which is
         the whole-planned-network behaviour; a set means only those segments are routable, and
@@ -226,6 +229,9 @@ class RouteNetwork:
     segments: tuple[Segment, ...]
     destinations: tuple[Destination, ...]
     block_vertex: Mapping[int, int]
+    vertex_coordinates: Mapping[int, tuple[float, float]] = field(
+        default_factory=dict, compare=False, repr=False
+    )
     _distance_cache: dict[tuple[int, str, int], dict[int, float]] = field(
         default_factory=dict, compare=False, repr=False
     )
@@ -245,6 +251,7 @@ class RouteNetwork:
         linkages: pd.DataFrame,
         *,
         initial_open: set[int] | None = None,
+        vertices: pd.DataFrame | None = None,
     ) -> RouteNetwork:
         """Build a network from the segments, destinations, and linkages tables.
 
@@ -264,6 +271,9 @@ class RouteNetwork:
             is the whole-network behaviour WS4 had before roads were dated. An empty set starts
             with no road. :func:`existing_segments` returns the usual set: the segments whose
             build cost is 0, which the reference makes available at period 1 at null cost.
+        vertices : pandas.DataFrame or None, optional
+            The vertex table, with ``NODE``/``vertex_id`` and ``X``/``Y``. When given, the
+            coordinates are kept for the run's used-road geometry.
 
         Returns
         -------
@@ -295,11 +305,22 @@ class RouteNetwork:
             _as_int(_get(row, "block_id", "BLOCK")): _as_int(_get(row, "vertex_id", "NODE"))
             for row in linkages.itertuples(index=False)
         }
+        coordinates: dict[int, tuple[float, float]] = {}
+        if vertices is not None:
+            for row in vertices.itertuples(index=False):
+                if not (hasattr(row, "x") or hasattr(row, "X")):
+                    continue
+                vertex = _as_int(_get(row, "vertex_id", "NODE"))
+                coordinates[vertex] = (
+                    _as_float(_get(row, "x", "X")),
+                    _as_float(_get(row, "y", "Y")),
+                )
         opened = None if initial_open is None else set(initial_open)
         return cls(
             segments=tuple(built),
             destinations=tuple(built_destinations),
             block_vertex=block_vertex,
+            vertex_coordinates=coordinates,
             opened=opened,
         )
 

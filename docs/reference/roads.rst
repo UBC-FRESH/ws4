@@ -64,7 +64,12 @@ It writes, into the run directory:
 - ``route_cost_report.csv`` — one row per period, with the established columns
   (``PERIOD, YEAR, PERIODWIDTH, LENGTH, BUILTLENGTH, BUILD_EXPENSE, HAUL_EXPENSE,
   MAINTAIN_EXPENSE, TOTAL, VOLUME, AVERAGEHAULDIST, AVERAGEBUILDCOST, AVERAGEHAULCOST,
-  AVERAGEMAINTCOST``).
+  AVERAGEMAINTCOST``);
+- ``used_roads.csv`` — one row per used segment per year, with the segment's vertex coordinates
+  (``period,segment_id,from_vertex,to_vertex,x1,y1,x2,y2,volume,built_length,first_use``). It is
+  written when the route configuration's ``vertices`` table carries ``X`` and ``Y``; the service
+  serves it as the **Used roads (run)** overlay. This is the run's road use, distinct from the
+  source access network.
 
 Route accounts and duplicate accounts
 -------------------------------------
@@ -76,8 +81,11 @@ value into another, scaled by a factor. ``resolve_account_values`` combines the 
 values with the route account values and applies the duplicates, so the resulting accounts (for
 example ``route.Total.haul``) can be targeted by the optimizer.
 
-A **route configuration** file (YAML) names the four route tables, an optional eligibility table,
-an optional unutilized account, the route accounts, and the duplicate accounts:
+A **route configuration** file (YAML) names the route tables, an optional eligibility table,
+an optional unutilized account, the route accounts, and the duplicate accounts. The ``vertices``
+table is optional as a configuration key: when it is omitted, ``vertices.csv`` beside the
+configuration is used if it exists, and it supplies the used-road geometry when it has ``X`` and
+``Y``:
 
 .. code-block:: yaml
 
