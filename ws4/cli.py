@@ -93,6 +93,12 @@ def simulate(
 def optimize(
     dataset: Path = typer.Option(..., exists=True),
     targets: Path = typer.Option(..., exists=True),
+    initial_schedule: Path | None = typer.Option(
+        None,
+        "--initial-schedule",
+        exists=True,
+        help="Schedule CSV (block_id,treatment,period) to start the search from",
+    ),
     weights: Path | None = typer.Option(
         None,
         exists=True,
@@ -130,6 +136,11 @@ def optimize(
     ),
     max_opening_ha: float = typer.Option(None, help="Maximum opening size, in hectares"),
     min_green_up_years: int = typer.Option(None, help="Green-up interval, in years"),
+    spatial_weight: float = typer.Option(
+        1.0,
+        "--spatial-weight",
+        help="Weight on the opening/green-up/core-area penalty",
+    ),
     spatial_override: bool = typer.Option(
         False, "--spatial-override", help="Allow schedules that violate the spatial constraints"
     ),
@@ -193,6 +204,7 @@ def optimize(
         islands=islands,
         episodes=episodes,
         targets_path=str(targets),
+        initial_schedule_path=(str(initial_schedule) if initial_schedule is not None else ""),
         weights_path=str(weights) if weights is not None else "",
         topology_path=str(topology) if topology is not None else "",
         route_config_path=str(route_config) if route_config is not None else "",
@@ -201,6 +213,7 @@ def optimize(
         min_green_up_years=min_green_up_years,
         core_buffer_m=core_buffer_m,
         min_core_area_ha=min_core_area_ha,
+        spatial_weight=spatial_weight,
         allow_spatial_override=spatial_override,
         lns_weight=lns_weight,
         lns_destroy=lns_destroy,

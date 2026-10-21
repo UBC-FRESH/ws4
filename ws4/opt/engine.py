@@ -79,6 +79,45 @@ from .solvers import (
 from .telemetry import RunLogger
 
 
+def load_schedule_csv(path: Path) -> Schedule:
+    """Load a ``block_id,treatment,period`` CSV into the search's schedule form.
+
+    Parameters
+    ----------
+    path : Path
+        A schedule CSV with one row per treatment event.
+
+    Returns
+    -------
+    Schedule
+        The chain of events per block, ordered by year.
+
+    Raises
+    ------
+    ValueError
+        When the file is missing one of the required columns.
+    """
+    frame = pd.read_csv(path)
+    required = {"block_id", "treatment", "period"}
+    missing = required - set(frame.columns)
+    if missing:
+        raise ValueError(
+            f"schedule {path} is missing required columns: {', '.join(sorted(missing))}"
+        )
+    schedule: Schedule = {}
+    for block, group in frame.groupby("block_id", sort=False):
+        schedule[int(float(str(block)))] = tuple(
+            sorted(
+                (
+                    (str(treatment), int(float(str(period))))
+                    for treatment, period in zip(group["treatment"], group["period"], strict=True)
+                ),
+                key=lambda event: event[1],
+            )
+        )
+    return schedule
+
+
 def _apply_thread_limit(threads: int) -> None:
     """Limit the BLAS and OpenMP pools this process may use.
 
@@ -144,6 +183,8 @@ class OptimizeConfig:
         The random seed. A run is reproducible for a given seed.
     targets_path : str
         The YAML file of goal-programming targets.
+    initial_schedule_path : str
+        A ``block_id,treatment,period`` CSV to start the search from. Serial starts only.
     weights_path : str
         Accepted for compatibility and not read. The weights that apply are each target's own
         ``min_weight`` and ``max_weight``; ``ws4 calibrate`` rescales them into a targets file.
@@ -237,6 +278,7 @@ class OptimizeConfig:
     time_limit: str = "01:00:00"
     seed: int = 42
     targets_path: str = ""
+    initial_schedule_path: str = ""
     control_path: str = ""
     weights_path: str = ""
     years: int = 50
@@ -1292,6 +1334,16 @@ class Optimizer:
         )
         self._start_clock()
         pool_search = self._use_pool()
+        initial = (
+            load_schedule_csv(Path(self.cfg.initial_schedule_path))
+            if self.cfg.initial_schedule_path
+            else None
+        )
+        if initial is not None and pool_search:
+            raise ValueError(
+                "initial_schedule_path is not supported with a process-pool search; "
+                "run with one start and one worker"
+            )
         if pool_search:
             best, best_obj, targets = self.search(out_dir=out_dir)
         else:
@@ -1311,6 +1363,7 @@ class Optimizer:
                     self.cfg.seed + start,
                     on_step=logger.step,
                     on_snapshot=snapshot,
+                    initial=initial,
                 )
                 if candidate_obj < best_obj:
                     best, best_obj = candidate, candidate_obj
@@ -1370,6 +1423,7 @@ class Optimizer:
             "seed": self.cfg.seed,
             "metaheuristic": self.cfg.metaheuristic,
             "starts": self.cfg.starts,
+            "initial_schedule_path": self.cfg.initial_schedule_path or None,
             "blocks_scheduled": len(best),
             "operators": self.registry.names(),
             "status": "ok",

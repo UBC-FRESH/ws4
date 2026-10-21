@@ -12,7 +12,7 @@ from typer.testing import CliRunner
 from ws4.build.compiler import build_canonical_dataset
 from ws4.cli import app
 from ws4.opt.core import Problem
-from ws4.opt.engine import OptimizeConfig, Optimizer
+from ws4.opt.engine import OptimizeConfig, Optimizer, load_schedule_csv
 from ws4.opt.incremental import IncrementalObjective
 from ws4.opt.objective import Target, load_targets, objective, objective_terms, penalty
 from ws4.opt.operators import OperatorRegistry, Schedule, ToggleOperator
@@ -21,6 +21,43 @@ from ws4.opt.telemetry import RunLogger, read_records
 from ws4.patch.constraints import core_area_penalty, schedule_years, spatial_penalty
 
 _FIXTURE = Path(__file__).resolve().parents[1] / "examples" / "synthetic"
+
+
+def test_a_schedule_csv_is_loaded_into_ordered_chains(tmp_path: Path) -> None:
+    """A schedule CSV becomes a block-to-chain mapping, with events ordered by year."""
+    path = tmp_path / "initial.csv"
+    path.write_text(
+        "block_id,treatment,period\n1,CC,10\n1,CT,5\n2,CC,0\n",
+        encoding="utf-8",
+    )
+    assert load_schedule_csv(path) == {
+        1: (("CT", 5), ("CC", 10)),
+        2: (("CC", 0),),
+    }
+    path.write_text("block_id,treatment\n1,CC\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="missing required columns"):
+        load_schedule_csv(path)
+
+
+def test_an_initial_schedule_is_the_starting_state(tmp_path: Path) -> None:
+    """The optimizer starts from the supplied schedule instead of an empty or greedy one."""
+    dataset, targets = _compile(tmp_path)
+    initial = tmp_path / "initial.csv"
+    initial.write_text("block_id,treatment,period\n1,CC,0\n", encoding="utf-8")
+    summary = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(
+            targets_path=targets,
+            initial_schedule_path=str(initial),
+            years=1,
+            iterations=1,
+            workers=1,
+            starts=1,
+        ),
+    ).run(tmp_path / "run")
+    schedule = pd.read_csv(tmp_path / "run" / "schedule.csv")
+    assert schedule[["block_id", "treatment", "period"]].values.tolist() == [[1, "CC", 0]]
+    assert summary["initial_schedule_path"] == str(initial)
 
 
 def test_patience_is_a_stability_stop_only_when_enabled() -> None:

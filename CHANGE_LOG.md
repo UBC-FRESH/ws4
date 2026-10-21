@@ -2098,3 +2098,18 @@ issue comments.
   left/right arrow keys.
 - P19.6: the lower-left assistant has a draggable height splitter (persisted, double-click resets)
   so a long conversation can use more of the sidebar.
+
+## 2026-10-21
+
+- Spatial penalties are now part of the move-delta objective. `SpatialPenaltyModel` keeps the
+  selected blocks per year and each block's disturbance years, recomputes opening/core-area
+  penalties only for the affected years and green-up only on incident edges, and the incremental
+  evaluator adds that delta to the account-target delta. The optimizer therefore keeps the faster
+  delta path when `max_opening_ha`, `min_green_up_years` or the core-area rule is active; the
+  whole-schedule path remains the fallback for build-route, edge-contrast and spread accounts.
+- `ws4 optimize` accepts `--initial-schedule` (a `block_id,treatment,period` CSV) and
+  `--spatial-weight`; the initial schedule is serial-start only. The optimizer summary records the
+  initial schedule path.
+- Added exactness tests: a random spatial walk, the spatial delta SA, and the
+  core-area rule match a fresh whole-schedule evaluation on the synthetic fixture. Full suite:
+  655 passed.

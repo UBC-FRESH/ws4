@@ -11,6 +11,7 @@ from ws4.build.compiler import build_canonical_dataset
 from ws4.opt.engine import OptimizeConfig, Optimizer
 from ws4.opt.incremental import IncrementalObjective
 from ws4.opt.objective import Target, objective
+from ws4.opt.operators import Schedule
 from ws4.opt.solvers import _changed_blocks, solve_sa_delta
 
 _FIXTURE = Path(__file__).resolve().parents[1] / "examples" / "synthetic"
@@ -36,6 +37,124 @@ def _targets() -> list[Target]:
         Target("product.Volume", 0, minimum=300.0, maximum=400.0),
         Target("product.Volume", 1, minimum=100.0),
     ]
+
+
+def _spatial_optimizer(
+    tmp_path: Path,
+    *,
+    max_opening_ha: float | None = 3.0,
+    min_green_up_years: int | None = 5,
+    min_core_area_ha: float | None = None,
+    core_buffer_m: float | None = None,
+    years: int = 10,
+) -> Optimizer:
+    """Build a fixture optimizer with a two-block topology and spatial rules."""
+    dataset = _dataset(tmp_path)
+    topology = tmp_path / "topology.csv"
+    topology.write_text(
+        "BLOCK1,BLOCK2,DISTANCE,LENGTH\n1,2,0.0,100.0\n",
+        encoding="utf-8",
+    )
+    return Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(
+            years=years,
+            iterations=1,
+            topology_path=str(topology),
+            max_opening_ha=max_opening_ha,
+            min_green_up_years=min_green_up_years,
+            min_core_area_ha=min_core_area_ha,
+            core_buffer_m=core_buffer_m,
+        ),
+    )
+
+
+def test_spatial_penalty_is_in_the_incremental_objective(tmp_path: Path) -> None:
+    """The incremental objective includes the opening and green-up penalty."""
+    optimizer = _spatial_optimizer(tmp_path)
+    evaluator = IncrementalObjective(optimizer, [])
+    schedule: Schedule = {1: (("CC", 0),), 2: (("CC", 0),)}
+    evaluator.reset(schedule)
+    # Both blocks in one 5 ha opening exceeds 3 ha by 2; the same-year pair is 5 short.
+    assert evaluator.objective == pytest.approx(7.0)
+    assert evaluator.objective == pytest.approx(optimizer._evaluate(schedule, []))
+
+
+def test_spatial_delta_tracks_a_random_walk(tmp_path: Path) -> None:
+    """delta() prices spatial moves exactly and apply() keeps the state consistent."""
+    optimizer = _spatial_optimizer(tmp_path, max_opening_ha=10.0)
+    targets = _targets()
+    candidates = optimizer.candidates()
+    evaluator = IncrementalObjective(optimizer, targets)
+    schedule = {block: options[0] for block, options in candidates.items() if options}
+    evaluator.reset(schedule)
+    rng = random.Random(7)
+    for _ in range(30):
+        move = optimizer.registry.pick(rng).apply(schedule, rng, candidates)
+        if move is None:
+            continue
+        changed = _changed_blocks(schedule, move)
+        expected = optimizer._evaluate(move, targets)
+        assert evaluator.objective + evaluator.delta(changed, move) == pytest.approx(
+            expected, abs=1e-9
+        )
+        evaluator.apply(changed, move)
+        assert evaluator.objective == pytest.approx(expected, abs=1e-9)
+        schedule = move
+
+
+def test_spatial_delta_is_exact_for_a_single_block_move(tmp_path: Path) -> None:
+    """A move that clears the same-year opening lowers the penalty by the exact amount."""
+    optimizer = _spatial_optimizer(tmp_path)
+    evaluator = IncrementalObjective(optimizer, [])
+    schedule: Schedule = {1: (("CC", 0),), 2: (("CC", 0),)}
+    evaluator.reset(schedule)
+    moved: Schedule = {1: (("CC", 0),), 2: (("CC", 2),)}
+    expected = optimizer._evaluate(moved, [])
+    assert expected == pytest.approx(3.0)  # 5-year green-up, 2-year gap
+    assert evaluator.objective + evaluator.delta([2], moved) == pytest.approx(expected)
+    evaluator.apply([2], moved)
+    assert evaluator.objective == pytest.approx(expected)
+
+
+def test_core_area_penalty_is_in_the_incremental_objective(tmp_path: Path) -> None:
+    """The core-area rule is priced on the same delta path as opening and green-up."""
+    optimizer = _spatial_optimizer(
+        tmp_path,
+        max_opening_ha=None,
+        min_green_up_years=None,
+        min_core_area_ha=100.0,
+        core_buffer_m=10.0,
+    )
+    evaluator = IncrementalObjective(optimizer, [])
+    schedule: Schedule = {1: (("CC", 0),)}
+    evaluator.reset(schedule)
+    assert evaluator.objective == pytest.approx(optimizer._evaluate(schedule, []))
+
+
+def test_the_delta_path_is_used_when_spatial_rules_are_active(tmp_path: Path) -> None:
+    """Spatial rules no longer force the whole-schedule fallback."""
+    optimizer = _spatial_optimizer(tmp_path)
+    assert optimizer.delta_evaluator([]) is not None
+
+
+def test_spatial_delta_solver_matches_a_fresh_evaluation(tmp_path: Path) -> None:
+    """The spatial delta SA returns an objective a whole-schedule evaluation confirms."""
+    optimizer = _spatial_optimizer(tmp_path, max_opening_ha=10.0)
+    evaluator = IncrementalObjective(optimizer, [])
+    candidates = optimizer.candidates()
+    initial = {block: options[0] for block, options in candidates.items() if options}
+    best, best_obj = solve_sa_delta(
+        evaluator,
+        random.Random(3),
+        iterations=20,
+        temperature=1000.0,
+        cooling=0.99,
+        candidates=candidates,
+        registry=optimizer.registry,
+        initial=initial,
+    )
+    assert best_obj == pytest.approx(optimizer._evaluate(best, []))
 
 
 def test_reset_matches_the_whole_schedule_evaluation(tmp_path: Path) -> None:
