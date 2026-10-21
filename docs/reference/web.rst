@@ -71,15 +71,20 @@ Endpoints
      - The run's report files and their sizes.
    * - ``GET /api/runs/{run}/reports/{name}``
      - One report file; a name the run does not hold is a 404.
-   * - ``GET /api/runs/{run}/map?year=&layer=&account=``
-     - A GeoJSON ``FeatureCollection`` joined to ``--geometry``. ``treatments`` is the selected
-       period, ``cumulative`` marks current and earlier treatments, ``patches`` carries the year's
-       patch membership, ``compartments`` the model spread membership (one ``account`` at a time),
-       and ``blocks`` is the bare geometry.
+   * - ``GET /api/runs/{run}/map?year=&period_start=&layer=&account=``
+     - A GeoJSON ``FeatureCollection`` joined to ``--geometry``. ``year`` is the period's end year
+       and ``period_start`` its first year, so ``treatments`` covers the period; ``cumulative``
+       marks the current period and earlier ones, ``patches`` carries the year's patch membership,
+       ``compartments`` the model spread membership (one ``account`` at a time), and ``blocks`` is
+       the bare geometry.
    * - ``GET /api/runs/{run}/layers``
      - The layers the run can actually draw (treatments, cumulative, patches, compartments), its
        patch and compartment classes/accounts, and the named reasons roads/used roads/compartments
        are unavailable.
+   * - ``GET /api/runs/{run}/periods``
+     - The run's own range: min/max and distinct years from its schedule, patch membership or
+       account values, the configured targets' period width, and the folded periods (``start``,
+       ``end``, ``label``) the map control steps through.
    * - ``GET /api/runs/{run}/used-roads?year=``
      - The route model's used segments for one year as GeoJSON ``LineStrings``, from the run's
        ``used_roads.csv``; a run without the artifact is a named 404.
@@ -120,8 +125,10 @@ Layers
 
 The Legend tab builds a grouped tree from ``GET /api/runs/{run}/layers`` and the run's own files:
 
-- **Current treatment** and **cumulative through year** come from ``schedule.csv``; cumulative
-  distinguishes the current period (red) from earlier ones (tan).
+- **Current period** and **cumulative through period** come from ``schedule.csv``; the map control
+  folds years by the configured targets' ``period_width`` and shows both the period and its year
+  range. The previous/next period is one click on the slider or one **left/right arrow key**;
+  cumulative distinguishes the current period (red) from earlier ones (tan).
 - **Patch size class** comes from ``patch_membership.csv``. A run without a schedule still gets a
   period range from the patch membership, or from its account values, so a simulate run can be read.
 - **Spread compartments** comes from ``spread_membership.csv``: the untreated blocks grouped into
@@ -129,7 +136,7 @@ The Legend tab builds a grouped tree from ``GET /api/runs/{run}/layers`` and the
   (0–10, 10–50, 50–150, 150+ ha), numbers the largest component 0, and draws the period's treated
   blocks as breaks. When the run has more than one spread account, the layer tree offers the account
   selector. This is a **model** layer, not the source ``COMPART`` base colour.
-- **Current treatment** is a solid fill; **earlier** cumulative treatments use a diagonal hatch.
+- **Current period** is a solid fill; **earlier** cumulative treatments use a diagonal hatch.
   Patch classes are distinct solid colours. Polygon boundaries stay stroked, so the stand mosaic is
   visible at every zoom.
 - **Base colour** is a presentation choice over the source attributes: compartment, THEME2, THEME5,

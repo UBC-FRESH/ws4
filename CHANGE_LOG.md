@@ -2093,3 +2093,6 @@ issue comments.
 - P19.3: a stability stop (`patience`) ends a start after a configurable run of iterations without
   an incumbent improvement; the optimizer/CLI record it in the summary, and the web player exposes
   the field beside its iteration and time limits.
+- P19.5: the map control steps by accounting periods (the targets' `period_width`) rather than
+  years, labels the period with its year range, sends the period range to the map, and pages with
+  left/right arrow keys.

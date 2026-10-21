@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map() };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map() };
 
 const $ = (id) => document.getElementById(id);
 const statusLine = (text) => { $('status').textContent = text; };
@@ -188,7 +188,7 @@ function render(refit = true) {
       if (state.live.active) {
         const chain = state.live.schedule.get(String(properties.block_id));
         isTreated = chain
-          ? chain.some((event) => Number(event[1]) === Number(state.year))
+          ? chain.some((event) => inCurrentPeriod(event[1]))
           : false;
       }
       klass = isTreated ? 'treated' : 'untreated';
@@ -232,7 +232,7 @@ function render(refit = true) {
   const skinHasTreatments = state.skin?.layers ? state.skin.layers.includes('treatments') : true;
   $('treated-label').closest('label').hidden = baseMode || !skinHasTreatments;
   $('untreated-label').textContent = baseMode ? 'Blocks' : 'Untreated';
-  $('scale').textContent = `year ${state.year} · 1 px ≈ ${Math.round(1 / base.scale)} m`;
+  $('scale').textContent = `period ${state.periodIndex + 1} · year ${state.year} · 1 px ≈ ${Math.round(1 / base.scale)} m`;
   applyVisibility();
   if (refit) renderRoads();
 }
@@ -262,14 +262,14 @@ function updateLiveBlocks(blocks) {
     if (!element) continue;
     const chain = state.live.schedule.get(String(block));
     const treated = chain
-      ? chain.some((event) => Number(event[1]) === Number(state.year))
+      ? chain.some((event) => inCurrentPeriod(event[1]))
       : false;
     element.setAttribute('class', `block ${treated ? 'treated' : 'untreated'}`);
   }
   let treated = 0;
   for (const feature of state.features) {
     const chain = state.live.schedule.get(String(feature.properties?.block_id));
-    if (chain?.some((event) => Number(event[1]) === Number(state.year))) treated += 1;
+    if (chain?.some((event) => inCurrentPeriod(event[1]))) treated += 1;
   }
   $('n-treated').textContent = treated.toLocaleString();
   $('n-untreated').textContent = (state.features.length - treated).toLocaleString();
@@ -289,14 +289,18 @@ async function loadMap() {
           ? 'blocks'
           : 'treatments';
   try {
-    let query = `api/runs/${encodeURIComponent(state.run)}/map?year=${state.year}&layer=${layer}`;
+    const period = currentPeriod();
+    const end = period ? Number(period.end) : state.year;
+    let query = `api/runs/${encodeURIComponent(state.run)}/map?year=${end}&layer=${layer}`;
+    query += periodQuery();
     if (layer === 'compartments') {
       query += `&account=${encodeURIComponent(state.compartmentAccount)}`;
     }
     const body = await api(query);
     state.features = body.features ?? [];
     render();
-    statusLine(`${state.features.length.toLocaleString()} blocks · ${layer} · year ${state.year}`);
+    const span = period ? ` · years ${period.start}-${period.end}` : '';
+    statusLine(`${state.features.length.toLocaleString()} blocks · ${layer} · period ${state.periodIndex + 1}${span}`);
     if (state.showUsedRoads) loadUsedRoads();
   } catch (error) {
     statusLine(`map unavailable: ${error.message}`);
@@ -471,8 +475,8 @@ async function loadComparison() {
   $('compare-summary').textContent = 'loading…';
   try {
     const [mapA, mapB, accountsA, accountsB, targetsA, targetsB] = await Promise.all([
-      api(`api/runs/${encodeURIComponent(runA)}/map?year=${state.year}`),
-      api(`api/runs/${encodeURIComponent(runB)}/map?year=${state.year}`),
+      api(`api/runs/${encodeURIComponent(runA)}/map?year=${state.year}${periodQuery()}`),
+      api(`api/runs/${encodeURIComponent(runB)}/map?year=${state.year}${periodQuery()}`),
       api(`api/runs/${encodeURIComponent(runA)}/accounts?year=${state.year}`),
       api(`api/runs/${encodeURIComponent(runB)}/accounts?year=${state.year}`),
       api(`api/runs/${encodeURIComponent(runA)}/targets`),
@@ -501,9 +505,9 @@ async function loadComparison() {
     state.compare = { a: runA, b: runB, blocks };
     render(true);
     $('compare-summary').textContent =
-      `year ${state.year} · A only ${aOnly.toLocaleString()} · B only ${bOnly.toLocaleString()} · both ${both.toLocaleString()} · neither ${neither.toLocaleString()}`
+      `period ${state.periodIndex + 1} · A only ${aOnly.toLocaleString()} · B only ${bOnly.toLocaleString()} · both ${both.toLocaleString()} · neither ${neither.toLocaleString()}`
       + (accountsB.length ? '' : ' · B has no account values at this year');
-    $('compare-year').textContent = state.year;
+    $('compare-year').textContent = `period ${state.periodIndex + 1} (${state.year})`;
     renderCompareTargets(targetsA, targetsB);
     const totalsA = accountTotals(accountsA);
     const totalsB = accountTotals(accountsB);
@@ -518,7 +522,7 @@ async function loadComparison() {
       .sort((left, right) => Math.abs(right.delta) - Math.abs(left.delta)
         || left.name.localeCompare(right.name));
     renderCompareAccounts();
-    statusLine(`${state.features.length.toLocaleString()} blocks · ${runA} vs ${runB} · year ${state.year}`);
+    statusLine(`${state.features.length.toLocaleString()} blocks · ${runA} vs ${runB} · period ${state.periodIndex + 1}`);
   } catch (error) {
     if (token !== state.compareToken) return;
     state.compareView = false;
@@ -579,9 +583,9 @@ function layerLabel() {
     return `Base: ${info?.label ?? state.baseAttribute}`;
   }
   if (state.compareView && state.compare) return 'Treated in A or B';
-  if (state.layerMode === 'cumulative') return 'Treated through the year';
+  if (state.layerMode === 'cumulative') return 'Treated through the period';
   if (state.layerMode === 'patches') return 'Patches in the year';
-  return 'Treated in the year';
+  return 'Treated in the period';
 }
 
 function renderLayerTree() {
@@ -622,8 +626,8 @@ function renderLayerTree() {
     wrapper.append(input, text);
     modeGroup.append(wrapper);
   };
-  addMode('current', 'Current treatment', Boolean(info.treatments) && layers.includes('treatments'));
-  addMode('cumulative', 'Cumulative through year', Boolean(info.cumulative) && layers.includes('treatments'));
+  addMode('current', 'Current period', Boolean(info.treatments) && layers.includes('treatments'));
+  addMode('cumulative', 'Cumulative through period', Boolean(info.cumulative) && layers.includes('treatments'));
   addMode('patches', 'Patch size class', Boolean(info.patches) && layers.includes('patches'));
   addMode('compartments', 'Spread compartments', Boolean(info.compartments) && layers.includes('compartments'));
   if (info.cumulative && layers.includes('treatments') && state.layerMode === 'cumulative') {
@@ -894,18 +898,69 @@ async function loadLayers() {
   }
 }
 
+function currentPeriod() {
+  return state.periods[state.periodIndex] ?? null;
+}
+
+function inCurrentPeriod(year) {
+  const period = currentPeriod();
+  const start = period ? Number(period.start) : Number(state.year);
+  const end = period ? Number(period.end) : Number(state.year);
+  return Number(year) >= start && Number(year) <= end;
+}
+
+function setPeriod(index) {
+  const slider = $('year');
+  if (!state.periods.length) {
+    state.periodIndex = 0;
+    state.year = 0;
+    slider.value = '0';
+    $('year-label').textContent = 'Period 1';
+    return null;
+  }
+  const next = Math.min(Math.max(0, index), state.periods.length - 1);
+  state.periodIndex = next;
+  const period = state.periods[next];
+  state.year = Number(period.end);
+  slider.value = String(next);
+  $('year-label').textContent = period.label ?? `Period ${next + 1}`;
+  return period;
+}
+
+function selectPeriodForYear(year) {
+  const index = state.periods.findIndex(
+    (period) => Number(year) >= Number(period.start) && Number(year) <= Number(period.end),
+  );
+  return setPeriod(index >= 0 ? index : 0);
+}
+
+function periodQuery() {
+  const period = currentPeriod();
+  return period ? `&period_start=${Number(period.start)}` : '';
+}
+
 async function loadPeriods() {
   const body = await api(`api/runs/${encodeURIComponent(state.run)}/periods`);
+  let periods = Array.isArray(body.periods) ? body.periods : [];
+  if (!periods.length) {
+    periods = (body.values ?? []).map((year, index) => ({
+      index,
+      start: Number(year),
+      end: Number(year),
+      label: `Period ${index + 1} · year ${year}`,
+    }));
+  }
+  state.periods = periods;
+  state.periodWidth = Number(body.period_width ?? 1);
   const slider = $('year');
-  const low = Number(body.min ?? 0);
-  const high = Number(body.max ?? 0);
-  const wanted = Number.isFinite(state.year) ? state.year : low;
-  slider.min = low;
-  slider.max = high;
-  // keep the analyst's year across a run finishing; only clamp it into the new horizon
-  state.year = Math.min(Math.max(wanted, low), high);
-  slider.value = state.year;
-  $('year-label').textContent = state.year;
+  slider.min = '0';
+  slider.max = String(Math.max(0, periods.length - 1));
+  // keep the analyst's year across a run finishing; clamp it into a period of the new horizon
+  const wanted = Number.isFinite(state.year) ? state.year : Number(periods[0]?.end ?? 0);
+  const index = periods.findIndex(
+    (period) => wanted >= Number(period.start) && wanted <= Number(period.end),
+  );
+  setPeriod(index >= 0 ? index : 0);
 }
 
 function applySkin(skin) {
@@ -1237,13 +1292,7 @@ async function loadTargets() {
     table.hidden = false;
     button.hidden = false;
     if (!state.yearChosen) {
-      const slider = $('year');
-      const low = Number(slider.min || 0);
-      const high = Number(slider.max || 0);
-      const first = Number(rows[0].year);
-      state.year = Math.min(Math.max(first, low), high);
-      slider.value = state.year;
-      $('year-label').textContent = state.year;
+      selectPeriodForYear(Number(rows[0].year));
     }
     const body = table.querySelector('tbody');
     body.replaceChildren();
@@ -1718,9 +1767,10 @@ async function loadReports() {
       item.append(link);
       list.append(item);
     }
-    const slider = $('year');
-    $('report-from').value = slider.min || 0;
-    $('report-to').value = slider.max || 0;
+    const firstPeriod = state.periods[0];
+    const lastPeriod = state.periods[state.periods.length - 1];
+    $('report-from').value = firstPeriod?.start ?? 0;
+    $('report-to').value = lastPeriod?.end ?? 0;
     const accounts = await api(`api/runs/${encodeURIComponent(state.run)}/accounts`);
     const names = [...new Set(accounts.map((row) => String(row.account)))].sort();
     const datalist = $('account-names');
@@ -1986,12 +2036,29 @@ function wireControls() {
   });
   $('year').addEventListener('input', (event) => {
     state.yearChosen = true;
-    state.year = Number(event.target.value);
-    $('year-label').textContent = state.year;
+    setPeriod(Number(event.target.value));
   });
   $('year').addEventListener('change', () => {
     if (state.compareView) { loadComparison(); return; }
     if (state.live.active) render(false); else loadMap();
+    if (state.showUsedRoads) loadUsedRoads();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    const active = document.activeElement;
+    const tag = active?.tagName;
+    if (tag === 'TEXTAREA' || tag === 'SELECT' || active?.isContentEditable) return;
+    if (tag === 'INPUT' && active.type !== 'range') return;
+    if (!state.periods.length) return;
+    const next = state.periodIndex + (event.key === 'ArrowRight' ? 1 : -1);
+    if (next < 0 || next >= state.periods.length) return;
+    event.preventDefault();
+    state.yearChosen = true;
+    setPeriod(next);
+    if (state.compareView) loadComparison();
+    else if (state.live.active) render(false);
+    else loadMap();
     if (state.showUsedRoads) loadUsedRoads();
   });
   $('skin').addEventListener('change', async (event) => {

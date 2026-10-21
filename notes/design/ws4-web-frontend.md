@@ -108,8 +108,9 @@ manifests ship: `model-builder`, `scenario-analyst`, `scenario-browser`, `review
   treatments (current period vs cumulative); patches; spread compartments; roads by built/used/planned.
   The first cut renders block polygons (or points) from the configured GeoJSON with treated/untreated
   classes; the additional layer families reuse the same map endpoint once their artefacts are joined.
-- The period control is the model's own: years are folded by `period_width`, and the label is the period
-  the reference uses (period 1 ends at year 10). The UI shows both the period and its year range.
+- The period control is the model's own: years are folded by the targets' `period_width`, and the
+  label is the period the reference uses (period 1 ends at year 10). The UI shows both the period
+  and its year range, and left/right arrow keys step one period. **Implemented in P19.5.**
 - Selecting a block opens its attributes; selecting a patch or compartment filters the accounts to it.
 
 ## Map layers

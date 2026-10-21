@@ -16,6 +16,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from collections import Counter
 from collections.abc import Awaitable, Callable, Iterator
 from datetime import datetime
 from pathlib import Path
@@ -88,6 +89,80 @@ def _geometry_features(path: Path) -> list[dict[str, Any]]:
         if block is not None:
             properties["block_id"] = int(block)
     return features
+
+
+def _run_period_width(targets_path: Path | None) -> int:
+    """Return the run's display period width, from the configured targets.
+
+    A target's ``period_width`` is the accounting period it reads. The map folds years by the
+    most common width; a tie picks the shorter width, because inventing a wider period would hide
+    a shorter target. No targets means one year per period.
+
+    Parameters
+    ----------
+    targets_path : Path or None
+        The targets YAML the service was started with.
+
+    Returns
+    -------
+    int
+        The period width, at least 1.
+    """
+    if targets_path is None or not targets_path.is_file():
+        return 1
+    try:
+        targets = load_targets(targets_path)
+    except (ValueError, OSError):
+        return 1
+    widths = [target.period_width for target in targets if target.period_width > 0]
+    if not widths:
+        return 1
+    counts = Counter(widths)
+    return min(counts, key=lambda width: (-counts[width], width))
+
+
+def _run_periods(years: list[int], width: int) -> list[dict[str, object]]:
+    """Fold a run's years into the periods the map steps through.
+
+    Parameters
+    ----------
+    years : list of int
+        The run's sorted years.
+    width : int
+        The period width, in years.
+
+    Returns
+    -------
+    list of dict
+        ``index``, ``start``, ``end`` and ``label`` per period.
+    """
+    if not years:
+        return []
+    if width <= 1:
+        return [
+            {
+                "index": index,
+                "start": year,
+                "end": year,
+                "label": f"Period {index + 1} · year {year}",
+            }
+            for index, year in enumerate(years)
+        ]
+    periods: list[dict[str, object]] = []
+    start = years[0]
+    while start <= years[-1]:
+        end = min(start + width - 1, years[-1])
+        index = len(periods)
+        periods.append(
+            {
+                "index": index,
+                "start": start,
+                "end": end,
+                "label": f"Period {index + 1} · years {start}-{end}",
+            }
+        )
+        start = end + 1
+    return periods
 
 
 def create_app(
@@ -937,8 +1012,15 @@ def create_app(
                 continue
             values = sorted({int(value) for value in frame[column].astype("int64").tolist()})
             if values:
-                return {"min": values[0], "max": values[-1], "values": values}
-        return {"min": 0, "max": 0, "values": []}
+                width = _run_period_width(targets_path)
+                return {
+                    "min": values[0],
+                    "max": values[-1],
+                    "values": values,
+                    "period_width": width,
+                    "periods": _run_periods(values, width),
+                }
+        return {"min": 0, "max": 0, "values": [], "period_width": 1, "periods": []}
 
     @app.get("/api/runs/{run}/layers")
     def layer_info(run: str) -> dict[str, Any]:
@@ -1019,14 +1101,17 @@ def create_app(
         year: int | None = Query(default=None),
         layer: str = Query(default="treatments"),
         account: str | None = Query(default=None),
+        period_start: int | None = Query(default=None),
     ) -> dict[str, Any]:
         """Return a GeoJSON FeatureCollection of every block for one map layer.
 
         ``treatments`` is the selected period, ``cumulative`` marks current and earlier
         treatments, ``patches`` colors the selected year's patch membership, ``compartments``
         is the model spread-compartment membership (optionally for one ``account``), and
-        ``blocks`` is the bare geometry. The layer is the base geometry; the properties carry
-        the flags the client needs, so a layer change is one request and no second join.
+        ``blocks`` is the bare geometry. ``year`` is the period's end year and ``period_start``
+        its first year; without it the period is one year. The layer is the base geometry; the
+        properties carry the flags the client needs, so a layer change is one request and no
+        second join.
         """
         directory = run_dir(run)
         if layer not in ("treatments", "cumulative", "patches", "compartments", "blocks"):
@@ -1094,8 +1179,11 @@ def create_app(
             schedule = read_csv(directory, "schedule.csv")
             if year is None:
                 year = int(schedule["period"].min()) if not schedule.empty else 0
+            first = year if period_start is None else min(period_start, year)
             selected = schedule[
-                schedule["period"] <= year if layer == "cumulative" else schedule["period"] == year
+                schedule["period"] <= year
+                if layer == "cumulative"
+                else (schedule["period"] >= first) & (schedule["period"] <= year)
             ]
             for block_id, group in selected.groupby("block_id"):
                 treatments_by_block[int(float(str(block_id)))] = sorted(
@@ -1104,7 +1192,9 @@ def create_app(
             if layer == "cumulative":
                 current = {
                     int(value)
-                    for value in schedule[schedule["period"] == year]["block_id"].astype("int64")
+                    for value in schedule[
+                        (schedule["period"] >= first) & (schedule["period"] <= year)
+                    ]["block_id"].astype("int64")
                 }
         else:
             year = 0 if year is None else year

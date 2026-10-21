@@ -205,7 +205,41 @@ def test_the_map_serves_simplified_block_polygons_and_compartments(tmp_path: Pat
 def test_periods_come_from_the_runs_schedule(tmp_path: Path) -> None:
     """The period control gets the run's own range, not a guessed horizon."""
     client, _ = _app(tmp_path)
-    assert client.get("/api/runs/run1/periods").json() == {"min": 0, "max": 1, "values": [0, 1]}
+    body = client.get("/api/runs/run1/periods").json()
+    assert body["min"] == 0
+    assert body["max"] == 1
+    assert body["values"] == [0, 1]
+    assert body["period_width"] == 1
+    assert [period["start"] for period in body["periods"]] == [0, 1]
+    assert all(period["start"] == period["end"] for period in body["periods"])
+
+
+def test_periods_fold_years_by_the_target_period_width(tmp_path: Path) -> None:
+    """A ten-year target period is one map period, not ten year stops."""
+    client, _ = _app(tmp_path)
+    targets = tmp_path / "targets.yaml"
+    targets.write_text(
+        "targets:\n"
+        "  - account: feature.Volume\n"
+        "    year: 9\n"
+        "    period_width: 10\n"
+        "    minimum: 0\n",
+        encoding="utf-8",
+    )
+    run = tmp_path / "runs" / "run-long"
+    run.mkdir()
+    (run / "schedule.csv").write_text(
+        "block_id,treatment,period\n1,CC,0\n2,CT,9\n", encoding="utf-8"
+    )
+    body = client.get("/api/runs/run-long/periods").json()
+    assert body["period_width"] == 10
+    assert body["periods"] == [{"index": 0, "start": 0, "end": 9, "label": "Period 1 · years 0-9"}]
+    # a period is a range: the map shows both treatments, not only the end year's
+    features = client.get(
+        "/api/runs/run-long/map",
+        params={"year": 9, "period_start": 0, "layer": "treatments"},
+    ).json()["features"]
+    assert all(feature["properties"]["treated"] for feature in features)
 
 
 def test_the_map_refuses_without_geometry_and_for_an_unknown_layer(tmp_path: Path) -> None:
@@ -238,11 +272,11 @@ def test_periods_fall_back_to_patch_membership_or_accounts(tmp_path: Path) -> No
     """A run with no schedule still has a real period range for the map control."""
     client, _ = _app(tmp_path)
     _patch_run(tmp_path)
-    assert client.get("/api/runs/run-patches/periods").json() == {
-        "min": 1,
-        "max": 2,
-        "values": [1, 2],
-    }
+    body = client.get("/api/runs/run-patches/periods").json()
+    assert body["min"] == 1
+    assert body["max"] == 2
+    assert body["values"] == [1, 2]
+    assert [period["start"] for period in body["periods"]] == [1, 2]
 
 
 def test_the_layers_endpoint_names_what_the_run_can_draw(tmp_path: Path) -> None:

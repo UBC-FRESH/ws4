@@ -4,16 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=38">
+  <link rel="stylesheet" href="static/style.css?v=39">
 </head>
 <body>
   <header>
-    <strong>WS4</strong><span class="build">v38</span>
+    <strong>WS4</strong><span class="build">v39</span>
     <label>Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
-    <label class="year">Year
+    <label class="year">Period
       <input id="year" type="range" min="0" max="0" step="1" value="0">
-      <output id="year-label">0</output>
+      <output id="year-label">Period 1</output>
     </label>
     <span id="status">loading…</span>
   </header>
@@ -30,7 +30,7 @@
         <h2>Layers</h2>
         <div id="layer-tree" class="layer-tree"></div>
         <p id="layers-hint" class="hint">loading layers…</p>
-        <label><input type="checkbox" id="show-treated" checked> <span class="swatch treated"></span> <span id="treated-label">Treated in the year</span> <b id="n-treated">0</b></label>
+        <label><input type="checkbox" id="show-treated" checked> <span class="swatch treated"></span> <span id="treated-label">Treated in the period</span> <b id="n-treated">0</b></label>
         <label><input type="checkbox" id="show-untreated" checked> <span class="swatch untreated"></span> <span id="untreated-label">Untreated</span> <b id="n-untreated">0</b></label>
         <p class="hint">Click a block for its attributes. Wheel to zoom; drag to pan.</p>
         <div id="detail" class="detail"></div>
@@ -138,6 +138,6 @@
       <div class="scale" id="scale"></div>
     </div>
   </main>
-  <script type="module" src="static/app.js?v=38"></script>
+  <script type="module" src="static/app.js?v=39"></script>
 </body>
 </html>
