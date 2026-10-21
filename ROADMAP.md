@@ -791,7 +791,7 @@ what the model produces.
   an account selector. This is the account independently reproduced in thesis #13.
 - [x] P19.2 **The run's used-road geometry/use.** Write the route model's segment geometry and the
   period's opened/used segments; serve a used-roads overlay distinct from the source access layer.
-- [ ] P19.3 **Stability stopping criterion.** Stop a continuous search after a configurable number of
+- [x] P19.3 **Stability stopping criterion.** Stop a continuous search after a configurable number of
   iterations without incumbent improvement; expose it in the player and record it in the summary.
 - [ ] P19.4 **Map scale.** Move the polygon/road shell to MapLibre (or an equivalent) when the
   feature count or a basemap demands it, with the layer tree contracts unchanged.

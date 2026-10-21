@@ -249,6 +249,7 @@ def create_app(
         years: int,
         time_limit: str,
         islands: int,
+        patience: int,
     ) -> list[str]:
         """Return the CLI command for a web-started search; only known options are passed."""
         if targets_path is None:
@@ -272,6 +273,8 @@ def create_app(
             str(years),
             "--control-file",
             str(out / "control.json"),
+            "--patience",
+            str(patience),
             "--starts",
             str(islands),
             "--threads",
@@ -307,8 +310,13 @@ def create_app(
         requested_islands = payload.get("islands", 1)
         islands = 1 if requested_islands is None else int(requested_islands)
         time_limit = str(payload.get("time_limit", "") or "")
+        patience = int(payload.get("patience", 0) or 0)
         if not 1 <= iterations <= 1_000_000_000 or not 1 <= years <= 1000:
             raise HTTPException(status_code=422, detail="iterations or years are out of range")
+        if not 0 <= patience <= 1_000_000_000:
+            raise HTTPException(
+                status_code=422, detail="patience must be a non-negative iteration count"
+            )
         if not 1 <= islands <= 64:
             raise HTTPException(status_code=422, detail="islands must be between 1 and 64")
         if continuous and not time_limit:
@@ -319,7 +327,7 @@ def create_app(
             raise HTTPException(status_code=409, detail=f"run {run_id!r} already exists")
         out.mkdir(parents=True)
         (out / "control.json").write_text('{"action": "run"}\n', encoding="utf-8")
-        command = _run_command(out, iterations, seed, years, time_limit, islands)
+        command = _run_command(out, iterations, seed, years, time_limit, islands, patience)
         console = (out / "console.log").open("wb")
         processes[run_id] = subprocess.Popen(command, stdout=console, stderr=subprocess.STDOUT)
         return {
@@ -330,6 +338,7 @@ def create_app(
             "years": years,
             "islands": islands,
             "time_limit": time_limit,
+            "patience": patience,
         }
 
     @app.post("/api/runs/{run}/control")

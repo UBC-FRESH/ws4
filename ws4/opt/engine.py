@@ -151,6 +151,9 @@ class OptimizeConfig:
         The horizon in years. The simulation step is one year.
     iterations : int
         The iteration budget of the search.
+    patience : int
+        Stop a start after this many iterations without an incumbent improvement; 0 disables
+        the criterion. It is the stability stop for a continuous search.
     temperature : float
         The initial simulated-annealing temperature.
     cooling : float
@@ -238,6 +241,7 @@ class OptimizeConfig:
     weights_path: str = ""
     years: int = 50
     iterations: int = 500
+    patience: int = 0
     temperature: float = 1000.0
     cooling: float = 0.99
     cooling_mode: str = "geometric"
@@ -277,6 +281,8 @@ class OptimizeConfig:
 
     def __post_init__(self) -> None:
         """Reject an unknown temperature schedule before the search starts."""
+        if self.patience < 0:
+            raise ValueError("patience must be zero (off) or a positive iteration count")
         if self.cooling_mode not in {"geometric", "adaptive"}:
             raise ValueError(f"unknown cooling_mode: {self.cooling_mode!r}")
 
@@ -1095,6 +1101,7 @@ class Optimizer:
                 control=control,
                 initial=initial,
                 deadline=limit,
+                patience=self.cfg.patience,
             )
         if self.cfg.metaheuristic == "ils":
             return solve_ils(
@@ -1105,6 +1112,7 @@ class Optimizer:
                 on_step=on_step,
                 initial=initial,
                 deadline=limit,
+                patience=self.cfg.patience,
             )
         evaluator = self.delta_evaluator(targets)
         if evaluator is not None:
@@ -1125,6 +1133,7 @@ class Optimizer:
                 on_snapshot=on_snapshot,
                 adaptive=self.cfg.cooling_mode == "adaptive",
                 cooling_window=self.cfg.cooling_window,
+                patience=self.cfg.patience,
             )
         return solve_sa(
             problem,
@@ -1138,6 +1147,7 @@ class Optimizer:
             adaptive=self.cfg.cooling_mode == "adaptive",
             deadline=limit,
             cooling_window=self.cfg.cooling_window,
+            patience=self.cfg.patience,
         )
 
     def _use_pool(self) -> bool:
@@ -1356,6 +1366,7 @@ class Optimizer:
         summary: dict[str, Any] = {
             "incumbent_objective": best_obj,
             "iterations": self.cfg.iterations,
+            "patience": self.cfg.patience,
             "seed": self.cfg.seed,
             "metaheuristic": self.cfg.metaheuristic,
             "starts": self.cfg.starts,

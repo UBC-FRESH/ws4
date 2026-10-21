@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=37">
+  <link rel="stylesheet" href="static/style.css?v=38">
 </head>
 <body>
   <header>
-    <strong>WS4</strong><span class="build">v37</span>
+    <strong>WS4</strong><span class="build">v38</span>
     <label>Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Year
@@ -46,6 +46,7 @@
         <button id="save-targets" hidden>Save targets</button>
         <div class="run-row">
           <label>Max iters <input id="run-iterations" type="number" value="0" min="0" step="1" title="0 = until stopped"></label>
+          <label>Patience <input id="run-patience" type="number" value="0" min="0" step="1" title="stop after N iterations without an improvement; 0 = off"></label>
           <label>Time <input id="run-time-limit" type="text" placeholder="HH:MM:SS" size="9"></label>
           <label>Years <input id="run-years" type="number" value="50" min="1" step="1"></label>
           <label>Islands <input id="run-islands" type="number" value="8" min="1" max="64" step="1" title="parallel independent searches; 1 = one core"></label>
@@ -137,6 +138,6 @@
       <div class="scale" id="scale"></div>
     </div>
   </main>
-  <script type="module" src="static/app.js?v=37"></script>
+  <script type="module" src="static/app.js?v=38"></script>
 </body>
 </html>

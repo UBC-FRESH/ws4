@@ -1512,6 +1512,7 @@ async function startRun() {
     return;
   }
   const iterations = Number($('run-iterations')?.value || 0);
+  const patience = Number($('run-patience')?.value || 0);
   const timeLimit = ($('run-time-limit')?.value || '').trim();
   const seed = Number($('run-seed')?.value || 1);
   const years = Number($('run-years')?.value || 50);
@@ -1533,7 +1534,7 @@ async function startRun() {
     const response = await fetch('api/runs', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ iterations, time_limit: timeLimit, seed, years, islands }),
+      body: JSON.stringify({ iterations, patience, time_limit: timeLimit, seed, years, islands }),
       signal: controller.signal,
     });
     window.clearTimeout(timer);

@@ -125,6 +125,26 @@ def expired(deadline: float | None) -> bool:
     return deadline is not None and time.monotonic() >= deadline
 
 
+def patience_reached(iteration: int, last_improvement: int, patience: int) -> bool:
+    """Return whether a search has gone ``patience`` iterations without an improvement.
+
+    Parameters
+    ----------
+    iteration : int
+        The next iteration the search would run.
+    last_improvement : int
+        The iteration of the last incumbent improvement.
+    patience : int
+        The allowed run of unimproved iterations; 0 disables the criterion.
+
+    Returns
+    -------
+    bool
+        True when the criterion is enabled and its run is exhausted.
+    """
+    return patience > 0 and iteration - last_improvement >= patience
+
+
 def solve_sa(
     problem: Problem,
     rng: random.Random,
@@ -138,6 +158,7 @@ def solve_sa(
     adaptive: bool = False,
     cooling_window: int = 64,
     deadline: float | None = None,
+    patience: int = 0,
 ) -> tuple[Schedule, float]:
     """Run simulated annealing.
 
@@ -167,6 +188,8 @@ def solve_sa(
         Use the adaptive Aarts-Van Laarhoven schedule instead of the geometric one.
     cooling_window : int, optional
         The iterations per temperature when ``adaptive`` is set, capped at half the budget.
+    patience : int, optional
+        Stop after this many iterations without an incumbent improvement; 0 disables it.
 
     Returns
     -------
@@ -182,7 +205,10 @@ def solve_sa(
         adaptive=adaptive,
         window=TemperatureSchedule.effective_window(iterations, cooling_window),
     )
+    last_improvement = 0
     for iteration in range(iterations):
+        if patience_reached(iteration, last_improvement, patience):
+            break
         if expired(deadline) or _stopped(control, iteration):
             break
         increase = 0.0
@@ -196,6 +222,7 @@ def solve_sa(
                 current, current_obj = move, move_obj
                 if move_obj < best_obj:
                     best, best_obj = dict(move), move_obj
+                    last_improvement = iteration
         schedule.observe(increase, current_obj)
         _report(on_step, iteration, best_obj)
     return best, best_obj
@@ -217,6 +244,7 @@ def solve_sa_delta(
     adaptive: bool = False,
     cooling_window: int = 64,
     deadline: float | None = None,
+    patience: int = 0,
 ) -> tuple[Schedule, float]:
     """Run simulated annealing priced by per-move objective deltas.
 
@@ -257,6 +285,8 @@ def solve_sa_delta(
         Use the adaptive Aarts-Van Laarhoven schedule instead of the geometric one.
     cooling_window : int, optional
         The iterations per temperature when ``adaptive`` is set, capped at half the budget.
+    patience : int, optional
+        Stop after this many iterations without an incumbent improvement; 0 disables it.
 
     Returns
     -------
@@ -273,7 +303,10 @@ def solve_sa_delta(
         adaptive=adaptive,
         window=TemperatureSchedule.effective_window(iterations, cooling_window),
     )
+    last_improvement = 0
     for iteration in range(iterations):
+        if patience_reached(iteration, last_improvement, patience):
+            break
         if expired(deadline) or _stopped(control, iteration):
             break
         increase = 0.0
@@ -290,6 +323,7 @@ def solve_sa_delta(
                 current_obj = move_obj
                 if move_obj < best_obj:
                     best, best_obj = dict(current), move_obj
+                    last_improvement = iteration
             else:
                 restore(current, undo)
                 evaluator.revert()
@@ -311,6 +345,7 @@ def solve_tabu(
     control: RunControl | None = None,
     initial: Schedule | None = None,
     deadline: float | None = None,
+    patience: int = 0,
 ) -> tuple[Schedule, float]:
     """Run tabu search: pick the best non-tabu move each iteration.
 
@@ -336,6 +371,8 @@ def solve_tabu(
         schedule when it says ``stop``.
     initial : dict or None, optional
         A starting schedule. Defaults to the empty schedule.
+    patience : int, optional
+        Stop after this many iterations without an incumbent improvement; 0 disables it.
 
     Returns
     -------
@@ -346,7 +383,10 @@ def solve_tabu(
     current_obj = problem.evaluate(current)
     best, best_obj = dict(current), current_obj
     tabu: deque[frozenset[tuple[int, Chain | None]]] = deque(maxlen=tenure)
+    last_improvement = 0
     for iteration in range(iterations):
+        if patience_reached(iteration, last_improvement, patience):
+            break
         if expired(deadline) or _stopped(control, iteration):
             break
         chosen: Schedule | None = None
@@ -366,6 +406,7 @@ def solve_tabu(
             current, current_obj = chosen, chosen_obj
             if current_obj < best_obj:
                 best, best_obj = dict(current), current_obj
+                last_improvement = iteration
         _report(on_step, iteration, best_obj)
     return best, best_obj
 
@@ -380,6 +421,7 @@ def solve_ils(
     control: RunControl | None = None,
     initial: Schedule | None = None,
     deadline: float | None = None,
+    patience: int = 0,
 ) -> tuple[Schedule, float]:
     """Run iterated local search: perturb, then accept an improvement.
 
@@ -403,6 +445,8 @@ def solve_ils(
         schedule when it says ``stop``.
     initial : dict or None, optional
         A starting schedule. Defaults to the empty schedule.
+    patience : int, optional
+        Stop after this many iterations without an incumbent improvement; 0 disables it.
 
     Returns
     -------
@@ -412,7 +456,10 @@ def solve_ils(
     current: Schedule = dict(initial) if initial is not None else {}
     current_obj = problem.evaluate(current)
     best, best_obj = dict(current), current_obj
+    last_improvement = 0
     for iteration in range(iterations):
+        if patience_reached(iteration, last_improvement, patience):
+            break
         if expired(deadline) or _stopped(control, iteration):
             break
         candidate = dict(current)
@@ -425,5 +472,6 @@ def solve_ils(
             current, current_obj = candidate, candidate_obj
             if candidate_obj < best_obj:
                 best, best_obj = dict(candidate), candidate_obj
+                last_improvement = iteration
         _report(on_step, iteration, best_obj)
     return best, best_obj
