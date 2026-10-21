@@ -27,6 +27,7 @@ import yaml
 from fastapi import Body, FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.gzip import GZipMiddleware
 from starlette.responses import Response
 
 from ..opt.objective import flow_penalty, flow_series, load_targets, period_value
@@ -305,6 +306,7 @@ def create_app(
     source_crs = str(crs)
     agent_working_directory = Path(agent_cwd).resolve() if agent_cwd is not None else Path.cwd()
     app = FastAPI(title="WS4", version="0.1.0")
+    app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
 
     @app.middleware("http")
     async def no_cache_static(
