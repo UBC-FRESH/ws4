@@ -57,6 +57,7 @@ from .operators import (
     Candidates,
     Chain,
     ClusterOperator,
+    CoalesceOperator,
     LnsOperator,
     MergeOperator,
     OperatorRegistry,
@@ -258,6 +259,11 @@ class OptimizeConfig:
         The selection weight of the cluster operator; 0 disables it and its topology.
     cluster_size : int
         The maximum number of blocks in a cluster move.
+    coalesce_weight : float
+        The selection weight of the coalesce operator, which aligns a connected cluster
+        onto one treatment year; 0 disables it.
+    coalesce_size : int
+        The maximum number of blocks in a coalesce move.
     warm_cache : bool
         Whether to pre-warm the per-block delta cache before the search.
     patch_accounts_path : str
@@ -314,6 +320,8 @@ class OptimizeConfig:
     lns_destroy: float = 0.1
     cluster_weight: float = 0.0
     cluster_size: int = 8
+    coalesce_weight: float = 0.0
+    coalesce_size: int = 8
     warm_cache: bool = False
     patch_accounts_path: str = ""
     spread_accounts_path: str = ""
@@ -369,6 +377,11 @@ class Optimizer:
                     weight=cfg.cluster_weight,
                     size=cfg.cluster_size,
                     neighbours=self._neighbours() if cfg.cluster_weight > 0.0 else {},
+                ),
+                CoalesceOperator(
+                    weight=cfg.coalesce_weight,
+                    size=cfg.coalesce_size,
+                    neighbours=(self._neighbours() if cfg.coalesce_weight > 0.0 else {}),
                 ),
                 MergeOperator(self, weight=cfg.merge_weight),
                 SplitOperator(self, weight=cfg.split_weight),

@@ -488,6 +488,114 @@ class ClusterOperator(_OperatorBase):
         return undo or None
 
 
+class CoalesceOperator(_OperatorBase):
+    """Align a connected cluster onto one treatment year.
+
+    The cluster and merge operators change which blocks are assigned, but a large
+    opening also needs its blocks treated in the **same year**. This operator grows
+    a connected cluster, picks a target year from the seed block (its current chain,
+    or one of its candidate years), and rechooses every other cluster member onto a
+    candidate chain that treats it in that year.
+
+    Parameters
+    ----------
+    weight : float, optional
+        The operator's selection weight. Defaults to 0.2.
+    size : int, optional
+        The maximum number of blocks in the cluster. Defaults to 8.
+    neighbours : mapping of int to tuple of int, optional
+        The topological neighbours per block. An empty map leaves every cluster a
+        single block, so the move is unavailable.
+    """
+
+    name = "coalesce"
+
+    def __init__(
+        self,
+        *,
+        weight: float = 0.2,
+        size: int = 8,
+        neighbours: Mapping[int, tuple[int, ...]] | None = None,
+    ) -> None:
+        """Set the weight, the cluster size, and the topological neighbours per block."""
+        self.weight = weight
+        self.size = size
+        self.neighbours = neighbours or {}
+
+    def _grow(self, seed: int, rng: random.Random) -> list[int]:
+        """Return a connected set of at most ``size`` blocks, grown from ``seed``."""
+        chosen = [seed]
+        seen = {seed}
+        frontier = [seed]
+        while frontier and len(chosen) < self.size:
+            block = frontier.pop(rng.randrange(len(frontier)))
+            options = list(self.neighbours.get(block, ()))
+            rng.shuffle(options)
+            for other in options:
+                if other in seen:
+                    continue
+                seen.add(other)
+                chosen.append(other)
+                frontier.append(other)
+                if len(chosen) >= self.size:
+                    break
+        return chosen
+
+    def propose_inplace(
+        self, schedule: Schedule, rng: random.Random, candidates: Candidates
+    ) -> Undo | None:
+        """Align a connected cluster to one treatment year, in place.
+
+        Parameters
+        ----------
+        schedule : dict of int to Chain
+            The schedule to mutate in place.
+        rng : random.Random
+            The random source.
+        candidates : dict of int to list of Chain
+            The candidate chains per block.
+
+        Returns
+        -------
+        dict of int to Chain or None
+            The previous chain per touched block, or None when no two blocks can be
+            aligned.
+        """
+        assignable = [block for block, options in candidates.items() if options]
+        if not assignable:
+            return None
+        seed = rng.choice(assignable)
+        cluster = self._grow(seed, rng)
+        if len(cluster) < 2:
+            return None
+        seed_chain = schedule.get(seed)
+        if seed_chain:
+            target_year = int(seed_chain[0][1])
+        else:
+            seed_options = [chain for chain in candidates.get(seed, ()) if chain]
+            if not seed_options:
+                return None
+            target_year = int(rng.choice(seed_options)[0][1])
+
+        undo: Undo = {}
+        for block in cluster:
+            options = [
+                chain
+                for chain in candidates.get(block, ())
+                if chain and any(int(year) == target_year for _, year in chain)
+            ]
+            if not options:
+                continue
+            choice = rng.choice(options)
+            if schedule.get(block) == choice:
+                continue
+            undo[block] = schedule.get(block)
+            schedule[block] = choice
+        if not undo:
+            return None
+        return undo
+
+
 if TYPE_CHECKING:
     from .patch import PatchModel
 

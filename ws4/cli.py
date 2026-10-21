@@ -162,6 +162,12 @@ def optimize(
         0.0, "--cluster-weight", help="Weight of the topology cluster operator (0 disables it)"
     ),
     cluster_size: int = typer.Option(8, "--cluster-size", help="Blocks per cluster move"),
+    coalesce_weight: float = typer.Option(
+        0.0,
+        "--coalesce-weight",
+        help="Weight of the coalesce operator, which aligns a connected cluster to one year",
+    ),
+    coalesce_size: int = typer.Option(8, "--coalesce-size", help="Blocks per coalesce move"),
     merge_weight: float = typer.Option(
         0.0, "--merge-weight", help="Weight of the patch merge operator (0 disables it)"
     ),
@@ -221,6 +227,8 @@ def optimize(
         greedy_seed=seed_greedy,
         cluster_weight=cluster_weight,
         cluster_size=cluster_size,
+        coalesce_weight=coalesce_weight,
+        coalesce_size=coalesce_size,
         merge_weight=merge_weight,
         split_weight=split_weight,
         patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",

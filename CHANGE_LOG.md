@@ -2118,3 +2118,8 @@ issue comments.
   windows gained inclusive `flow_start_period`/`flow_end_period` and `flow_reference_period`.
   Reports and the web target table now carry the period beside the derived year. Full suite: 658
   passed; dashboard GREEN.
+- Added a `coalesce` move: it grows a connected cluster, takes a target treatment year from the seed
+  block, and rechooses the other members onto candidate chains that treat them in that year. This
+  is the patch-shaping counterpart to `cluster` (which rechooses members independently) and `merge`
+  (which only fills partial-membership gaps). Exposed as `--coalesce-weight` and `--coalesce-size`;
+  covered by a connected-cluster test. Full suite: 659 passed; dashboard GREEN.

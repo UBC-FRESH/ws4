@@ -11,7 +11,7 @@ from ws4.build.compiler import build_canonical_dataset
 from ws4.opt.engine import OptimizeConfig, Optimizer
 from ws4.opt.incremental import IncrementalObjective
 from ws4.opt.objective import Target, objective
-from ws4.opt.operators import Schedule
+from ws4.opt.operators import CoalesceOperator, Schedule
 from ws4.opt.solvers import _changed_blocks, solve_sa_delta
 
 _FIXTURE = Path(__file__).resolve().parents[1] / "examples" / "synthetic"
@@ -67,6 +67,23 @@ def _spatial_optimizer(
             core_buffer_m=core_buffer_m,
         ),
     )
+
+
+def test_coalesce_aligns_a_connected_cluster_to_one_year(tmp_path: Path) -> None:
+    """The coalesce move puts adjacent blocks onto the same treatment year."""
+    optimizer = _spatial_optimizer(tmp_path, max_opening_ha=None, min_green_up_years=None)
+    candidates = optimizer.candidates()
+    operator = CoalesceOperator(weight=1.0, size=2, neighbours=optimizer._neighbours())
+    schedule: Schedule = {1: (("CC", 0),), 2: (("CC", 5),)}
+    rng = random.Random(1)
+    undo = None
+    for _ in range(20):
+        undo = operator.propose_inplace(schedule, rng, candidates)
+        if undo is not None:
+            break
+    assert undo is not None
+    years = {chain[0][1] for chain in schedule.values() if chain}
+    assert len(years) == 1
 
 
 def test_spatial_penalty_is_in_the_incremental_objective(tmp_path: Path) -> None:
