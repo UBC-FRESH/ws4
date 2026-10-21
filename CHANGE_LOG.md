@@ -2104,3 +2104,6 @@ issue comments.
 - #165 speed: a feature reduction goal shortlists blocks by the direct feature curve
   before exact candidate scoring, and the reduction-goal seed scores the shortlist in
   forked workers. The exact seed still builds and verifies the schedule.
+- P19.4: MapLibre GL JS with an OpenStreetMap raster basemap is the default map renderer, with
+  the SVG shell kept as a switchable fallback. The service transforms the source CRS to WGS84 for
+  MapLibre (`--crs`, `format=wgs84`); the layer, period and selection contracts are unchanged.

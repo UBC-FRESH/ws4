@@ -71,12 +71,13 @@ Endpoints
      - The run's report files and their sizes.
    * - ``GET /api/runs/{run}/reports/{name}``
      - One report file; a name the run does not hold is a 404.
-   * - ``GET /api/runs/{run}/map?year=&period_start=&layer=&account=``
+   * - ``GET /api/runs/{run}/map?year=&period_start=&layer=&account=&format=``
      - A GeoJSON ``FeatureCollection`` joined to ``--geometry``. ``year`` is the period's end year
        and ``period_start`` its first year, so ``treatments`` covers the period; ``cumulative``
        marks the current period and earlier ones, ``patches`` carries the year's patch membership,
        ``compartments`` the model spread membership (one ``account`` at a time), and ``blocks`` is
-       the bare geometry.
+       the bare geometry. ``format=wgs84`` transforms the geometry for MapLibre; the default is the
+       source CRS the SVG uses.
    * - ``GET /api/runs/{run}/layers``
      - The layers the run can actually draw (treatments, cumulative, patches, compartments), its
        patch and compartment classes/accounts, and the named reasons roads/used roads/compartments
@@ -85,12 +86,13 @@ Endpoints
      - The run's own range: min/max and distinct years from its schedule, patch membership or
        account values, the configured targets' period width, and the folded periods (``start``,
        ``end``, ``label``) the map control steps through.
-   * - ``GET /api/runs/{run}/used-roads?year=``
+   * - ``GET /api/runs/{run}/used-roads?year=&format=``
      - The route model's used segments for one year as GeoJSON ``LineStrings``, from the run's
-       ``used_roads.csv``; a run without the artifact is a named 404.
-   * - ``GET /api/roads``
+       ``used_roads.csv``; a run without the artifact is a named 404. ``format=wgs84`` for MapLibre.
+   * - ``GET /api/roads?format=``
      - The configured source access-road lines as a GeoJSON ``FeatureCollection`` for the map
-       overlay; a service started without ``--roads`` returns a named 404.
+       overlay; a service started without ``--roads`` returns a named 404. ``format=wgs84`` for
+       MapLibre.
    * - ``GET /api/targets``
      - The targets YAML as written.
    * - ``PUT /api/targets``
@@ -150,6 +152,24 @@ The Legend tab builds a grouped tree from ``GET /api/runs/{run}/layers`` and the
   from the source overlay; a run without the artifact names it unavailable rather than drawing
   the source network as if it were used. A run without ``spread_membership.csv`` likewise keeps
   **Spread compartments** unavailable rather than inventing membership.
+
+MapLibre
+--------
+
+The browser shell can render the same layers with **MapLibre GL JS** (vendored in
+``static/vendor``, BSD licensed) and an OpenStreetMap raster basemap. The layer tree and period
+controls are unchanged; the **Map engine** group switches between MapLibre and the SVG fallback.
+MapLibre requests the map, source-road and used-road layers with ``format=wgs84``; the service
+transforms the source CRS with pyproj. Start the service with the CRS the geometry actually uses:
+
+.. code-block:: bash
+
+   ws4 serve --dataset build/compiled --runs runs --geometry blocks.geojson --crs EPSG:26911
+
+The SVG fallback keeps native coordinates and remains available when WebGL or the basemap is
+unavailable. The basemap is an external OpenStreetMap raster source; without network access the
+blocks still draw, but the basemap is blank. MapLibre draws the cumulative earlier-period fill as
+a flat tan rather than the SVG hatch; the API and layer semantics are otherwise identical.
 
 Geometry
 --------

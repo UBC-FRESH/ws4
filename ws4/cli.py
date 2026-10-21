@@ -496,6 +496,9 @@ def serve(
     roads: Path | None = typer.Option(
         None, "--roads", exists=True, help="GeoJSON access-road lines for the map overlay"
     ),
+    crs: str = typer.Option(
+        "EPSG:4326", "--crs", help="Source CRS of --geometry and --roads (MapLibre uses WGS84)"
+    ),
     host: str = typer.Option("127.0.0.1", help="Bind address"),
     port: int = typer.Option(8000, help="Bind port"),
     root_path: str = typer.Option(
@@ -548,6 +551,7 @@ def serve(
             block_coordinates=block_coordinates,
             route_config=route_config,
             roads=roads,
+            crs=crs,
         ),
         host=host,
         port=port,

@@ -91,6 +91,63 @@ def _geometry_features(path: Path) -> list[dict[str, Any]]:
     return features
 
 
+def _to_wgs84(features: list[dict[str, Any]], crs: str) -> list[dict[str, Any]]:
+    """Return features transformed from ``crs`` to WGS84 for MapLibre.
+
+    Parameters
+    ----------
+    features : list of dict
+        GeoJSON features in the source CRS.
+    crs : str
+        The source CRS, for example ``EPSG:3005``.
+
+    Returns
+    -------
+    list of dict
+        Features with WGS84 coordinates. The input features are not mutated.
+
+    Raises
+    ------
+    HTTPException
+        When a non-WGS84 source is requested but pyproj is not installed.
+    """
+    if crs.upper() in {"EPSG:4326", "WGS84", "CRS:84"}:
+        return features
+    try:
+        from pyproj import Transformer
+    except ImportError as error:  # pragma: no cover - depends on the install
+        raise HTTPException(
+            status_code=409,
+            detail=f"MapLibre WGS84 output for {crs} needs pyproj; install the geo extra",
+        ) from error
+    transformer = Transformer.from_crs(crs, "EPSG:4326", always_xy=True)
+
+    def transform(coordinates: object) -> object:
+        if (
+            isinstance(coordinates, (list, tuple))
+            and len(coordinates) >= 2
+            and isinstance(coordinates[0], (int, float))
+            and isinstance(coordinates[1], (int, float))
+        ):
+            x, y = transformer.transform(float(coordinates[0]), float(coordinates[1]))
+            return [x, y]
+        if isinstance(coordinates, (list, tuple)):
+            return [transform(item) for item in coordinates]
+        return coordinates
+
+    return [
+        {
+            **feature,
+            "geometry": {
+                **feature["geometry"],
+                "coordinates": transform(feature["geometry"]["coordinates"]),
+            },
+        }
+        for feature in features
+        if feature.get("geometry")
+    ]
+
+
 def _run_period_width(targets_path: Path | None) -> int:
     """Return the run's display period width, from the configured targets.
 
@@ -182,6 +239,7 @@ def create_app(
     block_coordinates: Path | None = None,
     route_config: Path | None = None,
     roads: Path | None = None,
+    crs: str = "EPSG:4326",
 ) -> FastAPI:
     """Create the WS4 read API.
 
@@ -223,6 +281,9 @@ def create_app(
         Route model and accounts handed to web-started searches.
     roads : Path or None, optional
         A GeoJSON line layer of the source access roads, drawn as an optional map overlay.
+    crs : str, optional
+        The source CRS of the geometry and roads. The SVG shell uses the native coordinates;
+        ``format=wgs84`` transforms them for MapLibre. Default ``EPSG:4326``.
 
     Returns
     -------
@@ -241,6 +302,7 @@ def create_app(
     )
     route_config_path = Path(route_config).resolve() if route_config is not None else None
     roads_path = Path(roads).resolve() if roads is not None else None
+    source_crs = str(crs)
     agent_working_directory = Path(agent_cwd).resolve() if agent_cwd is not None else Path.cwd()
     app = FastAPI(title="WS4", version="0.1.0")
 
@@ -865,16 +927,23 @@ def create_app(
         return {"reply": reply, "session": session_id, "actions": actions[-12:]}
 
     @app.get("/api/roads")
-    def roads_geojson() -> dict[str, Any]:
+    def roads_geojson(format: str = Query(default="projected")) -> dict[str, Any]:
         """Return the configured source access-road lines for the map overlay."""
         if roads_path is None or not roads_path.is_file():
             raise HTTPException(
                 status_code=404, detail="no source road layer is configured (--roads)"
             )
-        return {"type": "FeatureCollection", "features": road_features()}
+        features = road_features()
+        if format == "wgs84":
+            features = _to_wgs84(features, source_crs)
+        return {"type": "FeatureCollection", "features": features}
 
     @app.get("/api/runs/{run}/used-roads")
-    def used_roads_geojson(run: str, year: int | None = Query(default=None)) -> dict[str, Any]:
+    def used_roads_geojson(
+        run: str,
+        year: int | None = Query(default=None),
+        format: str = Query(default="projected"),
+    ) -> dict[str, Any]:
         """Return the run's used road segments for one year, as GeoJSON LineStrings."""
         directory = run_dir(run)
         path = directory / "used_roads.csv"
@@ -909,6 +978,8 @@ def create_app(
                     },
                 }
             )
+        if format == "wgs84":
+            features = _to_wgs84(features, source_crs)
         return {"type": "FeatureCollection", "year": year, "features": features}
 
     @app.get("/api/skins")
@@ -1102,6 +1173,7 @@ def create_app(
         layer: str = Query(default="treatments"),
         account: str | None = Query(default=None),
         period_start: int | None = Query(default=None),
+        format: str = Query(default="projected"),
     ) -> dict[str, Any]:
         """Return a GeoJSON FeatureCollection of every block for one map layer.
 
@@ -1238,6 +1310,8 @@ def create_app(
             features.append(
                 {"type": "Feature", "geometry": base.get("geometry"), "properties": properties}
             )
+        if format == "wgs84":
+            features = _to_wgs84(features, source_crs)
         return {
             "type": "FeatureCollection",
             "features": features,
