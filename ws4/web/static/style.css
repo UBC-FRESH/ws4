@@ -18,8 +18,10 @@ aside { background:var(--panel); border-right:1px solid var(--line); padding:.6r
 nav.tabs { display:flex; gap:.25rem; margin:.6rem .6rem .6rem; }
 nav.tabs button { border:1px solid var(--line); background:#eef2f6; padding:.25rem .55rem; border-radius:.35rem; cursor:pointer; }
 nav.tabs button.active { background:var(--ink); color:#fff; border-color:var(--ink); }
-.chat { flex:none; display:flex; flex-direction:column; gap:.3rem; height:15rem; min-height:8rem;
+.chat { flex:none; display:flex; flex-direction:column; gap:.3rem; height:var(--chat-height,15rem); min-height:8rem;
         padding:.45rem .55rem .55rem; border-top:1px solid var(--line); background:#fbfcfd; }
+#chat-splitter { flex:none; height:6px; cursor:row-resize; background:var(--line); }
+#chat-splitter:hover, #chat-splitter.dragging { background:#b7c4d1; }
 .chat-head { display:flex; align-items:center; gap:.4rem; font-size:.78rem; font-weight:600; }
 .chat-head .chat-model { color:var(--muted); font-weight:400; font-size:.66rem; margin-left:auto;
                          overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:9rem; }
