@@ -211,10 +211,11 @@ deployment needs an authenticating proxy and a separate decision. The model is a
 
 ## Decisions
 
-1. **Stack:** FastAPI + uvicorn as an extra, with a **dependency-free browser shell** for the first cut
-   (vanilla ES modules and SVG), so the service has no Node build and CI needs no JavaScript toolchain.
-   MapLibre + a basemap is the target when WebGL, raster basemaps or large layer counts are needed;
-   the shell's layer/tree/period contracts are written so that swap does not change the API.
+1. **Stack:** FastAPI + uvicorn as an extra, with a **vanilla ES module shell**. P19.4 adds
+   MapLibre GL JS and an OpenStreetMap raster basemap as the default renderer, with the SVG shell
+   kept as the fallback and switchable in the layer tree. The layer/tree/period contracts are the
+   same for both; MapLibre requests WGS84 geometry and the service transforms the source CRS with
+   pyproj. No Node build or JavaScript toolchain is needed.
 2. **The service is a reader.** A run is started by invoking the CLI; the service does not import the
    optimizer into the request process, so a crash in a search cannot take the UI down.
 3. **Targets are the optimizer's YAML**, not a parallel JSON model.

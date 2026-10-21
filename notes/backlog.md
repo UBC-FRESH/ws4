@@ -355,7 +355,9 @@ items are enhancements and maintenance.
   vertices geometry, one row per used segment per year; the service serves it at
   `/api/runs/{run}/used-roads` and the map draws **Used roads (run)** distinctly from the source
   access overlay.
-- **MapLibre and a basemap** when polygon counts or raster layers outgrow the dependency-free SVG shell.
+- **MapLibre and a basemap.** `done` (P19.4). MapLibre GL JS + an OpenStreetMap raster basemap is
+  the default renderer, with the SVG shell kept as a switchable fallback; WGS84 output is transformed
+  from the service's `--crs` with pyproj.
 - **A stability stopping criterion.** `done` (P19.3). `OptimizeConfig.patience` / `--patience`
   stops a start after N iterations without an incumbent improvement; the summary records it and the
   web player exposes it beside the iteration and time limits.
