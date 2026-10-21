@@ -30,7 +30,7 @@ exists and the maintainer approves it.
 | P16 The bridge at the same footprint | #141 | `feature/p16-bridge-matched` | complete |
 | P17 Roads opened to the period | #145 | `feature/p17-opened-roads` | complete |
 | P18 A graphical web front end | #146 | `feature/p18-web-frontend` | complete |
-| P19 Model-derived spatial layers and map scale | #161 | `feature/p19-spatial-layers` | active |
+| P19 Model-derived spatial layers and map scale | #161 | `feature/p19-spatial-layers` | complete |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -750,8 +750,8 @@ current period from the cumulative total.
   colours; the service caches the geometry, and live schedules update only the changed blocks.
   Source attributes (compartment, THEME2, THEME5, MartStrata, LMU) drive an optional base-colour
   mode with a category legend. An optional **source access-road overlay** reads `--roads` and draws
-  the access network. P19.1 and P19.2 now add the model spread-compartment membership and the run's
-  used-road overlay; the MapLibre swap waits for a basemap need.
+  the access network. P19.1 and P19.2 add the model spread-compartment membership and the run's
+  used-road overlay; P19.4 adds MapLibre and the basemap, with the SVG shell kept as the fallback.
 - [x] P18.3 Targets — **live**: a table per account and period with editable min/max/weights, a save
   that validates through the optimizer's loader, the realized value from the selected run's own CSV
   with a met/below/above status, and a **Run search** action that starts the optimizer behind
@@ -779,7 +779,7 @@ green; the design is recorded before the first UI line. Close-out report:
 
 Parent issue: #161
 Branch: `feature/p19-spatial-layers`
-Status: active
+Status: complete
 
 Goal: finish the model-derived spatial layers the P18 close-out deferred, and keep the map usable at
 scale. The source polygons, source compartments and source access roads already ship; this phase adds
@@ -793,12 +793,12 @@ what the model produces.
   period's opened/used segments; serve a used-roads overlay distinct from the source access layer.
 - [x] P19.3 **Stability stopping criterion.** Stop a continuous search after a configurable number of
   iterations without incumbent improvement; expose it in the player and record it in the summary.
-- [ ] P19.4 **Map scale.** Move the polygon/road shell to MapLibre (or an equivalent) when the
+- [x] P19.4 **Map scale.** Move the polygon/road shell to MapLibre (or an equivalent) when the
   feature count or a basemap demands it, with the layer tree contracts unchanged.
-- [ ] P19.5 **Period map control.** Fold years by the targets' ``period_width``, label the map with
+- [x] P19.5 **Period map control.** Fold years by the targets' ``period_width``, label the map with
   the period and its year range, send the period range to the current/cumulative layers, and page
   with left/right arrow keys. This is the period control the P18 design named.
-- [ ] P19.6 **Resizable assistant pane.** A drag bar sizes the lower-left assistant, persisted in
+- [x] P19.6 **Resizable assistant pane.** A drag bar sizes the lower-left assistant, persisted in
   local storage and reset by double-click, so a conversation can use more of the sidebar.
 
 Acceptance: a spread run writes the membership and the layer renders it; a route run writes segment

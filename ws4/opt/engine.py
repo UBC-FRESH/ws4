@@ -68,6 +68,7 @@ from .operators import (
     ToggleOperator,
 )
 from .patch import PatchModel
+from .prescreen import feature_goal_blocks
 from .seeding import greedy_schedule
 from .solvers import (
     expired,
@@ -225,6 +226,10 @@ class OptimizeConfig:
         ranked by the penalty they remove from the declared floors per unit of the declared
         ceilings, taken in that order while no ceiling is breached. Unlike ``warm_start`` it
         reads the targets, so it respects a budget rather than ignoring it.
+    seed_account : str
+        When set with ``greedy_seed``, the target account to reduce to its maximum instead of
+        satisfying floors. Other maximum targets are its cost ceilings; this is the hazard-shaped
+        seed. Empty uses the floor mode.
     mip_bound : bool
         Whether to solve the mixed-integer lower bound and record it in the summary.
     topology_path : str
@@ -307,6 +312,7 @@ class OptimizeConfig:
     episodes: int = 1
     warm_start: bool = False
     greedy_seed: bool = False
+    seed_account: str = ""
     mip_bound: bool = False
     topology_path: str = ""
     route_config_path: str = ""
@@ -1067,17 +1073,50 @@ class Optimizer:
             )
         return self.cfg.spatial_weight * penalty
 
-    def greedy_schedule(self, targets: Sequence[Target] | None = None) -> Schedule:
+    def _seed_candidates(self, targets: Sequence[Target], account: str | None) -> Candidates:
+        """Return the candidate set for a seed, optionally screening a feature goal.
+
+        A feature goal with product cost ceilings is screened by its direct curves before the
+        exact seed scores candidates; the exact seed still prices every shortlisted chain. The
+        full candidate set is used when the screen does not apply.
+        """
+        candidates = self.candidates()
+        if not account:
+            return candidates
+        screened = feature_goal_blocks(
+            self.dataset_dir,
+            account,
+            targets,
+            self.cfg.years,
+            40_000,
+        )
+        if screened:
+            return {block: chains for block, chains in candidates.items() if block in screened}
+        return candidates
+
+    def greedy_schedule(
+        self,
+        targets: Sequence[Target] | None = None,
+        seed_account: str | None = None,
+        workers: int | None = None,
+    ) -> Schedule:
         """Return a schedule built by construction against the run's targets, or an empty one.
 
         A starting point for the search rather than a result: candidate chains are ranked by the
         penalty they remove from the declared floors per unit of the declared ceilings, and taken in
-        that order while no ceiling is breached. See :func:`ws4.opt.seeding.greedy_schedule`.
+        that order while no ceiling is breached. When ``seed_account`` names a target with a
+        maximum, that target is reduced to its maximum and the other maximum targets are its cost
+        ceilings. See :func:`ws4.opt.seeding.greedy_schedule`.
 
         Parameters
         ----------
         targets : sequence of Target or None, optional
             The targets to build against, or None to load the run's own.
+        seed_account : str or None, optional
+            The reduction goal account, or None to use the configuration's ``seed_account``.
+        workers : int or None, optional
+            Forked processes for reduction-goal scoring, or None to use the configuration's
+            ``workers``. The floor mode is serial.
 
         Returns
         -------
@@ -1102,7 +1141,13 @@ class Optimizer:
                 "has none: it declares duplicate accounts, a build route account, or edge "
                 "contrast, each of which rewrites or extends the account values"
             )
-        return greedy_schedule(evaluator, self.candidates())
+        account = self.cfg.seed_account if seed_account is None else seed_account
+        return greedy_schedule(
+            evaluator,
+            self._seed_candidates(goals, account or None),
+            goal_account=account or None,
+            workers=self.cfg.workers if workers is None else workers,
+        )
 
     def _solve(
         self,
@@ -1152,7 +1197,12 @@ class Optimizer:
         if initial is None and self.cfg.greedy_seed:
             evaluator = self.delta_evaluator(targets)
             if evaluator is not None:
-                initial = greedy_schedule(evaluator, candidates)
+                initial = greedy_schedule(
+                    evaluator,
+                    self._seed_candidates(targets, self.cfg.seed_account or None),
+                    goal_account=self.cfg.seed_account or None,
+                    workers=self.cfg.workers,
+                )
         if initial is None and self.cfg.warm_start:
             initial = {block: options[0] for block, options in candidates.items() if options}
         if self.cfg.metaheuristic == "tabu":

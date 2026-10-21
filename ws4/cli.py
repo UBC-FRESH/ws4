@@ -158,6 +158,11 @@ def optimize(
         "--seed-greedy",
         help="Seed the search with a schedule built from the declared targets and ceilings",
     ),
+    seed_account: str = typer.Option(
+        "",
+        "--seed-account",
+        help="With --seed-greedy, reduce this target account to its maximum instead of floors",
+    ),
     cluster_weight: float = typer.Option(
         0.0, "--cluster-weight", help="Weight of the topology cluster operator (0 disables it)"
     ),
@@ -235,6 +240,7 @@ def optimize(
         lns_destroy=lns_destroy,
         warm_cache=warm_cache,
         greedy_seed=seed_greedy,
+        seed_account=seed_account,
         cluster_weight=cluster_weight,
         cluster_size=cluster_size,
         coalesce_weight=coalesce_weight,
@@ -301,6 +307,11 @@ def watch(
         "--seed-greedy",
         help="Seed the search with a schedule built from the declared targets and ceilings",
     ),
+    seed_account: str = typer.Option(
+        "",
+        "--seed-account",
+        help="With --seed-greedy, reduce this target account to its maximum instead of floors",
+    ),
     islands: int = typer.Option(0, "--islands", help="Parallel islands (0 = single search)"),
     cluster_weight: float = typer.Option(
         0.0, "--cluster-weight", help="Weight of the topology cluster operator (0 disables it)"
@@ -350,6 +361,7 @@ def watch(
         lns_destroy=lns_destroy,
         warm_cache=warm_cache,
         greedy_seed=seed_greedy,
+        seed_account=seed_account,
         islands=islands,
         workers=islands,
         cluster_weight=cluster_weight,
@@ -517,6 +529,9 @@ def serve(
     roads: Path | None = typer.Option(
         None, "--roads", exists=True, help="GeoJSON access-road lines for the map overlay"
     ),
+    crs: str = typer.Option(
+        "EPSG:4326", "--crs", help="Source CRS of --geometry and --roads (MapLibre uses WGS84)"
+    ),
     host: str = typer.Option("127.0.0.1", help="Bind address"),
     port: int = typer.Option(8000, help="Bind port"),
     root_path: str = typer.Option(
@@ -569,6 +584,7 @@ def serve(
             block_coordinates=block_coordinates,
             route_config=route_config,
             roads=roads,
+            crs=crs,
         ),
         host=host,
         port=port,

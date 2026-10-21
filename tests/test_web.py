@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import subprocess
 from pathlib import Path
+from typing import Any, cast
 
 import pandas as pd
 import pytest
@@ -79,6 +80,27 @@ def _app(tmp_path: Path, *, with_geometry: bool = True) -> tuple[TestClient, Pat
         geometry=geometry if with_geometry else None,
     )
     return TestClient(app), targets
+
+
+def test_the_wgs84_transform_is_for_maplibre_only() -> None:
+    """The SVG keeps native coordinates; the MapLibre format transforms without mutating input."""
+    pytest.importorskip("pyproj")
+    from ws4.web.app import _to_wgs84
+
+    feature = {
+        "type": "Feature",
+        "properties": {"block_id": 1},
+        "geometry": {"type": "Point", "coordinates": [662656.9, 5558125.9]},
+    }
+    out = _to_wgs84([feature], "EPSG:26911")
+    geometry = cast(dict[str, Any], out[0]["geometry"])
+    coordinates = geometry["coordinates"]
+    assert isinstance(coordinates, list)
+    lon, lat = coordinates
+    assert -114.8 < lon < -114.6
+    assert 50.0 < lat < 50.3
+    original = cast(dict[str, Any], feature["geometry"])
+    assert original["coordinates"] == [662656.9, 5558125.9]
 
 
 def test_the_landing_page_lists_the_dataset_and_its_runs(tmp_path: Path) -> None:

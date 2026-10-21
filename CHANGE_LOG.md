@@ -2131,3 +2131,12 @@ issue comments.
   period is inside its band. The watch panel excludes flow targets, whose series is a percent
   profile rather than an account level. `patch_first_search` now shows all 52 target rows met.
   Full suite: 659 passed; dashboard GREEN.
+- #165: `--seed-greedy --seed-account ACCOUNT` builds a schedule that reduces a named
+  maximum target (the hazard-shaped case) under its other maximum targets' cost ceilings.
+  The default `--seed-greedy` floor mode is unchanged.
+- #165 speed: a feature reduction goal shortlists blocks by the direct feature curve
+  before exact candidate scoring, and the reduction-goal seed scores the shortlist in
+  forked workers. The exact seed still builds and verifies the schedule.
+- P19.4: MapLibre GL JS with an OpenStreetMap raster basemap is the default map renderer, with
+  the SVG shell kept as a switchable fallback. The service transforms the source CRS to WGS84 for
+  MapLibre (`--crs`, `format=wgs84`); the layer, period and selection contracts are unchanged.

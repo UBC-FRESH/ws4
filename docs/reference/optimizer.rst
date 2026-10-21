@@ -176,6 +176,34 @@ The solvers are simulated annealing (``sa``), tabu search (``tabu``), and iterat
 (``OptimizeConfig.starts``), serial or across a process pool (``OptimizeConfig.workers``), keeping the
 best. ``OptimizeConfig.warm_start`` seeds the search from each block's first candidate.
 
+Seeding a target by construction
+--------------------------------
+
+``--seed-greedy`` builds a starting schedule from the targets instead of relying on the
+one-block moves to find hundreds of them. In the default mode the declared **floors** are the
+goal: candidates are ranked by the penalty they remove per unit of the declared cost
+ceilings, and taken until the ceilings would be breached. This is the aggregate-area case
+(#133/P14).
+
+    ws4 optimize --dataset build/compiled --targets targets.yaml --seed-greedy ...
+
+A **reduction goal** uses ``--seed-account`` instead. The named target must be active and
+have a ``maximum``; the other maximum targets are its cost ceilings. Candidates are ranked
+by the penalty they remove from that target per unit of cost, and taken until the target is
+met or the budget is exhausted. This is the hazard-shaped case:
+
+    ws4 optimize --dataset build/compiled --targets hazard.yaml \
+                 --seed-greedy --seed-account feature.FuelHazard ...
+
+The seed is a starting point, not an enforcement: the search remains free to soften any
+bound. The goal seed is exact for the simulator's account deltas, so its result is checked
+by the same ``report_targets.csv`` as a normal run.
+
+For a large feature goal with product cost ceilings, the seed first shortlists the 40,000
+blocks with the cheapest direct feature-curve reduction per dollar, then prices the
+shortlisted chains exactly. The screen is a heuristic for speed; it never substitutes an
+estimated value for the reported result. Other goal shapes use the full candidate set.
+
 Simulated annealing cools geometrically by default (``OptimizeConfig.temperature`` and
 ``OptimizeConfig.cooling``). Setting ``OptimizeConfig.cooling_mode`` to ``adaptive`` (``--cooling-mode
 adaptive``) uses the polynomial-time schedule of Aarts and Van Laarhoven instead: the initial

@@ -4,11 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=40">
+  <link rel="stylesheet" href="static/style.css?v=41">
+  <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
 </head>
 <body>
   <header>
-    <strong>WS4</strong><span class="build">v40</span>
+    <strong>WS4</strong><span class="build">v41</span>
     <label>Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Period
@@ -126,6 +127,7 @@
     </aside>
     <div id="splitter" title="Drag to resize the panel"></div>
     <div id="map-wrap">
+      <div id="maplibre-map" hidden></div>
       <svg id="map" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <pattern id="earlier-hatch" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)">
@@ -139,6 +141,7 @@
       <div class="scale" id="scale"></div>
     </div>
   </main>
-  <script type="module" src="static/app.js?v=40"></script>
+  <script src="static/vendor/maplibre-gl.js"></script>
+  <script type="module" src="static/app.js?v=41"></script>
 </body>
 </html>
