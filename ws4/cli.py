@@ -168,6 +168,16 @@ def optimize(
         help="Weight of the coalesce operator, which aligns a connected cluster to one year",
     ),
     coalesce_size: int = typer.Option(8, "--coalesce-size", help="Blocks per coalesce move"),
+    coalesce_min_area_ha: float = typer.Option(
+        5.0,
+        "--coalesce-min-area-ha",
+        help="Smallest opening area a coalesce move will build",
+    ),
+    coalesce_max_area_ha: float = typer.Option(
+        40.0,
+        "--coalesce-max-area-ha",
+        help="Largest opening area a coalesce move will build",
+    ),
     merge_weight: float = typer.Option(
         0.0, "--merge-weight", help="Weight of the patch merge operator (0 disables it)"
     ),
@@ -229,6 +239,8 @@ def optimize(
         cluster_size=cluster_size,
         coalesce_weight=coalesce_weight,
         coalesce_size=coalesce_size,
+        coalesce_min_area_ha=coalesce_min_area_ha,
+        coalesce_max_area_ha=coalesce_max_area_ha,
         merge_weight=merge_weight,
         split_weight=split_weight,
         patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",

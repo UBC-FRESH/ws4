@@ -2121,5 +2121,7 @@ issue comments.
 - Added a `coalesce` move: it grows a connected cluster, takes a target treatment year from the seed
   block, and rechooses the other members onto candidate chains that treat them in that year. This
   is the patch-shaping counterpart to `cluster` (which rechooses members independently) and `merge`
-  (which only fills partial-membership gaps). Exposed as `--coalesce-weight` and `--coalesce-size`;
-  covered by a connected-cluster test. Full suite: 659 passed; dashboard GREEN.
+  (which only fills partial-membership gaps). Exposed as `--coalesce-weight`, `--coalesce-size`, `--coalesce-min-area-ha`
+  and `--coalesce-max-area-ha`; the cluster grows until its criterion-weighted area is
+  inside the band (default 5-40 ha). Covered by a connected-cluster test. Full suite:
+  659 passed; dashboard GREEN.

@@ -264,6 +264,10 @@ class OptimizeConfig:
         onto one treatment year; 0 disables it.
     coalesce_size : int
         The maximum number of blocks in a coalesce move.
+    coalesce_min_area_ha : float
+        The smallest opening area a coalesce move will build.
+    coalesce_max_area_ha : float
+        The largest opening area a coalesce move will build.
     warm_cache : bool
         Whether to pre-warm the per-block delta cache before the search.
     patch_accounts_path : str
@@ -322,6 +326,8 @@ class OptimizeConfig:
     cluster_size: int = 8
     coalesce_weight: float = 0.0
     coalesce_size: int = 8
+    coalesce_min_area_ha: float = 5.0
+    coalesce_max_area_ha: float = 40.0
     warm_cache: bool = False
     patch_accounts_path: str = ""
     spread_accounts_path: str = ""
@@ -379,8 +385,11 @@ class Optimizer:
                     neighbours=self._neighbours() if cfg.cluster_weight > 0.0 else {},
                 ),
                 CoalesceOperator(
+                    self,
                     weight=cfg.coalesce_weight,
                     size=cfg.coalesce_size,
+                    min_area_ha=cfg.coalesce_min_area_ha,
+                    max_area_ha=cfg.coalesce_max_area_ha,
                     neighbours=(self._neighbours() if cfg.coalesce_weight > 0.0 else {}),
                 ),
                 MergeOperator(self, weight=cfg.merge_weight),

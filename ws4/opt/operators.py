@@ -489,20 +489,27 @@ class ClusterOperator(_OperatorBase):
 
 
 class CoalesceOperator(_OperatorBase):
-    """Align a connected cluster onto one treatment year.
+    """Align a connected cluster onto one treatment year, within an area band.
 
     The cluster and merge operators change which blocks are assigned, but a large
-    opening also needs its blocks treated in the **same year**. This operator grows
-    a connected cluster, picks a target year from the seed block (its current chain,
-    or one of its candidate years), and rechooses every other cluster member onto a
-    candidate chain that treats it in that year.
+    opening also needs its blocks treated in the **same year** and its total area
+    inside the policy band. This operator grows a connected cluster until its
+    criterion-weighted area reaches ``min_area_ha`` (without exceeding
+    ``max_area_ha``), takes a target year from the seed block, and rechooses every
+    member onto a candidate chain that treats it in that year.
 
     Parameters
     ----------
+    optimizer : PatchSource
+        The optimizer, used to read the active patch criterion and block areas.
     weight : float, optional
         The operator's selection weight. Defaults to 0.2.
     size : int, optional
         The maximum number of blocks in the cluster. Defaults to 8.
+    min_area_ha : float, optional
+        The smallest opening area the move will build. Defaults to 5 ha.
+    max_area_ha : float, optional
+        The largest opening area the move will build. Defaults to 40 ha.
     neighbours : mapping of int to tuple of int, optional
         The topological neighbours per block. An empty map leaves every cluster a
         single block, so the move is unavailable.
@@ -512,34 +519,39 @@ class CoalesceOperator(_OperatorBase):
 
     def __init__(
         self,
+        optimizer: PatchSource,
         *,
         weight: float = 0.2,
         size: int = 8,
+        min_area_ha: float = 5.0,
+        max_area_ha: float = 40.0,
         neighbours: Mapping[int, tuple[int, ...]] | None = None,
     ) -> None:
-        """Set the weight, the cluster size, and the topological neighbours per block."""
+        """Set the optimizer, weight, cluster size, area band and neighbours."""
+        if min_area_ha < 0.0 or max_area_ha <= min_area_ha:
+            raise ValueError("coalesce requires 0 <= min_area_ha < max_area_ha")
+        self.optimizer = optimizer
         self.weight = weight
         self.size = size
+        self.min_area_ha = min_area_ha
+        self.max_area_ha = max_area_ha
         self.neighbours = neighbours or {}
 
-    def _grow(self, seed: int, rng: random.Random) -> list[int]:
-        """Return a connected set of at most ``size`` blocks, grown from ``seed``."""
-        chosen = [seed]
-        seen = {seed}
-        frontier = [seed]
-        while frontier and len(chosen) < self.size:
-            block = frontier.pop(rng.randrange(len(frontier)))
-            options = list(self.neighbours.get(block, ()))
-            rng.shuffle(options)
-            for other in options:
-                if other in seen:
-                    continue
-                seen.add(other)
-                chosen.append(other)
-                frontier.append(other)
-                if len(chosen) >= self.size:
-                    break
-        return chosen
+    def _area(
+        self,
+        block: int,
+        chain: Chain,
+        label: str | None,
+        year: int,
+        block_area: Mapping[int, float],
+        model: object | None,
+    ) -> float:
+        """Return the criterion-weighted area a chain contributes in a year."""
+        area = float(block_area.get(block, 0.0))
+        if label is None or model is None:
+            return area
+        value = model.value(block, chain, label, year)  # type: ignore[attr-defined]
+        return max(0.0, area * float(value))
 
     def propose_inplace(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
@@ -558,16 +570,18 @@ class CoalesceOperator(_OperatorBase):
         Returns
         -------
         dict of int to Chain or None
-            The previous chain per touched block, or None when no two blocks can be
-            aligned.
+            The previous chain per touched block, or None when no opening in the area
+            band can be built.
         """
         assignable = [block for block, options in candidates.items() if options]
         if not assignable:
             return None
+        model = self.optimizer.active_patch_model()
+        labels = tuple(getattr(model, "labels", ())) if model is not None else ()
+        label = labels[0] if labels else None
+        block_area = self.optimizer._block_area()  # type: ignore[attr-defined]
+
         seed = rng.choice(assignable)
-        cluster = self._grow(seed, rng)
-        if len(cluster) < 2:
-            return None
         seed_chain = schedule.get(seed)
         if seed_chain:
             target_year = int(seed_chain[0][1])
@@ -577,16 +591,42 @@ class CoalesceOperator(_OperatorBase):
                 return None
             target_year = int(rng.choice(seed_options)[0][1])
 
-        undo: Undo = {}
-        for block in cluster:
-            options = [
+        def options_at_year(block: int) -> list[Chain]:
+            return [
                 chain
                 for chain in candidates.get(block, ())
                 if chain and any(int(year) == target_year for _, year in chain)
             ]
+
+        seed_options = options_at_year(seed)
+        if not seed_options:
+            return None
+        chosen: dict[int, Chain] = {seed: rng.choice(seed_options)}
+        total = self._area(seed, chosen[seed], label, target_year, block_area, model)
+        if total > self.max_area_ha:
+            return None
+        seen = {seed}
+        frontier = list(self.neighbours.get(seed, ()))
+        while total < self.min_area_ha and frontier and len(chosen) < self.size:
+            block = frontier.pop(rng.randrange(len(frontier)))
+            if block in seen or block in chosen:
+                continue
+            seen.add(block)
+            options = options_at_year(block)
             if not options:
                 continue
             choice = rng.choice(options)
+            area = self._area(block, choice, label, target_year, block_area, model)
+            if area <= 0.0 or total + area > self.max_area_ha:
+                continue
+            chosen[block] = choice
+            total += area
+            frontier.extend(other for other in self.neighbours.get(block, ()) if other not in seen)
+        if total < self.min_area_ha:
+            return None
+
+        undo: Undo = {}
+        for block, choice in chosen.items():
             if schedule.get(block) == choice:
                 continue
             undo[block] = schedule.get(block)

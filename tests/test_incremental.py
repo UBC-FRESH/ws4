@@ -73,7 +73,14 @@ def test_coalesce_aligns_a_connected_cluster_to_one_year(tmp_path: Path) -> None
     """The coalesce move puts adjacent blocks onto the same treatment year."""
     optimizer = _spatial_optimizer(tmp_path, max_opening_ha=None, min_green_up_years=None)
     candidates = optimizer.candidates()
-    operator = CoalesceOperator(weight=1.0, size=2, neighbours=optimizer._neighbours())
+    operator = CoalesceOperator(
+        optimizer,
+        weight=1.0,
+        size=2,
+        min_area_ha=5.0,
+        max_area_ha=40.0,
+        neighbours=optimizer._neighbours(),
+    )
     schedule: Schedule = {1: (("CC", 0),), 2: (("CC", 5),)}
     rng = random.Random(1)
     undo = None
