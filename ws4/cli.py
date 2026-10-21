@@ -147,6 +147,11 @@ def optimize(
         "--seed-greedy",
         help="Seed the search with a schedule built from the declared targets and ceilings",
     ),
+    seed_account: str = typer.Option(
+        "",
+        "--seed-account",
+        help="With --seed-greedy, reduce this target account to its maximum instead of floors",
+    ),
     cluster_weight: float = typer.Option(
         0.0, "--cluster-weight", help="Weight of the topology cluster operator (0 disables it)"
     ),
@@ -206,6 +211,7 @@ def optimize(
         lns_destroy=lns_destroy,
         warm_cache=warm_cache,
         greedy_seed=seed_greedy,
+        seed_account=seed_account,
         cluster_weight=cluster_weight,
         cluster_size=cluster_size,
         merge_weight=merge_weight,
@@ -268,6 +274,11 @@ def watch(
         "--seed-greedy",
         help="Seed the search with a schedule built from the declared targets and ceilings",
     ),
+    seed_account: str = typer.Option(
+        "",
+        "--seed-account",
+        help="With --seed-greedy, reduce this target account to its maximum instead of floors",
+    ),
     islands: int = typer.Option(0, "--islands", help="Parallel islands (0 = single search)"),
     cluster_weight: float = typer.Option(
         0.0, "--cluster-weight", help="Weight of the topology cluster operator (0 disables it)"
@@ -317,6 +328,7 @@ def watch(
         lns_destroy=lns_destroy,
         warm_cache=warm_cache,
         greedy_seed=seed_greedy,
+        seed_account=seed_account,
         islands=islands,
         workers=islands,
         cluster_weight=cluster_weight,

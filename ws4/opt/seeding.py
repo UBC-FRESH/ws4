@@ -67,16 +67,25 @@ def target_value(cells: Sequence[tuple[int, str]], totals: dict[tuple[int, str],
 
 
 def greedy_schedule(
-    evaluator: IncrementalObjective, candidates: Candidates, limit: int | None = None
+    evaluator: IncrementalObjective,
+    candidates: Candidates,
+    limit: int | None = None,
+    goal_account: str | None = None,
 ) -> Schedule:
-    """Return an initial schedule built to satisfy the declared floors within the declared ceilings.
+    """Return an initial schedule built by construction against the run's targets.
 
-    The rule is deliberately simple and general. Every candidate chain is scored once — the penalty
-    it removes from the floors, per unit of the ceilings it spends — the candidates are taken in
-    that order, **skipping any that would push a ceiling past its maximum**. Nothing is enforced:
-    the result is a starting point for the search, which is still free to soften any bound, and the
-    ceilings are respected only so that the seed is not worse than the schedule the search already
-    rejects.
+    The default mode satisfies the declared floors within the declared ceilings. Every candidate
+    chain is scored once — the penalty it removes from the floors, per unit of the ceilings it
+    spends — and the candidates are taken in that order, **skipping any that would push a ceiling
+    past its maximum**. Nothing is enforced: the result is a starting point for the search, which
+    is still free to soften any bound, and the ceilings are respected only so that the seed is not
+    worse than the schedule the search already rejects.
+
+    With ``goal_account``, the named target is a **reduction goal** instead: it must have a
+    maximum, and the other maximum targets are its cost ceilings. A candidate is scored by the
+    penalty it removes from that goal per unit of cost it adds, and candidates are taken until the
+    goal is met or the budget is exhausted. This is the hazard-shaped case (one maximum to reduce
+    under several cost ceilings); the area-shaped case is the default floor mode.
 
     A candidate is a whole chain for a block, so a block is treated at most once and the schedule
     returned is a valid search state.
@@ -89,6 +98,10 @@ def greedy_schedule(
         The candidate chains per block.
     limit : int or None, optional
         The most moves to take, or None for one per block at most.
+    goal_account : str or None, optional
+        A target account to reduce to its maximum, rather than a floor to satisfy. The account
+        must name exactly one active target with a maximum; its other maximum targets are the cost
+        ceilings. None (the default) uses the floor mode.
 
     Returns
     -------
@@ -98,20 +111,87 @@ def greedy_schedule(
     Raises
     ------
     ValueError
-        When a limit is given that is not positive.
+        When a limit is given that is not positive, or ``goal_account`` names no unique active
+        target with a maximum.
     """
     if limit is not None and limit < 1:
         raise ValueError(f"a limit of {limit} moves is not a schedule")
     targets = evaluator.targets
+    years = evaluator.optimizer.cfg.years
+    cells = [target_cells(target, years) for target in targets]
+    if goal_account is not None:
+        matches = [index for index, target in enumerate(targets) if target.account == goal_account]
+        if len(matches) != 1 or targets[matches[0]].maximum is None:
+            raise ValueError(
+                f"goal account {goal_account!r} must name exactly one active target with a maximum"
+            )
+        goal_index = matches[0]
+        goal = targets[goal_index]
+        goal_cells = cells[goal_index]
+        ceilings = [
+            index
+            for index, target in enumerate(targets)
+            if index != goal_index and target.maximum is not None
+        ]
+        evaluator.reset({})
+        totals = dict(evaluator.totals)
+        goal_value = target_value(goal_cells, totals)
+        if goal.maximum is not None and goal_value <= goal.maximum:
+            return {}
+        scored: list[tuple[float, int, Chain]] = []
+        for block, options in candidates.items():
+            for chain in options:
+                if not chain:
+                    continue
+                contribution = evaluator.contribution(block, chain)
+                after = goal_value + sum(contribution.get(cell, 0.0) for cell in goal_cells)
+                gain = penalty(goal_value, goal) - penalty(after, goal)
+                if gain <= 0.0:
+                    continue
+                cost = 0.0
+                for index in ceilings:
+                    cost += sum(max(contribution.get(cell, 0.0), 0.0) for cell in cells[index])
+                scored.append((gain / (cost + _UNIT_COST), block, chain))
+        scored.sort(key=lambda entry: -entry[0])
+        chosen: Schedule = {}
+        spent: dict[int, float] = {
+            index: sum(max(totals.get(cell, 0.0), 0.0) for cell in cells[index])
+            for index in ceilings
+        }
+        current = goal_value
+        for _score, block, chain in scored:
+            if block in chosen:
+                continue
+            if limit is not None and len(chosen) >= limit:
+                break
+            contribution = evaluator.contribution(block, chain)
+            addition = {
+                index: sum(max(contribution.get(cell, 0.0), 0.0) for cell in cells[index])
+                for index in ceilings
+            }
+            breached = False
+            for index in ceilings:
+                ceiling = targets[index].maximum
+                if ceiling is not None and spent[index] + addition[index] > ceiling:
+                    breached = True
+                    break
+            if breached:
+                continue
+            chosen[block] = chain
+            current += sum(contribution.get(cell, 0.0) for cell in goal_cells)
+            for index in ceilings:
+                spent[index] += addition[index]
+            if goal.maximum is not None and current <= goal.maximum:
+                break
+        evaluator.reset(chosen)
+        return chosen
     ceilings = [index for index, target in enumerate(targets) if target.maximum is not None]
     floors = [index for index, target in enumerate(targets) if target.minimum is not None]
     if not floors:
         return {}
-    years = evaluator.optimizer.cfg.years
-    cells = [target_cells(target, years) for target in targets]
     evaluator.reset({})
     totals = dict(evaluator.totals)
-    scored: list[tuple[float, int, Chain]] = []
+    scored = []
     for block, options in candidates.items():
         for chain in options:
             if not chain:
@@ -130,8 +210,8 @@ def greedy_schedule(
                 cost += sum(max(contribution.get(cell, 0.0), 0.0) for cell in cells[index])
             scored.append((gain / (cost + _UNIT_COST), block, chain))
     scored.sort(key=lambda entry: -entry[0])
-    chosen: Schedule = {}
-    spent: dict[int, float] = dict.fromkeys(ceilings, 0.0)
+    chosen = {}
+    spent = dict.fromkeys(ceilings, 0.0)
     for _score, block, chain in scored:
         if block in chosen:
             continue
