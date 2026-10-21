@@ -2096,3 +2096,5 @@ issue comments.
 - P19.5: the map control steps by accounting periods (the targets' `period_width`) rather than
   years, labels the period with its year range, sends the period range to the map, and pages with
   left/right arrow keys.
+- P19.6: the lower-left assistant has a draggable height splitter (persisted, double-click resets)
+  so a long conversation can use more of the sidebar.

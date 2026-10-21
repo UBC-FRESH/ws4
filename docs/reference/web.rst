@@ -225,7 +225,9 @@ service user's filesystem and shell permissions and auto-approves its own tool c
 can reach the service can therefore ask it to change files or run commands. Keep the service on
 loopback (the default) or behind an authenticating proxy, and do not enable it on a shared service.
 The panel keeps one OpenCode session per conversation and starts a new one with **New**; a session
-id is lost on reload, so a fresh page starts a fresh conversation.
+id is lost on reload, so a fresh page starts a fresh conversation. A horizontal drag bar above the
+panel resizes its height (8 rem minimum, leaving the layer panel usable); the height is kept in
+local storage, and double-clicking the bar restores the default.
 
 Reports
 -------

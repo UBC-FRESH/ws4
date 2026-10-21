@@ -798,6 +798,8 @@ what the model produces.
 - [ ] P19.5 **Period map control.** Fold years by the targets' ``period_width``, label the map with
   the period and its year range, send the period range to the current/cumulative layers, and page
   with left/right arrow keys. This is the period control the P18 design named.
+- [ ] P19.6 **Resizable assistant pane.** A drag bar sizes the lower-left assistant, persisted in
+  local storage and reset by double-click, so a conversation can use more of the sidebar.
 
 Acceptance: a spread run writes the membership and the layer renders it; a route run writes segment
 geometry/use; a stability stop writes the usual summary and names the criterion; the dashboard is
