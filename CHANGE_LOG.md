@@ -2090,3 +2090,6 @@ issue comments.
 - P19.2: route runs write `used_roads.csv` with the used segments' vertex geometry (when the
   vertices table has coordinates); the service serves the year's used roads as a GeoJSON overlay
   and the web layer tree draws it distinctly from the source access layer.
+- P19.3: a stability stop (`patience`) ends a start after a configurable run of iterations without
+  an incumbent improvement; the optimizer/CLI record it in the summary, and the web player exposes
+  the field beside its iteration and time limits.

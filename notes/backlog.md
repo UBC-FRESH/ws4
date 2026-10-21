@@ -356,7 +356,8 @@ items are enhancements and maintenance.
   `/api/runs/{run}/used-roads` and the map draws **Used roads (run)** distinctly from the source
   access overlay.
 - **MapLibre and a basemap** when polygon counts or raster layers outgrow the dependency-free SVG shell.
-- **A stability stopping criterion** (stop after N iterations without improvement); the player offers
-  iterations and time only.
+- **A stability stopping criterion.** `done` (P19.3). `OptimizeConfig.patience` / `--patience`
+  stops a start after N iterations without an incumbent improvement; the summary records it and the
+  web player exposes it beside the iteration and time limits.
 - **Shared embedded assistant.** The local OpenCode assistant is behind `--allow-agent`; a shared
   deployment needs authentication and a deliberate decision about shell/filesystem access.

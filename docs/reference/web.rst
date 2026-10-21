@@ -100,7 +100,8 @@ Endpoints
      - Start a search with the configured dataset and targets. **Refused unless the service was started
        with ``--allow-runs``**; iterations and years are bounded. With no ``iterations`` (or ``0``) the
        run is **continuous** until stopped, with a 24-hour safety limit; a positive ``iterations`` is the
-       stopping criterion.
+       budget, and ``patience`` (default 0, off) stops after that many iterations without an incumbent
+       improvement. The body may also carry ``time_limit``, ``seed``, ``years`` and ``islands``.
    * - ``POST /api/runs/{run}/control``
      - ``{"action": "pause" | "run" | "stop"}``. The search polls its ``control.json`` every 64
        iterations: pause holds it, and stop returns its best schedule so the run writes its summary.

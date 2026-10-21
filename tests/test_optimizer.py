@@ -11,14 +11,51 @@ import pytest
 from typer.testing import CliRunner
 from ws4.build.compiler import build_canonical_dataset
 from ws4.cli import app
+from ws4.opt.core import Problem
 from ws4.opt.engine import OptimizeConfig, Optimizer
 from ws4.opt.incremental import IncrementalObjective
 from ws4.opt.objective import Target, load_targets, objective, objective_terms, penalty
-from ws4.opt.operators import Schedule
+from ws4.opt.operators import OperatorRegistry, Schedule, ToggleOperator
+from ws4.opt.solvers import patience_reached, solve_sa
 from ws4.opt.telemetry import RunLogger, read_records
 from ws4.patch.constraints import core_area_penalty, schedule_years, spatial_penalty
 
 _FIXTURE = Path(__file__).resolve().parents[1] / "examples" / "synthetic"
+
+
+def test_patience_is_a_stability_stop_only_when_enabled() -> None:
+    """The stability stop fires after the configured run of unimproved iterations."""
+    assert patience_reached(0, 0, 0) is False
+    assert patience_reached(10, 10, 0) is False
+    assert patience_reached(9, 0, 10) is False
+    assert patience_reached(10, 0, 10) is True
+    assert patience_reached(20, 10, 10) is True
+    with pytest.raises(ValueError, match="patience"):
+        OptimizeConfig(patience=-1)
+
+
+def test_the_solver_stops_after_patience_without_an_improvement() -> None:
+    """The stability stop bounds a start that cannot improve, not only the helper."""
+    import random
+
+    steps: list[int] = []
+    problem = Problem(
+        evaluate=lambda schedule: 0.0,
+        candidates={},
+        registry=OperatorRegistry([ToggleOperator()]),
+    )
+    best, objective = solve_sa(
+        problem,
+        random.Random(1),
+        iterations=100,
+        temperature=1.0,
+        cooling=1.0,
+        patience=5,
+        on_step=lambda iteration, value: steps.append(iteration),
+    )
+    assert best == {}
+    assert objective == 0.0
+    assert steps == [0, 1, 2, 3, 4]
 
 
 def test_penalty_weights_shortfall_and_excess() -> None:

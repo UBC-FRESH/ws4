@@ -105,6 +105,11 @@ def optimize(
         None, "--control-file", help="JSON file that can pause or stop the search"
     ),
     iterations: int = typer.Option(500, min=1, help="Search iterations"),
+    patience: int = typer.Option(
+        0,
+        min=0,
+        help="Stop after this many iterations without an improvement; 0 disables it",
+    ),
     years: int = typer.Option(50, help="Simulation horizon in years"),
     seed: int = typer.Option(42),
     islands: int = typer.Option(0, help="parallel islands with elite migration (0 = off)"),
@@ -182,6 +187,7 @@ def optimize(
         time_limit=time_limit,
         control_path=str(control_file) if control_file is not None else "",
         iterations=iterations,
+        patience=patience,
         years=years,
         seed=seed,
         islands=islands,

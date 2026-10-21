@@ -187,6 +187,12 @@ For scale, an **island model** (``OptimizeConfig.islands`` and ``episodes``, or 
 global best schedule into every island as the next episode's starting point. The result is
 deterministic for a given seed.
 
+A continuous search can stop on **stability** instead of a fixed budget: ``OptimizeConfig.patience``
+(``--patience``) ends a start after that many iterations without an incumbent improvement, and
+``0`` disables the rule. The run summary records ``patience`` beside ``iterations`` and
+``time_limit_reached``; the web player exposes the same field as **Patience**. The stability stop is
+deterministic for a seed because it counts iterations, not wall-clock time.
+
 The mixed-integer layer (``ws4.opt.mip``) solves an option-selection MILP (HiGHS via
 ``scipy.optimize.milp``) for a penalty **lower bound** and a candidate schedule. Enabling
 ``OptimizeConfig.mip_bound`` (``--mip-bound``) records the bound, the gap, and the bound status in the
@@ -340,7 +346,8 @@ Outputs
    * - ``schedule.csv``
      - The incumbent schedule (``block_id,treatment,period``).
    * - ``summary.json``
-     - The run summary: objective, iterations, seed, metaheuristic, operators, block count, status,
+     - The run summary: objective, iterations, patience, seed, metaheuristic, operators, block count,
+       status, time-limit flag, dataset reference.
        and the dataset manifest.
    * - ``account_values.csv``, ``product_values.csv``
      - The simulated account and product values for the incumbent schedule.
