@@ -198,6 +198,11 @@ The seed is a starting point, not an enforcement: the search remains free to sof
 bound. The goal seed is exact for the simulator's account deltas, so its result is checked
 by the same ``report_targets.csv`` as a normal run.
 
+For a large feature goal with product cost ceilings, the seed first shortlists the 40,000
+blocks with the cheapest direct feature-curve reduction per dollar, then prices the
+shortlisted chains exactly. The screen is a heuristic for speed; it never substitutes an
+estimated value for the reported result. Other goal shapes use the full candidate set.
+
 Simulated annealing cools geometrically by default (``OptimizeConfig.temperature`` and
 ``OptimizeConfig.cooling``). Setting ``OptimizeConfig.cooling_mode`` to ``adaptive`` (``--cooling-mode
 adaptive``) uses the polynomial-time schedule of Aarts and Van Laarhoven instead: the initial

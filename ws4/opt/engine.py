@@ -67,6 +67,7 @@ from .operators import (
     ToggleOperator,
 )
 from .patch import PatchModel
+from .prescreen import feature_goal_blocks
 from .seeding import greedy_schedule
 from .solvers import (
     expired,
@@ -1008,8 +1009,32 @@ class Optimizer:
             )
         return self.cfg.spatial_weight * penalty
 
+    def _seed_candidates(self, targets: Sequence[Target], account: str | None) -> Candidates:
+        """Return the candidate set for a seed, optionally screening a feature goal.
+
+        A feature goal with product cost ceilings is screened by its direct curves before the
+        exact seed scores candidates; the exact seed still prices every shortlisted chain. The
+        full candidate set is used when the screen does not apply.
+        """
+        candidates = self.candidates()
+        if not account:
+            return candidates
+        screened = feature_goal_blocks(
+            self.dataset_dir,
+            account,
+            targets,
+            self.cfg.years,
+            40_000,
+        )
+        if screened:
+            return {block: chains for block, chains in candidates.items() if block in screened}
+        return candidates
+
     def greedy_schedule(
-        self, targets: Sequence[Target] | None = None, seed_account: str | None = None
+        self,
+        targets: Sequence[Target] | None = None,
+        seed_account: str | None = None,
+        workers: int | None = None,
     ) -> Schedule:
         """Return a schedule built by construction against the run's targets, or an empty one.
 
@@ -1025,6 +1050,9 @@ class Optimizer:
             The targets to build against, or None to load the run's own.
         seed_account : str or None, optional
             The reduction goal account, or None to use the configuration's ``seed_account``.
+        workers : int or None, optional
+            Forked processes for reduction-goal scoring, or None to use the configuration's
+            ``workers``. The floor mode is serial.
 
         Returns
         -------
@@ -1050,7 +1078,12 @@ class Optimizer:
                 "contrast, each of which rewrites or extends the account values"
             )
         account = self.cfg.seed_account if seed_account is None else seed_account
-        return greedy_schedule(evaluator, self.candidates(), goal_account=account or None)
+        return greedy_schedule(
+            evaluator,
+            self._seed_candidates(goals, account or None),
+            goal_account=account or None,
+            workers=self.cfg.workers if workers is None else workers,
+        )
 
     def _solve(
         self,
@@ -1101,7 +1134,10 @@ class Optimizer:
             evaluator = self.delta_evaluator(targets)
             if evaluator is not None:
                 initial = greedy_schedule(
-                    evaluator, candidates, goal_account=self.cfg.seed_account or None
+                    evaluator,
+                    self._seed_candidates(targets, self.cfg.seed_account or None),
+                    goal_account=self.cfg.seed_account or None,
+                    workers=self.cfg.workers,
                 )
         if initial is None and self.cfg.warm_start:
             initial = {block: options[0] for block, options in candidates.items() if options}

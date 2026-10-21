@@ -10,7 +10,10 @@ the targets the run declares, so a floor is any target with a ``minimum`` and a 
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+import multiprocessing
+from collections.abc import Mapping, Sequence
+from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass
 
 from .incremental import IncrementalObjective
 from .objective import Target, accumulates, penalty
@@ -66,11 +69,55 @@ def target_value(cells: Sequence[tuple[int, str]], totals: dict[tuple[int, str],
     return sum(totals.get(cell, 0.0) for cell in cells)
 
 
+@dataclass
+class _GoalContext:
+    """The immutable state a worker needs to score one block's candidate chains."""
+
+    evaluator: IncrementalObjective
+    candidates: Candidates
+    targets: Sequence[Target]
+    cells: Sequence[Sequence[tuple[int, str]]]
+    totals: Mapping[tuple[int, str], float]
+    goal: Target
+    goal_cells: Sequence[tuple[int, str]]
+    ceilings: Sequence[int]
+    goal_value: float
+
+
+_GOAL_CONTEXT: _GoalContext | None = None
+
+
+def _score_goal_block(context: _GoalContext, block: int) -> list[tuple[float, int, Chain]]:
+    """Score one block's candidate chains against a reduction goal."""
+    scored: list[tuple[float, int, Chain]] = []
+    for chain in context.candidates.get(block, []):
+        if not chain:
+            continue
+        contribution = context.evaluator.contribution(block, chain)
+        after = context.goal_value + sum(contribution.get(cell, 0.0) for cell in context.goal_cells)
+        gain = penalty(context.goal_value, context.goal) - penalty(after, context.goal)
+        if gain <= 0.0:
+            continue
+        cost = 0.0
+        for index in context.ceilings:
+            cost += sum(max(contribution.get(cell, 0.0), 0.0) for cell in context.cells[index])
+        scored.append((gain / (cost + _UNIT_COST), block, chain))
+    return scored
+
+
+def _score_goal_block_worker(block: int) -> list[tuple[float, int, Chain]]:
+    """Fork-pool entry point; the context is inherited from the parent."""
+    if _GOAL_CONTEXT is None:
+        return []
+    return _score_goal_block(_GOAL_CONTEXT, block)
+
+
 def greedy_schedule(
     evaluator: IncrementalObjective,
     candidates: Candidates,
     limit: int | None = None,
     goal_account: str | None = None,
+    workers: int = 1,
 ) -> Schedule:
     """Return an initial schedule built by construction against the run's targets.
 
@@ -102,6 +149,10 @@ def greedy_schedule(
         A target account to reduce to its maximum, rather than a floor to satisfy. The account
         must name exactly one active target with a maximum; its other maximum targets are the cost
         ceilings. None (the default) uses the floor mode.
+    workers : int, optional
+        The number of forked processes used to score reduction-goal candidates. The default, 1,
+        scores serially. Forking preserves the evaluator and its caches; results are ranked in the
+        parent, so the schedule is unchanged.
 
     Returns
     -------
@@ -116,6 +167,8 @@ def greedy_schedule(
     """
     if limit is not None and limit < 1:
         raise ValueError(f"a limit of {limit} moves is not a schedule")
+    if workers < 1:
+        raise ValueError(f"a seed worker count of {workers} is not positive")
     targets = evaluator.targets
     years = evaluator.optimizer.cfg.years
     cells = [target_cells(target, years) for target in targets]
@@ -138,20 +191,36 @@ def greedy_schedule(
         goal_value = target_value(goal_cells, totals)
         if goal.maximum is not None and goal_value <= goal.maximum:
             return {}
-        scored: list[tuple[float, int, Chain]] = []
-        for block, options in candidates.items():
-            for chain in options:
-                if not chain:
-                    continue
-                contribution = evaluator.contribution(block, chain)
-                after = goal_value + sum(contribution.get(cell, 0.0) for cell in goal_cells)
-                gain = penalty(goal_value, goal) - penalty(after, goal)
-                if gain <= 0.0:
-                    continue
-                cost = 0.0
-                for index in ceilings:
-                    cost += sum(max(contribution.get(cell, 0.0), 0.0) for cell in cells[index])
-                scored.append((gain / (cost + _UNIT_COST), block, chain))
+        context = _GoalContext(
+            evaluator=evaluator,
+            candidates=candidates,
+            targets=targets,
+            cells=cells,
+            totals=totals,
+            goal=goal,
+            goal_cells=goal_cells,
+            ceilings=ceilings,
+            goal_value=goal_value,
+        )
+        if workers > 1:
+            global _GOAL_CONTEXT
+            _GOAL_CONTEXT = context
+            try:
+                mp_context = multiprocessing.get_context("fork")
+                with ProcessPoolExecutor(
+                    max_workers=min(workers, len(candidates)),
+                    mp_context=mp_context,
+                ) as pool:
+                    chunks = pool.map(
+                        _score_goal_block_worker,
+                        candidates.keys(),
+                        chunksize=max(1, len(candidates) // (workers * 4)),
+                    )
+                    scored = [entry for chunk in chunks for entry in chunk]
+            finally:
+                _GOAL_CONTEXT = None
+        else:
+            scored = [entry for block in candidates for entry in _score_goal_block(context, block)]
         scored.sort(key=lambda entry: -entry[0])
         chosen: Schedule = {}
         spent: dict[int, float] = {
