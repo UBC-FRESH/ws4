@@ -750,8 +750,8 @@ current period from the cumulative total.
   colours; the service caches the geometry, and live schedules update only the changed blocks.
   Source attributes (compartment, THEME2, THEME5, MartStrata, LMU) drive an optional base-colour
   mode with a category legend. An optional **source access-road overlay** reads `--roads` and draws
-  the access network. Remaining: the run's used-road subset and model spread-compartment membership;
-  then the MapLibre swap when a basemap is needed.
+  the access network. P19.1 and P19.2 now add the model spread-compartment membership and the run's
+  used-road overlay; the MapLibre swap waits for a basemap need.
 - [x] P18.3 Targets — **live**: a table per account and period with editable min/max/weights, a save
   that validates through the optimizer's loader, the realized value from the selected run's own CSV
   with a met/below/above status, and a **Run search** action that starts the optimizer behind
@@ -789,7 +789,7 @@ what the model produces.
   spread-connectivity account (year, account, compartment, class, block, area, component area); serve
   it as `layer=compartments`; add the model spread layer to the layer tree with class checkboxes and
   an account selector. This is the account independently reproduced in thesis #13.
-- [ ] P19.2 **The run's used-road geometry/use.** Write the route model's segment geometry and the
+- [x] P19.2 **The run's used-road geometry/use.** Write the route model's segment geometry and the
   period's opened/used segments; serve a used-roads overlay distinct from the source access layer.
 - [ ] P19.3 **Stability stopping criterion.** Stop a continuous search after a configurable number of
   iterations without incumbent improvement; expose it in the player and record it in the summary.

@@ -345,13 +345,16 @@ items are enhancements and maintenance.
   to take the fix. Until then `product.FuelTreatmentCost / 20,000` is the clean hectares measure.
   Target: P16.
 
-## P18 follow-ups (not shipped)
+## P18/P19 follow-ups
 
-- **Model spread-compartment membership.** The source `COMPART` field is a base colour; the per-year
-  spread-connectivity compartments the #13 account measures still need a `spread_membership.csv`
-  artifact and a map layer. The account itself was independently reproduced on the thesis side.
-- **The run's used-road subset.** `--roads` draws the source access network, not the route model's
-  opened/used segments. A segment-geometry/use artifact is needed for that overlay.
+- **Model spread-compartment membership.** `done` (P19.1, #162). The simulator writes
+  `spread_membership.csv` (largest component first, area class per component), the service serves
+  `layer=compartments`, and the web layer tree has the class/account tree. The source `COMPART` field
+  remains a separate base colour; the #13 account is the model-side evidence.
+- **The run's used-road subset.** `done` (P19.2). A route run writes `used_roads.csv` from the
+  vertices geometry, one row per used segment per year; the service serves it at
+  `/api/runs/{run}/used-roads` and the map draws **Used roads (run)** distinctly from the source
+  access overlay.
 - **MapLibre and a basemap** when polygon counts or raster layers outgrow the dependency-free SVG shell.
 - **A stability stopping criterion** (stop after N iterations without improvement); the player offers
   iterations and time only.

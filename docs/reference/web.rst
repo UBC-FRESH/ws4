@@ -71,13 +71,18 @@ Endpoints
      - The run's report files and their sizes.
    * - ``GET /api/runs/{run}/reports/{name}``
      - One report file; a name the run does not hold is a 404.
-   * - ``GET /api/runs/{run}/map?year=&layer=``
+   * - ``GET /api/runs/{run}/map?year=&layer=&account=``
      - A GeoJSON ``FeatureCollection`` joined to ``--geometry``. ``treatments`` is the selected
        period, ``cumulative`` marks current and earlier treatments, ``patches`` carries the year's
-       patch membership, and ``blocks`` is the bare geometry.
+       patch membership, ``compartments`` the model spread membership (one ``account`` at a time),
+       and ``blocks`` is the bare geometry.
    * - ``GET /api/runs/{run}/layers``
-     - The layers the run can actually draw (treatments, cumulative, patches), its patch classes
-       and accounts, and the named reasons roads/compartments are unavailable.
+     - The layers the run can actually draw (treatments, cumulative, patches, compartments), its
+       patch and compartment classes/accounts, and the named reasons roads/used roads/compartments
+       are unavailable.
+   * - ``GET /api/runs/{run}/used-roads?year=``
+     - The route model's used segments for one year as GeoJSON ``LineStrings``, from the run's
+       ``used_roads.csv``; a run without the artifact is a named 404.
    * - ``GET /api/roads``
      - The configured source access-road lines as a GeoJSON ``FeatureCollection`` for the map
        overlay; a service started without ``--roads`` returns a named 404.
@@ -131,9 +136,12 @@ The Legend tab builds a grouped tree from ``GET /api/runs/{run}/layers`` and the
   block by the chosen source field. This is a static, source-derived view, not a model computation,
   and every layer keeps the same polygon geometry.
 - **Access roads (source)** is an optional overlay from ``--roads``, a GeoJSON of the source
-  access-line layer. It is a static source network, not the run's used-road subset; the run's
-  route-model geometry remains a follow-up. A run without ``spread_membership.csv`` still names
-  **Spread compartments** as unavailable rather than inventing membership.
+  access-line layer. It is a static source network.
+- **Used roads (run)** is the route model's used segments for the selected year, from the run's
+  ``used_roads.csv``. It is served by ``GET /api/runs/{run}/used-roads?year=...`` and is distinct
+  from the source overlay; a run without the artifact names it unavailable rather than drawing
+  the source network as if it were used. A run without ``spread_membership.csv`` likewise keeps
+  **Spread compartments** unavailable rather than inventing membership.
 
 Geometry
 --------

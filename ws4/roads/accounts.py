@@ -488,7 +488,9 @@ def load_route_config(path: Path) -> RouteConfig:
 
     The file names the four route tables (``segments``, ``destinations``, ``linkages``), an
     optional ``eligibility`` table, an optional ``unutilized`` account — one name, or a name
-    per product — and lists of ``route_accounts`` and ``duplicate_accounts``. ``initial_roads``
+    per product — and lists of ``route_accounts`` and ``duplicate_accounts``. A ``vertices``
+    table (named in the config, or ``vertices.csv`` beside the config or the segments table)
+    supplies the coordinates for the used-road geometry. ``initial_roads``
     is ``all`` (the default, the whole planned network) or ``existing`` (the zero-build-cost
     roads open at period 1, the rest opened on demand). Relative paths
     resolve against the configuration file's directory.
@@ -526,13 +528,22 @@ def load_route_config(path: Path) -> RouteConfig:
     segments = pd.read_csv(resolve(route["segments"]))
     destinations = pd.read_csv(resolve(route["destinations"]))
     linkages = pd.read_csv(resolve(route["linkages"]))
+    if route.get("vertices"):
+        vertices_path = resolve(route["vertices"])
+    elif (base / "vertices.csv").is_file():
+        vertices_path = base / "vertices.csv"
+    else:
+        vertices_path = resolve(route["segments"]).parent / "vertices.csv"
+    vertices = pd.read_csv(vertices_path) if vertices_path.is_file() else None
     initial_roads = str(route.get("initial_roads", "all")).lower()
     if initial_roads not in ("all", "existing"):
         raise ValueError(
             f"route.initial_roads is 'all' or 'existing', and {initial_roads!r} is neither"
         )
     initial_open = existing_segments(segments) if initial_roads == "existing" else None
-    network = RouteNetwork.from_tables(segments, destinations, linkages, initial_open=initial_open)
+    network = RouteNetwork.from_tables(
+        segments, destinations, linkages, initial_open=initial_open, vertices=vertices
+    )
     eligibility = (
         load_route_eligibility(resolve(route["eligibility"])) if route.get("eligibility") else {}
     )
@@ -993,6 +1004,58 @@ class RouteCostLedger:
             columns=["year", "destination", "product", "volume"],
         )
 
+    def used_roads(self) -> pd.DataFrame:
+        """Return the used road segments with their vertex geometry.
+
+        One row per used segment per year. The geometry comes from the network's ``vertices``
+        table; when the table has no coordinates, the frame is empty rather than inventing a line.
+
+        Returns
+        -------
+        pandas.DataFrame
+            ``period``, ``segment_id``, ``from_vertex``, ``to_vertex``, ``x1``, ``y1``, ``x2``,
+            ``y2``, ``volume``, ``built_length`` and ``first_use``.
+        """
+        self._flush()
+        rows: list[dict[str, object]] = []
+        for (year, segment_id), state in sorted(self._segments.items()):
+            segment = self._by_id[segment_id]
+            start = self.network.vertex_coordinates.get(segment.from_vertex)
+            end = self.network.vertex_coordinates.get(segment.to_vertex)
+            if start is None or end is None:
+                continue
+            rows.append(
+                {
+                    "period": year,
+                    "segment_id": segment_id,
+                    "from_vertex": segment.from_vertex,
+                    "to_vertex": segment.to_vertex,
+                    "x1": start[0],
+                    "y1": start[1],
+                    "x2": end[0],
+                    "y2": end[1],
+                    "volume": state.volume,
+                    "built_length": state.built_length,
+                    "first_use": self._first_use.get(segment_id, 0),
+                }
+            )
+        return pd.DataFrame(
+            rows,
+            columns=[
+                "period",
+                "segment_id",
+                "from_vertex",
+                "to_vertex",
+                "x1",
+                "y1",
+                "x2",
+                "y2",
+                "volume",
+                "built_length",
+                "first_use",
+            ],
+        )
+
     def network_table(self) -> pd.DataFrame:
         """Return the network table: one row per segment per period.
 
@@ -1239,8 +1302,8 @@ class RouteCostLedger:
         ----------
         out_dir : Path
             The run directory. The method writes ``route_values.csv``,
-            ``network_table.csv``, the route cost report, and a route table and a route cost
-            report per destination.
+            ``network_table.csv``, the route cost report, a route table and a route cost report
+            per destination, and ``used_roads.csv`` when the vertices table has coordinates.
         """
         out_dir = Path(out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -1248,6 +1311,9 @@ class RouteCostLedger:
         network = self.network_table()
         if not network.empty:
             network.to_csv(out_dir / "network_table.csv", index=False)
+        used_roads = self.used_roads()
+        if not used_roads.empty:
+            used_roads.to_csv(out_dir / "used_roads.csv", index=False)
         report = self.route_cost_report()
         report.rename(columns=_ROUTE_COST_LABELS).to_csv(
             out_dir / "route_cost_report.csv", index=False
