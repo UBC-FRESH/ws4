@@ -1049,7 +1049,9 @@ function statusOf(row, value) {
 function renderWatchPanel() {
   const panel = $('watch-panel');
   panel.replaceChildren();
-  const watched = state.targets.filter((row) => state.watched.has(`${row.year}|${row.account}`));
+  const watched = state.targets.filter(
+    (row) => !row.flow && state.watched.has(String(row.index)),
+  );
   if (!watched.length) {
     panel.textContent = 'no targets selected — tick a target in the table below';
     return;
@@ -1296,8 +1298,9 @@ async function loadTargets() {
     }
     const body = table.querySelector('tbody');
     body.replaceChildren();
-    const keys = rows.map((row) => `${row.year}|${row.account}`);
-    if (state.watched.size === 0 && window.localStorage.getItem('ws4.watched') === null) {
+    const keys = rows.filter((row) => !row.flow).map((row) => String(row.index));
+    if (![...state.watched].some((key) => keys.includes(key))) {
+      state.watched.clear();
       for (const key of keys.slice(0, 8)) state.watched.add(key);
       saveWatched();
     }
@@ -1306,7 +1309,7 @@ async function loadTargets() {
     try {
       const realized = await api(`api/runs/${encodeURIComponent(state.run)}/targets`);
       for (const item of realized) {
-        (values[item.year] ??= {})[item.account] = item.value;
+        values[item.index] = item.value;
       }
       const all = await api(`api/runs/${encodeURIComponent(state.run)}/accounts`);
       for (const item of all) {
@@ -1317,7 +1320,7 @@ async function loadTargets() {
     rows.forEach((row, index) => {
       const tr = document.createElement('tr');
       tr.classList.toggle('inactive', row.active === false);
-      const key = `${row.year}|${row.account}`;
+      const key = String(row.index);
       const on = document.createElement('td');
       const onBox = document.createElement('input');
       onBox.type = 'checkbox';
@@ -1358,14 +1361,15 @@ async function loadTargets() {
         td.append(numberInput(row[field], field, index));
         tr.append(td);
       }
-      state.targetCells.set(`${row.year}|${row.account}`, {
-        row, text: valueLine, band: null, marker: null, value: values[row.year]?.[row.account],
+      state.targetCells.set(String(row.index), {
+        row, text: valueLine, band: null, marker: null, value: values[row.index],
       });
       body.append(tr);
     });
     for (const entry of state.targetCells.values()) paintTarget(entry, entry.value);
     for (const row of rows) {
-      const value = values[row.year]?.[row.account];
+      if (row.flow) continue;
+      const value = values[row.index];
       if (value !== undefined) state.windowValues.set(`${row.year}|${row.account}`, Number(value));
     }
     renderWatchPanel();

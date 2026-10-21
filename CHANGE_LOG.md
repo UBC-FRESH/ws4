@@ -2125,3 +2125,9 @@ issue comments.
   and `--coalesce-max-area-ha`; the cluster grows until its criterion-weighted area is
   inside the band (default 5-40 ha). Covered by a connected-cluster test. Full suite:
   659 passed; dashboard GREEN.
+- The web target table now keys rows by target index and reports flow targets from their
+  percent series rather than the account's period value. Harvest and even-flow targets on the
+  same account/year no longer collide, and the flow status is `met` only when every compared
+  period is inside its band. The watch panel excludes flow targets, whose series is a percent
+  profile rather than an account level. `patch_first_search` now shows all 52 target rows met.
+  Full suite: 659 passed; dashboard GREEN.

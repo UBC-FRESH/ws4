@@ -29,7 +29,7 @@ from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Str
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import Response
 
-from ..opt.objective import load_targets, period_value
+from ..opt.objective import flow_penalty, flow_series, load_targets, period_value
 from .skins import load_skins
 
 _REPORT_SUFFIXES = {".csv", ".html", ".png", ".json", ".txt"}
@@ -517,12 +517,14 @@ def create_app(
             "iteration": record.get("iteration"),
             "values": [
                 {
+                    "index": target_index,
                     "account": target.account,
                     "period": target.period,
                     "year": target.year,
+                    "flow": target.flow,
                     "value": period_value(index, target),
                 }
-                for target in load_targets(targets_path)
+                for target_index, target in enumerate(load_targets(targets_path))
                 if target.active
             ],
             # the optimizer's snapshot already holds every year of the tracked accounts; the
@@ -1262,21 +1264,47 @@ def create_app(
             key = (int(year), str(account))
             index[key] = index.get(key, 0.0) + float(value)
         rows: list[dict[str, Any]] = []
-        for target in load_targets(targets_path):
-            value = period_value(index, target)
-            status = "inactive"
-            if target.active:
-                status = "met"
-                if target.minimum is not None and value < target.minimum:
-                    status = "below"
-                elif target.maximum is not None and value > target.maximum:
-                    status = "above"
+        horizon = max((year for year, _ in index), default=-1) + 1
+        for target_index, target in enumerate(load_targets(targets_path)):
+            if target.flow:
+                series = flow_series(index, target, horizon)
+                flow_values = list(series.values())
+                value = (
+                    max(flow_values)
+                    if target.maximum is not None and flow_values
+                    else min(flow_values)
+                    if flow_values
+                    else 0.0
+                )
+                status = "inactive"
+                if target.active:
+                    status = "met"
+                    if flow_penalty(index, target, horizon) > 0.0:
+                        if (
+                            target.maximum is not None
+                            and flow_values
+                            and max(flow_values) > target.maximum
+                        ):
+                            status = "above"
+                        else:
+                            status = "below"
+            else:
+                value = period_value(index, target)
+                status = "inactive"
+                if target.active:
+                    status = "met"
+                    if target.minimum is not None and value < target.minimum:
+                        status = "below"
+                    elif target.maximum is not None and value > target.maximum:
+                        status = "above"
             rows.append(
                 {
+                    "index": target_index,
                     "account": target.account,
                     "period": target.period,
                     "year": target.year,
                     "period_width": target.period_width,
+                    "flow": target.flow,
                     "value": value,
                     "status": status,
                     "active": target.active,
@@ -1290,17 +1318,19 @@ def create_app(
             return []
         return [
             {
+                "index": target_index,
                 "account": target.account,
                 "period": target.period,
                 "year": target.year,
                 "period_width": target.period_width,
+                "flow": target.flow,
                 "minimum": target.minimum,
                 "maximum": target.maximum,
                 "min_weight": target.min_weight,
                 "max_weight": target.max_weight,
                 "active": target.active,
             }
-            for target in load_targets(targets_path)
+            for target_index, target in enumerate(load_targets(targets_path))
         ]
 
     def _write_targets(document: str) -> int:
