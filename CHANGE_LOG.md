@@ -2101,3 +2101,6 @@ issue comments.
 - #165: `--seed-greedy --seed-account ACCOUNT` builds a schedule that reduces a named
   maximum target (the hazard-shaped case) under its other maximum targets' cost ceilings.
   The default `--seed-greedy` floor mode is unchanged.
+- #165 speed: a feature reduction goal shortlists blocks by the direct feature curve
+  before exact candidate scoring, and the reduction-goal seed scores the shortlist in
+  forked workers. The exact seed still builds and verifies the schedule.
