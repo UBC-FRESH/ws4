@@ -9,11 +9,17 @@ set rather than a random draw.
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
+from typing import cast
 
 import pandas as pd
 import pytest
 from ws4.build.compiler import build_canonical_dataset
 from ws4.opt.engine import OptimizeConfig, Optimizer
+from ws4.opt.incremental import IncrementalObjective
+from ws4.opt.objective import Target
+from ws4.opt.operators import Candidates
+from ws4.opt.seeding import greedy_schedule
 from ws4.roads.accounts import load_route_config
 from ws4.sim.engine import Simulator
 
@@ -119,6 +125,81 @@ def _limits(tmp_path: Path) -> tuple[Path, Path, float, float]:
     route = _route(tmp_path)
     product, cost = _one_block(dataset, route, tmp_path)
     return dataset, route, _REQUIRED * product, _ALLOWED * cost
+
+
+class _GoalEvaluator:
+    """A tiny reduction goal: one hazard maximum and one cost maximum."""
+
+    def __init__(self, hazard: float = 12.0) -> None:
+        self.targets = [
+            Target("feature.Hazard", 4, maximum=5.0),
+            Target("product.Cost", 4, maximum=5.0),
+        ]
+        self.optimizer = SimpleNamespace(cfg=SimpleNamespace(years=5))
+        self.hazard = hazard
+        self.totals: dict[tuple[int, str], float] = {}
+
+    def reset(self, schedule: dict[int, tuple[tuple[str, int], ...]]) -> None:
+        self.totals = {
+            (4, "feature.Hazard"): self.hazard,
+            (4, "product.Cost"): 0.0,
+        }
+
+    def contribution(
+        self, block: int, chain: tuple[tuple[str, int], ...]
+    ) -> dict[tuple[int, str], float]:
+        values = {
+            1: {(4, "feature.Hazard"): -6.0, (4, "product.Cost"): 2.0},
+            2: {(4, "feature.Hazard"): -4.0, (4, "product.Cost"): 2.0},
+            3: {(4, "feature.Hazard"): -10.0, (4, "product.Cost"): 10.0},
+        }
+        return values.get(block, {})
+
+
+def test_a_goal_seed_reduces_the_named_maximum_under_its_cost_ceilings() -> None:
+    """The hazard-shaped seed takes the best reduction per dollar until the target is met."""
+    evaluator = _GoalEvaluator()
+    candidates: Candidates = {
+        1: [(("FB", 0),)],
+        2: [(("FB", 0),)],
+        3: [(("FB", 0),)],
+    }
+    schedule = greedy_schedule(
+        cast(IncrementalObjective, evaluator), candidates, goal_account="feature.Hazard"
+    )
+    assert set(schedule) == {1, 2}
+    hazard = 12.0 + sum(
+        evaluator.contribution(block, chain)[(4, "feature.Hazard")]
+        for block, chain in schedule.items()
+    )
+    cost = sum(
+        evaluator.contribution(block, chain)[(4, "product.Cost")]
+        for block, chain in schedule.items()
+    )
+    assert hazard == 2.0
+    assert hazard <= 5.0
+    assert cost == 4.0 <= 5.0
+
+
+def test_a_goal_seed_is_empty_when_the_maximum_is_already_met() -> None:
+    """A met reduction target needs no seed, rather than treating blocks for no reason."""
+    evaluator = _GoalEvaluator(hazard=4.0)
+    assert (
+        greedy_schedule(
+            cast(IncrementalObjective, evaluator),
+            {1: [(("FB", 0),)]},
+            goal_account="feature.Hazard",
+        )
+        == {}
+    )
+
+
+def test_a_goal_seed_names_an_account_it_can_reduce() -> None:
+    """A misspelled or non-maximum goal account is refused with its name."""
+    with pytest.raises(ValueError, match=r"feature\.Nope"):
+        greedy_schedule(
+            cast(IncrementalObjective, _GoalEvaluator()), {}, goal_account="feature.Nope"
+        )
 
 
 def test_the_unseeded_search_misses_the_floor_and_the_seeded_one_does_not(tmp_path: Path) -> None:

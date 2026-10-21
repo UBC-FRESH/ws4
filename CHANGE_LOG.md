@@ -2098,3 +2098,6 @@ issue comments.
   left/right arrow keys.
 - P19.6: the lower-left assistant has a draggable height splitter (persisted, double-click resets)
   so a long conversation can use more of the sidebar.
+- #165: `--seed-greedy --seed-account ACCOUNT` builds a schedule that reduces a named
+  maximum target (the hazard-shaped case) under its other maximum targets' cost ceilings.
+  The default `--seed-greedy` floor mode is unchanged.
