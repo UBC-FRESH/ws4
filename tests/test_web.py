@@ -133,7 +133,7 @@ def test_accounts_are_filtered_by_year_and_account(tmp_path: Path) -> None:
     one = client.get(
         "/api/runs/run1/accounts", params={"year": 0, "account": "feature.Volume"}
     ).json()
-    assert one == [{"offset": 0, "account": "feature.Volume", "value": 10.0}]
+    assert one == [{"offset": 0, "account": "feature.Volume", "value": 10.0, "year": 1}]
 
 
 def test_reports_are_listed_and_downloaded(tmp_path: Path) -> None:

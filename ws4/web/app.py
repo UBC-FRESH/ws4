@@ -572,10 +572,16 @@ def create_app(
         """Fold a telemetry targets record over each target's period, keeping its year series."""
         if targets_path is None or not targets_path.is_file():
             return record
+
+        def item_offset(item: dict[str, Any]) -> int:
+            """Return an item's offset, accepting legacy telemetry's 0-based year."""
+            return int(item["offset"]) if "offset" in item else int(item["year"])
+
         index = {
-            (int(item["year"]), str(item["account"])): float(item["value"])
+            (item_offset(item), str(item["account"])): float(item["value"])
             for item in record.get("values", [])
         }
+        series = [{**item, "year": item_offset(item) + 1} for item in record.get("values", [])]
         payload: dict[str, Any] = {
             "type": "targets",
             "iteration": record.get("iteration"),
@@ -593,7 +599,7 @@ def create_app(
             ],
             # the optimizer's snapshot already holds every year of the tracked accounts; the
             # panel uses these as the live series behind the period-target value
-            "series": record.get("values", []),
+            "series": series,
         }
         if record.get("island") is not None:
             payload["island"] = record["island"]
@@ -1049,10 +1055,14 @@ def create_app(
             frame = frame[frame["offset"] == year]
         if account is not None:
             frame = frame[frame["account"] == account]
-        return [
-            {str(key): value for key, value in row.items()}
-            for row in frame.to_dict(orient="records")
-        ]
+        rows: list[dict[str, Any]] = []
+        for row in frame.to_dict(orient="records"):
+            record = {str(key): value for key, value in row.items()}
+            if "offset" in record:
+                # ``year`` is the display label; the stored clock is the offset.
+                record["year"] = int(record["offset"]) + 1
+            rows.append(record)
+        return rows
 
     @app.get("/api/runs/{run}/reports")
     def reports(run: str) -> list[dict[str, Any]]:
