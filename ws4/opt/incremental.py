@@ -106,7 +106,7 @@ class IncrementalObjective:
             # patch statistics are only needed where a patch target reads them (the accounting
             # points); the simulation is annual but the accounting is periodic
             self.patch.set_focus_years(
-                sorted({target.year for target in self.targets if is_patch(target.account)})
+                sorted({target.end_offset() for target in self.targets if is_patch(target.account)})
             )
 
         self.accounts: set[str] = {
@@ -128,13 +128,13 @@ class IncrementalObjective:
                 stop = target.flow_end if target.flow_end is not None else horizon
                 return tuple(range(target.flow_start, stop))
             if not accumulates(target.account):
-                return (target.year,)
-            return tuple(target.cell_years())
+                return (target.end_offset(),)
+            return tuple(target.cell_offsets())
 
-        self._target_years: list[tuple[int, ...]] = [years_for(target) for target in self.targets]
+        self._target_offsets: list[tuple[int, ...]] = [years_for(target) for target in self.targets]
         self._targets_by_cell: dict[Cell, list[int]] = {}
         for index, target in enumerate(self.targets):
-            for year in self._target_years[index]:
+            for year in self._target_offsets[index]:
                 self._targets_by_cell.setdefault((year, target.account), []).append(index)
 
     def reset(self, schedule: Schedule) -> None:
@@ -242,7 +242,7 @@ class IncrementalObjective:
                 total += flow_penalty(self.totals, target, self.optimizer.cfg.years)
                 continue
             value = sum(
-                self.totals.get((year, target.account), 0.0) for year in self._target_years[index]
+                self.totals.get((year, target.account), 0.0) for year in self._target_offsets[index]
             )
             total += penalty(value, target)
         return total + self.spatial.objective
@@ -280,14 +280,14 @@ class IncrementalObjective:
                 continue
             if accumulates(target.account):
                 before = sum(
-                    self.totals.get((year, target.account), 0.0) for year in target.cell_years()
+                    self.totals.get((year, target.account), 0.0) for year in target.cell_offsets()
                 )
                 change = sum(
-                    pending.get((year, target.account), 0.0) for year in target.cell_years()
+                    pending.get((year, target.account), 0.0) for year in target.cell_offsets()
                 )
             else:
-                before = self.totals.get((target.year, target.account), 0.0)
-                change = pending.get((target.year, target.account), 0.0)
+                before = self.totals.get((target.end_offset(), target.account), 0.0)
+                change = pending.get((target.end_offset(), target.account), 0.0)
             total += penalty(before + change, target) - penalty(before, target)
         return total + self.spatial.delta(changed, schedule)
 
@@ -320,15 +320,15 @@ class IncrementalObjective:
         self.spatial.apply(changed, schedule)
 
     def values_frame(self) -> pd.DataFrame:
-        """Return the tracked account values as a frame (``year``, ``account``, ``value``).
+        """Return the tracked account values as a frame (``offset``, ``account``, ``value``).
 
         Returns
         -------
         pandas.DataFrame
-            One row per tracked ``(year, account)`` cell.
+            One row per tracked ``(offset, account)`` cell.
         """
         rows = [
-            {"year": year, "account": account, "value": value}
-            for (year, account), value in self.totals.items()
+            {"offset": offset, "account": account, "value": value}
+            for (offset, account), value in self.totals.items()
         ]
-        return pd.DataFrame(rows, columns=["year", "account", "value"])
+        return pd.DataFrame(rows, columns=["offset", "account", "value"])

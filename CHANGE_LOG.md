@@ -2140,3 +2140,13 @@ issue comments.
 - P19.4: MapLibre GL JS with an OpenStreetMap raster basemap is the default map renderer, with
   the SVG shell kept as a switchable fallback. The service transforms the source CRS to WGS84 for
   MapLibre (`--crs`, `format=wgs84`); the layer, period and selection contracts are unchanged.
+
+- The schedule clock is now a single 0-based `offset` clock everywhere. A schedule CSV carries
+  `offset` (offset 0 is the first simulation year); the legacy `period` schedule column is rejected.
+  Account values, optimizer chains, patch/spatial state, road ledgers and the web API all speak
+  offsets. Accounting period 0 remains the zero-length pre-simulation snapshot at offset -1, and
+  period `p >= 1` covers offsets `(p-1)*period_width` through `p*period_width - 1`. `year` is a
+  display label only (`year = offset + 1`). This removes the old conflation of the schedule's
+  0-based step with the accounting period and the resulting off-by-one and period-0 treatment bug.
+  The TSA 48 builders emit `offset`, and the calibrated TSA 48 model is rebuilt on the corrected
+  clock. Full suite: 665 passed; dashboard GREEN.

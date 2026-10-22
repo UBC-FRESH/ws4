@@ -102,7 +102,7 @@ Endpoints
      - The parsed targets as JSON, for an editor that does not parse YAML.
    * - ``GET /api/runs/{run}/targets``
      - Each target's realized value over the target's own period — the optimizer's
-       ``period_value`` rule: a product sums its years, a feature reads the period's end.
+       ``period_value`` rule: a product sums its offsets, a feature reads the period's end offset.
    * - ``POST /api/runs``
      - Start a search with the configured dataset and targets. **Refused unless the service was started
        with ``--allow-runs``**; iterations and years are bounded. With no ``iterations`` (or ``0``) the
@@ -128,7 +128,7 @@ Layers
 The Legend tab builds a grouped tree from ``GET /api/runs/{run}/layers`` and the run's own files:
 
 - **Current period** and **cumulative through period** come from ``schedule.csv``; the map control
-  folds years by the configured targets' ``period_width`` and shows both the period and its year
+  folds offsets by the configured targets' ``period_width`` and shows both the period and its year
   range. The previous/next period is one click on the slider or one **left/right arrow key**;
   cumulative distinguishes the current period (red) from earlier ones (tan).
 - **Patch size class** comes from ``patch_membership.csv``. A run without a schedule still gets a

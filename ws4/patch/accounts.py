@@ -482,7 +482,7 @@ class PatchLedger:
         criteria : mapping of str to mapping of int to float
             The criterion values per block, keyed by the criteria feature label.
         """
-        row: dict[str, float] = {"period": float(year), "year": float(year)}
+        row: dict[str, float] = {"offset": float(year), "period": float(year), "year": float(year)}
         for account, edges in zip(self.accounts, self._by_account, strict=True):
             values = criteria.get(account.criteria, {})
             for key, value in patch_account_values(account, values, edges, self.block_area).items():
@@ -519,6 +519,7 @@ class PatchLedger:
             for block in component.blocks:
                 rows.append(
                     {
+                        "offset": component.period,
                         "period": component.period,
                         "year": component.period,
                         "account": component.account,
@@ -529,7 +530,8 @@ class PatchLedger:
                     }
                 )
         return pd.DataFrame(
-            rows, columns=["period", "year", "account", "class", "patch", "block", "area_ha"]
+            rows,
+            columns=["offset", "period", "year", "account", "class", "patch", "block", "area_ha"],
         )
 
     def write(self, out_dir: Path) -> None:

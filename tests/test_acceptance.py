@@ -221,7 +221,7 @@ def _write_report(
 
     root.mkdir(parents=True, exist_ok=True)
     schedule.to_csv(root / "schedule.csv", index=False)
-    years = horizon if horizon is not None else int(schedule["period"].max()) + 1
+    years = horizon if horizon is not None else int(schedule["offset"].max()) + 1
     values = Simulator.from_dataset(dataset).simulate(schedule, years)
     values = values.assign(value=values["value"] * factor)
     values.to_csv(root / "account_values.csv", index=False)
@@ -233,7 +233,7 @@ def test_the_accounts_comparison_agrees_with_itself(tmp_path: Path) -> None:
     dataset = build_canonical_dataset(
         FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "compiled"
     )
-    schedule = pd.DataFrame({"block_id": [1, 2], "treatment": ["CC", "CC"], "period": [0, 1]})
+    schedule = pd.DataFrame({"block_id": [1, 2], "treatment": ["CC", "CC"], "offset": [0, 1]})
     report = _write_report(tmp_path / "report", dataset, schedule)
 
     differences, compared = acc.compare_account_values(dataset, report)
@@ -247,7 +247,7 @@ def test_the_accounts_comparison_reports_a_difference(tmp_path: Path) -> None:
     dataset = build_canonical_dataset(
         FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "compiled"
     )
-    schedule = pd.DataFrame({"block_id": [1], "treatment": ["CC"], "period": [0]})
+    schedule = pd.DataFrame({"block_id": [1], "treatment": ["CC"], "offset": [0]})
     report = _write_report(tmp_path / "report", dataset, schedule, factor=2.0)
 
     differences, _ = acc.compare_account_values(dataset, report)
@@ -260,7 +260,7 @@ def test_the_accounts_comparison_replays_the_reference_horizon(tmp_path: Path) -
     dataset = build_canonical_dataset(
         FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "compiled"
     )
-    schedule = pd.DataFrame({"block_id": [1], "treatment": ["CC"], "period": [0]})
+    schedule = pd.DataFrame({"block_id": [1], "treatment": ["CC"], "offset": [0]})
     report = _write_report(tmp_path / "report", dataset, schedule, horizon=3)
 
     differences, compared = acc.compare_account_values(dataset, report)
@@ -273,7 +273,7 @@ def test_a_schedule_deciding_past_the_reported_years_is_a_difference(tmp_path: P
     dataset = build_canonical_dataset(
         FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "compiled"
     )
-    schedule = pd.DataFrame({"block_id": [1, 1], "treatment": ["CC", "CC"], "period": [0, 5]})
+    schedule = pd.DataFrame({"block_id": [1, 1], "treatment": ["CC", "CC"], "offset": [0, 5]})
     report = _write_report(tmp_path / "report", dataset, schedule, horizon=2)
 
     differences, _ = acc.compare_account_values(dataset, report)
@@ -456,19 +456,21 @@ def _write_period_report(
     schedule.to_csv(root / "schedule.csv", index=False)
     values = Simulator.from_dataset(dataset).simulate(schedule, 21)
     series = {
-        str(account): group.set_index("year")["value"]
+        str(account): group.set_index("offset")["value"]
         for account, group in values.groupby("account")
     }
     rows = []
     for account, annual in series.items():
         for period, year in ((0, 0), (1, 10), (2, 20)):
+            # period p covers offsets (p - 1) * 10 .. p * 10 - 1; period 0 is the snapshot at -1
+            end_offset = period * 10 - 1
             if period == 0:
-                current = float(annual.get(0, 0.0))
+                current = float(annual.get(-1, 0.0))
             elif aggregated and account.startswith("product."):
-                window = annual.loc[year - 9 : year]
+                window = annual.loc[end_offset - 9 : end_offset]
                 current = float(window.sum())
             else:
-                current = float(annual.get(year, 0.0))
+                current = float(annual.get(end_offset, 0.0))
             rows.append(
                 {
                     "TARGET": account,
@@ -487,7 +489,7 @@ def test_the_accounts_comparison_applies_the_reference_period_convention(tmp_pat
     dataset = build_canonical_dataset(
         FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "compiled"
     )
-    schedule = pd.DataFrame({"block_id": [1, 2], "treatment": ["CC", "CC"], "period": [0, 1]})
+    schedule = pd.DataFrame({"block_id": [1, 2], "treatment": ["CC", "CC"], "offset": [0, 1]})
     report = _write_period_report(tmp_path / "period", dataset, schedule, aggregated=True)
 
     differences, compared = acc.compare_account_values(dataset, report)
@@ -501,7 +503,7 @@ def test_period_reports_of_annual_values_are_a_difference(tmp_path: Path) -> Non
     dataset = build_canonical_dataset(
         FIXTURE / "recipe.xml", FIXTURE / "fragments.csv", tmp_path / "compiled"
     )
-    schedule = pd.DataFrame({"block_id": [1, 2], "treatment": ["CC", "CC"], "period": [0, 1]})
+    schedule = pd.DataFrame({"block_id": [1, 2], "treatment": ["CC", "CC"], "offset": [0, 1]})
     report = _write_period_report(tmp_path / "period", dataset, schedule, aggregated=False)
 
     differences, _compared = acc.compare_account_values(dataset, report)
@@ -669,7 +671,7 @@ def _destination_fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
     report = tmp_path / "report"
     report.mkdir()
     (report / "schedule.csv").write_text(
-        "BLOCK,DELTA,AGE,TYPE,TREATMENT\n1,1,41,MANAGED,CC\n", encoding="utf-8"
+        "BLOCK,DELTA,AGE,TYPE,TREATMENT\n1,0,41,MANAGED,CC\n", encoding="utf-8"
     )
     pd.DataFrame(
         {
@@ -875,7 +877,7 @@ def test_the_component_check_runs_against_a_listing_and_can_fail(tmp_path: Path)
     dataset, roads, report = _patch_export(tmp_path)
     own = tmp_path / "own"
     schedule = tmp_path / "ws4-schedule.csv"
-    pd.DataFrame({"block_id": [1, 2], "treatment": ["CC", "CC"], "period": [1, 1]}).to_csv(
+    pd.DataFrame({"block_id": [1, 2], "treatment": ["CC", "CC"], "offset": [1, 1]}).to_csv(
         schedule, index=False
     )
     Simulator.from_dataset(dataset).run(

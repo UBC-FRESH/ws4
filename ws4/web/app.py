@@ -957,9 +957,10 @@ def create_app(
         frame = read_csv(directory, "used_roads.csv")
         if frame.empty:
             return {"type": "FeatureCollection", "year": year or 0, "features": []}
+        time_column = "offset" if "offset" in frame.columns else "period"
         if year is None:
-            year = int(frame["period"].min())
-        selected = frame[frame["period"] == year]
+            year = int(frame[time_column].min())
+        selected = frame[frame[time_column] == year]
         features: list[dict[str, Any]] = []
         for row in selected.to_dict(orient="records"):
             features.append(
@@ -973,7 +974,7 @@ def create_app(
                         ],
                     },
                     "properties": {
-                        "period": int(row["period"]),
+                        "period": int(row[time_column]),
                         "segment_id": int(row["segment_id"]),
                         "from_vertex": int(row["from_vertex"]),
                         "to_vertex": int(row["to_vertex"]),
@@ -1045,7 +1046,7 @@ def create_app(
         """Return realized account values, optionally filtered by year and account."""
         frame = read_csv(run_dir(run), "account_values.csv")
         if year is not None:
-            frame = frame[frame["year"] == year]
+            frame = frame[frame["offset"] == year]
         if account is not None:
             frame = frame[frame["account"] == account]
         return [
@@ -1077,9 +1078,9 @@ def create_app(
         """Return the run's periods from its schedule, patch membership or account values."""
         directory = run_dir(run)
         for name, column in (
-            ("schedule.csv", "period"),
-            ("patch_membership.csv", "year"),
-            ("account_values.csv", "year"),
+            ("schedule.csv", "offset"),
+            ("patch_membership.csv", "period"),
+            ("account_values.csv", "offset"),
         ):
             if not (directory / name).is_file():
                 continue
@@ -1214,8 +1215,8 @@ def create_app(
             if account is None or account not in compartment_accounts:
                 account = compartment_accounts[0] if compartment_accounts else ""
             if year is None:
-                year = int(frame["year"].min()) if not frame.empty else 0
-            selected = frame[(frame["year"] == year) & (frame["account"] == account)]
+                year = int(frame["offset"].min()) if not frame.empty else 0
+            selected = frame[(frame["offset"] == year) & (frame["account"] == account)]
             for row in selected.to_dict(orient="records"):
                 block = int(row["block"])
                 compartments_by_block[block] = {
@@ -1229,7 +1230,7 @@ def create_app(
             )
             if (directory / "schedule.csv").is_file():
                 schedule = read_csv(directory, "schedule.csv")
-                current_rows = schedule[schedule["period"] == year]
+                current_rows = schedule[schedule["offset"] == year]
                 for block_id, group in current_rows.groupby("block_id"):
                     current_treatments[int(float(str(block_id)))] = sorted(
                         {str(value) for value in group["treatment"]}
@@ -1238,9 +1239,10 @@ def create_app(
             if not (directory / "patch_membership.csv").is_file():
                 raise HTTPException(status_code=404, detail="the run has no patch_membership.csv")
             frame = read_csv(directory, "patch_membership.csv")
+            time_column = "offset" if "offset" in frame.columns else "period"
             if year is None:
-                year = int(frame["year"].min()) if not frame.empty else 0
-            selected = frame[frame["year"] == year]
+                year = int(frame[time_column].min()) if not frame.empty else 0
+            selected = frame[frame[time_column] == year]
             for row in selected.to_dict(orient="records"):
                 block = int(row["block"])
                 patches_by_block[block] = {
@@ -1255,12 +1257,12 @@ def create_app(
                 raise HTTPException(status_code=404, detail="the run has no schedule.csv")
             schedule = read_csv(directory, "schedule.csv")
             if year is None:
-                year = int(schedule["period"].min()) if not schedule.empty else 0
+                year = int(schedule["offset"].min()) if not schedule.empty else 0
             first = year if period_start is None else min(period_start, year)
             selected = schedule[
-                schedule["period"] <= year
+                schedule["offset"] <= year
                 if layer == "cumulative"
-                else (schedule["period"] >= first) & (schedule["period"] <= year)
+                else (schedule["offset"] >= first) & (schedule["offset"] <= year)
             ]
             for block_id, group in selected.groupby("block_id"):
                 treatments_by_block[int(float(str(block_id)))] = sorted(
@@ -1270,7 +1272,7 @@ def create_app(
                 current = {
                     int(value)
                     for value in schedule[
-                        (schedule["period"] >= first) & (schedule["period"] <= year)
+                        (schedule["offset"] >= first) & (schedule["offset"] <= year)
                     ]["block_id"].astype("int64")
                 }
         else:
@@ -1335,7 +1337,7 @@ def create_app(
         values = read_csv(directory, "account_values.csv")
         index: dict[tuple[int, str], float] = {}
         for year, account, value in zip(
-            values["year"], values["account"], values["value"], strict=True
+            values["offset"], values["account"], values["value"], strict=True
         ):
             key = (int(year), str(account))
             index[key] = index.get(key, 0.0) + float(value)

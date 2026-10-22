@@ -152,6 +152,7 @@ def write_targets(path: Path, targets: Sequence[Target]) -> Path:
             entry["period"] = target.period
         else:
             entry["year"] = target.year
+            entry["offset"] = target.end_offset()
         if target.minimum is not None:
             entry["minimum"] = target.minimum
         if target.maximum is not None:

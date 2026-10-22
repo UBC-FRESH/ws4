@@ -39,6 +39,7 @@ from ..roads.accounts import (
     resolve_allocation_values,
 )
 from ..roads.network import RouteNetwork
+from ..schedule import schedule_offset_frame
 from ..spread.accounts import (
     Point,
     SpreadAccount,
@@ -321,7 +322,7 @@ class Simulator:
         return cached
 
     def _delivery_overrides(
-        self, schedule: pd.DataFrame, year: int, route_model: RouteModel
+        self, schedule: pd.DataFrame, offset: int, route_model: RouteModel
     ) -> dict[tuple[int, str], str]:
         """Return what a year's delivery targets decide, for the blocks nearest each of them.
 
@@ -335,9 +336,9 @@ class Simulator:
         Parameters
         ----------
         schedule : pandas.DataFrame
-            The schedule, with ``block_id``, ``treatment`` and ``period`` columns.
-        year : int
-            The year the treatments are applied in.
+            The schedule, with ``block_id``, ``treatment`` and ``offset`` columns.
+        offset : int
+            The simulation offset the treatments are applied in.
         route_model : RouteModel
             The route model, whose delivery targets are filled.
 
@@ -352,7 +353,7 @@ class Simulator:
         offsets = np.asarray(offsets)
         areas = np.asarray(areas)
         by_block = self._block_index()
-        rows = list(schedule[schedule["period"] == year].itertuples(index=False))
+        rows = list(schedule[schedule["offset"] == offset].itertuples(index=False))
         for delivery in route_model.delivery:
             if delivery.destination not in route_model.eligible(delivery.product):
                 continue
@@ -368,11 +369,11 @@ class Simulator:
                     key = (int(tracks[index]), label)
                     if self._treatment_by_key.get(key) is None:
                         continue
-                    offset = int(offsets[index])
+                    fragment_offset = int(offsets[index])
                     area = float(areas[index])
                     for curve_id, product_label in self._products_by_key.get(key, []):
                         if product_label == delivery.product:
-                            produced += area * self._curve_value(curve_id, offset)
+                            produced += area * self._curve_value(curve_id, fragment_offset)
                 if produced > 0.0:
                     candidates.append((route.haul_cost, block_id, produced))
             candidates.sort()
@@ -387,7 +388,7 @@ class Simulator:
     def apply_treatments(
         self,
         schedule: pd.DataFrame,
-        year: int,
+        offset: int,
         route_model: RouteModel | None = None,
         ledger: RouteCostLedger | None = None,
     ) -> set[int]:
@@ -402,9 +403,9 @@ class Simulator:
         Parameters
         ----------
         schedule : pandas.DataFrame
-            The schedule, with ``block_id``, ``treatment``, and ``period`` columns.
-        year : int
-            The year to apply.
+            The schedule, with ``block_id``, ``treatment``, and ``offset`` columns.
+        offset : int
+            The simulation offset to apply.
         route_model : RouteModel or None, optional
             The route model (destinations, eligibility, surplus) for routing products.
         ledger : RouteCostLedger or None, optional
@@ -416,7 +417,7 @@ class Simulator:
             The blocks that had at least one fragment treated.
         """
         if route_model is not None and route_model.delivery:
-            route_model.set_overrides(self._delivery_overrides(schedule, year, route_model))
+            route_model.set_overrides(self._delivery_overrides(schedule, offset, route_model))
         disturbed: set[int] = set()
         # What a product criterion reads is *this* year's production, so it starts empty each year:
         # left to accumulate, a criterion would select every block ever harvested rather than the
@@ -428,7 +429,7 @@ class Simulator:
         areas = self.fragments["area_ha"].to_numpy(copy=True)
         by_block = self._block_index()
         changed = False
-        for row in schedule[schedule["period"] == year].itertuples(index=False):
+        for row in schedule[schedule["offset"] == offset].itertuples(index=False):
             block_id = _as_int(row.block_id)
             label = str(row.treatment)
             for index in by_block.get(block_id, []):
@@ -436,12 +437,12 @@ class Simulator:
                 treatment = self._treatment_by_key.get(key)
                 if treatment is None:
                     continue
-                offset = int(offsets[index])
+                fragment_offset = int(offsets[index])
                 area = float(areas[index])
                 for curve_id, product_label in self._products_by_key.get(key, []):
-                    value = area * self._curve_value(curve_id, offset)
+                    value = area * self._curve_value(curve_id, fragment_offset)
                     self._product_values.append(
-                        {"year": year, "account": product_label, "value": value}
+                        {"offset": offset, "account": product_label, "value": value}
                     )
                     produced = self._produced.setdefault(product_label, {})
                     produced[block_id] = produced.get(block_id, 0.0) + value
@@ -450,10 +451,12 @@ class Simulator:
                     if route_model is not None and route_model.delivers(product_label):
                         destination, route = route_model.assign(block_id, product_label)
                         if ledger is not None:
-                            ledger.record(year, block_id, product_label, value, destination, route)
+                            ledger.record(
+                                offset, block_id, product_label, value, destination, route
+                            )
                         self._route_values.append(
                             {
-                                "year": year,
+                                "offset": offset,
                                 "block_id": block_id,
                                 "destination": destination,
                                 "product": product_label,
@@ -473,7 +476,7 @@ class Simulator:
             self._join_dirty = True
         return disturbed
 
-    def account_values(self, year: int) -> list[dict[str, object]]:
+    def account_values(self, offset: int) -> list[dict[str, object]]:
         """Compute the feature account values for the current state.
 
         A feature label may appear on several tracks; the value is the sum of the area
@@ -482,13 +485,13 @@ class Simulator:
 
         Parameters
         ----------
-        year : int
-            The year to label the values with.
+        offset : int
+            The simulation offset to label the values with.
 
         Returns
         -------
         list of dict
-            One ``{"year", "account", "value"}`` record per feature account.
+            One ``{"offset", "account", "value"}`` record per feature account.
         """
         if self._join_dirty or self._join_frame_id != id(self.fragments):
             self._rebuild_join()
@@ -500,7 +503,7 @@ class Simulator:
         values = areas[self._pair_frag] * yields
         totals = np.bincount(self._pair_label, weights=values, minlength=len(self._labels))
         return [
-            {"year": year, "account": self._labels[index], "value": float(total)}
+            {"offset": offset, "account": self._labels[index], "value": float(total)}
             for index, total in enumerate(totals)
         ]
 
@@ -710,14 +713,22 @@ class Simulator:
         positions = self._block_index().get(int(block_id), [])
         if not positions:
             return {}
-        by_year = {int(year): str(treatment) for treatment, year in events}
+        by_offset = {int(offset): str(treatment) for treatment, offset in events}
         arrays_track, arrays_offset, arrays_area = self._fragment_arrays()
         tracks = arrays_track[positions]
         offsets = arrays_offset[positions]
         areas = arrays_area[positions]
         totals: dict[tuple[int, str], float] = {}
+        # Offset -1 is the pre-simulation snapshot.
+        for index in range(len(positions)):
+            area = float(areas[index])
+            offset = int(offsets[index])
+            for curve_id, label in self._track_features.get(int(tracks[index]), ()):
+                value = area * self._curve_value(curve_id, offset)
+                key = (-1, label)
+                totals[key] = totals.get(key, 0.0) + value
         for step in range(years):
-            treatment = by_year.get(step)
+            treatment = by_offset.get(step)
             if treatment is not None:
                 for index in range(len(positions)):
                     current = int(tracks[index])
@@ -774,29 +785,29 @@ class Simulator:
                 kernel = ProductKernel(self)
                 self._product_kernel = kernel
             return kernel.products(block_id, events)
-        by_year = {int(year): str(treatment) for treatment, year in events}
+        by_offset = {int(offset): str(treatment) for treatment, offset in events}
         arrays_track, arrays_offset, arrays_area = self._fragment_arrays()
         tracks = arrays_track[positions]
         offsets = arrays_offset[positions]
         areas = arrays_area[positions]
         totals: dict[tuple[int, str], float] = {}
         current = 0
-        for year in sorted(by_year):
-            gap = year - current
+        for offset in sorted(by_offset):
+            gap = offset - current
             if gap:
                 offsets = offsets + gap
-                current = year
-            treatment = by_year[year]
+                current = offset
+            treatment = by_offset[offset]
             for index in range(len(positions)):
                 key = (int(tracks[index]), treatment)
                 transition = self._treatment_by_key.get(key)
                 if transition is None:
                     continue
                 area = float(areas[index])
-                offset = int(offsets[index])
+                fragment_offset = int(offsets[index])
                 for curve_id, product_label in self._products_by_key.get(key, []):
-                    value = area * self._curve_value(curve_id, offset)
-                    cell = (year, product_label)
+                    value = area * self._curve_value(curve_id, fragment_offset)
+                    cell = (offset, product_label)
                     totals[cell] = totals.get(cell, 0.0) + value
                 tracks[index] = transition[0]
                 offsets[index] = transition[1]
@@ -907,13 +918,13 @@ class Simulator:
         positions = self._block_index().get(int(block_id), [])
         if not positions or not route_accounts:
             return {}
-        by_year = {int(year): str(treatment) for treatment, year in events}
+        by_offset = {int(offset): str(treatment) for treatment, offset in events}
         tracks = self.fragments["track_id"].to_numpy()[positions].astype(np.int64)
         offsets = self.fragments["offset"].to_numpy()[positions].astype(np.int64)
         areas = self.fragments["area_ha"].to_numpy()[positions].astype(float)
         ledger = RouteCostLedger(route_model.network, collect=False)
         for step in range(years):
-            treatment = by_year.get(step)
+            treatment = by_offset.get(step)
             if treatment is not None:
                 for index in range(len(positions)):
                     key = (int(tracks[index]), treatment)
@@ -934,7 +945,7 @@ class Simulator:
             offsets += 1
         frame = ledger.account_values(route_accounts)
         return {
-            (int(str(row.year)), str(row.account)): float(str(row.value))
+            (int(str(row.offset)), str(row.account)): float(str(row.value))
             for row in frame.itertuples(index=False)
         }
 
@@ -1019,7 +1030,7 @@ class Simulator:
         Parameters
         ----------
         schedule : pandas.DataFrame
-            The schedule, with ``block_id``, ``treatment``, and ``period`` columns.
+            The schedule, with ``block_id``, ``treatment``, and ``offset`` columns.
         years : int
             The number of annual steps.
         network : RouteNetwork or None, optional
@@ -1066,16 +1077,20 @@ class Simulator:
             | {element.attribute2 for element in edge_elements}
             | set(spread_labels)
         )
-        for year in range(years):
+        # Offset -1 is the instantaneous pre-simulation snapshot. Record it before any
+        # treatment is applied; the first treatment offset (0) is the first simulation
+        # step, and period 1 covers offsets 0 through period_width - 1.
+        records.extend(self.account_values(-1))
+        for offset in range(years):
             products_before = len(self._product_values)
-            self.apply_treatments(schedule, year, model, ledger)
-            records.extend(self.account_values(year))
+            self.apply_treatments(schedule, offset, model, ledger)
+            records.extend(self.account_values(offset))
             produced: dict[str, float] = {}
             for record in self._product_values[products_before:]:
                 account = str(record["account"])
                 produced[account] = produced.get(account, 0.0) + float(str(record["value"]))
             records.extend(
-                {"year": year, "account": account, "value": value}
+                {"offset": offset, "account": account, "value": value}
                 for account, value in produced.items()
             )
             if spread_accounts and spread_points:
@@ -1091,21 +1106,21 @@ class Simulator:
                         membership=membership,
                     )
                     for row in membership:
-                        row["year"] = year
+                        row["offset"] = offset
                         self._spread_membership.append(row)
                     for account, value in cells.items():
-                        record = {"year": year, "account": account, "value": value}
+                        record = {"offset": offset, "account": account, "value": value}
                         records.append(record)
                         self._spread_values.append(dict(record))
             if edge_elements:
                 criteria = {label: self.block_criteria(label) for label in criteria_labels}
                 for row in edge_values(edge_elements, list(edges), criteria):
-                    record = {"year": year, "account": row["account"], "value": row["value"]}
+                    record = {"offset": offset, "account": row["account"], "value": row["value"]}
                     records.append(record)
                     self._edge_values.append(dict(record))
             self.fragments["offset"] = self.fragments["offset"].astype(int) + 1
             self._invalidate_state()
-        return pd.DataFrame(records, columns=["year", "account", "value"])
+        return pd.DataFrame(records, columns=["offset", "account", "value"])
 
     def run(
         self,
@@ -1136,7 +1151,7 @@ class Simulator:
         Parameters
         ----------
         schedule_csv : Path
-            A CSV with ``block_id``, ``treatment``, and ``period`` columns.
+            A CSV with ``block_id``, ``treatment``, and ``offset`` columns.
         years : int
             The number of annual steps.
         out_dir : Path
@@ -1200,9 +1215,7 @@ class Simulator:
         """
         out_dir = Path(out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
-        schedule = pd.read_csv(schedule_csv)
-        if "period" not in schedule.columns:
-            schedule = schedule.assign(period=0)
+        schedule = schedule_offset_frame(pd.read_csv(schedule_csv))
 
         model = route_model
         if model is None and network is not None:
@@ -1255,22 +1268,22 @@ class Simulator:
             if not shares.empty:
                 values = pd.concat([values, shares], ignore_index=True)
         values.to_csv(out_dir / "account_values.csv", index=False)
-        pd.DataFrame(self._product_values, columns=["year", "account", "value"]).to_csv(
+        pd.DataFrame(self._product_values, columns=["offset", "account", "value"]).to_csv(
             out_dir / "product_values.csv", index=False
         )
         if edge_elements:
-            pd.DataFrame(self._edge_values, columns=["year", "account", "value"]).to_csv(
+            pd.DataFrame(self._edge_values, columns=["offset", "account", "value"]).to_csv(
                 out_dir / "edge_metrics.csv", index=False
             )
         if spread_accounts:
-            pd.DataFrame(self._spread_values, columns=["year", "account", "value"]).to_csv(
+            pd.DataFrame(self._spread_values, columns=["offset", "account", "value"]).to_csv(
                 out_dir / "spread_metrics.csv", index=False
             )
             if self._spread_membership:
                 pd.DataFrame(
                     self._spread_membership,
                     columns=[
-                        "year",
+                        "offset",
                         "account",
                         "compartment",
                         "compartment_class",
@@ -1285,7 +1298,7 @@ class Simulator:
             pd.DataFrame(
                 self._route_values,
                 columns=[
-                    "year",
+                    "offset",
                     "block_id",
                     "destination",
                     "product",
@@ -1338,7 +1351,7 @@ class Simulator:
         Parameters
         ----------
         schedule : pandas.DataFrame
-            The schedule, with ``block_id``, ``treatment``, and ``period`` columns.
+            The schedule, with ``block_id``, ``treatment``, and ``offset`` columns.
         years : int
             The number of annual steps.
         topology_csv : Path
@@ -1380,15 +1393,15 @@ class Simulator:
         patch_records: list[dict[str, object]] = []
         schedule_pairs: list[tuple[int, int]] = []
         self.fragments["offset"] = self.fragments["age"].astype(int)
-        for year in range(years):
-            disturbed = self.apply_treatments(schedule, year)
+        for offset in range(years):
+            disturbed = self.apply_treatments(schedule, offset)
             if ledger is not None:
                 criteria = {label: self.block_criteria(label) for label in criteria_labels}
-                ledger.record(year, criteria)
+                ledger.record(offset, criteria)
             if disturbed:
-                schedule_pairs.extend((int(block), year) for block in disturbed)
+                schedule_pairs.extend((int(block), offset) for block in disturbed)
                 patch_records.append(
-                    {"year": year, **patch_metrics(disturbed, edges, block_area, patch_breaks)}
+                    {"offset": offset, **patch_metrics(disturbed, edges, block_area, patch_breaks)}
                 )
             self.fragments["offset"] = self.fragments["offset"].astype(int) + 1
             self._invalidate_state()

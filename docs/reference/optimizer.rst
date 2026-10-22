@@ -11,14 +11,15 @@ Objective
 
 A target names one account and one accounting **period**, with a ``minimum``, a ``maximum``, or both.
 **The simulation step is one year and is not configurable.** Treatments, growth, transitions and road
-events are all simulated annually; the **account** time step is a whole number of years — the period
-length — and is what ``period_width`` sets (default 1). Five and ten years are the convention in forest
-planning; any whole multiple of a year is accepted. For an additive account (volume, area, a count) the
-account value for the period is the sum of its years, compared to the levels, so a decade target is
-``period_width: 10``; the penalty is the weighted shortfall below the minimum plus the weighted excess
-above the maximum, and the objective is the total penalty (lower is better). A **patch** account is a
-snapshot of the map rather than an additive quantity, so a patch target is read at the end year of its
-period. Targets load from a YAML file:
+events are all simulated annually, at a simulation *offset* (offset 0 is the first year); the
+**account** time step is a whole number of years — the period length — and is what ``period_width``
+sets (default 1). Five and ten years are the convention in forest planning; any whole multiple of a
+year is accepted. For an additive account (volume, area, a count) the account value for the period is
+the sum of its offsets, compared to the levels, so a decade target is ``period_width: 10``; the penalty
+is the weighted shortfall below the minimum plus the weighted excess above the maximum, and the
+objective is the total penalty (lower is better). A **patch** account is a snapshot of the map rather
+than an additive quantity, so a patch target is read at the end offset of its period. Targets load from
+a YAML file:
 
 .. code-block:: yaml
 
@@ -37,11 +38,12 @@ period. Targets load from a YAML file:
        min_weight: 10000
        shape: non_linear
 
-**Period numbering** follows the established convention: **period 0 is the instantaneous snapshot at
-year 0**, and periods **1 to N** are the accounting periods the targets are set on. A target at
-``period: 1`` with ``period_width: 10`` is the level for years 1 to 10; period 2 is years 11 to 20,
-and so on. ``year`` remains accepted for older target files, but it is the period's end year and is
-derived from the period when the period is given.
+**Period numbering**: **period 0 is the zero-length pre-simulation snapshot at offset -1**, and periods
+**1 to N** are the accounting periods the targets are set on. A target at ``period: 1`` with
+``period_width: 10`` reads offsets 0 to 9; period 2 reads offsets 10 to 19, and so on. The **year** is a
+display label only: it is the year the period ends on (``offset + 1``), so period 1 with width 10
+displays as the decade ending in year 10. ``year`` remains accepted for older target files, but write
+``period``.
 
 **Flow targets** express even flow or non-declining yield without pinning the level, which is the
 established way to state them: the flow target is set to zero with a weight, and a separate target on
@@ -247,8 +249,8 @@ Watch
 ``ws4 watch`` runs the same search and paints the realized-versus-target window of an account in
 place: one column per period, the minimum/maximum target band shaded, and the realized value drawn
 over it, coloured by status (green inside the window, red below the minimum, blue above the
-maximum). Targets are per year; the view sums them into periods of ``--period-width`` years, so
-per-year levels that sum to a periodic target read as the periodic window. ``--plain`` prints one
+maximum). Targets are per period; the view groups offsets into periods of ``--period-width`` years, so
+per-period levels that sum to a periodic target read as the periodic window. ``--plain`` prints one
 final frame instead of a live view. The live view repaints on a fixed heartbeat
 (``--refresh`` seconds, default 2), independent of the search, so the header (iteration rate,
 objective) stays current even between improvements.
@@ -303,8 +305,8 @@ band of young forest, not an opening. Pick the criterion that matches the questi
 Each block's criterion series is cached per chain, the adjacency is indexed by block, and a move
 updates only the components near the moved block — a resize, a merge, a new standalone patch, or a
 removal/split. A patch move therefore costs a few milliseconds of patch work rather than a full
-re-simulation. Patch statistics are also kept only at the years a target actually reads (the first
-year of each period), because the simulation is annual while the accounting is periodic; on a
+re-simulation. Patch statistics are also kept only at the offsets a target actually reads (the end
+offset of each period), because the simulation is annual while the accounting is periodic; on a
 200-year, 20-period benchmark with a volume floor and a patch ramp that change alone took the search
 from 62 to 310 iterations/s.
 
@@ -374,7 +376,7 @@ Outputs
    * - File
      - Contents
    * - ``schedule.csv``
-     - The incumbent schedule (``block_id,treatment,period``).
+     - The incumbent schedule (``block_id,treatment,offset``).
    * - ``summary.json``
      - The run summary: objective, iterations, patience, seed, metaheuristic, operators, block count,
        status, time-limit flag, dataset reference.

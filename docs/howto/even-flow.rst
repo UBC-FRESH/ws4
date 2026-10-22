@@ -32,10 +32,10 @@ definitional, not a bug. Run first with only a linear floor, so every period car
    # tmp/howto/level.yaml — the floor, and nothing else
    targets:
      - account: product.Harvested.CC
-       year: 0
+       period: 1
        minimum: 30000          # one target per period; here, the first
        period_width: 10
-     # ... and the same for years 10, 20, ... to cover the horizon
+     # ... and the same for periods 2, 3, ... to cover the horizon
 
 .. code-block:: bash
 
@@ -59,11 +59,11 @@ with a weight high enough that the shape is worth more than the level.
    # tmp/howto/level-and-flow.yaml — the floor, plus the shape
    targets:
      - account: product.Harvested.CC
-       year: 0
+       period: 1
        minimum: 30000
        period_width: 10
      - account: product.Harvested.CC
-       year: 0
+       period: 1
        flow: even              # or: flow: ndy
        period_width: 10
        minimum: -1             # one percent below the reference period is free
@@ -97,7 +97,7 @@ same band tolerates a one-percent **decline**:
 .. code-block:: yaml
 
      - account: feature.Volume.managed
-       year: 0
+       period: 1
        flow: ndy
        period_width: 10
        flow_start: 50          # the last five periods, say
@@ -109,7 +109,7 @@ Omit ``maximum`` to leave growth free, which is the strict closing-inventory for
 ``maximum: 1`` to charge a rise as well, which is occasionally what a case wants. Every period of
 the window is compared, including the first, which is measured against the period immediately before
 the window. ``flow_end`` is **exclusive**, so a window of the last five decades of a 100-year horizon
-starts at year 50 and has no ``flow_end``.
+starts at offset 50 and has no ``flow_end``.
 
 **4. The same in Python.** The flow keys are fields on ``Target``:
 

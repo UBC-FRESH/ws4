@@ -24,7 +24,7 @@ def _config(tmp_path: Path, **overrides: object) -> OptimizeConfig:
     """A run with a target, so the search has something to work on."""
     targets = tmp_path / "targets.yaml"
     targets.write_text(
-        "targets:\n  - account: feature.Volume\n    year: 0\n    minimum: 500\n", encoding="utf-8"
+        "targets:\n  - account: feature.Volume\n    period: 1\n    minimum: 500\n", encoding="utf-8"
     )
     settings: dict[str, object] = {"years": 1, "targets_path": str(targets)}
     settings.update(overrides)

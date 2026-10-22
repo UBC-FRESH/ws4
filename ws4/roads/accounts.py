@@ -628,28 +628,28 @@ def resolve_allocation_values(
         configuration and the routing disagree about what the master is.
     """
     if not allocations:
-        return pd.DataFrame(columns=["year", "account", "value"])
-    totals = values.groupby(["year", "account"], as_index=False)["value"].sum()
+        return pd.DataFrame(columns=["offset", "account", "value"])
+    totals = values.groupby(["offset", "account"], as_index=False)["value"].sum()
     rows: list[dict[str, object]] = []
     for allocation in allocations:
         master = totals[totals["account"] == allocation.master]
         if master.empty:
             continue
-        moved: dict[int, float] = {int(year): 0.0 for year in master["year"]}
+        moved: dict[int, float] = {int(year): 0.0 for year in master["offset"]}
         for destination, account in allocation.allocations:
             share = volumes[
                 (volumes["destination"] == destination) & (volumes["product"] == allocation.master)
             ]
-            for year, volume in zip(share["year"], share["volume"], strict=True):
+            for year, volume in zip(share["offset"], share["volume"], strict=True):
                 year = int(year)
                 value = float(volume) * allocation.factor
                 moved[year] = moved.get(year, 0.0) + value
-                rows.append({"year": year, "account": account, "value": value})
+                rows.append({"offset": year, "account": account, "value": value})
         # Check every year either side knows about, not just the master's own: a share routed in a
         # year the master has no value for is still a share of it.
         totals_by_year = {
             int(year): float(value)
-            for year, value in zip(master["year"], master["value"], strict=True)
+            for year, value in zip(master["offset"], master["value"], strict=True)
         }
         for year in sorted(set(totals_by_year) | set(moved)):
             total = totals_by_year.get(year, 0.0)
@@ -661,9 +661,9 @@ def resolve_allocation_values(
                 )
             if allocation.unallocated:
                 rows.append(
-                    {"year": year, "account": allocation.unallocated, "value": max(rest, 0.0)}
+                    {"offset": year, "account": allocation.unallocated, "value": max(rest, 0.0)}
                 )
-    return pd.DataFrame(rows, columns=["year", "account", "value"])
+    return pd.DataFrame(rows, columns=["offset", "account", "value"])
 
 
 def resolve_account_values(
@@ -695,7 +695,7 @@ def resolve_account_values(
         frames.append(extra)
     combined = pd.concat(frames, ignore_index=True) if len(frames) > 1 else values.copy()
     if duplicates:
-        totals = combined.groupby(["year", "account"], as_index=False)["value"].sum()
+        totals = combined.groupby(["offset", "account"], as_index=False)["value"].sum()
         additions: list[pd.DataFrame] = []
         for duplicate in duplicates:
             source = totals[totals["account"] == duplicate.master]
@@ -707,7 +707,7 @@ def resolve_account_values(
             additions.append(copied)
         if additions:
             combined = pd.concat([combined, *additions], ignore_index=True)
-    return pd.DataFrame(combined.groupby(["year", "account"], as_index=False)["value"].sum())
+    return pd.DataFrame(combined.groupby(["offset", "account"], as_index=False)["value"].sum())
 
 
 @dataclass
@@ -814,7 +814,7 @@ class RouteCostLedger:
         if self.collect:
             self._route_rows.append(
                 {
-                    "year": year,
+                    "offset": year,
                     "block_id": block_id,
                     "destination": destination,
                     "product": product,
@@ -978,7 +978,7 @@ class RouteCostLedger:
         return pd.DataFrame(
             self._route_rows,
             columns=[
-                "year",
+                "offset",
                 "block_id",
                 "destination",
                 "product",
@@ -998,10 +998,10 @@ class RouteCostLedger:
         """
         return pd.DataFrame(
             [
-                {"year": year, "destination": destination, "product": product, "volume": volume}
+                {"offset": year, "destination": destination, "product": product, "volume": volume}
                 for (year, destination, product), volume in sorted(self._product_volume.items())
             ],
-            columns=["year", "destination", "product", "volume"],
+            columns=["offset", "destination", "product", "volume"],
         )
 
     def used_roads(self) -> pd.DataFrame:
@@ -1026,7 +1026,7 @@ class RouteCostLedger:
                 continue
             rows.append(
                 {
-                    "period": year,
+                    "offset": year,
                     "segment_id": segment_id,
                     "from_vertex": segment.from_vertex,
                     "to_vertex": segment.to_vertex,
@@ -1042,7 +1042,7 @@ class RouteCostLedger:
         return pd.DataFrame(
             rows,
             columns=[
-                "period",
+                "offset",
                 "segment_id",
                 "from_vertex",
                 "to_vertex",
@@ -1121,7 +1121,7 @@ class RouteCostLedger:
             segment = self._by_id[segment_id]
             rows.append(
                 {
-                    "period": year,
+                    "offset": year,
                     "segment_id": segment_id,
                     "from_vertex": segment.from_vertex,
                     "to_vertex": segment.to_vertex,
@@ -1134,7 +1134,7 @@ class RouteCostLedger:
         return pd.DataFrame(
             rows,
             columns=[
-                "period",
+                "offset",
                 "segment_id",
                 "from_vertex",
                 "to_vertex",
@@ -1169,7 +1169,11 @@ class RouteCostLedger:
                     if destination != account.destination or product != account.product:
                         continue
                     rows.append(
-                        {"year": year, "account": account.account, "value": volume * account.factor}
+                        {
+                            "offset": year,
+                            "account": account.account,
+                            "value": volume * account.factor,
+                        }
                     )
                 continue
             for (year, destination), totals in self._dest_totals.items():
@@ -1177,12 +1181,12 @@ class RouteCostLedger:
                     continue
                 rows.append(
                     {
-                        "year": year,
+                        "offset": year,
                         "account": account.account,
                         "value": totals.get(account.kind, 0.0) * account.factor,
                     }
                 )
-        return pd.DataFrame(rows, columns=["year", "account", "value"])
+        return pd.DataFrame(rows, columns=["offset", "account", "value"])
 
     def route_cost_report(self, destination: str | None = None) -> pd.DataFrame:
         """Return the route cost report: one row per period of the model.

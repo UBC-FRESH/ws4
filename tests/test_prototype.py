@@ -30,7 +30,7 @@ def _simulate(dataset: Path, schedule: Path, tmp_path: Path, years: int) -> pd.D
 def _write_schedule(tmp_path: Path, name: str, rows: list[tuple[int, str, int]]) -> Path:
     """Write a schedule CSV."""
     path = tmp_path / name
-    pd.DataFrame(rows, columns=["block_id", "treatment", "period"]).to_csv(path, index=False)
+    pd.DataFrame(rows, columns=["block_id", "treatment", "offset"]).to_csv(path, index=False)
     return path
 
 
@@ -44,7 +44,7 @@ def test_simulate_grows_the_feature_account(tmp_path: Path) -> None:
     dataset = _build(tmp_path)
     schedule = _write_schedule(tmp_path, "empty.csv", [])
     values = _simulate(dataset, schedule, tmp_path, years=2)
-    volume = values[values["account"] == "feature.Volume"].set_index("year")["value"]
+    volume = values[values["account"] == "feature.Volume"].set_index("offset")["value"]
     assert volume.loc[0] == pytest.approx(700.0)
     assert volume.loc[1] == pytest.approx(712.5)
 
@@ -54,5 +54,5 @@ def test_treatment_resets_offset_and_switches_track(tmp_path: Path) -> None:
     dataset = _build(tmp_path)
     schedule = _write_schedule(tmp_path, "cc.csv", [(1, "CC", 0)])
     values = _simulate(dataset, schedule, tmp_path, years=1)
-    volume = values[values["account"] == "feature.Volume"].set_index("year")["value"]
+    volume = values[values["account"] == "feature.Volume"].set_index("offset")["value"]
     assert volume.loc[0] == pytest.approx(340.0)

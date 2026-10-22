@@ -160,8 +160,8 @@ def test_duplicate_accounts_copy_and_scale() -> None:
     """A duplicate account copies its master into a target, scaled."""
     from ws4.roads.accounts import DuplicateAccount, resolve_account_values
 
-    values = pd.DataFrame({"year": [0], "account": ["a"], "value": [5.0]})
-    extra = pd.DataFrame({"year": [0], "account": ["route.haul"], "value": [100.0]})
+    values = pd.DataFrame({"offset": [0], "account": ["a"], "value": [5.0]})
+    extra = pd.DataFrame({"offset": [0], "account": ["route.haul"], "value": [100.0]})
     resolved = resolve_account_values(
         values, extra, [DuplicateAccount("route.haul", "route.total", 0.5)]
     )
@@ -192,13 +192,13 @@ def test_used_roads_carry_the_vertex_geometry(tmp_path: Path) -> None:
     ledger.record(1, 1, "product.Yield", 10.0, "destination.MILL1", route)
     used = ledger.used_roads()
     assert len(used) == 4
-    assert set(used["period"]) == {0, 1}
+    assert set(used["offset"]) == {0, 1}
     first = used.iloc[0]
     assert (first["x1"], first["y1"], first["x2"], first["y2"]) == (0.0, 0.0, 100.0, 0.0)
     ledger.write(tmp_path)
     written = pd.read_csv(tmp_path / "used_roads.csv")
     assert len(written) == 4
-    assert {"period", "segment_id", "x1", "y1", "x2", "y2"}.issubset(written.columns)
+    assert {"offset", "segment_id", "x1", "y1", "x2", "y2"}.issubset(written.columns)
 
 
 def test_load_route_config(tmp_path: Path) -> None:
@@ -302,11 +302,11 @@ def test_a_product_allocation_partitions_a_master_across_destinations() -> None:
     from ws4.roads.accounts import ProductAllocation, resolve_allocation_values
 
     values = pd.DataFrame(
-        {"year": [0, 0], "account": ["product.yield", "other"], "value": [100.0, 5.0]}
+        {"offset": [0, 0], "account": ["product.yield", "other"], "value": [100.0, 5.0]}
     )
     volumes = pd.DataFrame(
         {
-            "year": [0, 0],
+            "offset": [0, 0],
             "destination": ["mill1", "mill2"],
             "product": ["product.yield"] * 2,
             "volume": [30.0, 45.0],
@@ -326,7 +326,7 @@ def test_a_product_allocation_partitions_a_master_across_destinations() -> None:
     got = {
         (account, year): value
         for account, year, value in zip(
-            shares["account"], shares["year"], shares["value"], strict=True
+            shares["account"], shares["offset"], shares["value"], strict=True
         )
     }
     assert got[("product.mill1", 0)] == 30.0
@@ -338,9 +338,9 @@ def test_an_allocation_that_exceeds_its_master_is_refused() -> None:
     """Shares larger than the master would mean the configuration and routing disagree."""
     from ws4.roads.accounts import ProductAllocation, resolve_allocation_values
 
-    values = pd.DataFrame({"year": [0], "account": ["product.yield"], "value": [10.0]})
+    values = pd.DataFrame({"offset": [0], "account": ["product.yield"], "value": [10.0]})
     volumes = pd.DataFrame(
-        {"year": [0], "destination": ["mill1"], "product": ["product.yield"], "volume": [99.0]}
+        {"offset": [0], "destination": ["mill1"], "product": ["product.yield"], "volume": [99.0]}
     )
     with pytest.raises(ValueError, match="exceed its own value"):
         resolve_allocation_values(

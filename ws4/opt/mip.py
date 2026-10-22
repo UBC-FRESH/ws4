@@ -63,7 +63,7 @@ def _simulate_index(
     simulator.fragments["offset"] = simulator.fragments["age"].astype(int)  # type: ignore[attr-defined]
     values = simulator.simulate(schedule, years)  # type: ignore[attr-defined]
     return {
-        (str(row.account), int(float(str(row.year)))): float(str(row.value))
+        (str(row.account), int(float(str(row.offset)))): float(str(row.value))
         for row in values.itertuples(index=False)
     }
 
@@ -102,7 +102,7 @@ def option_contributions(
     accounted = sorted(
         {(target.account, year) for target in targets for year in _target_years(target)}
     )
-    empty = pd.DataFrame([], columns=["block_id", "treatment", "period"])
+    empty = pd.DataFrame([], columns=["block_id", "treatment", "offset"])
     base: dict[int, dict[tuple[str, int], float]] = {}
     deltas: dict[tuple[int, Chain], dict[tuple[str, int], float]] = {}
     for block, options in candidates.items():
@@ -111,7 +111,7 @@ def option_contributions(
         for option in options:
             schedule = pd.DataFrame(
                 [
-                    {"block_id": block, "treatment": treatment, "period": year}
+                    {"block_id": block, "treatment": treatment, "offset": year}
                     for treatment, year in option
                 ]
             )
@@ -332,7 +332,7 @@ def _target_years(target: Target) -> list[int]:
     list of int
         The years the target's value comes from.
     """
-    return list(target.cell_years()) if accumulates(target.account) else [target.year]
+    return list(target.cell_offsets()) if accumulates(target.account) else [target.end_offset()]
 
 
 def bound_for(

@@ -263,7 +263,7 @@ def test_a_run_writes_the_spread_accounts_and_the_optimizer_can_target_them(tmp_
 
     dataset, topology, coordinates, accounts = _run_fixture(tmp_path)
     schedule = tmp_path / "schedule.csv"
-    schedule.write_text("block_id,treatment,period\n1,CC,0\n", encoding="utf-8")
+    schedule.write_text("block_id,treatment,offset\n1,CC,0\n", encoding="utf-8")
     out = tmp_path / "run"
     Simulator.from_dataset(dataset).run(
         schedule,
@@ -275,10 +275,10 @@ def test_a_run_writes_the_spread_accounts_and_the_optimizer_can_target_them(tmp_
     )
     membership = pd.read_csv(out / "spread_membership.csv")
     assert not membership.empty
-    assert {"year", "account", "compartment", "compartment_class", "block", "area_ha"}.issubset(
+    assert {"offset", "account", "compartment", "compartment_class", "block", "area_ha"}.issubset(
         membership.columns
     )
-    assert sorted(membership["year"].unique().tolist()) == [0, 1]
+    assert sorted(membership["offset"].unique().tolist()) == [0, 1]
 
     measured = pd.read_csv(out / "spread_metrics.csv")
     assert set(measured["account"]) == {
@@ -287,13 +287,13 @@ def test_a_run_writes_the_spread_accounts_and_the_optimizer_can_target_them(tmp_
         "spread.fire.TOTAL.area",
         "spread.fire.TOTAL.blocks",
     }
-    assert sorted(measured["year"].unique()) == [0, 1]
+    assert sorted(measured["offset"].unique()) == [0, 1]
     values = pd.read_csv(out / "account_values.csv")
     assert (values["account"] == "spread.fire.largest_component").any()
 
     targets = tmp_path / "targets.yaml"
     targets.write_text(
-        "targets:\n  - account: spread.fire.largest_component\n    year: 1\n    maximum: 0\n",
+        "targets:\n  - account: spread.fire.largest_component\n    period: 1\n    maximum: 0\n",
         encoding="utf-8",
     )
     config = OptimizeConfig(
@@ -313,4 +313,4 @@ def test_a_run_writes_the_spread_accounts_and_the_optimizer_can_target_them(tmp_
     report = pd.read_csv(tmp_path / "opt" / "report_targets.csv")
     row = report[report["account"] == "spread.fire.largest_component"]
     assert not row.empty
-    assert float(row["value"].iloc[0]) > 0.0  # year 1 treats nothing, so the lattice is untreated
+    assert float(row["value"].iloc[0]) > 0.0  # offset 0 treats one block, so the lattice is open

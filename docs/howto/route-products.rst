@@ -52,7 +52,7 @@ factor, which is how a per-mill cost becomes a total.
                 --years 60 --topology examples/estate/topology.csv \
                 --route-config examples/estate/route.yaml --out tmp/estate/run
 
-Cutting eight blocks in year 0 on the sample estate splits between the mills by least haul cost, and
+Cutting eight blocks at offset 0 on the sample estate splits between the mills by least haul cost, and
 the route accounts resolve into the account values:
 
 .. code-block:: text
@@ -79,7 +79,7 @@ are ordinary targets:
 
    targets:
      - account: route.Total.haul
-       year: 0
+       period: 1
        maximum: 500000
        max_weight: 1.0
        period_width: 10

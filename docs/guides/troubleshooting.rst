@@ -41,8 +41,9 @@ Simulating
 ----------
 
 **A simulation is fast but the accounts are flat.**
-Check the schedule's ``period`` column: it is in **years**, not period indices. A schedule written in
-period indices treats the wrong years.
+Check the schedule's ``offset`` column: it is the number of years after the start of the simulation
+(offset 0 is the first simulation year), not an accounting-period index. A schedule written in period
+indices treats the wrong offsets, and a ``period`` column is rejected outright.
 
 **The treatment was applied but no product appeared.**
 The product belongs to the stratum the treatment moves the fragment **to**, so a treatment whose

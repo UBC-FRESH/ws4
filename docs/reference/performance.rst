@@ -44,7 +44,7 @@ them falls back to the full simulation.
 Patch targets are not additive either: a patch spans adjacent blocks, so the optimizer prices them
 through a patch model instead (a move touches only the components near the moved block). Because the
 simulation is annual while the accounting is periodic, the patch statistics are maintained only at
-the years a patch target reads — the end year of its period — which is what took the patch
+the offsets a patch target reads — the end offset of its period — which is what took the patch
 benchmark from 62 to 310 iterations/s.
 
 Threads and scaling

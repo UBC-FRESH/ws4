@@ -18,8 +18,8 @@ _FIXTURE = Path(__file__).resolve().parents[1] / "examples" / "synthetic"
 
 def test_objective_terms_reports_each_target() -> None:
     """The per-target penalties come back in order."""
-    values = pd.DataFrame({"year": [0, 0], "account": ["a", "b"], "value": [5.0, 100.0]})
-    targets = [Target("a", 0, minimum=10.0), Target("b", 0, maximum=50.0)]
+    values = pd.DataFrame({"offset": [0, 0], "account": ["a", "b"], "value": [5.0, 100.0]})
+    targets = [Target("a", period=1, minimum=10.0), Target("b", period=1, maximum=50.0)]
     assert objective_terms(values, targets) == [5.0, 50.0]
 
 
@@ -79,7 +79,10 @@ def _optimizer(tmp_path: Path, targets_path: Path) -> Optimizer:
 
 def test_calibrate_rescales_a_missed_target(tmp_path: Path) -> None:
     """The pilot peaks a missed minimum and the target is rescaled to the mean peak."""
-    targets = [Target("feature.Volume", 0, maximum=1.0), Target("product.Volume", 0, minimum=300.0)]
+    targets = [
+        Target("feature.Volume", period=1, maximum=1.0),
+        Target("product.Volume", period=1, minimum=300.0),
+    ]
     targets_path = write_targets(tmp_path / "t.yaml", targets)
     optimizer = _optimizer(tmp_path, targets_path)
     peaks = pilot_peaks(optimizer, targets, iterations=20, seed=1, samples=4)
@@ -98,7 +101,7 @@ def test_calibrate_command_writes_a_targets_file(tmp_path: Path) -> None:
     )
     targets = tmp_path / "t.yaml"
     targets.write_text(
-        "targets:\n  - account: product.Volume\n    year: 0\n    minimum: 300\n", encoding="utf-8"
+        "targets:\n  - account: product.Volume\n    period: 1\n    minimum: 300\n", encoding="utf-8"
     )
     out = tmp_path / "calibrated.yaml"
     result = CliRunner().invoke(

@@ -41,6 +41,7 @@ from ..roads.accounts import (
     load_route_config,
     resolve_account_values,
 )
+from ..schedule import schedule_offset_frame
 from ..sim.engine import Simulator
 from ..spread.accounts import (
     Point,
@@ -82,7 +83,7 @@ from .telemetry import RunLogger
 
 
 def load_schedule_csv(path: Path) -> Schedule:
-    """Load a ``block_id,treatment,period`` CSV into the search's schedule form.
+    """Load a ``block_id,treatment,offset`` CSV into the search's schedule form.
 
     Parameters
     ----------
@@ -99,8 +100,8 @@ def load_schedule_csv(path: Path) -> Schedule:
     ValueError
         When the file is missing one of the required columns.
     """
-    frame = pd.read_csv(path)
-    required = {"block_id", "treatment", "period"}
+    frame = schedule_offset_frame(pd.read_csv(path))
+    required = {"block_id", "treatment", "offset"}
     missing = required - set(frame.columns)
     if missing:
         raise ValueError(
@@ -111,8 +112,8 @@ def load_schedule_csv(path: Path) -> Schedule:
         schedule[int(float(str(block)))] = tuple(
             sorted(
                 (
-                    (str(treatment), int(float(str(period))))
-                    for treatment, period in zip(group["treatment"], group["period"], strict=True)
+                    (str(treatment), int(float(str(offset))))
+                    for treatment, offset in zip(group["treatment"], group["offset"], strict=True)
                 ),
                 key=lambda event: event[1],
             )
@@ -591,11 +592,11 @@ class Optimizer:
     def _schedule_frame(self, schedule: Schedule) -> pd.DataFrame:
         """Render a schedule as a DataFrame (one row per treatment event)."""
         rows = [
-            {"block_id": block, "treatment": treatment, "period": year}
+            {"block_id": block, "treatment": treatment, "offset": offset}
             for block, chain in schedule.items()
-            for treatment, year in chain
+            for treatment, offset in chain
         ]
-        return pd.DataFrame(rows, columns=["block_id", "treatment", "period"])
+        return pd.DataFrame(rows, columns=["block_id", "treatment", "offset"])
 
     def simulator(self) -> Simulator:
         """Return a reusable simulator, built once and reset before each use.
@@ -631,12 +632,12 @@ class Optimizer:
         if patch is not None:
             patch.reset(schedule)
             rows = [
-                {"year": year, "account": account, "value": value}
-                for (year, account), value in patch.cell_map().items()
+                {"offset": offset, "account": account, "value": value}
+                for (offset, account), value in patch.cell_map().items()
             ]
             if rows:
                 values = pd.concat(
-                    [values, pd.DataFrame(rows, columns=["year", "account", "value"])],
+                    [values, pd.DataFrame(rows, columns=["offset", "account", "value"])],
                     ignore_index=True,
                 )
                 self._last_values = values
@@ -654,11 +655,11 @@ class Optimizer:
         Returns
         -------
         pandas.DataFrame
-            The account values, with ``year``, ``account``, and ``value`` columns, or an
+            The account values, with ``offset``, ``account``, and ``value`` columns, or an
             empty frame with those columns before any evaluation.
         """
         if self._last_values is None:
-            return pd.DataFrame(columns=["year", "account", "value"])
+            return pd.DataFrame(columns=["offset", "account", "value"])
         return self._last_values
 
     def patch_accounts(self) -> tuple[PatchAccount, ...]:
@@ -841,13 +842,13 @@ class Optimizer:
             {
                 "block_id": pd.Series(dtype="int64"),
                 "treatment": pd.Series(dtype="string"),
-                "period": pd.Series(dtype="int64"),
+                "offset": pd.Series(dtype="int64"),
             }
         )
         values = simulator.simulate(empty, self.cfg.years)
         simulator.reset()
         base = {
-            (int(str(row.year)), str(row.account)): float(str(row.value))
+            (int(str(row.offset)), str(row.account)): float(str(row.value))
             for row in values.itertuples(index=False)
         }
         self._base_cache = base
@@ -918,10 +919,10 @@ class Optimizer:
         """Render a ``(year, account) -> value`` mapping as an account-values frame."""
         return pd.DataFrame(
             [
-                {"year": year, "account": account, "value": value}
-                for (year, account), value in totals.items()
+                {"offset": offset, "account": account, "value": value}
+                for (offset, account), value in totals.items()
             ],
-            columns=["year", "account", "value"],
+            columns=["offset", "account", "value"],
         )
 
     def _incremental_values(
@@ -1047,7 +1048,7 @@ class Optimizer:
             return 0.0
         block_area = self._block_area()
         pairs = [
-            (int(float(str(row.block_id))), int(float(str(row.period))))
+            (int(float(str(row.block_id))), int(float(str(row.offset))))
             for row in schedule.itertuples(index=False)
         ]
         selected_by_year, disturbance_years = schedule_years(pairs)
@@ -1482,9 +1483,9 @@ class Optimizer:
         if patch_frame.is_file():
             ledger = pd.read_csv(patch_frame)
             if not ledger.empty:
-                melted = ledger.melt(id_vars="year", var_name="account", value_name="value")
+                melted = ledger.melt(id_vars="offset", var_name="account", value_name="value")
                 values = pd.concat(
-                    [values, melted[["year", "account", "value"]]], ignore_index=True
+                    [values, melted[["offset", "account", "value"]]], ignore_index=True
                 )
         self._last_values = values
         write_report(values, targets, out_dir)

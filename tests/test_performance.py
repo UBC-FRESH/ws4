@@ -35,7 +35,7 @@ def _dataset(tmp_path: Path, fragments: int = 0) -> Path:
 def test_the_simulator_is_deterministic(tmp_path: Path) -> None:
     """The same schedule simulated twice produces identical account values."""
     dataset = _dataset(tmp_path)
-    schedule = pd.DataFrame({"block_id": [1, 2], "treatment": ["CC", "CC"], "period": [0, 0]})
+    schedule = pd.DataFrame({"block_id": [1, 2], "treatment": ["CC", "CC"], "offset": [0, 0]})
     first = Simulator.from_dataset(dataset).simulate(schedule, years=5)
     second = Simulator.from_dataset(dataset).simulate(schedule, years=5)
     pd.testing.assert_frame_equal(
@@ -84,9 +84,9 @@ def test_incremental_matches_the_full_simulation_on_random_schedules(tmp_path: P
         incremental = optimizer._incremental_values(schedule, ())
         full = optimizer._full_values(schedule, None, (), ())
         joined = (
-            incremental.set_index(["year", "account"])["value"]
+            incremental.set_index(["offset", "account"])["value"]
             .to_frame("incremental")
-            .join(full.set_index(["year", "account"])["value"].to_frame("full"), how="outer")
+            .join(full.set_index(["offset", "account"])["value"].to_frame("full"), how="outer")
             .fillna(0.0)
         )
         assert (joined["incremental"] - joined["full"]).abs().max() == pytest.approx(0.0, abs=1e-6)
@@ -133,10 +133,10 @@ def test_block_route_accounts_match_the_shared_ledger(tmp_path: Path) -> None:
 
     simulator.reset()
     ledger = RouteCostLedger(model.network, collect=False)
-    schedule = pd.DataFrame({"block_id": [1], "treatment": ["CC"], "period": [0]})
+    schedule = pd.DataFrame({"block_id": [1], "treatment": ["CC"], "offset": [0]})
     simulator.simulate(schedule, 3, route_model=model, ledger=ledger)
     full = {
-        (int(str(row.year)), str(row.account)): float(str(row.value))
+        (int(str(row.offset)), str(row.account)): float(str(row.value))
         for row in ledger.account_values(accounts).itertuples(index=False)
     }
     assert set(per_block) == set(full)
@@ -149,7 +149,7 @@ def test_collect_and_summary_ledgers_agree(tmp_path: Path) -> None:
     dataset = _dataset(tmp_path)
     model = _route_model()
     accounts = _route_account_specs()
-    schedule = pd.DataFrame({"block_id": [1], "treatment": ["CC"], "period": [0]})
+    schedule = pd.DataFrame({"block_id": [1], "treatment": ["CC"], "offset": [0]})
 
     reporting = RouteCostLedger(model.network, collect=True)
     Simulator.from_dataset(dataset).simulate(schedule, 3, route_model=model, ledger=reporting)
@@ -159,10 +159,10 @@ def test_collect_and_summary_ledgers_agree(tmp_path: Path) -> None:
     summary_values = summary.account_values(accounts)
     joined = (
         reporting.account_values(accounts)
-        .set_index(["year", "account"])["value"]
+        .set_index(["offset", "account"])["value"]
         .to_frame("reporting")
         .join(
-            summary_values.set_index(["year", "account"])["value"].to_frame("summary"),
+            summary_values.set_index(["offset", "account"])["value"].to_frame("summary"),
             how="outer",
         )
         .fillna(0.0)

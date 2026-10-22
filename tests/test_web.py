@@ -31,29 +31,29 @@ def _app(tmp_path: Path, *, with_geometry: bool = True) -> tuple[TestClient, Pat
     simulated = tmp_path / "runs" / "run2"
     simulated.mkdir()
     (simulated / "account_values.csv").write_text(
-        "year,account,value\n0,feature.Volume,3.0\n", encoding="utf-8"
+        "offset,account,value\n0,feature.Volume,3.0\n", encoding="utf-8"
     )
-    (simulated / "schedule.csv").write_text("block_id,treatment,period\n2,CT,1\n", encoding="utf-8")
+    (simulated / "schedule.csv").write_text("block_id,treatment,offset\n2,CT,1\n", encoding="utf-8")
     (run / "summary.json").write_text('{"status": "ok", "objective": 0.0}', encoding="utf-8")
     pd.DataFrame(
         [
-            {"year": 0, "account": "feature.Volume", "value": 10.0},
-            {"year": 1, "account": "feature.Volume", "value": 11.0},
-            {"year": 0, "account": "product.Yield", "value": 5.0},
+            {"offset": 0, "account": "feature.Volume", "value": 10.0},
+            {"offset": 1, "account": "feature.Volume", "value": 11.0},
+            {"offset": 0, "account": "product.Yield", "value": 5.0},
         ]
     ).to_csv(run / "account_values.csv", index=False)
     pd.DataFrame(
         [
-            {"block_id": 1, "treatment": "CC", "period": 0},
-            {"block_id": 2, "treatment": "CT", "period": 1},
+            {"block_id": 1, "treatment": "CC", "offset": 0},
+            {"block_id": 2, "treatment": "CT", "offset": 1},
         ]
     ).to_csv(run / "schedule.csv", index=False)
     (run / "report.csv").write_text("a,b\n1,2\n", encoding="utf-8")
     targets = tmp_path / "targets.yaml"
     targets.write_text(
         "targets:\n"
-        "  - account: feature.Volume\n    year: 0\n    minimum: 0\n"
-        "  - account: product.Yield\n    year: 1\n    period_width: 2\n    minimum: 0\n",
+        "  - account: feature.Volume\n    period: 1\n    minimum: 0\n"
+        "  - account: product.Yield\n    period: 1\n    period_width: 2\n    minimum: 0\n",
         encoding="utf-8",
     )
     geometry = tmp_path / "geometry.geojson"
@@ -133,7 +133,7 @@ def test_accounts_are_filtered_by_year_and_account(tmp_path: Path) -> None:
     one = client.get(
         "/api/runs/run1/accounts", params={"year": 0, "account": "feature.Volume"}
     ).json()
-    assert one == [{"year": 0, "account": "feature.Volume", "value": 10.0}]
+    assert one == [{"offset": 0, "account": "feature.Volume", "value": 10.0}]
 
 
 def test_reports_are_listed_and_downloaded(tmp_path: Path) -> None:
@@ -243,7 +243,7 @@ def test_periods_fold_years_by_the_target_period_width(tmp_path: Path) -> None:
     targets.write_text(
         "targets:\n"
         "  - account: feature.Volume\n"
-        "    year: 9\n"
+        "    period: 1\n"
         "    period_width: 10\n"
         "    minimum: 0\n",
         encoding="utf-8",
@@ -251,7 +251,7 @@ def test_periods_fold_years_by_the_target_period_width(tmp_path: Path) -> None:
     run = tmp_path / "runs" / "run-long"
     run.mkdir()
     (run / "schedule.csv").write_text(
-        "block_id,treatment,period\n1,CC,0\n2,CT,9\n", encoding="utf-8"
+        "block_id,treatment,offset\n1,CC,0\n2,CT,9\n", encoding="utf-8"
     )
     body = client.get("/api/runs/run-long/periods").json()
     assert body["period_width"] == 10
@@ -278,7 +278,7 @@ def _patch_run(tmp_path: Path) -> Path:
     run = tmp_path / "runs" / "run-patches"
     run.mkdir()
     (run / "account_values.csv").write_text(
-        "year,account,value\n0,feature.Volume,1.0\n1,feature.Volume,2.0\n", encoding="utf-8"
+        "offset,account,value\n0,feature.Volume,1.0\n1,feature.Volume,2.0\n", encoding="utf-8"
     )
     (run / "patch_membership.csv").write_text(
         "period,year,account,class,patch,block,area_ha\n"
@@ -362,7 +362,8 @@ def test_inactive_targets_are_kept_in_the_json_and_reported(tmp_path: Path) -> N
     """The editor can round-trip an inactive target; the run reports it as inactive."""
     client, targets = _app(tmp_path)
     targets.write_text(
-        "targets:\n  - account: feature.Volume\n    year: 0\n    minimum: 100\n    active: false\n",
+        "targets:\n  - account: feature.Volume\n    period: 1\n"
+        "    minimum: 100\n    active: false\n",
         encoding="utf-8",
     )
     rows = client.get("/api/targets.json").json()
@@ -401,7 +402,7 @@ def test_the_model_spread_compartments_layer(tmp_path: Path) -> None:
     client, _ = _app(tmp_path)
     run = tmp_path / "runs" / "run1"
     (run / "spread_membership.csv").write_text(
-        "year,account,compartment,compartment_class,block,area_ha,compartment_area_ha\n"
+        "offset,account,compartment,compartment_class,block,area_ha,compartment_area_ha\n"
         "1,spread.fire,0,10_50,1,5.0,20.0\n",
         encoding="utf-8",
     )
@@ -472,7 +473,7 @@ def test_targets_round_trip_and_an_invalid_document_is_refused(tmp_path: Path) -
     client, targets = _app(tmp_path)
     before = client.get("/api/targets").text
     assert "feature.Volume" in before
-    replacement = "targets:\n  - account: feature.Volume\n    year: 0\n    maximum: 100\n"
+    replacement = "targets:\n  - account: feature.Volume\n    period: 1\n    maximum: 100\n"
     response = client.put(
         "/api/targets", content=replacement, headers={"content-type": "text/yaml"}
     )

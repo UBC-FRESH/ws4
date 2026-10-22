@@ -18,24 +18,24 @@ year, in cubic metres.
 Step 1: state the question as targets
 -------------------------------------
 
-A target is an account, the first year of a period, and a bound. Write them in a file:
+A target is an account, an accounting period, and a bound. Write them in a file:
 
 .. code-block:: yaml
 
    # tmp/getting-started/study.yaml
    targets:
-     - account: feature.Volume      # keep at least 340 m3 standing at year 0
-       year: 0
+     - account: feature.Volume      # keep at least 340 m3 standing in the first year
+       period: 1
        minimum: 340
        period_width: 1
-     - account: product.Volume      # produce at least 300 m3 at year 0
-       year: 0
+     - account: product.Volume      # produce at least 300 m3 in the first year
+       period: 1
        minimum: 300
        period_width: 1
 
 The two floors are deliberately close to the two arms of the trade-off: 340 is exactly what is
 standing if block 1 is cleared (``2.0 * 170``), and 300 is a little less than what clearing it
-produces (``3.0 * 120 = 360``).
+produces (``3.0 * 120 = 360``). Period 1 with width 1 reads offset 0, the first simulation year.
 
 Step 2: search
 --------------
@@ -64,7 +64,7 @@ Four files matter. ``schedule.csv`` is the decision:
 
 .. code-block:: text
 
-   block_id,treatment,period
+   block_id,treatment,offset
    1,CC,0
    2,CC,3
 
@@ -76,35 +76,36 @@ Four files matter. ``schedule.csv`` is the decision:
    blocks_scheduled: 2
    iterations: 500
 
-``report_targets.csv`` says how each target fared:
+``report_targets.csv`` says how each target fared (``year`` is the display label, the year the period
+ends on):
 
 .. code-block:: text
 
    account,year,value,minimum,maximum,penalty,status
-   feature.Volume,0,340.0,340,,0.0,met
-   product.Volume,0,360.0,300,,0.0,met
+   feature.Volume,1,340.0,340,,0.0,met
+   product.Volume,1,360.0,300,,0.0,met
 
-and ``report_accounts.csv`` summarises the whole profile:
+and ``report_accounts.csv`` summarises the whole profile (including the offset -1 snapshot):
 
 .. code-block:: text
 
    account,min,max,mean,final
-   feature.Volume,45.0,380.0,239.0,70.0
+   feature.Volume,45.0,700.0,315.8,70.0
    product.Volume,355.0,360.0,357.5,355.0
 
 Step 4: check it by hand
 ------------------------
 
-* ``feature.Volume`` at year 0 is ``340 = 2.0 * 170``: block 1's 3.0 ha of natural track is gone, and
+* ``feature.Volume`` at offset 0 is ``340 = 2.0 * 170``: block 1's 3.0 ha of natural track is gone, and
   block 2's 2.0 ha remains.
-* ``product.Volume`` at year 0 is ``360 = 3.0 * 120``: block 1's harvest is in.
+* ``product.Volume`` at offset 0 is ``360 = 3.0 * 120``: block 1's harvest is in.
 * Both floors are met, so the penalty is zero and the objective is zero.
 
 Step 5: notice what the result does *not* say
 ---------------------------------------------
 
-Block 2 is cleared at **year 3**, and that choice is arbitrary: nothing in the target set reads any
-year after 0, so clearing block 2 at year 1 and clearing it at year 4 cost exactly the same. A
+Block 2 is cleared at **offset 3**, and that choice is arbitrary: nothing in the target set reads any
+offset after 0, so clearing block 2 at offset 1 and clearing it at offset 4 cost exactly the same. A
 zero-cost search is an indifferent search.
 
 That is the most common surprise for a new user, and the fix is to say what you care about:

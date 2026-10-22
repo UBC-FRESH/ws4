@@ -25,7 +25,7 @@ def _dataset(tmp_path: Path) -> Path:
 def _schedule(tmp_path: Path, name: str, rows: list[tuple[int, str, int]]) -> Path:
     """Write a schedule CSV."""
     path = tmp_path / name
-    pd.DataFrame(rows, columns=["block_id", "treatment", "period"]).to_csv(path, index=False)
+    pd.DataFrame(rows, columns=["block_id", "treatment", "offset"]).to_csv(path, index=False)
     return path
 
 
@@ -93,7 +93,7 @@ def test_simulate_reports_the_product_account(tmp_path: Path) -> None:
     dataset = _dataset(tmp_path)
     schedule = _schedule(tmp_path, "cc.csv", [(1, "CC", 0)])
     values = Simulator.from_dataset(dataset).simulate(pd.read_csv(schedule), years=2)
-    produced = values[values["account"] == "product.Volume"].set_index("year")["value"]
+    produced = values[values["account"] == "product.Volume"].set_index("offset")["value"]
     assert produced.loc[0] == pytest.approx(360.0)
     assert 1 not in produced.index  # produced once, in the treatment year
 
@@ -104,7 +104,7 @@ def test_simulate_aggregates_products_per_year_and_account(tmp_path: Path) -> No
     schedule = _schedule(tmp_path, "cc.csv", [(1, "CC", 0), (2, "CC", 0)])
     values = Simulator.from_dataset(dataset).simulate(pd.read_csv(schedule), years=1)
     rows = values[values["account"] == "product.Volume"]
-    assert not rows[["year", "account"]].duplicated().any()
+    assert not rows[["offset", "account"]].duplicated().any()
     expected = sum(
         Simulator.from_dataset(dataset)
         .block_trajectory(block, "CC", 0, 1)
@@ -210,8 +210,11 @@ def test_a_treatment_the_track_does_not_offer_is_skipped(tmp_path: Path) -> None
     offered = _run(dataset, _schedule(tmp_path, "cc.csv", [(1, "CC", 0)]), tmp_path, 1, "cc")
     missing = _run(dataset, _schedule(tmp_path, "zz.csv", [(1, "ZZ", 0)]), tmp_path, 1, "zz")
     baseline = _run(dataset, _schedule(tmp_path, "none.csv", []), tmp_path, 1, "none")
-    # CC moves block 1's fragment to the managed track, so its value changes.
-    assert offered["value"].iloc[0] != baseline["value"].iloc[0]
+    # CC moves block 1's fragment to the managed track, so its first simulated offset changes.
+    # Offset -1 is the pre-simulation snapshot, which no treatment can change.
+    offered_first = offered[offered["offset"] == 0]["value"].iloc[0]
+    baseline_first = baseline[baseline["offset"] == 0]["value"].iloc[0]
+    assert offered_first != baseline_first
     # An unoffered treatment leaves the state unchanged.
     pd.testing.assert_frame_equal(missing, baseline)
 
@@ -240,11 +243,11 @@ def test_block_chain_delta_equals_the_simulate_delta(tmp_path: Path) -> None:
     """A chain of events is additive: its delta equals simulate()'s delta for the same rows."""
     dataset = _dataset(tmp_path)
     events = [("CC", 0), ("CC", 2)]
-    rows = pd.DataFrame({"block_id": [1, 1], "treatment": ["CC", "CC"], "period": [0, 2]})
+    rows = pd.DataFrame({"block_id": [1, 1], "treatment": ["CC", "CC"], "offset": [0, 2]})
     values = Simulator.from_dataset(dataset).simulate(rows, 4)
     base = Simulator.from_dataset(dataset).simulate(rows.head(0), 4)
-    combined = values.set_index(["year", "account"])["value"]
-    baseline = base.set_index(["year", "account"])["value"]
+    combined = values.set_index(["offset", "account"])["value"]
+    baseline = base.set_index(["offset", "account"])["value"]
     simulated = combined.subtract(baseline, fill_value=0.0)
 
     simulator = Simulator.from_dataset(dataset)
@@ -308,6 +311,7 @@ def test_a_run_states_which_blocks_formed_which_patch(tmp_path: Path) -> None:
     )
     membership = pd.read_csv(out / "patch_membership.csv")
     assert list(membership.columns) == [
+        "offset",
         "period",
         "year",
         "account",
@@ -339,7 +343,7 @@ def test_block_criteria_answers_for_a_product_in_the_year_it_is_produced(tmp_pat
     dataset = _dataset(tmp_path)
     simulator = Simulator.from_dataset(dataset)
     assert simulator.block_criteria("product.Volume") == {}
-    table = pd.DataFrame({"block_id": [1], "treatment": ["CC"], "period": [0]})
+    table = pd.DataFrame({"block_id": [1], "treatment": ["CC"], "offset": [0]})
     simulator.apply_treatments(table, 0)
     produced = simulator.block_criteria("product.Volume")
     assert set(produced) == {1}
@@ -351,5 +355,5 @@ def test_block_criteria_answers_for_a_product_in_the_year_it_is_produced(tmp_pat
     # a block whose unmanaged portion was not treated, it is the share that was harvested.
     assert produced[1] == pytest.approx(120.0)
     # the next year produces nothing more, so the criterion is a flow rather than a level
-    simulator.apply_treatments(table.assign(period=1), 1)
+    simulator.apply_treatments(table.assign(offset=1), 1)
     assert simulator.block_criteria("product.Volume") == {}

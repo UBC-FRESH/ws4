@@ -128,11 +128,11 @@ def period_totals(
         account = str(row.account)
         if account not in wanted:
             continue
-        year = int(float(str(row.year)))
-        if year < 0 or year >= years:
+        offset = int(float(str(row.offset)))
+        if offset < 0 or offset >= years:
             continue
-        totals[year // period_width] += float(str(row.value))
-        counts[year // period_width] += 1
+        totals[offset // period_width] += float(str(row.value))
+        counts[offset // period_width] += 1
     if mean:
         return [
             total / count if count else 0.0 for total, count in zip(totals, counts, strict=True)
@@ -158,8 +158,8 @@ def _period_levels(
         if target.account != account or target.flow:
             continue
         width = max(1, target.period_width)
-        start = target.year
-        stop = target.year + width
+        start = target.end_offset() - width + 1
+        stop = target.end_offset() + 1
         first = max(0, start // period_width)
         last = min((stop - 1) // period_width, n_periods - 1)
         for period in range(first, last + 1):
@@ -596,7 +596,7 @@ class WatchState:
         values = (
             self.best_values
             if self.best_values is not None
-            else pd.DataFrame(columns=["year", "account", "value"])
+            else pd.DataFrame(columns=["offset", "account", "value"])
         )
         return tuple(
             target_window(values, self.targets, (account,), self.period_width, self.years, account)
@@ -680,7 +680,7 @@ def _wrapped_evaluate(
 def _snapshot(evaluator: IncrementalObjective) -> tuple[tuple[int, str, float], ...]:
     """Return the evaluator's account values as picklable tuples."""
     return tuple(
-        (int(float(str(row.year))), str(row.account), float(str(row.value)))
+        (int(float(str(row.offset))), str(row.account), float(str(row.value)))
         for row in evaluator.values_frame().itertuples(index=False)
     )
 
@@ -747,7 +747,7 @@ def _drain(queue: Any, state: WatchState) -> None:  # noqa: ANN401 - a multiproc
             state.iteration = iteration
         if objective < state.best_objective:
             state.best_objective = objective
-            state.best_values = pd.DataFrame(list(cells), columns=["year", "account", "value"])
+            state.best_values = pd.DataFrame(list(cells), columns=["offset", "account", "value"])
             state.windows = state.current_windows()
         if blocks:
             state.blocks = blocks

@@ -17,7 +17,7 @@ Prerequisites
 Procedure
 ---------
 
-**1. Write the targets.** A target names an account, the first year of a period, and a bound. The
+**1. Write the targets.** A target names an account, an accounting period, and a bound. The
 simplest useful file has two targets: a floor on harvest, and a floor that stops the search stripping
 the later years.
 
@@ -26,11 +26,11 @@ the later years.
    # tmp/howto/targets.yaml
    targets:
      - account: product.Harvested.CC     # produce at least 30,000 m3 in period 1
-       year: 0
+       period: 1
        minimum: 30000
        period_width: 10
      - account: feature.Volume.managed   # and keep at least 100,000 m3 standing in period 1
-       year: 0
+       period: 1
        minimum: 100000
        period_width: 10
 
@@ -41,7 +41,7 @@ targets table:
 .. code-block:: yaml
 
      - account: feature.Volume.managed
-       year: 0
+       period: 1
        minimum: 100000
        period_width: 10
        active: false
@@ -54,7 +54,7 @@ sometimes exactly what you want (a hard constraint you never want violated) and 
 .. code-block:: yaml
 
      - account: patch.harvest.10_50.size
-       year: 0
+       period: 1
        minimum: 25
        min_weight: 2000        # a share, in percent: worth 2000 per percent below 25
        shape: non_linear       # squared, so small misses are cheap and large ones are not
@@ -63,11 +63,13 @@ sometimes exactly what you want (a hard constraint you never want violated) and 
 weighted **squared** deviation. Use non-linear when you care about being close rather than merely
 on the right side, which is the usual choice for a share or a flow term.
 
-**4. Say which years.** ``period_width`` groups years into the period a target reads: ``10`` means a
-decade, ``1`` a single year. Period 0 is the state before the simulation starts, so a target at
-``year: 0`` with ``period_width: 10`` is the level for the **first accounting period**, covering
-years 1 to 10. Add one target per period you care about, or leave later periods out — but remember
-that an unconstrained year is free, and a free year will be spent (see
+**4. Say which periods.** ``period_width`` groups offsets into the period a target reads: ``10`` means
+a decade, ``1`` a single offset. Period ``p >= 1`` covers offsets ``(p - 1) * period_width`` through
+``p * period_width - 1``, so ``period: 1`` with ``period_width: 10`` is the **first accounting
+period**, covering offsets 0 to 9 and displaying as the decade ending in year 10. Period 0 is the
+zero-length pre-simulation snapshot at offset -1, so it is not a treatment slot. ``year`` is a display
+label only; write ``period``. Add one target per period you care about, or leave later periods out —
+but remember that an unconstrained offset is free, and a free offset will be spent (see
 :doc:`../getting-started/first-model`).
 
 **5. Search, and read the statuses.**
@@ -104,13 +106,13 @@ them:
    from ws4.opt.objective import Target, load_targets
 
    targets = load_targets("tmp/howto/targets.yaml")
-   targets.append(Target("feature.Volume.managed", 90, minimum=100000, period_width=10))
+   targets.append(Target("feature.Volume.managed", period=10, minimum=100000, period_width=10))
 
    print(targets[0])
 
 .. code-block:: text
 
-   Target(account='product.Harvested.CC', year=0, minimum=30000, maximum=None, min_weight=1.0,
+   Target(account='product.Harvested.CC', year=10, minimum=30000, maximum=None, min_weight=1.0,
           max_weight=1.0, period_width=10, shape='linear', flow='', flow_start=0, flow_end=None,
           flow_reference=None, active=True)
 

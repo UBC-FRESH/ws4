@@ -16,7 +16,7 @@ from ws4.sim.engine import Simulator
 pytest.importorskip("scipy")  # the MIP bound needs the optional 'opt' extra
 
 _FIXTURE = Path(__file__).resolve().parents[1] / "examples" / "synthetic"
-_EMPTY = pd.DataFrame([], columns=["block_id", "treatment", "period"])
+_EMPTY = pd.DataFrame([], columns=["block_id", "treatment", "offset"])
 
 
 def _setup(tmp_path: Path) -> tuple[Path, list[Target]]:
@@ -25,7 +25,7 @@ def _setup(tmp_path: Path) -> tuple[Path, list[Target]]:
         _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
     )
     # The empty schedule gives 700; treating both blocks drops the value.
-    return dataset, [Target("feature.Volume", 0, maximum=500.0)]
+    return dataset, [Target("feature.Volume", period=1, maximum=500.0)]
 
 
 def test_mip_bound_is_no_worse_than_the_empty_schedule(tmp_path: Path) -> None:
@@ -45,9 +45,9 @@ def test_mip_bound_is_achieved_by_its_schedule(tmp_path: Path) -> None:
     result = bound_for(dataset, targets, candidates, 1)
     schedule = pd.DataFrame(
         [
-            {"block_id": block, "treatment": treatment, "period": year}
+            {"block_id": block, "treatment": treatment, "offset": offset}
             for block, chain in result.schedule.items()
-            for treatment, year in chain
+            for treatment, offset in chain
         ]
     )
     achieved = objective(Simulator.from_dataset(dataset).simulate(schedule, 1), targets)
@@ -69,11 +69,11 @@ def test_mip_bound_is_a_lower_bound_for_random_schedules(tmp_path: Path) -> None
         }
         frame = pd.DataFrame(
             [
-                {"block_id": block, "treatment": treatment, "period": year}
+                {"block_id": block, "treatment": treatment, "offset": offset}
                 for block, chain in schedule.items()
-                for treatment, year in chain
+                for treatment, offset in chain
             ],
-            columns=["block_id", "treatment", "period"],
+            columns=["block_id", "treatment", "offset"],
         )
         values = Simulator.from_dataset(dataset).simulate(frame, 1)
         assert objective(values, targets) >= result.objective - 1e-6
@@ -93,9 +93,9 @@ def test_mip_bound_with_stand_centred_opening_constraints(tmp_path: Path) -> Non
     assert constrained.objective >= plain.objective - 1e-6
     schedule = pd.DataFrame(
         [
-            {"block_id": block, "treatment": treatment, "period": year}
+            {"block_id": block, "treatment": treatment, "offset": offset}
             for block, chain in constrained.schedule.items()
-            for treatment, year in chain
+            for treatment, offset in chain
         ]
     )
     areas = {1: 3.0, 2: 2.0}
@@ -115,7 +115,7 @@ def test_mip_bound_with_stand_centred_opening_constraints(tmp_path: Path) -> Non
 def test_mip_bound_handles_periodic_targets(tmp_path: Path) -> None:
     """A period-width target constrains the account summed over the whole period."""
     dataset, _ = _setup(tmp_path)
-    targets = [Target("feature.Volume", 0, maximum=1400.0, period_width=2)]
+    targets = [Target("feature.Volume", period=1, maximum=1400.0, period_width=2)]
     candidates = Optimizer.from_dataset(dataset, OptimizeConfig(years=2)).candidates()
     result = bound_for(dataset, targets, candidates, 2)
     assert result.status == "optimal"
@@ -130,11 +130,11 @@ def test_mip_bound_handles_periodic_targets(tmp_path: Path) -> None:
         }
         frame = pd.DataFrame(
             [
-                {"block_id": block, "treatment": treatment, "period": year}
+                {"block_id": block, "treatment": treatment, "offset": offset}
                 for block, chain in schedule.items()
-                for treatment, year in chain
+                for treatment, offset in chain
             ],
-            columns=["block_id", "treatment", "period"],
+            columns=["block_id", "treatment", "offset"],
         )
         values = Simulator.from_dataset(dataset).simulate(frame, 2)
         assert objective(values, targets) >= result.objective - 1e-6

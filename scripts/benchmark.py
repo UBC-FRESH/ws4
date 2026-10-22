@@ -114,7 +114,7 @@ def run_benchmark(
     build_seconds = time.perf_counter() - started
 
     schedule = workdir / "schedule.csv"
-    schedule.write_text("block_id,treatment,period\n", encoding="utf-8")
+    schedule.write_text("block_id,treatment,offset\n", encoding="utf-8")
     simulator = Simulator.from_dataset(dataset)
     started = time.perf_counter()
     simulator.run(schedule, years=years, out_dir=workdir / "run")
@@ -175,7 +175,7 @@ def c5_schedule(dataset: Path, limit: int) -> pd.DataFrame:
     Returns
     -------
     pandas.DataFrame
-        A schedule with ``block_id``, ``treatment``, and ``period`` columns.
+        A schedule with ``block_id``, ``treatment``, and ``offset`` columns.
     """
     simulator = Simulator.from_dataset(dataset)
     blocks = pd.read_parquet(dataset / "blocks.parquet")
@@ -183,7 +183,7 @@ def c5_schedule(dataset: Path, limit: int) -> pd.DataFrame:
         blocks[["block_id", "track_id"]], on="track_id", how="inner"
     )
     picks = merged.drop_duplicates("block_id").head(limit)
-    return pd.DataFrame(picks.loc[:, ["block_id", "treatment"]]).assign(period=0)
+    return pd.DataFrame(picks.loc[:, ["block_id", "treatment"]]).assign(offset=0)
 
 
 def _route_config(workdir: Path, sample_dir: Path) -> Path:

@@ -54,8 +54,9 @@ at age 40, fragment 2 is 2.0 ha at age 60. The recipe defines a growth curve per
 treatment (``CC``) that moves a fragment from the natural track to the managed track, a
 ``feature.Volume`` feature, and a ``product.Volume`` product.
 
-With no schedule, the natural-track volume at year 0 is ``3.0 * 120 + 2.0 * 170 = 700``. Clearing
-block 1 at year 0 moves that fragment onto the managed track, so the figure below should read ``340``.
+With no schedule, the natural-track volume at offset 0 is ``3.0 * 120 + 2.0 * 170 = 700``. Clearing
+block 1 at offset 0 moves that fragment onto the managed track, so the figure below should read
+``340``.
 
 Compile the dataset
 -------------------
@@ -75,13 +76,13 @@ Compile the dataset
 Simulate a schedule
 -------------------
 
-A schedule is a CSV with ``block_id``, ``treatment``, and ``period`` columns, where the period is in
-years. Clear block 1 at year 0 and replay five years:
+A schedule is a CSV with ``block_id``, ``treatment``, and ``offset`` columns, where the offset is the
+number of years after the start of the simulation. Clear block 1 at offset 0 and replay five years:
 
 .. code-block:: bash
 
    cat > tmp/getting-started/schedule.csv <<'CSV'
-   block_id,treatment,period
+   block_id,treatment,offset
    1,CC,0
    CSV
    ws4 simulate --dataset tmp/getting-started/compiled \
@@ -98,26 +99,28 @@ topology is given, and the route outputs when a route configuration is given. Th
 
 .. code-block:: text
 
-   year,account,value
+   offset,account,value
+   -1,feature.Volume,700.0
    0,feature.Volume,340.0
    0,product.Volume,360.0
    1,feature.Volume,360.0
    2,feature.Volume,380.0
 
 ``340.0`` is the figure from the example: the clearcut removed fragment 1's 3.0 ha of natural volume
-and left ``2.0 * 170``. ``product.Volume`` records what the treatment produced.
+and left ``2.0 * 170``. ``product.Volume`` records what the treatment produced. The row at offset -1 is
+the pre-simulation snapshot.
 
 State a target and check a run against it
 -----------------------------------------
 
-A target names an account, the first year of a period, and a bound. Targets live in a YAML file:
+A target names an account, an accounting period, and a bound. Targets live in a YAML file:
 
 .. code-block:: yaml
 
    # tmp/getting-started/targets.yaml
    targets:
      - account: feature.Volume
-       year: 0
+       period: 1
        minimum: 700
        maximum: 700
        period_width: 1
@@ -136,10 +139,11 @@ profile:
 .. code-block:: text
 
    account,year,value,minimum,maximum,penalty,status
-   feature.Volume,0,340.0,700,700,360.0,below
+   feature.Volume,1,340.0,700,700,360.0,below
 
 The status is ``below`` because clearing block 1 drops the natural volume to 340 against a floor of
-700; the penalty is the shortfall.
+700; the penalty is the shortfall. The ``year`` column is the display label, the year the period ends
+on.
 
 Search for a schedule that meets it
 -----------------------------------

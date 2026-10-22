@@ -29,7 +29,7 @@ def test_a_schedule_csv_is_loaded_into_ordered_chains(tmp_path: Path) -> None:
     """A schedule CSV becomes a block-to-chain mapping, with events ordered by year."""
     path = tmp_path / "initial.csv"
     path.write_text(
-        "block_id,treatment,period\n1,CC,10\n1,CT,5\n2,CC,0\n",
+        "block_id,treatment,offset\n1,CC,10\n1,CT,5\n2,CC,0\n",
         encoding="utf-8",
     )
     assert load_schedule_csv(path) == {
@@ -37,7 +37,7 @@ def test_a_schedule_csv_is_loaded_into_ordered_chains(tmp_path: Path) -> None:
         2: (("CC", 0),),
     }
     path.write_text("block_id,treatment\n1,CC\n", encoding="utf-8")
-    with pytest.raises(ValueError, match="missing required columns"):
+    with pytest.raises(ValueError, match="offset"):
         load_schedule_csv(path)
 
 
@@ -45,7 +45,7 @@ def test_an_initial_schedule_is_the_starting_state(tmp_path: Path) -> None:
     """The optimizer starts from the supplied schedule instead of an empty or greedy one."""
     dataset, targets = _compile(tmp_path)
     initial = tmp_path / "initial.csv"
-    initial.write_text("block_id,treatment,period\n1,CC,0\n", encoding="utf-8")
+    initial.write_text("block_id,treatment,offset\n1,CC,0\n", encoding="utf-8")
     summary = Optimizer.from_dataset(
         dataset,
         OptimizeConfig(
@@ -58,7 +58,7 @@ def test_an_initial_schedule_is_the_starting_state(tmp_path: Path) -> None:
         ),
     ).run(tmp_path / "run")
     schedule = pd.read_csv(tmp_path / "run" / "schedule.csv")
-    assert schedule[["block_id", "treatment", "period"]].values.tolist() == [[1, "CC", 0]]
+    assert schedule[["block_id", "treatment", "offset"]].values.tolist() == [[1, "CC", 0]]
     assert summary["initial_schedule_path"] == str(initial)
 
 
@@ -109,26 +109,26 @@ def test_a_target_period_must_be_at_least_one_year() -> None:
     """The account period is a whole number of years, never shorter."""
     with pytest.raises(ValueError, match="period_width"):
         Target("a", 0, minimum=1.0, period_width=0)
-    # a period ends at its year, which is the reference implementation's convention
-    assert Target("a", 0, minimum=1.0, period_width=7).cell_years() == range(-6, 1)
-    assert Target("a", 10, minimum=1.0, period_width=10).cell_years() == range(1, 11)
+    # period 0 is the zero-length snapshot at offset -1
+    assert Target("a", period=0, minimum=1.0, period_width=7).cell_offsets() == (-1,)
+    assert Target("a", period=1, minimum=1.0, period_width=7).cell_offsets() == tuple(range(0, 7))
 
 
 def test_periods_are_the_primary_target_index() -> None:
-    """A period and its width derive the end year and the years in the period."""
+    """A period and its width derive the end year and the offsets in the period."""
     first = Target("a", period=1, period_width=10, minimum=1.0)
     assert first.year == 10
-    assert first.cell_years() == range(1, 11)
+    assert first.cell_offsets() == tuple(range(0, 10))
     second = Target("a", period=2, period_width=10, minimum=1.0)
     assert second.year == 20
-    assert second.cell_years() == range(11, 21)
+    assert second.cell_offsets() == tuple(range(10, 20))
     snapshot = Target("a", period=0, period_width=10, minimum=1.0)
     assert snapshot.year == 0
-    assert snapshot.cell_years() == range(0, 0)
+    assert snapshot.cell_offsets() == (-1,)
 
 
 def test_flow_periods_are_converted_to_the_internal_year_window() -> None:
-    """Inclusive period windows become the years the flow helpers read."""
+    """Inclusive period windows become the offsets the flow helpers read."""
     target = Target(
         "a",
         period=1,
@@ -138,7 +138,7 @@ def test_flow_periods_are_converted_to_the_internal_year_window() -> None:
         flow_end_period=10,
     )
     assert target.flow_start == 0
-    assert target.flow_end == 101
+    assert target.flow_end == 100
 
 
 def test_period_targets_round_trip_through_yaml(tmp_path: Path) -> None:
@@ -159,7 +159,7 @@ def test_period_targets_round_trip_through_yaml(tmp_path: Path) -> None:
     assert targets[0].period == 2
     assert targets[0].year == 20
     assert targets[0].flow_start == 0
-    assert targets[0].flow_end == 41
+    assert targets[0].flow_end == 40
     out = tmp_path / "written.yaml"
     write_targets(out, targets)
     written = yaml.safe_load(out.read_text(encoding="utf-8"))["targets"][0]
@@ -172,12 +172,12 @@ def test_inactive_targets_are_kept_and_not_priced(tmp_path: Path) -> None:
     """An inactive target round-trips from YAML but contributes no objective term."""
     path = tmp_path / "targets.yaml"
     path.write_text(
-        "targets:\n  - account: a\n    year: 0\n    minimum: 10\n    active: false\n",
+        "targets:\n  - account: a\n    period: 1\n    minimum: 10\n    active: false\n",
         encoding="utf-8",
     )
     targets = load_targets(path)
     assert targets[0].active is False
-    values = pd.DataFrame({"year": [0], "account": ["a"], "value": [0.0]})
+    values = pd.DataFrame({"offset": [0], "account": ["a"], "value": [0.0]})
     assert objective(values, targets) == 0.0
     assert objective_terms(values, targets) == [0.0]
 
@@ -205,8 +205,11 @@ def test_penalty_non_linear_squares_the_deviation() -> None:
 
 def test_objective_sums_targets() -> None:
     """The objective sums the penalties over the targets."""
-    values = pd.DataFrame({"year": [0, 0], "account": ["a", "b"], "value": [5.0, 100.0]})
-    targets = [Target("a", 0, minimum=10.0), Target("b", 0, maximum=50.0)]
+    values = pd.DataFrame({"offset": [0, 0], "account": ["a", "b"], "value": [5.0, 100.0]})
+    targets = [
+        Target("a", period=1, minimum=10.0),
+        Target("b", period=1, maximum=50.0),
+    ]
     assert objective(values, targets) == 5.0 + 50.0
 
 
@@ -235,7 +238,7 @@ def test_the_optimizer_resolves_route_accounts(tmp_path: Path) -> None:
     )
     targets = tmp_path / "targets.yaml"
     targets.write_text(
-        "targets:\n  - account: route.Total.haul\n    year: 0\n    minimum: 0\n", encoding="utf-8"
+        "targets:\n  - account: route.Total.haul\n    period: 1\n    minimum: 0\n", encoding="utf-8"
     )
     cfg = OptimizeConfig(
         years=1,
@@ -295,9 +298,9 @@ def test_incremental_route_accounts_match_the_full_simulation(tmp_path: Path) ->
     incremental = optimizer._incremental_values(schedule, duplicate_accounts, route_accounts)
     full = optimizer._full_values(schedule, model, route_accounts, duplicate_accounts)
     joined = (
-        incremental.set_index(["year", "account"])["value"]
+        incremental.set_index(["offset", "account"])["value"]
         .to_frame("incremental")
-        .join(full.set_index(["year", "account"])["value"].to_frame("full"), how="outer")
+        .join(full.set_index(["offset", "account"])["value"].to_frame("full"), how="outer")
         .fillna(0.0)
     )
     assert (joined["incremental"] - joined["full"]).abs().max() == pytest.approx(0.0, abs=1e-6)
@@ -311,11 +314,11 @@ def test_load_targets(tmp_path: Path) -> None:
     """Targets load from a YAML file."""
     path = tmp_path / "targets.yaml"
     path.write_text(
-        "targets:\n  - account: feature.Volume\n    year: 0\n    maximum: 500\n",
+        "targets:\n  - account: feature.Volume\n    period: 1\n    maximum: 500\n",
         encoding="utf-8",
     )
     loaded = load_targets(path)
-    assert loaded == [Target("feature.Volume", 0, maximum=500.0)]
+    assert loaded == [Target("feature.Volume", period=1, maximum=500.0)]
 
 
 @pytest.mark.parametrize("metaheuristic", ["sa", "tabu", "ils"])
@@ -327,7 +330,7 @@ def test_metaheuristics_improve_the_objective(tmp_path: Path, metaheuristic: str
     targets = tmp_path / "targets.yaml"
     # The empty schedule gives feature.Volume = 700 at year 0; CC on block 1 lowers it.
     targets.write_text(
-        "targets:\n  - account: feature.Volume\n    year: 0\n    maximum: 500\n",
+        "targets:\n  - account: feature.Volume\n    period: 1\n    maximum: 500\n",
         encoding="utf-8",
     )
     optimizer = Optimizer.from_dataset(
@@ -365,7 +368,7 @@ def test_optimizer_writes_telemetry(tmp_path: Path) -> None:
     )
     targets = tmp_path / "targets.yaml"
     targets.write_text(
-        "targets:\n  - account: feature.Volume\n    year: 0\n    maximum: 500\n",
+        "targets:\n  - account: feature.Volume\n    period: 1\n    maximum: 500\n",
         encoding="utf-8",
     )
     Optimizer.from_dataset(
@@ -392,7 +395,7 @@ def test_warm_start_runs(tmp_path: Path) -> None:
     )
     targets = tmp_path / "targets.yaml"
     targets.write_text(
-        "targets:\n  - account: feature.Volume\n    year: 0\n    maximum: 500\n",
+        "targets:\n  - account: feature.Volume\n    period: 1\n    maximum: 500\n",
         encoding="utf-8",
     )
     summary = Optimizer.from_dataset(
@@ -409,7 +412,7 @@ def test_mip_bound_is_recorded_with_a_non_negative_gap(tmp_path: Path) -> None:
     )
     targets = tmp_path / "targets.yaml"
     targets.write_text(
-        "targets:\n  - account: feature.Volume\n    year: 0\n    maximum: 500\n",
+        "targets:\n  - account: feature.Volume\n    period: 1\n    maximum: 500\n",
         encoding="utf-8",
     )
     summary = Optimizer.from_dataset(
@@ -428,7 +431,7 @@ def _compile(tmp_path: Path) -> tuple[Path, str]:
     )
     targets = tmp_path / "targets.yaml"
     targets.write_text(
-        "targets:\n  - account: feature.Volume\n    year: 0\n    maximum: 500\n",
+        "targets:\n  - account: feature.Volume\n    period: 1\n    maximum: 500\n",
         encoding="utf-8",
     )
     return dataset, str(targets)
@@ -556,7 +559,7 @@ def test_the_scoped_spatial_penalty_matches_the_full_edge_computation(tmp_path: 
     graph = optimizer._graph()
     block_area = optimizer._block_area()
     pairs = [
-        (int(float(str(row.block_id))), int(float(str(row.period))))
+        (int(float(str(row.block_id))), int(float(str(row.offset))))
         for row in frame.itertuples(index=False)
     ]
     selected_by_year, disturbance_years = schedule_years(pairs)
@@ -604,8 +607,8 @@ def test_spatial_override_disables_the_penalty(tmp_path: Path) -> None:
     )
     frame = pd.DataFrame(
         [
-            {"block_id": 1, "treatment": "CC", "period": 0},
-            {"block_id": 2, "treatment": "CC", "period": 0},
+            {"block_id": 1, "treatment": "CC", "offset": 0},
+            {"block_id": 2, "treatment": "CC", "offset": 0},
         ]
     )
     enforced = Optimizer.from_dataset(
@@ -628,7 +631,7 @@ def test_multi_start_is_no_worse_than_single_start(tmp_path: Path) -> None:
     )
     targets = tmp_path / "targets.yaml"
     targets.write_text(
-        "targets:\n  - account: feature.Volume\n    year: 0\n    maximum: 500\n",
+        "targets:\n  - account: feature.Volume\n    period: 1\n    maximum: 500\n",
         encoding="utf-8",
     )
 
@@ -648,7 +651,7 @@ def test_incremental_evaluation_matches_a_full_simulation(tmp_path: Path) -> Non
         _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
     )
     optimizer = Optimizer.from_dataset(dataset, OptimizeConfig(years=3, iterations=1, seed=1))
-    targets = [Target("feature.Volume", 0, maximum=1000.0)]
+    targets = [Target("feature.Volume", period=1, maximum=1000.0)]
     options = optimizer.candidates()
     schedule = {block: choices[0] for block, choices in options.items() if choices}
     assert schedule  # the fixture offers at least one treatment
@@ -656,9 +659,9 @@ def test_incremental_evaluation_matches_a_full_simulation(tmp_path: Path) -> Non
     incremental = optimizer._incremental_values(schedule, ())
     full = optimizer._full_values(schedule, None, (), ())
     joined = (
-        incremental.set_index(["year", "account"])["value"]
+        incremental.set_index(["offset", "account"])["value"]
         .to_frame("incremental")
-        .join(full.set_index(["year", "account"])["value"].to_frame("full"), how="outer")
+        .join(full.set_index(["offset", "account"])["value"].to_frame("full"), how="outer")
         .fillna(0.0)
     )
     assert (joined["incremental"] - joined["full"]).abs().max() == pytest.approx(0.0, abs=1e-6)
@@ -673,7 +676,7 @@ def test_incremental_evaluation_matches_for_the_empty_schedule(tmp_path: Path) -
         _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
     )
     optimizer = Optimizer.from_dataset(dataset, OptimizeConfig(years=3, iterations=1, seed=1))
-    targets = [Target("feature.Volume", 0, minimum=0.0)]
+    targets = [Target("feature.Volume", period=1, minimum=0.0)]
     assert optimizer._evaluate({}, targets) == pytest.approx(
         objective(optimizer._full_values({}, None, (), ()), targets)
     )
@@ -687,9 +690,9 @@ def test_objective_scores_a_product_account_target(tmp_path: Path) -> None:
     optimizer = Optimizer.from_dataset(dataset, OptimizeConfig(years=1, iterations=1, seed=1))
     schedule: Schedule = {1: (("CC", 0),)}
     # Block 1 produces 360; a minimum above it shows the exact shortfall, not a zero value.
-    shortfall = optimizer._evaluate(schedule, [Target("product.Volume", 0, minimum=1000.0)])
+    shortfall = optimizer._evaluate(schedule, [Target("product.Volume", period=1, minimum=1000.0)])
     assert shortfall == pytest.approx(640.0)
-    met = optimizer._evaluate(schedule, [Target("product.Volume", 0, minimum=100.0)])
+    met = optimizer._evaluate(schedule, [Target("product.Volume", period=1, minimum=100.0)])
     assert met == pytest.approx(0.0)
 
 
@@ -700,7 +703,7 @@ def test_island_search_is_deterministic_and_no_worse_than_a_single_start(tmp_pat
     )
     targets = tmp_path / "targets.yaml"
     targets.write_text(
-        "targets:\n  - account: feature.Volume\n    year: 0\n    maximum: 500\n",
+        "targets:\n  - account: feature.Volume\n    period: 1\n    maximum: 500\n",
         encoding="utf-8",
     )
 
@@ -734,7 +737,7 @@ def test_optimize_command_records_a_mip_bound(tmp_path: Path) -> None:
     )
     targets = tmp_path / "targets.yaml"
     targets.write_text(
-        "targets:\n  - account: feature.Volume\n    year: 0\n    maximum: 500\n", encoding="utf-8"
+        "targets:\n  - account: feature.Volume\n    period: 1\n    maximum: 500\n", encoding="utf-8"
     )
     weights = tmp_path / "weights.yaml"
     weights.write_text("weights: {}\n", encoding="utf-8")
@@ -801,7 +804,7 @@ def test_a_run_leaves_the_incumbent_values_readable(tmp_path: Path) -> None:
     )
     targets = tmp_path / "targets.yaml"
     targets.write_text(
-        "targets:\n- account: feature.Volume\n  year: 0\n  minimum: 1\n  period_width: 1\n"
+        "targets:\n- account: feature.Volume\n  period: 1\n  minimum: 1\n  period_width: 1\n"
     )
     optimizer = Optimizer.from_dataset(
         dataset, OptimizeConfig(years=3, iterations=20, seed=1, targets_path=str(targets))
@@ -813,7 +816,7 @@ def test_a_run_leaves_the_incumbent_values_readable(tmp_path: Path) -> None:
 
     values = optimizer.last_account_values()
     assert not values.empty
-    assert {"year", "account", "value"} <= set(values.columns)
+    assert {"offset", "account", "value"} <= set(values.columns)
     assert "feature.Volume" in set(values["account"])
 
 
@@ -851,9 +854,9 @@ def test_the_incremental_route_path_prices_the_additive_accounts(tmp_path: Path)
     incremental = optimizer._incremental_values(schedule, duplicate_accounts, route_accounts)
     full = optimizer._full_values(schedule, model, route_accounts, duplicate_accounts)
     joined = (
-        incremental.set_index(["year", "account"])["value"]
+        incremental.set_index(["offset", "account"])["value"]
         .to_frame("incremental")
-        .join(full.set_index(["year", "account"])["value"].to_frame("full"), how="outer")
+        .join(full.set_index(["offset", "account"])["value"].to_frame("full"), how="outer")
         .fillna(0.0)
     )
     assert (joined["incremental"] - joined["full"]).abs().max() == pytest.approx(0.0, abs=1e-6)

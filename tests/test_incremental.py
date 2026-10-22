@@ -34,8 +34,8 @@ def _optimizer(tmp_path: Path, years: int = 4, iterations: int = 1) -> Optimizer
 def _targets() -> list[Target]:
     """A couple of goals on a raw product account."""
     return [
-        Target("product.Volume", 0, minimum=300.0, maximum=400.0),
-        Target("product.Volume", 1, minimum=100.0),
+        Target("product.Volume", period=1, minimum=300.0, maximum=400.0),
+        Target("product.Volume", period=2, minimum=100.0),
     ]
 
 
@@ -266,34 +266,37 @@ def test_warm_precomputes_the_candidate_contributions(tmp_path: Path) -> None:
 
 
 def test_a_product_target_sums_the_account_over_its_period() -> None:
-    """A period ends at its year, and a product accumulates over it."""
+    """A product accumulates over its period's offsets."""
     values = pd.DataFrame(
-        {"year": [0, 1, 2, 3], "account": ["product.a"] * 4, "value": [1.0, 2.0, 3.0, 4.0]}
+        {"offset": [0, 1, 2, 3], "account": ["product.a"] * 4, "value": [1.0, 2.0, 3.0, 4.0]}
     )
     periodic = [
-        Target("product.a", 0, minimum=1.0, maximum=1.0, period_width=2),  # years -1..0 -> 1
-        Target("product.a", 2, minimum=5.0, maximum=5.0, period_width=2),  # years 1..2 -> 2 + 3
+        # period 1 with width 2 covers offsets 0-1 -> 1 + 2 = 3
+        Target("product.a", period=1, minimum=3.0, maximum=3.0, period_width=2),
+        # period 2 with width 2 covers offsets 2-3 -> 3 + 4 = 7
+        Target("product.a", period=2, minimum=7.0, maximum=7.0, period_width=2),
     ]
     assert objective(values, periodic) == pytest.approx(0.0)
-    off = [Target("product.a", 2, minimum=7.0, maximum=7.0, period_width=2)]
-    assert objective(values, off) == pytest.approx(2.0)  # the period's total, not one year
+    off = [Target("product.a", period=2, minimum=9.0, maximum=9.0, period_width=2)]
+    assert objective(values, off) == pytest.approx(2.0)  # the period's total, not one offset
 
 
 def test_a_level_target_is_read_at_its_periods_end() -> None:
-    """A feature is a state of the map, so a period's value is the account at its end year."""
+    """A feature is a state of the map, so a period's value is the account at its end offset."""
     values = pd.DataFrame(
-        {"year": [0, 1, 2, 3], "account": ["feature.a"] * 4, "value": [1.0, 2.0, 3.0, 4.0]}
+        {"offset": [0, 1, 2, 3], "account": ["feature.a"] * 4, "value": [1.0, 2.0, 3.0, 4.0]}
     )
-    targets = [Target("feature.a", 2, minimum=3.0, maximum=3.0, period_width=5)]
-    assert objective(values, targets) == pytest.approx(0.0)  # year 2, whatever the width
-    off = [Target("feature.a", 3, minimum=3.0, maximum=3.0, period_width=5)]
-    assert objective(values, off) == pytest.approx(1.0)  # year 3, not the sum of the window
+    # period 1 with width 4 covers offsets 0-3, read at its end offset 3 -> 4
+    targets = [Target("feature.a", period=1, minimum=4.0, maximum=4.0, period_width=4)]
+    assert objective(values, targets) == pytest.approx(0.0)
+    off = [Target("feature.a", period=1, minimum=5.0, maximum=5.0, period_width=4)]
+    assert objective(values, off) == pytest.approx(1.0)  # the end offset, not the sum of the window
 
 
 def test_incremental_matches_periodic_targets(tmp_path: Path) -> None:
     """The move-based evaluator scores a periodic target the same as the whole-schedule path."""
     optimizer = _optimizer(tmp_path, years=6)
-    targets = [Target("product.Volume", 0, minimum=300.0, maximum=300.0, period_width=2)]
+    targets = [Target("product.Volume", period=1, minimum=300.0, maximum=300.0, period_width=2)]
     candidates = optimizer.candidates()
     schedule = {block: chains[0] for block, chains in candidates.items() if chains}
     evaluator = IncrementalObjective(optimizer, targets)
@@ -343,9 +346,9 @@ def test_a_chain_schedule_evaluates_incrementally_and_fully(tmp_path: Path) -> N
     incremental = optimizer._incremental_values(schedule, (), ())
     full = optimizer._full_values(schedule, None, (), ())
     joined = (
-        incremental.set_index(["year", "account"])["value"]
+        incremental.set_index(["offset", "account"])["value"]
         .to_frame("incremental")
-        .join(full.set_index(["year", "account"])["value"].to_frame("full"), how="outer")
+        .join(full.set_index(["offset", "account"])["value"].to_frame("full"), how="outer")
         .fillna(0.0)
     )
     assert (joined["incremental"] - joined["full"]).abs().max() == pytest.approx(0.0, abs=1e-6)
@@ -356,10 +359,11 @@ def test_optimizer_uses_the_delta_path(tmp_path: Path) -> None:
     optimizer = _optimizer(tmp_path, years=3, iterations=25)
     targets_path = tmp_path / "targets.yaml"
     targets_path.write_text(
-        "targets:\n  - account: product.Volume\n    year: 0\n    minimum: 300\n    maximum: 400\n",
+        "targets:\n  - account: product.Volume\n    period: 1\n"
+        "    minimum: 300\n    maximum: 400\n",
         encoding="utf-8",
     )
     optimizer.cfg.targets_path = str(targets_path)
-    targets = [Target("product.Volume", 0, minimum=300.0, maximum=400.0)]
+    targets = [Target("product.Volume", period=1, minimum=300.0, maximum=400.0)]
     best, objective = optimizer._solve(3)
     assert objective == pytest.approx(optimizer._evaluate(best, targets))
