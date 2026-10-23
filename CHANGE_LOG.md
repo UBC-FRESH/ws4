@@ -2165,3 +2165,9 @@ issue comments.
 - The web period control now reads the simulated horizon from account values as well as the schedule, so a 300-year run keeps a 300-year slider even when the schedule stops earlier. Changing periods preserves the current map view instead of refitting. UI build v45.
 - The chat panel retries once after a 502/503/504, which recovers the common cold first turn through the reverse proxy. The map legend now distinguishes all treated blocks from connected patch openings. UI build v46.
 - When a service has a run named `reference`, the UI opens that run by default. This makes the NICC reference target set the first thing an analyst sees; services without a reference run keep the old first-run behavior. UI build v47.
+- Added viewport level-of-detail to the map endpoint and the MapLibre shell. `bbox` limits the
+  response to intersecting features, and `zoom` below 10 returns compact block centroids. Treatment
+  layers return treated centroids only at the overview scale, and the bare block layer returns an
+  even sample; the response carries full-run treated/untreated totals. The shell reloads after a
+  debounced `moveend` and keeps the current view. The TSA 46 initial payload fell from 444 MB to
+  66 KB at zoom 5; a zoom-12 viewport is 524 KB. Tests: 46 web tests, mypy, ruff, validator, docs.

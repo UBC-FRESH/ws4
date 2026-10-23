@@ -92,6 +92,136 @@ def _geometry_features(path: Path) -> list[dict[str, Any]]:
     return features
 
 
+def _parse_bbox(text: str) -> tuple[float, float, float, float]:
+    """Parse a ``minx,miny,maxx,maxy`` bbox string.
+
+    Parameters
+    ----------
+    text : str
+        Four comma-separated numbers.
+
+    Returns
+    -------
+    tuple of (float, float, float, float)
+        The west, south, east, and north bounds.
+
+    Raises
+    ------
+    ValueError
+        When the string does not have four increasing coordinates.
+    """
+    parts = [float(value) for value in text.split(",")]
+    if len(parts) != 4:
+        raise ValueError("bbox needs minx,miny,maxx,maxy")
+    minx, miny, maxx, maxy = parts
+    if minx >= maxx or miny >= maxy:
+        raise ValueError("bbox must have minx < maxx and miny < maxy")
+    return minx, miny, maxx, maxy
+
+
+def _bbox_to_source(
+    bbox: tuple[float, float, float, float], source_crs: str
+) -> tuple[float, float, float, float]:
+    """Transform a WGS84 bbox into the source CRS.
+
+    Parameters
+    ----------
+    bbox : tuple of (float, float, float, float)
+        WGS84 west, south, east, and north bounds.
+    source_crs : str
+        The geometry's CRS.
+
+    Returns
+    -------
+    tuple of (float, float, float, float)
+        The bbox in the source CRS. A WGS84 source is returned unchanged.
+
+    Raises
+    ------
+    HTTPException
+        When the source is not WGS84 and pyproj is not installed.
+    """
+    if source_crs.upper() in {"EPSG:4326", "WGS84", "CRS:84"}:
+        return bbox
+    try:
+        from pyproj import Transformer
+    except ImportError as error:  # pragma: no cover - depends on the install
+        raise HTTPException(
+            status_code=422, detail="bbox filtering needs pyproj for a non-WGS84 geometry"
+        ) from error
+    transformer = Transformer.from_crs("EPSG:4326", source_crs, always_xy=True)
+    return transformer.transform_bounds(*bbox)
+
+
+def _feature_bounds(feature: dict[str, Any]) -> tuple[float, float, float, float] | None:
+    """Return a feature's coordinate bounds without constructing a shapely geometry.
+
+    Parameters
+    ----------
+    feature : dict
+        GeoJSON feature.
+
+    Returns
+    -------
+    tuple of (float, float, float, float) or None
+        West, south, east, and north bounds, or ``None`` when the feature has no
+        coordinate pairs.
+    """
+    geometry = feature.get("geometry")
+    if not isinstance(geometry, dict):
+        return None
+    coordinates = geometry.get("coordinates")
+    if coordinates is None:
+        return None
+    minx = miny = math.inf
+    maxx = maxy = -math.inf
+
+    def walk(value: object) -> None:
+        nonlocal minx, miny, maxx, maxy
+        if not isinstance(value, (list, tuple)):
+            return
+        if len(value) >= 2:
+            first = value[0]
+            second = value[1]
+            if isinstance(first, (int, float)) and isinstance(second, (int, float)):
+                x = float(first)
+                y = float(second)
+                minx = min(minx, x)
+                miny = min(miny, y)
+                maxx = max(maxx, x)
+                maxy = max(maxy, y)
+                return
+        for child in value:
+            walk(child)
+
+    walk(coordinates)
+    if minx is math.inf:
+        return None
+    return minx, miny, maxx, maxy
+
+
+def _intersects(bbox: tuple[float, float, float, float], feature: dict[str, Any]) -> bool:
+    """Report whether a feature's coordinate bounds overlap a bbox.
+
+    Parameters
+    ----------
+    bbox : tuple of (float, float, float, float)
+        Target bounds.
+    feature : dict
+        GeoJSON feature.
+
+    Returns
+    -------
+    bool
+        ``True`` when the feature bounds overlap the bbox.
+    """
+    bounds = _feature_bounds(feature)
+    if bounds is None:
+        return False
+    minx, miny, maxx, maxy = bounds
+    return not (maxx < bbox[0] or minx > bbox[2] or maxy < bbox[1] or miny > bbox[3])
+
+
 def _to_wgs84(features: list[dict[str, Any]], crs: str) -> list[dict[str, Any]]:
     """Return features transformed from ``crs`` to WGS84 for MapLibre.
 
@@ -1238,6 +1368,8 @@ def create_app(
         account: str | None = Query(default=None),
         period_start: int | None = Query(default=None),
         format: str = Query(default="projected"),
+        bbox: str | None = Query(default=None),
+        zoom: float | None = Query(default=None),
     ) -> dict[str, Any]:
         """Return a GeoJSON FeatureCollection of every block for one map layer.
 
@@ -1375,6 +1507,41 @@ def create_app(
             features.append(
                 {"type": "Feature", "geometry": base.get("geometry"), "properties": properties}
             )
+        total_features = len(features)
+        total_treated = sum(
+            1 for feature in features if bool(feature.get("properties", {}).get("treated"))
+        )
+        if bbox is not None:
+            try:
+                requested = _parse_bbox(bbox)
+            except ValueError as error:
+                raise HTTPException(status_code=422, detail=str(error)) from error
+            if format == "wgs84":
+                requested = _bbox_to_source(requested, source_crs)
+            features = [feature for feature in features if _intersects(requested, feature)]
+        overview_mode: str | None = None
+        if zoom is not None and zoom < 10:
+            for feature in features:
+                bounds = _feature_bounds(feature)
+                if bounds is None:
+                    continue
+                minx, miny, maxx, maxy = bounds
+                feature["geometry"] = {
+                    "type": "Point",
+                    "coordinates": [(minx + maxx) / 2.0, (miny + maxy) / 2.0],
+                }
+                feature["properties"]["overview"] = True
+            if layer == "blocks":
+                step = max(1, len(features) // 5000)
+                features = features[::step]
+                overview_mode = "sample"
+            else:
+                features = [
+                    feature
+                    for feature in features
+                    if bool(feature.get("properties", {}).get("treated"))
+                ]
+                overview_mode = "treated"
         if format == "wgs84":
             features = _to_wgs84(features, source_crs)
         return {
@@ -1382,6 +1549,12 @@ def create_app(
             "features": features,
             "year": year,
             "layer": layer,
+            "total_features": total_features,
+            "returned_features": len(features),
+            "total_treated": total_treated,
+            "total_untreated": total_features - total_treated,
+            "overview": bool(zoom is not None and zoom < 10),
+            "overview_mode": overview_mode,
             "patch_classes": patch_classes,
             "compartment_classes": compartment_classes,
             "compartment_accounts": compartment_accounts,

@@ -71,13 +71,17 @@ Endpoints
      - The run's report files and their sizes.
    * - ``GET /api/runs/{run}/reports/{name}``
      - One report file; a name the run does not hold is a 404.
-   * - ``GET /api/runs/{run}/map?year=&period_start=&layer=&account=&format=``
+   * - ``GET /api/runs/{run}/map?year=&period_start=&layer=&account=&format=&bbox=&zoom=``
      - A GeoJSON ``FeatureCollection`` joined to ``--geometry``. ``year`` is the period's end year
        and ``period_start`` its first year, so ``treatments`` covers the period; ``cumulative``
        marks the current period and earlier ones, ``patches`` carries the year's patch membership,
        ``compartments`` the model spread membership (one ``account`` at a time), and ``blocks`` is
        the bare geometry. ``format=wgs84`` transforms the geometry for MapLibre; the default is the
-       source CRS the SVG uses.
+       source CRS the SVG uses. ``bbox=minx,miny,maxx,maxy`` keeps only intersecting features, in
+       WGS84 when ``format=wgs84``. ``zoom`` below 10 returns block centroids; for treatment layers
+       it returns only treated centroids, and for the bare block layer it returns an even sample.
+       The response carries ``total_features``, ``total_treated``, ``total_untreated``, and
+       ``overview_mode`` so the shell can keep full-run counts while drawing the viewport.
    * - ``GET /api/runs/{run}/layers``
      - The layers the run can actually draw (treatments, cumulative, patches, compartments), its
        patch and compartment classes/accounts, and the named reasons roads/used roads/compartments
@@ -170,6 +174,13 @@ The SVG fallback keeps native coordinates and remains available when WebGL or th
 unavailable. The basemap is an external OpenStreetMap raster source; without network access the
 blocks still draw, but the basemap is blank. MapLibre draws the cumulative earlier-period fill as
 a flat tan rather than the SVG hatch; the API and layer semantics are otherwise identical.
+
+MapLibre requests the current viewport with ``bbox`` and ``zoom`` and reloads after a debounced
+``moveend``. Below zoom 10 the service returns compact centroids; treatment layers return the
+treated blocks only, and the bare block layer returns an even sample. At zoom 10 and above the
+service returns the intersecting block polygons. The shell keeps the full-run treated/untreated
+counts from the response while the map draws only the viewport. This keeps a management-unit map
+from loading every polygon up front.
 
 Geometry
 --------

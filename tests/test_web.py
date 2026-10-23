@@ -921,3 +921,43 @@ def test_an_unknown_run_is_a_named_404(tmp_path: Path) -> None:
     response = client.get("/api/runs/nope/summary")
     assert response.status_code == 404
     assert "nope" in response.json()["detail"]
+
+
+def test_the_map_filters_to_a_bbox(tmp_path: Path) -> None:
+    """A bbox returns only the features whose bounds overlap it."""
+    client, _ = _app(tmp_path)
+    body = client.get(
+        "/api/runs/run1/map",
+        params={"year": 0, "bbox": "0.5,-1,1.5,1"},
+    ).json()
+    assert body["total_features"] == 2
+    assert body["returned_features"] == 1
+    assert [feature["properties"]["block_id"] for feature in body["features"]] == [1]
+
+
+def test_the_map_returns_centroids_below_zoom_ten(tmp_path: Path) -> None:
+    """A low-zoom request returns compact points, not polygons."""
+    client, _ = _app(tmp_path)
+    body = client.get("/api/runs/run1/map", params={"year": 0, "zoom": 5}).json()
+    assert body["overview"] is True
+    assert body["overview_mode"] == "treated"
+    assert body["total_features"] == 2
+    assert body["total_treated"] == 1
+    assert body["returned_features"] == 1
+    assert all(feature["geometry"]["type"] == "Point" for feature in body["features"])
+    assert all(feature["properties"]["overview"] is True for feature in body["features"])
+
+
+def test_the_map_keeps_polygons_at_high_zoom(tmp_path: Path) -> None:
+    """A high-zoom request keeps the polygon geometry."""
+    client, _ = _app(tmp_path)
+    body = client.get("/api/runs/run1/map", params={"year": 0, "zoom": 12}).json()
+    assert body["overview"] is False
+    assert body["features"][0]["geometry"]["type"] == "Point"
+
+
+def test_the_map_rejects_a_malformed_bbox(tmp_path: Path) -> None:
+    """A bbox that is not four increasing numbers is a 422."""
+    client, _ = _app(tmp_path)
+    response = client.get("/api/runs/run1/map", params={"year": 0, "bbox": "1,2,3"})
+    assert response.status_code == 422
