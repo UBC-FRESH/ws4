@@ -2171,3 +2171,9 @@ issue comments.
   even sample; the response carries full-run treated/untreated totals. The shell reloads after a
   debounced `moveend` and keeps the current view. The TSA 46 initial payload fell from 444 MB to
   66 KB at zoom 5; a zoom-12 viewport is 524 KB. Tests: 46 web tests, mypy, ruff, validator, docs.
+- Added the MVT tile endpoint and the MapLibre vector source for the block, treatment, and
+  cumulative layers. `GET /api/runs/{run}/tiles/{z}/{x}/{y}.mvt` returns treated centroids below
+  zoom 10 and simplified polygons above it, with an in-memory tile cache; `map-stats` keeps the
+  full-run counts. The TSA 46 zoom-0 tile is 8.5 KB (331 treated blocks); a zoom-12 tile is 3.1 KB
+  and 57 ms once the source payload is cached. Patches, compartments, and comparison keep the
+  GeoJSON path.

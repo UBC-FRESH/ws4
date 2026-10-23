@@ -961,3 +961,57 @@ def test_the_map_rejects_a_malformed_bbox(tmp_path: Path) -> None:
     client, _ = _app(tmp_path)
     response = client.get("/api/runs/run1/map", params={"year": 0, "bbox": "1,2,3"})
     assert response.status_code == 422
+
+
+def test_the_tile_endpoint_returns_mvt_features(tmp_path: Path) -> None:
+    """The MVT tile carries the treated block and its display properties."""
+    import mapbox_vector_tile
+
+    client, _ = _app(tmp_path)
+    response = client.get(
+        "/api/runs/run1/tiles/0/0/0.mvt",
+        params={"year": 0, "layer": "treatments"},
+    )
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/vnd.mapbox-vector-tile")
+    decoded = mapbox_vector_tile.decode(response.content)
+    features = decoded["blocks"]["features"]
+    assert [feature["properties"]["block_id"] for feature in features] == [1]
+    assert features[0]["properties"]["treated"] is True
+
+
+def test_the_tile_endpoint_keeps_only_the_tile_at_high_zoom(tmp_path: Path) -> None:
+    """A high-zoom tile returns the blocks that intersect its own bounds."""
+    import mapbox_vector_tile
+    import mercantile
+
+    client, _ = _app(tmp_path)
+    tile = mercantile.tile(1.0, 0.0, 12)
+    response = client.get(
+        f"/api/runs/run1/tiles/12/{tile.x}/{tile.y}.mvt",
+        params={"year": 0, "layer": "treatments"},
+    )
+    assert response.status_code == 200
+    decoded = mapbox_vector_tile.decode(response.content)
+    features = decoded["blocks"]["features"]
+    assert [feature["properties"]["block_id"] for feature in features] == [1]
+
+
+def test_the_tile_endpoint_names_an_unknown_layer(tmp_path: Path) -> None:
+    """A tile layer outside the MVT set is a 422."""
+    client, _ = _app(tmp_path)
+    response = client.get(
+        "/api/runs/run1/tiles/0/0/0.mvt",
+        params={"year": 0, "layer": "patches"},
+    )
+    assert response.status_code == 422
+
+
+def test_map_stats_reports_full_run_counts(tmp_path: Path) -> None:
+    """The stats endpoint carries the full-run counts the viewport map omits."""
+    client, _ = _app(tmp_path)
+    body = client.get(
+        "/api/runs/run1/map-stats",
+        params={"year": 0, "layer": "treatments"},
+    ).json()
+    assert body == {"total_features": 2, "total_treated": 1, "total_untreated": 1}

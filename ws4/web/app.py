@@ -15,6 +15,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from collections import Counter
 from collections.abc import Awaitable, Callable, Iterator
@@ -22,11 +23,19 @@ from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Any
 
+import mapbox_vector_tile
+import mercantile
+import numpy as np
 import pandas as pd
 import yaml
 from fastapi import Body, FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from pyproj import Transformer
+from shapely import transform as shapely_transform
+from shapely.geometry import box, shape
+from shapely.geometry.base import BaseGeometry
+from shapely.strtree import STRtree
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.responses import Response
 
@@ -220,6 +229,84 @@ def _intersects(bbox: tuple[float, float, float, float], feature: dict[str, Any]
         return False
     minx, miny, maxx, maxy = bounds
     return not (maxx < bbox[0] or minx > bbox[2] or maxy < bbox[1] or miny > bbox[3])
+
+
+TILE_EXTENT: int = 4096
+
+
+def _tile_tolerance(zoom: int) -> float:
+    """Return the simplification tolerance in metres for a tile zoom.
+
+    Parameters
+    ----------
+    zoom : int
+        Web Mercator zoom level.
+
+    Returns
+    -------
+    float
+        Tolerance in source metres; zero keeps the original vertices.
+    """
+    if zoom >= 16:
+        return 0.0
+    if zoom >= 14:
+        return 10.0
+    if zoom >= 12:
+        return 50.0
+    return 100.0
+
+
+def _tile_coordinates(
+    geometry: BaseGeometry,
+    bounds: tuple[float, float, float, float],
+    extent: int = TILE_EXTENT,
+) -> BaseGeometry:
+    """Map a Web Mercator geometry into tile-local coordinates.
+
+    Parameters
+    ----------
+    geometry : BaseGeometry
+        A Shapely geometry in EPSG:3857.
+    bounds : tuple of (float, float, float, float)
+        The tile's west, south, east, and north bounds in EPSG:3857.
+    extent : int, optional
+        MVT tile extent. The default is 4096.
+
+    Returns
+    -------
+    BaseGeometry
+        The geometry in tile-local coordinates, y down.
+    """
+    minx, miny, maxx, maxy = bounds
+    width = max(maxx - minx, 1e-9)
+    height = max(maxy - miny, 1e-9)
+
+    def project(coordinates: np.ndarray) -> np.ndarray:
+        x = (coordinates[:, 0] - minx) / width * extent
+        y = (maxy - coordinates[:, 1]) / height * extent
+        return np.column_stack([x, y])
+
+    return shapely_transform(geometry, project)
+
+
+def _scalar_properties(properties: dict[str, Any]) -> dict[str, object]:
+    """Keep the MVT-safe scalar properties.
+
+    Parameters
+    ----------
+    properties : dict
+        A feature's source properties.
+
+    Returns
+    -------
+    dict of str to object
+        Only strings, booleans, and numbers; lists and ``None`` are dropped.
+    """
+    result: dict[str, object] = {}
+    for key, value in properties.items():
+        if isinstance(value, (str, bool, int, float)):
+            result[key] = value
+    return result
 
 
 def _to_wgs84(features: list[dict[str, Any]], crs: str) -> list[dict[str, Any]]:
@@ -1560,6 +1647,147 @@ def create_app(
             "compartment_accounts": compartment_accounts,
             "account": account if layer == "compartments" else None,
         }
+
+    payload_cache: dict[tuple[str, int | None, str, int | None, str], dict[str, Any]] = {}
+    payload_lock = threading.Lock()
+    tile_cache: dict[tuple[str, int, int, int, str, int | None, int | None], bytes] = {}
+
+    def cached_geometry(
+        run: str,
+        year: int | None,
+        layer: str,
+        period_start: int | None,
+        account: str | None,
+    ) -> dict[str, Any]:
+        """Build and cache the source-CRS features for one layer and period."""
+        key = (run, year, layer, period_start, account or "")
+        cached = payload_cache.get(key)
+        if cached is not None:
+            return cached
+        with payload_lock:
+            cached = payload_cache.get(key)
+            if cached is not None:
+                return cached
+            payload = map_features(
+                run=run,
+                year=year,
+                layer=layer,
+                account=account,
+                period_start=period_start,
+                format="projected",
+                bbox=None,
+                zoom=None,
+            )
+            features = list(payload["features"])
+            shapes = [shape(feature["geometry"]) for feature in features]
+            entry = {
+                "features": features,
+                "shapes": shapes,
+                "tree": STRtree(shapes),
+                "centroids": [geometry.representative_point() for geometry in shapes],
+            }
+            payload_cache.clear()
+            payload_cache[key] = entry
+            return entry
+
+    @app.get("/api/runs/{run}/map-stats")
+    def map_stats(
+        run: str,
+        year: int | None = Query(default=None),
+        layer: str = Query(default="treatments"),
+        account: str | None = Query(default=None),
+        period_start: int | None = Query(default=None),
+    ) -> dict[str, int]:
+        """Return the full-run feature counts a viewport map does not carry."""
+        if layer not in ("blocks", "treatments", "cumulative"):
+            raise HTTPException(status_code=422, detail=f"unknown tile layer {layer!r}")
+        entry = cached_geometry(run, year, layer, period_start, account)
+        total = len(entry["features"])
+        treated = sum(
+            1 for feature in entry["features"] if bool(feature.get("properties", {}).get("treated"))
+        )
+        return {
+            "total_features": total,
+            "total_treated": treated,
+            "total_untreated": total - treated,
+        }
+
+    @app.get("/api/runs/{run}/tiles/{z}/{x}/{y}.mvt")
+    def map_tile(
+        run: str,
+        z: int,
+        x: int,
+        y: int,
+        year: int | None = Query(default=None),
+        layer: str = Query(default="treatments"),
+        account: str | None = Query(default=None),
+        period_start: int | None = Query(default=None),
+    ) -> Response:
+        """Return one MVT tile for the current viewport and zoom."""
+        if layer not in ("blocks", "treatments", "cumulative"):
+            raise HTTPException(status_code=422, detail=f"unknown tile layer {layer!r}")
+        if z < 0 or z > 22 or x < 0 or y < 0 or x >= 2**z or y >= 2**z:
+            raise HTTPException(status_code=422, detail="tile coordinate out of range")
+        cache_key = (run, z, x, y, layer, year, period_start)
+        cached_tile = tile_cache.get(cache_key)
+        if cached_tile is not None:
+            return Response(
+                content=cached_tile,
+                media_type="application/vnd.mapbox-vector-tile",
+                headers={"Cache-Control": "public, max-age=3600"},
+            )
+        entry = cached_geometry(run, year, layer, period_start, account)
+        tile = mercantile.Tile(x, y, z)
+        mercator = mercantile.xy_bounds(tile)
+        to_source = Transformer.from_crs("EPSG:3857", source_crs, always_xy=True)
+        to_mercator = Transformer.from_crs(source_crs, "EPSG:3857", always_xy=True)
+        source_bounds = to_source.transform_bounds(
+            mercator.left, mercator.bottom, mercator.right, mercator.top
+        )
+        tile_box = box(*source_bounds)
+        tolerance = _tile_tolerance(z)
+        features: list[dict[str, Any]] = []
+        for index in entry["tree"].query(tile_box):
+            properties = entry["features"][int(index)].get("properties", {})
+            treated = bool(properties.get("treated"))
+            if z < 10:
+                if layer != "blocks" and not treated:
+                    continue
+                geometry = entry["centroids"][int(index)]
+            else:
+                geometry = entry["shapes"][int(index)]
+                if tolerance > 0:
+                    geometry = geometry.simplify(tolerance, preserve_topology=True)
+                geometry = geometry.intersection(tile_box)
+                if geometry.is_empty:
+                    continue
+
+            def project(coordinates: np.ndarray) -> np.ndarray:
+                xs, ys = to_mercator.transform(coordinates[:, 0], coordinates[:, 1])
+                return np.column_stack([xs, ys])
+
+            mercator_geometry = shapely_transform(geometry, project)
+            features.append(
+                {
+                    "geometry": _tile_coordinates(
+                        mercator_geometry,
+                        (mercator.left, mercator.bottom, mercator.right, mercator.top),
+                    ),
+                    "properties": _scalar_properties(properties),
+                }
+            )
+        payload = mapbox_vector_tile.encode(
+            [{"name": "blocks", "features": features}],
+            default_options={"extents": TILE_EXTENT, "y_coord_down": True},
+        )
+        if len(tile_cache) >= 4096:
+            tile_cache.clear()
+        tile_cache[cache_key] = payload
+        return Response(
+            content=payload,
+            media_type="application/vnd.mapbox-vector-tile",
+            headers={"Cache-Control": "public, max-age=3600"},
+        )
 
     def _realized_rows(directory: Path) -> list[dict[str, Any]]:
         """Return each target's realized period value, computed by the optimizer's own rule."""

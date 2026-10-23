@@ -82,6 +82,14 @@ Endpoints
        it returns only treated centroids, and for the bare block layer it returns an even sample.
        The response carries ``total_features``, ``total_treated``, ``total_untreated``, and
        ``overview_mode`` so the shell can keep full-run counts while drawing the viewport.
+   * - ``GET /api/runs/{run}/tiles/{z}/{x}/{y}.mvt?year=&layer=&period_start=``
+     - One Mapbox Vector Tile for ``blocks``, ``treatments``, or ``cumulative``. The layer is
+       named ``blocks`` in the tile. Below zoom 10 it carries treated centroids; at zoom 10 and
+       above it carries the intersecting polygons, simplified for the zoom. The response is cached
+       in memory and marked ``Cache-Control: public, max-age=3600``.
+   * - ``GET /api/runs/{run}/map-stats?year=&layer=&period_start=``
+     - The full-run ``total_features``, ``total_treated``, and ``total_untreated`` for the layer,
+       so a tiled viewport keeps the run's own counts.
    * - ``GET /api/runs/{run}/layers``
      - The layers the run can actually draw (treatments, cumulative, patches, compartments), its
        patch and compartment classes/accounts, and the named reasons roads/used roads/compartments
@@ -181,6 +189,14 @@ treated blocks only, and the bare block layer returns an even sample. At zoom 10
 service returns the intersecting block polygons. The shell keeps the full-run treated/untreated
 counts from the response while the map draws only the viewport. This keeps a management-unit map
 from loading every polygon up front.
+
+For the block, treatment, and cumulative layers the shell uses the MVT tile endpoint instead of
+the viewport GeoJSON. A vector source requests only the tiles MapLibre needs at the current zoom;
+the server returns treated centroids below zoom 10 and simplified polygons at zoom 10 and above.
+The tile layer is always named ``blocks`` in the vector source, and the properties carry
+``block_id``, ``treated``, and ``current``. The shell reads full-run counts from
+``map-stats``. The GeoJSON path remains for patches, compartments, and comparison, where the
+per-feature styling is richer.
 
 Geometry
 --------

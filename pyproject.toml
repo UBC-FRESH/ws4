@@ -35,7 +35,7 @@ dependencies = [
 [project.optional-dependencies]
 geo = ["geopandas>=0.14", "pyogrio>=0.9", "shapely>=2.0", "rtree>=1.0"]
 opt = ["numba>=0.59", "networkx>=3.2", "ray>=2.9", "scipy>=1.11", "threadpoolctl>=3.1"]
-web = ["fastapi>=0.110", "uvicorn>=0.29"]
+web = ["fastapi>=0.110", "uvicorn>=0.29", "mapbox-vector-tile>=2.1", "mercantile>=1.2", "shapely>=2.0", "pyproj>=3.6"]
 
 [project.urls]
 Homepage = "https://github.com/UBC-FRESH/ws4"
@@ -97,6 +97,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["geopandas", "geopandas.*", "shapely", "shapely.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["mapbox_vector_tile", "mapbox_vector_tile.*", "mercantile", "mercantile.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
