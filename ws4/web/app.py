@@ -1114,26 +1114,47 @@ def create_app(
     def periods(run: str) -> dict[str, Any]:
         """Return the run's periods from its schedule, patch membership or account values."""
         directory = run_dir(run)
-        for name, column in (
-            ("schedule.csv", "offset"),
-            ("patch_membership.csv", "period"),
-            ("account_values.csv", "offset"),
-        ):
-            if not (directory / name).is_file():
-                continue
-            frame = read_csv(directory, name)
-            if frame.empty:
-                continue
-            values = sorted({int(value) for value in frame[column].astype("int64").tolist()})
-            if values:
-                width = _run_period_width(targets_path)
-                return {
-                    "min": values[0],
-                    "max": values[-1],
-                    "values": values,
-                    "period_width": width,
-                    "periods": _run_periods(values, width),
-                }
+        offsets: set[int] = set()
+        schedule_path = directory / "schedule.csv"
+        if schedule_path.is_file():
+            schedule = read_csv(directory, "schedule.csv")
+            if not schedule.empty and "offset" in schedule.columns:
+                offsets.update(
+                    int(value)
+                    for value in schedule["offset"].astype("int64").tolist()
+                    if int(value) >= 0
+                )
+                accounts = directory / "account_values.csv"
+                if accounts.is_file():
+                    frame = read_csv(directory, "account_values.csv")
+                    if not frame.empty and "offset" in frame.columns:
+                        offsets.update(
+                            int(value)
+                            for value in frame["offset"].astype("int64").tolist()
+                            if int(value) >= 0
+                        )
+        elif (directory / "patch_membership.csv").is_file():
+            frame = read_csv(directory, "patch_membership.csv")
+            if not frame.empty and "period" in frame.columns:
+                offsets.update(int(value) for value in frame["period"].astype("int64").tolist())
+        elif (directory / "account_values.csv").is_file():
+            frame = read_csv(directory, "account_values.csv")
+            if not frame.empty and "offset" in frame.columns:
+                offsets.update(
+                    int(value)
+                    for value in frame["offset"].astype("int64").tolist()
+                    if int(value) >= 0
+                )
+        values = sorted(offsets)
+        if values:
+            width = _run_period_width(targets_path)
+            return {
+                "min": values[0],
+                "max": values[-1],
+                "values": values,
+                "period_width": width,
+                "periods": _run_periods(values, width),
+            }
         return {"min": 0, "max": 0, "values": [], "period_width": 1, "periods": []}
 
     @app.get("/api/runs/{run}/layers")

@@ -264,6 +264,39 @@ def test_periods_fold_years_by_the_target_period_width(tmp_path: Path) -> None:
     assert all(feature["properties"]["treated"] for feature in features)
 
 
+def test_periods_follow_the_simulated_horizon_not_the_schedule_stop(tmp_path: Path) -> None:
+    """A 300-year run keeps a 300-year slider even when the schedule stops at offset 99."""
+    client, _ = _app(tmp_path)
+    run = tmp_path / "runs" / "run-long300"
+    run.mkdir()
+    (run / "schedule.csv").write_text("block_id,treatment,offset\n1,CC,99\n", encoding="utf-8")
+    pd.DataFrame(
+        [{"offset": offset, "account": "feature.Volume", "value": 1.0} for offset in range(300)]
+    ).to_csv(run / "account_values.csv", index=False)
+    targets = tmp_path / "targets.yaml"
+    targets.write_text(
+        "targets:\n"
+        "  - account: feature.Volume\n"
+        "    period: 1\n"
+        "    period_width: 10\n"
+        "    minimum: 0\n",
+        encoding="utf-8",
+    )
+    client = TestClient(
+        create_app(
+            dataset=tmp_path / "dataset",
+            runs=tmp_path / "runs",
+            targets=targets,
+            geometry=tmp_path / "geometry.geojson",
+        )
+    )
+    body = client.get("/api/runs/run-long300/periods").json()
+    assert body["max"] == 299
+    assert body["period_width"] == 10
+    assert body["periods"][-1]["end"] == 299
+    assert len(body["periods"]) == 30
+
+
 def test_the_map_refuses_without_geometry_and_for_an_unknown_layer(tmp_path: Path) -> None:
     """A missing geometry or an unknown layer is named, not answered with an empty map."""
     client, _ = _app(tmp_path, with_geometry=False)
