@@ -815,7 +815,7 @@ Status: active
 Goal: keep the map usable on real management units by loading only the current viewport and only the
 detail that zoom requires, instead of one full-management-unit GeoJSON payload.
 
-- [ ] P20.1 Add viewport bbox and zoom LOD to the map endpoint and UI (#184)
+- [x] P20.1 Add viewport bbox and zoom LOD to the map endpoint and UI (#184)
 - [ ] P20.2 Add MVT tiles and a vector source
 
 Acceptance: a low-zoom request returns compact centroids, a high-zoom bbox request returns only the
