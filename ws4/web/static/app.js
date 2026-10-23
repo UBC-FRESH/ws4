@@ -2270,7 +2270,7 @@ async function sendChat(event) {
   thinking.classList.add('thinking');
   $('chat-status').textContent = '';
   try {
-    const response = await fetch('api/chat', {
+    const request = () => fetch('api/chat', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -2280,6 +2280,12 @@ async function sendChat(event) {
         year: state.year,
       }),
     });
+    let response = await request();
+    if ([502, 503, 504].includes(response.status)) {
+      // The first turn can hit a cold reverse-proxy/agent timeout; one delayed retry recovers it.
+      await new Promise((resolve) => window.setTimeout(resolve, 2000));
+      response = await request();
+    }
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload.detail || `chat failed (${response.status})`);
     state.chatSession = payload.session || state.chatSession;
