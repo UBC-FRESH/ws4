@@ -537,7 +537,7 @@ function updateLiveBlocks(blocks) {
   applyVisibility();
 }
 
-async function loadMap() {
+async function loadMap(preserveView = false) {
   if (!state.run) return;
   statusLine('loading map…');
   const layer = state.layerMode === 'patches' && state.layers?.patches
@@ -560,7 +560,7 @@ async function loadMap() {
     if (state.mapEngine === 'maplibre') query += '&format=wgs84';
     const body = await api(query);
     state.features = body.features ?? [];
-    render();
+    render(!preserveView);
     const span = period ? ` · years ${period.start}-${period.end}` : '';
     statusLine(`${state.features.length.toLocaleString()} blocks · ${layer} · period ${state.periodIndex + 1}${span}`);
     if (state.showUsedRoads) loadUsedRoads();
@@ -2367,7 +2367,7 @@ function wireControls() {
   });
   $('year').addEventListener('change', () => {
     if (state.compareView) { loadComparison(); return; }
-    if (state.live.active) render(false); else loadMap();
+    if (state.live.active) render(false); else loadMap(true);
     if (state.showUsedRoads) loadUsedRoads();
   });
   document.addEventListener('keydown', (event) => {
@@ -2385,7 +2385,7 @@ function wireControls() {
     setPeriod(next);
     if (state.compareView) loadComparison();
     else if (state.live.active) render(false);
-    else loadMap();
+    else loadMap(true);
     if (state.showUsedRoads) loadUsedRoads();
   });
   $('skin').addEventListener('change', async (event) => {
