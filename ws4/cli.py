@@ -17,6 +17,7 @@ from .opt.calibrate import write_targets
 from .opt.engine import OptimizeConfig, Optimizer
 from .opt.objective import load_targets
 from .opt.watch import run_watch
+from .patch.accounts import load_patch_accounts
 from .patch.edge import load_edge_elements
 from .report import write_report
 from .roads.accounts import load_route_config
@@ -48,12 +49,16 @@ def build(
 @app.command()
 def simulate(
     dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
-    schedule: Path = typer.Option(
-        ..., exists=True, help="CSV: block_id,treatment,period (period in years)"
-    ),
+    schedule: Path = typer.Option(..., exists=True, help="CSV: block_id,treatment,offset"),
     years: int = typer.Option(200, help="Simulation horizon in years"),
     out: Path = typer.Option(..., help="Output directory"),
     topology: Path = typer.Option(None, exists=True, help="Block topology for spatial metrics"),
+    patch_accounts: Path = typer.Option(
+        None, "--patch-accounts", exists=True, help="Patch size-distribution accounts (YAML)"
+    ),
+    patch_membership: bool = typer.Option(
+        False, "--patch-membership", help="Write patch_membership.csv"
+    ),
     route_config: Path = typer.Option(
         None, "--route-config", exists=True, help="Optional route model and route accounts (YAML)"
     ),
@@ -76,6 +81,8 @@ def simulate(
         years=years,
         out_dir=out,
         topology_csv=topology,
+        patch_accounts=load_patch_accounts(patch_accounts) if patch_accounts is not None else (),
+        patch_membership=patch_membership,
         route_model=config.model if config is not None else None,
         route_accounts=config.route_accounts if config is not None else (),
         duplicate_accounts=config.duplicate_accounts if config is not None else (),

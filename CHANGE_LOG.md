@@ -2161,3 +2161,4 @@ issue comments.
   through the web API. The test is part of the normal suite and has its own named CI job.
 - Cut the MKRF and North Island docs over to ws4 as the primary runtime, with the retained
   Patchworks packages marked reference/interchange-only. Full suite: 667 passed; dashboard GREEN.
+- `ws4 simulate` now accepts `--patch-accounts` and `--patch-membership`, so a run can write the opening-size distribution it used without going through the Python API. The schedule help now names the offset clock. Full suite and dashboard remain green.
