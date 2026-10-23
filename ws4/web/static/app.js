@@ -2476,7 +2476,9 @@ async function start() {
       option.textContent = `${run.id} (${run.kind ?? 'run'})`;
       select.append(option);
     }
-    const preferred = (summary.runs ?? []).find((run) => run.id === 'run-dated3') ?? (summary.runs ?? [])[0];
+    const preferred = (summary.runs ?? []).find((run) => run.id === 'reference')
+      ?? (summary.runs ?? []).find((run) => run.id === 'run-dated3')
+      ?? (summary.runs ?? [])[0];
     if (!preferred) { statusLine('no runs found'); return; }
     select.value = preferred.id;
     state.run = preferred.id;
