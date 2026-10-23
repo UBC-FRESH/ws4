@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false };
 
 const $ = (id) => document.getElementById(id);
 const statusLine = (text) => { $('status').textContent = text; };
@@ -1553,6 +1553,11 @@ async function loadTargets() {
     const rows = await api('api/targets.json');
     rows.forEach((row) => { row.active = row.active !== false; });
     state.targets = rows;
+    const signature = rows
+      .map((row) => `${row.index}|${row.account}|${row.period}|${row.year}|${row.period_width}`)
+      .join(";");
+    const targetsChanged = signature !== state.targetSignature;
+    state.targetSignature = signature;
     if (!rows.length) {
       empty.hidden = false;
       table.hidden = true;
@@ -1568,7 +1573,7 @@ async function loadTargets() {
     const body = table.querySelector('tbody');
     body.replaceChildren();
     const keys = rows.filter((row) => !row.flow).map((row) => String(row.index));
-    if (![...state.watched].some((key) => keys.includes(key))) {
+    if (targetsChanged || ![...state.watched].some((key) => keys.includes(key))) {
       state.watched.clear();
       for (const key of keys.slice(0, 12)) state.watched.add(key);
       saveWatched();
