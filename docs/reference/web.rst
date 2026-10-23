@@ -190,13 +190,12 @@ service returns the intersecting block polygons. The shell keeps the full-run tr
 counts from the response while the map draws only the viewport. This keeps a management-unit map
 from loading every polygon up front.
 
-For the block, treatment, and cumulative layers the shell uses the MVT tile endpoint instead of
-the viewport GeoJSON. A vector source requests only the tiles MapLibre needs at the current zoom;
-the server returns treated centroids below zoom 10 and simplified polygons at zoom 10 and above.
-The tile layer is always named ``blocks`` in the vector source, and the properties carry
-``block_id``, ``treated``, and ``current``. The shell reads full-run counts from
-``map-stats``. The GeoJSON path remains for patches, compartments, and comparison, where the
-per-feature styling is richer.
+The MVT endpoint is available for a vector-source client. It returns treated centroids below zoom
+10 and simplified polygons at zoom 10 and above; the tile layer is named ``blocks`` and its
+properties carry ``block_id``, ``treated``, and ``current``. ``map-stats`` carries the full-run
+counts. The current shell keeps the viewport GeoJSON path until the MapLibre vector-source
+integration is validated; that integration is its own task. Patches, compartments, and comparison
+stay on the GeoJSON path, where the per-feature styling is richer.
 
 Geometry
 --------

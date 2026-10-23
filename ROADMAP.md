@@ -816,7 +816,9 @@ Goal: keep the map usable on real management units by loading only the current v
 detail that zoom requires, instead of one full-management-unit GeoJSON payload.
 
 - [x] P20.1 Add viewport bbox and zoom LOD to the map endpoint and UI (#184)
-- [x] P20.2 Add MVT tiles and a vector source (#186)
+- [x] P20.2 Add the MVT tile endpoint and tile cache (#186)
+- [ ] P20.3 Add the MapLibre vector source and validate it in a browser (#187)
+- [ ] P20.4 Add the 1M-fragment scale gate
 
 Acceptance: a low-zoom request returns compact centroids, a high-zoom bbox request returns only the
 visible blocks, the front-end reloads on `moveend` without a loop, and the TSA 46 initial payload is

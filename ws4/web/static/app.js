@@ -200,12 +200,6 @@ function ensureMapLibre() {
       map.addSource('blocks', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       map.addSource('roads', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       map.addSource('used-roads', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-      map.addSource('blocks-vector', {
-        type: 'vector',
-        tiles: [],
-        minzoom: 0,
-        maxzoom: 16,
-      });
       map.addLayer({
         id: 'land-base-fill',
         type: 'fill',
@@ -240,34 +234,6 @@ function ensureMapLibre() {
         },
       });
       map.addLayer({
-        id: 'blocks-vector-fill',
-        type: 'fill',
-        source: 'blocks-vector',
-        'source-layer': 'blocks',
-        filter: ['any', ['==', ['geometry-type'], 'Polygon'], ['==', ['geometry-type'], 'MultiPolygon']],
-        layout: { visibility: 'none' },
-        paint: {
-          'fill-color': '#2f7d4f',
-          'fill-opacity': 0.55,
-          'fill-outline-color': 'rgba(0,0,0,0.22)',
-        },
-      });
-      map.addLayer({
-        id: 'blocks-vector-points',
-        type: 'circle',
-        source: 'blocks-vector',
-        'source-layer': 'blocks',
-        filter: ['==', ['geometry-type'], 'Point'],
-        layout: { visibility: 'none' },
-        paint: {
-          'circle-radius': 3,
-          'circle-color': '#2f7d4f',
-          'circle-opacity': 0.55,
-          'circle-stroke-color': 'rgba(0,0,0,0.25)',
-          'circle-stroke-width': 0.4,
-        },
-      });
-      map.addLayer({
         id: 'roads-line',
         type: 'line',
         source: 'roads',
@@ -279,17 +245,17 @@ function ensureMapLibre() {
         source: 'used-roads',
         paint: { 'line-color': '#6d28d9', 'line-width': 1.6, 'line-opacity': 0.9 },
       });
-      for (const interactive of ['blocks-fill', 'blocks-points', 'blocks-vector-fill', 'blocks-vector-points']) {
+      for (const interactive of ['blocks-fill', 'blocks-points']) {
         map.on('click', interactive, (event) => {
           const feature = event.features?.[0];
-          if (feature) showDetail(feature.properties.block_id, feature.properties);
+          if (feature) showDetail(feature.properties.block_id);
         });
         map.on('mouseenter', interactive, () => { map.getCanvas().style.cursor = 'pointer'; });
         map.on('mouseleave', interactive, () => { map.getCanvas().style.cursor = ''; });
       }
       let viewportTimer = null;
       map.on('moveend', () => {
-        if (!state.mapLibreReady || state.mapLoading || state.suppressViewportReload || state.vectorActive) return;
+        if (!state.mapLibreReady || state.mapLoading || state.suppressViewportReload) return;
         window.clearTimeout(viewportTimer);
         viewportTimer = window.setTimeout(() => { loadMap(true); }, 250);
       });
@@ -345,17 +311,6 @@ async function loadLandBase(map = state.mapLibre) {
     const body = await api('api/land-base?format=wgs84');
     const source = map.getSource('land-base');
     if (source) source.setData(body);
-    if (!state.vectorActive && !state.features.length && body.features?.length) {
-      const box = new window.maplibregl.LngLatBounds();
-      for (const feature of body.features) {
-        if (feature.geometry?.coordinates) extendMapBounds(box, feature.geometry.coordinates);
-      }
-      if (!box.isEmpty()) {
-        state.suppressViewportReload = true;
-        window.setTimeout(() => { state.suppressViewportReload = false; }, 700);
-        map.fitBounds(box, { padding: 30, duration: 0 });
-      }
-    }
   } catch (error) {
     // The underlay is optional: a service without --land-base has none.
   }
@@ -559,7 +514,6 @@ function render(refit = true) {
 
 function applyVisibility() {
   if (state.mapEngine === 'maplibre') {
-    updateVectorPaint();
     renderMapLibre(false);
     return;
   }
@@ -609,112 +563,22 @@ function updateLiveBlocks(blocks) {
   applyVisibility();
 }
 
-function mapLayerName() {
-  if (state.layerMode === 'patches' && state.layers?.patches) return 'patches';
-  if (state.layerMode === 'cumulative' && state.layers?.cumulative) return 'cumulative';
-  if (state.layerMode === 'compartments' && state.layers?.compartments) return 'compartments';
-  if (state.layerMode === 'base' || (state.layers && !state.layers.treatments)) return 'blocks';
-  return 'treatments';
-}
-
-function vectorMode(layer) {
-  return state.mapEngine === 'maplibre'
-    && !state.compareView
-    && ['blocks', 'treatments', 'cumulative'].includes(layer);
-}
-
-function vectorColorExpression() {
-  if (state.layerMode === 'cumulative' && state.layers?.cumulative) {
-    return ['case',
-      ['all', ['==', ['get', 'treated'], true], ['==', ['get', 'current'], false]], '#f0d2b0',
-      ['==', ['get', 'treated'], true], '#c0392b',
-      '#2f7d4f'];
-  }
-  return ['case', ['==', ['get', 'treated'], true], '#c0392b', '#2f7d4f'];
-}
-
-function vectorOpacityExpression() {
-  const showTreated = $('show-treated').checked;
-  const showUntreated = $('show-untreated').checked;
-  return ['case',
-    ['==', ['get', 'treated'], true], showTreated ? 1 : 0,
-    showUntreated ? 0.55 : 0];
-}
-
-function updateVectorPaint() {
-  const map = state.mapLibre;
-  if (!map) return;
-  const color = vectorColorExpression();
-  const opacity = vectorOpacityExpression();
-  for (const id of ['blocks-vector-fill', 'blocks-vector-points']) {
-    if (!map.getLayer(id)) continue;
-    map.setPaintProperty(id, id.endsWith('fill') ? 'fill-color' : 'circle-color', color);
-    map.setPaintProperty(id, id.endsWith('fill') ? 'fill-opacity' : 'circle-opacity', opacity);
-  }
-}
-
-function hideVectorLayers() {
-  const map = state.mapLibre;
-  state.vectorActive = false;
-  if (!map) return;
-  for (const id of ['blocks-vector-fill', 'blocks-vector-points']) {
-    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none');
-  }
-  for (const id of ['blocks-fill', 'blocks-points']) {
-    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'visible');
-  }
-}
-
-async function loadVectorMap(layer, end, period) {
-  const map = state.mapLibre;
-  if (!map || !state.mapLibreReady) return false;
-  const source = map.getSource('blocks-vector');
-  if (!source) return false;
-  const run = encodeURIComponent(state.run);
-  let url = `api/runs/${run}/tiles/{z}/{x}/{y}.mvt?year=${end}&layer=${layer}`;
-  if (period) url += `&period_start=${period.start}`;
-  source.setTiles([url]);
-  state.vectorActive = true;
-  state.features = [];
-  for (const id of ['blocks-vector-fill', 'blocks-vector-points']) {
-    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'visible');
-  }
-  for (const id of ['blocks-fill', 'blocks-points']) {
-    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none');
-  }
-  updateVectorPaint();
-  try {
-    let stats = `api/runs/${run}/map-stats?year=${end}&layer=${layer}`;
-    if (period) stats += `&period_start=${period.start}`;
-    const body = await api(stats);
-    state.mapTotals = { treated: body.total_treated ?? 0, untreated: body.total_untreated ?? 0 };
-    $('n-treated').textContent = Number(state.mapTotals.treated).toLocaleString();
-    $('n-untreated').textContent = Number(state.mapTotals.untreated).toLocaleString();
-  } catch {
-    state.mapTotals = null;
-  }
-  return true;
-}
-
 async function loadMap(preserveView = false) {
   if (!state.run) return;
   state.mapLoading = true;
   statusLine('loading map…');
-  const layer = mapLayerName();
+  const layer = state.layerMode === 'patches' && state.layers?.patches
+    ? 'patches'
+    : state.layerMode === 'cumulative' && state.layers?.cumulative
+      ? 'cumulative'
+      : state.layerMode === 'compartments' && state.layers?.compartments
+        ? 'compartments'
+        : state.layerMode === 'base' || (state.layers && !state.layers.treatments)
+          ? 'blocks'
+          : 'treatments';
   try {
     const period = currentPeriod();
     const end = period ? Number(period.end) : state.year;
-    if (vectorMode(layer)) {
-      const active = await loadVectorMap(layer, end, period);
-      if (active) {
-        const span = period ? ` · years ${period.start}-${period.end}` : '';
-        statusLine(`MVT · ${layer} · period ${state.periodIndex + 1}${span}`);
-        if (state.showUsedRoads) loadUsedRoads();
-        return;
-      }
-    }
-    hideVectorLayers();
-    state.mapTotals = null;
     let query = `api/runs/${encodeURIComponent(state.run)}/map?year=${end}&layer=${layer}`;
     query += periodQuery();
     if (layer === 'compartments') {
@@ -2284,10 +2148,10 @@ async function buildReport() {
   }
 }
 
-function showDetail(block, supplied = null) {
+function showDetail(block) {
   const feature = state.features.find((candidate) => String(candidate.properties?.block_id) === String(block));
-  const properties = supplied ?? feature?.properties;
-  if (!properties) return;
+  if (!feature) return;
+  const properties = feature.properties ?? {};
   if (state.compareView && state.compare) {
     const flags = state.compare.blocks.get(String(block)) ?? { a: false, b: false };
     $('detail').innerHTML = `<b>Block ${properties.block_id}</b><br>` +

@@ -2177,3 +2177,7 @@ issue comments.
   full-run counts. The TSA 46 zoom-0 tile is 8.5 KB (331 treated blocks); a zoom-12 tile is 3.1 KB
   and 57 ms once the source payload is cached. Patches, compartments, and comparison keep the
   GeoJSON path.
+- P20.2 correction: the MVT tile endpoint, `map-stats`, and the in-memory tile cache are in
+  place, but the MapLibre vector-source integration did not request tiles in a headless-browser
+  check, so it is deferred to P20.3. The shell keeps the verified viewport GeoJSON path; the
+  endpoint remains available and tested for a vector-source client.
