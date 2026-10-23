@@ -15,10 +15,10 @@ import pandas as pd
 from .opt.objective import Target, flow_series, penalty, period_value
 
 
-def _by_year(values: pd.DataFrame) -> dict[tuple[int, str], float]:
-    """Index values by (year, account)."""
+def _by_offset(values: pd.DataFrame) -> dict[tuple[int, str], float]:
+    """Index values by (offset, account)."""
     return {
-        (int(float(str(row.year))), str(row.account)): float(str(row.value))
+        (int(float(str(row.offset))), str(row.account)): float(str(row.value))
         for row in values.itertuples(index=False)
     }
 
@@ -40,7 +40,9 @@ def account_summary(values: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame(columns=["account", "min", "max", "mean", "final"])
     grouped = values.groupby("account")["value"]
     summary = grouped.agg(["min", "max", "mean"]).reset_index()
-    final = values.sort_values("year").groupby("account")["value"].last().reset_index(name="final")
+    final = (
+        values.sort_values("offset").groupby("account")["value"].last().reset_index(name="final")
+    )
     return summary.merge(final, on="account")
 
 
@@ -65,14 +67,14 @@ def ratio_account(
     pandas.DataFrame
         The ratio account values, with ``year``, ``account``, and ``value`` columns.
     """
-    index: Mapping[tuple[int, str], float] = _by_year(values)
-    years = sorted({year for year, _ in index})
+    index: Mapping[tuple[int, str], float] = _by_offset(values)
+    offsets = sorted({offset for offset, _ in index})
     rows: list[dict[str, object]] = []
-    for year in years:
-        top = index.get((year, numerator), 0.0)
-        bottom = index.get((year, denominator), 0.0)
-        rows.append({"year": year, "account": name, "value": (top / bottom) if bottom else 0.0})
-    return pd.DataFrame(rows, columns=["year", "account", "value"])
+    for offset in offsets:
+        top = index.get((offset, numerator), 0.0)
+        bottom = index.get((offset, denominator), 0.0)
+        rows.append({"offset": offset, "account": name, "value": (top / bottom) if bottom else 0.0})
+    return pd.DataFrame(rows, columns=["offset", "account", "value"])
 
 
 def _status(value: float, target: Target) -> str:
@@ -113,14 +115,15 @@ def target_status(values: pd.DataFrame, targets: list[Target]) -> pd.DataFrame:
         One row per target with ``account``, ``year``, ``value``, ``minimum``,
         ``maximum``, ``penalty``, and ``status`` (``met``, ``below``, or ``above``).
     """
-    index = _by_year(values)
-    horizon = max((year for year, _ in index), default=-1) + 1
+    index = _by_offset(values)
+    horizon = max((offset for offset, _ in index), default=-1) + 1
     rows: list[dict[str, object]] = []
     for target in targets:
         if not target.active:
             rows.append(
                 {
                     "account": target.account,
+                    "period": target.period,
                     "year": target.year,
                     "value": 0.0,
                     "minimum": target.minimum,
@@ -135,11 +138,16 @@ def target_status(values: pd.DataFrame, targets: list[Target]) -> pd.DataFrame:
             # one row per period, exactly as the reference reports it, with a zero for the period an
             # even-flow comparison is made against. Reporting the single value a level target would
             # have made a flow target look met while the search paid for it.
-            for year, value in sorted(flow_series(index, target, horizon).items()):
+            for end_offset, value in sorted(flow_series(index, target, horizon).items()):
+                width = max(1, target.period_width)
                 rows.append(
                     {
                         "account": target.account,
-                        "year": year,
+                        "period": (end_offset + 1) // width
+                        if (end_offset + 1) % width == 0
+                        else None,
+                        "offset": end_offset,
+                        "year": end_offset + 1,
                         "value": value,
                         "minimum": target.minimum,
                         "maximum": target.maximum,
@@ -157,6 +165,7 @@ def target_status(values: pd.DataFrame, targets: list[Target]) -> pd.DataFrame:
         rows.append(
             {
                 "account": target.account,
+                "period": target.period,
                 "year": target.year,
                 "value": value,
                 "minimum": target.minimum,

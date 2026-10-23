@@ -17,6 +17,7 @@ from .opt.calibrate import write_targets
 from .opt.engine import OptimizeConfig, Optimizer
 from .opt.objective import load_targets
 from .opt.watch import run_watch
+from .patch.accounts import load_patch_accounts
 from .patch.edge import load_edge_elements
 from .report import write_report
 from .roads.accounts import load_route_config
@@ -48,12 +49,16 @@ def build(
 @app.command()
 def simulate(
     dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
-    schedule: Path = typer.Option(
-        ..., exists=True, help="CSV: block_id,treatment,period (period in years)"
-    ),
+    schedule: Path = typer.Option(..., exists=True, help="CSV: block_id,treatment,offset"),
     years: int = typer.Option(200, help="Simulation horizon in years"),
     out: Path = typer.Option(..., help="Output directory"),
     topology: Path = typer.Option(None, exists=True, help="Block topology for spatial metrics"),
+    patch_accounts: Path = typer.Option(
+        None, "--patch-accounts", exists=True, help="Patch size-distribution accounts (YAML)"
+    ),
+    patch_membership: bool = typer.Option(
+        False, "--patch-membership", help="Write patch_membership.csv"
+    ),
     route_config: Path = typer.Option(
         None, "--route-config", exists=True, help="Optional route model and route accounts (YAML)"
     ),
@@ -76,6 +81,8 @@ def simulate(
         years=years,
         out_dir=out,
         topology_csv=topology,
+        patch_accounts=load_patch_accounts(patch_accounts) if patch_accounts is not None else (),
+        patch_membership=patch_membership,
         route_model=config.model if config is not None else None,
         route_accounts=config.route_accounts if config is not None else (),
         duplicate_accounts=config.duplicate_accounts if config is not None else (),
@@ -93,6 +100,12 @@ def simulate(
 def optimize(
     dataset: Path = typer.Option(..., exists=True),
     targets: Path = typer.Option(..., exists=True),
+    initial_schedule: Path | None = typer.Option(
+        None,
+        "--initial-schedule",
+        exists=True,
+        help="Schedule CSV (block_id,treatment,period) to start the search from",
+    ),
     weights: Path | None = typer.Option(
         None,
         exists=True,
@@ -130,6 +143,11 @@ def optimize(
     ),
     max_opening_ha: float = typer.Option(None, help="Maximum opening size, in hectares"),
     min_green_up_years: int = typer.Option(None, help="Green-up interval, in years"),
+    spatial_weight: float = typer.Option(
+        1.0,
+        "--spatial-weight",
+        help="Weight on the opening/green-up/core-area penalty",
+    ),
     spatial_override: bool = typer.Option(
         False, "--spatial-override", help="Allow schedules that violate the spatial constraints"
     ),
@@ -156,6 +174,22 @@ def optimize(
         0.0, "--cluster-weight", help="Weight of the topology cluster operator (0 disables it)"
     ),
     cluster_size: int = typer.Option(8, "--cluster-size", help="Blocks per cluster move"),
+    coalesce_weight: float = typer.Option(
+        0.0,
+        "--coalesce-weight",
+        help="Weight of the coalesce operator, which aligns a connected cluster to one year",
+    ),
+    coalesce_size: int = typer.Option(8, "--coalesce-size", help="Blocks per coalesce move"),
+    coalesce_min_area_ha: float = typer.Option(
+        5.0,
+        "--coalesce-min-area-ha",
+        help="Smallest opening area a coalesce move will build",
+    ),
+    coalesce_max_area_ha: float = typer.Option(
+        40.0,
+        "--coalesce-max-area-ha",
+        help="Largest opening area a coalesce move will build",
+    ),
     merge_weight: float = typer.Option(
         0.0, "--merge-weight", help="Weight of the patch merge operator (0 disables it)"
     ),
@@ -198,6 +232,7 @@ def optimize(
         islands=islands,
         episodes=episodes,
         targets_path=str(targets),
+        initial_schedule_path=(str(initial_schedule) if initial_schedule is not None else ""),
         weights_path=str(weights) if weights is not None else "",
         topology_path=str(topology) if topology is not None else "",
         route_config_path=str(route_config) if route_config is not None else "",
@@ -206,6 +241,7 @@ def optimize(
         min_green_up_years=min_green_up_years,
         core_buffer_m=core_buffer_m,
         min_core_area_ha=min_core_area_ha,
+        spatial_weight=spatial_weight,
         allow_spatial_override=spatial_override,
         lns_weight=lns_weight,
         lns_destroy=lns_destroy,
@@ -214,6 +250,10 @@ def optimize(
         seed_account=seed_account,
         cluster_weight=cluster_weight,
         cluster_size=cluster_size,
+        coalesce_weight=coalesce_weight,
+        coalesce_size=coalesce_size,
+        coalesce_min_area_ha=coalesce_min_area_ha,
+        coalesce_max_area_ha=coalesce_max_area_ha,
         merge_weight=merge_weight,
         split_weight=split_weight,
         patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",
@@ -475,6 +515,11 @@ def serve(
     geometry: Path | None = typer.Option(
         None, "--geometry", help="GeoJSON of block points or polygons"
     ),
+    land_base: Path | None = typer.Option(
+        None,
+        "--land-base",
+        help="Optional GeoJSON polygon drawn under the blocks as non-forest land",
+    ),
     topology: Path | None = typer.Option(
         None, "--topology", exists=True, help="Block topology for patch membership on new runs"
     ),
@@ -497,7 +542,9 @@ def serve(
         None, "--roads", exists=True, help="GeoJSON access-road lines for the map overlay"
     ),
     crs: str = typer.Option(
-        "EPSG:4326", "--crs", help="Source CRS of --geometry and --roads (MapLibre uses WGS84)"
+        "EPSG:4326",
+        "--crs",
+        help="Source CRS of --geometry, --land-base and --roads (MapLibre uses WGS84)",
     ),
     host: str = typer.Option("127.0.0.1", help="Bind address"),
     port: int = typer.Option(8000, help="Bind port"),
@@ -541,6 +588,7 @@ def serve(
             runs=runs,
             targets=targets,
             geometry=geometry,
+            land_base=land_base,
             allow_runs=allow_runs,
             allow_agent=allow_agent,
             agent_model=agent_model,

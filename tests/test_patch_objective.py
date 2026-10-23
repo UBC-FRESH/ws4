@@ -117,11 +117,11 @@ def test_patch_model_matches_the_reporting_path(tmp_path: Path) -> None:
     )
     frame = pd.DataFrame(
         [
-            {"block_id": block, "treatment": treatment, "period": year}
+            {"block_id": block, "treatment": treatment, "offset": offset}
             for block, chain in schedule.items()
-            for treatment, year in chain
+            for treatment, offset in chain
         ],
-        columns=["block_id", "treatment", "period"],
+        columns=["block_id", "treatment", "offset"],
     )
     simulator.fragments["offset"] = simulator.fragments["age"].astype(int)
     for year in range(2):
@@ -159,7 +159,7 @@ def test_a_gap_is_a_non_member_between_two_components() -> None:
 
 
 def test_a_patch_target_is_read_at_one_year_of_its_period(tmp_path: Path) -> None:
-    """A patch account is a snapshot, so a period-width patch target reads its first year only."""
+    """A patch account is a snapshot, so a period-width patch target reads one offset of it."""
     dataset = build_canonical_dataset(
         _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
     )
@@ -176,12 +176,13 @@ def test_a_patch_target_is_read_at_one_year_of_its_period(tmp_path: Path) -> Non
         ),
     )
     account = "patch.harvest.TOTAL.frequency"
-    target = Target(account, 0, maximum=0.0, period_width=2)
+    # period 1 with width 2 covers offsets 0-1; a snapshot is read at the period's end offset 1
+    target = Target(account, period=1, maximum=0.0, period_width=2)
     evaluator = IncrementalObjective(optimizer, [target], (), optimizer.patch_accounts())
     evaluator.reset({1: (("CC", 0),)})
-    assert evaluator._target_years == [(0,)]
+    assert evaluator._target_offsets == [(1,)]
     assert evaluator.objective == pytest.approx(
-        penalty(evaluator.totals.get((0, account), 0.0), target)
+        penalty(evaluator.totals.get((1, account), 0.0), target)
     )
 
 
@@ -305,7 +306,7 @@ def test_a_patch_target_is_scored(tmp_path: Path) -> None:
         ),
     )
     schedule: Schedule = {1: (("CC", 0),)}
-    target = Target("patch.harvest.0_5.frequency", 0, maximum=0.0)
+    target = Target("patch.harvest.0_5.frequency", period=1, maximum=0.0)
     values = optimizer._full_values(schedule, None, (), ())
     expected = objective(values, [target])
     evaluator = IncrementalObjective(optimizer, [target], (), optimizer.patch_accounts())
@@ -327,8 +328,8 @@ def test_a_run_reports_the_patch_accounts_it_priced(tmp_path: Path) -> None:
     targets_path = tmp_path / "targets.yaml"
     targets_path.write_text(
         "targets:\n"
-        "- account: patch.opening.50_150.size\n"
-        "  year: 0\n"
+        "- account: patch.opening.10_50.size\n"
+        "  period: 1\n"
         "  minimum: 30\n"
         "  min_weight: 2000\n"
         "  shape: non_linear\n"
@@ -353,7 +354,7 @@ def test_a_run_reports_the_patch_accounts_it_priced(tmp_path: Path) -> None:
     assert {"period", "block", "patch", "class", "area_ha"}.issubset(membership.columns)
 
     reported = pd.read_csv(tmp_path / "run" / "report_targets.csv").iloc[0]
-    assert reported["account"] == "patch.opening.50_150.size"
+    assert reported["account"] == "patch.opening.10_50.size"
     assert reported["value"] > 0.0, "the incumbent's openings should be reported, not a missing row"
     assert reported["status"] == "met"
     assert summary["incumbent_objective"] == pytest.approx(0.0, abs=1.0)

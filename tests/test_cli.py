@@ -132,7 +132,7 @@ def test_optimize_runs_without_a_weights_file(tmp_path: Path) -> None:
     dataset = build_example(tmp_path)
     targets = tmp_path / "targets.yaml"
     targets.write_text(
-        "targets:\n- account: feature.Volume\n  year: 0\n  minimum: 700\n  period_width: 1\n"
+        "targets:\n- account: feature.Volume\n  period: 1\n  minimum: 700\n  period_width: 1\n"
     )
     out = tmp_path / "run"
     result = run_ws4(
@@ -160,7 +160,7 @@ def test_optimize_honours_the_iteration_budget(tmp_path: Path) -> None:
     dataset = build_example(tmp_path)
     targets = tmp_path / "targets.yaml"
     targets.write_text(
-        "targets:\n- account: feature.Volume\n  year: 0\n  minimum: 700\n  period_width: 1\n"
+        "targets:\n- account: feature.Volume\n  period: 1\n  minimum: 700\n  period_width: 1\n"
     )
     out = tmp_path / "run"
     result = run_ws4(
@@ -188,7 +188,7 @@ def test_optimize_still_accepts_a_weights_file(tmp_path: Path) -> None:
     dataset = build_example(tmp_path)
     targets = tmp_path / "targets.yaml"
     targets.write_text(
-        "targets:\n- account: feature.Volume\n  year: 0\n  minimum: 700\n  period_width: 1\n"
+        "targets:\n- account: feature.Volume\n  period: 1\n  minimum: 700\n  period_width: 1\n"
     )
     weights = tmp_path / "weights.yaml"
     weights.write_text("weights: {}\n")

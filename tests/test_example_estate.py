@@ -32,7 +32,7 @@ def test_the_estate_forms_openings_and_routes_to_both_mills(tmp_path: Path) -> N
         ESTATE / "recipe.xml", ESTATE / "fragments.csv", tmp_path / "compiled"
     )
     schedule = pd.DataFrame(
-        {"block_id": [1, 2, 9, 10, 57, 58, 63, 64], "treatment": ["CC"] * 8, "period": [0] * 8}
+        {"block_id": [1, 2, 9, 10, 57, 58, 63, 64], "treatment": ["CC"] * 8, "offset": [0] * 8}
     )
     schedule_csv = tmp_path / "schedule.csv"
     schedule.to_csv(schedule_csv, index=False)
@@ -52,7 +52,7 @@ def test_the_estate_forms_openings_and_routes_to_both_mills(tmp_path: Path) -> N
 
     values = pd.read_csv(tmp_path / "run" / "account_values.csv")
     year_zero = dict(
-        zip(values[values.year == 0]["account"], values[values.year == 0]["value"], strict=True)
+        zip(values[values.offset == 0]["account"], values[values.offset == 0]["value"], strict=True)
     )
     assert year_zero["feature.Seral.regen"] > 0.0, "the cuts should have formed openings"
     assert year_zero["product.Harvested.CC"] > 0.0
@@ -64,4 +64,4 @@ def test_the_estate_forms_openings_and_routes_to_both_mills(tmp_path: Path) -> N
     assert year_zero["route.Total.haul"] > 0.0
 
     metrics = pd.read_csv(tmp_path / "run" / "patch_metrics.csv")
-    assert int(metrics.loc[metrics.year == 0, "patch_count"].iloc[0]) > 0
+    assert int(metrics.loc[metrics.offset == 0, "patch_count"].iloc[0]) > 0

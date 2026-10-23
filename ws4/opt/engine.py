@@ -41,6 +41,7 @@ from ..roads.accounts import (
     load_route_config,
     resolve_account_values,
 )
+from ..schedule import schedule_offset_frame
 from ..sim.engine import Simulator
 from ..spread.accounts import (
     Point,
@@ -57,6 +58,7 @@ from .operators import (
     Candidates,
     Chain,
     ClusterOperator,
+    CoalesceOperator,
     LnsOperator,
     MergeOperator,
     OperatorRegistry,
@@ -78,6 +80,45 @@ from .solvers import (
     solve_tabu,
 )
 from .telemetry import RunLogger
+
+
+def load_schedule_csv(path: Path) -> Schedule:
+    """Load a ``block_id,treatment,offset`` CSV into the search's schedule form.
+
+    Parameters
+    ----------
+    path : Path
+        A schedule CSV with one row per treatment event.
+
+    Returns
+    -------
+    Schedule
+        The chain of events per block, ordered by year.
+
+    Raises
+    ------
+    ValueError
+        When the file is missing one of the required columns.
+    """
+    frame = schedule_offset_frame(pd.read_csv(path))
+    required = {"block_id", "treatment", "offset"}
+    missing = required - set(frame.columns)
+    if missing:
+        raise ValueError(
+            f"schedule {path} is missing required columns: {', '.join(sorted(missing))}"
+        )
+    schedule: Schedule = {}
+    for block, group in frame.groupby("block_id", sort=False):
+        schedule[int(float(str(block)))] = tuple(
+            sorted(
+                (
+                    (str(treatment), int(float(str(offset))))
+                    for treatment, offset in zip(group["treatment"], group["offset"], strict=True)
+                ),
+                key=lambda event: event[1],
+            )
+        )
+    return schedule
 
 
 def _apply_thread_limit(threads: int) -> None:
@@ -145,6 +186,8 @@ class OptimizeConfig:
         The random seed. A run is reproducible for a given seed.
     targets_path : str
         The YAML file of goal-programming targets.
+    initial_schedule_path : str
+        A ``block_id,treatment,period`` CSV to start the search from. Serial starts only.
     weights_path : str
         Accepted for compatibility and not read. The weights that apply are each target's own
         ``min_weight`` and ``max_weight``; ``ws4 calibrate`` rescales them into a targets file.
@@ -222,6 +265,15 @@ class OptimizeConfig:
         The selection weight of the cluster operator; 0 disables it and its topology.
     cluster_size : int
         The maximum number of blocks in a cluster move.
+    coalesce_weight : float
+        The selection weight of the coalesce operator, which aligns a connected cluster
+        onto one treatment year; 0 disables it.
+    coalesce_size : int
+        The maximum number of blocks in a coalesce move.
+    coalesce_min_area_ha : float
+        The smallest opening area a coalesce move will build.
+    coalesce_max_area_ha : float
+        The largest opening area a coalesce move will build.
     warm_cache : bool
         Whether to pre-warm the per-block delta cache before the search.
     patch_accounts_path : str
@@ -242,6 +294,7 @@ class OptimizeConfig:
     time_limit: str = "01:00:00"
     seed: int = 42
     targets_path: str = ""
+    initial_schedule_path: str = ""
     control_path: str = ""
     weights_path: str = ""
     years: int = 50
@@ -278,6 +331,10 @@ class OptimizeConfig:
     lns_destroy: float = 0.1
     cluster_weight: float = 0.0
     cluster_size: int = 8
+    coalesce_weight: float = 0.0
+    coalesce_size: int = 8
+    coalesce_min_area_ha: float = 5.0
+    coalesce_max_area_ha: float = 40.0
     warm_cache: bool = False
     patch_accounts_path: str = ""
     spread_accounts_path: str = ""
@@ -333,6 +390,14 @@ class Optimizer:
                     weight=cfg.cluster_weight,
                     size=cfg.cluster_size,
                     neighbours=self._neighbours() if cfg.cluster_weight > 0.0 else {},
+                ),
+                CoalesceOperator(
+                    self,
+                    weight=cfg.coalesce_weight,
+                    size=cfg.coalesce_size,
+                    min_area_ha=cfg.coalesce_min_area_ha,
+                    max_area_ha=cfg.coalesce_max_area_ha,
+                    neighbours=(self._neighbours() if cfg.coalesce_weight > 0.0 else {}),
                 ),
                 MergeOperator(self, weight=cfg.merge_weight),
                 SplitOperator(self, weight=cfg.split_weight),
@@ -527,11 +592,11 @@ class Optimizer:
     def _schedule_frame(self, schedule: Schedule) -> pd.DataFrame:
         """Render a schedule as a DataFrame (one row per treatment event)."""
         rows = [
-            {"block_id": block, "treatment": treatment, "period": year}
+            {"block_id": block, "treatment": treatment, "offset": offset}
             for block, chain in schedule.items()
-            for treatment, year in chain
+            for treatment, offset in chain
         ]
-        return pd.DataFrame(rows, columns=["block_id", "treatment", "period"])
+        return pd.DataFrame(rows, columns=["block_id", "treatment", "offset"])
 
     def simulator(self) -> Simulator:
         """Return a reusable simulator, built once and reset before each use.
@@ -567,12 +632,12 @@ class Optimizer:
         if patch is not None:
             patch.reset(schedule)
             rows = [
-                {"year": year, "account": account, "value": value}
-                for (year, account), value in patch.cell_map().items()
+                {"offset": offset, "account": account, "value": value}
+                for (offset, account), value in patch.cell_map().items()
             ]
             if rows:
                 values = pd.concat(
-                    [values, pd.DataFrame(rows, columns=["year", "account", "value"])],
+                    [values, pd.DataFrame(rows, columns=["offset", "account", "value"])],
                     ignore_index=True,
                 )
                 self._last_values = values
@@ -590,11 +655,11 @@ class Optimizer:
         Returns
         -------
         pandas.DataFrame
-            The account values, with ``year``, ``account``, and ``value`` columns, or an
+            The account values, with ``offset``, ``account``, and ``value`` columns, or an
             empty frame with those columns before any evaluation.
         """
         if self._last_values is None:
-            return pd.DataFrame(columns=["year", "account", "value"])
+            return pd.DataFrame(columns=["offset", "account", "value"])
         return self._last_values
 
     def patch_accounts(self) -> tuple[PatchAccount, ...]:
@@ -777,13 +842,13 @@ class Optimizer:
             {
                 "block_id": pd.Series(dtype="int64"),
                 "treatment": pd.Series(dtype="string"),
-                "period": pd.Series(dtype="int64"),
+                "offset": pd.Series(dtype="int64"),
             }
         )
         values = simulator.simulate(empty, self.cfg.years)
         simulator.reset()
         base = {
-            (int(str(row.year)), str(row.account)): float(str(row.value))
+            (int(str(row.offset)), str(row.account)): float(str(row.value))
             for row in values.itertuples(index=False)
         }
         self._base_cache = base
@@ -854,10 +919,10 @@ class Optimizer:
         """Render a ``(year, account) -> value`` mapping as an account-values frame."""
         return pd.DataFrame(
             [
-                {"year": year, "account": account, "value": value}
-                for (year, account), value in totals.items()
+                {"offset": offset, "account": account, "value": value}
+                for (offset, account), value in totals.items()
             ],
-            columns=["year", "account", "value"],
+            columns=["offset", "account", "value"],
         )
 
     def _incremental_values(
@@ -983,7 +1048,7 @@ class Optimizer:
             return 0.0
         block_area = self._block_area()
         pairs = [
-            (int(float(str(row.block_id))), int(float(str(row.period))))
+            (int(float(str(row.block_id))), int(float(str(row.offset))))
             for row in schedule.itertuples(index=False)
         ]
         selected_by_year, disturbance_years = schedule_years(pairs)
@@ -1342,6 +1407,16 @@ class Optimizer:
         )
         self._start_clock()
         pool_search = self._use_pool()
+        initial = (
+            load_schedule_csv(Path(self.cfg.initial_schedule_path))
+            if self.cfg.initial_schedule_path
+            else None
+        )
+        if initial is not None and pool_search:
+            raise ValueError(
+                "initial_schedule_path is not supported with a process-pool search; "
+                "run with one start and one worker"
+            )
         if pool_search:
             best, best_obj, targets = self.search(out_dir=out_dir)
         else:
@@ -1361,6 +1436,7 @@ class Optimizer:
                     self.cfg.seed + start,
                     on_step=logger.step,
                     on_snapshot=snapshot,
+                    initial=initial,
                 )
                 if candidate_obj < best_obj:
                     best, best_obj = candidate, candidate_obj
@@ -1407,9 +1483,9 @@ class Optimizer:
         if patch_frame.is_file():
             ledger = pd.read_csv(patch_frame)
             if not ledger.empty:
-                melted = ledger.melt(id_vars="year", var_name="account", value_name="value")
+                melted = ledger.melt(id_vars="offset", var_name="account", value_name="value")
                 values = pd.concat(
-                    [values, melted[["year", "account", "value"]]], ignore_index=True
+                    [values, melted[["offset", "account", "value"]]], ignore_index=True
                 )
         self._last_values = values
         write_report(values, targets, out_dir)
@@ -1420,6 +1496,7 @@ class Optimizer:
             "seed": self.cfg.seed,
             "metaheuristic": self.cfg.metaheuristic,
             "starts": self.cfg.starts,
+            "initial_schedule_path": self.cfg.initial_schedule_path or None,
             "blocks_scheduled": len(best),
             "operators": self.registry.names(),
             "status": "ok",

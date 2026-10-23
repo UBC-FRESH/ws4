@@ -80,7 +80,7 @@ harvesting that lands in the class:
    # tmp/howto/patch-targets.yaml
    targets:
      - account: patch.harvest.10_50.size
-       year: 0
+       period: 1
        minimum: 25
        min_weight: 2000
        shape: non_linear

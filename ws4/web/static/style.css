@@ -172,3 +172,10 @@ path.block.compare-both { fill:#6b4c9a; }
 #standard-reports a { color:#1f6feb; }
 .road { fill:none; stroke:#4c5661; stroke-width:.55; opacity:.55; pointer-events:none; }
 .road.used { stroke:#6d28d9; stroke-width:1.1; opacity:.9; }
+.window-table { display:grid; gap:.1rem; margin-top:.25rem; font-size:.68rem; font-variant-numeric:tabular-nums; }
+.window-row { display:grid; grid-template-columns:2.6rem 1fr 1fr 1fr 3.2rem; gap:.3rem; align-items:baseline; }
+.window-row.header { color:var(--muted); text-transform:uppercase; letter-spacing:.04em; font-size:.6rem; }
+.window-row span:nth-child(n+2) { text-align:right; }
+.window-row span.met { color:var(--untreated); }
+.window-row span.below { color:var(--treated); }
+.window-row span.above { color:#b45309; }

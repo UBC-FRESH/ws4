@@ -2098,6 +2098,39 @@ issue comments.
   left/right arrow keys.
 - P19.6: the lower-left assistant has a draggable height splitter (persisted, double-click resets)
   so a long conversation can use more of the sidebar.
+
+## 2026-10-21
+
+- Spatial penalties are now part of the move-delta objective. `SpatialPenaltyModel` keeps the
+  selected blocks per year and each block's disturbance years, recomputes opening/core-area
+  penalties only for the affected years and green-up only on incident edges, and the incremental
+  evaluator adds that delta to the account-target delta. The optimizer therefore keeps the faster
+  delta path when `max_opening_ha`, `min_green_up_years` or the core-area rule is active; the
+  whole-schedule path remains the fallback for build-route, edge-contrast and spread accounts.
+- `ws4 optimize` accepts `--initial-schedule` (a `block_id,treatment,period` CSV) and
+  `--spatial-weight`; the initial schedule is serial-start only. The optimizer summary records the
+  initial schedule path.
+- Added exactness tests: a random spatial walk, the spatial delta SA, and the
+  core-area rule match a fresh whole-schedule evaluation on the synthetic fixture.
+- Targets are indexed by accounting period in the target file: `period: 1` is the first
+  accounting period (years 1 to `period_width`), and `period: 0` is the initial snapshot. `year` and
+  the year-based flow keys remain accepted for older files; a period key takes precedence. Flow
+  windows gained inclusive `flow_start_period`/`flow_end_period` and `flow_reference_period`.
+  Reports and the web target table now carry the period beside the derived year. Full suite: 658
+  passed; dashboard GREEN.
+- Added a `coalesce` move: it grows a connected cluster, takes a target treatment year from the seed
+  block, and rechooses the other members onto candidate chains that treat them in that year. This
+  is the patch-shaping counterpart to `cluster` (which rechooses members independently) and `merge`
+  (which only fills partial-membership gaps). Exposed as `--coalesce-weight`, `--coalesce-size`, `--coalesce-min-area-ha`
+  and `--coalesce-max-area-ha`; the cluster grows until its criterion-weighted area is
+  inside the band (default 5-40 ha). Covered by a connected-cluster test. Full suite:
+  659 passed; dashboard GREEN.
+- The web target table now keys rows by target index and reports flow targets from their
+  percent series rather than the account's period value. Harvest and even-flow targets on the
+  same account/year no longer collide, and the flow status is `met` only when every compared
+  period is inside its band. The watch panel excludes flow targets, whose series is a percent
+  profile rather than an account level. `patch_first_search` now shows all 52 target rows met.
+  Full suite: 659 passed; dashboard GREEN.
 - #165: `--seed-greedy --seed-account ACCOUNT` builds a schedule that reduces a named
   maximum target (the hazard-shaped case) under its other maximum targets' cost ceilings.
   The default `--seed-greedy` floor mode is unchanged.
@@ -2107,3 +2140,25 @@ issue comments.
 - P19.4: MapLibre GL JS with an OpenStreetMap raster basemap is the default map renderer, with
   the SVG shell kept as a switchable fallback. The service transforms the source CRS to WGS84 for
   MapLibre (`--crs`, `format=wgs84`); the layer, period and selection contracts are unchanged.
+
+- The schedule clock is now a single 0-based `offset` clock everywhere. A schedule CSV carries
+  `offset` (offset 0 is the first simulation year); the legacy `period` schedule column is rejected.
+  Account values, optimizer chains, patch/spatial state, road ledgers and the web API all speak
+  offsets. Accounting period 0 remains the zero-length pre-simulation snapshot at offset -1, and
+  period `p >= 1` covers offsets `(p-1)*period_width` through `p*period_width - 1`. `year` is a
+  display label only (`year = offset + 1`). This removes the old conflation of the schedule's
+  0-based step with the accounting period and the resulting off-by-one and period-0 treatment bug.
+  The TSA 48 builders emit `offset`, and the calibrated TSA 48 model is rebuilt on the corrected
+  clock. Full suite: 665 passed; dashboard GREEN.
+
+## 2026-10-23
+
+- Added the optional `--land-base` polygon to `ws4 serve` and a pale underlay layer under the
+  blocks. The TSA 48 full and NICC instances now pass their gross AOI so non-forest gaps read as
+  land rather than missing geometry; the map still works without the flag. UI build v43.
+- Added the clean-checkout contract test and CI job: the tracked synthetic recipe builds a matrix,
+  a patch-first schedule on the offset clock is simulated, and the period target table is read
+  through the web API. The test is part of the normal suite and has its own named CI job.
+- Cut the MKRF and North Island docs over to ws4 as the primary runtime, with the retained
+  Patchworks packages marked reference/interchange-only. Full suite: 667 passed; dashboard GREEN.
+- `ws4 simulate` now accepts `--patch-accounts` and `--patch-membership`, so a run can write the opening-size distribution it used without going through the Python API. The schedule help now names the offset clock. Full suite and dashboard remain green.

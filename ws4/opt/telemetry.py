@@ -131,7 +131,7 @@ class RunLogger:
 
         A full schedule every snapshot would be large and mostly still; the analyst needs the
         *movement*, so only the changed blocks are written. A block removed from the schedule is
-        sent with an empty treatment and a period of -1. Each worker keeps its own previous
+        sent with an empty treatment and an offset of -1. Each worker keeps its own previous
         schedule, so a parallel search never reports one island's blocks as another's removal.
 
         Parameters
@@ -139,7 +139,7 @@ class RunLogger:
         iteration : int
             The iteration index.
         schedule : mapping of int to sequence of (str, int)
-            The incumbent schedule: each block's treatment chain, as (treatment, period) events.
+            The incumbent schedule: each block's treatment chain, as (treatment, offset) events.
         island : str or None, optional
             The worker that reported it, when the search runs more than one.
         """
@@ -147,7 +147,7 @@ class RunLogger:
         previous = self._last_schedules.get(key, {})
         current = {block: tuple(chain) for block, chain in schedule.items()}
         changed: list[list[object]] = [
-            [block, [[treatment, period] for treatment, period in chain]]
+            [block, [[treatment, offset] for treatment, offset in chain]]
             for block, chain in current.items()
             if previous.get(block) != chain
         ]

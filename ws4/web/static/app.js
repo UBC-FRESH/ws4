@@ -196,9 +196,19 @@ function ensureMapLibre() {
     });
     map.addControl(new window.maplibregl.NavigationControl(), 'top-right');
     map.on('load', () => {
+      map.addSource('land-base', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       map.addSource('blocks', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       map.addSource('roads', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       map.addSource('used-roads', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addLayer({
+        id: 'land-base-fill',
+        type: 'fill',
+        source: 'land-base',
+        paint: {
+          'fill-color': '#e6ebe2',
+          'fill-opacity': 0.35,
+        },
+      });
       map.addLayer({
         id: 'blocks-fill',
         type: 'fill',
@@ -228,6 +238,7 @@ function ensureMapLibre() {
       map.on('mouseenter', 'blocks-fill', () => { map.getCanvas().style.cursor = 'pointer'; });
       map.on('mouseleave', 'blocks-fill', () => { map.getCanvas().style.cursor = ''; });
       state.mapLibreReady = true;
+      loadLandBase(map);
       renderMapLibre(true);
     });
     map.on('error', () => { /* a missing basemap tile must not hide the blocks */ });
@@ -268,6 +279,17 @@ function setMapLibreRoads() {
   const used = state.mapLibre.getSource('used-roads');
   if (roads) roads.setData({ type: 'FeatureCollection', features: state.showRoads ? state.roads : [] });
   if (used) used.setData({ type: 'FeatureCollection', features: state.showUsedRoads ? state.usedRoads : [] });
+}
+
+async function loadLandBase(map = state.mapLibre) {
+  if (!map) return;
+  try {
+    const body = await api('api/land-base?format=wgs84');
+    const source = map.getSource('land-base');
+    if (source) source.setData(body);
+  } catch (error) {
+    // The underlay is optional: a service without --land-base has none.
+  }
 }
 
 function renderMapLibre(refit = true) {
@@ -1300,7 +1322,9 @@ function statusOf(row, value) {
 function renderWatchPanel() {
   const panel = $('watch-panel');
   panel.replaceChildren();
-  const watched = state.targets.filter((row) => state.watched.has(`${row.year}|${row.account}`));
+  const watched = state.targets.filter(
+    (row) => !row.flow && state.watched.has(String(row.index)),
+  );
   if (!watched.length) {
     panel.textContent = 'no targets selected — tick a target in the table below';
     return;
@@ -1311,49 +1335,18 @@ function renderWatchPanel() {
     groups.get(row.account).push(row);
   }
   const svgNS = 'http://www.w3.org/2000/svg';
+  const fmt = (value) => (value === null || value === undefined
+    ? '—'
+    : Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 }));
   for (const [account, rows] of groups) {
-    const targetsByYear = new Map(rows.map((row) => [Number(row.year), row]));
-    const series = state.series.get(account) ?? new Map();
-    const periodWidth = Number(rows[0].period_width ?? 1);
-    const accumulating = account.startsWith('product.');
-    const cellYears = [];
-    for (const row of rows) {
-      const rowWidth = Math.max(1, Number(row.period_width ?? periodWidth));
-      for (let year = Number(row.year) - rowWidth + 1; year <= Number(row.year); year += 1) {
-        if (year >= 0) cellYears.push(year);
-      }
-    }
-    const rawYears = [...series.keys()];
-    const lowYear = rawYears.length ? Math.min(...rawYears, ...cellYears) : Math.min(...cellYears);
-    const highYear = rawYears.length ? Math.max(...rawYears, ...cellYears) : Math.max(...cellYears);
-    const years = [...new Set([
-      ...rawYears,
-      ...cellYears,
-      ...rows.map((row) => Number(row.year)),
-      ...[...state.windowValues.keys()]
-        .filter((key) => key.endsWith(`|${account}`))
-        .map((key) => Number(key.split('|')[0])),
-    ])].filter((year) => year >= lowYear && year <= highYear).sort((left, right) => left - right);
-    if (!years.length) continue;
-    const valueAt = (year) => {
-      const live = state.windowValues.get(`${year}|${account}`);
-      if (live !== undefined) return Number(live);
-      if (!accumulating) return series.has(year) ? Number(series.get(year)) : undefined;
-      const windowWidth = Math.max(1, Number(targetsByYear.get(year)?.period_width ?? periodWidth));
-      let total = 0;
-      let found = false;
-      for (let offset = 0; offset < windowWidth; offset += 1) {
-        const value = series.get(year - offset);
-        if (value !== undefined) { total += Number(value); found = true; }
-      }
-      return found ? total : 0;
-    };
-    const values = years.map(valueAt);
-    const latestTarget = rows.reduce((left, right) => (Number(left.year) >= Number(right.year) ? left : right));
-    const latestValue = state.windowValues.get(`${latestTarget.year}|${account}`) ?? valueAt(Number(latestTarget.year));
+    rows.sort((left, right) => Number(left.year) - Number(right.year));
+    const points = rows.map((row) => ({
+      row,
+      value: state.targetCells.get(String(row.index))?.value,
+    }));
+    const latest = points[points.length - 1];
     const card = document.createElement('div');
     card.className = 'window-card';
-    if (periodWidth > 1) card.title = `${account}: ${accumulating ? 'sum' : 'level'} over a ${periodWidth}-year period`;
     const title = document.createElement('div');
     title.className = 'window-title';
     const name = document.createElement('span');
@@ -1362,37 +1355,36 @@ function renderWatchPanel() {
     name.title = account;
     const badge = document.createElement('span');
     badge.className = 'window-badge';
-    if (latestValue !== undefined) {
-      const status = statusOf(latestTarget, latestValue);
-      badge.textContent = `${Number(latestValue).toLocaleString(undefined, { maximumFractionDigits: 1 })}${status ? ` · ${status}` : ''}`;
+    if (latest && latest.value !== undefined && latest.value !== null) {
+      const status = statusOf(latest.row, latest.value);
+      badge.textContent = `${fmt(latest.value)}${status ? ` · ${status}` : ''}`;
       if (status) badge.classList.add(status);
     } else {
       badge.textContent = '—';
     }
     title.append(name, badge);
     card.append(title);
+
     const width = 320, height = 92, left = 34, right = 8, top = 8, bottom = 22;
     let low = Infinity, high = -Infinity;
-    for (const row of rows) {
-      for (const bound of [row.minimum, row.maximum]) {
+    for (const point of points) {
+      for (const bound of [point.row.minimum, point.row.maximum]) {
         if (bound !== null && bound !== undefined && Number.isFinite(Number(bound))) {
           low = Math.min(low, Number(bound));
           high = Math.max(high, Number(bound));
         }
       }
-    }
-    for (const value of values) {
-      if (value !== undefined && Number.isFinite(Number(value))) {
-        low = Math.min(low, Number(value));
-        high = Math.max(high, Number(value));
+      if (point.value !== undefined && point.value !== null && Number.isFinite(Number(point.value))) {
+        low = Math.min(low, Number(point.value));
+        high = Math.max(high, Number(point.value));
       }
     }
     if (!Number.isFinite(low) || !Number.isFinite(high)) { low = 0; high = 1; }
     if (low === high) { low -= 0.5; high += 0.5; }
     const pad = (high - low) * 0.12;
     const domainLow = low - pad, domainHigh = high + pad;
-    const step = years.length > 1 ? (width - left - right) / (years.length - 1) : 0;
-    const x = (index) => (years.length === 1
+    const step = points.length > 1 ? (width - left - right) / (points.length - 1) : 0;
+    const x = (index) => (points.length === 1
       ? left + (width - left - right) / 2
       : left + index * step);
     const y = (value) => top + (1 - (value - domainLow) / (domainHigh - domainLow)) * (height - top - bottom);
@@ -1404,60 +1396,88 @@ function renderWatchPanel() {
     axis.setAttribute('y1', height - bottom); axis.setAttribute('y2', height - bottom);
     axis.setAttribute('class', 'window-axis');
     svg.append(axis);
-    const bandWidth = Math.max(4, Math.min(16, step * 0.6 || 12));
-    rows.forEach((row) => {
-      const index = years.indexOf(Number(row.year));
-      if (index < 0) return;
+    const bandWidth = Math.max(6, Math.min(22, step * 0.6 || 12));
+    points.forEach((point, index) => {
+      const row = point.row;
       if (row.minimum !== null && row.maximum !== null) {
         const band = document.createElementNS(svgNS, 'rect');
         band.setAttribute('x', x(index) - bandWidth / 2);
-        band.setAttribute('y', y(row.maximum));
+        band.setAttribute('y', y(Number(row.maximum)));
         band.setAttribute('width', bandWidth);
-        band.setAttribute('height', Math.max(1, y(row.minimum) - y(row.maximum)));
+        band.setAttribute('height', Math.max(1, y(Number(row.minimum)) - y(Number(row.maximum))));
         band.setAttribute('class', 'window-band');
         svg.append(band);
       } else if (row.minimum !== null || row.maximum !== null) {
         const bound = row.minimum ?? row.maximum;
         const line = document.createElementNS(svgNS, 'line');
         line.setAttribute('x1', x(index) - bandWidth / 2); line.setAttribute('x2', x(index) + bandWidth / 2);
-        line.setAttribute('y1', y(bound)); line.setAttribute('y2', y(bound));
+        line.setAttribute('y1', y(Number(bound))); line.setAttribute('y2', y(Number(bound)));
         line.setAttribute('class', 'window-bound');
         svg.append(line);
       }
     });
-    const defined = values.map((value, index) => ({ value, index }))
-                          .filter((entry) => entry.value !== undefined);
+    const defined = points
+      .map((point, index) => ({ ...point, index }))
+      .filter((point) => point.value !== undefined && point.value !== null);
     if (defined.length > 1) {
       const line = document.createElementNS(svgNS, 'polyline');
-      line.setAttribute('points', defined.map((entry) => `${x(entry.index)},${y(entry.value)}`).join(' '));
+      line.setAttribute('points', defined.map((point) => `${x(point.index)},${y(Number(point.value))}`).join(' '));
       line.setAttribute('class', 'window-line');
       svg.append(line);
     }
-    for (const entry of defined) {
+    for (const point of defined) {
       const dot = document.createElementNS(svgNS, 'circle');
-      dot.setAttribute('cx', x(entry.index));
-      dot.setAttribute('cy', y(entry.value));
-      dot.setAttribute('r', years.length > 40 ? 1.4 : 2.2);
-      const year = years[entry.index];
-      const target = targetsByYear.get(year);
-      dot.setAttribute('class', `window-dot ${target ? statusOf(target, entry.value) : ''}`);
+      dot.setAttribute('cx', x(point.index));
+      dot.setAttribute('cy', y(Number(point.value)));
+      dot.setAttribute('r', points.length > 40 ? 1.4 : 2.2);
+      dot.setAttribute('class', `window-dot ${statusOf(point.row, point.value)}`);
       const tip = document.createElementNS(svgNS, 'title');
-      tip.textContent = `${year}: ${Number(entry.value).toLocaleString()}${target ? ` (${statusOf(target, entry.value)})` : ''}`;
+      tip.textContent = `period ${point.row.period ?? point.row.year}: ${fmt(point.value)} (${statusOf(point.row, point.value)})`;
       dot.append(tip);
       svg.append(dot);
     }
-    const labelEvery = Math.max(1, Math.ceil(years.length / 6));
-    years.forEach((year, index) => {
-      if (index % labelEvery && index !== years.length - 1) return;
+    const labelEvery = Math.max(1, Math.ceil(points.length / 6));
+    points.forEach((point, index) => {
+      if (index % labelEvery && index !== points.length - 1) return;
       const label = document.createElementNS(svgNS, 'text');
       label.setAttribute('x', x(index));
       label.setAttribute('y', height - 6);
       label.setAttribute('text-anchor', 'middle');
       label.setAttribute('class', 'window-label');
-      label.textContent = String(year);
+      label.textContent = String(point.row.year);
       svg.append(label);
     });
     card.append(svg);
+
+    const table = document.createElement('div');
+    table.className = 'window-table';
+    const header = document.createElement('div');
+    header.className = 'window-row header';
+    for (const text of ['Period', 'Min', 'Max', 'Achieved', 'Status']) {
+      const cell = document.createElement('span');
+      cell.textContent = text;
+      header.append(cell);
+    }
+    table.append(header);
+    for (const point of points) {
+      const row = document.createElement('div');
+      row.className = 'window-row';
+      const values = [
+        String(point.row.period ?? point.row.year),
+        fmt(point.row.minimum),
+        fmt(point.row.maximum),
+        fmt(point.value),
+        statusOf(point.row, point.value),
+      ];
+      for (const [index, text] of values.entries()) {
+        const cell = document.createElement('span');
+        cell.textContent = text;
+        if (index === 4) cell.className = text;
+        row.append(cell);
+      }
+      table.append(row);
+    }
+    card.append(table);
     panel.append(card);
   }
 }
@@ -1547,9 +1567,10 @@ async function loadTargets() {
     }
     const body = table.querySelector('tbody');
     body.replaceChildren();
-    const keys = rows.map((row) => `${row.year}|${row.account}`);
-    if (state.watched.size === 0 && window.localStorage.getItem('ws4.watched') === null) {
-      for (const key of keys.slice(0, 8)) state.watched.add(key);
+    const keys = rows.filter((row) => !row.flow).map((row) => String(row.index));
+    if (![...state.watched].some((key) => keys.includes(key))) {
+      state.watched.clear();
+      for (const key of keys.slice(0, 12)) state.watched.add(key);
       saveWatched();
     }
     const values = {};
@@ -1557,7 +1578,7 @@ async function loadTargets() {
     try {
       const realized = await api(`api/runs/${encodeURIComponent(state.run)}/targets`);
       for (const item of realized) {
-        (values[item.year] ??= {})[item.account] = item.value;
+        values[item.index] = item.value;
       }
       const all = await api(`api/runs/${encodeURIComponent(state.run)}/accounts`);
       for (const item of all) {
@@ -1568,7 +1589,7 @@ async function loadTargets() {
     rows.forEach((row, index) => {
       const tr = document.createElement('tr');
       tr.classList.toggle('inactive', row.active === false);
-      const key = `${row.year}|${row.account}`;
+      const key = String(row.index);
       const on = document.createElement('td');
       const onBox = document.createElement('input');
       onBox.type = 'checkbox';
@@ -1602,21 +1623,22 @@ async function loadTargets() {
       account.append(box, label, valueLine);
       tr.append(account);
       const year = document.createElement('td');
-      year.textContent = row.year;
+      year.textContent = row.period ?? row.year;
       tr.append(year);
       for (const field of ['minimum', 'maximum', 'min_weight', 'max_weight']) {
         const td = document.createElement('td');
         td.append(numberInput(row[field], field, index));
         tr.append(td);
       }
-      state.targetCells.set(`${row.year}|${row.account}`, {
-        row, text: valueLine, band: null, marker: null, value: values[row.year]?.[row.account],
+      state.targetCells.set(String(row.index), {
+        row, text: valueLine, band: null, marker: null, value: values[row.index],
       });
       body.append(tr);
     });
     for (const entry of state.targetCells.values()) paintTarget(entry, entry.value);
     for (const row of rows) {
-      const value = values[row.year]?.[row.account];
+      if (row.flow) continue;
+      const value = values[row.index];
       if (value !== undefined) state.windowValues.set(`${row.year}|${row.account}`, Number(value));
     }
     renderWatchPanel();

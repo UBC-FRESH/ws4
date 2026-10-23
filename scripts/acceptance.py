@@ -184,7 +184,7 @@ def check_prototype(workdir: Path) -> CheckResult:
     if problems:
         return CheckResult("prototype", "fail", problems[0])
     schedule = workdir / "schedule.csv"
-    schedule.write_text("block_id,treatment,period\n", encoding="utf-8")
+    schedule.write_text("block_id,treatment,offset\n", encoding="utf-8")
     values = Simulator.from_dataset(dataset).run(schedule, years=1, out_dir=workdir / "run")
     if values.empty:
         return CheckResult("prototype", "fail", "no account values")
@@ -209,7 +209,7 @@ def check_optimizer(workdir: Path) -> CheckResult:
     )
     targets_path = workdir / "targets.yaml"
     targets_path.write_text(
-        "targets:\n  - account: feature.Volume\n    year: 0\n    maximum: 500\n",
+        "targets:\n  - account: feature.Volume\n    period: 1\n    maximum: 500\n",
         encoding="utf-8",
     )
     config = OptimizeConfig(years=1, iterations=200, seed=1, targets_path=str(targets_path))
@@ -607,13 +607,14 @@ def _reference_period_value(
     if values is None:
         return 0.0
     if period <= 0:
-        return float(values.get(0, 0.0))
+        return float(values.get(-1, 0.0))
+    end_offset = year - 1
     if account.startswith(("product.", "patch.")):
         # a product, and a patch account, accumulate within the period and are reported as its
         # total: the reference's own field list says so ("the sum of ... values in this period"),
         # and measured on the harvested family a level reading is 25 times too small
-        return float(values.loc[year - width + 1 : year].sum())
-    return float(values.get(year, 0.0))
+        return float(values.loc[end_offset - width + 1 : end_offset].sum())
+    return float(values.get(end_offset, 0.0))
 
 
 def compare_account_values(
@@ -651,14 +652,14 @@ def compare_account_values(
     schedule_frame = pd.read_csv(report_dir / "schedule.csv")
     block = _first_present(schedule_frame, "block_id", "block")
     treatment = _first_present(schedule_frame, "treatment")
-    period = _first_present(schedule_frame, "period", "year", "DELTA")
-    if block is None or treatment is None or period is None:
-        return (["schedule.csv needs block_id, treatment and period columns"], 0)
+    time_column = _first_present(schedule_frame, "offset", "period", "year", "DELTA")
+    if block is None or treatment is None or time_column is None:
+        return (["schedule.csv needs block_id, treatment and offset columns"], 0)
     schedule = pd.DataFrame(
         {
             "block_id": schedule_frame[block].astype(int),
             "treatment": schedule_frame[treatment].astype(str),
-            "period": schedule_frame[period].astype(int),
+            "offset": schedule_frame[time_column].astype(int) - (1 if time_column == "year" else 0),
         }
     )
 
@@ -667,7 +668,7 @@ def compare_account_values(
         # the reference's own report name, so its export can be read where it lands
         values_path = report_dir / "targetSummary.csv"
     reference = pd.read_csv(values_path)
-    reference_year = _first_present(reference, "year", "period", "YEAR")
+    reference_year = _first_present(reference, "offset", "year", "period", "YEAR")
     reference_account = _first_present(reference, "account", "ACCOUNT", "TARGET")
     reference_value = _first_present(reference, "value", "VALUE", "CURRENT")
     if reference_year is None or reference_account is None or reference_value is None:
@@ -677,7 +678,7 @@ def compare_account_values(
         # the reference reports its own ratio, flow and route targets as well as account values;
         # only the accounts both sides have are comparable
         reference = reference[reference[reference_account].astype(str).isin(known_accounts)]
-    expected = {
+    raw_expected = {
         (int(year), str(account)): float(value)
         for year, account, value in zip(
             reference[reference_year],
@@ -687,13 +688,13 @@ def compare_account_values(
         )
     }
 
-    years = int(schedule["period"].max()) + 1 if not schedule.empty else 1
+    years = int(schedule["offset"].max()) + 1 if not schedule.empty else 1
     # The horizon to replay is the reference's own last reported year, which is what its account
     # values cover. Deriving it from the schedule alone under-simulates whenever the reference
     # reports years its last decision does not reach — and every such year is then reported as a
     # difference, which is a spurious failure rather than a finding. A schedule that decides beyond
     # the reported years is the opposite case, and is said out loud instead of silently truncated.
-    reported_years = max((year for year, _ in expected), default=-1) + 1
+    reported_years = max((year for year, _ in raw_expected), default=-1) + 1
     if reported_years > 0:
         years = reported_years
     values = Simulator.from_dataset(dataset_dir).simulate(schedule, years)
@@ -702,8 +703,9 @@ def compare_account_values(
     if period_column is not None and width_column is not None:
         # the reference's own period format: build its cells from WS4's annual values under the
         # convention it uses, rather than comparing its period totals to WS4's single years
+        expected = raw_expected
         series = {
-            str(account): group.set_index("year")["value"]
+            str(account): group.set_index("offset")["value"]
             for account, group in values.groupby("account")
         }
         produced = {
@@ -719,17 +721,24 @@ def compare_account_values(
             )
         }
     else:
+        # A WS4-native values file already carries offsets; an external annual report carries
+        # 1-based years, so its cells shift back by one to meet the offset clock.
+        expected = (
+            raw_expected
+            if reference_year == "offset"
+            else {(year - 1, account): value for (year, account), value in raw_expected.items()}
+        )
         produced = {
             (int(year), str(account)): float(value)
             for year, account, value in zip(
-                values["year"], values["account"], values["value"], strict=True
+                values["offset"], values["account"], values["value"], strict=True
             )
         }
 
     differences: list[str] = []
-    if not schedule.empty and int(schedule["period"].max()) + 1 > years:
+    if not schedule.empty and int(schedule["offset"].max()) + 1 > years:
         differences.append(
-            f"schedule.csv decides in period {int(schedule['period'].max())}, beyond the "
+            f"schedule.csv decides in period {int(schedule['offset'].max())}, beyond the "
             f"reference's last reported year {years - 1}"
         )
     compared = 0
@@ -769,21 +778,21 @@ def _simulated_for_report(dataset_dir: Path, report_dir: Path) -> pd.DataFrame:
     schedule_frame = pd.read_csv(report_dir / "schedule.csv")
     block = _first_present(schedule_frame, "block_id", "block", "BLOCK")
     treatment = _first_present(schedule_frame, "treatment", "TREATMENT")
-    period = _first_present(schedule_frame, "period", "year", "DELTA")
-    if block is None or treatment is None or period is None:
-        return pd.DataFrame(columns=["year", "account", "value"])
+    time_column = _first_present(schedule_frame, "offset", "period", "year", "DELTA")
+    if block is None or treatment is None or time_column is None:
+        return pd.DataFrame(columns=["offset", "account", "value"])
     schedule = pd.DataFrame(
         {
             "block_id": schedule_frame[block].astype(int),
             "treatment": schedule_frame[treatment].astype(str),
-            "period": schedule_frame[period].astype(int),
+            "offset": schedule_frame[time_column].astype(int) - (1 if time_column == "year" else 0),
         }
     )
     summary = report_dir / "targetSummary.csv"
     if summary.is_file():
         years = int(pd.read_csv(summary)["YEAR"].max()) + 1
     else:
-        years = int(schedule["period"].max()) + 1
+        years = int(schedule["offset"].max()) + 1
     return Simulator.from_dataset(dataset_dir).simulate(schedule, years)
 
 
@@ -901,7 +910,7 @@ def compare_flow_targets(
     if target_column is None or year_column is None or value_column is None:
         return ([], 0, {})
     index = {
-        (int(float(str(row.year))), str(row.account)): float(str(row.value))
+        (int(float(str(row.offset))), str(row.account)): float(str(row.value))
         for row in values.itertuples(index=False)
     }
     horizon = max((year for year, _ in index), default=-1) + 1
@@ -918,7 +927,12 @@ def compare_flow_targets(
         if rows.empty:
             continue
         target = Target(
-            account, horizon - 1, flow=flow, flow_start=start, flow_end=end, period_width=10
+            account,
+            horizon,
+            flow=flow,
+            flow_start=max(0, start - 1),
+            flow_end=max(0, end - 1),
+            period_width=10,
         )
         series = flow_series(index, target, horizon)
         for year, want in zip(rows[year_column], rows[value_column], strict=True):
@@ -1274,21 +1288,22 @@ def check_destinations(
     schedule_frame = pd.read_csv(schedule_path)
     block = _first_present(schedule_frame, "block_id", "block")
     treatment = _first_present(schedule_frame, "treatment")
-    period = _first_present(schedule_frame, "period", "year", "DELTA")
-    if block is None or treatment is None or period is None:
+    time_column = _first_present(schedule_frame, "offset", "period", "year", "DELTA")
+    if block is None or treatment is None or time_column is None:
         return CheckResult(
-            "destinations", "fail", "schedule.csv needs block_id, treatment and period"
+            "destinations", "fail", "schedule.csv needs block_id, treatment and offset"
         )
     schedule = pd.DataFrame(
         {
             "block": schedule_frame[block].astype(int),
-            "period": schedule_frame[period].astype(int),
+            "treatment": schedule_frame[treatment].astype(str),
+            "offset": schedule_frame[time_column].astype(int) - (1 if time_column == "year" else 0),
         }
     )
 
     width = max(_reference_period_width(where), 1)
     schedule["reference_period"] = [
-        0 if year <= 0 else (year - 1) // width + 1 for year in schedule["period"]
+        0 if offset < 0 else offset // width + 1 for offset in schedule["offset"]
     ]
 
     unexplained: list[str] = []
@@ -1355,7 +1370,7 @@ def check_destinations(
         product_allocations=allocations,
     )
     series = {
-        str(account): group.set_index("year")["value"]
+        str(account): group.set_index("offset")["value"]
         for account, group in values.groupby("account")
     }
     compared = 0
@@ -1439,7 +1454,7 @@ def _reported_years(where: Sequence[Path], schedule: pd.DataFrame) -> int:
         year = _first_present(frame, "YEAR", "year", "period")
         if year is not None and len(frame):
             return int(frame[year].max()) + 1
-    return max(int(schedule["period"].max()) + 1, 1) if not schedule.empty else 1
+    return max(int(schedule["offset"].max()) + 1, 1) if not schedule.empty else 1
 
 
 def _compare_mill_product(
@@ -1731,7 +1746,7 @@ def _ws4_schedule(report_dir: Path, where: Sequence[Path], workdir: Path) -> Pat
         {
             "block_id": frame[block].astype(int),
             "treatment": frame[treatment].astype(str),
-            "period": frame[period].astype(int),
+            "offset": frame[period].astype(int) - (1 if period == "year" else 0),
         }
     ).to_csv(normalised, index=False)
     return normalised
@@ -1804,7 +1819,7 @@ def check_patch_components(
     out = workdir / "patch-components"
     Simulator.from_dataset(dataset_dir).run(
         schedule,
-        years=_reported_years(where, pd.DataFrame({"period": [0]})),
+        years=_reported_years(where, pd.DataFrame({"offset": [0]})),
         out_dir=out,
         topology_csv=topology_path,
         patch_accounts=tuple(

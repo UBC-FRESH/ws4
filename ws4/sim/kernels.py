@@ -268,6 +268,7 @@ class ProductKernel:
         year_out, slot_out, value_out = self._out
         totals: dict[Cell, float] = {}
         for index in range(int(count)):
+            # Chain events and account cells are both offsets.
             cell = (int(year_out[index]), self.labels[int(slot_out[index])])
             totals[cell] = totals.get(cell, 0.0) + float(value_out[index])
         return {cell: value for cell, value in totals.items() if value != 0.0}

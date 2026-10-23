@@ -41,7 +41,7 @@ ws4 optimize --dataset tmp/estate/compiled --targets tmp/estate/targets.yaml --y
 
 `fragments.csv` is the only file you are expected to edit to make your own variation: change the ages
 and the areas and everything else still applies. A schedule is a CSV of `block_id`, `treatment`,
-`period`, for example `1,CC,0` to clearcut block 1 at year 0.
+`offset`, for example `1,CC,0` to clearcut block 1 at offset 0 (the first simulation year).
 
 Guides that use this estate: `docs/howto/route-products.rst` and `docs/howto/patch-targets.rst`.
 

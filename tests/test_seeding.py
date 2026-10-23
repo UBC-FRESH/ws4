@@ -72,7 +72,7 @@ def _route(tmp_path: Path) -> Path:
 def _one_block(dataset: Path, route: Path, tmp_path: Path) -> tuple[float, float]:
     """Return what one block is worth and what it costs, measured rather than assumed."""
     schedule = tmp_path / "one.csv"
-    schedule.write_text("block_id,treatment,period\n1,CC,0\n", encoding="utf-8")
+    schedule.write_text("block_id,treatment,offset\n1,CC,0\n", encoding="utf-8")
     config = load_route_config(route)
     values = Simulator.from_dataset(dataset).run(
         schedule,
@@ -96,8 +96,8 @@ def _config(
     targets = tmp_path / f"targets-{greedy_seed}.yaml"
     targets.write_text(
         "targets:\n"
-        f"  - account: product.Volume\n    year: 0\n    minimum: {floor}\n"
-        f"  - account: route.Mill1.haul\n    year: 0\n    maximum: {ceiling}\n",
+        f"  - account: product.Volume\n    period: 1\n    minimum: {floor}\n"
+        f"  - account: route.Mill1.haul\n    period: 1\n    maximum: {ceiling}\n",
         encoding="utf-8",
     )
     return OptimizeConfig(
@@ -132,8 +132,8 @@ class _GoalEvaluator:
 
     def __init__(self, hazard: float = 12.0) -> None:
         self.targets = [
-            Target("feature.Hazard", 4, maximum=5.0),
-            Target("product.Cost", 4, maximum=5.0),
+            Target("feature.Hazard", period=5, maximum=5.0),
+            Target("product.Cost", period=5, maximum=5.0),
         ]
         self.optimizer = SimpleNamespace(cfg=SimpleNamespace(years=5))
         self.hazard = hazard

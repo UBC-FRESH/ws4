@@ -27,9 +27,10 @@ import yaml
 from fastapi import Body, FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.gzip import GZipMiddleware
 from starlette.responses import Response
 
-from ..opt.objective import load_targets, period_value
+from ..opt.objective import flow_penalty, flow_series, load_targets, period_value
 from .skins import load_skins
 
 _REPORT_SUFFIXES = {".csv", ".html", ".png", ".json", ".txt"}
@@ -228,6 +229,7 @@ def create_app(
     runs: Path,
     targets: Path | None = None,
     geometry: Path | None = None,
+    land_base: Path | None = None,
     allow_runs: bool = False,
     allow_agent: bool = False,
     agent_model: str = "opencode-go/deepseek-v4.1-flash",
@@ -255,6 +257,9 @@ def create_app(
     geometry : Path or None, optional
         A GeoJSON file of block polygons or points, joined on ``block_id``. Without it the map
         endpoint refuses with the missing artefact named.
+    land_base : Path or None, optional
+        A GeoJSON polygon layer drawn under the blocks as the non-forest land base. It is
+        optional: without it the basemap shows through gaps between blocks.
     allow_runs : bool, optional
         When true, ``POST /api/runs`` may start a search with the configured dataset and targets.
         False (the default) keeps the service read-only apart from the targets file.
@@ -293,6 +298,7 @@ def create_app(
     dataset = Path(dataset).resolve()
     runs_root = Path(runs).resolve()
     geometry_path = Path(geometry).resolve() if geometry is not None else None
+    land_base_path = Path(land_base).resolve() if land_base is not None else None
     targets_path = Path(targets).resolve() if targets is not None else None
     topology_path = Path(topology).resolve() if topology is not None else None
     patch_accounts_path = Path(patch_accounts).resolve() if patch_accounts is not None else None
@@ -305,6 +311,7 @@ def create_app(
     source_crs = str(crs)
     agent_working_directory = Path(agent_cwd).resolve() if agent_cwd is not None else Path.cwd()
     app = FastAPI(title="WS4", version="0.1.0")
+    app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
 
     @app.middleware("http")
     async def no_cache_static(
@@ -344,7 +351,17 @@ def create_app(
         return pd.read_csv(path)
 
     geometry_cache: list[dict[str, Any]] | None = None
+    land_base_cache: list[dict[str, Any]] | None = None
     road_cache: list[dict[str, Any]] | None = None
+
+    def land_base_features() -> list[dict[str, Any]]:
+        """Return the optional non-forest underlay once, parsed."""
+        nonlocal land_base_cache
+        if land_base_cache is None:
+            land_base_cache = (
+                _geometry_features(land_base_path) if land_base_path is not None else []
+            )
+        return land_base_cache
 
     def road_features() -> list[dict[str, Any]]:
         """Return the source road lines once, parsed; the overlay is not run-specific."""
@@ -570,25 +587,34 @@ def create_app(
         """Fold a telemetry targets record over each target's period, keeping its year series."""
         if targets_path is None or not targets_path.is_file():
             return record
+
+        def item_offset(item: dict[str, Any]) -> int:
+            """Return an item's offset, accepting legacy telemetry's 0-based year."""
+            return int(item["offset"]) if "offset" in item else int(item["year"])
+
         index = {
-            (int(item["year"]), str(item["account"])): float(item["value"])
+            (item_offset(item), str(item["account"])): float(item["value"])
             for item in record.get("values", [])
         }
+        series = [{**item, "year": item_offset(item) + 1} for item in record.get("values", [])]
         payload: dict[str, Any] = {
             "type": "targets",
             "iteration": record.get("iteration"),
             "values": [
                 {
+                    "index": target_index,
                     "account": target.account,
+                    "period": target.period,
                     "year": target.year,
+                    "flow": target.flow,
                     "value": period_value(index, target),
                 }
-                for target in load_targets(targets_path)
+                for target_index, target in enumerate(load_targets(targets_path))
                 if target.active
             ],
             # the optimizer's snapshot already holds every year of the tracked accounts; the
             # panel uses these as the live series behind the period-target value
-            "series": record.get("values", []),
+            "series": series,
         }
         if record.get("island") is not None:
             payload["island"] = record["island"]
@@ -926,6 +952,18 @@ def create_app(
             raise HTTPException(status_code=502, detail=detail[:500])
         return {"reply": reply, "session": session_id, "actions": actions[-12:]}
 
+    @app.get("/api/land-base")
+    def land_base_geojson(format: str = Query(default="projected")) -> dict[str, Any]:
+        """Return the optional non-forest underlay drawn beneath the blocks."""
+        if land_base_path is None or not land_base_path.is_file():
+            raise HTTPException(
+                status_code=404, detail="no land-base layer is configured (--land-base)"
+            )
+        features = land_base_features()
+        if format == "wgs84":
+            features = _to_wgs84(features, source_crs)
+        return {"type": "FeatureCollection", "features": features}
+
     @app.get("/api/roads")
     def roads_geojson(format: str = Query(default="projected")) -> dict[str, Any]:
         """Return the configured source access-road lines for the map overlay."""
@@ -952,9 +990,10 @@ def create_app(
         frame = read_csv(directory, "used_roads.csv")
         if frame.empty:
             return {"type": "FeatureCollection", "year": year or 0, "features": []}
+        time_column = "offset" if "offset" in frame.columns else "period"
         if year is None:
-            year = int(frame["period"].min())
-        selected = frame[frame["period"] == year]
+            year = int(frame[time_column].min())
+        selected = frame[frame[time_column] == year]
         features: list[dict[str, Any]] = []
         for row in selected.to_dict(orient="records"):
             features.append(
@@ -968,7 +1007,7 @@ def create_app(
                         ],
                     },
                     "properties": {
-                        "period": int(row["period"]),
+                        "period": int(row[time_column]),
                         "segment_id": int(row["segment_id"]),
                         "from_vertex": int(row["from_vertex"]),
                         "to_vertex": int(row["to_vertex"]),
@@ -1040,13 +1079,17 @@ def create_app(
         """Return realized account values, optionally filtered by year and account."""
         frame = read_csv(run_dir(run), "account_values.csv")
         if year is not None:
-            frame = frame[frame["year"] == year]
+            frame = frame[frame["offset"] == year]
         if account is not None:
             frame = frame[frame["account"] == account]
-        return [
-            {str(key): value for key, value in row.items()}
-            for row in frame.to_dict(orient="records")
-        ]
+        rows: list[dict[str, Any]] = []
+        for row in frame.to_dict(orient="records"):
+            record = {str(key): value for key, value in row.items()}
+            if "offset" in record:
+                # ``year`` is the display label; the stored clock is the offset.
+                record["year"] = int(record["offset"]) + 1
+            rows.append(record)
+        return rows
 
     @app.get("/api/runs/{run}/reports")
     def reports(run: str) -> list[dict[str, Any]]:
@@ -1072,9 +1115,9 @@ def create_app(
         """Return the run's periods from its schedule, patch membership or account values."""
         directory = run_dir(run)
         for name, column in (
-            ("schedule.csv", "period"),
-            ("patch_membership.csv", "year"),
-            ("account_values.csv", "year"),
+            ("schedule.csv", "offset"),
+            ("patch_membership.csv", "period"),
+            ("account_values.csv", "offset"),
         ):
             if not (directory / name).is_file():
                 continue
@@ -1209,8 +1252,8 @@ def create_app(
             if account is None or account not in compartment_accounts:
                 account = compartment_accounts[0] if compartment_accounts else ""
             if year is None:
-                year = int(frame["year"].min()) if not frame.empty else 0
-            selected = frame[(frame["year"] == year) & (frame["account"] == account)]
+                year = int(frame["offset"].min()) if not frame.empty else 0
+            selected = frame[(frame["offset"] == year) & (frame["account"] == account)]
             for row in selected.to_dict(orient="records"):
                 block = int(row["block"])
                 compartments_by_block[block] = {
@@ -1224,7 +1267,7 @@ def create_app(
             )
             if (directory / "schedule.csv").is_file():
                 schedule = read_csv(directory, "schedule.csv")
-                current_rows = schedule[schedule["period"] == year]
+                current_rows = schedule[schedule["offset"] == year]
                 for block_id, group in current_rows.groupby("block_id"):
                     current_treatments[int(float(str(block_id)))] = sorted(
                         {str(value) for value in group["treatment"]}
@@ -1233,9 +1276,10 @@ def create_app(
             if not (directory / "patch_membership.csv").is_file():
                 raise HTTPException(status_code=404, detail="the run has no patch_membership.csv")
             frame = read_csv(directory, "patch_membership.csv")
+            time_column = "offset" if "offset" in frame.columns else "period"
             if year is None:
-                year = int(frame["year"].min()) if not frame.empty else 0
-            selected = frame[frame["year"] == year]
+                year = int(frame[time_column].min()) if not frame.empty else 0
+            selected = frame[frame[time_column] == year]
             for row in selected.to_dict(orient="records"):
                 block = int(row["block"])
                 patches_by_block[block] = {
@@ -1250,12 +1294,12 @@ def create_app(
                 raise HTTPException(status_code=404, detail="the run has no schedule.csv")
             schedule = read_csv(directory, "schedule.csv")
             if year is None:
-                year = int(schedule["period"].min()) if not schedule.empty else 0
+                year = int(schedule["offset"].min()) if not schedule.empty else 0
             first = year if period_start is None else min(period_start, year)
             selected = schedule[
-                schedule["period"] <= year
+                schedule["offset"] <= year
                 if layer == "cumulative"
-                else (schedule["period"] >= first) & (schedule["period"] <= year)
+                else (schedule["offset"] >= first) & (schedule["offset"] <= year)
             ]
             for block_id, group in selected.groupby("block_id"):
                 treatments_by_block[int(float(str(block_id)))] = sorted(
@@ -1265,7 +1309,7 @@ def create_app(
                 current = {
                     int(value)
                     for value in schedule[
-                        (schedule["period"] >= first) & (schedule["period"] <= year)
+                        (schedule["offset"] >= first) & (schedule["offset"] <= year)
                     ]["block_id"].astype("int64")
                 }
         else:
@@ -1330,25 +1374,52 @@ def create_app(
         values = read_csv(directory, "account_values.csv")
         index: dict[tuple[int, str], float] = {}
         for year, account, value in zip(
-            values["year"], values["account"], values["value"], strict=True
+            values["offset"], values["account"], values["value"], strict=True
         ):
             key = (int(year), str(account))
             index[key] = index.get(key, 0.0) + float(value)
         rows: list[dict[str, Any]] = []
-        for target in load_targets(targets_path):
-            value = period_value(index, target)
-            status = "inactive"
-            if target.active:
-                status = "met"
-                if target.minimum is not None and value < target.minimum:
-                    status = "below"
-                elif target.maximum is not None and value > target.maximum:
-                    status = "above"
+        horizon = max((year for year, _ in index), default=-1) + 1
+        for target_index, target in enumerate(load_targets(targets_path)):
+            if target.flow:
+                series = flow_series(index, target, horizon)
+                flow_values = list(series.values())
+                value = (
+                    max(flow_values)
+                    if target.maximum is not None and flow_values
+                    else min(flow_values)
+                    if flow_values
+                    else 0.0
+                )
+                status = "inactive"
+                if target.active:
+                    status = "met"
+                    if flow_penalty(index, target, horizon) > 0.0:
+                        if (
+                            target.maximum is not None
+                            and flow_values
+                            and max(flow_values) > target.maximum
+                        ):
+                            status = "above"
+                        else:
+                            status = "below"
+            else:
+                value = period_value(index, target)
+                status = "inactive"
+                if target.active:
+                    status = "met"
+                    if target.minimum is not None and value < target.minimum:
+                        status = "below"
+                    elif target.maximum is not None and value > target.maximum:
+                        status = "above"
             rows.append(
                 {
+                    "index": target_index,
                     "account": target.account,
+                    "period": target.period,
                     "year": target.year,
                     "period_width": target.period_width,
+                    "flow": target.flow,
                     "value": value,
                     "status": status,
                     "active": target.active,
@@ -1362,16 +1433,19 @@ def create_app(
             return []
         return [
             {
+                "index": target_index,
                 "account": target.account,
+                "period": target.period,
                 "year": target.year,
                 "period_width": target.period_width,
+                "flow": target.flow,
                 "minimum": target.minimum,
                 "maximum": target.maximum,
                 "min_weight": target.min_weight,
                 "max_weight": target.max_weight,
                 "active": target.active,
             }
-            for target in load_targets(targets_path)
+            for target_index, target in enumerate(load_targets(targets_path))
         ]
 
     def _write_targets(document: str) -> int:

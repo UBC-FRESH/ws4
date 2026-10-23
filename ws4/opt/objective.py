@@ -20,16 +20,21 @@ import yaml
 class Target:
     """One goal-programming target.
 
-    A target is **periodic**: it applies to the account summed over ``period_width`` years
-    starting at ``year`` (a single year when ``period_width`` is 1). Treatments are still
-    scheduled by year; only the accounting is aggregated.
+    A target is **periodic**: it applies to one accounting period of ``period_width`` years.
+    Period 1 is the first accounting period (years 1 to ``period_width``), period 2 the next,
+    and period 0 is the initial snapshot at year 0. Treatments are still scheduled by year;
+    only the accounting is aggregated.
 
     Attributes
     ----------
     account : str
         The account label the target applies to.
     year : int
-        The first year of the period the target applies to.
+        The end year of the period, derived from ``period`` and ``period_width``. Kept because
+        account values are stored by year; prefer ``period`` in the target file.
+    period : int or None
+        The period index. Period 0 is the initial snapshot; periods 1 to N are the accounting
+        periods. When given, ``year`` is derived as ``period * period_width``.
     minimum : float or None
         The lower bound; a value below it is penalized.
     maximum : float or None
@@ -56,13 +61,19 @@ class Target:
     flow_reference : int or None
         The first year of the flow term's reference period, or None for the final period of the
         window. Every other period is measured as a percent difference from it.
+    flow_start_period : int or None
+        The first period of a flow term's window, inclusive. When given, ``flow_start`` is derived.
+    flow_end_period : int or None
+        The last period of a flow term's window, inclusive. When given, ``flow_end`` is derived.
+    flow_reference_period : int or None
+        The reference period for an even-flow comparison. When given, ``flow_reference`` is derived.
     active : bool
         Whether the search prices this target. An inactive target stays in the file and is
         reported, but its penalty is not part of the objective.
     """
 
     account: str
-    year: int
+    year: int = 0
     minimum: float | None = None
     maximum: float | None = None
     min_weight: float = 1.0
@@ -73,6 +84,10 @@ class Target:
     flow_start: int = 0
     flow_end: int | None = None
     flow_reference: int | None = None
+    period: int | None = None
+    flow_start_period: int | None = None
+    flow_end_period: int | None = None
+    flow_reference_period: int | None = None
     active: bool = True
 
     def __post_init__(self) -> None:
@@ -83,26 +98,72 @@ class Target:
             raise ValueError("period_width must be at least one year")
         if self.flow not in {"", "even", "ndy"}:
             raise ValueError(f"unknown flow type: {self.flow!r}")
+        if self.period is not None:
+            if self.period < 0:
+                raise ValueError("period must be zero (initial snapshot) or positive")
+            # ``year`` is the display label: the 1-based year the period ends on.
+            object.__setattr__(self, "year", self.period * self.period_width)
+        if self.flow_start_period is not None:
+            if self.flow_start_period < 0:
+                raise ValueError("flow_start_period must not be negative")
+            # Flow windows are offset ranges: period p starts at offset (p-1)*width.
+            object.__setattr__(
+                self,
+                "flow_start",
+                (self.flow_start_period - 1) * self.period_width,
+            )
+        if self.flow_end_period is not None:
+            if self.flow_end_period < 0:
+                raise ValueError("flow_end_period must not be negative")
+            # Exclusive offset end: period p covers offsets up to p*width - 1.
+            object.__setattr__(
+                self,
+                "flow_end",
+                self.flow_end_period * self.period_width,
+            )
+        if self.flow_reference_period is not None:
+            if self.flow_reference_period < 0:
+                raise ValueError("flow_reference_period must not be negative")
+            object.__setattr__(
+                self,
+                "flow_reference",
+                (self.flow_reference_period - 1) * self.period_width,
+            )
         if self.flow_end is not None and self.flow_end <= self.flow_start:
             raise ValueError("flow_end must be after flow_start")
 
-    def cell_years(self) -> range:
-        """Return the years of the target's period.
+    def cell_offsets(self) -> tuple[int, ...]:
+        """Return the simulation offsets of the target's period.
 
-        The period **ends** at :attr:`year`, which is the reference implementation's convention:
-        its report labels a period by the year it ends on, so a period it reports as year 10 with
-        width 10 covers years 1-10. Measured against the reference's own period values on the C5
-        sample, a ``product.`` account reported as 1,921,975.8 for year 10 is the sum of WS4's years
-        1-10 (1,921,975.7) and not of years 0-9 or 10-19, and its period 0 is the initial snapshot
-        at year 0 — so a window that reaches back past the horizon contributes nothing, which is
-        what makes the snapshot expressible.
+        Period 0 is the snapshot at offset -1. Period ``p >= 1`` covers offsets
+        ``(p - 1) * width`` through ``p * width - 1``. ``year`` remains a display
+        label only: the 1-based year the period ends on.
 
         Returns
         -------
-        range
-            The years of the target's period, ending at :attr:`year`.
+        tuple of int
+            The offsets of the target's period.
         """
-        return range(self.year - max(1, self.period_width) + 1, self.year + 1)
+        width = max(1, self.period_width)
+        if self.period is not None:
+            if self.period == 0:
+                return (-1,)
+            return tuple(range((self.period - 1) * width, self.period * width))
+        # Legacy ``year`` is a 1-based end year; year 0 is the snapshot.
+        if self.year == 0:
+            return (-1,)
+        return tuple(range(self.year - width, self.year))
+
+    def end_offset(self) -> int:
+        """Return the offset the period is read at for a level account.
+
+        Returns
+        -------
+        int
+            The last offset of the period, or -1 for the snapshot.
+        """
+        offsets = self.cell_offsets()
+        return offsets[-1] if offsets else -1
 
 
 #: The prefix of an account that accumulates over a period rather than being read at its end.
@@ -148,8 +209,8 @@ def period_value(index: Mapping[tuple[int, str], float], target: Target) -> floa
         period's end year when it does not.
     """
     if accumulates(target.account):
-        return sum(index.get((year, target.account), 0.0) for year in target.cell_years())
-    return index.get((target.year, target.account), 0.0)
+        return sum(index.get((offset, target.account), 0.0) for offset in target.cell_offsets())
+    return index.get((target.end_offset(), target.account), 0.0)
 
 
 def penalty(value: float, target: Target) -> float:
@@ -203,8 +264,8 @@ def flow_period_ends(target: Target, years: int) -> list[int]:
     """
     width = max(1, target.period_width)
     stop = target.flow_end if target.flow_end is not None else years
-    # the window is half-open, so a period ending exactly at its end is outside it
-    return [end for end in range(width, stop, width) if end > target.flow_start]
+    # Periods end on offsets width-1, 2*width-1, ...; the window is half-open.
+    return [end for end in range(width - 1, stop, width) if end >= target.flow_start]
 
 
 def flow_reference_end(target: Target, years: int) -> int:
@@ -234,7 +295,7 @@ def flow_reference_end(target: Target, years: int) -> int:
         return ends[-1]
     width = max(1, target.period_width)
     for end in ends:
-        if end - width < target.flow_reference <= end:
+        if end - width + 1 <= target.flow_reference <= end:
             return end
     return ends[0]
 
@@ -342,7 +403,7 @@ def flow_values(
     # through 200. A window that reaches back past year 0 contributes nothing, which is how the
     # reference's initial snapshot period is expressed.
     ends = flow_period_ends(target, years)
-    if target.flow == "ndy" and ends and ends[0] - width > 0:
+    if target.flow == "ndy" and ends and ends[0] - width >= 0:
         # A non-declining window includes its first period, which compares with the period before
         # the window, so the series starts one period earlier than the window does.
         ends = [ends[0] - width, *ends]
@@ -440,7 +501,7 @@ def objective(values: pd.DataFrame, targets: Sequence[Target]) -> float:
         The total penalty.
     """
     index = _value_index(values)
-    horizon = max((year for year, _ in index), default=-1) + 1
+    horizon = max((offset for offset, _ in index), default=-1) + 1
     total = 0.0
     for target in targets:
         if not target.active:
@@ -453,9 +514,9 @@ def objective(values: pd.DataFrame, targets: Sequence[Target]) -> float:
 
 
 def _value_index(values: pd.DataFrame) -> dict[tuple[int, str], float]:
-    """Index an account-values frame by ``(year, account)``."""
+    """Index an account-values frame by ``(offset, account)``."""
     return {
-        (int(float(str(row.year))), str(row.account)): float(str(row.value))
+        (int(float(str(row.offset))), str(row.account)): float(str(row.value))
         for row in values.itertuples(index=False)
     }
 
@@ -484,7 +545,7 @@ def objective_terms(
         One penalty per target.
     """
     index = _value_index(values)
-    horizon = max((year for year, _ in index), default=-1) + 1
+    horizon = max((offset for offset, _ in index), default=-1) + 1
     penalties: list[float] = []
     for target in targets:
         if not target.active:
@@ -495,7 +556,7 @@ def objective_terms(
             continue
         if point_in_time is not None and point_in_time(target.account):
             # a caller that knows an account is a level, whatever its name says
-            value = index.get((target.year, target.account), 0.0)
+            value = index.get((target.end_offset(), target.account), 0.0)
         else:
             value = period_value(index, target)
         penalties.append(penalty(value, target))
@@ -553,15 +614,24 @@ def balance_targets(targets: Sequence[Target], peaks: Sequence[float]) -> list[T
     return scaled
 
 
+def _optional_int(entry: Mapping[str, object], key: str) -> int | None:
+    """Return an optional integer field from a YAML target entry."""
+    value = entry.get(key)
+    return None if value is None else int(float(str(value)))
+
+
 def load_targets(path: Path) -> list[Target]:
     """Load targets from a YAML file.
 
-    The file is a mapping with a ``targets`` list; each entry has ``account``,
-    ``year``, and any of ``minimum``, ``maximum``, ``min_weight``, ``max_weight``,
-    ``period_width`` (years per period; the account is summed over them), ``shape``
-    (``linear`` or ``non_linear``), and the flow keys ``flow`` (``even`` or ``ndy``),
-    ``flow_start`` and ``flow_end`` (the flow window, in years), and ``active`` (default true;
-    an inactive target is kept and reported but not priced).
+    The file is a mapping with a ``targets`` list. Each entry names one accounting period
+    with ``period`` (period 1 is the first accounting period and period 0 the initial
+    snapshot) and any of ``minimum``, ``maximum``, ``min_weight``, ``max_weight``,
+    ``period_width`` (years per period), ``shape`` (``linear`` or ``non_linear``), the flow
+    keys ``flow`` (``even`` or ``ndy``), ``flow_start_period`` and ``flow_end_period``
+    (inclusive period window), ``flow_reference_period``, and ``active``.
+
+    ``year`` and the year-based flow keys are still accepted for older files; a period key
+    takes precedence when both are present.
 
     Parameters
     ----------
@@ -575,23 +645,31 @@ def load_targets(path: Path) -> list[Target]:
     """
     raw = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
     entries = raw.get("targets", []) if isinstance(raw, dict) else []
-    return [
-        Target(
-            account=str(entry["account"]),
-            year=int(entry["year"]),
-            minimum=entry.get("minimum"),
-            maximum=entry.get("maximum"),
-            min_weight=float(entry.get("min_weight", 1.0)),
-            max_weight=float(entry.get("max_weight", 1.0)),
-            period_width=int(entry.get("period_width", 1)),
-            shape=str(entry.get("shape", "linear")),
-            flow=str(entry.get("flow", "")),
-            flow_start=int(entry.get("flow_start", 0)),
-            flow_end=(int(entry["flow_end"]) if entry.get("flow_end") is not None else None),
-            flow_reference=(
-                int(entry["flow_reference"]) if entry.get("flow_reference") is not None else None
-            ),
-            active=bool(entry.get("active", True)),
+    targets: list[Target] = []
+    for entry in entries:
+        period = _optional_int(entry, "period")
+        year = _optional_int(entry, "year")
+        if period is None and year is None:
+            raise ValueError(f"target {entry.get('account')!r} needs 'period' (or a legacy 'year')")
+        targets.append(
+            Target(
+                account=str(entry["account"]),
+                year=year or 0,
+                period=period,
+                minimum=entry.get("minimum"),
+                maximum=entry.get("maximum"),
+                min_weight=float(entry.get("min_weight", 1.0)),
+                max_weight=float(entry.get("max_weight", 1.0)),
+                period_width=int(entry.get("period_width", 1)),
+                shape=str(entry.get("shape", "linear")),
+                flow=str(entry.get("flow", "")),
+                flow_start=int(entry.get("flow_start", 0)),
+                flow_end=_optional_int(entry, "flow_end"),
+                flow_reference=_optional_int(entry, "flow_reference"),
+                flow_start_period=_optional_int(entry, "flow_start_period"),
+                flow_end_period=_optional_int(entry, "flow_end_period"),
+                flow_reference_period=_optional_int(entry, "flow_reference_period"),
+                active=bool(entry.get("active", True)),
+            )
         )
-        for entry in entries
-    ]
+    return targets

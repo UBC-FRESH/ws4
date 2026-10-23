@@ -53,8 +53,9 @@ holds one frame per table:
 Simulate a schedule
 -------------------
 
-A schedule is a frame with ``block_id``, ``treatment``, and ``period`` columns, where the period is
-in years. ``Simulator.simulate`` replays it and returns the account values as a frame:
+A schedule is a frame with ``block_id``, ``treatment``, and ``offset`` columns, where the offset is the
+number of years after the start of the simulation (offset 0 is the first year). ``Simulator.simulate``
+replays it and returns the account values as a frame:
 
 .. code-block:: python
 
@@ -62,20 +63,24 @@ in years. ``Simulator.simulate`` replays it and returns the account values as a 
 
    from ws4.sim.engine import Simulator
 
-   schedule = pd.DataFrame({"block_id": [1], "treatment": ["CC"], "period": [0]})
+   schedule = pd.DataFrame({"block_id": [1], "treatment": ["CC"], "offset": [0]})
    values = Simulator.from_dataset(dataset).simulate(schedule, 5)
-   print(values.head(4).to_string(index=False))
+   print(values.head(6).to_string(index=False))
 
 .. code-block:: text
 
-    year        account  value
-       0 feature.Volume  340.0
-       0 product.Volume  360.0
-       1 feature.Volume  360.0
-       2 feature.Volume  380.0
+    offset        account  value
+        -1 feature.Volume  700.0
+         0 feature.Volume  340.0
+         0 product.Volume  360.0
+         1 feature.Volume  360.0
+         2 feature.Volume  380.0
+         3 feature.Volume  400.0
 
-That is the figure from the walkthrough: clearing block 1 at year 0 moves its 3.0 ha from the natural
-track to the managed track, leaving ``2.0 * 170 = 340``.
+That is the figure from the walkthrough: clearing block 1 at offset 0 moves its 3.0 ha from the natural
+track to the managed track, leaving ``2.0 * 170 = 340``. The row at offset -1 is the zero-length
+pre-simulation snapshot: the state before any treatment, which the simulator records so a run has a
+before.
 
 Search for a schedule
 ---------------------

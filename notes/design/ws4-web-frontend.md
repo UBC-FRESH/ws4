@@ -35,6 +35,11 @@ not polygons. The service accepts `--geometry PATH` (GeoJSON or Parquet with `bl
 without it the map uses block centroids from an optional `block_points` table. Geometry is joined on
 `block_id`; it is never written back into the dataset.
 
+**The land base is a separate optional layer.** `--land-base PATH` takes a GeoJSON polygon and draws it
+under the blocks in a pale neutral fill, so non-forest gaps in the inventory read as land rather than
+as missing geometry. It is not joined to blocks and carries no model meaning; a service without it
+simply shows the basemap through those gaps.
+
 ## The service surface
 
 An optional extra, `ws4[web]` (FastAPI + uvicorn). The core `ws4` install is unchanged.
@@ -51,6 +56,7 @@ An optional extra, `ws4[web]` (FastAPI + uvicorn). The core `ws4` install is unc
 | GET/PUT | `/api/targets` | read or replace the targets YAML; PUT validates by loading it |
 | POST | `/api/runs` | start a run from a dataset + schedule + targets; returns its id |
 | GET | `/api/runs/{id}/events` | the SSE stream |
+| GET | `/api/land-base?format=` | the optional non-forest underlay |
 
 The SPA is served at `/`. Default bind is `127.0.0.1`; no authentication in the first cut, and the
 service refuses a non-loopback bind unless `--allow-remote` is passed. That refusal is the security

@@ -10,9 +10,11 @@ penalty is a function of that cell's value. So the delta of a move is the sum, o
 the moved block touches, of ``penalty(after) - penalty(before)``. That is exact, and it costs
 O(cells the block touches) rather than O(schedule x years x accounts).
 
-Scope (M1): targets on raw feature/product accounts, with no route accounts, no duplicate
-accounts, and no edge contrast. The optimizer falls back to whole-schedule evaluation for
-anything else.
+Route accounts are additive and are priced the same way. Patch size-distribution
+accounts are non-additive and are priced through a :class:`PatchModel`; the
+opening, green-up and core-area penalties are priced through
+:class:`SpatialPenaltyModel`. The optimizer falls back to whole-schedule
+evaluation only for build-route, edge-contrast or spread accounts.
 """
 
 from __future__ import annotations
@@ -25,6 +27,7 @@ import pandas as pd
 from .objective import Target, accumulates, flow_penalty, penalty
 from .operators import Candidates, Chain, Schedule
 from .patch import PatchModel
+from .spatial import SpatialPenaltyModel
 
 if TYPE_CHECKING:
     from ..patch.accounts import PatchAccount
@@ -38,7 +41,8 @@ class IncrementalObjective:
 
     The evaluator holds the running account totals, so a move is priced by its exact delta
     rather than by recomputing the whole schedule. Patch accounts are not additive, so they
-    are priced separately through a :class:`PatchModel`.
+    are priced separately through a :class:`PatchModel`; the spatial rules are priced
+    through a :class:`SpatialPenaltyModel`.
 
     Parameters
     ----------
@@ -91,6 +95,7 @@ class IncrementalObjective:
         self.optimizer = optimizer
         self.targets = [target for target in targets if target.active]
         self.patch = PatchModel(optimizer, patch_accounts) if patch_accounts else None
+        self.spatial = SpatialPenaltyModel(optimizer)
         optimizer.set_active_patch_model(self.patch)
         patch_names = {account.name for account in patch_accounts}
 
@@ -101,7 +106,7 @@ class IncrementalObjective:
             # patch statistics are only needed where a patch target reads them (the accounting
             # points); the simulation is annual but the accounting is periodic
             self.patch.set_focus_years(
-                sorted({target.year for target in self.targets if is_patch(target.account)})
+                sorted({target.end_offset() for target in self.targets if is_patch(target.account)})
             )
 
         self.accounts: set[str] = {
@@ -123,13 +128,13 @@ class IncrementalObjective:
                 stop = target.flow_end if target.flow_end is not None else horizon
                 return tuple(range(target.flow_start, stop))
             if not accumulates(target.account):
-                return (target.year,)
-            return tuple(target.cell_years())
+                return (target.end_offset(),)
+            return tuple(target.cell_offsets())
 
-        self._target_years: list[tuple[int, ...]] = [years_for(target) for target in self.targets]
+        self._target_offsets: list[tuple[int, ...]] = [years_for(target) for target in self.targets]
         self._targets_by_cell: dict[Cell, list[int]] = {}
         for index, target in enumerate(self.targets):
-            for year in self._target_years[index]:
+            for year in self._target_offsets[index]:
                 self._targets_by_cell.setdefault((year, target.account), []).append(index)
 
     def reset(self, schedule: Schedule) -> None:
@@ -150,6 +155,7 @@ class IncrementalObjective:
             self.patch.reset(schedule)
             for cell, value in self.patch.cell_map().items():
                 self.totals[cell] = self.totals.get(cell, 0.0) + value
+        self.spatial.reset(schedule)
 
     def contribution(self, block: int, chain: Chain) -> dict[Cell, float]:
         """Return (and cache) a chain's tracked-cell contribution (feature, product, route).
@@ -199,9 +205,10 @@ class IncrementalObjective:
                 self.contribution(block, chain)
 
     def revert(self) -> None:
-        """Undo a move's patch changes that were not committed."""
+        """Undo a move's patch and spatial changes that were not committed."""
         if self.patch is not None:
             self.patch.revert()
+        self.spatial.revert()
 
     def _pending(self, changed: Sequence[int], schedule: Schedule) -> dict[Cell, float]:
         """Return the per-cell change a move makes."""
@@ -235,10 +242,10 @@ class IncrementalObjective:
                 total += flow_penalty(self.totals, target, self.optimizer.cfg.years)
                 continue
             value = sum(
-                self.totals.get((year, target.account), 0.0) for year in self._target_years[index]
+                self.totals.get((year, target.account), 0.0) for year in self._target_offsets[index]
             )
             total += penalty(value, target)
-        return total
+        return total + self.spatial.objective
 
     def delta(self, changed: Sequence[int], schedule: Schedule) -> float:
         """Return the exact objective change a move would make, without applying it.
@@ -258,7 +265,7 @@ class IncrementalObjective:
         pending = self._pending(changed, schedule)
         self._pending_move = (pending, list(changed), schedule)
         if not pending:
-            return 0.0
+            return self.spatial.delta(changed, schedule)
         affected: set[int] = set()
         for cell in pending:
             affected.update(self._targets_by_cell.get(cell, ()))
@@ -273,16 +280,16 @@ class IncrementalObjective:
                 continue
             if accumulates(target.account):
                 before = sum(
-                    self.totals.get((year, target.account), 0.0) for year in target.cell_years()
+                    self.totals.get((year, target.account), 0.0) for year in target.cell_offsets()
                 )
                 change = sum(
-                    pending.get((year, target.account), 0.0) for year in target.cell_years()
+                    pending.get((year, target.account), 0.0) for year in target.cell_offsets()
                 )
             else:
-                before = self.totals.get((target.year, target.account), 0.0)
-                change = pending.get((target.year, target.account), 0.0)
+                before = self.totals.get((target.end_offset(), target.account), 0.0)
+                change = pending.get((target.end_offset(), target.account), 0.0)
             total += penalty(before + change, target) - penalty(before, target)
-        return total
+        return total + self.spatial.delta(changed, schedule)
 
     def apply(self, changed: Sequence[int], schedule: Schedule) -> None:
         """Apply a move to the state.
@@ -310,17 +317,18 @@ class IncrementalObjective:
                 self.assignments[block] = assignment
         if self.patch is not None:
             self.patch.commit(changed, schedule)
+        self.spatial.apply(changed, schedule)
 
     def values_frame(self) -> pd.DataFrame:
-        """Return the tracked account values as a frame (``year``, ``account``, ``value``).
+        """Return the tracked account values as a frame (``offset``, ``account``, ``value``).
 
         Returns
         -------
         pandas.DataFrame
-            One row per tracked ``(year, account)`` cell.
+            One row per tracked ``(offset, account)`` cell.
         """
         rows = [
-            {"year": year, "account": account, "value": value}
-            for (year, account), value in self.totals.items()
+            {"offset": offset, "account": account, "value": value}
+            for (offset, account), value in self.totals.items()
         ]
-        return pd.DataFrame(rows, columns=["year", "account", "value"])
+        return pd.DataFrame(rows, columns=["offset", "account", "value"])

@@ -19,9 +19,11 @@ it is *operable*, and the optimizer builds its candidate chains from exactly tho
 window that excludes your stand ages leaves the search with nothing to choose, and a window that admits
 a wide range of ages gives it a lot.
 
-Because the step is a year and the schedule is by year, a schedule is a list of `(block, treatment,
-year)` decisions, and it is what the optimizer searches over. Everything else — the account values,
-the patch map, the road costs — is a *view* of the state that the simulation produces.
+Because the step is a year and the schedule is keyed by offset, a schedule is a list of `(block,
+treatment, offset)` decisions, and it is what the optimizer searches over. Offset 0 is the first
+simulation year. Everything else — the account values, the patch map, the road costs — is a *view* of
+the state that the simulation produces, recorded at offsets from -1 (the pre-simulation snapshot)
+through ``years - 1``.
 
 Where to read more: :doc:`../reference/simulator` for the engine and its outputs, and
 :doc:`the-model` for the vocabulary above.

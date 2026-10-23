@@ -46,8 +46,8 @@ def target_cells(target: Target, years: int) -> tuple[tuple[int, str], ...]:
         stop = target.flow_end if target.flow_end is not None else years
         return tuple((year, target.account) for year in range(target.flow_start, stop))
     if not accumulates(target.account):
-        return ((target.year, target.account),)
-    return tuple((year, target.account) for year in target.cell_years())
+        return ((target.end_offset(), target.account),)
+    return tuple((offset, target.account) for offset in target.cell_offsets())
 
 
 def target_value(cells: Sequence[tuple[int, str]], totals: dict[tuple[int, str], float]) -> float:

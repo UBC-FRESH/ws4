@@ -81,10 +81,12 @@ reproducible, it is because this artefact is.
 constraints are inside simulation and optimization, so a schedule that cannot be cut in the real
 world is not a schedule the search will produce.
 
-**The simulation steps by year; the accounting is by period.** Treatments happen in a year; a target
-reads the account over a whole number of years (``period_width``, usually 5 or 10) **ending** at the
-year it names, so ``year: 10, period_width: 10`` covers years 1 to 10. Period 0 is the instant before
-the simulation starts; the periods targets use are numbered from 1.
+**The simulation steps by offset; the accounting is by period.** Treatments happen at a simulation
+offset (offset 0 is the first year); a target reads the account over a whole number of offsets
+(``period_width``, usually 5 or 10). Period ``p >= 1`` covers offsets ``(p - 1) * period_width``
+through ``p * period_width - 1``, so ``period: 1, period_width: 10`` covers offsets 0 to 9 and displays
+as the decade ending in year 10. The year is a display label only (``year = offset + 1``). Period 0 is
+the zero-length pre-simulation snapshot at offset -1; the periods targets use are numbered from 1.
 
 **Reproducibility is a feature.** Every search records its seed, and the simulator is deterministic
 given a schedule.

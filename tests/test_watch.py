@@ -35,10 +35,10 @@ def _dataset(tmp_path: Path) -> Path:
 
 
 def _values() -> pd.DataFrame:
-    """Two accounts over four years."""
+    """Two accounts over four simulation offsets."""
     return pd.DataFrame(
         {
-            "year": [0, 1, 2, 3, 0],
+            "offset": [0, 1, 2, 3, 0],
             "account": ["a", "a", "a", "a", "b"],
             "value": [1.0, 2.0, 3.0, 4.0, 10.0],
         }
@@ -63,10 +63,10 @@ def test_period_totals_sums_the_named_accounts_per_period() -> None:
 def test_target_window_bands_penalties_and_statuses() -> None:
     """The window sums per-year levels and scores each period."""
     targets = [
-        Target("a", 0, minimum=1.0, maximum=2.0),
         Target("a", 1, minimum=1.0, maximum=2.0),
         Target("a", 2, minimum=1.0, maximum=2.0),
         Target("a", 3, minimum=1.0, maximum=2.0),
+        Target("a", 4, minimum=1.0, maximum=2.0),
     ]
     window = target_window(_values(), targets, ["a"], 2, 4, label="account a")
     assert window.account == "account a"
@@ -133,9 +133,9 @@ def test_last_account_values_exposes_the_evaluation(tmp_path: Path) -> None:
     dataset = _dataset(tmp_path)
     optimizer = Optimizer.from_dataset(dataset, OptimizeConfig(years=2, iterations=1, seed=1))
     empty = optimizer.last_account_values()
-    assert list(empty.columns) == ["year", "account", "value"]
+    assert list(empty.columns) == ["offset", "account", "value"]
     assert empty.empty
-    optimizer._evaluate({1: (("CC", 0),)}, [Target("product.Volume", 0, minimum=0.0)])
+    optimizer._evaluate({1: (("CC", 0),)}, [Target("product.Volume", period=1, minimum=0.0)])
     values = optimizer.last_account_values()
     assert not values.empty
     assert "product.Volume" in {str(a) for a in values["account"]}
@@ -143,8 +143,8 @@ def test_last_account_values_exposes_the_evaluation(tmp_path: Path) -> None:
 
 def test_a_flow_target_does_not_change_the_account_window() -> None:
     """A flow target is a percent term, not an account level, so the window ignores it."""
-    values = pd.DataFrame([{"year": 0, "account": "a", "value": 5.0}])
-    level = Target("a", 0, minimum=1.0)
+    values = pd.DataFrame([{"offset": 0, "account": "a", "value": 5.0}])
+    level = Target("a", period=1, minimum=1.0)
     flow = Target("a", 0, flow="even", minimum=-1.0, maximum=1.0, min_weight=10.0)
     window = target_window(values, [level, flow], ("a",), 1, 1)
     assert window.minimum == (1.0,)
@@ -162,13 +162,13 @@ def test_a_percentage_account_is_averaged_over_a_period() -> None:
     account = "patch.h.10_50.size"
     values = pd.DataFrame(
         [
-            {"year": 0, "account": account, "value": 40.0},
-            {"year": 1, "account": account, "value": 60.0},
+            {"offset": 0, "account": account, "value": 40.0},
+            {"offset": 1, "account": account, "value": 60.0},
         ]
     )
     assert period_totals(values, (account,), 2, 2) == [100.0]
     assert period_totals(values, (account,), 2, 2, mean=True) == [50.0]
-    window = target_window(values, [Target(account, 0, minimum=100.0)], (account,), 2, 2)
+    window = target_window(values, [Target(account, period=1, minimum=100.0)], (account,), 2, 2)
     assert window.realized == (50.0,)
     assert window.minimum == (100.0,)
     assert window.total_penalty() == 50.0
@@ -181,12 +181,12 @@ def test_a_watch_state_builds_one_window_per_account() -> None:
         accounts=("a", "b"),
         period_width=1,
         years=2,
-        targets=(Target("a", 0, minimum=1.0), Target("b", 1, minimum=2.0)),
+        targets=(Target("a", 1, minimum=1.0), Target("b", 2, minimum=2.0)),
     )
     state.best_values = pd.DataFrame(
         [
-            {"year": 0, "account": "a", "value": 1.0},
-            {"year": 1, "account": "b", "value": 3.0},
+            {"offset": 0, "account": "a", "value": 1.0},
+            {"offset": 1, "account": "b", "value": 3.0},
         ]
     )
     windows = state.current_windows()
@@ -202,7 +202,7 @@ def test_watch_command_shows_two_windows(tmp_path: Path) -> None:
     dataset = _dataset(tmp_path)
     targets = tmp_path / "two.yaml"
     targets.write_text(
-        "targets:\n  - account: product.Volume\n    year: 0\n    minimum: 300\n",
+        "targets:\n  - account: product.Volume\n    period: 1\n    minimum: 300\n",
         encoding="utf-8",
     )
     result = CliRunner().invoke(
@@ -236,7 +236,8 @@ def test_watch_command_prints_a_frame(tmp_path: Path) -> None:
     dataset = _dataset(tmp_path)
     targets = tmp_path / "targets.yaml"
     targets.write_text(
-        "targets:\n  - account: product.Volume\n    year: 0\n    minimum: 300\n    maximum: 400\n",
+        "targets:\n  - account: product.Volume\n    period: 1\n"
+        "    minimum: 300\n    maximum: 400\n",
         encoding="utf-8",
     )
     result = CliRunner().invoke(
@@ -268,7 +269,8 @@ def test_watch_command_accepts_the_adaptive_schedule(tmp_path: Path) -> None:
     dataset = _dataset(tmp_path)
     targets = tmp_path / "adaptive.yaml"
     targets.write_text(
-        "targets:\n  - account: product.Volume\n    year: 0\n    minimum: 300\n    maximum: 400\n",
+        "targets:\n  - account: product.Volume\n    period: 1\n"
+        "    minimum: 300\n    maximum: 400\n",
         encoding="utf-8",
     )
     result = CliRunner().invoke(
@@ -303,7 +305,8 @@ def test_watch_runs_islands(tmp_path: Path) -> None:
     dataset = _dataset(tmp_path)
     targets_path = tmp_path / "islands.yaml"
     targets_path.write_text(
-        "targets:\n  - account: product.Volume\n    year: 0\n    minimum: 300\n    maximum: 400\n",
+        "targets:\n  - account: product.Volume\n    period: 1\n"
+        "    minimum: 300\n    maximum: 400\n",
         encoding="utf-8",
     )
     optimizer = Optimizer.from_dataset(

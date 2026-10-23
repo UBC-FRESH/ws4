@@ -24,8 +24,9 @@ A treatment the track does not offer is a no-op. See ``notes/adr/0005``.
 Schedule
 --------
 
-A schedule is a CSV with the columns ``block_id,treatment,period``, where ``period`` is a year. The
-same block may be scheduled more than once.
+A schedule is a CSV with the columns ``block_id,treatment,offset``, where ``offset`` is the number of
+years after the start of the simulation (offset 0 is the first simulation year). The same block may be
+scheduled more than once.
 
 .. code-block:: bash
 
@@ -41,10 +42,11 @@ Outputs
    * - File
      - Contents
    * - ``account_values.csv``
-     - ``year,account,value`` — the feature and product account values over the horizon; a year's
-       products are summed per account.
+     - ``offset,account,value`` — the feature and product account values over the horizon, with a
+       snapshot at offset -1 and one record per offset 0 to ``years - 1``; a period's products are
+       summed per account.
    * - ``product_values.csv``
-     - ``year,account,value`` — the product yields recorded at each treatment (per event, before the
+     - ``offset,account,value`` — the product yields recorded at each treatment (per event, before the
        per-account aggregation).
    * - ``dataset.json``
      - The dataset manifest, so a run records what it read.
