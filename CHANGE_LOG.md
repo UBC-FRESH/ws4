@@ -2150,3 +2150,14 @@ issue comments.
   0-based step with the accounting period and the resulting off-by-one and period-0 treatment bug.
   The TSA 48 builders emit `offset`, and the calibrated TSA 48 model is rebuilt on the corrected
   clock. Full suite: 665 passed; dashboard GREEN.
+
+## 2026-10-23
+
+- Added the optional `--land-base` polygon to `ws4 serve` and a pale underlay layer under the
+  blocks. The TSA 48 full and NICC instances now pass their gross AOI so non-forest gaps read as
+  land rather than missing geometry; the map still works without the flag. UI build v43.
+- Added the clean-checkout contract test and CI job: the tracked synthetic recipe builds a matrix,
+  a patch-first schedule on the offset clock is simulated, and the period target table is read
+  through the web API. The test is part of the normal suite and has its own named CI job.
+- Cut the MKRF and North Island docs over to ws4 as the primary runtime, with the retained
+  Patchworks packages marked reference/interchange-only. Full suite: 667 passed; dashboard GREEN.

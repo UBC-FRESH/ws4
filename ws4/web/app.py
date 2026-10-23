@@ -229,6 +229,7 @@ def create_app(
     runs: Path,
     targets: Path | None = None,
     geometry: Path | None = None,
+    land_base: Path | None = None,
     allow_runs: bool = False,
     allow_agent: bool = False,
     agent_model: str = "opencode-go/deepseek-v4.1-flash",
@@ -256,6 +257,9 @@ def create_app(
     geometry : Path or None, optional
         A GeoJSON file of block polygons or points, joined on ``block_id``. Without it the map
         endpoint refuses with the missing artefact named.
+    land_base : Path or None, optional
+        A GeoJSON polygon layer drawn under the blocks as the non-forest land base. It is
+        optional: without it the basemap shows through gaps between blocks.
     allow_runs : bool, optional
         When true, ``POST /api/runs`` may start a search with the configured dataset and targets.
         False (the default) keeps the service read-only apart from the targets file.
@@ -294,6 +298,7 @@ def create_app(
     dataset = Path(dataset).resolve()
     runs_root = Path(runs).resolve()
     geometry_path = Path(geometry).resolve() if geometry is not None else None
+    land_base_path = Path(land_base).resolve() if land_base is not None else None
     targets_path = Path(targets).resolve() if targets is not None else None
     topology_path = Path(topology).resolve() if topology is not None else None
     patch_accounts_path = Path(patch_accounts).resolve() if patch_accounts is not None else None
@@ -346,7 +351,17 @@ def create_app(
         return pd.read_csv(path)
 
     geometry_cache: list[dict[str, Any]] | None = None
+    land_base_cache: list[dict[str, Any]] | None = None
     road_cache: list[dict[str, Any]] | None = None
+
+    def land_base_features() -> list[dict[str, Any]]:
+        """Return the optional non-forest underlay once, parsed."""
+        nonlocal land_base_cache
+        if land_base_cache is None:
+            land_base_cache = (
+                _geometry_features(land_base_path) if land_base_path is not None else []
+            )
+        return land_base_cache
 
     def road_features() -> list[dict[str, Any]]:
         """Return the source road lines once, parsed; the overlay is not run-specific."""
@@ -936,6 +951,18 @@ def create_app(
             )
             raise HTTPException(status_code=502, detail=detail[:500])
         return {"reply": reply, "session": session_id, "actions": actions[-12:]}
+
+    @app.get("/api/land-base")
+    def land_base_geojson(format: str = Query(default="projected")) -> dict[str, Any]:
+        """Return the optional non-forest underlay drawn beneath the blocks."""
+        if land_base_path is None or not land_base_path.is_file():
+            raise HTTPException(
+                status_code=404, detail="no land-base layer is configured (--land-base)"
+            )
+        features = land_base_features()
+        if format == "wgs84":
+            features = _to_wgs84(features, source_crs)
+        return {"type": "FeatureCollection", "features": features}
 
     @app.get("/api/roads")
     def roads_geojson(format: str = Query(default="projected")) -> dict[str, Any]:

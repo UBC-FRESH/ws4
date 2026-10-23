@@ -468,6 +468,53 @@ def test_a_source_road_layer_is_served_for_the_overlay(tmp_path: Path) -> None:
     assert without.get("/api/runs/run1/layers").json()["roads"] is False
 
 
+def test_the_optional_land_base_underlay(tmp_path: Path) -> None:
+    """The land base is a separate polygon layer; without it the endpoint names the flag."""
+    _app(tmp_path)
+    land_base = tmp_path / "land-base.geojson"
+    land_base.write_text(
+        json.dumps(
+            {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "properties": {"aoi_name": "fixture"},
+                        "geometry": {
+                            "type": "Polygon",
+                            "coordinates": [[[0, 0], [3, 0], [3, 1], [0, 1], [0, 0]]],
+                        },
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    client = TestClient(
+        create_app(
+            dataset=tmp_path / "dataset",
+            runs=tmp_path / "runs",
+            targets=tmp_path / "targets.yaml",
+            geometry=tmp_path / "geometry.geojson",
+            land_base=land_base,
+        )
+    )
+    body = client.get("/api/land-base").json()
+    assert body["type"] == "FeatureCollection"
+    assert body["features"][0]["properties"]["aoi_name"] == "fixture"
+    assert body["features"][0]["geometry"]["type"] == "Polygon"
+    wgs84 = client.get("/api/land-base", params={"format": "wgs84"}).json()
+    assert wgs84["features"][0]["geometry"]["coordinates"][0][0] == [0.0, 0.0]
+    assert client.get("/api/land-base?format=wgs84").status_code == 200
+
+    plain = tmp_path / "plain"
+    plain.mkdir()
+    without, _ = _app(plain)
+    response = without.get("/api/land-base")
+    assert response.status_code == 404
+    assert "--land-base" in response.json()["detail"]
+
+
 def test_targets_round_trip_and_an_invalid_document_is_refused(tmp_path: Path) -> None:
     """A valid edit replaces the YAML; an invalid one leaves it unchanged."""
     client, targets = _app(tmp_path)

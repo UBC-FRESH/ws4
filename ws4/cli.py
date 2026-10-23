@@ -508,6 +508,11 @@ def serve(
     geometry: Path | None = typer.Option(
         None, "--geometry", help="GeoJSON of block points or polygons"
     ),
+    land_base: Path | None = typer.Option(
+        None,
+        "--land-base",
+        help="Optional GeoJSON polygon drawn under the blocks as non-forest land",
+    ),
     topology: Path | None = typer.Option(
         None, "--topology", exists=True, help="Block topology for patch membership on new runs"
     ),
@@ -530,7 +535,9 @@ def serve(
         None, "--roads", exists=True, help="GeoJSON access-road lines for the map overlay"
     ),
     crs: str = typer.Option(
-        "EPSG:4326", "--crs", help="Source CRS of --geometry and --roads (MapLibre uses WGS84)"
+        "EPSG:4326",
+        "--crs",
+        help="Source CRS of --geometry, --land-base and --roads (MapLibre uses WGS84)",
     ),
     host: str = typer.Option("127.0.0.1", help="Bind address"),
     port: int = typer.Option(8000, help="Bind port"),
@@ -574,6 +581,7 @@ def serve(
             runs=runs,
             targets=targets,
             geometry=geometry,
+            land_base=land_base,
             allow_runs=allow_runs,
             allow_agent=allow_agent,
             agent_model=agent_model,

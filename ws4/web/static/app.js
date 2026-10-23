@@ -196,9 +196,19 @@ function ensureMapLibre() {
     });
     map.addControl(new window.maplibregl.NavigationControl(), 'top-right');
     map.on('load', () => {
+      map.addSource('land-base', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       map.addSource('blocks', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       map.addSource('roads', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       map.addSource('used-roads', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addLayer({
+        id: 'land-base-fill',
+        type: 'fill',
+        source: 'land-base',
+        paint: {
+          'fill-color': '#e6ebe2',
+          'fill-opacity': 0.35,
+        },
+      });
       map.addLayer({
         id: 'blocks-fill',
         type: 'fill',
@@ -228,6 +238,7 @@ function ensureMapLibre() {
       map.on('mouseenter', 'blocks-fill', () => { map.getCanvas().style.cursor = 'pointer'; });
       map.on('mouseleave', 'blocks-fill', () => { map.getCanvas().style.cursor = ''; });
       state.mapLibreReady = true;
+      loadLandBase(map);
       renderMapLibre(true);
     });
     map.on('error', () => { /* a missing basemap tile must not hide the blocks */ });
@@ -268,6 +279,17 @@ function setMapLibreRoads() {
   const used = state.mapLibre.getSource('used-roads');
   if (roads) roads.setData({ type: 'FeatureCollection', features: state.showRoads ? state.roads : [] });
   if (used) used.setData({ type: 'FeatureCollection', features: state.showUsedRoads ? state.usedRoads : [] });
+}
+
+async function loadLandBase(map = state.mapLibre) {
+  if (!map) return;
+  try {
+    const body = await api('api/land-base?format=wgs84');
+    const source = map.getSource('land-base');
+    if (source) source.setData(body);
+  } catch (error) {
+    // The underlay is optional: a service without --land-base has none.
+  }
 }
 
 function renderMapLibre(refit = true) {
