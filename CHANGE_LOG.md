@@ -2163,3 +2163,4 @@ issue comments.
   Patchworks packages marked reference/interchange-only. Full suite: 667 passed; dashboard GREEN.
 - `ws4 simulate` now accepts `--patch-accounts` and `--patch-membership`, so a run can write the opening-size distribution it used without going through the Python API. The schedule help now names the offset clock. Full suite and dashboard remain green.
 - The web period control now reads the simulated horizon from account values as well as the schedule, so a 300-year run keeps a 300-year slider even when the schedule stops earlier. Changing periods preserves the current map view instead of refitting. UI build v45.
+- The chat panel retries once after a 502/503/504, which recovers the common cold first turn through the reverse proxy. The map legend now distinguishes all treated blocks from connected patch openings. UI build v46.

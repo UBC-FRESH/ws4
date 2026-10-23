@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=45">
+  <link rel="stylesheet" href="static/style.css?v=46">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
 </head>
 <body>
   <header>
-    <strong>WS4</strong><span class="build">v45</span>
+    <strong>WS4</strong><span class="build">v46</span>
     <label>Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Period
@@ -31,9 +31,10 @@
         <h2>Layers</h2>
         <div id="layer-tree" class="layer-tree"></div>
         <p id="layers-hint" class="hint">loading layers…</p>
-        <label><input type="checkbox" id="show-treated" checked> <span class="swatch treated"></span> <span id="treated-label">Treated in the period</span> <b id="n-treated">0</b></label>
+        <label><input type="checkbox" id="show-treated" checked> <span class="swatch treated"></span> <span id="treated-label" title="Every scheduled block. Isolated blocks are not a valid opening; use Colour by → Patch size class to see connected openings.">Treated in the period</span> <b id="n-treated">0</b></label>
         <label><input type="checkbox" id="show-untreated" checked> <span class="swatch untreated"></span> <span id="untreated-label">Untreated</span> <b id="n-untreated">0</b></label>
         <p class="hint">Click a block for its attributes. Wheel to zoom; drag to pan.</p>
+        <p class="hint">Treated blocks are every scheduled block; patch openings are the connected 5-40 ha groups.</p>
         <div id="detail" class="detail"></div>
       </section>
       <section id="tab-targets" hidden>
@@ -142,6 +143,6 @@
     </div>
   </main>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=45"></script>
+  <script type="module" src="static/app.js?v=46"></script>
 </body>
 </html>
