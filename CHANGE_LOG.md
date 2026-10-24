@@ -2271,3 +2271,9 @@ issue comments.
   `scripts/check_target_browser.py` opened 51 accounts, filtered to an account, added and removed a
   target against a scratch targets file; the empty-file path was tested separately; the P20 tile
   plots at z13-z15 remain normal block mosaics. Dashboard **GREEN**.
+
+- P23 close-out: the account browser and target activation are implemented, tested, documented, and
+  queued in `notes/reports/p23-closeout.md` (PR #212, evidence head `b2079e1`). The report records
+  the empty-file path, the notes-preserving round-trip, the last-target guard, and the period-label
+  follow-up. Dashboard **GREEN**. The P22 close-out now records its merged status and moves the
+  search-portfolio recommendation to P24 (planned).

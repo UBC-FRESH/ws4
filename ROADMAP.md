@@ -35,6 +35,7 @@ exists and the maintainer approves it.
 | P21 Search quality and validation | #190 | `feature/p21-search-quality` | complete |
 | P22 Map operations | #198 | `feature/p22-map-ops` | complete |
 | P23 Accounts and target activation | #206 | `feature/p23-target-browser` | active |
+| P24 Search portfolio and multi-objective | TBD | `feature/p24-search-portfolio` | planned |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -892,6 +893,25 @@ Acceptance:
 - Every account in the run's `account_values.csv` is reachable.
 - The new target is written to the targets YAML and appears in the Targets table.
 - An already-targeted account is visibly marked.
+- `python scripts/dashboard.py` is green.
+
+## Phase 24: Search portfolio and multi-objective
+
+Parent issue: TBD
+Branch: `feature/p24-search-portfolio`
+Status: planned
+
+Goal: make search quality visible across objectives and tuned configurations.
+
+- [ ] P24.1 Add a Pareto/archive mode over target weights or objectives
+- [ ] P24.2 Wire the random/grid/Bayesian tuners into a repeatable tuning command
+- [ ] P24.3 Add LP dual/reduced-cost sensitivity for the linear target subset
+
+Acceptance:
+
+- A search can record a Pareto archive over weights or objectives.
+- The tuners run from one repeatable command and record the dataset and budget.
+- The sensitivity report labels LP duals as advisory.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes

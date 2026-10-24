@@ -2,11 +2,11 @@
 
 Phase: P22, Map operations
 Parent issue: #198
-Pull request: not opened yet
+Pull request: #202, squash-merged as `bba9cea`
 Evidence head: `57a98dd`
 Report commit: the commit that adds this report. Its CI run is posted on the pull request.
 Date: 2026-10-24
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-24; parent issue #198 closed.
 
 ## Recommendation
 
@@ -64,13 +64,16 @@ The pull request is opened with this report. Its first CI run is posted on the p
 
 ## 6. Next phase
 
+The maintainer redirected the next phase to the account and target browser (P23, #206). The
+search-portfolio proposal below is therefore queued as P24 (planned), not P23.
+
 Goal: make the search's quality visible across objectives and tuned configurations.
 
 Tasks:
 
-- P23.1 Add a Pareto/archive mode over target weights or objectives.
-- P23.2 Wire the random/grid/Bayesian tuners into a repeatable tuning command.
-- P23.3 Add LP dual/reduced-cost sensitivity for the linear target subset.
+- P24.1 Add a Pareto/archive mode over target weights or objectives.
+- P24.2 Wire the random/grid/Bayesian tuners into a repeatable tuning command.
+- P24.3 Add LP dual/reduced-cost sensitivity for the linear target subset.
 
 Recommended defaults:
 
