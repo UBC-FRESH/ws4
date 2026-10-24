@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false };
 
 const $ = (id) => document.getElementById(id);
 const TILE_VERSION = 'v8';
@@ -737,7 +737,7 @@ async function loadMap(preserveView = false) {
     const end = period ? Number(period.end) : state.year;
     const span = period ? ` · years ${period.start}-${period.end}` : '';
     if (state.mapEngine === 'maplibre' && vectorMode(layer)) {
-      const base = document.baseURI.endsWith('/') ? document.baseURI : `${document.baseURI}/`;
+      const base = new URL('.', document.baseURI).href;
       let tileUrl = `${base}api/runs/${encodeURIComponent(state.run)}/tiles/{z}/{x}/{y}.mvt?year=${end}&layer=${layer}&v=${TILE_VERSION}`;
       if (period) tileUrl += `&period_start=${period.start}`;
       state.vectorActive = true;
@@ -1768,6 +1768,201 @@ function updateLiveTargets(values, iteration, series = []) {
   }
 }
 
+
+function accountKind(account) {
+  return String(account).startsWith('product.') ? 'flow' : 'level';
+}
+
+function accountLastValue(account) {
+  const years = state.series.get(account);
+  if (!years || !years.size) return null;
+  let lastYear = -Infinity;
+  let lastValue = null;
+  for (const [year, value] of years) {
+    if (year > lastYear) { lastYear = year; lastValue = Number(value); }
+  }
+  return lastValue;
+}
+
+function formatAccountValue(value) {
+  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+  return Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 });
+}
+
+function accountIsTarget(account) {
+  return state.targets.some((row) => row.account === account);
+}
+
+function renderAccountTree() {
+  const tree = $('account-tree');
+  if (!tree) return;
+  const query = String($('account-search')?.value ?? '').trim().toLowerCase();
+  const accounts = [...state.series.keys()].sort((a, b) => a.localeCompare(b));
+  const matched = query ? accounts.filter((account) => account.toLowerCase().includes(query)) : accounts;
+  tree.replaceChildren();
+  if (!matched.length) {
+    const empty = document.createElement('p');
+    empty.className = 'hint';
+    empty.textContent = state.run ? 'no accounts match this search' : 'select a run to browse accounts';
+    tree.append(empty);
+    return;
+  }
+  const root = { children: new Map(), leaves: [] };
+  for (const account of matched) {
+    const parts = account.split('.');
+    let node = root;
+    for (const part of parts) {
+      if (!node.children.has(part)) node.children.set(part, { children: new Map(), leaves: [] });
+      node = node.children.get(part);
+    }
+    node.leaves.push(account);
+  }
+  const build = (node, depth) => {
+    const fragment = document.createDocumentFragment();
+    const children = [...node.children.keys()].sort((a, b) => a.localeCompare(b));
+    for (const part of children) {
+      const child = node.children.get(part);
+      const group = document.createElement('details');
+      group.open = query.length > 0 || depth === 0;
+      const summary = document.createElement('summary');
+      summary.textContent = part;
+      group.append(summary, build(child, depth + 1));
+      fragment.append(group);
+    }
+    for (const account of node.leaves) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'account-leaf';
+      button.dataset.account = account;
+      button.title = account;
+      const name = document.createElement('span');
+      name.className = 'name';
+      name.textContent = account.split('.').pop();
+      const kind = document.createElement('span');
+      kind.className = 'kind';
+      kind.textContent = accountKind(account);
+      kind.title = `${accountKind(account)} account`;
+      const value = document.createElement('span');
+      value.className = 'value';
+      value.textContent = formatAccountValue(accountLastValue(account));
+      button.append(name, kind, value);
+      if (accountIsTarget(account)) {
+        const badge = document.createElement('span');
+        badge.className = 'badge';
+        badge.textContent = 'target';
+        button.append(badge);
+      }
+      button.addEventListener('click', () => selectAccount(account));
+      fragment.append(button);
+    }
+    return fragment;
+  };
+  tree.append(build(root, 0));
+}
+
+function selectAccount(account) {
+  state.pickedAccount = account;
+  $('account-picker').hidden = false;
+  $('picked-account-name').textContent = account;
+  $('picked-account-kind').textContent = accountKind(account);
+  const last = accountLastValue(account);
+  $('picked-account-value').textContent = last === null ? 'no value' : `last value ${formatAccountValue(last)}`;
+  $('new-target-period').value = '1';
+  const width = state.targets.find((row) => Number(row.period_width) > 0)?.period_width ?? 10;
+  $('new-target-width').value = String(width);
+  $('new-target-min').value = '';
+  $('new-target-max').value = '';
+  $('new-target-min-weight').value = '1';
+  $('new-target-max-weight').value = '1';
+  const existing = state.targets.filter((row) => row.account === account).length;
+  $('new-target-status').textContent = existing
+    ? `${existing} existing target${existing === 1 ? '' : 's'} for this account`
+    : '';
+}
+
+function collectTargets() {
+  const rows = state.targets.map((row) => ({ ...row }));
+  for (const input of document.querySelectorAll('#targets-table input[data-field]')) {
+    const index = Number(input.dataset.index);
+    const field = input.dataset.field;
+    if (!rows[index] || !field) continue;
+    rows[index][field] = input.value === '' ? null : Number(input.value);
+  }
+  return rows;
+}
+
+async function postTargets(rows, message) {
+  try {
+    const response = await fetch('api/targets.json', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(rows),
+    });
+    if (!response.ok) {
+      const detail = (await response.json()).detail ?? response.statusText;
+      throw new Error(detail);
+    }
+    $('targets-status').textContent = message ?? `saved ${rows.length} targets`;
+    await loadPeriods();
+    await loadTargets();
+    return true;
+  } catch (error) {
+    $('targets-status').textContent = `not saved: ${error.message}`;
+    return false;
+  }
+}
+
+async function addTarget() {
+  const account = state.pickedAccount;
+  const status = $('new-target-status');
+  if (!account) { status.textContent = 'pick an account first'; return; }
+  const period = Number($('new-target-period').value);
+  const width = Number($('new-target-width').value);
+  const minText = $('new-target-min').value;
+  const maxText = $('new-target-max').value;
+  const minimum = minText === '' ? null : Number(minText);
+  const maximum = maxText === '' ? null : Number(maxText);
+  const minWeight = Number($('new-target-min-weight').value);
+  const maxWeight = Number($('new-target-max-weight').value);
+  if (!Number.isInteger(period) || period < 0) { status.textContent = 'period must be a whole number of at least 0'; return; }
+  if (!Number.isInteger(width) || width < 1) { status.textContent = 'width must be a whole number of at least 1'; return; }
+  if (minimum === null && maximum === null) { status.textContent = 'enter a minimum, a maximum, or both'; return; }
+  if (minimum !== null && !Number.isFinite(minimum)) { status.textContent = 'minimum must be a number'; return; }
+  if (maximum !== null && !Number.isFinite(maximum)) { status.textContent = 'maximum must be a number'; return; }
+  if (minimum !== null && maximum !== null && minimum > maximum) { status.textContent = 'minimum is above maximum'; return; }
+  if (!Number.isFinite(minWeight) || minWeight < 0) { status.textContent = 'minimum weight must be zero or more'; return; }
+  if (!Number.isFinite(maxWeight) || maxWeight < 0) { status.textContent = 'maximum weight must be zero or more'; return; }
+  const rows = collectTargets();
+  rows.push({
+    index: rows.length,
+    account,
+    period,
+    year: period * width,
+    period_width: width,
+    flow: '',
+    shape: 'linear',
+    minimum,
+    maximum,
+    min_weight: minWeight,
+    max_weight: maxWeight,
+    active: true,
+  });
+  if (await postTargets(rows, `added target for ${account}`)) {
+    status.textContent = `added ${account}`;
+  }
+}
+
+async function removeTarget(index) {
+  if (state.targets.length <= 1) {
+    $('targets-status').textContent = 'the targets file cannot be empty; edit it directly to remove the last target';
+    return;
+  }
+  const rows = collectTargets()
+    .filter((_row, rowIndex) => rowIndex !== index)
+    .map((row, rowIndex) => ({ ...row, index: rowIndex }));
+  await postTargets(rows, 'removed target');
+}
+
 async function loadTargets() {
   const empty = $('targets-empty');
   const table = $('targets-table');
@@ -1778,6 +1973,16 @@ async function loadTargets() {
     const rows = await api('api/targets.json');
     rows.forEach((row) => { row.active = row.active !== false; });
     state.targets = rows;
+    state.series = new Map();
+    try {
+      const catalog = await api(`api/runs/${encodeURIComponent(state.run)}/accounts`);
+      for (const item of catalog) {
+        const account = String(item.account);
+        if (!state.series.has(account)) state.series.set(account, new Map());
+        state.series.get(account).set(Number(item.year), Number(item.value));
+      }
+    } catch { /* the account tree is optional when a run has no values */ }
+    renderAccountTree();
     const signature = rows
       .map((row) => `${row.index}|${row.account}|${row.period}|${row.year}|${row.period_width}`)
       .join(";");
@@ -1804,16 +2009,10 @@ async function loadTargets() {
       saveWatched();
     }
     const values = {};
-    state.series = new Map();
     try {
       const realized = await api(`api/runs/${encodeURIComponent(state.run)}/targets`);
       for (const item of realized) {
         values[item.index] = item.value;
-      }
-      const all = await api(`api/runs/${encodeURIComponent(state.run)}/accounts`);
-      for (const item of all) {
-        if (!state.series.has(item.account)) state.series.set(item.account, new Map());
-        state.series.get(item.account).set(Number(item.year), Number(item.value));
       }
     } catch { /* no realized values for this run */ }
     rows.forEach((row, index) => {
@@ -1860,6 +2059,17 @@ async function loadTargets() {
         td.append(numberInput(row[field], field, index));
         tr.append(td);
       }
+      const actions = document.createElement('td');
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'remove-target';
+      remove.textContent = '×';
+      remove.title = `remove target for ${row.account}`;
+      remove.setAttribute('aria-label', `remove target for ${row.account}`);
+      remove.disabled = rows.length <= 1;
+      remove.addEventListener('click', () => removeTarget(index));
+      actions.append(remove);
+      tr.append(actions);
       state.targetCells.set(String(row.index), {
         row, text: valueLine, band: null, marker: null, value: values[row.index],
       });
@@ -1872,6 +2082,7 @@ async function loadTargets() {
       if (value !== undefined) state.windowValues.set(`${row.year}|${row.account}`, Number(value));
     }
     renderWatchPanel();
+    renderAccountTree();
     if (state.skin) applySkin(state.skin);
   } catch (error) {
     empty.hidden = false;
@@ -1882,30 +2093,7 @@ async function loadTargets() {
 }
 
 async function saveTargets() {
-  const rows = state.targets.map((row) => ({ ...row }));
-  for (const input of document.querySelectorAll('#targets-table input[data-field]')) {
-    const index = Number(input.dataset.index);
-    const field = input.dataset.field;
-    if (!rows[index] || !field) continue;
-    rows[index][field] = input.value === '' ? null : Number(input.value);
-  }
-  try {
-    const response = await fetch('api/targets.json', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(rows),
-    });
-    if (!response.ok) {
-      const detail = (await response.json()).detail ?? response.statusText;
-      throw new Error(detail);
-    }
-    $('targets-status').textContent = `saved ${rows.length} targets`;
-    loadTargets().catch(() => { /* the run does not depend on the table refresh */ });
-    return true;
-  } catch (error) {
-    $('targets-status').textContent = `not saved: ${error.message}`;
-    return false;
-  }
+  return postTargets(collectTargets());
 }
 
 async function fillRuns(summary, preferred) {
@@ -2625,6 +2813,8 @@ function wireControls() {
     if (skin) { applySkin(skin); await loadTargets(); }
   });
   $('save-targets').addEventListener('click', saveTargets);
+  $('account-search').addEventListener('input', renderAccountTree);
+  $('add-target').addEventListener('click', addTarget);
   $('build-report').addEventListener('click', buildReport);
   $('compare-a').addEventListener('change', loadComparison);
   $('compare-b').addEventListener('change', loadComparison);
