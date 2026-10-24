@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 from ws4.build.compiler import build_canonical_dataset
 from ws4.opt.engine import OptimizeConfig, Optimizer
-from ws4.opt.mip import bound_for
+from ws4.opt.mip import bound_for, relaxation_for
 from ws4.opt.objective import Target, objective
 from ws4.sim.engine import Simulator
 
@@ -138,3 +138,33 @@ def test_mip_bound_handles_periodic_targets(tmp_path: Path) -> None:
         )
         values = Simulator.from_dataset(dataset).simulate(frame, 2)
         assert objective(values, targets) >= result.objective - 1e-6
+
+
+def test_lp_relaxation_is_a_lower_bound_with_a_binding_dual(tmp_path: Path) -> None:
+    """The LP bound is no higher than the MIP, and an impossible floor has a positive dual."""
+    dataset, _ = _setup(tmp_path)
+    targets = [Target("feature.Volume", period=1, minimum=1000.0)]
+    candidates = Optimizer.from_dataset(dataset, OptimizeConfig(years=1)).candidates()
+    mip = bound_for(dataset, targets, candidates, 1)
+    lp = relaxation_for(dataset, targets, candidates, 1)
+    assert lp.status == "optimal"
+    assert lp.objective <= mip.objective + 1e-6
+    assert len(lp.duals) == 1
+    dual = lp.duals[0]
+    assert dual.bound == "minimum"
+    assert dual.binding is True
+    assert dual.dual > 0.0
+    assert len(lp.reduced_costs) == len(candidates)
+    assert all(0.0 <= cost.value <= 1.0 for cost in lp.reduced_costs)
+
+
+def test_lp_relaxation_records_a_non_binding_bound(tmp_path: Path) -> None:
+    """A bound the schedule clears has zero dual and a positive slack."""
+    dataset, _ = _setup(tmp_path)
+    targets = [Target("feature.Volume", period=1, maximum=500.0)]
+    candidates = Optimizer.from_dataset(dataset, OptimizeConfig(years=1)).candidates()
+    lp = relaxation_for(dataset, targets, candidates, 1)
+    assert lp.status == "optimal"
+    assert lp.duals[0].binding is False
+    assert lp.duals[0].dual == 0.0
+    assert lp.duals[0].slack > 0.0
