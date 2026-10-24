@@ -38,7 +38,8 @@ exists and the maintainer approves it.
 | P24 Search portfolio and multi-objective | #207 | `feature/p24-search-portfolio` | complete |
 | P25 Constraint repair and flow ceilings | #214 | `feature/p25-constraints` | complete |
 | P26 Reproducibility and data quality | #219 | `feature/p26-repro-quality` | complete |
-| P27 Goal normalization and priority tiers | #227 | `feature/p27-normalization` | pr-open |
+| P27 Goal normalization and priority tiers | #227 | `feature/p27-normalization` | complete |
+| P28 Inventory and flow ceilings | #233 | `feature/p28-inventory` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -968,7 +969,7 @@ Acceptance:
 
 Parent issue: #227
 Branch: `feature/p27-normalization`
-Status: pr-open
+Status: complete
 
 Goal: make target weights comparable across goals: opt-in automatic normalization, priority
 tiers, and raw/normalized deviation reporting while keeping the current weighted objective as
@@ -983,6 +984,28 @@ Acceptance:
 - A target can set `normalization: auto`; the normalized penalty and scale are reported.
 - Targets with different `priority` values use the priority-aware objective; default targets do not.
 - Existing targets produce the same objective and report values.
+- `python scripts/dashboard.py` is green.
+
+## Phase 28: Inventory and flow ceilings
+
+Parent issue: #233
+Branch: `feature/p28-inventory`
+Status: pr-open
+
+Goal: make closing inventory and flow ceilings first-class report surfaces: label level/flow
+targets, emit the final inventory, add an NDY/even constraint to the flow-ceiling probe, and
+carry both through scenario comparison.
+
+- [x] P28.1 Add target kind and the ending-inventory report (#234)
+- [x] P28.2 Add the NDY/even flow-ceiling probe (#235)
+- [x] P28.3 Compare ending inventory and flow across scenarios (#236)
+
+Acceptance:
+
+- `report_targets.csv` names level and flow targets; `ending_inventory.csv` and a summary block
+  report the final values.
+- A max-flow probe can require NDY or even flow and reports the worst change and feasibility.
+- Scenario comparison carries ending inventory and flow status.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes

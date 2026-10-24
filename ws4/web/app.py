@@ -50,6 +50,7 @@ from ..opt.objective import (
     period_value,
     raw_penalty,
 )
+from ..report import target_kind
 from .skins import load_skins
 
 _REPORT_SUFFIXES = {".csv", ".html", ".png", ".json", ".txt"}
@@ -2037,6 +2038,7 @@ def create_app(
                     "scale": normalization_scale(target),
                     "normalization": target.normalization,
                     "priority": target.priority,
+                    "kind": target_kind(target),
                     "status": status,
                     "active": target.active,
                 }

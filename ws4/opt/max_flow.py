@@ -17,6 +17,7 @@ import math
 import shutil
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
+from itertools import pairwise
 from pathlib import Path
 from typing import Any
 
@@ -41,6 +42,12 @@ class Probe:
         The optimizer's incumbent objective, when the run produced one.
     values : mapping of int to float
         The realized account value per period.
+    floor_feasible : bool
+        Whether every period met the requested floor.
+    flow_feasible : bool
+        Whether the requested NDY/even condition held.
+    worst_change : float or None
+        The worst percent period change, or None when no flow was requested.
     run_dir : str
         The probe's run directory.
     error : str
@@ -51,6 +58,9 @@ class Probe:
     feasible: bool
     objective: float | None
     values: Mapping[int, float]
+    floor_feasible: bool
+    flow_feasible: bool
+    worst_change: float | None
     run_dir: str
     error: str = ""
 
@@ -69,6 +79,9 @@ class Probe:
             "values": {
                 str(period): round(value, 6) for period, value in sorted(self.values.items())
             },
+            "floor_feasible": self.floor_feasible,
+            "flow_feasible": self.flow_feasible,
+            "worst_change": None if self.worst_change is None else round(self.worst_change, 6),
             "run_dir": self.run_dir,
             "error": self.error,
         }
@@ -115,6 +128,51 @@ def period_values(
         else:
             values[period] = index.get(offsets[-1], 0.0)
     return values
+
+
+def flow_feasibility(
+    values: Mapping[int, float], flow: str, tolerance: float
+) -> tuple[bool, float | None]:
+    """Return whether a period profile satisfies an NDY or even-flow condition.
+
+    Parameters
+    ----------
+    values : mapping of int to float
+        The account value per 1-based period.
+    flow : str
+        ``"ndy"`` or ``"even"``.
+    tolerance : float
+        The allowed percent change, as a percentage.
+
+    Returns
+    -------
+    tuple of (bool, float or None)
+        Whether the condition holds and the worst signed percent change. A non-positive
+        balance makes the condition false.
+
+    Raises
+    ------
+    ValueError
+        When the flow is not ``ndy`` or ``even``.
+    """
+    if flow not in {"ndy", "even"}:
+        raise ValueError("flow must be ndy or even")
+    ordered = [values[period] for period in sorted(values)]
+    if len(ordered) < 2:
+        return True, 0.0
+    changes: list[float] = []
+    if flow == "ndy":
+        for previous, current in pairwise(ordered):
+            if previous <= 0.0:
+                return False, None
+            changes.append(100.0 * (current - previous) / previous)
+        return min(changes) >= -tolerance, min(changes)
+    reference = ordered[-1]
+    if reference <= 0.0:
+        return False, None
+    changes = [100.0 * (value - reference) / reference for value in ordered[:-1]]
+    worst = max(changes, key=abs) if changes else 0.0
+    return all(abs(change) <= tolerance for change in changes), worst
 
 
 def high_bound(optimizer: Optimizer, account: str, years: int, period_width: int) -> float:
@@ -172,6 +230,8 @@ def _probe_targets(
     level: float,
     years: int,
     period_width: int,
+    flow: str = "",
+    flow_tolerance: float = 0.0,
 ) -> Path:
     """Write a target file with the flow floor and the other targets preserved."""
     periods = years // period_width
@@ -186,7 +246,23 @@ def _probe_targets(
         )
         for period in range(1, periods + 1)
     ]
-    return write_targets(path, [*others, *floors])
+    flow_targets: list[Target] = []
+    if flow:
+        flow_targets.append(
+            Target(
+                account=account,
+                period=1,
+                period_width=period_width,
+                flow=flow,
+                flow_start_period=1,
+                flow_end_period=periods,
+                minimum=-flow_tolerance,
+                maximum=flow_tolerance if flow == "even" else None,
+                min_weight=1.0,
+                max_weight=1.0,
+            )
+        )
+    return write_targets(path, [*others, *floors, *flow_targets])
 
 
 def run_max_flow(
@@ -210,6 +286,8 @@ def run_max_flow(
     core_buffer_m: float | None = None,
     min_core_area_ha: float | None = None,
     constraint_strategy: str = "reject",
+    flow: str = "",
+    flow_tolerance: float = 0.0,
 ) -> dict[str, Any]:
     """Binary-search the highest feasible constant flow floor.
 
@@ -254,6 +332,10 @@ def run_max_flow(
         The minimum core area.
     constraint_strategy : str, optional
         The spatial policy for the probes. Defaults to ``"reject"``.
+    flow : str, optional
+        ``"ndy"`` or ``"even"`` to require a flow shape in every probe. Empty disables it.
+    flow_tolerance : float, optional
+        The allowed percent change for the flow condition. Defaults to zero.
 
     Returns
     -------
@@ -271,6 +353,10 @@ def run_max_flow(
         raise ValueError("probes must be positive")
     if tolerance < 0.0:
         raise ValueError("tolerance must be zero or positive")
+    if flow not in {"", "ndy", "even"}:
+        raise ValueError("flow must be empty, ndy, or even")
+    if flow_tolerance < 0.0:
+        raise ValueError("flow_tolerance must be zero or positive")
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     base_targets = load_targets(targets)
@@ -298,6 +384,8 @@ def run_max_flow(
             level,
             years,
             period_width,
+            flow,
+            flow_tolerance,
         )
         config = OptimizeConfig(
             targets_path=str(target_path),
@@ -318,14 +406,21 @@ def run_max_flow(
             summary = Optimizer.from_dataset(dataset, config).run(probe_dir / "run")
             frame = pd.read_csv(probe_dir / "run" / "account_values.csv")
             values = period_values(frame, account, years, period_width)
-            feasible = bool(summary.get("constraint_feasible", True)) and all(
-                value >= level * (1.0 - tolerance) for value in values.values()
+            floor_feasible = all(value >= level * (1.0 - tolerance) for value in values.values())
+            flow_feasible, worst_change = (
+                flow_feasibility(values, flow, flow_tolerance) if flow else (True, None)
+            )
+            feasible = (
+                bool(summary.get("constraint_feasible", True)) and floor_feasible and flow_feasible
             )
             record = Probe(
                 level=level,
                 feasible=feasible,
                 objective=float(summary.get("incumbent_objective", math.inf)),
                 values=values,
+                floor_feasible=floor_feasible,
+                flow_feasible=flow_feasible,
+                worst_change=worst_change,
                 run_dir=str(probe_dir / "run"),
             )
         except Exception as error:
@@ -334,6 +429,9 @@ def run_max_flow(
                 feasible=False,
                 objective=None,
                 values={},
+                floor_feasible=False,
+                flow_feasible=False,
+                worst_change=None,
                 run_dir=str(probe_dir / "run"),
                 error=str(error),
             )
@@ -362,6 +460,8 @@ def run_max_flow(
         "seed": seed,
         "metaheuristic": metaheuristic,
         "constraint_strategy": constraint_strategy,
+        "flow": flow,
+        "flow_tolerance": flow_tolerance,
         "tolerance": tolerance,
         "high_bound": initial_high,
         "ceiling": low,
@@ -401,22 +501,25 @@ def render_markdown(report: Mapping[str, Any]) -> str:
         "",
         f"- Account: `{report['account']}` · periods: {report['years'] // report['period_width']} "
         f"of {report['period_width']} years each",
-        f"- Constraint strategy: {report['constraint_strategy']} · tolerance: "
-        f"{report['tolerance']:.1%}",
+        f"- Constraint strategy: {report['constraint_strategy']} · floor tolerance: "
+        f"{report['tolerance']:.1%} · flow: {report['flow'] or 'none'} "
+        f"(±{report['flow_tolerance']:.3g}%)",
         f"- Additive high bound: {report['high_bound']:.6g}",
         f"- **Advisory ceiling: {report['ceiling']:.6g}**",
         f"- Best schedule: `{report['best_schedule']}`",
         "",
-        "| Probe | Level | Feasible | Objective | Per-period values |",
-        "| ---: | ---: | --- | ---: | --- |",
+        "| Probe | Level | Floor | Flow | Worst change | Objective | Per-period values |",
+        "| ---: | ---: | --- | --- | ---: | ---: | --- |",
     ]
     for index, probe in enumerate(report.get("probes", [])):
         values = ", ".join(
             f"{period}:{value:.6g}" for period, value in sorted(probe["values"].items())
         )
         objective = "" if probe["objective"] is None else f"{probe['objective']:.6g}"
+        worst = "" if probe["worst_change"] is None else f"{probe['worst_change']:.6g}"
         lines.append(
-            f"| {index} | {probe['level']:.6g} | {probe['feasible']} | {objective} | {values} |"
+            f"| {index} | {probe['level']:.6g} | {probe['floor_feasible']} | "
+            f"{probe['flow_feasible']} | {worst} | {objective} | {values} |"
         )
     lines.extend(
         [

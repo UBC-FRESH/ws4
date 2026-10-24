@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 from ws4.build.compiler import build_canonical_dataset
 from ws4.opt.engine import OptimizeConfig, Optimizer
-from ws4.opt.max_flow import high_bound, period_values, run_max_flow
+from ws4.opt.max_flow import flow_feasibility, high_bound, period_values, run_max_flow
 from ws4.opt.objective import load_targets
 
 import max_flow as max_flow_script
@@ -156,3 +156,38 @@ def test_zero_high_bound_writes_an_empty_schedule(tmp_path: Path) -> None:
     assert (tmp_path / "flow" / "best-schedule.csv").read_text(encoding="utf-8") == (
         "block_id,treatment,offset\n"
     )
+
+
+def test_flow_feasibility_checks_ndy_and_even() -> None:
+    """NDY allows growth and a bounded decline; even holds the reference band."""
+    assert flow_feasibility({1: 10.0, 2: 11.0}, "ndy", 0.0)[0] is True
+    assert flow_feasibility({1: 10.0, 2: 9.0}, "ndy", 0.0)[0] is False
+    assert flow_feasibility({1: 10.0, 2: 9.9}, "ndy", 1.0)[0] is True
+    assert flow_feasibility({1: 10.0, 2: 10.05}, "even", 1.0)[0] is True
+    assert flow_feasibility({1: 10.0, 2: 11.0}, "even", 1.0)[0] is False
+
+
+def test_max_flow_adds_the_requested_flow_target(tmp_path: Path) -> None:
+    """An NDY probe writes the floors plus a flow target and reports both statuses."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    targets = tmp_path / "targets.yaml"
+    targets.write_text("targets: []\n", encoding="utf-8")
+    report = run_max_flow(
+        dataset=dataset,
+        targets=targets,
+        account="feature.Volume",
+        out_dir=tmp_path / "flow",
+        years=1,
+        period_width=1,
+        iterations=2,
+        probes=1,
+        high=100.0,
+        flow="ndy",
+    )
+    assert report["flow"] == "ndy"
+    probe_targets = load_targets(tmp_path / "flow" / "probes" / "probe-000" / "targets.yaml")
+    assert any(target.flow == "ndy" for target in probe_targets)
+    assert "floor_feasible" in report["probes"][0]
+    assert "flow_feasible" in report["probes"][0]
