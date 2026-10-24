@@ -264,6 +264,18 @@ matching account, checks that the table gained a row, and removes that row when 
 file still has another target. The last target is left in place because the API
 refuses an empty targets document.
 
+The Play and Stop controls have a separate smoke. It needs a service started with
+``--allow-runs`` and a scratch targets file, because it starts a short run:
+
+.. code-block:: bash
+
+   python scripts/check_run_controls.py http://127.0.0.1:8022/ --iterations 3
+
+It clicks Play, asserts that ``POST /api/runs`` returns 200 and the button moves to
+Pause, then clicks Stop. The SVG and MapLibre shells share these controls; the check
+guards against the regression where the click listener was only installed by the SVG
+map path.
+
 The scale gate builds a synthetic point grid and times the tile path:
 
 .. code-block:: bash

@@ -615,6 +615,10 @@ def serve(
     """Serve the read-only web API over a dataset and its runs (needs the ``web`` extra)."""
     if host not in {"127.0.0.1", "localhost", "::1"} and not allow_remote:
         raise typer.BadParameter("refusing a non-loopback bind without --allow-remote")
+    if patch_accounts is not None and topology is None:
+        raise typer.BadParameter("--patch-accounts needs --topology")
+    if spread_accounts is not None and (topology is None or block_coordinates is None):
+        raise typer.BadParameter("--spread-accounts needs --topology and --block-coordinates")
     try:
         from .web.app import create_app
     except ImportError as error:

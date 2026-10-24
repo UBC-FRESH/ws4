@@ -2302,7 +2302,16 @@ issue comments.
   plots at z13-z15 remain normal block mosaics. Dashboard **GREEN**.
 
 - P23 close-out: the account browser and target activation are implemented, tested, documented, and
-  queued in `notes/reports/p23-closeout.md` (PR #212, evidence head `b2079e1`). The report records
+  queued in `notes/reports/p23-closeout.md` (PR #212, evidence head `01dfccf`). The report records
   the empty-file path, the notes-preserving round-trip, the last-target guard, and the period-label
   follow-up. Dashboard **GREEN**. The P22 close-out now records its merged status and moves the
   search-portfolio recommendation to P24 (planned).
+
+- P23.1 follow-up: Play and Stop were wired inside the SVG-only `fit()` helper, so a MapLibre
+  page had no click listener and pressing Play did nothing. The listeners now live in
+  `wireControls` and are installed once. Verified on the c5 sample: the button moved to Pause,
+  `POST /api/runs` returned 200, progress appeared, and a run started from a target added in the
+  Targets tab wrote that account to `report_targets.csv`. Added the opt-in
+  `scripts/check_run_controls.py`. The service now refuses `--patch-accounts` without `--topology`
+  (and spread accounts without both inputs) instead of starting a doomed run, and the optimizer
+  names the missing topology; tests cover both. Shell assets move to `v51`. Dashboard **GREEN**.

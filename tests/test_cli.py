@@ -211,3 +211,26 @@ def test_optimize_still_accepts_a_weights_file(tmp_path: Path) -> None:
         str(out),
     )
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_serve_refuses_patch_accounts_without_topology(tmp_path: Path) -> None:
+    """The service names the missing topology instead of starting doomed runs."""
+    dataset = tmp_path / "dataset"
+    dataset.mkdir()
+    runs = tmp_path / "runs"
+    runs.mkdir()
+    patches = tmp_path / "patches.yaml"
+    patches.write_text("accounts: []\n", encoding="utf-8")
+    result = run_ws4(
+        "serve",
+        "--dataset",
+        str(dataset),
+        "--runs",
+        str(runs),
+        "--patch-accounts",
+        str(patches),
+        "--port",
+        "0",
+    )
+    assert result.returncode != 0
+    assert "--patch-accounts needs --topology" in result.stdout + result.stderr

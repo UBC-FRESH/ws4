@@ -756,6 +756,8 @@ class Optimizer:
         accounts = self.patch_accounts()
         if not accounts:
             return None
+        if not self.cfg.topology_path:
+            raise ValueError("patch accounts need a topology (set topology_path)")
         if self._patch_cache is None:
             self._patch_cache = PatchModel(self, accounts)
         return self._patch_cache

@@ -432,3 +432,17 @@ def test_a_patch_criterion_the_dataset_does_not_have_is_refused(tmp_path: Path) 
             optimizer,
             [PatchAccount(name="patch.nope", criteria="feature.Nonexistent", threshold=0.5)],
         )
+
+
+def test_patch_model_requires_a_topology(tmp_path: Path) -> None:
+    """Patch accounts cannot be priced without the adjacency edge list."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    patches = _patches(tmp_path / "patches.yaml")
+    optimizer = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(years=1, iterations=1, seed=1, patch_accounts_path=str(patches)),
+    )
+    with pytest.raises(ValueError, match="patch accounts need a topology"):
+        optimizer.patch_model()

@@ -40,18 +40,6 @@ function bounds(features) {
 
 function fit(features) {
   const box = bounds(features);
-  document.addEventListener('click', (event) => {
-    const button = event.target.closest('#start-run');
-    if (!button || button.disabled) return;
-    event.preventDefault();
-    if (state.live.active) togglePause(); else startRun();
-  });
-  document.addEventListener('click', (event) => {
-    const stop = event.target.closest('#stop-run');
-    if (!stop || stop.disabled) return;
-    event.preventDefault();
-    stopRun();
-  });
   const svg = $('map');
   const width = svg.clientWidth || 800;
   const height = svg.clientHeight || 600;
@@ -2760,6 +2748,10 @@ async function loadAgent() {
 function wireControls() {
   wireSplitter();
   wireChatSplitter();
+  $('start-run').addEventListener('click', () => {
+    if (state.live.active) togglePause(); else startRun();
+  });
+  $('stop-run').addEventListener('click', stopRun);
   $('run').addEventListener('change', async (event) => {
     state.run = event.target.value;
     await loadSkins();
