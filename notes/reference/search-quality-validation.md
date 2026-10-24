@@ -61,17 +61,20 @@ This is a harness demonstration, not a benchmark claim: 50 iterations is far bel
 TSA 47 benchmark uses, and neither engine reached a zero penalty. The value is that the harness makes
 the spread and the engine comparison visible.
 
-## P21.3 — Sensitivity report (planned)
+## P21.3 — Sensitivity report
 
-The MIP layer already returns a penalty lower bound and a gap. The next step is an advisory
-sensitivity report: for each target, whether it is binding, its slack, and the marginal effect of
-relaxing it. This extends `ws4.opt.mip` rather than replacing it. It must not change a schedule.
+`scripts/sensitivity.py` reads a run's `report_targets.csv` and the target file, then reports each
+target's shortfall, excess, nearest-bound slack, binding status, and the per-unit objective weight
+that applies outside a bound. It writes `sensitivity.json` and `sensitivity.md`. It is advisory and
+does not change a schedule. This is the goal-programming slack view; true LP dual/reduced-cost
+sensitivity remains a follow-up.
 
-## P21.4 — Threshold accepting (planned)
+## P21.4 — Threshold accepting
 
-A threshold-accepting solver would share the operator registry and incremental evaluator. It accepts
-a feasible move when the objective decline is within a current threshold, and shrinks the threshold
-over time. It is simpler to explain and tune than SA and is competitive on spatial harvest scheduling.
+`solve_threshold` shares the operator registry and uses the same `Problem` adapter. It accepts an
+improving move always, and a worsening move while the increase is within the current threshold; the
+threshold is multiplied by the cooling factor each iteration. `ws4 optimize --engine threshold
+--threshold N --cooling F` selects it, and it honours `--patience` and `--reversion`.
 
 ## Related
 

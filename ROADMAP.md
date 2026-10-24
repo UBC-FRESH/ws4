@@ -837,7 +837,7 @@ Goal: make the optimizer's quality measurable and improve it with small, evidenc
 
 - [x] P21.1 Add search reversion to SA, tabu, and ILS (#191)
 - [x] P21.2 Add the multi-seed and multi-engine validation harness (#192)
-- [ ] P21.3 Add the target sensitivity report (#193)
+- [x] P21.3 Add the target sensitivity report (#193)
 - [x] P21.4 Add a threshold-accepting engine (#194)
 
 Acceptance:

@@ -277,6 +277,22 @@ output directory, reversion interval, and (with ``--mip-bound``) the lower bound
 and population standard deviation per engine. Use it before a release or a benchmark claim: a single
 seed is an anecdote, and a single engine is not a comparison.
 
+Target sensitivity
+------------------
+
+``scripts/sensitivity.py`` reads a completed run's ``report_targets.csv`` and the target file that
+produced it, then reports each target's distance to its nearest bound, whether it is binding, and the
+per-unit objective weight that applies when a bound is relaxed. It is advisory and does not change a
+schedule.
+
+.. code-block:: bash
+
+   python scripts/sensitivity.py --run opt --targets targets.yaml --out opt/evidence
+
+A missed target has a marginal cost per unit; a target with slack is not controlling the plan. A
+binding target exactly at its bound with zero shortfall has no penalty to remove, so its marginal is
+also zero. The JSON and Markdown reports are suitable for a plan review or an AAC negotiation record.
+
 Watch
 -----
 

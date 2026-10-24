@@ -2216,3 +2216,9 @@ issue comments.
   `--engine` for sa, tabu, ils, and threshold; `ws4 watch` accepts the same alias. Tests cover the
   parameter guard, an optimizer run, and unknown-engine rejection. Dashboard **GREEN**; one
   `test_web.py` tile test failed once under load and passed in three isolated and two full reruns.
+
+- P21.3: added `scripts/sensitivity.py`, an advisory report over a run's `report_targets.csv` and
+  the target file. It reports each target's shortfall, excess, nearest-bound slack, binding status,
+  and the per-unit objective weight that applies outside a bound. It writes JSON and Markdown. This
+  is the goal-programming slack view, not an LP dual; true LP dual sensitivity remains a follow-up.
+  Tests: 4 sensitivity tests; dashboard **GREEN**.
