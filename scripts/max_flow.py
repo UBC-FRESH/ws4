@@ -56,6 +56,18 @@ def main(argv: list[str] | None = None) -> int:
         default="reject",
         choices=("penalize", "reject", "repair"),
     )
+    parser.add_argument(
+        "--flow",
+        default="",
+        choices=("", "ndy", "even"),
+        help="Also require non-declining or even flow in every probe",
+    )
+    parser.add_argument(
+        "--flow-tolerance",
+        type=float,
+        default=0.0,
+        help="Allowed percent change for the flow condition",
+    )
     args = parser.parse_args(argv)
     report = run_max_flow(
         dataset=args.dataset,
@@ -77,6 +89,8 @@ def main(argv: list[str] | None = None) -> int:
         core_buffer_m=args.core_buffer_m,
         min_core_area_ha=args.min_core_area_ha,
         constraint_strategy=args.constraint_strategy,
+        flow=args.flow,
+        flow_tolerance=args.flow_tolerance,
     )
     print(str(report["markdown"]))
     print(
