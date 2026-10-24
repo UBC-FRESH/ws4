@@ -2315,3 +2315,10 @@ issue comments.
   `scripts/check_run_controls.py`. The service now refuses `--patch-accounts` without `--topology`
   (and spread accounts without both inputs) instead of starting a doomed run, and the optimizer
   names the missing topology; tests cover both. Shell assets move to `v51`. Dashboard **GREEN**.
+
+- P26.1: every optimizer run writes `run_manifest.json` with the code revision, dataset reference
+  and hashes, full configuration, seeds, environment, and a reproduce command.
+- P26.2: every run writes `data_quality.json` and a compact `data_quality` summary block covering
+  manifest metadata, table counts, target-account coverage, and explicit unknowns/limitations.
+- P26.3: `scripts/compare_scenarios.py` compares labelled runs, writes JSON/Markdown/CSV tables, and
+  reports an optional Pareto front over named metrics. Dashboard **GREEN**.

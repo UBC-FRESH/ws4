@@ -34,9 +34,10 @@ exists and the maintainer approves it.
 | P20 Production map serving | #183 | `feature/p20-map-lod` | complete |
 | P21 Search quality and validation | #190 | `feature/p21-search-quality` | complete |
 | P22 Map operations | #198 | `feature/p22-map-ops` | complete |
-| P23 Accounts and target activation | #206 | `feature/p23-target-browser` | active |
+| P23 Accounts and target activation | #206 | `feature/p23-target-browser` | complete |
 | P24 Search portfolio and multi-objective | #207 | `feature/p24-search-portfolio` | complete |
-| P25 Constraint repair and flow ceilings | #214 | `feature/p25-constraints` | pr-open |
+| P25 Constraint repair and flow ceilings | #214 | `feature/p25-constraints` | complete |
+| P26 Reproducibility and data quality | #219 | `feature/p26-repro-quality` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -877,7 +878,7 @@ Acceptance:
 
 Parent issue: #206
 Branch: `feature/p23-target-browser`
-Status: active
+Status: complete
 
 Goal: let a user discover every account the run reports and activate any of them as an objective target
 without knowing the account vocabulary in advance.
@@ -923,7 +924,7 @@ Acceptance:
 
 Parent issue: #214
 Branch: `feature/p25-constraints`
-Status: pr-open
+Status: complete
 
 Goal: make hard feasibility explicit and auditable: let a run reject or repair infeasible
 moves instead of only pricing them, report what happened, and add a constructive
@@ -939,6 +940,27 @@ Acceptance:
 - `penalize` behavior is unchanged, and an unknown strategy fails before the search.
 - The summary records the strategy, proposed/rejected/repaired counts, and final feasibility.
 - `scripts/max_flow.py` writes the ceiling, probe log, and best feasible schedule.
+- `python scripts/dashboard.py` is green.
+
+## Phase 26: Reproducibility and data quality
+
+Parent issue: #219
+Branch: `feature/p26-repro-quality`
+Status: active
+
+Goal: make every run reproducible and its data limitations visible: write a complete run manifest,
+summarize dataset quality and known gaps, and compare scenarios over the same landscape.
+
+- [ ] P26.1 Add the run manifest (#220)
+- [ ] P26.2 Add the data-quality block and report (#221)
+- [ ] P26.3 Add scenario comparison (#222)
+
+Acceptance:
+
+- Every run writes `run_manifest.json` with code, dataset, config, seeds, environment, and a
+  reproduce command.
+- Every run writes `data_quality.json` and a summary block that names checks and unknowns.
+- `scripts/compare_scenarios.py` compares labelled runs and writes JSON/Markdown/CSV.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes
