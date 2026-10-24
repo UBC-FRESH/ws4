@@ -557,6 +557,42 @@ Outputs
    * - ``telemetry.jsonl``
      - A run header and one record per search step.
 
+Run manifest and data quality
+-----------------------------
+
+Every run writes two review artefacts beside the summary:
+
+- ``run_manifest.json``: the ws4 version and Git revision (when available), the dataset reference
+  and source hashes, the full ``OptimizeConfig``, the seeds, the Python/package environment, and a
+  reproduce command. The command repeats the principal settings; the full configuration is in the
+  manifest.
+- ``data_quality.json``: the dataset manifest metadata, Parquet table row counts, target-account
+  coverage, and a list of explicit unknowns and model limitations. The run summary carries a compact
+  ``data_quality`` block and the report path.
+
+The quality status distinguishes **not supplied** from **checked and good**. A dataset with no
+metadata reports ``unknown`` and names the missing inventory-vintage/imputation/coverage fields
+rather than treating an empty block as a pass. Derived accounts (``patch.*``, ``route.*``,
+``spread.*``) are reported separately because they are not rows in ``accounts.parquet``.
+
+Scenario comparison
+-------------------
+
+``scripts/compare_scenarios.py`` reads completed runs and compares them over one landscape:
+
+.. code-block:: bash
+
+   python scripts/compare_scenarios.py \
+     --run base=runtime/base --run dense=runtime/dense \
+     --metric product.Yield.managed.Conif:max --metric feature.Old:min \
+     --out runtime/compare
+
+Each ``--run`` takes ``label=path``. The output contains ``scenarios.json``, ``scenarios.md``,
+``scenario_runs.csv``, ``scenario_targets.csv``, and ``scenario_accounts.csv``. With ``--metric`` the
+command also reports the nondominated front over those accounts; an account missing from a run keeps
+that run off the front rather than inventing a value. A missing summary, target report, or constraint
+report is shown as unavailable, not as passing.
+
 API
 ---
 
@@ -620,6 +656,12 @@ API
    :members:
 
 .. autofunction:: ws4.opt.max_flow.run_max_flow
+
+.. autofunction:: ws4.opt.repro.write_reproducibility
+
+.. autofunction:: ws4.opt.repro.dataset_quality
+
+.. autofunction:: ws4.opt.scenarios.compare_scenarios
 
 .. autofunction:: ws4.opt.max_flow.high_bound
 

@@ -71,6 +71,7 @@ from .operators import (
 )
 from .patch import PatchModel
 from .prescreen import feature_goal_blocks
+from .repro import write_reproducibility
 from .seeding import greedy_schedule
 from .solvers import (
     expired,
@@ -1535,6 +1536,7 @@ class Optimizer:
                 )
         self._last_values = values
         write_report(values, targets, out_dir)
+        reproducibility = write_reproducibility(out_dir, self.dataset_dir, self.cfg)
         constraint_report = self._constraint_report(out_dir, best, pool_search)
         summary: dict[str, Any] = {
             "incumbent_objective": best_obj,
@@ -1552,6 +1554,9 @@ class Optimizer:
             "constraint_stats": constraint_report["stats"],
             "constraint_feasible": constraint_report["feasible"],
             "constraint_report": "constraint_report.json",
+            "run_manifest": "run_manifest.json",
+            "data_quality": reproducibility["quality"]["summary"],
+            "data_quality_report": "data_quality.json",
             "status": "ok",
             "time_limit_reached": bool(expired(self._deadline)),
             "dataset": dataset_reference(self.dataset_dir),
