@@ -34,7 +34,8 @@ exists and the maintainer approves it.
 | P20 Production map serving | #183 | `feature/p20-map-lod` | complete |
 | P21 Search quality and validation | #190 | `feature/p21-search-quality` | complete |
 | P22 Map operations | #198 | `feature/p22-map-ops` | complete |
-| P24 Search portfolio and multi-objective | #207 | `feature/p24-search-portfolio` | pr-open |
+| P24 Search portfolio and multi-objective | #207 | `feature/p24-search-portfolio` | complete |
+| P25 Constraint repair and flow ceilings | #214 | `feature/p25-constraints` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -875,7 +876,7 @@ Acceptance:
 
 Parent issue: #207
 Branch: `feature/p24-search-portfolio`
-Status: pr-open
+Status: complete
 
 Goal: make the search's quality visible across objectives and tuned configurations: keep an elite
 archive, run a portfolio over target-weight vectors to produce a Pareto front, add a repeatable
@@ -892,6 +893,28 @@ Acceptance:
 - A portfolio run varies target weights, records every member, and writes a front table.
 - A tuner run ranks configurations by a stated budget and seed set.
 - The LP relaxation reports finite target duals and option reduced costs on a small instance.
+- `python scripts/dashboard.py` is green.
+
+## Phase 25: Constraint repair and flow ceilings
+
+Parent issue: #214
+Branch: `feature/p25-constraints`
+Status: pr-open
+
+Goal: make hard feasibility explicit and auditable: let a run reject or repair infeasible
+moves instead of only pricing them, report what happened, and add a constructive
+binary-search flow ceiling under the active spatial rules.
+
+- [x] P25.1 Add the constraint strategy guard and per-strategy counts (#215)
+- [x] P25.2 Add the feasibility summary block and constraint report (#216)
+- [x] P25.3 Add the binary-search flow-ceiling command (#217)
+
+Acceptance:
+
+- `reject` and `repair` produce zero spatial violations on a constrained fixture.
+- `penalize` behavior is unchanged, and an unknown strategy fails before the search.
+- The summary records the strategy, proposed/rejected/repaired counts, and final feasibility.
+- `scripts/max_flow.py` writes the ceiling, probe log, and best feasible schedule.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes

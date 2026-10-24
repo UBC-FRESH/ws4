@@ -131,3 +131,28 @@ def test_main_wires_the_arguments(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     assert captured["account"] == "product.volume"
     assert captured["high"] == 100.0
     assert captured["probes"] == 2
+
+
+def test_zero_high_bound_writes_an_empty_schedule(tmp_path: Path) -> None:
+    """A zero ceiling is a valid advisory result, not a crash."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    targets = tmp_path / "targets.yaml"
+    targets.write_text("targets: []\n", encoding="utf-8")
+    report = run_max_flow(
+        dataset=dataset,
+        targets=targets,
+        account="feature.Volume",
+        out_dir=tmp_path / "flow",
+        years=1,
+        period_width=1,
+        probes=1,
+        high=0.0,
+    )
+    assert report["ceiling"] == 0.0
+    assert report["probes"] == []
+    assert report["feasible"] is False
+    assert (tmp_path / "flow" / "best-schedule.csv").read_text(encoding="utf-8") == (
+        "block_id,treatment,offset\n"
+    )

@@ -2272,3 +2272,16 @@ issue comments.
   `scripts/lp_sensitivity.py` reports target duals and option reduced costs with HiGHS.
   The real synthetic-estate smoke produced a binding floor dual of 1.0 and reduced costs
   360/340 on the two CC options. Dashboard **GREEN**.
+
+- P25.1: `--constraint-strategy penalize|reject|repair` wraps the operator registry with a
+  constraint guard. Reject refuses an infeasible proposal; repair tries a one-block local
+  repair; penalize remains the default incremental path. The guard counts proposed,
+  feasible, rejected, and repaired moves and repairs an infeasible seed.
+- P25.2: the run summary records `constraint_strategy`, `constraint_stats`, and
+  `constraint_feasible`; each run writes `constraint_report.json` with the final spatial
+  violations. The synthetic constrained run reported 22 proposed, 13 feasible, 9 rejected,
+  and zero final violations under reject and repair.
+- P25.3: `scripts/max_flow.py` binary-searches a constant per-period volume floor with the
+  existing optimizer, preserving the non-volume targets and writing `max_flow.json`,
+  `max_flow.md`, `probe-config.json`, the probe log, and `best-schedule.csv`. The high bound
+  is an additive envelope and the ceiling is advisory. Dashboard **GREEN**.
