@@ -2302,7 +2302,7 @@ issue comments.
   plots at z13-z15 remain normal block mosaics. Dashboard **GREEN**.
 
 - P23 close-out: the account browser and target activation are implemented, tested, documented, and
-  queued in `notes/reports/p23-closeout.md` (PR #212, evidence head `1526216`). The report records
+  queued in `notes/reports/p23-closeout.md` (PR #212, evidence head `8dca0d4`). The report records
   the empty-file path, the notes-preserving round-trip, the last-target guard, and the period-label
   follow-up. Dashboard **GREEN**. The P22 close-out now records its merged status and moves the
   search-portfolio recommendation to P24 (planned).
@@ -2344,3 +2344,8 @@ issue comments.
 - P28.1-P28.3 refresh: the example notebooks' stored target and ending-inventory tables include
   the new `kind` and inventory surfaces. `python scripts/check_notebooks.py` reports 47 compared,
   0 drifted.
+- P23.1 follow-up: the run control is now **Solve**, without the media triangle, and **Max iters**
+  defaults blank as ∞. A blank or zero value starts a continuous run with no default wall-clock cap;
+  the old 24-hour limit is removed, and Pause/Stop are text controls. `scripts/check_run_controls.py`
+  now asserts that the default POST returns `continuous: true` and an empty `time_limit`, then stops
+  the run. Shell assets move to `v52`. Dashboard **GREEN**.

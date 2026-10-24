@@ -2151,7 +2151,7 @@ async function finishRun(id) {
   runWatch.done = true;
   stopRunWatch();
   state.live.active = false;
-  $('start-run').textContent = '▶ Play';
+  $('start-run').textContent = 'Solve';
   $('stop-run').hidden = true;
   state.runPaused = false;
   showRun(`run ${id} · done`, false);
@@ -2170,10 +2170,10 @@ async function pollRun(id) {
   try {
     const status = await api(`api/runs/${encodeURIComponent(id)}/status`);
     state.runPaused = Boolean(status.paused);
-    $('start-run').textContent = state.runPaused ? '▶ Resume' : '⏸ Pause';
+    $('start-run').textContent = state.runPaused ? 'Resume' : 'Pause';
     if (status.status === 'failed') {
       stopRunWatch();
-      $('start-run').textContent = '▶ Play';
+      $('start-run').textContent = 'Solve';
       $('stop-run').hidden = true;
       showRun(`run ${id} · the search exited without a summary — see console.log`, false);
       return;
@@ -2201,7 +2201,7 @@ async function togglePause() {
       body: JSON.stringify({ action }),
     });
     state.runPaused = !state.runPaused;
-    $('start-run').textContent = state.runPaused ? '▶ Resume' : '⏸ Pause';
+    $('start-run').textContent = state.runPaused ? 'Resume' : 'Pause';
     showRun(`run ${runWatch.id} · ${state.runPaused ? 'paused' : 'running'} · ${elapsed()}`, true);
   } catch (error) {
     showRun(`run ${runWatch.id} · control failed: ${error.message}`, true);
@@ -2234,7 +2234,7 @@ async function startRun() {
   try { saved = await saveTargets(); } catch (error) { saved = false; }
   if (!saved) {
     $('start-run').disabled = false;
-    $('start-run').textContent = '▶ Play';
+    $('start-run').textContent = 'Solve';
     const reason = $('targets-status').textContent || 'no reason given';
     showRun(`targets not saved: ${reason}`, false);
     return;
@@ -2274,7 +2274,7 @@ async function startRun() {
     runWatch.id = run.id;
     runWatch.islands = Number(run.islands || 1);
     $('start-run').disabled = false;
-    $('start-run').textContent = '⏸ Pause';
+    $('start-run').textContent = 'Pause';
     $('stop-run').hidden = false;
     pollRun(run.id);
     runWatch.timer = setInterval(() => pollRun(run.id), 2000);
@@ -2314,7 +2314,7 @@ async function startRun() {
     window.clearTimeout(timer);
     state.live.active = false;
     $('start-run').disabled = false;
-    $('start-run').textContent = '▶ Play';
+    $('start-run').textContent = 'Solve';
     $('stop-run').hidden = true;
     const reason = error.name === 'AbortError' ? 'the request timed out after 20 s' : error.message;
     showRun(`not started: ${reason}`, false);

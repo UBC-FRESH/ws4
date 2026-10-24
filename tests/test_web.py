@@ -660,6 +660,36 @@ def test_starting_a_run_bounds_the_island_count(tmp_path: Path) -> None:
     assert client.post("/api/runs", json={"iterations": 1, "islands": 65}).status_code == 422
 
 
+def test_starting_a_run_without_iterations_is_continuous(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A blank Max iters starts an unbounded run with no default time limit."""
+    client = _runs_client(tmp_path)
+    captured: dict[str, object] = {}
+
+    class FakePopen:
+        pid = 123
+
+        def poll(self) -> int | None:
+            return None
+
+    def fake_popen(command: list[str], stdout: object = None, stderr: object = None) -> FakePopen:
+        captured["command"] = command
+        return FakePopen()
+
+    monkeypatch.setattr("ws4.web.app.subprocess.Popen", fake_popen)
+    response = client.post("/api/runs", json={})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["continuous"] is True
+    assert body["iterations"] == 1_000_000_000
+    assert body["time_limit"] == ""
+    command = captured["command"]
+    assert isinstance(command, list)
+    assert command[command.index("--iterations") + 1] == "1000000000"
+    assert "--time-limit" not in command
+
+
 def test_starting_a_run_passes_the_island_count_to_the_cli(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

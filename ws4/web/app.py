@@ -811,8 +811,7 @@ def create_app(
             )
         if not 1 <= islands <= 64:
             raise HTTPException(status_code=422, detail="islands must be between 1 and 64")
-        if continuous and not time_limit:
-            time_limit = "24:00:00"
+        # A continuous run has no default wall-clock cap; the control file stops it.
         run_id = f"web-{datetime.now():%Y%m%d-%H%M%S}-{seed}"
         out = runs_root / run_id
         if out.exists():
