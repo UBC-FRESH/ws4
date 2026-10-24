@@ -870,6 +870,29 @@ Acceptance:
 - The 1M-fragment benchmark reports peak RSS and enforces the recorded budget.
 - `python scripts/dashboard.py` is green.
 
+## Phase 24: Search portfolio and multi-objective
+
+Parent issue: #207
+Branch: `feature/p24-search-portfolio`
+Status: active
+
+Goal: make the search's quality visible across objectives and tuned configurations: keep an elite
+archive, run a portfolio over target-weight vectors to produce a Pareto front, add a repeatable
+tuner, and expose true LP dual/reduced-cost sensitivity for the linear subset.
+
+- [ ] P24.1 Add the elite archive and Pareto front (#208)
+- [ ] P24.2 Add the portfolio runner over target-weight vectors (#209)
+- [ ] P24.3 Add the grid/random tuner (#210)
+- [ ] P24.4 Add LP dual and reduced-cost sensitivity (#211)
+
+Acceptance:
+
+- An archive keeps nondominated elites under named max/min metrics and exports schedules.
+- A portfolio run varies target weights, records every member, and writes a front table.
+- A tuner run ranks configurations by a stated budget and seed set.
+- The LP relaxation reports finite target duals and option reduced costs on a small instance.
+- `python scripts/dashboard.py` is green.
+
 ## Detailed Next Steps Notes
 
 1. Phase 0 is complete: pull request #8 squash-merged as `97330a8`, the branch deleted, and parent
