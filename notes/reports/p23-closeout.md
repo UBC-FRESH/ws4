@@ -15,7 +15,8 @@ Approve these actions. The agent carries them out in this order, and reads back 
 
 1. Squash-merge pull request #212, and delete the branch `feature/p23-target-browser`.
 2. Close task issue #195 and parent issue #206 with closeout comments that cite the merge commit.
-3. Launch P24, Search portfolio and multi-objective, as a planned phase.
+3. P24, Search portfolio and multi-objective, was launched by the maintainer while this phase was in
+   review; this phase takes no launch action.
 
 Settings changes: none. This phase changes no repository setting, tag, release, or external account.
 
@@ -89,19 +90,11 @@ and made 12 MVT requests at `v=v8` with no console errors.
 
 ## 7. Next phase
 
-P22 recommended a search-portfolio phase as P23. The maintainer redirected the next phase to the
-account/target browser, so that proposal is queued as P24 (planned) instead.
+The maintainer redirected the phase after P22 to the account/target browser (this P23), so the
+search-portfolio proposal moved to P24. P24 was then launched while this phase was in review (parent
+#207, pull request #213); this phase does not launch it.
 
-Goal: make search quality visible across objectives and tuned configurations.
-
-Tasks:
-
-- P24.1 Add a Pareto/archive mode over target weights or objectives.
-- P24.2 Wire the random/grid/Bayesian tuners into a repeatable tuning command.
-- P24.3 Add LP dual/reduced-cost sensitivity for the linear target subset.
-
-Recommended defaults:
-
-- Keep the current goal-programming objective; the Pareto archive is an added view.
-- Keep the tuners opt-in; a tuned configuration is recorded with its dataset and budget.
-- Treat LP duals as advisory, like the P21 sensitivity report.
+P24 delivers the elite archive and Pareto front, the target-weight portfolio runner, the grid/random
+tuner, and LP dual/reduced-cost sensitivity. Its tasks are P24.1 to P24.4 in `ROADMAP.md`. The
+recommended defaults remain: keep goal programming as the objective, keep the tuners opt-in, and
+treat LP duals as advisory.
