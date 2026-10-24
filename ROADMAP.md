@@ -32,7 +32,7 @@ exists and the maintainer approves it.
 | P18 A graphical web front end | #146 | `feature/p18-web-frontend` | complete |
 | P19 Model-derived spatial layers and map scale | #161 | `feature/p19-spatial-layers` | complete |
 | P20 Production map serving | #183 | `feature/p20-map-lod` | complete |
-| P21 Search quality and validation | #190 | `feature/p21-search-quality` | active |
+| P21 Search quality and validation | #190 | `feature/p21-search-quality` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -831,7 +831,7 @@ below 20 MB.
 
 Parent issue: #190
 Branch: `feature/p21-search-quality`
-Status: active
+Status: pr-open
 
 Goal: make the optimizer's quality measurable and improve it with small, evidence-backed changes.
 

@@ -2222,3 +2222,7 @@ issue comments.
   and the per-unit objective weight that applies outside a bound. It writes JSON and Markdown. This
   is the goal-programming slack view, not an LP dual; true LP dual sensitivity remains a follow-up.
   Tests: 4 sensitivity tests; dashboard **GREEN**.
+
+- P21 close-out: reversion, the validation sweep, the sensitivity report, and the threshold-accepting
+  engine are implemented, tested, documented, and queued for review in `notes/reports/p21-closeout.md`.
+  Dashboard **GREEN** at `37c16e6`.
