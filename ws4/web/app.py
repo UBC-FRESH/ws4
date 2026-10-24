@@ -41,7 +41,15 @@ from shapely.strtree import STRtree
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.responses import Response
 
-from ..opt.objective import flow_penalty, flow_series, load_targets, period_value
+from ..opt.objective import (
+    flow_penalty,
+    flow_series,
+    load_targets,
+    normalization_scale,
+    penalty,
+    period_value,
+    raw_penalty,
+)
 from .skins import load_skins
 
 _REPORT_SUFFIXES = {".csv", ".html", ".png", ".json", ".txt"}
@@ -2024,6 +2032,11 @@ def create_app(
                     "period_width": target.period_width,
                     "flow": target.flow,
                     "value": value,
+                    "raw_penalty": None if target.flow else raw_penalty(value, target),
+                    "penalty": None if target.flow else penalty(value, target),
+                    "scale": normalization_scale(target),
+                    "normalization": target.normalization,
+                    "priority": target.priority,
                     "status": status,
                     "active": target.active,
                 }
@@ -2049,6 +2062,8 @@ def create_app(
                 "maximum": target.maximum,
                 "min_weight": target.min_weight,
                 "max_weight": target.max_weight,
+                "normalization": target.normalization,
+                "priority": target.priority,
                 "active": target.active,
             }
             if target_index < len(entries) and isinstance(entries[target_index], dict):

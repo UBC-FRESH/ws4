@@ -32,8 +32,28 @@ def _run(
     )
     pd.DataFrame(
         [
-            {"account": "feature.Volume", "period": 1, "value": volume, "status": "met"},
-            {"account": "feature.Old", "period": 1, "value": cost, "status": "met"},
+            {
+                "account": "feature.Volume",
+                "period": 1,
+                "value": volume,
+                "status": "met",
+                "raw_penalty": 0.0,
+                "penalty": 0.0,
+                "scale": 500.0,
+                "normalization": "auto",
+                "priority": 2,
+            },
+            {
+                "account": "feature.Old",
+                "period": 1,
+                "value": cost,
+                "status": "met",
+                "raw_penalty": 0.0,
+                "penalty": 0.0,
+                "scale": 1.0,
+                "normalization": "none",
+                "priority": 1,
+            },
         ]
     ).to_csv(path / "report_targets.csv", index=False)
     pd.DataFrame(
@@ -77,6 +97,8 @@ def test_compare_writes_tables_and_a_front(tmp_path: Path) -> None:
     assert (tmp_path / "compare" / "scenario_runs.csv").is_file()
     assert (tmp_path / "compare" / "scenario_targets.csv").is_file()
     assert (tmp_path / "compare" / "scenario_accounts.csv").is_file()
+    targets = pd.read_csv(tmp_path / "compare" / "scenario_targets.csv")
+    assert {"raw_penalty", "penalty", "scale", "normalization", "priority"} <= set(targets.columns)
     assert "Scenario comparison" in str(report["markdown"])
 
 
