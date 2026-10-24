@@ -2194,3 +2194,7 @@ issue comments.
   `memory`, `disk`, or `miss`, and the 1,000,000-fragment scale gate. The gate measured a 130 KB
   zoom-0 tile in 29.3 s cold and 0.018 s warm, and a 2.8 KB zoom-12 tile in 0.038 s; all
   thresholds pass. Tests: disk/memory/miss cache, grid writer, and scale smoke.
+- P20 is queued for approval. The close-out report is `notes/reports/p20-closeout.md`, the pull
+  request is #185, and the roadmap/tracker say `pr-open`. The evidence includes the 66 KB TSA 46
+  viewport, the 8.5 KB z0 and 3.1 KB z12 tiles, the disk/memory/miss cache check, the browser
+  smoke on both TSAs, and the 1,000,000-fragment scale gate (29.3 s cold, 0.018 s warm).
