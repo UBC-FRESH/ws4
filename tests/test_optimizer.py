@@ -18,7 +18,7 @@ from ws4.opt.engine import OptimizeConfig, Optimizer, load_schedule_csv
 from ws4.opt.incremental import IncrementalObjective
 from ws4.opt.objective import Target, load_targets, objective, objective_terms, penalty
 from ws4.opt.operators import OperatorRegistry, Schedule, ToggleOperator
-from ws4.opt.solvers import patience_reached, solve_sa
+from ws4.opt.solvers import patience_reached, reversion_due, solve_sa
 from ws4.opt.telemetry import RunLogger, read_records
 from ws4.patch.constraints import core_area_penalty, schedule_years, spatial_penalty
 
@@ -71,6 +71,33 @@ def test_patience_is_a_stability_stop_only_when_enabled() -> None:
     assert patience_reached(20, 10, 10) is True
     with pytest.raises(ValueError, match="patience"):
         OptimizeConfig(patience=-1)
+
+
+def test_reversion_is_due_on_the_configured_interval() -> None:
+    """Reversion is off at zero and fires on each positive multiple."""
+    assert reversion_due(0, 0) is False
+    assert reversion_due(10, 0) is False
+    assert reversion_due(0, 10) is False
+    assert reversion_due(9, 10) is False
+    assert reversion_due(10, 10) is True
+    assert reversion_due(20, 10) is True
+
+
+def test_reversion_is_a_non_negative_accepted_move_count() -> None:
+    """A negative reversion interval is rejected before the search starts."""
+    with pytest.raises(ValueError, match="reversion"):
+        OptimizeConfig(reversion=-1)
+
+
+def test_a_run_records_its_reversion_interval(tmp_path: Path) -> None:
+    """The summary carries the reversion setting, and a reversion run still writes a schedule."""
+    dataset, targets = _compile(tmp_path)
+    summary = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(targets_path=targets, seed=1, years=1, iterations=5, reversion=1, workers=1),
+    ).run(tmp_path / "reversion")
+    assert summary["reversion"] == 1
+    assert (tmp_path / "reversion" / "schedule.csv").is_file()
 
 
 def test_the_solver_stops_after_patience_without_an_improvement() -> None:

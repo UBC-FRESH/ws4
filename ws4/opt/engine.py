@@ -198,6 +198,9 @@ class OptimizeConfig:
     patience : int
         Stop a start after this many iterations without an incumbent improvement; 0 disables
         the criterion. It is the stability stop for a continuous search.
+    reversion : int
+        Reset the current solution to the incumbent every this many accepted moves; 0 disables
+        it. Applied by SA, tabu, and ILS.
     temperature : float
         The initial simulated-annealing temperature.
     cooling : float
@@ -300,6 +303,7 @@ class OptimizeConfig:
     years: int = 50
     iterations: int = 500
     patience: int = 0
+    reversion: int = 0
     temperature: float = 1000.0
     cooling: float = 0.99
     cooling_mode: str = "geometric"
@@ -346,6 +350,8 @@ class OptimizeConfig:
         """Reject an unknown temperature schedule before the search starts."""
         if self.patience < 0:
             raise ValueError("patience must be zero (off) or a positive iteration count")
+        if self.reversion < 0:
+            raise ValueError("reversion must be zero (off) or a positive accepted-move count")
         if self.cooling_mode not in {"geometric", "adaptive"}:
             raise ValueError(f"unknown cooling_mode: {self.cooling_mode!r}")
 
@@ -1217,6 +1223,7 @@ class Optimizer:
                 initial=initial,
                 deadline=limit,
                 patience=self.cfg.patience,
+                reversion=self.cfg.reversion,
             )
         if self.cfg.metaheuristic == "ils":
             return solve_ils(
@@ -1228,6 +1235,7 @@ class Optimizer:
                 initial=initial,
                 deadline=limit,
                 patience=self.cfg.patience,
+                reversion=self.cfg.reversion,
             )
         evaluator = self.delta_evaluator(targets)
         if evaluator is not None:
@@ -1249,6 +1257,7 @@ class Optimizer:
                 adaptive=self.cfg.cooling_mode == "adaptive",
                 cooling_window=self.cfg.cooling_window,
                 patience=self.cfg.patience,
+                reversion=self.cfg.reversion,
             )
         return solve_sa(
             problem,
@@ -1263,6 +1272,7 @@ class Optimizer:
             deadline=limit,
             cooling_window=self.cfg.cooling_window,
             patience=self.cfg.patience,
+            reversion=self.cfg.reversion,
         )
 
     def _use_pool(self) -> bool:
@@ -1493,6 +1503,7 @@ class Optimizer:
             "incumbent_objective": best_obj,
             "iterations": self.cfg.iterations,
             "patience": self.cfg.patience,
+            "reversion": self.cfg.reversion,
             "seed": self.cfg.seed,
             "metaheuristic": self.cfg.metaheuristic,
             "starts": self.cfg.starts,

@@ -2198,3 +2198,13 @@ issue comments.
   request is #185, and the roadmap/tracker say `pr-open`. The evidence includes the 66 KB TSA 46
   viewport, the 8.5 KB z0 and 3.1 KB z12 tiles, the disk/memory/miss cache check, the browser
   smoke on both TSAs, and the 1,000,000-fragment scale gate (29.3 s cold, 0.018 s warm).
+
+## 2026-10-24
+
+- P21.1: `ws4 optimize --reversion N` resets the current solution to the incumbent every N
+  accepted moves in SA, tabu, and ILS. The run summary records `reversion`; the optimizer reference
+  explains the intensification step. Tests cover the helper, the config check, and a run.
+- P21.2: `scripts/validate_search.py` runs SA, tabu, and ILS over several seeds with the same
+  targets and budget, then reports best/mean/median/worst, population standard deviation,
+  zero-penalty status, and the MIP gap when `--mip-bound` is set. It writes JSON and Markdown.
+  The dashboard is green.

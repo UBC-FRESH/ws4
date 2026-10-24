@@ -145,6 +145,24 @@ def patience_reached(iteration: int, last_improvement: int, patience: int) -> bo
     return patience > 0 and iteration - last_improvement >= patience
 
 
+def reversion_due(accepted: int, reversion: int) -> bool:
+    """Return whether a reversion is due after an accepted move.
+
+    Parameters
+    ----------
+    accepted : int
+        The number of accepted moves so far.
+    reversion : int
+        The reversion interval; 0 disables it.
+
+    Returns
+    -------
+    bool
+        True when ``reversion`` is positive and ``accepted`` is a positive multiple of it.
+    """
+    return reversion > 0 and accepted > 0 and accepted % reversion == 0
+
+
 def solve_sa(
     problem: Problem,
     rng: random.Random,
@@ -159,6 +177,7 @@ def solve_sa(
     cooling_window: int = 64,
     deadline: float | None = None,
     patience: int = 0,
+    reversion: int = 0,
 ) -> tuple[Schedule, float]:
     """Run simulated annealing.
 
@@ -190,6 +209,9 @@ def solve_sa(
         The iterations per temperature when ``adaptive`` is set, capped at half the budget.
     patience : int, optional
         Stop after this many iterations without an incumbent improvement; 0 disables it.
+    reversion : int, optional
+        Reset the current solution to the incumbent every ``reversion`` accepted moves;
+        0 disables it.
 
     Returns
     -------
@@ -199,6 +221,7 @@ def solve_sa(
     current: Schedule = dict(initial) if initial is not None else {}
     current_obj = problem.evaluate(current)
     best, best_obj = dict(current), current_obj
+    accepted = 0
     schedule = TemperatureSchedule(
         initial=temperature,
         cooling=cooling,
@@ -220,9 +243,13 @@ def solve_sa(
                 (current_obj - move_obj) / max(schedule.temperature, 1e-9)
             ):
                 current, current_obj = move, move_obj
+                accepted += 1
                 if move_obj < best_obj:
                     best, best_obj = dict(move), move_obj
                     last_improvement = iteration
+                if reversion_due(accepted, reversion):
+                    current, current_obj = dict(best), best_obj
+                    accepted = 0
         schedule.observe(increase, current_obj)
         _report(on_step, iteration, best_obj)
     return best, best_obj
@@ -245,6 +272,7 @@ def solve_sa_delta(
     cooling_window: int = 64,
     deadline: float | None = None,
     patience: int = 0,
+    reversion: int = 0,
 ) -> tuple[Schedule, float]:
     """Run simulated annealing priced by per-move objective deltas.
 
@@ -287,6 +315,9 @@ def solve_sa_delta(
         The iterations per temperature when ``adaptive`` is set, capped at half the budget.
     patience : int, optional
         Stop after this many iterations without an incumbent improvement; 0 disables it.
+    reversion : int, optional
+        Reset the current solution to the incumbent every ``reversion`` accepted moves;
+        0 disables it.
 
     Returns
     -------
@@ -304,6 +335,7 @@ def solve_sa_delta(
         window=TemperatureSchedule.effective_window(iterations, cooling_window),
     )
     last_improvement = 0
+    accepted = 0
     for iteration in range(iterations):
         if patience_reached(iteration, last_improvement, patience):
             break
@@ -321,9 +353,15 @@ def solve_sa_delta(
             ):
                 evaluator.apply(changed, current)
                 current_obj = move_obj
+                accepted += 1
                 if move_obj < best_obj:
                     best, best_obj = dict(current), move_obj
                     last_improvement = iteration
+                if reversion_due(accepted, reversion):
+                    current = dict(best)
+                    evaluator.reset(current)
+                    current_obj = best_obj
+                    accepted = 0
             else:
                 restore(current, undo)
                 evaluator.revert()
@@ -346,6 +384,7 @@ def solve_tabu(
     initial: Schedule | None = None,
     deadline: float | None = None,
     patience: int = 0,
+    reversion: int = 0,
 ) -> tuple[Schedule, float]:
     """Run tabu search: pick the best non-tabu move each iteration.
 
@@ -373,6 +412,9 @@ def solve_tabu(
         A starting schedule. Defaults to the empty schedule.
     patience : int, optional
         Stop after this many iterations without an incumbent improvement; 0 disables it.
+    reversion : int, optional
+        Reset the current solution to the incumbent every ``reversion`` accepted moves;
+        0 disables it.
 
     Returns
     -------
@@ -382,6 +424,7 @@ def solve_tabu(
     current: Schedule = dict(initial) if initial is not None else {}
     current_obj = problem.evaluate(current)
     best, best_obj = dict(current), current_obj
+    accepted = 0
     tabu: deque[frozenset[tuple[int, Chain | None]]] = deque(maxlen=tenure)
     last_improvement = 0
     for iteration in range(iterations):
@@ -404,9 +447,13 @@ def solve_tabu(
         if chosen is not None:
             tabu.append(_signature(current, chosen))
             current, current_obj = chosen, chosen_obj
+            accepted += 1
             if current_obj < best_obj:
                 best, best_obj = dict(current), current_obj
                 last_improvement = iteration
+            if reversion_due(accepted, reversion):
+                current, current_obj = dict(best), best_obj
+                accepted = 0
         _report(on_step, iteration, best_obj)
     return best, best_obj
 
@@ -422,6 +469,7 @@ def solve_ils(
     initial: Schedule | None = None,
     deadline: float | None = None,
     patience: int = 0,
+    reversion: int = 0,
 ) -> tuple[Schedule, float]:
     """Run iterated local search: perturb, then accept an improvement.
 
@@ -447,6 +495,9 @@ def solve_ils(
         A starting schedule. Defaults to the empty schedule.
     patience : int, optional
         Stop after this many iterations without an incumbent improvement; 0 disables it.
+    reversion : int, optional
+        Reset the current solution to the incumbent every ``reversion`` accepted moves;
+        0 disables it.
 
     Returns
     -------
@@ -457,6 +508,7 @@ def solve_ils(
     current_obj = problem.evaluate(current)
     best, best_obj = dict(current), current_obj
     last_improvement = 0
+    accepted = 0
     for iteration in range(iterations):
         if patience_reached(iteration, last_improvement, patience):
             break
@@ -470,8 +522,12 @@ def solve_ils(
         candidate_obj = problem.evaluate(candidate)
         if candidate_obj < current_obj:
             current, current_obj = candidate, candidate_obj
+            accepted += 1
             if candidate_obj < best_obj:
                 best, best_obj = dict(candidate), candidate_obj
                 last_improvement = iteration
+            if reversion_due(accepted, reversion):
+                current, current_obj = dict(best), best_obj
+                accepted = 0
         _report(on_step, iteration, best_obj)
     return best, best_obj

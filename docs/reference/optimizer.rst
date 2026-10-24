@@ -224,6 +224,12 @@ A continuous search can stop on **stability** instead of a fixed budget: ``Optim
 ``time_limit_reached``; the web player exposes the same field as **Patience**. The stability stop is
 deterministic for a seed because it counts iterations, not wall-clock time.
 
+A search can also **revert** to its incumbent: ``OptimizeConfig.reversion`` (``--reversion``)
+resets the current solution to the best schedule every *N* accepted moves, then continues from
+there. ``0`` disables it. Reversion is a cheap intensification step that recovers a search which
+has wandered into a poor neighbourhood; the run summary records ``reversion`` with the other
+search settings. It is applied by SA, tabu, and ILS.
+
 The mixed-integer layer (``ws4.opt.mip``) solves an option-selection MILP (HiGHS via
 ``scipy.optimize.milp``) for a penalty **lower bound** and a candidate schedule. Enabling
 ``OptimizeConfig.mip_bound`` (``--mip-bound``) records the bound, the gap, and the bound status in the
@@ -242,6 +248,26 @@ When a route configuration is given (``OptimizeConfig.route_config_path`` or
 ``--route-config``), the objective is evaluated with the route model, and the route accounts and
 duplicate accounts (see :doc:`roads`) are resolved into the account values, so targets can be set on
 accounts such as ``route.Total.haul``.
+
+Validation sweep
+----------------
+
+``scripts/validate_search.py`` runs the same targets, horizon, and iteration budget through several
+engines and seeds, then reports the distribution of incumbents. It is orchestration of the same
+``Optimizer`` the CLI uses, so a record can be reproduced with the equivalent ``ws4 optimize``
+command. The report is advisory; it does not change a schedule.
+
+.. code-block:: bash
+
+   python scripts/validate_search.py \
+     --dataset build/compiled --targets targets.yaml \
+     --engines sa,tabu,ils --seeds 1,2,3 --iterations 500 --years 50 \
+     --out runtime/validation
+
+The JSON records each run's objective, zero-penalty status, output directory, and (with
+``--mip-bound``) the lower bound and gap. The Markdown table reports runs, best, mean, median, worst,
+and population standard deviation per engine. Use it before a release or a benchmark claim: a single
+seed is an anecdote, and a single engine is not a comparison.
 
 Watch
 -----
@@ -378,7 +404,7 @@ Outputs
    * - ``schedule.csv``
      - The incumbent schedule (``block_id,treatment,offset``).
    * - ``summary.json``
-     - The run summary: objective, iterations, patience, seed, metaheuristic, operators, block count,
+     - The run summary: objective, iterations, patience, reversion, seed, metaheuristic, operators, block count,
        status, time-limit flag, dataset reference.
        and the dataset manifest.
    * - ``account_values.csv``, ``product_values.csv``
