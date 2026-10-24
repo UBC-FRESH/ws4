@@ -37,7 +37,7 @@ exists and the maintainer approves it.
 | P23 Accounts and target activation | #206 | `feature/p23-target-browser` | complete |
 | P24 Search portfolio and multi-objective | #207 | `feature/p24-search-portfolio` | complete |
 | P25 Constraint repair and flow ceilings | #214 | `feature/p25-constraints` | complete |
-| P26 Reproducibility and data quality | #219 | `feature/p26-repro-quality` | active |
+| P26 Reproducibility and data quality | #219 | `feature/p26-repro-quality` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -946,14 +946,14 @@ Acceptance:
 
 Parent issue: #219
 Branch: `feature/p26-repro-quality`
-Status: active
+Status: pr-open
 
 Goal: make every run reproducible and its data limitations visible: write a complete run manifest,
 summarize dataset quality and known gaps, and compare scenarios over the same landscape.
 
-- [ ] P26.1 Add the run manifest (#220)
-- [ ] P26.2 Add the data-quality block and report (#221)
-- [ ] P26.3 Add scenario comparison (#222)
+- [x] P26.1 Add the run manifest (#220)
+- [x] P26.2 Add the data-quality block and report (#221)
+- [x] P26.3 Add scenario comparison (#222)
 
 Acceptance:
 
