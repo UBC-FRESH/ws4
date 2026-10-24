@@ -62,11 +62,11 @@ circle.untreated { fill:var(--untreated); fill-opacity:.55; }
 #targets-table { width:100%; border-collapse:collapse; font-size:.74rem; }
 #targets-table th, #targets-table td { border-bottom:1px solid var(--line); padding:.15rem .2rem; text-align:left; }
 #targets-table th { color:var(--muted); font-weight:600; }
-#targets-table input[type=number] { width:4.1rem; font-size:.74rem; padding:.1rem .15rem; }
+#targets-table input[type=number] { width:3.5rem; font-size:.74rem; padding:.1rem .15rem; }
 #targets-table input[type=number]::-webkit-outer-spin-button,
 #targets-table input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
 #targets-table input[type=number] { -moz-appearance:textfield; }
-#targets-table td.account { max-width:8rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#targets-table td.account { max-width:6.5rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 #save-targets { margin-top:.5rem; padding:.3rem .7rem; }
 #report-preview { margin-top:.6rem; overflow:auto; max-height:55vh; }
 #report-preview table { border-collapse:collapse; font-size:.72rem; }
@@ -179,3 +179,30 @@ path.block.compare-both { fill:#6b4c9a; }
 .window-row span.met { color:var(--untreated); }
 .window-row span.below { color:var(--treated); }
 .window-row span.above { color:#b45309; }
+
+/* Account browser and target activation */
+.account-browser { margin:.6rem 0 .8rem; border:1px solid var(--line); border-radius:.45rem;
+                   padding:.5rem; background:#fbfcfd; }
+.account-browser-head { display:flex; gap:.5rem; align-items:center; margin-bottom:.4rem; }
+.account-browser-head h3 { font-size:.8rem; margin:0; text-transform:uppercase; letter-spacing:.06em;
+                           color:var(--muted); white-space:nowrap; }
+.account-browser-head input { flex:1; min-width:0; }
+.account-tree { max-height:18rem; overflow:auto; font-size:.8rem; }
+.account-tree details { margin-left:.55rem; }
+.account-tree > details { margin-left:0; }
+.account-tree summary { cursor:pointer; color:var(--muted); }
+.account-leaf { display:flex; gap:.4rem; align-items:baseline; width:100%; border:0; background:none;
+                text-align:left; cursor:pointer; padding:.08rem .2rem; border-radius:.25rem; }
+.account-leaf:hover { background:#eef2f6; }
+.account-leaf .name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.account-leaf .value { margin-left:auto; color:var(--muted); font-variant-numeric:tabular-nums;
+                       white-space:nowrap; }
+.badge { background:#eef2f6; border:1px solid var(--line); border-radius:999px; padding:0 .35rem;
+         font-size:.68rem; color:var(--muted); }
+.account-picker { margin-top:.5rem; border-top:1px solid var(--line); padding-top:.45rem; }
+.picked-account { display:flex; gap:.4rem; align-items:baseline; flex-wrap:wrap; margin-bottom:.25rem; }
+.account-leaf .kind { color:var(--muted); font-size:.66rem; text-transform:uppercase; letter-spacing:.03em; }
+.account-leaf .badge { flex:none; }
+.remove-target { padding:.05rem .35rem; font-size:.72rem; }
+#targets-table th:last-child, #targets-table td:last-child { position:sticky; right:0; background:var(--panel);
+  box-shadow:-1px 0 var(--line); text-align:center; }

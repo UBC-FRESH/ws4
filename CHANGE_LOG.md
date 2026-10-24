@@ -2288,3 +2288,15 @@ issue comments.
 - P25.2 refresh: the example notebooks' stored outputs now include the new
   `constraint_strategy` summary field. `python scripts/check_notebooks.py` reports 47
   compared and 0 drifted.
+- P23.1: the Targets tab now reads the selected run's account catalogue, folds the names on their
+  `.` segments into a searchable tree, and shows each account's last value, its level/flow rule, and
+  a `target` badge when it is already targeted. Selecting a leaf opens a period/width/min/max/weight
+  form; **Add target** validates the whole list through `POST /api/targets.json`, writes the YAML,
+  and refreshes the table. The table's **×** removes a target; the last target cannot be removed
+  because the API refuses an empty document. The width defaults to the file's existing width, or ten
+  years when the file is empty. Target `notes` fields survive the JSON round-trip; comments and key
+  order do not, which the web reference now states. The shell assets move to `v50`, and the tile base
+  now resolves without the page query so `?v=50` works. Verification:
+  `scripts/check_target_browser.py` opened 51 accounts, filtered to an account, added and removed a
+  target against a scratch targets file; the empty-file path was tested separately; the P20 tile
+  plots at z13-z15 remain normal block mosaics. Dashboard **GREEN**.
