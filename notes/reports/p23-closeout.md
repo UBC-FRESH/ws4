@@ -4,7 +4,7 @@ Phase: P23, Accounts and target activation
 Parent issue: #206
 Task issue: #195 (P23.1)
 Pull request: #212
-Evidence head: `ec1048d`
+Evidence head: `1526216`
 Report commit: the commit that adds this report. Its CI run is posted on the pull request.
 Date: 2026-10-24
 Status: queued for approval. Not merged.
@@ -30,7 +30,7 @@ Settings changes: none. This phase changes no repository setting, tag, release, 
 | An already-targeted account is visibly marked. | The leaf renders a `target` badge; `accountIsTarget` drives it from `state.targets`. The check saw the badge after the add. | Met |
 | A run started from the UI uses the new target. | On the c5 sample, a target added in the Targets tab (`feature.Area.managed.CDCONMIX`, period 1) was written to the YAML; Play started a 3-iteration run, and the run's `report_targets.csv` contained that account with period 1. | Met |
 | The last target is removable. | The API refuses an empty `targets` document, so the browser disables removal of the last row and documents the YAML edit. | Not met; deliberate guard |
-| `python scripts/dashboard.py` is green. | Lint, format, types, tests, validator, docs, and docstrings pass at `ec1048d`. | Met |
+| `python scripts/dashboard.py` is green. | Lint, format, types, tests, validator, docs, and docstrings pass at `1526216`. | Met |
 
 ## 2. Workflow compliance
 
@@ -48,7 +48,7 @@ Settings changes: none. This phase changes no repository setting, tag, release, 
 
 ## 3. Gate evidence
 
-| Gate | Result at `ec1048d` |
+| Gate | Result at `1526216` |
 | --- | --- |
 | lint | green |
 | format | green |
