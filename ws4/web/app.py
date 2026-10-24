@@ -234,6 +234,69 @@ def _intersects(bbox: tuple[float, float, float, float], feature: dict[str, Any]
 TILE_EXTENT: int = 4096
 
 
+def _safe_cache_name(value: str) -> str:
+    """Return a filesystem-safe path component.
+
+    Parameters
+    ----------
+    value : str
+        A run name, layer name, or other key.
+
+    Returns
+    -------
+    str
+        Letters, digits, dot, dash, and underscore; every other character becomes
+        an underscore.
+    """
+    return "".join(
+        character if character.isalnum() or character in "._-" else "_" for character in value
+    )
+
+
+def _tile_cache_path(
+    root: Path,
+    run: str,
+    layer: str,
+    year: int | None,
+    period_start: int | None,
+    z: int,
+    x: int,
+    y: int,
+) -> Path:
+    """Return the durable cache path for one tile.
+
+    Parameters
+    ----------
+    root : Path
+        Cache root.
+    run : str
+        Run name.
+    layer : str
+        Map layer.
+    year : int or None
+        Period end year.
+    period_start : int or None
+        Period start year.
+    z, x, y : int
+        Tile coordinates.
+
+    Returns
+    -------
+    Path
+        A path under ``root`` with sanitized run and layer components.
+    """
+    return (
+        root
+        / _safe_cache_name(run)
+        / _safe_cache_name(layer)
+        / f"year-{year if year is not None else 'none'}"
+        / f"period-{period_start if period_start is not None else 'none'}"
+        / str(z)
+        / str(x)
+        / f"{y}.mvt"
+    )
+
+
 def _tile_tolerance(zoom: int) -> float:
     """Return the simplification tolerance in metres for a tile zoom.
 
@@ -459,6 +522,7 @@ def create_app(
     route_config: Path | None = None,
     roads: Path | None = None,
     crs: str = "EPSG:4326",
+    tile_cache_dir: Path | None = None,
 ) -> FastAPI:
     """Create the WS4 read API.
 
@@ -506,6 +570,8 @@ def create_app(
     crs : str, optional
         The source CRS of the geometry and roads. The SVG shell uses the native coordinates;
         ``format=wgs84`` transforms them for MapLibre. Default ``EPSG:4326``.
+    tile_cache_dir : Path or None, optional
+        Directory for durable MVT tiles. ``None`` keeps tiles in memory only.
 
     Returns
     -------
@@ -525,6 +591,7 @@ def create_app(
     )
     route_config_path = Path(route_config).resolve() if route_config is not None else None
     roads_path = Path(roads).resolve() if roads is not None else None
+    tile_cache_root = Path(tile_cache_dir).resolve() if tile_cache_dir is not None else None
     source_crs = str(crs)
     agent_working_directory = Path(agent_cwd).resolve() if agent_cwd is not None else Path.cwd()
     app = FastAPI(title="WS4", version="0.1.0")
@@ -1729,12 +1796,31 @@ def create_app(
         if z < 0 or z > 22 or x < 0 or y < 0 or x >= 2**z or y >= 2**z:
             raise HTTPException(status_code=422, detail="tile coordinate out of range")
         cache_key = (run, z, x, y, layer, year, period_start)
+        cache_path = (
+            _tile_cache_path(tile_cache_root, run, layer, year, period_start, z, x, y)
+            if tile_cache_root is not None
+            else None
+        )
         cached_tile = tile_cache.get(cache_key)
         if cached_tile is not None:
             return Response(
                 content=cached_tile,
                 media_type="application/vnd.mapbox-vector-tile",
-                headers={"Cache-Control": "public, max-age=3600"},
+                headers={
+                    "Cache-Control": "public, max-age=3600",
+                    "X-WS4-Tile-Cache": "memory",
+                },
+            )
+        if cache_path is not None and cache_path.is_file():
+            payload = cache_path.read_bytes()
+            tile_cache[cache_key] = payload
+            return Response(
+                content=payload,
+                media_type="application/vnd.mapbox-vector-tile",
+                headers={
+                    "Cache-Control": "public, max-age=3600",
+                    "X-WS4-Tile-Cache": "disk",
+                },
             )
         entry = cached_geometry(run, year, layer, period_start, account)
         tile = mercantile.Tile(x, y, z)
@@ -1746,14 +1832,22 @@ def create_app(
         )
         tile_box = box(*source_bounds)
         tolerance = _tile_tolerance(z)
+        indices = [int(index) for index in entry["tree"].query(tile_box)]
+        if z < 10:
+            if layer == "blocks":
+                step = max(1, len(indices) // 5000)
+                indices = indices[::step]
+            else:
+                indices = [
+                    index
+                    for index in indices
+                    if bool(entry["features"][index].get("properties", {}).get("treated"))
+                ]
         features: list[dict[str, Any]] = []
-        for index in entry["tree"].query(tile_box):
-            properties = entry["features"][int(index)].get("properties", {})
-            treated = bool(properties.get("treated"))
+        for index in indices:
+            properties = entry["features"][index].get("properties", {})
             if z < 10:
-                if layer != "blocks" and not treated:
-                    continue
-                geometry = entry["centroids"][int(index)]
+                geometry = entry["centroids"][index]
             else:
                 geometry = entry["shapes"][int(index)]
                 if tolerance > 0:
@@ -1783,10 +1877,18 @@ def create_app(
         if len(tile_cache) >= 4096:
             tile_cache.clear()
         tile_cache[cache_key] = payload
+        if cache_path is not None:
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            temporary = cache_path.with_name(f"{cache_path.name}.tmp")
+            temporary.write_bytes(payload)
+            temporary.replace(cache_path)
         return Response(
             content=payload,
             media_type="application/vnd.mapbox-vector-tile",
-            headers={"Cache-Control": "public, max-age=3600"},
+            headers={
+                "Cache-Control": "public, max-age=3600",
+                "X-WS4-Tile-Cache": "miss",
+            },
         )
 
     def _realized_rows(directory: Path) -> list[dict[str, Any]]:

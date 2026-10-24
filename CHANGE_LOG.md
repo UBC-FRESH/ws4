@@ -2190,3 +2190,7 @@ issue comments.
   patches, compartments, and comparison. The TSA 46 shell makes six z6 MVT requests on load
   (331 treated centroids of 171,825 blocks); TSA 47 makes four z7 requests (456 of 74,170).
   `scripts/check_map_browser.py` is the opt-in Playwright smoke; both services pass it.
+- P20.4 adds a durable MVT tile cache (`ws4 serve --tile-cache`) with `X-WS4-Tile-Cache` reporting
+  `memory`, `disk`, or `miss`, and the 1,000,000-fragment scale gate. The gate measured a 130 KB
+  zoom-0 tile in 29.3 s cold and 0.018 s warm, and a 2.8 KB zoom-12 tile in 0.038 s; all
+  thresholds pass. Tests: disk/memory/miss cache, grid writer, and scale smoke.

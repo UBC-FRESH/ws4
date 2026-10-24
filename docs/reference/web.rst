@@ -178,6 +178,11 @@ transforms the source CRS with pyproj. Start the service with the CRS the geomet
 
    ws4 serve --dataset build/compiled --runs runs --geometry blocks.geojson --crs EPSG:26911
 
+Add ``--tile-cache PATH`` to keep the MVT tiles across restarts. Tiles are written under
+``PATH/<run>/<layer>/year-<year>/period-<start>/<z>/<x>/<y>.mvt`` and served with
+``Cache-Control: public, max-age=3600``. The response header ``X-WS4-Tile-Cache`` reports
+``memory``, ``disk``, or ``miss``. Without the flag the cache is in memory only.
+
 The SVG fallback keeps native coordinates and remains available when WebGL or the basemap is
 unavailable. The basemap is an external OpenStreetMap raster source; without network access the
 blocks still draw, but the basemap is blank. MapLibre draws the cumulative earlier-period fill as
@@ -205,6 +210,16 @@ The browser path has an opt-in smoke:
 
 It needs Playwright and a Chromium build, and it fails when the shell makes no ``.mvt`` request or
 reports a console error. It is not a CI gate because the browser install is heavy.
+
+The scale gate builds a synthetic point grid and times the tile path:
+
+.. code-block:: bash
+
+   python scripts/benchmark_map_scale.py --fragments 1000000 --check
+
+The check fails when a zoom-0 or zoom-12 tile is over 2 MB, the cold request is over 120 seconds,
+or the warm request is over 5 seconds. On 2026-10-24, 1,000,000 fragments produced a 130 KB zoom-0
+tile in 29.3 seconds cold and 0.018 seconds warm, and a 2.8 KB zoom-12 tile in 0.038 seconds.
 
 Geometry
 --------

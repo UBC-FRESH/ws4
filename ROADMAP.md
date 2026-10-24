@@ -818,7 +818,7 @@ detail that zoom requires, instead of one full-management-unit GeoJSON payload.
 - [x] P20.1 Add viewport bbox and zoom LOD to the map endpoint and UI (#184)
 - [x] P20.2 Add the MVT tile endpoint and tile cache (#186)
 - [x] P20.3 Add the MapLibre vector source and validate it in a browser (#187)
-- [ ] P20.4 Add the 1M-fragment scale gate
+- [x] P20.4 Add the durable tile cache and 1M-fragment scale gate (#188)
 
 Acceptance: a low-zoom request returns compact centroids, a high-zoom bbox request returns only the
 visible blocks, the front-end reloads on `moveend` without a loop, and the TSA 46 initial payload is

@@ -20,7 +20,12 @@ from fastapi.testclient import TestClient
 from ws4.web.app import create_app
 
 
-def _app(tmp_path: Path, *, with_geometry: bool = True) -> tuple[TestClient, Path]:
+def _app(
+    tmp_path: Path,
+    *,
+    with_geometry: bool = True,
+    tile_cache_dir: Path | None = None,
+) -> tuple[TestClient, Path]:
     """Create a dataset, a run and a client over them; return the client and the targets path."""
     dataset = tmp_path / "dataset"
     dataset.mkdir()
@@ -78,6 +83,7 @@ def _app(tmp_path: Path, *, with_geometry: bool = True) -> tuple[TestClient, Pat
         runs=tmp_path / "runs",
         targets=targets,
         geometry=geometry if with_geometry else None,
+        tile_cache_dir=tile_cache_dir,
     )
     return TestClient(app), targets
 
@@ -1015,3 +1021,29 @@ def test_map_stats_reports_full_run_counts(tmp_path: Path) -> None:
         params={"year": 0, "layer": "treatments"},
     ).json()
     assert body == {"total_features": 2, "total_treated": 1, "total_untreated": 1}
+
+
+def test_the_tile_cache_writes_and_reuses_a_disk_tile(tmp_path: Path) -> None:
+    """A tile is written once and served from disk by a fresh application."""
+    cache = tmp_path / "tile-cache"
+    client, targets = _app(tmp_path, tile_cache_dir=cache)
+    params = {"year": 0, "layer": "treatments"}
+    first = client.get("/api/runs/run1/tiles/0/0/0.mvt", params=params)
+    assert first.status_code == 200
+    assert first.headers["x-ws4-tile-cache"] == "miss"
+    files = list(cache.rglob("*.mvt"))
+    assert len(files) == 1
+    second = client.get("/api/runs/run1/tiles/0/0/0.mvt", params=params)
+    assert second.headers["x-ws4-tile-cache"] == "memory"
+    fresh = TestClient(
+        create_app(
+            dataset=tmp_path / "dataset",
+            runs=tmp_path / "runs",
+            targets=targets,
+            geometry=tmp_path / "geometry.geojson",
+            tile_cache_dir=cache,
+        )
+    )
+    third = fresh.get("/api/runs/run1/tiles/0/0/0.mvt", params=params)
+    assert third.headers["x-ws4-tile-cache"] == "disk"
+    assert third.content == first.content
