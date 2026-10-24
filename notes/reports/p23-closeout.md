@@ -4,7 +4,7 @@ Phase: P23, Accounts and target activation
 Parent issue: #206
 Task issue: #195 (P23.1)
 Pull request: #212
-Evidence head: `42ccc9c`
+Evidence head: `fe4a19d`
 Report commit: the commit that adds this report. Its CI run is posted on the pull request.
 Date: 2026-10-24
 Status: queued for approval. Not merged.
@@ -33,7 +33,7 @@ Settings changes: none. This phase changes no repository setting, tag, release, 
 | A flat incumbent is visibly different from a stalled solver. | On c5, 100 iterations/one island: best stayed at 3,965,293 while current moved to 3,965,632 and accepted rose past 30; the run panel shows `best · current · accepted`. | Met |
 | A run started from the UI uses the new target. | On the c5 sample, a target added in the Targets tab (`feature.Area.managed.CDCONMIX`, period 1) was written to the YAML; the start control launched a 3-iteration run, and the run's `report_targets.csv` contained that account with period 1. | Met |
 | The last target is removable. | The API refuses an empty `targets` document, so the browser disables removal of the last row and documents the YAML edit. | Not met; deliberate guard |
-| `python scripts/dashboard.py` is green. | Lint, format, types, tests, validator, docs, and docstrings pass at `42ccc9c`. | Met |
+| `python scripts/dashboard.py` is green. | Lint, format, types, tests, validator, docs, and docstrings pass at `fe4a19d`. | Met |
 
 ## 2. Workflow compliance
 
@@ -51,7 +51,7 @@ Settings changes: none. This phase changes no repository setting, tag, release, 
 
 ## 3. Gate evidence
 
-| Gate | Result at `42ccc9c` |
+| Gate | Result at `fe4a19d` |
 | --- | --- |
 | lint | green |
 | format | green |
