@@ -234,7 +234,7 @@ def _intersects(bbox: tuple[float, float, float, float], feature: dict[str, Any]
 
 
 TILE_EXTENT: int = 4096
-TILE_CACHE_VERSION: str = "v7"
+TILE_CACHE_VERSION: str = "v8"
 
 
 def _safe_cache_name(value: str) -> str:

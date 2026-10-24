@@ -2236,3 +2236,6 @@ issue comments.
   `ed9693e`. The close-out report now records the rejected centroid/grid LOD and the final policy:
   full geometry at detail zooms, a 100 m overview below zoom 8, and treated-only block polygons
   below zoom 6.
+- P20.6 cache-bust: tile URLs now carry `v=v8`, the server cache is v8, and block outlines are
+  visible. A sampled z13 tile is 57 full block polygons, 0 invalid; the browser no longer reuses
+  the pre-fix 100 m tiles.
