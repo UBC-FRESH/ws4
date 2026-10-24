@@ -2250,3 +2250,7 @@ issue comments.
   1M-fragment gate measured 130 KB z0 / 25.19 s cold / 0.018 s warm / 1,734.6 MiB peak. The gate
   caught a real regression: the bare block MVT layer was not sampled below zoom 6, producing a
   27 MB z0 tile; it now samples to 5,000 features and returns to 130 KB. Dashboard **GREEN**.
+
+- P22 close-out: pre-warm, path-prefix deployment check, and the 1M peak-RSS gate are implemented,
+  tested, documented, and queued in `notes/reports/p22-closeout.md`. The scale gate caught and fixed
+  the missing low-zoom block sampling. Dashboard **GREEN** at `57a98dd`.

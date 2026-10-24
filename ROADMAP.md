@@ -33,7 +33,7 @@ exists and the maintainer approves it.
 | P19 Model-derived spatial layers and map scale | #161 | `feature/p19-spatial-layers` | complete |
 | P20 Production map serving | #183 | `feature/p20-map-lod` | complete |
 | P21 Search quality and validation | #190 | `feature/p21-search-quality` | complete |
-| P22 Map operations | #198 | `feature/p22-map-ops` | active |
+| P22 Map operations | #198 | `feature/p22-map-ops` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -854,7 +854,7 @@ Acceptance:
 
 Parent issue: #198
 Branch: `feature/p22-map-ops`
-Status: active
+Status: pr-open
 
 Goal: make production map serving operationally repeatable: pre-warm the durable tile cache, prove the
 service works behind a path prefix, and measure the 1M-fragment cold-build memory.
