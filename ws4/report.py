@@ -84,6 +84,53 @@ def ratio_account(
     return pd.DataFrame(rows, columns=["offset", "account", "value"])
 
 
+def target_kind(target: Target) -> str:
+    """Return the target's reporting kind.
+
+    Parameters
+    ----------
+    target : Target
+        The target.
+
+    Returns
+    -------
+    str
+        ``"level"``, ``"flow.even"``, or ``"flow.ndy"``.
+    """
+    return f"flow.{target.flow}" if target.flow else "level"
+
+
+def ending_inventory(values: pd.DataFrame) -> pd.DataFrame:
+    """Return the final feature-inventory values.
+
+    The ending inventory is the state at the last offset for accounts whose name starts
+    with ``feature.``. A ``product.`` account is harvested output, not closing inventory.
+
+    Parameters
+    ----------
+    values : pandas.DataFrame
+        Account values with ``offset``, ``account``, and ``value``.
+
+    Returns
+    -------
+    pandas.DataFrame
+        ``offset``, ``account``, and ``value`` at the final offset. Empty with those
+        columns when there are no feature accounts.
+    """
+    columns = ["offset", "account", "value"]
+    if values.empty or "offset" not in values.columns:
+        return pd.DataFrame(columns=columns)
+    final = int(float(values["offset"].astype(float).max()))
+    frame = values[
+        (values["offset"].astype(float) == final)
+        & values["account"].astype(str).str.startswith("feature.")
+    ]
+    if frame.empty:
+        return pd.DataFrame(columns=columns)
+    ending = frame.groupby("account", sort=True)["value"].sum().reset_index().assign(offset=final)
+    return ending[columns]
+
+
 def _status(value: float, target: Target) -> str:
     """Return whether a value is within a target's bounds.
 
@@ -141,6 +188,7 @@ def target_status(values: pd.DataFrame, targets: list[Target]) -> pd.DataFrame:
                     "scale": normalization_scale(target),
                     "normalization": target.normalization,
                     "priority": target.priority,
+                    "kind": target_kind(target),
                     "status": "inactive",
                 }
             )
@@ -168,6 +216,7 @@ def target_status(values: pd.DataFrame, targets: list[Target]) -> pd.DataFrame:
                         "scale": normalization_scale(target),
                         "normalization": target.normalization,
                         "priority": target.priority,
+                        "kind": target_kind(target),
                         "status": _status(value, target),
                     }
                 )
@@ -191,6 +240,7 @@ def target_status(values: pd.DataFrame, targets: list[Target]) -> pd.DataFrame:
                 "scale": normalization_scale(target),
                 "normalization": target.normalization,
                 "priority": target.priority,
+                "kind": target_kind(target),
                 "status": status,
             }
         )
@@ -207,9 +257,11 @@ def write_report(values: pd.DataFrame, targets: list[Target], out_dir: Path) -> 
     targets : list of Target
         The targets.
     out_dir : Path
-        Directory to write ``report_accounts.csv`` and ``report_targets.csv`` into.
+        Directory to write ``report_accounts.csv``, ``report_targets.csv``, and
+        ``ending_inventory.csv`` into.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     account_summary(values).to_csv(out_dir / "report_accounts.csv", index=False)
     target_status(values, targets).to_csv(out_dir / "report_targets.csv", index=False)
+    ending_inventory(values).to_csv(out_dir / "ending_inventory.csv", index=False)

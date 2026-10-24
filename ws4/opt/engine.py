@@ -30,7 +30,7 @@ from ..patch.accounts import (
 )
 from ..patch.constraints import core_area_penalty, schedule_years, spatial_penalty
 from ..patch.edge import EdgeElement, load_edge_elements
-from ..report import write_report
+from ..report import ending_inventory, write_report
 from ..roads.accounts import (
     DuplicateAccount,
     MaintenanceCharge,
@@ -1536,6 +1536,11 @@ class Optimizer:
                 )
         self._last_values = values
         write_report(values, targets, out_dir)
+        ending = ending_inventory(values)
+        ending_offset = int(ending["offset"].iloc[0]) if not ending.empty else -1
+        ending_values = {
+            str(row.account): float(str(row.value)) for row in ending.itertuples(index=False)
+        }
         reproducibility = write_reproducibility(out_dir, self.dataset_dir, self.cfg)
         constraint_report = self._constraint_report(out_dir, best, pool_search)
         summary: dict[str, Any] = {
@@ -1557,6 +1562,8 @@ class Optimizer:
             "run_manifest": "run_manifest.json",
             "data_quality": reproducibility["quality"]["summary"],
             "data_quality_report": "data_quality.json",
+            "ending_inventory": {"offset": ending_offset, "accounts": ending_values},
+            "ending_inventory_report": "ending_inventory.csv",
             "status": "ok",
             "time_limit_reached": bool(expired(self._deadline)),
             "dataset": dataset_reference(self.dataset_dir),
