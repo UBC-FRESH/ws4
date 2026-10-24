@@ -234,7 +234,7 @@ def _intersects(bbox: tuple[float, float, float, float], feature: dict[str, Any]
 
 
 TILE_EXTENT: int = 4096
-TILE_CACHE_VERSION: str = "v7"
+TILE_CACHE_VERSION: str = "v8"
 
 
 def _safe_cache_name(value: str) -> str:
@@ -254,6 +254,32 @@ def _safe_cache_name(value: str) -> str:
     return "".join(
         character if character.isalnum() or character in "._-" else "_" for character in value
     )
+
+
+def _sample_low_zoom(indices: list[int], layer: str, z: int, *, limit: int = 5000) -> list[int]:
+    """Return an even sample of the bare block layer below zoom 6.
+
+    Parameters
+    ----------
+    indices : list of int
+        The tile's intersecting feature indices.
+    layer : str
+        The tile layer.
+    z : int
+        The zoom level.
+    limit : int, optional
+        The most block features to return at low zoom.
+
+    Returns
+    -------
+    list of int
+        The original indices, or an even sample for the bare block layer below
+        zoom 6.
+    """
+    if z >= 6 or layer != "blocks":
+        return indices
+    step = max(1, len(indices) // limit)
+    return indices[::step]
 
 
 def _tile_cache_path(
@@ -1881,6 +1907,7 @@ def create_app(
         tile_box = box(*source_bounds)
         tolerance = _tile_tolerance(z)
         indices = [int(index) for index in entry["tree"].query(tile_box)]
+        indices = _sample_low_zoom(indices, layer, z)
         if z < 6 and layer != "blocks":
             indices = [
                 index

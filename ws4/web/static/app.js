@@ -4,6 +4,7 @@
 const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false };
 
 const $ = (id) => document.getElementById(id);
+const TILE_VERSION = 'v8';
 const statusLine = (text) => { $('status').textContent = text; };
 
 async function api(path) {
@@ -217,7 +218,7 @@ function ensureMapLibre() {
         paint: {
           'fill-color': ['to-color', ['get', '_fill']],
           'fill-opacity': ['get', '_opacity'],
-          'fill-outline-color': 'rgba(0,0,0,0.08)',
+          'fill-outline-color': 'rgba(0,0,0,0.22)',
         },
       });
       map.addLayer({
@@ -653,7 +654,7 @@ function installVectorSource(url) {
       paint: {
         'fill-color': '#2f7d4f',
         'fill-opacity': 0.55,
-        'fill-outline-color': 'rgba(0,0,0,0.08)',
+        'fill-outline-color': 'rgba(0,0,0,0.22)',
       },
     };
     const pointLayer = {
@@ -737,7 +738,7 @@ async function loadMap(preserveView = false) {
     const span = period ? ` · years ${period.start}-${period.end}` : '';
     if (state.mapEngine === 'maplibre' && vectorMode(layer)) {
       const base = document.baseURI.endsWith('/') ? document.baseURI : `${document.baseURI}/`;
-      let tileUrl = `${base}api/runs/${encodeURIComponent(state.run)}/tiles/{z}/{x}/{y}.mvt?year=${end}&layer=${layer}`;
+      let tileUrl = `${base}api/runs/${encodeURIComponent(state.run)}/tiles/{z}/{x}/{y}.mvt?year=${end}&layer=${layer}&v=${TILE_VERSION}`;
       if (period) tileUrl += `&period_start=${period.start}`;
       state.vectorActive = true;
       state.features = [];

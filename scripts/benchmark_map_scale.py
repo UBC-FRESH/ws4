@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -42,12 +43,32 @@ class BenchmarkResult(TypedDict):
     z0_cache: str | None
     z12_cache: str | None
     warm_cache: str | None
+    peak_rss_mb: float
 
 
 DEFAULT_FRAGMENTS: int = 1_000_000
 MAX_TILE_BYTES: int = 2_000_000
 MAX_COLD_SECONDS: float = 120.0
 MAX_WARM_SECONDS: float = 5.0
+MAX_RSS_MB: float = 4096.0
+
+
+def peak_rss_mb() -> float | None:
+    """Return the process peak resident set size in MiB, or None when unavailable.
+
+    Returns
+    -------
+    float or None
+        The peak RSS, or None on a platform without the ``resource`` module.
+    """
+    try:
+        import resource
+    except ImportError:  # pragma: no cover - Windows without resource
+        return None
+    usage = float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+    if sys.platform == "darwin":
+        return usage / (1024.0 * 1024.0)
+    return usage / 1024.0
 
 
 def generate_grid(
@@ -196,6 +217,7 @@ def run_benchmark(
             "z0_cache": zero.headers.get("x-ws4-tile-cache"),
             "z12_cache": detail.headers.get("x-ws4-tile-cache"),
             "warm_cache": warm.headers.get("x-ws4-tile-cache"),
+            "peak_rss_mb": round(peak_rss_mb() or 0.0, 1),
         }
     finally:
         if temporary is not None:
@@ -233,6 +255,8 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - scale gate
         failures.append(f"cold {result['cold_seconds']}s > {MAX_COLD_SECONDS}s")
     if float(result["warm_seconds"]) > MAX_WARM_SECONDS:
         failures.append(f"warm {result['warm_seconds']}s > {MAX_WARM_SECONDS}s")
+    if float(result["peak_rss_mb"]) > MAX_RSS_MB:
+        failures.append(f"peak RSS {result['peak_rss_mb']} MiB > {MAX_RSS_MB} MiB")
     for failure in failures:
         print(f"FAIL: {failure}")
     return 1 if failures else 0

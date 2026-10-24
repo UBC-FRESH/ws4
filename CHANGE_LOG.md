@@ -2236,3 +2236,21 @@ issue comments.
   `ed9693e`. The close-out report now records the rejected centroid/grid LOD and the final policy:
   full geometry at detail zooms, a 100 m overview below zoom 8, and treated-only block polygons
   below zoom 6.
+- P20.6 cache-bust: tile URLs now carry `v=v8`, the server cache is v8, and block outlines are
+  visible. A sampled z13 tile is 57 full block polygons, 0 invalid; the browser no longer reuses
+  the pre-fix 100 m tiles.
+
+- P22.1: `scripts/prewarm_tiles.py` walks a model tree's bounds and selected zooms/layers/periods
+  in-process, writes the durable MVT cache, and reports requests, failures, bytes, seconds, and
+  cache-header counts.
+- P22.2: `scripts/check_map_proxy.py` mounts the service at a path prefix and verifies the shell,
+  static assets, API summary, viewport map, and MVT tile; it also asserts the relative URLs that
+  make a prefix work.
+- P22.3: `scripts/benchmark_map_scale.py` now reports peak RSS and enforces a 4096 MiB budget. The
+  1M-fragment gate measured 130 KB z0 / 25.19 s cold / 0.018 s warm / 1,734.6 MiB peak. The gate
+  caught a real regression: the bare block MVT layer was not sampled below zoom 6, producing a
+  27 MB z0 tile; it now samples to 5,000 features and returns to 130 KB. Dashboard **GREEN**.
+
+- P22 close-out: pre-warm, path-prefix deployment check, and the 1M peak-RSS gate are implemented,
+  tested, documented, and queued in `notes/reports/p22-closeout.md`. The scale gate caught and fixed
+  the missing low-zoom block sampling. Dashboard **GREEN** at `57a98dd`.

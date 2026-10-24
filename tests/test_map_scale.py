@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from benchmark_map_scale import generate_grid, run_benchmark
+from benchmark_map_scale import generate_grid, peak_rss_mb, run_benchmark
 
 
 def test_generate_grid_writes_the_requested_count(tmp_path: Path) -> None:
@@ -27,3 +27,10 @@ def test_scale_benchmark_smoke(tmp_path: Path) -> None:
     assert int(result["z12_bytes"]) >= 0
     assert result["z0_cache"] == "miss"
     assert result["warm_cache"] in {"memory", "disk"}
+    assert float(result["peak_rss_mb"]) > 0.0
+
+
+def test_peak_rss_is_positive() -> None:
+    """The process peak RSS is available on the Linux dev host."""
+    value = peak_rss_mb()
+    assert value is None or value > 0.0
