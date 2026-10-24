@@ -243,6 +243,54 @@ The mixed-integer layer (``ws4.opt.mip``) solves an option-selection MILP (HiGHS
 summary. With ``--topology`` and ``--max-opening-ha`` the bound also enforces the stand-centred
 opening constraints, which tighten it as the cap falls.
 
+Constraint strategies
+---------------------
+
+The spatial rules are **penalties** by default: an opening, green-up, or core-area violation adds a
+weighted penalty to the objective, and the search may trade it against the targets. Two opt-in
+policies make the rules hard:
+
+.. code-block:: bash
+
+   ws4 optimize --dataset build/compiled --targets targets.yaml --out opt \
+     --topology topology.csv --max-opening-ha 40 --min-green-up-years 3 \
+     --constraint-strategy reject
+
+``penalize`` is the default. ``reject`` refuses a move that would leave the schedule infeasible.
+``repair`` first tries a one-block local repair — drop an added block, restore a removed one, or
+restore a modified chain — and rejects the move if the result is still infeasible. The guard wraps
+the operator registry, so SA delta, SA, tabu, ILS, and threshold all see the same policy.
+
+An infeasible warm start or construction seed is made feasible before the search by removing the
+blocks in violating patches or green-up pairs. The run summary records ``constraint_strategy``,
+``constraint_stats`` (proposed, feasible, rejected, repaired, initial removals), and
+``constraint_feasible``. The run directory also contains ``constraint_report.json`` with the same
+counts and the final violation records. ``penalize`` keeps the scalable incremental penalty path;
+``reject`` and ``repair`` evaluate the full schedule per proposal, so use them on a constrained
+subproblem or when hard feasibility matters more than throughput.
+
+Flow ceiling
+------------
+
+``scripts/max_flow.py`` binary-searches a constant per-period volume floor. It replaces the targets
+on the chosen account with one floor per accounting period, keeps the other targets, and probes the
+existing optimizer at each level. A probe passes when every period meets the level within a relative
+tolerance and the optimizer reports no spatial violations.
+
+.. code-block:: bash
+
+   python scripts/max_flow.py \
+     --dataset build/compiled --targets targets.yaml \
+     --account product.Yield.managed.Conif --out runtime/max-flow \
+     --years 100 --period-width 10 --iterations 300 --probes 10 \
+     --topology topology.csv --max-opening-ha 40 --constraint-strategy reject
+
+The high bound is an additive envelope: for each block, the best candidate contribution per period,
+summed over blocks. It is an upper bound, not a schedule. The **advisory ceiling** is the highest
+level a finite probe verified; the output contains ``max_flow.json``, ``max_flow.md``,
+``probe-config.json``, the probe run directories, and ``best-schedule.csv``. A zero ceiling still
+writes a valid report. The ceiling is not a certified maximum.
+
 Run
 ---
 
@@ -567,6 +615,13 @@ API
    :members:
 
 .. autofunction:: ws4.opt.mip.bound_for
+
+.. autoclass:: ws4.opt.constraints.ConstraintGuard
+   :members:
+
+.. autofunction:: ws4.opt.max_flow.run_max_flow
+
+.. autofunction:: ws4.opt.max_flow.high_bound
 
 .. autofunction:: ws4.opt.mip.relaxation_for
 
