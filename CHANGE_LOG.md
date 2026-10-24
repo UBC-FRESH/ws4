@@ -2285,3 +2285,6 @@ issue comments.
   existing optimizer, preserving the non-volume targets and writing `max_flow.json`,
   `max_flow.md`, `probe-config.json`, the probe log, and `best-schedule.csv`. The high bound
   is an additive envelope and the ceiling is advisory. Dashboard **GREEN**.
+- P25.2 refresh: the example notebooks' stored outputs now include the new
+  `constraint_strategy` summary field. `python scripts/check_notebooks.py` reports 47
+  compared and 0 drifted.
