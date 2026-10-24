@@ -33,7 +33,8 @@ exists and the maintainer approves it.
 | P19 Model-derived spatial layers and map scale | #161 | `feature/p19-spatial-layers` | complete |
 | P20 Production map serving | #183 | `feature/p20-map-lod` | complete |
 | P21 Search quality and validation | #190 | `feature/p21-search-quality` | complete |
-| P22 Map operations | #198 | `feature/p22-map-ops` | pr-open |
+| P22 Map operations | #198 | `feature/p22-map-ops` | complete |
+| P23 Accounts and target activation | #206 | `feature/p23-target-browser` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -854,7 +855,7 @@ Acceptance:
 
 Parent issue: #198
 Branch: `feature/p22-map-ops`
-Status: pr-open
+Status: complete
 
 Goal: make production map serving operationally repeatable: pre-warm the durable tile cache, prove the
 service works behind a path prefix, and measure the 1M-fragment cold-build memory.
@@ -868,6 +869,29 @@ Acceptance:
 - A pre-warm run writes durable tiles and reports hits, misses, bytes, and time.
 - The path-prefix check serves `/prefix/`, static assets, the API, and a tile.
 - The 1M-fragment benchmark reports peak RSS and enforces the recorded budget.
+- `python scripts/dashboard.py` is green.
+
+## Phase 23: Accounts and target activation
+
+Parent issue: #206
+Branch: `feature/p23-target-browser`
+Status: active
+
+Goal: let a user discover every account the run reports and activate any of them as an objective target
+without knowing the account vocabulary in advance.
+
+- [ ] P23.1 Web UI: navigate every account and activate any as a target (#195)
+  - [ ] Read the run's account catalogue instead of a hard-coded list
+  - [ ] Group and search account names on their `.` segments
+  - [ ] Show the last value, level/flow, and existing-target state
+  - [ ] Add and remove targets through `/api/targets.json`
+
+Acceptance:
+
+- A user can find an account by substring and add a minimum, maximum, or both.
+- Every account in the run's `account_values.csv` is reachable.
+- The new target is written to the targets YAML and appears in the Targets table.
+- An already-targeted account is visibly marked.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes

@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=47">
+  <link rel="stylesheet" href="static/style.css?v=50">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
 </head>
 <body>
   <header>
-    <strong>WS4</strong><span class="build">v47</span>
+    <strong>WS4</strong><span class="build">v50</span>
     <label>Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Period
@@ -39,10 +39,35 @@
       </section>
       <section id="tab-targets" hidden>
         <h2>Targets</h2>
-        <p id="targets-empty" class="hint">no targets file is configured</p>
+        <p id="targets-empty" class="hint">no targets yet — pick an account below</p>
+        <div id="account-browser" class="account-browser">
+          <div class="account-browser-head">
+            <h3>Accounts in this run</h3>
+            <input id="account-search" type="search" placeholder="Search accounts…" autocomplete="off">
+          </div>
+          <div id="account-tree" class="account-tree"></div>
+          <div id="account-picker" class="account-picker" hidden>
+            <div class="picked-account">
+              <b id="picked-account-name"></b>
+              <span id="picked-account-kind" class="badge"></span>
+              <span id="picked-account-value" class="hint"></span>
+            </div>
+            <div class="run-row">
+              <label>Period <input id="new-target-period" type="number" value="1" min="0" step="1"></label>
+              <label>Width <input id="new-target-width" type="number" value="10" min="1" step="1"></label>
+              <label>Min <input id="new-target-min" type="number" step="any"></label>
+              <label>Max <input id="new-target-max" type="number" step="any"></label>
+              <label>Min w <input id="new-target-min-weight" type="number" value="1" min="0" step="any"></label>
+              <label>Max w <input id="new-target-max-weight" type="number" value="1" min="0" step="any"></label>
+              <button id="add-target">Add target</button>
+            </div>
+            <p class="hint">Period 1 is the first accounting period; width is its length in years.</p>
+            <p id="new-target-status" class="hint"></p>
+          </div>
+        </div>
         <div id="watch-panel" class="watch"></div>
         <div class="table-wrap"><table id="targets-table" hidden>
-          <thead><tr><th>On</th><th>Account</th><th>Period</th><th>Min</th><th>Max</th><th>Min w</th><th>Max w</th></tr></thead>
+          <thead><tr><th>On</th><th>Account</th><th>Period</th><th>Min</th><th>Max</th><th>Min w</th><th>Max w</th><th></th></tr></thead>
           <tbody></tbody>
         </table></div>
         <button id="save-targets" hidden>Save targets</button>
@@ -143,6 +168,6 @@
     </div>
   </main>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=47"></script>
+  <script type="module" src="static/app.js?v=50"></script>
 </body>
 </html>

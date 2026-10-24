@@ -2031,11 +2031,14 @@ def create_app(
         return rows
 
     def _target_rows() -> list[dict[str, Any]]:
-        """Return the targets as rows the browser can edit."""
+        """Return the targets as rows the browser can edit, keeping any notes."""
         if targets_path is None or not targets_path.is_file():
             return []
-        return [
-            {
+        raw = yaml.safe_load(targets_path.read_text(encoding="utf-8")) or {}
+        entries = raw.get("targets", []) if isinstance(raw, dict) else []
+        rows: list[dict[str, Any]] = []
+        for target_index, target in enumerate(load_targets(targets_path)):
+            row: dict[str, Any] = {
                 "index": target_index,
                 "account": target.account,
                 "period": target.period,
@@ -2048,8 +2051,12 @@ def create_app(
                 "max_weight": target.max_weight,
                 "active": target.active,
             }
-            for target_index, target in enumerate(load_targets(targets_path))
-        ]
+            if target_index < len(entries) and isinstance(entries[target_index], dict):
+                notes = entries[target_index].get("notes")
+                if notes is not None:
+                    row["notes"] = notes
+            rows.append(row)
+        return rows
 
     def _write_targets(document: str) -> int:
         """Validate a targets document with the optimizer's loader, then replace the file."""
