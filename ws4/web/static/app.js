@@ -272,6 +272,7 @@ function ensureMapLibre() {
     map.on('error', () => { /* a missing basemap tile must not hide the blocks */ });
     state.mapLibre = map;
     state.mapFitted = false;
+    window.__ws4Map = map;
     return map;
   } catch (error) {
     state.mapEngine = 'svg';
@@ -737,7 +738,7 @@ async function loadMap(preserveView = false) {
     const end = period ? Number(period.end) : state.year;
     const span = period ? ` · years ${period.start}-${period.end}` : '';
     if (state.mapEngine === 'maplibre' && vectorMode(layer)) {
-      const base = document.baseURI.endsWith('/') ? document.baseURI : `${document.baseURI}/`;
+      const base = new URL('.', document.baseURI).href;
       let tileUrl = `${base}api/runs/${encodeURIComponent(state.run)}/tiles/{z}/{x}/{y}.mvt?year=${end}&layer=${layer}&v=${TILE_VERSION}`;
       if (period) tileUrl += `&period_start=${period.start}`;
       state.vectorActive = true;
