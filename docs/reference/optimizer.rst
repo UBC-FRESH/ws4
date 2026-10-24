@@ -152,6 +152,47 @@ weighted penalty to the objective (see :doc:`spatial`): a maximum opening size, 
 and a core-area rule. Edge contrast accounts (``--edge-elements``) are added to the account values, so
 they can be targeted. The penalties are disabled only by the explicit ``--spatial-override``.
 
+Normalization and priority tiers
+--------------------------------
+
+Targets with different units compete on different scales: a volume floor in cubic metres
+can dominate a patch-size share or a cost ceiling. Two opt-in target fields make the
+trade-off explicit.
+
+``normalization: auto`` divides the target's weighted penalty by the larger absolute
+minimum/maximum, floored at one. ``normalization: none`` is the default and keeps the old
+behaviour. The scale is recorded in ``report_targets.csv`` beside the raw and normalized
+penalty.
+
+.. code-block:: yaml
+
+   targets:
+     - account: product.Yield.managed.Conif
+       period: 1
+       period_width: 10
+       minimum: 800000
+       normalization: auto
+     - account: patch.harvest.10_50.size
+       period: 1
+       minimum: 10
+       normalization: auto
+
+``priority`` is a positive integer tier. Targets at the same tier add normally. When more
+than one tier is present, a lower-priority tier is multiplied by ``PRIORITY_SCALE`` per step
+(``1e9``), so a small higher-priority penalty outranks a larger lower-priority one in the
+scalar search. This is a priority-weighted objective, **not a certified lexicographic
+solve**; the run report still carries every target's raw and normalized penalty so a
+reviewer can inspect the trade-off. The default priority is one, which leaves the current
+objective unchanged.
+
+.. code-block:: bash
+
+   ws4 optimize --dataset build/compiled --targets targets.yaml --out opt
+
+The report columns are ``raw_penalty``, ``penalty`` (normalized), ``scale``,
+``normalization``, and ``priority``. The incremental evaluator and the MIP/LP option model use
+the same scale; sensitivity reports the effective normalized marginal.
+
 Search stack
 ------------
 
@@ -619,6 +660,12 @@ API
 .. autofunction:: ws4.opt.objective.objective
 
 .. autofunction:: ws4.opt.objective.penalty
+
+.. autofunction:: ws4.opt.objective.raw_penalty
+
+.. autofunction:: ws4.opt.objective.normalization_scale
+
+.. autofunction:: ws4.opt.objective.priority_total
 
 .. autofunction:: ws4.opt.objective.flow_values
 

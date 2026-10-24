@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-from ws4.opt.objective import Target, load_targets
+from ws4.opt.objective import Target, load_targets, normalization_scale
 
 TOLERANCE: float = 1e-6
 
@@ -78,10 +78,11 @@ def run_sensitivity(run: Path, targets: Path) -> dict[str, object]:
             maximum is not None and abs(value - maximum) <= TOLERANCE
         )
         marginal = 0.0
+        scale = normalization_scale(target) if target is not None else 1.0
         if below > 0.0 and target is not None:
-            marginal = float(target.min_weight)
+            marginal = float(target.min_weight) / scale
         elif above > 0.0 and target is not None:
-            marginal = float(target.max_weight)
+            marginal = float(target.max_weight) / scale
         records.append(
             {
                 "account": account,
@@ -95,6 +96,9 @@ def run_sensitivity(run: Path, targets: Path) -> dict[str, object]:
                 "excess": round(above, 6),
                 "slack": round(_slack(value, minimum, maximum), 6),
                 "binding": bool(at_bound),
+                "normalization": target.normalization if target is not None else "none",
+                "priority": target.priority if target is not None else 1,
+                "scale": scale,
                 "marginal_relaxation": marginal,
             }
         )
@@ -131,22 +135,24 @@ def render_markdown(report: dict[str, object]) -> str:
         f"- Targets: `{report['targets']}`",
         f"- Binding: {report['binding_count']} · missed: {report['missed_count']}",
         "",
-        "| Account | Period | Value | Min | Max | Status | Slack | Binding | Marginal |",
-        "| --- | ---: | ---: | ---: | ---: | --- | ---: | --- | ---: |",
+        "| Account | Period | Value | Min | Max | Status | Slack | Binding | Scale | Marginal |",
+        "| --- | ---: | ---: | ---: | ---: | --- | ---: | --- | ---: | ---: |",
     ]
     for record in records:
         assert isinstance(record, dict)
         lines.append(
             f"| {record['account']} | {record['period']} | {record['value']} | "
             f"{record['minimum']} | {record['maximum']} | {record['status']} | "
-            f"{record['slack']} | {record['binding']} | {record['marginal_relaxation']} |"
+            f"{record['slack']} | {record['binding']} | {record['scale']} | "
+            f"{record['marginal_relaxation']} |"
         )
     lines.extend(
         [
             "",
-            "Marginal is the objective weight per unit when the value is outside a bound; it is",
-            "zero inside the band. A binding target at its bound with zero shortfall has no",
-            "immediate penalty to remove, so its marginal is also zero.",
+            "Marginal is the normalized objective weight per unit when the value is outside a",
+            "bound; it is zero inside the band. Scale is the automatic normalization divisor.",
+            "A binding target at its bound with zero shortfall has no immediate penalty to remove,",
+            "so its marginal is also zero.",
         ]
     )
     return "\n".join(lines)

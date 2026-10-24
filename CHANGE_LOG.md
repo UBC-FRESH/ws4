@@ -2324,3 +2324,13 @@ issue comments.
   reports an optional Pareto front over named metrics. Dashboard **GREEN**.
 - P26.1-P26.2 refresh: the example notebooks' stored outputs include the new run-manifest and
   data-quality summary fields. `python scripts/check_notebooks.py` reports 47 compared and 0 drifted.
+
+- P27.1: `normalization: auto` divides a target's weighted penalty by its larger absolute
+  bound (floored at one), and `report_targets.csv` carries raw/normalized penalties and scale.
+  The MIP/LP option model uses the same scale.
+- P27.2: `priority` tiers use a `1e9` step multiplier in the scalar objective. Default priority
+  one leaves the current objective unchanged; the incremental evaluator and full objective agree.
+- P27.3: sensitivity reports the effective normalized marginal, the web target rows carry
+  normalization/priority, and scenario target tables preserve the new columns. Dashboard **GREEN**.
+- P27.3 refresh: the example notebooks' stored target tables include `raw_penalty`, `scale`,
+  `normalization`, and `priority`. `python scripts/check_notebooks.py` reports 47 compared, 0 drifted.

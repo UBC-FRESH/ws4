@@ -19,12 +19,12 @@ evaluation only for build-route, edge-contrast or spread accounts.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from .objective import Target, accumulates, flow_penalty, penalty
+from .objective import Target, accumulates, flow_penalty, penalty, priority_total
 from .operators import Candidates, Chain, Schedule
 from .patch import PatchModel
 from .spatial import SpatialPenaltyModel
@@ -227,6 +227,31 @@ class IncrementalObjective:
                 pending[cell] = pending.get(cell, 0.0) + value
         return pending
 
+    def _terms(self, totals: Mapping[Cell, float] | None = None) -> list[float]:
+        """Return the current penalty per target.
+
+        Parameters
+        ----------
+        totals : mapping of (int, str) to float or None, optional
+            Account totals to price. Defaults to the evaluator's current totals.
+
+        Returns
+        -------
+        list of float
+            One normalized penalty per active target.
+        """
+        values = self.totals if totals is None else totals
+        penalties: list[float] = []
+        for index, target in enumerate(self.targets):
+            if target.flow:
+                penalties.append(flow_penalty(values, target, self.optimizer.cfg.years))
+                continue
+            value = sum(
+                values.get((year, target.account), 0.0) for year in self._target_offsets[index]
+            )
+            penalties.append(penalty(value, target))
+        return penalties
+
     @property
     def objective(self) -> float:
         """Return the objective for the current state (periods summed).
@@ -236,16 +261,7 @@ class IncrementalObjective:
         float
             The total weighted penalty.
         """
-        total = 0.0
-        for index, target in enumerate(self.targets):
-            if target.flow:
-                total += flow_penalty(self.totals, target, self.optimizer.cfg.years)
-                continue
-            value = sum(
-                self.totals.get((year, target.account), 0.0) for year in self._target_offsets[index]
-            )
-            total += penalty(value, target)
-        return total + self.spatial.objective
+        return priority_total(self.targets, self._terms()) + self.spatial.objective
 
     def delta(self, changed: Sequence[int], schedule: Schedule) -> float:
         """Return the exact objective change a move would make, without applying it.
@@ -266,6 +282,13 @@ class IncrementalObjective:
         self._pending_move = (pending, list(changed), schedule)
         if not pending:
             return self.spatial.delta(changed, schedule)
+        if len({target.priority for target in self.targets}) > 1:
+            after_totals = dict(self.totals)
+            for cell, value in pending.items():
+                after_totals[cell] = after_totals.get(cell, 0.0) + value
+            before_total = priority_total(self.targets, self._terms())
+            after_total = priority_total(self.targets, self._terms(after_totals))
+            return after_total - before_total + self.spatial.delta(changed, schedule)
         affected: set[int] = set()
         for cell in pending:
             affected.update(self._targets_by_cell.get(cell, ()))

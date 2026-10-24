@@ -37,7 +37,8 @@ exists and the maintainer approves it.
 | P23 Accounts and target activation | #206 | `feature/p23-target-browser` | complete |
 | P24 Search portfolio and multi-objective | #207 | `feature/p24-search-portfolio` | complete |
 | P25 Constraint repair and flow ceilings | #214 | `feature/p25-constraints` | complete |
-| P26 Reproducibility and data quality | #219 | `feature/p26-repro-quality` | pr-open |
+| P26 Reproducibility and data quality | #219 | `feature/p26-repro-quality` | complete |
+| P27 Goal normalization and priority tiers | #227 | `feature/p27-normalization` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -946,7 +947,7 @@ Acceptance:
 
 Parent issue: #219
 Branch: `feature/p26-repro-quality`
-Status: pr-open
+Status: complete
 
 Goal: make every run reproducible and its data limitations visible: write a complete run manifest,
 summarize dataset quality and known gaps, and compare scenarios over the same landscape.
@@ -961,6 +962,27 @@ Acceptance:
   reproduce command.
 - Every run writes `data_quality.json` and a summary block that names checks and unknowns.
 - `scripts/compare_scenarios.py` compares labelled runs and writes JSON/Markdown/CSV.
+- `python scripts/dashboard.py` is green.
+
+## Phase 27: Goal normalization and priority tiers
+
+Parent issue: #227
+Branch: `feature/p27-normalization`
+Status: pr-open
+
+Goal: make target weights comparable across goals: opt-in automatic normalization, priority
+tiers, and raw/normalized deviation reporting while keeping the current weighted objective as
+the default.
+
+- [x] P27.1 Add automatic normalization and the scale report (#228)
+- [x] P27.2 Add priority tiers and the priority-aware objective (#229)
+- [x] P27.3 Report normalized deviations in the run and scenario tables (#230)
+
+Acceptance:
+
+- A target can set `normalization: auto`; the normalized penalty and scale are reported.
+- Targets with different `priority` values use the priority-aware objective; default targets do not.
+- Existing targets produce the same objective and report values.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes

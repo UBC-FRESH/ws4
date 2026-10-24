@@ -70,6 +70,14 @@ class Target:
     active : bool
         Whether the search prices this target. An inactive target stays in the file and is
         reported, but its penalty is not part of the objective.
+    normalization : str
+        ``"none"`` (the default) or ``"auto"``. Auto divides the weighted penalty by the
+        larger absolute minimum/maximum, floored at one, so targets with different units are
+        comparable.
+    priority : int
+        The priority tier, at least one. Targets at the same tier add; lower-priority tiers
+        are multiplied by ``PRIORITY_SCALE`` per step so higher priorities dominate the
+        scalar search. Default one leaves the objective unchanged.
     """
 
     account: str
@@ -89,15 +97,21 @@ class Target:
     flow_end_period: int | None = None
     flow_reference_period: int | None = None
     active: bool = True
+    normalization: str = "none"
+    priority: int = 1
 
     def __post_init__(self) -> None:
-        """Reject an unknown penalty shape, flow type, or a period shorter than a year."""
+        """Reject an unknown penalty shape, flow type, normalization, or priority."""
         if self.shape not in {"linear", "non_linear"}:
             raise ValueError(f"unknown penalty shape: {self.shape!r}")
         if self.period_width < 1:
             raise ValueError("period_width must be at least one year")
         if self.flow not in {"", "even", "ndy"}:
             raise ValueError(f"unknown flow type: {self.flow!r}")
+        if self.normalization not in {"none", "auto"}:
+            raise ValueError(f"unknown normalization: {self.normalization!r}")
+        if self.priority < 1:
+            raise ValueError("priority must be a positive integer")
         if self.period is not None:
             if self.period < 0:
                 raise ValueError("period must be zero (initial snapshot) or positive")
@@ -213,8 +227,32 @@ def period_value(index: Mapping[tuple[int, str], float], target: Target) -> floa
     return index.get((target.end_offset(), target.account), 0.0)
 
 
-def penalty(value: float, target: Target) -> float:
-    """Return the penalty for one account value against one target.
+#: The multiplier between adjacent priority tiers, when targets use different priorities.
+PRIORITY_SCALE = 1e9
+
+
+def normalization_scale(target: Target) -> float:
+    """Return the divisor for a target's weighted penalty.
+
+    Parameters
+    ----------
+    target : Target
+        The target.
+
+    Returns
+    -------
+    float
+        The larger absolute bound when ``normalization`` is ``auto``, floored at one so a
+        near-zero bound does not amplify the deviation. Otherwise one.
+    """
+    if target.normalization != "auto":
+        return 1.0
+    bounds = [abs(float(bound)) for bound in (target.minimum, target.maximum) if bound is not None]
+    return max([1.0, *bounds])
+
+
+def raw_penalty(value: float, target: Target) -> float:
+    """Return the weighted shortfall and excess before normalization.
 
     Parameters
     ----------
@@ -240,6 +278,65 @@ def penalty(value: float, target: Target) -> float:
             deviation *= deviation
         total += target.max_weight * deviation
     return total
+
+
+def penalty(value: float, target: Target) -> float:
+    """Return the weighted, optionally normalized, penalty for one target.
+
+    Parameters
+    ----------
+    value : float
+        The account value.
+    target : Target
+        The target.
+
+    Returns
+    -------
+    float
+        ``raw_penalty`` divided by :func:`normalization_scale`.
+    """
+    return raw_penalty(value, target) / normalization_scale(target)
+
+
+def priority_total(targets: Sequence[Target], penalties: Sequence[float]) -> float:
+    """Return the scalar objective for per-target penalties under priority tiers.
+
+    Targets with the same priority contribute additively. When more than one tier is
+    present, a tier's contribution is multiplied by ``PRIORITY_SCALE`` for every tier
+    above it. This makes higher-priority tiers dominate the scalar search; it is a
+    priority-weighted objective, not a certified lexicographic solve.
+
+    Parameters
+    ----------
+    targets : sequence of Target
+        The targets, in the same order as ``penalties``.
+    penalties : sequence of float
+        One penalty per target.
+
+    Returns
+    -------
+    float
+        The weighted total. With every target at the default priority 1, this is the sum.
+
+    Raises
+    ------
+    ValueError
+        When the two sequences differ in length.
+    """
+    if len(targets) != len(penalties):
+        raise ValueError("targets and penalties must have the same length")
+    active = [
+        (target, float(value))
+        for target, value in zip(targets, penalties, strict=True)
+        if target.active
+    ]
+    if not active:
+        return 0.0
+    tiers = {target.priority for target, _ in active}
+    if len(tiers) == 1:
+        return sum(value for _, value in active)
+    highest = max(tiers)
+    return sum(value * (PRIORITY_SCALE ** (highest - target.priority)) for target, value in active)
 
 
 def flow_period_ends(target: Target, years: int) -> list[int]:
@@ -500,17 +597,7 @@ def objective(values: pd.DataFrame, targets: Sequence[Target]) -> float:
     float
         The total penalty.
     """
-    index = _value_index(values)
-    horizon = max((offset for offset, _ in index), default=-1) + 1
-    total = 0.0
-    for target in targets:
-        if not target.active:
-            continue
-        if target.flow:
-            total += flow_penalty(index, target, horizon)
-            continue
-        total += penalty(period_value(index, target), target)
-    return total
+    return priority_total(targets, objective_terms(values, targets))
 
 
 def _value_index(values: pd.DataFrame) -> dict[tuple[int, str], float]:
@@ -631,7 +718,8 @@ def load_targets(path: Path) -> list[Target]:
     (inclusive period window), ``flow_reference_period``, and ``active``.
 
     ``year`` and the year-based flow keys are still accepted for older files; a period key
-    takes precedence when both are present.
+    takes precedence when both are present. ``normalization`` is ``none`` or ``auto``;
+    ``priority`` is a positive integer tier.
 
     Parameters
     ----------
@@ -670,6 +758,8 @@ def load_targets(path: Path) -> list[Target]:
                 flow_end_period=_optional_int(entry, "flow_end_period"),
                 flow_reference_period=_optional_int(entry, "flow_reference_period"),
                 active=bool(entry.get("active", True)),
+                normalization=str(entry.get("normalization", "none")),
+                priority=int(entry.get("priority", 1)),
             )
         )
     return targets
