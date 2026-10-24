@@ -84,7 +84,19 @@ def check(url: str, *, wait_ms: int = 12000) -> int:  # pragma: no cover - needs
 
 
 def main(argv: list[str] | None = None) -> int:  # pragma: no cover - needs a browser
-    """Run the browser smoke from the command line."""
+    """Run the browser smoke from the command line.
+
+    Parameters
+    ----------
+    argv : list of str or None, optional
+        Arguments to parse. ``None`` reads ``sys.argv``.
+
+    Returns
+    -------
+    int
+        ``0`` on success, ``1`` on a failed check, and ``2`` when the browser is
+        unavailable.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("url", nargs="?", default="http://127.0.0.1:8017/")
     parser.add_argument("--wait-ms", type=int, default=12000)
