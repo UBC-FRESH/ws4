@@ -257,7 +257,7 @@ function ensureMapLibre() {
       map.on('dragstart', () => { state.userInteracted = true; });
       map.on('zoomstart', (event) => { if (event.originalEvent) state.userInteracted = true; });
       map.on('moveend', () => {
-        if (!state.mapLibreReady || state.mapLoading || state.suppressViewportReload) return;
+        if (!state.mapLibreReady || state.mapLoading || state.suppressViewportReload || state.vectorActive) return;
         if (!state.userInteracted) return;
         state.userInteracted = false;
         window.clearTimeout(viewportTimer);
@@ -519,6 +519,7 @@ function render(refit = true) {
 
 function applyVisibility() {
   if (state.mapEngine === 'maplibre') {
+    updateVectorPaint();
     renderMapLibre(false);
     return;
   }
@@ -566,6 +567,128 @@ function updateLiveBlocks(blocks) {
   $('n-treated').textContent = treated.toLocaleString();
   $('n-untreated').textContent = (state.features.length - treated).toLocaleString();
   applyVisibility();
+}
+
+function vectorMode(layer) {
+  return state.mapEngine === 'maplibre'
+    && !state.compareView
+    && ['blocks', 'treatments', 'cumulative'].includes(layer);
+}
+
+function vectorColorExpression() {
+  if (state.layerMode === 'cumulative' && state.layers?.cumulative) {
+    return ['case',
+      ['all', ['==', ['get', 'treated'], true], ['==', ['get', 'current'], false]], '#f0d2b0',
+      ['==', ['get', 'treated'], true], '#c0392b',
+      '#2f7d4f'];
+  }
+  return ['case', ['==', ['get', 'treated'], true], '#c0392b', '#2f7d4f'];
+}
+
+function vectorOpacityExpression() {
+  const showTreated = $('show-treated').checked;
+  const showUntreated = $('show-untreated').checked;
+  return ['case',
+    ['==', ['get', 'treated'], true], showTreated ? 1 : 0,
+    showUntreated ? 0.55 : 0];
+}
+
+function updateVectorPaint() {
+  const map = state.mapLibre;
+  if (!map || !state.vectorActive) return;
+  const color = vectorColorExpression();
+  const opacity = vectorOpacityExpression();
+  for (const id of ['blocks-vector-fill', 'blocks-vector-points']) {
+    if (!map.getLayer(id)) continue;
+    map.setPaintProperty(id, id.endsWith('fill') ? 'fill-color' : 'circle-color', color);
+    map.setPaintProperty(id, id.endsWith('fill') ? 'fill-opacity' : 'circle-opacity', opacity);
+  }
+}
+
+function installVectorSource(url) {
+  const map = state.mapLibre;
+  if (!map) return false;
+  const existing = map.getSource('blocks-vector');
+  if (existing) {
+    if (state.vectorUrl !== url) {
+      existing.setTiles([url]);
+      state.vectorUrl = url;
+    }
+  } else {
+    map.addSource('blocks-vector', { type: 'vector', tiles: [url], minzoom: 0, maxzoom: 16 });
+    const before = map.getLayer('roads-line') ? 'roads-line' : undefined;
+    const fillLayer = {
+      id: 'blocks-vector-fill',
+      type: 'fill',
+      source: 'blocks-vector',
+      'source-layer': 'blocks',
+      filter: ['any', ['==', ['geometry-type'], 'Polygon'], ['==', ['geometry-type'], 'MultiPolygon']],
+      paint: {
+        'fill-color': '#2f7d4f',
+        'fill-opacity': 0.55,
+        'fill-outline-color': 'rgba(0,0,0,0.22)',
+      },
+    };
+    const pointLayer = {
+      id: 'blocks-vector-points',
+      type: 'circle',
+      source: 'blocks-vector',
+      'source-layer': 'blocks',
+      filter: ['==', ['geometry-type'], 'Point'],
+      paint: {
+        'circle-radius': 3,
+        'circle-color': '#2f7d4f',
+        'circle-opacity': 0.55,
+        'circle-stroke-color': 'rgba(0,0,0,0.25)',
+        'circle-stroke-width': 0.4,
+      },
+    };
+    if (before) {
+      map.addLayer(fillLayer, before);
+      map.addLayer(pointLayer, before);
+    } else {
+      map.addLayer(fillLayer);
+      map.addLayer(pointLayer);
+    }
+    for (const interactive of ['blocks-vector-fill', 'blocks-vector-points']) {
+      map.on('click', interactive, (event) => {
+        const feature = event.features?.[0];
+        if (feature) showDetail(feature.properties.block_id, feature.properties);
+      });
+      map.on('mouseenter', interactive, () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', interactive, () => { map.getCanvas().style.cursor = ''; });
+    }
+    state.vectorUrl = url;
+  }
+  state.vectorActive = true;
+  for (const id of ['blocks-vector-fill', 'blocks-vector-points']) {
+    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'visible');
+  }
+  for (const id of ['blocks-fill', 'blocks-points']) {
+    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none');
+  }
+  updateVectorPaint();
+  return true;
+}
+
+function ensureVectorSource(url) {
+  const map = state.mapLibre;
+  if (!map) return;
+  const install = () => installVectorSource(url);
+  if (map.loaded()) install();
+  else map.once('idle', install);
+}
+
+function hideVectorLayers() {
+  state.vectorActive = false;
+  const map = state.mapLibre;
+  if (!map) return;
+  for (const id of ['blocks-vector-fill', 'blocks-vector-points']) {
+    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none');
+  }
+  for (const id of ['blocks-fill', 'blocks-points']) {
+    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'visible');
+  }
 }
 
 async function loadMap(preserveView = false) {
@@ -616,6 +739,19 @@ async function loadMap(preserveView = false) {
     const place = state.mapEngine === 'maplibre' ? 'in view' : '';
     const noun = body.overview_mode === 'treated' ? 'treated blocks' : 'blocks';
     statusLine(`${state.features.length.toLocaleString()} ${noun} ${place} · ${layer} · period ${state.periodIndex + 1}${span}`);
+    if (state.mapEngine === 'maplibre' && vectorMode(layer)) {
+      const base = document.baseURI.endsWith('/') ? document.baseURI : `${document.baseURI}/`;
+      let tileUrl = `${base}api/runs/${encodeURIComponent(state.run)}/tiles/{z}/{x}/{y}.mvt?year=${end}&layer=${layer}`;
+      if (period) tileUrl += `&period_start=${period.start}`;
+      state.vectorActive = true;
+      state.mapTotals = { treated: body.total_treated ?? 0, untreated: body.total_untreated ?? 0 };
+      $('n-treated').textContent = Number(state.mapTotals.treated).toLocaleString();
+      $('n-untreated').textContent = Number(state.mapTotals.untreated).toLocaleString();
+      ensureVectorSource(tileUrl);
+      statusLine(`${state.features.length.toLocaleString()} ${noun} ${place} · ${layer} · MVT · period ${state.periodIndex + 1}${span}`);
+    } else if (state.mapEngine === 'maplibre') {
+      hideVectorLayers();
+    }
     if (state.showUsedRoads) loadUsedRoads();
   } catch (error) {
     statusLine(`map unavailable: ${error.message}`);
@@ -2161,10 +2297,10 @@ async function buildReport() {
   }
 }
 
-function showDetail(block) {
+function showDetail(block, supplied = null) {
   const feature = state.features.find((candidate) => String(candidate.properties?.block_id) === String(block));
-  if (!feature) return;
-  const properties = feature.properties ?? {};
+  const properties = supplied ?? feature?.properties;
+  if (!properties) return;
   if (state.compareView && state.compare) {
     const flags = state.compare.blocks.get(String(block)) ?? { a: false, b: false };
     $('detail').innerHTML = `<b>Block ${properties.block_id}</b><br>` +

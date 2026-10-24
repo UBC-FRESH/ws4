@@ -2185,3 +2185,8 @@ issue comments.
   load instead of deadlocking, and reloads the viewport only after a user drag or zoom. The TSA 46
   initial request is 66 KB at zoom 5 with 331 treated centroids; the full-run counts come from the
   response's totals. This is the verified shell path while P20.3 owns the vector-source integration.
+- P20.3 wires the MVT endpoint into the MapLibre shell. The vector source installs after the map
+  is idle, uses `setTiles` for period/layer changes, and keeps the viewport GeoJSON path for
+  patches, compartments, and comparison. The TSA 46 shell makes six z6 MVT requests on load
+  (331 treated centroids of 171,825 blocks); TSA 47 makes four z7 requests (456 of 74,170).
+  `scripts/check_map_browser.py` is the opt-in Playwright smoke; both services pass it.

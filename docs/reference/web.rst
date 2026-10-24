@@ -190,12 +190,21 @@ service returns the intersecting block polygons. The shell keeps the full-run tr
 counts from the response while the map draws only the viewport. This keeps a management-unit map
 from loading every polygon up front.
 
-The MVT endpoint is available for a vector-source client. It returns treated centroids below zoom
-10 and simplified polygons at zoom 10 and above; the tile layer is named ``blocks`` and its
-properties carry ``block_id``, ``treated``, and ``current``. ``map-stats`` carries the full-run
-counts. The current shell keeps the viewport GeoJSON path until the MapLibre vector-source
-integration is validated; that integration is its own task. Patches, compartments, and comparison
-stay on the GeoJSON path, where the per-feature styling is richer.
+The shell uses the MVT tile endpoint for the block, treatment, and cumulative layers. The vector
+source requests only the tiles MapLibre needs at the current zoom; the server returns treated
+centroids below zoom 10 and simplified polygons at zoom 10 and above. The tile layer is named
+``blocks`` and its properties carry ``block_id``, ``treated``, and ``current``. The shell reads
+full-run counts from the GeoJSON response's totals and from ``map-stats``. Patches, compartments,
+and comparison stay on the GeoJSON path, where the per-feature styling is richer.
+
+The browser path has an opt-in smoke:
+
+.. code-block:: bash
+
+   python scripts/check_map_browser.py http://127.0.0.1:8000/
+
+It needs Playwright and a Chromium build, and it fails when the shell makes no ``.mvt`` request or
+reports a console error. It is not a CI gate because the browser install is heavy.
 
 Geometry
 --------
