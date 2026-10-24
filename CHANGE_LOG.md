@@ -2254,3 +2254,7 @@ issue comments.
 - P22 close-out: pre-warm, path-prefix deployment check, and the 1M peak-RSS gate are implemented,
   tested, documented, and queued in `notes/reports/p22-closeout.md`. The scale gate caught and fixed
   the missing low-zoom block sampling. Dashboard **GREEN** at `57a98dd`.
+
+- Refresh the stored outputs of `010_quickstart`, `030_sample_estate`, `040_patch_targets`, and
+  `050_routes_and_mills` after P21 added `reversion 0` to the solver banner. The `Notebook outputs`
+  gate is green again; no solver behavior changed.
