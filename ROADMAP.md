@@ -33,7 +33,8 @@ exists and the maintainer approves it.
 | P19 Model-derived spatial layers and map scale | #161 | `feature/p19-spatial-layers` | complete |
 | P20 Production map serving | #183 | `feature/p20-map-lod` | complete |
 | P21 Search quality and validation | #190 | `feature/p21-search-quality` | complete |
-| P22 Map operations | #198 | `feature/p22-map-ops` | pr-open |
+| P22 Map operations | #198 | `feature/p22-map-ops` | complete |
+| P24 Search portfolio and multi-objective | #207 | `feature/p24-search-portfolio` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -854,7 +855,7 @@ Acceptance:
 
 Parent issue: #198
 Branch: `feature/p22-map-ops`
-Status: pr-open
+Status: complete
 
 Goal: make production map serving operationally repeatable: pre-warm the durable tile cache, prove the
 service works behind a path prefix, and measure the 1M-fragment cold-build memory.
@@ -868,6 +869,29 @@ Acceptance:
 - A pre-warm run writes durable tiles and reports hits, misses, bytes, and time.
 - The path-prefix check serves `/prefix/`, static assets, the API, and a tile.
 - The 1M-fragment benchmark reports peak RSS and enforces the recorded budget.
+- `python scripts/dashboard.py` is green.
+
+## Phase 24: Search portfolio and multi-objective
+
+Parent issue: #207
+Branch: `feature/p24-search-portfolio`
+Status: pr-open
+
+Goal: make the search's quality visible across objectives and tuned configurations: keep an elite
+archive, run a portfolio over target-weight vectors to produce a Pareto front, add a repeatable
+tuner, and expose true LP dual/reduced-cost sensitivity for the linear subset.
+
+- [x] P24.1 Add the elite archive and Pareto front (#208)
+- [x] P24.2 Add the portfolio runner over target-weight vectors (#209)
+- [x] P24.3 Add the grid/random tuner (#210)
+- [x] P24.4 Add LP dual and reduced-cost sensitivity (#211)
+
+Acceptance:
+
+- An archive keeps nondominated elites under named max/min metrics and exports schedules.
+- A portfolio run varies target weights, records every member, and writes a front table.
+- A tuner run ranks configurations by a stated budget and seed set.
+- The LP relaxation reports finite target duals and option reduced costs on a small instance.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes
