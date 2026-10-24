@@ -89,6 +89,10 @@ Endpoints
        use ``--geometry-overview`` when it is configured; detail zooms use ``--geometry`` and
        simplify only to the tile resolution. The response is cached in memory and on disk and is
        marked ``Cache-Control: public, max-age=3600``.
+   * - ``GET /api/geometry/bounds?format=``
+     - The configured geometry's extent as ``[west, south, east, north]``, in the source CRS or
+       WGS84. The MapLibre shell uses it to fit the view to the AOI even when the service has no
+       land-base layer.
    * - ``GET /api/runs/{run}/map-stats?year=&layer=&period_start=``
      - The full-run ``total_features``, ``total_treated``, and ``total_untreated`` for the layer,
        so a tiled viewport keeps the run's own counts.

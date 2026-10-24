@@ -470,6 +470,55 @@ def _to_wgs84(features: list[dict[str, Any]], crs: str) -> list[dict[str, Any]]:
     ]
 
 
+def _geometry_bounds(
+    features: list[dict[str, Any]],
+) -> tuple[float, float, float, float] | None:
+    """Return the west, south, east and north bounds of GeoJSON features.
+
+    Parameters
+    ----------
+    features : list of dict
+        Parsed GeoJSON features in their source CRS.
+
+    Returns
+    -------
+    tuple of float or None
+        ``(west, south, east, north)``, or ``None`` when no finite coordinate exists.
+    """
+    min_x = math.inf
+    min_y = math.inf
+    max_x = -math.inf
+    max_y = -math.inf
+
+    def visit(coordinates: object) -> None:
+        nonlocal min_x, min_y, max_x, max_y
+        if (
+            isinstance(coordinates, (list, tuple))
+            and len(coordinates) >= 2
+            and isinstance(coordinates[0], (int, float))
+            and isinstance(coordinates[1], (int, float))
+        ):
+            x = float(coordinates[0])
+            y = float(coordinates[1])
+            if math.isfinite(x) and math.isfinite(y):
+                min_x = min(min_x, x)
+                min_y = min(min_y, y)
+                max_x = max(max_x, x)
+                max_y = max(max_y, y)
+            return
+        if isinstance(coordinates, (list, tuple)):
+            for child in coordinates:
+                visit(child)
+
+    for feature in features:
+        geometry = feature.get("geometry")
+        if isinstance(geometry, dict):
+            visit(geometry.get("coordinates"))
+    if not math.isfinite(min_x):
+        return None
+    return (min_x, min_y, max_x, max_y)
+
+
 def _run_period_width(targets_path: Path | None) -> int:
     """Return the run's display period width, from the configured targets.
 
@@ -1300,6 +1349,35 @@ def create_app(
         if format == "wgs84":
             features = _to_wgs84(features, source_crs)
         return {"type": "FeatureCollection", "features": features}
+
+    geometry_bounds_cache: dict[str, list[float]] = {}
+
+    @app.get("/api/geometry/bounds")
+    def geometry_bounds(format: str = Query(default="projected")) -> dict[str, Any]:
+        """Return the configured geometry's extent, optionally in WGS84."""
+        if geometry_path is None or not geometry_path.is_file():
+            raise HTTPException(
+                status_code=404, detail="no geometry layer is configured (--geometry)"
+            )
+        if format not in {"projected", "wgs84"}:
+            raise HTTPException(status_code=422, detail=f"unknown bounds format {format!r}")
+        if format not in geometry_bounds_cache:
+            native = _geometry_bounds(base_features())
+            if native is None:
+                raise HTTPException(status_code=404, detail="the geometry has no finite bounds")
+            west, south, east, north = native
+            if format == "wgs84" and source_crs.upper() not in {"EPSG:4326", "WGS84", "CRS:84"}:
+                transformer = Transformer.from_crs(source_crs, "EPSG:4326", always_xy=True)
+                points = [transformer.transform(x, y) for x in (west, east) for y in (south, north)]
+                west = min(point[0] for point in points)
+                east = max(point[0] for point in points)
+                south = min(point[1] for point in points)
+                north = max(point[1] for point in points)
+            geometry_bounds_cache[format] = [west, south, east, north]
+        return {
+            "bounds": geometry_bounds_cache[format],
+            "crs": "EPSG:4326" if format == "wgs84" else source_crs,
+        }
 
     @app.get("/api/roads")
     def roads_geojson(format: str = Query(default="projected")) -> dict[str, Any]:

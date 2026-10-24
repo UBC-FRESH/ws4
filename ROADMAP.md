@@ -891,6 +891,7 @@ without knowing the account vocabulary in advance.
   - [x] Show the last value, level/flow, and existing-target state
   - [x] Add and remove targets through `/api/targets.json`
 - [x] P23.2 Make Solve continuous and remove the media controls (#224)
+- [x] P23.3 Fit the MapLibre view to the configured geometry (#226)
 
 Acceptance:
 

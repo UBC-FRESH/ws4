@@ -555,6 +555,21 @@ def test_the_optional_land_base_underlay(tmp_path: Path) -> None:
     assert "--land-base" in response.json()["detail"]
 
 
+def test_geometry_bounds_fit_the_map_to_the_configured_layer(tmp_path: Path) -> None:
+    """The MapLibre shell can fit the view without loading the full geometry."""
+    client, _ = _app(tmp_path)
+    body = client.get("/api/geometry/bounds").json()
+    assert body == {"bounds": [1.0, 0.0, 2.0, 0.0], "crs": "EPSG:4326"}
+    assert client.get("/api/geometry/bounds?format=wgs84").json()["bounds"] == [1.0, 0.0, 2.0, 0.0]
+    assert client.get("/api/geometry/bounds?format=nope").status_code == 422
+    plain = tmp_path / "plain"
+    plain.mkdir()
+    without, _ = _app(plain, with_geometry=False)
+    response = without.get("/api/geometry/bounds")
+    assert response.status_code == 404
+    assert "--geometry" in response.json()["detail"]
+
+
 def test_targets_round_trip_and_an_invalid_document_is_refused(tmp_path: Path) -> None:
     """A valid edit replaces the YAML; an invalid one leaves it unchanged."""
     client, targets = _app(tmp_path)

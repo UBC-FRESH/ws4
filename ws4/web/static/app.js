@@ -323,6 +323,23 @@ async function loadLandBase(map = state.mapLibre) {
   }
 }
 
+async function fitVectorBounds() {
+  if (!state.mapLibre || state.mapFitted) return;
+  try {
+    const body = await api('api/geometry/bounds?format=wgs84');
+    const bounds = body.bounds;
+    if (!Array.isArray(bounds) || bounds.length !== 4) return;
+    const [west, south, east, north] = bounds.map(Number);
+    if (![west, south, east, north].every(Number.isFinite)) return;
+    state.mapFitted = true;
+    state.suppressViewportReload = true;
+    window.setTimeout(() => { state.suppressViewportReload = false; }, 700);
+    state.mapLibre.fitBounds([[west, south], [east, north]], {
+      padding: 30, duration: 0, maxZoom: 12,
+    });
+  } catch { /* a service without geometry keeps the default view */ }
+}
+
 function renderMapLibre(refit = true) {
   const map = ensureMapLibre();
   if (!map || !state.mapLibreReady) return;
@@ -731,6 +748,7 @@ async function loadMap(preserveView = false) {
       state.vectorActive = true;
       state.features = [];
       ensureVectorSource(tileUrl);
+      await fitVectorBounds();
       let stats = `api/runs/${encodeURIComponent(state.run)}/map-stats?year=${end}&layer=${layer}`;
       if (period) stats += `&period_start=${period.start}`;
       try {

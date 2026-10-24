@@ -29,6 +29,7 @@ Settings changes: none. This phase changes no repository setting, tag, release, 
 | Adding a target writes a valid YAML document and the new row appears in the Targets table. | `scripts/check_target_browser.py` added a target (rows 1 to 2), the API returned both rows, the YAML was valid, and the row rendered. An empty-file service accepted the first target with width 10. | Met |
 | An already-targeted account is visibly marked. | The leaf renders a `target` badge; `accountIsTarget` drives it from `state.targets`. The check saw the badge after the add. | Met |
 | The default Solve starts a continuous run. | **Max iters** is blank (∞); a request without iterations returns `continuous: true`, `iterations: 1000000000`, and an empty `time_limit`; `check_run_controls.py` asserts this default and stops the run. | Met |
+| The map fits the configured geometry. | `/api/geometry/bounds?format=wgs84` returns the AOI extent; on the c5 service the shell requests zoom-9 tiles over the AOI and draws the block mosaic, instead of the hard-coded z5 BC view. | Met |
 | A run started from the UI uses the new target. | On the c5 sample, a target added in the Targets tab (`feature.Area.managed.CDCONMIX`, period 1) was written to the YAML; the start control launched a 3-iteration run, and the run's `report_targets.csv` contained that account with period 1. | Met |
 | The last target is removable. | The API refuses an empty `targets` document, so the browser disables removal of the last row and documents the YAML edit. | Not met; deliberate guard |
 | `python scripts/dashboard.py` is green. | Lint, format, types, tests, validator, docs, and docstrings pass at `1368392`. | Met |
@@ -72,9 +73,10 @@ The pull request is opened with this report. Its first CI run is posted on pull 
 | The width defaults to ten years when the file is empty. | An empty file has no width to inherit, and ten years is the planning convention used by the benchmark targets. | The form exposes the width; the user can change it before adding. |
 | The account tree covers the run's accounts, not accounts that exist only in the dataset. | The acceptance criterion names `account_values.csv`; dataset-only accounts have no value to show. | A later dataset-catalogue view can merge them when the need is concrete. |
 | The display period groups the zero-based first slice as "Period 1", while a target period is one-based. | Pre-existing grouping in `/api/runs/<run>/periods`; this phase did not change the optimizer's period semantics. | The form hint states that period 1 is the first accounting period; the mismatch is recorded as a follow-up, not silently changed. |
-| The phase also carries the map shell cache fix. | The target browser could not be validated through `?v=...` while the base URL swallowed the page query. | The fix is included at `v52`, documented, and PR #204 is closed as superseded. |
+| The phase also carries the map shell cache fix. | The target browser could not be validated through `?v=...` while the base URL swallowed the page query. | The fix is included at `v53`, documented, and PR #204 is closed as superseded. |
 | The old Play control did nothing on the MapLibre map. | The Play and Stop listeners were installed inside `fit()`, the SVG-only bounds helper; a MapLibre page never called it. The c5 test reproduced the failure: no `POST /api/runs` and no button change. | Moved the listeners to `wireControls` and added `scripts/check_run_controls.py`; the c5 run then posted, switched to Pause, showed progress, and wrote the new target to `report_targets.csv`. |
 | The control implied playback and defaulted to a finite budget. | The button read “Play” with a media triangle, and the finite default made a click look inert while the solver was only bounded. | Renamed it **Solve**, removed the media glyphs, left **Max iters** blank as ∞, and removed the 24-hour default cap; `check_run_controls.py` asserts `continuous: true` and an empty `time_limit`. |
+| The MapLibre view opened at the BC-wide default. | The vector path returned before fitting, and `fitMapLibre` only ran for the SVG/GeoJSON features; without a land-base layer nothing moved the camera. | Added the bounds endpoint and a one-time `fitVectorBounds` call in the vector path; the c5 shell now fits the AOI. |
 | The c5 service can start a run that fails on a configuration gap. | `--patch-accounts` without `--topology` reached the optimizer, which tried to read `.` as a CSV and exited with `IsADirectoryError`. | The service refuses the combination with a named error; the optimizer also names the missing topology; tests cover both. Legacy c5 runs with `year`/`period` columns remain a separate compatibility follow-up; UI testing uses a clean runs directory of current-schema runs. |
 
 ## 6. Verification commands
@@ -83,7 +85,7 @@ The pull request is opened with this report. Its first CI run is posted on pull 
 python scripts/dashboard.py
 python scripts/check_target_browser.py http://127.0.0.1:8021/ --search CWH_HW_M
 python scripts/check_run_controls.py http://127.0.0.1:8022/
-python scripts/check_map_browser.py 'http://127.0.0.1:8017/?v=52' --wait-ms 30000
+python scripts/check_map_browser.py 'http://127.0.0.1:8022/?v=53' --wait-ms 30000
 ```
 
 The first is the gate. The second ran against a scratch targets file and left one target because

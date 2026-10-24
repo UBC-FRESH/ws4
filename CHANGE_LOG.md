@@ -2349,3 +2349,11 @@ issue comments.
   the old 24-hour limit is removed, and Pause/Stop are text controls. `scripts/check_run_controls.py`
   now asserts that the default POST returns `continuous: true` and an empty `time_limit`, then stops
   the run. Shell assets move to `v52`. Dashboard **GREEN**.
+
+- P23.3: added `GET /api/geometry/bounds?format=projected|wgs84`, which returns the configured
+  geometry's extent and transforms the four corners for a projected CRS. The MapLibre vector path
+  now fits the view to that extent once per page before loading tiles, so a service without a
+  land-base layer no longer opens at the hard-coded BC-wide centre. On the c5 service the shell
+  moved from z5/BC to z9 over the AOI and rendered the block mosaic. Tests cover the endpoint,
+  the no-geometry 404, and the bad-format refusal; the web reference documents it. Shell assets
+  move to `v53`. Dashboard **GREEN**.
