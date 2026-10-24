@@ -2232,3 +2232,7 @@ issue comments.
   block. The centroid and grid MVT paths are removed. Measured: a z12 tile is 4.98 KB / 74 full
   block polygons; a z6 overview tile is a 65,268-block mosaic; the map is exact at the zooms where
   it matters.
+- P20 is complete. Pull request #185 merged as `2123252`; the P20.6 exact-geometry correction is
+  `ed9693e`. The close-out report now records the rejected centroid/grid LOD and the final policy:
+  full geometry at detail zooms, a 100 m overview below zoom 8, and treated-only block polygons
+  below zoom 6.
