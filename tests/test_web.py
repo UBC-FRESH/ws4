@@ -785,9 +785,23 @@ def test_a_live_run_streams_the_best_island_and_its_schedule(tmp_path: Path) -> 
     client, _ = _app(tmp_path)
     run = tmp_path / "runs" / "run2"
     records = [
-        {"type": "step", "island": "start-0", "iteration": 10, "objective": 10.0},
+        {
+            "type": "step",
+            "island": "start-0",
+            "iteration": 10,
+            "objective": 10.0,
+            "current": 9.0,
+            "accepted": 1,
+        },
         {"type": "schedule", "island": "start-0", "iteration": 10, "changed": [[1, [["CC", 0]]]]},
-        {"type": "step", "island": "start-1", "iteration": 9, "objective": 5.0},
+        {
+            "type": "step",
+            "island": "start-1",
+            "iteration": 9,
+            "objective": 5.0,
+            "current": 6.0,
+            "accepted": 2,
+        },
         {"type": "schedule", "island": "start-1", "iteration": 9, "changed": [[2, [["CT", 0]]]]},
         {
             "type": "targets",
@@ -795,7 +809,14 @@ def test_a_live_run_streams_the_best_island_and_its_schedule(tmp_path: Path) -> 
             "iteration": 9,
             "values": [{"year": 0, "account": "feature.Volume", "value": 11.0}],
         },
-        {"type": "step", "island": "start-0", "iteration": 20, "objective": 7.0},
+        {
+            "type": "step",
+            "island": "start-0",
+            "iteration": 20,
+            "objective": 7.0,
+            "current": 8.0,
+            "accepted": 3,
+        },
         {"type": "schedule", "island": "start-0", "iteration": 20, "changed": [[3, [["CC", 0]]]]},
     ]
     for island, start_index, end_index in (("start-0", 0, 3), ("start-1", 3, 6)):
@@ -810,6 +831,10 @@ def test_a_live_run_streams_the_best_island_and_its_schedule(tmp_path: Path) -> 
     assert '"reset": true' in body
     # the best island is start-1, so its block is the one in the reset map
     assert '"island": "start-1"' in body
+    # the incumbent is start-1's objective, but the progress record reports the latest trace
+    assert '"objective": 5.0' in body
+    assert '"current": 8.0' in body
+    assert '"accepted": 3' in body
     assert '[[2,[["CT",0]]]]' in body.replace(" ", "")
     assert "event: targets" in body
     assert '"series"' in body

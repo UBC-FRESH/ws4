@@ -2183,6 +2183,18 @@ async function finishRun(id) {
   window.setTimeout(() => { $('run-panel').hidden = true; }, 6000);
 }
 
+function stepDetail(step) {
+  if (!step) return '';
+  const parts = [];
+  if (step.current !== undefined && step.current !== null) {
+    parts.push(`current ${Number(step.current).toFixed(2)}`);
+  }
+  if (step.accepted !== undefined && step.accepted !== null) {
+    parts.push(`accepted ${Number(step.accepted).toLocaleString()}`);
+  }
+  return parts.length ? ` · ${parts.join(' · ')}` : '';
+}
+
 async function pollRun(id) {
   if (id !== runWatch.id) return;
   try {
@@ -2201,7 +2213,7 @@ async function pollRun(id) {
     const shown = state.live.total || step?.total || step?.iteration;
     const island = step?.island ? ` · ${step.island}` : '';
     const progress = step
-      ? `${Number(shown).toLocaleString()} iterations · best ${Number(step.objective).toFixed(2)}${island}`
+      ? `${Number(shown).toLocaleString()} iterations · best ${Number(step.objective).toFixed(2)}${stepDetail(step)}${island}`
       : (runWatch.islands > 1 ? `starting ${runWatch.islands} islands…` : 'waiting for the first step…');
     showRun(`run ${id} · ${progress} · ${elapsed()}`, true);
   } catch (error) {
@@ -2317,7 +2329,7 @@ async function startRun() {
         const shown = step.total ?? step.iteration;
         const island = step.island ? ` · ${step.island}` : '';
         showRun(
-          `run ${run.id} · ${Number(shown).toLocaleString()} iterations · best ${Number(step.objective).toFixed(2)}${island} · ${elapsed()}`,
+          `run ${run.id} · ${Number(shown).toLocaleString()} iterations · best ${Number(step.objective).toFixed(2)}${stepDetail(step)}${island} · ${elapsed()}`,
           true,
         );
       }

@@ -22,6 +22,9 @@ from .operators import Candidates, Chain, OperatorRegistry, Schedule, restore
 
 StepCallback = Callable[[int, float], None]
 
+#: Called with (iteration, incumbent objective, current objective, accepted moves).
+TraceCallback = Callable[[int, float, float, int], None]
+
 #: Called with (iteration, realized cells) on a snapshot interval.
 SnapshotCallback = Callable[
     [int, Mapping[tuple[int, str], float], Mapping[int, Sequence[tuple[str, int]]]], None
@@ -71,9 +74,21 @@ def _stopped(control: RunControl | None, iteration: int) -> bool:
 
 
 def _report(on_step: StepCallback | None, iteration: int, objective: float) -> None:
-    """Report an iteration's objective when a callback is given."""
+    """Report an iteration's incumbent objective when a callback is given."""
     if on_step is not None:
         on_step(iteration, objective)
+
+
+def _trace(
+    on_trace: TraceCallback | None,
+    iteration: int,
+    best: float,
+    current: float,
+    accepted: int,
+) -> None:
+    """Report the current solution alongside the incumbent when a callback is given."""
+    if on_trace is not None:
+        on_trace(iteration, best, current, accepted)
 
 
 def parse_time_limit(text: str) -> float | None:
@@ -171,6 +186,7 @@ def solve_sa(
     temperature: float,
     cooling: float,
     on_step: StepCallback | None = None,
+    on_trace: TraceCallback | None = None,
     control: RunControl | None = None,
     initial: Schedule | None = None,
     adaptive: bool = False,
@@ -198,6 +214,9 @@ def solve_sa(
         The geometric cooling factor.
     on_step : callable or None, optional
         Called with ``(iteration, best_objective)`` each iteration.
+    on_trace : callable or None, optional
+        Called with ``(iteration, best_objective, current_objective, accepted_moves)`` each
+        iteration, for a live view of the search while the incumbent is flat.
     control : RunControl or None, optional
         A polled control file; the search holds while it says ``pause`` and returns its best
         schedule when it says ``stop``.
@@ -252,6 +271,7 @@ def solve_sa(
                     accepted = 0
         schedule.observe(increase, current_obj)
         _report(on_step, iteration, best_obj)
+        _trace(on_trace, iteration, best_obj, current_obj, accepted)
     return best, best_obj
 
 
@@ -266,6 +286,7 @@ def solve_sa_delta(
     registry: OperatorRegistry,
     initial: Schedule | None = None,
     on_step: StepCallback | None = None,
+    on_trace: TraceCallback | None = None,
     control: RunControl | None = None,
     on_snapshot: SnapshotCallback | None = None,
     adaptive: bool = False,
@@ -303,6 +324,9 @@ def solve_sa_delta(
         A starting schedule.
     on_step : callable or None, optional
         Called with ``(iteration, best_objective)`` each iteration.
+    on_trace : callable or None, optional
+        Called with ``(iteration, best_objective, current_objective, accepted_moves)`` each
+        iteration, for a live view of the search while the incumbent is flat.
     control : RunControl or None, optional
         A polled control file; the search holds while it says ``pause`` and returns its best
         schedule when it says ``stop``.
@@ -367,6 +391,7 @@ def solve_sa_delta(
                 evaluator.revert()
         schedule.observe(increase, current_obj)
         _report(on_step, iteration, best_obj)
+        _trace(on_trace, iteration, best_obj, current_obj, accepted)
         if on_snapshot is not None and (iteration % 20 == 0 or iteration == iterations - 1):
             on_snapshot(iteration, evaluator.totals, evaluator.assignments)
     return best, best_obj
@@ -380,6 +405,7 @@ def solve_threshold(
     threshold: float,
     cooling: float,
     on_step: StepCallback | None = None,
+    on_trace: TraceCallback | None = None,
     control: RunControl | None = None,
     initial: Schedule | None = None,
     deadline: float | None = None,
@@ -407,6 +433,9 @@ def solve_threshold(
         The factor applied to the threshold each iteration; it must be in ``(0, 1]``.
     on_step : callable or None, optional
         Called with ``(iteration, best_objective)`` each iteration.
+    on_trace : callable or None, optional
+        Called with ``(iteration, best_objective, current_objective, accepted_moves)`` each
+        iteration, for a live view of the search while the incumbent is flat.
     control : RunControl or None, optional
         A polled control file; the search holds while it says ``pause`` and returns its best
         schedule when it says ``stop``.
@@ -459,6 +488,7 @@ def solve_threshold(
                     accepted = 0
         current_threshold *= cooling
         _report(on_step, iteration, best_obj)
+        _trace(on_trace, iteration, best_obj, current_obj, accepted)
         if current_threshold <= 1e-12:
             break
     return best, best_obj
@@ -472,6 +502,7 @@ def solve_tabu(
     tenure: int,
     samples: int = 8,
     on_step: StepCallback | None = None,
+    on_trace: TraceCallback | None = None,
     control: RunControl | None = None,
     initial: Schedule | None = None,
     deadline: float | None = None,
@@ -497,6 +528,9 @@ def solve_tabu(
         The number of candidate moves sampled per iteration.
     on_step : callable or None, optional
         Called with ``(iteration, best_objective)`` each iteration.
+    on_trace : callable or None, optional
+        Called with ``(iteration, best_objective, current_objective, accepted_moves)`` each
+        iteration, for a live view of the search while the incumbent is flat.
     control : RunControl or None, optional
         A polled control file; the search holds while it says ``pause`` and returns its best
         schedule when it says ``stop``.
@@ -547,6 +581,7 @@ def solve_tabu(
                 current, current_obj = dict(best), best_obj
                 accepted = 0
         _report(on_step, iteration, best_obj)
+        _trace(on_trace, iteration, best_obj, current_obj, accepted)
     return best, best_obj
 
 
@@ -557,6 +592,7 @@ def solve_ils(
     iterations: int,
     perturbation: int,
     on_step: StepCallback | None = None,
+    on_trace: TraceCallback | None = None,
     control: RunControl | None = None,
     initial: Schedule | None = None,
     deadline: float | None = None,
@@ -580,6 +616,9 @@ def solve_ils(
         The number of random moves applied to perturb the incumbent.
     on_step : callable or None, optional
         Called with ``(iteration, best_objective)`` each iteration.
+    on_trace : callable or None, optional
+        Called with ``(iteration, best_objective, current_objective, accepted_moves)`` each
+        iteration, for a live view of the search while the incumbent is flat.
     control : RunControl or None, optional
         A polled control file; the search holds while it says ``pause`` and returns its best
         schedule when it says ``stop``.
@@ -622,4 +661,5 @@ def solve_ils(
                 current, current_obj = dict(best), best_obj
                 accepted = 0
         _report(on_step, iteration, best_obj)
+        _trace(on_trace, iteration, best_obj, current_obj, accepted)
     return best, best_obj

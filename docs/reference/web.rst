@@ -31,7 +31,9 @@ still produces the usual schedule and summary rather than a killed process. The 
 coalesced to one progress record, one targets snapshot and the merged schedule diff per poll, which
 keeps a fast search from flooding the page. With parallel islands it follows the island with the
 lowest objective; ``progress`` carries the aggregate step count in ``total`` and names that island,
-and a schedule event with ``reset`` replaces the client's map when the best island changes. Each
+and a schedule event with ``reset`` replaces the client's map when the best island changes. A
+progress record also carries the current solution's objective and the accepted-move count, so the
+run panel shows activity while the incumbent is flat. Each
 worker writes its own ``telemetry-<island>.jsonl`` while it runs; the run's canonical
 ``telemetry.jsonl`` is merged from them after the search, and the live reader follows the worker
 files so it sees the search at the solver's rate rather than behind one writer.

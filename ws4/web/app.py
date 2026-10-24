@@ -1032,17 +1032,19 @@ def create_app(
             schedules: dict[str, dict[int, Any]] = {}
             latest_targets: dict[str, dict[str, Any]] = {}
             best_step: dict[str, Any] | None = None
+            latest_step: dict[str, Any] | None = None
             best_island = ""
             best_objective = math.inf
             total = 0
 
             def apply(record: dict[str, Any]) -> None:
                 """Fold one telemetry record into the stream's state."""
-                nonlocal best_step, best_island, best_objective, total
+                nonlocal best_step, latest_step, best_island, best_objective, total
                 kind = record.get("type")
                 island = str(record.get("island", "") or "")
                 if kind == "step":
                     total += 1
+                    latest_step = record
                     value = record.get("objective")
                     if not isinstance(value, (int, float, str)):
                         return
@@ -1083,6 +1085,17 @@ def create_app(
                         except json.JSONDecodeError:
                             continue
 
+            def progress_payload() -> dict[str, Any]:
+                """Return the incumbent step with the latest current/accepted fields."""
+                payload = dict(best_step or {})
+                payload["total"] = total
+                if latest_step is not None:
+                    for key in ("current", "accepted"):
+                        if key in latest_step:
+                            payload[key] = latest_step[key]
+                    payload["latest_iteration"] = latest_step.get("iteration")
+                return payload
+
             # replay what exists so a client that connects mid-run gets the current schedule
             for record in new_records():
                 apply(record)
@@ -1090,8 +1103,7 @@ def create_app(
             emitted_step: dict[str, Any] | None = None
             emitted_total = total
             if best_step is not None:
-                payload = dict(best_step)
-                payload["total"] = total
+                payload = progress_payload()
                 yield f"event: progress\ndata: {json.dumps(payload)}\n\n"
                 emitted_step = best_step
             if best_island in latest_targets:
@@ -1176,8 +1188,7 @@ def create_app(
                 if best_step is not None and (
                     best_step is not emitted_step or total != emitted_total
                 ):
-                    payload = dict(best_step)
-                    payload["total"] = total
+                    payload = progress_payload()
                     yield f"event: progress\ndata: {json.dumps(payload)}\n\n"
                     emitted_step = best_step
                     emitted_total = total

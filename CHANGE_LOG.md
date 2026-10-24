@@ -2357,3 +2357,11 @@ issue comments.
   moved from z5/BC to z9 over the AOI and rendered the block mosaic. Tests cover the endpoint,
   the no-geometry 404, and the bad-format refusal; the web reference documents it. Shell assets
   move to `v53`. Dashboard **GREEN**.
+
+- P23.4: the metaheuristic solvers now emit a trace with the current solution's objective and the
+  accepted-move count, alongside the incumbent. Telemetry step records carry `current` and
+  `accepted`; the SSE progress event keeps the incumbent `objective` but merges the latest trace,
+  so a flat best is visibly different from a stalled search. The run panel shows
+  `best · current · accepted`. On c5, best stayed at 3,965,293 while current moved to 3,965,632 and
+  accepted rose past 30. Solver, telemetry, and SSE tests cover the fields; shell assets move to
+  `v54`. Dashboard **GREEN**.
