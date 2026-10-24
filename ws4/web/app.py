@@ -32,9 +32,11 @@ from fastapi import Body, FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pyproj import Transformer
+from shapely import make_valid
 from shapely import transform as shapely_transform
 from shapely.geometry import box, shape
 from shapely.geometry.base import BaseGeometry
+from shapely.ops import unary_union
 from shapely.strtree import STRtree
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.responses import Response
@@ -232,6 +234,7 @@ def _intersects(bbox: tuple[float, float, float, float], feature: dict[str, Any]
 
 
 TILE_EXTENT: int = 4096
+TILE_CACHE_VERSION: str = "v7"
 
 
 def _safe_cache_name(value: str) -> str:
@@ -287,6 +290,7 @@ def _tile_cache_path(
     """
     return (
         root
+        / TILE_CACHE_VERSION
         / _safe_cache_name(run)
         / _safe_cache_name(layer)
         / f"year-{year if year is not None else 'none'}"
@@ -310,13 +314,15 @@ def _tile_tolerance(zoom: int) -> float:
     float
         Tolerance in source metres; zero keeps the original vertices.
     """
-    if zoom >= 16:
+    if zoom >= 15:
         return 0.0
-    if zoom >= 14:
-        return 10.0
-    if zoom >= 12:
-        return 50.0
-    return 100.0
+    if zoom >= 13:
+        return 5.0
+    if zoom >= 11:
+        return 15.0
+    if zoom >= 9:
+        return 30.0
+    return 50.0
 
 
 def _tile_coordinates(
@@ -509,6 +515,7 @@ def create_app(
     runs: Path,
     targets: Path | None = None,
     geometry: Path | None = None,
+    geometry_overview: Path | None = None,
     land_base: Path | None = None,
     allow_runs: bool = False,
     allow_agent: bool = False,
@@ -538,6 +545,9 @@ def create_app(
     geometry : Path or None, optional
         A GeoJSON file of block polygons or points, joined on ``block_id``. Without it the map
         endpoint refuses with the missing artefact named.
+    geometry_overview : Path or None, optional
+        A coarser geometry for low-zoom tiles. Detail zooms use ``geometry``; when this is
+        ``None`` every zoom uses ``geometry``.
     land_base : Path or None, optional
         A GeoJSON polygon layer drawn under the blocks as the non-forest land base. It is
         optional: without it the basemap shows through gaps between blocks.
@@ -581,6 +591,7 @@ def create_app(
     dataset = Path(dataset).resolve()
     runs_root = Path(runs).resolve()
     geometry_path = Path(geometry).resolve() if geometry is not None else None
+    overview_path = Path(geometry_overview).resolve() if geometry_overview is not None else None
     land_base_path = Path(land_base).resolve() if land_base is not None else None
     targets_path = Path(targets).resolve() if targets is not None else None
     topology_path = Path(topology).resolve() if topology is not None else None
@@ -635,6 +646,7 @@ def create_app(
         return pd.read_csv(path)
 
     geometry_cache: list[dict[str, Any]] | None = None
+    overview_cache: list[dict[str, Any]] | None = None
     land_base_cache: list[dict[str, Any]] | None = None
     road_cache: list[dict[str, Any]] | None = None
 
@@ -660,6 +672,13 @@ def create_app(
         if geometry_cache is None:
             geometry_cache = _geometry_features(geometry_path) if geometry_path is not None else []
         return geometry_cache
+
+    def overview_features() -> list[dict[str, Any]]:
+        """Return the optional coarse geometry once, parsed."""
+        nonlocal overview_cache
+        if overview_cache is None:
+            overview_cache = _geometry_features(overview_path) if overview_path is not None else []
+        return overview_cache
 
     @app.get("/", response_class=HTMLResponse)
     def index() -> HTMLResponse:
@@ -1715,7 +1734,7 @@ def create_app(
             "account": account if layer == "compartments" else None,
         }
 
-    payload_cache: dict[tuple[str, int | None, str, int | None, str], dict[str, Any]] = {}
+    payload_cache: dict[tuple[str, int | None, str, int | None, str, bool], dict[str, Any]] = {}
     payload_lock = threading.Lock()
     tile_cache: dict[tuple[str, int, int, int, str, int | None, int | None], bytes] = {}
 
@@ -1725,9 +1744,11 @@ def create_app(
         layer: str,
         period_start: int | None,
         account: str | None,
+        *,
+        overview: bool = False,
     ) -> dict[str, Any]:
         """Build and cache the source-CRS features for one layer and period."""
-        key = (run, year, layer, period_start, account or "")
+        key = (run, year, layer, period_start, account or "", overview)
         cached = payload_cache.get(key)
         if cached is not None:
             return cached
@@ -1746,12 +1767,21 @@ def create_app(
                 zoom=None,
             )
             features = list(payload["features"])
+            if overview and overview_path is not None:
+                by_block = {
+                    int(feature["properties"]["block_id"]): feature["geometry"]
+                    for feature in overview_features()
+                    if feature.get("properties", {}).get("block_id") is not None
+                }
+                for feature in features:
+                    block = feature.get("properties", {}).get("block_id")
+                    if block is not None and int(block) in by_block:
+                        feature["geometry"] = by_block[int(block)]
             shapes = [shape(feature["geometry"]) for feature in features]
             entry = {
                 "features": features,
                 "shapes": shapes,
                 "tree": STRtree(shapes),
-                "centroids": [geometry.representative_point() for geometry in shapes],
             }
             payload_cache.clear()
             payload_cache[key] = entry
@@ -1768,10 +1798,21 @@ def create_app(
         """Return the full-run feature counts a viewport map does not carry."""
         if layer not in ("blocks", "treatments", "cumulative"):
             raise HTTPException(status_code=422, detail=f"unknown tile layer {layer!r}")
-        entry = cached_geometry(run, year, layer, period_start, account)
-        total = len(entry["features"])
+        payload = map_features(
+            run=run,
+            year=year,
+            layer=layer,
+            account=account,
+            period_start=period_start,
+            format="projected",
+            bbox=None,
+            zoom=None,
+        )
+        total = len(payload["features"])
         treated = sum(
-            1 for feature in entry["features"] if bool(feature.get("properties", {}).get("treated"))
+            1
+            for feature in payload["features"]
+            if bool(feature.get("properties", {}).get("treated"))
         )
         return {
             "total_features": total,
@@ -1822,7 +1863,14 @@ def create_app(
                     "X-WS4-Tile-Cache": "disk",
                 },
             )
-        entry = cached_geometry(run, year, layer, period_start, account)
+        entry = cached_geometry(
+            run,
+            year,
+            layer,
+            period_start,
+            account,
+            overview=z < 8 and overview_path is not None,
+        )
         tile = mercantile.Tile(x, y, z)
         mercator = mercantile.xy_bounds(tile)
         to_source = Transformer.from_crs("EPSG:3857", source_crs, always_xy=True)
@@ -1833,33 +1881,37 @@ def create_app(
         tile_box = box(*source_bounds)
         tolerance = _tile_tolerance(z)
         indices = [int(index) for index in entry["tree"].query(tile_box)]
-        if z < 10:
-            if layer == "blocks":
-                step = max(1, len(indices) // 5000)
-                indices = indices[::step]
-            else:
-                indices = [
-                    index
-                    for index in indices
-                    if bool(entry["features"][index].get("properties", {}).get("treated"))
-                ]
+        if z < 6 and layer != "blocks":
+            indices = [
+                index
+                for index in indices
+                if bool(entry["features"][index].get("properties", {}).get("treated"))
+            ]
         features: list[dict[str, Any]] = []
+
+        def project(coordinates: np.ndarray) -> np.ndarray:
+            xs, ys = to_mercator.transform(coordinates[:, 0], coordinates[:, 1])
+            return np.column_stack([xs, ys])
+
         for index in indices:
             properties = entry["features"][index].get("properties", {})
-            if z < 10:
-                geometry = entry["centroids"][index]
-            else:
-                geometry = entry["shapes"][int(index)]
-                if tolerance > 0:
-                    geometry = geometry.simplify(tolerance, preserve_topology=True)
-                geometry = geometry.intersection(tile_box)
-                if geometry.is_empty:
+            geometry = entry["shapes"][index]
+            if not geometry.is_valid:
+                geometry = make_valid(geometry)
+                if geometry.geom_type == "GeometryCollection":
+                    parts = [
+                        part
+                        for part in geometry.geoms
+                        if part.geom_type in ("Polygon", "MultiPolygon")
+                    ]
+                    geometry = unary_union(parts) if parts else geometry
+                if geometry.geom_type not in ("Polygon", "MultiPolygon"):
                     continue
-
-            def project(coordinates: np.ndarray) -> np.ndarray:
-                xs, ys = to_mercator.transform(coordinates[:, 0], coordinates[:, 1])
-                return np.column_stack([xs, ys])
-
+            if tolerance > 0:
+                geometry = geometry.simplify(tolerance, preserve_topology=True)
+            geometry = geometry.intersection(tile_box)
+            if geometry.is_empty:
+                continue
             mercator_geometry = shapely_transform(geometry, project)
             features.append(
                 {

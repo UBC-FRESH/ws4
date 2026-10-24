@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false };
 
 const $ = (id) => document.getElementById(id);
 const statusLine = (text) => { $('status').textContent = text; };
@@ -217,7 +217,7 @@ function ensureMapLibre() {
         paint: {
           'fill-color': ['to-color', ['get', '_fill']],
           'fill-opacity': ['get', '_opacity'],
-          'fill-outline-color': 'rgba(0,0,0,0.22)',
+          'fill-outline-color': 'rgba(0,0,0,0.08)',
         },
       });
       map.addLayer({
@@ -270,6 +270,7 @@ function ensureMapLibre() {
     });
     map.on('error', () => { /* a missing basemap tile must not hide the blocks */ });
     state.mapLibre = map;
+    state.mapFitted = false;
     return map;
   } catch (error) {
     state.mapEngine = 'svg';
@@ -316,6 +317,18 @@ async function loadLandBase(map = state.mapLibre) {
     const body = await api('api/land-base?format=wgs84');
     const source = map.getSource('land-base');
     if (source) source.setData(body);
+    if (!state.mapFitted && body.features?.length) {
+      const box = new window.maplibregl.LngLatBounds();
+      for (const feature of body.features) {
+        if (feature.geometry?.coordinates) extendMapBounds(box, feature.geometry.coordinates);
+      }
+      if (!box.isEmpty()) {
+        state.mapFitted = true;
+        state.suppressViewportReload = true;
+        window.setTimeout(() => { state.suppressViewportReload = false; }, 700);
+        map.fitBounds(box, { padding: 30, duration: 0 });
+      }
+    }
   } catch (error) {
     // The underlay is optional: a service without --land-base has none.
   }
@@ -569,6 +582,14 @@ function updateLiveBlocks(blocks) {
   applyVisibility();
 }
 
+function mapLayerName() {
+  if (state.layerMode === 'patches' && state.layers?.patches) return 'patches';
+  if (state.layerMode === 'cumulative' && state.layers?.cumulative) return 'cumulative';
+  if (state.layerMode === 'compartments' && state.layers?.compartments) return 'compartments';
+  if (state.layerMode === 'base' || (state.layers && !state.layers.treatments)) return 'blocks';
+  return 'treatments';
+}
+
 function vectorMode(layer) {
   return state.mapEngine === 'maplibre'
     && !state.compareView
@@ -576,19 +597,25 @@ function vectorMode(layer) {
 }
 
 function vectorColorExpression() {
+  const grid = state.layerMode === 'blocks' || (state.layers && !state.layers.treatments)
+    ? ['interpolate', ['linear'], ['coalesce', ['get', 'treated_share'], 0], 0, '#2f7d4f', 1, '#2f7d4f']
+    : ['interpolate', ['linear'], ['coalesce', ['get', 'treated_share'], 0],
+      0, '#f4a261', 0.02, '#e76f51', 0.05, '#d62828', 0.15, '#8b0000'];
   if (state.layerMode === 'cumulative' && state.layers?.cumulative) {
     return ['case',
+      ['has', 'treated_share'], grid,
       ['all', ['==', ['get', 'treated'], true], ['==', ['get', 'current'], false]], '#f0d2b0',
       ['==', ['get', 'treated'], true], '#c0392b',
       '#2f7d4f'];
   }
-  return ['case', ['==', ['get', 'treated'], true], '#c0392b', '#2f7d4f'];
+  return ['case', ['has', 'treated_share'], grid, ['==', ['get', 'treated'], true], '#c0392b', '#2f7d4f'];
 }
 
 function vectorOpacityExpression() {
   const showTreated = $('show-treated').checked;
   const showUntreated = $('show-untreated').checked;
   return ['case',
+    ['has', 'treated_share'], 0.85,
     ['==', ['get', 'treated'], true], showTreated ? 1 : 0,
     showUntreated ? 0.55 : 0];
 }
@@ -626,7 +653,7 @@ function installVectorSource(url) {
       paint: {
         'fill-color': '#2f7d4f',
         'fill-opacity': 0.55,
-        'fill-outline-color': 'rgba(0,0,0,0.22)',
+        'fill-outline-color': 'rgba(0,0,0,0.08)',
       },
     };
     const pointLayer = {
@@ -703,18 +730,38 @@ async function loadMap(preserveView = false) {
   state.mapRetries = 0;
   state.mapLoading = true;
   statusLine('loading map…');
-  const layer = state.layerMode === 'patches' && state.layers?.patches
-    ? 'patches'
-    : state.layerMode === 'cumulative' && state.layers?.cumulative
-      ? 'cumulative'
-      : state.layerMode === 'compartments' && state.layers?.compartments
-        ? 'compartments'
-        : state.layerMode === 'base' || (state.layers && !state.layers.treatments)
-          ? 'blocks'
-          : 'treatments';
+  const layer = mapLayerName();
   try {
     const period = currentPeriod();
     const end = period ? Number(period.end) : state.year;
+    const span = period ? ` · years ${period.start}-${period.end}` : '';
+    if (state.mapEngine === 'maplibre' && vectorMode(layer)) {
+      const base = document.baseURI.endsWith('/') ? document.baseURI : `${document.baseURI}/`;
+      let tileUrl = `${base}api/runs/${encodeURIComponent(state.run)}/tiles/{z}/{x}/{y}.mvt?year=${end}&layer=${layer}`;
+      if (period) tileUrl += `&period_start=${period.start}`;
+      state.vectorActive = true;
+      state.features = [];
+      ensureVectorSource(tileUrl);
+      let stats = `api/runs/${encodeURIComponent(state.run)}/map-stats?year=${end}&layer=${layer}`;
+      if (period) stats += `&period_start=${period.start}`;
+      try {
+        const body = await api(stats);
+        state.mapTotals = {
+          treated: body.total_treated ?? 0,
+          untreated: body.total_untreated ?? 0,
+        };
+        $('n-treated').textContent = Number(state.mapTotals.treated).toLocaleString();
+        $('n-untreated').textContent = Number(state.mapTotals.untreated).toLocaleString();
+        statusLine(`${state.mapTotals.treated.toLocaleString()} treated blocks · ${layer} · MVT · period ${state.periodIndex + 1}${span}`);
+      } catch {
+        state.mapTotals = null;
+        statusLine(`MVT · ${layer} · period ${state.periodIndex + 1}${span}`);
+      }
+      if (state.showUsedRoads) loadUsedRoads();
+      return;
+    }
+    hideVectorLayers();
+    state.mapTotals = null;
     let query = `api/runs/${encodeURIComponent(state.run)}/map?year=${end}&layer=${layer}`;
     query += periodQuery();
     if (layer === 'compartments') {
@@ -735,23 +782,9 @@ async function loadMap(preserveView = false) {
       ? { treated: body.total_treated ?? 0, untreated: body.total_untreated ?? 0 }
       : null;
     render(!preserveView);
-    const span = period ? ` · years ${period.start}-${period.end}` : '';
     const place = state.mapEngine === 'maplibre' ? 'in view' : '';
     const noun = body.overview_mode === 'treated' ? 'treated blocks' : 'blocks';
     statusLine(`${state.features.length.toLocaleString()} ${noun} ${place} · ${layer} · period ${state.periodIndex + 1}${span}`);
-    if (state.mapEngine === 'maplibre' && vectorMode(layer)) {
-      const base = document.baseURI.endsWith('/') ? document.baseURI : `${document.baseURI}/`;
-      let tileUrl = `${base}api/runs/${encodeURIComponent(state.run)}/tiles/{z}/{x}/{y}.mvt?year=${end}&layer=${layer}`;
-      if (period) tileUrl += `&period_start=${period.start}`;
-      state.vectorActive = true;
-      state.mapTotals = { treated: body.total_treated ?? 0, untreated: body.total_untreated ?? 0 };
-      $('n-treated').textContent = Number(state.mapTotals.treated).toLocaleString();
-      $('n-untreated').textContent = Number(state.mapTotals.untreated).toLocaleString();
-      ensureVectorSource(tileUrl);
-      statusLine(`${state.features.length.toLocaleString()} ${noun} ${place} · ${layer} · MVT · period ${state.periodIndex + 1}${span}`);
-    } else if (state.mapEngine === 'maplibre') {
-      hideVectorLayers();
-    }
     if (state.showUsedRoads) loadUsedRoads();
   } catch (error) {
     statusLine(`map unavailable: ${error.message}`);

@@ -821,6 +821,7 @@ detail that zoom requires, instead of one full-management-unit GeoJSON payload.
 - [x] P20.3 Add the MapLibre vector source and validate it in a browser (#187)
 - [x] P20.4 Add the durable tile cache and 1M-fragment scale gate (#188)
 - [x] P20.5 Close out production map serving (#189)
+- [x] P20.6 Restore exact block geometry at detail zooms (#197)
 
 Acceptance: a low-zoom request returns compact centroids, a high-zoom bbox request returns only the
 visible blocks, the front-end reloads on `moveend` without a loop, and the TSA 46 initial payload is

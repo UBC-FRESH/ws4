@@ -2226,3 +2226,9 @@ issue comments.
 - P21 close-out: reversion, the validation sweep, the sensitivity report, and the threshold-accepting
   engine are implemented, tested, documented, and queued for review in `notes/reports/p21-closeout.md`.
   Dashboard **GREEN** at `37c16e6`.
+- P20.6 corrects the map's geometry policy after the first LOD was rejected as a point/grid
+  scatter. The service uses `fragments_full.geojson` for detail zooms and a 100 m overview below
+  zoom 8; below zoom 6 treatment layers show treated block polygons, and zoom 6+ shows every
+  block. The centroid and grid MVT paths are removed. Measured: a z12 tile is 4.98 KB / 74 full
+  block polygons; a z6 overview tile is a 65,268-block mosaic; the map is exact at the zooms where
+  it matters.

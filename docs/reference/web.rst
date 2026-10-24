@@ -84,9 +84,11 @@ Endpoints
        ``overview_mode`` so the shell can keep full-run counts while drawing the viewport.
    * - ``GET /api/runs/{run}/tiles/{z}/{x}/{y}.mvt?year=&layer=&period_start=``
      - One Mapbox Vector Tile for ``blocks``, ``treatments``, or ``cumulative``. The layer is
-       named ``blocks`` in the tile. Below zoom 10 it carries treated centroids; at zoom 10 and
-       above it carries the intersecting polygons, simplified for the zoom. The response is cached
-       in memory and marked ``Cache-Control: public, max-age=3600``.
+       named ``blocks`` in the tile. Below zoom 6, treatment layers carry treated block polygons
+       only; at zoom 6 and above they carry every intersecting block polygon. Tiles below zoom 8
+       use ``--geometry-overview`` when it is configured; detail zooms use ``--geometry`` and
+       simplify only to the tile resolution. The response is cached in memory and on disk and is
+       marked ``Cache-Control: public, max-age=3600``.
    * - ``GET /api/runs/{run}/map-stats?year=&layer=&period_start=``
      - The full-run ``total_features``, ``total_treated``, and ``total_untreated`` for the layer,
        so a tiled viewport keeps the run's own counts.
@@ -176,9 +178,11 @@ transforms the source CRS with pyproj. Start the service with the CRS the geomet
 
 .. code-block:: bash
 
-   ws4 serve --dataset build/compiled --runs runs --geometry blocks.geojson --crs EPSG:26911
+   ws4 serve --dataset build/compiled --runs runs --geometry blocks_full.geojson \
+     --geometry-overview blocks_overview.geojson --crs EPSG:26911
 
-Add ``--tile-cache PATH`` to keep the MVT tiles across restarts. Tiles are written under
+``--geometry`` is the detail layer; ``--geometry-overview`` is an optional coarser layer used by
+tiles below zoom 8. Without the overview, every zoom uses the detail layer. Add ``--tile-cache PATH`` to keep the MVT tiles across restarts. Tiles are written under
 ``PATH/<run>/<layer>/year-<year>/period-<start>/<z>/<x>/<y>.mvt`` and served with
 ``Cache-Control: public, max-age=3600``. The response header ``X-WS4-Tile-Cache`` reports
 ``memory``, ``disk``, or ``miss``. Without the flag the cache is in memory only.
@@ -196,11 +200,13 @@ counts from the response while the map draws only the viewport. This keeps a man
 from loading every polygon up front.
 
 The shell uses the MVT tile endpoint for the block, treatment, and cumulative layers. The vector
-source requests only the tiles MapLibre needs at the current zoom; the server returns treated
-centroids below zoom 10 and simplified polygons at zoom 10 and above. The tile layer is named
-``blocks`` and its properties carry ``block_id``, ``treated``, and ``current``. The shell reads
-full-run counts from the GeoJSON response's totals and from ``map-stats``. Patches, compartments,
-and comparison stay on the GeoJSON path, where the per-feature styling is richer.
+source requests only the tiles MapLibre needs at the current zoom. Below zoom 6, treatment layers
+show treated block polygons; at zoom 6 and above they show every block polygon. The tile layer is
+named ``blocks`` and its properties carry ``block_id``, ``treated``, and ``current``. Low-zoom
+tiles use the configured overview geometry; detail zooms use the full geometry and simplify only
+to the tile resolution (50 m below zoom 9, 15 m at 11-12, 5 m at 13-14, and full at 15+). The shell
+reads full-run counts from ``map-stats``. Patches, compartments, and comparison stay on the
+GeoJSON path, where the per-feature styling is richer.
 
 The browser path has an opt-in smoke:
 

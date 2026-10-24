@@ -540,6 +540,11 @@ def serve(
     geometry: Path | None = typer.Option(
         None, "--geometry", help="GeoJSON of block points or polygons"
     ),
+    geometry_overview: Path | None = typer.Option(
+        None,
+        "--geometry-overview",
+        help="Coarser GeoJSON for low-zoom tiles; detail zooms use --geometry",
+    ),
     land_base: Path | None = typer.Option(
         None,
         "--land-base",
@@ -618,6 +623,7 @@ def serve(
             runs=runs,
             targets=targets,
             geometry=geometry,
+            geometry_overview=geometry_overview,
             land_base=land_base,
             allow_runs=allow_runs,
             allow_agent=allow_agent,
