@@ -179,6 +179,10 @@ def write_targets(path: Path, targets: Sequence[Target]) -> Path:
                 entry["flow_reference"] = target.flow_reference
         if not target.active:
             entry["active"] = False
+        if target.normalization != "none":
+            entry["normalization"] = target.normalization
+        if target.priority != 1:
+            entry["priority"] = target.priority
         entries.append(entry)
     destination = Path(path)
     destination.write_text(yaml.safe_dump({"targets": entries}, sort_keys=False), encoding="utf-8")

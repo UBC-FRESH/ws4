@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 
 from ..patch.accounts import load_patch_edges_detailed
-from .objective import Target, accumulates
+from .objective import Target, accumulates, normalization_scale
 from .operators import Candidates, Chain, Schedule
 
 
@@ -382,8 +382,9 @@ def _build_program(
     offset = {key: sum(base[block].get(key, 0.0) for block in blocks) for key in accounted}
     objective = np.zeros(n_vars)
     for target_index, target in enumerate(targets):
-        objective[n_x + target_index] = target.min_weight
-        objective[n_x + n_targets + target_index] = target.max_weight
+        scale = normalization_scale(target)
+        objective[n_x + target_index] = target.min_weight / scale
+        objective[n_x + n_targets + target_index] = target.max_weight / scale
     rows: list[np.ndarray] = []
     lower: list[float] = []
     upper: list[float] = []

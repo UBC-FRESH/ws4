@@ -367,3 +367,21 @@ def test_optimizer_uses_the_delta_path(tmp_path: Path) -> None:
     targets = [Target("product.Volume", period=1, minimum=300.0, maximum=400.0)]
     best, objective = optimizer._solve(3)
     assert objective == pytest.approx(optimizer._evaluate(best, targets))
+
+
+def test_incremental_matches_priority_and_normalized_targets(tmp_path: Path) -> None:
+    """The delta path and the whole-schedule objective agree with tiers and auto scaling."""
+    optimizer = _optimizer(tmp_path)
+    targets = [
+        Target("product.Volume", period=1, minimum=300.0, normalization="auto", priority=1),
+        Target("product.Volume", period=2, minimum=100.0, normalization="auto", priority=2),
+    ]
+    evaluator = optimizer.delta_evaluator(targets)
+    assert evaluator is not None
+    block = min(optimizer.candidates())
+    evaluator.reset({})
+    before = evaluator.objective
+    delta = evaluator.delta([block], {block: optimizer.candidates()[block][0]})
+    evaluator.apply([block], {block: optimizer.candidates()[block][0]})
+    assert evaluator.objective == pytest.approx(before + delta)
+    assert evaluator.objective == pytest.approx(objective(evaluator.values_frame(), targets))

@@ -12,7 +12,14 @@ from pathlib import Path
 
 import pandas as pd
 
-from .opt.objective import Target, flow_series, penalty, period_value
+from .opt.objective import (
+    Target,
+    flow_series,
+    normalization_scale,
+    penalty,
+    period_value,
+    raw_penalty,
+)
 
 
 def _by_offset(values: pd.DataFrame) -> dict[tuple[int, str], float]:
@@ -113,7 +120,8 @@ def target_status(values: pd.DataFrame, targets: list[Target]) -> pd.DataFrame:
     -------
     pandas.DataFrame
         One row per target with ``account``, ``year``, ``value``, ``minimum``,
-        ``maximum``, ``penalty``, and ``status`` (``met``, ``below``, or ``above``).
+        ``maximum``, ``raw_penalty``, ``penalty`` (normalized), ``scale``,
+        ``normalization``, ``priority``, and ``status``.
     """
     index = _by_offset(values)
     horizon = max((offset for offset, _ in index), default=-1) + 1
@@ -128,7 +136,11 @@ def target_status(values: pd.DataFrame, targets: list[Target]) -> pd.DataFrame:
                     "value": 0.0,
                     "minimum": target.minimum,
                     "maximum": target.maximum,
+                    "raw_penalty": 0.0,
                     "penalty": 0.0,
+                    "scale": normalization_scale(target),
+                    "normalization": target.normalization,
+                    "priority": target.priority,
                     "status": "inactive",
                 }
             )
@@ -151,7 +163,11 @@ def target_status(values: pd.DataFrame, targets: list[Target]) -> pd.DataFrame:
                         "value": value,
                         "minimum": target.minimum,
                         "maximum": target.maximum,
+                        "raw_penalty": raw_penalty(value, target),
                         "penalty": penalty(value, target),
+                        "scale": normalization_scale(target),
+                        "normalization": target.normalization,
+                        "priority": target.priority,
                         "status": _status(value, target),
                     }
                 )
@@ -170,7 +186,11 @@ def target_status(values: pd.DataFrame, targets: list[Target]) -> pd.DataFrame:
                 "value": value,
                 "minimum": target.minimum,
                 "maximum": target.maximum,
+                "raw_penalty": raw_penalty(value, target),
                 "penalty": penalty(value, target),
+                "scale": normalization_scale(target),
+                "normalization": target.normalization,
+                "priority": target.priority,
                 "status": status,
             }
         )
