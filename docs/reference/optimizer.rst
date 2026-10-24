@@ -173,10 +173,17 @@ by default; ``cluster``, ``merge`` and ``split`` ship at weight zero, so a confi
 them a weight (``--cluster-weight``, ``--merge-weight``, ``--split-weight``, or
 ``OptimizeConfig.cluster_weight`` and friends) before they are selected.
 
-The solvers are simulated annealing (``sa``), tabu search (``tabu``), and iterated local search
-(``ils``), selected by ``OptimizeConfig.metaheuristic``. A run may use multiple starts
-(``OptimizeConfig.starts``), serial or across a process pool (``OptimizeConfig.workers``), keeping the
-best. ``OptimizeConfig.warm_start`` seeds the search from each block's first candidate.
+The solvers are simulated annealing (``sa``), tabu search (``tabu``), iterated local search
+(``ils``), and threshold accepting (``threshold``), selected by ``--engine``
+(``OptimizeConfig.metaheuristic``). A run may use multiple starts (``OptimizeConfig.starts``), serial
+or across a process pool (``OptimizeConfig.workers``), keeping the best.
+``OptimizeConfig.warm_start`` seeds the search from each block's first candidate.
+
+Threshold accepting (``--engine threshold``) accepts an improving move always, and accepts a
+worsening move while its increase is no larger than the current **threshold**. The threshold is
+multiplied by the cooling factor each iteration; ``--threshold`` sets the initial value and
+``--cooling`` sets the factor. It is simpler to explain and tune than SA and is competitive on
+spatial harvest scheduling. Like SA, it honours ``--patience`` and ``--reversion``.
 
 Seeding a target by construction
 --------------------------------
@@ -224,6 +231,12 @@ A continuous search can stop on **stability** instead of a fixed budget: ``Optim
 ``time_limit_reached``; the web player exposes the same field as **Patience**. The stability stop is
 deterministic for a seed because it counts iterations, not wall-clock time.
 
+A search can also **revert** to its incumbent: ``OptimizeConfig.reversion`` (``--reversion``)
+resets the current solution to the best schedule every *N* accepted moves, then continues from
+there. ``0`` disables it. Reversion is a cheap intensification step that recovers a search which
+has wandered into a poor neighbourhood; the run summary records ``reversion`` with the other
+search settings. It is applied by SA, tabu, and ILS.
+
 The mixed-integer layer (``ws4.opt.mip``) solves an option-selection MILP (HiGHS via
 ``scipy.optimize.milp``) for a penalty **lower bound** and a candidate schedule. Enabling
 ``OptimizeConfig.mip_bound`` (``--mip-bound``) records the bound, the gap, and the bound status in the
@@ -242,6 +255,43 @@ When a route configuration is given (``OptimizeConfig.route_config_path`` or
 ``--route-config``), the objective is evaluated with the route model, and the route accounts and
 duplicate accounts (see :doc:`roads`) are resolved into the account values, so targets can be set on
 accounts such as ``route.Total.haul``.
+
+Validation sweep
+----------------
+
+``scripts/validate_search.py`` runs the same targets, horizon, and iteration budget through several
+engines and seeds, then reports the distribution of incumbents. It is orchestration of the same
+``Optimizer`` the CLI uses, so a record can be reproduced with the equivalent ``ws4 optimize``
+command. The report is advisory; it does not change a schedule.
+
+.. code-block:: bash
+
+   python scripts/validate_search.py \
+     --dataset build/compiled --targets targets.yaml \
+     --engines sa,tabu,ils --seeds 1,2,3 --iterations 500 --years 50 \
+     --out runtime/validation
+
+Use ``--reversion`` to include the reversion interval in every run, so a sweep can compare a
+reverted search with the plain one. The JSON records each run's objective, zero-penalty status,
+output directory, reversion interval, and (with ``--mip-bound``) the lower bound and gap. The Markdown table reports runs, best, mean, median, worst,
+and population standard deviation per engine. Use it before a release or a benchmark claim: a single
+seed is an anecdote, and a single engine is not a comparison.
+
+Target sensitivity
+------------------
+
+``scripts/sensitivity.py`` reads a completed run's ``report_targets.csv`` and the target file that
+produced it, then reports each target's distance to its nearest bound, whether it is binding, and the
+per-unit objective weight that applies when a bound is relaxed. It is advisory and does not change a
+schedule.
+
+.. code-block:: bash
+
+   python scripts/sensitivity.py --run opt --targets targets.yaml --out opt/evidence
+
+A missed target has a marginal cost per unit; a target with slack is not controlling the plan. A
+binding target exactly at its bound with zero shortfall has no penalty to remove, so its marginal is
+also zero. The JSON and Markdown reports are suitable for a plan review or an AAC negotiation record.
 
 Watch
 -----
@@ -378,7 +428,7 @@ Outputs
    * - ``schedule.csv``
      - The incumbent schedule (``block_id,treatment,offset``).
    * - ``summary.json``
-     - The run summary: objective, iterations, patience, seed, metaheuristic, operators, block count,
+     - The run summary: objective, iterations, patience, reversion, seed, metaheuristic, operators, block count,
        status, time-limit flag, dataset reference.
        and the dataset manifest.
    * - ``account_values.csv``, ``product_values.csv``

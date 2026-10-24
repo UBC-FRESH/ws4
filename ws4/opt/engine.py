@@ -78,6 +78,7 @@ from .solvers import (
     solve_sa,
     solve_sa_delta,
     solve_tabu,
+    solve_threshold,
 )
 from .telemetry import RunLogger
 
@@ -198,8 +199,13 @@ class OptimizeConfig:
     patience : int
         Stop a start after this many iterations without an incumbent improvement; 0 disables
         the criterion. It is the stability stop for a continuous search.
+    reversion : int
+        Reset the current solution to the incumbent every this many accepted moves; 0 disables
+        it. Applied by SA, tabu, and ILS.
     temperature : float
         The initial simulated-annealing temperature.
+    threshold : float
+        The initial threshold-accepting threshold, in objective units.
     cooling : float
         The geometric cooling factor.
     cooling_mode : str
@@ -207,7 +213,7 @@ class OptimizeConfig:
     cooling_window : int
         The iterations per temperature in adaptive mode.
     metaheuristic : str
-        ``"sa"``, ``"tabu"``, or ``"ils"``.
+        ``"sa"``, ``"tabu"``, ``"ils"``, or ``"threshold"``.
     tenure : int
         The tabu tenure, in iterations.
     perturbation : int
@@ -300,7 +306,9 @@ class OptimizeConfig:
     years: int = 50
     iterations: int = 500
     patience: int = 0
+    reversion: int = 0
     temperature: float = 1000.0
+    threshold: float = 1.0
     cooling: float = 0.99
     cooling_mode: str = "geometric"
     cooling_window: int = 64
@@ -346,6 +354,12 @@ class OptimizeConfig:
         """Reject an unknown temperature schedule before the search starts."""
         if self.patience < 0:
             raise ValueError("patience must be zero (off) or a positive iteration count")
+        if self.reversion < 0:
+            raise ValueError("reversion must be zero (off) or a positive accepted-move count")
+        if self.threshold < 0.0:
+            raise ValueError("threshold must be zero or positive")
+        if self.metaheuristic not in {"sa", "tabu", "ils", "threshold"}:
+            raise ValueError(f"unknown metaheuristic: {self.metaheuristic!r}")
         if self.cooling_mode not in {"geometric", "adaptive"}:
             raise ValueError(f"unknown cooling_mode: {self.cooling_mode!r}")
 
@@ -1206,6 +1220,20 @@ class Optimizer:
                 )
         if initial is None and self.cfg.warm_start:
             initial = {block: options[0] for block, options in candidates.items() if options}
+        if self.cfg.metaheuristic == "threshold":
+            return solve_threshold(
+                problem,
+                rng,
+                iterations=self.cfg.iterations,
+                threshold=self.cfg.threshold,
+                cooling=self.cfg.cooling,
+                on_step=on_step,
+                control=control,
+                initial=initial,
+                deadline=limit,
+                patience=self.cfg.patience,
+                reversion=self.cfg.reversion,
+            )
         if self.cfg.metaheuristic == "tabu":
             return solve_tabu(
                 problem,
@@ -1217,6 +1245,7 @@ class Optimizer:
                 initial=initial,
                 deadline=limit,
                 patience=self.cfg.patience,
+                reversion=self.cfg.reversion,
             )
         if self.cfg.metaheuristic == "ils":
             return solve_ils(
@@ -1228,6 +1257,7 @@ class Optimizer:
                 initial=initial,
                 deadline=limit,
                 patience=self.cfg.patience,
+                reversion=self.cfg.reversion,
             )
         evaluator = self.delta_evaluator(targets)
         if evaluator is not None:
@@ -1249,6 +1279,7 @@ class Optimizer:
                 adaptive=self.cfg.cooling_mode == "adaptive",
                 cooling_window=self.cfg.cooling_window,
                 patience=self.cfg.patience,
+                reversion=self.cfg.reversion,
             )
         return solve_sa(
             problem,
@@ -1263,6 +1294,7 @@ class Optimizer:
             deadline=limit,
             cooling_window=self.cfg.cooling_window,
             patience=self.cfg.patience,
+            reversion=self.cfg.reversion,
         )
 
     def _use_pool(self) -> bool:
@@ -1493,8 +1525,10 @@ class Optimizer:
             "incumbent_objective": best_obj,
             "iterations": self.cfg.iterations,
             "patience": self.cfg.patience,
+            "reversion": self.cfg.reversion,
             "seed": self.cfg.seed,
             "metaheuristic": self.cfg.metaheuristic,
+            "threshold": self.cfg.threshold,
             "starts": self.cfg.starts,
             "initial_schedule_path": self.cfg.initial_schedule_path or None,
             "blocks_scheduled": len(best),

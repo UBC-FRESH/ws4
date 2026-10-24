@@ -31,7 +31,8 @@ exists and the maintainer approves it.
 | P17 Roads opened to the period | #145 | `feature/p17-opened-roads` | complete |
 | P18 A graphical web front end | #146 | `feature/p18-web-frontend` | complete |
 | P19 Model-derived spatial layers and map scale | #161 | `feature/p19-spatial-layers` | complete |
-| P20 Production map serving | #183 | `feature/p20-map-lod` | pr-open |
+| P20 Production map serving | #183 | `feature/p20-map-lod` | complete |
+| P21 Search quality and validation | #190 | `feature/p21-search-quality` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -810,7 +811,7 @@ green on every merge; source layers are never mislabelled as model layers.
 
 Parent issue: #183
 Branch: `feature/p20-map-lod`
-Status: pr-open
+Status: complete
 
 Goal: keep the map usable on real management units by loading only the current viewport and only the
 detail that zoom requires, instead of one full-management-unit GeoJSON payload.
@@ -825,6 +826,27 @@ Acceptance: a low-zoom request returns compact centroids, a high-zoom bbox reque
 visible blocks, the front-end reloads on `moveend` without a loop, and the TSA 46 initial payload is
 below 20 MB.
 
+
+## Phase 21: Search quality and validation
+
+Parent issue: #190
+Branch: `feature/p21-search-quality`
+Status: pr-open
+
+Goal: make the optimizer's quality measurable and improve it with small, evidence-backed changes.
+
+- [x] P21.1 Add search reversion to SA, tabu, and ILS (#191)
+- [x] P21.2 Add the multi-seed and multi-engine validation harness (#192)
+- [x] P21.3 Add the target sensitivity report (#193)
+- [x] P21.4 Add a threshold-accepting engine (#194)
+
+Acceptance:
+
+- `--reversion N` resets the current solution to the best every N accepted moves and the summary records it.
+- `validate-search` reports best/mean/median/worst, standard deviation, feasibility rate, and the MIP gap when enabled.
+- The sensitivity report names binding targets, slack, and the marginal effect of relaxing each target.
+- The threshold engine shares the existing operators and evaluator.
+- `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes
 

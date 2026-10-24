@@ -2198,3 +2198,31 @@ issue comments.
   request is #185, and the roadmap/tracker say `pr-open`. The evidence includes the 66 KB TSA 46
   viewport, the 8.5 KB z0 and 3.1 KB z12 tiles, the disk/memory/miss cache check, the browser
   smoke on both TSAs, and the 1,000,000-fragment scale gate (29.3 s cold, 0.018 s warm).
+
+## 2026-10-24
+
+- P21.1: `ws4 optimize --reversion N` resets the current solution to the incumbent every N
+  accepted moves in SA, tabu, and ILS. The run summary records `reversion`; the optimizer reference
+  explains the intensification step. Tests cover the helper, the config check, and a run.
+- P21.2: `scripts/validate_search.py` runs SA, tabu, and ILS over several seeds with the same
+  targets and budget, then reports best/mean/median/worst, population standard deviation,
+  zero-penalty status, and the MIP gap when `--mip-bound` is set. It writes JSON and Markdown.
+  The dashboard is green.
+- The validation sweep accepts `--reversion`, so a run can compare a reverted search with the plain one. Tests: 6 validate-search tests; dashboard **GREEN**.
+
+- P21.4: added the threshold-accepting engine (`--engine threshold`, `--threshold`, `--cooling`).
+  It accepts improving moves always and worsening moves within the current threshold, shrinks the
+  threshold each iteration, and shares `--patience` and `--reversion`. `ws4 optimize` now exposes
+  `--engine` for sa, tabu, ils, and threshold; `ws4 watch` accepts the same alias. Tests cover the
+  parameter guard, an optimizer run, and unknown-engine rejection. Dashboard **GREEN**; one
+  `test_web.py` tile test failed once under load and passed in three isolated and two full reruns.
+
+- P21.3: added `scripts/sensitivity.py`, an advisory report over a run's `report_targets.csv` and
+  the target file. It reports each target's shortfall, excess, nearest-bound slack, binding status,
+  and the per-unit objective weight that applies outside a bound. It writes JSON and Markdown. This
+  is the goal-programming slack view, not an LP dual; true LP dual sensitivity remains a follow-up.
+  Tests: 4 sensitivity tests; dashboard **GREEN**.
+
+- P21 close-out: reversion, the validation sweep, the sensitivity report, and the threshold-accepting
+  engine are implemented, tested, documented, and queued for review in `notes/reports/p21-closeout.md`.
+  Dashboard **GREEN** at `37c16e6`.
