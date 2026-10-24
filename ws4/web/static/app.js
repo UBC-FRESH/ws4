@@ -254,14 +254,19 @@ function ensureMapLibre() {
         map.on('mouseleave', interactive, () => { map.getCanvas().style.cursor = ''; });
       }
       let viewportTimer = null;
+      map.on('dragstart', () => { state.userInteracted = true; });
+      map.on('zoomstart', (event) => { if (event.originalEvent) state.userInteracted = true; });
       map.on('moveend', () => {
         if (!state.mapLibreReady || state.mapLoading || state.suppressViewportReload) return;
+        if (!state.userInteracted) return;
+        state.userInteracted = false;
         window.clearTimeout(viewportTimer);
         viewportTimer = window.setTimeout(() => { loadMap(true); }, 250);
       });
       state.mapLibreReady = true;
       loadLandBase(map);
       renderMapLibre(true);
+      if (state.run) loadMap(false);
     });
     map.on('error', () => { /* a missing basemap tile must not hide the blocks */ });
     state.mapLibre = map;
@@ -565,6 +570,14 @@ function updateLiveBlocks(blocks) {
 
 async function loadMap(preserveView = false) {
   if (!state.run) return;
+  if (state.mapEngine === 'maplibre' && !state.mapLibre) ensureMapLibre();
+  if (state.mapEngine === 'maplibre' && !state.mapLibreReady) {
+    state.mapRetries = (state.mapRetries || 0) + 1;
+    if (state.mapRetries > 40) return;
+    window.setTimeout(() => loadMap(preserveView), 300);
+    return;
+  }
+  state.mapRetries = 0;
   state.mapLoading = true;
   statusLine('loading map…');
   const layer = state.layerMode === 'patches' && state.layers?.patches

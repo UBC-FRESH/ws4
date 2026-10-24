@@ -2181,3 +2181,7 @@ issue comments.
   place, but the MapLibre vector-source integration did not request tiles in a headless-browser
   check, so it is deferred to P20.3. The shell keeps the verified viewport GeoJSON path; the
   endpoint remains available and tested for a vector-source client.
+- P20.1 fix: the shell now creates the MapLibre map before waiting for readiness, retries the first
+  load instead of deadlocking, and reloads the viewport only after a user drag or zoom. The TSA 46
+  initial request is 66 KB at zoom 5 with 331 treated centroids; the full-run counts come from the
+  response's totals. This is the verified shell path while P20.3 owns the vector-source integration.
