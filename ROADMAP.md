@@ -32,7 +32,8 @@ exists and the maintainer approves it.
 | P18 A graphical web front end | #146 | `feature/p18-web-frontend` | complete |
 | P19 Model-derived spatial layers and map scale | #161 | `feature/p19-spatial-layers` | complete |
 | P20 Production map serving | #183 | `feature/p20-map-lod` | complete |
-| P21 Search quality and validation | #190 | `feature/p21-search-quality` | pr-open |
+| P21 Search quality and validation | #190 | `feature/p21-search-quality` | complete |
+| P22 Map operations | #198 | `feature/p22-map-ops` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -832,7 +833,7 @@ below 20 MB.
 
 Parent issue: #190
 Branch: `feature/p21-search-quality`
-Status: pr-open
+Status: complete
 
 Goal: make the optimizer's quality measurable and improve it with small, evidence-backed changes.
 
@@ -847,6 +848,26 @@ Acceptance:
 - `validate-search` reports best/mean/median/worst, standard deviation, feasibility rate, and the MIP gap when enabled.
 - The sensitivity report names binding targets, slack, and the marginal effect of relaxing each target.
 - The threshold engine shares the existing operators and evaluator.
+- `python scripts/dashboard.py` is green.
+
+## Phase 22: Map operations
+
+Parent issue: #198
+Branch: `feature/p22-map-ops`
+Status: active
+
+Goal: make production map serving operationally repeatable: pre-warm the durable tile cache, prove the
+service works behind a path prefix, and measure the 1M-fragment cold-build memory.
+
+- [ ] P22.1 Add the durable tile-cache pre-warm command (#199)
+- [ ] P22.2 Add the path-prefix deployment check (#200)
+- [ ] P22.3 Add the 1M-fragment peak-RSS profile and budget (#201)
+
+Acceptance:
+
+- A pre-warm run writes durable tiles and reports hits, misses, bytes, and time.
+- The path-prefix check serves `/prefix/`, static assets, the API, and a tile.
+- The 1M-fragment benchmark reports peak RSS and enforces the recorded budget.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes
