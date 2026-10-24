@@ -71,13 +71,25 @@ Endpoints
      - The run's report files and their sizes.
    * - ``GET /api/runs/{run}/reports/{name}``
      - One report file; a name the run does not hold is a 404.
-   * - ``GET /api/runs/{run}/map?year=&period_start=&layer=&account=&format=``
+   * - ``GET /api/runs/{run}/map?year=&period_start=&layer=&account=&format=&bbox=&zoom=``
      - A GeoJSON ``FeatureCollection`` joined to ``--geometry``. ``year`` is the period's end year
        and ``period_start`` its first year, so ``treatments`` covers the period; ``cumulative``
        marks the current period and earlier ones, ``patches`` carries the year's patch membership,
        ``compartments`` the model spread membership (one ``account`` at a time), and ``blocks`` is
        the bare geometry. ``format=wgs84`` transforms the geometry for MapLibre; the default is the
-       source CRS the SVG uses.
+       source CRS the SVG uses. ``bbox=minx,miny,maxx,maxy`` keeps only intersecting features, in
+       WGS84 when ``format=wgs84``. ``zoom`` below 10 returns block centroids; for treatment layers
+       it returns only treated centroids, and for the bare block layer it returns an even sample.
+       The response carries ``total_features``, ``total_treated``, ``total_untreated``, and
+       ``overview_mode`` so the shell can keep full-run counts while drawing the viewport.
+   * - ``GET /api/runs/{run}/tiles/{z}/{x}/{y}.mvt?year=&layer=&period_start=``
+     - One Mapbox Vector Tile for ``blocks``, ``treatments``, or ``cumulative``. The layer is
+       named ``blocks`` in the tile. Below zoom 10 it carries treated centroids; at zoom 10 and
+       above it carries the intersecting polygons, simplified for the zoom. The response is cached
+       in memory and marked ``Cache-Control: public, max-age=3600``.
+   * - ``GET /api/runs/{run}/map-stats?year=&layer=&period_start=``
+     - The full-run ``total_features``, ``total_treated``, and ``total_untreated`` for the layer,
+       so a tiled viewport keeps the run's own counts.
    * - ``GET /api/runs/{run}/layers``
      - The layers the run can actually draw (treatments, cumulative, patches, compartments), its
        patch and compartment classes/accounts, and the named reasons roads/used roads/compartments
@@ -166,10 +178,48 @@ transforms the source CRS with pyproj. Start the service with the CRS the geomet
 
    ws4 serve --dataset build/compiled --runs runs --geometry blocks.geojson --crs EPSG:26911
 
+Add ``--tile-cache PATH`` to keep the MVT tiles across restarts. Tiles are written under
+``PATH/<run>/<layer>/year-<year>/period-<start>/<z>/<x>/<y>.mvt`` and served with
+``Cache-Control: public, max-age=3600``. The response header ``X-WS4-Tile-Cache`` reports
+``memory``, ``disk``, or ``miss``. Without the flag the cache is in memory only.
+
 The SVG fallback keeps native coordinates and remains available when WebGL or the basemap is
 unavailable. The basemap is an external OpenStreetMap raster source; without network access the
 blocks still draw, but the basemap is blank. MapLibre draws the cumulative earlier-period fill as
 a flat tan rather than the SVG hatch; the API and layer semantics are otherwise identical.
+
+MapLibre requests the current viewport with ``bbox`` and ``zoom`` and reloads after a debounced
+``moveend``. Below zoom 10 the service returns compact centroids; treatment layers return the
+treated blocks only, and the bare block layer returns an even sample. At zoom 10 and above the
+service returns the intersecting block polygons. The shell keeps the full-run treated/untreated
+counts from the response while the map draws only the viewport. This keeps a management-unit map
+from loading every polygon up front.
+
+The shell uses the MVT tile endpoint for the block, treatment, and cumulative layers. The vector
+source requests only the tiles MapLibre needs at the current zoom; the server returns treated
+centroids below zoom 10 and simplified polygons at zoom 10 and above. The tile layer is named
+``blocks`` and its properties carry ``block_id``, ``treated``, and ``current``. The shell reads
+full-run counts from the GeoJSON response's totals and from ``map-stats``. Patches, compartments,
+and comparison stay on the GeoJSON path, where the per-feature styling is richer.
+
+The browser path has an opt-in smoke:
+
+.. code-block:: bash
+
+   python scripts/check_map_browser.py http://127.0.0.1:8000/
+
+It needs Playwright and a Chromium build, and it fails when the shell makes no ``.mvt`` request or
+reports a console error. It is not a CI gate because the browser install is heavy.
+
+The scale gate builds a synthetic point grid and times the tile path:
+
+.. code-block:: bash
+
+   python scripts/benchmark_map_scale.py --fragments 1000000 --check
+
+The check fails when a zoom-0 or zoom-12 tile is over 2 MB, the cold request is over 120 seconds,
+or the warm request is over 5 seconds. On 2026-10-24, 1,000,000 fragments produced a 130 KB zoom-0
+tile in 29.3 seconds cold and 0.018 seconds warm, and a 2.8 KB zoom-12 tile in 0.038 seconds.
 
 Geometry
 --------

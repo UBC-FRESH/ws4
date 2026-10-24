@@ -2165,3 +2165,36 @@ issue comments.
 - The web period control now reads the simulated horizon from account values as well as the schedule, so a 300-year run keeps a 300-year slider even when the schedule stops earlier. Changing periods preserves the current map view instead of refitting. UI build v45.
 - The chat panel retries once after a 502/503/504, which recovers the common cold first turn through the reverse proxy. The map legend now distinguishes all treated blocks from connected patch openings. UI build v46.
 - When a service has a run named `reference`, the UI opens that run by default. This makes the NICC reference target set the first thing an analyst sees; services without a reference run keep the old first-run behavior. UI build v47.
+- Added viewport level-of-detail to the map endpoint and the MapLibre shell. `bbox` limits the
+  response to intersecting features, and `zoom` below 10 returns compact block centroids. Treatment
+  layers return treated centroids only at the overview scale, and the bare block layer returns an
+  even sample; the response carries full-run treated/untreated totals. The shell reloads after a
+  debounced `moveend` and keeps the current view. The TSA 46 initial payload fell from 444 MB to
+  66 KB at zoom 5; a zoom-12 viewport is 524 KB. Tests: 46 web tests, mypy, ruff, validator, docs.
+- Added the MVT tile endpoint and the MapLibre vector source for the block, treatment, and
+  cumulative layers. `GET /api/runs/{run}/tiles/{z}/{x}/{y}.mvt` returns treated centroids below
+  zoom 10 and simplified polygons above it, with an in-memory tile cache; `map-stats` keeps the
+  full-run counts. The TSA 46 zoom-0 tile is 8.5 KB (331 treated blocks); a zoom-12 tile is 3.1 KB
+  and 57 ms once the source payload is cached. Patches, compartments, and comparison keep the
+  GeoJSON path.
+- P20.2 correction: the MVT tile endpoint, `map-stats`, and the in-memory tile cache are in
+  place, but the MapLibre vector-source integration did not request tiles in a headless-browser
+  check, so it is deferred to P20.3. The shell keeps the verified viewport GeoJSON path; the
+  endpoint remains available and tested for a vector-source client.
+- P20.1 fix: the shell now creates the MapLibre map before waiting for readiness, retries the first
+  load instead of deadlocking, and reloads the viewport only after a user drag or zoom. The TSA 46
+  initial request is 66 KB at zoom 5 with 331 treated centroids; the full-run counts come from the
+  response's totals. This is the verified shell path while P20.3 owns the vector-source integration.
+- P20.3 wires the MVT endpoint into the MapLibre shell. The vector source installs after the map
+  is idle, uses `setTiles` for period/layer changes, and keeps the viewport GeoJSON path for
+  patches, compartments, and comparison. The TSA 46 shell makes six z6 MVT requests on load
+  (331 treated centroids of 171,825 blocks); TSA 47 makes four z7 requests (456 of 74,170).
+  `scripts/check_map_browser.py` is the opt-in Playwright smoke; both services pass it.
+- P20.4 adds a durable MVT tile cache (`ws4 serve --tile-cache`) with `X-WS4-Tile-Cache` reporting
+  `memory`, `disk`, or `miss`, and the 1,000,000-fragment scale gate. The gate measured a 130 KB
+  zoom-0 tile in 29.3 s cold and 0.018 s warm, and a 2.8 KB zoom-12 tile in 0.038 s; all
+  thresholds pass. Tests: disk/memory/miss cache, grid writer, and scale smoke.
+- P20 is queued for approval. The close-out report is `notes/reports/p20-closeout.md`, the pull
+  request is #185, and the roadmap/tracker say `pr-open`. The evidence includes the 66 KB TSA 46
+  viewport, the 8.5 KB z0 and 3.1 KB z12 tiles, the disk/memory/miss cache check, the browser
+  smoke on both TSAs, and the 1,000,000-fragment scale gate (29.3 s cold, 0.018 s warm).

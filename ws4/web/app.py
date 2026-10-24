@@ -15,6 +15,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from collections import Counter
 from collections.abc import Awaitable, Callable, Iterator
@@ -22,11 +23,19 @@ from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Any
 
+import mapbox_vector_tile
+import mercantile
+import numpy as np
 import pandas as pd
 import yaml
 from fastapi import Body, FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from pyproj import Transformer
+from shapely import transform as shapely_transform
+from shapely.geometry import box, shape
+from shapely.geometry.base import BaseGeometry
+from shapely.strtree import STRtree
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.responses import Response
 
@@ -90,6 +99,277 @@ def _geometry_features(path: Path) -> list[dict[str, Any]]:
         if block is not None:
             properties["block_id"] = int(block)
     return features
+
+
+def _parse_bbox(text: str) -> tuple[float, float, float, float]:
+    """Parse a ``minx,miny,maxx,maxy`` bbox string.
+
+    Parameters
+    ----------
+    text : str
+        Four comma-separated numbers.
+
+    Returns
+    -------
+    tuple of (float, float, float, float)
+        The west, south, east, and north bounds.
+
+    Raises
+    ------
+    ValueError
+        When the string does not have four increasing coordinates.
+    """
+    parts = [float(value) for value in text.split(",")]
+    if len(parts) != 4:
+        raise ValueError("bbox needs minx,miny,maxx,maxy")
+    minx, miny, maxx, maxy = parts
+    if minx >= maxx or miny >= maxy:
+        raise ValueError("bbox must have minx < maxx and miny < maxy")
+    return minx, miny, maxx, maxy
+
+
+def _bbox_to_source(
+    bbox: tuple[float, float, float, float], source_crs: str
+) -> tuple[float, float, float, float]:
+    """Transform a WGS84 bbox into the source CRS.
+
+    Parameters
+    ----------
+    bbox : tuple of (float, float, float, float)
+        WGS84 west, south, east, and north bounds.
+    source_crs : str
+        The geometry's CRS.
+
+    Returns
+    -------
+    tuple of (float, float, float, float)
+        The bbox in the source CRS. A WGS84 source is returned unchanged.
+
+    Raises
+    ------
+    HTTPException
+        When the source is not WGS84 and pyproj is not installed.
+    """
+    if source_crs.upper() in {"EPSG:4326", "WGS84", "CRS:84"}:
+        return bbox
+    try:
+        from pyproj import Transformer
+    except ImportError as error:  # pragma: no cover - depends on the install
+        raise HTTPException(
+            status_code=422, detail="bbox filtering needs pyproj for a non-WGS84 geometry"
+        ) from error
+    transformer = Transformer.from_crs("EPSG:4326", source_crs, always_xy=True)
+    return transformer.transform_bounds(*bbox)
+
+
+def _feature_bounds(feature: dict[str, Any]) -> tuple[float, float, float, float] | None:
+    """Return a feature's coordinate bounds without constructing a shapely geometry.
+
+    Parameters
+    ----------
+    feature : dict
+        GeoJSON feature.
+
+    Returns
+    -------
+    tuple of (float, float, float, float) or None
+        West, south, east, and north bounds, or ``None`` when the feature has no
+        coordinate pairs.
+    """
+    geometry = feature.get("geometry")
+    if not isinstance(geometry, dict):
+        return None
+    coordinates = geometry.get("coordinates")
+    if coordinates is None:
+        return None
+    minx = miny = math.inf
+    maxx = maxy = -math.inf
+
+    def walk(value: object) -> None:
+        nonlocal minx, miny, maxx, maxy
+        if not isinstance(value, (list, tuple)):
+            return
+        if len(value) >= 2:
+            first = value[0]
+            second = value[1]
+            if isinstance(first, (int, float)) and isinstance(second, (int, float)):
+                x = float(first)
+                y = float(second)
+                minx = min(minx, x)
+                miny = min(miny, y)
+                maxx = max(maxx, x)
+                maxy = max(maxy, y)
+                return
+        for child in value:
+            walk(child)
+
+    walk(coordinates)
+    if minx is math.inf:
+        return None
+    return minx, miny, maxx, maxy
+
+
+def _intersects(bbox: tuple[float, float, float, float], feature: dict[str, Any]) -> bool:
+    """Report whether a feature's coordinate bounds overlap a bbox.
+
+    Parameters
+    ----------
+    bbox : tuple of (float, float, float, float)
+        Target bounds.
+    feature : dict
+        GeoJSON feature.
+
+    Returns
+    -------
+    bool
+        ``True`` when the feature bounds overlap the bbox.
+    """
+    bounds = _feature_bounds(feature)
+    if bounds is None:
+        return False
+    minx, miny, maxx, maxy = bounds
+    return not (maxx < bbox[0] or minx > bbox[2] or maxy < bbox[1] or miny > bbox[3])
+
+
+TILE_EXTENT: int = 4096
+
+
+def _safe_cache_name(value: str) -> str:
+    """Return a filesystem-safe path component.
+
+    Parameters
+    ----------
+    value : str
+        A run name, layer name, or other key.
+
+    Returns
+    -------
+    str
+        Letters, digits, dot, dash, and underscore; every other character becomes
+        an underscore.
+    """
+    return "".join(
+        character if character.isalnum() or character in "._-" else "_" for character in value
+    )
+
+
+def _tile_cache_path(
+    root: Path,
+    run: str,
+    layer: str,
+    year: int | None,
+    period_start: int | None,
+    z: int,
+    x: int,
+    y: int,
+) -> Path:
+    """Return the durable cache path for one tile.
+
+    Parameters
+    ----------
+    root : Path
+        Cache root.
+    run : str
+        Run name.
+    layer : str
+        Map layer.
+    year : int or None
+        Period end year.
+    period_start : int or None
+        Period start year.
+    z, x, y : int
+        Tile coordinates.
+
+    Returns
+    -------
+    Path
+        A path under ``root`` with sanitized run and layer components.
+    """
+    return (
+        root
+        / _safe_cache_name(run)
+        / _safe_cache_name(layer)
+        / f"year-{year if year is not None else 'none'}"
+        / f"period-{period_start if period_start is not None else 'none'}"
+        / str(z)
+        / str(x)
+        / f"{y}.mvt"
+    )
+
+
+def _tile_tolerance(zoom: int) -> float:
+    """Return the simplification tolerance in metres for a tile zoom.
+
+    Parameters
+    ----------
+    zoom : int
+        Web Mercator zoom level.
+
+    Returns
+    -------
+    float
+        Tolerance in source metres; zero keeps the original vertices.
+    """
+    if zoom >= 16:
+        return 0.0
+    if zoom >= 14:
+        return 10.0
+    if zoom >= 12:
+        return 50.0
+    return 100.0
+
+
+def _tile_coordinates(
+    geometry: BaseGeometry,
+    bounds: tuple[float, float, float, float],
+    extent: int = TILE_EXTENT,
+) -> BaseGeometry:
+    """Map a Web Mercator geometry into tile-local coordinates.
+
+    Parameters
+    ----------
+    geometry : BaseGeometry
+        A Shapely geometry in EPSG:3857.
+    bounds : tuple of (float, float, float, float)
+        The tile's west, south, east, and north bounds in EPSG:3857.
+    extent : int, optional
+        MVT tile extent. The default is 4096.
+
+    Returns
+    -------
+    BaseGeometry
+        The geometry in tile-local coordinates, y down.
+    """
+    minx, miny, maxx, maxy = bounds
+    width = max(maxx - minx, 1e-9)
+    height = max(maxy - miny, 1e-9)
+
+    def project(coordinates: np.ndarray) -> np.ndarray:
+        x = (coordinates[:, 0] - minx) / width * extent
+        y = (maxy - coordinates[:, 1]) / height * extent
+        return np.column_stack([x, y])
+
+    return shapely_transform(geometry, project)
+
+
+def _scalar_properties(properties: dict[str, Any]) -> dict[str, object]:
+    """Keep the MVT-safe scalar properties.
+
+    Parameters
+    ----------
+    properties : dict
+        A feature's source properties.
+
+    Returns
+    -------
+    dict of str to object
+        Only strings, booleans, and numbers; lists and ``None`` are dropped.
+    """
+    result: dict[str, object] = {}
+    for key, value in properties.items():
+        if isinstance(value, (str, bool, int, float)):
+            result[key] = value
+    return result
 
 
 def _to_wgs84(features: list[dict[str, Any]], crs: str) -> list[dict[str, Any]]:
@@ -242,6 +522,7 @@ def create_app(
     route_config: Path | None = None,
     roads: Path | None = None,
     crs: str = "EPSG:4326",
+    tile_cache_dir: Path | None = None,
 ) -> FastAPI:
     """Create the WS4 read API.
 
@@ -289,6 +570,8 @@ def create_app(
     crs : str, optional
         The source CRS of the geometry and roads. The SVG shell uses the native coordinates;
         ``format=wgs84`` transforms them for MapLibre. Default ``EPSG:4326``.
+    tile_cache_dir : Path or None, optional
+        Directory for durable MVT tiles. ``None`` keeps tiles in memory only.
 
     Returns
     -------
@@ -308,6 +591,7 @@ def create_app(
     )
     route_config_path = Path(route_config).resolve() if route_config is not None else None
     roads_path = Path(roads).resolve() if roads is not None else None
+    tile_cache_root = Path(tile_cache_dir).resolve() if tile_cache_dir is not None else None
     source_crs = str(crs)
     agent_working_directory = Path(agent_cwd).resolve() if agent_cwd is not None else Path.cwd()
     app = FastAPI(title="WS4", version="0.1.0")
@@ -1238,6 +1522,8 @@ def create_app(
         account: str | None = Query(default=None),
         period_start: int | None = Query(default=None),
         format: str = Query(default="projected"),
+        bbox: str | None = Query(default=None),
+        zoom: float | None = Query(default=None),
     ) -> dict[str, Any]:
         """Return a GeoJSON FeatureCollection of every block for one map layer.
 
@@ -1375,6 +1661,41 @@ def create_app(
             features.append(
                 {"type": "Feature", "geometry": base.get("geometry"), "properties": properties}
             )
+        total_features = len(features)
+        total_treated = sum(
+            1 for feature in features if bool(feature.get("properties", {}).get("treated"))
+        )
+        if bbox is not None:
+            try:
+                requested = _parse_bbox(bbox)
+            except ValueError as error:
+                raise HTTPException(status_code=422, detail=str(error)) from error
+            if format == "wgs84":
+                requested = _bbox_to_source(requested, source_crs)
+            features = [feature for feature in features if _intersects(requested, feature)]
+        overview_mode: str | None = None
+        if zoom is not None and zoom < 10:
+            for feature in features:
+                bounds = _feature_bounds(feature)
+                if bounds is None:
+                    continue
+                minx, miny, maxx, maxy = bounds
+                feature["geometry"] = {
+                    "type": "Point",
+                    "coordinates": [(minx + maxx) / 2.0, (miny + maxy) / 2.0],
+                }
+                feature["properties"]["overview"] = True
+            if layer == "blocks":
+                step = max(1, len(features) // 5000)
+                features = features[::step]
+                overview_mode = "sample"
+            else:
+                features = [
+                    feature
+                    for feature in features
+                    if bool(feature.get("properties", {}).get("treated"))
+                ]
+                overview_mode = "treated"
         if format == "wgs84":
             features = _to_wgs84(features, source_crs)
         return {
@@ -1382,11 +1703,193 @@ def create_app(
             "features": features,
             "year": year,
             "layer": layer,
+            "total_features": total_features,
+            "returned_features": len(features),
+            "total_treated": total_treated,
+            "total_untreated": total_features - total_treated,
+            "overview": bool(zoom is not None and zoom < 10),
+            "overview_mode": overview_mode,
             "patch_classes": patch_classes,
             "compartment_classes": compartment_classes,
             "compartment_accounts": compartment_accounts,
             "account": account if layer == "compartments" else None,
         }
+
+    payload_cache: dict[tuple[str, int | None, str, int | None, str], dict[str, Any]] = {}
+    payload_lock = threading.Lock()
+    tile_cache: dict[tuple[str, int, int, int, str, int | None, int | None], bytes] = {}
+
+    def cached_geometry(
+        run: str,
+        year: int | None,
+        layer: str,
+        period_start: int | None,
+        account: str | None,
+    ) -> dict[str, Any]:
+        """Build and cache the source-CRS features for one layer and period."""
+        key = (run, year, layer, period_start, account or "")
+        cached = payload_cache.get(key)
+        if cached is not None:
+            return cached
+        with payload_lock:
+            cached = payload_cache.get(key)
+            if cached is not None:
+                return cached
+            payload = map_features(
+                run=run,
+                year=year,
+                layer=layer,
+                account=account,
+                period_start=period_start,
+                format="projected",
+                bbox=None,
+                zoom=None,
+            )
+            features = list(payload["features"])
+            shapes = [shape(feature["geometry"]) for feature in features]
+            entry = {
+                "features": features,
+                "shapes": shapes,
+                "tree": STRtree(shapes),
+                "centroids": [geometry.representative_point() for geometry in shapes],
+            }
+            payload_cache.clear()
+            payload_cache[key] = entry
+            return entry
+
+    @app.get("/api/runs/{run}/map-stats")
+    def map_stats(
+        run: str,
+        year: int | None = Query(default=None),
+        layer: str = Query(default="treatments"),
+        account: str | None = Query(default=None),
+        period_start: int | None = Query(default=None),
+    ) -> dict[str, int]:
+        """Return the full-run feature counts a viewport map does not carry."""
+        if layer not in ("blocks", "treatments", "cumulative"):
+            raise HTTPException(status_code=422, detail=f"unknown tile layer {layer!r}")
+        entry = cached_geometry(run, year, layer, period_start, account)
+        total = len(entry["features"])
+        treated = sum(
+            1 for feature in entry["features"] if bool(feature.get("properties", {}).get("treated"))
+        )
+        return {
+            "total_features": total,
+            "total_treated": treated,
+            "total_untreated": total - treated,
+        }
+
+    @app.get("/api/runs/{run}/tiles/{z}/{x}/{y}.mvt")
+    def map_tile(
+        run: str,
+        z: int,
+        x: int,
+        y: int,
+        year: int | None = Query(default=None),
+        layer: str = Query(default="treatments"),
+        account: str | None = Query(default=None),
+        period_start: int | None = Query(default=None),
+    ) -> Response:
+        """Return one MVT tile for the current viewport and zoom."""
+        if layer not in ("blocks", "treatments", "cumulative"):
+            raise HTTPException(status_code=422, detail=f"unknown tile layer {layer!r}")
+        if z < 0 or z > 22 or x < 0 or y < 0 or x >= 2**z or y >= 2**z:
+            raise HTTPException(status_code=422, detail="tile coordinate out of range")
+        cache_key = (run, z, x, y, layer, year, period_start)
+        cache_path = (
+            _tile_cache_path(tile_cache_root, run, layer, year, period_start, z, x, y)
+            if tile_cache_root is not None
+            else None
+        )
+        cached_tile = tile_cache.get(cache_key)
+        if cached_tile is not None:
+            return Response(
+                content=cached_tile,
+                media_type="application/vnd.mapbox-vector-tile",
+                headers={
+                    "Cache-Control": "public, max-age=3600",
+                    "X-WS4-Tile-Cache": "memory",
+                },
+            )
+        if cache_path is not None and cache_path.is_file():
+            payload = cache_path.read_bytes()
+            tile_cache[cache_key] = payload
+            return Response(
+                content=payload,
+                media_type="application/vnd.mapbox-vector-tile",
+                headers={
+                    "Cache-Control": "public, max-age=3600",
+                    "X-WS4-Tile-Cache": "disk",
+                },
+            )
+        entry = cached_geometry(run, year, layer, period_start, account)
+        tile = mercantile.Tile(x, y, z)
+        mercator = mercantile.xy_bounds(tile)
+        to_source = Transformer.from_crs("EPSG:3857", source_crs, always_xy=True)
+        to_mercator = Transformer.from_crs(source_crs, "EPSG:3857", always_xy=True)
+        source_bounds = to_source.transform_bounds(
+            mercator.left, mercator.bottom, mercator.right, mercator.top
+        )
+        tile_box = box(*source_bounds)
+        tolerance = _tile_tolerance(z)
+        indices = [int(index) for index in entry["tree"].query(tile_box)]
+        if z < 10:
+            if layer == "blocks":
+                step = max(1, len(indices) // 5000)
+                indices = indices[::step]
+            else:
+                indices = [
+                    index
+                    for index in indices
+                    if bool(entry["features"][index].get("properties", {}).get("treated"))
+                ]
+        features: list[dict[str, Any]] = []
+        for index in indices:
+            properties = entry["features"][index].get("properties", {})
+            if z < 10:
+                geometry = entry["centroids"][index]
+            else:
+                geometry = entry["shapes"][int(index)]
+                if tolerance > 0:
+                    geometry = geometry.simplify(tolerance, preserve_topology=True)
+                geometry = geometry.intersection(tile_box)
+                if geometry.is_empty:
+                    continue
+
+            def project(coordinates: np.ndarray) -> np.ndarray:
+                xs, ys = to_mercator.transform(coordinates[:, 0], coordinates[:, 1])
+                return np.column_stack([xs, ys])
+
+            mercator_geometry = shapely_transform(geometry, project)
+            features.append(
+                {
+                    "geometry": _tile_coordinates(
+                        mercator_geometry,
+                        (mercator.left, mercator.bottom, mercator.right, mercator.top),
+                    ),
+                    "properties": _scalar_properties(properties),
+                }
+            )
+        payload = mapbox_vector_tile.encode(
+            [{"name": "blocks", "features": features}],
+            default_options={"extents": TILE_EXTENT, "y_coord_down": True},
+        )
+        if len(tile_cache) >= 4096:
+            tile_cache.clear()
+        tile_cache[cache_key] = payload
+        if cache_path is not None:
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            temporary = cache_path.with_name(f"{cache_path.name}.tmp")
+            temporary.write_bytes(payload)
+            temporary.replace(cache_path)
+        return Response(
+            content=payload,
+            media_type="application/vnd.mapbox-vector-tile",
+            headers={
+                "Cache-Control": "public, max-age=3600",
+                "X-WS4-Tile-Cache": "miss",
+            },
+        )
 
     def _realized_rows(directory: Path) -> list[dict[str, Any]]:
         """Return each target's realized period value, computed by the optimizer's own rule."""

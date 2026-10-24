@@ -20,7 +20,12 @@ from fastapi.testclient import TestClient
 from ws4.web.app import create_app
 
 
-def _app(tmp_path: Path, *, with_geometry: bool = True) -> tuple[TestClient, Path]:
+def _app(
+    tmp_path: Path,
+    *,
+    with_geometry: bool = True,
+    tile_cache_dir: Path | None = None,
+) -> tuple[TestClient, Path]:
     """Create a dataset, a run and a client over them; return the client and the targets path."""
     dataset = tmp_path / "dataset"
     dataset.mkdir()
@@ -78,6 +83,7 @@ def _app(tmp_path: Path, *, with_geometry: bool = True) -> tuple[TestClient, Pat
         runs=tmp_path / "runs",
         targets=targets,
         geometry=geometry if with_geometry else None,
+        tile_cache_dir=tile_cache_dir,
     )
     return TestClient(app), targets
 
@@ -921,3 +927,123 @@ def test_an_unknown_run_is_a_named_404(tmp_path: Path) -> None:
     response = client.get("/api/runs/nope/summary")
     assert response.status_code == 404
     assert "nope" in response.json()["detail"]
+
+
+def test_the_map_filters_to_a_bbox(tmp_path: Path) -> None:
+    """A bbox returns only the features whose bounds overlap it."""
+    client, _ = _app(tmp_path)
+    body = client.get(
+        "/api/runs/run1/map",
+        params={"year": 0, "bbox": "0.5,-1,1.5,1"},
+    ).json()
+    assert body["total_features"] == 2
+    assert body["returned_features"] == 1
+    assert [feature["properties"]["block_id"] for feature in body["features"]] == [1]
+
+
+def test_the_map_returns_centroids_below_zoom_ten(tmp_path: Path) -> None:
+    """A low-zoom request returns compact points, not polygons."""
+    client, _ = _app(tmp_path)
+    body = client.get("/api/runs/run1/map", params={"year": 0, "zoom": 5}).json()
+    assert body["overview"] is True
+    assert body["overview_mode"] == "treated"
+    assert body["total_features"] == 2
+    assert body["total_treated"] == 1
+    assert body["returned_features"] == 1
+    assert all(feature["geometry"]["type"] == "Point" for feature in body["features"])
+    assert all(feature["properties"]["overview"] is True for feature in body["features"])
+
+
+def test_the_map_keeps_polygons_at_high_zoom(tmp_path: Path) -> None:
+    """A high-zoom request keeps the polygon geometry."""
+    client, _ = _app(tmp_path)
+    body = client.get("/api/runs/run1/map", params={"year": 0, "zoom": 12}).json()
+    assert body["overview"] is False
+    assert body["features"][0]["geometry"]["type"] == "Point"
+
+
+def test_the_map_rejects_a_malformed_bbox(tmp_path: Path) -> None:
+    """A bbox that is not four increasing numbers is a 422."""
+    client, _ = _app(tmp_path)
+    response = client.get("/api/runs/run1/map", params={"year": 0, "bbox": "1,2,3"})
+    assert response.status_code == 422
+
+
+def test_the_tile_endpoint_returns_mvt_features(tmp_path: Path) -> None:
+    """The MVT tile carries the treated block and its display properties."""
+    import mapbox_vector_tile
+
+    client, _ = _app(tmp_path)
+    response = client.get(
+        "/api/runs/run1/tiles/0/0/0.mvt",
+        params={"year": 0, "layer": "treatments"},
+    )
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/vnd.mapbox-vector-tile")
+    decoded = mapbox_vector_tile.decode(response.content)
+    features = decoded["blocks"]["features"]
+    assert [feature["properties"]["block_id"] for feature in features] == [1]
+    assert features[0]["properties"]["treated"] is True
+
+
+def test_the_tile_endpoint_keeps_only_the_tile_at_high_zoom(tmp_path: Path) -> None:
+    """A high-zoom tile returns the blocks that intersect its own bounds."""
+    import mapbox_vector_tile
+    import mercantile
+
+    client, _ = _app(tmp_path)
+    tile = mercantile.tile(1.0, 0.0, 12)
+    response = client.get(
+        f"/api/runs/run1/tiles/12/{tile.x}/{tile.y}.mvt",
+        params={"year": 0, "layer": "treatments"},
+    )
+    assert response.status_code == 200
+    decoded = mapbox_vector_tile.decode(response.content)
+    features = decoded["blocks"]["features"]
+    assert [feature["properties"]["block_id"] for feature in features] == [1]
+
+
+def test_the_tile_endpoint_names_an_unknown_layer(tmp_path: Path) -> None:
+    """A tile layer outside the MVT set is a 422."""
+    client, _ = _app(tmp_path)
+    response = client.get(
+        "/api/runs/run1/tiles/0/0/0.mvt",
+        params={"year": 0, "layer": "patches"},
+    )
+    assert response.status_code == 422
+
+
+def test_map_stats_reports_full_run_counts(tmp_path: Path) -> None:
+    """The stats endpoint carries the full-run counts the viewport map omits."""
+    client, _ = _app(tmp_path)
+    body = client.get(
+        "/api/runs/run1/map-stats",
+        params={"year": 0, "layer": "treatments"},
+    ).json()
+    assert body == {"total_features": 2, "total_treated": 1, "total_untreated": 1}
+
+
+def test_the_tile_cache_writes_and_reuses_a_disk_tile(tmp_path: Path) -> None:
+    """A tile is written once and served from disk by a fresh application."""
+    cache = tmp_path / "tile-cache"
+    client, targets = _app(tmp_path, tile_cache_dir=cache)
+    params = {"year": 0, "layer": "treatments"}
+    first = client.get("/api/runs/run1/tiles/0/0/0.mvt", params=params)
+    assert first.status_code == 200
+    assert first.headers["x-ws4-tile-cache"] == "miss"
+    files = list(cache.rglob("*.mvt"))
+    assert len(files) == 1
+    second = client.get("/api/runs/run1/tiles/0/0/0.mvt", params=params)
+    assert second.headers["x-ws4-tile-cache"] == "memory"
+    fresh = TestClient(
+        create_app(
+            dataset=tmp_path / "dataset",
+            runs=tmp_path / "runs",
+            targets=targets,
+            geometry=tmp_path / "geometry.geojson",
+            tile_cache_dir=cache,
+        )
+    )
+    third = fresh.get("/api/runs/run1/tiles/0/0/0.mvt", params=params)
+    assert third.headers["x-ws4-tile-cache"] == "disk"
+    assert third.content == first.content

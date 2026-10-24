@@ -14,7 +14,7 @@ from .build.legacy import ingest_legacy_matrix
 from .model.schema import validate_dataset
 from .opt.calibrate import calibrate as run_calibration
 from .opt.calibrate import write_targets
-from .opt.engine import OptimizeConfig, Optimizer
+from .opt.engine import OptimizeConfig, Optimizer, load_schedule_csv
 from .opt.objective import load_targets
 from .opt.watch import run_watch
 from .patch.accounts import load_patch_accounts
@@ -277,6 +277,12 @@ def optimize(
 def watch(
     dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
     targets: Path = typer.Option(..., exists=True, help="Targets YAML (levels are per year)"),
+    initial_schedule: Path | None = typer.Option(
+        None,
+        "--initial-schedule",
+        exists=True,
+        help="Schedule CSV (block_id,treatment,offset) to start the search from",
+    ),
     account: list[str] | None = typer.Option(
         None,
         "--account",
@@ -386,6 +392,7 @@ def watch(
         cooling_window=cooling_window,
     )
     optimizer = Optimizer.from_dataset(dataset, cfg)
+    initial = load_schedule_csv(initial_schedule) if initial_schedule is not None else None
     summary = run_watch(
         optimizer,
         target_list,
@@ -394,6 +401,7 @@ def watch(
         label=" + ".join(accounts),
         refresh=refresh,
         plain=plain,
+        initial=initial,
     )
     table = Table(title="Watch summary")
     table.add_column("key")
@@ -541,6 +549,11 @@ def serve(
     roads: Path | None = typer.Option(
         None, "--roads", exists=True, help="GeoJSON access-road lines for the map overlay"
     ),
+    tile_cache: Path | None = typer.Option(
+        None,
+        "--tile-cache",
+        help="Directory for durable MVT tiles (default: memory only)",
+    ),
     crs: str = typer.Option(
         "EPSG:4326",
         "--crs",
@@ -599,6 +612,7 @@ def serve(
             block_coordinates=block_coordinates,
             route_config=route_config,
             roads=roads,
+            tile_cache_dir=tile_cache,
             crs=crs,
         ),
         host=host,

@@ -31,6 +31,7 @@ exists and the maintainer approves it.
 | P17 Roads opened to the period | #145 | `feature/p17-opened-roads` | complete |
 | P18 A graphical web front end | #146 | `feature/p18-web-frontend` | complete |
 | P19 Model-derived spatial layers and map scale | #161 | `feature/p19-spatial-layers` | complete |
+| P20 Production map serving | #183 | `feature/p20-map-lod` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -804,6 +805,26 @@ what the model produces.
 Acceptance: a spread run writes the membership and the layer renders it; a route run writes segment
 geometry/use; a stability stop writes the usual summary and names the criterion; the dashboard is
 green on every merge; source layers are never mislabelled as model layers.
+
+## Phase 20: Production map serving
+
+Parent issue: #183
+Branch: `feature/p20-map-lod`
+Status: pr-open
+
+Goal: keep the map usable on real management units by loading only the current viewport and only the
+detail that zoom requires, instead of one full-management-unit GeoJSON payload.
+
+- [x] P20.1 Add viewport bbox and zoom LOD to the map endpoint and UI (#184)
+- [x] P20.2 Add the MVT tile endpoint and tile cache (#186)
+- [x] P20.3 Add the MapLibre vector source and validate it in a browser (#187)
+- [x] P20.4 Add the durable tile cache and 1M-fragment scale gate (#188)
+- [x] P20.5 Close out production map serving (#189)
+
+Acceptance: a low-zoom request returns compact centroids, a high-zoom bbox request returns only the
+visible blocks, the front-end reloads on `moveend` without a loop, and the TSA 46 initial payload is
+below 20 MB.
+
 
 ## Detailed Next Steps Notes
 
