@@ -2258,3 +2258,17 @@ issue comments.
 - Refresh the stored outputs of `010_quickstart`, `030_sample_estate`, `040_patch_targets`, and
   `050_routes_and_mills` after P21 added `reversion 0` to the solver banner. The `Notebook outputs`
   gate is green again; no solver behavior changed.
+
+- P24.1: `ws4.opt.archive` keeps elite schedules with their objective, realized metrics,
+  seed, and source; filters a stable nondominated front under explicit max/min directions;
+  and exports `archive.json` plus one schedule CSV per elite.
+- P24.2: `scripts/portfolio.py` and `ws4.opt.portfolio` vary target-weight factors over a
+  grid and seeds, record every member, and write `portfolio.json`, `portfolio.md`,
+  `front.csv`, and the elite archive.
+- P24.3: `scripts/tune.py` and `ws4.opt.tune` run grid or seeded-random candidates over
+  `OptimizeConfig` fields, rank by best and median objective, and write `tuning.json`,
+  `tuning.md`, and `best.json`.
+- P24.4: the option-selection program is shared by the MIP and the new LP relaxation;
+  `scripts/lp_sensitivity.py` reports target duals and option reduced costs with HiGHS.
+  The real synthetic-estate smoke produced a binding floor dual of 1.0 and reduced costs
+  360/340 on the two CC options. Dashboard **GREEN**.
