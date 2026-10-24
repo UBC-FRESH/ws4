@@ -2332,3 +2332,5 @@ issue comments.
   one leaves the current objective unchanged; the incremental evaluator and full objective agree.
 - P27.3: sensitivity reports the effective normalized marginal, the web target rows carry
   normalization/priority, and scenario target tables preserve the new columns. Dashboard **GREEN**.
+- P27.3 refresh: the example notebooks' stored target tables include `raw_penalty`, `scale`,
+  `normalization`, and `priority`. `python scripts/check_notebooks.py` reports 47 compared, 0 drifted.
