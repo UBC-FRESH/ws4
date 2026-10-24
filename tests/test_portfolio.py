@@ -21,6 +21,8 @@ from ws4.opt.portfolio import (
     weight_vectors,
 )
 
+import portfolio as portfolio_script
+
 
 def _targets(path: Path) -> Path:
     """Write two periodic targets."""
@@ -200,3 +202,62 @@ def test_portfolio_records_a_failed_member(tmp_path: Path) -> None:
     )
     assert report["failures"] == 1
     assert "boom" in str(report["markdown"])
+
+
+def test_portfolio_main_wires_the_arguments(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The CLI parses the grid, defaults the metrics, and reports success."""
+    captured: dict[str, Any] = {}
+
+    def fake(**kwargs: object) -> dict[str, Any]:
+        captured.update(kwargs)
+        return {"markdown": "# portfolio", "front": [], "failures": 0}
+
+    monkeypatch.setattr(portfolio_script, "run_portfolio", fake)
+    code = portfolio_script.main(
+        [
+            "--dataset",
+            str(tmp_path / "dataset"),
+            "--targets",
+            str(tmp_path / "targets.yaml"),
+            "--out",
+            str(tmp_path / "out"),
+            "--vary",
+            "product.volume=1,2",
+            "--seeds",
+            "1,2",
+            "--iterations",
+            "3",
+        ]
+    )
+    assert code == 0
+    assert captured["vary"] == {"product.volume": (1.0, 2.0)}
+    assert captured["metrics"] == ["product.volume"]
+    assert captured["seeds"] == [1, 2]
+
+
+def test_portfolio_main_returns_one_on_a_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A member failure is a non-zero exit."""
+    monkeypatch.setattr(
+        portfolio_script,
+        "run_portfolio",
+        lambda **kwargs: {"markdown": "# portfolio", "front": [], "failures": 1},
+    )
+    assert (
+        portfolio_script.main(
+            [
+                "--dataset",
+                str(tmp_path / "dataset"),
+                "--targets",
+                str(tmp_path / "targets.yaml"),
+                "--out",
+                str(tmp_path / "out"),
+                "--vary",
+                "a=1",
+            ]
+        )
+        == 1
+    )

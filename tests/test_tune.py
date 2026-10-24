@@ -10,6 +10,8 @@ import pytest
 from ws4.opt.engine import OptimizeConfig
 from ws4.opt.tune import candidates, run_tuning, validate_space
 
+import tune as tune_script
+
 
 class _FakeRunner:
     """Rank temperature and cooling by their distance from a target."""
@@ -100,3 +102,61 @@ def test_run_tuning_records_failures(tmp_path: Path) -> None:
     assert report["winner"] is None
     assert report["failures"] == 1
     assert "boom" in str(report["markdown"])
+
+
+def test_tune_main_wires_the_arguments(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The CLI reads the space JSON and exits zero when a candidate won."""
+    space = tmp_path / "space.json"
+    space.write_text('{"temperature": [100, 500]}', encoding="utf-8")
+    captured: dict[str, Any] = {}
+
+    def fake(**kwargs: object) -> dict[str, Any]:
+        captured.update(kwargs)
+        return {"markdown": "# tuning", "winner": {"label": "candidate-000"}, "failures": 0}
+
+    monkeypatch.setattr(tune_script, "run_tuning", fake)
+    code = tune_script.main(
+        [
+            "--dataset",
+            str(tmp_path / "dataset"),
+            "--targets",
+            str(tmp_path / "targets.yaml"),
+            "--space",
+            str(space),
+            "--out",
+            str(tmp_path / "out"),
+            "--seeds",
+            "1,2",
+        ]
+    )
+    assert code == 0
+    assert captured["space"] == {"temperature": [100, 500]}
+    assert captured["seeds"] == [1, 2]
+
+
+def test_tune_main_returns_one_without_a_winner(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A sweep with no successful candidate is a non-zero exit."""
+    space = tmp_path / "space.json"
+    space.write_text('{"temperature": [100]}', encoding="utf-8")
+    monkeypatch.setattr(
+        tune_script,
+        "run_tuning",
+        lambda **kwargs: {"markdown": "# tuning", "winner": None, "failures": 1},
+    )
+    assert (
+        tune_script.main(
+            [
+                "--dataset",
+                str(tmp_path / "dataset"),
+                "--targets",
+                str(tmp_path / "targets.yaml"),
+                "--space",
+                str(space),
+                "--out",
+                str(tmp_path / "out"),
+            ]
+        )
+        == 1
+    )

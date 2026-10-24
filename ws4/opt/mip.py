@@ -13,6 +13,7 @@ subproblem), not a full landscape.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -174,7 +175,7 @@ class LpResult:
             The objective, status, variables, duals, reduced costs, and message.
         """
         return {
-            "objective": self.objective,
+            "objective": None if math.isinf(self.objective) else self.objective,
             "status": self.status,
             "variables": self.variables,
             "duals": [dual.as_dict() for dual in self.duals],

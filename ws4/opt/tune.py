@@ -301,8 +301,7 @@ def run_tuning(
         iterations=iterations,
         threads=threads,
     )
-    if not base.targets_path:
-        base = replace(base, targets_path=str(targets))
+    base = replace(base, targets_path=str(targets))
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     rows: list[dict[str, Any]] = []

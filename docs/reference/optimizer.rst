@@ -293,6 +293,77 @@ A missed target has a marginal cost per unit; a target with slack is not control
 binding target exactly at its bound with zero shortfall has no penalty to remove, so its marginal is
 also zero. The JSON and Markdown reports are suitable for a plan review or an AAC negotiation record.
 
+Search portfolio and Pareto front
+---------------------------------
+
+The search minimizes one weighted-goal penalty. A decision review often needs the
+neighbouring answers too, so ``scripts/portfolio.py`` re-runs the existing optimizer over
+a grid of target-weight factors. Every member keeps its objective and realized metrics;
+``ws4.opt.archive`` keeps the elites and filters the nondominated front.
+
+.. code-block:: bash
+
+   python scripts/portfolio.py \
+     --dataset build/compiled --targets targets.yaml --out runtime/portfolio \
+     --vary "product.Yield.managed.Conif=0.5,1,2;feature.Old=1,2" \
+     --metrics product.Yield.managed.Conif,feature.Old \
+     --directions "product.Yield.managed.Conif=max;feature.Old=max" \
+     --seeds 1,2,3 --iterations 500 --years 50
+
+A factor multiplies the matching targets' ``min_weight`` and ``max_weight``; the bounds and
+the other targets are unchanged. An ``account@period`` key varies one period. The metrics
+read ``account_values.csv``: a bare name is the last offset, ``name@sum`` sums the horizon,
+and ``name@<offset>`` reads one year. The output directory contains the member runs,
+``portfolio.json``, ``portfolio.md``, ``front.csv``, and an ``archive/`` directory with the
+manifest and one schedule CSV per archived elite.
+
+The front is a finite grid under a fixed budget and seed set. It is advisory, not a
+certified optimum, and a weight vector that reaches the same metric point as another keeps
+the lower scalar objective.
+
+Tuner
+-----
+
+``scripts/tune.py`` runs a grid or a seeded random sample over a small set of
+``OptimizeConfig`` fields. Every candidate uses the same dataset, targets, seeds, and
+iteration budget; the report ranks by best and then median objective, so one lucky seed
+does not choose the winner. Path fields and the evaluation seed are not tunable.
+
+.. code-block:: bash
+
+   cat > runtime/space.json <<'JSON'
+   {"temperature": [100, 500, 1000], "cooling": [0.9, 0.95, 0.99]}
+   JSON
+   python scripts/tune.py \
+     --dataset build/compiled --targets targets.yaml --space runtime/space.json \
+     --out runtime/tuning --seeds 1,2,3 --iterations 300 --years 50
+
+Use ``--mode random --budget 12`` to sample instead of crossing the grid. The directory
+contains one run per candidate and seed, ``tuning.json``, ``tuning.md``, and ``best.json``
+for the winning parameters. A failed seed is named in the report rather than aborting the
+sweep. The ranking compares a finite budget; it is not an optimality claim.
+
+LP dual and reduced-cost sensitivity
+------------------------------------
+
+``scripts/lp_sensitivity.py`` relaxes the option-selection model's binary variables to
+``[0, 1]`` and solves the same target and opening rows with HiGHS through
+``scipy.optimize.linprog``. The LP objective is a lower bound on the mixed-integer penalty.
+Each target row reports a **dual**: the objective reduction from relaxing its bound by one
+unit (lowering a minimum or raising a maximum). Each option variable reports its LP value
+and reduced cost.
+
+.. code-block:: bash
+
+   python scripts/lp_sensitivity.py \
+     --dataset build/compiled --targets targets.yaml --out runtime/lp \
+     --years 10 --limit-blocks 2000 --top 20
+
+Use ``--limit-blocks`` to declare a subproblem; a full landscape is much larger than this
+report is intended to solve. ``--topology`` and ``--max-opening-ha`` add the same
+stand-centred opening rows as the MIP bound. The JSON and Markdown are advisory: they price
+the relaxation, not a schedule, and a zero dual on a non-binding row is expected.
+
 Watch
 -----
 
@@ -496,6 +567,23 @@ API
    :members:
 
 .. autofunction:: ws4.opt.mip.bound_for
+
+.. autofunction:: ws4.opt.mip.relaxation_for
+
+.. autoclass:: ws4.opt.mip.LpResult
+   :members:
+
+.. autoclass:: ws4.opt.archive.Elite
+   :members:
+
+.. autoclass:: ws4.opt.archive.EliteArchive
+   :members:
+
+.. autofunction:: ws4.opt.archive.pareto_front
+
+.. autofunction:: ws4.opt.portfolio.run_portfolio
+
+.. autofunction:: ws4.opt.tune.run_tuning
 
 .. autoclass:: ws4.opt.telemetry.RunLogger
    :members:
