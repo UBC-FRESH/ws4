@@ -324,8 +324,11 @@ tolerance and the optimizer reports no spatial violations.
      --dataset build/compiled --targets targets.yaml \
      --account product.Yield.managed.Conif --out runtime/max-flow \
      --years 100 --period-width 10 --iterations 300 --probes 10 \
-     --topology topology.csv --max-opening-ha 40 --constraint-strategy reject
+     --topology topology.csv --max-opening-ha 40 --constraint-strategy reject \
+     --flow ndy --flow-tolerance 0
 
+The optional ``--flow ndy|even`` adds the matching flow target to every probe; the report
+keeps floor feasibility and flow feasibility separate and records the worst period change.
 The high bound is an additive envelope: for each block, the best candidate contribution per period,
 summed over blocks. It is an upper bound, not a schedule. The **advisory ceiling** is the highest
 level a finite probe verified; the output contains ``max_flow.json``, ``max_flow.md``,
@@ -594,7 +597,9 @@ Outputs
    * - ``account_values.csv``, ``product_values.csv``
      - The simulated account and product values for the incumbent schedule.
    * - ``report_accounts.csv``, ``report_targets.csv``
-     - The account summary and the per-target status.
+     - The account summary and the per-target status, including target kind and normalized penalty.
+   * - ``ending_inventory.csv``
+     - The final feature-inventory value per account at the last offset.
    * - ``telemetry.jsonl``
      - A run header and one record per search step.
 
@@ -629,7 +634,8 @@ Scenario comparison
      --out runtime/compare
 
 Each ``--run`` takes ``label=path``. The output contains ``scenarios.json``, ``scenarios.md``,
-``scenario_runs.csv``, ``scenario_targets.csv``, and ``scenario_accounts.csv``. With ``--metric`` the
+``scenario_runs.csv``, ``scenario_targets.csv``, ``scenario_accounts.csv``, ``scenario_ending.csv``,
+and ``scenario_flows.csv``. With ``--metric`` the
 command also reports the nondominated front over those accounts; an account missing from a run keeps
 that run off the front rather than inventing a value. A missing summary, target report, or constraint
 report is shown as unavailable, not as passing.
@@ -711,6 +717,10 @@ API
 .. autofunction:: ws4.opt.scenarios.compare_scenarios
 
 .. autofunction:: ws4.opt.max_flow.high_bound
+
+.. autofunction:: ws4.opt.max_flow.flow_feasibility
+
+.. autofunction:: ws4.report.ending_inventory
 
 .. autofunction:: ws4.opt.mip.relaxation_for
 
