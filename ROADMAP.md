@@ -34,6 +34,7 @@ exists and the maintainer approves it.
 | P20 Production map serving | #183 | `feature/p20-map-lod` | complete |
 | P21 Search quality and validation | #190 | `feature/p21-search-quality` | complete |
 | P22 Map operations | #198 | `feature/p22-map-ops` | complete |
+| P23 Accounts and target activation | #206 | `feature/p23-target-browser` | active |
 | P24 Search portfolio and multi-objective | #207 | `feature/p24-search-portfolio` | complete |
 | P25 Constraint repair and flow ceilings | #214 | `feature/p25-constraints` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
@@ -870,6 +871,29 @@ Acceptance:
 - A pre-warm run writes durable tiles and reports hits, misses, bytes, and time.
 - The path-prefix check serves `/prefix/`, static assets, the API, and a tile.
 - The 1M-fragment benchmark reports peak RSS and enforces the recorded budget.
+- `python scripts/dashboard.py` is green.
+
+## Phase 23: Accounts and target activation
+
+Parent issue: #206
+Branch: `feature/p23-target-browser`
+Status: active
+
+Goal: let a user discover every account the run reports and activate any of them as an objective target
+without knowing the account vocabulary in advance.
+
+- [x] P23.1 Web UI: navigate every account and activate any as a target (#195)
+  - [x] Read the run's account catalogue instead of a hard-coded list
+  - [x] Group and search account names on their `.` segments
+  - [x] Show the last value, level/flow, and existing-target state
+  - [x] Add and remove targets through `/api/targets.json`
+
+Acceptance:
+
+- A user can find an account by substring and add a minimum, maximum, or both.
+- Every account in the run's `account_values.csv` is reachable.
+- The new target is written to the targets YAML and appears in the Targets table.
+- An already-targeted account is visibly marked.
 - `python scripts/dashboard.py` is green.
 
 ## Phase 24: Search portfolio and multi-objective

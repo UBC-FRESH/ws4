@@ -14,6 +14,7 @@ from typing import Any, cast
 
 import pandas as pd
 import pytest
+import yaml
 
 pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient
@@ -571,6 +572,27 @@ def test_targets_round_trip_and_an_invalid_document_is_refused(tmp_path: Path) -
     )
     assert refused.status_code == 422
     assert targets.read_text(encoding="utf-8") == replacement
+
+
+def test_targets_json_preserves_notes_when_edited(tmp_path: Path) -> None:
+    """A note in the YAML survives an edit made through the JSON editor."""
+    client, targets = _app(tmp_path)
+    targets.write_text(
+        "targets:\n"
+        "  - account: feature.Volume\n"
+        "    period: 1\n"
+        "    minimum: 0\n"
+        "    notes: keep the rationale\n",
+        encoding="utf-8",
+    )
+    rows = client.get("/api/targets.json").json()
+    assert rows[0]["notes"] == "keep the rationale"
+    rows[0]["maximum"] = 100
+    response = client.post("/api/targets.json", json=rows)
+    assert response.status_code == 200
+    written = yaml.safe_load(targets.read_text(encoding="utf-8"))
+    assert written["targets"][0]["notes"] == "keep the rationale"
+    assert written["targets"][0]["maximum"] == 100
 
 
 def test_targets_json_round_trip_and_an_empty_list_is_refused(tmp_path: Path) -> None:

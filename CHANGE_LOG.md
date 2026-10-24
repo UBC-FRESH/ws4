@@ -2288,3 +2288,30 @@ issue comments.
 - P25.2 refresh: the example notebooks' stored outputs now include the new
   `constraint_strategy` summary field. `python scripts/check_notebooks.py` reports 47
   compared and 0 drifted.
+- P23.1: the Targets tab now reads the selected run's account catalogue, folds the names on their
+  `.` segments into a searchable tree, and shows each account's last value, its level/flow rule, and
+  a `target` badge when it is already targeted. Selecting a leaf opens a period/width/min/max/weight
+  form; **Add target** validates the whole list through `POST /api/targets.json`, writes the YAML,
+  and refreshes the table. The table's **×** removes a target; the last target cannot be removed
+  because the API refuses an empty document. The width defaults to the file's existing width, or ten
+  years when the file is empty. Target `notes` fields survive the JSON round-trip; comments and key
+  order do not, which the web reference now states. The shell assets move to `v50`, and the tile base
+  now resolves without the page query so `?v=50` works. Verification:
+  `scripts/check_target_browser.py` opened 51 accounts, filtered to an account, added and removed a
+  target against a scratch targets file; the empty-file path was tested separately; the P20 tile
+  plots at z13-z15 remain normal block mosaics. Dashboard **GREEN**.
+
+- P23 close-out: the account browser and target activation are implemented, tested, documented, and
+  queued in `notes/reports/p23-closeout.md` (PR #212, evidence head `1526216`). The report records
+  the empty-file path, the notes-preserving round-trip, the last-target guard, and the period-label
+  follow-up. Dashboard **GREEN**. The P22 close-out now records its merged status and moves the
+  search-portfolio recommendation to P24 (planned).
+
+- P23.1 follow-up: Play and Stop were wired inside the SVG-only `fit()` helper, so a MapLibre
+  page had no click listener and pressing Play did nothing. The listeners now live in
+  `wireControls` and are installed once. Verified on the c5 sample: the button moved to Pause,
+  `POST /api/runs` returned 200, progress appeared, and a run started from a target added in the
+  Targets tab wrote that account to `report_targets.csv`. Added the opt-in
+  `scripts/check_run_controls.py`. The service now refuses `--patch-accounts` without `--topology`
+  (and spread accounts without both inputs) instead of starting a doomed run, and the optimizer
+  names the missing topology; tests cover both. Shell assets move to `v51`. Dashboard **GREEN**.

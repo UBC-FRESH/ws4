@@ -252,6 +252,30 @@ The browser path has an opt-in smoke:
 It needs Playwright and a Chromium build, and it fails when the shell makes no ``.mvt`` request or
 reports a console error. It is not a CI gate because the browser install is heavy.
 
+The targets path has a separate opt-in smoke. Run it against a service started with a
+**scratch** copy of the targets YAML, because it adds and then removes a target:
+
+.. code-block:: bash
+
+   python scripts/check_target_browser.py http://127.0.0.1:8021/ --search CWH_HW_M
+
+It opens the Targets tab, filters the account tree, adds a target with the first
+matching account, checks that the table gained a row, and removes that row when the
+file still has another target. The last target is left in place because the API
+refuses an empty targets document.
+
+The Play and Stop controls have a separate smoke. It needs a service started with
+``--allow-runs`` and a scratch targets file, because it starts a short run:
+
+.. code-block:: bash
+
+   python scripts/check_run_controls.py http://127.0.0.1:8022/ --iterations 3
+
+It clicks Play, asserts that ``POST /api/runs`` returns 200 and the button moves to
+Pause, then clicks Stop. The SVG and MapLibre shells share these controls; the check
+guards against the regression where the click listener was only installed by the SVG
+map path.
+
 The scale gate builds a synthetic point grid and times the tile path:
 
 .. code-block:: bash
@@ -341,6 +365,34 @@ The panel keeps one OpenCode session per conversation and starts a new one with 
 id is lost on reload, so a fresh page starts a fresh conversation. A horizontal drag bar above the
 panel resizes its height (8 rem minimum, leaving the layer panel usable); the height is kept in
 local storage, and double-clicking the bar restores the default.
+
+Targets
+-------
+
+The Targets tab starts with every account the selected run reports in
+``account_values.csv``. The tree folds the account name on its ``.`` segments, and
+the search box filters the tree by substring, so a user can find an account without
+knowing its exact name. Each leaf shows the account's last realized value, whether
+the optimizer treats it as a **level** or a **flow** (a ``product.`` account is a
+flow), and a ``target`` badge when the account already appears in the targets file.
+
+Selecting a leaf opens a small form for a new target. **Period** is the accounting
+period (period 1 is the first one), **Width** is its length in years, and **Min** and
+**Max** are optional bounds; the form requires at least one bound. **Min w** and
+**Max w** are the penalty weights. **Add target** validates the complete list through
+``POST /api/targets.json``, writes the configured YAML, and refreshes the table. The
+form defaults the width to the width already used by the file, or ten years when the
+file is empty.
+
+The table's **Remove** button deletes one target through the same endpoint. The API
+refuses an empty targets document, so the last target must be removed in the YAML or
+with ``Put targets``; the button is disabled in that case. The account browser only
+changes the targets document; it does not change account values or the optimizer's
+semantics.
+
+The editor writes the document with ``yaml.safe_dump``. It preserves each target's
+``notes`` field, but comments and the original key order are not preserved. Use a
+version-controlled targets file and review the diff after a large edit.
 
 Reports
 -------
