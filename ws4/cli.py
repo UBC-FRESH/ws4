@@ -129,6 +129,12 @@ def optimize(
         min=0,
         help="Reset the current solution to the incumbent every N accepted moves; 0 disables it",
     ),
+    engine: str = typer.Option(
+        "sa", "--engine", "--metaheuristic", help="sa, tabu, ils, or threshold"
+    ),
+    threshold: float = typer.Option(
+        1.0, "--threshold", help="Initial threshold for the threshold-accepting engine"
+    ),
     years: int = typer.Option(50, help="Simulation horizon in years"),
     seed: int = typer.Option(42),
     islands: int = typer.Option(0, help="parallel islands with elite migration (0 = off)"),
@@ -234,6 +240,8 @@ def optimize(
         iterations=iterations,
         patience=patience,
         reversion=reversion,
+        metaheuristic=engine,
+        threshold=threshold,
         years=years,
         seed=seed,
         islands=islands,
@@ -298,7 +306,9 @@ def watch(
     period_width: int = typer.Option(10, "--period-width", help="Years per period"),
     years: int = typer.Option(50, help="Simulation horizon in years"),
     iterations: int = typer.Option(2000, help="Search iterations"),
-    metaheuristic: str = typer.Option("sa", help="sa, tabu, or ils"),
+    metaheuristic: str = typer.Option(
+        "sa", "--metaheuristic", "--engine", help="sa, tabu, ils, or threshold"
+    ),
     temperature: float = typer.Option(1000.0, help="Initial SA temperature"),
     cooling: float = typer.Option(0.99, help="SA cooling factor"),
     cooling_mode: str = typer.Option(

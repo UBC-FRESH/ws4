@@ -2209,3 +2209,10 @@ issue comments.
   zero-penalty status, and the MIP gap when `--mip-bound` is set. It writes JSON and Markdown.
   The dashboard is green.
 - The validation sweep accepts `--reversion`, so a run can compare a reverted search with the plain one. Tests: 6 validate-search tests; dashboard **GREEN**.
+
+- P21.4: added the threshold-accepting engine (`--engine threshold`, `--threshold`, `--cooling`).
+  It accepts improving moves always and worsening moves within the current threshold, shrinks the
+  threshold each iteration, and shares `--patience` and `--reversion`. `ws4 optimize` now exposes
+  `--engine` for sa, tabu, ils, and threshold; `ws4 watch` accepts the same alias. Tests cover the
+  parameter guard, an optimizer run, and unknown-engine rejection. Dashboard **GREEN**; one
+  `test_web.py` tile test failed once under load and passed in three isolated and two full reruns.

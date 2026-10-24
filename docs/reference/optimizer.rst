@@ -173,10 +173,17 @@ by default; ``cluster``, ``merge`` and ``split`` ship at weight zero, so a confi
 them a weight (``--cluster-weight``, ``--merge-weight``, ``--split-weight``, or
 ``OptimizeConfig.cluster_weight`` and friends) before they are selected.
 
-The solvers are simulated annealing (``sa``), tabu search (``tabu``), and iterated local search
-(``ils``), selected by ``OptimizeConfig.metaheuristic``. A run may use multiple starts
-(``OptimizeConfig.starts``), serial or across a process pool (``OptimizeConfig.workers``), keeping the
-best. ``OptimizeConfig.warm_start`` seeds the search from each block's first candidate.
+The solvers are simulated annealing (``sa``), tabu search (``tabu``), iterated local search
+(``ils``), and threshold accepting (``threshold``), selected by ``--engine``
+(``OptimizeConfig.metaheuristic``). A run may use multiple starts (``OptimizeConfig.starts``), serial
+or across a process pool (``OptimizeConfig.workers``), keeping the best.
+``OptimizeConfig.warm_start`` seeds the search from each block's first candidate.
+
+Threshold accepting (``--engine threshold``) accepts an improving move always, and accepts a
+worsening move while its increase is no larger than the current **threshold**. The threshold is
+multiplied by the cooling factor each iteration; ``--threshold`` sets the initial value and
+``--cooling`` sets the factor. It is simpler to explain and tune than SA and is competitive on
+spatial harvest scheduling. Like SA, it honours ``--patience`` and ``--reversion``.
 
 Seeding a target by construction
 --------------------------------

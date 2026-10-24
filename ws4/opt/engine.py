@@ -78,6 +78,7 @@ from .solvers import (
     solve_sa,
     solve_sa_delta,
     solve_tabu,
+    solve_threshold,
 )
 from .telemetry import RunLogger
 
@@ -203,6 +204,8 @@ class OptimizeConfig:
         it. Applied by SA, tabu, and ILS.
     temperature : float
         The initial simulated-annealing temperature.
+    threshold : float
+        The initial threshold-accepting threshold, in objective units.
     cooling : float
         The geometric cooling factor.
     cooling_mode : str
@@ -210,7 +213,7 @@ class OptimizeConfig:
     cooling_window : int
         The iterations per temperature in adaptive mode.
     metaheuristic : str
-        ``"sa"``, ``"tabu"``, or ``"ils"``.
+        ``"sa"``, ``"tabu"``, ``"ils"``, or ``"threshold"``.
     tenure : int
         The tabu tenure, in iterations.
     perturbation : int
@@ -305,6 +308,7 @@ class OptimizeConfig:
     patience: int = 0
     reversion: int = 0
     temperature: float = 1000.0
+    threshold: float = 1.0
     cooling: float = 0.99
     cooling_mode: str = "geometric"
     cooling_window: int = 64
@@ -352,6 +356,10 @@ class OptimizeConfig:
             raise ValueError("patience must be zero (off) or a positive iteration count")
         if self.reversion < 0:
             raise ValueError("reversion must be zero (off) or a positive accepted-move count")
+        if self.threshold < 0.0:
+            raise ValueError("threshold must be zero or positive")
+        if self.metaheuristic not in {"sa", "tabu", "ils", "threshold"}:
+            raise ValueError(f"unknown metaheuristic: {self.metaheuristic!r}")
         if self.cooling_mode not in {"geometric", "adaptive"}:
             raise ValueError(f"unknown cooling_mode: {self.cooling_mode!r}")
 
@@ -1212,6 +1220,20 @@ class Optimizer:
                 )
         if initial is None and self.cfg.warm_start:
             initial = {block: options[0] for block, options in candidates.items() if options}
+        if self.cfg.metaheuristic == "threshold":
+            return solve_threshold(
+                problem,
+                rng,
+                iterations=self.cfg.iterations,
+                threshold=self.cfg.threshold,
+                cooling=self.cfg.cooling,
+                on_step=on_step,
+                control=control,
+                initial=initial,
+                deadline=limit,
+                patience=self.cfg.patience,
+                reversion=self.cfg.reversion,
+            )
         if self.cfg.metaheuristic == "tabu":
             return solve_tabu(
                 problem,
@@ -1506,6 +1528,7 @@ class Optimizer:
             "reversion": self.cfg.reversion,
             "seed": self.cfg.seed,
             "metaheuristic": self.cfg.metaheuristic,
+            "threshold": self.cfg.threshold,
             "starts": self.cfg.starts,
             "initial_schedule_path": self.cfg.initial_schedule_path or None,
             "blocks_scheduled": len(best),

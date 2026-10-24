@@ -372,6 +372,98 @@ def solve_sa_delta(
     return best, best_obj
 
 
+def solve_threshold(
+    problem: Problem,
+    rng: random.Random,
+    *,
+    iterations: int,
+    threshold: float,
+    cooling: float,
+    on_step: StepCallback | None = None,
+    control: RunControl | None = None,
+    initial: Schedule | None = None,
+    deadline: float | None = None,
+    patience: int = 0,
+    reversion: int = 0,
+) -> tuple[Schedule, float]:
+    """Run threshold accepting: accept a feasible move within the current threshold.
+
+    A move that improves the objective is always accepted. A move that worsens it is
+    accepted while the increase is no larger than the current threshold. The threshold
+    is multiplied by ``cooling`` each iteration, so the search diversifies early and
+    intensifies as the threshold approaches zero.
+
+    Parameters
+    ----------
+    problem : Problem
+        The problem adapter.
+    rng : random.Random
+        The random source.
+    iterations : int
+        The iteration budget.
+    threshold : float
+        The initial threshold, in objective units.
+    cooling : float
+        The factor applied to the threshold each iteration; it must be in ``(0, 1]``.
+    on_step : callable or None, optional
+        Called with ``(iteration, best_objective)`` each iteration.
+    control : RunControl or None, optional
+        A polled control file; the search holds while it says ``pause`` and returns its best
+        schedule when it says ``stop``.
+    initial : dict or None, optional
+        A starting schedule. Defaults to the empty schedule.
+    deadline : float or None, optional
+        A :func:`time.monotonic` value to stop at, or None to run the budget out.
+    patience : int, optional
+        Stop after this many iterations without an incumbent improvement; 0 disables it.
+    reversion : int, optional
+        Reset the current solution to the incumbent every ``reversion`` accepted moves;
+        0 disables it.
+
+    Returns
+    -------
+    tuple of (Schedule, float)
+        The best schedule and its objective.
+
+    Raises
+    ------
+    ValueError
+        When ``threshold`` is negative or ``cooling`` is outside ``(0, 1]``.
+    """
+    if threshold < 0.0:
+        raise ValueError("threshold must be zero or positive")
+    if not 0.0 < cooling <= 1.0:
+        raise ValueError("cooling must be in (0, 1]")
+    current: Schedule = dict(initial) if initial is not None else {}
+    current_obj = problem.evaluate(current)
+    best, best_obj = dict(current), current_obj
+    accepted = 0
+    last_improvement = 0
+    current_threshold = threshold
+    for iteration in range(iterations):
+        if patience_reached(iteration, last_improvement, patience):
+            break
+        if expired(deadline) or _stopped(control, iteration):
+            break
+        move = problem.registry.pick(rng).apply(current, rng, problem.candidates)
+        if move is not None:
+            move_obj = problem.evaluate(move)
+            if move_obj <= current_obj or (move_obj - current_obj) <= current_threshold:
+                current, current_obj = move, move_obj
+                accepted += 1
+                if move_obj < best_obj:
+                    best, best_obj = dict(move), move_obj
+                    last_improvement = iteration
+                if reversion_due(accepted, reversion):
+                    current, current_obj = dict(best), best_obj
+                    accepted = 0
+        current_threshold *= cooling
+        _report(on_step, iteration, best_obj)
+        if current_threshold <= 1e-12:
+            break
+    return best, best_obj
+
+
 def solve_tabu(
     problem: Problem,
     rng: random.Random,
