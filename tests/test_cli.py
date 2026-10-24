@@ -9,6 +9,7 @@ first half drives the framework scripts in ``scripts/``; the second half drives 
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -233,6 +234,6 @@ def test_serve_refuses_patch_accounts_without_topology(tmp_path: Path) -> None:
         "0",
     )
     assert result.returncode != 0
-    combined = result.stdout + result.stderr
+    combined = re.sub(r"\x1b\[[0-9;]*m", "", result.stdout + result.stderr)
     assert "patch-accounts" in combined
     assert "topology" in combined
