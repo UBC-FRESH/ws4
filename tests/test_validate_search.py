@@ -63,6 +63,7 @@ def test_run_validation_runs_each_engine_and_seed(tmp_path: Path) -> None:
         years=1,
         workdir=tmp_path / "runs",
         runner_factory=_fake_factory,
+        reversion=5,
         mip_bound=True,
     )
     records = report["records"]
@@ -70,6 +71,7 @@ def test_run_validation_runs_each_engine_and_seed(tmp_path: Path) -> None:
     assert len(records) == 4
     assert {record["engine"] for record in records} == {"sa", "tabu"}
     assert all("gap" in record for record in records)
+    assert report["reversion"] == 5
     summary = report["summary"]
     assert isinstance(summary, dict)
     assert summary["sa"]["runs"] == 2
@@ -110,6 +112,7 @@ def test_main_writes_the_json_and_markdown(tmp_path: Path, monkeypatch: pytest.M
         "targets": "t",
         "iterations": 1,
         "years": 1,
+        "reversion": 0,
         "mip_bound": False,
         "summary": {"sa": {"runs": 1, "best": 0.0}},
         "markdown": "# Validation sweep",

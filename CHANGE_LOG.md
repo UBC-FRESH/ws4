@@ -2208,3 +2208,4 @@ issue comments.
   targets and budget, then reports best/mean/median/worst, population standard deviation,
   zero-penalty status, and the MIP gap when `--mip-bound` is set. It writes JSON and Markdown.
   The dashboard is green.
+- The validation sweep accepts `--reversion`, so a run can compare a reverted search with the plain one. Tests: 6 validate-search tests; dashboard **GREEN**.

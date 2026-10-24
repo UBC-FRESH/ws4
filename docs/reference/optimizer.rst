@@ -264,8 +264,9 @@ command. The report is advisory; it does not change a schedule.
      --engines sa,tabu,ils --seeds 1,2,3 --iterations 500 --years 50 \
      --out runtime/validation
 
-The JSON records each run's objective, zero-penalty status, output directory, and (with
-``--mip-bound``) the lower bound and gap. The Markdown table reports runs, best, mean, median, worst,
+Use ``--reversion`` to include the reversion interval in every run, so a sweep can compare a
+reverted search with the plain one. The JSON records each run's objective, zero-penalty status,
+output directory, reversion interval, and (with ``--mip-bound``) the lower bound and gap. The Markdown table reports runs, best, mean, median, worst,
 and population standard deviation per engine. Use it before a release or a benchmark claim: a single
 seed is an anecdote, and a single engine is not a comparison.
 

@@ -97,6 +97,7 @@ def run_validation(
     iterations: int = 200,
     years: int = 50,
     threads: int = 1,
+    reversion: int = 0,
     mip_bound: bool = False,
     workdir: Path | None = None,
     runner_factory: Callable[[Path, OptimizeConfig], Runner] = Optimizer.from_dataset,
@@ -120,6 +121,9 @@ def run_validation(
     threads : int, optional
         Worker count passed to the optimizer. The default 1 keeps the sweep
         deterministic and serial.
+    reversion : int, optional
+        Reset the current solution to the incumbent every this many accepted moves;
+        0 disables it.
     mip_bound : bool, optional
         Ask each run for the MIP lower bound and gap.
     workdir : Path or None, optional
@@ -165,6 +169,7 @@ def run_validation(
                     years=years,
                     threads=threads,
                     workers=threads,
+                    reversion=reversion,
                     mip_bound=mip_bound,
                 )
                 summary = runner_factory(dataset, config).run(out)
@@ -194,6 +199,7 @@ def run_validation(
             "seeds": list(seeds),
             "iterations": iterations,
             "years": years,
+            "reversion": reversion,
             "mip_bound": mip_bound,
             "records": records,
             "summary": by_engine,
@@ -227,6 +233,7 @@ def render_markdown(report: dict[str, object]) -> str:
         f"- Targets: `{report['targets']}`",
         f"- Iterations: {report['iterations']}",
         f"- Years: {report['years']}",
+        f"- Reversion: {report['reversion']}",
         f"- MIP bound: {report['mip_bound']}",
         "",
         "| Engine | Runs | Best | Mean | Median | Worst | Stdev |",
@@ -269,6 +276,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--iterations", type=int, default=200)
     parser.add_argument("--years", type=int, default=50)
     parser.add_argument("--threads", type=int, default=1)
+    parser.add_argument("--reversion", type=int, default=0)
     parser.add_argument("--mip-bound", action="store_true")
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args(argv)
@@ -280,6 +288,7 @@ def main(argv: list[str] | None = None) -> int:
         iterations=args.iterations,
         years=args.years,
         threads=args.threads,
+        reversion=args.reversion,
         mip_bound=args.mip_bound,
         workdir=args.out,
     )
