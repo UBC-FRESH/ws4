@@ -2322,3 +2322,5 @@ issue comments.
   manifest metadata, table counts, target-account coverage, and explicit unknowns/limitations.
 - P26.3: `scripts/compare_scenarios.py` compares labelled runs, writes JSON/Markdown/CSV tables, and
   reports an optional Pareto front over named metrics. Dashboard **GREEN**.
+- P26.1-P26.2 refresh: the example notebooks' stored outputs include the new run-manifest and
+  data-quality summary fields. `python scripts/check_notebooks.py` reports 47 compared and 0 drifted.
