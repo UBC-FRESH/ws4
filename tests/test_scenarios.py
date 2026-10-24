@@ -54,6 +54,14 @@ def _run(
                 "normalization": "none",
                 "priority": 1,
             },
+            {
+                "account": "feature.Volume",
+                "period": 1,
+                "offset": 0,
+                "value": volume,
+                "status": "met",
+                "flow": "ndy",
+            },
         ]
     ).to_csv(path / "report_targets.csv", index=False)
     pd.DataFrame(
@@ -93,6 +101,10 @@ def test_compare_writes_tables_and_a_front(tmp_path: Path) -> None:
     )
     assert [record["label"] for record in report["runs"]] == ["base", "dense"]
     assert set(report["front"]) == {"base", "dense"}
+    assert (tmp_path / "compare" / "scenario_ending.csv").is_file()
+    assert (tmp_path / "compare" / "scenario_flows.csv").is_file()
+    assert "Ending inventory" in str(report["markdown"])
+    assert "Flow targets" in str(report["markdown"])
     assert (tmp_path / "compare" / "scenarios.json").is_file()
     assert (tmp_path / "compare" / "scenario_runs.csv").is_file()
     assert (tmp_path / "compare" / "scenario_targets.csv").is_file()

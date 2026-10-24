@@ -117,7 +117,21 @@ def _run_record(label: str, path: Path, metrics: Sequence[str]) -> dict[str, Any
     """Read one run and return its comparison record."""
     summary = _read_json(path / "summary.json")
     targets = _read_csv(path / "report_targets.csv")
-    accounts = _final_accounts(_read_csv(path / "account_values.csv"))
+    account_frame = _read_csv(path / "account_values.csv")
+    accounts = _final_accounts(account_frame)
+    ending_frame = _read_csv(path / "ending_inventory.csv")
+    if ending_frame.empty:
+        final = accounts
+        ending = [
+            {"account": name, "value": value}
+            for name, value in sorted(final.items())
+            if name.startswith("feature.")
+        ]
+    else:
+        ending = [
+            {"account": str(row.account), "value": float(str(row.value))}
+            for row in ending_frame.itertuples(index=False)
+        ]
     constraint = _read_json(path / "constraint_report.json")
     met = (
         int((targets.get("status", pd.Series(dtype=str)) == "met").sum())
@@ -129,6 +143,10 @@ def _run_record(label: str, path: Path, metrics: Sequence[str]) -> dict[str, Any
         if not targets.empty
         else 0
     )
+    target_rows: list[dict[str, Any]] = []
+    if not targets.empty:
+        for row in targets.to_dict(orient="records"):
+            target_rows.append({str(key): value for key, value in row.items()})
     return {
         "label": label,
         "path": str(path),
@@ -144,10 +162,46 @@ def _run_record(label: str, path: Path, metrics: Sequence[str]) -> dict[str, Any
         "targets_met": met,
         "targets_missed": missed,
         "metrics": {name: accounts.get(name) for name in metrics},
-        "targets": targets.to_dict(orient="records") if not targets.empty else [],
+        "targets": target_rows,
+        "flows": _flow_rows(target_rows),
+        "ending": ending,
         "accounts": accounts,
         "schedule": path / "schedule.csv",
     }
+
+
+def _flow_rows(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Return flow target rows with a percent change from the prior/reference period."""
+    grouped: dict[str, list[Mapping[str, Any]]] = {}
+    for row in rows:
+        if str(row.get("flow", "")):
+            grouped.setdefault(str(row.get("account", "")), []).append(row)
+    result: list[dict[str, Any]] = []
+    for account, group in grouped.items():
+        ordered = sorted(
+            group, key=lambda item: float(item.get("offset", item.get("period", 0)) or 0)
+        )
+        values = [float(item.get("value", 0.0) or 0.0) for item in ordered]
+        flow = str(ordered[0].get("flow", ""))
+        for index, item in enumerate(ordered):
+            change: float | None = None
+            if index > 0 and values[index - 1] > 0.0:
+                if flow == "ndy":
+                    change = 100.0 * (values[index] - values[index - 1]) / values[index - 1]
+                elif values[-1] > 0.0:
+                    change = 100.0 * (values[index] - values[-1]) / values[-1]
+            result.append(
+                {
+                    "account": account,
+                    "period": item.get("period"),
+                    "offset": item.get("offset"),
+                    "flow": flow,
+                    "value": values[index],
+                    "change_percent": change,
+                    "status": item.get("status"),
+                }
+            )
+    return result
 
 
 def compare_scenarios(
@@ -243,9 +297,17 @@ def compare_scenarios(
         for account, value in sorted(record["accounts"].items())
     ]
     pd.DataFrame(account_rows).to_csv(out_dir / "scenario_accounts.csv", index=False)
+    ending_rows = [
+        {"run": record["label"], **item} for record in records for item in record["ending"]
+    ]
+    pd.DataFrame(ending_rows).to_csv(out_dir / "scenario_ending.csv", index=False)
+    flow_rows = [{"run": record["label"], **item} for record in records for item in record["flows"]]
+    pd.DataFrame(flow_rows).to_csv(out_dir / "scenario_flows.csv", index=False)
     report: dict[str, Any] = {
         "runs": records,
         "front": [elite.source for elite in front],
+        "ending": ending_rows,
+        "flows": flow_rows,
         "directions": directions,
         "metrics": metric_names,
         "markdown": render_markdown(records, front, directions),
@@ -291,6 +353,12 @@ def render_markdown(
     str
         The report.
     """
+    ending_rows = [
+        {"run": record["label"], **item} for record in records for item in record.get("ending", [])
+    ]
+    flow_rows = [
+        {"run": record["label"], **item} for record in records for item in record.get("flows", [])
+    ]
     lines = [
         "# Scenario comparison",
         "",
@@ -330,6 +398,34 @@ def render_markdown(
             lines.append(f"| {elite.source} | {elite.objective:.6g} | {values} |")
     elif directions:
         lines.extend(["", "No run had every requested metric; the front is unavailable."])
+    if ending_rows:
+        lines.extend(
+            [
+                "",
+                "## Ending inventory",
+                "",
+                "| Run | Account | Value |",
+                "| --- | --- | ---: |",
+            ]
+        )
+        for row in ending_rows:
+            lines.append(f"| {row['run']} | {row['account']} | {float(row['value']):.6g} |")
+    if flow_rows:
+        lines.extend(
+            [
+                "",
+                "## Flow targets",
+                "",
+                "| Run | Account | Period | Value | Change % | Status |",
+                "| --- | --- | ---: | ---: | ---: | --- |",
+            ]
+        )
+        for row in flow_rows:
+            change = "" if row["change_percent"] is None else f"{row['change_percent']:.3g}"
+            lines.append(
+                f"| {row['run']} | {row['account']} | {row['period']} | "
+                f"{row['value']:.6g} | {change} | {row['status']} |"
+            )
     lines.extend(
         [
             "",
