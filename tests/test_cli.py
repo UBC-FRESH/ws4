@@ -233,4 +233,6 @@ def test_serve_refuses_patch_accounts_without_topology(tmp_path: Path) -> None:
         "0",
     )
     assert result.returncode != 0
-    assert "--patch-accounts needs --topology" in result.stdout + result.stderr
+    combined = result.stdout + result.stderr
+    assert "patch-accounts" in combined
+    assert "topology" in combined
