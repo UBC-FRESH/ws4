@@ -2334,3 +2334,13 @@ issue comments.
   normalization/priority, and scenario target tables preserve the new columns. Dashboard **GREEN**.
 - P27.3 refresh: the example notebooks' stored target tables include `raw_penalty`, `scale`,
   `normalization`, and `priority`. `python scripts/check_notebooks.py` reports 47 compared, 0 drifted.
+
+- P28.1: `report_targets.csv` carries a `kind` field (level, flow.even, flow.ndy), and every run
+  writes `ending_inventory.csv` plus a summary block for the final feature-account values.
+- P28.2: the flow-ceiling probe accepts `--flow ndy|even` and `--flow-tolerance`, adds the flow
+  target to each probe, and reports floor and flow feasibility separately with the worst change.
+- P28.3: scenario comparison writes `scenario_ending.csv` and `scenario_flows.csv` and names both
+  in the Markdown report. Dashboard **GREEN**.
+- P28.1-P28.3 refresh: the example notebooks' stored target and ending-inventory tables include
+  the new `kind` and inventory surfaces. `python scripts/check_notebooks.py` reports 47 compared,
+  0 drifted.
