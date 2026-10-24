@@ -15,8 +15,8 @@ Approve these actions. The agent carries them out in this order, and reads back 
 
 1. Squash-merge pull request #185, and delete the branch `feature/p20-map-lod`.
 2. Close parent issue #183 with a closeout comment that cites the merge commit.
-3. Launch P21, Map operations: pre-warm the durable cache, record a reverse-proxy deployment
-   check, and add a memory profile for the 1M-fragment cold build.
+3. Launch P21, Search quality and validation: add search reversion, a multi-seed/engine
+   validation harness, and a target sensitivity report. Map operations move to P22.
 
 Settings changes: none. This phase changes no repository setting, tag, release, or external
 account.
@@ -78,19 +78,23 @@ account.
 
 ## 6. Next phase
 
-Goal: keep the map operationally fast and deployable on a shared host.
+Goal: make the search's quality measurable and improve it with the smallest, highest-value changes.
 
 Tasks:
 
-- P21.1 Pre-warm the durable tile cache for a model tree.
-- P21.2 Record a reverse-proxy deployment check under a path prefix.
-- P21.3 Add a memory profile for the 1M-fragment cold build and decide the cache/index budget.
+- P21.1 Add search reversion to SA, tabu, and ILS.
+- P21.2 Add `ws4 validate-search`, a multi-seed, multi-engine validation harness.
+- P21.3 Add a target sensitivity report from the MIP/LP: slack, binding status, and marginal relaxation value.
+- P21.4 Add a threshold-accepting engine.
 
 Recommended defaults:
 
-- Keep the current LOD policy: treated centroids below zoom 10, polygons at 10+.
-- Keep the durable cache opt-in via `--tile-cache`.
-- Treat the 29.3 s cold build as a pre-warm step, not a user-facing request.
+- Reversion resets the current solution to the best every 10-50 accepted moves, configurable and
+  recorded in telemetry.
+- Validation uses the existing engines, seeds, and budgets, and reports best/mean/median/worst,
+  standard deviation, feasibility rate, and the MIP gap when enabled.
+- Sensitivity is advisory and does not change a run.
+- Map operations move to P22.
 
 ## 7. Decision
 
