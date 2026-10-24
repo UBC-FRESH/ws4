@@ -49,6 +49,7 @@ from ..spread.accounts import (
     load_block_coordinates,
     load_spread_accounts,
 )
+from .constraints import ConstraintGuard
 from .control import RunControl
 from .core import Problem
 from .incremental import IncrementalObjective
@@ -257,6 +258,10 @@ class OptimizeConfig:
         The weight on the combined spatial penalty.
     allow_spatial_override : bool
         Whether to run with the spatial penalties explicitly disabled.
+    constraint_strategy : str
+        ``"penalize"`` (the default) prices a spatial violation in the objective;
+        ``"reject"`` refuses an infeasible move; ``"repair"`` tries to keep the feasible
+        part of a move before rejecting it.
     toggle_weight : float
         The selection weight of the toggle operator.
     shift_weight : float
@@ -332,6 +337,7 @@ class OptimizeConfig:
     min_core_area_ha: float | None = None
     spatial_weight: float = 1.0
     allow_spatial_override: bool = False
+    constraint_strategy: str = "penalize"
     toggle_weight: float = 1.0
     shift_weight: float = 1.0
     swap_weight: float = 0.5
@@ -358,6 +364,8 @@ class OptimizeConfig:
             raise ValueError("reversion must be zero (off) or a positive accepted-move count")
         if self.threshold < 0.0:
             raise ValueError("threshold must be zero or positive")
+        if self.constraint_strategy not in {"penalize", "reject", "repair"}:
+            raise ValueError("constraint_strategy must be penalize, reject, or repair")
         if self.metaheuristic not in {"sa", "tabu", "ils", "threshold"}:
             raise ValueError(f"unknown metaheuristic: {self.metaheuristic!r}")
         if self.cooling_mode not in {"geometric", "adaptive"}:
@@ -438,6 +446,8 @@ class Optimizer:
         self._last_values: pd.DataFrame | None = None
         self._delta_cache: dict[tuple[int, Chain], dict[tuple[int, str], float]] = {}
         self._route_delta_cache: dict[tuple[int, Chain], dict[tuple[int, str], float]] = {}
+        self.constraint_guard = ConstraintGuard(self)
+        self.registry = self.constraint_guard.wrap(self.registry)
 
     @classmethod
     def from_dataset(cls, dataset_dir: Path, cfg: OptimizeConfig) -> Optimizer:
@@ -1220,6 +1230,8 @@ class Optimizer:
                 )
         if initial is None and self.cfg.warm_start:
             initial = {block: options[0] for block, options in candidates.items() if options}
+        if initial is not None:
+            initial = self.constraint_guard.prepare(initial)
         if self.cfg.metaheuristic == "threshold":
             return solve_threshold(
                 problem,
@@ -1521,6 +1533,7 @@ class Optimizer:
                 )
         self._last_values = values
         write_report(values, targets, out_dir)
+        constraint_report = self._constraint_report(out_dir, best, pool_search)
         summary: dict[str, Any] = {
             "incumbent_objective": best_obj,
             "iterations": self.cfg.iterations,
@@ -1533,6 +1546,10 @@ class Optimizer:
             "initial_schedule_path": self.cfg.initial_schedule_path or None,
             "blocks_scheduled": len(best),
             "operators": self.registry.names(),
+            "constraint_strategy": self.cfg.constraint_strategy,
+            "constraint_stats": constraint_report["stats"],
+            "constraint_feasible": constraint_report["feasible"],
+            "constraint_report": "constraint_report.json",
             "status": "ok",
             "time_limit_reached": bool(expired(self._deadline)),
             "dataset": dataset_reference(self.dataset_dir),
@@ -1551,6 +1568,47 @@ class Optimizer:
             summary["bound_status"] = bound.status
         (out_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
         return summary
+
+    def _constraint_report(
+        self, out_dir: Path, best: Schedule, pool_search: bool
+    ) -> dict[str, Any]:
+        """Write and return the final feasibility report.
+
+        Parameters
+        ----------
+        out_dir : Path
+            The run directory.
+        best : Schedule
+            The incumbent schedule.
+        pool_search : bool
+            Whether the search ran in a process pool, where the parent guard saw no moves.
+
+        Returns
+        -------
+        dict of str to Any
+            The strategy, counts, final violations, and feasibility flag.
+        """
+        violations_path = out_dir / "spatial_violations.csv"
+        records: list[dict[str, Any]] = []
+        if violations_path.is_file():
+            frame = pd.read_csv(violations_path)
+            records = [
+                {str(key): (None if pd.isna(value) else value) for key, value in row.items()}
+                for row in frame.to_dict(orient="records")
+            ]
+        stats = self.constraint_guard.summary()
+        stats["available"] = not pool_search
+        report: dict[str, Any] = {
+            "strategy": self.cfg.constraint_strategy,
+            "stats": stats,
+            "violations": records,
+            "feasible": not records,
+            "blocks_scheduled": len(best),
+        }
+        (out_dir / "constraint_report.json").write_text(
+            json.dumps(report, indent=2, sort_keys=True), encoding="utf-8"
+        )
+        return report
 
 
 def _worker_logger(out_dir: str, island: str, cfg: OptimizeConfig) -> RunLogger | None:

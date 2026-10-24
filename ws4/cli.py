@@ -163,6 +163,11 @@ def optimize(
     spatial_override: bool = typer.Option(
         False, "--spatial-override", help="Allow schedules that violate the spatial constraints"
     ),
+    constraint_strategy: str = typer.Option(
+        "penalize",
+        "--constraint-strategy",
+        help="Spatial policy: penalize (default), reject, or repair",
+    ),
     lns_weight: float = typer.Option(
         0.2, "--lns-weight", help="Weight of the LNS operator (0 disables it)"
     ),
@@ -258,6 +263,7 @@ def optimize(
         min_core_area_ha=min_core_area_ha,
         spatial_weight=spatial_weight,
         allow_spatial_override=spatial_override,
+        constraint_strategy=constraint_strategy,
         lns_weight=lns_weight,
         lns_destroy=lns_destroy,
         warm_cache=warm_cache,

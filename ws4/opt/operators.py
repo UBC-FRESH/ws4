@@ -842,6 +842,17 @@ class OperatorRegistry:
             else [ToggleOperator(), ShiftOperator(), SwapOperator(), LnsOperator()]
         )
 
+    @property
+    def operators(self) -> list[Operator]:
+        """Return the registered operators in selection order.
+
+        Returns
+        -------
+        list of Operator
+            A copy of the operator list.
+        """
+        return list(self._operators)
+
     def names(self) -> list[str]:
         """Return the operator names.
 
