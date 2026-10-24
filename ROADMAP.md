@@ -859,9 +859,9 @@ Status: active
 Goal: make production map serving operationally repeatable: pre-warm the durable tile cache, prove the
 service works behind a path prefix, and measure the 1M-fragment cold-build memory.
 
-- [ ] P22.1 Add the durable tile-cache pre-warm command (#199)
-- [ ] P22.2 Add the path-prefix deployment check (#200)
-- [ ] P22.3 Add the 1M-fragment peak-RSS profile and budget (#201)
+- [x] P22.1 Add the durable tile-cache pre-warm command (#199)
+- [x] P22.2 Add the path-prefix deployment check (#200)
+- [x] P22.3 Add the 1M-fragment peak-RSS profile and budget (#201)
 
 Acceptance:
 

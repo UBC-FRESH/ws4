@@ -208,6 +208,41 @@ to the tile resolution (50 m below zoom 9, 15 m at 11-12, 5 m at 13-14, and full
 reads full-run counts from ``map-stats``. Patches, compartments, and comparison stay on the
 GeoJSON path, where the per-feature styling is richer.
 
+Pre-warm and deployment checks
+------------------------------
+
+The durable cache can be warmed before the first browser request:
+
+.. code-block:: bash
+
+   python scripts/prewarm_tiles.py \
+     --dataset runtime/tsa46_full/matrix \
+     --runs runtime/tsa46_full/runs \
+     --geometry runtime/tsa46_full/fragments.geojson \
+     --geometry-overview runtime/tsa46_full/fragments.geojson \
+     --tile-cache runtime/tsa46_full/tile-cache \
+     --bbox=634372,684898,1029161,1222796 \
+     --zooms 0-7 --layers blocks,treatments,cumulative \
+     --period-width 10 --horizon 100
+
+The report names tiles requested, failures, bytes, seconds, and the durable-cache
+header counts. The command opens the app in-process with the same cache directory,
+so the service then serves the warm tiles from disk.
+
+The path-prefix check mounts the service at ``/ws4`` and requests the shell, its
+static assets, the API summary, a viewport map, and an MVT tile through the prefix:
+
+.. code-block:: bash
+
+   python scripts/check_map_proxy.py \
+     --dataset runtime/tsa46_full/matrix \
+     --runs runtime/tsa46_full/runs \
+     --geometry runtime/tsa46_full/fragments.geojson \
+     --prefix /ws4
+
+It also asserts that the shell and script use relative URLs, which is what makes a
+path prefix work without a rewrite rule.
+
 The browser path has an opt-in smoke:
 
 .. code-block:: bash
@@ -224,8 +259,10 @@ The scale gate builds a synthetic point grid and times the tile path:
    python scripts/benchmark_map_scale.py --fragments 1000000 --check
 
 The check fails when a zoom-0 or zoom-12 tile is over 2 MB, the cold request is over 120 seconds,
-or the warm request is over 5 seconds. On 2026-10-24, 1,000,000 fragments produced a 130 KB zoom-0
-tile in 29.3 seconds cold and 0.018 seconds warm, and a 2.8 KB zoom-12 tile in 0.038 seconds.
+the warm request is over 5 seconds, or peak RSS is over 4096 MiB. On 2026-10-24, 1,000,000 fragments
+produced a 130 KB zoom-0 tile in 25.19 seconds cold and 0.018 seconds warm, a 2.8 KB zoom-12 tile in
+0.034 seconds, and a peak RSS of 1,734.6 MiB. The bare block layer is sampled to at most 5,000
+features below zoom 6, which is what keeps the zoom-0 tile bounded.
 
 Geometry
 --------

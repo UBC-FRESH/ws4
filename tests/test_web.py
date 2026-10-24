@@ -1047,3 +1047,14 @@ def test_the_tile_cache_writes_and_reuses_a_disk_tile(tmp_path: Path) -> None:
     third = fresh.get("/api/runs/run1/tiles/0/0/0.mvt", params=params)
     assert third.headers["x-ws4-tile-cache"] == "disk"
     assert third.content == first.content
+
+
+def test_low_zoom_blocks_are_sampled_but_detail_is_not() -> None:
+    """The bare block tile samples at low zoom; other layers and detail zooms do not."""
+    from ws4.web.app import _sample_low_zoom
+
+    sampled = _sample_low_zoom(list(range(20_000)), "blocks", 5)
+    assert len(sampled) <= 5_000
+    assert sampled[0] == 0
+    assert _sample_low_zoom(list(range(10)), "blocks", 6) == list(range(10))
+    assert _sample_low_zoom(list(range(10)), "treatments", 5) == list(range(10))
