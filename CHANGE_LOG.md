@@ -2432,3 +2432,9 @@ issue comments.
   `GET /api/search/{name}/status`, and open the finished artifact. The endpoint composes the existing
   `scripts/portfolio.py` and `scripts/tune.py` with the configured dataset and targets; the tuner
   space is written beside the output. Shell assets move to `v64`. Dashboard **GREEN**.
+
+- P35.1: reconciled the P30-P34 planning surfaces. P34 was reopened because P34.2 is
+  still planned; P34.2 #272 is now a linked child. P30/P31/P33/P34 issue bodies were
+  expanded to the phase/task templates and closed tasks carry completion metadata.
+  Added P31 and P33 close-out reports, updated the P30 report to merged, and set P33
+  complete. Dashboard **GREEN**.

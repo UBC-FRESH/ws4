@@ -44,8 +44,9 @@ exists and the maintainer approves it.
 | P30 Live run surfaces | #242 | `feature/p30-live-surfaces` | complete |
 | P31 Comparison map over MVT | #257 | `feature/p31-compare-map` | complete |
 | P32 Dataset provenance and limitations | #249 | `feature/p32-provenance` | pr-open |
-| P33 Search artifact browser | #261 | `feature/p33-search-ui` | active |
+| P33 Search artifact browser | #261 | `feature/p33-search-ui` | complete |
 | P34 Search launcher | #265 | `feature/p34-search-launch` | active |
+| P35 Workflow conformance | #273 | `feature/p35-conformance` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1121,7 +1122,7 @@ Acceptance:
 
 Parent issue: #261
 Branch: `feature/p33-search-ui`
-Status: active
+Status: complete
 
 Goal: give the portfolio, tuner, and LP artifacts a read-only browser surface over the
 runs root.
@@ -1159,6 +1160,31 @@ Acceptance:
 - A launcher writes a directory under the runs root and returns its id.
 - Status reports running, done, or failed.
 - A finished job opens in the artifact table.
+- `python scripts/dashboard.py` is green.
+
+## Phase 35: Workflow conformance
+
+Parent issue: #273
+Branch: `feature/p35-conformance`
+Status: active
+
+Goal: reconcile the P30-P34 planning surfaces after the UI work: exact issue templates,
+one parent per phase, one child per task, close-out reports for completed phases, and
+consistent roadmap/changelog statuses.
+
+- [ ] P35.1 Reconcile the P30-P34 planning surfaces (#274)
+  - [ ] Audit and reformat the affected parent and task issues
+  - [ ] Reopen P34 and add P34.2 as a child
+  - [ ] Write P31 and P33 close-out reports
+  - [ ] Sync roadmap and changelog
+  - [ ] Run the dashboard and read back the planning surfaces
+
+Acceptance:
+
+- The affected issues match the phase/task templates.
+- P34 is active with P34.2 planned and linked.
+- P31 and P33 have reports; P30's report reflects its merge.
+- The roadmap/changelog statuses agree with merged state.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes

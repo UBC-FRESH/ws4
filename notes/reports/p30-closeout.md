@@ -2,16 +2,15 @@
 
 Phase: P30, Live run surfaces
 Parent issue: #242
-Pull requests: #246 (P30.1-P30.2), #253 (P30.3), #256 (P30.4)
+Pull requests: #246 (P30.1-P30.2), #253 (P30.3), #256 (P30.4); final merge `0e2d956`
 Evidence head: `d7d949c`
 Report commit: the commit that adds this report.
 Date: 2026-10-25
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-25; parent issue #242 closed.
 
 ## Recommendation
 
-1. Squash-merge pull request #256, and delete the branch `feature/p30-live-surfaces`.
-2. Close task issue #255 and parent issue #242 with closeout comments that cite the merge commit.
+Completed: pull request #256 merged as `0e2d956`; task #255 and parent #242 closed.
 
 Settings changes: none. This phase changes no repository setting, tag, release, or external account.
 
