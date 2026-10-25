@@ -13,6 +13,7 @@ import tempfile
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any  # geopandas objects are untyped in the consumer adapter
 
 from ws4.model.schema import load_manifest
 
@@ -298,6 +299,11 @@ def summarize_femic_lidar_for_polygons(
                     stats[stat] = float(np.min(values))
                 elif stat == "max":
                     stats[stat] = float(np.max(values))
+                elif stat == "p90":
+                    stats[stat] = float(np.percentile(values, 90))
+                elif stat.startswith("cover_ge_"):
+                    threshold = float(stat.removeprefix("cover_ge_"))
+                    stats[stat] = float(np.mean(values >= threshold) * 100.0)
                 else:
                     raise FemicLidarError(f"Unsupported summary statistic {stat!r}.")
             polygon_id = str(row[id_field]) if id_field is not None else str(index)
@@ -717,3 +723,328 @@ def _id_text(value: object) -> str:
 def _valid_pixels(row: dict[str, object], product: str) -> int:
     value = row.get(f"{product}_valid_pixels")
     return value if isinstance(value, int) else 0
+
+
+@dataclass(frozen=True)
+class CanopyMappingResult:
+    """Canopy and optional tree/VRI mapping for WS4 support."""
+
+    bundle_id: str
+    bundle_version: str
+    manifest_sha256: str
+    crs: str
+    resolution_m: float | None
+    fragments: tuple[dict[str, object], ...]
+    blocks: tuple[dict[str, object], ...]
+    vri_summary: dict[str, object] | None
+    tree_summary: dict[str, object] | None
+    aggregation_rules: dict[str, str]
+    caveats: tuple[str, ...]
+    generated_utc: str
+    warnings: tuple[str, ...] = ()
+
+    def to_dict(self) -> dict[str, object]:
+        """Return the canopy mapping as a JSON-serializable mapping."""
+        return {
+            "bundle_id": self.bundle_id,
+            "bundle_version": self.bundle_version,
+            "manifest_sha256": self.manifest_sha256,
+            "crs": self.crs,
+            "resolution_m": self.resolution_m,
+            "aggregation_rules": self.aggregation_rules,
+            "caveats": list(self.caveats),
+            "fragment_count": len(self.fragments),
+            "block_count": len(self.blocks),
+            "vri_summary": self.vri_summary,
+            "tree_summary": self.tree_summary,
+            "generated_utc": self.generated_utc,
+            "warnings": list(self.warnings),
+            "fragments": list(self.fragments),
+            "blocks": list(self.blocks),
+        }
+
+
+def map_femic_canopy_to_fragments(
+    bundle: FemicLidarBundle,
+    fragments_path: Path,
+    *,
+    vri_path: Path | None = None,
+    vri_height_field: str = "proj_height_1",
+    vri_cover_field: str | None = "crown_closure",
+    tree_product: str | None = None,
+    tree_height_field: str = "height_m",
+    tree_species_field: str | None = "species",
+    id_field: str = "fragment_id",
+    block_field: str = "block_id",
+    area_field: str = "area_ha",
+    generated_utc: str | None = None,
+) -> CanopyMappingResult:
+    """Map CHM/canopy metrics, VRI uncertainty, and optional tree summaries."""
+    try:
+        import geopandas as gpd
+    except ImportError as exc:  # pragma: no cover - dependency boundary
+        raise FemicLidarError("Canopy mapping requires `ws4[lidar]`.") from exc
+    if "chm" not in bundle.products:
+        raise FemicLidarError("Bundle does not contain product 'chm'.")
+    base = map_femic_lidar_to_fragments(
+        bundle,
+        fragments_path,
+        products=("chm",),
+        statistics=("mean", "p90", "p95", "max", "cover_ge_2", "cover_ge_5", "cover_ge_10"),
+        id_field=id_field,
+        block_field=block_field,
+        area_field=area_field,
+        generated_utc=generated_utc,
+    )
+    frame = gpd.read_file(fragments_path)
+    fragments = [dict(row) for row in base.fragments]
+    blocks = [dict(row) for row in base.blocks]
+    warnings = list(base.warnings)
+    vri_summary: dict[str, object] | None = None
+    if vri_path is not None:
+        vri_frame = gpd.read_file(vri_path)
+        if vri_frame.crs is None or frame.crs is None:
+            raise FemicLidarError("VRI and fragment layers must both have a CRS.")
+        if vri_frame.crs.to_string() != frame.crs.to_string():
+            raise FemicLidarError("VRI CRS does not match fragment CRS.")
+        if vri_height_field not in vri_frame.columns:
+            raise FemicLidarError(f"VRI is missing height field {vri_height_field!r}.")
+        if vri_cover_field is not None and vri_cover_field not in vri_frame.columns:
+            raise FemicLidarError(f"VRI is missing cover field {vri_cover_field!r}.")
+        fragment_vri = _vri_support_values(
+            frame[[id_field, "geometry"]],
+            id_field,
+            vri_frame,
+            vri_height_field,
+            vri_cover_field,
+        )
+        block_frame = frame[[block_field, "geometry"]].dissolve(by=block_field, as_index=False)
+        block_vri = _vri_support_values(
+            block_frame,
+            block_field,
+            vri_frame,
+            vri_height_field,
+            vri_cover_field,
+        )
+        _apply_vri_rows(fragments, id_field, fragment_vri)
+        _apply_vri_rows(blocks, block_field, block_vri)
+        vri_summary = _vri_summary(fragments)
+    tree_summary: dict[str, object] | None = None
+    if tree_product is not None:
+        if tree_product not in bundle.products:
+            raise FemicLidarError(f"Bundle does not contain product {tree_product!r}.")
+        tree_path = bundle.bundle_dir / bundle.products[tree_product].relative_path
+        tree_frame = gpd.read_file(tree_path)
+        if tree_frame.crs is None:
+            raise FemicLidarError("Tree product has no CRS.")
+        if tree_frame.crs.to_string() != frame.crs.to_string():
+            raise FemicLidarError("Tree product CRS does not match fragment CRS.")
+        tree_fragment = _tree_support_values(
+            frame[[id_field, "geometry"]],
+            id_field,
+            tree_frame,
+            tree_height_field,
+            tree_species_field,
+        )
+        block_frame = frame[[block_field, "geometry"]].dissolve(by=block_field, as_index=False)
+        tree_block = _tree_support_values(
+            block_frame,
+            block_field,
+            tree_frame,
+            tree_height_field,
+            tree_species_field,
+        )
+        _apply_tree_rows(fragments, id_field, tree_fragment)
+        _apply_tree_rows(blocks, block_field, tree_block)
+        supports_with_trees = 0
+        for row in fragments:
+            count = row.get("tree_count")
+            if isinstance(count, int) and count > 0:
+                supports_with_trees += 1
+        tree_summary = {
+            "tree_count": len(tree_frame),
+            "supports_with_trees": supports_with_trees,
+            "height_field": tree_height_field,
+            "species_field": tree_species_field,
+        }
+    result = CanopyMappingResult(
+        bundle_id=base.bundle_id,
+        bundle_version=base.bundle_version,
+        manifest_sha256=base.manifest_sha256,
+        crs=base.crs,
+        resolution_m=base.resolution_m,
+        fragments=tuple(fragments),
+        blocks=tuple(blocks),
+        vri_summary=vri_summary,
+        tree_summary=tree_summary,
+        aggregation_rules={
+            "fragments": "zonal CHM statistics over each fragment polygon",
+            "blocks": "zonal CHM statistics over the dissolved block geometry",
+            "vri": "area-weighted VRI overlap per support",
+            "trees": "tree points joined within each support",
+            "resolution": "native CHM resolution; no resampling",
+            "crs": "product CRS; no reprojection",
+        },
+        caveats=(
+            "CHM height is DSM minus DEM on native grids.",
+            "CHM cover at >=2 m is not VRI crown-closure equivalence.",
+            "VRI comparison is uncertainty evidence, not field accuracy.",
+            "Individual-tree summaries are optional and source-dependent.",
+        ),
+        generated_utc=generated_utc or datetime.now(UTC).isoformat(),
+        warnings=tuple(warnings),
+    )
+    return result
+
+
+def write_canopy_mapping(result: CanopyMappingResult, output_dir: Path) -> dict[str, Path]:
+    """Write canopy fragment/block CSVs and provenance manifest."""
+    try:
+        import pandas as pd
+    except ImportError as exc:  # pragma: no cover - dependency boundary
+        raise FemicLidarError("Writing canopy mapping requires pandas.") from exc
+    root = output_dir.expanduser().resolve()
+    root.mkdir(parents=True, exist_ok=True)
+    fragment_path = root / "canopy_fragments.csv"
+    block_path = root / "canopy_blocks.csv"
+    manifest_path = root / "canopy_mapping_manifest.json"
+    pd.DataFrame(result.fragments).to_csv(fragment_path, index=False)
+    pd.DataFrame(result.blocks).to_csv(block_path, index=False)
+    manifest_path.write_text(
+        json.dumps(result.to_dict(), indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return {
+        "fragments": fragment_path,
+        "blocks": block_path,
+        "manifest": manifest_path,
+    }
+
+
+def _vri_support_values(
+    support: Any,  # noqa: ANN401 - geopandas frame
+    id_field: str,
+    vri: Any,  # noqa: ANN401 - geopandas frame
+    height_field: str,
+    cover_field: str | None,
+) -> dict[str, tuple[float | None, float | None, float]]:
+    import geopandas as gpd
+
+    left = support[[id_field, "geometry"]].copy()
+    right = vri[[height_field, "geometry"]].copy()
+    if cover_field is not None:
+        right[cover_field] = vri[cover_field]
+    intersection = gpd.overlay(left, right, how="intersection", keep_geom_type=False)
+    if intersection.empty:
+        return {}
+    intersection["_area"] = intersection.geometry.area
+    values: dict[str, tuple[float | None, float | None, float]] = {}
+    for support_id, group in intersection.groupby(id_field):
+        area = float(group["_area"].sum())
+        if area <= 0:
+            continue
+        height = float((group[height_field] * group["_area"]).sum() / area)
+        cover = (
+            float((group[cover_field] * group["_area"]).sum() / area)
+            if cover_field is not None
+            else None
+        )
+        values[_id_text(support_id)] = (height, cover, area)
+    return values
+
+
+def _apply_vri_rows(
+    rows: list[dict[str, object]],
+    id_field: str,
+    values: dict[str, tuple[float | None, float | None, float]],
+) -> None:
+    for row in rows:
+        value = values.get(_id_text(row[id_field]))
+        if value is None:
+            row["vri_height_m"] = None
+            row["vri_cover_pct"] = None
+            row["chm_p95_minus_vri_height_m"] = None
+            row["chm_cover_ge_2_minus_vri_cover_pct"] = None
+            continue
+        height, cover, _ = value
+        row["vri_height_m"] = height
+        row["vri_cover_pct"] = cover
+        chm_height = _float_or_none(row.get("chm_p95"))
+        chm_cover = _float_or_none(row.get("chm_cover_ge_2"))
+        row["chm_p95_minus_vri_height_m"] = (
+            chm_height - height if chm_height is not None and height is not None else None
+        )
+        row["chm_cover_ge_2_minus_vri_cover_pct"] = (
+            chm_cover - cover if chm_cover is not None and cover is not None else None
+        )
+
+
+def _vri_summary(rows: list[dict[str, object]]) -> dict[str, object]:
+    height_deltas = [_float_or_none(row.get("chm_p95_minus_vri_height_m")) for row in rows]
+    cover_deltas = [_float_or_none(row.get("chm_cover_ge_2_minus_vri_cover_pct")) for row in rows]
+    height_values = [value for value in height_deltas if value is not None]
+    cover_values = [value for value in cover_deltas if value is not None]
+    return {
+        "matched_supports": len(height_values),
+        "height_bias_m": _mean(height_values),
+        "height_mae_m": _mean([abs(value) for value in height_values]),
+        "cover_bias_pct": _mean(cover_values),
+        "cover_mae_pct": _mean([abs(value) for value in cover_values]),
+    }
+
+
+def _tree_support_values(
+    support: Any,  # noqa: ANN401 - geopandas frame
+    id_field: str,
+    trees: Any,  # noqa: ANN401 - geopandas frame
+    height_field: str,
+    species_field: str | None,
+) -> dict[str, dict[str, object]]:
+    import geopandas as gpd
+    import numpy as np
+
+    left = support[[id_field, "geometry"]].copy()
+    joined = gpd.sjoin(trees, left, how="inner", predicate="within")
+    values: dict[str, dict[str, object]] = {}
+    for support_id, group in joined.groupby(id_field):
+        heights = np.asarray(group[height_field], dtype=float)
+        heights = heights[np.isfinite(heights)]
+        species: dict[str, int] = {}
+        if species_field is not None and species_field in group.columns:
+            species = {
+                str(key): int(value)
+                for key, value in group[species_field].fillna("unknown").value_counts().items()
+            }
+        values[_id_text(support_id)] = {
+            "tree_count": len(group),
+            "tree_height_mean_m": float(np.mean(heights)) if heights.size else None,
+            "tree_height_p95_m": float(np.percentile(heights, 95)) if heights.size else None,
+            "tree_species_counts": species,
+        }
+    return values
+
+
+def _apply_tree_rows(
+    rows: list[dict[str, object]],
+    id_field: str,
+    values: dict[str, dict[str, object]],
+) -> None:
+    for row in rows:
+        value = values.get(_id_text(row[id_field]))
+        if value is None:
+            row["tree_count"] = 0
+            row["tree_height_mean_m"] = None
+            row["tree_height_p95_m"] = None
+            row["tree_species_counts"] = {}
+            continue
+        row.update(value)
+
+
+def _float_or_none(value: object) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    return float(value)
+
+
+def _mean(values: list[float]) -> float | None:
+    return float(sum(values) / len(values)) if values else None

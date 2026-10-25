@@ -16,10 +16,12 @@ from .build.legacy import ingest_legacy_matrix
 from .io.lidar import (
     FemicLidarError,
     load_registered_femic_lidar_bundle,
+    map_femic_canopy_to_fragments,
     map_femic_lidar_to_fragments,
     read_registered_femic_lidar,
     register_femic_lidar_bundle,
     validate_registered_femic_lidar,
+    write_canopy_mapping,
     write_lidar_mapping,
 )
 from .model.schema import validate_dataset
@@ -888,6 +890,54 @@ def lidar_map(
         raise typer.Exit(code=1) from error
     print(f"fragments: {len(result.fragments)}")
     print(f"blocks: {len(result.blocks)}")
+    print(f"fragments_csv: {paths['fragments']}")
+    print(f"blocks_csv: {paths['blocks']}")
+    print(f"manifest: {paths['manifest']}")
+
+
+@lidar_app.command("canopy")
+def lidar_canopy(
+    dataset: Path = typer.Option(..., "--dataset", exists=True, file_okay=False),
+    fragments: Path = typer.Option(..., "--fragments", exists=True),
+    out: Path = typer.Option(..., "--out", help="Canopy mapping output directory"),
+    vri: Path | None = typer.Option(None, "--vri", help="Optional VRI layer"),
+    vri_height_field: str = typer.Option("proj_height_1", "--vri-height-field"),
+    vri_cover_field: str = typer.Option("crown_closure", "--vri-cover-field"),
+    tree_product: str | None = typer.Option(
+        None, "--tree-product", help="Optional individual-tree bundle product name"
+    ),
+    tree_height_field: str = typer.Option("height_m", "--tree-height-field"),
+    tree_species_field: str = typer.Option("species", "--tree-species-field"),
+    fragment_id_field: str = typer.Option("fragment_id", "--fragment-id-field"),
+    block_id_field: str = typer.Option("block_id", "--block-id-field"),
+    area_field: str = typer.Option("area_ha", "--area-field"),
+) -> None:
+    """Map CHM/canopy metrics, VRI uncertainty, and optional trees to WS4 support."""
+    try:
+        bundle = load_registered_femic_lidar_bundle(dataset)
+        result = map_femic_canopy_to_fragments(
+            bundle,
+            fragments,
+            vri_path=vri,
+            vri_height_field=vri_height_field,
+            vri_cover_field=vri_cover_field,
+            tree_product=tree_product,
+            tree_height_field=tree_height_field,
+            tree_species_field=tree_species_field,
+            id_field=fragment_id_field,
+            block_field=block_id_field,
+            area_field=area_field,
+        )
+        paths = write_canopy_mapping(result, out)
+    except FemicLidarError as error:
+        print(f"[bold red]LidarBC canopy mapping failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    print(f"fragments: {len(result.fragments)}")
+    print(f"blocks: {len(result.blocks)}")
+    if result.vri_summary is not None:
+        print(f"vri_matched_supports: {result.vri_summary['matched_supports']}")
+    if result.tree_summary is not None:
+        print(f"trees: {result.tree_summary['tree_count']}")
     print(f"fragments_csv: {paths['fragments']}")
     print(f"blocks_csv: {paths['blocks']}")
     print(f"manifest: {paths['manifest']}")

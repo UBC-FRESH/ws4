@@ -1689,6 +1689,12 @@ reimplementing discovery or materialization.
   - [x] Map slope/CHM to dissolved block support
   - [x] Record bundle pin, checksums, CRS, resolution, and aggregation rules
   - [x] Add mapping fixtures and CRS/product failure tests
+- [x] P52.4 Integrate FEMIC canopy and precision-forestry metrics into WS4 (#321)
+  - [x] Map CHM height/cover/structure to fragment and block support
+  - [x] Add optional VRI uncertainty comparison
+  - [x] Add optional individual-tree summaries
+  - [x] Record lineage, units, support, and caveats
+  - [x] Add canopy/VRI/tree fixtures and CLI
 
 Acceptance:
 

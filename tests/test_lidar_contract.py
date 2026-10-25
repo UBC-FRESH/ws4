@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 import rasterio
 from rasterio.transform import from_origin
-from shapely.geometry import box
+from shapely.geometry import Point, box
 from typer.testing import CliRunner
 from ws4.cli import app
 from ws4.io.lidar import (
@@ -17,12 +17,14 @@ from ws4.io.lidar import (
     bundle_pin,
     load_femic_lidar_bundle,
     load_registered_femic_lidar_bundle,
+    map_femic_canopy_to_fragments,
     map_femic_lidar_to_fragments,
     read_registered_femic_lidar,
     register_femic_lidar_bundle,
     summarize_femic_lidar_for_polygons,
     validate_femic_lidar_bundle,
     validate_registered_femic_lidar,
+    write_canopy_mapping,
     write_lidar_mapping,
 )
 from ws4.model.types import CanonicalDatasetManifest
@@ -65,6 +67,17 @@ def _bundle(tmp_path: Path) -> Path:
         nodata=-9999.0,
     ) as dataset:
         dataset.write(np.arange(1.0, 10.0).reshape(3, 3), 1)
+    tree_path = products / "individual_tree__03__trees.geojson"
+    trees = gpd.GeoDataFrame(
+        {
+            "tree_id": ["t1", "t2", "t3"],
+            "height_m": [10.0, 12.0, 14.0],
+            "species": ["HW", "CW", "HW"],
+        },
+        geometry=[Point(0.5, 0.5), Point(2.5, 1.5), Point(3.5, 1.5)],
+        crs="EPSG:3005",
+    )
+    trees.to_file(tree_path, driver="GeoJSON")
     manifest = {
         "schema_version": "femic.lidar.product.v1",
         "layout_version": "femic.lidar.bundle.v1",
@@ -82,8 +95,10 @@ def _bundle(tmp_path: Path) -> Path:
         },
         "processing": {"version": "test"},
         "summary": {
-            "product_count": 2,
-            "total_bytes": raster_path.stat().st_size + chm_path.stat().st_size,
+            "product_count": 3,
+            "total_bytes": (
+                raster_path.stat().st_size + chm_path.stat().st_size + tree_path.stat().st_size
+            ),
         },
         "products": [
             {
@@ -110,6 +125,19 @@ def _bundle(tmp_path: Path) -> Path:
                 "licence_id": "OGL-BC",
                 "source_tile_ids": ["lidarbc:5:1"],
                 "derived": True,
+                "lineage": ["test"],
+            },
+            {
+                "product": "individual_tree",
+                "relative_path": "products/individual_tree__03__trees.geojson",
+                "sha256": _sha256(tree_path),
+                "size_bytes": tree_path.stat().st_size,
+                "crs": "EPSG:3005",
+                "resolution_m": None,
+                "vertical_datum": "CGVD2013",
+                "licence_id": "OGL-BC",
+                "source_tile_ids": ["lidarbc:5:1"],
+                "derived": False,
                 "lineage": ["test"],
             },
         ],
@@ -372,3 +400,106 @@ def test_lidar_cli_map(tmp_path: Path) -> None:
     assert "fragments: 3" in result.output
     assert (out / "lidar_fragments.csv").is_file()
     assert (out / "lidar_blocks.csv").is_file()
+
+
+def _vri(tmp_path: Path) -> Path:
+    frame = gpd.GeoDataFrame(
+        {
+            "feature_id": [1],
+            "proj_height_1": [8.0],
+            "crown_closure": [80.0],
+        },
+        geometry=[box(0, 0, 4, 3)],
+        crs="EPSG:3005",
+    )
+    path = tmp_path / "vri.geojson"
+    frame.to_file(path, driver="GeoJSON")
+    return path
+
+
+def test_map_canopy_vri_and_trees(tmp_path: Path) -> None:
+    bundle_dir = _bundle(tmp_path)
+    dataset = _dataset(tmp_path)
+    register_femic_lidar_bundle(dataset, bundle_dir)
+    fragments = _fragments(tmp_path)
+    vri = _vri(tmp_path)
+    bundle = load_registered_femic_lidar_bundle(dataset)
+
+    result = map_femic_canopy_to_fragments(
+        bundle,
+        fragments,
+        vri_path=vri,
+        tree_product="individual_tree",
+        generated_utc="2026-10-25T00:00:00+00:00",
+    )
+
+    assert len(result.fragments) == 3
+    assert len(result.blocks) == 2
+    first = result.fragments[0]
+    assert first["chm_mean"] == pytest.approx(4.5)
+    assert first["chm_cover_ge_2"] == pytest.approx(83.3333333)
+    assert first["vri_height_m"] == pytest.approx(8.0)
+    assert first["vri_cover_pct"] == pytest.approx(80.0)
+    assert first["tree_count"] == 1
+    assert first["tree_height_mean_m"] == pytest.approx(10.0)
+    assert result.vri_summary is not None
+    assert result.vri_summary["matched_supports"] == 2
+    assert result.tree_summary is not None
+    assert result.tree_summary["tree_count"] == 3
+    assert result.tree_summary["supports_with_trees"] == 3
+    assert result.caveats
+
+    paths = write_canopy_mapping(result, tmp_path / "canopy")
+    assert paths["fragments"].is_file()
+    assert paths["blocks"].is_file()
+    assert paths["manifest"].is_file()
+    payload = json.loads(paths["manifest"].read_text())
+    assert payload["vri_summary"]["matched_supports"] == 2
+    assert payload["tree_summary"]["tree_count"] == 3
+
+
+def test_canopy_mapping_rejects_vri_crs(tmp_path: Path) -> None:
+    bundle_dir = _bundle(tmp_path)
+    dataset = _dataset(tmp_path)
+    register_femic_lidar_bundle(dataset, bundle_dir)
+    fragments = _fragments(tmp_path)
+    vri = gpd.read_file(_vri(tmp_path)).to_crs("EPSG:4326")
+    wrong = tmp_path / "vri_wrong.geojson"
+    vri.to_file(wrong, driver="GeoJSON")
+    bundle = load_registered_femic_lidar_bundle(dataset)
+
+    with pytest.raises(FemicLidarError, match="VRI CRS"):
+        map_femic_canopy_to_fragments(bundle, fragments, vri_path=wrong)
+
+
+def test_lidar_cli_canopy_map(tmp_path: Path) -> None:
+    bundle_dir = _bundle(tmp_path)
+    dataset = _dataset(tmp_path)
+    register_femic_lidar_bundle(dataset, bundle_dir)
+    fragments = _fragments(tmp_path)
+    vri = _vri(tmp_path)
+    out = tmp_path / "canopy"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "lidar",
+            "canopy",
+            "--dataset",
+            str(dataset),
+            "--fragments",
+            str(fragments),
+            "--vri",
+            str(vri),
+            "--tree-product",
+            "individual_tree",
+            "--out",
+            str(out),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "vri_matched_supports: 2" in result.output
+    assert "trees: 3" in result.output
+    assert (out / "canopy_fragments.csv").is_file()
+    assert (out / "canopy_mapping_manifest.json").is_file()

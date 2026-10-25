@@ -2559,3 +2559,5 @@ issue comments.
 - P52.2: added dataset-level FEMIC LidarBC registration. The pin is written to `manifest.json` metadata and `lidar_products.json`; `ws4 lidar register|inspect|validate` and `ws4 build --lidar-bundle` support the operator workflow. Failure fixtures cover missing datasets, wrong pins, and tampered bundles.
 
 - P52.3: added `map_femic_lidar_to_fragments` and `write_lidar_mapping`. Fragment support uses each fragment polygon; block support uses the dissolved block geometry. Outputs include fragment/block CSVs and a manifest with the bundle pin, checksums, CRS, native resolution, statistics, and aggregation rules. Added `ws4 lidar map` and coverage for missing products and CRS mismatch.
+
+- P52.4: added `map_femic_canopy_to_fragments` and `write_canopy_mapping`. CHM mean/p90/p95/max and 2/5/10 m cover map to fragment and dissolved-block support; optional VRI overlap adds area-weighted height/closure and uncertainty deltas; optional bundle tree products add tree counts, height mean/p95, and species counts. Added `ws4 lidar canopy` and tests for VRI/tree mapping and CRS failure.

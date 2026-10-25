@@ -61,6 +61,15 @@ statistics `mean`/`p95`. `write_lidar_mapping` writes fragment/block CSVs plus a
 manifest carrying the bundle pin, product checksums, CRS, resolution, and the
 aggregation rules. No resampling or reprojection is performed.
 
+## Canopy And Precision Forestry
+
+`map_femic_canopy_to_fragments` maps CHM mean/p90/p95/max and cover at
+2/5/10 m to fragment and dissolved-block support. Optional VRI overlap adds
+area-weighted height/closure, CHM-minus-VRI deltas, and uncertainty summaries.
+Optional bundle tree products add tree counts, height mean/p95, and species
+counts. `write_canopy_mapping` writes CSVs plus a manifest with provenance,
+aggregation rules, uncertainty, and caveats.
+
 ## Shared Parity
 
 Validated against FEMIC bundle `lidarbc-995fb1f771f4d7fe`

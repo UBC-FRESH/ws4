@@ -100,6 +100,30 @@ The output includes ``lidar_fragments.csv``, ``lidar_blocks.csv``, and
 checksums, CRS, native resolution, statistics, and explicit aggregation rules.
 No resampling or reprojection is performed.
 
+Canopy And Precision Forestry
+-----------------------------
+
+Map CHM height/cover and optional tree/VRI evidence:
+
+.. code-block:: bash
+
+   ws4 lidar canopy \
+     --dataset build/compiled \
+     --fragments data/fragments.gpkg \
+     --out build/canopy_mapping \
+     --vri data/vri.gpkg \
+     --tree-product individual_tree
+
+The mapping records CHM mean/p90/p95/max and cover at 2/5/10 m for fragments and
+dissolved blocks. With ``--vri`` it adds area-weighted VRI height/closure and
+CHM-minus-VRI deltas plus uncertainty summaries. With ``--tree-product`` it adds
+tree counts, height mean/p95, and species counts per support.
+
+The manifest records bundle provenance, checksums, CRS, native resolution,
+aggregation rules, VRI uncertainty, tree summary, and explicit caveats. CHM
+cover at >=2 m is not VRI crown-closure equivalence. No segmentation or raw
+point-cloud processing is implemented.
+
 Shared Parity
 -------------
 
