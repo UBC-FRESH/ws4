@@ -2466,3 +2466,8 @@ issue comments.
 
 - P34 close-out: pull request #286 squash-merged as `9cdae7`; parent #265 and task #272 closed.
   P34 status set complete.
+
+- P38.1: account leaves show the full name, the search box reports matched/total counts,
+  Enter selects the first match, and arrow keys move between leaves. Period labels are year
+  ranges and target rows say "Target period", separating the optimizer clock from the map
+  clock. Shell assets move to `v66`. Dashboard **GREEN**.
