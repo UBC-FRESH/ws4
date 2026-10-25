@@ -2405,3 +2405,9 @@ issue comments.
 - P30 close-out: live snapshots, the complete target editor, ending-inventory/flow surfaces, and
   legacy year/period handling are implemented, tested, documented, and queued in
   `notes/reports/p30-closeout.md` (PR #256, evidence head `d7d949c`). Dashboard **GREEN**.
+
+- P31.1: the Compare map now uses one MVT tile per viewport with a `compare` property (`a`, `b`,
+  `both`, or `none`) and `compare-stats` for full-run counts; it no longer fetches both full GeoJSON
+  viewports. The vector paint maps A-only red, B-only blue, both purple, and untreated blocks at low
+  opacity; block details use the tile's compare flag. Added backend tests for the counts and tile
+  flags. Shell assets move to `v61`. Dashboard **GREEN**.

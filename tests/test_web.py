@@ -1107,6 +1107,32 @@ def test_the_tile_endpoint_returns_mvt_features(tmp_path: Path) -> None:
     assert features[0]["properties"]["treated"] is True
 
 
+def test_compare_stats_and_tile_carry_the_ab_flag(tmp_path: Path) -> None:
+    """The compare tile marks A-only, B-only, and both blocks, and stats agree."""
+    import mapbox_vector_tile
+
+    client, _ = _app(tmp_path)
+    stats = client.get(
+        "/api/runs/run1/compare-stats",
+        params={"against": "run2", "year": 1, "period_start": 0},
+    ).json()
+    assert stats == {
+        "total_features": 2,
+        "a_only": 1,
+        "b_only": 0,
+        "both": 1,
+        "neither": 0,
+    }
+    response = client.get(
+        "/api/runs/run1/compare-tiles/0/0/0.mvt",
+        params={"against": "run2", "year": 1, "period_start": 0},
+    )
+    assert response.status_code == 200
+    decoded = mapbox_vector_tile.decode(response.content)
+    flags = {feature["properties"]["compare"] for feature in decoded["blocks"]["features"]}
+    assert flags == {"a", "both"}
+
+
 def test_the_tile_endpoint_keeps_only_the_tile_at_high_zoom(tmp_path: Path) -> None:
     """A high-zoom tile returns the blocks that intersect its own bounds."""
     import mapbox_vector_tile

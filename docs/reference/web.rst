@@ -97,6 +97,11 @@ Endpoints
      - The configured geometry's extent as ``[west, south, east, north]``, in the source CRS or
        WGS84. The MapLibre shell uses it to fit the view to the AOI even when the service has no
        land-base layer.
+   * - ``GET /api/runs/{run}/compare-stats?against=&year=&period_start=``
+     - The full-run A-only, B-only, both, and neither counts for two runs, without reading geometry.
+   * - ``GET /api/runs/{run}/compare-tiles/{z}/{x}/{y}.mvt?against=&year=&period_start=``
+     - One MVT tile whose ``compare`` property is ``a``, ``b``, ``both``, or ``none``. The Compare
+       map uses the same vector source and colors those flags directly.
    * - ``GET /api/runs/{run}/map-stats?year=&layer=&period_start=``
      - The full-run ``total_features``, ``total_treated``, and ``total_untreated`` for the layer,
        so a tiled viewport keeps the run's own counts.
@@ -345,15 +350,15 @@ does not list.
 Comparison
 ----------
 
-The **Compare** tab reads two completed runs through the existing reader endpoints:
-``/api/runs/{run}/map?year=``, ``/api/runs/{run}/accounts?year=`` and
-``/api/runs/{run}/targets``. At the selected year the map colors blocks treated only in A, only in
-B, and in both; the target table shows each target's kind, period value and status for both runs,
-the ending-inventory table compares the final feature values from each run's summary, and the account
-table lists the per-account delta ``B − A``, sorted by absolute change and filterable. The report
-tables appear before the map request finishes, so a large AOI does not hide them. The server computes
-nothing new: the target values use the same ``period_value`` rule, and a run with no values at the
-year is named rather than silently shown as zero everywhere.
+The **Compare** tab reads two completed runs through the existing reader endpoints and a
+compare-tile endpoint. At the selected year the map colors blocks treated only in A, only in B, and
+in both; the vector tile carries the flag in its ``compare`` property, and the full-run counts come
+from ``compare-stats``. The target table shows each target's kind, period value and status for both
+runs, the ending-inventory table compares the final feature values from each run's summary, and the
+account table lists the per-account delta ``B − A``, sorted by absolute change and filterable. The
+report tables appear before the map request finishes, so a large AOI does not hide them. The server
+computes nothing new: the target values use the same ``period_value`` rule, and a run with no values
+at the year is named rather than silently shown as zero everywhere.
 
 Chat agent
 ----------
