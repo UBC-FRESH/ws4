@@ -1194,12 +1194,12 @@ Goal: reconcile the P30-P34 planning surfaces after the UI work: exact issue tem
 one parent per phase, one child per task, close-out reports for completed phases, and
 consistent roadmap/changelog statuses.
 
-- [ ] P36.1 Reconcile the P30-P34 planning surfaces (#274)
-  - [ ] Audit and reformat the affected parent and task issues
-  - [ ] Reopen P34 and add P34.2 as a child
-  - [ ] Write P31 and P33 close-out reports
-  - [ ] Sync roadmap and changelog
-  - [ ] Run the dashboard and read back the planning surfaces
+- [x] P36.1 Reconcile the P30-P34 planning surfaces (#274)
+  - [x] Audit and reformat the affected parent and task issues
+  - [x] Reopen P34 and add P34.2 as a child
+  - [x] Write P31 and P33 close-out reports
+  - [x] Sync roadmap and changelog
+  - [x] Run the dashboard and read back the planning surfaces
 
 Acceptance:
 

@@ -3,7 +3,7 @@
 Phase: P36, Workflow conformance
 Parent issue: #273
 Pull request: #276
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-25 as `3c07917`.
 Date: 2026-10-25
 
 ## Recommendation
