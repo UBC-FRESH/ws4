@@ -233,3 +233,4 @@ path.block.compare-both { fill:#6b4c9a; }
 .search-run summary { cursor:pointer; color:var(--muted); font-size:.78rem; }
 .search-run textarea { font:inherit; font-size:.74rem; width:100%; min-width:18rem; }
 .search-run .run-row { align-items:flex-start; }
+#account-count { white-space:nowrap; font-size:.7rem; }

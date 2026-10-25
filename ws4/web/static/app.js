@@ -2170,6 +2170,7 @@ function renderAccountTree() {
   const accounts = [...state.series.keys()].sort((a, b) => a.localeCompare(b));
   const matched = query ? accounts.filter((account) => account.toLowerCase().includes(query)) : accounts;
   tree.replaceChildren();
+  $('account-count').textContent = `${matched.length} / ${accounts.length} accounts`;
   if (!matched.length) {
     const empty = document.createElement('p');
     empty.className = 'hint';
@@ -2207,7 +2208,7 @@ function renderAccountTree() {
       button.title = account;
       const name = document.createElement('span');
       name.className = 'name';
-      name.textContent = account.split('.').pop();
+      name.textContent = account;
       const kind = document.createElement('span');
       kind.className = 'kind';
       kind.textContent = accountKind(account);
@@ -3257,6 +3258,32 @@ function wireControls() {
   });
   $('save-targets').addEventListener('click', saveTargets);
   $('account-search').addEventListener('input', renderAccountTree);
+  $('account-search').addEventListener('keydown', (event) => {
+    const leaves = [...document.querySelectorAll('.account-leaf')];
+    if (!leaves.length) return;
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      leaves[0].click();
+    } else if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      leaves[0].focus();
+    }
+  });
+  $('account-tree').addEventListener('keydown', (event) => {
+    const leaves = [...document.querySelectorAll('.account-leaf')];
+    const index = leaves.indexOf(document.activeElement);
+    if (index < 0) return;
+    if (event.key === 'ArrowDown' && index + 1 < leaves.length) {
+      event.preventDefault();
+      leaves[index + 1].focus();
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      (leaves[index - 1] ?? $('account-search')).focus();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      $('account-search').focus();
+    }
+  });
   $('add-target').addEventListener('click', addTarget);
   $('build-report').addEventListener('click', buildReport);
   $('compare-a').addEventListener('change', loadComparison);

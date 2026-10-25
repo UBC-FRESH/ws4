@@ -575,7 +575,7 @@ def _run_periods(years: list[int], width: int) -> list[dict[str, object]]:
                 "index": index,
                 "start": year,
                 "end": year,
-                "label": f"Period {index + 1} · year {year}",
+                "label": f"Year {year}",
             }
             for index, year in enumerate(years)
         ]
@@ -589,7 +589,7 @@ def _run_periods(years: list[int], width: int) -> list[dict[str, object]]:
                 "index": index,
                 "start": start,
                 "end": end,
-                "label": f"Period {index + 1} · years {start}-{end}",
+                "label": f"Years {start}-{end}",
             }
         )
         start = end + 1

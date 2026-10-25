@@ -390,11 +390,15 @@ The Targets tab starts with every account the selected run reports in
 the search box filters the tree by substring, so a user can find an account without
 knowing its exact name. Each leaf shows the account's last realized value, whether
 the optimizer treats it as a **level** or a **flow** (a ``product.`` account is a
-flow), and a ``target`` badge when the account already appears in the targets file.
+flow), and a ``target`` badge when the account already appears in the targets file. The
+full account name is shown; the count beside the search box reports matches over the
+catalogue. Enter selects the first match, and the arrow keys move between leaves.
 
 Selecting a leaf opens a small form for a new target. **Period** is the accounting
 period (period 1 is the first one), **Width** is its length in years, and **Min** and
-**Max** are optional bounds; the form requires at least one bound. **Min w** and
+**Max** are optional bounds; the form requires at least one bound. The table's
+**Target period** column is the optimizer's one-based period; the map control labels its
+periods by year range, so the two clocks are not confused. **Min w** and
 **Max w** are the penalty weights. **Add target** validates the complete list through
 ``POST /api/targets.json``, writes the configured YAML, and refreshes the table. The
 form defaults the width to the width already used by the file, or ten years when the

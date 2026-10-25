@@ -2470,3 +2470,8 @@ issue comments.
   baseline-schedule, and simulate nodes, entry points, and command tests.
 - P38.3: both workflows resolve every node with zero provider diagnostics against the local
   FEMIC provider; instance dashboards are green. The full graph execution smoke remains P39.
+
+- P39.1: account leaves show the full name, the search box reports matched/total counts,
+  Enter selects the first match, and arrow keys move between leaves. Period labels are year
+  ranges and target rows say "Target period", separating the optimizer clock from the map
+  clock. Shell assets move to `v66`. Dashboard **GREEN**.

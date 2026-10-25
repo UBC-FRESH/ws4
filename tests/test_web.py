@@ -262,7 +262,7 @@ def test_periods_fold_years_by_the_target_period_width(tmp_path: Path) -> None:
     )
     body = client.get("/api/runs/run-long/periods").json()
     assert body["period_width"] == 10
-    assert body["periods"] == [{"index": 0, "start": 0, "end": 9, "label": "Period 1 · years 0-9"}]
+    assert body["periods"] == [{"index": 0, "start": 0, "end": 9, "label": "Years 0-9"}]
     # a period is a range: the map shows both treatments, not only the end year's
     features = client.get(
         "/api/runs/run-long/map",
