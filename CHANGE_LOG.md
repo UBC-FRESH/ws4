@@ -2561,3 +2561,9 @@ issue comments.
   incremental aggregate design, the fallback cases (delivery, planned-network opening, other
   route accounts), seven invariants, and the parity test plan. No incremental code landed.
   Dashboard **GREEN**.
+
+- P54 roadmap entry: added the Phase 54 parent (#375) for environmental accounts
+  (DHI, structure habitat, resilience metrics), with children #376-#378. The
+  phase excludes carbon, which is owned by P51 (#357). Branch
+  `feature/p54-environmental-accounts`; planning note
+  `notes/p54-environmental-accounts.md`. No model or objective change.
