@@ -53,6 +53,7 @@ exists and the maintainer approves it.
 | P40 Bounded provider workflow execution | #297 | `feature/p40-smoke` | complete |
 | P41 Provider smoke in CI | #303 | `feature/p41-ci-smoke` | complete |
 | P47 Model boundary record | #311 | `feature/p47-boundary` | complete |
+| P48 Ground-plot volume and DBH validation | #324 | `feature/p48-ground-plots` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
@@ -1370,6 +1371,27 @@ Acceptance:
 - Each docs site has a limitations page in the toctree.
 - The model-build and decisions pages link it.
 - Both instance dashboards are green.
+
+## Phase 48: Ground-plot volume and DBH validation
+
+Parent issue: #324
+Branch: `feature/p48-ground-plots`
+Status: complete
+
+Goal: reconcile the independent FAIB/Nemora ground plots against the production TSR-consistent
+curves, publish volume, DBH, height, and stems with sample sizes, and record a bounded decision.
+
+- [x] P48.1 Reconcile the plot set and provenance (#325)
+- [x] P48.2 Publish the stratified validation tables (#326)
+- [x] P48.3 Record the validation decision and close out (#327)
+
+Acceptance:
+
+- Both instances trace the plot source, matching rules, and sample sizes.
+- Volume, DBH, height, and stems are reported by species and age class where n permits.
+- The decision is explicit: retain production curves or adopt a justified alternative.
+- No curve or AAC change occurs without a separate ADR.
+- Both instance dashboards and the ws4 docs build are green.
 
 ## Detailed Next Steps Notes
 

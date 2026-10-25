@@ -2507,3 +2507,10 @@ issue comments.
 
 - P42 close-out: pull request #315 squash-merged as `cc59a0e`; parent #308 and tasks #309/#310
   closed. P42 status set complete.
+- P48.1/P48.2: both GBR instances reconcile the FAIB/Nemora sample, publish a stratified
+  ground-plot page with volume, DBH, height, and stems by sample type, species, and age class,
+  and add a reproducible summary script and CSV. TSA 46 has 20 matched rows from 17 sites; TSA 47
+  has 506 rows from 130 sites, including 480 VRI audits and 26 managed/young rows.
+- P48.3: ADR 0002 retains the production TSR-consistent BatchTIPSY curves. TSA 46 is too sparse
+  and too old for a correction; TSA 47 shows a real but confounded underprediction. No curve or
+  AAC change. The limitations pages and sidecars name the result.
