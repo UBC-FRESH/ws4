@@ -1100,7 +1100,7 @@ Acceptance:
 
 Parent issue: #249
 Branch: `feature/p32-provenance`
-Status: pr-open
+Status: complete
 
 Goal: turn the P26 data-quality block from `unknown` into a reviewable provenance record for the
 GBR instances: define a dataset provenance sidecar, expose it through `ws4 quality`, apply it to
