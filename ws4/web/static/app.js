@@ -1762,10 +1762,11 @@ function updateLiveTargets(values, iteration, series = []) {
   for (const [account, years] of liveSeries) state.series.set(account, years);
   let painted = 0;
   for (const item of values) {
-    const key = `${item.year}|${item.account}`;
+    const indexKey = String(item.index);
+    const valueKey = `${item.year}|${item.account}`;
     const value = Number(item.value);
-    if (state.watched.has(key)) { state.windowValues.set(key, value); painted += 1; }
-    const entry = state.targetCells.get(key);
+    if (state.watched.has(indexKey)) { state.windowValues.set(valueKey, value); painted += 1; }
+    const entry = state.targetCells.get(indexKey);
     if (entry) paintTarget(entry, value);
   }
   if (painted) renderWatchPanel();

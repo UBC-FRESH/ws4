@@ -8,12 +8,15 @@ core would take the same shape for WS3 or FHOPS (see
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
 from .operators import Candidates, OperatorRegistry, Schedule
 
 Evaluate = Callable[[Schedule], float]
+
+#: Called with a schedule and returns the realized account cells for a live snapshot.
+Snapshot = Callable[[Schedule], Mapping[tuple[int, str], float]]
 
 
 @dataclass
@@ -28,8 +31,12 @@ class Problem:
         The candidate moves per decision unit.
     registry : OperatorRegistry
         The neighbourhood operators.
+    snapshot : callable or None, optional
+        Return the realized account cells for a schedule, for a live map and target view. When
+        omitted, a solver that would otherwise emit a snapshot sends an empty mapping.
     """
 
     evaluate: Evaluate
     candidates: Candidates
     registry: OperatorRegistry
+    snapshot: Snapshot | None = None

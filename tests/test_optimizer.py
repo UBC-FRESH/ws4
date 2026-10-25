@@ -190,6 +190,31 @@ def test_the_solver_traces_the_current_objective_and_accepted_moves() -> None:
     assert all(accepted >= 0 for *_, accepted in traces)
 
 
+def test_whole_schedule_solver_emits_snapshots() -> None:
+    """Non-delta solvers emit realized cells for the live map and target cards."""
+    import random
+
+    snapshots: list[tuple[int, dict[tuple[int, str], float], dict[int, object]]] = []
+    problem = Problem(
+        evaluate=lambda schedule: 0.0,
+        candidates={},
+        registry=OperatorRegistry([ToggleOperator()]),
+        snapshot=lambda schedule: {(0, "feature.Volume"): 1.0},
+    )
+    solve_sa(
+        problem,
+        random.Random(1),
+        iterations=41,
+        temperature=1.0,
+        cooling=1.0,
+        on_snapshot=lambda iteration, totals, best: snapshots.append(
+            (iteration, dict(totals), dict(best))
+        ),
+    )
+    assert [iteration for iteration, _, _ in snapshots] == [0, 20, 40]
+    assert all(totals == {(0, "feature.Volume"): 1.0} for _, totals, _ in snapshots)
+
+
 def test_penalty_weights_shortfall_and_excess() -> None:
     """A value below the minimum or above the maximum is penalized."""
     target = Target(account="a", year=0, minimum=10.0, maximum=20.0, min_weight=2.0, max_weight=3.0)
