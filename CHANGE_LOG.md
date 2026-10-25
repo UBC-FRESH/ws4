@@ -2412,3 +2412,5 @@ issue comments.
   THLB, and explicit null imputation/coverage fields. Recorded in `notes/reference/gbr-provenance.md`.
 - P31.3: the limitations page now covers priority tiers, the bounded exact lane, dataset provenance,
   and the GBR VDYP/THLB caveats. Dashboard **GREEN**.
+- P31.1-P31.3 refresh: the example notebooks' stored summaries include `provenance_supplied`.
+  `python scripts/check_notebooks.py` reports 47 compared, 0 drifted.
