@@ -2438,3 +2438,6 @@ issue comments.
 - P35.2: both instance model-build docs link the ws4 limitations page and the VDYP/THLB caveats.
 - P35.3: both full build scripts copy the sidecar after `ws4 build` and fail on
   `ws4 quality --check`. Instance PRs #25/#26 merged.
+
+- P36.1: `ws4 quality --sidecar PATH` installs a tracked provenance record beside the matrix
+  and keeps the `--check` gate. Dashboard **GREEN**.
