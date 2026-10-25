@@ -46,7 +46,7 @@ exists and the maintainer approves it.
 | P32 Dataset provenance and limitations | #249 | `feature/p32-provenance` | complete |
 | P35 Instance provenance adoption | #267 | `feature/p35-provenance` | complete |
 | P36 Workflow conformance | #273 | `feature/p36-conformance` | pr-open |
-| P37 FreshForge provenance gate | #278 | `feature/p37-provenance-gate` | active |
+| P37 FreshForge provenance gate | #278 | `feature/p37-provenance-gate` | complete |
 | P33 Search artifact browser | #261 | `feature/p33-search-ui` | complete |
 | P34 Search launcher | #265 | `feature/p34-search-launch` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
@@ -1215,15 +1215,15 @@ Acceptance:
 
 Parent issue: #278
 Branch: `feature/p37-provenance-gate`
-Status: active
+Status: complete
 
 Goal: make the FreshForge lane enforce the P35 provenance gate: add `ws4 quality --sidecar`,
 add a `femic.ws4_quality` provider, and wire it into both GBR instance workflows after
 validation.
 
-- [ ] P37.1 Add `ws4 quality --sidecar` (#279)
-- [ ] P37.2 Add the `femic.ws4_quality` provider (#280)
-- [ ] P37.3 Wire both instance workflows and docs (#281)
+- [x] P37.1 Add `ws4 quality --sidecar` (#279)
+- [x] P37.2 Add the `femic.ws4_quality` provider (#280)
+- [x] P37.3 Wire both instance workflows and docs (#281)
 
 Acceptance:
 
