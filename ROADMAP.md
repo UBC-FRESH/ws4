@@ -61,7 +61,7 @@ exists and the maintainer approves it.
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
 | P44 Comparison and map operations | #341 | `feature/p44-compare-ops` | complete |
-| P45 Route evaluation performance | #368 | `feature/p45-route-profile` | pr-open |
+| P45 Route evaluation performance | #368 | `feature/p45-route-profile` | complete |
 | P52 Consume FEMIC-compiled LidarBC products | #317 | `feature/p52-lidar-products` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
@@ -1420,7 +1420,7 @@ Acceptance:
 
 Parent issue: #368
 Branch: `feature/p45-route-profile`
-Status: pr-open
+Status: complete
 
 Goal: measure the current route evaluation and specify an incremental ledger before
 changing optimizer accounting.
