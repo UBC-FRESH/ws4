@@ -48,7 +48,7 @@ exists and the maintainer approves it.
 | P36 Workflow conformance | #273 | `feature/p36-conformance` | complete |
 | P37 FreshForge provenance gate | #278 | `feature/p37-provenance-gate` | complete |
 | P33 Search artifact browser | #261 | `feature/p33-search-ui` | complete |
-| P34 Search launcher | #265 | `feature/p34-search-launch` | pr-open |
+| P34 Search launcher | #265 | `feature/p34-search-launch` | complete |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1146,7 +1146,7 @@ Acceptance:
 
 Parent issue: #265
 Branch: `feature/p34-search-launch`
-Status: pr-open
+Status: complete
 
 Goal: let the Search tab start a portfolio or tuner job, watch it, and open the result.
 
