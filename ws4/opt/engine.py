@@ -53,7 +53,7 @@ from .constraints import ConstraintGuard
 from .control import RunControl
 from .core import Problem
 from .incremental import IncrementalObjective
-from .mip import bound_for
+from .mip import bound_for, relaxation_for
 from .objective import Target, load_targets, objective
 from .operators import (
     Candidates,
@@ -241,6 +241,8 @@ class OptimizeConfig:
         seed. Empty uses the floor mode.
     mip_bound : bool
         Whether to solve the mixed-integer lower bound and record it in the summary.
+    lp_bound : bool
+        Whether to solve the LP relaxation and record its bound, gap, and status.
     topology_path : str
         The block topology edge list, for the spatial and patch models.
     route_config_path : str
@@ -329,6 +331,7 @@ class OptimizeConfig:
     greedy_seed: bool = False
     seed_account: str = ""
     mip_bound: bool = False
+    lp_bound: bool = False
     topology_path: str = ""
     route_config_path: str = ""
     edge_elements_path: str = ""
@@ -1589,6 +1592,18 @@ class Optimizer:
             summary["bound"] = bound.objective
             summary["gap"] = best_obj - bound.objective
             summary["bound_status"] = bound.status
+        if self.cfg.lp_bound:
+            lp = relaxation_for(
+                self.dataset_dir,
+                targets,
+                self.candidates(),
+                self.cfg.years,
+                topology_path=Path(self.cfg.topology_path) if self.cfg.topology_path else None,
+                max_opening_ha=self.cfg.max_opening_ha,
+            )
+            summary["lp_bound"] = lp.objective
+            summary["lp_gap"] = best_obj - lp.objective
+            summary["lp_status"] = lp.status
         (out_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
         return summary
 
