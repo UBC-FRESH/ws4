@@ -774,3 +774,23 @@ API
    :members:
 
 .. autofunction:: ws4.opt.telemetry.read_records
+
+Profiling route evaluation
+--------------------------
+
+Route configurations with per-segment accounts (`build`, `maintain`) or delivery
+targets use the full simulator on every evaluation. The route profile measures that
+path on a real schedule:
+
+.. code-block:: bash
+
+   python scripts/profile_route.py \
+     --dataset build/compiled \
+     --targets targets.yaml \
+     --route-config route.yaml \
+     --schedule runtime/runs/run-1/schedule.csv \
+     --years 50 --repeats 3 --out route-profile.json
+
+It reports seconds per evaluation and the top cumulative functions. The design for the
+incremental ledger, its fallback conditions, and the parity plan are in
+`notes/design/ws4-incremental-route.md`.
