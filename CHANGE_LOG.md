@@ -2475,3 +2475,6 @@ issue comments.
   Enter selects the first match, and arrow keys move between leaves. Period labels are year
   ranges and target rows say "Target period", separating the optimizer clock from the map
   clock. Shell assets move to `v66`. Dashboard **GREEN**.
+
+- P39 close-out: pull request #296 squash-merged as `8f77a9a`; parent #293 and task #294 closed.
+  P39 status set complete.

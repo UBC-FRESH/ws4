@@ -50,7 +50,7 @@ exists and the maintainer approves it.
 | P33 Search artifact browser | #261 | `feature/p33-search-ui` | complete |
 | P34 Search launcher | #265 | `feature/p34-search-launch` | complete |
 | P38 Instance FreshForge provider execution | #287 | `feature/p38-provider` | pr-open |
-| P39 Account browser polish | #293 | `feature/p39-account-polish` | pr-open |
+| P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1260,7 +1260,7 @@ Acceptance:
 
 Parent issue: #293
 Branch: `feature/p39-account-polish`
-Status: pr-open
+Status: complete
 
 Goal: finish the account browser and target-period labels so a user can read the full
 account name, see search counts, navigate by keyboard, and distinguish the optimizer's
