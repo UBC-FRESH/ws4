@@ -2555,3 +2555,5 @@ issue comments.
   Added the `ws4[lidar]` optional extra, contract note, reference docs, and
   shared parity evidence against `lidarbc-995fb1f771f4d7fe` (max difference
   0.0 versus FHOPS).
+
+- P52.2: added dataset-level FEMIC LidarBC registration. The pin is written to `manifest.json` metadata and `lidar_products.json`; `ws4 lidar register|inspect|validate` and `ws4 build --lidar-bundle` support the operator workflow. Failure fixtures cover missing datasets, wrong pins, and tampered bundles.

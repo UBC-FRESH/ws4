@@ -13,6 +13,12 @@ from rich.table import Table
 
 from .build.compiler import build_canonical_dataset
 from .build.legacy import ingest_legacy_matrix
+from .io.lidar import (
+    FemicLidarError,
+    read_registered_femic_lidar,
+    register_femic_lidar_bundle,
+    validate_registered_femic_lidar,
+)
 from .model.schema import validate_dataset
 from .opt.calibrate import calibrate as run_calibration
 from .opt.calibrate import write_targets
@@ -37,6 +43,19 @@ def build(
         ..., "--fragments", exists=True, help="Fragment inventory (CSV or Parquet)"
     ),
     out: Path = typer.Option(..., "--out", help="Output directory for canonical dataset"),
+    lidar_bundle: Path | None = typer.Option(
+        None,
+        "--lidar-bundle",
+        exists=True,
+        file_okay=False,
+        help="Optional FEMIC LidarBC bundle to register in the dataset",
+    ),
+    lidar_bundle_id: str | None = typer.Option(
+        None, "--lidar-bundle-id", help="Expected FEMIC bundle id"
+    ),
+    lidar_bundle_version: str | None = typer.Option(
+        None, "--lidar-bundle-version", help="Expected FEMIC bundle version"
+    ),
 ) -> None:
     """Compile a canonical dataset from an XML recipe and a *fragments* shapefile.
 
@@ -47,6 +66,17 @@ def build(
       • Block geometry is not required to build (it is a runtime view).
     """
     out = build_canonical_dataset(xml_path=xml, fragments_path=fragments, out_dir=out)
+    if lidar_bundle is not None:
+        try:
+            registration = register_femic_lidar_bundle(
+                out,
+                lidar_bundle,
+                expected_bundle_id=lidar_bundle_id,
+                expected_bundle_version=lidar_bundle_version,
+            )
+        except FemicLidarError as error:
+            raise typer.BadParameter(str(error)) from error
+        print(f"[bold green]Registered LidarBC bundle[/] → {registration['bundle_id']}")
     print(f"[bold green]Built dataset[/] → {out}")
 
 
@@ -764,6 +794,65 @@ def serve(
         root_path=root_path,
     )
 
+
+lidar_app = typer.Typer(help="Register and inspect FEMIC LidarBC products.")
+
+
+@lidar_app.command("register")
+def lidar_register(
+    dataset: Path = typer.Option(..., "--dataset", exists=True, file_okay=False),
+    bundle: Path = typer.Option(..., "--bundle", exists=True, file_okay=False),
+    bundle_id: str | None = typer.Option(None, "--bundle-id"),
+    bundle_version: str | None = typer.Option(None, "--bundle-version"),
+) -> None:
+    """Register a validated FEMIC bundle in a compiled dataset."""
+    try:
+        registration = register_femic_lidar_bundle(
+            dataset,
+            bundle,
+            expected_bundle_id=bundle_id,
+            expected_bundle_version=bundle_version,
+        )
+    except FemicLidarError as error:
+        print(f"[bold red]LidarBC registration failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    print(
+        f"[bold green]Registered[/] {registration['bundle_id']} @ {registration['bundle_version']}"
+    )
+
+
+@lidar_app.command("inspect")
+def lidar_inspect(
+    dataset: Path = typer.Option(..., "--dataset", exists=True, file_okay=False),
+) -> None:
+    """Print the FEMIC bundle pin registered in a dataset."""
+    try:
+        registration = read_registered_femic_lidar(dataset)
+    except FemicLidarError as error:
+        print(f"[bold red]LidarBC inspect failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    if registration is None:
+        print("No FEMIC LidarBC product is registered.")
+        return
+    print(json.dumps(registration, indent=2, sort_keys=True))
+
+
+@lidar_app.command("validate")
+def lidar_validate(
+    dataset: Path = typer.Option(..., "--dataset", exists=True, file_okay=False),
+) -> None:
+    """Revalidate the FEMIC bundle currently pinned by a dataset."""
+    try:
+        report = validate_registered_femic_lidar(dataset)
+    except FemicLidarError as error:
+        print(f"[bold red]LidarBC validation failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    print(json.dumps(report.to_dict(), indent=2, sort_keys=True))
+    if not report.is_valid:
+        raise typer.Exit(code=1)
+
+
+app.add_typer(lidar_app, name="lidar")
 
 if __name__ == "__main__":
     app()

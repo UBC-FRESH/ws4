@@ -36,6 +36,19 @@ or canopy summaries. The aggregation footprint must be recorded by the caller.
 The manifest/checksum validator is stdlib-only. Polygon summaries require
 `ws4[lidar]` (`geopandas`, `pyogrio`, `rasterio`).
 
+## Registration
+
+`register_femic_lidar_bundle(dataset_dir, bundle_dir)` validates the bundle and
+writes the pin to two places:
+
+- dataset `manifest.json` → `metadata.lidar_products`;
+- `lidar_products.json` sidecar.
+
+The bundle is referenced, not copied. `read_registered_femic_lidar` and
+`validate_registered_femic_lidar` inspect/revalidate the pin. The CLI exposes
+`ws4 lidar register|inspect|validate`, and `ws4 build --lidar-bundle` registers
+during a build.
+
 ## Shared Parity
 
 Validated against FEMIC bundle `lidarbc-995fb1f771f4d7fe`

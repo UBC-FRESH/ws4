@@ -1679,6 +1679,11 @@ reimplementing discovery or materialization.
   - [x] Validate manifest, licence, CRS, resolution, vertical datum, and source tiles
   - [x] Add polygon support summaries without reprojection
   - [x] Validate shared slope/CHM parity with FHOPS
+- [x] P52.2 Register and consume FEMIC-compiled LidarBC products (#319)
+  - [x] Write the pin to the dataset manifest and sidecar
+  - [x] Reference the bundle without copying or re-downloading tiles
+  - [x] Add register/inspect/validate CLI and build integration
+  - [x] Add missing/corrupt/incompatible failure tests
 
 Acceptance:
 

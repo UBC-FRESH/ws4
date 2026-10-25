@@ -10,13 +10,19 @@ import pytest
 import rasterio
 from rasterio.transform import from_origin
 from shapely.geometry import box
+from typer.testing import CliRunner
+from ws4.cli import app
 from ws4.io.lidar import (
     FemicLidarError,
     bundle_pin,
     load_femic_lidar_bundle,
+    read_registered_femic_lidar,
+    register_femic_lidar_bundle,
     summarize_femic_lidar_for_polygons,
     validate_femic_lidar_bundle,
+    validate_registered_femic_lidar,
 )
+from ws4.model.types import CanonicalDatasetManifest
 
 
 def _sha256(path: Path) -> str:
@@ -153,3 +159,90 @@ def test_polygon_summary_rejects_crs_mismatch(tmp_path: Path) -> None:
 
     with pytest.raises(FemicLidarError, match="CRS"):
         summarize_femic_lidar_for_polygons(bundle, polygon_path)
+
+
+def _dataset(tmp_path: Path) -> Path:
+    root = tmp_path / "dataset"
+    root.mkdir()
+    manifest = CanonicalDatasetManifest(tables={}, sources=[], metadata={})
+    (root / "manifest.json").write_text(manifest.model_dump_json(indent=2))
+    return root
+
+
+def test_register_bundle_in_dataset(tmp_path: Path) -> None:
+    bundle_dir = _bundle(tmp_path)
+    dataset = _dataset(tmp_path)
+
+    registration = register_femic_lidar_bundle(
+        dataset,
+        bundle_dir,
+        expected_bundle_id="lidarbc-test",
+        registered_utc="2026-10-25T00:00:00+00:00",
+    )
+
+    assert registration["bundle_id"] == "lidarbc-test"
+    assert registration["bundle_version"] == "test-1"
+    assert registration["registered_utc"] == "2026-10-25T00:00:00+00:00"
+    assert (dataset / "lidar_products.json").is_file()
+    manifest = json.loads((dataset / "manifest.json").read_text())
+    assert manifest["metadata"]["lidar_products"]["bundle_id"] == "lidarbc-test"
+    assert read_registered_femic_lidar(dataset)["bundle_id"] == "lidarbc-test"
+    assert validate_registered_femic_lidar(dataset).is_valid
+
+
+def test_register_bundle_is_idempotent(tmp_path: Path) -> None:
+    bundle_dir = _bundle(tmp_path)
+    dataset = _dataset(tmp_path)
+    first = register_femic_lidar_bundle(dataset, bundle_dir)
+    second = register_femic_lidar_bundle(dataset, bundle_dir)
+
+    assert first["bundle_id"] == second["bundle_id"]
+    assert first["manifest_sha256"] == second["manifest_sha256"]
+
+
+def test_register_rejects_missing_dataset_and_wrong_pin(tmp_path: Path) -> None:
+    bundle_dir = _bundle(tmp_path)
+    with pytest.raises(FemicLidarError, match="Dataset manifest"):
+        register_femic_lidar_bundle(tmp_path / "missing", bundle_dir)
+
+    dataset = _dataset(tmp_path)
+    with pytest.raises(FemicLidarError, match="Bundle id"):
+        register_femic_lidar_bundle(dataset, bundle_dir, expected_bundle_id="other")
+
+
+def test_registered_bundle_detects_tamper(tmp_path: Path) -> None:
+    bundle_dir = _bundle(tmp_path)
+    dataset = _dataset(tmp_path)
+    register_femic_lidar_bundle(dataset, bundle_dir)
+    (bundle_dir / "products/slope__01__slope.tif").write_bytes(b"tampered")
+
+    report = validate_registered_femic_lidar(dataset)
+    assert not report.is_valid
+    assert any("checksum" in error for error in report.errors)
+
+
+def test_lidar_cli_register_inspect_validate(tmp_path: Path) -> None:
+    bundle_dir = _bundle(tmp_path)
+    dataset = _dataset(tmp_path)
+    runner = CliRunner()
+
+    registered = runner.invoke(
+        app,
+        ["lidar", "register", "--dataset", str(dataset), "--bundle", str(bundle_dir)],
+    )
+    assert registered.exit_code == 0, registered.output
+    inspected = runner.invoke(app, ["lidar", "inspect", "--dataset", str(dataset)])
+    assert inspected.exit_code == 0, inspected.output
+    assert "lidarbc-test" in inspected.output
+    validated = runner.invoke(app, ["lidar", "validate", "--dataset", str(dataset)])
+    assert validated.exit_code == 0, validated.output
+    assert '"is_valid": true' in validated.output
+
+
+def test_lidar_cli_missing_registration(tmp_path: Path) -> None:
+    dataset = _dataset(tmp_path)
+    inspected = CliRunner().invoke(app, ["lidar", "inspect", "--dataset", str(dataset)])
+    assert inspected.exit_code == 0
+    assert "No FEMIC LidarBC product" in inspected.output
+    validated = CliRunner().invoke(app, ["lidar", "validate", "--dataset", str(dataset)])
+    assert validated.exit_code == 1

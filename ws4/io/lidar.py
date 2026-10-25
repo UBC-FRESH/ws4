@@ -13,11 +13,14 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+from ws4.model.schema import load_manifest
+
 FEMIC_LIDAR_MANIFEST_SCHEMA = "femic.lidar.product.v1"
 FEMIC_LIDAR_LAYOUT_VERSION = "femic.lidar.bundle.v1"
 FEMIC_LIDAR_LICENCE_ID = "OGL-BC"
 FEMIC_LIDAR_MANIFEST_NAME = "manifest.json"
 FEMIC_LIDAR_SELECTION_PATH = "provenance/selection.json"
+FEMIC_LIDAR_SIDECAR_NAME = "lidar_products.json"
 
 
 class FemicLidarError(RuntimeError):
@@ -146,6 +149,85 @@ def bundle_pin(bundle: FemicLidarBundle) -> dict[str, object]:
             for name, product in sorted(bundle.products.items())
         },
     }
+
+
+def register_femic_lidar_bundle(
+    dataset_dir: Path,
+    bundle_dir: Path,
+    *,
+    expected_bundle_id: str | None = None,
+    expected_bundle_version: str | None = None,
+    registered_utc: str | None = None,
+) -> dict[str, object]:
+    """Register a validated FEMIC bundle in a compiled WS4 dataset.
+
+    Writes the pin to the dataset manifest metadata and a
+    ``lidar_products.json`` sidecar. The bundle is referenced, not copied.
+    """
+    dataset_root = dataset_dir.expanduser().resolve()
+    manifest_path = dataset_root / "manifest.json"
+    if not manifest_path.is_file():
+        raise FemicLidarError(f"Dataset manifest is missing: {manifest_path}")
+    bundle = load_femic_lidar_bundle(
+        bundle_dir,
+        expected_bundle_id=expected_bundle_id,
+        expected_bundle_version=expected_bundle_version,
+    )
+    manifest = load_manifest(dataset_root)
+    registration: dict[str, object] = {
+        **bundle_pin(bundle),
+        "bundle_dir": _bundle_reference(dataset_root, bundle.bundle_dir),
+        "source_id": bundle.source.get("source_id"),
+        "licence_id": bundle.source.get("licence_id"),
+        "native_crs": bundle.source.get("native_crs"),
+        "registered_utc": registered_utc or datetime.now(UTC).isoformat(),
+    }
+    metadata = dict(manifest.metadata)
+    metadata["lidar_products"] = registration
+    manifest = manifest.model_copy(update={"metadata": metadata})
+    manifest_path.write_text(manifest.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    sidecar = dataset_root / FEMIC_LIDAR_SIDECAR_NAME
+    sidecar.write_text(json.dumps(registration, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return registration
+
+
+def read_registered_femic_lidar(dataset_dir: Path) -> dict[str, object] | None:
+    """Read the registered FEMIC LidarBC pin from a dataset, if present."""
+    dataset_root = dataset_dir.expanduser().resolve()
+    sidecar = dataset_root / FEMIC_LIDAR_SIDECAR_NAME
+    if sidecar.is_file():
+        try:
+            payload = json.loads(sidecar.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise FemicLidarError(f"Invalid LidarBC sidecar: {sidecar}") from exc
+        if not isinstance(payload, dict):
+            raise FemicLidarError(f"LidarBC sidecar must be an object: {sidecar}")
+        return {str(key): value for key, value in payload.items()}
+    manifest_path = dataset_root / "manifest.json"
+    if not manifest_path.is_file():
+        return None
+    try:
+        manifest = load_manifest(dataset_root)
+    except (OSError, ValueError) as exc:
+        raise FemicLidarError(f"Unable to read dataset manifest: {exc}") from exc
+    value = manifest.metadata.get("lidar_products")
+    if isinstance(value, dict):
+        return {str(key): item for key, item in value.items()}
+    return None
+
+
+def validate_registered_femic_lidar(dataset_dir: Path) -> FemicLidarValidation:
+    """Revalidate the bundle currently pinned by a dataset."""
+    registration = read_registered_femic_lidar(dataset_dir)
+    if registration is None:
+        raise FemicLidarError("Dataset has no registered FEMIC LidarBC product.")
+    bundle_ref = registration.get("bundle_dir")
+    if not isinstance(bundle_ref, str) or not bundle_ref.strip():
+        raise FemicLidarError("Registered LidarBC pin has no bundle_dir.")
+    bundle_path = Path(bundle_ref)
+    if not bundle_path.is_absolute():
+        bundle_path = dataset_dir.expanduser().resolve() / bundle_path
+    return validate_femic_lidar_bundle(bundle_path)
 
 
 def summarize_femic_lidar_for_polygons(
@@ -387,6 +469,13 @@ def _string_tuple(value: object) -> tuple[str, ...]:
     if not isinstance(value, list):
         return ()
     return tuple(str(item) for item in value)
+
+
+def _bundle_reference(dataset_root: Path, bundle_root: Path) -> str:
+    try:
+        return str(bundle_root.resolve().relative_to(dataset_root))
+    except ValueError:
+        return str(bundle_root.resolve())
 
 
 def _sha256_file(path: Path) -> str:

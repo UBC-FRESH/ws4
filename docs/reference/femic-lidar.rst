@@ -45,6 +45,35 @@ Python Usage
 Polygon summaries require ``ws4[lidar]``. Polygon and product CRS must match;
 there is no silent reprojection or resampling.
 
+Registration
+------------
+
+Register a validated bundle in a compiled dataset:
+
+.. code-block:: bash
+
+   ws4 lidar register \
+     --dataset build/compiled \
+     --bundle data/femic/lidarbc-2026.10.0 \
+     --bundle-id lidarbc-995fb1f771f4d7fe \
+     --bundle-version 2026.10.0-tfl6-pilot
+
+   ws4 lidar inspect --dataset build/compiled
+   ws4 lidar validate --dataset build/compiled
+
+Registration writes the pin to ``manifest.json`` under
+``metadata.lidar_products`` and to a ``lidar_products.json`` sidecar. The bundle
+is referenced, not copied.
+
+The same registration is available during a build:
+
+.. code-block:: bash
+
+   ws4 build --xml recipe.xml --fragments fragments.parquet --out build/compiled \
+     --lidar-bundle data/femic/lidarbc-2026.10.0 \
+     --lidar-bundle-id lidarbc-995fb1f771f4d7fe \
+     --lidar-bundle-version 2026.10.0-tfl6-pilot
+
 Shared Parity
 -------------
 
