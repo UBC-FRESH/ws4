@@ -42,7 +42,7 @@ exists and the maintainer approves it.
 | P28 Inventory and flow ceilings | #233 | `feature/p28-inventory` | complete |
 | P29 MIP lane and exact small-instance validation | #238 | `feature/p29-mip` | complete |
 | P30 Live run surfaces | #242 | `feature/p30-live-surfaces` | pr-open |
-| P31 Dataset provenance and limitations | #249 | `feature/p31-provenance` | active |
+| P31 Dataset provenance and limitations | #249 | `feature/p31-provenance` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1076,15 +1076,15 @@ Acceptance:
 
 Parent issue: #249
 Branch: `feature/p31-provenance`
-Status: active
+Status: pr-open
 
 Goal: turn the P26 data-quality block from `unknown` into a reviewable provenance record for the
 GBR instances: define a dataset provenance sidecar, expose it through `ws4 quality`, apply it to
 TSA 46 and TSA 47, and publish the model limitations those records imply.
 
-- [ ] P31.1 Add the provenance sidecar and `ws4 quality` (#250)
-- [ ] P31.2 Apply the GBR provenance records and verify the P26 report (#251)
-- [ ] P31.3 Publish the model-limitations page and links (#252)
+- [x] P31.1 Add the provenance sidecar and `ws4 quality` (#250)
+- [x] P31.2 Apply the GBR provenance records and verify the P26 report (#251)
+- [x] P31.3 Publish the model-limitations page and links (#252)
 
 Acceptance:
 
