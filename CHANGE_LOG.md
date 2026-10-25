@@ -2432,3 +2432,9 @@ issue comments.
   `GET /api/search/{name}/status`, and open the finished artifact. The endpoint composes the existing
   `scripts/portfolio.py` and `scripts/tune.py` with the configured dataset and targets; the tuner
   space is written beside the output. Shell assets move to `v64`. Dashboard **GREEN**.
+
+- P35.1: both GBR instance repositories track `config/dataset_quality.yaml` and provide
+  `scripts/apply_dataset_quality.py`; tests cover valid, missing, and CLI cases.
+- P35.2: both instance model-build docs link the ws4 limitations page and the VDYP/THLB caveats.
+- P35.3: both full build scripts copy the sidecar after `ws4 build` and fail on
+  `ws4 quality --check`. Instance PRs #25/#26 merged.

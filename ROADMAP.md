@@ -43,7 +43,8 @@ exists and the maintainer approves it.
 | P29 MIP lane and exact small-instance validation | #238 | `feature/p29-mip` | complete |
 | P30 Live run surfaces | #242 | `feature/p30-live-surfaces` | complete |
 | P31 Comparison map over MVT | #257 | `feature/p31-compare-map` | complete |
-| P32 Dataset provenance and limitations | #249 | `feature/p32-provenance` | pr-open |
+| P32 Dataset provenance and limitations | #249 | `feature/p32-provenance` | complete |
+| P35 Instance provenance adoption | #267 | `feature/p35-provenance` | active |
 | P33 Search artifact browser | #261 | `feature/p33-search-ui` | active |
 | P34 Search launcher | #265 | `feature/p34-search-launch` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
@@ -1160,6 +1161,26 @@ Acceptance:
 - Status reports running, done, or failed.
 - A finished job opens in the artifact table.
 - `python scripts/dashboard.py` is green.
+
+## Phase 35: Instance provenance adoption
+
+Parent issue: #267
+Branch: `feature/p35-provenance`
+Status: active
+
+Goal: make the P32 provenance result reproducible in the GBR instance repositories: track the
+sidecar, apply it after the matrix build, link the limitations page, and gate the build with
+`ws4 quality --check`.
+
+- [ ] P35.1 Track the sidecars and apply/check hook (#268)
+- [ ] P35.2 Link the limitations page in both instance docs (#269)
+- [ ] P35.3 Gate the full build with `ws4 quality --check` (#270)
+
+Acceptance:
+
+- A fresh build copies `data_quality.yaml` beside the matrix and passes the quality check.
+- Both instance docs link the limitations page.
+- The build exits non-zero when provenance is missing or invalid.
 
 ## Detailed Next Steps Notes
 
