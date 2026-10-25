@@ -2497,3 +2497,10 @@ issue comments.
   keep the VDYP-transform run as a backup, and carry the instance limitations URL and the
   deterministic-seed caveat. The ws4 GBR provenance reference and limitations guide are updated
   to match.
+- P42.1: the account tree has a Multi-select mode; one shared target form adds one row per
+  selected account in a single `POST /api/targets.json`. The picker shows the selection count,
+  mixed/level/flow kind, and a Clear control.
+- P42.2: browser-side validation refuses duplicate account/period targets, missing bounds,
+  min above max, and invalid priorities before the request. A successful save copies the
+  previous YAML to `targets.yaml.bak`. c5 verified: two accounts added in one POST, rows 2→4,
+  duplicate blocked, backup written. Shell assets move to `v67`. Dashboard **GREEN**.

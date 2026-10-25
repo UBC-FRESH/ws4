@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=66">
+  <link rel="stylesheet" href="static/style.css?v=67">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
 </head>
 <body>
   <header>
-    <strong>WS4</strong><span class="build">v66</span>
+    <strong>WS4</strong><span class="build">v67</span>
     <label>Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Period
@@ -46,6 +46,7 @@
             <h3>Accounts in this run</h3>
             <input id="account-search" type="search" placeholder="Search accounts…" autocomplete="off">
             <span id="account-count" class="hint"></span>
+            <label class="multi-select"><input id="account-multi" type="checkbox"> Multi-select</label>
           </div>
           <div id="account-tree" class="account-tree"></div>
           <div id="account-picker" class="account-picker" hidden>
@@ -53,6 +54,7 @@
               <b id="picked-account-name"></b>
               <span id="picked-account-kind" class="badge"></span>
               <span id="picked-account-value" class="hint"></span>
+              <button id="clear-target-selection" type="button" class="link-button">Clear</button>
             </div>
             <div class="run-row">
               <label>Period <input id="new-target-period" type="number" value="1" min="0" step="1"></label>
@@ -223,6 +225,6 @@
     </div>
   </main>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=66"></script>
+  <script type="module" src="static/app.js?v=67"></script>
 </body>
 </html>

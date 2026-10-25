@@ -234,3 +234,6 @@ path.block.compare-both { fill:#6b4c9a; }
 .search-run textarea { font:inherit; font-size:.74rem; width:100%; min-width:18rem; }
 .search-run .run-row { align-items:flex-start; }
 #account-count { white-space:nowrap; font-size:.7rem; }
+.multi-select { display:flex; gap:.25rem; align-items:center; white-space:nowrap; font-size:.7rem; color:var(--muted); }
+.account-leaf.selected { background:#e8f1ff; box-shadow:inset 2px 0 #1f6feb; }
+.link-button { border:0; background:none; color:#1f6feb; cursor:pointer; font:inherit; font-size:.72rem; padding:0 .2rem; }

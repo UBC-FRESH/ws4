@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false };
 
 const $ = (id) => document.getElementById(id);
 const TILE_VERSION = 'v8';
@@ -2206,6 +2206,7 @@ function renderAccountTree() {
       button.className = 'account-leaf';
       button.dataset.account = account;
       button.title = account;
+      button.classList.toggle('selected', state.selectedAccounts.has(account));
       const name = document.createElement('span');
       name.className = 'name';
       name.textContent = account;
@@ -2223,7 +2224,9 @@ function renderAccountTree() {
         badge.textContent = 'target';
         button.append(badge);
       }
-      button.addEventListener('click', () => selectAccount(account));
+      button.addEventListener('click', () => {
+        if ($('account-multi').checked) toggleSelection(account); else selectAccount(account);
+      });
       fragment.append(button);
     }
     return fragment;
@@ -2231,13 +2234,7 @@ function renderAccountTree() {
   tree.append(build(root, 0));
 }
 
-function selectAccount(account) {
-  state.pickedAccount = account;
-  $('account-picker').hidden = false;
-  $('picked-account-name').textContent = account;
-  $('picked-account-kind').textContent = accountKind(account);
-  const last = accountLastValue(account);
-  $('picked-account-value').textContent = last === null ? 'no value' : `last value ${formatAccountValue(last)}`;
+function resetTargetForm() {
   $('new-target-period').value = '1';
   const width = state.targets.find((row) => Number(row.period_width) > 0)?.period_width ?? 10;
   $('new-target-width').value = String(width);
@@ -2245,10 +2242,92 @@ function selectAccount(account) {
   $('new-target-max').value = '';
   $('new-target-min-weight').value = '1';
   $('new-target-max-weight').value = '1';
-  const existing = state.targets.filter((row) => row.account === account).length;
-  $('new-target-status').textContent = existing
-    ? `${existing} existing target${existing === 1 ? '' : 's'} for this account`
-    : '';
+}
+
+function renderSelection(reset = false) {
+  const accounts = [...state.selectedAccounts].sort((a, b) => a.localeCompare(b));
+  const picker = $('account-picker');
+  if (!accounts.length) {
+    state.pickedAccount = null;
+    picker.hidden = true;
+    $('new-target-status').textContent = '';
+    return;
+  }
+  const wasHidden = picker.hidden;
+  picker.hidden = false;
+  state.pickedAccount = accounts.length === 1 ? accounts[0] : null;
+  $('picked-account-name').textContent = accounts.length === 1
+    ? accounts[0]
+    : `${accounts.length} accounts selected`;
+  const kinds = new Set(accounts.map(accountKind));
+  $('picked-account-kind').textContent = kinds.size === 1 ? [...kinds][0] : 'mixed';
+  $('picked-account-value').textContent = accounts.length === 1
+    ? (accountLastValue(accounts[0]) === null
+      ? 'no value'
+      : `last value ${formatAccountValue(accountLastValue(accounts[0]))}`)
+    : accounts.join(', ');
+  if (reset || wasHidden) resetTargetForm();
+  if (accounts.length === 1) {
+    const existing = state.targets.filter((row) => row.account === accounts[0]).length;
+    $('new-target-status').textContent = existing
+      ? `${existing} existing target${existing === 1 ? '' : 's'} for this account`
+      : '';
+  } else {
+    $('new-target-status').textContent = `${accounts.length} accounts selected; one target will be added for each`;
+  }
+}
+
+function selectAccount(account) {
+  state.selectedAccounts = new Set([account]);
+  renderAccountTree();
+  renderSelection(true);
+}
+
+function toggleSelection(account) {
+  if (state.selectedAccounts.has(account)) state.selectedAccounts.delete(account);
+  else state.selectedAccounts.add(account);
+  renderAccountTree();
+  renderSelection(false);
+}
+
+function clearSelection() {
+  state.selectedAccounts.clear();
+  $('account-multi').checked = false;
+  renderAccountTree();
+  renderSelection(false);
+}
+
+function targetKey(row) {
+  return `${row.account}|${row.period ?? ''}|${row.year ?? ''}|${row.period_width ?? ''}|${row.flow ?? ''}`;
+}
+
+function validateTargetRows(rows) {
+  const seen = new Map();
+  for (const row of rows) {
+    const account = String(row.account ?? '');
+    if (!account) return 'every target needs an account';
+    if ((row.minimum === null || row.minimum === undefined)
+      && (row.maximum === null || row.maximum === undefined)) {
+      return `${account}: enter a minimum, a maximum, or both`;
+    }
+    if (row.minimum !== null && row.minimum !== undefined
+      && row.maximum !== null && row.maximum !== undefined
+      && Number(row.minimum) > Number(row.maximum)) {
+      return `${account}: minimum is above maximum`;
+    }
+    if (row.priority !== undefined && (!Number.isInteger(Number(row.priority))
+      || Number(row.priority) < 1)) {
+      return `${account}: priority must be a positive integer`;
+    }
+    if (row.normalization !== undefined
+      && !['none', 'auto'].includes(String(row.normalization))) {
+      return `${account}: normalization must be none or auto`;
+    }
+    const key = targetKey(row);
+    if (seen.has(key)) return `duplicate target for ${account} in the same period`;
+    seen.set(key, true);
+  }
+  return '';
 }
 
 function collectTargets() {
@@ -2265,6 +2344,11 @@ function collectTargets() {
 }
 
 async function postTargets(rows, message) {
+  const problem = validateTargetRows(rows);
+  if (problem) {
+    $('targets-status').textContent = `not saved: ${problem}`;
+    return false;
+  }
   try {
     const response = await fetch('api/targets.json', {
       method: 'POST',
@@ -2286,9 +2370,11 @@ async function postTargets(rows, message) {
 }
 
 async function addTarget() {
-  const account = state.pickedAccount;
+  const accounts = state.selectedAccounts.size
+    ? [...state.selectedAccounts]
+    : state.pickedAccount ? [state.pickedAccount] : [];
   const status = $('new-target-status');
-  if (!account) { status.textContent = 'pick an account first'; return; }
+  if (!accounts.length) { status.textContent = 'pick an account first'; return; }
   const period = Number($('new-target-period').value);
   const width = Number($('new-target-width').value);
   const minText = $('new-target-min').value;
@@ -2306,22 +2392,26 @@ async function addTarget() {
   if (!Number.isFinite(minWeight) || minWeight < 0) { status.textContent = 'minimum weight must be zero or more'; return; }
   if (!Number.isFinite(maxWeight) || maxWeight < 0) { status.textContent = 'maximum weight must be zero or more'; return; }
   const rows = collectTargets();
-  rows.push({
-    index: rows.length,
-    account,
-    period,
-    year: period * width,
-    period_width: width,
-    flow: '',
-    shape: 'linear',
-    minimum,
-    maximum,
-    min_weight: minWeight,
-    max_weight: maxWeight,
-    active: true,
-  });
-  if (await postTargets(rows, `added target for ${account}`)) {
-    status.textContent = `added ${account}`;
+  for (const account of accounts) {
+    rows.push({
+      index: rows.length,
+      account,
+      period,
+      year: period * width,
+      period_width: width,
+      flow: '',
+      shape: 'linear',
+      minimum,
+      maximum,
+      min_weight: minWeight,
+      max_weight: maxWeight,
+      active: true,
+    });
+  }
+  const label = accounts.length === 1 ? accounts[0] : `${accounts.length} accounts`;
+  if (await postTargets(rows, `added target for ${label}`)) {
+    status.textContent = `added ${label}`;
+    clearSelection();
   }
 }
 
@@ -3258,6 +3348,15 @@ function wireControls() {
   });
   $('save-targets').addEventListener('click', saveTargets);
   $('account-search').addEventListener('input', renderAccountTree);
+  $('account-multi').addEventListener('change', (event) => {
+    if (!event.target.checked && state.selectedAccounts.size > 1) {
+      const keep = [...state.selectedAccounts][0];
+      state.selectedAccounts = new Set([keep]);
+      renderSelection(false);
+    }
+    renderAccountTree();
+  });
+  $('clear-target-selection').addEventListener('click', clearSelection);
   $('account-search').addEventListener('keydown', (event) => {
     const leaves = [...document.querySelectorAll('.account-leaf')];
     if (!leaves.length) return;

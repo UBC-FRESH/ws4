@@ -734,6 +734,8 @@ def test_targets_round_trip_and_an_invalid_document_is_refused(tmp_path: Path) -
     assert response.status_code == 200
     assert response.json() == {"targets": 1}
     assert targets.read_text(encoding="utf-8") == replacement
+    backup = targets.with_name(targets.name + ".bak")
+    assert backup.read_text(encoding="utf-8") == before
     refused = client.put(
         "/api/targets", content="not: a target list\n", headers={"content-type": "text/yaml"}
     )

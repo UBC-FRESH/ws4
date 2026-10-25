@@ -54,6 +54,7 @@ exists and the maintainer approves it.
 | P41 Provider smoke in CI | #303 | `feature/p41-ci-smoke` | complete |
 | P47 Model boundary record | #311 | `feature/p47-boundary` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
+| P42 Target operations | #308 | `feature/p42-target-ops` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1324,6 +1325,31 @@ Acceptance:
 - The CI smoke includes `build_dataset`, validate, provenance, schedule, and simulate.
 - Every node succeeds on the tiny fixture.
 - The evidence JSON is uploaded as a CI artifact.
+## Phase 42: Target operations
+
+Parent issue: #308
+Branch: `feature/p42-target-ops`
+Status: pr-open
+
+Goal: add several accounts in one pass and make target replacement safer to review.
+
+- [x] P42.1 Add multi-account target creation (#309)
+  - [x] Add multi-select state and tree styling
+  - [x] Show the selected-account summary
+  - [x] Build one row per selected account
+  - [x] Add browser verification
+- [x] P42.2 Add target validation and a pre-save backup (#310)
+  - [x] Add the browser validation helper
+  - [x] Validate Add target and Save targets
+  - [x] Write `targets.yaml.bak`
+  - [x] Add endpoint and browser tests
+
+Acceptance:
+
+- Two or more accounts can be added in one save.
+- Duplicate and invalid targets are blocked with named messages.
+- The previous YAML is preserved as a backup.
+- `python scripts/dashboard.py` is green.
 
 ## Phase 47: Model boundary record
 
