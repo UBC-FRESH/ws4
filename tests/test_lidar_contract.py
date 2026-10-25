@@ -34,6 +34,11 @@ from ws4.model.types import CanonicalDatasetManifest
 from ws4.sim.engine import Simulator
 
 
+def _dict(value: object) -> dict[str, object]:
+    assert isinstance(value, dict)
+    return value
+
+
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -165,7 +170,7 @@ def test_load_and_pin_bundle(tmp_path: Path) -> None:
     assert bundle.products["slope"].resolution_m == 1.0
     pin = bundle_pin(bundle)
     assert pin["bundle_id"] == "lidarbc-test"
-    assert pin["products"]["slope"]["sha256"]
+    assert _dict(_dict(pin["products"])["slope"])["sha256"]
     assert validate_femic_lidar_bundle(root).is_valid
 
 
@@ -250,8 +255,11 @@ def test_register_bundle_in_dataset(tmp_path: Path) -> None:
     assert registration["registered_utc"] == "2026-10-25T00:00:00+00:00"
     assert (dataset / "lidar_products.json").is_file()
     manifest = json.loads((dataset / "manifest.json").read_text())
-    assert manifest["metadata"]["lidar_products"]["bundle_id"] == "lidarbc-test"
-    assert read_registered_femic_lidar(dataset)["bundle_id"] == "lidarbc-test"
+    metadata = _dict(manifest["metadata"])
+    assert _dict(metadata["lidar_products"])["bundle_id"] == "lidarbc-test"
+    stored = read_registered_femic_lidar(dataset)
+    assert stored is not None
+    assert stored["bundle_id"] == "lidarbc-test"
     assert validate_registered_femic_lidar(dataset).is_valid
 
 
