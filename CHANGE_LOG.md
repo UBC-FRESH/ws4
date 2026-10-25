@@ -2532,3 +2532,9 @@ issue comments.
 - P49.3: ADR 0003 records the data limit: the remeasured candidates are natural, experimental,
   or origin-unknown, and zero sites meet the pre-registered minimum. Production TSR curves and
   the AAC remain unchanged. The limitations pages and sidecars name the gap.
+
+- P50.1/P50.2: both GBR production matrices now carry the tracked provenance sidecar, and
+  `ws4 quality --check` exits zero (status ok, 12 tables, no warnings). The pre-refresh matrices
+  had no `data_quality.yaml`.
+- P50.3: both instances publish a runtime-provenance page and tracked hash report with matrix,
+  sidecar, manifest, and quality-report hashes. No matrix table, curve, target, or AAC change.
