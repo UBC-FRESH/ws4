@@ -150,6 +150,22 @@ Integration is a vectorized Parquet join. A 50,000-fragment / 5,000-block
 synthetic integration with four fields completed in about 0.14 s on the
 development host; no simulator or optimizer code path changes.
 
+Validation Evidence
+-------------------
+
+The real TFL 6 AOI path used a 100 ha support made of seven VRI polygons and one
+block:
+
+- WS4 vs FEMIC producer reference: maximum absolute difference ``7.1e-15``
+  (tolerance ``1e-9``);
+- WS4 vs FHOPS P14.1 consumer: maximum absolute difference ``0.0``;
+- map time ``0.755 s``; integration ``0.037 s``;
+- bundle 13.4 MB, mapping 4.4 KB, compiled validation dataset 52 KB;
+- licence OGL-BC, CRS ``EPSG:3005``, native resolution 1 m.
+
+The full report is in ``notes/reports/p52-closeout.md``. No production dataset
+switch or model-semantics change was made.
+
 Shared Parity
 -------------
 

@@ -60,7 +60,7 @@ exists and the maintainer approves it.
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
 | P44 Comparison and map operations | #341 | `feature/p44-compare-ops` | complete |
-| P52 Consume FEMIC-compiled LidarBC products | #317 | `feature/p52-lidar-products` | active |
+| P52 Consume FEMIC-compiled LidarBC products | #317 | `feature/p52-lidar-products` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1668,7 +1668,7 @@ Acceptance:
 
 Parent issue: #317
 Branch: `feature/p52-lidar-products`
-Status: active
+Status: pr-open
 
 Goal: pin and validate FEMIC LidarBC bundles, map terrain/canopy products to
 fragment/block support, and preserve native-resolution provenance without
@@ -1701,6 +1701,11 @@ reimplementing discovery or materialization.
   - [x] Preserve validity for datasets without LiDAR fields
   - [x] Verify simulator loading with expanded fields
   - [x] Add `ws4 lidar integrate` and overwrite/failure tests
+- [x] P52.6 Validate, benchmark, document, and close out P52 (#323)
+  - [x] Run the end-to-end TFL 6 AOI validation
+  - [x] Confirm WS4/FHOPS/FEMIC parity within 1e-9
+  - [x] Record performance, storage, and OGL-BC evidence
+  - [x] Add the close-out report and validation metrics
 
 Acceptance:
 
