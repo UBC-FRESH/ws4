@@ -2484,3 +2484,9 @@ issue comments.
 - P40.2: both graphs execute validate → provenance → baseline schedule → one-year simulate with
   every node `success`; evidence is written to `runtime/smoke/evidence.json`. Instance PRs
   #29/#30 merged.
+
+- P41.1: both instances add a tiny provider-smoke fixture and a CI workflow covering build,
+  validate, provenance, schedule, and simulate.
+- P41.2: `requirements-freshforge.txt` pins the FEMIC/ws4 commits; a separate `Provider smoke` CI
+  job runs the graph.
+- P41.3: the evidence JSON is uploaded as a CI artifact; both provider-smoke jobs pass.

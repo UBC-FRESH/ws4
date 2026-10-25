@@ -50,7 +50,8 @@ exists and the maintainer approves it.
 | P33 Search artifact browser | #261 | `feature/p33-search-ui` | complete |
 | P34 Search launcher | #265 | `feature/p34-search-launch` | complete |
 | P38 Instance FreshForge provider execution | #287 | `feature/p38-provider` | complete |
-| P40 Bounded provider workflow execution | #297 | `feature/p40-smoke` | pr-open |
+| P40 Bounded provider workflow execution | #297 | `feature/p40-smoke` | complete |
+| P41 Provider smoke in CI | #303 | `feature/p41-ci-smoke` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
@@ -1286,7 +1287,7 @@ Acceptance:
 
 Parent issue: #297
 Branch: `feature/p40-smoke`
-Status: pr-open
+Status: complete
 
 Goal: execute the provider graph on a bounded existing matrix, not only validate it: add a smoke
 workflow from validate through provenance, schedule, and simulate, add a runner that registers the
@@ -1302,6 +1303,26 @@ Acceptance:
 - The provenance node passes on the existing sidecar.
 - The schedule and one-year simulation artifacts exist.
 - The evidence JSON names the commands, statuses, and artifacts.
+
+## Phase 41: Provider smoke in CI
+
+Parent issue: #303
+Branch: `feature/p41-ci-smoke`
+Status: complete
+
+Goal: run the provider graph automatically: add a tiny fixture build, pin the provider
+environment, execute the full build → validate → provenance → schedule → simulate chain in each
+instance's CI, and upload the evidence.
+
+- [x] P41.1 Add the fixture and CI smoke workflow (#304)
+- [x] P41.2 Pin the provider environment and run the smoke (#305)
+- [x] P41.3 Upload evidence and document the gate (#306)
+
+Acceptance:
+
+- The CI smoke includes `build_dataset`, validate, provenance, schedule, and simulate.
+- Every node succeeds on the tiny fixture.
+- The evidence JSON is uploaded as a CI artifact.
 
 ## Detailed Next Steps Notes
 
