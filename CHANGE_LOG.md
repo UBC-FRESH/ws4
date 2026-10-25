@@ -2550,4 +2550,5 @@ issue comments.
   adds the FEMIC carbon-package loader, the CBM SIT compiler, the libcbm driver and `ws4 carbon`,
   carbon accounts and reports, parity and replay validation, a block-level carbon ledger, carbon
   targets in the optimizer, TSA24/MKRF validation, and GCBM output consumption. The design note is
-  `notes/design/ws4-carbon.md`.
+  `notes/design/ws4-carbon.md`. Dashboard **GREEN** (lint, format, types, tests, validator, docs,
+  docstrings).
