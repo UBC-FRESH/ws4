@@ -98,10 +98,10 @@ Dataset provenance
 provenance, and THLB provenance. When the sidecar is absent, ``ws4 quality`` and the P26
 ``data_quality`` block report the field as **unknown**, not as a pass.
 
-**The Great Bear Rainforest instances are not accepted TIPSY models.** Their managed curves use a
-VDYP7 transform, and their THLB is predecessor-derived rather than a reviewed GBR netdown. Their
-imputation share and coverage are not recorded in the source manifest. Treat the AAC as a model
-ceiling, not an operational guarantee.
+**The Great Bear Rainforest instances are not reviewed GBR yield tables.** Their natural curves use
+VDYP, and their managed curves use BatchTIPSY 4.7 under predecessor-TSR assumptions. Their THLB is
+predecessor-derived rather than a reviewed GBR netdown. Their imputation share and coverage are not
+recorded in the source manifest. Treat the AAC as a model ceiling, not an operational guarantee.
 
 **A schedule is not an operability, market, fire, or access guarantee.** The model prices the
 targets and constraints it is given; it does not certify that a block can be harvested, sold, or

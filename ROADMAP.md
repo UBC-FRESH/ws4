@@ -52,6 +52,7 @@ exists and the maintainer approves it.
 | P38 Instance FreshForge provider execution | #287 | `feature/p38-provider` | complete |
 | P40 Bounded provider workflow execution | #297 | `feature/p40-smoke` | complete |
 | P41 Provider smoke in CI | #303 | `feature/p41-ci-smoke` | complete |
+| P47 Model boundary record | #311 | `feature/p47-boundary` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
@@ -1323,6 +1324,26 @@ Acceptance:
 - The CI smoke includes `build_dataset`, validate, provenance, schedule, and simulate.
 - Every node succeeds on the tiny fixture.
 - The evidence JSON is uploaded as a CI artifact.
+
+## Phase 47: Model boundary record
+
+Parent issue: #311
+Branch: `feature/p47-boundary`
+Status: complete
+
+Goal: record the accepted GBR model boundary and publish a concise limitations page linked from
+each instance's index, model-build guide, decisions page, and provenance sidecar.
+
+- [x] P47.1 Add the model-boundary ADR (#312)
+- [x] P47.2 Add the limitations page and links (#313)
+- [x] P47.3 Link the provenance record and verify docs (#314)
+
+Acceptance:
+
+- Each instance has an accepted ADR naming the predecessor THLB, curve provenance, and AAC limits.
+- Each docs site has a limitations page in the toctree.
+- The model-build and decisions pages link it.
+- Both instance dashboards are green.
 
 ## Detailed Next Steps Notes
 

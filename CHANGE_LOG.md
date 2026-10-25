@@ -2490,3 +2490,10 @@ issue comments.
 - P41.2: `requirements-freshforge.txt` pins the FEMIC/ws4 commits; a separate `Provider smoke` CI
   job runs the graph.
 - P41.3: the evidence JSON is uploaded as a CI artifact; both provider-smoke jobs pass.
+
+- P47.1/P47.2: both GBR instances add an accepted model-boundary ADR, a `limitations` docs page,
+  and links from the index, model-build guide, and decisions page.
+- P47.3: the instance provenance sidecars now name the TSR-consistent BatchTIPSY managed curves,
+  keep the VDYP-transform run as a backup, and carry the instance limitations URL and the
+  deterministic-seed caveat. The ws4 GBR provenance reference and limitations guide are updated
+  to match.
