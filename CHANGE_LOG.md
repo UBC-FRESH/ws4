@@ -2504,3 +2504,6 @@ issue comments.
   min above max, and invalid priorities before the request. A successful save copies the
   previous YAML to `targets.yaml.bak`. c5 verified: two accounts added in one POST, rows 2→4,
   duplicate blocked, backup written. Shell assets move to `v67`. Dashboard **GREEN**.
+
+- P42 close-out: pull request #315 squash-merged as `cc59a0e`; parent #308 and tasks #309/#310
+  closed. P42 status set complete.
