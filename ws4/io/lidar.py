@@ -33,7 +33,33 @@ class FemicLidarError(RuntimeError):
 
 @dataclass(frozen=True)
 class FemicLidarProduct:
-    """One pinned product record from a FEMIC bundle manifest."""
+    """One pinned product record from a FEMIC bundle manifest.
+
+    Attributes
+    ----------
+    product : str
+        Product name from the bundle manifest.
+    relative_path : str
+        Path to the product relative to the bundle root.
+    sha256 : str
+        SHA-256 digest of the product file.
+    size_bytes : int
+        Product file size in bytes.
+    crs : str
+        Native product CRS.
+    resolution_m : float | None
+        Native resolution in metres, when the product is gridded.
+    vertical_datum : str
+        Vertical datum recorded by the producer.
+    licence_id : str
+        Licence identifier recorded by the producer.
+    source_tile_ids : tuple[str, ...]
+        Source LidarBC tile identifiers.
+    derived : bool
+        Whether the product is derived rather than an original source product.
+    lineage : tuple[str, ...]
+        Upstream products or processes used to derive this product.
+    """
 
     product: str
     relative_path: str
@@ -50,7 +76,31 @@ class FemicLidarProduct:
 
 @dataclass(frozen=True)
 class FemicLidarBundle:
-    """Pinned FEMIC LidarBC bundle metadata."""
+    """Pinned FEMIC LidarBC bundle metadata.
+
+    Attributes
+    ----------
+    bundle_dir : Path
+        Resolved bundle root.
+    manifest_path : Path
+        Path to the validated bundle manifest.
+    bundle_id : str
+        Producer bundle identifier.
+    bundle_version : str
+        Producer bundle version.
+    source : dict[str, object]
+        Source, licence, and native CRS metadata.
+    selection : dict[str, object]
+        Producer discovery and selection metadata.
+    processing : dict[str, object]
+        Producer processing metadata.
+    products : dict[str, FemicLidarProduct]
+        Product records keyed by product name.
+    manifest_sha256 : str
+        SHA-256 digest of the manifest bytes.
+    total_bytes : int
+        Total size of the pinned product files.
+    """
 
     bundle_dir: Path
     manifest_path: Path
@@ -66,7 +116,25 @@ class FemicLidarBundle:
 
 @dataclass(frozen=True)
 class FemicLidarValidation:
-    """Validation report for a FEMIC LidarBC bundle."""
+    """Validation report for a FEMIC LidarBC bundle.
+
+    Attributes
+    ----------
+    bundle_dir : Path
+        Resolved bundle root.
+    is_valid : bool
+        Whether the bundle passed every contract check.
+    checked_utc : str
+        UTC timestamp of the check.
+    errors : tuple[str, ...]
+        Contract errors that invalidate the bundle.
+    warnings : tuple[str, ...]
+        Non-fatal observations.
+    product_count : int
+        Number of pinned products examined.
+    total_bytes : int
+        Total size of the pinned product files.
+    """
 
     bundle_dir: Path
     is_valid: bool
@@ -77,7 +145,13 @@ class FemicLidarValidation:
     total_bytes: int
 
     def to_dict(self) -> dict[str, object]:
-        """Return the validation report as a JSON-serializable mapping."""
+        """Return the validation report as a JSON-serializable mapping.
+
+        Returns
+        -------
+        dict[str, object]
+            JSON-serializable validation report.
+        """
         return {
             "bundle_dir": str(self.bundle_dir),
             "is_valid": self.is_valid,
@@ -91,7 +165,19 @@ class FemicLidarValidation:
 
 @dataclass(frozen=True)
 class LidarPolygonSummary:
-    """One polygon-level support summary from a FEMIC product."""
+    """One polygon-level support summary from a FEMIC product.
+
+    Attributes
+    ----------
+    polygon_id : str
+        Identifier from the support layer.
+    product : str
+        Product that was summarized.
+    valid_pixels : int
+        Number of valid raster pixels in the polygon.
+    statistics : dict[str, float]
+        Requested statistics keyed by statistic name.
+    """
 
     polygon_id: str
     product: str
@@ -99,7 +185,13 @@ class LidarPolygonSummary:
     statistics: dict[str, float]
 
     def to_dict(self) -> dict[str, object]:
-        """Return the summary as a JSON-serializable mapping."""
+        """Return the summary as a JSON-serializable mapping.
+
+        Returns
+        -------
+        dict[str, object]
+            JSON-serializable polygon summary.
+        """
         return {
             "polygon_id": self.polygon_id,
             "product": self.product,
@@ -115,7 +207,29 @@ def load_femic_lidar_bundle(
     expected_bundle_version: str | None = None,
     verify_checksums: bool = True,
 ) -> FemicLidarBundle:
-    """Load and validate a FEMIC LidarBC bundle for consumption."""
+    """Load and validate a FEMIC LidarBC bundle for consumption.
+
+    Parameters
+    ----------
+    bundle_dir : Path
+        Bundle root containing ``manifest.json`` and ``products/``.
+    expected_bundle_id : str | None
+        Required bundle identifier, when pinned.
+    expected_bundle_version : str | None
+        Required bundle version, when pinned.
+    verify_checksums : bool
+        Whether to verify every product SHA-256 digest.
+
+    Returns
+    -------
+    FemicLidarBundle
+        Validated bundle metadata.
+
+    Raises
+    ------
+    FemicLidarError
+        If the bundle is missing, malformed, or fails a contract check.
+    """
     report, bundle = _validate(
         bundle_dir,
         verify_checksums=verify_checksums,
@@ -132,7 +246,20 @@ def validate_femic_lidar_bundle(
     *,
     verify_checksums: bool = True,
 ) -> FemicLidarValidation:
-    """Validate a FEMIC LidarBC bundle without raising on contract errors."""
+    """Validate a FEMIC LidarBC bundle without raising on contract errors.
+
+    Parameters
+    ----------
+    bundle_dir : Path
+        Bundle root containing ``manifest.json`` and ``products/``.
+    verify_checksums : bool
+        Whether to verify every product SHA-256 digest.
+
+    Returns
+    -------
+    FemicLidarValidation
+        Validation report, including errors and warnings.
+    """
     report, _ = _validate(
         bundle_dir,
         verify_checksums=verify_checksums,
@@ -143,7 +270,18 @@ def validate_femic_lidar_bundle(
 
 
 def bundle_pin(bundle: FemicLidarBundle) -> dict[str, object]:
-    """Return the stable pin fields WS4 records in its dataset provenance."""
+    """Return the stable pin fields WS4 records in its dataset provenance.
+
+    Parameters
+    ----------
+    bundle : FemicLidarBundle
+        Validated bundle metadata.
+
+    Returns
+    -------
+    dict[str, object]
+        Bundle id, version, manifest digest, and product digests.
+    """
     return {
         "bundle_id": bundle.bundle_id,
         "bundle_version": bundle.bundle_version,
@@ -167,6 +305,24 @@ def register_femic_lidar_bundle(
 
     Writes the pin to the dataset manifest metadata and a
     ``lidar_products.json`` sidecar. The bundle is referenced, not copied.
+
+    Parameters
+    ----------
+    dataset_dir : Path
+        Compiled WS4 dataset directory.
+    bundle_dir : Path
+        FEMIC bundle root to pin.
+    expected_bundle_id : str | None
+        Required bundle identifier, when pinned.
+    expected_bundle_version : str | None
+        Required bundle version, when pinned.
+    registered_utc : str | None
+        Registration timestamp; defaults to the current UTC time.
+
+    Returns
+    -------
+    dict[str, object]
+        Registration record written to the dataset.
     """
     dataset_root = dataset_dir.expanduser().resolve()
     manifest_path = dataset_root / "manifest.json"
@@ -196,7 +352,18 @@ def register_femic_lidar_bundle(
 
 
 def read_registered_femic_lidar(dataset_dir: Path) -> dict[str, object] | None:
-    """Read the registered FEMIC LidarBC pin from a dataset, if present."""
+    """Read the registered FEMIC LidarBC pin from a dataset, if present.
+
+    Parameters
+    ----------
+    dataset_dir : Path
+        Compiled WS4 dataset directory.
+
+    Returns
+    -------
+    dict[str, object] | None
+        Registration record, or ``None`` when the dataset has no pin.
+    """
     dataset_root = dataset_dir.expanduser().resolve()
     sidecar = dataset_root / FEMIC_LIDAR_SIDECAR_NAME
     if sidecar.is_file():
@@ -221,7 +388,18 @@ def read_registered_femic_lidar(dataset_dir: Path) -> dict[str, object] | None:
 
 
 def validate_registered_femic_lidar(dataset_dir: Path) -> FemicLidarValidation:
-    """Revalidate the bundle currently pinned by a dataset."""
+    """Revalidate the bundle currently pinned by a dataset.
+
+    Parameters
+    ----------
+    dataset_dir : Path
+        Compiled WS4 dataset directory.
+
+    Returns
+    -------
+    FemicLidarValidation
+        Validation report for the pinned bundle.
+    """
     registration = read_registered_femic_lidar(dataset_dir)
     if registration is None:
         raise FemicLidarError("Dataset has no registered FEMIC LidarBC product.")
@@ -246,6 +424,24 @@ def summarize_femic_lidar_for_polygons(
 
     Geometry and raster CRS must already match. No reprojection or resampling
     is performed.
+
+    Parameters
+    ----------
+    bundle : FemicLidarBundle
+        Validated bundle metadata.
+    polygons_path : Path
+        Polygon layer in the product CRS.
+    product : str
+        Bundle product to summarize.
+    id_field : str | None
+        Polygon identifier field; row index is used when omitted.
+    statistics : tuple[str, ...]
+        Requested statistics such as ``mean``, ``p95``, or ``cover_ge_2``.
+
+    Returns
+    -------
+    tuple[LidarPolygonSummary, ...]
+        One summary per polygon with valid pixels.
     """
     try:
         import geopandas as gpd
@@ -497,7 +693,35 @@ def _sha256_file(path: Path) -> str:
 
 @dataclass(frozen=True)
 class LidarMappingResult:
-    """Fragment and block terrain/canopy mapping from a registered bundle."""
+    """Fragment and block terrain/canopy mapping from a registered bundle.
+
+    Attributes
+    ----------
+    bundle_id : str
+        Producer bundle identifier.
+    bundle_version : str
+        Producer bundle version.
+    manifest_sha256 : str
+        SHA-256 digest of the bundle manifest.
+    crs : str
+        Product and support CRS.
+    resolution_m : float | None
+        Coarsest native resolution among selected products.
+    products : tuple[str, ...]
+        Products that were mapped.
+    statistics : tuple[str, ...]
+        Statistics that were computed.
+    fragments : tuple[dict[str, object], ...]
+        Fragment rows with native-statistic fields.
+    blocks : tuple[dict[str, object], ...]
+        Dissolved-block rows with native-statistic fields.
+    aggregation_rules : dict[str, str]
+        Human-readable mapping rules.
+    generated_utc : str
+        UTC timestamp of the mapping.
+    warnings : tuple[str, ...]
+        Non-fatal mapping observations.
+    """
 
     bundle_id: str
     bundle_version: str
@@ -513,7 +737,13 @@ class LidarMappingResult:
     warnings: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, object]:
-        """Return the mapping as a JSON-serializable mapping."""
+        """Return the mapping as a JSON-serializable mapping.
+
+        Returns
+        -------
+        dict[str, object]
+            JSON-serializable mapping manifest.
+        """
         return {
             "bundle_id": self.bundle_id,
             "bundle_version": self.bundle_version,
@@ -533,7 +763,18 @@ class LidarMappingResult:
 
 
 def load_registered_femic_lidar_bundle(dataset_dir: Path) -> FemicLidarBundle:
-    """Load the bundle pinned by a dataset registration."""
+    """Load the bundle pinned by a dataset registration.
+
+    Parameters
+    ----------
+    dataset_dir : Path
+        Compiled WS4 dataset directory.
+
+    Returns
+    -------
+    FemicLidarBundle
+        Validated bundle referenced by the dataset pin.
+    """
     registration = read_registered_femic_lidar(dataset_dir)
     if registration is None:
         raise FemicLidarError("Dataset has no registered FEMIC LidarBC product.")
@@ -567,6 +808,30 @@ def map_femic_lidar_to_fragments(
 
     Fragment support uses each fragment polygon directly. Block support uses
     the dissolved block geometry. No resampling or reprojection is performed.
+
+    Parameters
+    ----------
+    bundle : FemicLidarBundle
+        Validated bundle metadata.
+    fragments_path : Path
+        Fragment polygon layer in the product CRS.
+    products : tuple[str, ...]
+        Products to map.
+    statistics : tuple[str, ...]
+        Statistics to compute per product.
+    id_field : str
+        Fragment identifier field.
+    block_field : str
+        Block identifier field.
+    area_field : str
+        Optional fragment area field in hectares.
+    generated_utc : str | None
+        Mapping timestamp; defaults to the current UTC time.
+
+    Returns
+    -------
+    LidarMappingResult
+        Fragment and dissolved-block mapping with provenance.
     """
     try:
         import geopandas as gpd
@@ -693,7 +958,20 @@ def map_femic_lidar_to_fragments(
 
 
 def write_lidar_mapping(result: LidarMappingResult, output_dir: Path) -> dict[str, Path]:
-    """Write fragment/block mapping CSVs and a provenance manifest."""
+    """Write fragment/block mapping CSVs and a provenance manifest.
+
+    Parameters
+    ----------
+    result : LidarMappingResult
+        Mapping to persist.
+    output_dir : Path
+        Directory for the CSV and JSON outputs.
+
+    Returns
+    -------
+    dict[str, Path]
+        Paths to the fragment CSV, block CSV, and manifest.
+    """
     root = output_dir.expanduser().resolve()
     root.mkdir(parents=True, exist_ok=True)
     fragment_path = root / "lidar_fragments.csv"
@@ -725,7 +1003,37 @@ def _valid_pixels(row: dict[str, object], product: str) -> int:
 
 @dataclass(frozen=True)
 class CanopyMappingResult:
-    """Canopy and optional tree/VRI mapping for WS4 support."""
+    """Canopy and optional tree/VRI mapping for WS4 support.
+
+    Attributes
+    ----------
+    bundle_id : str
+        Producer bundle identifier.
+    bundle_version : str
+        Producer bundle version.
+    manifest_sha256 : str
+        SHA-256 digest of the bundle manifest.
+    crs : str
+        Product and support CRS.
+    resolution_m : float | None
+        Native CHM resolution.
+    fragments : tuple[dict[str, object], ...]
+        Fragment rows with canopy and optional VRI/tree fields.
+    blocks : tuple[dict[str, object], ...]
+        Dissolved-block rows with canopy and optional VRI/tree fields.
+    vri_summary : dict[str, object] | None
+        Aggregate VRI comparison evidence, when VRI was supplied.
+    tree_summary : dict[str, object] | None
+        Aggregate tree evidence, when a tree product was supplied.
+    aggregation_rules : dict[str, str]
+        Human-readable mapping rules.
+    caveats : tuple[str, ...]
+        Explicit interpretation limits.
+    generated_utc : str
+        UTC timestamp of the mapping.
+    warnings : tuple[str, ...]
+        Non-fatal mapping observations.
+    """
 
     bundle_id: str
     bundle_version: str
@@ -742,7 +1050,13 @@ class CanopyMappingResult:
     warnings: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, object]:
-        """Return the canopy mapping as a JSON-serializable mapping."""
+        """Return the canopy mapping as a JSON-serializable mapping.
+
+        Returns
+        -------
+        dict[str, object]
+            JSON-serializable canopy mapping manifest.
+        """
         return {
             "bundle_id": self.bundle_id,
             "bundle_version": self.bundle_version,
@@ -777,7 +1091,40 @@ def map_femic_canopy_to_fragments(
     area_field: str = "area_ha",
     generated_utc: str | None = None,
 ) -> CanopyMappingResult:
-    """Map CHM/canopy metrics, VRI uncertainty, and optional tree summaries."""
+    """Map CHM/canopy metrics, VRI uncertainty, and optional tree summaries.
+
+    Parameters
+    ----------
+    bundle : FemicLidarBundle
+        Validated bundle metadata.
+    fragments_path : Path
+        Fragment polygon layer in the product CRS.
+    vri_path : Path | None
+        Optional VRI polygon layer for uncertainty evidence.
+    vri_height_field : str
+        VRI projected-height field.
+    vri_cover_field : str | None
+        Optional VRI crown-closure field.
+    tree_product : str | None
+        Optional tree-point product in the bundle.
+    tree_height_field : str
+        Tree height field.
+    tree_species_field : str | None
+        Optional tree species field.
+    id_field : str
+        Fragment identifier field.
+    block_field : str
+        Block identifier field.
+    area_field : str
+        Optional fragment area field in hectares.
+    generated_utc : str | None
+        Mapping timestamp; defaults to the current UTC time.
+
+    Returns
+    -------
+    CanopyMappingResult
+        Canopy, VRI, and optional tree evidence with provenance.
+    """
     try:
         import geopandas as gpd
     except ImportError as exc:  # pragma: no cover - dependency boundary
@@ -896,7 +1243,20 @@ def map_femic_canopy_to_fragments(
 
 
 def write_canopy_mapping(result: CanopyMappingResult, output_dir: Path) -> dict[str, Path]:
-    """Write canopy fragment/block CSVs and provenance manifest."""
+    """Write canopy fragment/block CSVs and provenance manifest.
+
+    Parameters
+    ----------
+    result : CanopyMappingResult
+        Mapping to persist.
+    output_dir : Path
+        Directory for the CSV and JSON outputs.
+
+    Returns
+    -------
+    dict[str, Path]
+        Paths to the fragment CSV, block CSV, and manifest.
+    """
     root = output_dir.expanduser().resolve()
     root.mkdir(parents=True, exist_ok=True)
     fragment_path = root / "canopy_fragments.csv"
@@ -1046,7 +1406,27 @@ def _mean(values: list[float]) -> float | None:
 
 @dataclass(frozen=True)
 class LidarDatasetIntegrationResult:
-    """Fields and provenance written into a compiled dataset."""
+    """Fields and provenance written into a compiled dataset.
+
+    Attributes
+    ----------
+    dataset_dir : Path
+        Compiled dataset that was updated.
+    bundle_id : str
+        Producer bundle identifier.
+    fragment_fields : tuple[str, ...]
+        Prefixed LiDAR fields added to the fragment table.
+    block_fields : tuple[str, ...]
+        Prefixed LiDAR fields added to the block table.
+    fragment_rows : int
+        Fragment rows written.
+    block_rows : int
+        Block rows written.
+    generated_utc : str
+        UTC timestamp of the integration.
+    warnings : tuple[str, ...]
+        Non-fatal integration observations.
+    """
 
     dataset_dir: Path
     bundle_id: str
@@ -1058,7 +1438,13 @@ class LidarDatasetIntegrationResult:
     warnings: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, object]:
-        """Return the integration result as a JSON-serializable mapping."""
+        """Return the integration result as a JSON-serializable mapping.
+
+        Returns
+        -------
+        dict[str, object]
+            JSON-serializable integration result.
+        """
         return {
             "dataset_dir": str(self.dataset_dir),
             "bundle_id": self.bundle_id,
@@ -1079,7 +1465,26 @@ def integrate_lidar_mapping_into_dataset(
     overwrite: bool = False,
     generated_utc: str | None = None,
 ) -> LidarDatasetIntegrationResult:
-    """Add prefixed LiDAR fields to a compiled dataset's fragment/block tables."""
+    """Add prefixed LiDAR fields to a compiled dataset's fragment/block tables.
+
+    Parameters
+    ----------
+    dataset_dir : Path
+        Compiled WS4 dataset directory.
+    fragment_mapping_path : Path
+        Fragment mapping CSV produced by the mapping step.
+    block_mapping_path : Path | None
+        Optional block mapping CSV.
+    overwrite : bool
+        Whether to replace existing LiDAR fields.
+    generated_utc : str | None
+        Integration timestamp; defaults to the current UTC time.
+
+    Returns
+    -------
+    LidarDatasetIntegrationResult
+        Fields and provenance written to the dataset.
+    """
     dataset_root = dataset_dir.expanduser().resolve()
     manifest_path = dataset_root / "manifest.json"
     if not manifest_path.is_file():
