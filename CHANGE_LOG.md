@@ -2545,3 +2545,9 @@ issue comments.
   the A/B/both counts, and the Kind column.
 - P44.3: added `scripts/benchmark_compare.py` with cold/warm first-tile budgets. c5, six z9 tiles:
   2.063 s cold first, 0.003 s warm first, 13.336 s full cold, 0.018 s warm. Dashboard **GREEN**.
+
+- P51 activation: created parent issue #357 and tasks #358-#367 on `feature/p51-carbon`. The phase
+  adds the FEMIC carbon-package loader, the CBM SIT compiler, the libcbm driver and `ws4 carbon`,
+  carbon accounts and reports, parity and replay validation, a block-level carbon ledger, carbon
+  targets in the optimizer, TSA24/MKRF validation, and GCBM output consumption. The design note is
+  `notes/design/ws4-carbon.md`.

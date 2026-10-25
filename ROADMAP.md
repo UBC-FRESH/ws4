@@ -56,6 +56,7 @@ exists and the maintainer approves it.
 | P48 Ground-plot volume and DBH validation | #324 | `feature/p48-ground-plots` | complete |
 | P49 Managed/young validation pre-registration | #335 | `feature/p49-preregistration` | complete |
 | P50 Runtime provenance and release verification | #345 | `feature/p50-runtime-provenance` | complete |
+| P51 Forest carbon accounting and carbon-aware planning | #357 | `feature/p51-carbon` | active |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -1495,6 +1496,45 @@ Acceptance:
 - `ws4 quality --check` exits zero for both.
 - The report names the matrix path, sidecar hash, quality status, and command.
 - The instance docs link the report and both dashboards stay green.
+
+## Phase 51: Forest carbon accounting and carbon-aware planning
+
+Parent issue: #357
+Branch: `feature/p51-carbon`
+Status: active
+
+Goal: make carbon a first-class, reproducible outcome of a WS4 run and a target the optimizer can
+search against, using libcbm as the engine and FEMIC as the producer of the carbon input package.
+
+Architecture: the compiled dataset remains the runtime contract. `ws4 carbon` reads it plus a FEMIC
+carbon package and a schedule, compiles CBM SIT tables, and runs libcbm behind a small driver
+protocol. Carbon outputs are `carbon.*` accounts. The optimizer sees carbon through a block-level
+ledger that reuses CBM's stand-level additivity, or through a clearly labeled surrogate when the
+ledger cannot meet the search budget. The final schedule is always verified with the exact engine.
+See `notes/design/ws4-carbon.md`.
+
+- [ ] P51.1 Load and validate FEMIC carbon packages (#358)
+- [ ] P51.2 Compile CBM SIT tables from a WS4 dataset and schedule (#359)
+- [ ] P51.3 Add the libcbm driver and the `ws4 carbon` command (#360)
+- [ ] P51.4 Integrate carbon accounts, reports, and provenance (#361)
+- [ ] P51.5 Validate parity, mass balance, and deterministic replay (#362)
+- [ ] P51.6 Build the block-level carbon ledger (#363)
+- [ ] P51.7 Add carbon targets to the optimizer (#364)
+- [ ] P51.8 Validate carbon-aware planning on TSA24 and MKRF (#365)
+- [ ] P51.9 Consume GCBM outputs and compare spatial carbon (#366)
+- [ ] P51.10 Document, release, and close out the carbon phase (#367)
+
+Acceptance:
+
+- `ws4 carbon` runs on a real compiled dataset and schedule and writes pools, fluxes, accounts, and a
+  manifest.
+- The same inputs replay identically, and the manifest records the package, schedule, libcbm, and
+  `cbm_defaults` hashes.
+- WS4 and WS3 agree within a documented tolerance on the TSA24 fixture, or the difference is explained.
+- A carbon target changes a schedule on a small instance, and the winning schedule is verified with the
+  exact engine.
+- TSA24 and MKRF carbon-aware runs are recorded with their trade-offs and runtimes.
+- GCBM outputs can be ingested and compared without making FLINT a WS4 runtime dependency.
 
 ## Detailed Next Steps Notes
 
