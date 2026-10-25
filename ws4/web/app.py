@@ -1744,6 +1744,7 @@ def create_app(
             for filename, kind in (
                 ("portfolio.json", "portfolio"),
                 ("tuning.json", "tuning"),
+                ("lp_sensitivity.json", "lp"),
                 ("lp.json", "lp"),
             ):
                 path = directory / filename
@@ -1769,13 +1770,41 @@ def create_app(
         for filename, kind in (
             ("portfolio.json", "portfolio"),
             ("tuning.json", "tuning"),
+            ("lp_sensitivity.json", "lp"),
             ("lp.json", "lp"),
         ):
             path = directory / filename
             if path.is_file():
                 data = json.loads(path.read_text(encoding="utf-8"))
+                if kind == "portfolio":
+                    for member in data.get("members", []):
+                        for key in ("targets", "run_dir", "schedule"):
+                            value = member.get(key)
+                            if not value:
+                                continue
+                            resolved = Path(str(value)).resolve()
+                            if resolved.is_relative_to(directory):
+                                member[key] = str(resolved.relative_to(directory))
+                            else:
+                                member.pop(key, None)
+                data["files"] = sorted(
+                    str(item.relative_to(directory))
+                    for item in directory.rglob("*")
+                    if item.is_file()
+                )
                 return {"id": name, "kind": kind, "data": data}
         raise HTTPException(status_code=404, detail=f"no search artifact in {name!r}")
+
+    @app.get("/api/search/{name}/files/{path:path}")
+    def search_file(name: str, path: str) -> FileResponse:
+        """Serve a file resolved under one search artifact directory."""
+        directory = search_artifact_dir(name)
+        candidate = (directory / path).resolve()
+        if not candidate.is_relative_to(directory) or not candidate.is_file():
+            raise HTTPException(
+                status_code=404, detail=f"no file {path!r} in search artifact {name!r}"
+            )
+        return FileResponse(candidate)
 
     @app.get("/api/runs/{run}/reports")
     def reports(run: str) -> list[dict[str, Any]]:

@@ -647,6 +647,24 @@ def test_search_launchers_refuse_a_read_only_service(tmp_path: Path) -> None:
     assert "--allow-runs" in response.json()["detail"]
 
 
+def test_search_artifact_files_lp_and_traversal(tmp_path: Path) -> None:
+    """Search files stay under the artifact and LP reports are discovered."""
+    client, _ = _app(tmp_path)
+    directory = tmp_path / "runs" / "lp-demo"
+    directory.mkdir()
+    (directory / "lp_sensitivity.json").write_text(
+        json.dumps({"status": "optimal", "duals": [], "reduced_costs": []}),
+        encoding="utf-8",
+    )
+    (directory / "front.csv").write_text("label,objective\nmember-000,1\n", encoding="utf-8")
+    artifacts = {item["id"]: item["kind"] for item in client.get("/api/search").json()}
+    assert artifacts["lp-demo"] == "lp"
+    body = client.get("/api/search/lp-demo").json()
+    assert "front.csv" in body["data"]["files"]
+    assert client.get("/api/search/lp-demo/files/front.csv").status_code == 200
+    assert client.get("/api/search/lp-demo/files/../secret").status_code == 404
+
+
 def test_search_artifacts_are_listed_and_read(tmp_path: Path) -> None:
     """A portfolio or tuning directory under the runs root is a named search artifact."""
     client, _ = _app(tmp_path)
