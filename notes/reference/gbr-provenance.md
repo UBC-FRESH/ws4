@@ -2,15 +2,17 @@
 
 The P26 `data_quality` block reads a `data_quality.yaml` sidecar beside the compiled
 `manifest.json`. The two Great Bear Rainforest instance matrices carry the following records. Managed curves are
-the TSR-consistent BatchTIPSY lane; the dated VDYP-transform runs are comparison backups.
-The values that the source material does not state are `null`; the report keeps them unknown.
+the TSR-consistent BatchTIPSY lane; the dated VDYP-transform runs are comparison backups. The
+values that the source material does not state are `null`; the report keeps them unknown.
 
 Evidence:
 
 - `femic-tsa46-instance/config/run_profile.tsa46_full.yaml`
 - `femic-tsa46-instance/notes/reference/ws4-build.md`
-- `femic-tsa46-instance/notes/reference/vdyp-runtime.md`
+- `femic-tsa46-instance/notes/reference/tipsy-curves.md`
+- `femic-tsa46-instance/notes/reference/tipsy-validation.md`
 - `femic-tsa46-instance/data/source/public_data_manifest.json`
+- `femic-tsa46-instance/docs/limitations.rst`
 - the TSA 47 equivalents under `femic-tsa47-instance`
 
 ## TSA 46
