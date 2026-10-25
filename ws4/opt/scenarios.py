@@ -161,6 +161,12 @@ def _run_record(label: str, path: Path, metrics: Sequence[str]) -> dict[str, Any
         "violations": len(constraint.get("violations", [])),
         "targets_met": met,
         "targets_missed": missed,
+        "bound": summary.get("bound"),
+        "gap": summary.get("gap"),
+        "bound_status": summary.get("bound_status"),
+        "lp_bound": summary.get("lp_bound"),
+        "lp_gap": summary.get("lp_gap"),
+        "lp_status": summary.get("lp_status"),
         "metrics": {name: accounts.get(name) for name in metrics},
         "targets": target_rows,
         "flows": _flow_rows(target_rows),
@@ -282,6 +288,12 @@ def compare_scenarios(
                 "violations",
                 "targets_met",
                 "targets_missed",
+                "bound",
+                "gap",
+                "bound_status",
+                "lp_bound",
+                "lp_gap",
+                "lp_status",
             )
         }
         for record in records

@@ -284,6 +284,30 @@ The mixed-integer layer (``ws4.opt.mip``) solves an option-selection MILP (HiGHS
 summary. With ``--topology`` and ``--max-opening-ha`` the bound also enforces the stand-centred
 opening constraints, which tighten it as the cap falls.
 
+Exact option model
+------------------
+
+``ws4 solve-mip`` solves the option-selection model for a small instance or a declared block
+subset and writes the same run artefacts as a search::
+
+   ws4 solve-mip --dataset build/compiled --targets targets.yaml --out runtime/mip \
+     --years 50 --topology topology.csv --max-opening-ha 40
+
+It writes ``mip.json``, ``schedule.csv``, ``account_values.csv``, and ``report_targets.csv``.
+The model prices additive targets and the optional stand-centred opening rows. It does **not**
+model green-up, core area, patch distribution, routes, or spread connectivity, so ``mip.json``
+records the option objective, the replayed target penalty, the spatial violation count, and that
+model boundary. ``--limit-blocks`` is a diagnostic subproblem, not a fair whole-landscape solve.
+
+``scripts/exact_vs_heuristic.py`` runs the exact lane and a heuristic under the same targets,
+horizon, and budget, then writes both schedules and an ``exact_vs_heuristic.json``/``.md`` gap
+report. A zero gap means the heuristic matched the bounded option model; it is not an optimality
+claim for the full spatial problem.
+
+``ws4 optimize --lp-bound`` records the LP relaxation's ``lp_bound``, ``lp_gap``, and
+``lp_status`` in the run summary. ``validate_search.py --lp-bound`` carries it through a sweep,
+and scenario comparison includes the bound/gap fields when a run has them.
+
 Constraint strategies
 ---------------------
 
@@ -723,6 +747,10 @@ API
 .. autofunction:: ws4.report.ending_inventory
 
 .. autofunction:: ws4.opt.mip.relaxation_for
+
+.. autofunction:: ws4.opt.exact.solve_option_model
+
+.. autofunction:: ws4.opt.exact.write_exact_result
 
 .. autoclass:: ws4.opt.mip.LpResult
    :members:

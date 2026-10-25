@@ -26,6 +26,9 @@ def _run(
                 "seed": 1,
                 "metaheuristic": "sa",
                 "status": "ok",
+                "lp_bound": 0.0,
+                "lp_gap": objective,
+                "lp_status": "optimal",
             }
         ),
         encoding="utf-8",
@@ -109,6 +112,8 @@ def test_compare_writes_tables_and_a_front(tmp_path: Path) -> None:
     assert (tmp_path / "compare" / "scenario_runs.csv").is_file()
     assert (tmp_path / "compare" / "scenario_targets.csv").is_file()
     assert (tmp_path / "compare" / "scenario_accounts.csv").is_file()
+    runs = pd.read_csv(tmp_path / "compare" / "scenario_runs.csv")
+    assert {"lp_bound", "lp_gap", "lp_status"} <= set(runs.columns)
     targets = pd.read_csv(tmp_path / "compare" / "scenario_targets.csv")
     assert {"raw_penalty", "penalty", "scale", "normalization", "priority"} <= set(targets.columns)
     assert "Scenario comparison" in str(report["markdown"])

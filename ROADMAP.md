@@ -39,7 +39,8 @@ exists and the maintainer approves it.
 | P25 Constraint repair and flow ceilings | #214 | `feature/p25-constraints` | complete |
 | P26 Reproducibility and data quality | #219 | `feature/p26-repro-quality` | complete |
 | P27 Goal normalization and priority tiers | #227 | `feature/p27-normalization` | complete |
-| P28 Inventory and flow ceilings | #233 | `feature/p28-inventory` | pr-open |
+| P28 Inventory and flow ceilings | #233 | `feature/p28-inventory` | complete |
+| P29 MIP lane and exact small-instance validation | #238 | `feature/p29-mip` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -993,7 +994,7 @@ Acceptance:
 
 Parent issue: #233
 Branch: `feature/p28-inventory`
-Status: pr-open
+Status: complete
 
 Goal: make closing inventory and flow ceilings first-class report surfaces: label level/flow
 targets, emit the final inventory, add an NDY/even constraint to the flow-ceiling probe, and
@@ -1009,6 +1010,27 @@ Acceptance:
   report the final values.
 - A max-flow probe can require NDY or even flow and reports the worst change and feasibility.
 - Scenario comparison carries ending inventory and flow status.
+- `python scripts/dashboard.py` is green.
+
+## Phase 29: MIP lane and exact small-instance validation
+
+Parent issue: #238
+Branch: `feature/p29-mip`
+Status: pr-open
+
+Goal: close the optimality loop on small instances: solve the option-selection model exactly,
+compare it with the heuristic under the same targets, and carry LP/MIP gaps into validation and
+scenario reports.
+
+- [x] P29.1 Add the option-model MIP lane (#239)
+- [x] P29.2 Add exact-vs-heuristic validation (#240)
+- [x] P29.3 Carry LP/MIP gaps into reports (#241)
+
+Acceptance:
+
+- `ws4 solve-mip` writes a schedule, summary, target report, and explicit model status.
+- The exact-vs-heuristic report compares actual target penalties and names the gap.
+- `--lp-bound` records the LP bound and gap; scenario runs carry bound/gap fields.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes

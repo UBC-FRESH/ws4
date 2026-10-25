@@ -15,6 +15,7 @@ from .model.schema import validate_dataset
 from .opt.calibrate import calibrate as run_calibration
 from .opt.calibrate import write_targets
 from .opt.engine import OptimizeConfig, Optimizer, load_schedule_csv
+from .opt.exact import solve_option_model, write_exact_result
 from .opt.objective import load_targets
 from .opt.watch import run_watch
 from .patch.accounts import load_patch_accounts
@@ -234,6 +235,9 @@ def optimize(
     mip_bound: bool = typer.Option(
         False, "--mip-bound", help="Record a mixed-integer penalty lower bound in the summary"
     ),
+    lp_bound: bool = typer.Option(
+        False, "--lp-bound", help="Record an LP relaxation bound and gap in the summary"
+    ),
 ) -> None:
     """Search for a schedule that satisfies the targets and write a summary."""
     cfg = OptimizeConfig(
@@ -283,6 +287,7 @@ def optimize(
         cooling_mode=cooling_mode,
         cooling_window=cooling_window,
         mip_bound=mip_bound,
+        lp_bound=lp_bound,
     )
     opt = Optimizer.from_dataset(dataset, cfg)
     result = opt.run(out)
@@ -291,6 +296,53 @@ def optimize(
     table.add_column("value")
     for k, v in result.items():
         table.add_row(k, str(v))
+    print(table)
+
+
+@app.command()
+def solve_mip(
+    dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
+    targets: Path = typer.Option(..., exists=True, help="Targets YAML"),
+    out: Path = typer.Option(..., help="Output directory"),
+    years: int = typer.Option(50, help="Simulation horizon in years"),
+    topology: Path = typer.Option(None, exists=True, help="Block topology for opening rows"),
+    max_opening_ha: float = typer.Option(
+        None, "--max-opening-ha", help="Maximum opening area for the option model"
+    ),
+    limit_blocks: int = typer.Option(
+        None, "--limit-blocks", help="Keep only the first N blocks as a diagnostic subproblem"
+    ),
+) -> None:
+    """Solve the option-selection model exactly for a small instance or subset.
+
+    The model prices additive targets and optional stand-centred opening rows. It does not
+    model green-up, core area, patch distribution, routes, or spread connectivity; the
+    written report names that boundary and replays the schedule.
+    """
+    goal_list = load_targets(targets)
+    result = solve_option_model(
+        dataset,
+        goal_list,
+        years,
+        topology_path=topology,
+        max_opening_ha=max_opening_ha,
+        limit_blocks=limit_blocks,
+    )
+    report = write_exact_result(
+        out,
+        dataset,
+        goal_list,
+        years,
+        result,
+        topology_path=topology,
+        max_opening_ha=max_opening_ha,
+        limit_blocks=limit_blocks,
+    )
+    table = Table(title="Option-model solve")
+    table.add_column("key")
+    table.add_column("value")
+    for key, value in report.items():
+        table.add_row(key, str(value))
     print(table)
 
 

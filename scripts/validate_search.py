@@ -99,6 +99,7 @@ def run_validation(
     threads: int = 1,
     reversion: int = 0,
     mip_bound: bool = False,
+    lp_bound: bool = False,
     workdir: Path | None = None,
     runner_factory: Callable[[Path, OptimizeConfig], Runner] = Optimizer.from_dataset,
 ) -> dict[str, object]:
@@ -126,6 +127,8 @@ def run_validation(
         0 disables it.
     mip_bound : bool, optional
         Ask each run for the MIP lower bound and gap.
+    lp_bound : bool, optional
+        Ask each run for the LP relaxation bound and gap.
     workdir : Path or None, optional
         Directory for the run outputs. ``None`` creates and removes a temporary
         directory.
@@ -171,6 +174,7 @@ def run_validation(
                     workers=threads,
                     reversion=reversion,
                     mip_bound=mip_bound,
+                    lp_bound=lp_bound,
                 )
                 summary = runner_factory(dataset, config).run(out)
                 objective = _as_float(summary.get("incumbent_objective"))
@@ -184,6 +188,11 @@ def run_validation(
                 if "bound" in summary:
                     record["bound"] = summary["bound"]
                     record["gap"] = summary["gap"]
+                    record["bound_status"] = summary.get("bound_status")
+                if "lp_bound" in summary:
+                    record["lp_bound"] = summary["lp_bound"]
+                    record["lp_gap"] = summary["lp_gap"]
+                    record["lp_status"] = summary.get("lp_status")
                 records.append(record)
         by_engine = {
             engine: _stats(
@@ -201,6 +210,7 @@ def run_validation(
             "years": years,
             "reversion": reversion,
             "mip_bound": mip_bound,
+            "lp_bound": lp_bound,
             "records": records,
             "summary": by_engine,
         }
@@ -235,6 +245,7 @@ def render_markdown(report: dict[str, object]) -> str:
         f"- Years: {report['years']}",
         f"- Reversion: {report['reversion']}",
         f"- MIP bound: {report['mip_bound']}",
+        f"- LP bound: {report.get('lp_bound', False)}",
         "",
         "| Engine | Runs | Best | Mean | Median | Worst | Stdev |",
         "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
@@ -278,6 +289,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--threads", type=int, default=1)
     parser.add_argument("--reversion", type=int, default=0)
     parser.add_argument("--mip-bound", action="store_true")
+    parser.add_argument("--lp-bound", action="store_true")
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args(argv)
     report = run_validation(
