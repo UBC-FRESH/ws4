@@ -40,8 +40,9 @@ exists and the maintainer approves it.
 | P26 Reproducibility and data quality | #219 | `feature/p26-repro-quality` | complete |
 | P27 Goal normalization and priority tiers | #227 | `feature/p27-normalization` | complete |
 | P28 Inventory and flow ceilings | #233 | `feature/p28-inventory` | complete |
-| P29 MIP lane and exact small-instance validation | #238 | `feature/p29-mip` | pr-open |
+| P29 MIP lane and exact small-instance validation | #238 | `feature/p29-mip` | complete |
 | P30 Live run surfaces | #242 | `feature/p30-live-surfaces` | pr-open |
+| P31 Dataset provenance and limitations | #249 | `feature/p31-provenance` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1017,7 +1018,7 @@ Acceptance:
 
 Parent issue: #238
 Branch: `feature/p29-mip`
-Status: pr-open
+Status: complete
 
 Goal: close the optimality loop on small instances: solve the option-selection model exactly,
 compare it with the heuristic under the same targets, and carry LP/MIP gaps into validation and
@@ -1070,6 +1071,28 @@ Acceptance:
 - `python scripts/dashboard.py` is green.
 
 - `python scripts/dashboard.py` is green.
+
+## Phase 31: Dataset provenance and limitations
+
+Parent issue: #249
+Branch: `feature/p31-provenance`
+Status: active
+
+Goal: turn the P26 data-quality block from `unknown` into a reviewable provenance record for the
+GBR instances: define a dataset provenance sidecar, expose it through `ws4 quality`, apply it to
+TSA 46 and TSA 47, and publish the model limitations those records imply.
+
+- [ ] P31.1 Add the provenance sidecar and `ws4 quality` (#250)
+- [ ] P31.2 Apply the GBR provenance records and verify the P26 report (#251)
+- [ ] P31.3 Publish the model-limitations page and links (#252)
+
+Acceptance:
+
+- A dataset with a valid sidecar reports `ok`; a missing sidecar remains `unknown`.
+- `ws4 quality --check` fails on a missing or invalid sidecar.
+- TSA 46 and TSA 47 reports name inventory vintage, curve provenance, THLB provenance, and
+  explicitly unknown imputation/coverage fields.
+- The limitations page is linked from the provenance output and docs.
 
 ## Detailed Next Steps Notes
 

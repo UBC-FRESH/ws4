@@ -2405,3 +2405,10 @@ issue comments.
 - P30 close-out: live snapshots, the complete target editor, ending-inventory/flow surfaces, and
   legacy year/period handling are implemented, tested, documented, and queued in
   `notes/reports/p30-closeout.md` (PR #256, evidence head `d7d949c`). Dashboard **GREEN**.
+- P31.1: datasets may carry a `data_quality.yaml` provenance sidecar. `ws4 quality` reports it,
+  writes JSON/Markdown, and `--check` fails when provenance is missing or the report is not ok.
+- P31.2: applied the TSA 46 and TSA 47 provenance records to the current matrices. Both report
+  `status: ok` with inventory vintage 2025, VDYP-transform curve provenance, predecessor-derived
+  THLB, and explicit null imputation/coverage fields. Recorded in `notes/reference/gbr-provenance.md`.
+- P31.3: the limitations page now covers priority tiers, the bounded exact lane, dataset provenance,
+  and the GBR VDYP/THLB caveats. Dashboard **GREEN**.

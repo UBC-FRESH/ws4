@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -17,6 +18,7 @@ from .opt.calibrate import write_targets
 from .opt.engine import OptimizeConfig, Optimizer, load_schedule_csv
 from .opt.exact import solve_option_model, write_exact_result
 from .opt.objective import load_targets
+from .opt.repro import dataset_quality
 from .opt.watch import run_watch
 from .patch.accounts import load_patch_accounts
 from .patch.edge import load_edge_elements
@@ -297,6 +299,55 @@ def optimize(
     for k, v in result.items():
         table.add_row(k, str(v))
     print(table)
+
+
+@app.command()
+def quality(
+    dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
+    targets: Path = typer.Option(None, exists=True, help="Optional targets YAML for coverage"),
+    out: Path = typer.Option(None, help="Write quality.json and quality.md here"),
+    check: bool = typer.Option(
+        False, "--check", help="Fail when provenance is missing or the report is not ok"
+    ),
+) -> None:
+    """Inspect a compiled dataset's provenance and data-quality checks."""
+    report = dataset_quality(dataset, targets)
+    summary = report["summary"]
+    assert isinstance(summary, dict)
+    table = Table(title="Dataset quality")
+    table.add_column("key")
+    table.add_column("value")
+    for key in ("status", "provenance_supplied", "metadata_supplied", "table_count"):
+        table.add_row(key, str(summary.get(key)))
+    for item_check in report["checks"]:
+        assert isinstance(item_check, dict)
+        table.add_row(f"{item_check['name']} ({item_check['status']})", str(item_check["detail"]))
+    print(table)
+    if out is not None:
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "quality.json").write_text(
+            json.dumps(report, indent=2, sort_keys=True), encoding="utf-8"
+        )
+        lines = [
+            "# Dataset quality",
+            "",
+            f"- Status: {summary.get('status')}",
+            f"- Provenance supplied: {summary.get('provenance_supplied')}",
+            f"- Metadata supplied: {summary.get('metadata_supplied')}",
+            "",
+            "## Checks",
+        ]
+        for item_check in report["checks"]:
+            assert isinstance(item_check, dict)
+            lines.append(
+                f"- {item_check['name']}: **{item_check['status']}** — {item_check['detail']}"
+            )
+        lines.extend(["", "## Limitations"])
+        for item in report["limitations"]:
+            lines.append(f"- {item}")
+        (out / "quality.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    if check and (not summary.get("provenance_supplied") or summary.get("status") != "ok"):
+        raise typer.Exit(code=1)
 
 
 @app.command()
