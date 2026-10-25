@@ -2466,3 +2466,7 @@ issue comments.
 
 - P34 close-out: pull request #286 squash-merged as `9cdae7`; parent #265 and task #272 closed.
   P34 status set complete.
+- P38.1/P38.2: both instances package a `tsaXX.ws4` FreshForge provider with build, validate,
+  baseline-schedule, and simulate nodes, entry points, and command tests.
+- P38.3: both workflows resolve every node with zero provider diagnostics against the local
+  FEMIC provider; instance dashboards are green. The full graph execution smoke remains P39.
