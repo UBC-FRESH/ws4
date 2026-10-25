@@ -59,7 +59,7 @@ exists and the maintainer approves it.
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
-| P44 Comparison and map operations | #341 | `feature/p44-compare-ops` | pr-open |
+| P44 Comparison and map operations | #341 | `feature/p44-compare-ops` | complete |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1389,7 +1389,7 @@ Acceptance:
 
 Parent issue: #341
 Branch: `feature/p44-compare-ops`
-Status: pr-open
+Status: complete
 
 Goal: make the comparison path production-grade on large AOIs: durable compare tiles,
 a browser smoke, and a cold/warm scale gate.

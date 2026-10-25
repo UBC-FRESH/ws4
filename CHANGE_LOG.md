@@ -2545,3 +2545,6 @@ issue comments.
   the A/B/both counts, and the Kind column.
 - P44.3: added `scripts/benchmark_compare.py` with cold/warm first-tile budgets. c5, six z9 tiles:
   2.063 s cold first, 0.003 s warm first, 13.336 s full cold, 0.018 s warm. Dashboard **GREEN**.
+
+- P44 close-out: pull request #349 squash-merged as `05c3b44`; parent #341 and tasks #342/#343/#344
+  closed. P44 status set complete.
