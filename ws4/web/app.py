@@ -12,6 +12,7 @@ import json
 import math
 import os
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -52,6 +53,8 @@ from ..opt.objective import (
 )
 from ..report import target_kind
 from .skins import load_skins
+
+SEARCH_JOB_LIMIT: int = 20
 
 _REPORT_SUFFIXES = {".csv", ".html", ".png", ".json", ".txt"}
 
@@ -1535,6 +1538,15 @@ def create_app(
 
     search_jobs: dict[str, dict[str, Any]] = {}
 
+    def prune_search_jobs() -> None:
+        """Drop the oldest finished jobs while keeping the in-memory list bounded."""
+        for name in list(search_jobs):
+            if len(search_jobs) <= SEARCH_JOB_LIMIT:
+                break
+            job = search_jobs[name]
+            if job["process"].poll() is not None:
+                del search_jobs[name]
+
     def new_search_dir(prefix: str) -> Path:
         """Return a fresh output directory under the runs root."""
         out = runs_root / f"{prefix}-{datetime.now():%Y%m%d-%H%M%S}"
@@ -1552,8 +1564,19 @@ def create_app(
     def launch_search(kind: str, out: Path, command: list[str]) -> dict[str, Any]:
         """Start one search script and record its process."""
         console = (out / "console.log").open("wb")
-        process = subprocess.Popen(command, stdout=console, stderr=subprocess.STDOUT)
-        search_jobs[out.name] = {"kind": kind, "out": out, "process": process}
+        process = subprocess.Popen(
+            command,
+            stdout=console,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
+        search_jobs[out.name] = {
+            "kind": kind,
+            "out": out,
+            "process": process,
+            "stopped": False,
+        }
+        prune_search_jobs()
         return {"id": out.name, "kind": kind, "status": "running"}
 
     @app.post("/api/search/portfolio")
@@ -1660,6 +1683,22 @@ def create_app(
         ]
         return launch_search("tuning", out, command)
 
+    @app.post("/api/search/{name}/stop")
+    def stop_search(name: str) -> dict[str, Any]:
+        """Stop a running portfolio or tuner process."""
+        job = search_jobs.get(name)
+        if job is None:
+            raise HTTPException(status_code=404, detail=f"no search job named {name!r}")
+        process = job["process"]
+        if process.poll() is not None:
+            return {"id": name, "status": "finished", "returncode": process.returncode}
+        job["stopped"] = True
+        try:
+            os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+        except OSError:
+            process.terminate()
+        return {"id": name, "status": "stopping"}
+
     @app.get("/api/search/{name}/status")
     def search_status(name: str) -> dict[str, Any]:
         """Return a running search job's status and summary."""
@@ -1670,7 +1709,9 @@ def create_app(
         process = job["process"]
         running = process.poll() is None
         out = job["out"]
-        if running:
+        if job.get("stopped"):
+            status = "stopping" if running else "stopped"
+        elif running:
             status = "running"
         elif (out / "portfolio.json").is_file() or (out / "tuning.json").is_file():
             status = "done"
@@ -1712,7 +1753,13 @@ def create_app(
                     break
         for name, job in search_jobs.items():
             if name not in known:
-                artifacts.append({"id": name, "kind": job["kind"], "status": "running"})
+                artifacts.append(
+                    {
+                        "id": name,
+                        "kind": job["kind"],
+                        "status": "running" if job["process"].poll() is None else "stopped",
+                    }
+                )
         return artifacts
 
     @app.get("/api/search/{name}")

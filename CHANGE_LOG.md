@@ -2458,3 +2458,8 @@ issue comments.
   metadata and the exact command are covered.
 - P37.3: both GBR FreshForge workflows run the quality node after validation, install the sidecar,
   and fail on invalid provenance. Dashboards green.
+
+- P34.2: added `POST /api/search/{name}/stop`, which terminates the search process group and
+  reports `stopping`/`stopped`; the in-memory job list is bounded to 20 and drops the oldest
+  finished entries. The Search tab shows running jobs and a Stop control. Tests cover stop,
+  stopped status, and the bound. Shell assets move to `v65`. Dashboard **GREEN**.
