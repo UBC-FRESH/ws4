@@ -43,6 +43,7 @@ exists and the maintainer approves it.
 | P29 MIP lane and exact small-instance validation | #238 | `feature/p29-mip` | pr-open |
 | P30 Live run surfaces | #242 | `feature/p30-live-surfaces` | pr-open |
 | P31 Comparison map over MVT | #257 | `feature/p31-compare-map` | active |
+| P32 Search artifact browser | #261 | `feature/p32-search-ui` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1092,6 +1093,28 @@ Acceptance:
 - Compare requests MVT tiles, not the full A/B GeoJSON.
 - A-only, B-only, and both use the existing compare colors.
 - The summary counts come from compare-stats.
+- `python scripts/dashboard.py` is green.
+
+## Phase 32: Search artifact browser
+
+Parent issue: #261
+Branch: `feature/p32-search-ui`
+Status: active
+
+Goal: give the portfolio, tuner, and LP artifacts a read-only browser surface over the
+runs root.
+
+- [x] P32.1 Add the Search artifacts tab (#262)
+  - [x] Discover portfolio/tuning/LP artifacts under the runs root
+  - [x] Render portfolio members/front and tuner ranking
+  - [x] Add the search panel to every skin
+  - [x] Verify on c5 and document the CLI launch path
+
+Acceptance:
+
+- A portfolio artifact shows members, objective, metrics, and the front.
+- A tuning artifact shows the ranked candidates, best/median, and parameters.
+- No artifacts shows a clear empty state and the CLI command to create one.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes

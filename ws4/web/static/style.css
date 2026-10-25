@@ -223,3 +223,9 @@ path.block.compare-both { fill:#6b4c9a; }
   border-bottom:1px solid var(--line); padding:.12rem .25rem; text-align:left; }
 #ending-table th, #compare-ending th { color:var(--muted); font-weight:600; }
 #ending-table td.num, #compare-ending td.num { text-align:right; font-variant-numeric:tabular-nums; }
+.search-pick { display:flex; gap:.4rem; align-items:center; font-size:.78rem; color:var(--muted); margin:.4rem 0; }
+.search-pick select { font:inherit; font-size:.78rem; max-width:22rem; }
+#search-table { width:100%; border-collapse:collapse; font-size:.74rem; }
+#search-table th, #search-table td { border-bottom:1px solid var(--line); padding:.15rem .25rem; text-align:left; }
+#search-table th { color:var(--muted); font-weight:600; }
+#search-table tr.search-front { background:#eef8f1; font-weight:600; }

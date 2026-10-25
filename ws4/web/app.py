@@ -1524,6 +1524,50 @@ def create_app(
             rows.append(record)
         return rows
 
+    def search_artifact_dir(name: str) -> Path:
+        """Return a directory under the runs root that holds a search artifact."""
+        candidate = (runs_root / name).resolve()
+        if candidate.parent != runs_root or not candidate.is_dir():
+            raise HTTPException(
+                status_code=404, detail=f"no search artifact named {name!r} under {runs_root}"
+            )
+        return candidate
+
+    @app.get("/api/search")
+    def search_artifacts() -> list[dict[str, Any]]:
+        """List portfolio, tuner, and LP artifacts under the runs root."""
+        artifacts: list[dict[str, Any]] = []
+        if not runs_root.is_dir():
+            return artifacts
+        for directory in sorted(runs_root.iterdir()):
+            if not directory.is_dir():
+                continue
+            for filename, kind in (
+                ("portfolio.json", "portfolio"),
+                ("tuning.json", "tuning"),
+                ("lp.json", "lp"),
+            ):
+                path = directory / filename
+                if path.is_file():
+                    artifacts.append({"id": directory.name, "kind": kind})
+                    break
+        return artifacts
+
+    @app.get("/api/search/{name}")
+    def search_artifact(name: str) -> dict[str, Any]:
+        """Return one portfolio, tuner, or LP result for the browser."""
+        directory = search_artifact_dir(name)
+        for filename, kind in (
+            ("portfolio.json", "portfolio"),
+            ("tuning.json", "tuning"),
+            ("lp.json", "lp"),
+        ):
+            path = directory / filename
+            if path.is_file():
+                data = json.loads(path.read_text(encoding="utf-8"))
+                return {"id": name, "kind": kind, "data": data}
+        raise HTTPException(status_code=404, detail=f"no search artifact in {name!r}")
+
     @app.get("/api/runs/{run}/reports")
     def reports(run: str) -> list[dict[str, Any]]:
         """Return the report files a run wrote."""

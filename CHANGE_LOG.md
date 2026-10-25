@@ -2411,3 +2411,9 @@ issue comments.
   viewports. The vector paint maps A-only red, B-only blue, both purple, and untreated blocks at low
   opacity; block details use the tile's compare flag. Added backend tests for the counts and tile
   flags. Shell assets move to `v61`. Dashboard **GREEN**.
+
+- P32.1: added a read-only Search tab that discovers `portfolio.json`, `tuning.json`, and `lp.json`
+  under the runs root, renders portfolio members with the Pareto front, and renders tuner ranking
+  and parameters. `GET /api/search` and `GET /api/search/{name}` back it; every skin now includes the
+  search panel. c5's demo portfolio and tuner artifacts render; the tab points at the CLI commands
+  for creating new artifacts. Shell assets move to `v63`. Dashboard **GREEN**.

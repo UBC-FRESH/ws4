@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=61">
+  <link rel="stylesheet" href="static/style.css?v=63">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
 </head>
 <body>
   <header>
-    <strong>WS4</strong><span class="build">v61</span>
+    <strong>WS4</strong><span class="build">v63</span>
     <label>Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Period
@@ -25,6 +25,7 @@
         <button data-tab="targets">Targets</button>
         <button data-tab="reports">Reports</button>
         <button data-tab="comparison">Compare</button>
+        <button data-tab="search">Search</button>
       </nav>
       <div class="sidebar-body">
       <section id="tab-legend">
@@ -90,6 +91,16 @@
         <p id="run-status" class="hint"></p>
         <p id="targets-status" class="hint"></p>
         </div>
+      </section>
+      <section id="tab-search" hidden>
+        <h2>Search artifacts</h2>
+        <p id="search-empty" class="hint"></p>
+        <label class="search-pick">Artifact <select id="search-select"></select></label>
+        <p id="search-summary" class="hint"></p>
+        <div class="table-wrap"><table id="search-table" hidden>
+          <thead></thead>
+          <tbody></tbody>
+        </table></div>
       </section>
       <section id="tab-reports" hidden>
         <h2>Standard reports</h2>
@@ -184,6 +195,6 @@
     </div>
   </main>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=61"></script>
+  <script type="module" src="static/app.js?v=63"></script>
 </body>
 </html>

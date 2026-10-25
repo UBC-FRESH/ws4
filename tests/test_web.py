@@ -555,6 +555,43 @@ def test_the_optional_land_base_underlay(tmp_path: Path) -> None:
     assert "--land-base" in response.json()["detail"]
 
 
+def test_search_artifacts_are_listed_and_read(tmp_path: Path) -> None:
+    """A portfolio or tuning directory under the runs root is a named search artifact."""
+    client, _ = _app(tmp_path)
+    portfolio = tmp_path / "runs" / "portfolio-demo"
+    portfolio.mkdir()
+    (portfolio / "portfolio.json").write_text(
+        json.dumps(
+            {
+                "metrics": ["feature.Volume"],
+                "front": ["member-000:001"],
+                "members": [
+                    {
+                        "label": "member-000:001",
+                        "seed": 1,
+                        "objective": 2.0,
+                        "metrics": {"feature.Volume": 10.0},
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    tuning = tmp_path / "runs" / "tuning-demo"
+    tuning.mkdir()
+    (tuning / "tuning.json").write_text(
+        json.dumps({"mode": "grid", "ranking": ["candidate-000"], "candidates": []}),
+        encoding="utf-8",
+    )
+    artifacts = client.get("/api/search").json()
+    assert {item["id"] for item in artifacts} == {"portfolio-demo", "tuning-demo"}
+    body = client.get("/api/search/portfolio-demo").json()
+    assert body["kind"] == "portfolio"
+    assert body["data"]["front"] == ["member-000:001"]
+    assert client.get("/api/search/tuning-demo").json()["kind"] == "tuning"
+    assert client.get("/api/search/nope").status_code == 404
+
+
 def test_legacy_year_and_period_tables_are_normalized(tmp_path: Path) -> None:
     """A run written with year/period columns reads through the current offset endpoints."""
     client, _ = _app(tmp_path)
