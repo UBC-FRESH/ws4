@@ -2554,3 +2554,10 @@ issue comments.
 - P51.3: docs/Pages return 200; version metadata is consistently `0.1.0`, but `v0.1.0` is already
   tagged at `d8ecd72` and released on 2026-10-15. The candidate is green but **not tag-ready**
   until a new version and release notes are approved. No tag or release was created.
+
+- P45.1: added `scripts/profile_route.py` and profiled the c5 production route config on a
+  32-block schedule. Full route evaluation is 0.451 s/evaluation; `simulate` is the hot path
+  (0.407 s), not route assignment. Wrote `notes/design/ws4-incremental-route.md` with the
+  incremental aggregate design, the fallback cases (delivery, planned-network opening, other
+  route accounts), seven invariants, and the parity test plan. No incremental code landed.
+  Dashboard **GREEN**.

@@ -61,6 +61,7 @@ exists and the maintainer approves it.
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
 | P44 Comparison and map operations | #341 | `feature/p44-compare-ops` | complete |
+| P45 Route evaluation performance | #368 | `feature/p45-route-profile` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1412,6 +1413,27 @@ Acceptance:
 - Pre-warm writes compare tiles.
 - Browser smoke verifies flags and details.
 - Benchmark records cold/warm and enforces budgets.
+- `python scripts/dashboard.py` is green.
+
+## Phase 45: Route evaluation performance
+
+Parent issue: #368
+Branch: `feature/p45-route-profile`
+Status: pr-open
+
+Goal: measure the current route evaluation and specify an incremental ledger before
+changing optimizer accounting.
+
+- [x] P45.1 Profile route evaluation and specify the incremental ledger (#369)
+  - [x] Add the profiling script
+  - [x] Run it on c5
+  - [x] Write the invariants and API
+  - [x] Document the profile command
+
+Acceptance:
+
+- A repeatable profile reports seconds per evaluation and top costs.
+- The design note states fallback conditions and parity tests.
 - `python scripts/dashboard.py` is green.
 
 ## Phase 47: Model boundary record
