@@ -1514,7 +1514,7 @@ ledger cannot meet the search budget. The final schedule is always verified with
 See `notes/design/ws4-carbon.md`.
 
 - [x] P51.1 Load and validate FEMIC carbon packages (#358)
-- [ ] P51.2 Compile CBM SIT tables from a WS4 dataset and schedule (#359)
+- [x] P51.2 Compile CBM SIT tables from a WS4 dataset and schedule (#359)
 - [ ] P51.3 Add the libcbm driver and the `ws4 carbon` command (#360)
 - [ ] P51.4 Integrate carbon accounts, reports, and provenance (#361)
 - [ ] P51.5 Validate parity, mass balance, and deterministic replay (#362)

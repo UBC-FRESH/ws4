@@ -16,13 +16,25 @@ from .package import (
     resolve_tracks,
     validate_carbon_package,
 )
+from .sit import (
+    CarbonSitError,
+    SitTables,
+    build_sit_tables,
+    read_schedule,
+    write_sit_tables,
+)
 
 __all__ = [
     "CarbonPackage",
     "CarbonPackageError",
+    "CarbonSitError",
+    "SitTables",
     "TrackResolution",
+    "build_sit_tables",
     "load_carbon_package",
     "package_fingerprint",
+    "read_schedule",
     "resolve_tracks",
     "validate_carbon_package",
+    "write_sit_tables",
 ]

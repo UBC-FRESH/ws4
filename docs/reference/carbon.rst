@@ -142,6 +142,30 @@ and must be recorded in the run provenance.
 
 Duplicate track names in the dataset are rejected because a join would be ambiguous.
 
+SIT compilation
+---------------
+
+``ws4.carbon.sit.build_sit_tables`` compiles the package, the compiled dataset, and a
+schedule into SIT tables. It reads ``fragments``, ``tracks``, and ``treatments`` from the
+dataset; the package's ``yield`` table is authoritative, so the dataset's curves are not
+resampled.
+
+The compiler:
+
+- resolves every dataset track by exact name;
+- builds the SIT classifier, disturbance-type, age-class, inventory, yield, event, and
+  transition tables;
+- takes event area from the dataset fragments in the scheduled block and sets
+  ``time_step = offset + 1``;
+- maps each WS4 treatment to its package disturbance type;
+- rejects a retention split with ``CARBON-RETENTION-UNSUPPORTED`` rather than
+  approximating it;
+- rejects an unknown treatment, block, track, or missing dataset table with a stable
+  finding code.
+
+The generated tables can be parsed by libcbm directly. The ``test_optional_libcbm_parse``
+test does so when libcbm is installed; otherwise it skips.
+
 Fingerprint
 -----------
 
@@ -211,6 +235,5 @@ API
 The next step
 -------------
 
-The package loader does not run carbon. P51.2 compiles the SIT tables from the package,
-the compiled dataset, and the schedule; P51.3 runs the engine and writes the carbon
-reports.
+The package loader and SIT compiler do not run carbon. P51.3 adds the libcbm driver and
+the ``ws4 carbon`` command, then writes the carbon pools, fluxes, accounts, and manifest.

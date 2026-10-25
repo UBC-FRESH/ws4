@@ -2559,3 +2559,13 @@ issue comments.
   the caller explicitly allows them. Added 16 contract tests over a synthetic package, the
   consumer-side `docs/reference/carbon.rst` page, and the reference-index entry. Dashboard
   **GREEN** (lint, format, types, tests, validator, docs, docstrings).
+
+- P51.2: added `ws4/carbon/sit.py`, which compiles the package, compiled dataset, and schedule
+  into SIT classifiers, disturbance types, age classes, inventory, yield, events, and
+  transitions. Events take their area from the scheduled block's fragments and set
+  `time_step = offset + 1`; treatments map through the package disturbance map. Retention
+  splits fail with `CARBON-RETENTION-UNSUPPORTED`. `write_sit_tables` writes the audit copy.
+  Eight contract tests cover inventory/event/transition mapping, the package yield grid,
+  retention, unknown treatments, unmatched tracks, a missing dataset table, the offset clock,
+  and the audit writer; an optional libcbm test parses the tables when the engine is installed.
+  The libcbm parse was verified manually against `libcbm==2.10.2`. Dashboard **GREEN**.
