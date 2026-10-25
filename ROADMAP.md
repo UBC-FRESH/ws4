@@ -60,6 +60,7 @@ exists and the maintainer approves it.
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
 | P44 Comparison and map operations | #341 | `feature/p44-compare-ops` | complete |
+| P52 Consume FEMIC-compiled LidarBC products | #317 | `feature/p52-lidar-products` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1662,3 +1663,26 @@ Acceptance:
     same cost per metre and hauls 22% farther at 0.46× the cost per unit-km, because its solve chooses
     the road set and the assignment jointly. Reports: `p17-opened-roads.md`, `p17-tradeoff.md`,
     `p17-closeout.md`. Next: P18.
+
+## Phase 52: Consume FEMIC-compiled LidarBC products
+
+Parent issue: #317
+Branch: `feature/p52-lidar-products`
+Status: active
+
+Goal: pin and validate FEMIC LidarBC bundles, map terrain/canopy products to
+fragment/block support, and preserve native-resolution provenance without
+reimplementing discovery or materialization.
+
+- [x] P52.1 Define the WS4 consumer contract for FEMIC LidarBC products (#318)
+  - [x] Pin bundle id/version and per-product checksums
+  - [x] Validate manifest, licence, CRS, resolution, vertical datum, and source tiles
+  - [x] Add polygon support summaries without reprojection
+  - [x] Validate shared slope/CHM parity with FHOPS
+
+Acceptance:
+
+- WS4 can validate and pin a FEMIC bundle.
+- Polygon support summaries preserve the product CRS and native resolution.
+- Shared-AOI slope/CHM values match FHOPS within the documented tolerance.
+- No discovery or materialization is reimplemented in WS4.

@@ -2548,3 +2548,10 @@ issue comments.
 
 - P44 close-out: pull request #349 squash-merged as `05c3b44`; parent #341 and tasks #342/#343/#344
   closed. P44 status set complete.
+
+- P52.1: added `ws4.io.lidar` to pin FEMIC LidarBC bundles, validate manifest
+  schema, OGL-BC licence, checksums, CRS, resolution, vertical datum, and
+  source-tile membership, and summarize slope/CHM rasters over polygon support.
+  Added the `ws4[lidar]` optional extra, contract note, reference docs, and
+  shared parity evidence against `lidarbc-995fb1f771f4d7fe` (max difference
+  0.0 versus FHOPS).
