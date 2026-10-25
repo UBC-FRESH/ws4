@@ -640,6 +640,7 @@ Every run writes two review artefacts beside the summary:
   coverage, and a list of explicit unknowns and model limitations. The run summary carries a compact
   ``data_quality`` block and the report path.
 
+Install a tracked sidecar and check it in one command with ``ws4 quality --sidecar PATH --check``.
 The quality status distinguishes **not supplied** from **checked and good**. A dataset with no
 metadata reports ``unknown`` and names the missing inventory-vintage/imputation/coverage fields
 rather than treating an empty block as a pass. Derived accounts (``patch.*``, ``route.*``,

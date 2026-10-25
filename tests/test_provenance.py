@@ -86,3 +86,27 @@ def test_quality_command_checks_and_writes(tmp_path: Path) -> None:
     payload = json.loads((out / "quality.json").read_text(encoding="utf-8"))
     assert payload["summary"]["provenance_supplied"] is True
     assert (out / "quality.md").is_file()
+
+
+def test_quality_command_installs_a_sidecar(tmp_path: Path) -> None:
+    """--sidecar copies the tracked record beside the matrix before checking."""
+    dataset = _dataset(tmp_path)
+    sidecar = tmp_path / "tracked_quality.yaml"
+    sidecar.write_text("schema_version: 1\ninventory:\n  vintage: '2025'\n", encoding="utf-8")
+    out = tmp_path / "installed"
+    result = CliRunner().invoke(
+        app,
+        [
+            "quality",
+            "--dataset",
+            str(dataset),
+            "--sidecar",
+            str(sidecar),
+            "--out",
+            str(out),
+            "--check",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert (dataset / "data_quality.yaml").is_file()
+    assert (out / "quality.json").is_file()
