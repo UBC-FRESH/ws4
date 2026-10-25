@@ -2,7 +2,7 @@
 
 Phase: P52 / `#317`
 Branch: `feature/p52-lidar-products`
-Status: close-out queued; PR and merge in progress
+Status: complete; PR #381 squash-merged as `bd3bc18`
 Upstream producer: FEMIC P79 (`UBC-FRESH/femic#211`)
 
 ## Outcome
