@@ -2561,6 +2561,10 @@ issue comments.
   incremental aggregate design, the fallback cases (delivery, planned-network opening, other
   route accounts), seven invariants, and the parity test plan. No incremental code landed.
   Dashboard **GREEN**.
-
 - P45 close-out: pull request #370 squash-merged as `6e49f12`; parent #368 and task #369 closed.
   P45 status set complete.
+- P53.1/P53.2: bump the package and citation metadata to `0.2.0`, add the 0.2.0 release notes,
+  and replace the deprecated license classifier with the SPDX `Apache-2.0` expression.
+- P53.3: clean-checkout, dashboard, sdist/wheel build, `twine check`, isolated installs, entry
+  points, synthetic smoke, and Pages checks pass on the 0.2.0 head. No tag or release was created;
+  tag approval is pending.

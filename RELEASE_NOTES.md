@@ -1,3 +1,72 @@
+# WS4 0.2.0
+
+Target release: 2026-10-25
+
+WS4 0.2.0 turns the 0.1.0 core into a production-facing analyst system: the model still treats
+space as first-class, but the search, map, provenance, target, and provider surfaces are now
+designed for review rather than one-off runs.
+
+## Install
+
+```bash
+pip install .            # core: build, simulate, optimize, report, validate, ingest
+pip install ".[geo]"     # add the shapefile fragment reader
+pip install ".[opt]"     # add the optimization extras
+pip install ".[web]"     # add the web UI and map serving extras
+```
+
+Requires Python 3.11 or newer, on Linux.
+
+## What is new since 0.1.0
+
+- **Search and decision review.** Portfolio and multi-objective search, the MIP bound lane,
+  constraint repair, flow and inventory ceilings, normalized goal priorities, live run surfaces,
+  and a comparison map over MVT tiles.
+- **Artifact depth.** Search members, schedules, targets, fronts, portfolio reports, LP
+  sensitivity, failure metadata, console links, and safe artifact downloads are inspectable from
+  the Search tab. Durable compare tiles and pre-warm support make the A/B map usable at scale.
+- **Target operations.** Multi-account target creation, browser-side validation, and a pre-save
+  `targets.yaml.bak` backup.
+- **Map and account surfaces.** Map operations, account browsing and activation, model-derived
+  spatial layers, production map serving, and viewport controls.
+- **Provenance and limitations.** Dataset-quality sidecars, GBR instance provenance, model
+  boundary ADRs, stratified ground-plot validation, runtime-provenance reports, and explicit
+  no-optimality/no-AAC-guarantee language.
+- **Workflow execution.** The FreshForge instance providers, bounded smoke runs, a provenance
+  gate, and CI provider smoke on a tiny fixture.
+- **Reference instances.** Great Bear Rainforest North (TSA 46) and South (TSA 47) remain
+  standalone instances with published docs and provenance.
+
+## Verification
+
+- Clean-checkout build and test: pass.
+- `python scripts/dashboard.py`: lint, format, strict types, tests, workflow validator, docs, and
+  docstrings all green.
+- sdist and wheel build; `twine check` pass; isolated installs and entry points pass.
+- Synthetic build → validate → simulate → report smoke passes.
+- The ws4 docs, limitations, API, and both GBR instance sites return 200.
+
+See `notes/reports/p53-release-candidate.md` for the 0.2.0 evidence.
+
+## Known gaps
+
+- Route-evaluation performance (P45) profiling and design are included; no incremental route code
+  landed. Forest-carbon accounting (P51) and native LiDAR products (P52) remain later phases and
+  are **not** in 0.2.0.
+- Volume/DBH validation is documented but data-limited; the managed/young ground-plot test in
+  ADR 0003 remains blocked on management-origin data.
+- Deterministic seeds, bounded searches, and heuristic schedules are not certified optimal.
+- The AAC is a policy ceiling, not an operational or ecological guarantee.
+- PyPI publishing remains out of scope.
+
+## Documentation
+
+Published at https://ubc-fresh.github.io/ws4/.
+
+## License
+
+Apache-2.0. See `LICENSE`.
+
 # WS4 0.1.0
 
 Released: 2026-10-15

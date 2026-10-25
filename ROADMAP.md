@@ -57,6 +57,7 @@ exists and the maintainer approves it.
 | P49 Managed/young validation pre-registration | #335 | `feature/p49-preregistration` | complete |
 | P50 Runtime provenance and release verification | #345 | `feature/p50-runtime-provenance` | complete |
 | P51 Release-candidate verification | #351 | `feature/p51-release-candidate` | complete |
+| P53 Version 0.2.0 release preparation | #371 | `feature/p53-v020` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -1541,6 +1542,27 @@ Acceptance:
 - Docs/Pages return 200 for the key pages.
 - The report states whether the candidate is ready for a tag and names any blocker.
 - No tag, release, version bump, or production-data change.
+
+## Phase 53: Version 0.2.0 release preparation
+
+Parent issue: #371
+Branch: `feature/p53-v020`
+Status: complete
+
+Goal: apply the approved 0.2.0 version, write the release notes, fix the license metadata warning,
+and re-run the release gates without tagging.
+
+- [x] P53.1 Bump the version and citation metadata (#372)
+- [x] P53.2 Write the 0.2.0 release notes (#373)
+- [x] P53.3 Fix license metadata, re-run the gates, and request tag approval (#374)
+
+Acceptance:
+
+- All version fields read 0.2.0.
+- Release notes cover the changes since 0.1.0.
+- The package builds without the license-classifier warning.
+- Clean-checkout, dashboard, artifacts, isolated installs, entry points, and Pages pass.
+- No tag or release is created.
 
 ## Detailed Next Steps Notes
 
