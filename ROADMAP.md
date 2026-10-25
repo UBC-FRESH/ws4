@@ -44,10 +44,11 @@ exists and the maintainer approves it.
 | P30 Live run surfaces | #242 | `feature/p30-live-surfaces` | complete |
 | P31 Comparison map over MVT | #257 | `feature/p31-compare-map` | complete |
 | P32 Dataset provenance and limitations | #249 | `feature/p32-provenance` | complete |
-| P35 Instance provenance adoption | #267 | `feature/p35-provenance` | pr-open |
+| P35 Instance provenance adoption | #267 | `feature/p35-provenance` | complete |
+| P36 Workflow conformance | #273 | `feature/p36-conformance` | pr-open |
+| P37 FreshForge provenance gate | #278 | `feature/p37-provenance-gate` | active |
 | P33 Search artifact browser | #261 | `feature/p33-search-ui` | complete |
 | P34 Search launcher | #265 | `feature/p34-search-launch` | active |
-| P36 Workflow conformance | #273 | `feature/p36-conformance` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1167,7 +1168,7 @@ Acceptance:
 
 Parent issue: #267
 Branch: `feature/p35-provenance`
-Status: pr-open
+Status: complete
 
 Goal: make the P32 provenance result reproducible in the GBR instance repositories: track the
 sidecar, apply it after the matrix build, link the limitations page, and gate the build with
@@ -1209,6 +1210,26 @@ Acceptance:
 - The roadmap/changelog statuses agree with merged state.
 - `python scripts/dashboard.py` is green.
 
+
+## Phase 37: FreshForge provenance gate
+
+Parent issue: #278
+Branch: `feature/p37-provenance-gate`
+Status: active
+
+Goal: make the FreshForge lane enforce the P35 provenance gate: add `ws4 quality --sidecar`,
+add a `femic.ws4_quality` provider, and wire it into both GBR instance workflows after
+validation.
+
+- [ ] P37.1 Add `ws4 quality --sidecar` (#279)
+- [ ] P37.2 Add the `femic.ws4_quality` provider (#280)
+- [ ] P37.3 Wire both instance workflows and docs (#281)
+
+Acceptance:
+
+- `ws4 quality --sidecar PATH --check` installs the sidecar and gates the report.
+- `femic.ws4_quality` builds the install/check command and is covered by a provider test.
+- Both instance workflows add the node after validation and name the gate in docs.
 
 ## Detailed Next Steps Notes
 

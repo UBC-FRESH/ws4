@@ -2449,3 +2449,5 @@ issue comments.
 
 - P36 close-out: pull request #277 squash-merged as `3c07917`; parent #273 and task #274 closed.
   P36 status set complete. P34 remains active for P34.2.
+- P37.1: `ws4 quality --sidecar PATH` installs a tracked provenance record beside the matrix
+  and keeps the `--check` gate. Dashboard **GREEN**.

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
 import pandas as pd
@@ -305,12 +306,19 @@ def optimize(
 def quality(
     dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
     targets: Path = typer.Option(None, exists=True, help="Optional targets YAML for coverage"),
+    sidecar: Path = typer.Option(
+        None, exists=True, help="Copy this provenance sidecar into the dataset first"
+    ),
     out: Path = typer.Option(None, help="Write quality.json and quality.md here"),
     check: bool = typer.Option(
         False, "--check", help="Fail when provenance is missing or the report is not ok"
     ),
 ) -> None:
     """Inspect a compiled dataset's provenance and data-quality checks."""
+    if sidecar is not None:
+        destination = dataset / "data_quality.yaml"
+        if sidecar.resolve() != destination.resolve():
+            shutil.copyfile(sidecar, destination)
     report = dataset_quality(dataset, targets)
     summary = report["summary"]
     assert isinstance(summary, dict)
