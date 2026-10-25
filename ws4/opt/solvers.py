@@ -91,6 +91,20 @@ def _trace(
         on_trace(iteration, best, current, accepted)
 
 
+def _emit_snapshot(
+    on_snapshot: SnapshotCallback | None,
+    problem: Problem,
+    iteration: int,
+    iterations: int,
+    best: Schedule,
+) -> None:
+    """Emit a realized-cell snapshot on the shared twentieth-iteration cadence."""
+    if on_snapshot is None or not (iteration % 20 == 0 or iteration == iterations - 1):
+        return
+    totals = problem.snapshot(best) if problem.snapshot is not None else {}
+    on_snapshot(iteration, totals, best)
+
+
 def parse_time_limit(text: str) -> float | None:
     """Return a time limit in seconds, or None when the text states no limit.
 
@@ -188,6 +202,7 @@ def solve_sa(
     on_step: StepCallback | None = None,
     on_trace: TraceCallback | None = None,
     control: RunControl | None = None,
+    on_snapshot: SnapshotCallback | None = None,
     initial: Schedule | None = None,
     adaptive: bool = False,
     cooling_window: int = 64,
@@ -217,6 +232,9 @@ def solve_sa(
     on_trace : callable or None, optional
         Called with ``(iteration, best_objective, current_objective, accepted_moves)`` each
         iteration, for a live view of the search while the incumbent is flat.
+    on_snapshot : callable or None, optional
+        Called with ``(iteration, realized cells, incumbent schedule)`` every twentieth iteration
+        and on the last one, for a live target view and an animated map.
     control : RunControl or None, optional
         A polled control file; the search holds while it says ``pause`` and returns its best
         schedule when it says ``stop``.
@@ -272,6 +290,7 @@ def solve_sa(
         schedule.observe(increase, current_obj)
         _report(on_step, iteration, best_obj)
         _trace(on_trace, iteration, best_obj, current_obj, accepted)
+        _emit_snapshot(on_snapshot, problem, iteration, iterations, best)
     return best, best_obj
 
 
@@ -407,6 +426,7 @@ def solve_threshold(
     on_step: StepCallback | None = None,
     on_trace: TraceCallback | None = None,
     control: RunControl | None = None,
+    on_snapshot: SnapshotCallback | None = None,
     initial: Schedule | None = None,
     deadline: float | None = None,
     patience: int = 0,
@@ -436,6 +456,9 @@ def solve_threshold(
     on_trace : callable or None, optional
         Called with ``(iteration, best_objective, current_objective, accepted_moves)`` each
         iteration, for a live view of the search while the incumbent is flat.
+    on_snapshot : callable or None, optional
+        Called with ``(iteration, realized cells, incumbent schedule)`` every twentieth iteration
+        and on the last one, for a live target view and an animated map.
     control : RunControl or None, optional
         A polled control file; the search holds while it says ``pause`` and returns its best
         schedule when it says ``stop``.
@@ -489,6 +512,7 @@ def solve_threshold(
         current_threshold *= cooling
         _report(on_step, iteration, best_obj)
         _trace(on_trace, iteration, best_obj, current_obj, accepted)
+        _emit_snapshot(on_snapshot, problem, iteration, iterations, best)
         if current_threshold <= 1e-12:
             break
     return best, best_obj
@@ -504,6 +528,7 @@ def solve_tabu(
     on_step: StepCallback | None = None,
     on_trace: TraceCallback | None = None,
     control: RunControl | None = None,
+    on_snapshot: SnapshotCallback | None = None,
     initial: Schedule | None = None,
     deadline: float | None = None,
     patience: int = 0,
@@ -531,6 +556,9 @@ def solve_tabu(
     on_trace : callable or None, optional
         Called with ``(iteration, best_objective, current_objective, accepted_moves)`` each
         iteration, for a live view of the search while the incumbent is flat.
+    on_snapshot : callable or None, optional
+        Called with ``(iteration, realized cells, incumbent schedule)`` every twentieth iteration
+        and on the last one, for a live target view and an animated map.
     control : RunControl or None, optional
         A polled control file; the search holds while it says ``pause`` and returns its best
         schedule when it says ``stop``.
@@ -582,6 +610,7 @@ def solve_tabu(
                 accepted = 0
         _report(on_step, iteration, best_obj)
         _trace(on_trace, iteration, best_obj, current_obj, accepted)
+        _emit_snapshot(on_snapshot, problem, iteration, iterations, best)
     return best, best_obj
 
 
@@ -594,6 +623,7 @@ def solve_ils(
     on_step: StepCallback | None = None,
     on_trace: TraceCallback | None = None,
     control: RunControl | None = None,
+    on_snapshot: SnapshotCallback | None = None,
     initial: Schedule | None = None,
     deadline: float | None = None,
     patience: int = 0,
@@ -619,6 +649,9 @@ def solve_ils(
     on_trace : callable or None, optional
         Called with ``(iteration, best_objective, current_objective, accepted_moves)`` each
         iteration, for a live view of the search while the incumbent is flat.
+    on_snapshot : callable or None, optional
+        Called with ``(iteration, realized cells, incumbent schedule)`` every twentieth iteration
+        and on the last one, for a live target view and an animated map.
     control : RunControl or None, optional
         A polled control file; the search holds while it says ``pause`` and returns its best
         schedule when it says ``stop``.
@@ -662,4 +695,5 @@ def solve_ils(
                 accepted = 0
         _report(on_step, iteration, best_obj)
         _trace(on_trace, iteration, best_obj, current_obj, accepted)
+        _emit_snapshot(on_snapshot, problem, iteration, iterations, best)
     return best, best_obj

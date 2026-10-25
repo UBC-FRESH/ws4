@@ -602,12 +602,18 @@ def test_targets_json_preserves_notes_when_edited(tmp_path: Path) -> None:
     )
     rows = client.get("/api/targets.json").json()
     assert rows[0]["notes"] == "keep the rationale"
+    assert rows[0]["kind"] == "level"
     rows[0]["maximum"] = 100
+    rows[0]["normalization"] = "auto"
+    rows[0]["priority"] = 2
     response = client.post("/api/targets.json", json=rows)
     assert response.status_code == 200
     written = yaml.safe_load(targets.read_text(encoding="utf-8"))
     assert written["targets"][0]["notes"] == "keep the rationale"
     assert written["targets"][0]["maximum"] == 100
+    assert written["targets"][0]["normalization"] == "auto"
+    assert written["targets"][0]["priority"] == 2
+    assert "kind" not in written["targets"][0]
 
 
 def test_targets_json_round_trip_and_an_empty_list_is_refused(tmp_path: Path) -> None:

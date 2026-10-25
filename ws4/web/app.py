@@ -2154,6 +2154,7 @@ def create_app(
                 "max_weight": target.max_weight,
                 "normalization": target.normalization,
                 "priority": target.priority,
+                "kind": target_kind(target),
                 "active": target.active,
             }
             if target_index < len(entries) and isinstance(entries[target_index], dict):
@@ -2219,7 +2220,9 @@ def create_app(
         """Validate and replace the targets from a JSON list, writing the optimizer's YAML."""
         if not rows:
             raise HTTPException(status_code=422, detail="the targets list is empty")
-        document = yaml.safe_dump({"targets": rows}, sort_keys=False)
+        # ``kind`` is derived for the browser; it is not a targets-file field.
+        cleaned = [{key: value for key, value in row.items() if key != "kind"} for row in rows]
+        document = yaml.safe_dump({"targets": cleaned}, sort_keys=False)
         return {"targets": _write_targets(document)}
 
     return app

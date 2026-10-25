@@ -41,6 +41,7 @@ exists and the maintainer approves it.
 | P27 Goal normalization and priority tiers | #227 | `feature/p27-normalization` | complete |
 | P28 Inventory and flow ceilings | #233 | `feature/p28-inventory` | complete |
 | P29 MIP lane and exact small-instance validation | #238 | `feature/p29-mip` | pr-open |
+| P30 Live run surfaces | #242 | `feature/p30-live-surfaces` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1031,6 +1032,37 @@ Acceptance:
 - `ws4 solve-mip` writes a schedule, summary, target report, and explicit model status.
 - The exact-vs-heuristic report compares actual target penalties and names the gap.
 - `--lp-bound` records the LP bound and gap; scenario runs carry bound/gap fields.
+- `python scripts/dashboard.py` is green.
+
+## Phase 30: Live run surfaces
+
+Parent issue: #242
+Branch: `feature/p30-live-surfaces`
+Status: active
+
+Goal: make the browser's live run view truthful for every solver path, and close the small
+target-editor and report-surface gaps left by the P23 dogfood.
+
+- [x] P30.1 Emit live snapshots from non-delta solvers (#243)
+  - [x] Add the snapshot callback to the problem and whole-schedule solvers
+  - [x] Wire the engine's account-value snapshot
+  - [x] Add a solver test and a c5 live-stream check
+- [x] P30.2 Complete the target editor fields (#247)
+  - [x] Add `kind` to the target rows and strip it on save
+  - [x] Add a compact detail line for normalization, priority, kind, and notes
+  - [x] Make the run controls sticky
+  - [x] Extend the target-browser check and backend tests
+- [ ] P30.3 Surface ending inventory and flow status
+- [ ] P30.4 Diagnose legacy run schemas
+
+Acceptance:
+
+- A c5 patch/route run updates its map and target cards before completion.
+- The target table exposes normalization and priority; kind and notes follow.
+- P28 reports appear in the run and comparison surfaces.
+- A legacy run is refused or normalized with a specific message.
+- `python scripts/dashboard.py` is green.
+
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes

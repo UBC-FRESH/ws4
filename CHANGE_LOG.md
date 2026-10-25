@@ -2373,3 +2373,17 @@ issue comments.
   targets/budget and writes both schedules plus a JSON/Markdown gap report.
 - P29.3: `ws4 optimize --lp-bound` records `lp_bound`, `lp_gap`, and `lp_status`; validation and
   scenario comparison carry the MIP/LP bound and gap fields. Dashboard **GREEN**.
+- P30.1: whole-schedule solvers (`solve_sa`, `solve_threshold`, `solve_tabu`, `solve_ils`) now emit
+  `targets` and `schedule` snapshots every twentieth iteration; the engine builds a realized-cell
+  snapshot from the incumbent. Patch/route c5 runs therefore animate the map and update target cards
+  during the search, not only at completion. Fixed the browser's live-target key: it looked up
+  `state.targetCells` by `year|account` instead of the target index, so the cards never repainted.
+  Verified on c5: target cards moved from 1,260.7 / 11,083,008.7 to 0 / 11,084,175.8 at the first
+  snapshot and then to 182 / 11,084,018.8, while best stayed flat and accepted rose. Shell assets
+  move to `v55`. Dashboard **GREEN**.
+
+- P30.2: the target editor now shows and writes `normalization`, `priority`, and `notes`, displays
+  the derived `kind`, and keeps `kind` out of the YAML. Each target has a compact detail line; the
+  Save targets and solve controls are sticky at the bottom of the sidebar. The backend carries
+  `kind` in the JSON rows and strips it on save; tests cover the round-trip. Shell assets move to
+  `v56`. Dashboard **GREEN**.

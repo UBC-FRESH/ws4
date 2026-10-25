@@ -33,7 +33,9 @@ keeps a fast search from flooding the page. With parallel islands it follows the
 lowest objective; ``progress`` carries the aggregate step count in ``total`` and names that island,
 and a schedule event with ``reset`` replaces the client's map when the best island changes. A
 progress record also carries the current solution's objective and the accepted-move count, so the
-run panel shows activity while the incumbent is flat. Each
+run panel shows activity while the incumbent is flat. Whole-schedule solvers emit the target and
+schedule snapshots as well, at the same twentieth-iteration cadence as the incremental solver, so
+patch, route, spread, and edge runs animate the map and target cards during the search. Each
 worker writes its own ``telemetry-<island>.jsonl`` while it runs; the run's canonical
 ``telemetry.jsonl`` is merged from them after the search, and the live reader follows the worker
 files so it sees the search at the solver's rate rather than behind one writer.
@@ -390,6 +392,12 @@ period (period 1 is the first one), **Width** is its length in years, and **Min*
 ``POST /api/targets.json``, writes the configured YAML, and refreshes the table. The
 form defaults the width to the width already used by the file, or ten years when the
 file is empty.
+
+Each target has a second, compact line with **Normalization** (``none`` or ``auto``),
+**Priority** (a positive integer tier), **Kind** (``level``, ``flow.even``, or
+``flow.ndy``, derived from the flow setting), and **Notes**. The run controls —
+Save targets, Solve/Pause/Stop, the live detail, and the status lines — are sticky at
+the bottom of the sidebar, so a long targets table does not hide the controls.
 
 The table's **Remove** button deletes one target through the same endpoint. The API
 refuses an empty targets document, so the last target must be removed in the YAML or

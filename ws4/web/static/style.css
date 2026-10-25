@@ -206,3 +206,13 @@ path.block.compare-both { fill:#6b4c9a; }
 .remove-target { padding:.05rem .35rem; font-size:.72rem; }
 #targets-table th:last-child, #targets-table td:last-child { position:sticky; right:0; background:var(--panel);
   box-shadow:-1px 0 var(--line); text-align:center; }
+.run-controls { position:sticky; bottom:0; z-index:3; background:var(--panel);
+  border-top:1px solid var(--line); padding:.35rem .1rem .15rem; margin-top:.5rem; }
+.target-detail td { padding-top:0; padding-bottom:.35rem; background:#fbfcfd; }
+.target-detail-inner { display:flex; flex-wrap:wrap; gap:.35rem .8rem; align-items:center;
+  font-size:.72rem; color:var(--muted); }
+.target-detail-inner label { display:flex; gap:.25rem; align-items:center; }
+.target-detail-inner select { font:inherit; font-size:.72rem; }
+.target-detail-inner input[type=text] { width:10rem; font:inherit; font-size:.72rem;
+  padding:.1rem .2rem; border:1px solid var(--line); border-radius:.25rem; }
+.target-detail-inner input[type=number] { width:3rem; font-size:.72rem; padding:.1rem .15rem; }

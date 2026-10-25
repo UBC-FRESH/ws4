@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=54">
+  <link rel="stylesheet" href="static/style.css?v=56">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
 </head>
 <body>
   <header>
-    <strong>WS4</strong><span class="build">v54</span>
+    <strong>WS4</strong><span class="build">v56</span>
     <label>Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Period
@@ -70,6 +70,7 @@
           <thead><tr><th>On</th><th>Account</th><th>Period</th><th>Min</th><th>Max</th><th>Min w</th><th>Max w</th><th></th></tr></thead>
           <tbody></tbody>
         </table></div>
+        <div class="run-controls">
         <button id="save-targets" hidden>Save targets</button>
         <div class="run-row">
           <label>Max iters <input id="run-iterations" type="number" value="" min="0" step="1" placeholder="∞" title="blank or 0 = run until stopped"></label>
@@ -88,6 +89,7 @@
         </div>
         <p id="run-status" class="hint"></p>
         <p id="targets-status" class="hint"></p>
+        </div>
       </section>
       <section id="tab-reports" hidden>
         <h2>Standard reports</h2>
@@ -168,6 +170,6 @@
     </div>
   </main>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=54"></script>
+  <script type="module" src="static/app.js?v=56"></script>
 </body>
 </html>
