@@ -2561,3 +2561,6 @@ issue comments.
   incremental aggregate design, the fallback cases (delivery, planned-network opening, other
   route accounts), seven invariants, and the parity test plan. No incremental code landed.
   Dashboard **GREEN**.
+
+- P45 close-out: pull request #370 squash-merged as `6e49f12`; parent #368 and task #369 closed.
+  P45 status set complete.

@@ -3,7 +3,7 @@
 Phase: P45, Route evaluation performance
 Parent issue: #368
 Pull request: this P45 PR
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-25 as `6e49f12`.
 Date: 2026-10-25
 
 ## Recommendation
