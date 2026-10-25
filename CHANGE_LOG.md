@@ -2463,3 +2463,6 @@ issue comments.
   reports `stopping`/`stopped`; the in-memory job list is bounded to 20 and drops the oldest
   finished entries. The Search tab shows running jobs and a Stop control. Tests cover stop,
   stopped status, and the bound. Shell assets move to `v65`. Dashboard **GREEN**.
+
+- P34 close-out: pull request #286 squash-merged as `9cdae7`; parent #265 and task #272 closed.
+  P34 status set complete.

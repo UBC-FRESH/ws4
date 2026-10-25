@@ -5,7 +5,7 @@ Parent issue: #265
 Pull requests: #271 (P34.1), this P34.2 PR
 Evidence head: the P34.2 branch head
 Date: 2026-10-25
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-25 as `9cdae7`.
 
 ## Recommendation
 
