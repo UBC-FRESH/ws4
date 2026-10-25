@@ -416,6 +416,15 @@ The editor writes the document with ``yaml.safe_dump``. It preserves each target
 ``notes`` field, but comments and the original key order are not preserved. Use a
 version-controlled targets file and review the diff after a large edit.
 
+Search artifacts
+----------------
+
+The **Search** tab lists directories under the runs root that hold a ``portfolio.json``,
+``tuning.json``, or ``lp.json``. A portfolio shows its members, objective, declared metrics, and
+which members are on the Pareto front; a tuner shows its ranked candidates, best/median objective,
+and parameters. This is a viewer: the portfolio and tuning runs are still launched with
+``scripts/portfolio.py`` and ``scripts/tune.py``, and the tab points at their output directories.
+
 Reports
 -------
 
