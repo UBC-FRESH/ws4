@@ -2587,3 +2587,14 @@ issue comments.
 - P53.3: clean-checkout, dashboard, sdist/wheel build, `twine check`, isolated installs, entry
   points, synthetic smoke, and Pages checks pass on the 0.2.0 head. No tag or release was created;
   tag approval is pending.
+
+
+- P46.1/P46.2: added `Simulator.block_route_events`, a per-(block, chain) optimizer event
+  cache, and an exact ledger replay for build/maintenance. The replay preserves the full
+  simulation's year, schedule-row, and event order. Delivery targets and `initial_roads:
+  existing` still take the full path. Parity is within `1.9e-8` on c5; fixture tests cover
+  shared-segment build-once, maintenance, both schedule orders, and both fallbacks.
+- P46.3: added `scripts/benchmark_route_events.py`. c5, 32 blocks, 64 events: full 0.303 s,
+  warm cached 0.037 s (8.25x), cold cached 1.789 s. No GBR route configuration exists in
+  the workspace, so the GBR half is recorded as a deviation rather than fabricated.
+  Dashboard **GREEN**.

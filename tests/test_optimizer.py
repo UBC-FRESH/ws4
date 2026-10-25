@@ -375,24 +375,24 @@ def test_the_optimizer_resolves_route_accounts(tmp_path: Path) -> None:
 
 
 def test_incremental_route_accounts_match_the_full_simulation(tmp_path: Path) -> None:
-    """A per-block delta agrees with a full simulation, for the accounts that are per-block sums.
+    """Cached route events agree with a full simulation, including build and maintenance.
 
-    The configuration also prices the maintenance, which is charged once per segment per period and
-    so is not a per-block sum: that account is what makes the incremental path defer to the full
-    simulation, and this is the check that the deferral agrees with it.
+    Both blocks share one segment, so build must be charged once and maintenance once per
+    period; the cached-event replay keeps the full simulation's order and attribution. Both
+    schedule orders are checked because build is attributed to the first destination.
     """
     dataset = build_canonical_dataset(
         _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
     )
     (tmp_path / "segments.csv").write_text(
-        "SEGMENT,FNODE,TNODE,LENGTH,HAUL,BUILD,MAINTAIN\n1,1,2,100.0,10.0,0.0,1.0\n",
+        "SEGMENT,FNODE,TNODE,LENGTH,HAUL,BUILD,MAINTAIN\n1,1,2,100.0,10.0,5.0,1.0\n",
         encoding="utf-8",
     )
     (tmp_path / "destinations.csv").write_text(
         "NODE,ACCOUNT\n2,destination.MILL1\n", encoding="utf-8"
     )
     (tmp_path / "linkages.csv").write_text("BLOCK,NODE\n1,1\n2,1\n", encoding="utf-8")
-    (tmp_path / "route.yaml").write_text(
+    route_text = (
         "route:\n"
         "  segments: segments.csv\n"
         "  destinations: destinations.csv\n"
@@ -401,10 +401,11 @@ def test_incremental_route_accounts_match_the_full_simulation(tmp_path: Path) ->
         "  - {destination: destination.MILL1, kind: volume, account: route.vol}\n"
         "  - {destination: destination.MILL1, kind: haul, account: route.haul}\n"
         "  - {destination: destination.MILL1, kind: maintain, account: route.maint}\n"
+        "  - {destination: destination.MILL1, kind: build, account: route.build}\n"
         "duplicate_accounts:\n"
-        "  - {master: route.haul, target: route.total.haul}\n",
-        encoding="utf-8",
+        "  - {master: route.haul, target: route.total.haul}\n"
     )
+    (tmp_path / "route.yaml").write_text(route_text, encoding="utf-8")
     optimizer = Optimizer.from_dataset(
         dataset,
         OptimizeConfig(
@@ -412,20 +413,79 @@ def test_incremental_route_accounts_match_the_full_simulation(tmp_path: Path) ->
         ),
     )
     model, route_accounts, duplicate_accounts = optimizer.route()
+    schedules: tuple[Schedule, ...] = (
+        {1: (("CC", 0),), 2: (("CC", 0),)},
+        {2: (("CC", 0),), 1: (("CC", 0),)},
+    )
+    for schedule in schedules:
+        incremental = optimizer._incremental_values(schedule, duplicate_accounts, route_accounts)
+        full = optimizer._full_values(schedule, model, route_accounts, duplicate_accounts)
+        joined = (
+            incremental.set_index(["offset", "account"])["value"]
+            .to_frame("incremental")
+            .join(full.set_index(["offset", "account"])["value"].to_frame("full"), how="outer")
+            .fillna(0.0)
+        )
+        assert (joined["incremental"] - joined["full"]).abs().max() == pytest.approx(0.0, abs=1e-6)
+        # The route accounts are present, not just the feature accounts.
+        assert {
+            "route.vol",
+            "route.haul",
+            "route.maint",
+            "route.build",
+            "route.total.haul",
+        } <= set(incremental["account"])
+        build = incremental[incremental["account"] == "route.build"]["value"].sum()
+        assert build == pytest.approx(5.0)
+
+
+def test_delivery_and_opened_roads_keep_the_full_route_path(tmp_path: Path) -> None:
+    """Delivery allocation and opened-road growth cannot be replayed from independent events."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    (tmp_path / "segments.csv").write_text(
+        "SEGMENT,FNODE,TNODE,LENGTH,HAUL,BUILD,MAINTAIN\n1,1,2,100.0,10.0,5.0,1.0\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "destinations.csv").write_text(
+        "NODE,ACCOUNT\n2,destination.MILL1\n", encoding="utf-8"
+    )
+    (tmp_path / "linkages.csv").write_text("BLOCK,NODE\n1,1\n2,1\n", encoding="utf-8")
+    base = (
+        "route:\n"
+        "  segments: segments.csv\n"
+        "  destinations: destinations.csv\n"
+        "  linkages: linkages.csv\n"
+        "route_accounts:\n"
+        "  - {destination: destination.MILL1, kind: maintain, account: route.maint}\n"
+    )
+    variants = {
+        "opened": base.replace(
+            "  linkages: linkages.csv\n", "  linkages: linkages.csv\n  initial_roads: existing\n"
+        ),
+        "delivery": base + "delivery:\n"
+        "  - {destination: destination.MILL1, product: product.Volume, per_year: 1}\n",
+    }
     schedule: Schedule = {1: (("CC", 0),), 2: (("CC", 0),)}
-    incremental = optimizer._incremental_values(schedule, duplicate_accounts, route_accounts)
-    full = optimizer._full_values(schedule, model, route_accounts, duplicate_accounts)
-    joined = (
-        incremental.set_index(["offset", "account"])["value"]
-        .to_frame("incremental")
-        .join(full.set_index(["offset", "account"])["value"].to_frame("full"), how="outer")
-        .fillna(0.0)
-    )
-    assert (joined["incremental"] - joined["full"]).abs().max() == pytest.approx(0.0, abs=1e-6)
-    # The route accounts are present, not just the feature accounts.
-    assert {"route.vol", "route.haul", "route.maint", "route.total.haul"} <= set(
-        incremental["account"]
-    )
+    for name, text in variants.items():
+        path = tmp_path / f"route-{name}.yaml"
+        path.write_text(text, encoding="utf-8")
+        optimizer = Optimizer.from_dataset(
+            dataset, OptimizeConfig(years=2, iterations=1, seed=1, route_config_path=str(path))
+        )
+        model, route_accounts, duplicate_accounts = optimizer.route()
+        assert model is not None
+        assert optimizer._route_event_values(schedule, model, route_accounts) is None
+        incremental = optimizer._incremental_values(schedule, duplicate_accounts, route_accounts)
+        full = optimizer._full_values(schedule, model, route_accounts, duplicate_accounts)
+        joined = (
+            incremental.set_index(["offset", "account"])["value"]
+            .to_frame("incremental")
+            .join(full.set_index(["offset", "account"])["value"].to_frame("full"), how="outer")
+            .fillna(0.0)
+        )
+        assert (joined["incremental"] - joined["full"]).abs().max() == pytest.approx(0.0, abs=1e-6)
 
 
 def test_load_targets(tmp_path: Path) -> None:
