@@ -219,8 +219,8 @@ show treated block polygons; at zoom 6 and above they show every block polygon. 
 named ``blocks`` and its properties carry ``block_id``, ``treated``, and ``current``. Low-zoom
 tiles use the configured overview geometry; detail zooms use the full geometry and simplify only
 to the tile resolution (50 m below zoom 9, 15 m at 11-12, 5 m at 13-14, and full at 15+). The shell
-reads full-run counts from ``map-stats``. Patches, compartments, and comparison stay on the
-GeoJSON path, where the per-feature styling is richer.
+reads full-run counts from ``map-stats``. Patches and compartments stay on the GeoJSON path,
+where the per-feature styling is richer; comparison uses a dedicated compare MVT tile.
 
 Pre-warm and deployment checks
 ------------------------------
@@ -241,7 +241,26 @@ The durable cache can be warmed before the first browser request:
 
 The report names tiles requested, failures, bytes, seconds, and the durable-cache
 header counts. The command opens the app in-process with the same cache directory,
-so the service then serves the warm tiles from disk.
+so the service then serves the warm tiles from disk. Add ``compare`` to ``--layers``
+and ``--compare-against RUN`` to warm the comparison tiles for a run pair; the compare
+cache is stored per pair and period.
+
+The compare browser smoke needs two completed runs::
+
+   python scripts/check_compare_browser.py http://127.0.0.1:8017/ \
+     --run-a baseline --run-b opening_first
+
+It selects the pair, asserts that compare tiles are requested, and checks the A/B/both
+counts and the target Kind column. The compare benchmark measures the first cold tile,
+the full cold pass, and the warm pass::
+
+   python scripts/benchmark_compare.py http://127.0.0.1:8022/ \
+     --run-a web-20261024-221127-1 --run-b web-20261025-032849-2 \
+     --zoom 9 --bbox=-114.75,49.62,-114.13,50.40
+
+It fails when the first cold or warm tile exceeds its budget. On c5 (six tiles at z9)
+the recorded first tile was 2.063 s cold and 0.003 s warm; the full cold pass was
+13.336 s, the warm pass 0.018 s.
 
 The path-prefix check mounts the service at ``/ws4`` and requests the shell, its
 static assets, the API summary, a viewport map, and an MVT tile through the prefix:

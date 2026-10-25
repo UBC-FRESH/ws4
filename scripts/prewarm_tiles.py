@@ -24,7 +24,7 @@ from ws4.web.app import create_app
 
 DEFAULT_ZOOMS: tuple[int, ...] = (6,)
 DEFAULT_LAYERS: tuple[str, ...] = ("blocks",)
-TILE_LAYERS: tuple[str, ...] = ("blocks", "treatments", "cumulative")
+TILE_LAYERS: tuple[str, ...] = ("blocks", "treatments", "cumulative", "compare")
 
 
 def _parse_csv(text: str) -> list[str]:
@@ -173,6 +173,7 @@ def prewarm(
     zooms: tuple[int, ...] = DEFAULT_ZOOMS,
     layers: tuple[str, ...] = DEFAULT_LAYERS,
     run: str | None = None,
+    compare_against: str | None = None,
     horizon: int = 1,
     period_width: int = 0,
     max_tiles: int = 5000,
@@ -200,6 +201,8 @@ def prewarm(
         Tile layers to warm.
     run : str or None, optional
         A single run name; ``None`` warms every run with a summary or account values.
+    compare_against : str or None, optional
+        The other run for the ``compare`` layer.
     horizon : int, optional
         Simulation horizon for the period walk.
     period_width : int, optional
@@ -224,6 +227,8 @@ def prewarm(
         raise ValueError(f"unknown layer(s): {', '.join(unknown)}")
     if not zooms:
         raise ValueError("at least one zoom is required")
+    if "compare" in layers and not compare_against:
+        raise ValueError("the compare layer needs compare_against")
     if max_tiles < 1:
         raise ValueError("max_tiles must be positive")
     if bbox is None:
@@ -265,10 +270,14 @@ def prewarm(
                         params: dict[str, object] = {"year": year, "layer": layer}
                         if period_start is not None:
                             params["period_start"] = period_start
-                        response = client.get(
-                            f"/api/runs/{run_name}/tiles/{zoom}/{tile.x}/{tile.y}.mvt",
-                            params=params,
-                        )
+                        if layer == "compare":
+                            params["against"] = compare_against
+                            path = (
+                                f"/api/runs/{run_name}/compare-tiles/{zoom}/{tile.x}/{tile.y}.mvt"
+                            )
+                        else:
+                            path = f"/api/runs/{run_name}/tiles/{zoom}/{tile.x}/{tile.y}.mvt"
+                        response = client.get(path, params=params)
                         requested += 1
                         total_bytes += len(response.content)
                         cache_headers[response.headers.get("x-ws4-tile-cache", "none")] += 1
@@ -278,6 +287,7 @@ def prewarm(
         "dataset": str(dataset),
         "runs": run_names,
         "layers": list(layers),
+        "compare_against": compare_against,
         "zooms": list(zooms),
         "bbox": list(bbox),
         "tile_cache": str(tile_cache),
@@ -316,6 +326,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--zooms", default="6")
     parser.add_argument("--layers", default="blocks")
     parser.add_argument("--run", default=None)
+    parser.add_argument("--compare-against", default=None)
     parser.add_argument("--horizon", type=int, default=1)
     parser.add_argument("--period-width", type=int, default=0)
     parser.add_argument("--max-tiles", type=int, default=5000)
@@ -332,6 +343,7 @@ def main(argv: list[str] | None = None) -> int:
         zooms=parse_zooms(args.zooms),
         layers=tuple(_parse_csv(args.layers)),
         run=args.run,
+        compare_against=args.compare_against,
         horizon=args.horizon,
         period_width=args.period_width,
         max_tiles=args.max_tiles,

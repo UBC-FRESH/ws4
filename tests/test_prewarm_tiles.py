@@ -151,3 +151,30 @@ def test_main_writes_the_report(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     )
     assert main() == 0
     assert json.loads(out.read_text(encoding="utf-8"))["requested"] == 1
+
+
+def test_prewarm_writes_compare_tiles(tmp_path: Path) -> None:
+    """The compare layer warms a tile for the named run pair."""
+    dataset, runs, geometry, cache = _fixture(tmp_path)
+    other = runs / "run2"
+    other.mkdir()
+    (other / "summary.json").write_text('{"status": "ok"}', encoding="utf-8")
+    (other / "schedule.csv").write_text("block_id,treatment,offset\n1,CT,0\n", encoding="utf-8")
+    report = prewarm(
+        dataset=dataset,
+        runs=runs,
+        geometry=geometry,
+        tile_cache=cache,
+        bbox=(-1.0, -1.0, 1.0, 1.0),
+        zooms=(0,),
+        layers=("compare",),
+        run="run1",
+        compare_against="run2",
+        max_tiles=10,
+        crs="EPSG:4326",
+    )
+    assert report["requested"] == 1
+    assert report["failed"] == 0
+    tiles = list(cache.rglob("*.mvt"))
+    assert len(tiles) == 1
+    assert "compare-vs-run2" in str(tiles[0])
