@@ -54,7 +54,7 @@ exists and the maintainer approves it.
 | P41 Provider smoke in CI | #303 | `feature/p41-ci-smoke` | complete |
 | P47 Model boundary record | #311 | `feature/p47-boundary` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
-| P42 Target operations | #308 | `feature/p42-target-ops` | pr-open |
+| P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1329,7 +1329,7 @@ Acceptance:
 
 Parent issue: #308
 Branch: `feature/p42-target-ops`
-Status: pr-open
+Status: complete
 
 Goal: add several accounts in one pass and make target replacement safer to review.
 

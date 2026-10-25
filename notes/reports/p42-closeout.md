@@ -3,7 +3,7 @@
 Phase: P42, Target operations
 Parent issue: #308
 Pull request: this P42 PR
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-25 as `cc59a0e`.
 Date: 2026-10-25
 
 ## Recommendation
