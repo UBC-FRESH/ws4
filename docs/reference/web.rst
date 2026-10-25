@@ -396,9 +396,12 @@ catalogue. Enter selects the first match, and the arrow keys move between leaves
 
 Selecting a leaf opens a small form for a new target. **Period** is the accounting
 period (period 1 is the first one), **Width** is its length in years, and **Min** and
-**Max** are optional bounds; the form requires at least one bound. The table's
-**Target period** column is the optimizer's one-based period; the map control labels its
-periods by year range, so the two clocks are not confused. **Min w** and
+**Max** are optional bounds; the form requires at least one bound. Turn on
+**Multi-select** to choose several accounts; the shared period/width/bounds form adds one
+target per selected account in a single validated save. Duplicate account/period targets,
+missing bounds, min above max, and invalid priorities are refused in the browser before
+the request. The table's **Target period** column is the optimizer's one-based period; the
+map control labels its periods by year range, so the two clocks are not confused. **Min w** and
 **Max w** are the penalty weights. **Add target** validates the complete list through
 ``POST /api/targets.json``, writes the configured YAML, and refreshes the table. The
 form defaults the width to the width already used by the file, or ten years when the
@@ -417,7 +420,8 @@ changes the targets document; it does not change account values or the optimizer
 semantics.
 
 The editor writes the document with ``yaml.safe_dump``. It preserves each target's
-``notes`` field, but comments and the original key order are not preserved. Use a
+``notes`` field, but comments and the original key order are not preserved. Before replacing
+the file, the service copies the previous document to ``targets.yaml.bak``. Use a
 version-controlled targets file and review the diff after a large edit.
 
 Search artifacts

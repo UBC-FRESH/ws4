@@ -2594,6 +2594,8 @@ def create_app(
         except Exception as error:  # the loader's message is the refusal the CLI would give
             candidate.unlink(missing_ok=True)
             raise HTTPException(status_code=422, detail=str(error)) from error
+        if targets_path.is_file():
+            shutil.copy2(targets_path, targets_path.with_name(targets_path.name + ".bak"))
         shutil.move(str(candidate), targets_path)
         return len(targets)
 
