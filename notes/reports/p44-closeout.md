@@ -3,7 +3,7 @@
 Phase: P44, Comparison and map operations
 Parent issue: #341
 Pull request: this P44 PR
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-25 as `05c3b44`.
 Date: 2026-10-25
 
 ## Recommendation
