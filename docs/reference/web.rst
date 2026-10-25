@@ -428,9 +428,13 @@ Search artifacts
 ----------------
 
 The **Search** tab lists directories under the runs root that hold a ``portfolio.json``,
-``tuning.json``, or ``lp.json``. A portfolio shows its members, objective, declared metrics, and
-which members are on the Pareto front; a tuner shows its ranked candidates, best/median objective,
-and parameters. When the service has ``--allow-runs``, the tab also starts a portfolio or tuner
+``tuning.json``, ``lp_sensitivity.json``, or ``lp.json``. A portfolio shows its members, objective,
+declared metrics, status, failures, and which members are on the Pareto front. Selecting a member
+shows its factors, metrics, and safe download links for the schedule, targets, ``front.csv``,
+``portfolio.md``, and ``console.log``. A tuner shows its ranked candidates, best/median, failures,
+and parameters. An LP artifact renders target duals and option reduced costs, labelled advisory.
+The file endpoint resolves only paths under the artifact directory. When the service has
+``--allow-runs``, the tab also starts a portfolio or tuner
 through ``POST /api/search/portfolio`` or ``POST /api/search/tune`` and polls
 ``GET /api/search/{name}/status``; the endpoint runs the existing ``scripts/portfolio.py`` and
 ``scripts/tune.py`` against the configured dataset and targets. A running job has a **Stop** control; the

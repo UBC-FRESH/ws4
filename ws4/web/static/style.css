@@ -237,3 +237,9 @@ path.block.compare-both { fill:#6b4c9a; }
 .multi-select { display:flex; gap:.25rem; align-items:center; white-space:nowrap; font-size:.7rem; color:var(--muted); }
 .account-leaf.selected { background:#e8f1ff; box-shadow:inset 2px 0 #1f6feb; }
 .link-button { border:0; background:none; color:#1f6feb; cursor:pointer; font:inherit; font-size:.72rem; padding:0 .2rem; }
+#search-table tbody tr { cursor:pointer; }
+#search-table tbody tr:hover { background:#f2f6fa; }
+.search-detail { margin-top:.6rem; border-top:1px solid var(--line); padding-top:.45rem; font-size:.76rem; }
+.search-detail h3 { font-size:.82rem; margin:.2rem 0; }
+.search-detail pre { background:#f7f9fb; padding:.35rem; overflow:auto; max-height:10rem; }
+.search-detail ul { margin:.2rem 0 .4rem 1rem; padding:0; }

@@ -1031,10 +1031,72 @@ async function loadSearch(preferred = '') {
   }
 }
 
+function searchFileUrl(id, path) {
+  const encoded = String(path).split('/').map((part) => encodeURIComponent(part)).join('/');
+  return `api/search/${encodeURIComponent(id)}/files/${encoded}`;
+}
+
+function searchLink(id, path, label) {
+  const link = document.createElement('a');
+  link.href = searchFileUrl(id, path);
+  link.textContent = label;
+  link.target = '_blank';
+  link.rel = 'noopener';
+  return link;
+}
+
+function showSearchDetail(id, data) {
+  const detail = $('search-detail');
+  detail.replaceChildren();
+  detail.hidden = false;
+  if (!data) {
+    detail.textContent = 'select a row for details';
+    return;
+  }
+  const title = document.createElement('h3');
+  title.textContent = data.label ?? 'artifact';
+  detail.append(title);
+  const metadata = document.createElement('p');
+  metadata.className = 'hint';
+  metadata.textContent = data.seed !== undefined ? `seed ${data.seed} · ${data.status ?? ''}` : '';
+  if (data.error) metadata.textContent += ` · ${data.error}`;
+  detail.append(metadata);
+  if (data.factors) {
+    const factors = document.createElement('pre');
+    factors.textContent = JSON.stringify(data.factors, null, 2);
+    detail.append(factors);
+  }
+  if (data.metrics) {
+    const metrics = document.createElement('ul');
+    for (const [key, value] of Object.entries(data.metrics)) {
+      const item = document.createElement('li');
+      item.textContent = `${key}: ${compareNumber(value)}`;
+      metrics.append(item);
+    }
+    detail.append(metrics);
+  }
+  const links = document.createElement('p');
+  for (const [key, label, path] of [
+    ['schedule', 'Schedule', data.schedule],
+    ['targets', 'Targets', data.targets],
+    ['front', 'front.csv', 'front.csv'],
+    ['report', 'portfolio.md', 'portfolio.md'],
+    ['console', 'console.log', 'console.log'],
+  ]) {
+    if (!path) continue;
+    if (links.childNodes.length) links.append(' · ');
+    links.append(searchLink(id, path, label));
+  }
+  detail.append(links);
+}
+
 async function renderSearchArtifact(id) {
   const table = $('search-table');
   const summary = $('search-summary');
+  const detail = $('search-detail');
   if (!id) return;
+  detail.hidden = true;
+  detail.replaceChildren();
   try {
     const body = await api(`api/search/${encodeURIComponent(id)}`);
     const head = table.querySelector('thead');
@@ -1059,24 +1121,29 @@ async function renderSearchArtifact(id) {
         tr.append(td);
       }
       tbody.append(tr);
+      return tr;
     };
     if (body.kind === 'portfolio') {
       const data = body.data ?? {};
       const metrics = Array.isArray(data.metrics) ? data.metrics : [];
       const front = new Set(data.front ?? []);
       const members = Array.isArray(data.members) ? data.members : [];
-      summary.textContent = `portfolio · ${members.length} members · ${front.size} on the front · ${data.iterations ?? '?'} iterations · ${data.years ?? '?'} years`;
-      addHead(['Member', 'Seed', 'Objective', ...metrics, 'Front']);
+      summary.textContent = `portfolio · ${members.length} members · ${front.size} on the front · ${data.failures ?? 0} failures · ${data.iterations ?? '?'} iterations · ${data.years ?? '?'} years`;
+      addHead(['Member', 'Seed', 'Objective', ...metrics, 'Status', 'Front']);
       for (const member of members) {
         const key = `${member.label ?? ''}:${String(member.seed ?? '').padStart(3, '0')}`;
-        addRow([
+        const row = addRow([
           member.label ?? '',
           String(member.seed ?? ''),
           member.objective === null || member.objective === undefined ? 'failed' : compareNumber(member.objective),
           ...metrics.map((metric) => compareNumber(member.metrics?.[metric] ?? 0)),
+          member.status ?? '',
           front.has(key) ? 'front' : '',
         ], front.has(key) ? 'search-front' : '');
+        row.addEventListener('click', () => showSearchDetail(body.id, member));
       }
+      const first = members.find((member) => front.has(`${member.label}:${String(member.seed).padStart(3, '0')}`)) ?? members[0];
+      if (first) showSearchDetail(body.id, first);
       table.hidden = false;
       return;
     }
@@ -1085,19 +1152,76 @@ async function renderSearchArtifact(id) {
       const candidates = Array.isArray(data.candidates) ? data.candidates : [];
       const byLabel = new Map(candidates.map((candidate) => [candidate.label, candidate]));
       const ranking = Array.isArray(data.ranking) ? data.ranking : [];
-      summary.textContent = `tuning · ${data.mode ?? ''} · ${candidates.length} candidates · winner ${data.winner?.label ?? 'none'}`;
-      addHead(['Rank', 'Candidate', 'Best', 'Median', 'Runs', 'Parameters']);
+      summary.textContent = `tuning · ${data.mode ?? ''} · ${candidates.length} candidates · ${data.failures ?? 0} failures · winner ${data.winner?.label ?? 'none'}`;
+      addHead(['Rank', 'Candidate', 'Best', 'Median', 'Runs', 'Failures', 'Parameters']);
       ranking.forEach((label, index) => {
         const candidate = byLabel.get(label) ?? {};
-        addRow([
+        const failures = Array.isArray(candidate.failures) ? candidate.failures : [];
+        const row = addRow([
           String(index + 1),
           label,
           compareNumber(candidate.best ?? 0),
           compareNumber(candidate.median ?? 0),
           String(candidate.runs ?? 0),
+          String(failures.length),
           JSON.stringify(candidate.parameters ?? {}),
         ], index === 0 ? 'search-front' : '');
+        row.addEventListener('click', () => showSearchDetail(body.id, {
+          label,
+          status: failures.length ? `${failures.length} failures` : 'ok',
+          error: failures.join('; '),
+          metrics: { best: candidate.best ?? 0, median: candidate.median ?? 0 },
+        }));
       });
+      if (data.winner) {
+        showSearchDetail(body.id, {
+          label: `winner ${data.winner.label}`,
+          status: data.mode,
+          metrics: { best: data.winner.best ?? 0, median: data.winner.median ?? 0 },
+        });
+      }
+      table.hidden = false;
+      return;
+    }
+    if (body.kind === 'lp') {
+      const data = body.data ?? {};
+      summary.textContent = `lp · ${data.status ?? ''} · objective ${compareNumber(data.objective ?? 0)} · ${data.variables ?? '?'} options`;
+      addHead(['Account', 'Period', 'Bound', 'Dual', 'Slack', 'Binding']);
+      for (const dual of data.duals ?? []) {
+        addRow([
+          dual.account ?? '',
+          String(dual.period ?? ''),
+          dual.bound ?? '',
+          compareNumber(dual.dual ?? 0),
+          compareNumber(dual.slack ?? 0),
+          dual.binding ?? '',
+        ]);
+      }
+      const reduced = document.createElement('div');
+      const title = document.createElement('h3');
+      title.textContent = 'Option reduced costs';
+      reduced.append(title);
+      const inner = document.createElement('div');
+      inner.className = 'table-wrap';
+      const extra = document.createElement('table');
+      const extraHead = document.createElement('thead');
+      extraHead.innerHTML = '<tr><th>Block</th><th>Treatments</th><th>Value</th><th>Reduced cost</th></tr>';
+      const extraBody = document.createElement('tbody');
+      for (const cost of data.reduced_costs ?? []) {
+        const tr = document.createElement('tr');
+        const treatments = (cost.treatments ?? []).map(([name, offset]) => `${name}@${offset}`).join(' → ');
+        for (const value of [cost.block, treatments, compareNumber(cost.value ?? 0), compareNumber(cost.reduced_cost ?? 0)]) {
+          const td = document.createElement('td');
+          td.textContent = String(value);
+          tr.append(td);
+        }
+        extraBody.append(tr);
+      }
+      extra.append(extraHead, extraBody);
+      inner.append(extra);
+      reduced.append(inner);
+      detail.replaceChildren(reduced);
+      detail.hidden = false;
       table.hidden = false;
       return;
     }

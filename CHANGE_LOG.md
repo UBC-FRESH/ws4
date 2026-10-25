@@ -2514,3 +2514,11 @@ issue comments.
 - P48.3: ADR 0002 retains the production TSR-consistent BatchTIPSY curves. TSA 46 is too sparse
   and too old for a correction; TSA 47 shows a real but confounded underprediction. No curve or
   AAC change. The limitations pages and sidecars name the result.
+
+- P43.1: search artifacts expose artifact-relative member paths and a safe file endpoint; the
+  Search tab shows member factors/metrics/status and links for schedule, targets, front.csv,
+  portfolio.md, and console.log. Traversal outside the artifact is refused.
+- P43.2: `lp_sensitivity.json` is discovered and rendered as target duals plus an option
+  reduced-cost table, labelled advisory.
+- P43.3: portfolio/tuner summaries include failure counts, member/candidate status and error text,
+  and console links. c5 verified member downloads and LP rendering; shell `v68`. Dashboard **GREEN**.

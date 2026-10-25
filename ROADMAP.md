@@ -56,6 +56,7 @@ exists and the maintainer approves it.
 | P48 Ground-plot volume and DBH validation | #324 | `feature/p48-ground-plots` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
+| P43 Search artifact depth | #330 | `feature/p43-search-depth` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1350,6 +1351,35 @@ Acceptance:
 - Two or more accounts can be added in one save.
 - Duplicate and invalid targets are blocked with named messages.
 - The previous YAML is preserved as a backup.
+- `python scripts/dashboard.py` is green.
+
+## Phase 43: Search artifact depth
+
+Parent issue: #330
+Branch: `feature/p43-search-depth`
+Status: pr-open
+
+Goal: turn the Search tab into a review surface for Pareto members, LP sensitivity, and
+failed runs, with safe artifact downloads.
+
+- [x] P43.1 Pareto member drilldown and artifact downloads (#331)
+  - [x] Artifact-relative paths and safe file endpoint
+  - [x] Member detail panel
+  - [x] Downloads for schedule/targets/front/report
+- [x] P43.2 LP sensitivity view (#332)
+  - [x] Discover `lp_sensitivity.json`
+  - [x] Dual table
+  - [x] Reduced-cost table
+- [x] P43.3 Failure and metadata view (#333)
+  - [x] Failure counts and error text
+  - [x] Console link
+  - [x] Budget/seeds/mode metadata
+
+Acceptance:
+
+- Front members are inspectable and downloadable.
+- LP duals and reduced costs are readable.
+- Failures and console output are visible.
 - `python scripts/dashboard.py` is green.
 
 ## Phase 47: Model boundary record
