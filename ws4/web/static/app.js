@@ -603,6 +603,13 @@ function vectorMode(layer) {
 }
 
 function vectorColorExpression() {
+  if (state.compareView) {
+    return ['match', ['get', 'compare'],
+      'a', '#c0392b',
+      'b', '#1f6feb',
+      'both', '#6b4c9a',
+      '#2f7d4f'];
+  }
   const grid = state.layerMode === 'blocks' || (state.layers && !state.layers.treatments)
     ? ['interpolate', ['linear'], ['coalesce', ['get', 'treated_share'], 0], 0, '#2f7d4f', 1, '#2f7d4f']
     : ['interpolate', ['linear'], ['coalesce', ['get', 'treated_share'], 0],
@@ -620,6 +627,11 @@ function vectorColorExpression() {
 function vectorOpacityExpression() {
   const showTreated = $('show-treated').checked;
   const showUntreated = $('show-untreated').checked;
+  if (state.compareView) {
+    return ['case',
+      ['==', ['get', 'compare'], 'none'], showUntreated ? 0.12 : 0,
+      showTreated ? 1 : 0];
+  }
   return ['case',
     ['has', 'treated_share'], 0.85,
     ['==', ['get', 'treated'], true], showTreated ? 1 : 0,
@@ -855,7 +867,7 @@ function clearCompareView() {
   state.compareView = false;
   state.compare = null;
   $('treated-label').textContent = layerLabel();
-  if (state.features.length) {
+  if (state.mapEngine === 'maplibre' || state.features.length) {
     if (state.live.active) render(false); else loadMap();
   }
 }
@@ -1086,6 +1098,26 @@ async function loadComparison() {
         || left.name.localeCompare(right.name));
     renderCompareAccounts();
     $('compare-summary').textContent = 'loading comparison map…';
+    const period = currentPeriod();
+    const end = period ? Number(period.end) : state.year;
+    const query = `year=${end}${period ? `&period_start=${period.start}` : ''}`;
+    if (state.mapEngine === 'maplibre' && state.mapLibre) {
+      const base = new URL('.', document.baseURI).href;
+      const tileUrl = `${base}api/runs/${encodeURIComponent(runA)}/compare-tiles/{z}/{x}/{y}.mvt?against=${encodeURIComponent(runB)}&${query}&v=${TILE_VERSION}`;
+      state.vectorActive = true;
+      state.features = [];
+      state.compare = { a: runA, b: runB, blocks: new Map() };
+      ensureVectorSource(tileUrl);
+      updateVectorPaint();
+      const stats = await api(`api/runs/${encodeURIComponent(runA)}/compare-stats?against=${encodeURIComponent(runB)}&${query}`);
+      if (token !== state.compareToken) return;
+      $('compare-summary').textContent =
+        `period ${state.periodIndex + 1} · A only ${Number(stats.a_only).toLocaleString()} · B only ${Number(stats.b_only).toLocaleString()} · both ${Number(stats.both).toLocaleString()} · neither ${Number(stats.neither).toLocaleString()}`
+        + (accountsB.length ? '' : ' · B has no account values at this year');
+      $('compare-year').textContent = `period ${state.periodIndex + 1} (${state.year})`;
+      statusLine(`${Number(stats.total_features).toLocaleString()} blocks · ${runA} vs ${runB} · period ${state.periodIndex + 1}`);
+      return;
+    }
     const [mapA, mapB] = await Promise.all([
       api(`api/runs/${encodeURIComponent(runA)}/map?year=${state.year}${periodQuery()}${state.mapEngine === 'maplibre' ? '&format=wgs84' : ''}`),
       api(`api/runs/${encodeURIComponent(runB)}/map?year=${state.year}${periodQuery()}${state.mapEngine === 'maplibre' ? '&format=wgs84' : ''}`),
@@ -2707,7 +2739,10 @@ function showDetail(block, supplied = null) {
   const properties = supplied ?? feature?.properties;
   if (!properties) return;
   if (state.compareView && state.compare) {
-    const flags = state.compare.blocks.get(String(block)) ?? { a: false, b: false };
+    const compare = supplied?.compare;
+    const flags = compare
+      ? { a: compare === 'a' || compare === 'both', b: compare === 'b' || compare === 'both' }
+      : state.compare.blocks.get(String(block)) ?? { a: false, b: false };
     $('detail').innerHTML = `<b>Block ${properties.block_id}</b><br>` +
       `A: ${flags.a ? 'treated' : '—'} · B: ${flags.b ? 'treated' : '—'}<br>` +
       `A only: ${flags.a && !flags.b ? 'yes' : 'no'} · B only: ${flags.b && !flags.a ? 'yes' : 'no'}`;

@@ -42,6 +42,7 @@ exists and the maintainer approves it.
 | P28 Inventory and flow ceilings | #233 | `feature/p28-inventory` | complete |
 | P29 MIP lane and exact small-instance validation | #238 | `feature/p29-mip` | pr-open |
 | P30 Live run surfaces | #242 | `feature/p30-live-surfaces` | pr-open |
+| P31 Comparison map over MVT | #257 | `feature/p31-compare-map` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1069,6 +1070,28 @@ Acceptance:
 - A legacy run is refused or normalized with a specific message.
 - `python scripts/dashboard.py` is green.
 
+- `python scripts/dashboard.py` is green.
+
+## Phase 31: Comparison map over MVT
+
+Parent issue: #257
+Branch: `feature/p31-compare-map`
+Status: active
+
+Goal: render the Compare map from one vector tile carrying A, B, and both flags, so
+two large runs no longer fetch both full GeoJSON viewports.
+
+- [x] P31.1 Add compare MVT tiles and the vector compare view (#258)
+  - [x] Add the compare tile and stats endpoints
+  - [x] Use the vector source and a compare paint expression
+  - [x] Pass the compare flag into block details
+  - [x] Verify on c5 and keep the report tables ahead of the map
+
+Acceptance:
+
+- Compare requests MVT tiles, not the full A/B GeoJSON.
+- A-only, B-only, and both use the existing compare colors.
+- The summary counts come from compare-stats.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes

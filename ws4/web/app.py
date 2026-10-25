@@ -1867,6 +1867,9 @@ def create_app(
     payload_cache: dict[tuple[str, int | None, str, int | None, str, bool], dict[str, Any]] = {}
     payload_lock = threading.Lock()
     tile_cache: dict[tuple[str, int, int, int, str, int | None, int | None], bytes] = {}
+    compare_tile_cache: dict[
+        tuple[str, str, int, int, int, int | None, int | None, str], bytes
+    ] = {}
 
     def cached_geometry(
         run: str,
@@ -1949,6 +1952,153 @@ def create_app(
             "total_treated": treated,
             "total_untreated": total - treated,
         }
+
+    def _treated_blocks(entry: dict[str, Any]) -> set[int]:
+        """Return the block ids marked treated in a cached geometry entry."""
+        blocks: set[int] = set()
+        for feature in entry["features"]:
+            properties = feature.get("properties", {})
+            block = properties.get("block_id")
+            if block is not None and bool(properties.get("treated")):
+                blocks.add(int(block))
+        return blocks
+
+    def _treated_set(run: str, year: int | None, period_start: int | None) -> set[int]:
+        """Return the blocks treated in a run's period, without reading the geometry."""
+        directory = run_dir(run)
+        schedule_path = directory / "schedule.csv"
+        if not schedule_path.is_file():
+            raise HTTPException(status_code=404, detail="the run has no schedule.csv")
+        schedule = read_csv(directory, "schedule.csv")
+        if schedule.empty:
+            return set()
+        if year is None:
+            year = int(schedule["offset"].min())
+        first = year if period_start is None else min(period_start, year)
+        selected = schedule[(schedule["offset"] >= first) & (schedule["offset"] <= year)]
+        return {int(float(str(block))) for block in selected["block_id"].dropna().tolist()}
+
+    @app.get("/api/runs/{run}/compare-stats")
+    def compare_stats(
+        run: str,
+        against: str = Query(...),
+        year: int | None = Query(default=None),
+        period_start: int | None = Query(default=None),
+    ) -> dict[str, int]:
+        """Return the full-run A/B/both counts for two runs."""
+        run_dir(against)
+        treated_a = _treated_set(run, year, period_start)
+        treated_b = _treated_set(against, year, period_start)
+        total = len(base_features())
+        both = len(treated_a & treated_b)
+        a_only = len(treated_a - treated_b)
+        b_only = len(treated_b - treated_a)
+        return {
+            "total_features": total,
+            "a_only": a_only,
+            "b_only": b_only,
+            "both": both,
+            "neither": max(0, total - a_only - b_only - both),
+        }
+
+    @app.get("/api/runs/{run}/compare-tiles/{z}/{x}/{y}.mvt")
+    def compare_tile(
+        run: str,
+        z: int,
+        x: int,
+        y: int,
+        against: str = Query(...),
+        year: int | None = Query(default=None),
+        period_start: int | None = Query(default=None),
+    ) -> Response:
+        """Return one MVT tile with an A/B/both flag for each block."""
+        if z < 0 or z > 22 or x < 0 or y < 0 or x >= 2**z or y >= 2**z:
+            raise HTTPException(status_code=422, detail="tile coordinate out of range")
+        run_dir(against)
+        cache_key = (run, against, z, x, y, year, period_start, "compare")
+        cached_tile = compare_tile_cache.get(cache_key)
+        if cached_tile is not None:
+            return Response(
+                content=cached_tile,
+                media_type="application/vnd.mapbox-vector-tile",
+                headers={"Cache-Control": "public, max-age=3600", "X-WS4-Tile-Cache": "memory"},
+            )
+        overview = z < 8 and overview_path is not None
+        entry_a = cached_geometry(run, year, "treatments", period_start, None, overview=overview)
+        entry_b = cached_geometry(
+            against, year, "treatments", period_start, None, overview=overview
+        )
+        treated_a = _treated_blocks(entry_a)
+        treated_b = _treated_blocks(entry_b)
+        tile = mercantile.Tile(x, y, z)
+        mercator = mercantile.xy_bounds(tile)
+        to_source = Transformer.from_crs("EPSG:3857", source_crs, always_xy=True)
+        to_mercator = Transformer.from_crs(source_crs, "EPSG:3857", always_xy=True)
+        source_bounds = to_source.transform_bounds(
+            mercator.left, mercator.bottom, mercator.right, mercator.top
+        )
+        tile_box = box(*source_bounds)
+        tolerance = _tile_tolerance(z)
+        indices = [int(index) for index in entry_a["tree"].query(tile_box)]
+        features: list[dict[str, Any]] = []
+
+        def project(coordinates: np.ndarray) -> np.ndarray:
+            xs, ys = to_mercator.transform(coordinates[:, 0], coordinates[:, 1])
+            return np.column_stack([xs, ys])
+
+        for index in indices:
+            properties = entry_a["features"][index].get("properties", {})
+            block = properties.get("block_id")
+            if block is None:
+                continue
+            number = int(block)
+            in_a = number in treated_a
+            in_b = number in treated_b
+            flag = "both" if in_a and in_b else "a" if in_a else "b" if in_b else "none"
+            if z < 6 and flag == "none":
+                continue
+            geometry = entry_a["shapes"][index]
+            if not geometry.is_valid:
+                geometry = make_valid(geometry)
+                if geometry.geom_type == "GeometryCollection":
+                    parts = [
+                        part
+                        for part in geometry.geoms
+                        if part.geom_type in ("Polygon", "MultiPolygon")
+                    ]
+                    geometry = unary_union(parts) if parts else geometry
+                if geometry.geom_type not in ("Polygon", "MultiPolygon"):
+                    continue
+            if tolerance > 0:
+                geometry = geometry.simplify(tolerance, preserve_topology=True)
+            geometry = geometry.intersection(tile_box)
+            if geometry.is_empty:
+                continue
+            mercator_geometry = shapely_transform(geometry, project)
+            tile_properties = _scalar_properties(properties)
+            tile_properties["compare"] = flag
+            tile_properties["treated"] = flag != "none"
+            features.append(
+                {
+                    "geometry": _tile_coordinates(
+                        mercator_geometry,
+                        (mercator.left, mercator.bottom, mercator.right, mercator.top),
+                    ),
+                    "properties": tile_properties,
+                }
+            )
+        payload = mapbox_vector_tile.encode(
+            [{"name": "blocks", "features": features}],
+            default_options={"extents": TILE_EXTENT, "y_coord_down": True},
+        )
+        if len(compare_tile_cache) >= 4096:
+            compare_tile_cache.clear()
+        compare_tile_cache[cache_key] = payload
+        return Response(
+            content=payload,
+            media_type="application/vnd.mapbox-vector-tile",
+            headers={"Cache-Control": "public, max-age=3600", "X-WS4-Tile-Cache": "miss"},
+        )
 
     @app.get("/api/runs/{run}/tiles/{z}/{x}/{y}.mvt")
     def map_tile(
