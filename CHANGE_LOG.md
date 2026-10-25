@@ -2433,8 +2433,16 @@ issue comments.
   `scripts/portfolio.py` and `scripts/tune.py` with the configured dataset and targets; the tuner
   space is written beside the output. Shell assets move to `v64`. Dashboard **GREEN**.
 
-- P35.1: both GBR instance repositories track `config/dataset_quality.yaml` and provide
+- P36.1: both GBR instance repositories track `config/dataset_quality.yaml` and provide
   `scripts/apply_dataset_quality.py`; tests cover valid, missing, and CLI cases.
 - P35.2: both instance model-build docs link the ws4 limitations page and the VDYP/THLB caveats.
 - P35.3: both full build scripts copy the sidecar after `ws4 build` and fail on
   `ws4 quality --check`. Instance PRs #25/#26 merged.
+- P35.1: reconciled the P30-P34 planning surfaces. P34 was reopened because P34.2 is
+  still planned; P34.2 #272 is now a linked child. P30/P31/P33/P34 issue bodies were
+  expanded to the phase/task templates and closed tasks carry completion metadata.
+  Added P31 and P33 close-out reports, updated the P30 report to merged, and set P33
+  complete. Dashboard **GREEN**.
+
+- P35 close-out: the P30-P34 planning surfaces are reconciled, P34 is active with P34.2 planned,
+  and P31/P33 reports are present. Queued in `notes/reports/p35-closeout.md`; dashboard and CI green.
