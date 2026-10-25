@@ -1,6 +1,6 @@
-# Phase close-out report: P31 Dataset provenance and limitations
+# Phase close-out report: P32 Dataset provenance and limitations
 
-Phase: P31, Dataset provenance and limitations
+Phase: P32, Dataset provenance and limitations
 Parent issue: #249
 Pull request: not opened yet
 Evidence head: the commit that adds this report. Its CI run is posted on the pull request.
@@ -11,7 +11,7 @@ Status: queued for approval. Not merged.
 
 Approve these actions. The agent carries them out in this order, and reads back each result.
 
-1. Squash-merge the P31 pull request, and delete the branch `feature/p31-provenance`.
+1. Squash-merge the P32 pull request, and delete the branch `feature/p32-provenance`.
 2. Close parent issue #249 with a closeout comment that cites the merge commit.
 3. Launch P32, Instance provenance adoption: commit the sidecars and a build hook in each
    instance repository, link the limitations page there, and add the provenance check to the
@@ -31,11 +31,11 @@ Settings changes: none. This phase changes no repository setting, tag, release, 
 
 ## 2. Workflow compliance
 
-- Parent issue before the branch: #249 was created before `feature/p31-provenance`.
+- Parent issue before the branch: #249 was created before `feature/p32-provenance`.
 - Branch from `main`: the worktree starts at `6a645d9`, the P30.1-P30.2 head.
 - The concurrent P30 live-surfaces branch was not touched.
-- Commit messages start with task IDs: `P31`.
-- Roadmap and changelog in step: P31.1 to P31.3 are checked; the changelog records each.
+- Commit messages start with task IDs: `P32`.
+- Roadmap and changelog in step: P32.1 to P32.3 are checked; the changelog records each.
 - Child issues are closed with closeout evidence: #250, #251, and #252.
 - Approval gates: the phase opened no pull request until this report; it did not merge, tag, release,
   or change a setting.
@@ -66,7 +66,7 @@ Settings changes: none. This phase changes no repository setting, tag, release, 
 | Deviation | Cause | Remedy |
 | --- | --- | --- |
 | The GBR sidecars are applied to the current `runtime/` matrices, which are ignored. | The instance repositories own their compiled outputs; committing them would duplicate generated data. | P32 should track a `config/dataset_quality.yaml` per instance and add a build hook to copy it. |
-| The instance docs do not yet link the ws4 limitations page. | The instance repositories are separate and the P31 branch is in ws4. | P32 should add the links in both instance repositories. |
+| The instance docs do not yet link the ws4 limitations page. | The instance repositories are separate and the P32 branch is in ws4. | P32 should add the links in both instance repositories. |
 | Imputation share and coverage are `null`. | The source material does not record them. | The report keeps them unknown, as required. |
 
 ## 6. Next phase
