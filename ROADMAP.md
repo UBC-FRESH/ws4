@@ -1513,7 +1513,7 @@ ledger that reuses CBM's stand-level additivity, or through a clearly labeled su
 ledger cannot meet the search budget. The final schedule is always verified with the exact engine.
 See `notes/design/ws4-carbon.md`.
 
-- [ ] P51.1 Load and validate FEMIC carbon packages (#358)
+- [x] P51.1 Load and validate FEMIC carbon packages (#358)
 - [ ] P51.2 Compile CBM SIT tables from a WS4 dataset and schedule (#359)
 - [ ] P51.3 Add the libcbm driver and the `ws4 carbon` command (#360)
 - [ ] P51.4 Integrate carbon accounts, reports, and provenance (#361)
