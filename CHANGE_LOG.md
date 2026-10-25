@@ -2478,3 +2478,9 @@ issue comments.
 
 - P39 close-out: pull request #296 squash-merged as `8f77a9a`; parent #293 and task #294 closed.
   P39 status set complete.
+
+- P40.1/P40.3: both instances add a bounded smoke workflow and
+  `scripts/run_provider_smoke.py`, plus docs for the dry-run/real command.
+- P40.2: both graphs execute validate → provenance → baseline schedule → one-year simulate with
+  every node `success`; evidence is written to `runtime/smoke/evidence.json`. Instance PRs
+  #29/#30 merged.

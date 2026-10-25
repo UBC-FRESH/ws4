@@ -49,7 +49,8 @@ exists and the maintainer approves it.
 | P37 FreshForge provenance gate | #278 | `feature/p37-provenance-gate` | complete |
 | P33 Search artifact browser | #261 | `feature/p33-search-ui` | complete |
 | P34 Search launcher | #265 | `feature/p34-search-launch` | complete |
-| P38 Instance FreshForge provider execution | #287 | `feature/p38-provider` | pr-open |
+| P38 Instance FreshForge provider execution | #287 | `feature/p38-provider` | complete |
+| P40 Bounded provider workflow execution | #297 | `feature/p40-smoke` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
@@ -1241,7 +1242,7 @@ Acceptance:
 
 Parent issue: #287
 Branch: `feature/p38-provider`
-Status: pr-open
+Status: complete
 
 Goal: make the GBR FreshForge workflows executable: package `tsa46.ws4` and `tsa47.ws4` providers with
 the build, validate, schedule, and simulate nodes the workflows reference, then validate the graphs.
@@ -1280,6 +1281,27 @@ Acceptance:
 - The tree is keyboard-navigable.
 - Map labels use year ranges; target rows say "Target period".
 - `python scripts/dashboard.py` is green.
+
+## Phase 40: Bounded provider workflow execution
+
+Parent issue: #297
+Branch: `feature/p40-smoke`
+Status: pr-open
+
+Goal: execute the provider graph on a bounded existing matrix, not only validate it: add a smoke
+workflow from validate through provenance, schedule, and simulate, add a runner that registers the
+local providers, and record the commands and artifacts.
+
+- [x] P40.1 Add the smoke workflow and runner (#298)
+- [x] P40.2 Execute both smoke runs and record evidence (#299)
+- [x] P40.3 Document the smoke command and gate (#300)
+
+Acceptance:
+
+- Both smoke graphs execute every selected node successfully.
+- The provenance node passes on the existing sidecar.
+- The schedule and one-year simulation artifacts exist.
+- The evidence JSON names the commands, statuses, and artifacts.
 
 ## Detailed Next Steps Notes
 
