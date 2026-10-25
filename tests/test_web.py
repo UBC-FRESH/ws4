@@ -569,7 +569,9 @@ def test_search_launchers_compose_the_scripts(
         def poll(self) -> int | None:
             return None
 
-    def fake_popen(command: list[str], stdout: object = None, stderr: object = None) -> FakePopen:
+    def fake_popen(
+        command: list[str], stdout: object = None, stderr: object = None, **kwargs: object
+    ) -> FakePopen:
         captured.append(command)
         return FakePopen()
 
@@ -592,6 +594,49 @@ def test_search_launchers_compose_the_scripts(
     assert {item["id"] for item in listed} >= {portfolio.json()["id"], tuning.json()["id"]}
     status = client.get(f"/api/search/{portfolio.json()['id']}/status").json()
     assert status["status"] == "running"
+
+
+def test_search_stop_and_bounded_jobs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A launch can be stopped and the job list drops the oldest finished entries."""
+    client = _runs_client(tmp_path)
+
+    class FakePopen:
+        pid = 123
+        returncode = None
+
+        def poll(self) -> int | None:
+            return self.returncode
+
+        def terminate(self) -> None:
+            self.returncode = -15
+
+    processes: list[FakePopen] = []
+
+    def fake_popen(
+        command: list[str], stdout: object = None, stderr: object = None, **kwargs: object
+    ) -> FakePopen:
+        process = FakePopen()
+        processes.append(process)
+        return process
+
+    monkeypatch.setattr("ws4.web.app.subprocess.Popen", fake_popen)
+    launched = client.post(
+        "/api/search/portfolio", json={"vary": "feature.Volume=1", "iterations": 1, "years": 1}
+    ).json()
+    stopped = client.post(f"/api/search/{launched['id']}/stop")
+    assert stopped.status_code == 200
+    assert stopped.json()["status"] == "stopping"
+    assert client.get(f"/api/search/{launched['id']}/status").json()["status"] in {
+        "stopping",
+        "stopped",
+    }
+    processes[0].returncode = -15
+    assert client.get(f"/api/search/{launched['id']}/status").json()["status"] == "stopped"
+    monkeypatch.setattr("ws4.web.app.SEARCH_JOB_LIMIT", 1)
+    client.post(
+        "/api/search/portfolio", json={"vary": "feature.Volume=1", "iterations": 1, "years": 1}
+    )
+    assert len(client.get("/api/search").json()) == 1
 
 
 def test_search_launchers_refuse_a_read_only_service(tmp_path: Path) -> None:

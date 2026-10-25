@@ -971,6 +971,18 @@ function renderCompareAccounts() {
   }
 }
 
+async function stopSearch(id) {
+  const status = $('search-run-status');
+  try {
+    const body = await api(`api/search/${encodeURIComponent(id)}/stop`, { method: 'POST' });
+    status.textContent = `${id} · ${body.status}`;
+    await new Promise((resolve) => window.setTimeout(resolve, 1500));
+    await loadSearch();
+  } catch (error) {
+    status.textContent = `${id} · stop failed: ${error.message}`;
+  }
+}
+
 async function loadSearch(preferred = '') {
   const empty = $('search-empty');
   const select = $('search-select');
@@ -979,21 +991,36 @@ async function loadSearch(preferred = '') {
   try {
     const artifacts = await api('api/search');
     select.replaceChildren();
-    if (!artifacts.length) {
+    const jobs = $('search-jobs');
+    jobs.replaceChildren();
+    const ready = artifacts.filter((artifact) => !artifact.status);
+    for (const artifact of artifacts.filter((item) => item.status)) {
+      const item = document.createElement('li');
+      item.textContent = `${artifact.id} · ${artifact.kind} · ${artifact.status} `;
+      if (artifact.status === 'running') {
+        const stop = document.createElement('button');
+        stop.type = 'button';
+        stop.textContent = 'Stop';
+        stop.addEventListener('click', () => stopSearch(artifact.id));
+        item.append(stop);
+      }
+      jobs.append(item);
+    }
+    if (!ready.length) {
       empty.hidden = false;
-      empty.textContent = 'no portfolio or tuner artifacts under the runs root — create one with scripts/portfolio.py or scripts/tune.py';
+      empty.textContent = 'no completed portfolio or tuner artifacts yet — launch one below or use scripts/portfolio.py / scripts/tune.py';
       summary.textContent = '';
       table.hidden = true;
       return;
     }
     empty.hidden = true;
-    for (const artifact of artifacts) {
+    for (const artifact of ready) {
       const option = document.createElement('option');
       option.value = artifact.id;
       option.textContent = `${artifact.id} (${artifact.kind})`;
       select.append(option);
     }
-    if (preferred && artifacts.some((artifact) => artifact.id === preferred)) {
+    if (preferred && ready.some((artifact) => artifact.id === preferred)) {
       select.value = preferred;
     }
     await renderSearchArtifact(select.value);

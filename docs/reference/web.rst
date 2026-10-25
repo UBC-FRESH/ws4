@@ -425,8 +425,9 @@ which members are on the Pareto front; a tuner shows its ranked candidates, best
 and parameters. When the service has ``--allow-runs``, the tab also starts a portfolio or tuner
 through ``POST /api/search/portfolio`` or ``POST /api/search/tune`` and polls
 ``GET /api/search/{name}/status``; the endpoint runs the existing ``scripts/portfolio.py`` and
-``scripts/tune.py`` against the configured dataset and targets. A read-only service shows only the
-artifacts.
+``scripts/tune.py`` against the configured dataset and targets. A running job has a **Stop** control; the
+status reports `stopping`/`stopped`. The in-memory job list is bounded and drops the
+oldest finished entries. A read-only service shows only the artifacts.
 
 Reports
 -------

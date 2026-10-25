@@ -45,10 +45,10 @@ exists and the maintainer approves it.
 | P31 Comparison map over MVT | #257 | `feature/p31-compare-map` | complete |
 | P32 Dataset provenance and limitations | #249 | `feature/p32-provenance` | complete |
 | P35 Instance provenance adoption | #267 | `feature/p35-provenance` | complete |
-| P36 Workflow conformance | #273 | `feature/p36-conformance` | pr-open |
+| P36 Workflow conformance | #273 | `feature/p36-conformance` | complete |
 | P37 FreshForge provenance gate | #278 | `feature/p37-provenance-gate` | complete |
 | P33 Search artifact browser | #261 | `feature/p33-search-ui` | complete |
-| P34 Search launcher | #265 | `feature/p34-search-launch` | active |
+| P34 Search launcher | #265 | `feature/p34-search-launch` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1146,7 +1146,7 @@ Acceptance:
 
 Parent issue: #265
 Branch: `feature/p34-search-launch`
-Status: active
+Status: pr-open
 
 Goal: let the Search tab start a portfolio or tuner job, watch it, and open the result.
 
@@ -1155,7 +1155,11 @@ Goal: let the Search tab start a portfolio or tuner job, watch it, and open the 
   - [x] Add the status endpoint and console tail
   - [x] Add the Search tab forms
   - [x] Verify with a short c5 artifact
-- [ ] P34.2 Add cancellation and a bounded job list
+- [x] P34.2 Add cancellation and a bounded job list (#272)
+  - [x] Add the stop endpoint and process termination
+  - [x] Prune the job list on launch and completion
+  - [x] Add the Search tab stop/list controls
+  - [x] Add endpoint tests and verify on c5
 
 Acceptance:
 
@@ -1189,7 +1193,7 @@ Acceptance:
 
 Parent issue: #273
 Branch: `feature/p36-conformance`
-Status: pr-open
+Status: complete
 
 Goal: reconcile the P30-P34 planning surfaces after the UI work: exact issue templates,
 one parent per phase, one child per task, close-out reports for completed phases, and
