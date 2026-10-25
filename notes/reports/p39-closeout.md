@@ -5,7 +5,7 @@ Parent issue: #287
 Pull request: this docs/tracker PR
 Companion pull requests: femic-tsa46-instance #28, femic-tsa47-instance #29
 Date: 2026-10-25
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-25 as `8f77a9a`.
 
 ## Recommendation
 
