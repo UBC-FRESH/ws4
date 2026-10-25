@@ -2426,3 +2426,9 @@ issue comments.
   and parameters. `GET /api/search` and `GET /api/search/{name}` back it; every skin now includes the
   search panel. c5's demo portfolio and tuner artifacts render; the tab points at the CLI commands
   for creating new artifacts. Shell assets move to `v63`. Dashboard **GREEN**.
+
+- P34.1: the Search tab can launch a portfolio or tuner through `POST /api/search/portfolio`
+  and `POST /api/search/tune` (gated by `--allow-runs`), poll
+  `GET /api/search/{name}/status`, and open the finished artifact. The endpoint composes the existing
+  `scripts/portfolio.py` and `scripts/tune.py` with the configured dataset and targets; the tuner
+  space is written beside the output. Shell assets move to `v64`. Dashboard **GREEN**.

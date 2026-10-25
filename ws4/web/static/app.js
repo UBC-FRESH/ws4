@@ -971,7 +971,7 @@ function renderCompareAccounts() {
   }
 }
 
-async function loadSearch() {
+async function loadSearch(preferred = '') {
   const empty = $('search-empty');
   const select = $('search-select');
   const table = $('search-table');
@@ -992,6 +992,9 @@ async function loadSearch() {
       option.value = artifact.id;
       option.textContent = `${artifact.id} (${artifact.kind})`;
       select.append(option);
+    }
+    if (preferred && artifacts.some((artifact) => artifact.id === preferred)) {
+      select.value = preferred;
     }
     await renderSearchArtifact(select.value);
   } catch (error) {
@@ -1080,6 +1083,85 @@ async function renderSearchArtifact(id) {
   } catch (error) {
     summary.textContent = `artifact unavailable: ${error.message}`;
     table.hidden = true;
+  }
+}
+
+async function waitSearch(id) {
+  const status = $('search-run-status');
+  for (let attempt = 0; attempt < 900; attempt += 1) {
+    await new Promise((resolve) => window.setTimeout(resolve, 2000));
+    const body = await api(`api/search/${encodeURIComponent(id)}/status`);
+    if (body.status === 'running') {
+      status.textContent = `${id} · running · ${attempt * 2}s`;
+      continue;
+    }
+    if (body.status === 'done') {
+      status.textContent = `${id} · done`;
+      await loadSearch(id);
+      return;
+    }
+    status.textContent = `${id} · failed${body.log ? `
+${String(body.log).slice(-600)}` : ''}`;
+    return;
+  }
+  status.textContent = `${id} · still running; check the artifact later`;
+}
+
+async function startPortfolio() {
+  const status = $('search-run-status');
+  const vary = $('portfolio-vary').value.trim();
+  if (!vary) {
+    status.textContent = 'portfolio: enter an account and factors';
+    return;
+  }
+  status.textContent = 'portfolio: starting…';
+  try {
+    const body = await api('api/search/portfolio', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        vary,
+        metrics: $('portfolio-metrics').value.trim(),
+        seeds: $('portfolio-seeds').value.trim() || '1',
+        iterations: Number($('portfolio-iterations').value || 20),
+        years: Number($('portfolio-years').value || 50),
+        engine: $('portfolio-engine').value,
+      }),
+    });
+    status.textContent = `portfolio ${body.id} · running`;
+    await waitSearch(body.id);
+  } catch (error) {
+    status.textContent = `portfolio not started: ${error.message}`;
+  }
+}
+
+async function startTune() {
+  const status = $('search-run-status');
+  let space;
+  try {
+    space = JSON.parse($('tune-space').value || '{}');
+  } catch (error) {
+    status.textContent = `tuner: space is not valid JSON (${error.message})`;
+    return;
+  }
+  status.textContent = 'tuner: starting…';
+  try {
+    const body = await api('api/search/tune', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        space,
+        mode: $('tune-mode').value,
+        budget: Number($('tune-budget').value || 8),
+        seeds: $('tune-seeds').value.trim() || '1',
+        iterations: Number($('tune-iterations').value || 20),
+        years: Number($('tune-years').value || 50),
+      }),
+    });
+    status.textContent = `tuner ${body.id} · running`;
+    await waitSearch(body.id);
+  } catch (error) {
+    status.textContent = `tuner not started: ${error.message}`;
   }
 }
 
@@ -3154,6 +3236,8 @@ function wireControls() {
   $('compare-b').addEventListener('change', loadComparison);
   $('compare-filter').addEventListener('input', renderCompareAccounts);
   $('search-select').addEventListener('change', (event) => renderSearchArtifact(event.target.value));
+  $('run-portfolio').addEventListener('click', startPortfolio);
+  $('run-tune').addEventListener('click', startTune);
   $('chat-form').addEventListener('submit', sendChat);
   $('chat-new').addEventListener('click', newChat);
   $('chat-input').addEventListener('keydown', (event) => {
