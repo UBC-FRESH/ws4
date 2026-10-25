@@ -2401,3 +2401,7 @@ issue comments.
   current-schema runs still show `offset + 1`. This fixes the Accounts, Periods, Targets, treatment
   map, and used-road readers for old c5 runs instead of returning 500s. An endpoint test builds a
   legacy run and checks accounts, periods, targets, and the treatment map. Dashboard **GREEN**.
+
+- P30 close-out: live snapshots, the complete target editor, ending-inventory/flow surfaces, and
+  legacy year/period handling are implemented, tested, documented, and queued in
+  `notes/reports/p30-closeout.md` (PR #256, evidence head `d7d949c`). Dashboard **GREEN**.
