@@ -2548,3 +2548,9 @@ issue comments.
 
 - P44 close-out: pull request #349 squash-merged as `05c3b44`; parent #341 and tasks #342/#343/#344
   closed. P44 status set complete.
+- P51.1/P51.2: clean-checkout verification at `f30cd5b` passes; the dashboard is green; the
+  sdist and wheel build and pass `twine check`; both install in isolated environments; both
+  entry points and a synthetic build/validate/simulate/report smoke pass.
+- P51.3: docs/Pages return 200; version metadata is consistently `0.1.0`, but `v0.1.0` is already
+  tagged at `d8ecd72` and released on 2026-10-15. The candidate is green but **not tag-ready**
+  until a new version and release notes are approved. No tag or release was created.

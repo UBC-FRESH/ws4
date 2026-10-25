@@ -56,6 +56,7 @@ exists and the maintainer approves it.
 | P48 Ground-plot volume and DBH validation | #324 | `feature/p48-ground-plots` | complete |
 | P49 Managed/young validation pre-registration | #335 | `feature/p49-preregistration` | complete |
 | P50 Runtime provenance and release verification | #345 | `feature/p50-runtime-provenance` | complete |
+| P51 Release-candidate verification | #351 | `feature/p51-release-candidate` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -1495,6 +1496,29 @@ Acceptance:
 - `ws4 quality --check` exits zero for both.
 - The report names the matrix path, sidecar hash, quality status, and command.
 - The instance docs link the report and both dashboards stay green.
+
+## Phase 51: Release-candidate verification
+
+Parent issue: #351
+Branch: `feature/p51-release-candidate`
+Status: complete
+
+Goal: verify the current `main` as a release candidate without tagging or publishing: clean-checkout
+install, full gates, package build, isolated wheel install, entry points, docs/Pages, and a
+release-note/recommendation record.
+
+- [x] P51.1 Run the clean-checkout install and full gates (#352)
+- [x] P51.2 Build and install the artifacts and verify entry points (#353)
+- [x] P51.3 Audit release metadata, docs/Pages, and write the recommendation (#354)
+
+Acceptance:
+
+- The clean-checkout test and dashboard pass.
+- The sdist and wheel build and install in an isolated environment.
+- `ws4` and `python -m ws4.cli` work from the installed wheel.
+- Docs/Pages return 200 for the key pages.
+- The report states whether the candidate is ready for a tag and names any blocker.
+- No tag, release, version bump, or production-data change.
 
 ## Detailed Next Steps Notes
 
