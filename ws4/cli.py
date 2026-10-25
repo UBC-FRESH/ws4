@@ -322,6 +322,12 @@ def optimize(
     block_coordinates: Path = typer.Option(
         None, "--block-coordinates", exists=True, help="Block centroids (CSV: block, x, y)"
     ),
+    carbon_package: Path | None = typer.Option(
+        None,
+        "--carbon-package",
+        exists=True,
+        help="FEMIC carbon package; enables carbon accounts and carbon.* targets",
+    ),
     cooling_mode: str = typer.Option(
         "geometric", "--cooling-mode", help="Temperature schedule: geometric or adaptive"
     ),
@@ -378,6 +384,7 @@ def optimize(
         merge_weight=merge_weight,
         split_weight=split_weight,
         patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",
+        carbon_package_path=str(carbon_package) if carbon_package is not None else "",
         spread_accounts_path=str(spread_accounts) if spread_accounts is not None else "",
         block_coordinates_path=str(block_coordinates) if block_coordinates is not None else "",
         cooling_mode=cooling_mode,

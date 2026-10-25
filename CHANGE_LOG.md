@@ -2589,3 +2589,13 @@ issue comments.
   20-year no-event trajectory (25 inventory rows, 24 yield rows, `max_abs = 0.0` on pools and
   flux). The real TSA24 mini run replays byte-identically and its accounts reconcile to the
   pools. Report: `notes/reports/p515-parity.md`. Dashboard **GREEN**.
+
+- P51.6: added `ws4/carbon/ledger.py`, a block-level carbon ledger keyed by
+  `(block, chain)`. It runs one block's CBM chain at a time and sums the blocks; the
+  synthetic two-block fixture matches a full-schedule libcbm run exactly (`max_abs = 0.0`).
+- P51.7: added `--carbon-package` to `ws4 optimize`, carbon-aware incremental objective
+  deltas, the carbon target guard, and carbon accounts in the final run/report plus
+  `carbon_ledger.json`. A quickstart smoke with a `carbon.ecosystem.total` ceiling reduced
+  the objective from 1003.25 to 887.08 and chose a clearcut on block 1; ecosystem carbon at
+  offset 1 fell from 1203.25 to 1087.08 tC. Report:
+  `notes/reports/p517-carbon-optimizer.md`. Dashboard **GREEN**.

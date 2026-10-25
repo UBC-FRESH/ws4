@@ -7,6 +7,7 @@ run happens.
 
 from __future__ import annotations
 
+from .ledger import CarbonLedger
 from .libcbm import (
     CarbonEngineError,
     CarbonRun,
@@ -41,12 +42,14 @@ from .sit import (
     CarbonSitError,
     SitTables,
     build_sit_tables,
+    build_sit_tables_from_tables,
     read_schedule,
     write_sit_tables,
 )
 
 __all__ = [
     "CarbonEngineError",
+    "CarbonLedger",
     "CarbonPackage",
     "CarbonPackageError",
     "CarbonRun",
@@ -57,6 +60,7 @@ __all__ = [
     "SitTables",
     "TrackResolution",
     "build_sit_tables",
+    "build_sit_tables_from_tables",
     "carbon_accounts",
     "cbm_defaults_reference",
     "check_cbm_defaults",

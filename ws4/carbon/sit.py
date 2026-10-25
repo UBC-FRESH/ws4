@@ -279,6 +279,58 @@ def build_sit_tables(
     treatments = _read_table(root, "treatments", findings)
     if findings:
         raise CarbonSitError(findings)
+    return build_sit_tables_from_tables(
+        package,
+        fragments,
+        tracks,
+        treatments,
+        schedule,
+        allow_unmatched=allow_unmatched,
+    )
+
+
+def build_sit_tables_from_tables(
+    package: CarbonPackage,
+    fragments: pd.DataFrame,
+    tracks: pd.DataFrame,
+    treatments: pd.DataFrame,
+    schedule: pd.DataFrame,
+    *,
+    allow_unmatched: bool = False,
+) -> SitTables:
+    """Compile SIT tables from in-memory dataset tables.
+
+    This is the block-level entry point used by the carbon ledger. It takes the
+    same package and schedule as :func:`build_sit_tables`, but the dataset tables
+    are supplied directly so one block can be compiled without writing a dataset
+    directory.
+
+    Parameters
+    ----------
+    package : CarbonPackage
+        The loaded and validated FEMIC package.
+    fragments : pandas.DataFrame
+        The ``fragments`` table.
+    tracks : pandas.DataFrame
+        The ``tracks`` table.
+    treatments : pandas.DataFrame
+        The ``treatments`` table.
+    schedule : pandas.DataFrame
+        The schedule with ``block_id``, ``treatment``, and ``offset``.
+    allow_unmatched : bool, optional
+        Pass through to :func:`resolve_tracks`. Defaults to False.
+
+    Returns
+    -------
+    SitTables
+        The compiled SIT tables and audit totals.
+
+    Raises
+    ------
+    CarbonSitError
+        When the package, tables, or schedule cannot be compiled.
+    """
+    findings: list[Problem] = []
 
     try:
         resolution = resolve_tracks(package, tracks, allow_unmatched=allow_unmatched)

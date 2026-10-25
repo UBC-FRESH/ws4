@@ -24,8 +24,8 @@ TABLES: dict[str, list[list[object]]] = {
         ["classifier_id", "classifier", "value", "description"],
         [1, "track", "track1", "first track"],
         [1, "track", "track2", "second track"],
-        [2, "species", "softwood", "softwood"],
-        [2, "species", "hardwood", "hardwood"],
+        [2, "species", "Spruce", "Spruce"],
+        [2, "species", "Trembling aspen", "Trembling aspen"],
     ],
     "disturbance_types": [
         [
@@ -60,14 +60,14 @@ TABLES: dict[str, list[list[object]]] = {
     ],
     "yield": [
         ["track_name", "species", "leading_species", "age", "volume_m3_ha"],
-        ["track1", "softwood", "Spruce", 0, 0.0],
-        ["track1", "softwood", "Spruce", 10, 50.0],
-        ["track1", "softwood", "Spruce", 20, 120.0],
-        ["track1", "softwood", "Spruce", 30, 180.0],
-        ["track2", "hardwood", "Trembling aspen", 0, 0.0],
-        ["track2", "hardwood", "Trembling aspen", 10, 30.0],
-        ["track2", "hardwood", "Trembling aspen", 20, 70.0],
-        ["track2", "hardwood", "Trembling aspen", 30, 100.0],
+        ["track1", "Spruce", "Spruce", 0, 0.0],
+        ["track1", "Spruce", "Spruce", 10, 50.0],
+        ["track1", "Spruce", "Spruce", 20, 120.0],
+        ["track1", "Spruce", "Spruce", 30, 180.0],
+        ["track2", "Trembling aspen", "Trembling aspen", 0, 0.0],
+        ["track2", "Trembling aspen", "Trembling aspen", 10, 30.0],
+        ["track2", "Trembling aspen", "Trembling aspen", 20, 70.0],
+        ["track2", "Trembling aspen", "Trembling aspen", 30, 100.0],
     ],
     "track_carbon_map": [
         [
@@ -83,7 +83,7 @@ TABLES: dict[str, list[list[object]]] = {
         ],
         [
             "track1",
-            "track1;softwood",
+            "track1;Spruce",
             "Spruce",
             1.0,
             0.0,
@@ -94,7 +94,7 @@ TABLES: dict[str, list[list[object]]] = {
         ],
         [
             "track2",
-            "track2;hardwood",
+            "track2;Trembling aspen",
             "Trembling aspen",
             0.0,
             1.0,
@@ -106,8 +106,8 @@ TABLES: dict[str, list[list[object]]] = {
     ],
     "curve_carbon_map": [
         ["track_name", "feature_label", "species", "share"],
-        ["track1", "feature.Volume", "softwood", 1.0],
-        ["track2", "feature.Volume", "hardwood", 1.0],
+        ["track1", "feature.Volume", "Spruce", 1.0],
+        ["track2", "feature.Volume", "Trembling aspen", 1.0],
     ],
     "species_map": [
         ["bc_species", "cbm_species", "wood_type", "confidence", "notes"],

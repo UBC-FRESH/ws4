@@ -201,6 +201,19 @@ The run writes:
 The driver is optional: install ``ws4[carbon]`` (``libcbm==2.10.2``). A core WS4 install
 does not import libcbm.
 
+Carbon targets in the optimizer
+-------------------------------
+
+`ws4 optimize --carbon-package <package>` enables carbon accounts and `carbon.*` targets.
+The block-level :class:`ws4.carbon.ledger.CarbonLedger` runs one block's treatment chain
+at a time, caches the carbon accounts, and sums the blocks for a schedule. Because CBM is
+stand-level and area-additive, the sum is exact; the ledger is not a surrogate.
+
+A carbon target uses the same weighted-goal objective, period semantics, normalization,
+and priority tiers as any other account. A `carbon.*` target without a package is rejected
+before the search. The run writes carbon accounts into `account_values.csv` and the
+standard report, and records `carbon_ledger.json` beside the run.
+
 Validation and parity
 ---------------------
 
