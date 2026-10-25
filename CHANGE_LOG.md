@@ -2565,3 +2565,16 @@ issue comments.
 - P52.5: added `integrate_lidar_mapping_into_dataset` and `ws4 lidar integrate`. Mapping fields are written as optional `lidar_`-prefixed columns in fragment/block Parquet tables; the manifest records bundle pin, mapping hashes, field lists, support keys, and integration timestamp. Datasets without LiDAR fields remain valid; the simulator loads expanded tables unchanged. Re-integration requires `--overwrite`. A 50,000-fragment / 5,000-block synthetic integration with four fields completed in about 0.14 s; no simulator/optimizer code path changes.
 
 - P52.6: ran the real TFL 6 end-to-end consumer path on 7 fragments/1 block using `lidarbc-995fb1f771f4d7fe`. Register, map, integrate, validate, and simulator load all passed. WS4/FHOPS parity was `0.0`; WS4/FEMIC parity was `7.1e-15` (tolerance `1e-9`). Map `0.755 s`, integration `0.037 s`, bundle 13.4 MB, mapping 4.4 KB, dataset 52 KB, licence OGL-BC. Close-out report and metrics added; phase status set `pr-open`.
+- P51.1/P51.2: clean-checkout verification at `f30cd5b` passes; the dashboard is green; the
+  sdist and wheel build and pass `twine check`; both install in isolated environments; both
+  entry points and a synthetic build/validate/simulate/report smoke pass.
+- P51.3: docs/Pages return 200; version metadata is consistently `0.1.0`, but `v0.1.0` is already
+  tagged at `d8ecd72` and released on 2026-10-15. The candidate is green but **not tag-ready**
+  until a new version and release notes are approved. No tag or release was created.
+
+- P45.1: added `scripts/profile_route.py` and profiled the c5 production route config on a
+  32-block schedule. Full route evaluation is 0.451 s/evaluation; `simulate` is the hot path
+  (0.407 s), not route assignment. Wrote `notes/design/ws4-incremental-route.md` with the
+  incremental aggregate design, the fallback cases (delivery, planned-network opening, other
+  route accounts), seven invariants, and the parity test plan. No incremental code landed.
+  Dashboard **GREEN**.
