@@ -4,7 +4,8 @@
   "panels": [
     "legend",
     "reports",
-    "comparison"
+    "comparison",
+    "search"
   ],
   "layers": [
     "blocks",

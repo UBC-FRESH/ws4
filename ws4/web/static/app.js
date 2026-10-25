@@ -971,6 +971,118 @@ function renderCompareAccounts() {
   }
 }
 
+async function loadSearch() {
+  const empty = $('search-empty');
+  const select = $('search-select');
+  const table = $('search-table');
+  const summary = $('search-summary');
+  try {
+    const artifacts = await api('api/search');
+    select.replaceChildren();
+    if (!artifacts.length) {
+      empty.hidden = false;
+      empty.textContent = 'no portfolio or tuner artifacts under the runs root — create one with scripts/portfolio.py or scripts/tune.py';
+      summary.textContent = '';
+      table.hidden = true;
+      return;
+    }
+    empty.hidden = true;
+    for (const artifact of artifacts) {
+      const option = document.createElement('option');
+      option.value = artifact.id;
+      option.textContent = `${artifact.id} (${artifact.kind})`;
+      select.append(option);
+    }
+    await renderSearchArtifact(select.value);
+  } catch (error) {
+    empty.hidden = false;
+    empty.textContent = `search artifacts unavailable: ${error.message}`;
+    table.hidden = true;
+  }
+}
+
+async function renderSearchArtifact(id) {
+  const table = $('search-table');
+  const summary = $('search-summary');
+  if (!id) return;
+  try {
+    const body = await api(`api/search/${encodeURIComponent(id)}`);
+    const head = table.querySelector('thead');
+    const tbody = table.querySelector('tbody');
+    head.replaceChildren();
+    tbody.replaceChildren();
+    const addHead = (labels) => {
+      const tr = document.createElement('tr');
+      for (const label of labels) {
+        const th = document.createElement('th');
+        th.textContent = label;
+        tr.append(th);
+      }
+      head.append(tr);
+    };
+    const addRow = (values, className = '') => {
+      const tr = document.createElement('tr');
+      if (className) tr.className = className;
+      for (const value of values) {
+        const td = document.createElement('td');
+        td.textContent = value;
+        tr.append(td);
+      }
+      tbody.append(tr);
+    };
+    if (body.kind === 'portfolio') {
+      const data = body.data ?? {};
+      const metrics = Array.isArray(data.metrics) ? data.metrics : [];
+      const front = new Set(data.front ?? []);
+      const members = Array.isArray(data.members) ? data.members : [];
+      summary.textContent = `portfolio · ${members.length} members · ${front.size} on the front · ${data.iterations ?? '?'} iterations · ${data.years ?? '?'} years`;
+      addHead(['Member', 'Seed', 'Objective', ...metrics, 'Front']);
+      for (const member of members) {
+        const key = `${member.label ?? ''}:${String(member.seed ?? '').padStart(3, '0')}`;
+        addRow([
+          member.label ?? '',
+          String(member.seed ?? ''),
+          member.objective === null || member.objective === undefined ? 'failed' : compareNumber(member.objective),
+          ...metrics.map((metric) => compareNumber(member.metrics?.[metric] ?? 0)),
+          front.has(key) ? 'front' : '',
+        ], front.has(key) ? 'search-front' : '');
+      }
+      table.hidden = false;
+      return;
+    }
+    if (body.kind === 'tuning') {
+      const data = body.data ?? {};
+      const candidates = Array.isArray(data.candidates) ? data.candidates : [];
+      const byLabel = new Map(candidates.map((candidate) => [candidate.label, candidate]));
+      const ranking = Array.isArray(data.ranking) ? data.ranking : [];
+      summary.textContent = `tuning · ${data.mode ?? ''} · ${candidates.length} candidates · winner ${data.winner?.label ?? 'none'}`;
+      addHead(['Rank', 'Candidate', 'Best', 'Median', 'Runs', 'Parameters']);
+      ranking.forEach((label, index) => {
+        const candidate = byLabel.get(label) ?? {};
+        addRow([
+          String(index + 1),
+          label,
+          compareNumber(candidate.best ?? 0),
+          compareNumber(candidate.median ?? 0),
+          String(candidate.runs ?? 0),
+          JSON.stringify(candidate.parameters ?? {}),
+        ], index === 0 ? 'search-front' : '');
+      });
+      table.hidden = false;
+      return;
+    }
+    summary.textContent = `${body.kind} artifact ${id}`;
+    addHead(['Key', 'Value']);
+    for (const [key, value] of Object.entries(body.data ?? {})) {
+      addRow([key, typeof value === 'object' ? JSON.stringify(value) : String(value)]);
+    }
+    table.hidden = false;
+  } catch (error) {
+    summary.textContent = `artifact unavailable: ${error.message}`;
+    table.hidden = true;
+  }
+}
+
 function renderEndingSummary(summary, targets) {
   const section = $('ending-summary');
   const ending = summary?.ending_inventory;
@@ -3041,6 +3153,7 @@ function wireControls() {
   $('compare-a').addEventListener('change', loadComparison);
   $('compare-b').addEventListener('change', loadComparison);
   $('compare-filter').addEventListener('input', renderCompareAccounts);
+  $('search-select').addEventListener('change', (event) => renderSearchArtifact(event.target.value));
   $('chat-form').addEventListener('submit', sendChat);
   $('chat-new').addEventListener('click', newChat);
   $('chat-input').addEventListener('keydown', (event) => {
@@ -3055,10 +3168,12 @@ function wireControls() {
     button.addEventListener('click', () => {
       for (const other of document.querySelectorAll('nav.tabs button')) other.classList.toggle('active', other === button);
       const tab = button.dataset.tab;
-      for (const name of ['legend', 'targets', 'reports', 'comparison']) $(`tab-${name}`).hidden = name !== tab;
+      for (const name of ['legend', 'targets', 'reports', 'comparison', 'search']) $(`tab-${name}`).hidden = name !== tab;
       if (tab === 'comparison') {
         syncCompareRuns();
         loadComparison();
+      } else if (tab === 'search') {
+        loadSearch();
       } else if (state.compareView) {
         clearCompareView();
       }

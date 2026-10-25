@@ -2420,3 +2420,9 @@ issue comments.
   and the GBR VDYP/THLB caveats. Dashboard **GREEN**.
 - P32.1-P32.3 refresh: the example notebooks' stored summaries include `provenance_supplied`.
   `python scripts/check_notebooks.py` reports 47 compared, 0 drifted.
+
+- P33.1: added a read-only Search tab that discovers `portfolio.json`, `tuning.json`, and `lp.json`
+  under the runs root, renders portfolio members with the Pareto front, and renders tuner ranking
+  and parameters. `GET /api/search` and `GET /api/search/{name}` back it; every skin now includes the
+  search panel. c5's demo portfolio and tuner artifacts render; the tab points at the CLI commands
+  for creating new artifacts. Shell assets move to `v63`. Dashboard **GREEN**.

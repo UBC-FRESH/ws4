@@ -41,9 +41,10 @@ exists and the maintainer approves it.
 | P27 Goal normalization and priority tiers | #227 | `feature/p27-normalization` | complete |
 | P28 Inventory and flow ceilings | #233 | `feature/p28-inventory` | complete |
 | P29 MIP lane and exact small-instance validation | #238 | `feature/p29-mip` | complete |
-| P30 Live run surfaces | #242 | `feature/p30-live-surfaces` | pr-open |
-| P31 Comparison map over MVT | #257 | `feature/p31-compare-map` | active |
+| P30 Live run surfaces | #242 | `feature/p30-live-surfaces` | complete |
+| P31 Comparison map over MVT | #257 | `feature/p31-compare-map` | complete |
 | P32 Dataset provenance and limitations | #249 | `feature/p32-provenance` | pr-open |
+| P33 Search artifact browser | #261 | `feature/p33-search-ui` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1040,7 +1041,7 @@ Acceptance:
 
 Parent issue: #242
 Branch: `feature/p30-live-surfaces`
-Status: pr-open
+Status: complete
 
 Goal: make the browser's live run view truthful for every solver path, and close the small
 target-editor and report-surface gaps left by the P23 dogfood.
@@ -1071,13 +1072,11 @@ Acceptance:
 - A legacy run is refused or normalized with a specific message.
 - `python scripts/dashboard.py` is green.
 
-- `python scripts/dashboard.py` is green.
-
 ## Phase 31: Comparison map over MVT
 
 Parent issue: #257
 Branch: `feature/p31-compare-map`
-Status: active
+Status: complete
 
 Goal: render the Compare map from one vector tile carrying A, B, and both flags, so
 two large runs no longer fetch both full GeoJSON viewports.
@@ -1094,6 +1093,7 @@ Acceptance:
 - A-only, B-only, and both use the existing compare colors.
 - The summary counts come from compare-stats.
 - `python scripts/dashboard.py` is green.
+
 ## Phase 32: Dataset provenance and limitations
 
 Parent issue: #249
@@ -1115,6 +1115,28 @@ Acceptance:
 - TSA 46 and TSA 47 reports name inventory vintage, curve provenance, THLB provenance, and
   explicitly unknown imputation/coverage fields.
 - The limitations page is linked from the provenance output and docs.
+
+## Phase 33: Search artifact browser
+
+Parent issue: #261
+Branch: `feature/p33-search-ui`
+Status: active
+
+Goal: give the portfolio, tuner, and LP artifacts a read-only browser surface over the
+runs root.
+
+- [x] P33.1 Add the Search artifacts tab (#262)
+  - [x] Discover portfolio/tuning/LP artifacts under the runs root
+  - [x] Render portfolio members/front and tuner ranking
+  - [x] Add the search panel to every skin
+  - [x] Verify on c5 and document the CLI launch path
+
+Acceptance:
+
+- A portfolio artifact shows members, objective, metrics, and the front.
+- A tuning artifact shows the ranked candidates, best/median, and parameters.
+- No artifacts shows a clear empty state and the CLI command to create one.
+- `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes
 

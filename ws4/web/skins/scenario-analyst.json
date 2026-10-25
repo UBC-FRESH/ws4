@@ -5,7 +5,8 @@
     "legend",
     "targets",
     "reports",
-    "comparison"
+    "comparison",
+    "search"
   ],
   "layers": [
     "blocks",
