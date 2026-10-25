@@ -1056,7 +1056,10 @@ target-editor and report-surface gaps left by the P23 dogfood.
   - [x] Add the ending-inventory card and standard report entry
   - [x] Add the Compare ending-inventory table
   - [x] Add Kind to the Compare target table
-- [ ] P30.4 Diagnose legacy run schemas
+- [x] P30.4 Handle legacy year/period runs (#255)
+  - [x] Add the alias in the shared CSV reader
+  - [x] Preserve the legacy year label
+  - [x] Add an endpoint test for a legacy run
 
 Acceptance:
 

@@ -422,6 +422,11 @@ schedule and the ending inventory — and keeps the full file list below them. T
 card shows the final feature values and year from ``summary.json``, plus any flow-target status.
 Nothing is recomputed in the browser.
 
+Runs written before the current clock schema carry ``year`` in ``account_values.csv`` and ``period``
+in ``schedule.csv``. The shared run-table reader adds an ``offset`` alias for either column and keeps
+the existing ``year`` label, so the Accounts, Periods, Targets, and Map endpoints open the legacy run
+instead of returning a 500. The files are not rewritten.
+
 The **Build a report** form selects accounts (comma-separated, or blank for all) and a year range
 from the run's own ``account_values.csv``, renders the rows, and exports the same rows as a CSV
 download. A target's **On** checkbox is written through the same save as the bounds: an inactive

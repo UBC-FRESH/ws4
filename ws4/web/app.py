@@ -724,10 +724,17 @@ def create_app(
         ]
 
     def read_csv(run: Path, name: str) -> pd.DataFrame:
+        """Read a run table, normalising the legacy ``year``/``period`` clock to ``offset``."""
         path = run / name
         if not path.is_file():
             raise HTTPException(status_code=404, detail=f"the run has no {name}")
-        return pd.read_csv(path)
+        frame = pd.read_csv(path)
+        if "offset" not in frame.columns:
+            for column in ("year", "period"):
+                if column in frame.columns:
+                    frame["offset"] = frame[column]
+                    break
+        return frame
 
     geometry_cache: list[dict[str, Any]] | None = None
     overview_cache: list[dict[str, Any]] | None = None
@@ -1511,8 +1518,8 @@ def create_app(
         rows: list[dict[str, Any]] = []
         for row in frame.to_dict(orient="records"):
             record = {str(key): value for key, value in row.items()}
-            if "offset" in record:
-                # ``year`` is the display label; the stored clock is the offset.
+            if "offset" in record and "year" not in record:
+                # ``year`` is the display label; a legacy table already carries it.
                 record["year"] = int(record["offset"]) + 1
             rows.append(record)
         return rows

@@ -555,6 +555,29 @@ def test_the_optional_land_base_underlay(tmp_path: Path) -> None:
     assert "--land-base" in response.json()["detail"]
 
 
+def test_legacy_year_and_period_tables_are_normalized(tmp_path: Path) -> None:
+    """A run written with year/period columns reads through the current offset endpoints."""
+    client, _ = _app(tmp_path)
+    legacy = tmp_path / "runs" / "legacy"
+    legacy.mkdir()
+    (legacy / "account_values.csv").write_text(
+        "year,account,value\n0,feature.Volume,10\n1,feature.Volume,11\n",
+        encoding="utf-8",
+    )
+    (legacy / "schedule.csv").write_text(
+        "block_id,treatment,period\n2,CT,0\n2,CT,1\n",
+        encoding="utf-8",
+    )
+    rows = client.get("/api/runs/legacy/accounts", params={"year": 0}).json()
+    assert rows[0]["offset"] == 0
+    assert rows[0]["year"] == 0
+    periods = client.get("/api/runs/legacy/periods").json()
+    assert periods["values"] == [0, 1]
+    body = client.get("/api/runs/legacy/map", params={"year": 0, "layer": "treatments"}).json()
+    assert any(feature["properties"].get("treated") for feature in body["features"])
+    assert client.get("/api/runs/legacy/targets").status_code == 200
+
+
 def test_geometry_bounds_fit_the_map_to_the_configured_layer(tmp_path: Path) -> None:
     """The MapLibre shell can fit the view without loading the full geometry."""
     client, _ = _app(tmp_path)
