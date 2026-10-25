@@ -24,6 +24,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - Block topology, patch metrics and size classes, edge contrast, and the opening rules.
    * - :doc:`roads`
      - The network tables, least-cost routing, and the route accounts.
+   * - :doc:`carbon`
+     - The FEMIC carbon package contract, its tables, and the track-name join.
    * - :doc:`performance`
      - The measured figures and how to reproduce them.
    * - :doc:`web`
@@ -39,5 +41,6 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    optimizer
    spatial
    roads
+   carbon
    performance
    web

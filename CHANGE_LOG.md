@@ -2552,3 +2552,10 @@ issue comments.
   targets in the optimizer, TSA24/MKRF validation, and GCBM output consumption. The design note is
   `notes/design/ws4-carbon.md`. Dashboard **GREEN** (lint, format, types, tests, validator, docs,
   docstrings).
+
+- P51.1: added the carbon package contract loader in `ws4/carbon/package.py`, with a closed
+  manifest schema, table/column/unit validation, table hashes, a stable package fingerprint, and
+  the exact `track_name` join. Unmatched dataset tracks fail with `CARBON-UNMATCHED-TRACK` unless
+  the caller explicitly allows them. Added 16 contract tests over a synthetic package, the
+  consumer-side `docs/reference/carbon.rst` page, and the reference-index entry. Dashboard
+  **GREEN** (lint, format, types, tests, validator, docs, docstrings).
