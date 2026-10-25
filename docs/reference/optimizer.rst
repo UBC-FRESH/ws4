@@ -643,7 +643,9 @@ Every run writes two review artefacts beside the summary:
 The quality status distinguishes **not supplied** from **checked and good**. A dataset with no
 metadata reports ``unknown`` and names the missing inventory-vintage/imputation/coverage fields
 rather than treating an empty block as a pass. Derived accounts (``patch.*``, ``route.*``,
-``spread.*``) are reported separately because they are not rows in ``accounts.parquet``.
+``spread.*``) are reported separately because they are not rows in ``accounts.parquet``. The
+dataset may carry a ``data_quality.yaml`` sidecar; see :doc:`../guides/limitations-and-boundaries`
+for the provenance contract and the GBR caveats.
 
 Scenario comparison
 -------------------

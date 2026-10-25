@@ -27,6 +27,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+import yaml
+
 from ..model.schema import dataset_reference
 from .objective import load_targets
 
@@ -36,6 +38,7 @@ if TYPE_CHECKING:
 #: Accounts that the compiled matrix derives rather than stores in ``accounts.parquet``.
 _DERIVED_PREFIXES = ("patch.", "route.", "spread.")
 _PACKAGES = ("ws4", "numpy", "pandas", "pyarrow", "scipy", "pyproj", "fastapi")
+PROVENANCE_NAMES = ("data_quality.yaml", "data_quality.yml", "data_quality.json")
 
 
 def _sha256(path: Path) -> str | None:
@@ -126,6 +129,56 @@ def _target_accounts(targets_path: Path | None) -> list[str]:
         return []
 
 
+def load_provenance(dataset_dir: Path) -> tuple[dict[str, Any] | None, Path | None]:
+    """Load a dataset provenance sidecar.
+
+    The sidecar is ``data_quality.yaml`` (or ``.yml``/``.json``) beside the compiled
+    manifest. It carries the values the matrix itself cannot know: inventory vintage,
+    imputation and coverage, curve provenance, and THLB provenance.
+
+    Parameters
+    ----------
+    dataset_dir : Path
+        The compiled dataset directory.
+
+    Returns
+    -------
+    tuple of (dict or None, Path or None)
+        The sidecar mapping and its path, or ``(None, None)`` when absent.
+
+    Raises
+    ------
+    ValueError
+        When a present sidecar is not a mapping, has an unsupported schema version, or gives
+        a non-mapping section or non-list limitations.
+    """
+    for name in PROVENANCE_NAMES:
+        path = Path(dataset_dir) / name
+        if not path.is_file():
+            continue
+        try:
+            if path.suffix == ".json":
+                raw = json.loads(path.read_text(encoding="utf-8"))
+            else:
+                raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, yaml.YAMLError) as error:
+            raise ValueError(f"cannot read {name}: {error}") from error
+        if not isinstance(raw, Mapping):
+            raise ValueError(f"{name} must be a mapping")
+        schema = raw.get("schema_version", 1)
+        if schema != 1:
+            raise ValueError(f"{name} has unsupported schema_version {schema!r}")
+        for key in ("inventory", "curves", "thlb"):
+            value = raw.get(key)
+            if value is not None and not isinstance(value, Mapping):
+                raise ValueError(f"{name}.{key} must be a mapping")
+        limitations = raw.get("limitations")
+        if limitations is not None and not isinstance(limitations, list):
+            raise ValueError(f"{name}.limitations must be a list")
+        return dict(raw), path
+    return None, None
+
+
 def dataset_quality(dataset_dir: Path, targets_path: Path | None = None) -> dict[str, Any]:
     """Summarize the dataset's metadata, table counts, and target coverage.
 
@@ -198,6 +251,39 @@ def dataset_quality(dataset_dir: Path, targets_path: Path | None = None) -> dict
                     "detail": f"{len(table_counts)} tables have rows",
                 }
             )
+    try:
+        provenance, provenance_path = load_provenance(dataset_dir)
+        provenance_error = ""
+    except ValueError as error:
+        provenance, provenance_path = None, None
+        provenance_error = str(error)
+        checks.append({"name": "provenance", "status": "warn", "detail": provenance_error})
+        warnings.append("dataset provenance sidecar is invalid")
+    if provenance is not None:
+        sidecar_name = provenance_path.name if provenance_path is not None else "?"
+        checks.append(
+            {
+                "name": "provenance",
+                "status": "ok",
+                "detail": f"sidecar loaded: {sidecar_name}",
+            }
+        )
+        warnings[:] = [
+            warning for warning in warnings if warning != "data-quality metadata is not supplied"
+        ]
+        for check in checks:
+            if check["name"] == "metadata" and check["status"] == "unknown":
+                check["status"] = "ok"
+                check["detail"] = "sidecar supplies the provenance metadata"
+    elif not provenance_error:
+        checks.append(
+            {
+                "name": "provenance",
+                "status": "unknown",
+                "detail": "no data_quality sidecar was supplied",
+            }
+        )
+        warnings.append("dataset provenance is not supplied")
     accounts_path = dataset_dir / "accounts.parquet"
     provided: set[str] = set()
     if accounts_path.is_file():
@@ -246,7 +332,11 @@ def dataset_quality(dataset_dir: Path, targets_path: Path | None = None) -> dict
         "Account values are model outputs; the dataset does not carry a field audit.",
         "A harvest schedule is not a guarantee of operability, markets, fire, or access.",
     ]
-    if not metadata:
+    if provenance is not None:
+        for item in provenance.get("limitations", []) or []:
+            limitations.append(str(item))
+        limitations.append("Model limitations: docs/guides/limitations-and-boundaries")
+    if not metadata and provenance is None:
         limitations.append(
             "No inventory vintage, imputation share, or coverage metadata was supplied."
         )
@@ -254,6 +344,8 @@ def dataset_quality(dataset_dir: Path, targets_path: Path | None = None) -> dict
         "dataset": str(dataset_dir),
         "manifest_sha256": _sha256(manifest_path),
         "metadata": metadata,
+        "provenance": provenance,
+        "provenance_path": str(provenance_path) if provenance_path is not None else None,
         "tables": table_counts,
         "target_accounts": {
             "checked": checked,
@@ -264,7 +356,8 @@ def dataset_quality(dataset_dir: Path, targets_path: Path | None = None) -> dict
         "limitations": limitations,
         "summary": {
             "status": status,
-            "metadata_supplied": bool(metadata),
+            "metadata_supplied": bool(metadata or provenance),
+            "provenance_supplied": provenance is not None,
             "warnings": warnings,
             "table_count": len(table_counts),
         },

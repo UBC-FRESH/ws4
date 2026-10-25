@@ -2411,3 +2411,12 @@ issue comments.
   viewports. The vector paint maps A-only red, B-only blue, both purple, and untreated blocks at low
   opacity; block details use the tile's compare flag. Added backend tests for the counts and tile
   flags. Shell assets move to `v61`. Dashboard **GREEN**.
+- P32.1: datasets may carry a `data_quality.yaml` provenance sidecar. `ws4 quality` reports it,
+  writes JSON/Markdown, and `--check` fails when provenance is missing or the report is not ok.
+- P32.2: applied the TSA 46 and TSA 47 provenance records to the current matrices. Both report
+  `status: ok` with inventory vintage 2025, VDYP-transform curve provenance, predecessor-derived
+  THLB, and explicit null imputation/coverage fields. Recorded in `notes/reference/gbr-provenance.md`.
+- P32.3: the limitations page now covers priority tiers, the bounded exact lane, dataset provenance,
+  and the GBR VDYP/THLB caveats. Dashboard **GREEN**.
+- P32.1-P32.3 refresh: the example notebooks' stored summaries include `provenance_supplied`.
+  `python scripts/check_notebooks.py` reports 47 compared, 0 drifted.
