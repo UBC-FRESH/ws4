@@ -2365,3 +2365,11 @@ issue comments.
   `best · current · accepted`. On c5, best stayed at 3,965,293 while current moved to 3,965,632 and
   accepted rose past 30. Solver, telemetry, and SSE tests cover the fields; shell assets move to
   `v54`. Dashboard **GREEN**.
+
+- P29.1: `ws4 solve-mip` solves the option-selection model for a small instance or block subset,
+  replays the schedule, and writes `mip.json`, `schedule.csv`, `account_values.csv`, and
+  `report_targets.csv` with the model boundary named.
+- P29.2: `scripts/exact_vs_heuristic.py` runs the exact lane and a heuristic under the same
+  targets/budget and writes both schedules plus a JSON/Markdown gap report.
+- P29.3: `ws4 optimize --lp-bound` records `lp_bound`, `lp_gap`, and `lp_status`; validation and
+  scenario comparison carry the MIP/LP bound and gap fields. Dashboard **GREEN**.
