@@ -887,6 +887,9 @@ function renderCompareTargets(rowsA, rowsB) {
     account.textContent = a?.account ?? b?.account ?? '';
     account.title = account.textContent;
     tr.append(account);
+    const kind = document.createElement('td');
+    kind.textContent = a?.kind ?? b?.kind ?? config?.kind ?? '';
+    tr.append(kind);
     const year = document.createElement('td');
     year.className = 'num';
     year.textContent = String(a?.year ?? b?.year ?? '');
@@ -956,6 +959,96 @@ function renderCompareAccounts() {
   }
 }
 
+function renderEndingSummary(summary, targets) {
+  const section = $('ending-summary');
+  const ending = summary?.ending_inventory;
+  const accounts = ending?.accounts ?? {};
+  const names = Object.keys(accounts).sort();
+  if (!names.length) {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+  const offset = Number(ending.offset);
+  $('ending-year').textContent = Number.isFinite(offset) && offset >= 0
+    ? `· year ${offset + 1}`
+    : '';
+  const body = $('ending-table').querySelector('tbody');
+  body.replaceChildren();
+  for (const name of names) {
+    const tr = document.createElement('tr');
+    const account = document.createElement('td');
+    account.className = 'account';
+    account.textContent = name;
+    account.title = name;
+    const value = document.createElement('td');
+    value.className = 'num';
+    value.textContent = compareNumber(accounts[name]);
+    tr.append(account, value);
+    body.append(tr);
+  }
+  const order = { below: 3, above: 3, met: 2, inactive: 1 };
+  const flow = new Map();
+  for (const row of targets ?? []) {
+    const kind = String(row.kind ?? '');
+    if (!kind.startsWith('flow.')) continue;
+    const key = `${row.account}|${kind}`;
+    const previous = flow.get(key);
+    if (!previous || (order[row.status] ?? 0) > (order[previous] ?? 0)) flow.set(key, row.status);
+  }
+  $('ending-flows').textContent = flow.size
+    ? `Flow targets: ${[...flow].map(([key, status]) => `${key.replace('|', ' · ')} · ${status}`).join('; ')}`
+    : 'No flow targets configured.';
+}
+
+function renderCompareEnding(summaryA, summaryB) {
+  const table = $('compare-ending');
+  const empty = $('compare-ending-empty');
+  const body = table.querySelector('tbody');
+  body.replaceChildren();
+  const endingA = summaryA?.ending_inventory;
+  const endingB = summaryB?.ending_inventory;
+  const a = endingA?.accounts ?? {};
+  const b = endingB?.accounts ?? {};
+  const names = [...new Set([...Object.keys(a), ...Object.keys(b)])].sort();
+  if (!names.length) {
+    table.hidden = true;
+    empty.hidden = false;
+    empty.textContent = 'ending inventory is unavailable for these runs';
+    $('compare-ending-label').textContent = '';
+    return;
+  }
+  empty.hidden = true;
+  table.hidden = false;
+  const year = (ending) => {
+    const offset = Number(ending?.offset);
+    return Number.isFinite(offset) && offset >= 0 ? `year ${offset + 1}` : 'unknown';
+  };
+  $('compare-ending-label').textContent = `· A ${year(endingA)} · B ${year(endingB)}`;
+  for (const name of names) {
+    const tr = document.createElement('tr');
+    const account = document.createElement('td');
+    account.className = 'account';
+    account.textContent = name;
+    account.title = name;
+    tr.append(account);
+    for (const value of [a[name], b[name]]) {
+      const td = document.createElement('td');
+      td.className = 'num';
+      td.textContent = value === undefined ? '—' : compareNumber(value);
+      tr.append(td);
+    }
+    const delta = document.createElement('td');
+    delta.className = 'num';
+    const value = (b[name] ?? 0) - (a[name] ?? 0);
+    delta.textContent = `${value > 0 ? '+' : ''}${compareNumber(value)}`;
+    if (value > 0) delta.classList.add('compare-delta-positive');
+    if (value < 0) delta.classList.add('compare-delta-negative');
+    tr.append(delta);
+    body.append(tr);
+  }
+}
+
 async function loadComparison() {
   const runA = $('compare-a').value;
   const runB = $('compare-b').value;
@@ -967,13 +1060,35 @@ async function loadComparison() {
   state.compareView = true;
   $('compare-summary').textContent = 'loading…';
   try {
-    const [mapA, mapB, accountsA, accountsB, targetsA, targetsB] = await Promise.all([
-      api(`api/runs/${encodeURIComponent(runA)}/map?year=${state.year}${periodQuery()}${state.mapEngine === 'maplibre' ? '&format=wgs84' : ''}`),
-      api(`api/runs/${encodeURIComponent(runB)}/map?year=${state.year}${periodQuery()}${state.mapEngine === 'maplibre' ? '&format=wgs84' : ''}`),
+    const [accountsA, accountsB, targetsA, targetsB, summaryA, summaryB] = await Promise.all([
       api(`api/runs/${encodeURIComponent(runA)}/accounts?year=${state.year}`),
       api(`api/runs/${encodeURIComponent(runB)}/accounts?year=${state.year}`),
       api(`api/runs/${encodeURIComponent(runA)}/targets`),
       api(`api/runs/${encodeURIComponent(runB)}/targets`),
+      api(`api/runs/${encodeURIComponent(runA)}/summary`),
+      api(`api/runs/${encodeURIComponent(runB)}/summary`),
+    ]);
+    if (token !== state.compareToken) return;
+    // The report tables do not depend on the map, so show them before the slower map request.
+    renderCompareTargets(targetsA, targetsB);
+    renderCompareEnding(summaryA, summaryB);
+    const totalsA = accountTotals(accountsA);
+    const totalsB = accountTotals(accountsB);
+    const names = new Set([...totalsA.keys(), ...totalsB.keys()]);
+    state.compareAccounts = [...names]
+      .map((name) => {
+        const a = totalsA.get(name) ?? 0;
+        const b = totalsB.get(name) ?? 0;
+        return { name, a, b, delta: b - a };
+      })
+      .filter((row) => row.a !== 0 || row.b !== 0)
+      .sort((left, right) => Math.abs(right.delta) - Math.abs(left.delta)
+        || left.name.localeCompare(right.name));
+    renderCompareAccounts();
+    $('compare-summary').textContent = 'loading comparison map…';
+    const [mapA, mapB] = await Promise.all([
+      api(`api/runs/${encodeURIComponent(runA)}/map?year=${state.year}${periodQuery()}${state.mapEngine === 'maplibre' ? '&format=wgs84' : ''}`),
+      api(`api/runs/${encodeURIComponent(runB)}/map?year=${state.year}${periodQuery()}${state.mapEngine === 'maplibre' ? '&format=wgs84' : ''}`),
     ]);
     if (token !== state.compareToken) return;
     state.features = mapA.features ?? [];
@@ -1001,20 +1116,6 @@ async function loadComparison() {
       `period ${state.periodIndex + 1} · A only ${aOnly.toLocaleString()} · B only ${bOnly.toLocaleString()} · both ${both.toLocaleString()} · neither ${neither.toLocaleString()}`
       + (accountsB.length ? '' : ' · B has no account values at this year');
     $('compare-year').textContent = `period ${state.periodIndex + 1} (${state.year})`;
-    renderCompareTargets(targetsA, targetsB);
-    const totalsA = accountTotals(accountsA);
-    const totalsB = accountTotals(accountsB);
-    const names = new Set([...totalsA.keys(), ...totalsB.keys()]);
-    state.compareAccounts = [...names]
-      .map((name) => {
-        const a = totalsA.get(name) ?? 0;
-        const b = totalsB.get(name) ?? 0;
-        return { name, a, b, delta: b - a };
-      })
-      .filter((row) => row.a !== 0 || row.b !== 0)
-      .sort((left, right) => Math.abs(right.delta) - Math.abs(left.delta)
-        || left.name.localeCompare(right.name));
-    renderCompareAccounts();
     statusLine(`${state.features.length.toLocaleString()} blocks · ${runA} vs ${runB} · period ${state.periodIndex + 1}`);
   } catch (error) {
     if (token !== state.compareToken) return;
@@ -2480,6 +2581,7 @@ const STANDARD_REPORTS = [
   ['schedule.csv', 'Schedule'],
   ['account_values.csv', 'Account values'],
   ['product_values.csv', 'Product values'],
+  ['ending_inventory.csv', 'Ending inventory'],
 ];
 
 function csvCell(value) {
@@ -2535,6 +2637,15 @@ async function loadReports() {
     $('report-from').value = firstPeriod?.start ?? 0;
     $('report-to').value = lastPeriod?.end ?? 0;
     const accounts = await api(`api/runs/${encodeURIComponent(state.run)}/accounts`);
+    let endingSummary = null;
+    let targetRows = [];
+    try {
+      [endingSummary, targetRows] = await Promise.all([
+        api(`api/runs/${encodeURIComponent(state.run)}/summary`),
+        api(`api/runs/${encodeURIComponent(state.run)}/targets`),
+      ]);
+    } catch { /* an older run may not have either artifact */ }
+    renderEndingSummary(endingSummary, targetRows);
     const names = [...new Set(accounts.map((row) => String(row.account)))].sort();
     const datalist = $('account-names');
     datalist.replaceChildren();

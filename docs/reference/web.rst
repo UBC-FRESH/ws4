@@ -348,10 +348,12 @@ Comparison
 The **Compare** tab reads two completed runs through the existing reader endpoints:
 ``/api/runs/{run}/map?year=``, ``/api/runs/{run}/accounts?year=`` and
 ``/api/runs/{run}/targets``. At the selected year the map colors blocks treated only in A, only in
-B, and in both; the target table shows each target's period value and status for both runs, and the
-account table lists the per-account delta ``B − A``, sorted by absolute change and filterable. The
-server computes nothing new: the target values use the same ``period_value`` rule, and a run with no
-values at the year is named rather than silently shown as zero everywhere.
+B, and in both; the target table shows each target's kind, period value and status for both runs,
+the ending-inventory table compares the final feature values from each run's summary, and the account
+table lists the per-account delta ``B − A``, sorted by absolute change and filterable. The report
+tables appear before the map request finishes, so a large AOI does not hide them. The server computes
+nothing new: the target values use the same ``period_value`` rule, and a run with no values at the
+year is named rather than silently shown as zero everywhere.
 
 Chat agent
 ----------
@@ -415,8 +417,10 @@ Reports
 ``GET /api/runs/{run}/reports`` lists the report files a run wrote. The application renders a CSV in a
 table (first 200 rows) and opens HTML/PNG reports directly. The Reports tab groups the named
 **standard reports** when present — account summary, target status, route cost (overall and per
-destination), patch accounts and metrics, spread metrics, edge contrast, the road network and the
-schedule — and keeps the full file list below them. Nothing is recomputed in the browser.
+destination), patch accounts and metrics, spread metrics, edge contrast, the road network, the
+schedule and the ending inventory — and keeps the full file list below them. The ending-inventory
+card shows the final feature values and year from ``summary.json``, plus any flow-target status.
+Nothing is recomputed in the browser.
 
 The **Build a report** form selects accounts (comma-separated, or blank for all) and a year range
 from the run's own ``account_values.csv``, renders the rows, and exports the same rows as a CSV

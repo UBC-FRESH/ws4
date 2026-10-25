@@ -1052,7 +1052,10 @@ target-editor and report-surface gaps left by the P23 dogfood.
   - [x] Add a compact detail line for normalization, priority, kind, and notes
   - [x] Make the run controls sticky
   - [x] Extend the target-browser check and backend tests
-- [ ] P30.3 Surface ending inventory and flow status
+- [x] P30.3 Surface ending inventory and flow status (#248)
+  - [x] Add the ending-inventory card and standard report entry
+  - [x] Add the Compare ending-inventory table
+  - [x] Add Kind to the Compare target table
 - [ ] P30.4 Diagnose legacy run schemas
 
 Acceptance:

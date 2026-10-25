@@ -2387,3 +2387,11 @@ issue comments.
   Save targets and solve controls are sticky at the bottom of the sidebar. The backend carries
   `kind` in the JSON rows and strips it on save; tests cover the round-trip. Shell assets move to
   `v56`. Dashboard **GREEN**.
+
+- P30.3: the Reports tab now shows an ending-inventory card from `summary.json` (final feature values,
+  year, and flow-target status) and lists `ending_inventory.csv` as a standard report. The Compare
+  tab adds an ending-inventory table for A/B/delta and a `kind` column in the target table. The report
+  tables render before the slower comparison-map request, so a large AOI no longer delays them.
+  Verified on c5 with a new 10-iteration run: Reports showed 35 final feature values at year 50; the
+  Compare tables rendered while the map was still loading. Shell assets move to `v59`. Dashboard
+  **GREEN**.

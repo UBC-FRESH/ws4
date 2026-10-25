@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=56">
+  <link rel="stylesheet" href="static/style.css?v=59">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
 </head>
 <body>
   <header>
-    <strong>WS4</strong><span class="build">v56</span>
+    <strong>WS4</strong><span class="build">v59</span>
     <label>Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Period
@@ -95,6 +95,14 @@
         <h2>Standard reports</h2>
         <ul id="standard-reports"></ul>
         <p id="standard-reports-empty" class="hint">no standard reports for this run</p>
+        <div id="ending-summary" class="ending-summary" hidden>
+          <h2>Ending inventory <span id="ending-year" class="hint"></span></h2>
+          <p id="ending-flows" class="hint"></p>
+          <div class="table-wrap"><table id="ending-table">
+            <thead><tr><th>Account</th><th>Value</th></tr></thead>
+            <tbody></tbody>
+          </table></div>
+        </div>
         <h2>Build a report</h2>
         <div class="report-builder">
           <label>Accounts <input id="report-accounts" list="account-names" placeholder="comma-separated; blank = all"></label>
@@ -121,10 +129,16 @@
           <span class="compare-swatch compare-both"></span> both.
           Use the year control above.</p>
         <p id="compare-summary" class="hint">choose two runs</p>
+        <h2>Ending inventory <span id="compare-ending-label" class="hint"></span></h2>
+        <p id="compare-ending-empty" class="hint"></p>
+        <div class="table-wrap"><table id="compare-ending" hidden>
+          <thead><tr><th>Account</th><th>A</th><th>B</th><th>Δ B−A</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
         <h2>Target status</h2>
         <p id="compare-targets-empty" class="hint">no targets configured</p>
         <div class="table-wrap"><table id="compare-targets" hidden>
-          <thead><tr><th>Account</th><th>Year</th><th>Min</th><th>Max</th><th>A</th><th>B</th><th>Δ B−A</th></tr></thead>
+          <thead><tr><th>Account</th><th>Kind</th><th>Year</th><th>Min</th><th>Max</th><th>A</th><th>B</th><th>Δ B−A</th></tr></thead>
           <tbody></tbody>
         </table></div>
         <h2>Accounts · year <span id="compare-year">0</span></h2>
@@ -170,6 +184,6 @@
     </div>
   </main>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=56"></script>
+  <script type="module" src="static/app.js?v=59"></script>
 </body>
 </html>
