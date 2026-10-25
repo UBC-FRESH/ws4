@@ -40,6 +40,7 @@ exists and the maintainer approves it.
 | P26 Reproducibility and data quality | #219 | `feature/p26-repro-quality` | complete |
 | P27 Goal normalization and priority tiers | #227 | `feature/p27-normalization` | complete |
 | P28 Inventory and flow ceilings | #233 | `feature/p28-inventory` | pr-open |
+| P29 Live run surfaces | #242 | `feature/p29-live-surfaces` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1009,6 +1010,31 @@ Acceptance:
   report the final values.
 - A max-flow probe can require NDY or even flow and reports the worst change and feasibility.
 - Scenario comparison carries ending inventory and flow status.
+- `python scripts/dashboard.py` is green.
+
+## Phase 29: Live run surfaces
+
+Parent issue: #242
+Branch: `feature/p29-live-surfaces`
+Status: active
+
+Goal: make the browser's live run view truthful for every solver path, and close the small
+target-editor and report-surface gaps left by the P23 dogfood.
+
+- [x] P29.1 Emit live snapshots from non-delta solvers (#243)
+  - [x] Add the snapshot callback to the problem and whole-schedule solvers
+  - [x] Wire the engine's account-value snapshot
+  - [x] Add a solver test and a c5 live-stream check
+- [ ] P29.2 Complete the target editor fields
+- [ ] P29.3 Surface ending inventory and flow status
+- [ ] P29.4 Diagnose legacy run schemas
+
+Acceptance:
+
+- A c5 patch/route run updates its map and target cards before completion.
+- The target table exposes normalization and priority; kind and notes follow.
+- P28 reports appear in the run and comparison surfaces.
+- A legacy run is refused or normalized with a specific message.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes

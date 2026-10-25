@@ -1219,10 +1219,21 @@ class Optimizer:
         targets = load_targets(Path(self.cfg.targets_path)) if self.cfg.targets_path else []
         control = RunControl(Path(self.cfg.control_path)) if self.cfg.control_path else None
         candidates = self.candidates()
+
+        def snapshot_values(schedule: Schedule) -> Mapping[tuple[int, str], float]:
+            """Return the realized cells for a live map and target view."""
+            self._evaluate(schedule, targets)
+            values = self.last_account_values()
+            return {
+                (int(str(row.offset)), str(row.account)): float(str(row.value))
+                for row in values.itertuples(index=False)
+            }
+
         problem = Problem(
             evaluate=lambda schedule: self._evaluate(schedule, targets),
             candidates=candidates,
             registry=self.registry,
+            snapshot=snapshot_values,
         )
         rng = random.Random(seed)
         limit = self._deadline if deadline is None else deadline
@@ -1248,6 +1259,7 @@ class Optimizer:
                 cooling=self.cfg.cooling,
                 on_step=on_step,
                 on_trace=on_trace,
+                on_snapshot=on_snapshot,
                 control=control,
                 initial=initial,
                 deadline=limit,
@@ -1262,6 +1274,7 @@ class Optimizer:
                 tenure=self.cfg.tenure,
                 on_step=on_step,
                 on_trace=on_trace,
+                on_snapshot=on_snapshot,
                 control=control,
                 initial=initial,
                 deadline=limit,
@@ -1276,6 +1289,7 @@ class Optimizer:
                 perturbation=self.cfg.perturbation,
                 on_step=on_step,
                 on_trace=on_trace,
+                on_snapshot=on_snapshot,
                 initial=initial,
                 deadline=limit,
                 patience=self.cfg.patience,
@@ -1297,8 +1311,8 @@ class Optimizer:
                 deadline=limit,
                 on_step=on_step,
                 on_trace=on_trace,
-                control=control,
                 on_snapshot=on_snapshot,
+                control=control,
                 adaptive=self.cfg.cooling_mode == "adaptive",
                 cooling_window=self.cfg.cooling_window,
                 patience=self.cfg.patience,
@@ -1312,6 +1326,7 @@ class Optimizer:
             cooling=self.cfg.cooling,
             on_step=on_step,
             on_trace=on_trace,
+            on_snapshot=on_snapshot,
             control=control,
             initial=initial,
             adaptive=self.cfg.cooling_mode == "adaptive",

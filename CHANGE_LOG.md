@@ -2365,3 +2365,12 @@ issue comments.
   `best · current · accepted`. On c5, best stayed at 3,965,293 while current moved to 3,965,632 and
   accepted rose past 30. Solver, telemetry, and SSE tests cover the fields; shell assets move to
   `v54`. Dashboard **GREEN**.
+
+- P29.1: whole-schedule solvers (`solve_sa`, `solve_threshold`, `solve_tabu`, `solve_ils`) now emit
+  `targets` and `schedule` snapshots every twentieth iteration; the engine builds a realized-cell
+  snapshot from the incumbent. Patch/route c5 runs therefore animate the map and update target cards
+  during the search, not only at completion. Fixed the browser's live-target key: it looked up
+  `state.targetCells` by `year|account` instead of the target index, so the cards never repainted.
+  Verified on c5: target cards moved from 1,260.7 / 11,083,008.7 to 0 / 11,084,175.8 at the first
+  snapshot and then to 182 / 11,084,018.8, while best stayed flat and accepted rose. Shell assets
+  move to `v55`. Dashboard **GREEN**.

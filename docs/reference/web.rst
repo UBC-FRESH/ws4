@@ -33,7 +33,9 @@ keeps a fast search from flooding the page. With parallel islands it follows the
 lowest objective; ``progress`` carries the aggregate step count in ``total`` and names that island,
 and a schedule event with ``reset`` replaces the client's map when the best island changes. A
 progress record also carries the current solution's objective and the accepted-move count, so the
-run panel shows activity while the incumbent is flat. Each
+run panel shows activity while the incumbent is flat. Whole-schedule solvers emit the target and
+schedule snapshots as well, at the same twentieth-iteration cadence as the incremental solver, so
+patch, route, spread, and edge runs animate the map and target cards during the search. Each
 worker writes its own ``telemetry-<island>.jsonl`` while it runs; the run's canonical
 ``telemetry.jsonl`` is merged from them after the search, and the live reader follows the worker
 files so it sees the search at the solver's rate rather than behind one writer.
