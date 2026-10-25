@@ -50,6 +50,7 @@ exists and the maintainer approves it.
 | P33 Search artifact browser | #261 | `feature/p33-search-ui` | complete |
 | P34 Search launcher | #265 | `feature/p34-search-launch` | complete |
 | P38 Instance FreshForge provider execution | #287 | `feature/p38-provider` | pr-open |
+| P39 Account browser polish | #293 | `feature/p39-account-polish` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1255,6 +1256,30 @@ Acceptance:
 - The provider builds the expected commands for every workflow node.
 - FreshForge validation resolves every node in both workflows.
 - `python scripts/dashboard.py` is green in both instances.
+## Phase 39: Account browser polish
+
+Parent issue: #293
+Branch: `feature/p39-account-polish`
+Status: pr-open
+
+Goal: finish the account browser and target-period labels so a user can read the full
+account name, see search counts, navigate by keyboard, and distinguish the optimizer's
+target period from the map's year range.
+
+- [x] P39.1 Complete the account browser and period labels (#294)
+  - [x] Render full names and the search count
+  - [x] Add Enter/arrow navigation
+  - [x] Change period labels to year ranges and the target header
+  - [x] Add/update tests and browser verification
+  - [x] Update the web reference and changelog
+
+Acceptance:
+
+- Full account names are visible.
+- Search reports matched/total counts.
+- The tree is keyboard-navigable.
+- Map labels use year ranges; target rows say "Target period".
+- `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes
 
