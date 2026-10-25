@@ -1287,7 +1287,7 @@ Acceptance:
 
 Parent issue: #297
 Branch: `feature/p40-smoke`
-Status: pr-open
+Status: complete
 
 Goal: execute the provider graph on a bounded existing matrix, not only validate it: add a smoke
 workflow from validate through provenance, schedule, and simulate, add a runner that registers the
