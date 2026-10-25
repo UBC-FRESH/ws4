@@ -2451,3 +2451,10 @@ issue comments.
   P36 status set complete. P34 remains active for P34.2.
 - P37.1: `ws4 quality --sidecar PATH` installs a tracked provenance record beside the matrix
   and keeps the `--check` gate. Dashboard **GREEN**.
+
+- P37.1: `ws4 quality --sidecar PATH` installs a tracked provenance record beside the matrix and
+  keeps the `--check` gate.
+- P37.2: the `femic.ws4_quality` FreshForge provider builds the install/check command; provider
+  metadata and the exact command are covered.
+- P37.3: both GBR FreshForge workflows run the quality node after validation, install the sidecar,
+  and fail on invalid provenance. Dashboards green.
