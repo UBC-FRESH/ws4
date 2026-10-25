@@ -2548,6 +2548,23 @@ issue comments.
 
 - P44 close-out: pull request #349 squash-merged as `05c3b44`; parent #341 and tasks #342/#343/#344
   closed. P44 status set complete.
+
+- P52.1: added `ws4.io.lidar` to pin FEMIC LidarBC bundles, validate manifest
+  schema, OGL-BC licence, checksums, CRS, resolution, vertical datum, and
+  source-tile membership, and summarize slope/CHM rasters over polygon support.
+  Added the `ws4[lidar]` optional extra, contract note, reference docs, and
+  shared parity evidence against `lidarbc-995fb1f771f4d7fe` (max difference
+  0.0 versus FHOPS).
+
+- P52.2: added dataset-level FEMIC LidarBC registration. The pin is written to `manifest.json` metadata and `lidar_products.json`; `ws4 lidar register|inspect|validate` and `ws4 build --lidar-bundle` support the operator workflow. Failure fixtures cover missing datasets, wrong pins, and tampered bundles.
+
+- P52.3: added `map_femic_lidar_to_fragments` and `write_lidar_mapping`. Fragment support uses each fragment polygon; block support uses the dissolved block geometry. Outputs include fragment/block CSVs and a manifest with the bundle pin, checksums, CRS, native resolution, statistics, and aggregation rules. Added `ws4 lidar map` and coverage for missing products and CRS mismatch.
+
+- P52.4: added `map_femic_canopy_to_fragments` and `write_canopy_mapping`. CHM mean/p90/p95/max and 2/5/10 m cover map to fragment and dissolved-block support; optional VRI overlap adds area-weighted height/closure and uncertainty deltas; optional bundle tree products add tree counts, height mean/p95, and species counts. Added `ws4 lidar canopy` and tests for VRI/tree mapping and CRS failure.
+
+- P52.5: added `integrate_lidar_mapping_into_dataset` and `ws4 lidar integrate`. Mapping fields are written as optional `lidar_`-prefixed columns in fragment/block Parquet tables; the manifest records bundle pin, mapping hashes, field lists, support keys, and integration timestamp. Datasets without LiDAR fields remain valid; the simulator loads expanded tables unchanged. Re-integration requires `--overwrite`. A 50,000-fragment / 5,000-block synthetic integration with four fields completed in about 0.14 s; no simulator/optimizer code path changes.
+
+- P52.6: ran the real TFL 6 end-to-end consumer path on 7 fragments/1 block using `lidarbc-995fb1f771f4d7fe`. Register, map, integrate, validate, and simulator load all passed. WS4/FHOPS parity was `0.0`; WS4/FEMIC parity was `7.1e-15` (tolerance `1e-9`). Map `0.755 s`, integration `0.037 s`, bundle 13.4 MB, mapping 4.4 KB, dataset 52 KB, licence OGL-BC. Close-out report and metrics added; phase status set `pr-open`.
 - P51.1/P51.2: clean-checkout verification at `f30cd5b` passes; the dashboard is green; the
   sdist and wheel build and pass `twine check`; both install in isolated environments; both
   entry points and a synthetic build/validate/simulate/report smoke pass.

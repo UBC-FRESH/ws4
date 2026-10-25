@@ -63,6 +63,7 @@ exists and the maintainer approves it.
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
 | P44 Comparison and map operations | #341 | `feature/p44-compare-ops` | complete |
 | P45 Route evaluation performance | #368 | `feature/p45-route-profile` | complete |
+| P52 Consume FEMIC-compiled LidarBC products | #317 | `feature/p52-lidar-products` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1730,3 +1731,53 @@ Acceptance:
     same cost per metre and hauls 22% farther at 0.46× the cost per unit-km, because its solve chooses
     the road set and the assignment jointly. Reports: `p17-opened-roads.md`, `p17-tradeoff.md`,
     `p17-closeout.md`. Next: P18.
+
+## Phase 52: Consume FEMIC-compiled LidarBC products
+
+Parent issue: #317
+Branch: `feature/p52-lidar-products`
+Status: pr-open
+
+Goal: pin and validate FEMIC LidarBC bundles, map terrain/canopy products to
+fragment/block support, and preserve native-resolution provenance without
+reimplementing discovery or materialization.
+
+- [x] P52.1 Define the WS4 consumer contract for FEMIC LidarBC products (#318)
+  - [x] Pin bundle id/version and per-product checksums
+  - [x] Validate manifest, licence, CRS, resolution, vertical datum, and source tiles
+  - [x] Add polygon support summaries without reprojection
+  - [x] Validate shared slope/CHM parity with FHOPS
+- [x] P52.2 Register and consume FEMIC-compiled LidarBC products (#319)
+  - [x] Write the pin to the dataset manifest and sidecar
+  - [x] Reference the bundle without copying or re-downloading tiles
+  - [x] Add register/inspect/validate CLI and build integration
+  - [x] Add missing/corrupt/incompatible failure tests
+- [x] P52.3 Validate and map FEMIC native terrain products into WS4 (#320)
+  - [x] Map slope/CHM to fragment support
+  - [x] Map slope/CHM to dissolved block support
+  - [x] Record bundle pin, checksums, CRS, resolution, and aggregation rules
+  - [x] Add mapping fixtures and CRS/product failure tests
+- [x] P52.4 Integrate FEMIC canopy and precision-forestry metrics into WS4 (#321)
+  - [x] Map CHM height/cover/structure to fragment and block support
+  - [x] Add optional VRI uncertainty comparison
+  - [x] Add optional individual-tree summaries
+  - [x] Record lineage, units, support, and caveats
+  - [x] Add canopy/VRI/tree fixtures and CLI
+- [x] P52.5 Integrate terrain/canopy fields into the WS4 compiled dataset (#322)
+  - [x] Add optional prefixed LiDAR fields to fragment/block Parquet tables
+  - [x] Record bundle pin, mapping hashes, fields, and support keys in the manifest
+  - [x] Preserve validity for datasets without LiDAR fields
+  - [x] Verify simulator loading with expanded fields
+  - [x] Add `ws4 lidar integrate` and overwrite/failure tests
+- [x] P52.6 Validate, benchmark, document, and close out P52 (#323)
+  - [x] Run the end-to-end TFL 6 AOI validation
+  - [x] Confirm WS4/FHOPS/FEMIC parity within 1e-9
+  - [x] Record performance, storage, and OGL-BC evidence
+  - [x] Add the close-out report and validation metrics
+
+Acceptance:
+
+- WS4 can validate and pin a FEMIC bundle.
+- Polygon support summaries preserve the product CRS and native resolution.
+- Shared-AOI slope/CHM values match FHOPS within the documented tolerance.
+- No discovery or materialization is reimplemented in WS4.

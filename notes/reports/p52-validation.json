@@ -1,0 +1,26 @@
+{
+  "bundle_id": "lidarbc-995fb1f771f4d7fe",
+  "bundle_version": "2026.10.0-tfl6-pilot",
+  "fragments": 7,
+  "blocks": 1,
+  "max_diff_vs_femic": 7.105427357601002e-15,
+  "max_diff_vs_fhops": 0.0,
+  "map_seconds": 0.755,
+  "integrate_seconds": 0.037,
+  "bundle_bytes": 13406981,
+  "mapping_bytes": 4374,
+  "dataset_bytes": 52150,
+  "licence": "OGL-BC",
+  "crs": "EPSG:3005",
+  "resolution_m": 1.0,
+  "simulator_fragments": 7,
+  "integrated_fields": [
+    "lidar_slope_valid_pixels",
+    "lidar_slope_mean",
+    "lidar_slope_p95",
+    "lidar_chm_valid_pixels",
+    "lidar_chm_mean",
+    "lidar_chm_p95"
+  ],
+  "passed": true
+}

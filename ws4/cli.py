@@ -13,6 +13,18 @@ from rich.table import Table
 
 from .build.compiler import build_canonical_dataset
 from .build.legacy import ingest_legacy_matrix
+from .io.lidar import (
+    FemicLidarError,
+    integrate_lidar_mapping_into_dataset,
+    load_registered_femic_lidar_bundle,
+    map_femic_canopy_to_fragments,
+    map_femic_lidar_to_fragments,
+    read_registered_femic_lidar,
+    register_femic_lidar_bundle,
+    validate_registered_femic_lidar,
+    write_canopy_mapping,
+    write_lidar_mapping,
+)
 from .model.schema import validate_dataset
 from .opt.calibrate import calibrate as run_calibration
 from .opt.calibrate import write_targets
@@ -37,6 +49,19 @@ def build(
         ..., "--fragments", exists=True, help="Fragment inventory (CSV or Parquet)"
     ),
     out: Path = typer.Option(..., "--out", help="Output directory for canonical dataset"),
+    lidar_bundle: Path | None = typer.Option(
+        None,
+        "--lidar-bundle",
+        exists=True,
+        file_okay=False,
+        help="Optional FEMIC LidarBC bundle to register in the dataset",
+    ),
+    lidar_bundle_id: str | None = typer.Option(
+        None, "--lidar-bundle-id", help="Expected FEMIC bundle id"
+    ),
+    lidar_bundle_version: str | None = typer.Option(
+        None, "--lidar-bundle-version", help="Expected FEMIC bundle version"
+    ),
 ) -> None:
     """Compile a canonical dataset from an XML recipe and a *fragments* shapefile.
 
@@ -47,6 +72,17 @@ def build(
       • Block geometry is not required to build (it is a runtime view).
     """
     out = build_canonical_dataset(xml_path=xml, fragments_path=fragments, out_dir=out)
+    if lidar_bundle is not None:
+        try:
+            registration = register_femic_lidar_bundle(
+                out,
+                lidar_bundle,
+                expected_bundle_id=lidar_bundle_id,
+                expected_bundle_version=lidar_bundle_version,
+            )
+        except FemicLidarError as error:
+            raise typer.BadParameter(str(error)) from error
+        print(f"[bold green]Registered LidarBC bundle[/] → {registration['bundle_id']}")
     print(f"[bold green]Built dataset[/] → {out}")
 
 
@@ -764,6 +800,180 @@ def serve(
         root_path=root_path,
     )
 
+
+lidar_app = typer.Typer(help="Register and inspect FEMIC LidarBC products.")
+
+
+@lidar_app.command("register")
+def lidar_register(
+    dataset: Path = typer.Option(..., "--dataset", exists=True, file_okay=False),
+    bundle: Path = typer.Option(..., "--bundle", exists=True, file_okay=False),
+    bundle_id: str | None = typer.Option(None, "--bundle-id"),
+    bundle_version: str | None = typer.Option(None, "--bundle-version"),
+) -> None:
+    """Register a validated FEMIC bundle in a compiled dataset."""
+    try:
+        registration = register_femic_lidar_bundle(
+            dataset,
+            bundle,
+            expected_bundle_id=bundle_id,
+            expected_bundle_version=bundle_version,
+        )
+    except FemicLidarError as error:
+        print(f"[bold red]LidarBC registration failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    print(
+        f"[bold green]Registered[/] {registration['bundle_id']} @ {registration['bundle_version']}"
+    )
+
+
+@lidar_app.command("inspect")
+def lidar_inspect(
+    dataset: Path = typer.Option(..., "--dataset", exists=True, file_okay=False),
+) -> None:
+    """Print the FEMIC bundle pin registered in a dataset."""
+    try:
+        registration = read_registered_femic_lidar(dataset)
+    except FemicLidarError as error:
+        print(f"[bold red]LidarBC inspect failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    if registration is None:
+        print("No FEMIC LidarBC product is registered.")
+        return
+    print(json.dumps(registration, indent=2, sort_keys=True))
+
+
+@lidar_app.command("validate")
+def lidar_validate(
+    dataset: Path = typer.Option(..., "--dataset", exists=True, file_okay=False),
+) -> None:
+    """Revalidate the FEMIC bundle currently pinned by a dataset."""
+    try:
+        report = validate_registered_femic_lidar(dataset)
+    except FemicLidarError as error:
+        print(f"[bold red]LidarBC validation failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    print(json.dumps(report.to_dict(), indent=2, sort_keys=True))
+    if not report.is_valid:
+        raise typer.Exit(code=1)
+
+
+@lidar_app.command("map")
+def lidar_map(
+    dataset: Path = typer.Option(..., "--dataset", exists=True, file_okay=False),
+    fragments: Path = typer.Option(..., "--fragments", exists=True),
+    out: Path = typer.Option(..., "--out", help="Mapping output directory"),
+    product: list[str] | None = typer.Option(
+        None, "--product", help="Product to map; repeat for multiple products"
+    ),
+    statistic: list[str] | None = typer.Option(
+        None, "--statistic", help="Statistic to compute; repeat for multiple statistics"
+    ),
+    fragment_id_field: str = typer.Option("fragment_id", "--fragment-id-field"),
+    block_id_field: str = typer.Option("block_id", "--block-id-field"),
+    area_field: str = typer.Option("area_ha", "--area-field"),
+) -> None:
+    """Map registered terrain/canopy products to fragment and block support."""
+    try:
+        bundle = load_registered_femic_lidar_bundle(dataset)
+        result = map_femic_lidar_to_fragments(
+            bundle,
+            fragments,
+            products=tuple(product or ("slope", "chm")),
+            statistics=tuple(statistic or ("mean", "p95")),
+            id_field=fragment_id_field,
+            block_field=block_id_field,
+            area_field=area_field,
+        )
+        paths = write_lidar_mapping(result, out)
+    except FemicLidarError as error:
+        print(f"[bold red]LidarBC map failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    print(f"fragments: {len(result.fragments)}")
+    print(f"blocks: {len(result.blocks)}")
+    print(f"fragments_csv: {paths['fragments']}")
+    print(f"blocks_csv: {paths['blocks']}")
+    print(f"manifest: {paths['manifest']}")
+
+
+@lidar_app.command("canopy")
+def lidar_canopy(
+    dataset: Path = typer.Option(..., "--dataset", exists=True, file_okay=False),
+    fragments: Path = typer.Option(..., "--fragments", exists=True),
+    out: Path = typer.Option(..., "--out", help="Canopy mapping output directory"),
+    vri: Path | None = typer.Option(None, "--vri", help="Optional VRI layer"),
+    vri_height_field: str = typer.Option("proj_height_1", "--vri-height-field"),
+    vri_cover_field: str = typer.Option("crown_closure", "--vri-cover-field"),
+    tree_product: str | None = typer.Option(
+        None, "--tree-product", help="Optional individual-tree bundle product name"
+    ),
+    tree_height_field: str = typer.Option("height_m", "--tree-height-field"),
+    tree_species_field: str = typer.Option("species", "--tree-species-field"),
+    fragment_id_field: str = typer.Option("fragment_id", "--fragment-id-field"),
+    block_id_field: str = typer.Option("block_id", "--block-id-field"),
+    area_field: str = typer.Option("area_ha", "--area-field"),
+) -> None:
+    """Map CHM/canopy metrics, VRI uncertainty, and optional trees to WS4 support."""
+    try:
+        bundle = load_registered_femic_lidar_bundle(dataset)
+        result = map_femic_canopy_to_fragments(
+            bundle,
+            fragments,
+            vri_path=vri,
+            vri_height_field=vri_height_field,
+            vri_cover_field=vri_cover_field,
+            tree_product=tree_product,
+            tree_height_field=tree_height_field,
+            tree_species_field=tree_species_field,
+            id_field=fragment_id_field,
+            block_field=block_id_field,
+            area_field=area_field,
+        )
+        paths = write_canopy_mapping(result, out)
+    except FemicLidarError as error:
+        print(f"[bold red]LidarBC canopy mapping failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    print(f"fragments: {len(result.fragments)}")
+    print(f"blocks: {len(result.blocks)}")
+    if result.vri_summary is not None:
+        print(f"vri_matched_supports: {result.vri_summary['matched_supports']}")
+    if result.tree_summary is not None:
+        print(f"trees: {result.tree_summary['tree_count']}")
+    print(f"fragments_csv: {paths['fragments']}")
+    print(f"blocks_csv: {paths['blocks']}")
+    print(f"manifest: {paths['manifest']}")
+
+
+@lidar_app.command("integrate")
+def lidar_integrate(
+    dataset: Path = typer.Option(..., "--dataset", exists=True, file_okay=False),
+    fragments_mapping: Path = typer.Option(
+        ..., "--fragments-mapping", exists=True, help="lidar_fragments.csv"
+    ),
+    blocks_mapping: Path | None = typer.Option(
+        None, "--blocks-mapping", exists=True, help="lidar_blocks.csv or canopy_blocks.csv"
+    ),
+    overwrite: bool = typer.Option(False, "--overwrite", help="Replace existing LiDAR fields"),
+) -> None:
+    """Write LiDAR mapping fields into the compiled dataset."""
+    try:
+        result = integrate_lidar_mapping_into_dataset(
+            dataset,
+            fragments_mapping,
+            block_mapping_path=blocks_mapping,
+            overwrite=overwrite,
+        )
+    except FemicLidarError as error:
+        print(f"[bold red]LidarBC integration failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    print(f"bundle_id: {result.bundle_id}")
+    print(f"fragment_fields: {', '.join(result.fragment_fields)}")
+    print(f"block_fields: {', '.join(result.block_fields)}")
+    print(f"fragment_rows: {result.fragment_rows}")
+    print(f"block_rows: {result.block_rows}")
+
+
+app.add_typer(lidar_app, name="lidar")
 
 if __name__ == "__main__":
     app()
