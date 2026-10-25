@@ -49,6 +49,7 @@ exists and the maintainer approves it.
 | P37 FreshForge provenance gate | #278 | `feature/p37-provenance-gate` | complete |
 | P33 Search artifact browser | #261 | `feature/p33-search-ui` | complete |
 | P34 Search launcher | #265 | `feature/p34-search-launch` | complete |
+| P38 Instance FreshForge provider execution | #287 | `feature/p38-provider` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1234,6 +1235,26 @@ Acceptance:
 - `ws4 quality --sidecar PATH --check` installs the sidecar and gates the report.
 - `femic.ws4_quality` builds the install/check command and is covered by a provider test.
 - Both instance workflows add the node after validation and name the gate in docs.
+
+## Phase 38: Instance FreshForge provider execution
+
+Parent issue: #287
+Branch: `feature/p38-provider`
+Status: pr-open
+
+Goal: make the GBR FreshForge workflows executable: package `tsa46.ws4` and `tsa47.ws4` providers with
+the build, validate, schedule, and simulate nodes the workflows reference, then validate the graphs.
+
+- [x] P38.1 Package the TSA 46 provider and tests (#288)
+- [x] P38.2 Package the TSA 47 provider and tests (#289)
+- [x] P38.3 Validate both workflows end to end (#290)
+
+Acceptance:
+
+- Each instance exposes its `tsaXX.ws4` provider through an entry point.
+- The provider builds the expected commands for every workflow node.
+- FreshForge validation resolves every node in both workflows.
+- `python scripts/dashboard.py` is green in both instances.
 
 ## Detailed Next Steps Notes
 
