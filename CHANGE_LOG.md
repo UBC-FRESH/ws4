@@ -2395,3 +2395,13 @@ issue comments.
   Verified on c5 with a new 10-iteration run: Reports showed 35 final feature values at year 50; the
   Compare tables rendered while the map was still loading. Shell assets move to `v59`. Dashboard
   **GREEN**.
+
+- P30.4: legacy runs whose `account_values.csv` uses `year` and whose `schedule.csv` uses `period`
+  now read through an `offset` alias in the shared table reader. The existing year label is kept;
+  current-schema runs still show `offset + 1`. This fixes the Accounts, Periods, Targets, treatment
+  map, and used-road readers for old c5 runs instead of returning 500s. An endpoint test builds a
+  legacy run and checks accounts, periods, targets, and the treatment map. Dashboard **GREEN**.
+
+- P30 close-out: live snapshots, the complete target editor, ending-inventory/flow surfaces, and
+  legacy year/period handling are implemented, tested, documented, and queued in
+  `notes/reports/p30-closeout.md` (PR #256, evidence head `d7d949c`). Dashboard **GREEN**.

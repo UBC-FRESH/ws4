@@ -41,7 +41,7 @@ exists and the maintainer approves it.
 | P27 Goal normalization and priority tiers | #227 | `feature/p27-normalization` | complete |
 | P28 Inventory and flow ceilings | #233 | `feature/p28-inventory` | complete |
 | P29 MIP lane and exact small-instance validation | #238 | `feature/p29-mip` | pr-open |
-| P30 Live run surfaces | #242 | `feature/p30-live-surfaces` | active |
+| P30 Live run surfaces | #242 | `feature/p30-live-surfaces` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1038,7 +1038,7 @@ Acceptance:
 
 Parent issue: #242
 Branch: `feature/p30-live-surfaces`
-Status: active
+Status: pr-open
 
 Goal: make the browser's live run view truthful for every solver path, and close the small
 target-editor and report-surface gaps left by the P23 dogfood.
@@ -1056,7 +1056,10 @@ target-editor and report-surface gaps left by the P23 dogfood.
   - [x] Add the ending-inventory card and standard report entry
   - [x] Add the Compare ending-inventory table
   - [x] Add Kind to the Compare target table
-- [ ] P30.4 Diagnose legacy run schemas
+- [x] P30.4 Handle legacy year/period runs (#255)
+  - [x] Add the alias in the shared CSV reader
+  - [x] Preserve the legacy year label
+  - [x] Add an endpoint test for a legacy run
 
 Acceptance:
 
