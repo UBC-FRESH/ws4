@@ -59,6 +59,7 @@ exists and the maintainer approves it.
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
+| P44 Comparison and map operations | #341 | `feature/p44-compare-ops` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1382,6 +1383,34 @@ Acceptance:
 - Front members are inspectable and downloadable.
 - LP duals and reduced costs are readable.
 - Failures and console output are visible.
+- `python scripts/dashboard.py` is green.
+
+## Phase 44: Comparison and map operations
+
+Parent issue: #341
+Branch: `feature/p44-compare-ops`
+Status: pr-open
+
+Goal: make the comparison path production-grade on large AOIs: durable compare tiles,
+a browser smoke, and a cold/warm scale gate.
+
+- [x] P44.1 Add durable compare tiles and pre-warm support (#342)
+  - [x] Compare cache path and disk read/write
+  - [x] Pre-warm compare layers
+  - [x] Endpoint and prewarm tests
+- [x] P44.2 Add the compare browser smoke and detail parity (#343)
+  - [x] Browser smoke script
+  - [x] Verify flags/counts/details
+- [x] P44.3 Add the compare cold/warm scale gate (#344)
+  - [x] Benchmark script
+  - [x] Budget options and report
+
+Acceptance:
+
+- Repeated compare tiles hit disk.
+- Pre-warm writes compare tiles.
+- Browser smoke verifies flags and details.
+- Benchmark records cold/warm and enforces budgets.
 - `python scripts/dashboard.py` is green.
 
 ## Phase 47: Model boundary record

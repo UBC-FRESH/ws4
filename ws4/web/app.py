@@ -339,6 +339,29 @@ def _tile_cache_path(
     )
 
 
+def _compare_cache_path(
+    root: Path,
+    run: str,
+    against: str,
+    year: int | None,
+    period_start: int | None,
+    z: int,
+    x: int,
+    y: int,
+) -> Path:
+    """Return the durable cache path for one comparison tile."""
+    return _tile_cache_path(
+        root,
+        run,
+        f"compare-vs-{against}",
+        year,
+        period_start,
+        z,
+        x,
+        y,
+    )
+
+
 def _tile_tolerance(zoom: int) -> float:
     """Return the simplification tolerance in metres for a tile zoom.
 
@@ -2298,12 +2321,25 @@ def create_app(
             raise HTTPException(status_code=422, detail="tile coordinate out of range")
         run_dir(against)
         cache_key = (run, against, z, x, y, year, period_start, "compare")
+        cache_path = (
+            _compare_cache_path(tile_cache_root, run, against, year, period_start, z, x, y)
+            if tile_cache_root is not None
+            else None
+        )
         cached_tile = compare_tile_cache.get(cache_key)
         if cached_tile is not None:
             return Response(
                 content=cached_tile,
                 media_type="application/vnd.mapbox-vector-tile",
                 headers={"Cache-Control": "public, max-age=3600", "X-WS4-Tile-Cache": "memory"},
+            )
+        if cache_path is not None and cache_path.is_file():
+            payload = cache_path.read_bytes()
+            compare_tile_cache[cache_key] = payload
+            return Response(
+                content=payload,
+                media_type="application/vnd.mapbox-vector-tile",
+                headers={"Cache-Control": "public, max-age=3600", "X-WS4-Tile-Cache": "disk"},
             )
         overview = z < 8 and overview_path is not None
         entry_a = cached_geometry(run, year, "treatments", period_start, None, overview=overview)
@@ -2376,6 +2412,11 @@ def create_app(
         if len(compare_tile_cache) >= 4096:
             compare_tile_cache.clear()
         compare_tile_cache[cache_key] = payload
+        if cache_path is not None:
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            temporary = cache_path.with_name(f"{cache_path.name}.tmp")
+            temporary.write_bytes(payload)
+            temporary.replace(cache_path)
         return Response(
             content=payload,
             media_type="application/vnd.mapbox-vector-tile",

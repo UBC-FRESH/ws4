@@ -2538,3 +2538,10 @@ issue comments.
   had no `data_quality.yaml`.
 - P50.3: both instances publish a runtime-provenance page and tracked hash report with matrix,
   sidecar, manifest, and quality-report hashes. No matrix table, curve, target, or AAC change.
+- P44.1: comparison tiles now use a durable disk cache keyed by run pair, period, and tile;
+  `prewarm_tiles.py` accepts `compare` and `--compare-against`. Tests cover the disk hit and
+  compare pre-warm.
+- P44.2: added `scripts/check_compare_browser.py`; it selects a run pair, asserts compare tiles,
+  the A/B/both counts, and the Kind column.
+- P44.3: added `scripts/benchmark_compare.py` with cold/warm first-tile budgets. c5, six z9 tiles:
+  2.063 s cold first, 0.003 s warm first, 13.336 s full cold, 0.018 s warm. Dashboard **GREEN**.
