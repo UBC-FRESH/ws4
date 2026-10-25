@@ -55,6 +55,7 @@ exists and the maintainer approves it.
 | P47 Model boundary record | #311 | `feature/p47-boundary` | complete |
 | P48 Ground-plot volume and DBH validation | #324 | `feature/p48-ground-plots` | complete |
 | P49 Managed/young validation pre-registration | #335 | `feature/p49-preregistration` | complete |
+| P50 Runtime provenance and release verification | #345 | `feature/p50-runtime-provenance` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -1445,6 +1446,26 @@ Acceptance:
 - The decision is explicit and does not tune to the AAC.
 - No curve change occurs unless the pre-registered sample is met.
 - Both instance dashboards and the ws4 docs build are green.
+
+## Phase 50: Runtime provenance and release verification
+
+Parent issue: #345
+Branch: `feature/p50-runtime-provenance`
+Status: complete
+
+Goal: make the runtime matrices match the provenance published in P47-P49: refresh the sidecars
+beside the current matrices, run `ws4 quality --check`, and publish the evidence.
+
+- [x] P50.1 Refresh the runtime sidecars (#346)
+- [x] P50.2 Run the quality gate and capture the reports (#347)
+- [x] P50.3 Publish the runtime-provenance report and verify Pages (#348)
+
+Acceptance:
+
+- Both runtime matrices carry the current tracked sidecar.
+- `ws4 quality --check` exits zero for both.
+- The report names the matrix path, sidecar hash, quality status, and command.
+- The instance docs link the report and both dashboards stay green.
 
 ## Detailed Next Steps Notes
 
