@@ -229,3 +229,7 @@ path.block.compare-both { fill:#6b4c9a; }
 #search-table th, #search-table td { border-bottom:1px solid var(--line); padding:.15rem .25rem; text-align:left; }
 #search-table th { color:var(--muted); font-weight:600; }
 #search-table tr.search-front { background:#eef8f1; font-weight:600; }
+.search-run { margin:.4rem 0; border:1px solid var(--line); border-radius:.35rem; padding:.35rem .45rem; }
+.search-run summary { cursor:pointer; color:var(--muted); font-size:.78rem; }
+.search-run textarea { font:inherit; font-size:.74rem; width:100%; min-width:18rem; }
+.search-run .run-row { align-items:flex-start; }

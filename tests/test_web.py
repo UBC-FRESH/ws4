@@ -555,6 +555,53 @@ def test_the_optional_land_base_underlay(tmp_path: Path) -> None:
     assert "--land-base" in response.json()["detail"]
 
 
+def test_search_launchers_compose_the_scripts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Portfolio and tuner launches spawn the scripts under the runs root."""
+    client = _runs_client(tmp_path)
+    captured: list[list[str]] = []
+
+    class FakePopen:
+        pid = 123
+        returncode = None
+
+        def poll(self) -> int | None:
+            return None
+
+    def fake_popen(command: list[str], stdout: object = None, stderr: object = None) -> FakePopen:
+        captured.append(command)
+        return FakePopen()
+
+    monkeypatch.setattr("ws4.web.app.subprocess.Popen", fake_popen)
+    portfolio = client.post(
+        "/api/search/portfolio",
+        json={"vary": "feature.Volume=0.5,1.0", "iterations": 1, "years": 1, "seeds": "1"},
+    )
+    assert portfolio.status_code == 200
+    assert captured[-1][1].endswith("scripts/portfolio.py")
+    assert "--vary" in captured[-1]
+    tuning = client.post(
+        "/api/search/tune",
+        json={"space": {"temperature": [1, 2]}, "iterations": 1, "years": 1},
+    )
+    assert tuning.status_code == 200
+    assert captured[-1][1].endswith("scripts/tune.py")
+    assert (tmp_path / "runs" / tuning.json()["id"] / "space.json").is_file()
+    listed = client.get("/api/search").json()
+    assert {item["id"] for item in listed} >= {portfolio.json()["id"], tuning.json()["id"]}
+    status = client.get(f"/api/search/{portfolio.json()['id']}/status").json()
+    assert status["status"] == "running"
+
+
+def test_search_launchers_refuse_a_read_only_service(tmp_path: Path) -> None:
+    """The launcher obeys the same --allow-runs gate as the optimizer."""
+    client, _ = _app(tmp_path)
+    response = client.post("/api/search/portfolio", json={"vary": "feature.Volume=1"})
+    assert response.status_code == 403
+    assert "--allow-runs" in response.json()["detail"]
+
+
 def test_search_artifacts_are_listed_and_read(tmp_path: Path) -> None:
     """A portfolio or tuning directory under the runs root is a named search artifact."""
     client, _ = _app(tmp_path)

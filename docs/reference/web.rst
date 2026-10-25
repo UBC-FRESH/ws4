@@ -422,8 +422,11 @@ Search artifacts
 The **Search** tab lists directories under the runs root that hold a ``portfolio.json``,
 ``tuning.json``, or ``lp.json``. A portfolio shows its members, objective, declared metrics, and
 which members are on the Pareto front; a tuner shows its ranked candidates, best/median objective,
-and parameters. This is a viewer: the portfolio and tuning runs are still launched with
-``scripts/portfolio.py`` and ``scripts/tune.py``, and the tab points at their output directories.
+and parameters. When the service has ``--allow-runs``, the tab also starts a portfolio or tuner
+through ``POST /api/search/portfolio`` or ``POST /api/search/tune`` and polls
+``GET /api/search/{name}/status``; the endpoint runs the existing ``scripts/portfolio.py`` and
+``scripts/tune.py`` against the configured dataset and targets. A read-only service shows only the
+artifacts.
 
 Reports
 -------

@@ -45,6 +45,7 @@ exists and the maintainer approves it.
 | P31 Comparison map over MVT | #257 | `feature/p31-compare-map` | complete |
 | P32 Dataset provenance and limitations | #249 | `feature/p32-provenance` | pr-open |
 | P33 Search artifact browser | #261 | `feature/p33-search-ui` | active |
+| P34 Search launcher | #265 | `feature/p34-search-launch` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1136,6 +1137,28 @@ Acceptance:
 - A portfolio artifact shows members, objective, metrics, and the front.
 - A tuning artifact shows the ranked candidates, best/median, and parameters.
 - No artifacts shows a clear empty state and the CLI command to create one.
+- `python scripts/dashboard.py` is green.
+
+## Phase 34: Search launcher
+
+Parent issue: #265
+Branch: `feature/p34-search-launch`
+Status: active
+
+Goal: let the Search tab start a portfolio or tuner job, watch it, and open the result.
+
+- [x] P34.1 Add portfolio and tuner launchers (#266)
+  - [x] Add portfolio/tuner launch endpoints under --allow-runs
+  - [x] Add the status endpoint and console tail
+  - [x] Add the Search tab forms
+  - [x] Verify with a short c5 artifact
+- [ ] P34.2 Add cancellation and a bounded job list
+
+Acceptance:
+
+- A launcher writes a directory under the runs root and returns its id.
+- Status reports running, done, or failed.
+- A finished job opens in the artifact table.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes

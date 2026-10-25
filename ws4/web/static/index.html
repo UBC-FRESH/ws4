@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=63">
+  <link rel="stylesheet" href="static/style.css?v=64">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
 </head>
 <body>
   <header>
-    <strong>WS4</strong><span class="build">v63</span>
+    <strong>WS4</strong><span class="build">v64</span>
     <label>Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Period
@@ -97,6 +97,31 @@
         <p id="search-empty" class="hint"></p>
         <label class="search-pick">Artifact <select id="search-select"></select></label>
         <p id="search-summary" class="hint"></p>
+        <details class="search-run">
+          <summary>Run a portfolio</summary>
+          <div class="run-row">
+            <label>Vary <input id="portfolio-vary" type="text" placeholder="account=factor,factor"></label>
+            <label>Metrics <input id="portfolio-metrics" type="text" placeholder="optional; default varied accounts"></label>
+            <label>Seeds <input id="portfolio-seeds" type="text" value="1"></label>
+            <label>Iters <input id="portfolio-iterations" type="number" value="20" min="1"></label>
+            <label>Years <input id="portfolio-years" type="number" value="50" min="1"></label>
+            <label>Engine <select id="portfolio-engine"><option>sa</option><option>tabu</option><option>ils</option><option>threshold</option></select></label>
+            <button id="run-portfolio" type="button">Run portfolio</button>
+          </div>
+        </details>
+        <details class="search-run">
+          <summary>Run a tuner</summary>
+          <div class="run-row">
+            <label>Space <textarea id="tune-space" rows="3" placeholder='{"temperature": [500, 1000]}'></textarea></label>
+            <label>Mode <select id="tune-mode"><option>grid</option><option>random</option></select></label>
+            <label>Budget <input id="tune-budget" type="number" value="8" min="1"></label>
+            <label>Seeds <input id="tune-seeds" type="text" value="1"></label>
+            <label>Iters <input id="tune-iterations" type="number" value="20" min="1"></label>
+            <label>Years <input id="tune-years" type="number" value="50" min="1"></label>
+            <button id="run-tune" type="button">Run tuner</button>
+          </div>
+        </details>
+        <p id="search-run-status" class="hint"></p>
         <div class="table-wrap"><table id="search-table" hidden>
           <thead></thead>
           <tbody></tbody>
@@ -195,6 +220,6 @@
     </div>
   </main>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=63"></script>
+  <script type="module" src="static/app.js?v=64"></script>
 </body>
 </html>

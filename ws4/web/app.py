@@ -1533,12 +1533,170 @@ def create_app(
             )
         return candidate
 
+    search_jobs: dict[str, dict[str, Any]] = {}
+
+    def new_search_dir(prefix: str) -> Path:
+        """Return a fresh output directory under the runs root."""
+        out = runs_root / f"{prefix}-{datetime.now():%Y%m%d-%H%M%S}"
+        suffix = 1
+        while out.exists():
+            out = runs_root / f"{prefix}-{datetime.now():%Y%m%d-%H%M%S}-{suffix}"
+            suffix += 1
+        out.mkdir(parents=True)
+        return out
+
+    def script_path(name: str) -> Path:
+        """Return a repository script path."""
+        return Path(__file__).resolve().parents[2] / "scripts" / name
+
+    def launch_search(kind: str, out: Path, command: list[str]) -> dict[str, Any]:
+        """Start one search script and record its process."""
+        console = (out / "console.log").open("wb")
+        process = subprocess.Popen(command, stdout=console, stderr=subprocess.STDOUT)
+        search_jobs[out.name] = {"kind": kind, "out": out, "process": process}
+        return {"id": out.name, "kind": kind, "status": "running"}
+
+    @app.post("/api/search/portfolio")
+    def start_portfolio(body: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Start a target-weight portfolio under the runs root."""
+        if not allow_runs:
+            raise HTTPException(
+                status_code=403, detail="this service is read-only; use --allow-runs"
+            )
+        if targets_path is None:
+            raise HTTPException(status_code=422, detail="the service was started without --targets")
+        payload = body or {}
+        vary = str(payload.get("vary", "") or "").strip()
+        if not vary:
+            raise HTTPException(status_code=422, detail="vary is required")
+        iterations = int(payload.get("iterations", 20) or 20)
+        years = int(payload.get("years", 50) or 50)
+        threads = int(payload.get("threads", 1) or 1)
+        archive_size = int(payload.get("archive_size", 20) or 20)
+        if not 1 <= iterations <= 1_000_000 or not 1 <= years <= 1000:
+            raise HTTPException(status_code=422, detail="iterations or years are out of range")
+        if not 1 <= threads <= 64 or not 1 <= archive_size <= 100:
+            raise HTTPException(status_code=422, detail="threads or archive size is out of range")
+        out = new_search_dir("portfolio")
+        command = [
+            sys.executable,
+            str(script_path("portfolio.py")),
+            "--dataset",
+            str(dataset),
+            "--targets",
+            str(targets_path),
+            "--out",
+            str(out),
+            "--vary",
+            vary,
+            "--seeds",
+            str(payload.get("seeds", "1") or "1"),
+            "--iterations",
+            str(iterations),
+            "--years",
+            str(years),
+            "--threads",
+            str(threads),
+            "--engine",
+            str(payload.get("engine", "sa") or "sa"),
+            "--archive-size",
+            str(archive_size),
+            "--max-members",
+            str(min(64, int(payload.get("max_members", 64) or 64))),
+        ]
+        if payload.get("metrics"):
+            command.extend(["--metrics", str(payload["metrics"])])
+        if payload.get("directions"):
+            command.extend(["--directions", str(payload["directions"])])
+        return launch_search("portfolio", out, command)
+
+    @app.post("/api/search/tune")
+    def start_tune(body: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Start a grid or random tuner under the runs root."""
+        if not allow_runs:
+            raise HTTPException(
+                status_code=403, detail="this service is read-only; use --allow-runs"
+            )
+        if targets_path is None:
+            raise HTTPException(status_code=422, detail="the service was started without --targets")
+        payload = body or {}
+        space = payload.get("space")
+        if not isinstance(space, dict) or not space:
+            raise HTTPException(status_code=422, detail="space must be a non-empty JSON object")
+        iterations = int(payload.get("iterations", 20) or 20)
+        years = int(payload.get("years", 50) or 50)
+        budget = int(payload.get("budget", 16) or 16)
+        threads = int(payload.get("threads", 1) or 1)
+        if not 1 <= iterations <= 1_000_000 or not 1 <= years <= 1000:
+            raise HTTPException(status_code=422, detail="iterations or years are out of range")
+        if not 1 <= budget <= 256 or not 1 <= threads <= 64:
+            raise HTTPException(status_code=422, detail="budget or threads is out of range")
+        out = new_search_dir("tuning")
+        space_path = out / "space.json"
+        space_path.write_text(json.dumps(space), encoding="utf-8")
+        command = [
+            sys.executable,
+            str(script_path("tune.py")),
+            "--dataset",
+            str(dataset),
+            "--targets",
+            str(targets_path),
+            "--space",
+            str(space_path),
+            "--out",
+            str(out),
+            "--mode",
+            str(payload.get("mode", "grid") or "grid"),
+            "--budget",
+            str(budget),
+            "--seeds",
+            str(payload.get("seeds", "1") or "1"),
+            "--iterations",
+            str(iterations),
+            "--years",
+            str(years),
+            "--threads",
+            str(threads),
+        ]
+        return launch_search("tuning", out, command)
+
+    @app.get("/api/search/{name}/status")
+    def search_status(name: str) -> dict[str, Any]:
+        """Return a running search job's status and summary."""
+        job = search_jobs.get(name)
+        if job is None:
+            search_artifact_dir(name)
+            return {"id": name, "kind": "artifact", "status": "done", "returncode": 0, "log": ""}
+        process = job["process"]
+        running = process.poll() is None
+        out = job["out"]
+        if running:
+            status = "running"
+        elif (out / "portfolio.json").is_file() or (out / "tuning.json").is_file():
+            status = "done"
+        else:
+            status = "failed"
+        log_path = out / "console.log"
+        log = (
+            log_path.read_text(encoding="utf-8", errors="replace")[-2000:]
+            if log_path.is_file()
+            else ""
+        )
+        return {
+            "id": name,
+            "kind": job["kind"],
+            "status": status,
+            "returncode": process.returncode,
+            "log": log,
+        }
+
     @app.get("/api/search")
     def search_artifacts() -> list[dict[str, Any]]:
         """List portfolio, tuner, and LP artifacts under the runs root."""
         artifacts: list[dict[str, Any]] = []
         if not runs_root.is_dir():
             return artifacts
+        known: set[str] = set()
         for directory in sorted(runs_root.iterdir()):
             if not directory.is_dir():
                 continue
@@ -1550,7 +1708,11 @@ def create_app(
                 path = directory / filename
                 if path.is_file():
                     artifacts.append({"id": directory.name, "kind": kind})
+                    known.add(directory.name)
                     break
+        for name, job in search_jobs.items():
+            if name not in known:
+                artifacts.append({"id": name, "kind": job["kind"], "status": "running"})
         return artifacts
 
     @app.get("/api/search/{name}")
