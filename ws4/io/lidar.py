@@ -13,7 +13,9 @@ import tempfile
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any  # geopandas objects are untyped in the consumer adapter
+from typing import Any
+
+import pandas as pd  # geopandas objects are untyped in the consumer adapter
 
 from ws4.model.schema import load_manifest
 
@@ -692,10 +694,6 @@ def map_femic_lidar_to_fragments(
 
 def write_lidar_mapping(result: LidarMappingResult, output_dir: Path) -> dict[str, Path]:
     """Write fragment/block mapping CSVs and a provenance manifest."""
-    try:
-        import pandas as pd
-    except ImportError as exc:  # pragma: no cover - dependency boundary
-        raise FemicLidarError("Writing Lidar mapping requires pandas.") from exc
     root = output_dir.expanduser().resolve()
     root.mkdir(parents=True, exist_ok=True)
     fragment_path = root / "lidar_fragments.csv"
@@ -899,10 +897,6 @@ def map_femic_canopy_to_fragments(
 
 def write_canopy_mapping(result: CanopyMappingResult, output_dir: Path) -> dict[str, Path]:
     """Write canopy fragment/block CSVs and provenance manifest."""
-    try:
-        import pandas as pd
-    except ImportError as exc:  # pragma: no cover - dependency boundary
-        raise FemicLidarError("Writing canopy mapping requires pandas.") from exc
     root = output_dir.expanduser().resolve()
     root.mkdir(parents=True, exist_ok=True)
     fragment_path = root / "canopy_fragments.csv"
@@ -1048,3 +1042,148 @@ def _float_or_none(value: object) -> float | None:
 
 def _mean(values: list[float]) -> float | None:
     return float(sum(values) / len(values)) if values else None
+
+
+@dataclass(frozen=True)
+class LidarDatasetIntegrationResult:
+    """Fields and provenance written into a compiled dataset."""
+
+    dataset_dir: Path
+    bundle_id: str
+    fragment_fields: tuple[str, ...]
+    block_fields: tuple[str, ...]
+    fragment_rows: int
+    block_rows: int
+    generated_utc: str
+    warnings: tuple[str, ...] = ()
+
+    def to_dict(self) -> dict[str, object]:
+        """Return the integration result as a JSON-serializable mapping."""
+        return {
+            "dataset_dir": str(self.dataset_dir),
+            "bundle_id": self.bundle_id,
+            "fragment_fields": list(self.fragment_fields),
+            "block_fields": list(self.block_fields),
+            "fragment_rows": self.fragment_rows,
+            "block_rows": self.block_rows,
+            "generated_utc": self.generated_utc,
+            "warnings": list(self.warnings),
+        }
+
+
+def integrate_lidar_mapping_into_dataset(
+    dataset_dir: Path,
+    fragment_mapping_path: Path,
+    *,
+    block_mapping_path: Path | None = None,
+    overwrite: bool = False,
+    generated_utc: str | None = None,
+) -> LidarDatasetIntegrationResult:
+    """Add prefixed LiDAR fields to a compiled dataset's fragment/block tables."""
+    dataset_root = dataset_dir.expanduser().resolve()
+    manifest_path = dataset_root / "manifest.json"
+    if not manifest_path.is_file():
+        raise FemicLidarError(f"Dataset manifest is missing: {manifest_path}")
+    registration = read_registered_femic_lidar(dataset_root)
+    if registration is None:
+        raise FemicLidarError("Dataset has no registered FEMIC LidarBC product.")
+    manifest = load_manifest(dataset_root)
+    fragment_mapping = _read_mapping_csv(fragment_mapping_path, "fragment_id")
+    block_mapping = (
+        _read_mapping_csv(block_mapping_path, "block_id")
+        if block_mapping_path is not None
+        else None
+    )
+    fragments = pd.read_parquet(dataset_root / "fragments.parquet")
+    blocks = pd.read_parquet(dataset_root / "blocks.parquet")
+    warnings: list[str] = []
+    fragment_fields, fragments = _merge_mapping(
+        fragments,
+        fragment_mapping,
+        "fragment_id",
+        overwrite=overwrite,
+    )
+    block_fields: tuple[str, ...] = ()
+    if block_mapping is not None:
+        block_fields, blocks = _merge_mapping(
+            blocks,
+            block_mapping,
+            "block_id",
+            overwrite=overwrite,
+        )
+    _write_parquet_atomic(fragments, dataset_root / "fragments.parquet")
+    _write_parquet_atomic(blocks, dataset_root / "blocks.parquet")
+    timestamp = generated_utc or datetime.now(UTC).isoformat()
+    metadata = dict(manifest.metadata)
+    metadata["lidar_fields"] = {
+        "bundle_id": registration.get("bundle_id"),
+        "bundle_version": registration.get("bundle_version"),
+        "fragment_fields": list(fragment_fields),
+        "block_fields": list(block_fields),
+        "fragment_mapping_sha256": _sha256_file(fragment_mapping_path),
+        "block_mapping_sha256": (
+            _sha256_file(block_mapping_path) if block_mapping_path is not None else None
+        ),
+        "support_fields": {
+            "fragments": "fragment_id",
+            "blocks": "block_id",
+        },
+        "generated_utc": timestamp,
+    }
+    manifest = manifest.model_copy(update={"metadata": metadata})
+    manifest_path.write_text(manifest.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    bundle_id = registration.get("bundle_id")
+    return LidarDatasetIntegrationResult(
+        dataset_dir=dataset_root,
+        bundle_id=bundle_id if isinstance(bundle_id, str) else "",
+        fragment_fields=fragment_fields,
+        block_fields=block_fields,
+        fragment_rows=len(fragments),
+        block_rows=len(blocks),
+        generated_utc=timestamp,
+        warnings=tuple(warnings),
+    )
+
+
+def _read_mapping_csv(path: Path, key: str) -> pd.DataFrame:
+    frame = pd.read_csv(path)
+    if key not in frame.columns:
+        raise FemicLidarError(f"Mapping CSV is missing key {key!r}: {path}")
+    if frame[key].duplicated().any():
+        raise FemicLidarError(f"Mapping CSV has duplicate {key!r} rows: {path}")
+    return frame
+
+
+def _merge_mapping(
+    table: pd.DataFrame,
+    mapping: pd.DataFrame,
+    key: str,
+    *,
+    overwrite: bool,
+) -> tuple[tuple[str, ...], pd.DataFrame]:
+    excluded = {key, "block_id", "area_ha"}
+    field_map = {column: f"lidar_{column}" for column in mapping.columns if column not in excluded}
+    if not field_map:
+        raise FemicLidarError("Mapping CSV has no data fields to integrate.")
+    existing = [name for name in field_map.values() if name in table.columns]
+    if existing and not overwrite:
+        raise FemicLidarError(
+            "Dataset already has LiDAR fields; use overwrite: " + ", ".join(existing)
+        )
+    known = set(table[key])
+    mapped = set(mapping[key])
+    unknown = mapped - known
+    if unknown:
+        raise FemicLidarError(
+            f"Mapping references unknown {key!r} values: "
+            + ", ".join(str(value) for value in sorted(unknown)[:5])
+        )
+    subset = mapping[[key, *field_map]].rename(columns=field_map)
+    merged = table.merge(subset, on=key, how="left", validate="one_to_one")
+    return tuple(field_map.values()), merged
+
+
+def _write_parquet_atomic(frame: pd.DataFrame, path: Path) -> None:
+    temporary = path.with_suffix(".parquet.tmp")
+    frame.to_parquet(temporary, index=False)
+    temporary.replace(path)

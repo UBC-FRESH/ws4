@@ -124,6 +124,32 @@ aggregation rules, VRI uncertainty, tree summary, and explicit caveats. CHM
 cover at >=2 m is not VRI crown-closure equivalence. No segmentation or raw
 point-cloud processing is implemented.
 
+Dataset Integration
+-------------------
+
+Write mapping fields into the compiled dataset:
+
+.. code-block:: bash
+
+   ws4 lidar integrate \
+     --dataset build/compiled \
+     --fragments-mapping build/canopy_mapping/canopy_fragments.csv \
+     --blocks-mapping build/canopy_mapping/canopy_blocks.csv
+
+Fields are prefixed ``lidar_`` (for example ``lidar_slope_mean``,
+``lidar_chm_p95``, ``lidar_vri_height_m``, ``lidar_tree_count``). They are
+optional extra columns in the fragment and block Parquet tables; datasets
+without them remain valid.
+
+The manifest records the bundle pin, mapping hashes, field lists, support keys,
+and integration timestamp under ``metadata.lidar_fields``. Re-running without
+``--overwrite`` fails when fields already exist. Simulation/optimization read
+the same dataset contract and simply see the extra columns.
+
+Integration is a vectorized Parquet join. A 50,000-fragment / 5,000-block
+synthetic integration with four fields completed in about 0.14 s on the
+development host; no simulator or optimizer code path changes.
+
 Shared Parity
 -------------
 

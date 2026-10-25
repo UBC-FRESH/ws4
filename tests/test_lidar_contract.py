@@ -6,6 +6,7 @@ from pathlib import Path
 
 import geopandas as gpd
 import numpy as np
+import pandas as pd
 import pytest
 import rasterio
 from rasterio.transform import from_origin
@@ -15,6 +16,7 @@ from ws4.cli import app
 from ws4.io.lidar import (
     FemicLidarError,
     bundle_pin,
+    integrate_lidar_mapping_into_dataset,
     load_femic_lidar_bundle,
     load_registered_femic_lidar_bundle,
     map_femic_canopy_to_fragments,
@@ -27,7 +29,9 @@ from ws4.io.lidar import (
     write_canopy_mapping,
     write_lidar_mapping,
 )
+from ws4.model.schema import TABLES, validate_dataset
 from ws4.model.types import CanonicalDatasetManifest
+from ws4.sim.engine import Simulator
 
 
 def _sha256(path: Path) -> str:
@@ -503,3 +507,169 @@ def test_lidar_cli_canopy_map(tmp_path: Path) -> None:
     assert "trees: 3" in result.output
     assert (out / "canopy_fragments.csv").is_file()
     assert (out / "canopy_mapping_manifest.json").is_file()
+
+
+def _compiled_dataset(tmp_path: Path) -> Path:
+    dataset = tmp_path / "compiled"
+    dataset.mkdir()
+    tables = {
+        "fragments": pd.DataFrame(
+            {
+                "fragment_id": [1, 2, 3],
+                "block_id": [10, 10, 20],
+                "area_ha": [0.5, 0.5, 0.25],
+                "age": [40, 60, 50],
+                "track_id": [1, 1, 1],
+            }
+        ),
+        "blocks": pd.DataFrame(
+            {"block_id": [10, 20], "track_id": [1, 1], "offset": [0, 0], "area_ha": [1.0, 0.25]}
+        ),
+        "tracks": pd.DataFrame({"track_id": [1], "name": ["natural"]}),
+        "strata": pd.DataFrame({"track_id": [1], "offset": [0], "next_age": [0], "cycle": [0]}),
+        "treatments": pd.DataFrame(
+            {
+                "track_id": [1],
+                "begin": [40],
+                "end": [80],
+                "treatment": ["CC"],
+                "new_track": [1],
+                "offset": [0],
+                "retain": [0],
+            }
+        ),
+        "curves": pd.DataFrame({"curve_id": [1, 1], "x": [0.0, 10.0], "y": [0.0, 1.0]}),
+        "features": pd.DataFrame({"track_id": [1], "label": ["feature.Area"], "curve_id": [1]}),
+        "products": pd.DataFrame(
+            {"track_id": [1], "treatment": ["CC"], "label": ["product.Volume"], "curve_id": [1]}
+        ),
+        "protoaccounts": pd.DataFrame(
+            {
+                "group": ["all"],
+                "attribute": ["feature.Area"],
+                "account": ["feature.Area"],
+                "sum": [1.0],
+            }
+        ),
+        "accounts": pd.DataFrame(
+            {
+                "group": ["all"],
+                "attribute": ["feature.Area"],
+                "account": ["feature.Area"],
+                "sum": [1.0],
+            }
+        ),
+        "groups": pd.DataFrame({"block_id": [10, 20], "group": ["forest", "forest"]}),
+        "messages": pd.DataFrame({"severity": ["info"], "message": ["ok"]}),
+    }
+    for table in TABLES:
+        tables[table.name].to_parquet(dataset / table.file, index=False)
+    manifest = CanonicalDatasetManifest(tables={table.name: table.file for table in TABLES})
+    (dataset / "manifest.json").write_text(manifest.model_dump_json(indent=2))
+    return dataset
+
+
+def test_integrate_lidar_fields_into_dataset(tmp_path: Path) -> None:
+    bundle_dir = _bundle(tmp_path)
+    dataset = _compiled_dataset(tmp_path)
+    register_femic_lidar_bundle(dataset, bundle_dir)
+    fragments = _fragments(tmp_path)
+    vri = _vri(tmp_path)
+    bundle = load_registered_femic_lidar_bundle(dataset)
+    mapping = map_femic_canopy_to_fragments(
+        bundle,
+        fragments,
+        vri_path=vri,
+        tree_product="individual_tree",
+        generated_utc="2026-10-25T00:00:00+00:00",
+    )
+    paths = write_canopy_mapping(mapping, tmp_path / "mapping")
+
+    assert validate_dataset(dataset) == []
+    result = integrate_lidar_mapping_into_dataset(
+        dataset,
+        paths["fragments"],
+        block_mapping_path=paths["blocks"],
+        generated_utc="2026-10-25T00:00:00+00:00",
+    )
+
+    assert result.fragment_rows == 3
+    assert result.block_rows == 2
+    assert "lidar_chm_mean" in result.fragment_fields
+    assert "lidar_vri_height_m" in result.fragment_fields
+    assert "lidar_tree_count" in result.fragment_fields
+    fragments_table = pd.read_parquet(dataset / "fragments.parquet")
+    blocks_table = pd.read_parquet(dataset / "blocks.parquet")
+    assert "lidar_chm_mean" in fragments_table.columns
+    assert "lidar_chm_mean" in blocks_table.columns
+    assert fragments_table.loc[0, "lidar_chm_mean"] == pytest.approx(4.5)
+    assert validate_dataset(dataset) == []
+    simulator = Simulator.from_dataset(dataset)
+    assert len(simulator.fragments) == 3
+    assert "lidar_chm_mean" in simulator.fragments.columns
+    manifest = json.loads((dataset / "manifest.json").read_text())
+    assert manifest["metadata"]["lidar_fields"]["bundle_id"] == "lidarbc-test"
+    assert manifest["metadata"]["lidar_fields"]["fragment_fields"] == list(result.fragment_fields)
+
+    with pytest.raises(FemicLidarError, match="already has LiDAR fields"):
+        integrate_lidar_mapping_into_dataset(
+            dataset,
+            paths["fragments"],
+            block_mapping_path=paths["blocks"],
+        )
+    overwritten = integrate_lidar_mapping_into_dataset(
+        dataset,
+        paths["fragments"],
+        block_mapping_path=paths["blocks"],
+        overwrite=True,
+    )
+    assert overwritten.fragment_rows == 3
+
+
+def test_integration_rejects_unknown_ids_and_missing_registration(tmp_path: Path) -> None:
+    bundle_dir = _bundle(tmp_path)
+    dataset = _compiled_dataset(tmp_path)
+    fragments = _fragments(tmp_path)
+    mapping = map_femic_lidar_to_fragments(
+        load_femic_lidar_bundle(bundle_dir),
+        fragments,
+    )
+    paths = write_lidar_mapping(mapping, tmp_path / "mapping")
+    with pytest.raises(FemicLidarError, match="no registered"):
+        integrate_lidar_mapping_into_dataset(dataset, paths["fragments"])
+
+    register_femic_lidar_bundle(dataset, bundle_dir)
+    fragment_frame = pd.read_csv(paths["fragments"])
+    fragment_frame.loc[0, "fragment_id"] = 999
+    bad = tmp_path / "bad_fragments.csv"
+    fragment_frame.to_csv(bad, index=False)
+    with pytest.raises(FemicLidarError, match="unknown"):
+        integrate_lidar_mapping_into_dataset(dataset, bad)
+
+
+def test_lidar_cli_integrate(tmp_path: Path) -> None:
+    bundle_dir = _bundle(tmp_path)
+    dataset = _compiled_dataset(tmp_path)
+    register_femic_lidar_bundle(dataset, bundle_dir)
+    fragments = _fragments(tmp_path)
+    mapping = map_femic_lidar_to_fragments(
+        load_registered_femic_lidar_bundle(dataset),
+        fragments,
+    )
+    paths = write_lidar_mapping(mapping, tmp_path / "mapping")
+    result = CliRunner().invoke(
+        app,
+        [
+            "lidar",
+            "integrate",
+            "--dataset",
+            str(dataset),
+            "--fragments-mapping",
+            str(paths["fragments"]),
+            "--blocks-mapping",
+            str(paths["blocks"]),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert "fragment_rows: 3" in result.output
+    assert "lidar_slope_mean" in result.output

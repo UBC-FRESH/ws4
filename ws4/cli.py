@@ -15,6 +15,7 @@ from .build.compiler import build_canonical_dataset
 from .build.legacy import ingest_legacy_matrix
 from .io.lidar import (
     FemicLidarError,
+    integrate_lidar_mapping_into_dataset,
     load_registered_femic_lidar_bundle,
     map_femic_canopy_to_fragments,
     map_femic_lidar_to_fragments,
@@ -941,6 +942,35 @@ def lidar_canopy(
     print(f"fragments_csv: {paths['fragments']}")
     print(f"blocks_csv: {paths['blocks']}")
     print(f"manifest: {paths['manifest']}")
+
+
+@lidar_app.command("integrate")
+def lidar_integrate(
+    dataset: Path = typer.Option(..., "--dataset", exists=True, file_okay=False),
+    fragments_mapping: Path = typer.Option(
+        ..., "--fragments-mapping", exists=True, help="lidar_fragments.csv"
+    ),
+    blocks_mapping: Path | None = typer.Option(
+        None, "--blocks-mapping", exists=True, help="lidar_blocks.csv or canopy_blocks.csv"
+    ),
+    overwrite: bool = typer.Option(False, "--overwrite", help="Replace existing LiDAR fields"),
+) -> None:
+    """Write LiDAR mapping fields into the compiled dataset."""
+    try:
+        result = integrate_lidar_mapping_into_dataset(
+            dataset,
+            fragments_mapping,
+            block_mapping_path=blocks_mapping,
+            overwrite=overwrite,
+        )
+    except FemicLidarError as error:
+        print(f"[bold red]LidarBC integration failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    print(f"bundle_id: {result.bundle_id}")
+    print(f"fragment_fields: {', '.join(result.fragment_fields)}")
+    print(f"block_fields: {', '.join(result.block_fields)}")
+    print(f"fragment_rows: {result.fragment_rows}")
+    print(f"block_rows: {result.block_rows}")
 
 
 app.add_typer(lidar_app, name="lidar")

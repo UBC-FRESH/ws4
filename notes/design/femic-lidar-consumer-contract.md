@@ -70,6 +70,15 @@ Optional bundle tree products add tree counts, height mean/p95, and species
 counts. `write_canopy_mapping` writes CSVs plus a manifest with provenance,
 aggregation rules, uncertainty, and caveats.
 
+## Dataset Integration
+
+`integrate_lidar_mapping_into_dataset` joins mapping CSVs to the compiled
+fragment/block Parquet tables, prefixing fields with `lidar_`. The manifest
+under `metadata.lidar_fields` records the bundle pin, mapping hashes, field
+lists, support keys, and integration timestamp. Fields are optional; datasets
+without them remain valid and the simulator loads the expanded tables unchanged.
+Re-integration requires `overwrite=True` (`--overwrite`).
+
 ## Shared Parity
 
 Validated against FEMIC bundle `lidarbc-995fb1f771f4d7fe`

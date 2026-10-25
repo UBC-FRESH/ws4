@@ -1695,6 +1695,12 @@ reimplementing discovery or materialization.
   - [x] Add optional individual-tree summaries
   - [x] Record lineage, units, support, and caveats
   - [x] Add canopy/VRI/tree fixtures and CLI
+- [x] P52.5 Integrate terrain/canopy fields into the WS4 compiled dataset (#322)
+  - [x] Add optional prefixed LiDAR fields to fragment/block Parquet tables
+  - [x] Record bundle pin, mapping hashes, fields, and support keys in the manifest
+  - [x] Preserve validity for datasets without LiDAR fields
+  - [x] Verify simulator loading with expanded fields
+  - [x] Add `ws4 lidar integrate` and overwrite/failure tests
 
 Acceptance:
 
