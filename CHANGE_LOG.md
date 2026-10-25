@@ -2578,3 +2578,14 @@ issue comments.
   two-fragment dataset: start 232.3 tC, end 212.1 tC over 10 years, all `carbon.*` accounts
   written. Two runs produced byte-identical accounts, pools, flux, and manifest; the audit
   SIT copy was written. Dashboard **GREEN**.
+
+- P51.4: added `merge_carbon_accounts`, the `ws4 carbon --merge-into` option, and a report
+  test. Carbon rows are merged into a simulation run's `account_values.csv`,
+  `carbon_manifest.json` is copied beside the run, existing `carbon.*` rows are replaced
+  idempotently, and non-carbon accounts are preserved. The standard `ws4 report` now carries
+  the carbon accounts. Tests cover idempotence and report inclusion.
+- P51.5: added `ws4/carbon/parity.py` (frame/run comparison, mass-balance table, byte-level
+  replay) and `scripts/carbon_parity.py`. WS3 `tsa24_clipped` and WS4 agree exactly on the
+  20-year no-event trajectory (25 inventory rows, 24 yield rows, `max_abs = 0.0` on pools and
+  flux). The real TSA24 mini run replays byte-identically and its accounts reconcile to the
+  pools. Report: `notes/reports/p515-parity.md`. Dashboard **GREEN**.

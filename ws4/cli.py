@@ -17,6 +17,7 @@ from .carbon import (
     CarbonEngineError,
     build_sit_tables,
     load_carbon_package,
+    merge_carbon_accounts,
     read_schedule,
     run_libcbm,
     write_carbon_run,
@@ -129,6 +130,12 @@ def carbon(
     density: bool = typer.Option(
         False, "--density", help="Write tC/ha instead of tC in the pool and flux tables"
     ),
+    merge_into: Path | None = typer.Option(
+        None,
+        "--merge-into",
+        exists=True,
+        help="Optional simulation run directory to receive the carbon accounts",
+    ),
 ) -> None:
     """Run libcbm for a compiled dataset, a carbon package, and a schedule."""
     schedule_frame = read_schedule(schedule)
@@ -163,6 +170,17 @@ def carbon(
     except ValueError as exc:
         print(f"[red]Carbon run failed:[/red] {exc}")
         raise typer.Exit(code=1) from exc
+    if merge_into is not None:
+        try:
+            merge_carbon_accounts(
+                merge_into,
+                result.accounts_path,
+                carbon_manifest=result.manifest_path,
+            )
+        except CarbonEngineError as exc:
+            print(f"[red]Carbon account merge failed:[/red] {exc}")
+            raise typer.Exit(code=1) from exc
+        print(f"[green]Carbon accounts merged[/green] → {merge_into}")
 
     print(f"[bold green]Carbon run complete[/] → {out}")
     print(

@@ -186,6 +186,9 @@ protocol, and writes the run outputs:
 generated tables under ``carbon_sit/``. ``--density`` writes tC/ha instead of tC.
 ``--allow-defaults-mismatch`` is only for an explicit comparison; the default is a hard
 failure when the package's ``cbm_defaults`` hash differs from the installed database.
+``--merge-into <run-dir>`` merges the ``carbon.*`` accounts into an existing simulation
+run's ``account_values.csv`` and copies ``carbon_manifest.json`` beside it. Existing
+``carbon.*`` rows are replaced, so a rerun is idempotent; other accounts are preserved.
 
 The run writes:
 
@@ -197,6 +200,15 @@ The run writes:
 
 The driver is optional: install ``ws4[carbon]`` (``libcbm==2.10.2``). A core WS4 install
 does not import libcbm.
+
+Validation and parity
+---------------------
+
+``scripts/carbon_parity.py`` compares two carbon run directories on
+``(timestep, identifier)`` and exits nonzero when a pool or flux is outside the requested
+tolerance. ``ws4.carbon.parity`` exposes the same comparison, a mass-balance/account
+reconciliation table, and a byte-level replay check. The P51.5 report records the exact
+WS3/WS4 parity on the clipped TSA24 fixture and the real TSA24 replay evidence.
 
 Fingerprint
 -----------

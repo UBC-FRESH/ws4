@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from importlib import import_module
 from pathlib import Path
 
@@ -316,7 +317,7 @@ def run_libcbm(
     density: bool = False,
     allow_defaults_mismatch: bool = False,
 ) -> CarbonRun:
-    """Run libcbm on compiled SIT tables.
+    """Run libcbm on compiled SIT tables using a package's mapping.
 
     Parameters
     ----------
@@ -341,9 +342,53 @@ def run_libcbm(
     CarbonEngineError
         When libcbm is missing, the defaults mismatch, or the run fails.
     """
+    defaults = check_cbm_defaults(package, allow_mismatch=allow_defaults_mismatch)
+    run = run_libcbm_tables(
+        tables,
+        build_sit_config(package),
+        n_steps=n_steps,
+        density=density,
+    )
+    return replace(run, defaults=defaults)
+
+
+def run_libcbm_tables(
+    tables: SitTables,
+    config: Mapping[str, object],
+    *,
+    n_steps: int,
+    density: bool = False,
+) -> CarbonRun:
+    """Run libcbm on SIT tables with an explicit mapping configuration.
+
+    This is the engine-only entry point used by the parity harness. It does not
+    check a package manifest; callers that need the package check should use
+    :func:`run_libcbm`.
+
+    Parameters
+    ----------
+    tables : SitTables
+        The compiled SIT tables.
+    config : mapping of str to object
+        The libcbm SIT mapping configuration.
+    n_steps : int
+        Number of annual timesteps.
+    density : bool, optional
+        Return pools and fluxes as tC/ha rather than tC. Defaults to False.
+
+    Returns
+    -------
+    CarbonRun
+        The engine output.
+
+    Raises
+    ------
+    CarbonEngineError
+        When libcbm is missing or the run fails.
+    """
     if n_steps <= 0:
         raise CarbonEngineError("n_steps must be positive")
-    defaults = check_cbm_defaults(package, allow_mismatch=allow_defaults_mismatch)
+    defaults = cbm_defaults_reference()
     version = installed_libcbm_version()
     try:
         sit_cbm_factory = import_module("libcbm.input.sit.sit_cbm_factory")
@@ -365,7 +410,7 @@ def run_libcbm(
             sit_transitions=tables.transitions,
             sit_eligibilities=None,
         )
-        sit = sit_cbm_factory.initialize_sit(sit_data=sit_data, config=build_sit_config(package))
+        sit = sit_cbm_factory.initialize_sit(sit_data=sit_data, config=dict(config))
         classifiers, inventory = sit_cbm_factory.initialize_inventory(sit)
         output = cbm_output_class(
             density=density,
@@ -548,6 +593,61 @@ def write_carbon_run(
         ecosystem_end_tc=ecosystem_end,
         n_steps=n_steps,
     )
+
+
+def merge_carbon_accounts(
+    run_dir: Path,
+    carbon_accounts: Path,
+    *,
+    carbon_manifest: Path | None = None,
+) -> pd.DataFrame:
+    """Merge ``carbon.*`` accounts into a simulation run's account values.
+
+    Existing ``carbon.*`` rows are replaced, so a rerun is idempotent. Non-carbon
+    accounts are preserved. The optional carbon manifest is copied into the run
+    directory as ``carbon_manifest.json``.
+
+    Parameters
+    ----------
+    run_dir : Path
+        A simulation run directory with ``account_values.csv``.
+    carbon_accounts : Path
+        The ``carbon_accounts.csv`` produced by :func:`write_carbon_run`.
+    carbon_manifest : Path or None, optional
+        The carbon run manifest to copy into the run directory.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The merged account values.
+
+    Raises
+    ------
+    CarbonEngineError
+        When the run or carbon accounts are missing or malformed.
+    """
+    root = Path(run_dir)
+    values_path = root / "account_values.csv"
+    if not values_path.is_file():
+        raise CarbonEngineError(f"missing simulation account values: {values_path}")
+    accounts_path = Path(carbon_accounts)
+    if not accounts_path.is_file():
+        raise CarbonEngineError(f"missing carbon accounts: {accounts_path}")
+    base = pd.read_csv(values_path)
+    carbon = pd.read_csv(accounts_path)
+    required = {"offset", "account", "value"}
+    if not required.issubset(base.columns) or not required.issubset(carbon.columns):
+        raise CarbonEngineError(
+            "account_values.csv and carbon_accounts.csv need offset, account, and value"
+        )
+    base = base.loc[~base["account"].astype(str).str.startswith("carbon.")].copy()
+    carbon = carbon.loc[:, ["offset", "account", "value"]].copy()
+    merged = pd.concat([base, carbon], ignore_index=True)
+    merged = merged.sort_values(["offset", "account"], kind="stable").reset_index(drop=True)
+    merged.to_csv(values_path, index=False)
+    if carbon_manifest is not None and Path(carbon_manifest).is_file():
+        shutil.copy2(Path(carbon_manifest), root / "carbon_manifest.json")
+    return merged
 
 
 def _default_species(value: str) -> str:
