@@ -54,6 +54,7 @@ exists and the maintainer approves it.
 | P41 Provider smoke in CI | #303 | `feature/p41-ci-smoke` | complete |
 | P47 Model boundary record | #311 | `feature/p47-boundary` | complete |
 | P48 Ground-plot volume and DBH validation | #324 | `feature/p48-ground-plots` | complete |
+| P49 Managed/young validation pre-registration | #335 | `feature/p49-preregistration` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -1421,6 +1422,28 @@ Acceptance:
 - Volume, DBH, height, and stems are reported by species and age class where n permits.
 - The decision is explicit: retain production curves or adopt a justified alternative.
 - No curve or AAC change occurs without a separate ADR.
+- Both instance dashboards and the ws4 docs build are green.
+
+## Phase 49: Managed/young validation pre-registration
+
+Parent issue: #335
+Branch: `feature/p49-preregistration`
+Status: complete
+
+Goal: determine whether the public FAIB data contain an independent remeasured managed/young
+sample large enough to test the Cw/Hw 16-80 gap, and pre-register the test before fitting any
+correction.
+
+- [x] P49.1 Inventory the candidate remeasured sample (#336)
+- [x] P49.2 Write the pre-registered validation plan (#337)
+- [x] P49.3 Decide data-limited or run, and close out (#338)
+
+Acceptance:
+
+- The inventory names candidate counts, fields, and gaps.
+- The plan fixes the target population, exclusions, strata, metrics, and decision rule before results.
+- The decision is explicit and does not tune to the AAC.
+- No curve change occurs unless the pre-registered sample is met.
 - Both instance dashboards and the ws4 docs build are green.
 
 ## Detailed Next Steps Notes
