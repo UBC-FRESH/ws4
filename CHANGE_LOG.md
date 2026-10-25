@@ -2438,3 +2438,6 @@ issue comments.
   expanded to the phase/task templates and closed tasks carry completion metadata.
   Added P31 and P33 close-out reports, updated the P30 report to merged, and set P33
   complete. Dashboard **GREEN**.
+
+- P35 close-out: the P30-P34 planning surfaces are reconciled, P34 is active with P34.2 planned,
+  and P31/P33 reports are present. Queued in `notes/reports/p35-closeout.md`; dashboard and CI green.

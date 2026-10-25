@@ -46,7 +46,7 @@ exists and the maintainer approves it.
 | P32 Dataset provenance and limitations | #249 | `feature/p32-provenance` | pr-open |
 | P33 Search artifact browser | #261 | `feature/p33-search-ui` | complete |
 | P34 Search launcher | #265 | `feature/p34-search-launch` | active |
-| P35 Workflow conformance | #273 | `feature/p35-conformance` | active |
+| P35 Workflow conformance | #273 | `feature/p35-conformance` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1166,7 +1166,7 @@ Acceptance:
 
 Parent issue: #273
 Branch: `feature/p35-conformance`
-Status: active
+Status: pr-open
 
 Goal: reconcile the P30-P34 planning surfaces after the UI work: exact issue templates,
 one parent per phase, one child per task, close-out reports for completed phases, and
