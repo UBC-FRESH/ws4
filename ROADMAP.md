@@ -56,7 +56,7 @@ exists and the maintainer approves it.
 | P48 Ground-plot volume and DBH validation | #324 | `feature/p48-ground-plots` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
-| P43 Search artifact depth | #330 | `feature/p43-search-depth` | pr-open |
+| P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1357,7 +1357,7 @@ Acceptance:
 
 Parent issue: #330
 Branch: `feature/p43-search-depth`
-Status: pr-open
+Status: complete
 
 Goal: turn the Search tab into a review surface for Pareto members, LP sensitivity, and
 failed runs, with safe artifact downloads.

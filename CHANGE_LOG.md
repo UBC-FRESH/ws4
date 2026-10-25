@@ -2522,3 +2522,6 @@ issue comments.
   reduced-cost table, labelled advisory.
 - P43.3: portfolio/tuner summaries include failure counts, member/candidate status and error text,
   and console links. c5 verified member downloads and LP rendering; shell `v68`. Dashboard **GREEN**.
+
+- P43 close-out: pull request #334 squash-merged as `7f66e5b`; parent #330 and tasks #331/#332/#333
+  closed. P43 status set complete.

@@ -3,7 +3,7 @@
 Phase: P43, Search artifact depth
 Parent issue: #330
 Pull request: this P43 PR
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-25 as `7f66e5b`.
 Date: 2026-10-25
 
 ## Recommendation
