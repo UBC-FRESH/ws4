@@ -49,6 +49,18 @@ The bundle is referenced, not copied. `read_registered_femic_lidar` and
 `ws4 lidar register|inspect|validate`, and `ws4 build --lidar-bundle` registers
 during a build.
 
+## Fragment And Block Mapping
+
+`map_femic_lidar_to_fragments` computes:
+
+- fragment support: zonal statistics over each fragment polygon;
+- block support: zonal statistics over the dissolved block geometry.
+
+Defaults are `fragment_id`, `block_id`, `area_ha`, products `slope`/`chm`, and
+statistics `mean`/`p95`. `write_lidar_mapping` writes fragment/block CSVs plus a
+manifest carrying the bundle pin, product checksums, CRS, resolution, and the
+aggregation rules. No resampling or reprojection is performed.
+
 ## Shared Parity
 
 Validated against FEMIC bundle `lidarbc-995fb1f771f4d7fe`

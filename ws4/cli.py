@@ -15,9 +15,12 @@ from .build.compiler import build_canonical_dataset
 from .build.legacy import ingest_legacy_matrix
 from .io.lidar import (
     FemicLidarError,
+    load_registered_femic_lidar_bundle,
+    map_femic_lidar_to_fragments,
     read_registered_femic_lidar,
     register_femic_lidar_bundle,
     validate_registered_femic_lidar,
+    write_lidar_mapping,
 )
 from .model.schema import validate_dataset
 from .opt.calibrate import calibrate as run_calibration
@@ -850,6 +853,44 @@ def lidar_validate(
     print(json.dumps(report.to_dict(), indent=2, sort_keys=True))
     if not report.is_valid:
         raise typer.Exit(code=1)
+
+
+@lidar_app.command("map")
+def lidar_map(
+    dataset: Path = typer.Option(..., "--dataset", exists=True, file_okay=False),
+    fragments: Path = typer.Option(..., "--fragments", exists=True),
+    out: Path = typer.Option(..., "--out", help="Mapping output directory"),
+    product: list[str] | None = typer.Option(
+        None, "--product", help="Product to map; repeat for multiple products"
+    ),
+    statistic: list[str] | None = typer.Option(
+        None, "--statistic", help="Statistic to compute; repeat for multiple statistics"
+    ),
+    fragment_id_field: str = typer.Option("fragment_id", "--fragment-id-field"),
+    block_id_field: str = typer.Option("block_id", "--block-id-field"),
+    area_field: str = typer.Option("area_ha", "--area-field"),
+) -> None:
+    """Map registered terrain/canopy products to fragment and block support."""
+    try:
+        bundle = load_registered_femic_lidar_bundle(dataset)
+        result = map_femic_lidar_to_fragments(
+            bundle,
+            fragments,
+            products=tuple(product or ("slope", "chm")),
+            statistics=tuple(statistic or ("mean", "p95")),
+            id_field=fragment_id_field,
+            block_field=block_id_field,
+            area_field=area_field,
+        )
+        paths = write_lidar_mapping(result, out)
+    except FemicLidarError as error:
+        print(f"[bold red]LidarBC map failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    print(f"fragments: {len(result.fragments)}")
+    print(f"blocks: {len(result.blocks)}")
+    print(f"fragments_csv: {paths['fragments']}")
+    print(f"blocks_csv: {paths['blocks']}")
+    print(f"manifest: {paths['manifest']}")
 
 
 app.add_typer(lidar_app, name="lidar")

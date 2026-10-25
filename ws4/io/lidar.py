@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import tempfile
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -484,3 +485,235 @@ def _sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+@dataclass(frozen=True)
+class LidarMappingResult:
+    """Fragment and block terrain/canopy mapping from a registered bundle."""
+
+    bundle_id: str
+    bundle_version: str
+    manifest_sha256: str
+    crs: str
+    resolution_m: float | None
+    products: tuple[str, ...]
+    statistics: tuple[str, ...]
+    fragments: tuple[dict[str, object], ...]
+    blocks: tuple[dict[str, object], ...]
+    aggregation_rules: dict[str, str]
+    generated_utc: str
+    warnings: tuple[str, ...] = ()
+
+    def to_dict(self) -> dict[str, object]:
+        """Return the mapping as a JSON-serializable mapping."""
+        return {
+            "bundle_id": self.bundle_id,
+            "bundle_version": self.bundle_version,
+            "manifest_sha256": self.manifest_sha256,
+            "crs": self.crs,
+            "resolution_m": self.resolution_m,
+            "products": list(self.products),
+            "statistics": list(self.statistics),
+            "aggregation_rules": self.aggregation_rules,
+            "fragment_count": len(self.fragments),
+            "block_count": len(self.blocks),
+            "generated_utc": self.generated_utc,
+            "warnings": list(self.warnings),
+            "fragments": list(self.fragments),
+            "blocks": list(self.blocks),
+        }
+
+
+def load_registered_femic_lidar_bundle(dataset_dir: Path) -> FemicLidarBundle:
+    """Load the bundle pinned by a dataset registration."""
+    registration = read_registered_femic_lidar(dataset_dir)
+    if registration is None:
+        raise FemicLidarError("Dataset has no registered FEMIC LidarBC product.")
+    bundle_ref = registration.get("bundle_dir")
+    if not isinstance(bundle_ref, str) or not bundle_ref.strip():
+        raise FemicLidarError("Registered LidarBC pin has no bundle_dir.")
+    bundle_path = Path(bundle_ref)
+    if not bundle_path.is_absolute():
+        bundle_path = dataset_dir.expanduser().resolve() / bundle_path
+    bundle_id = registration.get("bundle_id")
+    bundle_version = registration.get("bundle_version")
+    return load_femic_lidar_bundle(
+        bundle_path,
+        expected_bundle_id=bundle_id if isinstance(bundle_id, str) else None,
+        expected_bundle_version=bundle_version if isinstance(bundle_version, str) else None,
+    )
+
+
+def map_femic_lidar_to_fragments(
+    bundle: FemicLidarBundle,
+    fragments_path: Path,
+    *,
+    products: tuple[str, ...] = ("slope", "chm"),
+    statistics: tuple[str, ...] = ("mean", "p95"),
+    id_field: str = "fragment_id",
+    block_field: str = "block_id",
+    area_field: str = "area_ha",
+    generated_utc: str | None = None,
+) -> LidarMappingResult:
+    """Map native bundle rasters to WS4 fragment and block support.
+
+    Fragment support uses each fragment polygon directly. Block support uses
+    the dissolved block geometry. No resampling or reprojection is performed.
+    """
+    try:
+        import geopandas as gpd
+    except ImportError as exc:  # pragma: no cover - dependency boundary
+        raise FemicLidarError("Lidar mapping requires `ws4[lidar]`.") from exc
+    for product in products:
+        if product not in bundle.products:
+            raise FemicLidarError(f"Bundle does not contain product {product!r}.")
+    try:
+        frame = gpd.read_file(fragments_path)
+    except (OSError, RuntimeError, TypeError, ValueError) as exc:
+        raise FemicLidarError(f"Unable to read fragments: {exc}") from exc
+    if frame.empty:
+        raise FemicLidarError("Fragment inventory contains no features.")
+    if frame.crs is None:
+        raise FemicLidarError("Fragment inventory has no CRS.")
+    for field in (id_field, block_field):
+        if field not in frame.columns:
+            raise FemicLidarError(f"Fragment inventory is missing field {field!r}.")
+    product_crs = {bundle.products[product].crs for product in products}
+    if len(product_crs) != 1:
+        raise FemicLidarError("Selected products do not share one CRS.")
+    if frame.crs.to_string() != next(iter(product_crs)):
+        raise FemicLidarError(
+            f"Fragment CRS {frame.crs.to_string()!r} does not match product CRS "
+            f"{next(iter(product_crs))!r}; reprojection is not allowed."
+        )
+    area_present = area_field in frame.columns
+    warnings: list[str] = []
+    if not area_present:
+        warnings.append(f"Optional area field {area_field!r} is missing.")
+    fragment_rows: dict[str, dict[str, object]] = {}
+    for _, record in frame.iterrows():
+        fragment_id = _id_text(record[id_field])
+        fragment_rows[fragment_id] = {
+            id_field: record[id_field],
+            block_field: record[block_field],
+            area_field: float(record[area_field]) if area_present else None,
+        }
+        for product in products:
+            fragment_rows[fragment_id][f"{product}_valid_pixels"] = 0
+            for stat in statistics:
+                fragment_rows[fragment_id][f"{product}_{stat}"] = None
+    for product in products:
+        summaries = summarize_femic_lidar_for_polygons(
+            bundle,
+            fragments_path,
+            product=product,
+            id_field=id_field,
+            statistics=statistics,
+        )
+        for summary in summaries:
+            row = fragment_rows.get(_id_text(summary.polygon_id))
+            if row is None:
+                continue
+            row[f"{product}_valid_pixels"] = summary.valid_pixels
+            for stat, value in summary.statistics.items():
+                row[f"{product}_{stat}"] = value
+    missing_fragments = sum(
+        1
+        for row in fragment_rows.values()
+        if all(_valid_pixels(row, product) == 0 for product in products)
+    )
+    if missing_fragments:
+        warnings.append(
+            f"{missing_fragments} fragments had no valid pixels for the selected products."
+        )
+    blocks_frame = frame[[block_field, "geometry"]].dissolve(by=block_field, as_index=False)
+    block_rows: dict[str, dict[str, object]] = {}
+    for _, record in blocks_frame.iterrows():
+        block_id = _id_text(record[block_field])
+        block_rows[block_id] = {block_field: record[block_field]}
+        for product in products:
+            block_rows[block_id][f"{product}_valid_pixels"] = 0
+            for stat in statistics:
+                block_rows[block_id][f"{product}_{stat}"] = None
+    with tempfile.TemporaryDirectory(prefix="ws4_lidar_blocks_") as temporary:
+        block_path = Path(temporary) / "blocks.gpkg"
+        blocks_frame.to_file(block_path, driver="GPKG", layer="blocks")
+        for product in products:
+            summaries = summarize_femic_lidar_for_polygons(
+                bundle,
+                block_path,
+                product=product,
+                id_field=block_field,
+                statistics=statistics,
+            )
+            for summary in summaries:
+                row = block_rows.get(_id_text(summary.polygon_id))
+                if row is None:
+                    continue
+                row[f"{product}_valid_pixels"] = summary.valid_pixels
+                for stat, value in summary.statistics.items():
+                    row[f"{product}_{stat}"] = value
+    if area_present:
+        areas = frame.groupby(block_field, as_index=False)[area_field].sum()
+        for _, record in areas.iterrows():
+            block_rows[_id_text(record[block_field])][area_field] = float(record[area_field])
+    resolutions: list[float] = []
+    for product in products:
+        resolution = bundle.products[product].resolution_m
+        if resolution is not None:
+            resolutions.append(resolution)
+    result = LidarMappingResult(
+        bundle_id=bundle.bundle_id,
+        bundle_version=bundle.bundle_version,
+        manifest_sha256=bundle.manifest_sha256,
+        crs=next(iter(product_crs)),
+        resolution_m=min(resolutions) if resolutions else None,
+        products=products,
+        statistics=statistics,
+        fragments=tuple(fragment_rows.values()),
+        blocks=tuple(block_rows.values()),
+        aggregation_rules={
+            "fragments": "zonal statistics over each fragment polygon",
+            "blocks": "zonal statistics over the dissolved block geometry",
+            "resolution": "native product resolution; no resampling",
+            "crs": "product CRS; no reprojection",
+        },
+        generated_utc=generated_utc or datetime.now(UTC).isoformat(),
+        warnings=tuple(warnings),
+    )
+    return result
+
+
+def write_lidar_mapping(result: LidarMappingResult, output_dir: Path) -> dict[str, Path]:
+    """Write fragment/block mapping CSVs and a provenance manifest."""
+    try:
+        import pandas as pd
+    except ImportError as exc:  # pragma: no cover - dependency boundary
+        raise FemicLidarError("Writing Lidar mapping requires pandas.") from exc
+    root = output_dir.expanduser().resolve()
+    root.mkdir(parents=True, exist_ok=True)
+    fragment_path = root / "lidar_fragments.csv"
+    block_path = root / "lidar_blocks.csv"
+    manifest_path = root / "lidar_mapping_manifest.json"
+    pd.DataFrame(result.fragments).to_csv(fragment_path, index=False)
+    pd.DataFrame(result.blocks).to_csv(block_path, index=False)
+    manifest_path.write_text(
+        json.dumps(result.to_dict(), indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return {
+        "fragments": fragment_path,
+        "blocks": block_path,
+        "manifest": manifest_path,
+    }
+
+
+def _id_text(value: object) -> str:
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    return str(value)
+
+
+def _valid_pixels(row: dict[str, object], product: str) -> int:
+    value = row.get(f"{product}_valid_pixels")
+    return value if isinstance(value, int) else 0

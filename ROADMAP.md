@@ -1684,6 +1684,11 @@ reimplementing discovery or materialization.
   - [x] Reference the bundle without copying or re-downloading tiles
   - [x] Add register/inspect/validate CLI and build integration
   - [x] Add missing/corrupt/incompatible failure tests
+- [x] P52.3 Validate and map FEMIC native terrain products into WS4 (#320)
+  - [x] Map slope/CHM to fragment support
+  - [x] Map slope/CHM to dissolved block support
+  - [x] Record bundle pin, checksums, CRS, resolution, and aggregation rules
+  - [x] Add mapping fixtures and CRS/product failure tests
 
 Acceptance:
 

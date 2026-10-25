@@ -74,6 +74,32 @@ The same registration is available during a build:
      --lidar-bundle-id lidarbc-995fb1f771f4d7fe \
      --lidar-bundle-version 2026.10.0-tfl6-pilot
 
+Fragment And Block Mapping
+--------------------------
+
+Map registered products to fragment and block support:
+
+.. code-block:: bash
+
+   ws4 lidar map \
+     --dataset build/compiled \
+     --fragments data/fragments.gpkg \
+     --out build/lidar_mapping \
+     --product slope \
+     --product chm \
+     --statistic mean \
+     --statistic p95
+
+Fragment rows are zonal statistics over each fragment polygon. Block rows are
+zonal statistics over the dissolved block geometry. The default fields are
+``fragment_id``, ``block_id``, and ``area_ha``; override them with
+``--fragment-id-field``, ``--block-id-field``, and ``--area-field``.
+
+The output includes ``lidar_fragments.csv``, ``lidar_blocks.csv``, and
+``lidar_mapping_manifest.json``. The manifest records the bundle pin, product
+checksums, CRS, native resolution, statistics, and explicit aggregation rules.
+No resampling or reprojection is performed.
+
 Shared Parity
 -------------
 
