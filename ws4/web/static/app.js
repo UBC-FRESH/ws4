@@ -323,6 +323,23 @@ async function loadLandBase(map = state.mapLibre) {
   }
 }
 
+async function fitVectorBounds() {
+  if (!state.mapLibre || state.mapFitted) return;
+  try {
+    const body = await api('api/geometry/bounds?format=wgs84');
+    const bounds = body.bounds;
+    if (!Array.isArray(bounds) || bounds.length !== 4) return;
+    const [west, south, east, north] = bounds.map(Number);
+    if (![west, south, east, north].every(Number.isFinite)) return;
+    state.mapFitted = true;
+    state.suppressViewportReload = true;
+    window.setTimeout(() => { state.suppressViewportReload = false; }, 700);
+    state.mapLibre.fitBounds([[west, south], [east, north]], {
+      padding: 30, duration: 0, maxZoom: 12,
+    });
+  } catch { /* a service without geometry keeps the default view */ }
+}
+
 function renderMapLibre(refit = true) {
   const map = ensureMapLibre();
   if (!map || !state.mapLibreReady) return;
@@ -731,6 +748,7 @@ async function loadMap(preserveView = false) {
       state.vectorActive = true;
       state.features = [];
       ensureVectorSource(tileUrl);
+      await fitVectorBounds();
       let stats = `api/runs/${encodeURIComponent(state.run)}/map-stats?year=${end}&layer=${layer}`;
       if (period) stats += `&period_start=${period.start}`;
       try {
@@ -2151,7 +2169,7 @@ async function finishRun(id) {
   runWatch.done = true;
   stopRunWatch();
   state.live.active = false;
-  $('start-run').textContent = '▶ Play';
+  $('start-run').textContent = 'Solve';
   $('stop-run').hidden = true;
   state.runPaused = false;
   showRun(`run ${id} · done`, false);
@@ -2165,15 +2183,27 @@ async function finishRun(id) {
   window.setTimeout(() => { $('run-panel').hidden = true; }, 6000);
 }
 
+function stepDetail(step) {
+  if (!step) return '';
+  const parts = [];
+  if (step.current !== undefined && step.current !== null) {
+    parts.push(`current ${Number(step.current).toFixed(2)}`);
+  }
+  if (step.accepted !== undefined && step.accepted !== null) {
+    parts.push(`accepted ${Number(step.accepted).toLocaleString()}`);
+  }
+  return parts.length ? ` · ${parts.join(' · ')}` : '';
+}
+
 async function pollRun(id) {
   if (id !== runWatch.id) return;
   try {
     const status = await api(`api/runs/${encodeURIComponent(id)}/status`);
     state.runPaused = Boolean(status.paused);
-    $('start-run').textContent = state.runPaused ? '▶ Resume' : '⏸ Pause';
+    $('start-run').textContent = state.runPaused ? 'Resume' : 'Pause';
     if (status.status === 'failed') {
       stopRunWatch();
-      $('start-run').textContent = '▶ Play';
+      $('start-run').textContent = 'Solve';
       $('stop-run').hidden = true;
       showRun(`run ${id} · the search exited without a summary — see console.log`, false);
       return;
@@ -2183,7 +2213,7 @@ async function pollRun(id) {
     const shown = state.live.total || step?.total || step?.iteration;
     const island = step?.island ? ` · ${step.island}` : '';
     const progress = step
-      ? `${Number(shown).toLocaleString()} iterations · best ${Number(step.objective).toFixed(2)}${island}`
+      ? `${Number(shown).toLocaleString()} iterations · best ${Number(step.objective).toFixed(2)}${stepDetail(step)}${island}`
       : (runWatch.islands > 1 ? `starting ${runWatch.islands} islands…` : 'waiting for the first step…');
     showRun(`run ${id} · ${progress} · ${elapsed()}`, true);
   } catch (error) {
@@ -2201,7 +2231,7 @@ async function togglePause() {
       body: JSON.stringify({ action }),
     });
     state.runPaused = !state.runPaused;
-    $('start-run').textContent = state.runPaused ? '▶ Resume' : '⏸ Pause';
+    $('start-run').textContent = state.runPaused ? 'Resume' : 'Pause';
     showRun(`run ${runWatch.id} · ${state.runPaused ? 'paused' : 'running'} · ${elapsed()}`, true);
   } catch (error) {
     showRun(`run ${runWatch.id} · control failed: ${error.message}`, true);
@@ -2234,7 +2264,7 @@ async function startRun() {
   try { saved = await saveTargets(); } catch (error) { saved = false; }
   if (!saved) {
     $('start-run').disabled = false;
-    $('start-run').textContent = '▶ Play';
+    $('start-run').textContent = 'Solve';
     const reason = $('targets-status').textContent || 'no reason given';
     showRun(`targets not saved: ${reason}`, false);
     return;
@@ -2274,7 +2304,7 @@ async function startRun() {
     runWatch.id = run.id;
     runWatch.islands = Number(run.islands || 1);
     $('start-run').disabled = false;
-    $('start-run').textContent = '⏸ Pause';
+    $('start-run').textContent = 'Pause';
     $('stop-run').hidden = false;
     pollRun(run.id);
     runWatch.timer = setInterval(() => pollRun(run.id), 2000);
@@ -2299,7 +2329,7 @@ async function startRun() {
         const shown = step.total ?? step.iteration;
         const island = step.island ? ` · ${step.island}` : '';
         showRun(
-          `run ${run.id} · ${Number(shown).toLocaleString()} iterations · best ${Number(step.objective).toFixed(2)}${island} · ${elapsed()}`,
+          `run ${run.id} · ${Number(shown).toLocaleString()} iterations · best ${Number(step.objective).toFixed(2)}${stepDetail(step)}${island} · ${elapsed()}`,
           true,
         );
       }
@@ -2314,7 +2344,7 @@ async function startRun() {
     window.clearTimeout(timer);
     state.live.active = false;
     $('start-run').disabled = false;
-    $('start-run').textContent = '▶ Play';
+    $('start-run').textContent = 'Solve';
     $('stop-run').hidden = true;
     const reason = error.name === 'AbortError' ? 'the request timed out after 20 s' : error.message;
     showRun(`not started: ${reason}`, false);

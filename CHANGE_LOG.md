@@ -2302,7 +2302,7 @@ issue comments.
   plots at z13-z15 remain normal block mosaics. Dashboard **GREEN**.
 
 - P23 close-out: the account browser and target activation are implemented, tested, documented, and
-  queued in `notes/reports/p23-closeout.md` (PR #212, evidence head `1526216`). The report records
+  queued in `notes/reports/p23-closeout.md` (PR #212, evidence head `934e288`). The report records
   the empty-file path, the notes-preserving round-trip, the last-target guard, and the period-label
   follow-up. Dashboard **GREEN**. The P22 close-out now records its merged status and moves the
   search-portfolio recommendation to P24 (planned).
@@ -2344,3 +2344,24 @@ issue comments.
 - P28.1-P28.3 refresh: the example notebooks' stored target and ending-inventory tables include
   the new `kind` and inventory surfaces. `python scripts/check_notebooks.py` reports 47 compared,
   0 drifted.
+- P23.1 follow-up: the run control is now **Solve**, without the media triangle, and **Max iters**
+  defaults blank as ∞. A blank or zero value starts a continuous run with no default wall-clock cap;
+  the old 24-hour limit is removed, and Pause/Stop are text controls. `scripts/check_run_controls.py`
+  now asserts that the default POST returns `continuous: true` and an empty `time_limit`, then stops
+  the run. Shell assets move to `v52`. Dashboard **GREEN**.
+
+- P23.3: added `GET /api/geometry/bounds?format=projected|wgs84`, which returns the configured
+  geometry's extent and transforms the four corners for a projected CRS. The MapLibre vector path
+  now fits the view to that extent once per page before loading tiles, so a service without a
+  land-base layer no longer opens at the hard-coded BC-wide centre. On the c5 service the shell
+  moved from z5/BC to z9 over the AOI and rendered the block mosaic. Tests cover the endpoint,
+  the no-geometry 404, and the bad-format refusal; the web reference documents it. Shell assets
+  move to `v53`. Dashboard **GREEN**.
+
+- P23.4: the metaheuristic solvers now emit a trace with the current solution's objective and the
+  accepted-move count, alongside the incumbent. Telemetry step records carry `current` and
+  `accepted`; the SSE progress event keeps the incumbent `objective` but merges the latest trace,
+  so a flat best is visibly different from a stalled search. The run panel shows
+  `best · current · accepted`. On c5, best stayed at 3,965,293 while current moved to 3,965,632 and
+  accepted rose past 30. Solver, telemetry, and SSE tests cover the fields; shell assets move to
+  `v54`. Dashboard **GREEN**.

@@ -92,6 +92,40 @@ class RunLogger:
             record["island"] = island
         self._write(record)
 
+    def trace(
+        self,
+        iteration: int,
+        objective: float,
+        current: float,
+        accepted: int,
+        island: str | None = None,
+    ) -> None:
+        """Record one iteration's incumbent, current objective, and accepted move count.
+
+        Parameters
+        ----------
+        iteration : int
+            The iteration index.
+        objective : float
+            The incumbent objective at that iteration.
+        current : float
+            The current solution's objective, which moves even while the incumbent is flat.
+        accepted : int
+            The number of accepted moves since the last reversion, or the run's accepted count.
+        island : str or None, optional
+            The worker that reported it, when the search runs more than one.
+        """
+        record: dict[str, Any] = {
+            "type": "step",
+            "iteration": iteration,
+            "objective": objective,
+            "current": current,
+            "accepted": accepted,
+        }
+        if island is not None:
+            record["island"] = island
+        self._write(record)
+
     def targets(
         self,
         iteration: int,

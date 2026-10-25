@@ -555,6 +555,21 @@ def test_the_optional_land_base_underlay(tmp_path: Path) -> None:
     assert "--land-base" in response.json()["detail"]
 
 
+def test_geometry_bounds_fit_the_map_to_the_configured_layer(tmp_path: Path) -> None:
+    """The MapLibre shell can fit the view without loading the full geometry."""
+    client, _ = _app(tmp_path)
+    body = client.get("/api/geometry/bounds").json()
+    assert body == {"bounds": [1.0, 0.0, 2.0, 0.0], "crs": "EPSG:4326"}
+    assert client.get("/api/geometry/bounds?format=wgs84").json()["bounds"] == [1.0, 0.0, 2.0, 0.0]
+    assert client.get("/api/geometry/bounds?format=nope").status_code == 422
+    plain = tmp_path / "plain"
+    plain.mkdir()
+    without, _ = _app(plain, with_geometry=False)
+    response = without.get("/api/geometry/bounds")
+    assert response.status_code == 404
+    assert "--geometry" in response.json()["detail"]
+
+
 def test_targets_round_trip_and_an_invalid_document_is_refused(tmp_path: Path) -> None:
     """A valid edit replaces the YAML; an invalid one leaves it unchanged."""
     client, targets = _app(tmp_path)
@@ -660,6 +675,36 @@ def test_starting_a_run_bounds_the_island_count(tmp_path: Path) -> None:
     assert client.post("/api/runs", json={"iterations": 1, "islands": 65}).status_code == 422
 
 
+def test_starting_a_run_without_iterations_is_continuous(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A blank Max iters starts an unbounded run with no default time limit."""
+    client = _runs_client(tmp_path)
+    captured: dict[str, object] = {}
+
+    class FakePopen:
+        pid = 123
+
+        def poll(self) -> int | None:
+            return None
+
+    def fake_popen(command: list[str], stdout: object = None, stderr: object = None) -> FakePopen:
+        captured["command"] = command
+        return FakePopen()
+
+    monkeypatch.setattr("ws4.web.app.subprocess.Popen", fake_popen)
+    response = client.post("/api/runs", json={})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["continuous"] is True
+    assert body["iterations"] == 1_000_000_000
+    assert body["time_limit"] == ""
+    command = captured["command"]
+    assert isinstance(command, list)
+    assert command[command.index("--iterations") + 1] == "1000000000"
+    assert "--time-limit" not in command
+
+
 def test_starting_a_run_passes_the_island_count_to_the_cli(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -740,9 +785,23 @@ def test_a_live_run_streams_the_best_island_and_its_schedule(tmp_path: Path) -> 
     client, _ = _app(tmp_path)
     run = tmp_path / "runs" / "run2"
     records = [
-        {"type": "step", "island": "start-0", "iteration": 10, "objective": 10.0},
+        {
+            "type": "step",
+            "island": "start-0",
+            "iteration": 10,
+            "objective": 10.0,
+            "current": 9.0,
+            "accepted": 1,
+        },
         {"type": "schedule", "island": "start-0", "iteration": 10, "changed": [[1, [["CC", 0]]]]},
-        {"type": "step", "island": "start-1", "iteration": 9, "objective": 5.0},
+        {
+            "type": "step",
+            "island": "start-1",
+            "iteration": 9,
+            "objective": 5.0,
+            "current": 6.0,
+            "accepted": 2,
+        },
         {"type": "schedule", "island": "start-1", "iteration": 9, "changed": [[2, [["CT", 0]]]]},
         {
             "type": "targets",
@@ -750,7 +809,14 @@ def test_a_live_run_streams_the_best_island_and_its_schedule(tmp_path: Path) -> 
             "iteration": 9,
             "values": [{"year": 0, "account": "feature.Volume", "value": 11.0}],
         },
-        {"type": "step", "island": "start-0", "iteration": 20, "objective": 7.0},
+        {
+            "type": "step",
+            "island": "start-0",
+            "iteration": 20,
+            "objective": 7.0,
+            "current": 8.0,
+            "accepted": 3,
+        },
         {"type": "schedule", "island": "start-0", "iteration": 20, "changed": [[3, [["CC", 0]]]]},
     ]
     for island, start_index, end_index in (("start-0", 0, 3), ("start-1", 3, 6)):
@@ -765,6 +831,10 @@ def test_a_live_run_streams_the_best_island_and_its_schedule(tmp_path: Path) -> 
     assert '"reset": true' in body
     # the best island is start-1, so its block is the one in the reset map
     assert '"island": "start-1"' in body
+    # the incumbent is start-1's objective, but the progress record reports the latest trace
+    assert '"objective": 5.0' in body
+    assert '"current": 8.0' in body
+    assert '"accepted": 3' in body
     assert '[[2,[["CT",0]]]]' in body.replace(" ", "")
     assert "event: targets" in body
     assert '"series"' in body

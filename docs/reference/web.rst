@@ -24,14 +24,16 @@ The islands are independent starts in a process pool: ``islands: 8`` uses eight 
 run's summary is the best of them. The iteration count is **per island**, so a bounded run of
 ``iterations: 1000`` with eight islands performs up to eight thousand iterations in total.
 
-A run is a **player**: the browser's Play starts a continuous search (or one bounded by the
-iterations or time entered), Pause writes ``{"action": "pause"}`` to the run's control file, and Stop
+A run is a **solver session**: the browser's **Solve** starts a continuous search (or one bounded by the
+iterations or time entered), **Pause** writes ``{"action": "pause"}`` to the run's control file, and **Stop**
 writes ``{"action": "stop"}``. The optimizer polls that file every sixty-fourth iteration, so a stop
 still produces the usual schedule and summary rather than a killed process. The event stream is
 coalesced to one progress record, one targets snapshot and the merged schedule diff per poll, which
 keeps a fast search from flooding the page. With parallel islands it follows the island with the
 lowest objective; ``progress`` carries the aggregate step count in ``total`` and names that island,
-and a schedule event with ``reset`` replaces the client's map when the best island changes. Each
+and a schedule event with ``reset`` replaces the client's map when the best island changes. A
+progress record also carries the current solution's objective and the accepted-move count, so the
+run panel shows activity while the incumbent is flat. Each
 worker writes its own ``telemetry-<island>.jsonl`` while it runs; the run's canonical
 ``telemetry.jsonl`` is merged from them after the search, and the live reader follows the worker
 files so it sees the search at the solver's rate rather than behind one writer.
@@ -89,6 +91,10 @@ Endpoints
        use ``--geometry-overview`` when it is configured; detail zooms use ``--geometry`` and
        simplify only to the tile resolution. The response is cached in memory and on disk and is
        marked ``Cache-Control: public, max-age=3600``.
+   * - ``GET /api/geometry/bounds?format=``
+     - The configured geometry's extent as ``[west, south, east, north]``, in the source CRS or
+       WGS84. The MapLibre shell uses it to fit the view to the AOI even when the service has no
+       land-base layer.
    * - ``GET /api/runs/{run}/map-stats?year=&layer=&period_start=``
      - The full-run ``total_features``, ``total_treated``, and ``total_untreated`` for the layer,
        so a tiled viewport keeps the run's own counts.
@@ -120,9 +126,10 @@ Endpoints
    * - ``POST /api/runs``
      - Start a search with the configured dataset and targets. **Refused unless the service was started
        with ``--allow-runs``**; iterations and years are bounded. With no ``iterations`` (or ``0``) the
-       run is **continuous** until stopped, with a 24-hour safety limit; a positive ``iterations`` is the
-       budget, and ``patience`` (default 0, off) stops after that many iterations without an incumbent
-       improvement. The body may also carry ``time_limit``, ``seed``, ``years`` and ``islands``.
+       run is **continuous** until stopped; a blank or zero **Max iters** field sends this default.
+       A positive ``iterations`` is the per-island budget, and ``patience`` (default 0, off) stops
+       after that many iterations without an incumbent improvement. The body may also carry
+       ``time_limit``, ``seed``, ``years`` and ``islands``; a time limit is applied only when given.
    * - ``POST /api/runs/{run}/control``
      - ``{"action": "pause" | "run" | "stop"}``. The search polls its ``control.json`` every 64
        iterations: pause holds it, and stop returns its best schedule so the run writes its summary.
@@ -264,15 +271,15 @@ matching account, checks that the table gained a row, and removes that row when 
 file still has another target. The last target is left in place because the API
 refuses an empty targets document.
 
-The Play and Stop controls have a separate smoke. It needs a service started with
+The Solve and Stop controls have a separate smoke. It needs a service started with
 ``--allow-runs`` and a scratch targets file, because it starts a short run:
 
 .. code-block:: bash
 
-   python scripts/check_run_controls.py http://127.0.0.1:8022/ --iterations 3
+   python scripts/check_run_controls.py http://127.0.0.1:8022/
 
-It clicks Play, asserts that ``POST /api/runs`` returns 200 and the button moves to
-Pause, then clicks Stop. The SVG and MapLibre shells share these controls; the check
+It clicks Solve with the default blank **Max iters**, asserts that ``POST /api/runs`` returns
+200 with ``continuous: true`` and no time limit, and the button moves to Pause; it then clicks Stop. The SVG and MapLibre shells share these controls; the check
 guards against the regression where the click listener was only installed by the SVG
 map path.
 

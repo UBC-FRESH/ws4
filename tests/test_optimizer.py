@@ -165,6 +165,31 @@ def test_the_solver_stops_after_patience_without_an_improvement() -> None:
     assert steps == [0, 1, 2, 3, 4]
 
 
+def test_the_solver_traces_the_current_objective_and_accepted_moves() -> None:
+    """The trace callback exposes activity even when the incumbent is unchanged."""
+    import random
+
+    traces: list[tuple[int, float, float, int]] = []
+    problem = Problem(
+        evaluate=lambda schedule: 0.0,
+        candidates={},
+        registry=OperatorRegistry([ToggleOperator()]),
+    )
+    solve_sa(
+        problem,
+        random.Random(1),
+        iterations=3,
+        temperature=1.0,
+        cooling=1.0,
+        on_trace=lambda iteration, best, current, accepted: traces.append(
+            (iteration, best, current, accepted)
+        ),
+    )
+    assert [trace[0] for trace in traces] == [0, 1, 2]
+    assert all(best == 0.0 and current == 0.0 for _, best, current, _ in traces)
+    assert all(accepted >= 0 for *_, accepted in traces)
+
+
 def test_penalty_weights_shortfall_and_excess() -> None:
     """A value below the minimum or above the maximum is penalized."""
     target = Target(account="a", year=0, minimum=10.0, maximum=20.0, min_weight=2.0, max_weight=3.0)
@@ -427,6 +452,16 @@ def test_run_logger_writes_a_header_and_steps(tmp_path: Path) -> None:
     assert records[0] == {"type": "run", "run_id": "run-1", "config": {"seed": 7}}
     assert records[1] == {"type": "step", "iteration": 0, "objective": 10.0}
     assert records[2]["objective"] == 8.0
+    with RunLogger(path, "run-2", {"seed": 8}) as logger:
+        logger.trace(0, 10.0, 11.5, 3)
+    traced = read_records(path)[1]
+    assert traced == {
+        "type": "step",
+        "iteration": 0,
+        "objective": 10.0,
+        "current": 11.5,
+        "accepted": 3,
+    }
 
 
 def test_optimizer_writes_telemetry(tmp_path: Path) -> None:
@@ -444,7 +479,9 @@ def test_optimizer_writes_telemetry(tmp_path: Path) -> None:
     ).run(tmp_path / "run")
     records = read_records(tmp_path / "run" / "telemetry.jsonl")
     assert records[0]["type"] == "run"
-    assert sum(1 for record in records if record["type"] == "step") == 5
+    steps = [record for record in records if record["type"] == "step"]
+    assert len(steps) == 5
+    assert all("current" in record and "accepted" in record for record in steps)
 
 
 def test_lns_operator_is_registered(tmp_path: Path) -> None:

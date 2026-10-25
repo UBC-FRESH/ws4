@@ -1,24 +1,26 @@
 #!/usr/bin/env python3
-"""Smoke-test the Play and Stop controls in a headless browser.
+"""Smoke-test the Solve and Stop controls in a headless browser.
 
 This is an opt-in check, not a CI gate: it needs Playwright and a Chromium build.
 Install them with ``pip install playwright`` and ``python -m playwright install chromium``.
 
 Run it against a service started with ``--allow-runs`` and a **scratch** targets
-file. The check starts a short run (three iterations, one island) and stops it, so
-the service must be able to spawn ``ws4 optimize``.
+file. By default the check leaves **Max iters** blank, asserts that the run is
+continuous with no time limit, and stops it. Pass a positive ``--iterations`` to
+check a bounded run instead.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 
 
 def check(  # pragma: no cover - needs a browser
-    url: str, *, wait_ms: int = 12000, iterations: int = 3
+    url: str, *, wait_ms: int = 12000, iterations: int = 0
 ) -> int:
-    """Click Play, assert a successful run POST and the Pause state, then Stop.
+    """Click Solve, assert the run request and control state, then Stop.
 
     Parameters
     ----------
@@ -27,7 +29,8 @@ def check(  # pragma: no cover - needs a browser
     wait_ms : int, optional
         Milliseconds to wait for the initial run and map.
     iterations : int, optional
-        Iterations per island for the short run.
+        Iterations per island for a bounded check. ``0`` leaves the field blank
+        and expects a continuous run.
 
     Returns
     -------
@@ -71,12 +74,17 @@ def check(  # pragma: no cover - needs a browser
         page.wait_for_timeout(wait_ms)
         page.get_by_role("button", name="Targets").click()
         page.wait_for_timeout(500)
-        page.fill("#run-iterations", str(iterations))
+        if iterations > 0:
+            page.fill("#run-iterations", str(iterations))
+        elif page.locator("#run-iterations").input_value() != "":
+            print("the default Max iters field is not blank", file=sys.stderr)
+            browser.close()
+            return 1
         page.fill("#run-islands", "1")
         page.click("#start-run")
         page.wait_for_timeout(5000)
         if not posts:
-            print("Play made no POST /api/runs request", file=sys.stderr)
+            print("Solve made no POST /api/runs request", file=sys.stderr)
             browser.close()
             return 1
         status, body = posts[-1]
@@ -84,8 +92,18 @@ def check(  # pragma: no cover - needs a browser
             print(f"POST /api/runs returned {status}: {body}", file=sys.stderr)
             browser.close()
             return 1
+        if iterations <= 0:
+            payload = json.loads(body)
+            if not payload.get("continuous"):
+                print(f"the default run is not continuous: {body}", file=sys.stderr)
+                browser.close()
+                return 1
+            if payload.get("time_limit"):
+                print(f"the default run has a time limit: {body}", file=sys.stderr)
+                browser.close()
+                return 1
         button = page.locator("#start-run").inner_text()
-        if "Pause" not in button and "Play" not in button:
+        if "Pause" not in button and "Solve" not in button:
             print(f"the start button is in an unexpected state: {button!r}", file=sys.stderr)
             browser.close()
             return 1
@@ -96,12 +114,12 @@ def check(  # pragma: no cover - needs a browser
             stopped = False
             for _ in range(20):
                 page.wait_for_timeout(1000)
-                if page.locator("#start-run").inner_text().strip() == "▶ Play":
+                if page.locator("#start-run").inner_text().strip() == "Solve":
                     stopped = True
                     break
             print(f"after Stop: {page.locator('#start-run').inner_text()}")
             if not stopped:
-                print("Stop did not return the control to Play", file=sys.stderr)
+                print("Stop did not return the control to Solve", file=sys.stderr)
                 browser.close()
                 return 1
         browser.close()
@@ -134,7 +152,7 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - needs a br
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("url", nargs="?", default="http://127.0.0.1:8022/")
     parser.add_argument("--wait-ms", type=int, default=12000)
-    parser.add_argument("--iterations", type=int, default=3)
+    parser.add_argument("--iterations", type=int, default=0)
     args = parser.parse_args(argv)
     return check(args.url, wait_ms=args.wait_ms, iterations=args.iterations)
 

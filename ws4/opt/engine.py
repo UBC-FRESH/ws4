@@ -1181,6 +1181,7 @@ class Optimizer:
         self,
         seed: int,
         on_step: Callable[[int, float], None] | None = None,
+        on_trace: Callable[[int, float, float, int], None] | None = None,
         on_snapshot: Callable[
             [int, Mapping[tuple[int, str], float], Mapping[int, Sequence[tuple[str, int]]]],
             None,
@@ -1197,6 +1198,9 @@ class Optimizer:
             The seed for this start.
         on_step : callable or None, optional
             Called with ``(iteration, best_objective)`` each iteration.
+        on_trace : callable or None, optional
+            Called with ``(iteration, best_objective, current_objective, accepted_moves)`` each
+            iteration, for a live view while the incumbent is flat.
         on_snapshot : callable or None, optional
             Called with ``(iteration, realized cells, incumbent schedule)`` on the snapshot
             interval, for a live target view and an animated map.
@@ -1243,6 +1247,7 @@ class Optimizer:
                 threshold=self.cfg.threshold,
                 cooling=self.cfg.cooling,
                 on_step=on_step,
+                on_trace=on_trace,
                 control=control,
                 initial=initial,
                 deadline=limit,
@@ -1256,6 +1261,7 @@ class Optimizer:
                 iterations=self.cfg.iterations,
                 tenure=self.cfg.tenure,
                 on_step=on_step,
+                on_trace=on_trace,
                 control=control,
                 initial=initial,
                 deadline=limit,
@@ -1269,6 +1275,7 @@ class Optimizer:
                 iterations=self.cfg.iterations,
                 perturbation=self.cfg.perturbation,
                 on_step=on_step,
+                on_trace=on_trace,
                 initial=initial,
                 deadline=limit,
                 patience=self.cfg.patience,
@@ -1289,6 +1296,7 @@ class Optimizer:
                 initial=initial,
                 deadline=limit,
                 on_step=on_step,
+                on_trace=on_trace,
                 control=control,
                 on_snapshot=on_snapshot,
                 adaptive=self.cfg.cooling_mode == "adaptive",
@@ -1303,6 +1311,7 @@ class Optimizer:
             temperature=self.cfg.temperature,
             cooling=self.cfg.cooling,
             on_step=on_step,
+            on_trace=on_trace,
             control=control,
             initial=initial,
             adaptive=self.cfg.cooling_mode == "adaptive",
@@ -1481,7 +1490,7 @@ class Optimizer:
 
                 candidate, candidate_obj = self._solve(
                     self.cfg.seed + start,
-                    on_step=logger.step,
+                    on_trace=logger.trace,
                     on_snapshot=snapshot,
                     initial=initial,
                 )
@@ -1686,8 +1695,8 @@ def _solve_with_logger(
         if logger is None:
             return optimizer._solve(seed, initial=initial, deadline=deadline)
 
-        def on_step(iteration: int, objective: float) -> None:
-            logger.step(iteration, objective, island=island)
+        def on_trace(iteration: int, best: float, current: float, accepted: int) -> None:
+            logger.trace(iteration, best, current, accepted, island=island)
 
         def on_snapshot(
             iteration: int,
@@ -1699,7 +1708,7 @@ def _solve_with_logger(
 
         return optimizer._solve(
             seed,
-            on_step=on_step,
+            on_trace=on_trace,
             on_snapshot=on_snapshot,
             initial=initial,
             deadline=deadline,
