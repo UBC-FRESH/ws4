@@ -216,3 +216,10 @@ path.block.compare-both { fill:#6b4c9a; }
 .target-detail-inner input[type=text] { width:10rem; font:inherit; font-size:.72rem;
   padding:.1rem .2rem; border:1px solid var(--line); border-radius:.25rem; }
 .target-detail-inner input[type=number] { width:3rem; font-size:.72rem; padding:.1rem .15rem; }
+.ending-summary { margin:.4rem 0 .8rem; }
+.ending-summary .table-wrap { max-height:16rem; }
+#ending-table, #compare-ending { width:100%; border-collapse:collapse; font-size:.74rem; }
+#ending-table th, #ending-table td, #compare-ending th, #compare-ending td {
+  border-bottom:1px solid var(--line); padding:.12rem .25rem; text-align:left; }
+#ending-table th, #compare-ending th { color:var(--muted); font-weight:600; }
+#ending-table td.num, #compare-ending td.num { text-align:right; font-variant-numeric:tabular-nums; }
