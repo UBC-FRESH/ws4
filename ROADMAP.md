@@ -1047,7 +1047,11 @@ target-editor and report-surface gaps left by the P23 dogfood.
   - [x] Add the snapshot callback to the problem and whole-schedule solvers
   - [x] Wire the engine's account-value snapshot
   - [x] Add a solver test and a c5 live-stream check
-- [ ] P30.2 Complete the target editor fields
+- [x] P30.2 Complete the target editor fields (#247)
+  - [x] Add `kind` to the target rows and strip it on save
+  - [x] Add a compact detail line for normalization, priority, kind, and notes
+  - [x] Make the run controls sticky
+  - [x] Extend the target-browser check and backend tests
 - [ ] P30.3 Surface ending inventory and flow status
 - [ ] P30.4 Diagnose legacy run schemas
 

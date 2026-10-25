@@ -1520,6 +1520,15 @@ function numberInput(value, field, index) {
   return input;
 }
 
+function textInput(value, field, index) {
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = value ?? '';
+  input.dataset.field = field;
+  input.dataset.index = index;
+  return input;
+}
+
 function loadWatched() {
   try {
     const raw = window.localStorage.getItem('ws4.watched');
@@ -1888,12 +1897,14 @@ function selectAccount(account) {
 }
 
 function collectTargets() {
-  const rows = state.targets.map((row) => ({ ...row }));
-  for (const input of document.querySelectorAll('#targets-table input[data-field]')) {
+  const rows = state.targets.map(({ kind, ...row }) => ({ ...row }));
+  for (const input of document.querySelectorAll('#targets-table [data-field]')) {
     const index = Number(input.dataset.index);
     const field = input.dataset.field;
     if (!rows[index] || !field) continue;
-    rows[index][field] = input.value === '' ? null : Number(input.value);
+    rows[index][field] = field === 'notes' || field === 'normalization'
+      ? input.value
+      : input.value === '' ? null : Number(input.value);
   }
   return rows;
 }
@@ -2081,6 +2092,48 @@ async function loadTargets() {
         row, text: valueLine, band: null, marker: null, value: values[row.index],
       });
       body.append(tr);
+      const detail = document.createElement('tr');
+      detail.className = 'target-detail';
+      const detailCell = document.createElement('td');
+      detailCell.colSpan = 8;
+      const inner = document.createElement('div');
+      inner.className = 'target-detail-inner';
+      const normLabel = document.createElement('label');
+      normLabel.append('Normalize');
+      const norm = document.createElement('select');
+      norm.dataset.index = String(index);
+      norm.dataset.field = 'normalization';
+      for (const optionValue of ['none', 'auto']) {
+        const option = document.createElement('option');
+        option.value = optionValue;
+        option.textContent = optionValue;
+        option.selected = (row.normalization || 'none') === optionValue;
+        norm.append(option);
+      }
+      normLabel.append(norm);
+      const priorityLabel = document.createElement('label');
+      priorityLabel.append('Priority');
+      const priority = document.createElement('input');
+      priority.type = 'number';
+      priority.min = '1';
+      priority.step = '1';
+      priority.value = row.priority ?? 1;
+      priority.dataset.index = String(index);
+      priority.dataset.field = 'priority';
+      priorityLabel.append(priority);
+      const kindLabel = document.createElement('label');
+      kindLabel.append('Kind');
+      const kind = document.createElement('span');
+      kind.className = 'badge';
+      kind.textContent = row.kind || (row.flow ? `flow.${row.flow}` : 'level');
+      kindLabel.append(kind);
+      const notesLabel = document.createElement('label');
+      notesLabel.append('Notes');
+      notesLabel.append(textInput(row.notes ?? '', 'notes', index));
+      inner.append(normLabel, priorityLabel, kindLabel, notesLabel);
+      detailCell.append(inner);
+      detail.append(detailCell);
+      body.append(detail);
     });
     for (const entry of state.targetCells.values()) paintTarget(entry, entry.value);
     for (const row of rows) {

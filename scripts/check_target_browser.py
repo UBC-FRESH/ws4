@@ -80,11 +80,23 @@ def check(  # pragma: no cover - needs a browser
             print(f"picked {picked!r}, expected {account!r}", file=sys.stderr)
             browser.close()
             return 1
-        rows_before = page.locator("#targets-table tbody tr").count()
+        rows_before = page.locator("#targets-table tbody tr:not(.target-detail)").count()
+        if page.locator("#targets-table select[data-field=normalization]").count() == 0:
+            print("the target normalization field is missing", file=sys.stderr)
+            browser.close()
+            return 1
+        if page.locator("#targets-table input[data-field=priority]").count() == 0:
+            print("the target priority field is missing", file=sys.stderr)
+            browser.close()
+            return 1
+        if page.locator("#targets-table input[data-field=notes]").count() == 0:
+            print("the target notes field is missing", file=sys.stderr)
+            browser.close()
+            return 1
         page.fill("#new-target-min", "0")
         page.click("#add-target")
         page.wait_for_timeout(6000)
-        rows_after = page.locator("#targets-table tbody tr").count()
+        rows_after = page.locator("#targets-table tbody tr:not(.target-detail)").count()
         if rows_after != rows_before + 1:
             print(f"target rows went from {rows_before} to {rows_after}", file=sys.stderr)
             browser.close()
@@ -95,7 +107,7 @@ def check(  # pragma: no cover - needs a browser
         if rows_after > 1:
             page.locator("button.remove-target").last.click()
             page.wait_for_timeout(6000)
-            rows_final = page.locator("#targets-table tbody tr").count()
+            rows_final = page.locator("#targets-table tbody tr:not(.target-detail)").count()
             if rows_final != rows_before:
                 print(
                     f"target rows after removal: {rows_final}, expected {rows_before}",
