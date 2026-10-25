@@ -2569,3 +2569,12 @@ issue comments.
   retention, unknown treatments, unmatched tracks, a missing dataset table, the offset clock,
   and the audit writer; an optional libcbm test parses the tables when the engine is installed.
   The libcbm parse was verified manually against `libcbm==2.10.2`. Dashboard **GREEN**.
+
+- P51.3: added the optional `carbon` extra (`libcbm==2.10.2`), the `ws4/carbon/libcbm.py`
+  driver, the `ws4 carbon` command, carbon account summaries, and the run manifest. The
+  driver checks the package/defaults hash, builds the libcbm mapping config from the package,
+  maps CBM species names directly, and writes pools, fluxes, long tables, accounts, and
+  provenance. A real TSA24 package (54 tracks, 6,016,466.4 ha) ran end-to-end against a
+  two-fragment dataset: start 232.3 tC, end 212.1 tC over 10 years, all `carbon.*` accounts
+  written. Two runs produced byte-identical accounts, pools, flux, and manifest; the audit
+  SIT copy was written. Dashboard **GREEN**.

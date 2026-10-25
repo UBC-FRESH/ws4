@@ -1515,7 +1515,7 @@ See `notes/design/ws4-carbon.md`.
 
 - [x] P51.1 Load and validate FEMIC carbon packages (#358)
 - [x] P51.2 Compile CBM SIT tables from a WS4 dataset and schedule (#359)
-- [ ] P51.3 Add the libcbm driver and the `ws4 carbon` command (#360)
+- [x] P51.3 Add the libcbm driver and the `ws4 carbon` command (#360)
 - [ ] P51.4 Integrate carbon accounts, reports, and provenance (#361)
 - [ ] P51.5 Validate parity, mass balance, and deterministic replay (#362)
 - [ ] P51.6 Build the block-level carbon ledger (#363)

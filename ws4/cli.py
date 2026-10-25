@@ -13,6 +13,15 @@ from rich.table import Table
 
 from .build.compiler import build_canonical_dataset
 from .build.legacy import ingest_legacy_matrix
+from .carbon import (
+    CarbonEngineError,
+    build_sit_tables,
+    load_carbon_package,
+    read_schedule,
+    run_libcbm,
+    write_carbon_run,
+    write_sit_tables,
+)
 from .model.schema import validate_dataset
 from .opt.calibrate import calibrate as run_calibration
 from .opt.calibrate import write_targets
@@ -98,6 +107,72 @@ def simulate(
         min_core_area_ha=min_core_area_ha,
     )
     print(f"[bold green]Simulation complete[/] → {out}")
+
+
+@app.command()
+def carbon(
+    dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
+    package: Path = typer.Option(..., exists=True, help="FEMIC carbon package directory"),
+    schedule: Path = typer.Option(..., exists=True, help="CSV: block_id,treatment,offset"),
+    out: Path = typer.Option(..., help="Output directory for the carbon run"),
+    years: int | None = typer.Option(
+        None, help="Annual timesteps; defaults to the latest schedule offset plus one"
+    ),
+    audit_sit: bool = typer.Option(
+        False, "--audit-sit", help="Write the generated SIT tables under carbon_sit/"
+    ),
+    allow_defaults_mismatch: bool = typer.Option(
+        False,
+        "--allow-defaults-mismatch",
+        help="Allow a package/cbm_defaults mismatch for an explicit comparison",
+    ),
+    density: bool = typer.Option(
+        False, "--density", help="Write tC/ha instead of tC in the pool and flux tables"
+    ),
+) -> None:
+    """Run libcbm for a compiled dataset, a carbon package, and a schedule."""
+    schedule_frame = read_schedule(schedule)
+    n_steps = int(years) if years is not None else int(schedule_frame["offset"].max()) + 1
+    if n_steps <= int(schedule_frame["offset"].max()):
+        print("[red]--years must run past the latest scheduled offset[/red]")
+        raise typer.Exit(code=1)
+    try:
+        loaded = load_carbon_package(package)
+        tables = build_sit_tables(loaded, dataset, schedule_frame)
+        if audit_sit:
+            write_sit_tables(tables, out / "carbon_sit")
+        run = run_libcbm(
+            loaded,
+            tables,
+            n_steps=n_steps,
+            density=density,
+            allow_defaults_mismatch=allow_defaults_mismatch,
+        )
+        result = write_carbon_run(
+            run,
+            out,
+            package=loaded,
+            dataset_dir=dataset,
+            schedule=schedule_frame,
+            n_steps=n_steps,
+            density=density,
+        )
+    except CarbonEngineError as exc:
+        print(f"[red]Carbon run failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    except ValueError as exc:
+        print(f"[red]Carbon run failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    print(f"[bold green]Carbon run complete[/] → {out}")
+    print(
+        f"timesteps={result.n_steps} ecosystem_start_tc={result.ecosystem_start_tc:.1f} "
+        f"ecosystem_end_tc={result.ecosystem_end_tc:.1f}"
+    )
+    print(f"pools: {result.pools_path}")
+    print(f"flux: {result.flux_path}")
+    print(f"accounts: {result.accounts_path}")
+    print(f"manifest: {result.manifest_path}")
 
 
 @app.command()

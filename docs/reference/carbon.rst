@@ -166,6 +166,38 @@ The compiler:
 The generated tables can be parsed by libcbm directly. The ``test_optional_libcbm_parse``
 test does so when libcbm is installed; otherwise it skips.
 
+Running the engine
+------------------
+
+``ws4 carbon`` loads the package, compiles the SIT tables, runs libcbm behind the driver
+protocol, and writes the run outputs:
+
+.. code-block:: bash
+
+   ws4 carbon \
+     --dataset output/ws4/tsa24/compiled \
+     --package output/carbon/tsa24 \
+     --schedule schedules/baseline.csv \
+     --out out/carbon/tsa24-baseline \
+     --years 200 \
+     --audit-sit
+
+``--years`` defaults to the latest schedule offset plus one. ``--audit-sit`` writes the
+generated tables under ``carbon_sit/``. ``--density`` writes tC/ha instead of tC.
+``--allow-defaults-mismatch`` is only for an explicit comparison; the default is a hard
+failure when the package's ``cbm_defaults`` hash differs from the installed database.
+
+The run writes:
+
+- ``carbon_pools.csv`` and ``carbon_pools_long.csv``
+- ``carbon_flux.csv`` and ``carbon_flux_long.csv``
+- ``carbon_accounts.csv`` with the ``carbon.*`` accounts
+- ``carbon_manifest.json`` with the package, dataset, schedule, engine, and defaults
+  provenance
+
+The driver is optional: install ``ws4[carbon]`` (``libcbm==2.10.2``). A core WS4 install
+does not import libcbm.
+
 Fingerprint
 -----------
 
@@ -235,5 +267,6 @@ API
 The next step
 -------------
 
-The package loader and SIT compiler do not run carbon. P51.3 adds the libcbm driver and
-the ``ws4 carbon`` command, then writes the carbon pools, fluxes, accounts, and manifest.
+P51.4 merges the ``carbon.*`` accounts into the run report and the provenance surfaces.
+P51.5 validates parity with WS3, mass balance, and deterministic replay on the TSA24
+fixture.
