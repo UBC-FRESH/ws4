@@ -59,13 +59,14 @@ Optimization
 
 **The search finds good schedules, not optimal ones.** The solvers are metaheuristics plus exact
 per-move deltas. ``--mip-bound`` records a penalty **lower bound** for an option-selection relaxation,
-which tells you how far from the bound a run finished; it is not a certificate of optimality for the
-spatial problem.
+and ``ws4 solve-mip`` solves that bounded model exactly for a small instance or subset. Neither is a
+certificate of optimality for the full spatial problem: green-up, core area, patch distribution,
+routes, and spread connectivity are outside the option model.
 
-**Weights trade off; they do not prioritise.** Every target is a weighted penalty, so a term with a
-large weight wins against a term with a small one, and the search cannot treat one as hard and
-another as soft. A term that must never be violated needs a weight large enough that the search
-respects it, and a look at the other terms' penalties afterwards.
+**Priority tiers are a large multiplier, not a lexicographic proof.** ``priority`` makes a
+higher-priority tier dominate lower tiers in the scalar objective, but a sufficiently large
+lower-tier penalty can still compete. The report keeps every raw and normalized target penalty
+visible so a review can inspect that trade-off.
 
 **Reproducibility is per configuration.** The same inputs, seed, and code path give the same result;
 changing ``workers`` or ``islands`` is a different search.
@@ -88,6 +89,23 @@ not read it: the weights that apply are each target's ``min_weight`` and ``max_w
 per-account factor file is a capability nobody has asked for yet; the option is optional, so the
 trap of a required no-op flag is gone. One settings gap remains tracked: ``threads`` is documented
 but not applied.
+
+Dataset provenance
+------------------
+
+**The compiled matrix does not know where its inventory came from.** A dataset may carry a
+``data_quality.yaml`` provenance sidecar with inventory vintage, imputation share, coverage, curve
+provenance, and THLB provenance. When the sidecar is absent, ``ws4 quality`` and the P26
+``data_quality`` block report the field as **unknown**, not as a pass.
+
+**The Great Bear Rainforest instances are not accepted TIPSY models.** Their managed curves use a
+VDYP7 transform, and their THLB is predecessor-derived rather than a reviewed GBR netdown. Their
+imputation share and coverage are not recorded in the source manifest. Treat the AAC as a model
+ceiling, not an operational guarantee.
+
+**A schedule is not an operability, market, fire, or access guarantee.** The model prices the
+targets and constraints it is given; it does not certify that a block can be harvested, sold, or
+treated, or that a landscape will resist fire. State those assumptions in the study record.
 
 Documentation
 -------------
