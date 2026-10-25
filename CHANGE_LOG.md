@@ -2446,3 +2446,6 @@ issue comments.
 
 - P35 close-out: the P30-P34 planning surfaces are reconciled, P34 is active with P34.2 planned,
   and P31/P33 reports are present. Queued in `notes/reports/p35-closeout.md`; dashboard and CI green.
+
+- P36 close-out: pull request #277 squash-merged as `3c07917`; parent #273 and task #274 closed.
+  P36 status set complete. P34 remains active for P34.2.
