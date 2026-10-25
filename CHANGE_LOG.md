@@ -2525,3 +2525,10 @@ issue comments.
 
 - P43 close-out: pull request #334 squash-merged as `7f66e5b`; parent #330 and tasks #331/#332/#333
   closed. P43 status set complete.
+- P49.1/P49.2: both GBR instances inventory the public FAIB candidates, add a pre-registered
+  four-strata managed/young validation plan, and publish the candidate counts and field audit.
+  TSA 46 has 205 candidate sites / 460 visits; TSA 47 has 351 / 572. The public schema has no
+  management-origin field.
+- P49.3: ADR 0003 records the data limit: the remeasured candidates are natural, experimental,
+  or origin-unknown, and zero sites meet the pre-registered minimum. Production TSR curves and
+  the AAC remain unchanged. The limitations pages and sidecars name the gap.
