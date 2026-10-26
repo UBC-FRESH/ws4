@@ -3,7 +3,7 @@
 Phase: P64, Patchworks-style target charts
 Parent issue: #456
 Pull request: #461
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-26 as `8b0d0e6`.
 Date: 2026-10-26
 
 ## Recommendation

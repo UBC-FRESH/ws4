@@ -65,7 +65,7 @@ exists and the maintainer approves it.
 | P60 Harden hydrology use with validation evidence | #415 | `feature/p60-closeout` | complete |
 | P61 Carbon and libcbm in the web UI | #430 | `feature/p61-carbon-ui` | complete |
 | P63 UI foundation for desktop and iPad landscape | #442 | `feature/p63-ui-foundation` | complete |
-| P64 Patchworks-style target charts | #456 | `feature/p64-target-charts` | pr-open |
+| P64 Patchworks-style target charts | #456 | `feature/p64-target-charts` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -1914,7 +1914,7 @@ Closeout report: `notes/reports/p63-closeout.md`.
 
 Parent issue: #456
 Branch: `feature/p64-target-charts`
-Status: pr-open
+Status: complete
 
 Goal: make target evaluation the primary analyst surface with a large, real-time chart per
 pinned target account showing every period's minimum, maximum, and achieved level.
