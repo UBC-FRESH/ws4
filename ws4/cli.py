@@ -98,6 +98,16 @@ from .patch.edge import load_edge_elements
 from .report import write_report
 from .roads.accounts import load_route_config
 from .sim.engine import Simulator
+from .structure_habitat import (
+    StructureHabitatError,
+    compare_to_dhi,
+    compute_structure_habitat,
+    diagnose_femic_canopy_structure,
+    diagnose_metrics,
+    make_source,
+    read_structure_habitat,
+    write_structure_habitat,
+)
 
 app = typer.Typer(help="WS4 — Wood Supply Simulation System (Spatially explicit)")
 
@@ -190,17 +200,38 @@ def simulate(
         exists=True,
         help="DHI source metadata JSON paired with --dhi-values.",
     ),
+    structure_values: Path | None = typer.Option(
+        None,
+        "--structure-values",
+        exists=True,
+        help="Structure habitat stand table from 'ws4 shi ingest'.",
+    ),
+    structure_metadata: Path | None = typer.Option(
+        None,
+        "--structure-metadata",
+        exists=True,
+        help="Structure habitat metadata JSON paired with --structure-values.",
+    ),
 ) -> None:
     """Simulate a schedule over a compiled dataset and write a run directory."""
     if (dhi_values is None) != (dhi_metadata is None):
         raise typer.BadParameter("--dhi-values and --dhi-metadata must be supplied together")
+    if (structure_values is None) != (structure_metadata is None):
+        raise typer.BadParameter(
+            "--structure-values and --structure-metadata must be supplied together"
+        )
     try:
         dhi_account = (
             read_dhi_account(dhi_values, dhi_metadata)
             if dhi_values is not None and dhi_metadata is not None
             else None
         )
-    except DhiError as error:
+        structure_account = (
+            read_structure_habitat(structure_values, structure_metadata)
+            if structure_values is not None and structure_metadata is not None
+            else None
+        )
+    except (DhiError, StructureHabitatError) as error:
         raise typer.BadParameter(str(error)) from error
     sim = Simulator.from_dataset(dataset)
     elements = load_edge_elements(edge_elements) if edge_elements is not None else ()
@@ -222,6 +253,7 @@ def simulate(
         core_buffer_m=core_buffer_m,
         min_core_area_ha=min_core_area_ha,
         dhi_account=dhi_account,
+        structure_habitat_account=structure_account,
     )
     print(f"[bold green]Simulation complete[/] → {out}")
 
@@ -1767,6 +1799,99 @@ def hydrology_validate(
 
 
 app.add_typer(lidar_app, name="lidar")
+shi_app = typer.Typer(
+    add_completion=False,
+    no_args_is_help=True,
+    help="Compute and compare the published structure habitat index.",
+)
+
+
+@shi_app.command("ingest")
+def shi_ingest(
+    metrics: Path = typer.Option(
+        ...,
+        "--metrics",
+        exists=True,
+        help="CSV with block_id and the three required ALS metrics.",
+    ),
+    output: Path = typer.Option(..., "--output", "-o", help="Stand table CSV."),
+    metadata: Path = typer.Option(..., "--metadata", help="Source metadata JSON."),
+    source_version: str = typer.Option(
+        ..., "--source-version", help="Required source version or vintage."
+    ),
+    source_id: str = typer.Option(
+        "coops-2016-structure-habitat", "--source-id", help="Product or workflow id."
+    ),
+    notes: str | None = typer.Option(None, "--notes", help="Optional provenance note."),
+) -> None:
+    """Compute the published index and write a stand table + provenance."""
+    frame = pd.read_csv(metrics)
+    try:
+        stand = compute_structure_habitat(frame)
+        source = make_source(source_id=source_id, source_version=source_version, notes=notes)
+        write_structure_habitat(stand, source, output, metadata)
+    except StructureHabitatError as error:
+        raise typer.BadParameter(str(error)) from error
+    print(f"[bold green]Structure habitat[/] {len(stand)} blocks → {output}")
+
+
+@shi_app.command("diagnose")
+def shi_diagnose(
+    metrics: Path | None = typer.Option(
+        None,
+        "--metrics",
+        exists=True,
+        help="Metrics CSV (including a ws4 lidar canopy mapping) to inspect.",
+    ),
+    canopy_structure: Path | None = typer.Option(
+        None,
+        "--canopy-structure",
+        exists=True,
+        help="FEMIC canopy_structure.json to inspect.",
+    ),
+    output: Path | None = typer.Option(None, "--output", help="Optional JSON report."),
+) -> None:
+    """Report whether a table has the exact metrics the index requires."""
+    if (metrics is None) == (canopy_structure is None):
+        raise typer.BadParameter("supply exactly one of --metrics or --canopy-structure")
+    if metrics is not None:
+        columns = list(pd.read_csv(metrics, nrows=0).columns)
+        report = diagnose_metrics(columns)
+    else:
+        payload = json.loads(canopy_structure.read_text(encoding="utf-8"))  # type: ignore[union-attr]
+        report = diagnose_femic_canopy_structure(payload)
+    text = json.dumps(report, indent=2, sort_keys=True)
+    if output is None:
+        typer.echo(text)
+    else:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(text + "\n", encoding="utf-8")
+        typer.echo(f"Wrote {output}")
+
+
+@shi_app.command("compare")
+def shi_compare(
+    structure: Path = typer.Option(
+        ..., "--structure", exists=True, help="Structure habitat stand table."
+    ),
+    dhi_values: Path = typer.Option(..., "--dhi-values", exists=True, help="DHI block values CSV."),
+    output: Path = typer.Option(..., "--output", "-o", help="Comparison CSV."),
+    dhi_bands: str = typer.Option("cum,min,var", "--dhi-bands", help="Comma-separated DHI bands."),
+) -> None:
+    """Compare structure components with DHI bands on common blocks."""
+    try:
+        result = compare_to_dhi(
+            pd.read_csv(structure),
+            pd.read_csv(dhi_values),
+            dhi_bands=tuple(name.strip() for name in dhi_bands.split(",") if name.strip()),
+        )
+    except StructureHabitatError as error:
+        raise typer.BadParameter(str(error)) from error
+    output.parent.mkdir(parents=True, exist_ok=True)
+    result.to_csv(output, index=False)
+    print(f"[bold green]DHI comparison[/] {len(result)} rows → {output}")
+
+
 dhi_app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
@@ -1834,6 +1959,7 @@ def dhi_ingest(
     print(f"[bold green]DHI values[/] {len(values)} blocks, bands {', '.join(names)} → {output}")
 
 
+app.add_typer(shi_app, name="shi")
 app.add_typer(dhi_app, name="dhi")
 app.add_typer(hydrology_app, name="hydrology")
 

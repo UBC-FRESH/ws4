@@ -1,0 +1,29 @@
+{
+  "boundary_rule": "A value exactly on a break is assigned to the lower class.",
+  "citation": "Coops et al. 2016, A forest structure habitat index based on airborne laser scanning data, Ecological Indicators 67:346-357, doi:10.1016/j.ecolind.2016.02.057",
+  "index_version": "coops-2016-v1",
+  "notes": "Synthetic exact-metric fixture for the WS4 software path; these are not real ALS observations.",
+  "required_metrics": [
+    "height_p95_m",
+    "cover_gt_1_37_pct",
+    "complexity_sd_gt_1_37_m"
+  ],
+  "schema_version": "ws4.structure_habitat.source.v1",
+  "source_id": "coops-2016-fixture",
+  "source_version": "synthetic-fixture-v1",
+  "thresholds": {
+    "complexity_sd_gt_1_37_m": [
+      3.0,
+      5.0
+    ],
+    "cover_gt_1_37_pct": [
+      33.0,
+      66.0
+    ],
+    "height_p95_m": [
+      10.0,
+      20.0
+    ]
+  },
+  "weights": "Equal components; the published product has no weights."
+}

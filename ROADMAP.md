@@ -1674,7 +1674,7 @@ not change the optimisation objective. Carbon is already owned by P51 (#357)
 and is not repeated here.
 
 - [x] P54.1 Add the DHI biodiversity account (#376)
-- [ ] P54.2 Add the structure habitat index (#377)
+- [x] P54.2 Add the structure habitat index (#377)
 - [ ] P54.3 Add spatial resilience metrics (#378)
 
 Acceptance:

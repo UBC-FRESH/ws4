@@ -59,6 +59,11 @@ vertices table carries coordinates — ``used_roads.csv`` for the map overlay; s
 When the simulator is given a DHI account (``Simulator.run(..., dhi_account=...)`` or the
 ``--dhi-values`` and ``--dhi-metadata`` options), it also writes ``dhi_values.csv`` and
 ``dhi_metadata.json``; see :doc:`dhi`. ``ws4 report`` adds ``report_dhi.csv``.
+When it is given a structure habitat account (``structure_habitat_account=...`` or
+``--structure-values`` and ``--structure-metadata``), it writes
+``structure_habitat_values.csv``, ``structure_habitat_landscape.csv``, and
+``structure_habitat_metadata.json``; see :doc:`structure-habitat`. ``ws4 report`` adds
+``report_structure_habitat.csv``.
 
 When the simulator is given a block topology (``Simulator.run(..., topology_csv=...)``), it also
 writes:

@@ -21,6 +21,7 @@ from .opt.objective import (
     period_value,
     raw_penalty,
 )
+from .structure_habitat import structure_habitat_report
 
 
 def _by_offset(values: pd.DataFrame) -> dict[tuple[int, str], float]:
@@ -359,3 +360,14 @@ def write_report(values: pd.DataFrame, targets: list[Target], out_dir: Path) -> 
     dhi = dhi_report(values, metadata)
     if not dhi.empty:
         dhi.to_csv(out_dir / "report_dhi.csv", index=False)
+    structure_metadata_path = out_dir / "structure_habitat_metadata.json"
+    structure_metadata: dict[str, object] | None = None
+    if structure_metadata_path.is_file():
+        try:
+            loaded_structure = json.loads(structure_metadata_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            loaded_structure = None
+        structure_metadata = loaded_structure if isinstance(loaded_structure, dict) else None
+    structure = structure_habitat_report(values, structure_metadata)
+    if not structure.empty:
+        structure.to_csv(out_dir / "report_structure_habitat.csv", index=False)
