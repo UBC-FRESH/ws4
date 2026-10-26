@@ -59,7 +59,7 @@ exists and the maintainer approves it.
 | P51 Release-candidate verification | #351 | `feature/p51-release-candidate` | complete |
 | P53 Version 0.2.0 release preparation | #371 | `feature/p53-v020` | complete |
 | P56 Disturbance event consumer | #393 | `feature/p56-disturbance-consumer` | complete |
-| P57 Forest carbon accounting and carbon-aware planning | #357 | `feature/p57-carbon` | pr-open |
+| P57 Forest carbon accounting and carbon-aware planning | #357 | `feature/p57-carbon` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -1671,7 +1671,7 @@ Acceptance:
 
 Parent issue: #357
 Branch: `feature/p57-carbon`
-Status: pr-open
+Status: complete
 
 Goal: make carbon a first-class, reproducible outcome of a WS4 run and a target the optimizer can
 search against, using libcbm as the engine and FEMIC as the producer of the carbon input package.
