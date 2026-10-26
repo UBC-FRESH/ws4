@@ -66,6 +66,7 @@ exists and the maintainer approves it.
 | P44 Comparison and map operations | #341 | `feature/p44-compare-ops` | complete |
 | P45 Route evaluation performance | #368 | `feature/p45-route-profile` | complete |
 | P52 Consume FEMIC-compiled LidarBC products | #317 | `feature/p52-lidar-products` | complete |
+| P57 Consume FEMIC hydrology response bundles | #395 | `feature/p57-hydrology-response` | pr-open |
 | P46 Cached route event ledger | #382 | `feature/p46-route-events` | complete |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
@@ -1666,6 +1667,62 @@ Acceptance:
 - A malformed event fails with a clear message.
 - `ws4 disturbance --json` emits a stable summary.
 - No compiled-dataset, simulator, or optimizer behavior changes.
+
+## Phase 57: Consume FEMIC hydrology response bundles
+
+Parent issue: #395
+Branch: `feature/p57-hydrology-response`
+Status: pr-open
+
+Goal: consume pinned FEMIC hydrology response and flood-risk bundles for
+screening-only spatial scheduling, without re-running FEMIC discovery,
+frequency fitting, or surrogate training.
+
+- [x] P57.1 Define and validate the FEMIC hydrology bundle consumer contract (#396)
+  - [x] Add schema constants, immutable records, and a stable bundle pin.
+  - [x] Implement load/validate with checksum, role, path, summary, and ID checks.
+  - [x] Add `ws4 hydrology inspect|validate` and JSON error reporting.
+  - [x] Add contract/failure tests and a synthetic fixture builder.
+  - [x] Add the design note, reference docs, roadmap, and changelog entry.
+- [x] P57.2 Register a pinned FEMIC hydrology bundle in a compiled dataset (#399)
+  - [x] Add sidecar/registration helpers and bundle-reference resolution.
+  - [x] Write and read `metadata.hydrology_products` and the sidecar.
+  - [x] Revalidate a registered bundle against its pin.
+  - [x] Add `ws4 hydrology register` and dataset `inspect|validate` modes.
+  - [x] Add tests, design note, reference docs, roadmap, and changelog.
+- [x] P57.3 Map WS4 support to FEMIC units, watersheds, and receptors (#401)
+  - [x] Add crosswalk and metadata loaders with checksum and review-state records.
+  - [x] Validate dataset/FEMIC IDs and derive fragment/block mappings safely.
+  - [x] Write fragment/block CSVs and a deterministic mapping manifest.
+  - [x] Add `ws4 hydrology map` and coverage/refusal reporting.
+  - [x] Add tests, design note, reference docs, roadmap, and changelog.
+- [x] P57.4 Screen a schedule against FEMIC flood-risk response and risk rows (#403)
+  - [x] Add mapping/schedule loaders and a typed screening result.
+  - [x] Derive watershed harvest fractions and scenario applicability checks.
+  - [x] Join response ratios and flood-risk rows; refuse outside tolerance.
+  - [x] Add CSV/JSON writers and `ws4 hydrology screen`.
+  - [x] Add tests, design note, reference docs, roadmap, and changelog.
+- [x] P57.5 Price optional flood-risk accounts in the optimizer (#407)
+  - [x] Add the flood-screen config and `FloodRiskModel`.
+  - [x] Append `flood.*` rows and price normal targets on them.
+  - [x] Refuse out-of-envelope schedules with the configured penalty.
+  - [x] Add `--flood-screen-config` to optimize/watch/calibrate.
+  - [x] Add tests, design note, reference docs, roadmap, and changelog.
+- [x] P57.6 Validate, document, and close out the hydrology consumer phase (#410)
+  - [x] Run the full hydrology contract suite and dashboard.
+  - [x] Record end-to-end evidence and limitations.
+  - [x] Write the close-out report and set P57 status to `pr-open`.
+  - [x] Update changelog and post closeout comments.
+  - [x] Queue the stacked PRs for maintainer approval.
+
+Acceptance:
+
+- A valid bundle returns a stable pin and per-artifact SHA-256/size records.
+- Tampered, missing, path-escaping, wrong-schema, missing-role, and ID-mismatch
+  bundles fail with specific errors.
+- CLI JSON reports are deterministic and exit non-zero on invalid input.
+- Validation is stdlib-only and never contacts FEMIC or the network.
+- The screening-only and hydrologist-review conditions remain explicit.
 
 ## Phase 58: Forest carbon accounting and carbon-aware planning
 

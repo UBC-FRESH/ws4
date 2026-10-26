@@ -34,6 +34,9 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - Pinned FEMIC LidarBC bundles, checksums, and polygon support summaries.
    * - :doc:`disturbance`
      - Read-only ``femic.disturbance.v1`` events and the summary report.
+   * - :doc:`femic-hydrology`
+     - Pinned FEMIC hydrology response bundles, checksums, flood-risk rows, and
+       applicability metadata.
 
 .. toctree::
    :maxdepth: 2
@@ -50,3 +53,4 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    web
    femic-lidar
    disturbance
+   femic-hydrology

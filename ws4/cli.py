@@ -33,6 +33,21 @@ from .disturbance import (
     load_disturbance_events,
     summarize_disturbance_events,
 )
+from .io.hydrology import (
+    FemicHydrologyError,
+    bundle_pin,
+    load_femic_hydrology_bundle,
+    load_hydrology_crosswalk,
+    load_hydrology_mapping,
+    load_registered_femic_hydrology_bundle,
+    map_femic_hydrology_to_dataset,
+    register_femic_hydrology_bundle,
+    screen_schedule_flood_risk,
+    validate_femic_hydrology_bundle,
+    validate_registered_femic_hydrology,
+    write_hydrology_mapping,
+    write_hydrology_screen,
+)
 from .io.lidar import (
     FemicLidarError,
     integrate_lidar_mapping_into_dataset,
@@ -121,6 +136,13 @@ def simulate(
     ),
     route_config: Path = typer.Option(
         None, "--route-config", exists=True, help="Optional route model and route accounts (YAML)"
+    ),
+    flood_screen_config: Path | None = typer.Option(
+        None,
+        "--flood-screen-config",
+        exists=True,
+        dir_okay=False,
+        help="Optional flood-screen config (hydrology response accounts)",
     ),
     edge_elements: Path = typer.Option(
         None, "--edge-elements", exists=True, help="Optional edge contrast elements (CSV)"
@@ -328,6 +350,13 @@ def optimize(
     route_config: Path = typer.Option(
         None, "--route-config", exists=True, help="Optional route model and route accounts (YAML)"
     ),
+    flood_screen_config: Path | None = typer.Option(
+        None,
+        "--flood-screen-config",
+        exists=True,
+        dir_okay=False,
+        help="Optional flood-screen config (hydrology response accounts)",
+    ),
     edge_elements: Path = typer.Option(
         None, "--edge-elements", exists=True, help="Optional edge contrast elements (CSV)"
     ),
@@ -449,6 +478,9 @@ def optimize(
         weights_path=str(weights) if weights is not None else "",
         topology_path=str(topology) if topology is not None else "",
         route_config_path=str(route_config) if route_config is not None else "",
+        flood_screen_config_path=(
+            str(flood_screen_config) if flood_screen_config is not None else ""
+        ),
         edge_elements_path=str(edge_elements) if edge_elements is not None else "",
         max_opening_ha=max_opening_ha,
         min_green_up_years=min_green_up_years,
@@ -666,6 +698,13 @@ def watch(
     route_config: Path = typer.Option(
         None, "--route-config", exists=True, help="Optional route model and route accounts (YAML)"
     ),
+    flood_screen_config: Path | None = typer.Option(
+        None,
+        "--flood-screen-config",
+        exists=True,
+        dir_okay=False,
+        help="Optional flood-screen config (hydrology response accounts)",
+    ),
     topology: Path = typer.Option(None, exists=True, help="Block topology for spatial constraints"),
     max_opening_ha: float = typer.Option(None, help="Maximum opening size, in hectares"),
     min_green_up_years: int = typer.Option(None, help="Green-up interval, in years"),
@@ -705,6 +744,9 @@ def watch(
         block_coordinates_path=str(block_coordinates) if block_coordinates is not None else "",
         topology_path=str(topology) if topology is not None else "",
         route_config_path=str(route_config) if route_config is not None else "",
+        flood_screen_config_path=(
+            str(flood_screen_config) if flood_screen_config is not None else ""
+        ),
         max_opening_ha=max_opening_ha,
         min_green_up_years=min_green_up_years,
         core_buffer_m=core_buffer_m,
@@ -754,6 +796,13 @@ def calibrate(
     block_coordinates: Path = typer.Option(
         None, "--block-coordinates", exists=True, help="Block centroids (CSV: block, x, y)"
     ),
+    flood_screen_config: Path | None = typer.Option(
+        None,
+        "--flood-screen-config",
+        exists=True,
+        dir_okay=False,
+        help="Optional flood-screen config (hydrology response accounts)",
+    ),
     warm_start: bool = typer.Option(
         False, "--warm-start", help="Start the pilot from each block's first candidate"
     ),
@@ -769,6 +818,9 @@ def calibrate(
         patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",
         spread_accounts_path=str(spread_accounts) if spread_accounts is not None else "",
         block_coordinates_path=str(block_coordinates) if block_coordinates is not None else "",
+        flood_screen_config_path=(
+            str(flood_screen_config) if flood_screen_config is not None else ""
+        ),
     )
     optimizer = Optimizer.from_dataset(dataset, cfg)
     calibrated = run_calibration(
@@ -1176,7 +1228,264 @@ def lidar_integrate(
     print(f"block_rows: {result.block_rows}")
 
 
+hydrology_app = typer.Typer(
+    help="Register, inspect, and validate FEMIC hydrology response bundles."
+)
+
+
+@hydrology_app.command("map")
+def hydrology_map(
+    dataset: Path = typer.Option(
+        ..., "--dataset", exists=True, file_okay=False, help="Compiled WS4 dataset"
+    ),
+    crosswalk: Path = typer.Option(
+        ..., "--crosswalk", exists=True, dir_okay=False, help="Explicit crosswalk CSV"
+    ),
+    metadata: Path | None = typer.Option(
+        None,
+        "--metadata",
+        exists=True,
+        dir_okay=False,
+        help="Optional crosswalk review metadata JSON",
+    ),
+    out: Path = typer.Option(..., "--out", help="Mapping output directory"),
+    allow_partial: bool = typer.Option(
+        False, "--allow-partial", help="Record unmapped supports instead of failing"
+    ),
+) -> None:
+    """Map explicit crosswalk rows to FEMIC units, watersheds, and receptors."""
+    try:
+        bundle = load_registered_femic_hydrology_bundle(dataset)
+        loaded = load_hydrology_crosswalk(crosswalk, metadata_path=metadata)
+        mapping = map_femic_hydrology_to_dataset(
+            dataset,
+            bundle,
+            loaded,
+            allow_partial=allow_partial,
+        )
+        paths = write_hydrology_mapping(mapping, out)
+    except FemicHydrologyError as error:
+        print(f"[bold red]Hydrology mapping failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    print(f"mapping_id: {mapping.mapping_id}")
+    print(f"review_status: {mapping.review_status}")
+    print(f"fragments: {len(mapping.fragments)}")
+    print(f"blocks: {len(mapping.blocks)}")
+    coverage = mapping.coverage
+    unmapped_fragments = coverage.get("unmapped_fragments", [])
+    unmapped_blocks = coverage.get("unmapped_blocks", [])
+    print(
+        "unmapped_fragments: "
+        f"{len(unmapped_fragments) if isinstance(unmapped_fragments, list) else 0}"
+    )
+    print(f"unmapped_blocks: {len(unmapped_blocks) if isinstance(unmapped_blocks, list) else 0}")
+    for warning in mapping.warnings:
+        print(f"warning: {warning}")
+    print(f"fragments_csv: {paths['fragments']}")
+    print(f"blocks_csv: {paths['blocks']}")
+    print(f"manifest: {paths['manifest']}")
+
+
+@hydrology_app.command("screen")
+def hydrology_screen(
+    dataset: Path = typer.Option(
+        ..., "--dataset", exists=True, file_okay=False, help="Compiled WS4 dataset"
+    ),
+    mapping: Path = typer.Option(
+        ..., "--mapping", exists=True, help="Mapping directory or manifest"
+    ),
+    schedule: Path = typer.Option(
+        ..., "--schedule", exists=True, dir_okay=False, help="WS4 schedule CSV"
+    ),
+    out: Path = typer.Option(..., "--out", help="Screening output directory"),
+    covariates: Path | None = typer.Option(
+        None,
+        "--covariates",
+        exists=True,
+        dir_okay=False,
+        help="Optional JSON object of global response covariates",
+    ),
+    scenario_tolerance: float = typer.Option(
+        0.05,
+        "--scenario-tolerance",
+        min=0.000001,
+        help="Maximum feature difference when selecting a response scenario",
+    ),
+    allow_refused: bool = typer.Option(
+        False, "--allow-refused", help="Write inside-domain rows plus refusals"
+    ),
+) -> None:
+    """Screen a schedule against FEMIC response and flood-risk rows."""
+    try:
+        bundle = load_registered_femic_hydrology_bundle(dataset)
+        loaded_mapping = load_hydrology_mapping(mapping)
+        supplied: dict[str, float] = {}
+        if covariates is not None:
+            payload = json.loads(covariates.read_text(encoding="utf-8"))
+            if not isinstance(payload, dict):
+                raise FemicHydrologyError("Covariates must be a JSON object.")
+            supplied = {str(key): float(value) for key, value in payload.items()}
+        mapping_manifest = mapping / "hydrology_mapping.json" if mapping.is_dir() else mapping
+        result = screen_schedule_flood_risk(
+            dataset,
+            bundle,
+            loaded_mapping,
+            schedule,
+            mapping_manifest_path=mapping_manifest,
+            covariates=supplied,
+            scenario_tolerance=scenario_tolerance,
+            allow_refused=allow_refused,
+        )
+        paths = write_hydrology_screen(result, out)
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        print(f"[bold red]Hydrology screening failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    except FemicHydrologyError as error:
+        print(f"[bold red]Hydrology screening failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    print(f"screen_id: {result.screen_id}")
+    print(f"rows: {len(result.rows)}")
+    print(f"refusals: {len(result.refusals)}")
+    for warning in result.warnings:
+        print(f"warning: {warning}")
+    print(f"screen_csv: {paths['rows']}")
+    print(f"manifest: {paths['manifest']}")
+
+
+@hydrology_app.command("register")
+def hydrology_register(
+    dataset: Path = typer.Option(
+        ..., "--dataset", exists=True, file_okay=False, help="Compiled WS4 dataset"
+    ),
+    bundle: Path = typer.Option(
+        ..., "--bundle", exists=True, file_okay=False, help="FEMIC hydrology bundle"
+    ),
+    bundle_id: str | None = typer.Option(None, "--bundle-id"),
+    bundle_version: str | None = typer.Option(None, "--bundle-version"),
+    json_output: bool = typer.Option(
+        False, "--json", help="Emit deterministic JSON registration record"
+    ),
+) -> None:
+    """Register a validated FEMIC hydrology bundle in a compiled dataset."""
+    try:
+        registration = register_femic_hydrology_bundle(
+            dataset,
+            bundle,
+            expected_bundle_id=bundle_id,
+            expected_bundle_version=bundle_version,
+        )
+    except FemicHydrologyError as error:
+        print(f"[bold red]Hydrology registration failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    if json_output:
+        print(json.dumps(registration, indent=2, sort_keys=True))
+        return
+    print(f"bundle_id: {registration['bundle_id']}")
+    print(f"bundle_version: {registration['bundle_version']}")
+    print(f"bundle_dir: {registration['bundle_dir']}")
+    print(f"manifest_sha256: {registration['manifest_sha256']}")
+
+
+@hydrology_app.command("inspect")
+def hydrology_inspect(
+    bundle: Path | None = typer.Argument(None, exists=True, help="Bundle directory or manifest"),
+    dataset: Path | None = typer.Option(
+        None,
+        "--dataset",
+        exists=True,
+        file_okay=False,
+        help="Inspect the hydrology bundle registered in a compiled dataset",
+    ),
+    json_output: bool = typer.Option(
+        False, "--json", help="Emit deterministic JSON instead of a summary"
+    ),
+) -> None:
+    """Print the stable pin for a validated FEMIC hydrology bundle."""
+    if (bundle is None) == (dataset is None):
+        print("[bold red]Provide exactly one of BUNDLE or --dataset.[/]")
+        raise typer.Exit(code=1)
+    try:
+        if dataset is not None:
+            loaded = load_registered_femic_hydrology_bundle(dataset)
+        else:
+            assert bundle is not None
+            report = validate_femic_hydrology_bundle(bundle)
+            if not report.is_valid:
+                print(json.dumps(report.to_dict(), indent=2, sort_keys=True))
+                raise typer.Exit(code=1)
+            loaded = load_femic_hydrology_bundle(bundle)
+        pin = bundle_pin(loaded)
+    except FemicHydrologyError as error:
+        print(f"[bold red]Hydrology inspect failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    if json_output:
+        print(json.dumps(pin, indent=2, sort_keys=True))
+        return
+    print(f"bundle_id: {pin['bundle_id']}")
+    print(f"bundle_version: {pin['bundle_version']}")
+    print(f"response_surface_id: {pin['response_surface_id']}")
+    print(f"domain_id: {pin['domain_id']}")
+    print(f"ledger_id: {pin['ledger_id']}")
+    print(f"manifest_sha256: {pin['manifest_sha256']}")
+    artifacts = pin["artifacts"]
+    if isinstance(artifacts, dict):
+        for role in sorted(artifacts):
+            print(f"artifact: {role}")
+
+
+@hydrology_app.command("validate")
+def hydrology_validate(
+    bundle: Path | None = typer.Argument(None, exists=True, help="Bundle directory or manifest"),
+    dataset: Path | None = typer.Option(
+        None,
+        "--dataset",
+        exists=True,
+        file_okay=False,
+        help="Validate the hydrology bundle registered in a compiled dataset",
+    ),
+    bundle_id: str | None = typer.Option(None, "--bundle-id"),
+    bundle_version: str | None = typer.Option(None, "--bundle-version"),
+    json_output: bool = typer.Option(
+        True, "--json/--no-json", help="Emit deterministic JSON validation report"
+    ),
+) -> None:
+    """Validate a FEMIC hydrology bundle and its artifact checksums."""
+    if (bundle is None) == (dataset is None):
+        print("[bold red]Provide exactly one of BUNDLE or --dataset.[/]")
+        raise typer.Exit(code=1)
+    try:
+        if dataset is not None:
+            if bundle_id is not None or bundle_version is not None:
+                raise FemicHydrologyError(
+                    "--bundle-id/--bundle-version are only valid with a direct BUNDLE."
+                )
+            report = validate_registered_femic_hydrology(dataset)
+        else:
+            assert bundle is not None
+            report = validate_femic_hydrology_bundle(
+                bundle,
+                expected_bundle_id=bundle_id,
+                expected_bundle_version=bundle_version,
+            )
+    except FemicHydrologyError as error:
+        print(f"[bold red]Hydrology validation failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    if json_output:
+        print(json.dumps(report.to_dict(), indent=2, sort_keys=True))
+    else:
+        print(f"valid: {report.is_valid}")
+        print(f"artifacts: {report.artifact_count}")
+        print(f"total_bytes: {report.total_bytes}")
+        for message in report.errors:
+            print(f"error: {message}")
+        for warning in report.warnings:
+            print(f"warning: {warning}")
+    if not report.is_valid:
+        raise typer.Exit(code=1)
+
+
 app.add_typer(lidar_app, name="lidar")
+app.add_typer(hydrology_app, name="hydrology")
 
 if __name__ == "__main__":
     app()

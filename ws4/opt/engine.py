@@ -52,6 +52,7 @@ from ..spread.accounts import (
 from .constraints import ConstraintGuard
 from .control import RunControl
 from .core import Problem
+from .flood import FloodRiskModel, FloodRiskRefusalError
 from .incremental import IncrementalObjective
 from .mip import bound_for, relaxation_for
 from .objective import Target, load_targets, objective
@@ -304,6 +305,10 @@ class OptimizeConfig:
     block_coordinates_path : str
         A CSV of block centroids (a block id, an ``x`` and a ``y``), read for the spread accounts'
         bearings.
+    flood_screen_config_path : str
+        An optional ``ws4.hydrology.flood_screen.v1`` configuration. When set, the optimizer
+        evaluates ``flood.*`` accounts from the registered FEMIC bundle and mapping. Refused
+        schedules receive the configured penalty instead of extrapolating.
     merge_weight : float
         The selection weight of the merge operator, which treats gap blocks.
     split_weight : float
@@ -364,6 +369,7 @@ class OptimizeConfig:
     carbon_package_path: str = ""
     spread_accounts_path: str = ""
     block_coordinates_path: str = ""
+    flood_screen_config_path: str = ""
     merge_weight: float = 0.0
     split_weight: float = 0.0
 
@@ -448,6 +454,8 @@ class Optimizer:
         self._edge_cache: tuple[EdgeElement, ...] | None = None
         self._simulator_cache: Simulator | None = None
         self._patch_cache: PatchModel | None = None
+        self._flood_cache: FloodRiskModel | None = None
+        self._flood_loaded = False
         self._active_patch: PatchModel | None = None
         self._patch_accounts_cache: tuple[PatchAccount, ...] | None = None
         self._base_cache: dict[tuple[int, str], float] | None = None
@@ -675,6 +683,15 @@ class Optimizer:
                     ignore_index=True,
                 )
                 self._last_values = values
+        flood = self.flood_model()
+        if flood is not None:
+            try:
+                flood_values = flood.values(frame, years=self.cfg.years)
+            except FloodRiskRefusalError:
+                return flood.refusal_penalty + self._spatial_penalty(frame)
+            if not flood_values.empty:
+                values = pd.concat([values, flood_values], ignore_index=True)
+                self._last_values = values
         return objective(values, targets) + self._spatial_penalty(frame)
 
     def last_account_values(self) -> pd.DataFrame:
@@ -793,6 +810,24 @@ class Optimizer:
             self._patch_cache = PatchModel(self, accounts)
         return self._patch_cache
 
+    def flood_model(self) -> FloodRiskModel | None:
+        """Return the optional schedule flood-risk model, loaded once.
+
+        Returns
+        -------
+        FloodRiskModel or None
+            The model, or None when no flood-screen configuration is set.
+        """
+        if not self.cfg.flood_screen_config_path:
+            return None
+        if not self._flood_loaded:
+            self._flood_cache = FloodRiskModel(
+                self.dataset_dir,
+                Path(self.cfg.flood_screen_config_path),
+            )
+            self._flood_loaded = True
+        return self._flood_cache
+
     def active_patch_model(self) -> PatchModel | None:
         """Return the patch model the current evaluator is maintaining.
 
@@ -835,6 +870,8 @@ class Optimizer:
         IncrementalObjective or None
             The evaluator, or None when the configuration needs whole-schedule values.
         """
+        if self.cfg.flood_screen_config_path:
+            return None
         model, route_accounts, duplicate_accounts = self.route()
         if duplicate_accounts or self.edge_elements() or self.spread_accounts():
             return None

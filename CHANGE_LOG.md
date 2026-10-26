@@ -2616,6 +2616,88 @@ issue comments.
   are in `main`; dashboard and all CI checks were green. No compiled-dataset,
   simulator, or optimizer behavior changed.
 
+- P57.1: added the read-only FEMIC hydrology response-bundle consumer contract in
+  `ws4/io/hydrology.py`. It validates `femic.hydrology.response.v1`, required
+  and optional artifact roles, role schemas, path containment, declared size and
+  SHA-256, response-surface and flood-risk summaries, domain/ledger IDs, and the
+  producer consumer contract. Added a stable `bundle_pin`, typed flood-risk
+  rows, `ws4 hydrology inspect|validate`, a synthetic contract fixture, the
+  design note, and reference docs. Validation is stdlib-only and never contacts
+  FEMIC or the network. Producer `consumer_phases` labels (`ws4: P49`,
+  `fhops: P14`) are documented as producer metadata, not WS4/FHOPS phase
+  numbers. A FEMIC-built fixture bundle (`hydro-response-70f4214e01afe461`)
+  validated and inspected successfully through the WS4 CLI. Dashboard **GREEN**
+  (lint, format, types, 109.06 s tests, validator, docs, docstrings).
+
+- P57.2: added dataset-level registration for FEMIC hydrology bundles.
+  `register_femic_hydrology_bundle` writes the pin to `metadata.hydrology_products`
+  and `hydrology_products.json` and references the bundle without copying it.
+  `read_registered_femic_hydrology`, `load_registered_femic_hydrology_bundle`,
+  and `validate_registered_femic_hydrology` revalidate bundle id/version,
+  manifest SHA-256, and artifact sizes/checksums. Added
+  `ws4 hydrology register` and `--dataset` modes for `inspect|validate`.
+  Seven new tests cover idempotent registration, relative/external references,
+  tampering, stale manifests, missing datasets, and CLI success/failure.
+  Dashboard **GREEN** (lint, format, types, 111.09 s tests, validator, docs,
+  docstrings).
+
+- P57.3: added explicit WS4-to-FEMIC support mapping. A reviewed crosswalk CSV
+  names one `fragment_id` or `block_id` per row and a FEMIC unit, watershed, and
+  optional receptor. Block rows expand to fragments; block mappings are derived
+  from fragment rows only when every fragment is mapped and agrees. Mapping
+  validates dataset/FEMIC IDs, rejects conflicts, and writes
+  `hydrology_fragments.csv`, `hydrology_blocks.csv`, and a deterministic
+  `hydrology_mapping.json` with bundle pin, crosswalk checksum, review status,
+  coverage, warnings, and caveats. Added `ws4 hydrology map` and
+  `--allow-partial`. No spatial inference, geometry join, or FEMIC re-run.
+  Eight new tests cover complete/partial mapping, derivation, conflicts,
+  unknown IDs, duplicate/bad rows, review metadata, and CLI behavior.
+  Dashboard **GREEN** (lint, format, types, 106.01 s tests, validator, docs,
+  docstrings).
+
+- P57.4: added read-only schedule-level flood-risk screening. `ws4 hydrology
+  screen` loads a schedule, mapping, pinned bundle, response scenarios, and
+  flood-risk rows; derives cumulative harvest fraction by watershed/period;
+  selects the nearest response scenario within a tolerance; and writes
+  `hydrology_screen.csv` plus a deterministic manifest. Missing scenario
+  features, missing watershed areas, and out-of-tolerance schedules refuse.
+  `--allow-refused` writes inside-domain rows and records refusals. No
+  simulator, optimizer, objective, or FEMIC process is invoked. Seven new tests
+  cover complete screening, refusal/allow, missing area, unknown blocks,
+  mapping round-trip, bundle mismatch, and CLI output. Dashboard **GREEN**
+  (lint, format, types, 106.53 s tests, validator, docs, docstrings).
+
+- P57.5: added optional `flood.*` accounts to the optimizer objective.
+  `ws4.hydrology.flood_screen.v1` config names the mapping, global covariates,
+  scenario tolerance, and refusal penalty. `FloodRiskModel` appends ratio, peak
+  flow, exceedance probability, and expected annual damage rows for each
+  receptor/return period; normal targets can price them. Out-of-envelope
+  schedules return the configured refusal penalty instead of extrapolating, and
+  the move-based delta evaluator is disabled while the model is active.
+  `--flood-screen-config` is available on `optimize`, `watch`, and `calibrate`.
+  Five new tests cover config loading, account emission, refusal, target
+  pricing, and penalty behavior. Dashboard **GREEN** (lint, format, types,
+  104.92 s tests, validator, docs, docstrings).
+
+- P57.6: wrote `notes/reports/p57-closeout.md`, recorded the stacked-PR and
+  public-pilot deviations, set P57 to `pr-open`, and queued the stack for
+  maintainer approval. The hydrology contract suite has 39 passing tests; the
+  dashboard is GREEN at the P57.5 evidence head. No merge, tag, release, or
+  settings change was made. Known limits: no reviewed public crosswalk, no
+  hydrologist review, no independent WS4 tail-check validation, whole-schedule
+  flood evaluation, optimizer-only accounts, and no FHOPS integration.
+  Report-commit dashboard **GREEN** (lint, format, types, 105.92 s tests,
+  validator, docs, docstrings).
+
+- P57 closeout consolidation: retargeted #411 to `main`, recorded the
+  maintainer-approved single-phase-PR strategy, and marked the five task PRs as
+  superseded. The report now names the squash-merge command and the post-merge
+  issue/branch cleanup. No merge has run yet. Consolidation dashboard **GREEN**
+  (lint, format, types, 102.98 s tests, validator, docs, docstrings).
+  Main advanced with P56/P58 before the phase merge; the closeout branch merged
+  `origin/main`, kept both phases, and re-ran the dashboard **GREEN** (lint,
+  format, types, 118.57 s tests, validator, docs, docstrings).
+
 - P58 activation: created parent issue #357 and tasks #358-#367 on `feature/p58-carbon`. The phase
   adds the FEMIC carbon-package loader, the CBM SIT compiler, the libcbm driver and `ws4 carbon`,
   carbon accounts and reports, parity and replay validation, a block-level carbon ledger, carbon

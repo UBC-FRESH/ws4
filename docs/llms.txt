@@ -51,4 +51,5 @@
 - [Spatial structure and constraints](reference/spatial.html): the block topology, patch metrics, and opening and green-up rules.
 - [Roads](reference/roads.html): the network tables, shortest-path routing, and the route outputs.
 - [Performance and scale](reference/performance.html): the measured figures, the incremental objective, and how to reproduce the benchmark.
+- [FEMIC hydrology](reference/femic-hydrology.html): pinned response bundles, checksums, flood-risk rows, and applicability metadata.
 - [API reference](api/index.html): the repository tooling's public functions, with their parameters, types, and return values. The package API is rendered on the reference pages above.
