@@ -2905,3 +2905,7 @@ issue comments.
 - P65.3: verified c5 single-period edit/save/reload, all-period min creation, drag edit, and
   inactive toggle; verified TSA 46 10-period edit/save/reload. `check_target_editing.py` exits 0.
   Dashboard **GREEN**.
+
+- P65 close-out: pull request #469 squash-merged as `342ac3b`; parent #464 and tasks
+  #465/#466/#467 closed; status set complete. The edit/save/reload evidence is recorded in
+  `notes/reports/p65-closeout.md`.

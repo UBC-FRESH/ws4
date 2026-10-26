@@ -66,7 +66,7 @@ exists and the maintainer approves it.
 | P61 Carbon and libcbm in the web UI | #430 | `feature/p61-carbon-ui` | complete |
 | P63 UI foundation for desktop and iPad landscape | #442 | `feature/p63-ui-foundation` | complete |
 | P64 Patchworks-style target charts | #456 | `feature/p64-target-charts` | complete |
-| P65 Editable target charts | #464 | `feature/p65-editable-targets` | pr-open |
+| P65 Editable target charts | #464 | `feature/p65-editable-targets` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -1944,7 +1944,7 @@ Acceptance:
 
 Parent issue: #464
 Branch: `feature/p65-editable-targets`
-Status: pr-open
+Status: complete
 
 Goal: make the target charts the analyst's editing surface for active state and per-period
 minimum/maximum bounds.
