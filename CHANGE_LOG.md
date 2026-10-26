@@ -2964,6 +2964,10 @@ issue comments.
   `notes/reports/p62-closeout.md`. Dashboard **GREEN**; final pre-merge CI run
   `40407187849` passed all five jobs.
 
+- P66.1: hid the assistant panel and splitter unless `/api/agent` reports both enabled and
+  available. A service without `--allow-agent` gives the sidebar back the full vertical space;
+  an enabled service keeps the resizable panel. Version `v74`.
+
 - P54 roadmap entry: added the Phase 54 parent (#375) for environmental accounts
   (DHI, structure habitat, resilience metrics), with children #376-#378. The
   phase excludes carbon, which is owned by P51 (#357). Branch

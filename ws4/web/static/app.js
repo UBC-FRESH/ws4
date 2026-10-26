@@ -4532,9 +4532,18 @@ function newChat() {
   $('chat-input').focus();
 }
 
+function setAssistantVisible(visible) {
+  const panel = $('chat-panel');
+  const splitter = $('chat-splitter');
+  if (panel) panel.hidden = !visible;
+  if (splitter) splitter.hidden = !visible;
+}
+
 async function loadAgent() {
   try {
     const info = await api('api/agent');
+    const available = Boolean(info.enabled) && Boolean(info.available);
+    setAssistantVisible(available);
     const model = info.model ? String(info.model).split('/').pop() : 'agent';
     $('chat-model').textContent = info.enabled ? model : 'disabled';
     if (!info.enabled) {
@@ -4545,6 +4554,7 @@ async function loadAgent() {
       $('chat-status').textContent = 'opencode is not on the service PATH';
     }
   } catch {
+    setAssistantVisible(false);
     $('chat-model').textContent = 'unavailable';
   }
 }
