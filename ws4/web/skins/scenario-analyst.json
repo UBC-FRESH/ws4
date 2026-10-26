@@ -4,6 +4,7 @@
   "panels": [
     "legend",
     "lidar",
+    "carbon",
     "targets",
     "reports",
     "comparison",

@@ -253,3 +253,11 @@ path.block.compare-both { fill:#6b4c9a; }
 .lidar-legend { margin:.5rem 0; }
 .lidar-bar { height:.55rem; border-radius:.2rem; background:linear-gradient(90deg,#2b6cb0,#e53e3e); border:1px solid var(--line); }
 .lidar-ends { display:flex; justify-content:space-between; color:var(--muted); font-size:.75rem; margin-top:.15rem; }
+
+.carbon-chart { width:100%; min-height:8.5rem; border:1px solid var(--line); border-radius:.35rem; background:#fbfcfe; margin:.35rem 0; }
+.carbon-composition { display:flex; flex-direction:column; gap:.25rem; margin:.45rem 0; }
+.carbon-bar-row { display:grid; grid-template-columns:7rem 1fr 5rem; gap:.4rem; align-items:center; font-size:.78rem; }
+.carbon-bar { height:.55rem; border-radius:.2rem; background:#2f7d4f; }
+.carbon-bar-row span:last-child { text-align:right; color:var(--muted); }
+.carbon-files { margin:.2rem 0; padding-left:1rem; font-size:.8rem; }
+.carbon-files a { color:#1f6feb; }

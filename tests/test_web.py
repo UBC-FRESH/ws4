@@ -1444,3 +1444,89 @@ def test_the_lidar_api_is_explicitly_unavailable_without_fields(tmp_path: Path) 
     assert body["fields"] == []
     assert body["block_count"] == 0
     assert client.get("/api/runs/run1/map", params={"year": 0, "lidar": True}).status_code == 200
+
+
+def test_the_carbon_api_aggregates_real_artifacts_and_carbon_only_runs(tmp_path: Path) -> None:
+    """Carbon runs are discoverable and their accounts, pools, ledger, and comparison are read."""
+    client, _ = _app(tmp_path)
+    carbon = tmp_path / "runs" / "carbon1"
+    carbon.mkdir()
+    (carbon / "carbon_manifest.json").write_text(
+        json.dumps({"package_id": "carbon-test", "libcbm_version": "2.10.2"}), encoding="utf-8"
+    )
+    (carbon / "carbon_ledger.json").write_text(
+        json.dumps({"ledger": "block-level", "years": 2}), encoding="utf-8"
+    )
+    pd.DataFrame(
+        [
+            {"offset": 0, "account": "carbon.ecosystem.total", "value": 100.0},
+            {"offset": 1, "account": "carbon.ecosystem.total", "value": 90.0},
+        ]
+    ).to_csv(carbon / "carbon_accounts.csv", index=False)
+    pd.DataFrame(
+        [
+            {
+                "identifier": 1,
+                "timestep": 0,
+                "SoftwoodMerch": 6.0,
+                "AboveGroundFastSoil": 1.0,
+                "Products": 2.0,
+            },
+            {
+                "identifier": 2,
+                "timestep": 0,
+                "SoftwoodMerch": 4.0,
+                "AboveGroundFastSoil": 2.0,
+                "Products": 3.0,
+            },
+            {
+                "identifier": 1,
+                "timestep": 1,
+                "SoftwoodMerch": 5.0,
+                "AboveGroundFastSoil": 1.0,
+                "Products": 2.0,
+            },
+        ]
+    ).to_csv(carbon / "carbon_pools.csv", index=False)
+    pd.DataFrame(
+        [
+            {"offset": 0, "carbon": 100.0, "reference": 101.0},
+            {"offset": 1, "carbon": 90.0, "reference": 92.0},
+        ]
+    ).to_csv(carbon / "gcbm_compare.csv", index=False)
+
+    body = client.get("/api/runs/carbon1/carbon").json()
+    assert body["available"] is True
+    assert body["manifest"]["package_id"] == "carbon-test"
+    assert body["ledger"]["ledger"] == "block-level"
+    assert body["accounts"][0]["account"] == "carbon.ecosystem.total"
+    assert [point["value"] for point in body["accounts"][0]["values"]] == [100.0, 90.0]
+    assert body["pools"]["timesteps"] == [0, 1]
+    composition = {group["name"]: group["values"] for group in body["pools"]["composition"]}
+    assert composition["Biomass"] == [10.0, 5.0]
+    assert composition["DOM and soil"] == [3.0, 1.0]
+    assert composition["Products"] == [5.0, 2.0]
+    assert body["gcbm"]["columns"] == ["offset", "carbon", "reference"]
+    assert {item["name"] for item in body["files"]} >= {
+        "carbon_manifest.json",
+        "carbon_accounts.csv",
+        "carbon_pools.csv",
+        "gcbm_compare.csv",
+    }
+    summary = client.get("/api/summary").json()
+    assert any(run["id"] == "carbon1" and run["kind"] == "carbon" for run in summary["runs"])
+    periods = client.get("/api/runs/carbon1/periods").json()
+    assert periods["min"] == 0
+    assert periods["max"] == 1
+    accounts = client.get("/api/runs/carbon1/accounts").json()
+    assert accounts[0]["account"] == "carbon.ecosystem.total"
+
+
+def test_a_run_without_carbon_artifacts_is_explicit(tmp_path: Path) -> None:
+    """A simulation run does not invent a carbon panel."""
+    client, _ = _app(tmp_path)
+    body = client.get("/api/runs/run1/carbon").json()
+    assert body["available"] is False
+    assert body["accounts"] == []
+    assert body["pools"] is None
+    assert body["files"] == []

@@ -2854,3 +2854,13 @@ issue comments.
 - 0.2.0 published to PyPI: `ws4==0.2.0` is available at https://pypi.org/project/ws4/0.2.0/.
   The published wheel and sdist match the GitHub release assets. The release policy now records
   that approved PyPI releases use a secure external credential file.
+
+
+- P61.1/P61.2: added `/api/runs/{run}/carbon`, carbon-only run discovery, carbon-account and period
+  fallbacks, and a Carbon tab with provenance, account trend, pool composition, ledger status,
+  GCBM comparison table, and artifact downloads. The service aggregates libcbm pools/fluxes by
+  timestep and never reruns carbon.
+- P61.3: verified TSA24 and MKRF real carbon artifacts. API account series match the CSVs at
+  `max_abs = 0.0`; browser smoke exits 0 for the standalone and optimizer runs; c5 shows the
+  explicit no-carbon state. No real `gcbm_compare.csv` exists, so that UI branch is fixture-tested.
+  Dashboard **GREEN**.

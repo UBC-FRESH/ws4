@@ -309,3 +309,13 @@ The next step
 P58.4 merges the ``carbon.*`` accounts into the run report and the provenance surfaces.
 P58.5 validates parity with WS3, mass balance, and deterministic replay on the TSA24
 fixture.
+
+
+Web UI
+------
+
+The **Carbon** tab in the optional web service reads the run's ``carbon_manifest.json``,
+``carbon_accounts.csv``, ``carbon_pools.csv``, ``carbon_flux.csv``, ``carbon_ledger.json``, and
+``gcbm_compare.csv``. It aggregates pools and fluxes by timestep and never reruns libcbm. See
+:doc:`web` for the endpoint. Carbon-only run directories are listed as ``carbon`` runs; their
+periods are read from the carbon account offsets.

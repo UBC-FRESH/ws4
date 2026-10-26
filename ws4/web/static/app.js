@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '' };
 
 const $ = (id) => document.getElementById(id);
 const TILE_VERSION = 'v8';
@@ -1950,6 +1950,222 @@ async function loadLidar() {
   }
 }
 
+function carbonAccount() {
+  return (state.carbon?.accounts ?? []).find((account) => account.account === state.carbonAccount) ?? null;
+}
+
+function drawCarbonChart() {
+  const svg = $('carbon-chart');
+  if (!svg) return;
+  svg.replaceChildren();
+  const account = carbonAccount();
+  const points = account?.values ?? [];
+  if (points.length < 1) return;
+  const width = 320;
+  const height = 140;
+  const pad = 22;
+  const xs = points.map((point) => Number(point.offset));
+  const ys = points.map((point) => Number(point.value));
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys, 0);
+  const maxY = Math.max(...ys);
+  const ySpan = maxY - minY || 1;
+  const xSpan = maxX - minX || 1;
+  const x = (value) => pad + ((value - minX) / xSpan) * (width - pad * 2);
+  const y = (value) => height - pad - ((value - minY) / ySpan) * (height - pad * 2);
+  const axis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  axis.setAttribute('x1', pad);
+  axis.setAttribute('x2', width - pad);
+  axis.setAttribute('y1', height - pad);
+  axis.setAttribute('y2', height - pad);
+  axis.setAttribute('stroke', '#d9e2ec');
+  svg.append(axis);
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  line.setAttribute('points', points.map((point) => `${x(point.offset).toFixed(1)},${y(point.value).toFixed(1)}`).join(' '));
+  line.setAttribute('fill', 'none');
+  line.setAttribute('stroke', '#2f7d4f');
+  line.setAttribute('stroke-width', '2');
+  svg.append(line);
+  for (const [label, value] of [[minX, minY], [maxX, maxY]]) {
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', label === minX ? pad : width - pad);
+    text.setAttribute('y', height - 5);
+    text.setAttribute('text-anchor', label === minX ? 'start' : 'end');
+    text.setAttribute('font-size', '9');
+    text.setAttribute('fill', '#616e7c');
+    text.textContent = `${label}: ${Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+    svg.append(text);
+  }
+}
+
+function renderCarbonComposition() {
+  const box = $('carbon-composition');
+  if (!box) return;
+  box.replaceChildren();
+  const pools = state.carbon?.pools;
+  if (!pools?.composition?.length) return;
+  const index = Math.max(0, (pools.timesteps?.length ?? 1) - 1);
+  const max = Math.max(...pools.composition.map((group) => Number(group.values[index] ?? 0)), 1);
+  for (const group of pools.composition) {
+    const value = Number(group.values[index] ?? 0);
+    const row = document.createElement('div');
+    row.className = 'carbon-bar-row';
+    const label = document.createElement('span');
+    label.textContent = group.name;
+    const track = document.createElement('span');
+    track.className = 'carbon-bar';
+    track.style.width = `${Math.max(1, (value / max) * 100)}%`;
+    const amount = document.createElement('span');
+    amount.textContent = value.toLocaleString(undefined, { maximumFractionDigits: 1 });
+    row.append(label, track, amount);
+    box.append(row);
+  }
+}
+
+function renderCarbonCompare() {
+  const table = $('carbon-compare');
+  const empty = $('carbon-compare-empty');
+  if (!table || !empty) return;
+  const gcbm = state.carbon?.gcbm;
+  table.replaceChildren();
+  if (!gcbm || !gcbm.rows?.length) {
+    table.hidden = true;
+    empty.hidden = false;
+    return;
+  }
+  empty.hidden = true;
+  table.hidden = false;
+  const head = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  for (const column of gcbm.columns ?? []) {
+    const cell = document.createElement('th');
+    cell.textContent = column;
+    headRow.append(cell);
+  }
+  head.append(headRow);
+  const body = document.createElement('tbody');
+  for (const row of gcbm.rows.slice(0, 100)) {
+    const tr = document.createElement('tr');
+    for (const column of gcbm.columns ?? []) {
+      const cell = document.createElement('td');
+      const value = row[column];
+      cell.textContent = typeof value === 'number'
+        ? value.toLocaleString(undefined, { maximumFractionDigits: 3 })
+        : value ?? '';
+      tr.append(cell);
+    }
+    body.append(tr);
+  }
+  table.append(head, body);
+}
+
+function renderCarbonFiles() {
+  const list = $('carbon-files');
+  if (!list) return;
+  list.replaceChildren();
+  for (const file of state.carbon?.files ?? []) {
+    const item = document.createElement('li');
+    const link = document.createElement('a');
+    link.href = `api/runs/${encodeURIComponent(state.run)}/reports/${encodeURIComponent(file.name)}`;
+    link.textContent = `${file.name} (${Number(file.bytes).toLocaleString()} B)`;
+    item.append(link);
+    list.append(item);
+  }
+  if (!list.children.length) {
+    const item = document.createElement('li');
+    item.className = 'hint';
+    item.textContent = 'no carbon artifacts';
+    list.append(item);
+  }
+}
+
+function carbonMetaRow(label, value) {
+  const row = document.createElement('div');
+  row.className = 'lidar-row';
+  const key = document.createElement('span');
+  key.textContent = label;
+  const text = document.createElement('span');
+  text.textContent = value === undefined || value === null || value === '' ? '—' : String(value);
+  row.append(key, text);
+  return row;
+}
+
+async function loadCarbon() {
+  const status = $('carbon-status');
+  const meta = $('carbon-meta');
+  const select = $('carbon-account');
+  if (!status || !meta || !select) return;
+  try {
+    const info = await api(`api/runs/${encodeURIComponent(state.run)}/carbon`);
+    state.carbon = info;
+    meta.replaceChildren();
+    select.replaceChildren();
+    if (!info.available) {
+      state.carbonAccount = '';
+      select.disabled = true;
+      status.textContent = 'this run has no carbon artifacts';
+      $('carbon-ledger').textContent = '';
+      renderCarbonComposition();
+      renderCarbonCompare();
+      renderCarbonFiles();
+      drawCarbonChart();
+      return;
+    }
+    select.disabled = false;
+    const accounts = info.accounts ?? [];
+    const ledger = info.ledger;
+    status.textContent = `${accounts.length} carbon accounts${info.pools ? ' · pools' : ''}${info.flux ? ' · flux' : ''}${ledger ? ' · ledger' : ''}`;
+    const manifest = info.manifest ?? {};
+    const units = manifest.units ?? {};
+    const rows = [
+      ['Package', manifest.package_id],
+      ['libcbm', manifest.libcbm_version],
+      ['Units', units.carbon],
+      ['Defaults', manifest.cbm_defaults?.version],
+      ['Fingerprint', manifest.package_fingerprint ? String(manifest.package_fingerprint).slice(0, 12) : null],
+      ['Schedule hash', manifest.schedule_sha256 ? String(manifest.schedule_sha256).slice(0, 12) : null],
+    ].filter(([, value]) => value !== undefined && value !== null && value !== '');
+    if (!rows.length && ledger) {
+      rows.push(['Ledger package', ledger.package], ['Ledger years', ledger.years]);
+    }
+    for (const [label, value] of rows) {
+      meta.append(carbonMetaRow(label, value));
+    }
+    const current = accounts.some((account) => account.account === state.carbonAccount)
+      ? state.carbonAccount
+      : accounts.find((account) => account.account === 'carbon.ecosystem.total')?.account
+        ?? accounts[0]?.account
+        ?? '';
+    state.carbonAccount = current;
+    for (const account of accounts) {
+      const option = document.createElement('option');
+      option.value = account.account;
+      option.textContent = account.account;
+      select.append(option);
+    }
+    select.value = current;
+    $('carbon-ledger').textContent = ledger
+      ? `Ledger: ${ledger.ledger ?? 'present'} · ${ledger.years ?? '—'} years${ledger.package ? ` · ${ledger.package}` : ''}`
+      : 'No carbon ledger recorded for this run.';
+    renderCarbonComposition();
+    renderCarbonCompare();
+    renderCarbonFiles();
+    drawCarbonChart();
+  } catch (error) {
+    state.carbon = null;
+    state.carbonAccount = '';
+    meta.replaceChildren();
+    select.replaceChildren();
+    select.disabled = true;
+    status.textContent = `carbon unavailable: ${error.message}`;
+    renderCarbonComposition();
+    renderCarbonCompare();
+    renderCarbonFiles();
+    drawCarbonChart();
+  }
+}
+
 async function loadLayers() {
   const hint = $('layers-hint');
   try {
@@ -2083,7 +2299,7 @@ async function loadPeriods() {
 
 function applySkin(skin) {
   state.skin = skin;
-  const panels = new Set(skin.panels ?? ['legend', 'lidar', 'targets', 'reports', 'comparison']);
+  const panels = new Set(skin.panels ?? ['legend', 'lidar', 'carbon', 'targets', 'reports', 'comparison']);
   for (const button of document.querySelectorAll('nav.tabs button')) {
     button.hidden = !panels.has(button.dataset.tab);
   }
@@ -2936,7 +3152,7 @@ async function finishRun(id) {
   try {
     const summary = await api('api/summary');
     if (await fillRuns(summary, id)) {
-      await loadPeriods(); await loadLayers(); await loadLidar(); await loadTargets(); await loadReports(); await loadMap();
+      await loadPeriods(); await loadLayers(); await loadLidar(); await loadCarbon(); await loadTargets(); await loadReports(); await loadMap();
     }
   } catch { /* the run is done; a refresh failure is not fatal */ }
   window.setTimeout(() => { $('run-panel').hidden = true; }, 6000);
@@ -3570,6 +3786,10 @@ function wireControls() {
     updateLidarRange();
     loadMap();
   });
+  $('carbon-account').addEventListener('change', (event) => {
+    state.carbonAccount = event.target.value;
+    drawCarbonChart();
+  });
   $('run').addEventListener('change', async (event) => {
     state.run = event.target.value;
     await loadSkins();
@@ -3577,6 +3797,7 @@ function wireControls() {
     await loadPeriods();
     await loadLayers();
     await loadLidar();
+    await loadCarbon();
     await loadTargets();
     await loadReports();
     syncCompareRuns();
@@ -3682,9 +3903,11 @@ function wireControls() {
     button.addEventListener('click', () => {
       for (const other of document.querySelectorAll('nav.tabs button')) other.classList.toggle('active', other === button);
       const tab = button.dataset.tab;
-      for (const name of ['legend', 'lidar', 'targets', 'reports', 'comparison', 'search']) $(`tab-${name}`).hidden = name !== tab;
+      for (const name of ['legend', 'lidar', 'carbon', 'targets', 'reports', 'comparison', 'search']) $(`tab-${name}`).hidden = name !== tab;
       if (tab === 'lidar') {
         loadLidar();
+      } else if (tab === 'carbon') {
+        loadCarbon();
       } else if (tab === 'comparison') {
         syncCompareRuns();
         loadComparison();
@@ -3756,6 +3979,7 @@ async function start() {
     await loadPeriods();
     await loadLayers();
     await loadLidar();
+    await loadCarbon();
     await loadTargets();
     await loadReports();
     await loadMap();

@@ -58,6 +58,36 @@ SEARCH_JOB_LIMIT: int = 20
 
 _REPORT_SUFFIXES = {".csv", ".html", ".png", ".json", ".txt"}
 
+#: Carbon pool columns grouped for the web summary. Each group is summed per timestep.
+_CARBON_POOL_GROUPS = {
+    "Biomass": (
+        "SoftwoodMerch",
+        "SoftwoodFoliage",
+        "SoftwoodOther",
+        "SoftwoodCoarseRoots",
+        "SoftwoodFineRoots",
+        "HardwoodMerch",
+        "HardwoodFoliage",
+        "HardwoodOther",
+        "HardwoodCoarseRoots",
+        "HardwoodFineRoots",
+    ),
+    "DOM and soil": (
+        "AboveGroundVeryFastSoil",
+        "BelowGroundVeryFastSoil",
+        "AboveGroundFastSoil",
+        "BelowGroundFastSoil",
+        "MediumSoil",
+        "AboveGroundSlowSoil",
+        "BelowGroundSlowSoil",
+        "SoftwoodStemSnag",
+        "SoftwoodBranchSnag",
+        "HardwoodStemSnag",
+        "HardwoodBranchSnag",
+    ),
+    "Products": ("Products",),
+}
+
 #: Canonical LiDAR field products, longest prefix first, and their display unit.
 _LIDAR_PRODUCTS = (
     ("vri_closure", "VRI closure", "%"),
@@ -783,6 +813,7 @@ def create_app(
             and (
                 (directory / "summary.json").is_file()
                 or (directory / "account_values.csv").is_file()
+                or (directory / "carbon_manifest.json").is_file()
             )
         ]
 
@@ -1640,6 +1671,9 @@ def create_app(
             if summary_path.is_file():
                 kind = "search"
                 summary = json.loads(summary_path.read_text(encoding="utf-8"))
+            elif (directory / "carbon_manifest.json").is_file():
+                kind = "carbon"
+                summary = {"status": "ok", "kind": kind}
             else:
                 kind = "simulate"
                 summary = {"status": "ok", "kind": kind}
@@ -1652,6 +1686,130 @@ def create_app(
         info = dict(lidar_dataset())
         info.pop("blocks", None)
         return info
+
+    @app.get("/api/runs/{run}/carbon")
+    def carbon_info(run: str) -> dict[str, Any]:
+        """Return the run's carbon artifacts, aggregated for the browser."""
+        directory = run_dir(run)
+        manifest: dict[str, Any] = {}
+        manifest_path = directory / "carbon_manifest.json"
+        if manifest_path.is_file():
+            try:
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                manifest = {}
+        ledger: dict[str, Any] | None = None
+        ledger_path = directory / "carbon_ledger.json"
+        if ledger_path.is_file():
+            try:
+                ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                ledger = None
+
+        accounts: list[dict[str, Any]] = []
+        account_path = directory / "carbon_accounts.csv"
+        if not account_path.is_file() and (directory / "account_values.csv").is_file():
+            account_path = directory / "account_values.csv"
+        if account_path.is_file():
+            frame = pd.read_csv(account_path)
+            if "account" in frame.columns and "value" in frame.columns:
+                frame = frame[frame["account"].astype(str).str.startswith("carbon.")]
+                time_column = "offset" if "offset" in frame.columns else "timestep"
+                if time_column in frame.columns:
+                    for account, group in frame.groupby("account", sort=True):
+                        points = [
+                            {"offset": int(float(str(offset))), "value": float(value)}
+                            for offset, value in zip(
+                                group[time_column].tolist(), group["value"].tolist(), strict=False
+                            )
+                            if not pd.isna(value)
+                        ]
+                        if points:
+                            accounts.append({"account": str(account), "values": points})
+
+        pools: dict[str, Any] | None = None
+        pools_path = directory / "carbon_pools.csv"
+        if pools_path.is_file():
+            frame = pd.read_csv(pools_path)
+            time_column = "timestep" if "timestep" in frame.columns else "offset"
+            if time_column in frame.columns:
+                numeric = [
+                    str(column)
+                    for column in frame.columns
+                    if column not in ("identifier", "timestep", "offset")
+                    and pd.api.types.is_numeric_dtype(frame[column])
+                ]
+                grouped = frame.groupby(time_column)[numeric].sum()
+                timesteps = [int(float(str(value))) for value in grouped.index.tolist()]
+                series = [
+                    {"name": name, "values": [float(value) for value in grouped[name].tolist()]}
+                    for name in numeric
+                ]
+                composition = []
+                for label, names in _CARBON_POOL_GROUPS.items():
+                    present = [name for name in names if name in grouped.columns]
+                    if not present:
+                        continue
+                    values = [float(value) for value in grouped[present].sum(axis=1).tolist()]
+                    composition.append({"name": label, "values": values})
+                pools = {
+                    "timesteps": timesteps,
+                    "series": series,
+                    "composition": composition,
+                }
+
+        flux: dict[str, Any] | None = None
+        flux_path = directory / "carbon_flux.csv"
+        if flux_path.is_file():
+            frame = pd.read_csv(flux_path)
+            time_column = "timestep" if "timestep" in frame.columns else "offset"
+            if time_column in frame.columns:
+                numeric = [
+                    str(column)
+                    for column in frame.columns
+                    if column not in ("identifier", "timestep", "offset")
+                    and pd.api.types.is_numeric_dtype(frame[column])
+                ]
+                grouped = frame.groupby(time_column)[numeric].sum()
+                flux = {
+                    "timesteps": [int(float(str(value))) for value in grouped.index.tolist()],
+                    "series": [
+                        {"name": name, "values": [float(value) for value in grouped[name].tolist()]}
+                        for name in numeric
+                    ],
+                }
+
+        gcbm: dict[str, Any] | None = None
+        compare_path = directory / "gcbm_compare.csv"
+        if compare_path.is_file():
+            frame = pd.read_csv(compare_path)
+            gcbm = {
+                "columns": [str(column) for column in frame.columns],
+                "rows": [
+                    {str(key): value for key, value in row.items()}
+                    for row in frame.to_dict(orient="records")
+                ],
+            }
+        files = [
+            {"name": path.name, "bytes": path.stat().st_size}
+            for path in sorted(directory.iterdir())
+            if path.is_file()
+            and (
+                path.name.startswith("carbon_")
+                or path.name in {"gcbm_compare.csv", "gcbm_manifest.json"}
+            )
+        ]
+        available = bool(manifest or accounts or pools or flux or ledger or gcbm)
+        return {
+            "available": available,
+            "manifest": manifest,
+            "ledger": ledger,
+            "accounts": accounts,
+            "pools": pools,
+            "flux": flux,
+            "gcbm": gcbm,
+            "files": files,
+        }
 
     @app.get("/api/runs/{run}/summary")
     def run_summary(run: str) -> dict[str, Any]:
@@ -1672,7 +1830,13 @@ def create_app(
         account: str | None = Query(default=None),
     ) -> list[dict[str, Any]]:
         """Return realized account values, optionally filtered by year and account."""
-        frame = read_csv(run_dir(run), "account_values.csv")
+        directory = run_dir(run)
+        if (directory / "account_values.csv").is_file():
+            frame = read_csv(directory, "account_values.csv")
+        elif (directory / "carbon_accounts.csv").is_file():
+            frame = read_csv(directory, "carbon_accounts.csv")
+        else:
+            raise HTTPException(status_code=404, detail="the run has no account_values.csv")
         if year is not None:
             frame = frame[frame["offset"] == year]
         if account is not None:
@@ -2013,6 +2177,14 @@ def create_app(
                 offsets.update(int(value) for value in frame["period"].astype("int64").tolist())
         elif (directory / "account_values.csv").is_file():
             frame = read_csv(directory, "account_values.csv")
+            if not frame.empty and "offset" in frame.columns:
+                offsets.update(
+                    int(value)
+                    for value in frame["offset"].astype("int64").tolist()
+                    if int(value) >= 0
+                )
+        elif (directory / "carbon_accounts.csv").is_file():
+            frame = read_csv(directory, "carbon_accounts.csv")
             if not frame.empty and "offset" in frame.columns:
                 offsets.update(
                     int(value)
