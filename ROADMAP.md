@@ -56,7 +56,7 @@ exists and the maintainer approves it.
 | P48 Ground-plot volume and DBH validation | #324 | `feature/p48-ground-plots` | complete |
 | P49 Managed/young validation pre-registration | #335 | `feature/p49-preregistration` | complete |
 | P50 Runtime provenance and release verification | #345 | `feature/p50-runtime-provenance` | complete |
-| P51 Forest carbon accounting and carbon-aware planning | #357 | `feature/p51-carbon` | active |
+| P51 Forest carbon accounting and carbon-aware planning | #357 | `feature/p51-carbon` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -1501,7 +1501,7 @@ Acceptance:
 
 Parent issue: #357
 Branch: `feature/p51-carbon`
-Status: active
+Status: pr-open
 
 Goal: make carbon a first-class, reproducible outcome of a WS4 run and a target the optimizer can
 search against, using libcbm as the engine and FEMIC as the producer of the carbon input package.
@@ -1522,7 +1522,7 @@ See `notes/design/ws4-carbon.md`.
 - [x] P51.7 Add carbon targets to the optimizer (#364)
 - [x] P51.8 Validate carbon-aware planning on TSA24 and MKRF (#365)
 - [x] P51.9 Consume GCBM outputs and compare spatial carbon (#366)
-- [ ] P51.10 Document, release, and close out the carbon phase (#367)
+- [x] P51.10 Document, release, and close out the carbon phase (#367)
 
 Acceptance:
 
@@ -1535,6 +1535,8 @@ Acceptance:
   exact engine.
 - TSA24 and MKRF carbon-aware runs are recorded with their trade-offs and runtimes.
 - GCBM outputs can be ingested and compared without making FLINT a WS4 runtime dependency.
+
+Closeout report: `notes/reports/p51-closeout.md`.
 
 ## Detailed Next Steps Notes
 

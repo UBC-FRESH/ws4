@@ -2617,3 +2617,8 @@ issue comments.
   `compare_gcbm_to_carbon` and `--compare-carbon` are ready; a same-landscape TSA24/MKRF
   comparison is deferred until the FEMIC walltowall export (P115.4). Report:
   `notes/reports/p519-gcbm-results.md`. Dashboard **GREEN**.
+
+- P51.10: queued the phase closeout. The closeout report is
+  `notes/reports/p51-closeout.md`; the roadmap status is `pr-open`. Remaining deferred
+  items are the full TSA24 landscape search, the same-landscape GCBM comparison (needs
+  P115.4), species-resolved curves/crosswalk review, and CBM4. Dashboard **GREEN**.
