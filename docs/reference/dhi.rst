@@ -12,7 +12,9 @@ The pilot uses the SILVIS Lab **MODIS 6.1 Terra NDVI Composite RGB** product for
 2003-2022 at 500 m, in EPSG:4326. The three bands are cumulative DHI (``cum``),
 minimum DHI (``min``), and variation DHI (``var``); the delivered 8-bit values are
 divided by 255. The source is public with no restrictions; see
-<https://silvis.forest.wisc.edu/data/dhis/>.
+<https://silvis.forest.wisc.edu/data/dhis/>. The public page also lists annual
+1 km zips; the WCS subset used here is the 2003-2022 composite. No annual layer is
+claimed by this pilot.
 
 A DHI source descriptor is required whenever values are used. It records:
 
