@@ -2877,3 +2877,8 @@ issue comments.
 - P63.4: added `scripts/check_ui_shell.py` and verified 1024×768, 1194×834, 1366×1024, and
   1500×1000 with no horizontal page scroll and usable map widths. LiDAR, carbon, compare, and
   target browser smokes pass. Dashboard **GREEN**.
+
+- P63 close-out: pull request #447 squash-merged as `63a39ef`; parent #442 and tasks
+  #443/#444/#445/#446 closed; status set complete. The four-workspace shell, URL/keyboard
+  navigation, Data sub-navigation, and iPad landscape evidence are recorded in
+  `notes/reports/p63-closeout.md`.
