@@ -63,6 +63,15 @@ the view. The workspace tabs implement the WAI-ARIA tabs pattern with left/right
 Home, and End navigation. LiDAR and Carbon are nested Data sections rather than top-level
 tabs; a Data option is hidden when the selected data does not exist.
 
+Assistant panel
+---------------
+
+The assistant panel and its drag splitter are rendered only when the service was started
+with ``--allow-agent`` **and** the ``opencode`` binary is available. Without both, the panel
+is absent and occupies no vertical space; the rest of the sidebar uses the recovered height.
+The browser cannot enable the assistant, because doing so would change the service's execution
+permissions. Start a separate service with ``--allow-agent`` when the assistant is wanted.
+
 Behind a proxy
 ---------------
 

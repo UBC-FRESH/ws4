@@ -68,6 +68,7 @@ exists and the maintainer approves it.
 | P63 UI foundation for desktop and iPad landscape | #442 | `feature/p63-ui-foundation` | complete |
 | P64 Patchworks-style target charts | #456 | `feature/p64-target-charts` | complete |
 | P65 Editable target charts | #464 | `feature/p65-editable-targets` | complete |
+| P66 Assistant panel visibility | #473 | `feature/p66-assistant-visibility` | active |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2021,6 +2022,22 @@ Acceptance:
 - All-period edits create missing rows.
 - Save validates through the normal targets loader and refreshes chart and table.
 - `python scripts/dashboard.py` is green.
+
+## Phase 66: Assistant panel visibility
+
+Parent issue: #473
+Branch: `feature/p66-assistant-visibility`
+Status: active
+
+Goal: stop the assistant panel from consuming sidebar space when the service has no agent.
+
+- [ ] P66.1 Hide the assistant panel when the service has no agent (#474)
+
+Acceptance:
+
+- A service without `--allow-agent` uses zero vertical space for the assistant.
+- A service with an enabled, available assistant keeps the panel.
+- Browser check and dashboard are green.
 
 ## Detailed Next Steps Notes
 
