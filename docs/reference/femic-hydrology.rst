@@ -141,7 +141,7 @@ Pass exactly one of a direct ``BUNDLE`` argument or ``--dataset``.
 Validation Evidence
 -------------------
 
-P59.1 reads the optional FEMIC validation-report and model-card artifacts. The
+P60.1 reads the optional FEMIC validation-report and model-card artifacts. The
 readiness command is a report, not a gate:
 
 .. code-block:: bash
@@ -161,14 +161,14 @@ Statuses:
 The report carries the producer validation/model-card IDs, review status,
 usable fits, tail-check failures, benchmark pass/fail/not-evaluated counts,
 full-pilot readiness, and a deterministic evidence digest. Missing evidence is
-reported as missing; it is never treated as approval. The P59.1 command does
+reported as missing; it is never treated as approval. The P60.1 command does
 not refuse screening or optimization; a later policy task decides how the
 evidence gates use.
 
 Readiness Policies
 -------------------
 
-P59.2 gates use on the readiness report:
+P60.2 gates use on the readiness report:
 
 - ``allow_provisional`` (default): allow missing/provisional evidence with the
   recorded warnings, but a tail-check block still refuses.

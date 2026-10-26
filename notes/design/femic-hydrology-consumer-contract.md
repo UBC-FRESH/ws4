@@ -127,7 +127,7 @@ This is an objective-screening surface, not a simulator output and not a
 schedule-specific process simulation. The run must retain the screening-only
 and hydrologist-review caveats.
 
-## P59.1 validation-evidence decision
+## P60.1 validation-evidence decision
 
 Readiness is a separate report from bundle validity. A bundle can be
 structurally valid and still have no model card, a `not_reviewed` card, or a
@@ -139,11 +139,11 @@ Tail-check failures always produce `blocked`; review status never overrides
 them. Missing evidence produces `not_available`, not approval. The evidence
 digest is deterministic over the bundle pin and evidence summary.
 
-P59.1 only reports. A later task decides whether screening/optimizer use
+P60.1 only reports. A later task decides whether screening/optimizer use
 requires `ready`, an explicit provisional override, or a tail-check-specific
 policy.
 
-## P59.2 readiness-policy decision
+## P60.2 readiness-policy decision
 
 `enforce_hydrology_readiness` maps evidence to use:
 

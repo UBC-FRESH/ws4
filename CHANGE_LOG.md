@@ -2787,7 +2787,7 @@ issue comments.
   public-watershed pilot/tail-check hardening phase, or FHOPS Phase 15 after its
   P14 LidarBC phase merges.
 
-- P59.1: added FEMIC validation-evidence readiness reporting.
+- P60.1: added FEMIC validation-evidence readiness reporting.
   `assess_femic_hydrology_readiness` reads optional `validation_report` and
   `model_card` artifacts and reports `not_available`, `provisional`,
   `conditionally_ready`, `ready`, or `blocked`, with review status, usable fits,
@@ -2798,7 +2798,7 @@ issue comments.
   malformed/mismatched, deterministic, and CLI paths. Dashboard **GREEN**
   (lint, format, types, 121.43 s tests, validator, docs, docstrings).
 
-- P59.2: added readiness gating for hydrology screening and optimization.
+- P60.2: added readiness gating for hydrology screening and optimization.
   `enforce_hydrology_readiness` implements `allow_provisional`,
   `require_reviewed`, and `require_ready`; tail-check blocks refuse under every
   policy, with `allow_tail_failures` as an explicit `allow_provisional`-only
@@ -2808,3 +2808,10 @@ issue comments.
   `readiness_policy`/`allow_tail_failures` to the flood-screen config and four
   policy/CLI/optimizer tests. Dashboard **GREEN** (lint, format, types,
   121.59 s tests, validator, docs, docstrings).
+
+- P60.3: wrote `notes/reports/p60-closeout.md`, recorded the P59-to-P60
+  renumbering collision with the LiDAR UI PR #425, consolidated P60 into a
+  single phase PR, and set P60 to `pr-open`. The hydrology contract suite has 51
+  passing tests; the dashboard is GREEN at the P60.2 evidence head. No merge,
+  tag, release, or settings change was made. Report-commit dashboard **GREEN**
+  (lint, format, types, 113.80 s tests, validator, docs, docstrings).
