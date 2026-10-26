@@ -1681,6 +1681,12 @@ frequency fitting, or surrogate training.
   - [x] Join response ratios and flood-risk rows; refuse outside tolerance.
   - [x] Add CSV/JSON writers and `ws4 hydrology screen`.
   - [x] Add tests, design note, reference docs, roadmap, and changelog.
+- [ ] P57.5 Price optional flood-risk accounts in the optimizer (#407)
+  - [ ] Add the flood-screen config and `FloodRiskModel`.
+  - [ ] Append `flood.*` rows and price normal targets on them.
+  - [ ] Refuse out-of-envelope schedules with the configured penalty.
+  - [ ] Add `--flood-screen-config` to optimize/watch/calibrate.
+  - [ ] Add tests, design note, reference docs, roadmap, and changelog.
 
 Acceptance:
 
