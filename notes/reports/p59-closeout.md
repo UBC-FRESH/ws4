@@ -2,7 +2,7 @@
 
 Phase: P59, LiDAR in the web UI
 Parent issue: #417
-Pull request: this P59 PR
+Pull request: #425
 Status: queued for approval. Not merged.
 Date: 2026-10-26
 
