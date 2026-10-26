@@ -1,6 +1,6 @@
 # WS4 0.2.0
 
-Target release: 2026-10-25
+Target release: 2026-10-26
 
 WS4 0.2.0 turns the 0.1.0 core into a production-facing analyst system: the model still treats
 space as first-class, but the search, map, provenance, target, and provider surfaces are now
@@ -11,6 +11,8 @@ designed for review rather than one-off runs.
 ```bash
 pip install .            # core: build, simulate, optimize, report, validate, ingest
 pip install ".[geo]"     # add the shapefile fragment reader
+pip install ".[lidar]"   # add FEMIC LidarBC mapping dependencies
+pip install ".[carbon]"  # add the optional libcbm carbon engine
 pip install ".[opt]"     # add the optimization extras
 pip install ".[web]"     # add the web UI and map serving extras
 ```
@@ -36,23 +38,57 @@ Requires Python 3.11 or newer, on Linux.
   gate, and CI provider smoke on a tiny fixture.
 - **Reference instances.** Great Bear Rainforest North (TSA 46) and South (TSA 47) remain
   standalone instances with published docs and provenance.
+- **Native FEMIC LiDAR products (P52).** Register and validate versioned LidarBC bundles; map
+  native-resolution slope/CHM and optional VRI/tree evidence to fragments and blocks; and
+  integrate optional `lidar_*` fields with bundle and checksum provenance. The simulator loads the
+  expanded dataset unchanged; no WS4 model semantics consume the fields yet.
+- **Forest carbon accounting (P58).** FEMIC carbon packages, libcbm SIT compilation, the
+  `ws4 carbon` command, carbon accounts and reports, a block-level ledger, and carbon-aware
+  optimizer targets. TSA24/MKRF bounded validation and byte-identical replay are recorded.
+- **Hydrology response screening (P57).** Pinned FEMIC hydrology bundles, explicit reviewed
+  crosswalks, schedule-level flood-risk screening, and optional `flood.*` accounts in the
+  optimizer. This is screening-only; no hydrologist review or operational flood claim is made.
+- **Disturbance events (P56).** A read-only `femic.disturbance.v1` consumer and
+  `ws4 disturbance` report for event year/type/severity and affected blocks. No compiled-dataset,
+  simulator, or optimizer behavior changed.
+- **Route-event cache (P46).** A per-block route-event cache and exact ledger replay for
+  build and maintenance. The c5 warm cache was 8.25x faster than the full path with parity
+  within `1.9e-8`; delivery and `initial_roads: existing` configurations keep the full path.
 
 ## Verification
 
-- Clean-checkout build and test: pass.
-- `python scripts/dashboard.py`: lint, format, strict types, tests, workflow validator, docs, and
-  docstrings all green.
-- sdist and wheel build; `twine check` pass; isolated installs and entry points pass.
-- Synthetic build → validate → simulate → report smoke passes.
-- The ws4 docs, limitations, API, and both GBR instance sites return 200.
+- P53 head: clean-checkout build and test, dashboard, sdist/wheel build, `twine check`, isolated
+  installs, entry points, synthetic build/validate/simulate/report smoke, and Pages checks pass.
+- P52 LiDAR: 61 tests; real TFL 6 bundle map/integrate/simulator load; WS4/FEMIC parity
+  `7.1e-15` and WS4/FHOPS parity `0.0`.
+- P56 disturbance: 13 unit tests and 4 CLI tests; read-only behavior verified.
+- P57 hydrology: 39 contract tests, dashboard green, screening and flood-account pricing tests;
+  public crosswalk and hydrologist review remain open as noted below.
+- P58 carbon: WS3/WS4 TSA24 parity `max_abs = 0.0`; bounded TSA24/MKRF carbon-aware runs were
+  exact-verified; accounts, pools, flux, and manifests replay byte-identically.
+- P46 route events: c5 parity `1.9e-8`; warm cache 0.037 s versus 0.303 s full path.
+- The P55 final 0.2.0 candidate re-runs these gates on the final head. No tag is created without
+  explicit approval.
 
-See `notes/reports/p53-release-candidate.md` for the 0.2.0 evidence.
+See `notes/reports/p53-release-candidate.md` for the 0.2.0 candidate evidence and the P52, P57,
+and P58 close-out reports for the phase evidence.
 
 ## Known gaps
 
-- Route-evaluation performance (P45) profiling and design are included; no incremental route code
-  landed. Forest-carbon accounting (P51) and native LiDAR products (P52) remain later phases and
-  are **not** in 0.2.0.
+- Environmental accounts (P54) are planned for a later phase and are **not** in 0.2.0.
+- Route evaluation: P45 profiling/design and the P46 route-event cache are included; no
+  incremental route evaluator landed. Delivery and opened-road configurations still take the full
+  path.
+- Carbon: the full TSA24 landscape carbon-aware search is not complete; the TSA24 block ledger
+  differs from the exact engine by about 0.03% after disturbances; the same-landscape GCBM
+  comparison awaits the FEMIC walltowall export (P115.4); species-resolved curves/crosswalk review
+  and CBM4 remain deferred.
+- Hydrology: there is no reviewed public crosswalk, hydrologist review, or independent WS4
+  tail-check validation; flood accounts are optimizer-only and whole-schedule; no FHOPS hydrology
+  integration exists.
+- Disturbance events are report-only; no simulator or optimizer semantics consume them.
+- LiDAR fields are persisted dataset evidence; no WS4 operability or optimization constraints
+  consume them yet.
 - Volume/DBH validation is documented but data-limited; the managed/young ground-plot test in
   ADR 0003 remains blocked on management-origin data.
 - Deterministic seeds, bounded searches, and heuristic schedules are not certified optimal.

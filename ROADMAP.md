@@ -58,6 +58,7 @@ exists and the maintainer approves it.
 | P50 Runtime provenance and release verification | #345 | `feature/p50-runtime-provenance` | complete |
 | P51 Release-candidate verification | #351 | `feature/p51-release-candidate` | complete |
 | P53 Version 0.2.0 release preparation | #371 | `feature/p53-v020` | complete |
+| P55 Final 0.2.0 release candidate | #388 | `feature/p55-release-candidate` | pr-open |
 | P56 Disturbance event consumer | #393 | `feature/p56-disturbance-consumer` | complete |
 | P58 Forest carbon accounting and carbon-aware planning | #357 | `feature/p58-carbon` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
@@ -1648,6 +1649,27 @@ Acceptance:
 - The package builds without the license-classifier warning.
 - Clean-checkout, dashboard, artifacts, isolated installs, entry points, and Pages pass.
 - No tag or release is created.
+
+## Phase 55: Final 0.2.0 release candidate
+
+Parent issue: #388
+Branch: `feature/p55-release-candidate`
+Status: pr-open
+
+Goal: produce the final 0.2.0 release candidate after the carbon, LiDAR, hydrology, and
+disturbance work landed, update the release notes, re-run the release gates on the final head,
+and request tag approval.
+
+- [x] P55.1 Update the 0.2.0 notes for P51/P52 and later merged phases (#389)
+- [ ] P55.2 Re-run the final release gates on the final head (#390)
+- [ ] P55.3 Request tag approval and close out (#391)
+
+Acceptance:
+
+- The notes match the final merged head and avoid claiming unfinished work.
+- Known gaps list only still-open work.
+- Clean-checkout, dashboard, artifacts, isolated installs, entry points, and Pages pass.
+- No tag or release is created without explicit approval.
 
 ## Phase 56: Disturbance event consumer
 
