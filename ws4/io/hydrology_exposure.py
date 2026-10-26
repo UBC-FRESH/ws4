@@ -28,6 +28,12 @@ HYDROLOGY_EXPOSURE_FEATURES: tuple[str, ...] = (
     "culvert_count",
     "culvert_exposed_count",
 )
+HYDROLOGY_EXPOSURE_DERIVED_FEATURES: tuple[str, ...] = (
+    "road_built_density_km_per_km2",
+    "road_used_density_km_per_km2",
+    "road_decommissioned_density_km_per_km2",
+    "culvert_exposure_per_km2",
+)
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
 

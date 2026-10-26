@@ -59,6 +59,10 @@ from .io.hydrology import (
     write_hydrology_mapping,
     write_hydrology_screen,
 )
+from .io.hydrology_exposure import (
+    HydrologyExposureError,
+    load_hydrology_exposure,
+)
 from .io.hydrology_preflight import (
     DEFAULT_HYDROLOGY_PREFLIGHT_POLICY,
     build_hydrology_preflight,
@@ -1526,6 +1530,13 @@ def hydrology_screen(
         dir_okay=False,
         help="Optional JSON object of global response covariates",
     ),
+    exposure: Path | None = typer.Option(
+        None,
+        "--exposure",
+        exists=True,
+        dir_okay=False,
+        help="Optional schedule-bound road/culvert exposure JSON",
+    ),
     scenario_tolerance: float = typer.Option(
         0.05,
         "--scenario-tolerance",
@@ -1556,6 +1567,7 @@ def hydrology_screen(
             allow_tail_failures=allow_tail_failures,
         )
         loaded_mapping = load_hydrology_mapping(mapping)
+        loaded_exposure = load_hydrology_exposure(exposure) if exposure is not None else None
         supplied: dict[str, float] = {}
         if covariates is not None:
             payload = json.loads(covariates.read_text(encoding="utf-8"))
@@ -1569,6 +1581,7 @@ def hydrology_screen(
             loaded_mapping,
             schedule,
             mapping_manifest_path=mapping_manifest,
+            exposure=loaded_exposure,
             covariates=supplied,
             scenario_tolerance=scenario_tolerance,
             allow_refused=allow_refused,
@@ -1577,12 +1590,15 @@ def hydrology_screen(
     except (OSError, ValueError, json.JSONDecodeError) as error:
         print(f"[bold red]Hydrology screening failed:[/] {error}")
         raise typer.Exit(code=1) from error
-    except FemicHydrologyError as error:
+    except (FemicHydrologyError, HydrologyExposureError) as error:
         print(f"[bold red]Hydrology screening failed:[/] {error}")
         raise typer.Exit(code=1) from error
     print(f"screen_id: {result.screen_id}")
     print(f"rows: {len(result.rows)}")
     print(f"refusals: {len(result.refusals)}")
+    if result.exposure_id is not None:
+        print(f"exposure_id: {result.exposure_id}")
+        print(f"exposure_sha256: {result.exposure_sha256}")
     for warning in result.warnings:
         print(f"warning: {warning}")
     print(f"screen_csv: {paths['rows']}")

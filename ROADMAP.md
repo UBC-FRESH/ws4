@@ -1919,10 +1919,10 @@ Design note: `notes/design/ws4-hydrology-consumer-hardening.md`.
   - [x] Add the exposure schema, loader, and validation.
   - [x] Bind the table to a schedule hash and require review metadata.
   - [x] Add fixtures, tests, and reference docs.
-- [ ] P62.4 Use exposure in screening and guard the optimizer (#452)
-  - [ ] Add exposure features to one-schedule screening.
-  - [ ] Record exposure identity, schedule hash, and refusals.
-  - [ ] Refuse fixed exposure in the optimizer and add tests/docs.
+- [x] P62.4 Use exposure in screening and guard the optimizer (#452)
+  - [x] Add exposure features to one-schedule screening.
+  - [x] Record exposure identity, schedule hash, and refusals.
+  - [x] Refuse fixed exposure in the optimizer and add tests/docs.
 - [ ] P62.5 Prove the consumer path on a synthetic fixture (#453)
   - [ ] Add the end-to-end fixture and success path.
   - [ ] Add the fail-closed matrix.

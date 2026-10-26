@@ -133,6 +133,10 @@ Direct bundle inspection and validation remain available:
      --mapping build/hydrology_mapping --schedule schedule.csv \
      --out build/hydrology_screen
 
+   ws4 hydrology screen --dataset build/compiled \
+     --mapping build/hydrology_mapping --schedule schedule.csv \
+     --exposure schedule-exposure.json --out build/hydrology_screen
+
 ``validate`` emits a deterministic JSON report by default and exits non-zero on
 an invalid bundle. ``inspect`` prints the bundle pin and artifact roles for a
 valid bundle; an invalid bundle prints the validation report and exits non-zero.
@@ -228,6 +232,31 @@ Load it with ``ws4.io.hydrology_exposure.load_hydrology_exposure``. The
 returned object preserves the file SHA-256, source, review state, declared
 watersheds and periods, and the canonical feature values for a watershed and
 period.
+
+Screening With Exposure
+~~~~~~~~~~~~~~~~~~~~~~~
+
+`hydrology screen --exposure` checks the table's schedule hash against the
+schedule before reading response scenarios. A mismatch refuses. For each mapped
+watershed and period, the screen adds the raw exposure features and these
+calculated densities using the FEMIC watershed area:
+
+- ``road_built_density_km_per_km2``;
+- ``road_used_density_km_per_km2``;
+- ``road_decommissioned_density_km_per_km2``;
+- ``culvert_exposure_per_km2``.
+
+A global covariate may not duplicate an exposure feature. A missing declared
+watershed/period is a refusal, not a zero. The screen manifest records the
+exposure ID, file digest, review state, and ``coverage.exposure_used``. The row
+CSV carries the raw features and derived densities. If no response-surface
+scenario names an exposure feature, the result carries a warning that exposure
+was supplied but not used.
+
+The optimizer does not accept exposure yet. A flood-screen config that names
+``exposure`` or ``exposure_path`` is refused until exposure can be derived for
+each candidate schedule. A fixed table bound to one schedule is not a valid
+optimizer input.
 
 Validation Evidence
 -------------------

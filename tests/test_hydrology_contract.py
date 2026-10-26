@@ -32,6 +32,7 @@ from ws4.io.hydrology import (
     write_hydrology_mapping,
     write_hydrology_screen,
 )
+from ws4.io.hydrology_exposure import load_hydrology_exposure
 from ws4.opt.engine import OptimizeConfig, Optimizer
 from ws4.opt.flood import (
     FloodRiskModel,
@@ -1146,10 +1147,87 @@ def _write_schedule(path: Path) -> Path:
     return path
 
 
+def _exposure_surface_payload() -> dict[str, object]:
+    scenarios = (
+        ("baseline", {"harvest_fraction": 0.0, "road_used_km": 0.0}, 1.0),
+        ("medium", {"harvest_fraction": 0.03, "road_used_km": 1.0}, 1.1),
+        ("high", {"harvest_fraction": 0.06, "road_used_km": 2.0}, 1.2),
+    )
+    return {
+        "schema_version": "femic.hydrology.flood_response.v1",
+        "surface_id": "fixture-surface",
+        "generated_utc": GENERATED_UTC,
+        "station_id": "fixture-station",
+        "method": "nonstationary_gev",
+        "baseline_name": "baseline",
+        "return_periods": [2.0, 100.0],
+        "scenarios": [
+            {"name": name, "covariates": covariates} for name, covariates, _ratio in scenarios
+        ],
+        "summary": {"row_count": len(scenarios) * 2},
+        "rows": [
+            {
+                "scenario_name": name,
+                "return_period": period,
+                "quantile": 120.0 * ratio,
+                "baseline_quantile": 120.0,
+                "ratio": ratio,
+                "difference": 120.0 * (ratio - 1.0),
+            }
+            for name, _covariates, ratio in scenarios
+            for period in (2.0, 100.0)
+        ],
+        "diagnostics": {},
+        "warnings": [],
+        "caveats": ["Synthetic fixture only."],
+    }
+
+
+def _write_exposure(
+    path: Path,
+    schedule: Path,
+    *,
+    watersheds: tuple[str, ...] = ("watershed-1", "watershed-2"),
+    periods: tuple[int, ...] = (0, 1),
+    road_used: dict[tuple[str, int], float] | None = None,
+    schedule_sha256: str | None = None,
+    review_status: str = "reviewed",
+) -> Path:
+    roads = road_used or {}
+    payload = {
+        "schema_version": "ws4.hydrology.exposure.v1",
+        "exposure_id": "exposure-fixture-001",
+        "generated_utc": GENERATED_UTC,
+        "source_id": "synthetic-road-culvert-fixture",
+        "review_status": review_status,
+        "reviewer_id": "reviewer-1" if review_status == "reviewed" else None,
+        "schedule_sha256": schedule_sha256 or hashlib.sha256(schedule.read_bytes()).hexdigest(),
+        "watershed_ids": list(watersheds),
+        "periods": list(periods),
+        "rows": [
+            {
+                "watershed_id": watershed_id,
+                "period": period,
+                "road_built_km": 0.0,
+                "road_used_km": roads.get((watershed_id, period), 0.0),
+                "road_decommissioned_km": 0.0,
+                "culvert_count": 0,
+                "culvert_exposed_count": 0,
+            }
+            for watershed_id in watersheds
+            for period in periods
+        ],
+        "caveats": ["Synthetic exposure fixture only."],
+    }
+    _write_json(path, payload)
+    return path
+
+
 def _screen_fixture(
     root: Path,
     *,
     tail_failures: dict[str, list[str]] | None = None,
+    surface_payload: dict[str, object] | None = None,
 ) -> tuple[Path, FemicHydrologyBundle, Path, Path]:
     dataset = _compiled_dataset(root / "dataset")
     bundle = load_femic_hydrology_bundle(
@@ -1157,7 +1235,7 @@ def _screen_fixture(
             root / "bundle",
             domain_payload=_domain_payload(),
             ledger_payload=_ledger_payload(),
-            response_surface_payload=_screen_surface_payload(),
+            response_surface_payload=surface_payload or _screen_surface_payload(),
             flood_risk_payload=_screen_risk_payload(),
             validation_report_payload=(
                 _validation_evidence_payload(tail_failures=tail_failures)
@@ -1284,6 +1362,190 @@ def test_screen_rejects_unknown_schedule_block(tmp_path: Path) -> None:
 
     with pytest.raises(FemicHydrologyError, match="no explicit FEMIC mapping"):
         screen_schedule_flood_risk(dataset, bundle, mapping, unknown)
+
+
+def test_screen_uses_exposure_and_records_identity(tmp_path: Path) -> None:
+    dataset, bundle, mapping_manifest, schedule = _screen_fixture(
+        tmp_path,
+        surface_payload=_exposure_surface_payload(),
+    )
+    mapping = load_hydrology_mapping(mapping_manifest)
+    exposure_path = _write_exposure(
+        tmp_path / "exposure.json",
+        schedule,
+        road_used={
+            ("watershed-1", 0): 1.0,
+            ("watershed-1", 1): 2.0,
+            ("watershed-2", 1): 1.0,
+        },
+    )
+    exposure = load_hydrology_exposure(exposure_path)
+    screen = screen_schedule_flood_risk(
+        dataset,
+        bundle,
+        mapping,
+        schedule,
+        mapping_manifest_path=mapping_manifest,
+        exposure=exposure,
+        generated_utc=GENERATED_UTC,
+    )
+
+    assert screen.exposure_id == "exposure-fixture-001"
+    assert screen.exposure_sha256 == exposure.sha256
+    assert screen.coverage["exposure_used"] is True
+    assert screen.rows[0]["scenario_name"] == "medium"
+    assert screen.rows[0]["road_used_km"] == pytest.approx(1.0)
+    assert screen.rows[1]["scenario_name"] == "high"
+    assert screen.rows[2]["scenario_name"] == "medium"
+    assert screen.to_dict()["exposure"] == {
+        "exposure_id": "exposure-fixture-001",
+        "exposure_sha256": exposure.sha256,
+        "review_status": "reviewed",
+    }
+
+
+def test_screen_refuses_when_exposure_feature_is_required_but_absent(tmp_path: Path) -> None:
+    dataset, bundle, mapping_manifest, schedule = _screen_fixture(
+        tmp_path,
+        surface_payload=_exposure_surface_payload(),
+    )
+    mapping = load_hydrology_mapping(mapping_manifest)
+
+    screen = screen_schedule_flood_risk(
+        dataset,
+        bundle,
+        mapping,
+        schedule,
+        allow_refused=True,
+        generated_utc=GENERATED_UTC,
+    )
+
+    assert screen.rows == ()
+    assert any("feature tolerance" in str(item["reason"]) for item in screen.refusals)
+
+
+def test_screen_rejects_exposure_schedule_mismatch(tmp_path: Path) -> None:
+    dataset, bundle, mapping_manifest, schedule = _screen_fixture(
+        tmp_path,
+        surface_payload=_exposure_surface_payload(),
+    )
+    mapping = load_hydrology_mapping(mapping_manifest)
+    exposure = load_hydrology_exposure(
+        _write_exposure(
+            tmp_path / "exposure.json",
+            schedule,
+            schedule_sha256="b" * 64,
+        )
+    )
+
+    with pytest.raises(FemicHydrologyError, match="schedule hash"):
+        screen_schedule_flood_risk(
+            dataset,
+            bundle,
+            mapping,
+            schedule,
+            exposure=exposure,
+        )
+
+
+def test_screen_refuses_missing_exposure_watershed(tmp_path: Path) -> None:
+    dataset, bundle, mapping_manifest, schedule = _screen_fixture(
+        tmp_path,
+        surface_payload=_exposure_surface_payload(),
+    )
+    mapping = load_hydrology_mapping(mapping_manifest)
+    exposure = load_hydrology_exposure(
+        _write_exposure(
+            tmp_path / "exposure.json",
+            schedule,
+            watersheds=("watershed-1",),
+            road_used={("watershed-1", 0): 1.0, ("watershed-1", 1): 2.0},
+        )
+    )
+
+    screen = screen_schedule_flood_risk(
+        dataset,
+        bundle,
+        mapping,
+        schedule,
+        exposure=exposure,
+        allow_refused=True,
+        generated_utc=GENERATED_UTC,
+    )
+
+    assert any("no declared row" in str(item["reason"]) for item in screen.refusals)
+
+
+def test_screen_rejects_exposure_covariate_overlap(tmp_path: Path) -> None:
+    dataset, bundle, mapping_manifest, schedule = _screen_fixture(
+        tmp_path,
+        surface_payload=_exposure_surface_payload(),
+    )
+    mapping = load_hydrology_mapping(mapping_manifest)
+    exposure = load_hydrology_exposure(_write_exposure(tmp_path / "exposure.json", schedule))
+
+    with pytest.raises(FemicHydrologyError, match="may not also be supplied"):
+        screen_schedule_flood_risk(
+            dataset,
+            bundle,
+            mapping,
+            schedule,
+            exposure=exposure,
+            covariates={"road_used_km": 1.0},
+        )
+
+
+def test_cli_screen_with_exposure_records_it(tmp_path: Path) -> None:
+    dataset, _bundle_value, mapping_manifest, schedule = _screen_fixture(
+        tmp_path,
+        surface_payload=_exposure_surface_payload(),
+    )
+    _ = _bundle_value
+    exposure = _write_exposure(
+        tmp_path / "exposure.json",
+        schedule,
+        road_used={
+            ("watershed-1", 0): 1.0,
+            ("watershed-1", 1): 2.0,
+            ("watershed-2", 1): 1.0,
+        },
+    )
+    out = tmp_path / "screen-exposure"
+
+    result = runner.invoke(
+        app,
+        [
+            "hydrology",
+            "screen",
+            "--dataset",
+            str(dataset),
+            "--mapping",
+            str(mapping_manifest),
+            "--schedule",
+            str(schedule),
+            "--exposure",
+            str(exposure),
+            "--out",
+            str(out),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "exposure_id: exposure-fixture-001" in result.stdout
+    manifest = json.loads((out / "hydrology_screen.json").read_text(encoding="utf-8"))
+    assert manifest["exposure"]["exposure_id"] == "exposure-fixture-001"
+    assert manifest["coverage"]["exposure_used"] is True
+
+
+def test_flood_config_rejects_exposure(tmp_path: Path) -> None:
+    dataset, config_path = _optimizer_fixture(tmp_path)
+    _ = dataset
+    payload = json.loads(config_path.read_text(encoding="utf-8"))
+    payload["exposure"] = "exposure.json"
+    _write_json(config_path, payload)
+
+    with pytest.raises(FloodRiskRefusalError, match="schedule-derived exposure"):
+        load_flood_screen_config(config_path)
 
 
 def test_load_mapping_round_trip(tmp_path: Path) -> None:

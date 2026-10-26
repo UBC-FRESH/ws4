@@ -2906,3 +2906,12 @@ issue comments.
   It preserves the file SHA-256 and performs no spatial inference. Added the
   synthetic exposure fixture, tests, design note, and reference docs. Dashboard
   **GREEN**.
+
+- P62.4: wired the explicit exposure table into one-schedule screening.
+  `hydrology screen --exposure` checks the schedule hash, rejects overlapping
+  global covariates, refuses missing watershed/period rows, and records the
+  exposure ID/digest/review state. Raw features and calculated densities enter
+  response-scenario selection and the row CSV. The optimizer refuses a
+  flood-screen config that names exposure until schedule-derived exposure can be
+  evaluated per candidate. Added tests, docs, design note, and backlog entry.
+  Dashboard **GREEN**.

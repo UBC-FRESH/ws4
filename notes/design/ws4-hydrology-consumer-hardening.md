@@ -109,6 +109,20 @@ P62.4 lets `hydrology screen` use a valid exposure table for the schedule it
 names. The screen records the exposure identity and schedule hash. If the bundle
 requires an exposure feature that the table does not provide, the screen refuses.
 
+The screen merges the table's raw features with the schedule's harvest fraction:
+`road_built_km`, `road_used_km`, `road_decommissioned_km`, `culvert_count`, and
+`culvert_exposed_count`. It also computes densities from the FEMIC watershed
+area: `road_built_density_km_per_km2`, `road_used_density_km_per_km2`,
+`road_decommissioned_density_km_per_km2`, and `culvert_exposure_per_km2`.
+Those densities are calculated values, not observed road density.
+
+A global covariate may not duplicate an exposure feature. A mapped watershed or
+period missing from the exposure table is a refusal, not a zero. A schedule-hash
+mismatch refuses. The screen records the exposure ID, file digest, review state,
+and a `coverage.exposure_used` flag. If no response-surface scenario names an
+exposure feature, the screen records a warning rather than pretending the table
+affected the result.
+
 The optimizer evaluates many candidate schedules. A fixed exposure table cannot
 be correct for all of them. P62 therefore makes a flood-screen configuration
 that names exposure fail with a specific "not supported until schedule-derived
@@ -117,6 +131,11 @@ exposure exists" error. This is a deliberate negative capability, with a test.
 A later phase may derive exposure from the route network and evaluate it inside
 search. That requires a road-state contract, culvert geometry, and a reviewed
 flood response that uses those features. It is not part of P62.
+
+For now, `load_flood_screen_config` rejects a config that names `exposure` or
+`exposure_path`. The refusal is deliberate: a table bound to one schedule cannot
+be reused across the optimizer's candidate schedules. The capability is recorded
+in `notes/backlog.md`, not hidden behind a default.
 
 ## Fail-closed rules
 
