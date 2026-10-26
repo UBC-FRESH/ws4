@@ -13,6 +13,20 @@ from rich.table import Table
 
 from .build.compiler import build_canonical_dataset
 from .build.legacy import ingest_legacy_matrix
+from .carbon import (
+    CarbonEngineError,
+    GcbmResultsError,
+    build_sit_tables,
+    compare_gcbm_to_carbon,
+    load_carbon_package,
+    merge_carbon_accounts,
+    read_gcbm_results,
+    read_schedule,
+    run_libcbm,
+    write_carbon_run,
+    write_gcbm_results,
+    write_sit_tables,
+)
 from .disturbance import (
     DisturbanceError,
     events_for_block,
@@ -140,6 +154,130 @@ def simulate(
         min_core_area_ha=min_core_area_ha,
     )
     print(f"[bold green]Simulation complete[/] → {out}")
+
+
+@app.command()
+def carbon(
+    dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
+    package: Path = typer.Option(..., exists=True, help="FEMIC carbon package directory"),
+    schedule: Path = typer.Option(..., exists=True, help="CSV: block_id,treatment,offset"),
+    out: Path = typer.Option(..., help="Output directory for the carbon run"),
+    years: int | None = typer.Option(
+        None, help="Annual timesteps; defaults to the latest schedule offset plus one"
+    ),
+    audit_sit: bool = typer.Option(
+        False, "--audit-sit", help="Write the generated SIT tables under carbon_sit/"
+    ),
+    allow_defaults_mismatch: bool = typer.Option(
+        False,
+        "--allow-defaults-mismatch",
+        help="Allow a package/cbm_defaults mismatch for an explicit comparison",
+    ),
+    density: bool = typer.Option(
+        False, "--density", help="Write tC/ha instead of tC in the pool and flux tables"
+    ),
+    merge_into: Path | None = typer.Option(
+        None,
+        "--merge-into",
+        exists=True,
+        help="Optional simulation run directory to receive the carbon accounts",
+    ),
+) -> None:
+    """Run libcbm for a compiled dataset, a carbon package, and a schedule."""
+    schedule_frame = read_schedule(schedule)
+    latest_offset = int(schedule_frame["offset"].max()) if not schedule_frame.empty else -1
+    n_steps = int(years) if years is not None else latest_offset + 1
+    if n_steps <= latest_offset:
+        print("[red]--years must run past the latest scheduled offset[/red]")
+        raise typer.Exit(code=1)
+    try:
+        loaded = load_carbon_package(package)
+        tables = build_sit_tables(loaded, dataset, schedule_frame)
+        if audit_sit:
+            write_sit_tables(tables, out / "carbon_sit")
+        run = run_libcbm(
+            loaded,
+            tables,
+            n_steps=n_steps,
+            density=density,
+            allow_defaults_mismatch=allow_defaults_mismatch,
+        )
+        result = write_carbon_run(
+            run,
+            out,
+            package=loaded,
+            dataset_dir=dataset,
+            schedule=schedule_frame,
+            n_steps=n_steps,
+            density=density,
+        )
+    except CarbonEngineError as exc:
+        print(f"[red]Carbon run failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    except ValueError as exc:
+        print(f"[red]Carbon run failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    if merge_into is not None:
+        try:
+            merge_carbon_accounts(
+                merge_into,
+                result.accounts_path,
+                carbon_manifest=result.manifest_path,
+            )
+        except CarbonEngineError as exc:
+            print(f"[red]Carbon account merge failed:[/red] {exc}")
+            raise typer.Exit(code=1) from exc
+        print(f"[green]Carbon accounts merged[/green] → {merge_into}")
+
+    print(f"[bold green]Carbon run complete[/] → {out}")
+    print(
+        f"timesteps={result.n_steps} ecosystem_start_tc={result.ecosystem_start_tc:.1f} "
+        f"ecosystem_end_tc={result.ecosystem_end_tc:.1f}"
+    )
+    print(f"pools: {result.pools_path}")
+    print(f"flux: {result.flux_path}")
+    print(f"accounts: {result.accounts_path}")
+    print(f"manifest: {result.manifest_path}")
+
+
+@app.command()
+def gcbm(
+    results: Path = typer.Option(..., "--results", exists=True, help="GCBM gcbm_output.db"),
+    out: Path = typer.Option(..., help="Output directory for the GCBM summary"),
+    compare_carbon: Path | None = typer.Option(
+        None,
+        "--compare-carbon",
+        exists=True,
+        help="Optional WS4 carbon run directory to compare against",
+    ),
+) -> None:
+    """Read a raw GCBM results database and optionally compare it with WS4."""
+    try:
+        loaded = read_gcbm_results(results)
+        summary = write_gcbm_results(loaded, out)
+    except GcbmResultsError as exc:
+        print(f"[red]GCBM results failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    print(f"[bold green]GCBM results summarized[/] → {out}")
+    print(
+        f"locations={loaded.locations['location_id'].nunique()} "
+        f"steps={loaded.dates['step'].nunique()} "
+        f"ecosystem_start_tc={summary.ecosystem_start_tc:.1f} "
+        f"ecosystem_end_tc={summary.ecosystem_end_tc:.1f}"
+    )
+    print(f"pools: {summary.pools_path}")
+    print(f"fluxes: {summary.fluxes_path}")
+    print(f"accounts: {summary.accounts_path}")
+    if compare_carbon is not None:
+        carbon_accounts = compare_carbon / "carbon_accounts.csv"
+        if not carbon_accounts.is_file():
+            print(f"[red]Missing WS4 carbon accounts:[/red] {carbon_accounts}")
+            raise typer.Exit(code=1)
+        comparison = compare_gcbm_to_carbon(pd.read_csv(summary.accounts_path), carbon_accounts)
+        comparison_path = out / "gcbm_compare.csv"
+        comparison.to_csv(comparison_path, index=False)
+        max_abs = float(comparison["difference_tc"].abs().max()) if not comparison.empty else 0.0
+        print(f"comparison: {comparison_path} max_abs_tc={max_abs:.3f}")
 
 
 @app.command()
@@ -271,6 +409,12 @@ def optimize(
     block_coordinates: Path = typer.Option(
         None, "--block-coordinates", exists=True, help="Block centroids (CSV: block, x, y)"
     ),
+    carbon_package: Path | None = typer.Option(
+        None,
+        "--carbon-package",
+        exists=True,
+        help="FEMIC carbon package; enables carbon accounts and carbon.* targets",
+    ),
     cooling_mode: str = typer.Option(
         "geometric", "--cooling-mode", help="Temperature schedule: geometric or adaptive"
     ),
@@ -327,6 +471,7 @@ def optimize(
         merge_weight=merge_weight,
         split_weight=split_weight,
         patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",
+        carbon_package_path=str(carbon_package) if carbon_package is not None else "",
         spread_accounts_path=str(spread_accounts) if spread_accounts is not None else "",
         block_coordinates_path=str(block_coordinates) if block_coordinates is not None else "",
         cooling_mode=cooling_mode,

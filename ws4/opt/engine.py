@@ -17,7 +17,7 @@ from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
@@ -83,6 +83,9 @@ from .solvers import (
     solve_threshold,
 )
 from .telemetry import RunLogger
+
+if TYPE_CHECKING:
+    from ..carbon.ledger import CarbonLedger
 
 
 def load_schedule_csv(path: Path) -> Schedule:
@@ -292,6 +295,9 @@ class OptimizeConfig:
         Whether to pre-warm the per-block delta cache before the search.
     patch_accounts_path : str
         The patch account definitions, enabling the patch size-distribution targets.
+    carbon_package_path : str
+        The FEMIC carbon package. When set, carbon accounts are added to the objective and
+        the run report, and ``carbon.*`` targets are allowed.
     spread_accounts_path : str
         A YAML file of spread-connectivity account definitions; needs ``topology_path`` for the
         adjacency and ``block_coordinates_path`` for the bearings.
@@ -355,6 +361,7 @@ class OptimizeConfig:
     coalesce_max_area_ha: float = 40.0
     warm_cache: bool = False
     patch_accounts_path: str = ""
+    carbon_package_path: str = ""
     spread_accounts_path: str = ""
     block_coordinates_path: str = ""
     merge_weight: float = 0.0
@@ -450,6 +457,7 @@ class Optimizer:
         self._last_values: pd.DataFrame | None = None
         self._delta_cache: dict[tuple[int, Chain], dict[tuple[int, str], float]] = {}
         self._route_delta_cache: dict[tuple[int, Chain], dict[tuple[int, str], float]] = {}
+        self._carbon_ledger_cache: CarbonLedger | None = None
         self._route_event_cache: dict[tuple[int, Chain, int], tuple[RouteEvent, ...]] = {}
         self.constraint_guard = ConstraintGuard(self)
         self.registry = self.constraint_guard.wrap(self.registry)
@@ -704,6 +712,27 @@ class Optimizer:
             self._patch_accounts_cache = load_patch_accounts(Path(self.cfg.patch_accounts_path))
         return self._patch_accounts_cache
 
+    def carbon_ledger(self) -> CarbonLedger | None:
+        """Return the block-level carbon ledger when a package is configured.
+
+        Returns
+        -------
+        CarbonLedger or None
+            The ledger, or None when the run names no carbon package.
+        """
+        if not self.cfg.carbon_package_path:
+            return None
+        if self._carbon_ledger_cache is None:
+            from ..carbon.ledger import CarbonLedger
+            from ..carbon.package import load_carbon_package
+
+            self._carbon_ledger_cache = CarbonLedger(
+                self.dataset_dir,
+                load_carbon_package(Path(self.cfg.carbon_package_path)),
+                self.cfg.years,
+            )
+        return self._carbon_ledger_cache
+
     def spread_accounts(self) -> tuple[SpreadAccount, ...]:
         """Return the spread-connectivity accounts the configuration names, loaded once.
 
@@ -858,6 +887,17 @@ class Optimizer:
             )
         elif duplicate_accounts:
             values = resolve_account_values(values, None, duplicate_accounts)
+        carbon = self.carbon_ledger()
+        if carbon is not None:
+            rows = [
+                {"offset": offset, "account": account, "value": value}
+                for (offset, account), value in carbon.schedule_values(schedule).items()
+            ]
+            if rows:
+                values = pd.concat(
+                    [values, pd.DataFrame(rows, columns=["offset", "account", "value"])],
+                    ignore_index=True,
+                )
         return values
 
     def _base_values(self) -> dict[tuple[int, str], float]:
@@ -879,6 +919,9 @@ class Optimizer:
             (int(str(row.offset)), str(row.account)): float(str(row.value))
             for row in values.itertuples(index=False)
         }
+        carbon = self.carbon_ledger()
+        if carbon is not None:
+            base.update(carbon.base_values())
         self._base_cache = base
         return base
 
@@ -922,6 +965,10 @@ class Optimizer:
             cell: treated.get(cell, 0.0) - empty.get(cell, 0.0)
             for cell in set(treated) | set(empty)
         }
+        carbon = self.carbon_ledger()
+        if carbon is not None:
+            for cell, value in carbon.block_delta(block, chain, accounts).items():
+                delta[cell] = delta.get(cell, 0.0) + value
         delta = {cell: value for cell, value in delta.items() if value != 0.0}
         self._delta_cache[key] = delta
         return delta
@@ -1229,6 +1276,24 @@ class Optimizer:
             workers=self.cfg.workers if workers is None else workers,
         )
 
+    def _require_carbon_target_support(self, targets: Sequence[Target]) -> None:
+        """Reject carbon targets when no carbon package is configured.
+
+        Parameters
+        ----------
+        targets : sequence of Target
+            The loaded targets.
+
+        Raises
+        ------
+        ValueError
+            When a carbon target is present without a package.
+        """
+        if any(target.account.startswith("carbon.") for target in targets) and (
+            not self.cfg.carbon_package_path
+        ):
+            raise ValueError("carbon targets need a carbon package; set --carbon-package")
+
     def _solve(
         self,
         seed: int,
@@ -1269,6 +1334,7 @@ class Optimizer:
             The best schedule and its objective.
         """
         targets = load_targets(Path(self.cfg.targets_path)) if self.cfg.targets_path else []
+        self._require_carbon_target_support(targets)
         control = RunControl(Path(self.cfg.control_path)) if self.cfg.control_path else None
         candidates = self.candidates()
 
@@ -1594,6 +1660,29 @@ class Optimizer:
             core_buffer_m=self.cfg.core_buffer_m,
             min_core_area_ha=self.cfg.min_core_area_ha,
         )
+        carbon = self.carbon_ledger()
+        if carbon is not None:
+            carbon_rows = [
+                {"offset": offset, "account": account, "value": value}
+                for (offset, account), value in carbon.schedule_values(best).items()
+            ]
+            if carbon_rows:
+                values = pd.concat(
+                    [values, pd.DataFrame(carbon_rows, columns=["offset", "account", "value"])],
+                    ignore_index=True,
+                )
+            (out_dir / "carbon_ledger.json").write_text(
+                json.dumps(
+                    {
+                        "package": self.cfg.carbon_package_path,
+                        "years": self.cfg.years,
+                        "ledger": "block-level",
+                    },
+                    indent=2,
+                    sort_keys=True,
+                ),
+                encoding="utf-8",
+            )
         # The patch accounts are not additive, so the simulator reports them in their own file
         # rather than in the account values. Fold them in, or a patch target would be priced
         # against a missing row: a zero value carrying its whole penalty.
@@ -1611,6 +1700,7 @@ class Optimizer:
                     [values, melted[["offset", "account", "value"]]], ignore_index=True
                 )
         self._last_values = values
+        values.to_csv(out_dir / "account_values.csv", index=False)
         write_report(values, targets, out_dir)
         ending = ending_inventory(values)
         ending_offset = int(ending["offset"].iloc[0]) if not ending.empty else -1
