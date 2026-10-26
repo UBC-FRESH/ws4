@@ -1,27 +1,27 @@
-# P57 closeout: forest carbon accounting and carbon-aware planning
+# P58 closeout: forest carbon accounting and carbon-aware planning
 
 Date: 2026-10-26
-Phase: P57
+Phase: P58
 Parent issue: #357
-Branch: `feature/p57-carbon`
+Branch: `feature/p58-carbon`
 
 ## 1. What the phase delivered
 
-P57 made carbon a first-class, reproducible outcome of a WS4 run and a target the
+P58 made carbon a first-class, reproducible outcome of a WS4 run and a target the
 optimizer can search against. It did so without changing the compiled-dataset contract:
 the carbon package is a separate FEMIC-produced input, and libcbm is an optional engine.
 
 Delivered:
 
-- A typed, closed-schema carbon package loader and track-name join (`P57.1`).
-- A SIT compiler from the package, compiled dataset, and schedule (`P57.2`).
-- A libcbm driver with a pinned optional extra and the `ws4 carbon` command (`P57.3`).
-- Carbon accounts merged into simulation runs and the standard report (`P57.4`).
-- WS3 parity, mass-balance/account reconciliation, and byte-level replay (`P57.5`).
-- A block-level carbon ledger (`P57.6`).
-- Carbon targets in the optimizer with exact per-block CBM deltas (`P57.7`).
-- Real TSA24 and MKRF validation on bounded spatial subsets (`P57.8`).
-- A GCBM results reader and comparison surface (`P57.9`).
+- A typed, closed-schema carbon package loader and track-name join (`P58.1`).
+- A SIT compiler from the package, compiled dataset, and schedule (`P58.2`).
+- A libcbm driver with a pinned optional extra and the `ws4 carbon` command (`P58.3`).
+- Carbon accounts merged into simulation runs and the standard report (`P58.4`).
+- WS3 parity, mass-balance/account reconciliation, and byte-level replay (`P58.5`).
+- A block-level carbon ledger (`P58.6`).
+- Carbon targets in the optimizer with exact per-block CBM deltas (`P58.7`).
+- Real TSA24 and MKRF validation on bounded spatial subsets (`P58.8`).
+- A GCBM results reader and comparison surface (`P58.9`).
 
 ## 2. Evidence
 
@@ -40,10 +40,10 @@ Delivered:
 
 Reports:
 
-- `notes/reports/p575-parity.md`
-- `notes/reports/p577-carbon-optimizer.md`
-- `notes/reports/p578-carbon-validation.md`
-- `notes/reports/p579-gcbm-results.md`
+- `notes/reports/p585-parity.md`
+- `notes/reports/p587-carbon-optimizer.md`
+- `notes/reports/p588-carbon-validation.md`
+- `notes/reports/p589-gcbm-results.md`
 
 ## 3. Boundaries and deferred work
 
@@ -73,7 +73,7 @@ ws4 gcbm --results gcbm_output.db --out <out>
 
 ## 5. Closeout state
 
-- Child tasks P57.1 to P57.10 are closed or recorded with their deferral above.
-- The phase branch is `feature/p57-carbon`.
-- Pull request: #408, approved for squash-merge from `feature/p57-carbon` to `main`.
+- Child tasks P58.1 to P58.10 are closed or recorded with their deferral above.
+- The phase branch is `feature/p58-carbon`.
+- Pull request: #408, approved for squash-merge from `feature/p58-carbon` to `main`.
 - Parent #357 closes after the merge; the branch is deleted after the merge.

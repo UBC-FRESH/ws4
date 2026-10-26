@@ -59,7 +59,7 @@ exists and the maintainer approves it.
 | P51 Release-candidate verification | #351 | `feature/p51-release-candidate` | complete |
 | P53 Version 0.2.0 release preparation | #371 | `feature/p53-v020` | complete |
 | P56 Disturbance event consumer | #393 | `feature/p56-disturbance-consumer` | complete |
-| P57 Forest carbon accounting and carbon-aware planning | #357 | `feature/p57-carbon` | complete |
+| P58 Forest carbon accounting and carbon-aware planning | #357 | `feature/p58-carbon` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -1667,10 +1667,10 @@ Acceptance:
 - `ws4 disturbance --json` emits a stable summary.
 - No compiled-dataset, simulator, or optimizer behavior changes.
 
-## Phase 57: Forest carbon accounting and carbon-aware planning
+## Phase 58: Forest carbon accounting and carbon-aware planning
 
 Parent issue: #357
-Branch: `feature/p57-carbon`
+Branch: `feature/p58-carbon`
 Status: complete
 
 Goal: make carbon a first-class, reproducible outcome of a WS4 run and a target the optimizer can
@@ -1683,16 +1683,16 @@ ledger that reuses CBM's stand-level additivity, or through a clearly labeled su
 ledger cannot meet the search budget. The final schedule is always verified with the exact engine.
 See `notes/design/ws4-carbon.md`.
 
-- [x] P57.1 Load and validate FEMIC carbon packages (#358)
-- [x] P57.2 Compile CBM SIT tables from a WS4 dataset and schedule (#359)
-- [x] P57.3 Add the libcbm driver and the `ws4 carbon` command (#360)
-- [x] P57.4 Integrate carbon accounts, reports, and provenance (#361)
-- [x] P57.5 Validate parity, mass balance, and deterministic replay (#362)
-- [x] P57.6 Build the block-level carbon ledger (#363)
-- [x] P57.7 Add carbon targets to the optimizer (#364)
-- [x] P57.8 Validate carbon-aware planning on TSA24 and MKRF (#365)
-- [x] P57.9 Consume GCBM outputs and compare spatial carbon (#366)
-- [x] P57.10 Document, release, and close out the carbon phase (#367)
+- [x] P58.1 Load and validate FEMIC carbon packages (#358)
+- [x] P58.2 Compile CBM SIT tables from a WS4 dataset and schedule (#359)
+- [x] P58.3 Add the libcbm driver and the `ws4 carbon` command (#360)
+- [x] P58.4 Integrate carbon accounts, reports, and provenance (#361)
+- [x] P58.5 Validate parity, mass balance, and deterministic replay (#362)
+- [x] P58.6 Build the block-level carbon ledger (#363)
+- [x] P58.7 Add carbon targets to the optimizer (#364)
+- [x] P58.8 Validate carbon-aware planning on TSA24 and MKRF (#365)
+- [x] P58.9 Consume GCBM outputs and compare spatial carbon (#366)
+- [x] P58.10 Document, release, and close out the carbon phase (#367)
 
 Acceptance:
 
@@ -1706,7 +1706,7 @@ Acceptance:
 - TSA24 and MKRF carbon-aware runs are recorded with their trade-offs and runtimes.
 - GCBM outputs can be ingested and compared without making FLINT a WS4 runtime dependency.
 
-Closeout report: `notes/reports/p57-closeout.md`.
+Closeout report: `notes/reports/p58-closeout.md`.
 
 ## Detailed Next Steps Notes
 

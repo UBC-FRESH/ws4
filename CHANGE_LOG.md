@@ -2616,21 +2616,21 @@ issue comments.
   are in `main`; dashboard and all CI checks were green. No compiled-dataset,
   simulator, or optimizer behavior changed.
 
-- P57 activation: created parent issue #357 and tasks #358-#367 on `feature/p57-carbon`. The phase
+- P58 activation: created parent issue #357 and tasks #358-#367 on `feature/p58-carbon`. The phase
   adds the FEMIC carbon-package loader, the CBM SIT compiler, the libcbm driver and `ws4 carbon`,
   carbon accounts and reports, parity and replay validation, a block-level carbon ledger, carbon
   targets in the optimizer, TSA24/MKRF validation, and GCBM output consumption. The design note is
   `notes/design/ws4-carbon.md`. Dashboard **GREEN** (lint, format, types, tests, validator, docs,
   docstrings).
 
-- P57.1: added the carbon package contract loader in `ws4/carbon/package.py`, with a closed
+- P58.1: added the carbon package contract loader in `ws4/carbon/package.py`, with a closed
   manifest schema, table/column/unit validation, table hashes, a stable package fingerprint, and
   the exact `track_name` join. Unmatched dataset tracks fail with `CARBON-UNMATCHED-TRACK` unless
   the caller explicitly allows them. Added 16 contract tests over a synthetic package, the
   consumer-side `docs/reference/carbon.rst` page, and the reference-index entry. Dashboard
   **GREEN** (lint, format, types, tests, validator, docs, docstrings).
 
-- P57.2: added `ws4/carbon/sit.py`, which compiles the package, compiled dataset, and schedule
+- P58.2: added `ws4/carbon/sit.py`, which compiles the package, compiled dataset, and schedule
   into SIT classifiers, disturbance types, age classes, inventory, yield, events, and
   transitions. Events take their area from the scheduled block's fragments and set
   `time_step = offset + 1`; treatments map through the package disturbance map. Retention
@@ -2640,7 +2640,7 @@ issue comments.
   and the audit writer; an optional libcbm test parses the tables when the engine is installed.
   The libcbm parse was verified manually against `libcbm==2.10.2`. Dashboard **GREEN**.
 
-- P57.3: added the optional `carbon` extra (`libcbm==2.10.2`), the `ws4/carbon/libcbm.py`
+- P58.3: added the optional `carbon` extra (`libcbm==2.10.2`), the `ws4/carbon/libcbm.py`
   driver, the `ws4 carbon` command, carbon account summaries, and the run manifest. The
   driver checks the package/defaults hash, builds the libcbm mapping config from the package,
   maps CBM species names directly, and writes pools, fluxes, long tables, accounts, and
@@ -2649,28 +2649,28 @@ issue comments.
   written. Two runs produced byte-identical accounts, pools, flux, and manifest; the audit
   SIT copy was written. Dashboard **GREEN**.
 
-- P57.4: added `merge_carbon_accounts`, the `ws4 carbon --merge-into` option, and a report
+- P58.4: added `merge_carbon_accounts`, the `ws4 carbon --merge-into` option, and a report
   test. Carbon rows are merged into a simulation run's `account_values.csv`,
   `carbon_manifest.json` is copied beside the run, existing `carbon.*` rows are replaced
   idempotently, and non-carbon accounts are preserved. The standard `ws4 report` now carries
   the carbon accounts. Tests cover idempotence and report inclusion.
-- P57.5: added `ws4/carbon/parity.py` (frame/run comparison, mass-balance table, byte-level
+- P58.5: added `ws4/carbon/parity.py` (frame/run comparison, mass-balance table, byte-level
   replay) and `scripts/carbon_parity.py`. WS3 `tsa24_clipped` and WS4 agree exactly on the
   20-year no-event trajectory (25 inventory rows, 24 yield rows, `max_abs = 0.0` on pools and
   flux). The real TSA24 mini run replays byte-identically and its accounts reconcile to the
-  pools. Report: `notes/reports/p575-parity.md`. Dashboard **GREEN**.
+  pools. Report: `notes/reports/p585-parity.md`. Dashboard **GREEN**.
 
-- P57.6: added `ws4/carbon/ledger.py`, a block-level carbon ledger keyed by
+- P58.6: added `ws4/carbon/ledger.py`, a block-level carbon ledger keyed by
   `(block, chain)`. It runs one block's CBM chain at a time and sums the blocks; the
   synthetic two-block fixture matches a full-schedule libcbm run exactly (`max_abs = 0.0`).
-- P57.7: added `--carbon-package` to `ws4 optimize`, carbon-aware incremental objective
+- P58.7: added `--carbon-package` to `ws4 optimize`, carbon-aware incremental objective
   deltas, the carbon target guard, and carbon accounts in the final run/report plus
   `carbon_ledger.json`. A quickstart smoke with a `carbon.ecosystem.total` ceiling reduced
   the objective from 1003.25 to 887.08 and chose a clearcut on block 1; ecosystem carbon at
   offset 1 fell from 1203.25 to 1087.08 tC. Report:
-  `notes/reports/p577-carbon-optimizer.md`. Dashboard **GREEN**.
+  `notes/reports/p587-carbon-optimizer.md`. Dashboard **GREEN**.
 
-- P57.8: validated the real TSA24 and MKRF instances. Built the full TSA24 dataset
+- P58.8: validated the real TSA24 and MKRF instances. Built the full TSA24 dataset
   (536,458 fragments, 108 tracks) and carbon package (108 tracks, 6,016,466.4 ha); a
   one-AU baseline (7,313 fragments) ran five years in 38 s (21.77M -> 21.95M tC). The full
   536k-fragment run was stopped after 35m30 at ~99% CPU with no output. Carbon-aware search
@@ -2678,18 +2678,22 @@ issue comments.
   verification 133,294.95 tC; ledger/exact difference ~0.03%). Built the full MKRF dataset
   (3,183 fragments, 7,048 tracks) and a dataset-derived package (1,903 tracks); a five-block
   subset met a 10,500 tC ceiling (objective 0.0, 2 CC blocks; exact 10,478.44 tC; ledger
-  exact). Report: `notes/reports/p578-carbon-validation.md`. Dashboard **GREEN**.
+  exact). Report: `notes/reports/p588-carbon-validation.md`. Dashboard **GREEN**.
 
-- P57.9: added `ws4/carbon/gcbm.py` and `ws4 gcbm`, reading the GCBM 2.5.x results
+- P58.9: added `ws4/carbon/gcbm.py` and `ws4 gcbm`, reading the GCBM 2.5.x results
   database without FLINT or Wine and mapping pools to `carbon.*` accounts. The supplied
   GCBM package was run under Wine 9.0 on the bundled Standalone Template: 11,347 land units
   in 85 s. The reader produced 120 locations / 12 steps and 67,388.5 -> 52,880.9 tC.
   `compare_gcbm_to_carbon` and `--compare-carbon` are ready; a same-landscape TSA24/MKRF
   comparison is deferred until the FEMIC walltowall export (P115.4). Report:
-  `notes/reports/p579-gcbm-results.md`. Dashboard **GREEN**.
+  `notes/reports/p589-gcbm-results.md`. Dashboard **GREEN**.
 
-- P57.10: completed the phase closeout. The closeout report is
-  `notes/reports/p57-closeout.md`; the roadmap status is `complete` and pull request #408 is
-  approved for merge. Remaining deferred
+- P58.10: completed the phase closeout. The closeout report is
+  `notes/reports/p58-closeout.md`; the roadmap status is `complete` and pull request #408
+  was squash-merged as `ddf4ed8`. Remaining deferred
   items are the full TSA24 landscape search, the same-landscape GCBM comparison (needs
   P115.4), species-resolved curves/crosswalk review, and CBM4. Dashboard **GREEN**.
+
+- P58 renumbering: the carbon phase was opened as P51 and then P57; both numbers were already
+  claimed on `main` or by the active hydrology phase. A follow-up renumbers the carbon phase,
+  its reports, roadmap section, and issue labels to P58. No runtime code or evidence changed.
