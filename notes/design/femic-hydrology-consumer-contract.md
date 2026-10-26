@@ -92,3 +92,20 @@ unmapped IDs.
 Complete coverage is required by default. `--allow-partial` is for exploratory
 mapping and records the gap rather than hiding it. No centroid, nearest
 watershed, or geometry join is used.
+
+## P57.4 schedule screening decision
+
+Screening derives cumulative block area by mapped watershed and schedule
+period, then `harvest_fraction = harvested_area / FEMIC_watershed_area`. Other
+response features must be supplied explicitly as global covariates; missing
+scenario features refuse rather than defaulting to zero.
+
+The nearest response-surface scenario is selected only when every scenario
+feature is within `scenario_tolerance`. The selected scenario's return-period
+ratio is applied to the pinned flood-risk baseline flow. Bundle scenario flow,
+exceedance probability, and expected annual damage are carried as bundle
+metadata, not recomputed.
+
+Refusals fail by default. `--allow-refused` writes inside-domain rows and records
+the refusals. A row is a planning screen, not a schedule-specific process
+simulation. No simulator, optimizer, objective, or FEMIC process is invoked.

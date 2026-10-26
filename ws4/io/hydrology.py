@@ -28,6 +28,7 @@ FEMIC_HYDROLOGY_SIDECAR_NAME = "hydrology_products.json"
 FEMIC_HYDROLOGY_METADATA_KEY = "hydrology_products"
 HYDROLOGY_CROSSWALK_SCHEMA = "ws4.hydrology.crosswalk.v1"
 HYDROLOGY_MAPPING_SCHEMA = "ws4.hydrology.mapping.v1"
+HYDROLOGY_SCREEN_SCHEMA = "ws4.hydrology.screen.v1"
 HYDROLOGY_CROSSWALK_REVIEW_STATUSES: tuple[str, ...] = (
     "not_reviewed",
     "review_pending",
@@ -830,6 +831,430 @@ def write_hydrology_mapping(mapping: HydrologyMapping, out_dir: Path) -> dict[st
         "blocks": blocks_path,
         "manifest": manifest_path,
     }
+
+
+@dataclass(frozen=True)
+class HydrologyScreen:
+    """Read-only schedule-level flood-risk screening result.
+
+    Attributes
+    ----------
+    screen_id : str
+        Deterministic screening identifier.
+    generated_utc : str
+        Screening timestamp.
+    bundle_id : str
+        FEMIC bundle identifier.
+    bundle_version : str
+        FEMIC bundle version.
+    manifest_sha256 : str
+        FEMIC manifest digest.
+    mapping_id : str
+        Mapping identifier.
+    mapping_sha256 : str
+        Mapping manifest digest.
+    schedule_sha256 : str
+        Schedule CSV digest.
+    scenario_tolerance : float
+        Maximum feature difference allowed when selecting a response scenario.
+    covariates : dict[str, float]
+        Global response features supplied by the caller.
+    rows : tuple[dict[str, object], ...]
+        Inside-domain screening rows.
+    refusals : tuple[dict[str, object], ...]
+        Refused schedule/watershed/return-period combinations.
+    coverage : dict[str, object]
+        Schedule period and watershed coverage.
+    warnings : tuple[str, ...]
+        Non-fatal screening observations.
+    caveats : tuple[str, ...]
+        Screening-only caveats.
+    """
+
+    screen_id: str
+    generated_utc: str
+    bundle_id: str
+    bundle_version: str
+    manifest_sha256: str
+    mapping_id: str
+    mapping_sha256: str
+    schedule_sha256: str
+    scenario_tolerance: float
+    covariates: dict[str, float]
+    rows: tuple[dict[str, object], ...]
+    refusals: tuple[dict[str, object], ...]
+    coverage: dict[str, object]
+    warnings: tuple[str, ...]
+    caveats: tuple[str, ...]
+
+    def to_dict(self) -> dict[str, object]:
+        """Return the screening manifest as a JSON-serializable mapping.
+
+        Returns
+        -------
+        dict[str, object]
+            Identity, provenance, coverage, refusals, and caveats.
+        """
+        return {
+            "schema_version": HYDROLOGY_SCREEN_SCHEMA,
+            "screen_id": self.screen_id,
+            "generated_utc": self.generated_utc,
+            "bundle_id": self.bundle_id,
+            "bundle_version": self.bundle_version,
+            "manifest_sha256": self.manifest_sha256,
+            "mapping_id": self.mapping_id,
+            "mapping_sha256": self.mapping_sha256,
+            "schedule_sha256": self.schedule_sha256,
+            "scenario_tolerance": self.scenario_tolerance,
+            "covariates": self.covariates,
+            "row_count": len(self.rows),
+            "refusal_count": len(self.refusals),
+            "coverage": self.coverage,
+            "refusals": list(self.refusals),
+            "warnings": list(self.warnings),
+            "caveats": list(self.caveats),
+        }
+
+
+def load_hydrology_mapping(path: Path) -> HydrologyMapping:
+    """Load a hydrology mapping manifest and its fragment/block CSVs.
+
+    Parameters
+    ----------
+    path : Path
+        Mapping directory or ``hydrology_mapping.json`` path.
+
+    Returns
+    -------
+    HydrologyMapping
+        Validated mapping with fragment/block rows.
+
+    Raises
+    ------
+    FemicHydrologyError
+        If the manifest or CSVs are missing or inconsistent.
+    """
+    resolved = path.expanduser().resolve()
+    manifest_path = resolved / "hydrology_mapping.json" if resolved.is_dir() else resolved
+    payload = _read_json_object(manifest_path, context="hydrology mapping manifest")
+    if payload.get("schema_version") != HYDROLOGY_MAPPING_SCHEMA:
+        raise FemicHydrologyError(
+            f"Unsupported hydrology mapping schema {payload.get('schema_version')!r}."
+        )
+    root = manifest_path.parent
+    fragments = _csv_mapping_rows(root / "hydrology_fragments.csv", "fragment")
+    blocks = _csv_mapping_rows(root / "hydrology_blocks.csv", "block")
+    if _int(payload.get("fragment_count", -1), "fragment_count") != len(fragments):
+        raise FemicHydrologyError("Hydrology mapping fragment count does not match the CSV.")
+    if _int(payload.get("block_count", -1), "block_count") != len(blocks):
+        raise FemicHydrologyError("Hydrology mapping block count does not match the CSV.")
+    coverage = payload.get("coverage")
+    if not isinstance(coverage, Mapping):
+        raise FemicHydrologyError("Hydrology mapping coverage must be an object.")
+    return HydrologyMapping(
+        mapping_id=_text(payload.get("mapping_id"), "mapping_id"),
+        generated_utc=_text(payload.get("generated_utc"), "mapping generated_utc"),
+        bundle_id=_text(payload.get("bundle_id"), "mapping bundle_id"),
+        bundle_version=_text(payload.get("bundle_version"), "mapping bundle_version"),
+        manifest_sha256=_text(payload.get("manifest_sha256"), "mapping manifest_sha256"),
+        crosswalk_id=_text(payload.get("crosswalk_id"), "mapping crosswalk_id"),
+        crosswalk_sha256=_text(payload.get("crosswalk_sha256"), "mapping crosswalk_sha256"),
+        review_status=_text(payload.get("review_status"), "mapping review_status"),
+        fragments=fragments,
+        blocks=blocks,
+        coverage={str(key): item for key, item in coverage.items()},
+        warnings=_strict_strings(payload.get("warnings"), "mapping warnings"),
+        caveats=_strict_strings(payload.get("caveats"), "mapping caveats"),
+    )
+
+
+def screen_schedule_flood_risk(
+    dataset_dir: Path,
+    bundle: FemicHydrologyBundle,
+    mapping: HydrologyMapping,
+    schedule_path: Path,
+    *,
+    mapping_manifest_path: Path | None = None,
+    covariates: Mapping[str, float] | None = None,
+    scenario_tolerance: float = 0.05,
+    allow_refused: bool = False,
+    generated_utc: str | None = None,
+) -> HydrologyScreen:
+    """Screen a WS4 schedule against the FEMIC response and flood-risk rows.
+
+    Parameters
+    ----------
+    dataset_dir : Path
+        Compiled WS4 dataset directory.
+    bundle : FemicHydrologyBundle
+        Pinned FEMIC bundle.
+    mapping : HydrologyMapping
+        Explicit WS4-to-FEMIC mapping.
+    schedule_path : Path
+        WS4 schedule CSV with ``block_id``, ``treatment``, and ``offset``.
+    mapping_manifest_path : Path | None, optional
+        Mapping manifest path used to record its digest.
+    covariates : Mapping[str, float] | None, optional
+        Global response features not derived from the schedule, such as road
+        density. Missing scenario features cause refusal.
+    scenario_tolerance : float, optional
+        Maximum absolute feature difference allowed when selecting a response
+        scenario.
+    allow_refused : bool, optional
+        Return inside-domain rows plus refusals instead of failing on refusal.
+    generated_utc : str | None, optional
+        Screening timestamp.
+
+    Returns
+    -------
+    HydrologyScreen
+        Screening rows, refusals, coverage, and caveats.
+
+    Raises
+    ------
+    FemicHydrologyError
+        If inputs are malformed or a refusal occurs without ``allow_refused``.
+    """
+    if scenario_tolerance <= 0 or not math.isfinite(scenario_tolerance):
+        raise FemicHydrologyError("Scenario tolerance must be positive and finite.")
+    if (
+        mapping.bundle_id != bundle.bundle_id
+        or mapping.bundle_version != bundle.bundle_version
+        or mapping.manifest_sha256 != bundle.manifest_sha256
+    ):
+        raise FemicHydrologyError("Hydrology mapping was built from a different FEMIC bundle pin.")
+    supplied = {str(name): float(value) for name, value in (covariates or {}).items()}
+    if any(not math.isfinite(value) for value in supplied.values()):
+        raise FemicHydrologyError("Covariate values must be finite.")
+    schedule = _load_schedule(schedule_path)
+    block_records = {_int(row["block_id"], "mapping block_id"): row for row in mapping.blocks}
+    dataset_blocks = _load_block_areas(dataset_dir.expanduser().resolve())
+    watershed_areas = _watershed_areas(bundle)
+    scenarios = _response_scenarios(bundle)
+    surface_rows = _response_surface_rows(bundle)
+    risk_rows = read_femic_flood_risk(bundle).rows
+    risk_by_watershed: dict[str, list[FemicFloodRiskRow]] = {}
+    for row in risk_rows:
+        risk_by_watershed.setdefault(row.watershed_id, []).append(row)
+    periods = sorted({item.offset for item in schedule})
+    harvested_by_period: dict[int, set[int]] = {period: set() for period in periods}
+    for item in schedule:
+        block_id = item.block_id
+        if block_id not in block_records:
+            raise FemicHydrologyError(f"Schedule block {block_id} has no explicit FEMIC mapping.")
+        harvested_by_period[item.offset].add(block_id)
+    cumulative_blocks: set[int] = set()
+    rows: list[dict[str, object]] = []
+    refusals: list[dict[str, object]] = []
+    screened_watersheds: set[str] = set()
+    for period in periods:
+        cumulative_blocks |= harvested_by_period[period]
+        area_by_watershed: dict[str, float] = {}
+        for block_id in cumulative_blocks:
+            record = block_records[block_id]
+            watershed_id = _text(record.get("watershed_id"), "mapping watershed_id")
+            area_by_watershed[watershed_id] = area_by_watershed.get(
+                watershed_id, 0.0
+            ) + dataset_blocks.get(block_id, 0.0)
+        if not area_by_watershed:
+            continue
+        for watershed_id in sorted(area_by_watershed):
+            screened_watersheds.add(watershed_id)
+            area = area_by_watershed[watershed_id]
+            watershed_area = watershed_areas.get(watershed_id)
+            if watershed_area is None or watershed_area <= 0:
+                refusals.append(
+                    {
+                        "period": period,
+                        "watershed_id": watershed_id,
+                        "receptor_id": None,
+                        "return_period": None,
+                        "reason": "FEMIC domain has no positive watershed area.",
+                    }
+                )
+                continue
+            harvest_fraction = area / watershed_area
+            if harvest_fraction > 1.0:
+                refusals.append(
+                    {
+                        "period": period,
+                        "watershed_id": watershed_id,
+                        "receptor_id": None,
+                        "return_period": None,
+                        "reason": "Cumulative harvest fraction exceeds 1.0.",
+                    }
+                )
+                continue
+            features = {**supplied, "harvest_fraction": harvest_fraction}
+            selected = _select_scenario(scenarios, features, scenario_tolerance)
+            if selected is None:
+                refusals.append(
+                    {
+                        "period": period,
+                        "watershed_id": watershed_id,
+                        "receptor_id": None,
+                        "return_period": None,
+                        "reason": (
+                            "No response-surface scenario is inside the "
+                            f"{scenario_tolerance:g} feature tolerance."
+                        ),
+                    }
+                )
+                continue
+            scenario_name, scenario_covariates = selected
+            watershed_risk = risk_by_watershed.get(watershed_id, [])
+            if not watershed_risk:
+                refusals.append(
+                    {
+                        "period": period,
+                        "watershed_id": watershed_id,
+                        "receptor_id": None,
+                        "return_period": None,
+                        "reason": "No flood-risk row exists for this watershed.",
+                    }
+                )
+                continue
+            for risk in watershed_risk:
+                surface = surface_rows.get((scenario_name, risk.return_period))
+                if surface is None:
+                    refusals.append(
+                        {
+                            "period": period,
+                            "watershed_id": watershed_id,
+                            "receptor_id": risk.receptor_id,
+                            "return_period": risk.return_period,
+                            "reason": (
+                                "Response surface has no row for the selected "
+                                "scenario and return period."
+                            ),
+                        }
+                    )
+                    continue
+                ratio = _float(surface.get("ratio"), "surface ratio")
+                rows.append(
+                    {
+                        "period": period,
+                        "watershed_id": watershed_id,
+                        "receptor_id": risk.receptor_id,
+                        "return_period": risk.return_period,
+                        "harvested_area_ha": area,
+                        "watershed_area_ha": watershed_area,
+                        "harvest_fraction": harvest_fraction,
+                        "scenario_name": scenario_name,
+                        "scenario_covariates": dict(scenario_covariates),
+                        "response_ratio": ratio,
+                        "baseline_peak_flow_m3s": risk.baseline_peak_flow_m3s,
+                        "screening_peak_flow_m3s": risk.baseline_peak_flow_m3s * ratio,
+                        "bundle_scenario_peak_flow_m3s": risk.scenario_peak_flow_m3s,
+                        "exceedance_probability": risk.exceedance_probability,
+                        "expected_annual_damage": risk.expected_annual_damage,
+                    }
+                )
+    if refusals and not allow_refused:
+        reasons = "; ".join(str(item["reason"]) for item in refusals[:3])
+        raise FemicHydrologyError(f"Schedule screening refused {len(refusals)} row(s): {reasons}")
+    schedule_sha = _sha256_file(schedule_path)
+    mapping_sha = _sha256_file(mapping_manifest_path) if mapping_manifest_path is not None else ""
+    timestamp = generated_utc or datetime.now(UTC).isoformat()
+    material = {
+        "bundle_id": bundle.bundle_id,
+        "mapping_id": mapping.mapping_id,
+        "schedule_sha256": schedule_sha,
+        "rows": rows,
+        "refusals": refusals,
+        "covariates": supplied,
+        "scenario_tolerance": scenario_tolerance,
+    }
+    screen_id = (
+        "ws4-hydro-screen-"
+        + hashlib.sha256(
+            json.dumps(material, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()[:16]
+    )
+    warnings: list[str] = []
+    if mapping.review_status != "reviewed":
+        warnings.append("Mapping is not reviewed; schedule screening is provisional.")
+    if refusals:
+        warnings.append(f"{len(refusals)} screening row(s) were refused.")
+    coverage = {
+        "periods": periods,
+        "watersheds": sorted(screened_watersheds),
+        "mapped_blocks": len(block_records),
+        "screened_rows": len(rows),
+        "refused_rows": len(refusals),
+    }
+    caveats = (
+        "Schedule screening uses a precomputed response-surface scenario, not a "
+        "schedule-specific process simulation.",
+        "Baseline flows, receptor rows, and bundle scenario flows come from the "
+        "pinned FEMIC flood-risk table.",
+        "Screening only; not a regulatory flood map or operational safety determination.",
+        "Hydrologist review and a completed process-model pilot remain required.",
+        *mapping.caveats,
+    )
+    return HydrologyScreen(
+        screen_id=screen_id,
+        generated_utc=timestamp,
+        bundle_id=bundle.bundle_id,
+        bundle_version=bundle.bundle_version,
+        manifest_sha256=bundle.manifest_sha256,
+        mapping_id=mapping.mapping_id,
+        mapping_sha256=mapping_sha,
+        schedule_sha256=schedule_sha,
+        scenario_tolerance=scenario_tolerance,
+        covariates=supplied,
+        rows=tuple(rows),
+        refusals=tuple(refusals),
+        coverage=coverage,
+        warnings=tuple(warnings),
+        caveats=caveats,
+    )
+
+
+def write_hydrology_screen(screen: HydrologyScreen, out_dir: Path) -> dict[str, Path]:
+    """Write screening CSV and manifest.
+
+    Parameters
+    ----------
+    screen : HydrologyScreen
+        Screening result.
+    out_dir : Path
+        Output directory.
+
+    Returns
+    -------
+    dict[str, Path]
+        Paths keyed by ``rows`` and ``manifest``.
+    """
+    output = out_dir.expanduser().resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    rows_path = output / "hydrology_screen.csv"
+    columns = (
+        "period",
+        "watershed_id",
+        "receptor_id",
+        "return_period",
+        "harvested_area_ha",
+        "watershed_area_ha",
+        "harvest_fraction",
+        "scenario_name",
+        "response_ratio",
+        "baseline_peak_flow_m3s",
+        "screening_peak_flow_m3s",
+        "bundle_scenario_peak_flow_m3s",
+        "exceedance_probability",
+        "expected_annual_damage",
+    )
+    with rows_path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=columns, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(screen.rows)
+    manifest_path = output / "hydrology_screen.json"
+    manifest_path.write_text(
+        json.dumps(screen.to_dict(), indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return {"rows": rows_path, "manifest": manifest_path}
 
 
 def register_femic_hydrology_bundle(
@@ -1903,3 +2328,160 @@ def _optional_int(value: object) -> int | None:
     if isinstance(value, str) and not value.strip():
         return None
     return _int(value, "support_id")
+
+
+def _csv_mapping_rows(path: Path, kind: str) -> tuple[dict[str, object], ...]:
+    if not path.is_file():
+        raise FemicHydrologyError(f"Hydrology mapping CSV is missing: {path}")
+    try:
+        with path.open(newline="", encoding="utf-8") as handle:
+            reader = csv.DictReader(handle)
+            rows: list[dict[str, object]] = []
+            for payload in reader:
+                if kind == "fragment":
+                    rows.append(
+                        {
+                            "fragment_id": _int(payload.get("fragment_id"), "fragment_id"),
+                            "block_id": _int(payload.get("block_id"), "block_id"),
+                            "unit_id": _text(payload.get("unit_id"), "unit_id"),
+                            "watershed_id": _text(payload.get("watershed_id"), "watershed_id"),
+                            "receptor_id": _optional_text(payload.get("receptor_id")),
+                            "source": _text(payload.get("source"), "source"),
+                        }
+                    )
+                elif kind == "block":
+                    rows.append(
+                        {
+                            "block_id": _int(payload.get("block_id"), "block_id"),
+                            "unit_id": _text(payload.get("unit_id"), "unit_id"),
+                            "watershed_id": _text(payload.get("watershed_id"), "watershed_id"),
+                            "receptor_id": _optional_text(payload.get("receptor_id")),
+                            "source": _text(payload.get("source"), "source"),
+                        }
+                    )
+                else:
+                    raise FemicHydrologyError(f"Unknown mapping row kind {kind!r}.")
+    except OSError as exc:
+        raise FemicHydrologyError(f"Unable to read hydrology mapping CSV: {exc}") from exc
+    return tuple(rows)
+
+
+@dataclass(frozen=True)
+class _ScheduleItem:
+    block_id: int
+    treatment: str
+    offset: int
+
+
+def _load_schedule(path: Path) -> tuple[_ScheduleItem, ...]:
+    resolved = path.expanduser().resolve()
+    if not resolved.is_file():
+        raise FemicHydrologyError(f"Schedule is missing: {resolved}")
+    try:
+        frame = pd.read_csv(resolved)
+    except (OSError, ValueError) as exc:
+        raise FemicHydrologyError(f"Unable to read schedule: {exc}") from exc
+    required = {"block_id", "treatment", "offset"}
+    missing = required - set(frame.columns)
+    if missing:
+        raise FemicHydrologyError(
+            "Schedule is missing required columns: " + ", ".join(sorted(missing)) + "."
+        )
+    rows: list[_ScheduleItem] = []
+    for _, row in frame.iterrows():
+        rows.append(
+            _ScheduleItem(
+                block_id=_int(row["block_id"], "schedule block_id"),
+                treatment=_text(row["treatment"], "schedule treatment"),
+                offset=_int(row["offset"], "schedule offset"),
+            )
+        )
+    return tuple(rows)
+
+
+def _load_block_areas(dataset_root: Path) -> dict[int, float]:
+    path = dataset_root / "blocks.parquet"
+    if not path.is_file():
+        raise FemicHydrologyError(f"Dataset blocks are missing: {path}")
+    try:
+        frame = pd.read_parquet(path)
+    except (OSError, ValueError) as exc:
+        raise FemicHydrologyError(f"Unable to read dataset blocks: {exc}") from exc
+    for column in ("block_id", "area_ha"):
+        if column not in frame.columns:
+            raise FemicHydrologyError(f"blocks.parquet is missing {column!r}.")
+    areas: dict[int, float] = {}
+    for block_id, area in zip(frame["block_id"], frame["area_ha"], strict=True):
+        areas[_int(block_id, "block_id")] = _float(area, "block area_ha")
+    return areas
+
+
+def _watershed_areas(bundle: FemicHydrologyBundle) -> dict[str, float]:
+    domain = _bundle_payload(bundle, "domain")
+    areas: dict[str, float] = {}
+    for item in _dict_list(domain.get("watersheds"), "domain watersheds"):
+        watershed_id = _text(item.get("watershed_id"), "domain watershed_id")
+        raw_area = item.get("area_km2")
+        if raw_area is None:
+            continue
+        area_km2 = _float(raw_area, "watershed area_km2")
+        if area_km2 > 0:
+            areas[watershed_id] = area_km2 * 100.0
+    return areas
+
+
+def _response_scenarios(
+    bundle: FemicHydrologyBundle,
+) -> tuple[tuple[str, dict[str, float]], ...]:
+    surface = _bundle_payload(bundle, "response_surface")
+    scenarios: list[tuple[str, dict[str, float]]] = []
+    for item in _dict_list(surface.get("scenarios"), "response scenarios"):
+        name = _text(item.get("name"), "scenario name")
+        covariates = item.get("covariates")
+        if not isinstance(covariates, Mapping):
+            raise FemicHydrologyError(f"Scenario {name!r} has no covariates object.")
+        scenarios.append(
+            (
+                name,
+                {
+                    str(key): _float(value, f"scenario {name} {key}")
+                    for key, value in covariates.items()
+                },
+            )
+        )
+    if not scenarios:
+        raise FemicHydrologyError("Response surface has no scenarios.")
+    return tuple(scenarios)
+
+
+def _response_surface_rows(
+    bundle: FemicHydrologyBundle,
+) -> dict[tuple[str, float], dict[str, object]]:
+    surface = _bundle_payload(bundle, "response_surface")
+    rows: dict[tuple[str, float], dict[str, object]] = {}
+    for item in _dict_list(surface.get("rows"), "response rows"):
+        scenario = _text(item.get("scenario_name"), "response scenario_name")
+        period = _float(item.get("return_period"), "response return_period")
+        rows[(scenario, period)] = item
+    if not rows:
+        raise FemicHydrologyError("Response surface has no rows.")
+    return rows
+
+
+def _select_scenario(
+    scenarios: tuple[tuple[str, dict[str, float]], ...],
+    features: Mapping[str, float],
+    tolerance: float,
+) -> tuple[str, dict[str, float]] | None:
+    best: tuple[float, str, dict[str, float]] | None = None
+    for name, covariates in scenarios:
+        if "harvest_fraction" not in covariates:
+            continue
+        if any(key not in features for key in covariates):
+            continue
+        distance = max(abs(float(features[key]) - value) for key, value in covariates.items())
+        if distance <= tolerance and (best is None or distance < best[0]):
+            best = (distance, name, covariates)
+    if best is None:
+        return None
+    return best[1], best[2]

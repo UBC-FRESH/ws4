@@ -18,12 +18,15 @@ from .io.hydrology import (
     bundle_pin,
     load_femic_hydrology_bundle,
     load_hydrology_crosswalk,
+    load_hydrology_mapping,
     load_registered_femic_hydrology_bundle,
     map_femic_hydrology_to_dataset,
     register_femic_hydrology_bundle,
+    screen_schedule_flood_risk,
     validate_femic_hydrology_bundle,
     validate_registered_femic_hydrology,
     write_hydrology_mapping,
+    write_hydrology_screen,
 )
 from .io.lidar import (
     FemicLidarError,
@@ -1040,6 +1043,72 @@ def hydrology_map(
         print(f"warning: {warning}")
     print(f"fragments_csv: {paths['fragments']}")
     print(f"blocks_csv: {paths['blocks']}")
+    print(f"manifest: {paths['manifest']}")
+
+
+@hydrology_app.command("screen")
+def hydrology_screen(
+    dataset: Path = typer.Option(
+        ..., "--dataset", exists=True, file_okay=False, help="Compiled WS4 dataset"
+    ),
+    mapping: Path = typer.Option(
+        ..., "--mapping", exists=True, help="Mapping directory or manifest"
+    ),
+    schedule: Path = typer.Option(
+        ..., "--schedule", exists=True, dir_okay=False, help="WS4 schedule CSV"
+    ),
+    out: Path = typer.Option(..., "--out", help="Screening output directory"),
+    covariates: Path | None = typer.Option(
+        None,
+        "--covariates",
+        exists=True,
+        dir_okay=False,
+        help="Optional JSON object of global response covariates",
+    ),
+    scenario_tolerance: float = typer.Option(
+        0.05,
+        "--scenario-tolerance",
+        min=0.000001,
+        help="Maximum feature difference when selecting a response scenario",
+    ),
+    allow_refused: bool = typer.Option(
+        False, "--allow-refused", help="Write inside-domain rows plus refusals"
+    ),
+) -> None:
+    """Screen a schedule against FEMIC response and flood-risk rows."""
+    try:
+        bundle = load_registered_femic_hydrology_bundle(dataset)
+        loaded_mapping = load_hydrology_mapping(mapping)
+        supplied: dict[str, float] = {}
+        if covariates is not None:
+            payload = json.loads(covariates.read_text(encoding="utf-8"))
+            if not isinstance(payload, dict):
+                raise FemicHydrologyError("Covariates must be a JSON object.")
+            supplied = {str(key): float(value) for key, value in payload.items()}
+        mapping_manifest = mapping / "hydrology_mapping.json" if mapping.is_dir() else mapping
+        result = screen_schedule_flood_risk(
+            dataset,
+            bundle,
+            loaded_mapping,
+            schedule,
+            mapping_manifest_path=mapping_manifest,
+            covariates=supplied,
+            scenario_tolerance=scenario_tolerance,
+            allow_refused=allow_refused,
+        )
+        paths = write_hydrology_screen(result, out)
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        print(f"[bold red]Hydrology screening failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    except FemicHydrologyError as error:
+        print(f"[bold red]Hydrology screening failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    print(f"screen_id: {result.screen_id}")
+    print(f"rows: {len(result.rows)}")
+    print(f"refusals: {len(result.refusals)}")
+    for warning in result.warnings:
+        print(f"warning: {warning}")
+    print(f"screen_csv: {paths['rows']}")
     print(f"manifest: {paths['manifest']}")
 
 

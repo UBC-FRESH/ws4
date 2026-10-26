@@ -16,14 +16,17 @@ from ws4.io.hydrology import (
     bundle_pin,
     load_femic_hydrology_bundle,
     load_hydrology_crosswalk,
+    load_hydrology_mapping,
     load_registered_femic_hydrology_bundle,
     map_femic_hydrology_to_dataset,
     read_femic_flood_risk,
     read_registered_femic_hydrology,
     register_femic_hydrology_bundle,
+    screen_schedule_flood_risk,
     validate_femic_hydrology_bundle,
     validate_registered_femic_hydrology,
     write_hydrology_mapping,
+    write_hydrology_screen,
 )
 
 runner = CliRunner()
@@ -106,6 +109,8 @@ def _bundle(
     include_validation_report: bool = False,
     domain_payload: dict[str, object] | None = None,
     ledger_payload: dict[str, object] | None = None,
+    response_surface_payload: dict[str, object] | None = None,
+    flood_risk_payload: dict[str, object] | None = None,
 ) -> Path:
     root.mkdir(parents=True, exist_ok=True)
     artifacts = [
@@ -113,13 +118,13 @@ def _bundle(
             root,
             "response_surface",
             "femic.hydrology.flood_response.v1",
-            _response_surface(),
+            response_surface_payload or _response_surface(),
         ),
         _artifact(
             root,
             "flood_risk",
             "femic.hydrology.flood_risk.v1",
-            _flood_risk(),
+            flood_risk_payload or _flood_risk(),
         ),
         _artifact(
             root,
@@ -155,6 +160,15 @@ def _bundle(
                 },
             )
         )
+    surface_payload = response_surface_payload or _response_surface()
+    risk_payload = flood_risk_payload or _flood_risk()
+    risk_summary = risk_payload.get("summary")
+    risk_rows = risk_payload.get("rows")
+    risk_row_count = (
+        risk_summary.get("row_count")
+        if isinstance(risk_summary, dict)
+        else (len(risk_rows) if isinstance(risk_rows, list) else 0)
+    )
     manifest = {
         "schema_version": "femic.hydrology.response.v1",
         "bundle_id": BUNDLE_ID,
@@ -166,14 +180,14 @@ def _bundle(
         "response_surface_id": "fixture-surface",
         "artifacts": artifacts,
         "response_surface": {
-            "surface_id": "fixture-surface",
-            "baseline_name": "baseline",
-            "return_periods": [2.0, 100.0],
+            "surface_id": surface_payload["surface_id"],
+            "baseline_name": surface_payload["baseline_name"],
+            "return_periods": surface_payload["return_periods"],
         },
         "flood_risk": {
-            "table_id": "hydro-risk-fixture",
-            "row_count": 1,
-            "baseline_name": "baseline",
+            "table_id": risk_payload["table_id"],
+            "row_count": risk_row_count,
+            "baseline_name": risk_payload["baseline_name"],
         },
         "applicability_domain": {
             "feature_names": ["harvest_fraction"],
@@ -634,8 +648,8 @@ def _domain_payload() -> dict[str, object]:
         "schema_version": "femic.hydrology.domain.v1",
         "domain_id": "fixture-domain",
         "watersheds": [
-            {"watershed_id": "watershed-1"},
-            {"watershed_id": "watershed-2"},
+            {"watershed_id": "watershed-1", "area_km2": 1.0},
+            {"watershed_id": "watershed-2", "area_km2": 2.0},
         ],
         "receptors": [
             {"receptor_id": "receptor-1"},
@@ -1026,3 +1040,265 @@ def test_cli_map_writes_outputs(tmp_path: Path) -> None:
     assert (out / "hydrology_fragments.csv").is_file()
     assert (out / "hydrology_blocks.csv").is_file()
     assert (out / "hydrology_mapping.json").is_file()
+
+
+def _screen_surface_payload() -> dict[str, object]:
+    return {
+        "schema_version": "femic.hydrology.flood_response.v1",
+        "surface_id": "fixture-surface",
+        "generated_utc": GENERATED_UTC,
+        "station_id": "fixture-station",
+        "method": "nonstationary_gev",
+        "baseline_name": "baseline",
+        "return_periods": [2.0, 100.0],
+        "scenarios": [
+            {"name": "baseline", "covariates": {"harvest_fraction": 0.0}},
+            {"name": "medium", "covariates": {"harvest_fraction": 0.03}},
+            {"name": "high", "covariates": {"harvest_fraction": 0.5}},
+        ],
+        "summary": {"row_count": 6},
+        "rows": [
+            {
+                "scenario_name": scenario,
+                "return_period": period,
+                "quantile": 120.0 * ratio,
+                "baseline_quantile": 120.0,
+                "ratio": ratio,
+                "difference": 120.0 * (ratio - 1.0),
+            }
+            for scenario, ratio in (
+                ("baseline", 1.0),
+                ("medium", 1.1),
+                ("high", 1.25),
+            )
+            for period in (2.0, 100.0)
+        ],
+        "diagnostics": {},
+        "warnings": [],
+        "caveats": ["Synthetic fixture only."],
+    }
+
+
+def _screen_risk_payload() -> dict[str, object]:
+    return {
+        "schema_version": "femic.hydrology.flood_risk.v1",
+        "table_id": "hydro-risk-fixture",
+        "generated_utc": GENERATED_UTC,
+        "source_surface_id": "fixture-surface",
+        "baseline_name": "baseline",
+        "summary": {"row_count": 2},
+        "rows": [
+            {
+                "receptor_id": "receptor-1",
+                "watershed_id": "watershed-1",
+                "return_period": 100.0,
+                "baseline_peak_flow_m3s": 120.0,
+                "scenario_peak_flow_m3s": 150.0,
+                "ratio": 1.25,
+                "exceedance_probability": 0.01,
+                "expected_annual_damage": 42000.0,
+            },
+            {
+                "receptor_id": "receptor-2",
+                "watershed_id": "watershed-2",
+                "return_period": 100.0,
+                "baseline_peak_flow_m3s": 80.0,
+                "scenario_peak_flow_m3s": 90.0,
+                "ratio": 1.125,
+                "exceedance_probability": 0.02,
+                "expected_annual_damage": 12000.0,
+            },
+        ],
+        "caveats": ["Screening only; synthetic fixture."],
+    }
+
+
+def _write_schedule(path: Path) -> Path:
+    path.write_text(
+        "block_id,treatment,offset\n10,clearcut,0\n11,clearcut,1\n",
+        encoding="utf-8",
+    )
+    return path
+
+
+def _screen_fixture(
+    root: Path,
+) -> tuple[Path, FemicHydrologyBundle, Path, Path]:
+    dataset = _compiled_dataset(root / "dataset")
+    bundle = load_femic_hydrology_bundle(
+        _bundle(
+            root / "bundle",
+            domain_payload=_domain_payload(),
+            ledger_payload=_ledger_payload(),
+            response_surface_payload=_screen_surface_payload(),
+            flood_risk_payload=_screen_risk_payload(),
+        )
+    )
+    register_femic_hydrology_bundle(dataset, bundle.bundle_dir, registered_utc=GENERATED_UTC)
+    crosswalk_path = _write_crosswalk(root / "crosswalk.csv", _complete_fragment_rows())
+    metadata = _write_metadata(
+        root / "crosswalk.meta.json",
+        crosswalk_sha256=hashlib.sha256(crosswalk_path.read_bytes()).hexdigest(),
+    )
+    crosswalk = load_hydrology_crosswalk(crosswalk_path, metadata_path=metadata)
+    mapping = map_femic_hydrology_to_dataset(
+        dataset,
+        bundle,
+        crosswalk,
+        generated_utc=GENERATED_UTC,
+    )
+    mapping_paths = write_hydrology_mapping(mapping, root / "mapping")
+    return dataset, bundle, mapping_paths["manifest"], _write_schedule(root / "schedule.csv")
+
+
+def test_screen_schedule_produces_receptor_rows(tmp_path: Path) -> None:
+    dataset, bundle, mapping_manifest, schedule = _screen_fixture(tmp_path)
+    mapping = load_hydrology_mapping(mapping_manifest)
+    screen = screen_schedule_flood_risk(
+        dataset,
+        bundle,
+        mapping,
+        schedule,
+        mapping_manifest_path=mapping_manifest,
+        generated_utc=GENERATED_UTC,
+    )
+    paths = write_hydrology_screen(screen, tmp_path / "screen")
+
+    assert len(screen.rows) == 3
+    assert screen.refusals == ()
+    assert screen.rows[0]["watershed_id"] == "watershed-1"
+    assert screen.rows[0]["scenario_name"] == "medium"
+    assert screen.rows[0]["screening_peak_flow_m3s"] == pytest.approx(132.0)
+    assert screen.rows[1]["period"] == 1
+    assert {row["watershed_id"] for row in screen.rows[1:]} == {
+        "watershed-1",
+        "watershed-2",
+    }
+    assert paths["rows"].is_file()
+    assert paths["manifest"].is_file()
+    manifest = json.loads(paths["manifest"].read_text(encoding="utf-8"))
+    assert manifest["schema_version"] == "ws4.hydrology.screen.v1"
+    assert manifest["row_count"] == 3
+    assert manifest["schedule_sha256"] == screen.schedule_sha256
+    assert manifest["mapping_sha256"] == screen.mapping_sha256
+
+
+def test_screen_refuses_outside_tolerance_and_can_allow(tmp_path: Path) -> None:
+    dataset, bundle, mapping_manifest, schedule = _screen_fixture(tmp_path)
+    mapping = load_hydrology_mapping(mapping_manifest)
+
+    with pytest.raises(FemicHydrologyError, match="refused"):
+        screen_schedule_flood_risk(
+            dataset,
+            bundle,
+            mapping,
+            schedule,
+            scenario_tolerance=0.001,
+        )
+
+    screen = screen_schedule_flood_risk(
+        dataset,
+        bundle,
+        mapping,
+        schedule,
+        scenario_tolerance=0.001,
+        allow_refused=True,
+        generated_utc=GENERATED_UTC,
+    )
+    assert screen.refusals
+    assert any("tolerance" in str(item["reason"]) for item in screen.refusals)
+    assert all(row["watershed_id"] == "watershed-1" for row in screen.rows)
+
+
+def test_screen_refuses_missing_watershed_area(tmp_path: Path) -> None:
+    dataset = _compiled_dataset(tmp_path / "dataset")
+    domain = _domain_payload()
+    domain["watersheds"] = [{"watershed_id": "watershed-1"}]
+    bundle = load_femic_hydrology_bundle(
+        _bundle(
+            tmp_path / "bundle",
+            domain_payload=domain,
+            ledger_payload=_ledger_payload(),
+            response_surface_payload=_screen_surface_payload(),
+            flood_risk_payload=_screen_risk_payload(),
+        )
+    )
+    register_femic_hydrology_bundle(dataset, bundle.bundle_dir)
+    crosswalk_path = _write_crosswalk(tmp_path / "crosswalk.csv", _complete_fragment_rows())
+    crosswalk = load_hydrology_crosswalk(crosswalk_path)
+    mapping = map_femic_hydrology_to_dataset(dataset, bundle, crosswalk)
+    schedule = _write_schedule(tmp_path / "schedule.csv")
+
+    screen = screen_schedule_flood_risk(
+        dataset,
+        bundle,
+        mapping,
+        schedule,
+        allow_refused=True,
+    )
+    assert any("watershed area" in str(item["reason"]) for item in screen.refusals)
+
+
+def test_screen_rejects_unknown_schedule_block(tmp_path: Path) -> None:
+    dataset, bundle, mapping_manifest, _schedule = _screen_fixture(tmp_path)
+    mapping = load_hydrology_mapping(mapping_manifest)
+    unknown = tmp_path / "unknown.csv"
+    unknown.write_text("block_id,treatment,offset\n999,clearcut,0\n", encoding="utf-8")
+
+    with pytest.raises(FemicHydrologyError, match="no explicit FEMIC mapping"):
+        screen_schedule_flood_risk(dataset, bundle, mapping, unknown)
+
+
+def test_load_mapping_round_trip(tmp_path: Path) -> None:
+    dataset, bundle, mapping_manifest, schedule = _screen_fixture(tmp_path)
+    _ = dataset, bundle, schedule
+    mapping = load_hydrology_mapping(mapping_manifest)
+    assert mapping.mapping_id.startswith("ws4-hydro-mapping-")
+    assert len(mapping.fragments) == 4
+    assert len(mapping.blocks) == 3
+    assert mapping.coverage["unmapped_fragments"] == []
+
+
+def test_cli_screen_writes_outputs(tmp_path: Path) -> None:
+    dataset, _bundle_value, mapping_manifest, schedule = _screen_fixture(tmp_path)
+    _ = _bundle_value
+    out = tmp_path / "screen-out"
+
+    result = runner.invoke(
+        app,
+        [
+            "hydrology",
+            "screen",
+            "--dataset",
+            str(dataset),
+            "--mapping",
+            str(mapping_manifest),
+            "--schedule",
+            str(schedule),
+            "--out",
+            str(out),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "screen_id: ws4-hydro-screen-" in result.stdout
+    assert (out / "hydrology_screen.csv").is_file()
+    assert (out / "hydrology_screen.json").is_file()
+
+
+def test_screen_rejects_mapping_from_other_bundle(tmp_path: Path) -> None:
+    dataset, _bundle_value, mapping_manifest, schedule = _screen_fixture(tmp_path)
+    mapping = load_hydrology_mapping(mapping_manifest)
+    other_domain = _domain_payload()
+    other_domain["name"] = "Other synthetic domain"
+    other = _bundle(
+        tmp_path / "other-bundle",
+        domain_payload=other_domain,
+        ledger_payload=_ledger_payload(),
+        response_surface_payload=_screen_surface_payload(),
+        flood_risk_payload=_screen_risk_payload(),
+    )
+    other_bundle = load_femic_hydrology_bundle(other)
+
+    with pytest.raises(FemicHydrologyError, match="different FEMIC bundle pin"):
+        screen_schedule_flood_risk(dataset, other_bundle, mapping, schedule)

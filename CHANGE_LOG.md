@@ -2641,3 +2641,15 @@ issue comments.
   unknown IDs, duplicate/bad rows, review metadata, and CLI behavior.
   Dashboard **GREEN** (lint, format, types, 106.01 s tests, validator, docs,
   docstrings).
+
+- P57.4: added read-only schedule-level flood-risk screening. `ws4 hydrology
+  screen` loads a schedule, mapping, pinned bundle, response scenarios, and
+  flood-risk rows; derives cumulative harvest fraction by watershed/period;
+  selects the nearest response scenario within a tolerance; and writes
+  `hydrology_screen.csv` plus a deterministic manifest. Missing scenario
+  features, missing watershed areas, and out-of-tolerance schedules refuse.
+  `--allow-refused` writes inside-domain rows and records refusals. No
+  simulator, optimizer, objective, or FEMIC process is invoked. Seven new tests
+  cover complete screening, refusal/allow, missing area, unknown blocks,
+  mapping round-trip, bundle mismatch, and CLI output. Dashboard **GREEN**
+  (lint, format, types, 106.53 s tests, validator, docs, docstrings).

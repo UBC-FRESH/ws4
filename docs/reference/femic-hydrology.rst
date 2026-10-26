@@ -129,6 +129,9 @@ Direct bundle inspection and validation remain available:
 
    ws4 hydrology map --dataset build/compiled --crosswalk crosswalk.csv \
      --out build/hydrology_mapping
+   ws4 hydrology screen --dataset build/compiled \
+     --mapping build/hydrology_mapping --schedule schedule.csv \
+     --out build/hydrology_screen
 
 ``validate`` emits a deterministic JSON report by default and exits non-zero on
 an invalid bundle. ``inspect`` prints the bundle pin and artifact roles for a
@@ -190,6 +193,43 @@ not cover every fragment and block fails unless ``--allow-partial`` is set; a
 partial mapping records the unmapped IDs.
 
 No spatial inference or FEMIC re-run is performed.
+
+Schedule Screening
+-------------------
+
+P57.4 screens a WS4 schedule against the pinned response surface and flood-risk
+rows. It is read-only: no simulator, optimizer, objective, or FEMIC process is
+run.
+
+.. code-block:: bash
+
+   ws4 hydrology screen \
+     --dataset build/compiled \
+     --mapping build/hydrology_mapping \
+     --schedule schedule.csv \
+     --out build/hydrology_screen
+
+The screen:
+
+- sums cumulative block area by mapped watershed and schedule period;
+- derives ``harvest_fraction`` from the FEMIC domain watershed area;
+- adds optional global covariates from ``--covariates features.json``;
+- selects the nearest response-surface scenario within
+  ``--scenario-tolerance`` (default ``0.05``);
+- joins the selected response ratio to flood-risk rows by watershed, receptor,
+  and return period; and
+- writes ``hydrology_screen.csv`` and a deterministic
+  ``hydrology_screen.json`` manifest.
+
+A missing scenario feature, a harvest fraction outside the tolerance, a
+missing watershed area, or no flood-risk row is a refusal. Refusals fail the
+command by default. ``--allow-refused`` writes the inside-domain rows and records
+the refusals in the manifest.
+
+The screening peak flow is ``baseline_peak_flow_m3s * response_ratio``. The
+bundle's own scenario flow, exceedance probability, and expected annual damage
+are carried alongside it and are not recomputed. The row is a planning screen,
+not a schedule-specific process simulation or regulatory flood map.
 
 Flood-Risk Table
 ----------------
