@@ -71,11 +71,14 @@ Endpoints
      - The run's ``summary.json``.
    * - ``GET /api/runs/{run}/accounts?year=&account=``
      - Rows of the run's ``account_values.csv``, filtered.
+   * - ``GET /api/lidar``
+     - The dataset's registered FEMIC LiDAR pin, licence, CRS, products, and canonical
+       ``lidar_*`` block fields. ``available`` is false for a dataset without LiDAR.
    * - ``GET /api/runs/{run}/reports``
      - The run's report files and their sizes.
    * - ``GET /api/runs/{run}/reports/{name}``
      - One report file; a name the run does not hold is a 404.
-   * - ``GET /api/runs/{run}/map?year=&period_start=&layer=&account=&format=&bbox=&zoom=``
+   * - ``GET /api/runs/{run}/map?year=&period_start=&layer=&account=&format=&bbox=&zoom=&lidar=``
      - A GeoJSON ``FeatureCollection`` joined to ``--geometry``. ``year`` is the period's end year
        and ``period_start`` its first year, so ``treatments`` covers the period; ``cumulative``
        marks the current period and earlier ones, ``patches`` carries the year's patch membership,
@@ -86,6 +89,8 @@ Endpoints
        it returns only treated centroids, and for the bare block layer it returns an even sample.
        The response carries ``total_features``, ``total_treated``, ``total_untreated``, and
        ``overview_mode`` so the shell can keep full-run counts while drawing the viewport.
+       ``lidar=true`` joins the dataset's canonical block LiDAR fields by ``block_id`` and sets
+       the response's ``lidar`` flag.
    * - ``GET /api/runs/{run}/tiles/{z}/{x}/{y}.mvt?year=&layer=&period_start=``
      - One Mapbox Vector Tile for ``blocks``, ``treatments``, or ``cumulative``. The layer is
        named ``blocks`` in the tile. Below zoom 6, treatment layers carry treated block polygons
@@ -149,6 +154,20 @@ Endpoints
        cannot leave a stream holding a thread.
    * - ``GET /api/skins``, ``/api/skins/{id}``
      - The checked skin manifests.
+
+LiDAR
+-----
+
+The **LiDAR** tab is read-only. It shows the registered bundle id, version, source, licence,
+native CRS, products, and the canonical block field catalog. Selecting a field colours the
+visible blocks from the Parquet block values and shows the in-view range; clicking a block
+adds all its LiDAR values to the detail panel. The layer deliberately uses the explicit GeoJSON
+join instead of the MVT shortcut, because MVT properties do not carry the LiDAR fields. Missing
+values stay neutral. A dataset without a registration keeps the tab visible with an explicit
+unavailable state.
+
+The source must be a P52-registered FEMIC LidarBC bundle; the browser does not open rasters,
+reproject them, or derive new terrain or canopy values.
 
 Layers
 ------

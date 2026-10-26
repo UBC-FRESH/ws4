@@ -58,8 +58,10 @@ exists and the maintainer approves it.
 | P50 Runtime provenance and release verification | #345 | `feature/p50-runtime-provenance` | complete |
 | P51 Release-candidate verification | #351 | `feature/p51-release-candidate` | complete |
 | P53 Version 0.2.0 release preparation | #371 | `feature/p53-v020` | complete |
+| P55 Final 0.2.0 release candidate | #388 | `feature/p55-final-rc` | complete |
 | P56 Disturbance event consumer | #393 | `feature/p56-disturbance-consumer` | complete |
 | P58 Forest carbon accounting and carbon-aware planning | #357 | `feature/p58-carbon` | complete |
+| P59 LiDAR in the web UI | #417 | `feature/p59-lidar-ui` | complete |
 | P60 Harden hydrology use with validation evidence | #415 | `feature/p60-closeout` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
@@ -1650,6 +1652,27 @@ Acceptance:
 - Clean-checkout, dashboard, artifacts, isolated installs, entry points, and Pages pass.
 - No tag or release is created.
 
+## Phase 55: Final 0.2.0 release candidate
+
+Parent issue: #388
+Branch: `feature/p55-final-rc`
+Status: complete
+
+Goal: produce the final 0.2.0 release candidate after the carbon, LiDAR, hydrology, and
+disturbance work landed, update the release notes, re-run the release gates on the final head,
+and request tag approval.
+
+- [x] P55.1 Update the 0.2.0 notes for P51/P52 and later merged phases (#389)
+- [x] P55.2 Re-run the final release gates on the final head (#390)
+- [x] P55.3 Request tag approval and close out (#391)
+
+Acceptance:
+
+- The notes match the final merged head and avoid claiming unfinished work.
+- Known gaps list only still-open work.
+- Clean-checkout, dashboard, artifacts, isolated installs, entry points, and Pages pass.
+- No tag or release is created without explicit approval.
+
 ## Phase 56: Disturbance event consumer
 
 Parent issue: #393
@@ -1768,6 +1791,37 @@ Acceptance:
 - GCBM outputs can be ingested and compared without making FLINT a WS4 runtime dependency.
 
 Closeout report: `notes/reports/p58-closeout.md`.
+
+## Phase 59: LiDAR in the web UI
+
+Parent issue: #417
+Branch: `feature/p59-lidar-ui`
+Status: complete
+
+Goal: expose registered FEMIC LiDAR provenance, canonical block fields, block detail, and a
+read-only block choropleth in the web application, and repair the P52 overwrite path.
+
+- [x] P59.1 Add the LiDAR API and canonical field contract (#418)
+  - [x] Add the API and field-label helper
+  - [x] Join fields into the map response when requested
+  - [x] Repair overwrite and add the duplicate-column regression test
+- [x] P59.2 Add the LiDAR panel, map coloring, and block details (#419)
+  - [x] Add the tab, provenance card, and unavailable state
+  - [x] Add the field selector, scale, and legend
+  - [x] Add block-detail values and reset behavior
+- [x] P59.3 Verify real data, document, and close out (#420)
+  - [x] Regenerate the TFL 6 validation dataset without duplicate columns
+  - [x] Run the browser/API smoke
+  - [x] Verify the c5 fallback and write the close-out
+
+Acceptance:
+
+- A registered dataset shows bundle pin, CRS, licence, products, and fields.
+- A dataset without LiDAR shows an explicit unavailable state.
+- Selected fields colour blocks and appear in the block detail.
+- Overwrite leaves one canonical column per field.
+- The TFL 6 validation dataset and c5 fallback are both exercised.
+- `python scripts/dashboard.py` is green.
 
 ## Phase 60: Harden hydrology use with validation evidence
 

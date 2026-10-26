@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null };
 
 const $ = (id) => document.getElementById(id);
 const TILE_VERSION = 'v8';
@@ -117,7 +117,60 @@ async function loadUsedRoads() {
   }
 }
 
+function lidarColor(value) {
+  const range = state.lidarRange;
+  if (!range || !Number.isFinite(value)) return '#c9d2da';
+  const span = range[1] - range[0];
+  const t = span > 0 ? Math.max(0, Math.min(1, (value - range[0]) / span)) : 0.5;
+  return `hsl(${Math.round(220 - 220 * t)} 72% 52%)`;
+}
+
+function lidarFieldInfo(name) {
+  return (state.lidar?.fields ?? []).find((field) => field.name === name) ?? null;
+}
+
+function updateLidarRange() {
+  const field = state.lidarField;
+  if (!field) {
+    state.lidarRange = null;
+    renderLidarLegend();
+    return;
+  }
+  const values = [];
+  for (const feature of state.features) {
+    const value = Number(feature.properties?.[field]);
+    if (Number.isFinite(value)) values.push(value);
+  }
+  state.lidarRange = values.length
+    ? [Math.min(...values), Math.max(...values)]
+    : null;
+  renderLidarLegend();
+}
+
+function renderLidarLegend() {
+  const legend = $('lidar-legend');
+  if (!legend) return;
+  const field = lidarFieldInfo(state.lidarField);
+  if (!field || !state.lidarRange) {
+    legend.hidden = true;
+    return;
+  }
+  legend.hidden = false;
+  const unit = field.unit ? ` ${field.unit}` : '';
+  $('lidar-legend-title').textContent = `${field.label}${unit ? ` (${field.unit})` : ''}`;
+  $('lidar-min').textContent = Number(state.lidarRange[0]).toLocaleString(undefined, { maximumFractionDigits: 2 }) + unit;
+  $('lidar-max').textContent = Number(state.lidarRange[1]).toLocaleString(undefined, { maximumFractionDigits: 2 }) + unit;
+}
+
 function featureStyle(properties) {
+  if (state.lidarField) {
+    const value = Number(properties[state.lidarField]);
+    return {
+      treated: Boolean(properties.treated),
+      fill: Number.isFinite(value) ? lidarColor(value) : '#c9d2da',
+      opacity: 1,
+    };
+  }
   let treated = false;
   let fill = null;
   let opacity = 1;
@@ -445,7 +498,12 @@ function render(refit = true) {
     let isTreated;
     let klass;
     let fill = null;
-    if (state.compareView && state.compare) {
+    if (state.lidarField) {
+      const value = Number(properties[state.lidarField]);
+      isTreated = Boolean(properties.treated);
+      klass = isTreated ? 'treated' : 'untreated';
+      fill = Number.isFinite(value) ? lidarColor(value) : '#c9d2da';
+    } else if (state.compareView && state.compare) {
       const flags = state.compare.blocks.get(String(properties.block_id)) ?? {};
       const inA = Boolean(flags.a);
       const inB = Boolean(flags.b);
@@ -540,6 +598,10 @@ function applyVisibility() {
   if (state.mapEngine === 'maplibre') {
     updateVectorPaint();
     renderMapLibre(false);
+    return;
+  }
+  if (state.lidarField) {
+    for (const element of document.querySelectorAll('#viewport .block')) element.style.display = '';
     return;
   }
   const showTreated = $('show-treated').checked;
@@ -748,12 +810,13 @@ async function loadMap(preserveView = false) {
   state.mapRetries = 0;
   state.mapLoading = true;
   statusLine('loading map…');
-  const layer = mapLayerName();
+  const lidarField = state.lidarField ? lidarFieldInfo(state.lidarField) : null;
+  const layer = state.lidarField ? 'blocks' : mapLayerName();
   try {
     const period = currentPeriod();
     const end = period ? Number(period.end) : state.year;
     const span = period ? ` · years ${period.start}-${period.end}` : '';
-    if (state.mapEngine === 'maplibre' && vectorMode(layer)) {
+    if (state.mapEngine === 'maplibre' && vectorMode(layer) && !state.lidarField) {
       const base = new URL('.', document.baseURI).href;
       let tileUrl = `${base}api/runs/${encodeURIComponent(state.run)}/tiles/{z}/{x}/{y}.mvt?year=${end}&layer=${layer}&v=${TILE_VERSION}`;
       if (period) tileUrl += `&period_start=${period.start}`;
@@ -783,6 +846,7 @@ async function loadMap(preserveView = false) {
     state.mapTotals = null;
     let query = `api/runs/${encodeURIComponent(state.run)}/map?year=${end}&layer=${layer}`;
     query += periodQuery();
+    if (state.lidarField) query += '&lidar=1';
     if (layer === 'compartments') {
       query += `&account=${encodeURIComponent(state.compartmentAccount)}`;
     }
@@ -800,10 +864,12 @@ async function loadMap(preserveView = false) {
     state.mapTotals = body.overview
       ? { treated: body.total_treated ?? 0, untreated: body.total_untreated ?? 0 }
       : null;
+    updateLidarRange();
     render(!preserveView);
     const place = state.mapEngine === 'maplibre' ? 'in view' : '';
     const noun = body.overview_mode === 'treated' ? 'treated blocks' : 'blocks';
-    statusLine(`${state.features.length.toLocaleString()} ${noun} ${place} · ${layer} · period ${state.periodIndex + 1}${span}`);
+    const sourceLabel = lidarField ? `LiDAR: ${lidarField.label}` : layer;
+    statusLine(`${state.features.length.toLocaleString()} ${noun} ${place} · ${sourceLabel} · period ${state.periodIndex + 1}${span}`);
     if (state.showUsedRoads) loadUsedRoads();
   } catch (error) {
     statusLine(`map unavailable: ${error.message}`);
@@ -1548,6 +1614,10 @@ function compartmentLabel(klass) {
 }
 
 function layerLabel() {
+  if (state.lidarField) {
+    const field = lidarFieldInfo(state.lidarField);
+    return field ? `LiDAR: ${field.label}` : 'LiDAR';
+  }
   if (state.layerMode === 'compartments') return 'Spread compartments';
   if (state.layerMode === 'base' && state.baseAttribute) {
     const info = baseAttributeInfo(state.baseAttribute);
@@ -1814,6 +1884,72 @@ function renderLayerTree() {
   }
 }
 
+function lidarMetaRow(label, value) {
+  const row = document.createElement('div');
+  row.className = 'lidar-row';
+  const key = document.createElement('span');
+  key.textContent = label;
+  const text = document.createElement('span');
+  text.textContent = value === undefined || value === null || value === '' ? '—' : String(value);
+  row.append(key, text);
+  return row;
+}
+
+async function loadLidar() {
+  const status = $('lidar-status');
+  const meta = $('lidar-meta');
+  const select = $('lidar-field');
+  if (!status || !meta || !select) return;
+  try {
+    const info = await api('api/lidar');
+    state.lidar = info;
+    meta.replaceChildren();
+    if (!info.available) {
+      state.lidarField = '';
+      state.lidarRange = null;
+      select.replaceChildren(new Option('Off', ''));
+      select.disabled = true;
+      status.textContent = 'this dataset has no registered LiDAR fields';
+      renderLidarLegend();
+      return;
+    }
+    select.disabled = false;
+    status.textContent = `${info.fields.length} block fields · ${Number(info.block_count ?? 0).toLocaleString()} blocks`;
+    for (const [label, value] of [
+      ['Bundle', info.bundle_id],
+      ['Version', info.bundle_version],
+      ['Source', info.source_id],
+      ['Licence', info.licence_id],
+      ['CRS', info.native_crs],
+      ['Products', (info.products ?? []).join(', ')],
+      ['Registered', info.registered_utc],
+    ]) {
+      meta.append(lidarMetaRow(label, value));
+    }
+    const current = info.fields.some((field) => field.name === state.lidarField)
+      ? state.lidarField
+      : '';
+    state.lidarField = current;
+    select.replaceChildren(new Option('Off', ''));
+    for (const field of info.fields) {
+      const option = document.createElement('option');
+      option.value = field.name;
+      option.textContent = `${field.label}${field.unit ? ` (${field.unit})` : ''}`;
+      select.append(option);
+    }
+    select.value = current;
+    renderLidarLegend();
+  } catch (error) {
+    state.lidar = null;
+    state.lidarField = '';
+    select.disabled = true;
+    select.replaceChildren(new Option('Off', ''));
+    meta.replaceChildren();
+    status.textContent = `LiDAR unavailable: ${error.message}`;
+    renderLidarLegend();
+  }
+}
+
 async function loadLayers() {
   const hint = $('layers-hint');
   try {
@@ -1947,7 +2083,7 @@ async function loadPeriods() {
 
 function applySkin(skin) {
   state.skin = skin;
-  const panels = new Set(skin.panels ?? ['legend', 'targets', 'reports', 'comparison']);
+  const panels = new Set(skin.panels ?? ['legend', 'lidar', 'targets', 'reports', 'comparison']);
   for (const button of document.querySelectorAll('nav.tabs button')) {
     button.hidden = !panels.has(button.dataset.tab);
   }
@@ -2800,7 +2936,7 @@ async function finishRun(id) {
   try {
     const summary = await api('api/summary');
     if (await fillRuns(summary, id)) {
-      await loadPeriods(); await loadLayers(); await loadTargets(); await loadReports(); await loadMap();
+      await loadPeriods(); await loadLayers(); await loadLidar(); await loadTargets(); await loadReports(); await loadMap();
     }
   } catch { /* the run is done; a refresh failure is not fatal */ }
   window.setTimeout(() => { $('run-panel').hidden = true; }, 6000);
@@ -3216,6 +3352,17 @@ function showDetail(block, supplied = null) {
       $('detail').append(line);
     }
   }
+  for (const field of state.lidar?.fields ?? []) {
+    const value = properties[field.name];
+    if (value === undefined || value === null || value === '') continue;
+    const line = document.createElement('div');
+    const number = Number(value);
+    const text = Number.isFinite(number)
+      ? number.toLocaleString(undefined, { maximumFractionDigits: 2 })
+      : String(value);
+    line.textContent = `${field.label}${field.unit ? ` (${field.unit})` : ''}: ${text}`;
+    $('detail').append(line);
+  }
 }
 
 function wireSplitter() {
@@ -3418,12 +3565,18 @@ function wireControls() {
     if (state.live.active) togglePause(); else startRun();
   });
   $('stop-run').addEventListener('click', stopRun);
+  $('lidar-field').addEventListener('change', (event) => {
+    state.lidarField = event.target.value;
+    updateLidarRange();
+    loadMap();
+  });
   $('run').addEventListener('change', async (event) => {
     state.run = event.target.value;
     await loadSkins();
     await loadAgent();
     await loadPeriods();
     await loadLayers();
+    await loadLidar();
     await loadTargets();
     await loadReports();
     syncCompareRuns();
@@ -3529,8 +3682,10 @@ function wireControls() {
     button.addEventListener('click', () => {
       for (const other of document.querySelectorAll('nav.tabs button')) other.classList.toggle('active', other === button);
       const tab = button.dataset.tab;
-      for (const name of ['legend', 'targets', 'reports', 'comparison', 'search']) $(`tab-${name}`).hidden = name !== tab;
-      if (tab === 'comparison') {
+      for (const name of ['legend', 'lidar', 'targets', 'reports', 'comparison', 'search']) $(`tab-${name}`).hidden = name !== tab;
+      if (tab === 'lidar') {
+        loadLidar();
+      } else if (tab === 'comparison') {
         syncCompareRuns();
         loadComparison();
       } else if (tab === 'search') {
@@ -3600,6 +3755,7 @@ async function start() {
     await loadAgent();
     await loadPeriods();
     await loadLayers();
+    await loadLidar();
     await loadTargets();
     await loadReports();
     await loadMap();

@@ -1570,11 +1570,21 @@ def _merge_mapping(
     field_map = {column: f"lidar_{column}" for column in mapping.columns if column not in excluded}
     if not field_map:
         raise FemicLidarError("Mapping CSV has no data fields to integrate.")
-    existing = [name for name in field_map.values() if name in table.columns]
-    if existing and not overwrite:
-        raise FemicLidarError(
-            "Dataset already has LiDAR fields; use overwrite: " + ", ".join(existing)
-        )
+    canonical = set(field_map.values())
+    existing = [
+        str(name)
+        for name in table.columns
+        if any(str(name) == field or str(name).startswith(f"{field}_") for field in canonical)
+    ]
+    if existing:
+        if not overwrite:
+            raise FemicLidarError(
+                "Dataset already has LiDAR fields; use overwrite: " + ", ".join(existing)
+            )
+        # Drop the old columns before the join. Merging over them leaves pandas to
+        # suffix both sides as `_x`/`_y`, which breaks the manifest's field names.
+        # The variant match also repairs a dataset written by the old overwrite path.
+        table = table.drop(columns=existing)
     known = set(table[key])
     mapped = set(mapping[key])
     unknown = mapped - known

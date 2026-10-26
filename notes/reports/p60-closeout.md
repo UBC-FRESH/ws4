@@ -6,7 +6,7 @@ Pull request: #428, `feature/p60-closeout` into `main`
 Evidence head: `2bceea0` (P60.2), plus the report commit
 Report commit: the commit that adds this report. Its CI run is posted on the pull request.
 Date: 2026-10-26
-Status: queued for approval. Not merged.
+Status: queued for approval. Not merged. Main has advanced with P55/P59; this branch merged `origin/main` and re-ran the gates.
 
 ## Recommendation
 
@@ -78,6 +78,7 @@ changelog and the PR.
 | No hydrologist review. | No reviewer record exists. | Preserve `not_reviewed`; require reviewed evidence for operational use. |
 | No FHOPS integration. | FHOPS P14 is still its LidarBC phase. | FHOPS Phase 15 after P14. |
 | No independent WS4 tail-check fitting. | WS4 consumes producer evidence; it does not refit distributions. | Keep producer tail-check metadata authoritative; follow-up remediation if a producer fit is blocked. |
+| Main advanced with P55/P59 during closeout. | Release and LiDAR UI work merged while P60 awaited approval. | Merged `origin/main`; kept P55/P59/P60 sections and docs. Dashboard re-ran green (112.04 s tests). |
 
 ## 6. Next phase
 

@@ -2787,6 +2787,31 @@ issue comments.
   public-watershed pilot/tail-check hardening phase, or FHOPS Phase 15 after its
   P14 LidarBC phase merges.
 
+- P55.1: updated the 0.2.0 release notes for the merged P52 LiDAR, P58 carbon, P57 hydrology,
+  P56 disturbance, and P46 route-event work; removed the stale "P51/P52 not in 0.2.0" gap; added
+  the `lidar` and `carbon` install extras; recorded phase verification evidence and the remaining
+  carbon/hydrology/LiDAR limits. Added the Phase 55 roadmap section and tracker row. No tag.
+
+- P55.2: verified the final head with `.[geo,opt,carbon,lidar]` installed. Clean-checkout and
+  dashboard pass; added a `libcbm` mypy override and installed the optional extras in the
+  quality/dashboard/pre-commit jobs so carbon/LiDAR tests run. sdist/wheel build, `twine check`,
+  isolated installs, entry points, carbon/lidar/disturbance/hydrology commands, synthetic smoke,
+  and Pages pass.
+- P55.3: no tag or release created. Candidate is ready for explicit tag approval.
+
+- P59.1/P59.2: added `/api/lidar`, a canonical LiDAR field catalog and block join, a LiDAR tab with
+  provenance/field selection/range legend, map colouring, and block-detail values. The LiDAR layer
+  uses the explicit GeoJSON join rather than MVT; datasets without LiDAR keep an explicit disabled
+  state. Fixed the P52 overwrite path so re-integration drops canonical and `_x`/`_y` variants
+  before joining.
+- P59.3: re-integrated the real TFL 6 7-fragment/1-block validation dataset with six canonical
+  fields (slope and CHM valid-pixels/mean/p95), ran `scripts/check_lidar_browser.py` (exit 0), and
+  verified c5 reports no LiDAR. Dashboard **GREEN**.
+
+- P59 close-out: pull request #425 squash-merged as `1d1bb2a`; parent #417 and tasks
+  #418/#419/#420 closed; status set complete. The P52 overwrite repair and the real TFL 6
+  LiDAR UI smoke are recorded in `notes/reports/p59-closeout.md`.
+
 - P60.1: added FEMIC validation-evidence readiness reporting.
   `assess_femic_hydrology_readiness` reads optional `validation_report` and
   `model_card` artifacts and reports `not_available`, `provisional`,
@@ -2814,4 +2839,7 @@ issue comments.
   single phase PR #428, and set P60 to `pr-open`. The hydrology contract suite has 51
   passing tests; the dashboard is GREEN at the P60.2 evidence head. No merge,
   tag, release, or settings change was made. Report-commit dashboard **GREEN**
-  (lint, format, types, 113.80 s tests, validator, docs, docstrings).
+  (lint, format, types, 113.80 s tests, validator, docs, docstrings). Main
+  advanced with P55/P59 before the phase merge; the closeout branch merged
+  `origin/main`, kept all phases, and re-ran the dashboard **GREEN** (lint,
+  format, types, 112.04 s tests, validator, docs, docstrings).
