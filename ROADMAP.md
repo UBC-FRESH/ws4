@@ -64,7 +64,7 @@ exists and the maintainer approves it.
 | P44 Comparison and map operations | #341 | `feature/p44-compare-ops` | complete |
 | P45 Route evaluation performance | #368 | `feature/p45-route-profile` | complete |
 | P52 Consume FEMIC-compiled LidarBC products | #317 | `feature/p52-lidar-products` | complete |
-| P57 Consume FEMIC hydrology response bundles | #395 | `feature/p57-hydrology-response` | active |
+| P57 Consume FEMIC hydrology response bundles | #395 | `feature/p57-hydrology-response` | pr-open |
 | P46 Cached route event ledger | #382 | `feature/p46-route-events` | complete |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
@@ -1651,7 +1651,7 @@ Acceptance:
 
 Parent issue: #395
 Branch: `feature/p57-hydrology-response`
-Status: active
+Status: pr-open
 
 Goal: consume pinned FEMIC hydrology response and flood-risk bundles for
 screening-only spatial scheduling, without re-running FEMIC discovery,
@@ -1687,12 +1687,12 @@ frequency fitting, or surrogate training.
   - [x] Refuse out-of-envelope schedules with the configured penalty.
   - [x] Add `--flood-screen-config` to optimize/watch/calibrate.
   - [x] Add tests, design note, reference docs, roadmap, and changelog.
-- [ ] P57.6 Validate, document, and close out the hydrology consumer phase (#410)
-  - [ ] Run the full hydrology contract suite and dashboard.
-  - [ ] Record end-to-end evidence and limitations.
-  - [ ] Write the close-out report and set P57 status to `pr-open`.
-  - [ ] Update changelog and post closeout comments.
-  - [ ] Queue the stacked PRs for maintainer approval.
+- [x] P57.6 Validate, document, and close out the hydrology consumer phase (#410)
+  - [x] Run the full hydrology contract suite and dashboard.
+  - [x] Record end-to-end evidence and limitations.
+  - [x] Write the close-out report and set P57 status to `pr-open`.
+  - [x] Update changelog and post closeout comments.
+  - [x] Queue the stacked PRs for maintainer approval.
 
 Acceptance:
 

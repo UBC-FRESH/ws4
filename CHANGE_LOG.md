@@ -2665,3 +2665,13 @@ issue comments.
   Five new tests cover config loading, account emission, refusal, target
   pricing, and penalty behavior. Dashboard **GREEN** (lint, format, types,
   104.92 s tests, validator, docs, docstrings).
+
+- P57.6: wrote `notes/reports/p57-closeout.md`, recorded the stacked-PR and
+  public-pilot deviations, set P57 to `pr-open`, and queued the stack for
+  maintainer approval. The hydrology contract suite has 39 passing tests; the
+  dashboard is GREEN at the P57.5 evidence head. No merge, tag, release, or
+  settings change was made. Known limits: no reviewed public crosswalk, no
+  hydrologist review, no independent WS4 tail-check validation, whole-schedule
+  flood evaluation, optimizer-only accounts, and no FHOPS integration.
+  Report-commit dashboard **GREEN** (lint, format, types, 105.92 s tests,
+  validator, docs, docstrings).
