@@ -1338,12 +1338,19 @@ class Optimizer:
         Raises
         ------
         ValueError
-            When a carbon target is present without a package.
+            When a carbon or fertilization target is present without a package
+            or without a fertilization configuration.
         """
-        if any(target.account.startswith("carbon.") for target in targets) and (
-            not self.cfg.carbon_package_path
-        ):
+        needs_carbon = any(
+            target.account.startswith(("carbon.", "fertilization.")) for target in targets
+        )
+        if needs_carbon and not self.cfg.carbon_package_path:
             raise ValueError("carbon targets need a carbon package; set --carbon-package")
+        needs_fertilization = any(target.account.startswith("fertilization.") for target in targets)
+        if needs_fertilization and not self.cfg.carbon_fertilization_path:
+            raise ValueError(
+                "fertilization targets need a fertilization config; set --carbon-fertilization"
+            )
 
     def _solve(
         self,

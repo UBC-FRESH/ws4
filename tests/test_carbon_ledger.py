@@ -29,6 +29,15 @@ def test_carbon_fertilization_requires_a_package() -> None:
         OptimizeConfig(carbon_fertilization_path="fertilization.yaml")
 
 
+def test_fertilization_targets_require_a_fertilization_config() -> None:
+    """A fertilization account target needs the fertilization configuration."""
+    optimizer = Optimizer(Path("."), OptimizeConfig(carbon_package_path="pkg"))
+    with pytest.raises(ValueError, match="fertilization config"):
+        optimizer._require_carbon_target_support(
+            [Target(account="fertilization.co2e_t", maximum=1.0)]
+        )
+
+
 def test_ledger_matches_a_full_run(tmp_path: Path) -> None:
     """The block ledger reproduces the full-schedule carbon accounts."""
     pytest.importorskip("libcbm")
