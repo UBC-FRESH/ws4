@@ -1,5 +1,19 @@
 """Readers for recipes and inventories."""
 
+from .hydrology import (
+    FemicFloodRiskRow,
+    FemicFloodRiskTable,
+    FemicHydrologyArtifact,
+    FemicHydrologyBundle,
+    FemicHydrologyError,
+    FemicHydrologyValidation,
+    load_femic_hydrology_bundle,
+    read_femic_flood_risk,
+    validate_femic_hydrology_bundle,
+)
+from .hydrology import (
+    bundle_pin as hydrology_bundle_pin,
+)
 from .lidar import (
     CanopyMappingResult,
     FemicLidarBundle,
@@ -25,6 +39,12 @@ from .lidar import (
 
 __all__ = [
     "CanopyMappingResult",
+    "FemicFloodRiskRow",
+    "FemicFloodRiskTable",
+    "FemicHydrologyArtifact",
+    "FemicHydrologyBundle",
+    "FemicHydrologyError",
+    "FemicHydrologyValidation",
     "FemicLidarBundle",
     "FemicLidarError",
     "FemicLidarProduct",
@@ -32,14 +52,18 @@ __all__ = [
     "LidarDatasetIntegrationResult",
     "LidarPolygonSummary",
     "bundle_pin",
+    "hydrology_bundle_pin",
     "integrate_lidar_mapping_into_dataset",
+    "load_femic_hydrology_bundle",
     "load_femic_lidar_bundle",
     "load_registered_femic_lidar_bundle",
     "map_femic_canopy_to_fragments",
     "map_femic_lidar_to_fragments",
+    "read_femic_flood_risk",
     "read_registered_femic_lidar",
     "register_femic_lidar_bundle",
     "summarize_femic_lidar_for_polygons",
+    "validate_femic_hydrology_bundle",
     "validate_femic_lidar_bundle",
     "validate_registered_femic_lidar",
     "write_canopy_mapping",

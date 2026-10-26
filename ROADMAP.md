@@ -64,6 +64,7 @@ exists and the maintainer approves it.
 | P44 Comparison and map operations | #341 | `feature/p44-compare-ops` | complete |
 | P45 Route evaluation performance | #368 | `feature/p45-route-profile` | complete |
 | P52 Consume FEMIC-compiled LidarBC products | #317 | `feature/p52-lidar-products` | complete |
+| P57 Consume FEMIC hydrology response bundles | #395 | `feature/p57-hydrology-response` | active |
 | P46 Cached route event ledger | #382 | `feature/p46-route-events` | complete |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
@@ -1645,6 +1646,32 @@ Acceptance:
 - The package builds without the license-classifier warning.
 - Clean-checkout, dashboard, artifacts, isolated installs, entry points, and Pages pass.
 - No tag or release is created.
+
+## Phase 57: Consume FEMIC hydrology response bundles
+
+Parent issue: #395
+Branch: `feature/p57-hydrology-response`
+Status: active
+
+Goal: consume pinned FEMIC hydrology response and flood-risk bundles for
+screening-only spatial scheduling, without re-running FEMIC discovery,
+frequency fitting, or surrogate training.
+
+- [x] P57.1 Define and validate the FEMIC hydrology bundle consumer contract (#396)
+  - [x] Add schema constants, immutable records, and a stable bundle pin.
+  - [x] Implement load/validate with checksum, role, path, summary, and ID checks.
+  - [x] Add `ws4 hydrology inspect|validate` and JSON error reporting.
+  - [x] Add contract/failure tests and a synthetic fixture builder.
+  - [x] Add the design note, reference docs, roadmap, and changelog entry.
+
+Acceptance:
+
+- A valid bundle returns a stable pin and per-artifact SHA-256/size records.
+- Tampered, missing, path-escaping, wrong-schema, missing-role, and ID-mismatch
+  bundles fail with specific errors.
+- CLI JSON reports are deterministic and exit non-zero on invalid input.
+- Validation is stdlib-only and never contacts FEMIC or the network.
+- The screening-only and hydrologist-review conditions remain explicit.
 
 ## Detailed Next Steps Notes
 

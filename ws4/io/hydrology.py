@@ -1,0 +1,967 @@
+"""Read and validate FEMIC hydrology response bundles.
+
+WS4 consumes the FEMIC producer contract. This module pins a response bundle,
+verifies its manifest and artifact checksums, and exposes the response-surface
+and flood-risk records without re-running FEMIC discovery, frequency fitting,
+or surrogate training.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+import re
+from collections.abc import Mapping
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from pathlib import Path
+
+FEMIC_HYDROLOGY_MANIFEST_SCHEMA = "femic.hydrology.response.v1"
+FEMIC_HYDROLOGY_MANIFEST_NAME = "manifest.json"
+FEMIC_HYDROLOGY_RESPONSE_SURFACE_SCHEMA = "femic.hydrology.flood_response.v1"
+FEMIC_HYDROLOGY_FLOOD_RISK_SCHEMA = "femic.hydrology.flood_risk.v1"
+FEMIC_HYDROLOGY_DOMAIN_SCHEMA = "femic.hydrology.domain.v1"
+FEMIC_HYDROLOGY_DISTURBANCE_SCHEMA = "femic.hydrology.disturbance.v1"
+FEMIC_HYDROLOGY_SURROGATE_MODEL_SCHEMA = "femic.hydrology.surrogate_model.v1"
+FEMIC_HYDROLOGY_VALIDATION_SCHEMA = "femic.hydrology.validation.v1"
+FEMIC_HYDROLOGY_MODEL_CARD_SCHEMA = "femic.hydrology.model_card.v1"
+FEMIC_HYDROLOGY_PILOT_SCHEMA = "femic.hydrology.pilot.v1"
+FEMIC_HYDROLOGY_REQUIRED_ROLES: tuple[str, ...] = (
+    "response_surface",
+    "flood_risk",
+    "domain",
+    "disturbance_ledger",
+)
+FEMIC_HYDROLOGY_OPTIONAL_ROLES: tuple[str, ...] = (
+    "surrogate_model",
+    "surrogate_validation",
+    "frequency_fit",
+    "frequency_pairing",
+    "tier0_screening",
+    "benchmark_check",
+    "validation_report",
+    "model_card",
+    "pilot_run",
+)
+FEMIC_HYDROLOGY_ROLE_SCHEMAS: dict[str, str] = {
+    "response_surface": FEMIC_HYDROLOGY_RESPONSE_SURFACE_SCHEMA,
+    "flood_risk": FEMIC_HYDROLOGY_FLOOD_RISK_SCHEMA,
+    "domain": FEMIC_HYDROLOGY_DOMAIN_SCHEMA,
+    "disturbance_ledger": FEMIC_HYDROLOGY_DISTURBANCE_SCHEMA,
+    "surrogate_model": FEMIC_HYDROLOGY_SURROGATE_MODEL_SCHEMA,
+    "frequency_fit": "femic.hydrology.flood_frequency.v1",
+    "tier0_screening": "femic.hydrology.screening.v1",
+    "validation_report": FEMIC_HYDROLOGY_VALIDATION_SCHEMA,
+    "model_card": FEMIC_HYDROLOGY_MODEL_CARD_SCHEMA,
+    "pilot_run": FEMIC_HYDROLOGY_PILOT_SCHEMA,
+}
+FEMIC_HYDROLOGY_CONSUMER_CONTRACT_KEYS: tuple[str, ...] = (
+    "manifest_path",
+    "read_order",
+    "pin_rule",
+    "applicability_rule",
+    "native_units_rule",
+    "consumer_phases",
+)
+SHA256_PATTERN = re.compile(r"^[0-9a-fA-F]{64}$")
+
+
+class FemicHydrologyError(RuntimeError):
+    """Raised when a FEMIC hydrology bundle cannot be consumed."""
+
+
+@dataclass(frozen=True)
+class FemicHydrologyArtifact:
+    """One pinned manifest artifact.
+
+    Attributes
+    ----------
+    role : str
+        Producer artifact role.
+    relative_path : str
+        Path to the artifact relative to the bundle root.
+    schema_version : str | None
+        Artifact schema recorded by the producer.
+    media_type : str
+        Artifact media type.
+    size_bytes : int
+        Artifact size in bytes.
+    sha256 : str
+        Artifact SHA-256 digest.
+    description : str
+        Producer description.
+    """
+
+    role: str
+    relative_path: str
+    schema_version: str | None
+    media_type: str
+    size_bytes: int
+    sha256: str
+    description: str
+
+
+@dataclass(frozen=True)
+class FemicFloodRiskRow:
+    """One receptor/return-period flood-risk row.
+
+    Attributes
+    ----------
+    receptor_id : str
+        FEMIC receptor identifier.
+    watershed_id : str
+        FEMIC watershed identifier.
+    return_period : float
+        Return period in years.
+    baseline_peak_flow_m3s : float
+        Baseline peak flow in cubic metres per second.
+    scenario_peak_flow_m3s : float
+        Scenario peak flow in cubic metres per second.
+    ratio : float
+        Scenario/baseline peak-flow ratio.
+    exceedance_probability : float | None
+        Optional probability of exceeding a receptor threshold.
+    expected_annual_damage : float | None
+        Optional expected annual damage in producer units.
+    """
+
+    receptor_id: str
+    watershed_id: str
+    return_period: float
+    baseline_peak_flow_m3s: float
+    scenario_peak_flow_m3s: float
+    ratio: float
+    exceedance_probability: float | None
+    expected_annual_damage: float | None
+
+
+@dataclass(frozen=True)
+class FemicFloodRiskTable:
+    """Pinned FEMIC flood-risk table.
+
+    Attributes
+    ----------
+    table_id : str
+        Producer table identifier.
+    generated_utc : str
+        Producer generation timestamp.
+    source_surface_id : str
+        Response-surface identifier linked by the table.
+    baseline_name : str
+        Producer baseline scenario name.
+    rows : tuple[FemicFloodRiskRow, ...]
+        Receptor/return-period rows.
+    caveats : tuple[str, ...]
+        Producer caveats.
+    schema_version : str
+        Flood-risk schema.
+    """
+
+    table_id: str
+    generated_utc: str
+    source_surface_id: str
+    baseline_name: str
+    rows: tuple[FemicFloodRiskRow, ...]
+    caveats: tuple[str, ...]
+    schema_version: str
+
+
+@dataclass(frozen=True)
+class FemicHydrologyBundle:
+    """Validated FEMIC hydrology response bundle.
+
+    Attributes
+    ----------
+    bundle_dir : Path
+        Resolved bundle root.
+    manifest_path : Path
+        Validated manifest path.
+    bundle_id : str
+        Producer bundle identifier.
+    bundle_name : str
+        Producer bundle name.
+    bundle_version : str
+        Producer bundle version.
+    generated_utc : str
+        Producer generation timestamp.
+    domain_id : str
+        FEMIC domain identifier.
+    ledger_id : str
+        FEMIC disturbance-ledger identifier.
+    response_surface_id : str
+        Response-surface identifier.
+    artifacts : dict[str, FemicHydrologyArtifact]
+        Artifact records keyed by role.
+    response_surface : dict[str, object]
+        Producer response-surface summary.
+    flood_risk : dict[str, object]
+        Producer flood-risk summary.
+    applicability_domain : dict[str, object]
+        Producer applicability domain.
+    uncertainty : dict[str, object]
+        Producer uncertainty metadata.
+    consumer_contract : dict[str, object]
+        Producer consumer contract.
+    caveats : tuple[str, ...]
+        Producer caveats.
+    provenance : dict[str, object]
+        Producer provenance.
+    manifest_sha256 : str
+        SHA-256 digest of the manifest bytes.
+    total_bytes : int
+        Total size of pinned artifacts.
+    """
+
+    bundle_dir: Path
+    manifest_path: Path
+    bundle_id: str
+    bundle_name: str
+    bundle_version: str
+    generated_utc: str
+    domain_id: str
+    ledger_id: str
+    response_surface_id: str
+    artifacts: dict[str, FemicHydrologyArtifact]
+    response_surface: dict[str, object]
+    flood_risk: dict[str, object]
+    applicability_domain: dict[str, object]
+    uncertainty: dict[str, object]
+    consumer_contract: dict[str, object]
+    caveats: tuple[str, ...]
+    provenance: dict[str, object]
+    manifest_sha256: str
+    total_bytes: int
+
+
+@dataclass(frozen=True)
+class FemicHydrologyValidation:
+    """Validation report for a FEMIC hydrology response bundle.
+
+    Attributes
+    ----------
+    bundle_dir : Path
+        Resolved bundle root.
+    is_valid : bool
+        Whether the bundle passed every contract check.
+    checked_utc : str
+        UTC timestamp of the check.
+    errors : tuple[str, ...]
+        Contract errors that invalidate the bundle.
+    warnings : tuple[str, ...]
+        Non-fatal observations.
+    artifact_count : int
+        Number of pinned artifacts examined.
+    total_bytes : int
+        Total size of pinned artifacts.
+    """
+
+    bundle_dir: Path
+    is_valid: bool
+    checked_utc: str
+    errors: tuple[str, ...]
+    warnings: tuple[str, ...]
+    artifact_count: int
+    total_bytes: int
+
+    def to_dict(self) -> dict[str, object]:
+        """Return the validation report as a JSON-serializable mapping.
+
+        Returns
+        -------
+        dict[str, object]
+            JSON-serializable validation report.
+        """
+        return {
+            "bundle_dir": str(self.bundle_dir),
+            "is_valid": self.is_valid,
+            "checked_utc": self.checked_utc,
+            "errors": list(self.errors),
+            "warnings": list(self.warnings),
+            "artifact_count": self.artifact_count,
+            "total_bytes": self.total_bytes,
+        }
+
+
+def load_femic_hydrology_bundle(
+    bundle_path: Path,
+    *,
+    expected_bundle_id: str | None = None,
+    expected_bundle_version: str | None = None,
+) -> FemicHydrologyBundle:
+    """Load and validate a FEMIC hydrology response bundle.
+
+    Parameters
+    ----------
+    bundle_path : Path
+        Bundle directory or manifest path.
+    expected_bundle_id : str | None, optional
+        Required producer bundle identifier.
+    expected_bundle_version : str | None, optional
+        Required producer bundle version.
+
+    Returns
+    -------
+    FemicHydrologyBundle
+        Validated bundle metadata and pinned artifacts.
+
+    Raises
+    ------
+    FemicHydrologyError
+        If the bundle is invalid or does not match the expected pin.
+    """
+    report, bundle = _validate(
+        bundle_path,
+        expected_bundle_id=expected_bundle_id,
+        expected_bundle_version=expected_bundle_version,
+    )
+    if bundle is None or not report.is_valid:
+        raise FemicHydrologyError("; ".join(report.errors))
+    return bundle
+
+
+def validate_femic_hydrology_bundle(
+    bundle_path: Path,
+    *,
+    expected_bundle_id: str | None = None,
+    expected_bundle_version: str | None = None,
+) -> FemicHydrologyValidation:
+    """Validate a FEMIC hydrology response bundle without raising.
+
+    Parameters
+    ----------
+    bundle_path : Path
+        Bundle directory or manifest path.
+    expected_bundle_id : str | None, optional
+        Required producer bundle identifier.
+    expected_bundle_version : str | None, optional
+        Required producer bundle version.
+
+    Returns
+    -------
+    FemicHydrologyValidation
+        Validation report with specific errors and warnings.
+    """
+    report, _ = _validate(
+        bundle_path,
+        expected_bundle_id=expected_bundle_id,
+        expected_bundle_version=expected_bundle_version,
+    )
+    return report
+
+
+def bundle_pin(bundle: FemicHydrologyBundle) -> dict[str, object]:
+    """Return the stable downstream pin for a validated bundle.
+
+    Parameters
+    ----------
+    bundle : FemicHydrologyBundle
+        Validated bundle.
+
+    Returns
+    -------
+    dict[str, object]
+        Bundle identity, manifest digest, artifact checksums, and preserved
+        producer metadata.
+    """
+    return {
+        "bundle_id": bundle.bundle_id,
+        "bundle_version": bundle.bundle_version,
+        "manifest_sha256": bundle.manifest_sha256,
+        "domain_id": bundle.domain_id,
+        "ledger_id": bundle.ledger_id,
+        "response_surface_id": bundle.response_surface_id,
+        "artifacts": {
+            role: {
+                "relative_path": artifact.relative_path,
+                "schema_version": artifact.schema_version,
+                "size_bytes": artifact.size_bytes,
+                "sha256": artifact.sha256,
+            }
+            for role, artifact in sorted(bundle.artifacts.items())
+        },
+        "applicability_domain": bundle.applicability_domain,
+        "uncertainty": bundle.uncertainty,
+        "consumer_contract": bundle.consumer_contract,
+        "caveats": list(bundle.caveats),
+    }
+
+
+def read_femic_flood_risk(bundle: FemicHydrologyBundle) -> FemicFloodRiskTable:
+    """Read and validate the pinned flood-risk table.
+
+    Parameters
+    ----------
+    bundle : FemicHydrologyBundle
+        Validated bundle.
+
+    Returns
+    -------
+    FemicFloodRiskTable
+        Typed flood-risk table.
+
+    Raises
+    ------
+    FemicHydrologyError
+        If the flood-risk artifact is absent or malformed.
+    """
+    artifact = bundle.artifacts.get("flood_risk")
+    if artifact is None:
+        raise FemicHydrologyError("Bundle has no flood_risk artifact.")
+    payload = _read_json_object(
+        _resolve_member(bundle.bundle_dir, artifact.relative_path),
+        context="flood-risk artifact",
+    )
+    return _flood_risk_from_payload(payload, expected_surface=bundle.response_surface_id)
+
+
+def _validate(
+    bundle_path: Path,
+    *,
+    expected_bundle_id: str | None,
+    expected_bundle_version: str | None,
+) -> tuple[FemicHydrologyValidation, FemicHydrologyBundle | None]:
+    root, manifest_path = _resolve_manifest_path(bundle_path)
+    checked_utc = datetime.now(UTC).isoformat()
+    errors: list[str] = []
+    warnings: list[str] = []
+    artifacts: dict[str, FemicHydrologyArtifact] = {}
+    total_bytes = 0
+    manifest_sha256 = ""
+    try:
+        manifest_bytes = manifest_path.read_bytes()
+        manifest_sha256 = hashlib.sha256(manifest_bytes).hexdigest()
+        payload = _json_object(manifest_bytes, context="manifest")
+    except (OSError, FemicHydrologyError) as exc:
+        return (
+            FemicHydrologyValidation(
+                bundle_dir=root,
+                is_valid=False,
+                checked_utc=checked_utc,
+                errors=(str(exc),),
+                warnings=(),
+                artifact_count=0,
+                total_bytes=0,
+            ),
+            None,
+        )
+    if payload.get("schema_version") != FEMIC_HYDROLOGY_MANIFEST_SCHEMA:
+        errors.append(
+            "Unsupported hydrology manifest schema "
+            f"{payload.get('schema_version')!r}; expected "
+            f"{FEMIC_HYDROLOGY_MANIFEST_SCHEMA!r}."
+        )
+    bundle_id = _required_text(payload.get("bundle_id"), "bundle_id", errors)
+    bundle_name = _required_text(payload.get("bundle_name"), "bundle_name", errors)
+    bundle_version = _required_text(payload.get("bundle_version"), "bundle_version", errors)
+    generated_utc = _required_text(payload.get("generated_utc"), "generated_utc", errors)
+    domain_id = _required_text(payload.get("domain_id"), "domain_id", errors)
+    ledger_id = _required_text(payload.get("ledger_id"), "ledger_id", errors)
+    response_surface_id = _required_text(
+        payload.get("response_surface_id"), "response_surface_id", errors
+    )
+    if bundle_id and not bundle_id.startswith("hydro-response-"):
+        errors.append("Bundle ID does not use the FEMIC hydro-response prefix.")
+    if bundle_id and bundle_name and not bundle_name.startswith(bundle_id):
+        errors.append("Bundle name does not start with the bundle ID.")
+    if expected_bundle_id is not None and bundle_id != expected_bundle_id:
+        errors.append(f"Bundle ID {bundle_id!r} does not match expected {expected_bundle_id!r}.")
+    if expected_bundle_version is not None and bundle_version != expected_bundle_version:
+        errors.append(
+            f"Bundle version {bundle_version!r} does not match expected "
+            f"{expected_bundle_version!r}."
+        )
+    response_surface = _mapping(payload.get("response_surface"), "response_surface", errors)
+    flood_risk = _mapping(payload.get("flood_risk"), "flood_risk", errors)
+    applicability_domain = _mapping(
+        payload.get("applicability_domain"), "applicability_domain", errors
+    )
+    uncertainty = _mapping(payload.get("uncertainty"), "uncertainty", errors)
+    consumer_contract = _mapping(payload.get("consumer_contract"), "consumer_contract", errors)
+    caveats = _strings(payload.get("caveats"), "caveats", errors)
+    provenance = _mapping(payload.get("provenance"), "provenance", errors)
+    _validate_consumer_contract(consumer_contract, errors, warnings)
+    if not response_surface:
+        errors.append("Manifest has no response_surface summary.")
+    else:
+        for key in ("surface_id", "baseline_name", "return_periods"):
+            if key not in response_surface:
+                errors.append(f"response_surface summary is missing {key!r}.")
+        if response_surface.get("surface_id") != response_surface_id:
+            errors.append("response_surface summary ID does not match response_surface_id.")
+    if not flood_risk:
+        errors.append("Manifest has no flood_risk summary.")
+    else:
+        for key in ("table_id", "row_count", "baseline_name"):
+            if key not in flood_risk:
+                errors.append(f"flood_risk summary is missing {key!r}.")
+
+    artifact_payload: list[object] = _list(payload.get("artifacts"), "artifacts", errors)
+    seen_roles: set[str] = set()
+    for index, item in enumerate(artifact_payload, start=1):
+        artifact = _artifact_from_payload(item, index=index, errors=errors)
+        if artifact is None:
+            continue
+        if artifact.role in seen_roles:
+            errors.append(f"Duplicate artifact role {artifact.role!r}.")
+            continue
+        if (
+            artifact.role not in FEMIC_HYDROLOGY_REQUIRED_ROLES
+            and artifact.role not in FEMIC_HYDROLOGY_OPTIONAL_ROLES
+        ):
+            warnings.append(f"Unrecognised optional artifact role {artifact.role!r}.")
+        seen_roles.add(artifact.role)
+        artifacts[artifact.role] = artifact
+        expected_schema = FEMIC_HYDROLOGY_ROLE_SCHEMAS.get(artifact.role)
+        if expected_schema is not None and artifact.schema_version != expected_schema:
+            errors.append(
+                f"Artifact {artifact.role!r} schema {artifact.schema_version!r} "
+                f"does not match {expected_schema!r}."
+            )
+        member = _resolve_member(root, artifact.relative_path)
+        if member is None:
+            errors.append(
+                f"Artifact {artifact.role!r} path escapes the bundle: {artifact.relative_path!r}."
+            )
+            continue
+        if not member.is_file():
+            errors.append(f"Artifact {artifact.role!r} is missing: {artifact.relative_path}.")
+            continue
+        size = member.stat().st_size
+        total_bytes += size
+        if size != artifact.size_bytes:
+            errors.append(
+                f"Artifact {artifact.role!r} size mismatch: {size} != {artifact.size_bytes}."
+            )
+        digest = _sha256_file(member)
+        if digest.lower() != artifact.sha256.lower():
+            errors.append(f"Artifact {artifact.role!r} checksum mismatch.")
+    missing_roles = [role for role in FEMIC_HYDROLOGY_REQUIRED_ROLES if role not in artifacts]
+    if missing_roles:
+        errors.append(
+            "Bundle is missing required artifact roles: " + ", ".join(missing_roles) + "."
+        )
+
+    try:
+        _validate_artifact_payloads(
+            root,
+            artifacts,
+            response_surface_id=response_surface_id,
+            domain_id=domain_id,
+            ledger_id=ledger_id,
+            response_surface=response_surface,
+            flood_risk=flood_risk,
+            errors=errors,
+        )
+    except FemicHydrologyError as exc:
+        errors.append(str(exc))
+    report = FemicHydrologyValidation(
+        bundle_dir=root,
+        is_valid=not errors,
+        checked_utc=checked_utc,
+        errors=tuple(errors),
+        warnings=tuple(warnings),
+        artifact_count=len(artifacts),
+        total_bytes=total_bytes,
+    )
+    if not report.is_valid:
+        return report, None
+    bundle = FemicHydrologyBundle(
+        bundle_dir=root,
+        manifest_path=manifest_path,
+        bundle_id=bundle_id,
+        bundle_name=bundle_name,
+        bundle_version=bundle_version,
+        generated_utc=generated_utc,
+        domain_id=domain_id,
+        ledger_id=ledger_id,
+        response_surface_id=response_surface_id,
+        artifacts=artifacts,
+        response_surface=response_surface,
+        flood_risk=flood_risk,
+        applicability_domain=applicability_domain,
+        uncertainty=uncertainty,
+        consumer_contract=consumer_contract,
+        caveats=caveats,
+        provenance=provenance,
+        manifest_sha256=manifest_sha256,
+        total_bytes=total_bytes,
+    )
+    return report, bundle
+
+
+def _validate_consumer_contract(
+    contract: Mapping[str, object],
+    errors: list[str],
+    warnings: list[str],
+) -> None:
+    for key in FEMIC_HYDROLOGY_CONSUMER_CONTRACT_KEYS:
+        if key not in contract:
+            errors.append(f"consumer_contract is missing {key!r}.")
+    phases = contract.get("consumer_phases")
+    if isinstance(phases, Mapping):
+        for consumer in ("ws4", "fhops"):
+            value = phases.get(consumer)
+            if not isinstance(value, str) or not value.strip():
+                errors.append(f"consumer_contract consumer_phases[{consumer!r}] must be text.")
+    elif phases is not None:
+        errors.append("consumer_contract consumer_phases must be an object.")
+    if "read_order" in contract and not isinstance(contract["read_order"], list):
+        errors.append("consumer_contract read_order must be a list.")
+    if "caveats" in contract:
+        warnings.append(
+            "Consumer contract caveats are producer metadata; preserve the "
+            "bundle caveats in downstream outputs."
+        )
+
+
+def _validate_artifact_payloads(
+    root: Path,
+    artifacts: Mapping[str, FemicHydrologyArtifact],
+    *,
+    response_surface_id: str,
+    domain_id: str,
+    ledger_id: str,
+    response_surface: Mapping[str, object],
+    flood_risk: Mapping[str, object],
+    errors: list[str],
+) -> None:
+    surface_artifact = artifacts.get("response_surface")
+    if surface_artifact is not None:
+        member = _resolve_member(root, surface_artifact.relative_path)
+        if member is not None and member.is_file():
+            payload = _read_json_object(member, context="response-surface artifact")
+            if payload.get("surface_id") != response_surface_id:
+                errors.append("response-surface artifact ID does not match the manifest.")
+            if payload.get("baseline_name") != response_surface.get("baseline_name"):
+                errors.append("response-surface baseline does not match the manifest summary.")
+            periods = payload.get("return_periods")
+            if not isinstance(periods, list) or not periods:
+                errors.append("response-surface artifact has no return periods.")
+            elif not _same_periods(periods, response_surface.get("return_periods")):
+                errors.append("response-surface return periods do not match the manifest summary.")
+    risk_artifact = artifacts.get("flood_risk")
+    if risk_artifact is not None:
+        member = _resolve_member(root, risk_artifact.relative_path)
+        if member is not None and member.is_file():
+            payload = _read_json_object(member, context="flood-risk artifact")
+            try:
+                table = _flood_risk_from_payload(
+                    payload,
+                    expected_surface=response_surface_id,
+                )
+            except FemicHydrologyError as exc:
+                errors.append(str(exc))
+            else:
+                if table.table_id != flood_risk.get("table_id"):
+                    errors.append("flood-risk table ID does not match the manifest.")
+                if table.baseline_name != flood_risk.get("baseline_name"):
+                    errors.append("flood-risk baseline does not match the manifest summary.")
+                if len(table.rows) != flood_risk.get("row_count"):
+                    errors.append("flood-risk row count does not match the manifest.")
+    domain_artifact = artifacts.get("domain")
+    if domain_artifact is not None:
+        member = _resolve_member(root, domain_artifact.relative_path)
+        if member is not None and member.is_file():
+            payload = _read_json_object(member, context="domain artifact")
+            if payload.get("domain_id") != domain_id:
+                errors.append("domain artifact ID does not match the manifest.")
+    ledger_artifact = artifacts.get("disturbance_ledger")
+    if ledger_artifact is not None:
+        member = _resolve_member(root, ledger_artifact.relative_path)
+        if member is not None and member.is_file():
+            payload = _read_json_object(member, context="disturbance-ledger artifact")
+            if payload.get("ledger_id") != ledger_id:
+                errors.append("disturbance-ledger ID does not match the manifest.")
+            if payload.get("domain_id") != domain_id:
+                errors.append("disturbance-ledger domain ID does not match the manifest.")
+
+
+def _flood_risk_from_payload(
+    payload: Mapping[str, object],
+    *,
+    expected_surface: str,
+) -> FemicFloodRiskTable:
+    if payload.get("schema_version") != FEMIC_HYDROLOGY_FLOOD_RISK_SCHEMA:
+        raise FemicHydrologyError("Unsupported flood-risk artifact schema.")
+    table_id = _text(payload.get("table_id"), "flood-risk table_id")
+    generated_utc = _text(payload.get("generated_utc"), "flood-risk generated_utc")
+    source_surface_id = _text(payload.get("source_surface_id"), "flood-risk source_surface_id")
+    baseline_name = _text(payload.get("baseline_name"), "flood-risk baseline_name")
+    if source_surface_id != expected_surface:
+        raise FemicHydrologyError("flood-risk source surface does not match the response surface.")
+    rows_value = payload.get("rows")
+    if not isinstance(rows_value, list) or not rows_value:
+        raise FemicHydrologyError("Flood-risk artifact must contain rows.")
+    rows: list[FemicFloodRiskRow] = []
+    seen: set[tuple[str, float]] = set()
+    for index, item in enumerate(rows_value, start=1):
+        row = _flood_risk_row(item, index=index)
+        key = (row.receptor_id, row.return_period)
+        if key in seen:
+            raise FemicHydrologyError(
+                f"Duplicate flood-risk row for {row.receptor_id}/{row.return_period}."
+            )
+        seen.add(key)
+        rows.append(row)
+    summary = payload.get("summary")
+    if isinstance(summary, Mapping):
+        row_count = summary.get("row_count")
+        if row_count is not None and _int(row_count, "flood-risk row_count") != len(rows):
+            raise FemicHydrologyError("Flood-risk summary row count does not match the rows.")
+    return FemicFloodRiskTable(
+        table_id=table_id,
+        generated_utc=generated_utc,
+        source_surface_id=source_surface_id,
+        baseline_name=baseline_name,
+        rows=tuple(rows),
+        caveats=_strings(payload.get("caveats"), "flood-risk caveats", []),
+        schema_version=FEMIC_HYDROLOGY_FLOOD_RISK_SCHEMA,
+    )
+
+
+def _flood_risk_row(item: object, *, index: int) -> FemicFloodRiskRow:
+    payload = _mapping(item, f"flood-risk row {index}", [])
+    receptor_id = _text(payload.get("receptor_id"), f"flood-risk row {index} receptor")
+    watershed_id = _text(payload.get("watershed_id"), f"flood-risk row {index} watershed")
+    return_period = _float(payload.get("return_period"), f"flood-risk row {index} return_period")
+    baseline = _float(
+        payload.get("baseline_peak_flow_m3s"),
+        f"flood-risk row {index} baseline_peak_flow_m3s",
+    )
+    scenario = _float(
+        payload.get("scenario_peak_flow_m3s"),
+        f"flood-risk row {index} scenario_peak_flow_m3s",
+    )
+    ratio = _float(payload.get("ratio"), f"flood-risk row {index} ratio")
+    if return_period <= 1 or not math.isfinite(return_period):
+        raise FemicHydrologyError("Flood-risk return periods must be > 1.")
+    if baseline <= 0 or scenario <= 0:
+        raise FemicHydrologyError("Flood-risk flows must be positive.")
+    if not math.isclose(ratio, scenario / baseline, rel_tol=1e-6, abs_tol=1e-9):
+        raise FemicHydrologyError(f"Flood-risk row {index} ratio does not equal scenario/baseline.")
+    exceedance = _optional_float(
+        payload.get("exceedance_probability"),
+        f"flood-risk row {index} exceedance_probability",
+    )
+    if exceedance is not None and not 0 <= exceedance <= 1:
+        raise FemicHydrologyError("Flood-risk exceedance probability must be in [0, 1].")
+    damage = _optional_float(
+        payload.get("expected_annual_damage"),
+        f"flood-risk row {index} expected_annual_damage",
+    )
+    if damage is not None and damage < 0:
+        raise FemicHydrologyError("Flood-risk expected annual damage cannot be negative.")
+    return FemicFloodRiskRow(
+        receptor_id=receptor_id,
+        watershed_id=watershed_id,
+        return_period=return_period,
+        baseline_peak_flow_m3s=baseline,
+        scenario_peak_flow_m3s=scenario,
+        ratio=ratio,
+        exceedance_probability=exceedance,
+        expected_annual_damage=damage,
+    )
+
+
+def _artifact_from_payload(
+    item: object,
+    *,
+    index: int,
+    errors: list[str],
+) -> FemicHydrologyArtifact | None:
+    payload = _mapping(item, f"artifact {index}", errors)
+    role = _required_text(payload.get("role"), f"artifact {index} role", errors)
+    relative_path = _required_text(
+        payload.get("relative_path"), f"artifact {index} relative_path", errors
+    )
+    schema_version = _optional_text(payload.get("schema_version"))
+    media_type = _required_text(payload.get("media_type"), f"artifact {index} media_type", errors)
+    size_bytes = _required_int(payload.get("size_bytes"), f"artifact {index} size_bytes", errors)
+    sha256 = _required_text(payload.get("sha256"), f"artifact {index} sha256", errors)
+    description = _optional_text(payload.get("description")) or ""
+    if not role or not relative_path:
+        return None
+    path = Path(relative_path)
+    if path.is_absolute():
+        errors.append(f"Artifact {role!r} path must be relative.")
+    if ".." in path.parts:
+        errors.append(f"Artifact {role!r} path must not traverse parents.")
+    if media_type and media_type != "application/json":
+        errors.append(f"Artifact {role!r} media_type must be application/json.")
+    if size_bytes is not None and size_bytes < 0:
+        errors.append(f"Artifact {role!r} size must be non-negative.")
+    if sha256 and not SHA256_PATTERN.match(sha256):
+        errors.append(f"Artifact {role!r} has an invalid SHA-256.")
+    if size_bytes is None or not sha256:
+        return None
+    return FemicHydrologyArtifact(
+        role=role,
+        relative_path=relative_path,
+        schema_version=schema_version,
+        media_type=media_type,
+        size_bytes=size_bytes,
+        sha256=sha256,
+        description=description,
+    )
+
+
+def _resolve_manifest_path(bundle_path: Path) -> tuple[Path, Path]:
+    resolved = bundle_path.expanduser().resolve()
+    manifest_path = resolved
+    if resolved.is_dir():
+        manifest_path = resolved / FEMIC_HYDROLOGY_MANIFEST_NAME
+    root = manifest_path.parent
+    return root, manifest_path
+
+
+def _resolve_member(root: Path, relative_path: str) -> Path | None:
+    candidate = (root / relative_path).resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError:
+        return None
+    return candidate
+
+
+def _read_json_object(path: Path | None, *, context: str) -> dict[str, object]:
+    if path is None:
+        raise FemicHydrologyError(f"Unable to resolve {context}.")
+    try:
+        payload: object = json.loads(path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        raise FemicHydrologyError(f"Unable to read {context}: {path}: {exc}") from exc
+    except json.JSONDecodeError as exc:
+        raise FemicHydrologyError(f"Invalid JSON in {context}: {path}: {exc}") from exc
+    if not isinstance(payload, Mapping):
+        raise FemicHydrologyError(f"{context} must be a JSON object: {path}")
+    return {str(key): value for key, value in payload.items()}
+
+
+def _json_object(payload: bytes, *, context: str) -> dict[str, object]:
+    try:
+        parsed: object = json.loads(payload.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise FemicHydrologyError(f"Invalid JSON in {context}: {exc}") from exc
+    if not isinstance(parsed, Mapping):
+        raise FemicHydrologyError(f"{context} must be a JSON object.")
+    return {str(key): value for key, value in parsed.items()}
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _same_periods(left: object, right: object) -> bool:
+    if not isinstance(left, list) or not isinstance(right, list):
+        return False
+    if len(left) != len(right):
+        return False
+    try:
+        return all(
+            math.isclose(float(a), float(b), rel_tol=1e-9, abs_tol=1e-12)
+            for a, b in zip(left, right, strict=True)
+        )
+    except (TypeError, ValueError):
+        return False
+
+
+def _mapping(
+    value: object,
+    context: str,
+    errors: list[str],
+) -> dict[str, object]:
+    if not isinstance(value, Mapping):
+        errors.append(f"{context} must be an object.")
+        return {}
+    return {str(key): item for key, item in value.items()}
+
+
+def _list(value: object, context: str, errors: list[str]) -> list[object]:
+    if not isinstance(value, list):
+        errors.append(f"{context} must be a list.")
+        return []
+    return value
+
+
+def _strings(value: object, context: str, errors: list[str]) -> tuple[str, ...]:
+    if value is None:
+        return ()
+    if not isinstance(value, list):
+        errors.append(f"{context} must be a list.")
+        return ()
+    result: list[str] = []
+    for item in value:
+        if not isinstance(item, str):
+            errors.append(f"{context} entries must be text.")
+            continue
+        text = item.strip()
+        if text:
+            result.append(text)
+    return tuple(result)
+
+
+def _required_text(value: object, field_name: str, errors: list[str]) -> str:
+    if not isinstance(value, str) or not value.strip():
+        errors.append(f"Manifest field {field_name!r} must be non-empty text.")
+        return ""
+    return value.strip()
+
+
+def _text(value: object, field_name: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise FemicHydrologyError(f"{field_name} must be non-empty text.")
+    return value.strip()
+
+
+def _optional_text(value: object) -> str | None:
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    return text or None
+
+
+def _required_int(value: object, field_name: str, errors: list[str]) -> int | None:
+    if isinstance(value, bool):
+        errors.append(f"Manifest field {field_name!r} must be an integer.")
+        return None
+    try:
+        parsed = int(str(value))
+    except (TypeError, ValueError):
+        errors.append(f"Manifest field {field_name!r} must be an integer.")
+        return None
+    if parsed < 0:
+        errors.append(f"Manifest field {field_name!r} must be non-negative.")
+        return None
+    return parsed
+
+
+def _int(value: object, field_name: str) -> int:
+    if isinstance(value, bool):
+        raise FemicHydrologyError(f"{field_name} must be an integer.")
+    try:
+        return int(str(value))
+    except (TypeError, ValueError) as exc:
+        raise FemicHydrologyError(f"{field_name} must be an integer.") from exc
+
+
+def _float(value: object, field_name: str) -> float:
+    if isinstance(value, bool):
+        raise FemicHydrologyError(f"{field_name} must be numeric.")
+    try:
+        parsed = float(str(value))
+    except (TypeError, ValueError) as exc:
+        raise FemicHydrologyError(f"{field_name} must be numeric.") from exc
+    if not math.isfinite(parsed):
+        raise FemicHydrologyError(f"{field_name} must be finite.")
+    return parsed
+
+
+def _optional_float(value: object, field_name: str) -> float | None:
+    if value is None:
+        return None
+    return _float(value, field_name)

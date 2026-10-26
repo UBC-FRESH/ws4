@@ -13,6 +13,12 @@ from rich.table import Table
 
 from .build.compiler import build_canonical_dataset
 from .build.legacy import ingest_legacy_matrix
+from .io.hydrology import (
+    FemicHydrologyError,
+    bundle_pin,
+    load_femic_hydrology_bundle,
+    validate_femic_hydrology_bundle,
+)
 from .io.lidar import (
     FemicLidarError,
     integrate_lidar_mapping_into_dataset,
@@ -973,7 +979,73 @@ def lidar_integrate(
     print(f"block_rows: {result.block_rows}")
 
 
+hydrology_app = typer.Typer(help="Inspect and validate FEMIC hydrology response bundles.")
+
+
+@hydrology_app.command("inspect")
+def hydrology_inspect(
+    bundle: Path = typer.Argument(..., exists=True, help="Bundle directory or manifest"),
+    json_output: bool = typer.Option(
+        False, "--json", help="Emit deterministic JSON instead of a summary"
+    ),
+) -> None:
+    """Print the stable pin for a validated FEMIC hydrology bundle."""
+    try:
+        report = validate_femic_hydrology_bundle(bundle)
+        if not report.is_valid:
+            print(json.dumps(report.to_dict(), indent=2, sort_keys=True))
+            raise typer.Exit(code=1)
+        loaded = load_femic_hydrology_bundle(bundle)
+        pin = bundle_pin(loaded)
+    except FemicHydrologyError as error:
+        print(f"[bold red]Hydrology inspect failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    if json_output:
+        print(json.dumps(pin, indent=2, sort_keys=True))
+        return
+    print(f"bundle_id: {pin['bundle_id']}")
+    print(f"bundle_version: {pin['bundle_version']}")
+    print(f"response_surface_id: {pin['response_surface_id']}")
+    print(f"domain_id: {pin['domain_id']}")
+    print(f"ledger_id: {pin['ledger_id']}")
+    print(f"manifest_sha256: {pin['manifest_sha256']}")
+    artifacts = pin["artifacts"]
+    if isinstance(artifacts, dict):
+        for role in sorted(artifacts):
+            print(f"artifact: {role}")
+
+
+@hydrology_app.command("validate")
+def hydrology_validate(
+    bundle: Path = typer.Argument(..., exists=True, help="Bundle directory or manifest"),
+    bundle_id: str | None = typer.Option(None, "--bundle-id"),
+    bundle_version: str | None = typer.Option(None, "--bundle-version"),
+    json_output: bool = typer.Option(
+        True, "--json/--no-json", help="Emit deterministic JSON validation report"
+    ),
+) -> None:
+    """Validate a FEMIC hydrology bundle and its artifact checksums."""
+    report = validate_femic_hydrology_bundle(
+        bundle,
+        expected_bundle_id=bundle_id,
+        expected_bundle_version=bundle_version,
+    )
+    if json_output:
+        print(json.dumps(report.to_dict(), indent=2, sort_keys=True))
+    else:
+        print(f"valid: {report.is_valid}")
+        print(f"artifacts: {report.artifact_count}")
+        print(f"total_bytes: {report.total_bytes}")
+        for error in report.errors:
+            print(f"error: {error}")
+        for warning in report.warnings:
+            print(f"warning: {warning}")
+    if not report.is_valid:
+        raise typer.Exit(code=1)
+
+
 app.add_typer(lidar_app, name="lidar")
+app.add_typer(hydrology_app, name="hydrology")
 
 if __name__ == "__main__":
     app()

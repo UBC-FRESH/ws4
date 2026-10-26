@@ -30,6 +30,9 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - The optional HTTP service over a run's artefacts, and the browser front end's contract.
    * - :doc:`femic-lidar`
      - Pinned FEMIC LidarBC bundles, checksums, and polygon support summaries.
+   * - :doc:`femic-hydrology`
+     - Pinned FEMIC hydrology response bundles, checksums, flood-risk rows, and
+       applicability metadata.
 
 .. toctree::
    :maxdepth: 2
@@ -44,3 +47,4 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    performance
    web
    femic-lidar
+   femic-hydrology

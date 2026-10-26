@@ -2602,3 +2602,16 @@ issue comments.
 - P46 close-out: pull request #386 squash-merged as `6c31d49`; parent #382 and tasks #383/#384/#385
   closed. P46 status set complete. The GBR benchmark deviation is recorded in the close-out:
   no production GBR route configuration exists in the workspace.
+
+- P57.1: added the read-only FEMIC hydrology response-bundle consumer contract in
+  `ws4/io/hydrology.py`. It validates `femic.hydrology.response.v1`, required
+  and optional artifact roles, role schemas, path containment, declared size and
+  SHA-256, response-surface and flood-risk summaries, domain/ledger IDs, and the
+  producer consumer contract. Added a stable `bundle_pin`, typed flood-risk
+  rows, `ws4 hydrology inspect|validate`, a synthetic contract fixture, the
+  design note, and reference docs. Validation is stdlib-only and never contacts
+  FEMIC or the network. Producer `consumer_phases` labels (`ws4: P49`,
+  `fhops: P14`) are documented as producer metadata, not WS4/FHOPS phase
+  numbers. A FEMIC-built fixture bundle (`hydro-response-70f4214e01afe461`)
+  validated and inspected successfully through the WS4 CLI. Dashboard **GREEN**
+  (lint, format, types, 109.06 s tests, validator, docs, docstrings).
