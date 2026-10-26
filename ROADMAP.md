@@ -61,7 +61,7 @@ exists and the maintainer approves it.
 | P55 Final 0.2.0 release candidate | #388 | `feature/p55-final-rc` | complete |
 | P56 Disturbance event consumer | #393 | `feature/p56-disturbance-consumer` | complete |
 | P58 Forest carbon accounting and carbon-aware planning | #357 | `feature/p58-carbon` | complete |
-| P59 LiDAR in the web UI | #417 | `feature/p59-lidar-ui` | pr-open |
+| P59 LiDAR in the web UI | #417 | `feature/p59-lidar-ui` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -1795,7 +1795,7 @@ Closeout report: `notes/reports/p58-closeout.md`.
 
 Parent issue: #417
 Branch: `feature/p59-lidar-ui`
-Status: pr-open
+Status: complete
 
 Goal: expose registered FEMIC LiDAR provenance, canonical block fields, block detail, and a
 read-only block choropleth in the web application, and repair the P52 overwrite path.
