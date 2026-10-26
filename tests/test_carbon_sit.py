@@ -368,3 +368,88 @@ def test_optional_libcbm_parse(tmp_path: Path) -> None:
     assert classifiers.n_rows == 2
     assert inventory.n_rows == 2
     assert libcbm is not None
+
+
+def test_multi_boundary_package_uses_separate_admin_eco_classifiers(tmp_path: Path) -> None:
+    """A package with two track boundaries compiles separate SIT classifiers."""
+    from dataclasses import replace
+
+    package = _write_package(tmp_path / "package")
+    tables = {name: frame.copy() for name, frame in package.tables.items()}
+    tables["boundaries"] = pd.DataFrame(
+        {
+            "admin_boundary": ["British Columbia", "British Columbia"],
+            "eco_boundary": ["Montane Cordillera", "Pacific Maritime"],
+        }
+    )
+    track_map = tables["track_carbon_map"].copy()
+    track_map.loc[track_map["track_name"] == "track2", "eco_boundary"] = "Pacific Maritime"
+    tables["track_carbon_map"] = track_map
+    package = replace(package, tables=tables)
+    dataset = _write_dataset(tmp_path / "dataset")
+    schedule = pd.DataFrame({"block_id": [1], "treatment": ["CC"], "offset": [0]})
+
+    compiled = build_sit_tables(package, dataset, schedule)
+
+    assert {"admin_boundary", "eco_boundary"}.issubset(set(compiled.classifiers["description"]))
+    assert compiled.inventory.shape[1] == 11
+    assert compiled.yield_table.shape[1] == 9
+
+
+def test_multi_boundary_config_uses_separate_mapping(tmp_path: Path) -> None:
+    """The mapping configuration selects the per-track spatial-unit classifier."""
+    from dataclasses import replace
+
+    from ws4.carbon.libcbm import build_sit_config
+
+    package = _write_package(tmp_path / "package")
+    tables = {name: frame.copy() for name, frame in package.tables.items()}
+    tables["boundaries"] = pd.DataFrame(
+        {
+            "admin_boundary": ["British Columbia", "British Columbia"],
+            "eco_boundary": ["Montane Cordillera", "Pacific Maritime"],
+        }
+    )
+    track_map = tables["track_carbon_map"].copy()
+    track_map.loc[track_map["track_name"] == "track2", "eco_boundary"] = "Pacific Maritime"
+    tables["track_carbon_map"] = track_map
+    package = replace(package, tables=tables)
+
+    config = build_sit_config(package)
+    spatial = config["mapping_config"]["spatial_units"]
+
+    assert spatial["mapping_mode"] == "SeparateAdminEcoClassifiers"
+    assert spatial["admin_classifier"] == "admin_boundary"
+    assert spatial["eco_classifier"] == "eco_boundary"
+    assert {row["user_eco_boundary"] for row in spatial["eco_mapping"]} == {
+        "Montane Cordillera",
+        "Pacific Maritime",
+    }
+
+
+def test_multi_boundary_libcbm_run(tmp_path: Path) -> None:
+    """libcbm accepts the per-track admin/eco spatial-unit mapping."""
+    pytest.importorskip("libcbm")
+    from dataclasses import replace
+
+    from ws4.carbon.libcbm import cbm_defaults_reference, run_libcbm
+
+    package = _write_package(tmp_path / "package")
+    package.manifest.cbm_defaults.sha256 = cbm_defaults_reference().sha256
+    tables = {name: frame.copy() for name, frame in package.tables.items()}
+    tables["boundaries"] = pd.DataFrame(
+        {
+            "admin_boundary": ["British Columbia", "British Columbia"],
+            "eco_boundary": ["Montane Cordillera", "Pacific Maritime"],
+        }
+    )
+    track_map = tables["track_carbon_map"].copy()
+    track_map.loc[track_map["track_name"] == "track2", "eco_boundary"] = "Pacific Maritime"
+    tables["track_carbon_map"] = track_map
+    package = replace(package, tables=tables)
+    dataset = _write_dataset(tmp_path / "dataset")
+
+    compiled = build_sit_tables(package, dataset, _schedule())
+    run = run_libcbm(package, compiled, n_steps=2)
+
+    assert run.pools.groupby("timestep")["HardwoodMerch"].sum().iloc[-1] > 0.0

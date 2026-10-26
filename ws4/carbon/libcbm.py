@@ -292,6 +292,38 @@ def build_sit_config(package: CarbonPackage) -> dict[str, object]:
         }
         for row in disturbances.itertuples(index=False)
     ]
+    track_map = package.tables.get("track_carbon_map")
+    track_ecos = (
+        sorted({str(value).strip() for value in track_map["eco_boundary"]})
+        if track_map is not None and "eco_boundary" in track_map.columns
+        else []
+    )
+    if len(track_ecos) > 1:
+        admin = package.manifest.boundaries.admin
+        spatial_units: dict[str, object] = {
+            "mapping_mode": "SeparateAdminEcoClassifiers",
+            "admin_classifier": "admin_boundary",
+            "eco_classifier": "eco_boundary",
+            "admin_mapping": [
+                {
+                    "user_admin_boundary": admin,
+                    "default_admin_boundary": admin,
+                }
+            ],
+            "eco_mapping": [
+                {
+                    "user_eco_boundary": eco,
+                    "default_eco_boundary": eco,
+                }
+                for eco in track_ecos
+            ],
+        }
+    else:
+        spatial_units = {
+            "mapping_mode": "SingleDefaultSpatialUnit",
+            "admin_boundary": package.manifest.boundaries.admin,
+            "eco_boundary": package.manifest.boundaries.eco,
+        }
     return {
         "mapping_config": {
             "nonforest": None,
@@ -299,11 +331,7 @@ def build_sit_config(package: CarbonPackage) -> dict[str, object]:
                 "species_classifier": package.manifest.mapping.species_classifier,
                 "species_mapping": species_mapping,
             },
-            "spatial_units": {
-                "mapping_mode": "SingleDefaultSpatialUnit",
-                "admin_boundary": package.manifest.boundaries.admin,
-                "eco_boundary": package.manifest.boundaries.eco,
-            },
+            "spatial_units": spatial_units,
             "disturbance_types": {
                 "disturbance_type_mapping": disturbance_mapping,
             },

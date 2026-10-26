@@ -374,13 +374,25 @@ def build_sit_tables_from_tables(
         raise CarbonSitError(findings)
 
     track_map = package.table("track_carbon_map").set_index("track_name", drop=False)
+    base_classifier_names = list(classifier_names)
+    boundary_values, boundary_rows = _boundary_classifiers(package, track_map)
+    if boundary_rows:
+        classifier_names = [*classifier_names, "admin_boundary", "eco_boundary"]
+        classifier_rows = [*classifier_rows, *boundary_rows]
     disturbance_map = _disturbance_map(package)
     age_classes = package.table("age_classes").loc[:, ["name", "class_size"]].copy()
     age_width = _age_width(age_classes, findings)
     if age_width is None or findings:
         raise CarbonSitError(findings)
 
-    classifier_by_track = _classifier_values_by_track(track_map, classifier_names, findings)
+    classifier_by_track = _classifier_values_by_track(
+        track_map,
+        base_classifier_names,
+        findings,
+    )
+    if boundary_rows:
+        for track_name, values in classifier_by_track.items():
+            values.extend(boundary_values.get(track_name, ()))
     inventory = _build_inventory(
         fragments=fragments,
         tracks=tracks,
@@ -502,6 +514,39 @@ def _build_classifiers(
         for value in values:
             rows.append([classifier_id, value, value])
     return names, rows
+
+
+def _boundary_classifiers(
+    package: CarbonPackage,
+    track_map: pd.DataFrame,
+) -> tuple[dict[str, tuple[str, str]], list[list[object]]]:
+    """Return per-track admin/eco values and SIT classifier rows.
+
+    A package with one eco boundary keeps the existing single-default mapping. A
+    package with multiple track boundaries gets two extra SIT classifiers so
+    libcbm can select the spatial unit per stand.
+    """
+    if track_map.empty or "eco_boundary" not in track_map.columns:
+        return {}, []
+    admin = package.manifest.boundaries.admin
+    eco_by_track = {
+        str(row.track_name): str(row.eco_boundary).strip()
+        for row in track_map.reset_index(drop=True).itertuples(index=False)
+    }
+    ecos = sorted(set(eco_by_track.values()))
+    if len(ecos) <= 1:
+        return {}, []
+    classifier_frame = package.table("classifiers")
+    existing = pd.to_numeric(classifier_frame["classifier_id"], errors="coerce").dropna()
+    next_id = int(existing.max()) + 1 if not existing.empty else 1
+    rows: list[list[object]] = [
+        [next_id, "_CLASSIFIER", "admin_boundary"],
+        [next_id, admin, admin],
+        [next_id + 1, "_CLASSIFIER", "eco_boundary"],
+    ]
+    rows.extend([next_id + 1, eco, eco] for eco in ecos)
+    values = {track_name: (admin, eco) for track_name, eco in eco_by_track.items()}
+    return values, rows
 
 
 def _age_width(age_classes: pd.DataFrame, findings: list[Problem]) -> int | None:

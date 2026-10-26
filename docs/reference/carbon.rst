@@ -112,8 +112,8 @@ Tables
    ``hardwood_share``, ``landclass``, ``last_disturbance``, ``eco_boundary``,
    ``volume_feature_label``. ``classifier_set`` is a semicolon-separated list in
    ascending ``classifier_id`` order. Shares are in 0-1 and sum to at most one. Every
-   leading species is in ``species_map.csv``. Every track's eco boundary matches the
-   manifest.
+   leading species is in ``species_map.csv``. Every track's eco boundary must appear in
+   ``boundaries.csv`` for the manifest administrative boundary.
 
 ``curve_carbon_map.csv``
    ``track_name``, ``feature_label``, ``species``, ``share``. It maps a WS4 feature
@@ -126,7 +126,10 @@ Tables
 
 ``boundaries.csv``
    ``admin_boundary`` and ``eco_boundary``, with optional ``spatial_unit_id``,
-   ``source``, and ``notes``. At least one row must match the manifest boundaries.
+   ``source``, and ``notes``. At least one row must match the manifest primary
+   boundary. A package may declare more than one eco boundary; WS4 then compiles the
+   SIT ``admin_boundary`` and ``eco_boundary`` classifiers and uses
+   ``SeparateAdminEcoClassifiers`` so each track gets its own CBM spatial unit.
 
 Track join
 ----------
@@ -332,7 +335,7 @@ The loader returns stable codes. The most useful ones:
    * - ``CARBON-UNKNOWN-DISTURBANCE``
      - A disturbance is not declared.
    * - ``CARBON-ECO-MISMATCH``
-     - A track eco boundary differs from the manifest.
+     - A track eco boundary is not declared in ``boundaries.csv``.
    * - ``CARBON-TABLE-HASH``
      - A table digest differs from the manifest.
    * - ``CARBON-UNMATCHED-TRACK``
