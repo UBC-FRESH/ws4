@@ -71,6 +71,11 @@ Blocking conditions include an invalid bundle, a tail-check block, a readiness
 state not allowed by the policy, an unreviewed crosswalk under a reviewed
 policy, and incomplete mapping without an explicit partial-mapping allowance.
 
+P62.2 defaults to ``require_reviewed`` for this command. A missing crosswalk is
+always a blocking reason: a direct-bundle report can show readiness evidence but
+cannot declare screening safe. ``--allow-partial`` is diagnostic only; unmapped
+fragments or blocks still block readiness.
+
 ## Exposure contract
 
 P62.3 adds `ws4.hydrology.exposure.v1`. It is an explicit table by watershed and

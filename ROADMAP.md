@@ -1911,10 +1911,10 @@ Design note: `notes/design/ws4-hydrology-consumer-hardening.md`.
   - [x] Rewrite the parent issue and add the phase to the roadmap.
   - [x] Write the design note and index it.
   - [x] Add the changelog entry and read back every GitHub edit.
-- [ ] P62.2 Add a fail-closed hydrology preflight report (#450)
-  - [ ] Add the preflight report and CLI command.
-  - [ ] Block invalid bundles, blocked readiness, weak policy, unreviewed crosswalks, and incomplete mapping.
-  - [ ] Add tests and reference docs.
+- [x] P62.2 Add a fail-closed hydrology preflight report (#450)
+  - [x] Add the preflight report and CLI command.
+  - [x] Block invalid bundles, blocked readiness, weak policy, unreviewed crosswalks, and incomplete mapping.
+  - [x] Add tests and reference docs.
 - [ ] P62.3 Add an explicit road/culvert exposure contract (#451)
   - [ ] Add the exposure schema, loader, and validation.
   - [ ] Bind the table to a schedule hash and require review metadata.

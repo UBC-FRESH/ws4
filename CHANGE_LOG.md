@@ -2891,3 +2891,10 @@ issue comments.
   (#449-#454), and wrote `notes/design/ws4-hydrology-consumer-hardening.md`.
   Chapman remains closed/data-blocked; Seymour remains an upstream dependency on
   FEMIC #388. No production code and no watershed result. Dashboard: **GREEN**.
+
+- P62.2: added `ws4 hydrology preflight` and
+  `ws4.hydrology.preflight.v1`. The report combines bundle pin, readiness,
+  policy, crosswalk review, and mapping coverage, defaults to
+  `require_reviewed`, and exits non-zero when `screening_ready` is false. A
+  missing crosswalk is always blocking; `--allow-partial` remains diagnostic.
+  Added unit/CLI tests and reference docs. Dashboard **GREEN**.

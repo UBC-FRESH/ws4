@@ -59,6 +59,10 @@ from .io.hydrology import (
     write_hydrology_mapping,
     write_hydrology_screen,
 )
+from .io.hydrology_preflight import (
+    DEFAULT_HYDROLOGY_PREFLIGHT_POLICY,
+    build_hydrology_preflight,
+)
 from .io.lidar import (
     FemicLidarError,
     integrate_lidar_mapping_into_dataset,
@@ -1356,6 +1360,98 @@ def hydrology_readiness(
     print(f"evidence_sha256: {readiness.evidence_sha256}")
     for warning in readiness.warnings:
         print(f"warning: {warning}")
+
+
+@hydrology_app.command("preflight")
+def hydrology_preflight(
+    bundle: Path | None = typer.Argument(None, exists=True, help="Bundle directory or manifest"),
+    dataset: Path | None = typer.Option(
+        None,
+        "--dataset",
+        exists=True,
+        file_okay=False,
+        help="Compiled dataset with a registered hydrology bundle",
+    ),
+    crosswalk: Path | None = typer.Option(
+        None,
+        "--crosswalk",
+        exists=True,
+        dir_okay=False,
+        help="Explicit crosswalk CSV",
+    ),
+    metadata: Path | None = typer.Option(
+        None,
+        "--metadata",
+        exists=True,
+        dir_okay=False,
+        help="Optional crosswalk review metadata JSON",
+    ),
+    policy: str = typer.Option(
+        DEFAULT_HYDROLOGY_PREFLIGHT_POLICY,
+        "--policy",
+        help="Readiness policy: allow_provisional, require_reviewed, or require_ready",
+    ),
+    allow_partial: bool = typer.Option(
+        False,
+        "--allow-partial",
+        help="Build a partial mapping and record the gaps; gaps still block readiness",
+    ),
+    json_output: bool = typer.Option(
+        False, "--json", help="Emit deterministic JSON evidence report"
+    ),
+) -> None:
+    """Report whether a bundle and crosswalk are safe to screen."""
+    if (bundle is None) == (dataset is None):
+        print("[bold red]Provide exactly one of BUNDLE or --dataset.[/]")
+        raise typer.Exit(code=1)
+    if crosswalk is not None and dataset is None:
+        print("[bold red]Crosswalk preflight requires --dataset.[/]")
+        raise typer.Exit(code=1)
+    try:
+        if dataset is not None:
+            loaded = load_registered_femic_hydrology_bundle(dataset)
+        else:
+            assert bundle is not None
+            loaded = load_femic_hydrology_bundle(bundle)
+        result = build_hydrology_preflight(
+            loaded,
+            dataset_dir=dataset,
+            crosswalk_path=crosswalk,
+            crosswalk_metadata_path=metadata,
+            policy=policy,
+            allow_partial=allow_partial,
+        )
+    except FemicHydrologyError as error:
+        print(f"[bold red]Hydrology preflight failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    if json_output:
+        typer.echo(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+    else:
+        print(f"screening_ready: {result.screening_ready}")
+        print(f"policy: {result.policy}")
+        readiness_status = result.readiness.get("status")
+        print(f"readiness_status: {readiness_status}")
+        if result.mapping is None:
+            print("mapping_review_status: (missing)")
+            print("mapping_unmapped_fragments: 0")
+            print("mapping_unmapped_blocks: 0")
+        else:
+            print(f"mapping_review_status: {result.mapping.get('review_status')}")
+            coverage = result.mapping.get("coverage")
+            if isinstance(coverage, dict):
+                fragments = coverage.get("unmapped_fragments")
+                blocks = coverage.get("unmapped_blocks")
+                print(
+                    "mapping_unmapped_fragments: "
+                    f"{len(fragments) if isinstance(fragments, list) else 0}"
+                )
+                print(f"mapping_unmapped_blocks: {len(blocks) if isinstance(blocks, list) else 0}")
+        for reason in result.blocking_reasons:
+            print(f"blocking: {reason}")
+        for warning in result.warnings:
+            print(f"warning: {warning}")
+    if not result.screening_ready:
+        raise typer.Exit(code=1)
 
 
 @hydrology_app.command("map")

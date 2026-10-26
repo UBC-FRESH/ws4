@@ -5,9 +5,9 @@ WS4 consumes versioned FEMIC hydrology response bundles for screening-only
 spatial scheduling. It does not run FEMIC discovery, frequency fitting,
 surrogate training, or flood-risk calculation.
 
-This page covers the read-only consumer contract implemented in P57.1.
-Registration, WS4-to-FEMIC unit mapping, schedule lookup, and `flood.*`
-objective terms are later tasks.
+This page covers the read-only consumer contract implemented across P57, P60,
+and P62. It covers bundle validation, registration, mapping, readiness, and
+preflight; the actual flood model remains a producer-side input.
 
 Bundle Contract
 ---------------
@@ -137,6 +137,41 @@ Direct bundle inspection and validation remain available:
 an invalid bundle. ``inspect`` prints the bundle pin and artifact roles for a
 valid bundle; an invalid bundle prints the validation report and exits non-zero.
 Pass exactly one of a direct ``BUNDLE`` argument or ``--dataset``.
+
+Preflight
+---------
+
+`ws4 hydrology preflight` combines the bundle pin, readiness evidence, crosswalk
+review state, and mapping coverage into one fail-closed report. It is
+orchestration over the existing validators; it does not run a schedule, write
+files, or contact the network.
+
+.. code-block:: bash
+
+   ws4 hydrology preflight \
+     --dataset build/compiled \
+     --crosswalk reviewed-crosswalk.csv \
+     --metadata reviewed-crosswalk.meta.json \
+     --policy require_reviewed \
+     --json
+
+The default preflight policy is ``require_reviewed``. The report sets
+``screening_ready`` to true only when:
+
+- the bundle is structurally valid;
+- the readiness state is allowed by the policy;
+- a crosswalk was supplied;
+- the crosswalk is reviewed under the selected policy; and
+- every fragment and block is mapped.
+
+A missing crosswalk is always a blocking reason, so a direct-bundle preflight
+can report readiness evidence but cannot declare screening safe. Partial
+mapping is available with ``--allow-partial`` for diagnosis, but unmapped
+fragments or blocks still block readiness.
+
+The command exits non-zero when ``screening_ready`` is false. A structurally
+valid bundle is not a hydrologically reviewed bundle, and a ready preflight is
+not a hydrologist review or a regulatory flood map.
 
 Validation Evidence
 -------------------
