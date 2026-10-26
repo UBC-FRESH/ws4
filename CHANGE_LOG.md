@@ -2864,3 +2864,7 @@ issue comments.
   `max_abs = 0.0`; browser smoke exits 0 for the standalone and optimizer runs; c5 shows the
   explicit no-carbon state. No real `gcbm_compare.csv` exists, so that UI branch is fixture-tested.
   Dashboard **GREEN**.
+
+- P61 close-out: pull request #436 squash-merged as `b61224a`; parent #430 and tasks
+  #431/#432/#433 closed; status set complete. Carbon/libcbm evidence and the GCBM
+  comparison gap are recorded in `notes/reports/p61-closeout.md`.

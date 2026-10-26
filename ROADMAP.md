@@ -63,7 +63,7 @@ exists and the maintainer approves it.
 | P58 Forest carbon accounting and carbon-aware planning | #357 | `feature/p58-carbon` | complete |
 | P59 LiDAR in the web UI | #417 | `feature/p59-lidar-ui` | complete |
 | P60 Harden hydrology use with validation evidence | #415 | `feature/p60-closeout` | complete |
-| P61 Carbon and libcbm in the web UI | #430 | `feature/p61-carbon-ui` | pr-open |
+| P61 Carbon and libcbm in the web UI | #430 | `feature/p61-carbon-ui` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -1868,7 +1868,7 @@ Acceptance:
 
 Parent issue: #430
 Branch: `feature/p61-carbon-ui`
-Status: pr-open
+Status: complete
 
 Goal: expose the P58 carbon artifacts in the web application without re-running libcbm.
 
