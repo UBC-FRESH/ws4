@@ -384,6 +384,8 @@ def sample_dhi_raster(
         raise DhiError(f"blocks file does not exist: {blocks}")
     if scale <= 0:
         raise DhiError("scale must be positive")
+    if not source_version.strip():
+        raise DhiError("source_version must not be empty")
     names = tuple(str(name).strip() for name in band_names)
     if not names or any(not name for name in names):
         raise DhiError("band_names must be a non-empty list")
