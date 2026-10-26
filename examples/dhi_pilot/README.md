@@ -51,7 +51,8 @@ ws4 simulate --dataset build/dhi_pilot \
   --dhi-metadata examples/dhi_pilot/dhi_metadata.json \
   --out runs/dhi_harvest
 
-ws4 report --run runs/dhi_harvest --targets targets.yaml
+ws4 report --run runs/dhi_harvest \
+  --targets examples/dhi_pilot/targets.yaml
 ```
 
 The baseline run keeps `feature.DHI.area` at 40 ha. The harvest run drops it to
