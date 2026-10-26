@@ -2956,3 +2956,10 @@ issue comments.
 - P65 close-out: pull request #469 squash-merged as `342ac3b`; parent #464 and tasks
   #465/#466/#467 closed; status set complete. The edit/save/reload evidence is recorded in
   `notes/reports/p65-closeout.md`.
+
+- P62 close-out: pull request #468 squash-merged as `55f7fdf`; parent #437
+  and tasks #449/#450/#451/#452/#453/#454 closed; status set complete. The
+  preflight, explicit exposure contract, schedule-bound screening, optimizer
+  refusal, and synthetic integration evidence are recorded in
+  `notes/reports/p62-closeout.md`. Dashboard **GREEN**; final pre-merge CI run
+  `40407187849` passed all five jobs.
