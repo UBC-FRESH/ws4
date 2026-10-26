@@ -2653,3 +2653,15 @@ issue comments.
   cover complete screening, refusal/allow, missing area, unknown blocks,
   mapping round-trip, bundle mismatch, and CLI output. Dashboard **GREEN**
   (lint, format, types, 106.53 s tests, validator, docs, docstrings).
+
+- P57.5: added optional `flood.*` accounts to the optimizer objective.
+  `ws4.hydrology.flood_screen.v1` config names the mapping, global covariates,
+  scenario tolerance, and refusal penalty. `FloodRiskModel` appends ratio, peak
+  flow, exceedance probability, and expected annual damage rows for each
+  receptor/return period; normal targets can price them. Out-of-envelope
+  schedules return the configured refusal penalty instead of extrapolating, and
+  the move-based delta evaluator is disabled while the model is active.
+  `--flood-screen-config` is available on `optimize`, `watch`, and `calibrate`.
+  Five new tests cover config loading, account emission, refusal, target
+  pricing, and penalty behavior. Dashboard **GREEN** (lint, format, types,
+  104.92 s tests, validator, docs, docstrings).

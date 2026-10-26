@@ -117,6 +117,13 @@ def simulate(
     route_config: Path = typer.Option(
         None, "--route-config", exists=True, help="Optional route model and route accounts (YAML)"
     ),
+    flood_screen_config: Path | None = typer.Option(
+        None,
+        "--flood-screen-config",
+        exists=True,
+        dir_okay=False,
+        help="Optional flood-screen config (hydrology response accounts)",
+    ),
     edge_elements: Path = typer.Option(
         None, "--edge-elements", exists=True, help="Optional edge contrast elements (CSV)"
     ),
@@ -198,6 +205,13 @@ def optimize(
     topology: Path = typer.Option(None, exists=True, help="Block topology for spatial constraints"),
     route_config: Path = typer.Option(
         None, "--route-config", exists=True, help="Optional route model and route accounts (YAML)"
+    ),
+    flood_screen_config: Path | None = typer.Option(
+        None,
+        "--flood-screen-config",
+        exists=True,
+        dir_okay=False,
+        help="Optional flood-screen config (hydrology response accounts)",
     ),
     edge_elements: Path = typer.Option(
         None, "--edge-elements", exists=True, help="Optional edge contrast elements (CSV)"
@@ -314,6 +328,9 @@ def optimize(
         weights_path=str(weights) if weights is not None else "",
         topology_path=str(topology) if topology is not None else "",
         route_config_path=str(route_config) if route_config is not None else "",
+        flood_screen_config_path=(
+            str(flood_screen_config) if flood_screen_config is not None else ""
+        ),
         edge_elements_path=str(edge_elements) if edge_elements is not None else "",
         max_opening_ha=max_opening_ha,
         min_green_up_years=min_green_up_years,
@@ -530,6 +547,13 @@ def watch(
     route_config: Path = typer.Option(
         None, "--route-config", exists=True, help="Optional route model and route accounts (YAML)"
     ),
+    flood_screen_config: Path | None = typer.Option(
+        None,
+        "--flood-screen-config",
+        exists=True,
+        dir_okay=False,
+        help="Optional flood-screen config (hydrology response accounts)",
+    ),
     topology: Path = typer.Option(None, exists=True, help="Block topology for spatial constraints"),
     max_opening_ha: float = typer.Option(None, help="Maximum opening size, in hectares"),
     min_green_up_years: int = typer.Option(None, help="Green-up interval, in years"),
@@ -569,6 +593,9 @@ def watch(
         block_coordinates_path=str(block_coordinates) if block_coordinates is not None else "",
         topology_path=str(topology) if topology is not None else "",
         route_config_path=str(route_config) if route_config is not None else "",
+        flood_screen_config_path=(
+            str(flood_screen_config) if flood_screen_config is not None else ""
+        ),
         max_opening_ha=max_opening_ha,
         min_green_up_years=min_green_up_years,
         core_buffer_m=core_buffer_m,
@@ -618,6 +645,13 @@ def calibrate(
     block_coordinates: Path = typer.Option(
         None, "--block-coordinates", exists=True, help="Block centroids (CSV: block, x, y)"
     ),
+    flood_screen_config: Path | None = typer.Option(
+        None,
+        "--flood-screen-config",
+        exists=True,
+        dir_okay=False,
+        help="Optional flood-screen config (hydrology response accounts)",
+    ),
     warm_start: bool = typer.Option(
         False, "--warm-start", help="Start the pilot from each block's first candidate"
     ),
@@ -633,6 +667,9 @@ def calibrate(
         patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",
         spread_accounts_path=str(spread_accounts) if spread_accounts is not None else "",
         block_coordinates_path=str(block_coordinates) if block_coordinates is not None else "",
+        flood_screen_config_path=(
+            str(flood_screen_config) if flood_screen_config is not None else ""
+        ),
     )
     optimizer = Optimizer.from_dataset(dataset, cfg)
     calibrated = run_calibration(

@@ -231,6 +231,60 @@ bundle's own scenario flow, exceedance probability, and expected annual damage
 are carried alongside it and are not recomputed. The row is a planning screen,
 not a schedule-specific process simulation or regulatory flood map.
 
+Flood Accounts In Optimization
+------------------------------
+
+P57.5 can expose the screening rows as optional `flood.*` accounts to the
+optimizer objective. It does not change the simulator or write flood accounts
+from `ws4 simulate`.
+
+Create a flood-screen config:
+
+.. code-block:: json
+
+   {
+     "schema_version": "ws4.hydrology.flood_screen.v1",
+     "mapping": "build/hydrology_mapping",
+     "covariates": {},
+     "scenario_tolerance": 0.05,
+     "refusal_penalty": 1000000000000.0
+   }
+
+Pass it to `ws4 optimize` (or `watch`/`calibrate`):
+
+.. code-block:: bash
+
+   ws4 optimize \
+     --dataset build/compiled \
+     --targets targets.yaml \
+     --flood-screen-config flood-screen.json \
+     --out build/run
+
+Targets use the account names:
+
+.. code-block:: text
+
+   flood.<receptor_id>.<return_period>.ratio
+   flood.<receptor_id>.<return_period>.peak_flow_m3s
+   flood.<receptor_id>.<return_period>.exceedance_probability
+   flood.<receptor_id>.<return_period>.expected_annual_damage
+
+For example:
+
+.. code-block:: yaml
+
+   targets:
+     - account: flood.receptor-1.100.ratio
+       period: 1
+       maximum: 1.10
+       max_weight: 10000
+
+A schedule outside the response-surface tolerance is not extrapolated. The
+optimizer returns the configured `refusal_penalty` for that evaluation. When a
+flood-screen config is active, the move-based delta evaluator is disabled and
+whole-schedule evaluation is used; this is a deliberate screening-first
+boundary, not a performance claim.
+
 Flood-Risk Table
 ----------------
 

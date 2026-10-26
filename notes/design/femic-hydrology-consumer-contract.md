@@ -109,3 +109,20 @@ metadata, not recomputed.
 Refusals fail by default. `--allow-refused` writes inside-domain rows and records
 the refusals. A row is a planning screen, not a schedule-specific process
 simulation. No simulator, optimizer, objective, or FEMIC process is invoked.
+
+## P57.5 optimizer account decision
+
+The flood-screen config is an optional per-run JSON document. It names the
+mapping, global covariates, scenario tolerance, and refusal penalty. The
+optimizer loads it once, appends `flood.*` rows to the account frame, and lets
+normal targets price them.
+
+Accounts are `flood.<receptor>.<return_period>.ratio`,
+`.peak_flow_m3s`, `.exceedance_probability`, and `.expected_annual_damage`.
+Schedules outside the response-surface tolerance return the configured refusal
+penalty instead of extrapolating. The delta evaluator returns `None` when this
+model is active, so search uses whole-schedule evaluation.
+
+This is an objective-screening surface, not a simulator output and not a
+schedule-specific process simulation. The run must retain the screening-only
+and hydrologist-review caveats.

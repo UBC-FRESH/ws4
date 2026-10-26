@@ -8,6 +8,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 from typer.testing import CliRunner
+from ws4.build.compiler import build_canonical_dataset
 from ws4.cli import app
 from ws4.io.hydrology import (
     FemicHydrologyBundle,
@@ -28,11 +29,20 @@ from ws4.io.hydrology import (
     write_hydrology_mapping,
     write_hydrology_screen,
 )
+from ws4.opt.engine import OptimizeConfig, Optimizer
+from ws4.opt.flood import (
+    FloodRiskModel,
+    FloodRiskRefusalError,
+    load_flood_screen_config,
+)
+from ws4.opt.objective import Target
+from ws4.opt.operators import Schedule
 
 runner = CliRunner()
 BUNDLE_ID = "hydro-response-test00000001"
 BUNDLE_VERSION = "2026.10.0"
 GENERATED_UTC = "2026-10-26T00:00:00+00:00"
+SYNTHETIC_FIXTURE = Path(__file__).resolve().parents[1] / "examples" / "synthetic"
 
 
 def _write_json(path: Path, payload: object) -> None:
@@ -1302,3 +1312,173 @@ def test_screen_rejects_mapping_from_other_bundle(tmp_path: Path) -> None:
 
     with pytest.raises(FemicHydrologyError, match="different FEMIC bundle pin"):
         screen_schedule_flood_risk(dataset, other_bundle, mapping, schedule)
+
+
+def _optimizer_domain_payload() -> dict[str, object]:
+    return {
+        "schema_version": "femic.hydrology.domain.v1",
+        "domain_id": "fixture-domain",
+        "watersheds": [{"watershed_id": "watershed-1", "area_km2": 1.0}],
+        "receptors": [{"receptor_id": "receptor-1"}],
+    }
+
+
+def _optimizer_ledger_payload() -> dict[str, object]:
+    return {
+        "schema_version": "femic.hydrology.disturbance.v1",
+        "ledger_id": "fixture-ledger",
+        "domain_id": "fixture-domain",
+        "units": [{"unit_id": "unit-1", "watershed_id": "watershed-1"}],
+    }
+
+
+def _optimizer_risk_payload() -> dict[str, object]:
+    payload = _screen_risk_payload()
+    payload["summary"] = {"row_count": 1}
+    payload["rows"] = [
+        {
+            "receptor_id": "receptor-1",
+            "watershed_id": "watershed-1",
+            "return_period": 100.0,
+            "baseline_peak_flow_m3s": 120.0,
+            "scenario_peak_flow_m3s": 150.0,
+            "ratio": 1.25,
+            "exceedance_probability": 0.01,
+            "expected_annual_damage": 42000.0,
+        }
+    ]
+    return payload
+
+
+def _flood_config(
+    path: Path,
+    mapping_manifest: Path,
+    *,
+    tolerance: float = 0.05,
+) -> Path:
+    _write_json(
+        path,
+        {
+            "schema_version": "ws4.hydrology.flood_screen.v1",
+            "mapping": str(mapping_manifest),
+            "covariates": {},
+            "scenario_tolerance": tolerance,
+            "refusal_penalty": 1e12,
+        },
+    )
+    return path
+
+
+def _optimizer_fixture(
+    root: Path,
+    *,
+    tolerance: float = 0.05,
+) -> tuple[Path, Path]:
+    dataset = build_canonical_dataset(
+        SYNTHETIC_FIXTURE / "recipe.xml",
+        SYNTHETIC_FIXTURE / "fragments.csv",
+        root / "compiled",
+    )
+    bundle = load_femic_hydrology_bundle(
+        _bundle(
+            root / "bundle",
+            domain_payload=_optimizer_domain_payload(),
+            ledger_payload=_optimizer_ledger_payload(),
+            response_surface_payload=_screen_surface_payload(),
+            flood_risk_payload=_optimizer_risk_payload(),
+        )
+    )
+    register_femic_hydrology_bundle(dataset, bundle.bundle_dir, registered_utc=GENERATED_UTC)
+    rows: list[dict[str, object]] = [
+        {
+            "fragment_id": "",
+            "block_id": block_id,
+            "unit_id": "unit-1",
+            "watershed_id": "watershed-1",
+            "receptor_id": "receptor-1",
+            "notes": "",
+        }
+        for block_id in (1, 2)
+    ]
+    crosswalk = load_hydrology_crosswalk(_write_crosswalk(root / "crosswalk.csv", rows))
+    mapping = map_femic_hydrology_to_dataset(
+        dataset,
+        bundle,
+        crosswalk,
+        generated_utc=GENERATED_UTC,
+    )
+    paths = write_hydrology_mapping(mapping, root / "mapping")
+    config = _flood_config(
+        root / "flood.json",
+        paths["manifest"],
+        tolerance=tolerance,
+    )
+    return dataset, config
+
+
+def test_load_flood_screen_config(tmp_path: Path) -> None:
+    dataset, config_path = _optimizer_fixture(tmp_path)
+    _ = dataset
+    config = load_flood_screen_config(config_path)
+    assert config.scenario_tolerance == 0.05
+    assert config.refusal_penalty == 1e12
+    assert config.mapping_path.is_file()
+
+
+def test_flood_model_emits_accounts_for_each_year(tmp_path: Path) -> None:
+    dataset, config_path = _optimizer_fixture(tmp_path)
+    model = FloodRiskModel(dataset, config_path)
+    schedule = pd.DataFrame({"block_id": [1, 2], "treatment": ["CC", "CC"], "offset": [0, 0]})
+    values = model.values(schedule, years=2)
+    accounts = set(values["account"])
+    assert "flood.receptor-1.100.ratio" in accounts
+    assert "flood.receptor-1.100.peak_flow_m3s" in accounts
+    assert set(values["offset"]) == {0, 1}
+    ratios = values[values["account"] == "flood.receptor-1.100.ratio"]
+    assert list(ratios["value"]) == pytest.approx([1.1, 1.1])
+
+
+def test_flood_model_refuses_outside_tolerance(tmp_path: Path) -> None:
+    dataset, config_path = _optimizer_fixture(tmp_path, tolerance=0.000001)
+    model = FloodRiskModel(dataset, config_path)
+    schedule = pd.DataFrame({"block_id": [1, 2], "treatment": ["CC", "CC"], "offset": [0, 0]})
+    with pytest.raises(FloodRiskRefusalError, match="refused"):
+        model.values(schedule, years=2)
+
+
+def test_optimizer_appends_flood_accounts_and_prices_target(tmp_path: Path) -> None:
+    dataset, config_path = _optimizer_fixture(tmp_path)
+    optimizer = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(
+            years=2,
+            iterations=1,
+            seed=1,
+            flood_screen_config_path=str(config_path),
+        ),
+    )
+    schedule: Schedule = {1: (("CC", 0),), 2: (("CC", 0),)}
+    score = optimizer._evaluate(
+        schedule,
+        [Target("flood.receptor-1.100.ratio", period=1, maximum=1.05, max_weight=1.0)],
+    )
+    values = optimizer.last_account_values()
+    assert score > 0
+    assert "flood.receptor-1.100.ratio" in set(values["account"])
+    assert optimizer.delta_evaluator([]) is None
+
+
+def test_optimizer_flood_refusal_returns_penalty(tmp_path: Path) -> None:
+    dataset, config_path = _optimizer_fixture(tmp_path, tolerance=0.000001)
+    optimizer = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(
+            years=2,
+            iterations=1,
+            seed=1,
+            flood_screen_config_path=str(config_path),
+        ),
+    )
+    schedule: Schedule = {1: (("CC", 0),), 2: (("CC", 0),)}
+    score = optimizer._evaluate(schedule, [])
+    assert score >= 1e11

@@ -13,7 +13,7 @@ import hashlib
 import json
 import math
 import re
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
@@ -972,11 +972,12 @@ def screen_schedule_flood_risk(
     dataset_dir: Path,
     bundle: FemicHydrologyBundle,
     mapping: HydrologyMapping,
-    schedule_path: Path,
+    schedule_source: Path | pd.DataFrame,
     *,
     mapping_manifest_path: Path | None = None,
     covariates: Mapping[str, float] | None = None,
     scenario_tolerance: float = 0.05,
+    periods: Sequence[int] | None = None,
     allow_refused: bool = False,
     generated_utc: str | None = None,
 ) -> HydrologyScreen:
@@ -990,8 +991,9 @@ def screen_schedule_flood_risk(
         Pinned FEMIC bundle.
     mapping : HydrologyMapping
         Explicit WS4-to-FEMIC mapping.
-    schedule_path : Path
-        WS4 schedule CSV with ``block_id``, ``treatment``, and ``offset``.
+    schedule_source : Path or pandas.DataFrame
+        WS4 schedule CSV or frame with ``block_id``, ``treatment``, and
+        ``offset``.
     mapping_manifest_path : Path | None, optional
         Mapping manifest path used to record its digest.
     covariates : Mapping[str, float] | None, optional
@@ -1000,6 +1002,9 @@ def screen_schedule_flood_risk(
     scenario_tolerance : float, optional
         Maximum absolute feature difference allowed when selecting a response
         scenario.
+    periods : sequence of int, optional
+        Offsets to screen even when no treatment occurs there. The default uses
+        the schedule's own offsets.
     allow_refused : bool, optional
         Return inside-domain rows plus refusals instead of failing on refusal.
     generated_utc : str | None, optional
@@ -1026,7 +1031,7 @@ def screen_schedule_flood_risk(
     supplied = {str(name): float(value) for name, value in (covariates or {}).items()}
     if any(not math.isfinite(value) for value in supplied.values()):
         raise FemicHydrologyError("Covariate values must be finite.")
-    schedule = _load_schedule(schedule_path)
+    schedule = _schedule_source(schedule_source)
     block_records = {_int(row["block_id"], "mapping block_id"): row for row in mapping.blocks}
     dataset_blocks = _load_block_areas(dataset_dir.expanduser().resolve())
     watershed_areas = _watershed_areas(bundle)
@@ -1036,7 +1041,10 @@ def screen_schedule_flood_risk(
     risk_by_watershed: dict[str, list[FemicFloodRiskRow]] = {}
     for row in risk_rows:
         risk_by_watershed.setdefault(row.watershed_id, []).append(row)
-    periods = sorted({item.offset for item in schedule})
+    requested_periods = {int(period) for period in (periods or ())}
+    periods = sorted(requested_periods | {item.offset for item in schedule})
+    if not periods:
+        raise FemicHydrologyError("Schedule has no treatments and no screening periods.")
     harvested_by_period: dict[int, set[int]] = {period: set() for period in periods}
     for item in schedule:
         block_id = item.block_id
@@ -1153,7 +1161,11 @@ def screen_schedule_flood_risk(
     if refusals and not allow_refused:
         reasons = "; ".join(str(item["reason"]) for item in refusals[:3])
         raise FemicHydrologyError(f"Schedule screening refused {len(refusals)} row(s): {reasons}")
-    schedule_sha = _sha256_file(schedule_path)
+    schedule_sha = (
+        _sha256_file(schedule_source)
+        if isinstance(schedule_source, Path)
+        else hashlib.sha256(schedule_source.to_csv(index=False).encode("utf-8")).hexdigest()
+    )
     mapping_sha = _sha256_file(mapping_manifest_path) if mapping_manifest_path is not None else ""
     timestamp = generated_utc or datetime.now(UTC).isoformat()
     material = {
@@ -2371,6 +2383,31 @@ class _ScheduleItem:
     block_id: int
     treatment: str
     offset: int
+
+
+def _schedule_source(source: Path | pd.DataFrame) -> tuple[_ScheduleItem, ...]:
+    if isinstance(source, Path):
+        return _load_schedule(source)
+    return _schedule_from_frame(source)
+
+
+def _schedule_from_frame(frame: pd.DataFrame) -> tuple[_ScheduleItem, ...]:
+    required = {"block_id", "treatment", "offset"}
+    missing = required - set(frame.columns)
+    if missing:
+        raise FemicHydrologyError(
+            "Schedule is missing required columns: " + ", ".join(sorted(missing)) + "."
+        )
+    rows: list[_ScheduleItem] = []
+    for _, row in frame.iterrows():
+        rows.append(
+            _ScheduleItem(
+                block_id=_int(row["block_id"], "schedule block_id"),
+                treatment=_text(row["treatment"], "schedule treatment"),
+                offset=_int(row["offset"], "schedule offset"),
+            )
+        )
+    return tuple(rows)
 
 
 def _load_schedule(path: Path) -> tuple[_ScheduleItem, ...]:
