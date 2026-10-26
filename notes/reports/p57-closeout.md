@@ -3,7 +3,7 @@
 Phase: P57 Consume FEMIC hydrology response bundles
 Parent issue: #395
 Pull request: #411, `feature/p57-closeout` into `main`
-Evidence head: `c35af30` (P57.5), plus the report commit
+Evidence head: `c35af30` (P57.5), plus the consolidation and main-merge commits
 Report commit: the commit that adds this report. Its CI run is posted on the pull request.
 Date: 2026-10-26
 Status: approved for single-phase squash merge; not merged.
@@ -46,6 +46,7 @@ Settings changes, each with its exact command. Each one runs only after its own 
 
 - Parent issue before the branch: #395 was created before the P57 branch and the task branches.
 - Branch base: each task branch was stacked on its predecessor; the approved consolidation retargets #411 to `main`.
+- Main advanced with P56 and P58 before the merge. `ROADMAP.md`, `CHANGE_LOG.md`, `docs/reference/index.rst`, and `ws4/cli.py` were merged by keeping both phases; no carbon or disturbance semantics were removed.
 - Commit messages: `P57.1` through `P57.6` prefixes are present.
 - Roadmap and changelog: updated by each task; P57.6 sets the phase to `pr-open`.
 - Child issues: open pending review; close them only after the corresponding PR merges.
@@ -76,6 +77,7 @@ and the PR.
 | --- | --- | --- |
 | WS4 phase renumbered to P57. | The planned `P49` is already a closed managed/young validation phase. | Treat FEMIC `consumer_phases` as producer metadata; document WS4's actual phase. |
 | Six stacked PRs instead of one phase PR. | Each task was bounded and queued before the prior task merged, per the one-task-at-a-time workflow. | Resolved by retargeting #411 to `main` and closing the five task PRs as superseded. |
+| Main advanced with P56/P58 during closeout. | Other work merged while the P57 stack waited for approval. | Merged `origin/main` into the closeout branch; kept P56/P58 and P57 sections, imports, and docs. Dashboard re-ran green (118.57 s tests). |
 | No real public watershed mapping or production pilot. | The workspace has no reviewed public crosswalk/domain with FEMIC ledger units. | Follow-up public pilot; do not infer a watershed. |
 | No hydrologist review. | No reviewer record exists. | Preserve `not_reviewed`; require review before operational use. |
 | No independent WS4 tail-check validation. | The consumer validates bundle structure/checksums, not FEMIC fit diagnostics. | Use the FEMIC model-card/tail-check metadata; add a dedicated guard in the follow-up phase. |

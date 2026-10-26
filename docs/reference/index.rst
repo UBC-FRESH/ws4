@@ -24,12 +24,16 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - Block topology, patch metrics and size classes, edge contrast, and the opening rules.
    * - :doc:`roads`
      - The network tables, least-cost routing, and the route accounts.
+   * - :doc:`carbon`
+     - The FEMIC carbon package contract, its tables, and the track-name join.
    * - :doc:`performance`
      - The measured figures and how to reproduce them.
    * - :doc:`web`
      - The optional HTTP service over a run's artefacts, and the browser front end's contract.
    * - :doc:`femic-lidar`
      - Pinned FEMIC LidarBC bundles, checksums, and polygon support summaries.
+   * - :doc:`disturbance`
+     - Read-only ``femic.disturbance.v1`` events and the summary report.
    * - :doc:`femic-hydrology`
      - Pinned FEMIC hydrology response bundles, checksums, flood-risk rows, and
        applicability metadata.
@@ -44,7 +48,9 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    optimizer
    spatial
    roads
+   carbon
    performance
    web
    femic-lidar
+   disturbance
    femic-hydrology

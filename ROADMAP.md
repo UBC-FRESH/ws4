@@ -58,6 +58,8 @@ exists and the maintainer approves it.
 | P50 Runtime provenance and release verification | #345 | `feature/p50-runtime-provenance` | complete |
 | P51 Release-candidate verification | #351 | `feature/p51-release-candidate` | complete |
 | P53 Version 0.2.0 release preparation | #371 | `feature/p53-v020` | complete |
+| P56 Disturbance event consumer | #393 | `feature/p56-disturbance-consumer` | complete |
+| P58 Forest carbon accounting and carbon-aware planning | #357 | `feature/p58-carbon` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -1647,6 +1649,25 @@ Acceptance:
 - Clean-checkout, dashboard, artifacts, isolated installs, entry points, and Pages pass.
 - No tag or release is created.
 
+## Phase 56: Disturbance event consumer
+
+Parent issue: #393
+Branch: `feature/p56-disturbance-consumer`
+Status: complete
+
+Goal: consume `femic.disturbance.v1` consumer rows in a read-only report,
+without changing the compiled dataset, simulator, or optimizer.
+
+- [x] P56.1 Load and report disturbance events (#394)
+
+Acceptance:
+
+- The loader accepts the consumer-row shape and the full event record.
+- The report names the event year, type, severity class, and affected blocks.
+- A malformed event fails with a clear message.
+- `ws4 disturbance --json` emits a stable summary.
+- No compiled-dataset, simulator, or optimizer behavior changes.
+
 ## Phase 57: Consume FEMIC hydrology response bundles
 
 Parent issue: #395
@@ -1702,6 +1723,47 @@ Acceptance:
 - CLI JSON reports are deterministic and exit non-zero on invalid input.
 - Validation is stdlib-only and never contacts FEMIC or the network.
 - The screening-only and hydrologist-review conditions remain explicit.
+
+## Phase 58: Forest carbon accounting and carbon-aware planning
+
+Parent issue: #357
+Branch: `feature/p58-carbon`
+Status: complete
+
+Goal: make carbon a first-class, reproducible outcome of a WS4 run and a target the optimizer can
+search against, using libcbm as the engine and FEMIC as the producer of the carbon input package.
+
+Architecture: the compiled dataset remains the runtime contract. `ws4 carbon` reads it plus a FEMIC
+carbon package and a schedule, compiles CBM SIT tables, and runs libcbm behind a small driver
+protocol. Carbon outputs are `carbon.*` accounts. The optimizer sees carbon through a block-level
+ledger that reuses CBM's stand-level additivity, or through a clearly labeled surrogate when the
+ledger cannot meet the search budget. The final schedule is always verified with the exact engine.
+See `notes/design/ws4-carbon.md`.
+
+- [x] P58.1 Load and validate FEMIC carbon packages (#358)
+- [x] P58.2 Compile CBM SIT tables from a WS4 dataset and schedule (#359)
+- [x] P58.3 Add the libcbm driver and the `ws4 carbon` command (#360)
+- [x] P58.4 Integrate carbon accounts, reports, and provenance (#361)
+- [x] P58.5 Validate parity, mass balance, and deterministic replay (#362)
+- [x] P58.6 Build the block-level carbon ledger (#363)
+- [x] P58.7 Add carbon targets to the optimizer (#364)
+- [x] P58.8 Validate carbon-aware planning on TSA24 and MKRF (#365)
+- [x] P58.9 Consume GCBM outputs and compare spatial carbon (#366)
+- [x] P58.10 Document, release, and close out the carbon phase (#367)
+
+Acceptance:
+
+- `ws4 carbon` runs on a real compiled dataset and schedule and writes pools, fluxes, accounts, and a
+  manifest.
+- The same inputs replay identically, and the manifest records the package, schedule, libcbm, and
+  `cbm_defaults` hashes.
+- WS4 and WS3 agree within a documented tolerance on the TSA24 fixture, or the difference is explained.
+- A carbon target changes a schedule on a small instance, and the winning schedule is verified with the
+  exact engine.
+- TSA24 and MKRF carbon-aware runs are recorded with their trade-offs and runtimes.
+- GCBM outputs can be ingested and compared without making FLINT a WS4 runtime dependency.
+
+Closeout report: `notes/reports/p58-closeout.md`.
 
 ## Detailed Next Steps Notes
 

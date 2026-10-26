@@ -237,3 +237,54 @@ def test_serve_refuses_patch_accounts_without_topology(tmp_path: Path) -> None:
     combined = re.sub(r"\x1b\[[0-9;]*m", "", result.stdout + result.stderr)
     assert "patch-accounts" in combined
     assert "topology" in combined
+
+
+def test_disturbance_reports_a_fire_event() -> None:
+    """The disturbance command reads a FEMIC consumer row and reports its year and type."""
+    result = run_ws4("disturbance", "--events", "tests/fixtures/disturbance/fire.json")
+    combined = re.sub(r"\x1b\[[0-9;]*m", "", result.stdout + result.stderr)
+    assert result.returncode == 0, combined
+    assert "fire-2023-001" in combined
+    assert "2023" in combined
+    assert "fire" in combined
+
+
+def test_disturbance_json_is_machine_readable() -> None:
+    """The ``--json`` output is a stable summary object."""
+    result = run_ws4(
+        "disturbance",
+        "--events",
+        "tests/fixtures/disturbance/fire.json",
+        "--json",
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["event_count"] == 1
+    assert payload["event_types"] == ["fire"]
+    assert payload["affected_blocks"] == [101]
+
+
+def test_disturbance_filters_by_block() -> None:
+    """A block filter selects only events that name the block."""
+    result = run_ws4(
+        "disturbance",
+        "--events",
+        "tests/fixtures/disturbance/nsr.json",
+        "--block-id",
+        "201",
+        "--json",
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["event_count"] == 1
+    assert payload["affected_blocks"] == [201]
+
+
+def test_disturbance_rejects_a_malformed_event(tmp_path: Path) -> None:
+    """A missing required field fails with a clear message."""
+    target = tmp_path / "bad.json"
+    target.write_text('{"event_id": "x", "year": 2020}', encoding="utf-8")
+    result = run_ws4("disturbance", "--events", str(target))
+    combined = re.sub(r"\x1b\[[0-9;]*m", "", result.stdout + result.stderr)
+    assert result.returncode != 0
+    assert "missing disturbance fields" in combined
