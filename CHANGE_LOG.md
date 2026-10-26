@@ -2892,3 +2892,7 @@ issue comments.
   targets (2 inactive cards), and a 400-iteration live c5 run whose achieved value moved
   1,260.74 -> 26,077.22 -> 35,150.61 without reload. `check_target_charts.py` exits 0; iPad
   1024 and desktop 1500 have no page overflow. Dashboard **GREEN**.
+
+- P64 close-out: pull request #461 squash-merged as `8b0d0e6`; parent #456 and tasks
+  #457/#458/#459 closed; status set complete. The chart/live-convergence evidence is
+  recorded in `notes/reports/p64-closeout.md`.
