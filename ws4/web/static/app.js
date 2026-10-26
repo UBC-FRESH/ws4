@@ -2936,6 +2936,15 @@ function renderTargetChart(account, periods) {
     svg.append(label);
   }
 
+  const selectedIndex = Math.min(Math.max(0, state.periodIndex), Math.max(0, cells.length - 1));
+  const highlight = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  highlight.setAttribute('x', left + step * selectedIndex);
+  highlight.setAttribute('y', top);
+  highlight.setAttribute('width', step);
+  highlight.setAttribute('height', plotHeight);
+  highlight.setAttribute('class', 'target-chart-selected-period');
+  svg.append(highlight);
+
   const readout = document.createElement('div');
   readout.className = 'target-chart-readout';
   const showReadout = (cell) => {
@@ -2984,6 +2993,7 @@ function renderTargetChart(account, periods) {
     hit.setAttribute('height', plotHeight);
     hit.setAttribute('class', 'target-chart-period');
     hit.setAttribute('fill', 'transparent');
+    hit.dataset.period = String(index);
     const tip = document.createElementNS('http://www.w3.org/2000/svg', 'title');
     tip.textContent = `${cell.label ?? `Period ${index + 1}`}: min ${minValue === null ? '—' : fullNumber(minValue)}, max ${maxValue === null ? '—' : fullNumber(maxValue)}, achieved ${cell.achieved === null ? '—' : fullNumber(cell.achieved)}`;
     hit.append(tip);
@@ -3008,9 +3018,13 @@ function renderTargetChart(account, periods) {
   };
   svg.addEventListener('pointerdown', (event) => {
     if (event.button !== 0) return;
-    const rect = svg.getBoundingClientRect();
-    const px = ((event.clientX - rect.left) / Math.max(rect.width, 1)) * width;
-    const index = Math.floor((px - left) / step);
+    const hit = event.target?.closest?.('.target-chart-period');
+    let index = hit ? Number(hit.dataset.period) : -1;
+    if (!Number.isInteger(index) || index < 0 || index >= cells.length) {
+      const rect = svg.getBoundingClientRect();
+      const px = ((event.clientX - rect.left) / Math.max(rect.width, 1)) * width;
+      index = Math.floor((px - left) / step);
+    }
     if (index < 0 || index >= cells.length) return;
     drag = { cell: cells[index], index, startY: event.clientY, moved: false };
     showReadout(drag.cell);
