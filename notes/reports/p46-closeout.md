@@ -2,8 +2,8 @@
 
 Phase: P46, Cached route event ledger
 Parent issue: #382
-Pull request: this P46 PR
-Status: queued for approval. Not merged.
+Pull request: #386
+Status: merged and closed on 2026-10-26 as `6c31d49`.
 Date: 2026-10-25
 
 ## Recommendation
