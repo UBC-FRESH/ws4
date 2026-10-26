@@ -2611,7 +2611,12 @@ issue comments.
   area. 13 unit tests and 4 CLI tests pass. No compiled-dataset, simulator, or
   optimizer behavior changes.
 
-- P57 activation: created parent issue #357 and tasks #358-#367 on `feature/p51-carbon`. The phase
+- P56 close-out: pull request #398 squash-merged as `5ea4a05`; parent #393 and task #394
+  closed. The read-only `femic.disturbance.v1` consumer and `ws4 disturbance` command
+  are in `main`; dashboard and all CI checks were green. No compiled-dataset,
+  simulator, or optimizer behavior changed.
+
+- P57 activation: created parent issue #357 and tasks #358-#367 on `feature/p57-carbon`. The phase
   adds the FEMIC carbon-package loader, the CBM SIT compiler, the libcbm driver and `ws4 carbon`,
   carbon accounts and reports, parity and replay validation, a block-level carbon ledger, carbon
   targets in the optimizer, TSA24/MKRF validation, and GCBM output consumption. The design note is
