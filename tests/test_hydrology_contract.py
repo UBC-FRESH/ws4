@@ -11,10 +11,13 @@ from typer.testing import CliRunner
 from ws4.build.compiler import build_canonical_dataset
 from ws4.cli import app
 from ws4.io.hydrology import (
+    HYDROLOGY_READINESS_POLICIES,
     FemicHydrologyBundle,
     FemicHydrologyError,
     HydrologyCrosswalk,
+    assess_femic_hydrology_readiness,
     bundle_pin,
+    enforce_hydrology_readiness,
     load_femic_hydrology_bundle,
     load_hydrology_crosswalk,
     load_hydrology_mapping,
@@ -121,6 +124,8 @@ def _bundle(
     ledger_payload: dict[str, object] | None = None,
     response_surface_payload: dict[str, object] | None = None,
     flood_risk_payload: dict[str, object] | None = None,
+    validation_report_payload: dict[str, object] | None = None,
+    model_card_payload: dict[str, object] | None = None,
 ) -> Path:
     root.mkdir(parents=True, exist_ok=True)
     artifacts = [
@@ -158,16 +163,26 @@ def _bundle(
             },
         ),
     ]
-    if include_validation_report:
+    if include_validation_report or validation_report_payload is not None:
         artifacts.append(
             _artifact(
                 root,
                 "validation_report",
                 "femic.hydrology.validation.v1",
-                {
+                validation_report_payload
+                or {
                     "schema_version": "femic.hydrology.validation.v1",
                     "validation_id": "fixture-validation",
                 },
+            )
+        )
+    if model_card_payload is not None:
+        artifacts.append(
+            _artifact(
+                root,
+                "model_card",
+                "femic.hydrology.model_card.v1",
+                model_card_payload,
             )
         )
     surface_payload = response_surface_payload or _response_surface()
@@ -1133,6 +1148,8 @@ def _write_schedule(path: Path) -> Path:
 
 def _screen_fixture(
     root: Path,
+    *,
+    tail_failures: dict[str, list[str]] | None = None,
 ) -> tuple[Path, FemicHydrologyBundle, Path, Path]:
     dataset = _compiled_dataset(root / "dataset")
     bundle = load_femic_hydrology_bundle(
@@ -1142,6 +1159,16 @@ def _screen_fixture(
             ledger_payload=_ledger_payload(),
             response_surface_payload=_screen_surface_payload(),
             flood_risk_payload=_screen_risk_payload(),
+            validation_report_payload=(
+                _validation_evidence_payload(tail_failures=tail_failures)
+                if tail_failures is not None
+                else None
+            ),
+            model_card_payload=(
+                _model_card_payload(tail_failures=tail_failures)
+                if tail_failures is not None
+                else None
+            ),
         )
     )
     register_femic_hydrology_bundle(dataset, bundle.bundle_dir, registered_utc=GENERATED_UTC)
@@ -1355,6 +1382,8 @@ def _flood_config(
     mapping_manifest: Path,
     *,
     tolerance: float = 0.05,
+    readiness_policy: str = "allow_provisional",
+    allow_tail_failures: bool = False,
 ) -> Path:
     _write_json(
         path,
@@ -1364,6 +1393,8 @@ def _flood_config(
             "covariates": {},
             "scenario_tolerance": tolerance,
             "refusal_penalty": 1e12,
+            "readiness_policy": readiness_policy,
+            "allow_tail_failures": allow_tail_failures,
         },
     )
     return path
@@ -1373,6 +1404,9 @@ def _optimizer_fixture(
     root: Path,
     *,
     tolerance: float = 0.05,
+    readiness_policy: str = "allow_provisional",
+    allow_tail_failures: bool = False,
+    tail_failures: dict[str, list[str]] | None = None,
 ) -> tuple[Path, Path]:
     dataset = build_canonical_dataset(
         SYNTHETIC_FIXTURE / "recipe.xml",
@@ -1386,6 +1420,16 @@ def _optimizer_fixture(
             ledger_payload=_optimizer_ledger_payload(),
             response_surface_payload=_screen_surface_payload(),
             flood_risk_payload=_optimizer_risk_payload(),
+            validation_report_payload=(
+                _validation_evidence_payload(tail_failures=tail_failures)
+                if tail_failures is not None
+                else None
+            ),
+            model_card_payload=(
+                _model_card_payload(tail_failures=tail_failures)
+                if tail_failures is not None
+                else None
+            ),
         )
     )
     register_femic_hydrology_bundle(dataset, bundle.bundle_dir, registered_utc=GENERATED_UTC)
@@ -1412,6 +1456,8 @@ def _optimizer_fixture(
         root / "flood.json",
         paths["manifest"],
         tolerance=tolerance,
+        readiness_policy=readiness_policy,
+        allow_tail_failures=allow_tail_failures,
     )
     return dataset, config
 
@@ -1482,3 +1528,332 @@ def test_optimizer_flood_refusal_returns_penalty(tmp_path: Path) -> None:
     schedule: Schedule = {1: (("CC", 0),), 2: (("CC", 0),)}
     score = optimizer._evaluate(schedule, [])
     assert score >= 1e11
+
+
+def _validation_evidence_payload(
+    *,
+    review_status: str = "not_reviewed",
+    review_recorded: bool = False,
+    tail_failures: dict[str, list[str]] | None = None,
+    not_evaluated: int = 5,
+) -> dict[str, object]:
+    return {
+        "schema_version": "femic.hydrology.validation.v1",
+        "validation_id": "fixture-validation",
+        "summary": {
+            "benchmark_cases": 5,
+            "benchmark_passed": 0,
+            "benchmark_failed": 0,
+            "benchmark_not_evaluated": not_evaluated,
+            "full_process_pilot_ready": False,
+            "hydrologist_review_recorded": review_recorded,
+            "usable_fits": {"08GA022": ["lp3"], "08HB048": ["gev", "lp3"]},
+            "tail_check_failures": tail_failures or {},
+        },
+        "readiness": {
+            "hydrologist_review_recorded": review_recorded,
+            "ready_for_full_process_pilot": False,
+        },
+        "benchmark_reviews": [],
+    }
+
+
+def _model_card_payload(
+    *,
+    review_status: str = "not_reviewed",
+    review_recorded: bool = False,
+    tail_failures: dict[str, list[str]] | None = None,
+) -> dict[str, object]:
+    return {
+        "schema_version": "femic.hydrology.model_card.v1",
+        "model_card_id": "fixture-model-card",
+        "validation_report_id": "fixture-validation",
+        "review_status": review_status,
+        "validation_summary": {
+            "full_process_pilot_ready": False,
+            "hydrologist_review_recorded": review_recorded,
+            "usable_fits": {"08GA022": ["lp3"], "08HB048": ["gev", "lp3"]},
+            "tail_check_failures": tail_failures or {},
+        },
+        "caveats": ["Synthetic evidence fixture."],
+    }
+
+
+def _evidence_bundle(
+    root: Path,
+    *,
+    review_status: str = "not_reviewed",
+    review_recorded: bool = False,
+    tail_failures: dict[str, list[str]] | None = None,
+    not_evaluated: int = 5,
+) -> Path:
+    return _bundle(
+        root,
+        validation_report_payload=_validation_evidence_payload(
+            review_status=review_status,
+            review_recorded=review_recorded,
+            tail_failures=tail_failures,
+            not_evaluated=not_evaluated,
+        ),
+        model_card_payload=_model_card_payload(
+            review_status=review_status,
+            review_recorded=review_recorded,
+            tail_failures=tail_failures,
+        ),
+    )
+
+
+def test_readiness_missing_evidence_is_not_available(tmp_path: Path) -> None:
+    bundle = load_femic_hydrology_bundle(_bundle(tmp_path / "bundle"))
+    readiness = assess_femic_hydrology_readiness(bundle)
+
+    assert readiness.status == "not_available"
+    assert readiness.review_status is None
+    assert readiness.tail_check_failures == {}
+    assert any("No validation_report" in warning for warning in readiness.warnings)
+    assert any("No model_card" in warning for warning in readiness.warnings)
+
+
+def test_readiness_provisional_evidence_is_not_approval(tmp_path: Path) -> None:
+    bundle = load_femic_hydrology_bundle(_evidence_bundle(tmp_path / "bundle"))
+    readiness = assess_femic_hydrology_readiness(bundle)
+
+    assert readiness.status == "provisional"
+    assert readiness.review_status == "not_reviewed"
+    assert readiness.validation_report_id == "fixture-validation"
+    assert readiness.model_card_id == "fixture-model-card"
+    assert readiness.benchmark_not_evaluated == 5
+    assert any("not_reviewed" in warning for warning in readiness.warnings)
+
+
+def test_readiness_tail_failure_blocks(tmp_path: Path) -> None:
+    failures = {"08GA022": ["GEV shape -5.68 is outside the screening range."]}
+    bundle = load_femic_hydrology_bundle(
+        _evidence_bundle(tmp_path / "bundle", tail_failures=failures)
+    )
+    readiness = assess_femic_hydrology_readiness(bundle)
+
+    assert readiness.status == "blocked"
+    assert readiness.tail_check_failures == failures
+    assert any("Tail-check" in warning for warning in readiness.warnings)
+
+
+def test_readiness_reviewed_clean_is_ready(tmp_path: Path) -> None:
+    bundle = load_femic_hydrology_bundle(
+        _evidence_bundle(
+            tmp_path / "bundle",
+            review_status="reviewed",
+            review_recorded=True,
+        )
+    )
+    readiness = assess_femic_hydrology_readiness(bundle)
+
+    assert readiness.status == "ready"
+    assert readiness.review_status == "reviewed"
+    assert readiness.hydrologist_review_recorded is True
+    assert readiness.tail_check_failures == {}
+
+
+def test_readiness_reviewed_with_conditions(tmp_path: Path) -> None:
+    bundle = load_femic_hydrology_bundle(
+        _evidence_bundle(
+            tmp_path / "bundle",
+            review_status="reviewed_with_conditions",
+            review_recorded=True,
+        )
+    )
+    readiness = assess_femic_hydrology_readiness(bundle)
+    assert readiness.status == "conditionally_ready"
+
+
+def test_readiness_malformed_evidence_and_id_mismatch(tmp_path: Path) -> None:
+    bad_card = _model_card_payload()
+    bad_card["review_status"] = "approved"
+    bundle = load_femic_hydrology_bundle(
+        _bundle(
+            tmp_path / "bad-card",
+            validation_report_payload=_validation_evidence_payload(),
+            model_card_payload=bad_card,
+        )
+    )
+    with pytest.raises(FemicHydrologyError, match="review status"):
+        assess_femic_hydrology_readiness(bundle)
+
+    bad_link = _model_card_payload()
+    bad_link["validation_report_id"] = "other-validation"
+    bundle = load_femic_hydrology_bundle(
+        _bundle(
+            tmp_path / "bad-link",
+            validation_report_payload=_validation_evidence_payload(),
+            model_card_payload=bad_link,
+        )
+    )
+    with pytest.raises(FemicHydrologyError, match="does not match"):
+        assess_femic_hydrology_readiness(bundle)
+
+
+def test_readiness_is_deterministic(tmp_path: Path) -> None:
+    bundle = load_femic_hydrology_bundle(
+        _evidence_bundle(
+            tmp_path / "bundle",
+            review_status="reviewed",
+            review_recorded=True,
+        )
+    )
+    first = assess_femic_hydrology_readiness(bundle)
+    second = assess_femic_hydrology_readiness(bundle)
+    assert first.evidence_sha256 == second.evidence_sha256
+    assert first.evidence_sha256.startswith("hydro-evidence-")
+
+
+def test_cli_readiness_direct_and_dataset(tmp_path: Path) -> None:
+    dataset = _dataset(tmp_path / "dataset")
+    bundle_root = tmp_path / "bundle"
+    _evidence_bundle(bundle_root)
+    register_femic_hydrology_bundle(dataset, bundle_root, registered_utc=GENERATED_UTC)
+
+    direct = runner.invoke(
+        app,
+        ["hydrology", "readiness", str(bundle_root), "--json"],
+    )
+    registered = runner.invoke(
+        app,
+        ["hydrology", "readiness", "--dataset", str(dataset), "--json"],
+    )
+
+    assert direct.exit_code == 0, direct.output
+    assert registered.exit_code == 0, registered.output
+    assert json.loads(direct.output)["status"] == "provisional"
+    assert json.loads(registered.output)["status"] == "provisional"
+
+
+def test_enforce_readiness_policies(tmp_path: Path) -> None:
+    statuses = {}
+    for status, kwargs in (
+        ("not_available", {}),
+        (
+            "provisional",
+            {"review_status": "not_reviewed"},
+        ),
+        (
+            "blocked",
+            {"tail_failures": {"08GA022": ["bad tail"]}},
+        ),
+        (
+            "ready",
+            {"review_status": "reviewed", "review_recorded": True},
+        ),
+        (
+            "conditionally_ready",
+            {"review_status": "reviewed_with_conditions", "review_recorded": True},
+        ),
+    ):
+        bundle = load_femic_hydrology_bundle(
+            _evidence_bundle(tmp_path / f"bundle-{status}", **kwargs)
+            if status != "not_available"
+            else _bundle(tmp_path / f"bundle-{status}")
+        )
+        statuses[status] = assess_femic_hydrology_readiness(bundle)
+
+    assert statuses["not_available"].status == "not_available"
+    assert statuses["provisional"].status == "provisional"
+    assert statuses["blocked"].status == "blocked"
+    assert statuses["ready"].status == "ready"
+    assert statuses["conditionally_ready"].status == "conditionally_ready"
+
+    enforce_hydrology_readiness(statuses["provisional"])
+    enforce_hydrology_readiness(statuses["conditionally_ready"], policy="require_reviewed")
+    enforce_hydrology_readiness(statuses["ready"], policy="require_ready")
+    with pytest.raises(FemicHydrologyError, match="not reviewed"):
+        enforce_hydrology_readiness(statuses["provisional"], policy="require_reviewed")
+    with pytest.raises(FemicHydrologyError, match="not fully ready"):
+        enforce_hydrology_readiness(
+            statuses["conditionally_ready"],
+            policy="require_ready",
+        )
+    with pytest.raises(FemicHydrologyError, match="Tail-check failures"):
+        enforce_hydrology_readiness(statuses["blocked"])
+    with pytest.raises(FemicHydrologyError, match="Tail-check failures"):
+        enforce_hydrology_readiness(
+            statuses["blocked"],
+            allow_tail_failures=True,
+            policy="require_reviewed",
+        )
+    enforce_hydrology_readiness(
+        statuses["blocked"],
+        allow_tail_failures=True,
+        policy="allow_provisional",
+    )
+    with pytest.raises(FemicHydrologyError, match="Unsupported readiness policy"):
+        enforce_hydrology_readiness(statuses["ready"], policy="unknown")
+
+
+def test_screen_cli_blocks_tail_failed_evidence(tmp_path: Path) -> None:
+    dataset, _bundle_value, mapping_manifest, schedule = _screen_fixture(
+        tmp_path,
+        tail_failures={"08GA022": ["GEV tail is non-physical"]},
+    )
+    _ = _bundle_value
+    out = tmp_path / "blocked-out"
+    blocked = runner.invoke(
+        app,
+        [
+            "hydrology",
+            "screen",
+            "--dataset",
+            str(dataset),
+            "--mapping",
+            str(mapping_manifest),
+            "--schedule",
+            str(schedule),
+            "--out",
+            str(out),
+        ],
+    )
+    assert blocked.exit_code == 1
+    assert "Tail-check failures" in blocked.output
+
+    allowed = runner.invoke(
+        app,
+        [
+            "hydrology",
+            "screen",
+            "--dataset",
+            str(dataset),
+            "--mapping",
+            str(mapping_manifest),
+            "--schedule",
+            str(schedule),
+            "--out",
+            str(out),
+            "--allow-tail-failures",
+        ],
+    )
+    assert allowed.exit_code == 0, allowed.output
+
+
+def test_optimizer_requires_reviewed_evidence(tmp_path: Path) -> None:
+    dataset, config_path = _optimizer_fixture(
+        tmp_path,
+        readiness_policy="require_reviewed",
+    )
+    with pytest.raises(FemicHydrologyError, match="not reviewed"):
+        FloodRiskModel(dataset, config_path)
+
+
+def test_flood_config_allow_tail_failures(tmp_path: Path) -> None:
+    config_path = _flood_config(
+        tmp_path / "flood.json",
+        tmp_path / "mapping.json",
+        allow_tail_failures=True,
+        readiness_policy="allow_provisional",
+    )
+    _write_json(tmp_path / "mapping.json", {"mapping_id": "x"})
+    config = load_flood_screen_config(config_path)
+    assert config.readiness_policy == "allow_provisional"
+    assert config.allow_tail_failures is True
+    assert HYDROLOGY_READINESS_POLICIES == (
+        "allow_provisional",
+        "require_reviewed",
+        "require_ready",
+    )

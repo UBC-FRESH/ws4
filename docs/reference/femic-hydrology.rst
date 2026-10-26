@@ -138,6 +138,70 @@ an invalid bundle. ``inspect`` prints the bundle pin and artifact roles for a
 valid bundle; an invalid bundle prints the validation report and exits non-zero.
 Pass exactly one of a direct ``BUNDLE`` argument or ``--dataset``.
 
+Validation Evidence
+-------------------
+
+P60.1 reads the optional FEMIC validation-report and model-card artifacts. The
+readiness command is a report, not a gate:
+
+.. code-block:: bash
+
+   ws4 hydrology readiness data/femic/hydrology-response-2026.10.0 --json
+   ws4 hydrology readiness --dataset build/compiled --json
+
+Statuses:
+
+- ``not_available``: no validation report or model card is packaged.
+- ``provisional``: evidence exists but the model card is not reviewed.
+- ``conditionally_ready``: reviewed with conditions.
+- ``ready``: reviewed, with a recorded hydrologist review and no tail-check
+  failures.
+- ``blocked``: a tail-check failure is recorded.
+
+The report carries the producer validation/model-card IDs, review status,
+usable fits, tail-check failures, benchmark pass/fail/not-evaluated counts,
+full-pilot readiness, and a deterministic evidence digest. Missing evidence is
+reported as missing; it is never treated as approval. The P60.1 command does
+not refuse screening or optimization; a later policy task decides how the
+evidence gates use.
+
+Readiness Policies
+-------------------
+
+P60.2 gates use on the readiness report:
+
+- ``allow_provisional`` (default): allow missing/provisional evidence with the
+  recorded warnings, but a tail-check block still refuses.
+- ``require_reviewed``: allow ``ready`` or ``conditionally_ready`` only.
+- ``require_ready``: allow ``ready`` only.
+
+A tail-check block refuses under every policy. The only override is
+``--allow-tail-failures`` with ``allow_provisional``; it is an explicit risk
+acceptance, not a claim that the fit is safe.
+
+.. code-block:: bash
+
+   ws4 hydrology screen ... --readiness-policy require_reviewed
+   ws4 hydrology screen ... --allow-tail-failures
+
+The flood-screen config accepts the same policy:
+
+.. code-block:: json
+
+   {
+     "schema_version": "ws4.hydrology.flood_screen.v1",
+     "mapping": "build/hydrology_mapping",
+     "covariates": {},
+     "scenario_tolerance": 0.05,
+     "refusal_penalty": 1000000000000.0,
+     "readiness_policy": "require_reviewed",
+     "allow_tail_failures": false
+   }
+
+``FloodRiskModel`` enforces the policy when it is constructed, so an optimizer
+run with disallowed evidence fails early with a clear message instead of
+returning refusal penalties for every schedule.
+
 Mapping WS4 Support
 --------------------
 

@@ -34,8 +34,11 @@ from .disturbance import (
     summarize_disturbance_events,
 )
 from .io.hydrology import (
+    HYDROLOGY_READINESS_POLICIES,
     FemicHydrologyError,
+    assess_femic_hydrology_readiness,
     bundle_pin,
+    enforce_hydrology_readiness,
     load_femic_hydrology_bundle,
     load_hydrology_crosswalk,
     load_hydrology_mapping,
@@ -1233,6 +1236,49 @@ hydrology_app = typer.Typer(
 )
 
 
+@hydrology_app.command("readiness")
+def hydrology_readiness(
+    bundle: Path | None = typer.Argument(None, exists=True, help="Bundle directory or manifest"),
+    dataset: Path | None = typer.Option(
+        None,
+        "--dataset",
+        exists=True,
+        file_okay=False,
+        help="Read evidence from the hydrology bundle registered in a dataset",
+    ),
+    json_output: bool = typer.Option(
+        False, "--json", help="Emit deterministic JSON evidence report"
+    ),
+) -> None:
+    """Report FEMIC validation-report and model-card evidence."""
+    if (bundle is None) == (dataset is None):
+        print("[bold red]Provide exactly one of BUNDLE or --dataset.[/]")
+        raise typer.Exit(code=1)
+    try:
+        if dataset is not None:
+            loaded = load_registered_femic_hydrology_bundle(dataset)
+        else:
+            assert bundle is not None
+            loaded = load_femic_hydrology_bundle(bundle)
+        readiness = assess_femic_hydrology_readiness(loaded)
+    except FemicHydrologyError as error:
+        print(f"[bold red]Hydrology readiness failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    if json_output:
+        typer.echo(json.dumps(readiness.to_dict(), indent=2, sort_keys=True))
+        return
+    print(f"status: {readiness.status}")
+    print(f"review_status: {readiness.review_status or '(missing)'}")
+    print(f"validation_report_id: {readiness.validation_report_id or '(missing)'}")
+    print(f"model_card_id: {readiness.model_card_id or '(missing)'}")
+    print(f"hydrologist_review_recorded: {readiness.hydrologist_review_recorded}")
+    print(f"tail_check_failures: {len(readiness.tail_check_failures)}")
+    print(f"benchmark_not_evaluated: {readiness.benchmark_not_evaluated}")
+    print(f"evidence_sha256: {readiness.evidence_sha256}")
+    for warning in readiness.warnings:
+        print(f"warning: {warning}")
+
+
 @hydrology_app.command("map")
 def hydrology_map(
     dataset: Path = typer.Option(
@@ -1314,10 +1360,26 @@ def hydrology_screen(
     allow_refused: bool = typer.Option(
         False, "--allow-refused", help="Write inside-domain rows plus refusals"
     ),
+    readiness_policy: str = typer.Option(
+        "allow_provisional",
+        "--readiness-policy",
+        help="Readiness policy: " + ", ".join(HYDROLOGY_READINESS_POLICIES),
+    ),
+    allow_tail_failures: bool = typer.Option(
+        False,
+        "--allow-tail-failures",
+        help="Explicitly permit tail-check-blocked evidence under allow_provisional",
+    ),
 ) -> None:
     """Screen a schedule against FEMIC response and flood-risk rows."""
     try:
         bundle = load_registered_femic_hydrology_bundle(dataset)
+        readiness = assess_femic_hydrology_readiness(bundle)
+        enforce_hydrology_readiness(
+            readiness,
+            policy=readiness_policy,
+            allow_tail_failures=allow_tail_failures,
+        )
         loaded_mapping = load_hydrology_mapping(mapping)
         supplied: dict[str, float] = {}
         if covariates is not None:
@@ -1378,7 +1440,7 @@ def hydrology_register(
         print(f"[bold red]Hydrology registration failed:[/] {error}")
         raise typer.Exit(code=1) from error
     if json_output:
-        print(json.dumps(registration, indent=2, sort_keys=True))
+        typer.echo(json.dumps(registration, indent=2, sort_keys=True))
         return
     print(f"bundle_id: {registration['bundle_id']}")
     print(f"bundle_version: {registration['bundle_version']}")
@@ -1411,7 +1473,7 @@ def hydrology_inspect(
             assert bundle is not None
             report = validate_femic_hydrology_bundle(bundle)
             if not report.is_valid:
-                print(json.dumps(report.to_dict(), indent=2, sort_keys=True))
+                typer.echo(json.dumps(report.to_dict(), indent=2, sort_keys=True))
                 raise typer.Exit(code=1)
             loaded = load_femic_hydrology_bundle(bundle)
         pin = bundle_pin(loaded)
@@ -1419,7 +1481,7 @@ def hydrology_inspect(
         print(f"[bold red]Hydrology inspect failed:[/] {error}")
         raise typer.Exit(code=1) from error
     if json_output:
-        print(json.dumps(pin, indent=2, sort_keys=True))
+        typer.echo(json.dumps(pin, indent=2, sort_keys=True))
         return
     print(f"bundle_id: {pin['bundle_id']}")
     print(f"bundle_version: {pin['bundle_version']}")
@@ -1471,7 +1533,7 @@ def hydrology_validate(
         print(f"[bold red]Hydrology validation failed:[/] {error}")
         raise typer.Exit(code=1) from error
     if json_output:
-        print(json.dumps(report.to_dict(), indent=2, sort_keys=True))
+        typer.echo(json.dumps(report.to_dict(), indent=2, sort_keys=True))
     else:
         print(f"valid: {report.is_valid}")
         print(f"artifacts: {report.artifact_count}")

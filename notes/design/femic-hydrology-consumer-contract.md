@@ -126,3 +126,40 @@ model is active, so search uses whole-schedule evaluation.
 This is an objective-screening surface, not a simulator output and not a
 schedule-specific process simulation. The run must retain the screening-only
 and hydrologist-review caveats.
+
+## P60.1 validation-evidence decision
+
+Readiness is a separate report from bundle validity. A bundle can be
+structurally valid and still have no model card, a `not_reviewed` card, or a
+recorded tail-check failure. `assess_femic_hydrology_readiness` reads the
+optional `validation_report` and `model_card` artifacts and returns one of
+`not_available`, `provisional`, `conditionally_ready`, `ready`, or `blocked`.
+
+Tail-check failures always produce `blocked`; review status never overrides
+them. Missing evidence produces `not_available`, not approval. The evidence
+digest is deterministic over the bundle pin and evidence summary.
+
+P60.1 only reports. A later task decides whether screening/optimizer use
+requires `ready`, an explicit provisional override, or a tail-check-specific
+policy.
+
+## P60.2 readiness-policy decision
+
+`enforce_hydrology_readiness` maps evidence to use:
+
+- `allow_provisional` (default) allows all non-blocked evidence and records the
+  warnings; a tail-check block still refuses.
+- `require_reviewed` allows `ready` and `conditionally_ready`.
+- `require_ready` allows `ready` only.
+
+A tail-check block refuses under every policy. `allow_tail_failures` only works
+with `allow_provisional` and is recorded as an explicit risk acceptance, not as
+a clean fit.
+
+The screen CLI checks the policy before reading the schedule. `FloodRiskModel`
+checks it in its constructor, so an optimizer run fails before the search
+rather than pricing every schedule with a refusal penalty.
+
+The default remains `allow_provisional` for compatibility with the P57
+screening handoff. Operational use should use `require_reviewed` or
+`require_ready` once a reviewed model card exists.

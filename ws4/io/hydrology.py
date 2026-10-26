@@ -29,6 +29,24 @@ FEMIC_HYDROLOGY_METADATA_KEY = "hydrology_products"
 HYDROLOGY_CROSSWALK_SCHEMA = "ws4.hydrology.crosswalk.v1"
 HYDROLOGY_MAPPING_SCHEMA = "ws4.hydrology.mapping.v1"
 HYDROLOGY_SCREEN_SCHEMA = "ws4.hydrology.screen.v1"
+HYDROLOGY_READINESS_STATUSES: tuple[str, ...] = (
+    "not_available",
+    "provisional",
+    "conditionally_ready",
+    "ready",
+    "blocked",
+)
+FEMIC_MODEL_CARD_REVIEW_STATUSES: tuple[str, ...] = (
+    "not_reviewed",
+    "review_pending",
+    "reviewed",
+    "reviewed_with_conditions",
+)
+HYDROLOGY_READINESS_POLICIES: tuple[str, ...] = (
+    "allow_provisional",
+    "require_reviewed",
+    "require_ready",
+)
 HYDROLOGY_CROSSWALK_REVIEW_STATUSES: tuple[str, ...] = (
     "not_reviewed",
     "review_pending",
@@ -481,6 +499,327 @@ class HydrologyCrosswalk:
     sha256: str
     rows: tuple[HydrologyCrosswalkRow, ...]
     metadata: HydrologyCrosswalkMetadata
+
+
+@dataclass(frozen=True)
+class FemicHydrologyReadiness:
+    """Reported validation evidence for a pinned hydrology bundle.
+
+    Attributes
+    ----------
+    bundle_id : str
+        FEMIC bundle identifier.
+    bundle_version : str
+        FEMIC bundle version.
+    manifest_sha256 : str
+        Bundle manifest digest.
+    status : str
+        ``not_available``, ``provisional``, ``conditionally_ready``, ``ready``,
+        or ``blocked``.
+    validation_report_id : str | None
+        Validation report identifier, when packaged.
+    model_card_id : str | None
+        Model card identifier, when packaged.
+    review_status : str | None
+        Producer model-card review status.
+    full_process_pilot_ready : bool | None
+        Producer full-pilot readiness flag.
+    hydrologist_review_recorded : bool | None
+        Producer review-record flag.
+    tail_check_failures : dict[str, list[str]]
+        Tail-check failures keyed by gauge/station.
+    usable_fits : dict[str, list[str]]
+        Usable fit methods keyed by gauge/station.
+    benchmark_cases : int
+        Number of published benchmark cases.
+    benchmark_passed : int
+        Passed benchmark count.
+    benchmark_failed : int
+        Failed benchmark count.
+    benchmark_not_evaluated : int
+        Not-evaluated benchmark count.
+    warnings : tuple[str, ...]
+        Non-fatal evidence warnings.
+    caveats : tuple[str, ...]
+        Evidence caveats.
+    evidence_sha256 : str
+        Deterministic digest of the evidence record.
+    """
+
+    bundle_id: str
+    bundle_version: str
+    manifest_sha256: str
+    status: str
+    validation_report_id: str | None
+    model_card_id: str | None
+    review_status: str | None
+    full_process_pilot_ready: bool | None
+    hydrologist_review_recorded: bool | None
+    tail_check_failures: dict[str, list[str]]
+    usable_fits: dict[str, list[str]]
+    benchmark_cases: int
+    benchmark_passed: int
+    benchmark_failed: int
+    benchmark_not_evaluated: int
+    warnings: tuple[str, ...]
+    caveats: tuple[str, ...]
+    evidence_sha256: str
+
+    def to_dict(self) -> dict[str, object]:
+        """Return the readiness report as a JSON-serializable mapping.
+
+        Returns
+        -------
+        dict[str, object]
+            Evidence identity, status, failures, fits, benchmarks, and caveats.
+        """
+        return {
+            "bundle_id": self.bundle_id,
+            "bundle_version": self.bundle_version,
+            "manifest_sha256": self.manifest_sha256,
+            "status": self.status,
+            "validation_report_id": self.validation_report_id,
+            "model_card_id": self.model_card_id,
+            "review_status": self.review_status,
+            "full_process_pilot_ready": self.full_process_pilot_ready,
+            "hydrologist_review_recorded": self.hydrologist_review_recorded,
+            "tail_check_failures": self.tail_check_failures,
+            "usable_fits": self.usable_fits,
+            "benchmark_cases": self.benchmark_cases,
+            "benchmark_passed": self.benchmark_passed,
+            "benchmark_failed": self.benchmark_failed,
+            "benchmark_not_evaluated": self.benchmark_not_evaluated,
+            "warnings": list(self.warnings),
+            "caveats": list(self.caveats),
+            "evidence_sha256": self.evidence_sha256,
+        }
+
+
+def assess_femic_hydrology_readiness(
+    bundle: FemicHydrologyBundle,
+) -> FemicHydrologyReadiness:
+    """Read validation-report and model-card evidence from a bundle.
+
+    Parameters
+    ----------
+    bundle : FemicHydrologyBundle
+        Validated hydrology bundle.
+
+    Returns
+    -------
+    FemicHydrologyReadiness
+        Review, tail-check, fit, and benchmark evidence. Missing evidence is
+        reported explicitly; it is never treated as approval.
+
+    Raises
+    ------
+    FemicHydrologyError
+        If a packaged evidence artifact is malformed.
+    """
+    validation = _optional_bundle_payload(bundle, "validation_report")
+    card = _optional_bundle_payload(bundle, "model_card")
+    warnings: list[str] = []
+    validation_id: str | None = None
+    card_id: str | None = None
+    review_status: str | None = None
+    full_process_ready: bool | None = None
+    review_recorded: bool | None = None
+    tail_failures: dict[str, list[str]] = {}
+    usable_fits: dict[str, list[str]] = {}
+    benchmark_cases = 0
+    benchmark_passed = 0
+    benchmark_failed = 0
+    benchmark_not_evaluated = 0
+    if validation is None:
+        warnings.append("No validation_report artifact is packaged.")
+    else:
+        if validation.get("schema_version") != "femic.hydrology.validation.v1":
+            raise FemicHydrologyError("Unsupported validation_report schema.")
+        validation_id = _text(validation.get("validation_id"), "validation_id")
+        summary = _mapping(validation.get("summary"), "validation summary", [])
+        tail_failures = _failure_map(
+            summary.get("tail_check_failures"),
+            "validation tail_check_failures",
+        )
+        usable_fits = _fit_map(summary.get("usable_fits"), "validation usable_fits")
+        full_process_ready = _optional_bool(
+            summary.get("full_process_pilot_ready"),
+            "validation full_process_pilot_ready",
+        )
+        review_recorded = _optional_bool(
+            summary.get("hydrologist_review_recorded"),
+            "validation hydrologist_review_recorded",
+        )
+        benchmark_cases = (
+            _evidence_int(
+                summary.get("benchmark_cases"),
+                "validation benchmark_cases",
+            )
+            or 0
+        )
+        benchmark_passed = (
+            _evidence_int(
+                summary.get("benchmark_passed"),
+                "validation benchmark_passed",
+            )
+            or 0
+        )
+        benchmark_failed = (
+            _evidence_int(
+                summary.get("benchmark_failed"),
+                "validation benchmark_failed",
+            )
+            or 0
+        )
+        benchmark_not_evaluated = (
+            _evidence_int(
+                summary.get("benchmark_not_evaluated"),
+                "validation benchmark_not_evaluated",
+            )
+            or 0
+        )
+        if benchmark_not_evaluated:
+            warnings.append(
+                f"{benchmark_not_evaluated} published benchmark case(s) are not evaluated."
+            )
+    if card is None:
+        warnings.append("No model_card artifact is packaged.")
+    else:
+        if card.get("schema_version") != "femic.hydrology.model_card.v1":
+            raise FemicHydrologyError("Unsupported model_card schema.")
+        card_id = _text(card.get("model_card_id"), "model_card_id")
+        review_status = _text(card.get("review_status"), "model_card review_status")
+        if review_status not in FEMIC_MODEL_CARD_REVIEW_STATUSES:
+            raise FemicHydrologyError(f"Unsupported model card review status {review_status!r}.")
+        summary = _mapping(card.get("validation_summary"), "model_card summary", [])
+        card_failures = _failure_map(
+            summary.get("tail_check_failures"),
+            "model_card tail_check_failures",
+        )
+        if card_failures:
+            tail_failures = card_failures
+        card_fits = _fit_map(summary.get("usable_fits"), "model_card usable_fits")
+        if card_fits:
+            usable_fits = card_fits
+        card_full = _optional_bool(
+            summary.get("full_process_pilot_ready"),
+            "model_card full_process_pilot_ready",
+        )
+        if card_full is not None:
+            full_process_ready = card_full
+        card_review = _optional_bool(
+            summary.get("hydrologist_review_recorded"),
+            "model_card hydrologist_review_recorded",
+        )
+        if card_review is not None:
+            review_recorded = card_review
+        if validation_id is not None:
+            linked = _optional_text(card.get("validation_report_id"))
+            if linked is not None and linked != validation_id:
+                raise FemicHydrologyError(
+                    "Model card validation_report_id does not match the report."
+                )
+    if tail_failures:
+        warnings.append("Tail-check failures are recorded and must not be used silently.")
+    if review_status is not None and review_status != "reviewed":
+        warnings.append(f"Model card review status is {review_status!r}.")
+    if validation is None and card is None:
+        status = "not_available"
+    elif tail_failures:
+        status = "blocked"
+    elif review_status == "reviewed" and review_recorded:
+        status = "ready"
+    elif review_status == "reviewed_with_conditions":
+        status = "conditionally_ready"
+    else:
+        status = "provisional"
+    caveats = (
+        "Readiness reports producer evidence; it does not create a hydrologist review.",
+        "A structural bundle/checksum pass is not hydrologic validation.",
+    )
+    evidence = {
+        "bundle_id": bundle.bundle_id,
+        "bundle_version": bundle.bundle_version,
+        "manifest_sha256": bundle.manifest_sha256,
+        "validation_report_id": validation_id,
+        "model_card_id": card_id,
+        "review_status": review_status,
+        "full_process_pilot_ready": full_process_ready,
+        "hydrologist_review_recorded": review_recorded,
+        "tail_check_failures": tail_failures,
+        "usable_fits": usable_fits,
+        "benchmark_cases": benchmark_cases,
+        "benchmark_passed": benchmark_passed,
+        "benchmark_failed": benchmark_failed,
+        "benchmark_not_evaluated": benchmark_not_evaluated,
+        "status": status,
+    }
+    digest = hashlib.sha256(
+        json.dumps(evidence, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    return FemicHydrologyReadiness(
+        bundle_id=bundle.bundle_id,
+        bundle_version=bundle.bundle_version,
+        manifest_sha256=bundle.manifest_sha256,
+        status=status,
+        validation_report_id=validation_id,
+        model_card_id=card_id,
+        review_status=review_status,
+        full_process_pilot_ready=full_process_ready,
+        hydrologist_review_recorded=review_recorded,
+        tail_check_failures=tail_failures,
+        usable_fits=usable_fits,
+        benchmark_cases=benchmark_cases,
+        benchmark_passed=benchmark_passed,
+        benchmark_failed=benchmark_failed,
+        benchmark_not_evaluated=benchmark_not_evaluated,
+        warnings=tuple(warnings),
+        caveats=caveats,
+        evidence_sha256=f"hydro-evidence-{digest[:16]}",
+    )
+
+
+def enforce_hydrology_readiness(
+    readiness: FemicHydrologyReadiness,
+    *,
+    policy: str = "allow_provisional",
+    allow_tail_failures: bool = False,
+) -> None:
+    """Enforce a readiness policy for screening or optimization.
+
+    Parameters
+    ----------
+    readiness : FemicHydrologyReadiness
+        Evidence report.
+    policy : str, optional
+        ``allow_provisional`` (default), ``require_reviewed``, or
+        ``require_ready``.
+    allow_tail_failures : bool, optional
+        Permit a tail-check block only under ``allow_provisional``. This is an
+        explicit risk acceptance, not a claim that the fit is safe.
+
+    Raises
+    ------
+    FemicHydrologyError
+        If the evidence does not satisfy the policy.
+    """
+    if policy not in HYDROLOGY_READINESS_POLICIES:
+        raise FemicHydrologyError(f"Unsupported readiness policy {policy!r}.")
+    if readiness.status == "blocked":
+        if not allow_tail_failures or policy != "allow_provisional":
+            raise FemicHydrologyError(
+                "Tail-check failures block hydrology use; an explicit "
+                "allow_tail_failures override under allow_provisional is required."
+            )
+        return
+    if policy == "allow_provisional":
+        return
+    if policy == "require_reviewed":
+        if readiness.status not in ("ready", "conditionally_ready"):
+            raise FemicHydrologyError(f"Readiness status {readiness.status!r} is not reviewed.")
+        return
+    if policy == "require_ready" and readiness.status != "ready":
+        raise FemicHydrologyError(f"Readiness status {readiness.status!r} is not fully ready.")
 
 
 @dataclass(frozen=True)
@@ -2522,3 +2861,56 @@ def _select_scenario(
     if best is None:
         return None
     return best[1], best[2]
+
+
+def _optional_bundle_payload(
+    bundle: FemicHydrologyBundle,
+    role: str,
+) -> dict[str, object] | None:
+    if role not in bundle.artifacts:
+        return None
+    return _bundle_payload(bundle, role)
+
+
+def _failure_map(value: object, context: str) -> dict[str, list[str]]:
+    if value is None:
+        return {}
+    if not isinstance(value, Mapping):
+        raise FemicHydrologyError(f"{context} must be an object.")
+    result: dict[str, list[str]] = {}
+    for key, item in value.items():
+        if not isinstance(item, list):
+            raise FemicHydrologyError(f"{context} values must be lists.")
+        reasons = [str(entry) for entry in item if isinstance(entry, str) and entry.strip()]
+        if reasons:
+            result[str(key)] = reasons
+    return result
+
+
+def _fit_map(value: object, context: str) -> dict[str, list[str]]:
+    if value is None:
+        return {}
+    if not isinstance(value, Mapping):
+        raise FemicHydrologyError(f"{context} must be an object.")
+    result: dict[str, list[str]] = {}
+    for key, item in value.items():
+        if not isinstance(item, list):
+            raise FemicHydrologyError(f"{context} values must be lists.")
+        fits = [str(entry) for entry in item if isinstance(entry, str) and entry.strip()]
+        if fits:
+            result[str(key)] = fits
+    return result
+
+
+def _optional_bool(value: object, field_name: str) -> bool | None:
+    if value is None:
+        return None
+    if not isinstance(value, bool):
+        raise FemicHydrologyError(f"{field_name} must be boolean.")
+    return value
+
+
+def _evidence_int(value: object, field_name: str) -> int | None:
+    if value is None:
+        return None
+    return _int(value, field_name)

@@ -62,6 +62,7 @@ exists and the maintainer approves it.
 | P56 Disturbance event consumer | #393 | `feature/p56-disturbance-consumer` | complete |
 | P58 Forest carbon accounting and carbon-aware planning | #357 | `feature/p58-carbon` | complete |
 | P59 LiDAR in the web UI | #417 | `feature/p59-lidar-ui` | complete |
+| P60 Harden hydrology use with validation evidence | #415 | `feature/p60-closeout` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -1821,6 +1822,42 @@ Acceptance:
 - Overwrite leaves one canonical column per field.
 - The TFL 6 validation dataset and c5 fallback are both exercised.
 - `python scripts/dashboard.py` is green.
+
+## Phase 60: Harden hydrology use with validation evidence
+
+Parent issue: #415
+Branch: `feature/p60-closeout`
+Status: pr-open
+
+Goal: read FEMIC validation-report and model-card evidence, report review and
+tail-check state, and prepare an explicit policy for provisional use.
+
+- [x] P60.1 Read and report FEMIC validation and model-card evidence (#416)
+  - [x] Add evidence dataclasses and readiness assessment.
+  - [x] Parse validation-report and model-card artifacts with schema checks.
+  - [x] Add `ws4 hydrology readiness` direct/dataset modes.
+  - [x] Add tests and fixture variants.
+  - [x] Add design note, reference docs, roadmap, and changelog.
+- [x] P60.2 Gate hydrology screening and optimization on readiness evidence (#423)
+  - [x] Add readiness policy constants and enforcement helper.
+  - [x] Extend screen CLI and flood-screen config.
+  - [x] Enforce readiness at `FloodRiskModel` construction.
+  - [x] Add tests for policy/status, CLI, and optimizer refusal.
+  - [x] Add design note, reference docs, roadmap, and changelog.
+- [x] P60.3 Validate, document, and close out P60 (#426)
+  - [x] Run the hydrology contract suite and dashboard.
+  - [x] Record the P59 collision and renumbering.
+  - [x] Write the close-out report and set P60 to `pr-open`.
+  - [x] Update changelog and post closeout comments.
+  - [x] Queue the single phase PR for maintainer approval.
+
+Acceptance:
+
+- Missing evidence is reported as `not_available`, not approved.
+- Provisional evidence is reported explicitly.
+- Tail-check failures are surfaced as blocking evidence.
+- A reviewed, clean card is reported as ready.
+- No screen/optimizer behavior changes in P60.1.
 
 ## Detailed Next Steps Notes
 
