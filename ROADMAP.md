@@ -58,7 +58,7 @@ exists and the maintainer approves it.
 | P50 Runtime provenance and release verification | #345 | `feature/p50-runtime-provenance` | complete |
 | P51 Release-candidate verification | #351 | `feature/p51-release-candidate` | complete |
 | P53 Version 0.2.0 release preparation | #371 | `feature/p53-v020` | complete |
-| P56 Disturbance event consumer | #393 | `feature/p56-disturbance-consumer` | active |
+| P56 Disturbance event consumer | #393 | `feature/p56-disturbance-consumer` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -1651,7 +1651,7 @@ Acceptance:
 
 Parent issue: #393
 Branch: `feature/p56-disturbance-consumer`
-Status: active
+Status: complete
 
 Goal: consume `femic.disturbance.v1` consumer rows in a read-only report,
 without changing the compiled dataset, simulator, or optimizer.
