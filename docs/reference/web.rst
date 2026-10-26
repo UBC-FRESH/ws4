@@ -74,6 +74,10 @@ Endpoints
    * - ``GET /api/lidar``
      - The dataset's registered FEMIC LiDAR pin, licence, CRS, products, and canonical
        ``lidar_*`` block fields. ``available`` is false for a dataset without LiDAR.
+   * - ``GET /api/runs/{run}/carbon``
+     - Carbon provenance, ``carbon.*`` account series, pool composition, flux series,
+       ledger status, GCBM comparison rows, and artifact names. Pools and fluxes are summed
+       by timestep; ``available`` is false when the run has no carbon artifacts.
    * - ``GET /api/runs/{run}/reports``
      - The run's report files and their sizes.
    * - ``GET /api/runs/{run}/reports/{name}``
@@ -168,6 +172,17 @@ unavailable state.
 
 The source must be a P52-registered FEMIC LidarBC bundle; the browser does not open rasters,
 reproject them, or derive new terrain or canopy values.
+
+Carbon
+------
+
+The **Carbon** tab reads the P58 artifacts without running libcbm. It shows the package id,
+libcbm version, carbon units, CBM defaults version, package fingerprint, schedule hash, and the
+carbon ledger when one exists. The account selector draws the run's own offset/value series;
+pool composition is the latest timestep of the aggregated biomass, DOM/soil, and product groups.
+Raw ``carbon_*`` and GCBM comparison files remain available through the reports endpoint. A
+carbon-only run is selectable even though it has no schedule or map; its period range comes from
+``carbon_accounts.csv``. A run without carbon keeps the tab with an explicit unavailable state.
 
 Layers
 ------

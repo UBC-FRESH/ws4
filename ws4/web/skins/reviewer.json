@@ -3,6 +3,7 @@
   "title": "Reviewer",
   "panels": [
     "lidar",
+    "carbon",
     "targets",
     "reports",
     "comparison",

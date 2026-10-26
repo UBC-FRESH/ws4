@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 #: The panels the application can render.
-PANELS = frozenset({"legend", "lidar", "targets", "reports", "comparison", "search"})
+PANELS = frozenset({"legend", "lidar", "carbon", "targets", "reports", "comparison", "search"})
 
 #: The layer families the map can offer.
 LAYERS = frozenset({"blocks", "treatments", "patches", "compartments", "roads"})

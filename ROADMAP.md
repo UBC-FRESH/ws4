@@ -63,6 +63,7 @@ exists and the maintainer approves it.
 | P58 Forest carbon accounting and carbon-aware planning | #357 | `feature/p58-carbon` | complete |
 | P59 LiDAR in the web UI | #417 | `feature/p59-lidar-ui` | complete |
 | P60 Harden hydrology use with validation evidence | #415 | `feature/p60-closeout` | complete |
+| P61 Carbon and libcbm in the web UI | #430 | `feature/p61-carbon-ui` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -1862,6 +1863,34 @@ Acceptance:
 - Tail-check failures are surfaced as blocking evidence.
 - A reviewed, clean card is reported as ready.
 - No screen/optimizer behavior changes in P60.1.
+
+## Phase 61: Carbon and libcbm in the web UI
+
+Parent issue: #430
+Branch: `feature/p61-carbon-ui`
+Status: pr-open
+
+Goal: expose the P58 carbon artifacts in the web application without re-running libcbm.
+
+- [x] P61.1 Add carbon run discovery and the carbon API (#431)
+  - [x] Add carbon-only discovery and period/account fallbacks
+  - [x] Add the carbon endpoint and timestep aggregation
+  - [x] Add artifact, empty-state, and carbon-only tests
+- [x] P61.2 Add the Carbon panel and charts (#432)
+  - [x] Add the tab, provenance, and unavailable state
+  - [x] Add the account selector, trend, and composition bars
+  - [x] Add ledger, comparison, downloads, and reset
+- [x] P61.3 Verify real TSA24/MKRF data and close out (#433)
+  - [x] Add the carbon browser smoke
+  - [x] Verify TSA24/MKRF API/UI evidence
+  - [x] Verify the non-carbon fallback and write the close-out
+
+Acceptance:
+
+- Carbon provenance, accounts, pools, ledger, and comparison are readable.
+- Carbon accounts match the CSV values.
+- Browser smoke passes on real TSA24 data and the non-carbon state is explicit.
+- `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes
 

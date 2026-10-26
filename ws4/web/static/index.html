@@ -9,7 +9,7 @@
 </head>
 <body>
   <header>
-    <strong>WS4</strong><span class="build">v69</span>
+    <strong>WS4</strong><span class="build">v70</span>
     <label>Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Period
@@ -23,6 +23,7 @@
       <nav class="tabs">
         <button data-tab="legend" class="active">Legend</button>
         <button data-tab="lidar">LiDAR</button>
+        <button data-tab="carbon">Carbon</button>
         <button data-tab="targets">Targets</button>
         <button data-tab="reports">Reports</button>
         <button data-tab="comparison">Compare</button>
@@ -52,6 +53,23 @@
           <div class="lidar-ends"><span id="lidar-min">—</span><span id="lidar-max">—</span></div>
         </div>
         <p class="hint">LiDAR values are block zonal summaries from the registered FEMIC bundle. Selecting a field turns off the MVT shortcut so the exact block join is visible; missing values stay neutral.</p>
+      </section>
+      <section id="tab-carbon" hidden>
+        <h2>Carbon</h2>
+        <p id="carbon-status" class="hint">loading carbon…</p>
+        <div id="carbon-meta" class="lidar-meta"></div>
+        <label class="lidar-field">Account
+          <select id="carbon-account"><option value="">—</option></select>
+        </label>
+        <svg id="carbon-chart" class="carbon-chart" viewBox="0 0 320 140" role="img" aria-label="carbon account trend"></svg>
+        <div id="carbon-composition" class="carbon-composition"></div>
+        <p id="carbon-ledger" class="hint"></p>
+        <h3>GCBM comparison</h3>
+        <div class="table-wrap"><table id="carbon-compare" hidden></table></div>
+        <p id="carbon-compare-empty" class="hint">no GCBM comparison in this run</p>
+        <h3>Artifacts</h3>
+        <ul id="carbon-files" class="carbon-files"></ul>
+        <p class="hint">Read-only: the service aggregates libcbm pools and fluxes by timestep and never reruns the carbon engine.</p>
       </section>
       <section id="tab-targets" hidden>
         <h2>Targets</h2>
@@ -241,6 +259,6 @@
     </div>
   </main>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=69"></script>
+  <script type="module" src="static/app.js?v=70"></script>
 </body>
 </html>
