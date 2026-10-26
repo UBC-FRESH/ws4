@@ -2940,5 +2940,6 @@ issue comments.
 - P62.6: ran the hydrology integration/contract/exposure/preflight suites and
   the full dashboard after merging `origin/main` at `083c143`. Wrote
   `notes/reports/p62-closeout.md`, set Phase 62 to `pr-open`, and queued the
-  single phase pull request #468 for approval. No merge, tag, release, or
-  settings change was made. Dashboard **GREEN**.
+  single phase pull request #468 for approval. CI run 40397685253 passed all
+  jobs. No merge, tag, release, or settings change was made. Dashboard
+  **GREEN**.

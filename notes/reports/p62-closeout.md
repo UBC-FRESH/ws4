@@ -76,7 +76,7 @@ and on #468.
 
 | Run ID | Head commit | Conclusion | Notes |
 | --- | --- | --- | --- |
-| pending | report commit | not yet run | CI runs on #468 after the report commit. |
+| 40397685253 | `e319dce` | success | Quality gates, pre-commit parity, clean-checkout contract, green dashboard summary, and notebook outputs all passed. |
 
 ## 5. Deviations
 
