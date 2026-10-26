@@ -98,9 +98,11 @@ Tables
 
 ``inventory.csv``
    ``track_name``, ``age``, ``area_ha``, ``delay``, ``landclass``,
-   ``historic_disturbance``, ``last_pass_disturbance``. Area is positive; age and delay
-   are non-negative; land class is 0-22. A disturbance must appear as a user type or a
-   default type in ``disturbance_types.csv``.
+   ``historic_disturbance``, ``last_pass_disturbance``, and optional
+   ``eco_boundary``. Area is positive; age and delay are non-negative; land class is
+   0-22. A disturbance must appear as a user type or a default type in
+   ``disturbance_types.csv``. When ``eco_boundary`` is present, WS4 splits a track's
+   dataset area across its inventory boundary shares.
 
 ``yield.csv``
    ``track_name``, ``species``, ``leading_species``, ``age``, ``volume_m3_ha``. The
@@ -129,7 +131,9 @@ Tables
    ``source``, and ``notes``. At least one row must match the manifest primary
    boundary. A package may declare more than one eco boundary; WS4 then compiles the
    SIT ``admin_boundary`` and ``eco_boundary`` classifiers and uses
-   ``SeparateAdminEcoClassifiers`` so each track gets its own CBM spatial unit.
+   ``SeparateAdminEcoClassifiers`` so each track gets its own CBM spatial unit. If
+   the inventory carries per-row ``eco_boundary``, a track's dataset area is split by
+   the package inventory shares rather than assigned wholly to its dominant boundary.
 
 Track join
 ----------

@@ -298,6 +298,11 @@ def build_sit_config(package: CarbonPackage) -> dict[str, object]:
         if track_map is not None and "eco_boundary" in track_map.columns
         else []
     )
+    inventory = package.tables.get("inventory")
+    if inventory is not None and "eco_boundary" in inventory.columns:
+        track_ecos = sorted(
+            {*track_ecos, *(str(value).strip() for value in inventory["eco_boundary"])}
+        )
     if len(track_ecos) > 1:
         admin = package.manifest.boundaries.admin
         spatial_units: dict[str, object] = {

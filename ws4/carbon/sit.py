@@ -375,7 +375,7 @@ def build_sit_tables_from_tables(
 
     track_map = package.table("track_carbon_map").set_index("track_name", drop=False)
     base_classifier_names = list(classifier_names)
-    boundary_values, boundary_rows = _boundary_classifiers(package, track_map)
+    boundary_values, boundary_weights, boundary_rows = _boundary_classifiers(package, track_map)
     if boundary_rows:
         classifier_names = [*classifier_names, "admin_boundary", "eco_boundary"]
         classifier_rows = [*classifier_rows, *boundary_rows]
@@ -390,9 +390,6 @@ def build_sit_tables_from_tables(
         base_classifier_names,
         findings,
     )
-    if boundary_rows:
-        for track_name, values in classifier_by_track.items():
-            values.extend(boundary_values.get(track_name, ()))
     inventory = _build_inventory(
         fragments=fragments,
         tracks=tracks,
@@ -400,6 +397,8 @@ def build_sit_tables_from_tables(
         track_map=track_map,
         classifier_names=classifier_names,
         classifier_by_track=classifier_by_track,
+        boundary_values=boundary_values,
+        boundary_weights=boundary_weights,
         disturbance_map=disturbance_map,
         findings=findings,
     )
@@ -408,6 +407,8 @@ def build_sit_tables_from_tables(
         track_map=track_map,
         classifier_names=classifier_names,
         classifier_by_track=classifier_by_track,
+        boundary_values=boundary_values,
+        boundary_weights=boundary_weights,
         age_width=age_width,
         age_count=len(age_classes),
         findings=findings,
@@ -419,6 +420,8 @@ def build_sit_tables_from_tables(
         resolution=resolution,
         classifier_names=classifier_names,
         classifier_by_track=classifier_by_track,
+        boundary_values=boundary_values,
+        boundary_weights=boundary_weights,
         disturbance_map=disturbance_map,
         findings=findings,
     )
@@ -428,6 +431,8 @@ def build_sit_tables_from_tables(
         track_map=track_map,
         classifier_names=classifier_names,
         classifier_by_track=classifier_by_track,
+        boundary_values=boundary_values,
+        boundary_weights=boundary_weights,
         disturbance_map=disturbance_map,
         findings=findings,
     )
@@ -519,23 +524,46 @@ def _build_classifiers(
 def _boundary_classifiers(
     package: CarbonPackage,
     track_map: pd.DataFrame,
-) -> tuple[dict[str, tuple[str, str]], list[list[object]]]:
-    """Return per-track admin/eco values and SIT classifier rows.
+) -> tuple[
+    dict[str, tuple[tuple[str, str], ...]],
+    dict[str, tuple[tuple[str, float], ...]],
+    list[list[object]],
+]:
+    """Return per-track boundary values, area weights, and SIT classifier rows.
 
-    A package with one eco boundary keeps the existing single-default mapping. A
-    package with multiple track boundaries gets two extra SIT classifiers so
-    libcbm can select the spatial unit per stand.
+    The package inventory is authoritative for a track that spans boundaries;
+    the track map supplies the fallback for tracks without inventory rows. A
+    package with one boundary keeps the existing single-default mapping.
     """
-    if track_map.empty or "eco_boundary" not in track_map.columns:
-        return {}, []
     admin = package.manifest.boundaries.admin
-    eco_by_track = {
-        str(row.track_name): str(row.eco_boundary).strip()
-        for row in track_map.reset_index(drop=True).itertuples(index=False)
-    }
-    ecos = sorted(set(eco_by_track.values()))
+    weights: dict[str, dict[str, float]] = {}
+    inventory = package.tables.get("inventory")
+    if inventory is not None and "eco_boundary" in inventory.columns:
+        for track_name, block in inventory.groupby("track_name", sort=True):
+            areas = (
+                block.assign(area_ha=pd.to_numeric(block["area_ha"], errors="coerce").fillna(0.0))
+                .groupby("eco_boundary", as_index=True)["area_ha"]
+                .sum()
+            )
+            total = float(areas.sum())
+            if total > 0:
+                weights[str(track_name)] = {
+                    str(eco).strip(): float(area) / total
+                    for eco, area in areas.items()
+                    if str(eco).strip()
+                }
+    if track_map.empty:
+        return {}, {}, []
+    for row in track_map.reset_index(drop=True).itertuples(index=False):
+        track_name = str(row.track_name)
+        if track_name in weights:
+            continue
+        eco = str(row.eco_boundary).strip() if "eco_boundary" in track_map.columns else ""
+        if eco:
+            weights[track_name] = {eco: 1.0}
+    ecos = sorted({eco for values in weights.values() for eco in values})
     if len(ecos) <= 1:
-        return {}, []
+        return {}, {}, []
     classifier_frame = package.table("classifiers")
     existing = pd.to_numeric(classifier_frame["classifier_id"], errors="coerce").dropna()
     next_id = int(existing.max()) + 1 if not existing.empty else 1
@@ -545,8 +573,15 @@ def _boundary_classifiers(
         [next_id + 1, "_CLASSIFIER", "eco_boundary"],
     ]
     rows.extend([next_id + 1, eco, eco] for eco in ecos)
-    values = {track_name: (admin, eco) for track_name, eco in eco_by_track.items()}
-    return values, rows
+    values = {
+        track_name: tuple((admin, eco) for eco in sorted(track_weights))
+        for track_name, track_weights in weights.items()
+    }
+    resolved_weights = {
+        track_name: tuple((eco, float(weight)) for eco, weight in sorted(track_weights.items()))
+        for track_name, track_weights in weights.items()
+    }
+    return values, resolved_weights, rows
 
 
 def _age_width(age_classes: pd.DataFrame, findings: list[Problem]) -> int | None:
@@ -607,6 +642,20 @@ def _classifier_values_by_track(
     return result
 
 
+def _boundary_variants(
+    track_name: str,
+    boundary_values: Mapping[str, Sequence[tuple[str, str]]],
+    boundary_weights: Mapping[str, Sequence[tuple[str, float]]],
+) -> tuple[tuple[str, str, float], ...]:
+    """Return the admin/eco/area-share variants for one track."""
+    values = list(boundary_values.get(track_name, ()))
+    weights = list(boundary_weights.get(track_name, ()))
+    if not values or not weights:
+        return ()
+    by_eco = {eco: (admin, eco) for admin, eco in values}
+    return tuple((*by_eco[eco], float(weight)) for eco, weight in weights if eco in by_eco)
+
+
 def _build_inventory(
     *,
     fragments: pd.DataFrame,
@@ -615,6 +664,8 @@ def _build_inventory(
     track_map: pd.DataFrame,
     classifier_names: Sequence[str],
     classifier_by_track: Mapping[str, Sequence[str]],
+    boundary_values: Mapping[str, Sequence[tuple[str, str]]],
+    boundary_weights: Mapping[str, Sequence[tuple[str, float]]],
     disturbance_map: Mapping[str, DisturbanceRule],
     findings: list[Problem],
 ) -> pd.DataFrame:
@@ -649,19 +700,26 @@ def _build_inventory(
             str(track_row.loc["last_disturbance"]), disturbance_map
         )
         historic = _user_disturbance("fire", disturbance_map)
-        row: dict[str, object] = dict(zip(classifier_names, values, strict=True))
-        row.update(
-            {
-                "using_age_class": "FALSE",
-                "age": int(str(fragment.age)),
-                "area": float(str(fragment.area_ha)),
-                "delay": 0,
-                "landclass": landclass,
-                "historic_disturbance": historic,
-                "last_pass_disturbance": last_disturbance,
-            }
-        )
-        rows.append(row)
+        variants = _boundary_variants(track_name, boundary_values, boundary_weights)
+        if not variants:
+            variants = (("", "", 1.0),)
+        for admin, eco, weight in variants:
+            row_values = [*values]
+            if eco:
+                row_values.extend([admin, eco])
+            row: dict[str, object] = dict(zip(classifier_names, row_values, strict=True))
+            row.update(
+                {
+                    "using_age_class": "FALSE",
+                    "age": int(str(fragment.age)),
+                    "area": float(str(fragment.area_ha)) * weight,
+                    "delay": 0,
+                    "landclass": landclass,
+                    "historic_disturbance": historic,
+                    "last_pass_disturbance": last_disturbance,
+                }
+            )
+            rows.append(row)
     return pd.DataFrame(rows, columns=[*classifier_names, *_INVENTORY_FIELDS])
 
 
@@ -671,6 +729,8 @@ def _build_yield(
     track_map: pd.DataFrame,
     classifier_names: Sequence[str],
     classifier_by_track: Mapping[str, Sequence[str]],
+    boundary_values: Mapping[str, Sequence[tuple[str, str]]],
+    boundary_weights: Mapping[str, Sequence[tuple[str, float]]],
     age_width: int,
     age_count: int,
     findings: list[Problem],
@@ -690,33 +750,40 @@ def _build_yield(
             )
             continue
         values = list(classifier_by_track[track_name])
-        row: dict[str, object] = dict(zip(classifier_names, values, strict=True))
-        row["leading_species"] = str(block["leading_species"].iloc[0])
-        for index in range(age_count):
-            row[f"v{index}"] = 0.0
-        for point in block.itertuples(index=False):
-            age = int(str(point.age))
-            if age % age_width != 0:
-                findings.append(
-                    Problem(
-                        "CARBON-YIELD-GRID",
-                        "yield.age",
-                        f"{track_name!r} has age {age}, not on the {age_width}-year grid",
+        variants = _boundary_variants(track_name, boundary_values, boundary_weights)
+        if not variants:
+            variants = (("", "", 1.0),)
+        for admin, eco, _weight in variants:
+            row_values = [*values]
+            if eco:
+                row_values.extend([admin, eco])
+            row: dict[str, object] = dict(zip(classifier_names, row_values, strict=True))
+            row["leading_species"] = str(block["leading_species"].iloc[0])
+            for index in range(age_count):
+                row[f"v{index}"] = 0.0
+            for point in block.itertuples(index=False):
+                age = int(str(point.age))
+                if age % age_width != 0:
+                    findings.append(
+                        Problem(
+                            "CARBON-YIELD-GRID",
+                            "yield.age",
+                            f"{track_name!r} has age {age}, not on the {age_width}-year grid",
+                        )
                     )
-                )
-                continue
-            index = age // age_width
-            if index >= age_count:
-                findings.append(
-                    Problem(
-                        "CARBON-YIELD-GRID",
-                        "yield.age",
-                        f"{track_name!r} has age {age} beyond the age classes",
+                    continue
+                index = age // age_width
+                if index >= age_count:
+                    findings.append(
+                        Problem(
+                            "CARBON-YIELD-GRID",
+                            "yield.age",
+                            f"{track_name!r} has age {age} beyond the age classes",
+                        )
                     )
-                )
-                continue
-            row[f"v{index}"] = float(str(point.volume_m3_ha))
-        rows.append(row)
+                    continue
+                row[f"v{index}"] = float(str(point.volume_m3_ha))
+            rows.append(row)
     return pd.DataFrame(
         rows, columns=[*classifier_names, *_YIELD_FIELDS, *[f"v{i}" for i in range(age_count)]]
     )
@@ -730,6 +797,8 @@ def _build_events(
     resolution: TrackResolution,
     classifier_names: Sequence[str],
     classifier_by_track: Mapping[str, Sequence[str]],
+    boundary_values: Mapping[str, Sequence[tuple[str, str]]],
+    boundary_weights: Mapping[str, Sequence[tuple[str, float]]],
     disturbance_map: Mapping[str, DisturbanceRule],
     findings: list[Problem],
 ) -> pd.DataFrame:
@@ -782,7 +851,15 @@ def _build_events(
                 area = float(pd.to_numeric(block_frame["area_ha"], errors="coerce").sum())
             else:
                 area = float(str(target_area))
-            grouped[tuple(classifier_by_track[target_name])] = area
+            target_values = list(classifier_by_track.get(target_name, []))
+            variants = _boundary_variants(target_name, boundary_values, boundary_weights)
+            if not variants:
+                variants = (("", "", 1.0),)
+            for admin, eco, weight in variants:
+                row_values = [*target_values]
+                if eco:
+                    row_values.extend([admin, eco])
+                grouped[tuple(row_values)] = area * weight
         else:
             for fragment in block_frame.itertuples(index=False):
                 track_name = track_names.get(int(str(fragment.track_id)))
@@ -795,10 +872,19 @@ def _build_events(
                         )
                     )
                     continue
-                values = tuple(classifier_by_track.get(track_name, []))
-                grouped[values] = grouped.get(values, 0.0) + float(str(fragment.area_ha))
-        for values, area in grouped.items():
-            row: dict[str, object] = dict(zip(classifier_names, values, strict=True))
+                values = list(classifier_by_track.get(track_name, []))
+                variants = _boundary_variants(track_name, boundary_values, boundary_weights)
+                if not variants:
+                    variants = (("", "", 1.0),)
+                for admin, eco, weight in variants:
+                    row_values = [*values]
+                    if eco:
+                        row_values.extend([admin, eco])
+                    grouped[tuple(row_values)] = (
+                        grouped.get(tuple(row_values), 0.0) + float(str(fragment.area_ha)) * weight
+                    )
+        for grouped_values, area in grouped.items():
+            row: dict[str, object] = dict(zip(classifier_names, grouped_values, strict=True))
             row.update(dict.fromkeys(_EVENT_FIELDS, -1))
             row.update(
                 {
@@ -822,6 +908,8 @@ def _build_transitions(
     track_map: pd.DataFrame,
     classifier_names: Sequence[str],
     classifier_by_track: Mapping[str, Sequence[str]],
+    boundary_values: Mapping[str, Sequence[tuple[str, str]]],
+    boundary_weights: Mapping[str, Sequence[tuple[str, float]]],
     disturbance_map: Mapping[str, DisturbanceRule],
     findings: list[Problem],
 ) -> pd.DataFrame:
@@ -876,20 +964,38 @@ def _build_transitions(
             continue
         source_values = list(classifier_by_track[source_name])
         destination_values = list(classifier_by_track[destination_name])
-        row: dict[str, object] = dict(zip(classifier_names, source_values, strict=True))
-        row.update(dict.fromkeys(_EVENT_FIELDS[:5], -1))
-        row.update(
-            {
-                "using_age_class": "FALSE",
-                "disturbance_type": str(disturbance.user_dist_type),
-            }
+        source_variants = _boundary_variants(source_name, boundary_values, boundary_weights)
+        destination_variants = _boundary_variants(
+            destination_name, boundary_values, boundary_weights
         )
-        for name, value in zip(classifier_names, destination_values, strict=True):
-            row[f"{name}_tr"] = value
-        row["regeneration_delay"] = int(str(disturbance.regen_delay))
-        row["reset_age"] = int(str(disturbance.transition_reset_age))
-        row["percent"] = 100.0
-        rows.append(row)
+        if not source_variants:
+            source_variants = (("", "", 1.0),)
+        if not destination_variants:
+            destination_variants = (("", "", 1.0),)
+        destination_by_eco = {eco: (admin, eco) for admin, eco, _weight in destination_variants}
+        for source_admin, source_eco, _source_weight in source_variants:
+            target = destination_by_eco.get(source_eco, destination_variants[0])
+            target_admin, target_eco = target[0], target[1]
+            row_source = [*source_values]
+            if source_eco:
+                row_source.extend([source_admin, source_eco])
+            row_destination = [*destination_values]
+            if target_eco:
+                row_destination.extend([target_admin, target_eco])
+            row: dict[str, object] = dict(zip(classifier_names, row_source, strict=True))
+            row.update(dict.fromkeys(_EVENT_FIELDS[:5], -1))
+            row.update(
+                {
+                    "using_age_class": "FALSE",
+                    "disturbance_type": str(disturbance.user_dist_type),
+                }
+            )
+            for name, value in zip(classifier_names, row_destination, strict=True):
+                row[f"{name}_tr"] = value
+            row["regeneration_delay"] = int(str(disturbance.regen_delay))
+            row["reset_age"] = int(str(disturbance.transition_reset_age))
+            row["percent"] = 100.0
+            rows.append(row)
     columns = [
         *classifier_names,
         "using_age_class",
