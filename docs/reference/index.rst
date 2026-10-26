@@ -30,6 +30,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - Dynamic Habitat Index ingest, account semantics, provenance, and web layer.
    * - :doc:`structure-habitat`
      - The published Coops et al. structure index, required metrics, accounts, and gaps.
+   * - :doc:`resilience`
+     - Connectivity, age-class diversity, and fragmentation accounts from existing state.
    * - :doc:`performance`
      - The measured figures and how to reproduce them.
    * - :doc:`web`
@@ -55,6 +57,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    carbon
    dhi
    structure-habitat
+   resilience
    performance
    web
    femic-lidar

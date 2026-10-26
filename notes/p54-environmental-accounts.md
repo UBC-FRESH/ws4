@@ -77,3 +77,17 @@ reference pattern; reuse it rather than inventing a second account surface.
   `report_structure_habitat.csv` with the caveat.
 - Pilot: four synthetic exact-metric blocks; DHI comparison is exploratory n=4.
   The fixture is not ecological evidence.
+
+## P54.3 implementation record
+
+- Connectivity: untreated components over the full topology (largest component,
+  percolation reach, component count, untreated area). Levels, hectares/count.
+- Age-class diversity: Shannon, evenness, and occupied count over 20-year
+  fragment age classes. Levels, index/count.
+- Fragmentation: current-year opening patch count, mean/largest patch area, and
+  treated area from the existing patch metrics. Flows, count/hectares.
+- `ws4 simulate --resilience --topology ...` writes `resilience_metrics.csv` and
+  `resilience_metadata.json`; `ws4 report` writes `report_resilience.csv`;
+  `ws4 resilience compare` compares two runs. No objective change.
+- Pilot: compact versus scattered openings on the sample estate; patch count 1
+  versus 4 at offset 0, with the same age-class count.

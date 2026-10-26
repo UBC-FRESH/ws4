@@ -3015,3 +3015,21 @@ issue comments.
   -> 11 passed; `python scripts/dashboard.py` -> **GREEN** (lint 0.07 s,
   format 0.09 s, types 7.66 s, tests 170.62 s, validator 0.80 s, docs 19.60 s,
   docstrings 4.45 s).
+
+- P54.3: added descriptive spatial resilience accounts. Connectivity reports the
+  largest untreated component, percolation reach, component count, and untreated
+  area over the full topology. Age-class diversity reports Shannon, evenness, and
+  occupied 20-year classes. Fragmentation reports current-year opening patch
+  count, mean/largest patch area, and treated area, reusing the existing patch
+  metrics. Connectivity and age are levels; fragmentation is a per-year flow.
+  `ws4 simulate --resilience --topology ...` writes `resilience_metrics.csv` and
+  `resilience_metadata.json`; `ws4 report` adds `report_resilience.csv`; `ws4
+  resilience compare` compares two runs. The sample-estate pilot opens one patch
+  (42.9 ha) versus four isolated patches (38.6 ha total); patch count is 1 versus
+  4 while age-class count stays 5, so the families are not redundant. No
+  objective, constraint, growth, or solver change. Report:
+  `notes/reports/p54.3-resilience.md`.
+  Verification: `python -m pytest tests/test_resilience.py -q --no-cov` ->
+  8 passed; `python scripts/dashboard.py` -> **GREEN** (lint 0.07 s, format
+  0.07 s, types 7.14 s, tests 129.22 s, validator 0.68 s, docs 17.69 s,
+  docstrings 3.02 s).
