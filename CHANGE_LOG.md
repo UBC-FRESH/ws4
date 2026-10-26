@@ -2896,3 +2896,12 @@ issue comments.
 - P64 close-out: pull request #461 squash-merged as `8b0d0e6`; parent #456 and tasks
   #457/#458/#459 closed; status set complete. The chart/live-convergence evidence is
   recorded in `notes/reports/p64-closeout.md`.
+
+- P65.1/P65.2: made the target charts editable. The chart now reconciles a period to its target
+  row, creates missing rows from account defaults, supports active/inactive toggles, exact min/max
+  entry, vertical drag, per-period or all-period application, clear-bound, dirty state, and save
+  through the existing validated targets JSON. Source-cell, target-row, chart, and target-table
+  updates stay in sync after save.
+- P65.3: verified c5 single-period edit/save/reload, all-period min creation, drag edit, and
+  inactive toggle; verified TSA 46 10-period edit/save/reload. `check_target_editing.py` exits 0.
+  Dashboard **GREEN**.

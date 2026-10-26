@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=72">
+  <link rel="stylesheet" href="static/style.css?v=73">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
 </head>
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v72</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v73</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Period
@@ -271,7 +271,11 @@
           <h2>Target charts</h2>
           <p class="hint">Minimum, maximum, and achieved account levels for every period. Pin targets in the Plan table; inactive targets are indicators.</p>
         </div>
-        <div id="target-chart-count" class="target-chart-count"></div>
+        <div class="target-canvas-actions">
+          <span id="target-chart-count" class="target-chart-count"></span>
+          <button id="target-chart-save" type="button" disabled>Save chart changes</button>
+          <span id="target-chart-status" class="hint"></span>
+        </div>
       </div>
       <div id="target-chart-grid" class="target-chart-grid"></div>
       <p id="target-chart-empty" class="target-chart-empty">Pin a target in the table to open its chart.</p>
@@ -293,6 +297,6 @@
     </div>
   </main>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=72"></script>
+  <script type="module" src="static/app.js?v=73"></script>
 </body>
 </html>

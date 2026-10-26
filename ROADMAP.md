@@ -66,6 +66,7 @@ exists and the maintainer approves it.
 | P61 Carbon and libcbm in the web UI | #430 | `feature/p61-carbon-ui` | complete |
 | P63 UI foundation for desktop and iPad landscape | #442 | `feature/p63-ui-foundation` | complete |
 | P64 Patchworks-style target charts | #456 | `feature/p64-target-charts` | complete |
+| P65 Editable target charts | #464 | `feature/p65-editable-targets` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -1937,6 +1938,38 @@ Acceptance:
 - Any target account, active or inactive, can be pinned and charted.
 - Every period shows min/max/achieved with exact values on hover and in a table.
 - The chart updates from live solver snapshots.
+- `python scripts/dashboard.py` is green.
+
+## Phase 65: Editable target charts
+
+Parent issue: #464
+Branch: `feature/p65-editable-targets`
+Status: pr-open
+
+Goal: make the target charts the analyst's editing surface for active state and per-period
+minimum/maximum bounds.
+
+- [x] P65.1 Add target chart row reconciliation and save (#465)
+  - [x] Add period/target row lookup and creation
+  - [x] Add update/all-period/clear helpers
+  - [x] Add a save path and dirty state
+  - [x] Add browser/API regression coverage
+- [x] P65.2 Add chart editing controls and interactions (#466)
+  - [x] Add chart toolbar controls
+  - [x] Add drag-to-set and exact input
+  - [x] Add all-period/clear behavior
+  - [x] Add dirty/save status and post-save refresh
+- [x] P65.3 Verify edit/save/live behavior and close out (#467)
+  - [x] Extend the target-chart smoke
+  - [x] Run edit/save/reload and live checks
+  - [x] Update docs and write the close-out
+
+Acceptance:
+
+- Any target account can be activated/deactivated from its chart.
+- Per-period min/max can be typed or dragged.
+- All-period edits create missing rows.
+- Save validates through the normal targets loader and refreshes chart and table.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes
