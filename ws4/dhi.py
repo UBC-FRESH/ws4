@@ -479,7 +479,9 @@ def write_dhi_ingest(
     metadata_json : str or Path
         Destination metadata JSON.
     """
-    values.to_csv(output_csv, index=False)
+    output = Path(output_csv)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    values.to_csv(output, index=False)
     Path(metadata_json).parent.mkdir(parents=True, exist_ok=True)
     Path(metadata_json).write_text(
         json.dumps(source.to_dict(), indent=2, sort_keys=True) + "\n",
