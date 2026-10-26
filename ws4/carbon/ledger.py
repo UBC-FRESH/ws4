@@ -82,13 +82,8 @@ class CarbonLedger:
             int(str(block)): frame
             for block, frame in self.fragments.groupby("block_id", sort=False)
         }
-        track_ids = set(
-            pd.to_numeric(self.fragments["track_id"], errors="coerce").dropna().astype(int)
-        )
         self._tracks = self.tracks.copy()
-        self._treatments = self.treatments.loc[
-            pd.to_numeric(self.treatments["track_id"], errors="coerce").isin(track_ids)
-        ].copy()
+        self._treatments = self.treatments.copy()
 
     @property
     def block_ids(self) -> tuple[int, ...]:
