@@ -3043,3 +3043,6 @@ issue comments.
   weights. No objective, constraint, growth, or solver change. Post-merge
   dashboard **GREEN** (lint 0.10 s, format 0.12 s, types 29.15 s, tests
   134.53 s, validator 0.90 s, docs 17.51 s, docstrings 2.98 s).
+
+- P66 close-out: pull request #476 squash-merged as `ed1f15a`; parent #473 and task #474
+  closed; status set complete. The assistant panel is absent when the service has no agent.
