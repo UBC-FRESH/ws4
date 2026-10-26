@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, selectedBlock: null, pendingBlock: null, pendingPeriod: null, urlReady: false };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, selectedBlock: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null };
 
 const $ = (id) => document.getElementById(id);
 const TILE_VERSION = 'v8';
@@ -2385,6 +2385,9 @@ function syncNavigation() {
   }
   if (state.workspace === 'map') $('tab-legend').hidden = false;
   if (state.workspace === 'plan') $('tab-targets').hidden = false;
+  $('map-wrap').hidden = state.workspace === 'plan';
+  $('target-canvas').hidden = state.workspace !== 'plan';
+  if (state.workspace === 'plan') renderTargetCharts();
   for (const workspace of ['results', 'data']) {
     const nav = $(`${workspace}-nav`);
     const buttons = [...(nav?.querySelectorAll('[role="tab"]') ?? [])];
@@ -2434,6 +2437,10 @@ function activateSubView() {
     else loadDataset();
     return;
   }
+  if (state.workspace === 'plan') {
+    renderTargetCharts();
+    return;
+  }
   if (state.workspace !== 'results' && state.compareView) clearCompareView();
 }
 
@@ -2461,6 +2468,7 @@ function setWorkspace(workspace, { sync = true, activate = true } = {}) {
     syncNavigation();
   }
   if (sync) updateUrl();
+  if (requested === 'map' && state.mapLibre) state.mapLibre.resize();
   if (activate) activateSubView();
 }
 
@@ -2617,6 +2625,323 @@ function statusOf(row, value) {
   if (row.minimum !== null && value < row.minimum) return 'below';
   if (row.maximum !== null && value > row.maximum) return 'above';
   return 'met';
+}
+
+
+function targetChartAccounts() {
+  const accounts = [];
+  const seen = new Set();
+  for (const row of state.targets) {
+    if (!state.watched.has(String(row.index))) continue;
+    if (seen.has(row.account)) continue;
+    seen.add(row.account);
+    accounts.push(row.account);
+  }
+  return accounts;
+}
+
+function periodAchieved(account, period) {
+  const series = state.series.get(account);
+  if (!series || !series.size) return null;
+  const start = Number(period.start) + 1;
+  const end = Number(period.end) + 1;
+  if (String(account).startsWith('product.')) {
+    let total = 0;
+    let found = false;
+    for (let year = start; year <= end; year += 1) {
+      if (series.has(year)) {
+        total += Number(series.get(year));
+        found = true;
+      }
+    }
+    return found ? total : null;
+  }
+  if (series.has(end)) return Number(series.get(end));
+  if (series.has(end - 1)) return Number(series.get(end - 1));
+  return null;
+}
+
+function compactNumber(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return '—';
+  const absolute = Math.abs(number);
+  if (absolute >= 1e9) return `${(number / 1e9).toFixed(2)}B`;
+  if (absolute >= 1e6) return `${(number / 1e6).toFixed(2)}M`;
+  if (absolute >= 1e3) return `${(number / 1e3).toFixed(1)}k`;
+  return number.toLocaleString(undefined, { maximumFractionDigits: 1 });
+}
+
+function fullNumber(value) {
+  return Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+function targetStatus(row, value) {
+  if (value === null || value === undefined) return 'unknown';
+  if (row.minimum === null || row.minimum === undefined) {
+    if (row.maximum === null || row.maximum === undefined) return 'indicator';
+  }
+  if (row.minimum !== null && row.minimum !== undefined && value < Number(row.minimum)) return 'below';
+  if (row.maximum !== null && row.maximum !== undefined && value > Number(row.maximum)) return 'above';
+  return 'met';
+}
+
+function chartCell(account, period) {
+  const source = state.targetSeries?.accounts?.find((item) => item.account === account);
+  const cell = source?.periods?.find((item) => Number(item.index) === Number(period.index));
+  return cell ?? {
+    index: Number(period.index),
+    start: Number(period.start),
+    end: Number(period.end),
+    label: period.label,
+    minimum: null,
+    maximum: null,
+    active: false,
+    target_indices: [],
+  };
+}
+
+function renderTargetChart(account, periods) {
+  const card = document.createElement('article');
+  card.className = 'target-chart-card';
+  const accountRows = state.targets.filter((row) => row.account === account);
+  const active = accountRows.some((row) => row.active !== false);
+  if (!active) card.classList.add('inactive');
+  const cells = periods.map((period) => {
+    const cell = chartCell(account, period);
+    const value = periodAchieved(account, period);
+    return { ...cell, achieved: value };
+  });
+  const title = document.createElement('div');
+  title.className = 'target-chart-title';
+  const name = document.createElement('span');
+  name.className = 'name';
+  name.textContent = account;
+  name.title = account;
+  const meta = document.createElement('span');
+  meta.className = 'meta';
+  const current = cells[Math.min(Math.max(0, state.periodIndex), cells.length - 1)];
+  meta.textContent = current && current.achieved !== null
+    ? `P${Number(current.index) + 1} · ${compactNumber(current.achieved)} · ${targetStatus(current, current.achieved)}${active ? '' : ' · inactive'}`
+    : active ? 'no value' : 'inactive';
+  meta.classList.add(current ? targetStatus(current, current.achieved) : 'unknown');
+  title.append(name, meta);
+  card.append(title);
+
+  const width = 540;
+  const height = 210;
+  const left = 48;
+  const right = 12;
+  const top = 12;
+  const bottom = 26;
+  const values = [];
+  for (const cell of cells) {
+    for (const value of [cell.minimum, cell.maximum, cell.achieved]) {
+      if (value !== null && value !== undefined && Number.isFinite(Number(value))) values.push(Number(value));
+    }
+  }
+  let low = values.length ? Math.min(...values) : 0;
+  let high = values.length ? Math.max(...values) : 1;
+  if (values.length && low >= 0) low = 0;
+  if (low === high) {
+    const pad = Math.max(Math.abs(low) * 0.1, 1);
+    low -= pad;
+    high += pad;
+  }
+  const pad = (high - low) * 0.08;
+  const domainLow = low >= 0 ? 0 : low - pad;
+  const domainHigh = high + pad;
+  const plotWidth = width - left - right;
+  const plotHeight = height - top - bottom;
+  const step = plotWidth / Math.max(periods.length, 1);
+  const barWidth = Math.max(2, Math.min(step * 0.86, 34));
+  const x = (index) => left + step * index + step / 2;
+  const y = (value) => top + (1 - (Number(value) - domainLow) / (domainHigh - domainLow)) * plotHeight;
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.setAttribute('class', 'target-chart-svg');
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', `${account} target chart`);
+
+  for (let index = 0; index < 4; index += 1) {
+    const value = domainLow + ((domainHigh - domainLow) * index) / 3;
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', left); line.setAttribute('x2', width - right);
+    line.setAttribute('y1', y(value)); line.setAttribute('y2', y(value));
+    line.setAttribute('class', 'target-chart-grid-line');
+    svg.append(line);
+    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    label.setAttribute('x', left - 5); label.setAttribute('y', y(value) + 3);
+    label.setAttribute('text-anchor', 'end');
+    label.setAttribute('class', 'target-chart-axis-label');
+    label.textContent = compactNumber(value);
+    svg.append(label);
+  }
+
+  const readout = document.createElement('div');
+  readout.className = 'target-chart-readout';
+  const showReadout = (cell) => {
+    readout.textContent = `${cell.label ?? 'period'} · min ${cell.minimum === null || cell.minimum === undefined ? '—' : fullNumber(cell.minimum)} · max ${cell.maximum === null || cell.maximum === undefined ? '—' : fullNumber(cell.maximum)} · achieved ${cell.achieved === null || cell.achieved === undefined ? '—' : fullNumber(cell.achieved)} · ${targetStatus(cell, cell.achieved)}`;
+  };
+  if (cells.length) showReadout(cells[Math.min(state.periodIndex, cells.length - 1)]);
+  cells.forEach((cell, index) => {
+    const center = x(index);
+    const minValue = cell.minimum === null || cell.minimum === undefined ? null : Number(cell.minimum);
+    const maxValue = cell.maximum === null || cell.maximum === undefined ? null : Number(cell.maximum);
+    if (minValue !== null || maxValue !== null) {
+      if (minValue !== null) {
+        const minRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        minRect.setAttribute('x', center - barWidth / 2);
+        minRect.setAttribute('y', y(minValue));
+        minRect.setAttribute('width', barWidth);
+        minRect.setAttribute('height', Math.max(1, height - bottom - y(minValue)));
+        minRect.setAttribute('class', 'target-min-zone');
+        svg.append(minRect);
+      }
+      if (maxValue !== null) {
+        const maxRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        maxRect.setAttribute('x', center - barWidth / 2);
+        maxRect.setAttribute('y', top);
+        maxRect.setAttribute('width', barWidth);
+        maxRect.setAttribute('height', Math.max(1, y(maxValue) - top));
+        maxRect.setAttribute('class', 'target-max-zone');
+        svg.append(maxRect);
+      }
+      if (minValue !== null && maxValue !== null && maxValue > minValue) {
+        const okRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        okRect.setAttribute('x', center - barWidth / 2);
+        okRect.setAttribute('y', y(maxValue));
+        okRect.setAttribute('width', barWidth);
+        okRect.setAttribute('height', Math.max(1, y(minValue) - y(maxValue)));
+        okRect.setAttribute('class', 'target-ok-zone');
+        svg.append(okRect);
+      }
+    }
+    const hit = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    hit.setAttribute('x', left + step * index);
+    hit.setAttribute('y', top);
+    hit.setAttribute('width', step);
+    hit.setAttribute('height', plotHeight);
+    hit.setAttribute('class', 'target-chart-period');
+    hit.setAttribute('fill', 'transparent');
+    const tip = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+    tip.textContent = `${cell.label ?? `Period ${index + 1}`}: min ${minValue === null ? '—' : fullNumber(minValue)}, max ${maxValue === null ? '—' : fullNumber(maxValue)}, achieved ${cell.achieved === null ? '—' : fullNumber(cell.achieved)}`;
+    hit.append(tip);
+    hit.addEventListener('mouseenter', () => showReadout(cell));
+    hit.addEventListener('focus', () => showReadout(cell));
+    hit.addEventListener('click', () => {
+      showReadout(cell);
+      setPeriod(Number(cell.index));
+      syncNavigation();
+    });
+    hit.setAttribute('tabindex', '0');
+    svg.append(hit);
+  });
+
+  const points = cells
+    .map((cell, index) => ({ cell, index }))
+    .filter(({ cell }) => cell.achieved !== null && cell.achieved !== undefined);
+  if (points.length > 1) {
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    line.setAttribute('points', points.map(({ cell, index }) => `${x(index)},${y(cell.achieved)}`).join(' '));
+    line.setAttribute('class', 'target-chart-line');
+    svg.append(line);
+  }
+  for (const { cell, index } of points) {
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('cx', x(index));
+    dot.setAttribute('cy', y(cell.achieved));
+    dot.setAttribute('r', periods.length > 40 ? 2 : 3);
+    dot.setAttribute('class', `target-chart-dot ${targetStatus(cell, cell.achieved)}`);
+    const tip = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+    tip.textContent = `achieved ${fullNumber(cell.achieved)}`;
+    dot.append(tip);
+    svg.append(dot);
+  }
+  const labelEvery = Math.max(1, Math.ceil(periods.length / 8));
+  periods.forEach((period, index) => {
+    if (index % labelEvery && index !== periods.length - 1) return;
+    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    label.setAttribute('x', x(index));
+    label.setAttribute('y', height - 7);
+    label.setAttribute('text-anchor', 'middle');
+    label.setAttribute('class', 'target-chart-axis-label');
+    label.textContent = `P${index + 1}`;
+    svg.append(label);
+  });
+  card.append(svg);
+  card.append(readout);
+
+  const legend = document.createElement('div');
+  legend.className = 'target-chart-legend';
+  for (const [klass, text] of [['min', 'minimum'], ['max', 'maximum'], ['achieved', 'achieved']]) {
+    const item = document.createElement('span');
+    item.className = klass;
+    item.textContent = text;
+    legend.append(item);
+  }
+  card.append(legend);
+  const details = document.createElement('details');
+  details.className = 'target-chart-table';
+  const summary = document.createElement('summary');
+  summary.textContent = 'All period values';
+  details.append(summary);
+  const table = document.createElement('table');
+  const head = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  for (const text of ['Period', 'Min', 'Max', 'Achieved', 'Status']) {
+    const th = document.createElement('th');
+    th.textContent = text;
+    headRow.append(th);
+  }
+  head.append(headRow);
+  const body = document.createElement('tbody');
+  for (const cell of cells) {
+    const row = document.createElement('tr');
+    const status = targetStatus(cell, cell.achieved);
+    for (const [text, klass] of [
+      [cell.label ?? `P${Number(cell.index) + 1}`, ''],
+      [cell.minimum === null || cell.minimum === undefined ? '—' : fullNumber(cell.minimum), 'num'],
+      [cell.maximum === null || cell.maximum === undefined ? '—' : fullNumber(cell.maximum), 'num'],
+      [cell.achieved === null || cell.achieved === undefined ? '—' : fullNumber(cell.achieved), 'num'],
+      [status, status],
+    ]) {
+      const td = document.createElement('td');
+      td.textContent = text;
+      if (klass) td.className = klass;
+      row.append(td);
+    }
+    body.append(row);
+  }
+  table.append(head, body);
+  details.append(table);
+  card.append(details);
+  const foot = document.createElement('div');
+  foot.className = 'target-chart-foot';
+  foot.textContent = `${active ? 'active target' : 'inactive indicator'} · ${cells.filter((cell) => cell.minimum !== null || cell.maximum !== null).length} bounded period(s)`;
+  card.append(foot);
+  return card;
+}
+
+function renderTargetCharts() {
+  const grid = $('target-chart-grid');
+  const empty = $('target-chart-empty');
+  const count = $('target-chart-count');
+  if (!grid || !empty) return;
+  const accounts = targetChartAccounts();
+  const periods = state.targetSeries?.periods?.length
+    ? state.targetSeries.periods
+    : state.periods;
+  grid.replaceChildren();
+  if (!accounts.length || !periods.length) {
+    empty.hidden = false;
+    grid.hidden = true;
+    if (count) count.textContent = '';
+    return;
+  }
+  empty.hidden = true;
+  grid.hidden = false;
+  for (const account of accounts) grid.append(renderTargetChart(account, periods));
+  if (count) count.textContent = `${accounts.length} chart${accounts.length === 1 ? '' : 's'} · ${periods.length} periods`;
 }
 
 function renderWatchPanel() {
@@ -2839,6 +3164,7 @@ function updateLiveTargets(values, iteration, series = []) {
     if (entry) paintTarget(entry, value);
   }
   if (painted) renderWatchPanel();
+  if (targetChartAccounts().some((account) => liveSeries.has(account))) renderTargetCharts();
   if (painted && iteration !== undefined) {
     $('run-status').textContent = `live target state at iteration ${iteration} (${painted} cells)`;
   }
@@ -3142,6 +3468,7 @@ async function loadTargets() {
     const rows = await api('api/targets.json');
     rows.forEach((row) => { row.active = row.active !== false; });
     state.targets = rows;
+    state.targetSeries = null;
     state.series = new Map();
     try {
       const catalog = await api(`api/runs/${encodeURIComponent(state.run)}/accounts`);
@@ -3151,6 +3478,9 @@ async function loadTargets() {
         state.series.get(account).set(Number(item.year), Number(item.value));
       }
     } catch { /* the account tree is optional when a run has no values */ }
+    try {
+      state.targetSeries = await api(`api/runs/${encodeURIComponent(state.run)}/target-series`);
+    } catch { /* the chart can still fall back to the target rows */ }
     renderAccountTree();
     const signature = rows
       .map((row) => `${row.index}|${row.account}|${row.period}|${row.year}|${row.period_width}`)
@@ -3174,7 +3504,13 @@ async function loadTargets() {
     const keys = rows.filter((row) => !row.flow).map((row) => String(row.index));
     if (targetsChanged || ![...state.watched].some((key) => keys.includes(key))) {
       state.watched.clear();
-      for (const key of keys.slice(0, 12)) state.watched.add(key);
+      const seen = new Set();
+      for (const row of rows) {
+        if (row.flow || seen.has(row.account)) continue;
+        seen.add(row.account);
+        state.watched.add(String(row.index));
+        if (seen.size >= 3) break;
+      }
       saveWatched();
     }
     const values = {};
@@ -3199,6 +3535,7 @@ async function loadTargets() {
         const entry = state.targetCells.get(key);
         if (entry) paintTarget(entry, entry.value);
         renderWatchPanel();
+        renderTargetCharts();
       });
       on.append(onBox);
       tr.append(on);
@@ -3207,11 +3544,12 @@ async function loadTargets() {
       const box = document.createElement('input');
       box.type = 'checkbox';
       box.checked = state.watched.has(key);
-      box.title = 'watch this target';
+      box.title = 'pin this target chart';
       box.addEventListener('change', () => {
         if (box.checked) state.watched.add(key); else state.watched.delete(key);
         saveWatched();
         renderWatchPanel();
+        renderTargetCharts();
       });
       const label = document.createElement('span');
       label.textContent = row.account;
@@ -3293,6 +3631,7 @@ async function loadTargets() {
       if (value !== undefined) state.windowValues.set(`${row.year}|${row.account}`, Number(value));
     }
     renderWatchPanel();
+    renderTargetCharts();
     renderAccountTree();
     if (state.skin) applySkin(state.skin);
   } catch (error) {

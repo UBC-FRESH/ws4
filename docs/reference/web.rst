@@ -162,6 +162,10 @@ Endpoints
    * - ``GET /api/runs/{run}/targets``
      - Each target's realized value over the target's own period — the optimizer's
        ``period_value`` rule: a product sums its offsets, a feature reads the period's end offset.
+   * - ``GET /api/runs/{run}/target-series``
+     - Every target account's bounds, active state, and target indices by run period, plus the
+       run's period list. Inactive targets are included. The Plan chart canvas consumes this
+       contract and adds achieved values from the run's account series.
    * - ``POST /api/runs``
      - Start a search with the configured dataset and targets. **Refused unless the service was started
        with ``--allow-runs``**; iterations and years are bounded. With no ``iterations`` (or ``0``) the
@@ -195,6 +199,27 @@ unavailable state.
 
 The source must be a P52-registered FEMIC LidarBC bundle; the browser does not open rasters,
 reproject them, or derive new terrain or canopy values.
+
+Target charts
+-------------
+
+The **Plan** workspace opens a Patchworks-style chart canvas instead of the map. Pinning a
+target row (the watch checkbox in the target table) opens one chart per account. Each chart
+shows every run period on the x axis:
+
+- red minimum zone;
+- blue maximum zone;
+- grey acceptable band when both bounds exist;
+- black achieved line and status-coloured points;
+- an exact readout for the hovered/selected period;
+- an expandable all-period table with period, min, max, achieved, and status.
+
+Inactive targets are charted as indicators with a dashed card, not hidden. The chart updates
+from the same SSE target snapshots that drive the live map, so the achieved line moves while
+the solver runs. Clicking a period selects it in the shell.
+
+The chart is a reader; the target table remains the editor for bounds, weights, activation,
+normalization, priority, and notes. Direct drag-to-edit in the chart is not part of this cut.
 
 Carbon
 ------
