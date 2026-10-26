@@ -9,6 +9,7 @@ designed for review rather than one-off runs.
 ## Install
 
 ```bash
+pip install ws4==0.2.0   # published release
 pip install .            # core: build, simulate, optimize, report, validate, ingest
 pip install ".[geo]"     # add the shapefile fragment reader
 pip install ".[lidar]"   # add FEMIC LidarBC mapping dependencies
@@ -93,7 +94,6 @@ and P58 close-out reports for the phase evidence.
   ADR 0003 remains blocked on management-origin data.
 - Deterministic seeds, bounded searches, and heuristic schedules are not certified optimal.
 - The AAC is a policy ceiling, not an operational or ecological guarantee.
-- PyPI publishing remains out of scope.
 
 ## Documentation
 

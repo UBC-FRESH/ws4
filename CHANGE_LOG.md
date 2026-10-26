@@ -2851,3 +2851,6 @@ issue comments.
   Next recommendation: public-watershed pilot/tail-check remediation, or FHOPS
   Phase 15 after P14. Post-merge dashboard **GREEN** (lint, format, types,
   123.47 s tests, validator, docs, docstrings).
+- 0.2.0 published to PyPI: `ws4==0.2.0` is available at https://pypi.org/project/ws4/0.2.0/.
+  The published wheel and sdist match the GitHub release assets. The release policy now records
+  that approved PyPI releases use a secure external credential file.
