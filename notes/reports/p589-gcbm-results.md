@@ -1,8 +1,8 @@
-# P57.9 GCBM results reader and comparison lane
+# P58.9 GCBM results reader and comparison lane
 
 Date: 2026-10-26
-Phase: P57
-Task: P57.9
+Phase: P58
+Task: P58.9
 Related: `notes/design/ws4-carbon.md`, `docs/reference/carbon.rst`
 
 ## 1. What was added

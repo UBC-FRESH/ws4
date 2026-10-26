@@ -1,10 +1,10 @@
-# P57.8 carbon-aware validation: TSA24 and MKRF
+# P58.8 carbon-aware validation: TSA24 and MKRF
 
 Date: 2026-10-26
-Phase: P57
-Task: P57.8
-Related: `notes/design/ws4-carbon.md`, `notes/reports/p575-parity.md`,
-`notes/reports/p577-carbon-optimizer.md`
+Phase: P58
+Task: P58.8
+Related: `notes/design/ws4-carbon.md`, `notes/reports/p585-parity.md`,
+`notes/reports/p587-carbon-optimizer.md`
 
 ## 1. Scope
 

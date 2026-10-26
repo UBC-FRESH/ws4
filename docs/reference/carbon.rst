@@ -225,7 +225,7 @@ date dimensions, writes `gcbm_pools.csv`, `gcbm_fluxes.csv`, `gcbm_accounts.csv`
 `carbon_accounts.csv`.
 
 The reader is tabular. Mapping GCBM spatial GeoTIFFs to WS4 blocks needs a same-landscape
-GCBM export, which is the FEMIC walltowall bridge (P115.4). The P57.9 report records the
+GCBM export, which is the FEMIC walltowall bridge (P115.4). The P58.9 report records the
 real sample-run reading and that boundary.
 
 Validation and parity
@@ -234,7 +234,7 @@ Validation and parity
 ``scripts/carbon_parity.py`` compares two carbon run directories on
 ``(timestep, identifier)`` and exits nonzero when a pool or flux is outside the requested
 tolerance. ``ws4.carbon.parity`` exposes the same comparison, a mass-balance/account
-reconciliation table, and a byte-level replay check. The P57.5 report records the exact
+reconciliation table, and a byte-level replay check. The P58.5 report records the exact
 WS3/WS4 parity on the clipped TSA24 fixture and the real TSA24 replay evidence.
 
 Fingerprint
@@ -306,6 +306,6 @@ API
 The next step
 -------------
 
-P57.4 merges the ``carbon.*`` accounts into the run report and the provenance surfaces.
-P57.5 validates parity with WS3, mass balance, and deterministic replay on the TSA24
+P58.4 merges the ``carbon.*`` accounts into the run report and the provenance surfaces.
+P58.5 validates parity with WS3, mass balance, and deterministic replay on the TSA24
 fixture.
