@@ -2811,7 +2811,7 @@ issue comments.
 
 - P60.3: wrote `notes/reports/p60-closeout.md`, recorded the P59-to-P60
   renumbering collision with the LiDAR UI PR #425, consolidated P60 into a
-  single phase PR, and set P60 to `pr-open`. The hydrology contract suite has 51
+  single phase PR #428, and set P60 to `pr-open`. The hydrology contract suite has 51
   passing tests; the dashboard is GREEN at the P60.2 evidence head. No merge,
   tag, release, or settings change was made. Report-commit dashboard **GREEN**
   (lint, format, types, 113.80 s tests, validator, docs, docstrings).

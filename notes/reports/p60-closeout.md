@@ -2,7 +2,7 @@
 
 Phase: P60 Harden hydrology use with validation evidence
 Parent issue: #415
-Pull request: #427, `feature/p60-closeout` into `main`
+Pull request: #428, `feature/p60-closeout` into `main`
 Evidence head: `2bceea0` (P60.2), plus the report commit
 Report commit: the commit that adds this report. Its CI run is posted on the pull request.
 Date: 2026-10-26
@@ -12,8 +12,8 @@ Status: queued for approval. Not merged.
 
 Approve these actions. The agent carries them out in this order, and reads back each result.
 
-1. Close #422 and #424 as superseded by the single phase pull request #427.
-2. Squash-merge #427 and delete `feature/p60-closeout` and the two superseded task branches.
+1. Close #422 and #424 as superseded by the single phase pull request #428.
+2. Squash-merge #428 and delete `feature/p60-closeout` and the two superseded task branches.
 3. Close child issues #416, #423, and #426 with closeout comments that cite the merge commit.
 4. Close parent issue #415 with a comment that cites the merge commit and the next recommendation.
 5. Launch the next bounded phase only after approval: a public-watershed pilot and tail-check remediation, or FHOPS Phase 15 if its P14 LidarBC phase is ready first.
@@ -21,7 +21,7 @@ Approve these actions. The agent carries them out in this order, and reads back 
 Merge command, after final CI is green:
 
 ```shell
-gh pr merge 427 --squash --delete-branch
+gh pr merge 428 --squash --delete-branch
 ```
 
 Settings changes, each with its exact command. Each one runs only after its own approval.
@@ -66,14 +66,14 @@ changelog and the PR.
 
 | Run ID | Head commit | Conclusion | Notes |
 | --- | --- | --- | --- |
-| pending | report commit | not yet run | CI runs on #427. |
+| pending | report commit | not yet run | CI runs on #428. |
 
 ## 5. Deviations
 
 | Deviation | Cause | Remedy |
 | --- | --- | --- |
 | Phase number changed from P59 to P60. | PR #425 (`feature/p59-lidar-ui`) claimed P59 for LiDAR web UI while this phase was in progress. | Renumbered issues, roadmap, docs, and task titles to P60; kept old branch names only until closeout deletion. |
-| Two task PRs instead of one phase PR. | P60.1 and P60.2 were queued separately before approval. | Consolidated into #427; #422 and #424 are superseded. |
+| Two task PRs instead of one phase PR. | P60.1 and P60.2 were queued separately before approval. | Consolidated into #428; #422 and #424 are superseded. |
 | No public-watershed pilot. | No reviewed public crosswalk/domain with FEMIC ledger units is available. | Follow-up pilot; do not infer a watershed. |
 | No hydrologist review. | No reviewer record exists. | Preserve `not_reviewed`; require reviewed evidence for operational use. |
 | No FHOPS integration. | FHOPS P14 is still its LidarBC phase. | FHOPS Phase 15 after P14. |
