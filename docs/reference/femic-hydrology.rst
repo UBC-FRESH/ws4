@@ -173,6 +173,62 @@ The command exits non-zero when ``screening_ready`` is false. A structurally
 valid bundle is not a hydrologically reviewed bundle, and a ready preflight is
 not a hydrologist review or a regulatory flood map.
 
+Road and Culvert Exposure
+-------------------------
+
+The exposure table is an explicit, schedule-bound input:
+
+.. code-block:: json
+
+   {
+     "schema_version": "ws4.hydrology.exposure.v1",
+     "exposure_id": "exposure-2026-001",
+     "generated_utc": "2026-10-26T00:00:00+00:00",
+     "source_id": "reviewed-road-and-culvert-inventory",
+     "review_status": "reviewed",
+     "reviewer_id": "reviewer-id",
+     "schedule_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "watershed_ids": ["watershed-1"],
+     "periods": [0, 1],
+     "rows": [
+       {
+         "watershed_id": "watershed-1",
+         "period": 0,
+         "road_built_km": 0.0,
+         "road_used_km": 1.25,
+         "road_decommissioned_km": 0.0,
+         "culvert_count": 4,
+         "culvert_exposed_count": 1
+       },
+       {
+         "watershed_id": "watershed-1",
+         "period": 1,
+         "road_built_km": 0.5,
+         "road_used_km": 1.75,
+         "road_decommissioned_km": 0.0,
+         "culvert_count": 4,
+         "culvert_exposed_count": 2
+       }
+     ],
+     "caveats": ["Screening input only."]
+   }
+
+`watershed_ids` and `periods` declare the complete grid. Every declared
+watershed/period pair must have exactly one row; a missing row is an error, not
+a zero. Lengths are finite non-negative numbers, counts are non-negative
+integers, reviewed metadata requires `reviewer_id`, and `schedule_sha256` must
+be a 64-character hex digest.
+
+The table is bound to one schedule hash. Reusing it for a different schedule is
+a refusal in the screening path, not a fallback. WS4 does not buffer roads,
+match culverts to streams, assign a watershed to a road, or infer missing
+periods. There is no geometry in this contract.
+
+Load it with ``ws4.io.hydrology_exposure.load_hydrology_exposure``. The
+returned object preserves the file SHA-256, source, review state, declared
+watersheds and periods, and the canonical feature values for a watershed and
+period.
+
 Validation Evidence
 -------------------
 

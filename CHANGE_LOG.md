@@ -2898,3 +2898,11 @@ issue comments.
   `require_reviewed`, and exits non-zero when `screening_ready` is false. A
   missing crosswalk is always blocking; `--allow-partial` remains diagnostic.
   Added unit/CLI tests and reference docs. Dashboard **GREEN**.
+
+- P62.3: added `ws4.hydrology.exposure.v1` and
+  `ws4.io.hydrology_exposure`. The loader requires a complete declared
+  watershed/period grid, non-negative finite road lengths, non-negative integer
+  culvert counts, explicit review metadata, and a 64-character schedule hash.
+  It preserves the file SHA-256 and performs no spatial inference. Added the
+  synthetic exposure fixture, tests, design note, and reference docs. Dashboard
+  **GREEN**.

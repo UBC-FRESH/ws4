@@ -96,6 +96,13 @@ is a gap, not a zero.
 The table is bound to one schedule hash. Using it for a different schedule is a
 refusal, not a fallback.
 
+P62.3 makes the table a complete declared grid. `watershed_ids` and `periods`
+declare the scope; every watershed/period pair must have exactly one row. A
+missing row is an error, not a zero. Counts are non-negative integers, lengths
+are finite non-negative numbers, a reviewed table needs a reviewer, and the
+schedule hash must be a 64-character hex digest. The loader preserves the file
+SHA-256 and never adds geometry.
+
 ## Screening and optimizer boundary
 
 P62.4 lets `hydrology screen` use a valid exposure table for the schedule it

@@ -1,0 +1,58 @@
+{
+  "schema_version": "ws4.hydrology.exposure.v1",
+  "exposure_id": "exposure-fixture-001",
+  "generated_utc": "2026-10-26T00:00:00+00:00",
+  "source_id": "synthetic-road-culvert-fixture",
+  "review_status": "reviewed",
+  "reviewer_id": "reviewer-1",
+  "schedule_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "watershed_ids": [
+    "watershed-1",
+    "watershed-2"
+  ],
+  "periods": [
+    0,
+    1
+  ],
+  "rows": [
+    {
+      "watershed_id": "watershed-1",
+      "period": 0,
+      "road_built_km": 0.0,
+      "road_used_km": 1.25,
+      "road_decommissioned_km": 0.0,
+      "culvert_count": 4,
+      "culvert_exposed_count": 1
+    },
+    {
+      "watershed_id": "watershed-1",
+      "period": 1,
+      "road_built_km": 0.5,
+      "road_used_km": 1.75,
+      "road_decommissioned_km": 0.0,
+      "culvert_count": 4,
+      "culvert_exposed_count": 2
+    },
+    {
+      "watershed_id": "watershed-2",
+      "period": 0,
+      "road_built_km": 0.0,
+      "road_used_km": 0.8,
+      "road_decommissioned_km": 0.2,
+      "culvert_count": 2,
+      "culvert_exposed_count": 0
+    },
+    {
+      "watershed_id": "watershed-2",
+      "period": 1,
+      "road_built_km": 0.0,
+      "road_used_km": 0.6,
+      "road_decommissioned_km": 0.4,
+      "culvert_count": 2,
+      "culvert_exposed_count": 1
+    }
+  ],
+  "caveats": [
+    "Synthetic fixture only; no real watershed or culvert location is represented."
+  ]
+}
