@@ -82,8 +82,24 @@ class CarbonLedger:
             int(str(block)): frame
             for block, frame in self.fragments.groupby("block_id", sort=False)
         }
-        self._tracks = self.tracks.copy()
-        self._treatments = self.treatments.copy()
+        track_ids = set(
+            pd.to_numeric(self.fragments["track_id"], errors="coerce").dropna().astype(int)
+        )
+        if fertilization is not None and fertilization.uses_curves:
+            self._tracks = self.tracks.copy()
+            relevant = pd.to_numeric(self.treatments["track_id"], errors="coerce").isin(track_ids)
+            if "new_track" in self.treatments.columns:
+                relevant = relevant | pd.to_numeric(
+                    self.treatments["new_track"], errors="coerce"
+                ).isin(track_ids)
+            self._treatments = self.treatments.loc[relevant].copy()
+        else:
+            self._tracks = self.tracks.loc[
+                pd.to_numeric(self.tracks["track_id"], errors="coerce").isin(track_ids)
+            ].copy()
+            self._treatments = self.treatments.loc[
+                pd.to_numeric(self.treatments["track_id"], errors="coerce").isin(track_ids)
+            ].copy()
 
     @property
     def block_ids(self) -> tuple[int, ...]:
