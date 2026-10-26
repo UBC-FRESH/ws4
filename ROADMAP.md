@@ -64,7 +64,7 @@ exists and the maintainer approves it.
 | P59 LiDAR in the web UI | #417 | `feature/p59-lidar-ui` | complete |
 | P60 Harden hydrology use with validation evidence | #415 | `feature/p60-closeout` | complete |
 | P61 Carbon and libcbm in the web UI | #430 | `feature/p61-carbon-ui` | complete |
-| P62 Harden the hydrology consumer and explicit road/culvert exposure | #437 | `feature/p62-hydrology-consumer` | pr-open |
+| P62 Harden the hydrology consumer and explicit road/culvert exposure | #437 | `feature/p62-hydrology-consumer` | complete |
 | P63 UI foundation for desktop and iPad landscape | #442 | `feature/p63-ui-foundation` | complete |
 | P64 Patchworks-style target charts | #456 | `feature/p64-target-charts` | complete |
 | P65 Editable target charts | #464 | `feature/p65-editable-targets` | complete |
@@ -1900,7 +1900,7 @@ Acceptance:
 
 Parent issue: #437
 Branch: `feature/p62-hydrology-consumer`
-Status: pr-open
+Status: complete
 
 Goal: make the WS4 hydrology consumer fail closed when evidence is incomplete,
 and add an explicit road/culvert exposure input by watershed and period. This is
@@ -1909,7 +1909,8 @@ data-blocked in FEMIC #383; Seymour depends on FEMIC #388 and has no reviewed
 bundle yet.
 
 Design note: `notes/design/ws4-hydrology-consumer-hardening.md`.
-Closeout report: `notes/reports/p62-closeout.md`.
+Closeout: pull request #468 squash-merged as `55f7fdf`; the phase report is
+`notes/reports/p62-closeout.md`.
 
 - [x] P62.1 Re-scope P62 and record the consumer boundary (#449)
   - [x] Rewrite the parent issue and add the phase to the roadmap.

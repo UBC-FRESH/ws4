@@ -6,7 +6,7 @@ Pull request: #468, `feature/p62-hydrology-consumer` into `main`
 Evidence head: `0d59e9d` (P62.5), plus the `origin/main` merge `0be35ad`
 Report commit: the commit that adds this report. Its CI run is posted on #468.
 Date: 2026-10-26
-Status: queued for approval. Not merged.
+Status: merged on 2026-10-26 as `55f7fdf`.
 
 ## Recommendation
 
@@ -77,6 +77,7 @@ and on #468.
 | Run ID | Head commit | Conclusion | Notes |
 | --- | --- | --- | --- |
 | 40397685253 | `e319dce` | success | Quality gates, pre-commit parity, clean-checkout contract, green dashboard summary, and notebook outputs all passed. |
+| 40407187849 | `34aec2b` | success | Final pre-merge run after merging `origin/main`; all five jobs passed. |
 
 ## 5. Deviations
 
