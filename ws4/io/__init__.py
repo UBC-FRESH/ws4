@@ -1,6 +1,7 @@
 """Readers for recipes and inventories."""
 
 from .hydrology import (
+    HYDROLOGY_READINESS_POLICIES,
     FemicFloodRiskRow,
     FemicFloodRiskTable,
     FemicHydrologyArtifact,
@@ -38,6 +39,7 @@ from .lidar import (
 )
 
 __all__ = [
+    "HYDROLOGY_READINESS_POLICIES",
     "CanopyMappingResult",
     "FemicFloodRiskRow",
     "FemicFloodRiskTable",
@@ -59,6 +61,7 @@ __all__ = [
     "LidarPolygonSummary",
     "assess_femic_hydrology_readiness",
     "bundle_pin",
+    "enforce_hydrology_readiness",
     "hydrology_bundle_pin",
     "integrate_lidar_mapping_into_dataset",
     "load_femic_hydrology_bundle",

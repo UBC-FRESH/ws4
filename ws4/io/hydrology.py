@@ -42,6 +42,11 @@ FEMIC_MODEL_CARD_REVIEW_STATUSES: tuple[str, ...] = (
     "reviewed",
     "reviewed_with_conditions",
 )
+HYDROLOGY_READINESS_POLICIES: tuple[str, ...] = (
+    "allow_provisional",
+    "require_reviewed",
+    "require_ready",
+)
 HYDROLOGY_CROSSWALK_REVIEW_STATUSES: tuple[str, ...] = (
     "not_reviewed",
     "review_pending",
@@ -772,6 +777,49 @@ def assess_femic_hydrology_readiness(
         caveats=caveats,
         evidence_sha256=f"hydro-evidence-{digest[:16]}",
     )
+
+
+def enforce_hydrology_readiness(
+    readiness: FemicHydrologyReadiness,
+    *,
+    policy: str = "allow_provisional",
+    allow_tail_failures: bool = False,
+) -> None:
+    """Enforce a readiness policy for screening or optimization.
+
+    Parameters
+    ----------
+    readiness : FemicHydrologyReadiness
+        Evidence report.
+    policy : str, optional
+        ``allow_provisional`` (default), ``require_reviewed``, or
+        ``require_ready``.
+    allow_tail_failures : bool, optional
+        Permit a tail-check block only under ``allow_provisional``. This is an
+        explicit risk acceptance, not a claim that the fit is safe.
+
+    Raises
+    ------
+    FemicHydrologyError
+        If the evidence does not satisfy the policy.
+    """
+    if policy not in HYDROLOGY_READINESS_POLICIES:
+        raise FemicHydrologyError(f"Unsupported readiness policy {policy!r}.")
+    if readiness.status == "blocked":
+        if not allow_tail_failures or policy != "allow_provisional":
+            raise FemicHydrologyError(
+                "Tail-check failures block hydrology use; an explicit "
+                "allow_tail_failures override under allow_provisional is required."
+            )
+        return
+    if policy == "allow_provisional":
+        return
+    if policy == "require_reviewed":
+        if readiness.status not in ("ready", "conditionally_ready"):
+            raise FemicHydrologyError(f"Readiness status {readiness.status!r} is not reviewed.")
+        return
+    if policy == "require_ready" and readiness.status != "ready":
+        raise FemicHydrologyError(f"Readiness status {readiness.status!r} is not fully ready.")
 
 
 @dataclass(frozen=True)

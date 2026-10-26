@@ -34,9 +34,11 @@ from .disturbance import (
     summarize_disturbance_events,
 )
 from .io.hydrology import (
+    HYDROLOGY_READINESS_POLICIES,
     FemicHydrologyError,
     assess_femic_hydrology_readiness,
     bundle_pin,
+    enforce_hydrology_readiness,
     load_femic_hydrology_bundle,
     load_hydrology_crosswalk,
     load_hydrology_mapping,
@@ -1358,10 +1360,26 @@ def hydrology_screen(
     allow_refused: bool = typer.Option(
         False, "--allow-refused", help="Write inside-domain rows plus refusals"
     ),
+    readiness_policy: str = typer.Option(
+        "allow_provisional",
+        "--readiness-policy",
+        help="Readiness policy: " + ", ".join(HYDROLOGY_READINESS_POLICIES),
+    ),
+    allow_tail_failures: bool = typer.Option(
+        False,
+        "--allow-tail-failures",
+        help="Explicitly permit tail-check-blocked evidence under allow_provisional",
+    ),
 ) -> None:
     """Screen a schedule against FEMIC response and flood-risk rows."""
     try:
         bundle = load_registered_femic_hydrology_bundle(dataset)
+        readiness = assess_femic_hydrology_readiness(bundle)
+        enforce_hydrology_readiness(
+            readiness,
+            policy=readiness_policy,
+            allow_tail_failures=allow_tail_failures,
+        )
         loaded_mapping = load_hydrology_mapping(mapping)
         supplied: dict[str, float] = {}
         if covariates is not None:

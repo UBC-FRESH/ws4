@@ -2797,3 +2797,14 @@ issue comments.
   Eight new tests cover missing, provisional, blocked, reviewed, conditional,
   malformed/mismatched, deterministic, and CLI paths. Dashboard **GREEN**
   (lint, format, types, 121.43 s tests, validator, docs, docstrings).
+
+- P59.2: added readiness gating for hydrology screening and optimization.
+  `enforce_hydrology_readiness` implements `allow_provisional`,
+  `require_reviewed`, and `require_ready`; tail-check blocks refuse under every
+  policy, with `allow_tail_failures` as an explicit `allow_provisional`-only
+  override. `ws4 hydrology screen` checks the policy before reading the
+  schedule. `FloodRiskModel` checks it at construction, so an optimizer run
+  fails early instead of returning refusal penalties for every schedule. Added
+  `readiness_policy`/`allow_tail_failures` to the flood-screen config and four
+  policy/CLI/optimizer tests. Dashboard **GREEN** (lint, format, types,
+  121.59 s tests, validator, docs, docstrings).

@@ -17,8 +17,11 @@ from pathlib import Path
 import pandas as pd
 
 from ws4.io.hydrology import (
+    HYDROLOGY_READINESS_POLICIES,
     FemicHydrologyError,
     HydrologyMapping,
+    assess_femic_hydrology_readiness,
+    enforce_hydrology_readiness,
     load_hydrology_mapping,
     load_registered_femic_hydrology_bundle,
     screen_schedule_flood_risk,
@@ -46,12 +49,19 @@ class FloodScreenConfig:
         Maximum feature difference allowed when selecting a response scenario.
     refusal_penalty : float
         Objective penalty applied when a schedule is refused.
+    readiness_policy : str
+        ``allow_provisional`` (default), ``require_reviewed``, or
+        ``require_ready``.
+    allow_tail_failures : bool
+        Permit a tail-check block only under ``allow_provisional``.
     """
 
     mapping_path: Path
     covariates: dict[str, float]
     scenario_tolerance: float
     refusal_penalty: float
+    readiness_policy: str
+    allow_tail_failures: bool
 
 
 class FloodRiskModel:
@@ -70,6 +80,12 @@ class FloodRiskModel:
         self.config = load_flood_screen_config(config_path)
         self.bundle = load_registered_femic_hydrology_bundle(self.dataset_dir)
         self.mapping: HydrologyMapping = load_hydrology_mapping(self.config.mapping_path)
+        self.readiness = assess_femic_hydrology_readiness(self.bundle)
+        enforce_hydrology_readiness(
+            self.readiness,
+            policy=self.config.readiness_policy,
+            allow_tail_failures=self.config.allow_tail_failures,
+        )
         self.mapping_manifest_path = (
             self.config.mapping_path / "hydrology_mapping.json"
             if self.config.mapping_path.is_dir()
@@ -226,11 +242,21 @@ def load_flood_screen_config(path: Path) -> FloodScreenConfig:
     )
     if penalty <= 0:
         raise FloodRiskRefusalError("Flood-screen refusal_penalty must be positive.")
+    readiness_policy = str(payload.get("readiness_policy", "allow_provisional"))
+    if readiness_policy not in HYDROLOGY_READINESS_POLICIES:
+        raise FloodRiskRefusalError(
+            f"Unsupported flood-screen readiness_policy {readiness_policy!r}."
+        )
+    allow_tail = payload.get("allow_tail_failures", False)
+    if not isinstance(allow_tail, bool):
+        raise FloodRiskRefusalError("Flood-screen allow_tail_failures must be boolean.")
     return FloodScreenConfig(
         mapping_path=mapping_path,
         covariates=covariates,
         scenario_tolerance=tolerance,
         refusal_penalty=penalty,
+        readiness_policy=readiness_policy,
+        allow_tail_failures=allow_tail,
     )
 
 

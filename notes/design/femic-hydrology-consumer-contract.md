@@ -142,3 +142,24 @@ digest is deterministic over the bundle pin and evidence summary.
 P59.1 only reports. A later task decides whether screening/optimizer use
 requires `ready`, an explicit provisional override, or a tail-check-specific
 policy.
+
+## P59.2 readiness-policy decision
+
+`enforce_hydrology_readiness` maps evidence to use:
+
+- `allow_provisional` (default) allows all non-blocked evidence and records the
+  warnings; a tail-check block still refuses.
+- `require_reviewed` allows `ready` and `conditionally_ready`.
+- `require_ready` allows `ready` only.
+
+A tail-check block refuses under every policy. `allow_tail_failures` only works
+with `allow_provisional` and is recorded as an explicit risk acceptance, not as
+a clean fit.
+
+The screen CLI checks the policy before reading the schedule. `FloodRiskModel`
+checks it in its constructor, so an optimizer run fails before the search
+rather than pricing every schedule with a refusal penalty.
+
+The default remains `allow_provisional` for compatibility with the P57
+screening handoff. Operational use should use `require_reviewed` or
+`require_ready` once a reviewed model card exists.

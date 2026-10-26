@@ -165,6 +165,43 @@ reported as missing; it is never treated as approval. The P59.1 command does
 not refuse screening or optimization; a later policy task decides how the
 evidence gates use.
 
+Readiness Policies
+-------------------
+
+P59.2 gates use on the readiness report:
+
+- ``allow_provisional`` (default): allow missing/provisional evidence with the
+  recorded warnings, but a tail-check block still refuses.
+- ``require_reviewed``: allow ``ready`` or ``conditionally_ready`` only.
+- ``require_ready``: allow ``ready`` only.
+
+A tail-check block refuses under every policy. The only override is
+``--allow-tail-failures`` with ``allow_provisional``; it is an explicit risk
+acceptance, not a claim that the fit is safe.
+
+.. code-block:: bash
+
+   ws4 hydrology screen ... --readiness-policy require_reviewed
+   ws4 hydrology screen ... --allow-tail-failures
+
+The flood-screen config accepts the same policy:
+
+.. code-block:: json
+
+   {
+     "schema_version": "ws4.hydrology.flood_screen.v1",
+     "mapping": "build/hydrology_mapping",
+     "covariates": {},
+     "scenario_tolerance": 0.05,
+     "refusal_penalty": 1000000000000.0,
+     "readiness_policy": "require_reviewed",
+     "allow_tail_failures": false
+   }
+
+``FloodRiskModel`` enforces the policy when it is constructed, so an optimizer
+run with disallowed evidence fails early with a clear message instead of
+returning refusal penalties for every schedule.
+
 Mapping WS4 Support
 --------------------
 
