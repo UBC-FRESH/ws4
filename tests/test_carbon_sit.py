@@ -430,6 +430,44 @@ def test_multi_boundary_config_uses_separate_mapping(tmp_path: Path) -> None:
     }
 
 
+def test_multi_boundary_inventory_splits_area_and_events(tmp_path: Path) -> None:
+    """A track with two package boundaries is split by its inventory shares."""
+    from dataclasses import replace
+
+    package = _write_package(tmp_path / "package")
+    tables = {name: frame.copy() for name, frame in package.tables.items()}
+    tables["boundaries"] = pd.DataFrame(
+        {
+            "admin_boundary": ["British Columbia", "British Columbia"],
+            "eco_boundary": ["Montane Cordillera", "Pacific Maritime"],
+        }
+    )
+    inventory = tables["inventory"].copy()
+    inventory["eco_boundary"] = ["Montane Cordillera", "Pacific Maritime"]
+    extra = inventory.loc[inventory["track_name"] == "track2"].copy()
+    extra["eco_boundary"] = "Montane Cordillera"
+    inventory = pd.concat([inventory, extra], ignore_index=True)
+    tables["inventory"] = inventory
+    track_map = tables["track_carbon_map"].copy()
+    track_map.loc[track_map["track_name"] == "track2", "eco_boundary"] = "Pacific Maritime"
+    tables["track_carbon_map"] = track_map
+    package = replace(package, tables=tables)
+    dataset = _write_dataset(tmp_path / "dataset")
+    schedule = pd.DataFrame({"block_id": [2], "treatment": ["fire"], "offset": [0]})
+
+    compiled = build_sit_tables(package, dataset, schedule)
+
+    track2_inventory = compiled.inventory.loc[compiled.inventory["track"] == "track2"]
+    assert track2_inventory["area"].sum() == pytest.approx(2.0)
+    assert track2_inventory.shape[0] == 2
+    assert set(track2_inventory["eco_boundary"]) == {
+        "Montane Cordillera",
+        "Pacific Maritime",
+    }
+    assert compiled.events["target"].sum() == pytest.approx(2.0)
+    assert compiled.events.shape[0] == 2
+
+
 def test_multi_boundary_libcbm_run(tmp_path: Path) -> None:
     """libcbm accepts the per-track admin/eco spatial-unit mapping."""
     pytest.importorskip("libcbm")
