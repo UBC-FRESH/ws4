@@ -2786,3 +2786,8 @@ issue comments.
   parent #395 are closed with this merge cited. The next recommendation is a
   public-watershed pilot/tail-check hardening phase, or FHOPS Phase 15 after its
   P14 LidarBC phase merges.
+
+- P55.1: updated the 0.2.0 release notes for the merged P52 LiDAR, P58 carbon, P57 hydrology,
+  P56 disturbance, and P46 route-event work; removed the stale "P51/P52 not in 0.2.0" gap; added
+  the `lidar` and `carbon` install extras; recorded phase verification evidence and the remaining
+  carbon/hydrology/LiDAR limits. Added the Phase 55 roadmap section and tracker row. No tag.
