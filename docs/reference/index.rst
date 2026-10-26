@@ -28,6 +28,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - The FEMIC carbon package contract, its tables, and the track-name join.
    * - :doc:`dhi`
      - Dynamic Habitat Index ingest, account semantics, provenance, and web layer.
+   * - :doc:`structure-habitat`
+     - The published Coops et al. structure index, required metrics, accounts, and gaps.
    * - :doc:`performance`
      - The measured figures and how to reproduce them.
    * - :doc:`web`
@@ -52,6 +54,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    roads
    carbon
    dhi
+   structure-habitat
    performance
    web
    femic-lidar

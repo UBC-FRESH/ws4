@@ -47,6 +47,7 @@ from ..spread.accounts import (
     load_block_coordinates,
     spread_account_values,
 )
+from ..structure_habitat import StructureHabitatAccount
 from .curve import CurveTable
 from .kernels import HAVE_NUMBA, ProductKernel
 
@@ -1073,6 +1074,7 @@ class Simulator:
         spread_edges: Sequence[tuple[int, int, float]] = (),
         spread_points: Mapping[int, Point] | None = None,
         dhi_account: DhiAccount | None = None,
+        structure_habitat_account: StructureHabitatAccount | None = None,
     ) -> pd.DataFrame:
         """Replay a schedule and return the account values, without writing files.
 
@@ -1105,6 +1107,10 @@ class Simulator:
         dhi_account : DhiAccount or None, optional
             Static Dynamic Habitat Index values per block. When given, the
             simulator records the DHI total and area-weighted mean for the
+            blocks not yet treated. The account does not change growth.
+        structure_habitat_account : StructureHabitatAccount or None, optional
+            Static Coops et al. (2016) structure habitat metrics per block. When
+            given, the simulator records component means and class areas for the
             blocks not yet treated. The account does not change growth.
 
         Returns
@@ -1142,6 +1148,16 @@ class Simulator:
                 {"offset": -1, "account": account, "value": value}
                 for account, value in dhi_account.account_values(dhi_area).items()
             )
+        structure_area: dict[int, float] = {}
+        if structure_habitat_account is not None:
+            structure_area = self._spread_block_area()
+            structure_habitat_account.validate(structure_area)
+            records.extend(
+                {"offset": -1, "account": account, "value": value}
+                for account, value in structure_habitat_account.account_values(
+                    structure_area
+                ).items()
+            )
         disturbed_blocks: set[int] = set()
         for offset in range(years):
             products_before = len(self._product_values)
@@ -1152,6 +1168,13 @@ class Simulator:
                     {"offset": offset, "account": account, "value": value}
                     for account, value in dhi_account.account_values(
                         dhi_area, excluded_blocks=disturbed_blocks
+                    ).items()
+                )
+            if structure_habitat_account is not None:
+                records.extend(
+                    {"offset": offset, "account": account, "value": value}
+                    for account, value in structure_habitat_account.account_values(
+                        structure_area, excluded_blocks=disturbed_blocks
                     ).items()
                 )
             produced: dict[str, float] = {}
@@ -1215,6 +1238,7 @@ class Simulator:
         core_buffer_m: float | None = None,
         min_core_area_ha: float | None = None,
         dhi_account: DhiAccount | None = None,
+        structure_habitat_account: StructureHabitatAccount | None = None,
     ) -> pd.DataFrame:
         """Replay a schedule for the given horizon and write the run outputs.
 
@@ -1269,6 +1293,10 @@ class Simulator:
             Static Dynamic Habitat Index values per block. When given, the DHI
             accounts are added to ``account_values.csv`` and the run-local
             values/metadata are written for reports and the web API.
+        structure_habitat_account : StructureHabitatAccount or None, optional
+            Static Coops et al. (2016) structure metrics per block. When given,
+            the structure accounts are added to ``account_values.csv`` and the
+            run-local stand table, landscape summary, and metadata are written.
         block_coordinates : Path or None, optional
             A CSV of block centroids (a block id, an ``x`` and a ``y``), which a spread bearing
             is read from. Required with ``spread_accounts``.
@@ -1327,6 +1355,7 @@ class Simulator:
             spread_points=points,
             edges=graph,
             dhi_account=dhi_account,
+            structure_habitat_account=structure_habitat_account,
         )
         if ledger is not None and route_accounts:
             values = resolve_account_values(
@@ -1345,6 +1374,8 @@ class Simulator:
         values.to_csv(out_dir / "account_values.csv", index=False)
         if dhi_account is not None:
             dhi_account.write(out_dir)
+        if structure_habitat_account is not None:
+            structure_habitat_account.write(out_dir, self._spread_block_area())
         pd.DataFrame(self._product_values, columns=["offset", "account", "value"]).to_csv(
             out_dir / "product_values.csv", index=False
         )

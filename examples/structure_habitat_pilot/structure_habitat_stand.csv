@@ -1,0 +1,5 @@
+block_id,height_p95_m,cover_gt_1_37_pct,complexity_sd_gt_1_37_m,height_class,cover_class,complexity_class,class_code,class_label
+1,8.0,20.0,2.0,0,0,0,0,H0-C0-K0
+2,15.0,45.0,4.0,1,1,1,13,H1-C1-K1
+3,25.0,70.0,6.0,2,2,2,26,H2-C2-K2
+4,35.0,90.0,8.0,2,2,2,26,H2-C2-K2

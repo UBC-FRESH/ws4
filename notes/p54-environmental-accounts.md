@@ -62,3 +62,18 @@ reference pattern; reuse it rather than inventing a second account surface.
   20 ha after blocks 1 and 3 are treated.
 - Limit: the public product is a 2003-2022 composite, not an annual series. The
   trajectory is schedule-driven. No regrowth, species model, or objective change.
+
+## P54.2 implementation record
+
+- Definition: Coops et al. (2016) three-component structure index: P95 first-return
+  height, first-return cover above 1.37 m, and SD of first-return heights above
+  1.37 m. Breaks are 10/20 m, 33/66%, and 3/5 m. The paper has no weights; WS4
+  records the equal-component statement and does not invent weights.
+- Coverage: `ws4 shi diagnose` reports missing metrics and CHM proxies without
+  substitution. The real TFL 6 bundle has CHM P95 and cover >=2 m, not the exact
+  first-return metrics, so the index is not computable there.
+- Accounts: `feature.SHI.height`, `.cover`, `.complexity` (area-weighted means),
+  `.area`, and component class areas. `ws4 report` writes
+  `report_structure_habitat.csv` with the caveat.
+- Pilot: four synthetic exact-metric blocks; DHI comparison is exploratory n=4.
+  The fixture is not ecological evidence.

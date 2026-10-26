@@ -2995,3 +2995,23 @@ issue comments.
   `python scripts/dashboard.py` -> **GREEN** (lint 0.07 s, format 0.09 s,
   types 0.82 s, tests 159.11 s, validator 0.90 s, docs 4.82 s,
   docstrings 4.34 s).
+
+- P54.2: added the published Coops et al. (2016) forest structure habitat index.
+  The exact definition is P95 first-return height, percentage of first returns
+  above 1.37 m, and the SD of first-return heights above 1.37 m, with breaks at
+  10/20 m, 33/66%, and 3/5 m. The paper has no weights; WS4 records the
+  equal-component statement instead of inventing coefficients. `ws4 shi ingest`
+  writes a stand table and versioned metadata; `ws4 shi diagnose` reports
+  present, missing, and proxy metrics without substitution; `ws4 shi compare`
+  reports Pearson/Spearman agreement with DHI bands and records disagreement.
+  `ws4 simulate --structure-values/--structure-metadata` records
+  `feature.SHI.height`, `.cover`, `.complexity`, `.area`, and component class
+  areas; `ws4 report` adds `report_structure_habitat.csv` with the caveat. The
+  synthetic four-block fixture moves from 40 ha to 20 ha under the harvest
+  schedule; the real TFL 6 FEMIC bundle reports `index_computable: false`
+  because its CHM fields are not the required first-return metrics. Report:
+  `notes/reports/p54.2-structure-habitat.md`.
+  Verification: `python -m pytest tests/test_structure_habitat.py -q --no-cov`
+  -> 11 passed; `python scripts/dashboard.py` -> **GREEN** (lint 0.07 s,
+  format 0.09 s, types 7.66 s, tests 170.62 s, validator 0.80 s, docs 19.60 s,
+  docstrings 4.45 s).

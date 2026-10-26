@@ -1,0 +1,15 @@
+{
+  "index_computable": false,
+  "message": "Structure habitat index is not computable; missing required metrics: height_p95_m, cover_gt_1_37_pct, complexity_sd_gt_1_37_m. Proxies are reported but not substituted.",
+  "missing": [
+    "height_p95_m",
+    "cover_gt_1_37_pct",
+    "complexity_sd_gt_1_37_m"
+  ],
+  "present": [],
+  "proxies": {
+    "complexity_sd_gt_1_37_m": "no first-return height standard deviation field is available",
+    "cover_gt_1_37_pct": "chm_cover_ge_2 uses a 2 m threshold, not 1.37 m",
+    "height_p95_m": "chm_p95 is CHM-derived, not first-return P95"
+  }
+}
