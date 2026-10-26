@@ -2943,3 +2943,12 @@ issue comments.
   single phase pull request #468 for approval. CI run 40397685253 passed all
   jobs. No merge, tag, release, or settings change was made. Dashboard
   **GREEN**.
+
+- P65.1/P65.2: made the target charts editable. The chart now reconciles a period to its target
+  row, creates missing rows from account defaults, supports active/inactive toggles, exact min/max
+  entry, vertical drag, per-period or all-period application, clear-bound, dirty state, and save
+  through the existing validated targets JSON. Source-cell, target-row, chart, and target-table
+  updates stay in sync after save.
+- P65.3: verified c5 single-period edit/save/reload, all-period min creation, drag edit, and
+  inactive toggle; verified TSA 46 10-period edit/save/reload. `check_target_editing.py` exits 0.
+  Dashboard **GREEN**.
