@@ -2,7 +2,7 @@
 
 Phase: P64, Patchworks-style target charts
 Parent issue: #456
-Pull request: this P64 PR
+Pull request: #461
 Status: queued for approval. Not merged.
 Date: 2026-10-26
 
