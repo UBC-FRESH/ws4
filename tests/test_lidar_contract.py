@@ -643,6 +643,44 @@ def test_integrate_lidar_fields_into_dataset(tmp_path: Path) -> None:
     assert not [name for name in lidar_columns if name.endswith(("_x", "_y"))]
 
 
+def test_integrate_lidar_fields_into_multitrack_blocks(tmp_path: Path) -> None:
+    """A block may appear on multiple track rows in a valid dataset."""
+
+    bundle_dir = _bundle(tmp_path)
+    dataset = _compiled_dataset(tmp_path)
+    register_femic_lidar_bundle(dataset, bundle_dir)
+    fragments = _fragments(tmp_path)
+    mapping = map_femic_lidar_to_fragments(
+        load_registered_femic_lidar_bundle(dataset),
+        fragments,
+        generated_utc="2026-10-25T00:00:00+00:00",
+    )
+    paths = write_lidar_mapping(mapping, tmp_path / "mapping")
+
+    blocks = pd.read_parquet(dataset / "blocks.parquet")
+    extra_track = blocks.iloc[[0]].copy()
+    extra_track["track_id"] = 2
+    extra_track["offset"] = 0
+    pd.concat([blocks, extra_track], ignore_index=True).to_parquet(
+        dataset / "blocks.parquet",
+        index=False,
+    )
+
+    result = integrate_lidar_mapping_into_dataset(
+        dataset,
+        paths["fragments"],
+        block_mapping_path=paths["blocks"],
+        generated_utc="2026-10-25T00:00:00+00:00",
+    )
+
+    integrated = pd.read_parquet(dataset / "blocks.parquet")
+    assert result.block_rows == 3
+    assert len(integrated) == 3
+    block_10 = integrated.loc[integrated["block_id"] == 10, "lidar_slope_mean"]
+    assert len(block_10) == 2
+    assert block_10.notna().all()
+
+
 def test_integration_rejects_unknown_ids_and_missing_registration(tmp_path: Path) -> None:
     bundle_dir = _bundle(tmp_path)
     dataset = _compiled_dataset(tmp_path)

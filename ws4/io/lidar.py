@@ -1507,6 +1507,7 @@ def integrate_lidar_mapping_into_dataset(
         fragment_mapping,
         "fragment_id",
         overwrite=overwrite,
+        allow_many_left=False,
     )
     block_fields: tuple[str, ...] = ()
     if block_mapping is not None:
@@ -1515,6 +1516,7 @@ def integrate_lidar_mapping_into_dataset(
             block_mapping,
             "block_id",
             overwrite=overwrite,
+            allow_many_left=True,
         )
     _write_parquet_atomic(fragments, dataset_root / "fragments.parquet")
     _write_parquet_atomic(blocks, dataset_root / "blocks.parquet")
@@ -1565,6 +1567,7 @@ def _merge_mapping(
     key: str,
     *,
     overwrite: bool,
+    allow_many_left: bool = False,
 ) -> tuple[tuple[str, ...], pd.DataFrame]:
     excluded = {key, "block_id", "area_ha"}
     field_map = {column: f"lidar_{column}" for column in mapping.columns if column not in excluded}
@@ -1594,7 +1597,10 @@ def _merge_mapping(
             + ", ".join(str(value) for value in sorted(unknown)[:5])
         )
     subset = mapping[[key, *field_map]].rename(columns=field_map)
-    merged = table.merge(subset, on=key, how="left", validate="one_to_one")
+    if allow_many_left:
+        merged = table.merge(subset, on=key, how="left", validate="many_to_one")
+    else:
+        merged = table.merge(subset, on=key, how="left", validate="one_to_one")
     return tuple(field_map.values()), merged
 
 
