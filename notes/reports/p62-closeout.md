@@ -3,7 +3,7 @@
 Phase: P62 Harden the hydrology consumer and explicit road/culvert exposure
 Parent issue: #437
 Pull request: #468, `feature/p62-hydrology-consumer` into `main`
-Evidence head: `0d59e9d` (P62.5), plus the `origin/main` merge `083c143`
+Evidence head: `0d59e9d` (P62.5), plus the `origin/main` merge `0be35ad`
 Report commit: the commit that adds this report. Its CI run is posted on #468.
 Date: 2026-10-26
 Status: queued for approval. Not merged.
@@ -64,7 +64,7 @@ At `0d59e9d` (P62.5):
 - `python scripts/dashboard.py`: GREEN (lint, format, types, tests, validator, docs, docstrings).
 - `python scripts/check_workflow.py`: 0 errors, 0 warnings.
 
-After merging `origin/main` at `083c143`:
+After merging `origin/main` at `0be35ad`:
 
 - `python scripts/dashboard.py`: GREEN.
 - `python scripts/check_workflow.py`: 0 errors, 0 warnings.
@@ -83,7 +83,7 @@ and on #468.
 | Deviation | Cause | Remedy |
 | --- | --- | --- |
 | P62 re-scoped from a Chapman/Seymour pilot. | Chapman is closed/data-blocked; Seymour has no reviewed FEMIC bundle. | Kept the phase number, recorded the boundary, and made P62 consumer hardening only. |
-| P62 is out of numeric order. | P63 and P64 landed while the P62 branch was active. | Kept P62 reserved by #437; merged `origin/main` as `083c143` and kept P62/P63/P64 roadmap and changelog sections. |
+| P62 is out of numeric order. | P63, P64, and P65 landed while the P62 branch was active. | Kept P62 reserved by #437; merged `origin/main` as `0be35ad` and kept P62/P63/P64/P65 roadmap and changelog sections. |
 | No real watershed screen. | The required reviewed bundle, crosswalk, receptor, gauge, and DEM evidence do not exist. | Used synthetic fixtures only; recorded the data preconditions in the design note. |
 | Optimizer-integrated exposure is not implemented. | A fixed table bound to one schedule cannot represent every optimizer candidate. | Refused the config and recorded the follow-up in `notes/backlog.md`. |
 | No hydrologist review. | No reviewer record exists. | Preserved the screening-only and review-required caveats. |
