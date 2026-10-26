@@ -2,7 +2,7 @@
 
 Phase: P66, Assistant panel visibility
 Parent issue: #473
-Pull request: this P66 PR
+Pull request: #476
 Status: queued for approval. Not merged.
 Date: 2026-10-26
 
