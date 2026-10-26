@@ -37,6 +37,7 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `design/ws4-builder-perf.md` — faster matrix builder (spike).
 - `design/ws4-watch.md` — the live target-window watcher (`ws4 watch`).
 - `design/ws4-optimizer-core.md` — event chains and per-move objective deltas (proposed).
+- `design/ws4-hydrology-consumer-hardening.md` — P62 preflight, exposure, and optimizer-boundary plan.
 - `adr/0001-fragment-compilation.md` — fragments are the compilation unit; blocks are a runtime aggregate.
 - `adr/0002-columnar-matrix-dataset.md` — the compiled dataset is versioned and columnar.
 - `adr/0003-spatial-structure-first-class.md` — spatial structure is part of the model.

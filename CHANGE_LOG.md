@@ -2882,3 +2882,12 @@ issue comments.
   #443/#444/#445/#446 closed; status set complete. The four-workspace shell, URL/keyboard
   navigation, Data sub-navigation, and iPad landscape evidence are recorded in
   `notes/reports/p63-closeout.md`.
+
+## 2026-10-26
+
+- P62.1: re-scoped P62 from a Chapman/Seymour watershed pilot to a bounded
+  hydrology consumer-hardening phase. Rewrote parent issue #437, added the
+  Phase 62 roadmap section and issue-tracker row, created P62.1-P62.6
+  (#449-#454), and wrote `notes/design/ws4-hydrology-consumer-hardening.md`.
+  Chapman remains closed/data-blocked; Seymour remains an upstream dependency on
+  FEMIC #388. No production code and no watershed result. Dashboard: **GREEN**.
