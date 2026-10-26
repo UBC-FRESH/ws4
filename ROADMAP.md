@@ -77,7 +77,7 @@ exists and the maintainer approves it.
 | P52 Consume FEMIC-compiled LidarBC products | #317 | `feature/p52-lidar-products` | complete |
 | P57 Consume FEMIC hydrology response bundles | #395 | `feature/p57-hydrology-response` | complete |
 | P46 Cached route event ledger | #382 | `feature/p46-route-events` | complete |
-| P54 Environmental accounts (habitat and resilience) | #375 | `feature/p54-environmental-accounts` | active |
+| P54 Environmental accounts (habitat and resilience) | #375 | `feature/p54-environmental-accounts` | complete |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 P51 carbon (`#357`), P52 (`#317`), and P53 (`#371`) are tracked by their phase
@@ -1666,7 +1666,7 @@ Acceptance:
 
 Parent issue: #375
 Branch: `feature/p54-environmental-accounts`
-Status: active
+Status: complete
 
 Goal: make biodiversity, habitat structure, and landscape resilience first-class
 ws4 accounts, with units, provenance, and a report/web surface. The phase does
