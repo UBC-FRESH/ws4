@@ -3,7 +3,7 @@
 Phase: P65, Editable target charts
 Parent issue: #464
 Pull request: #469
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-26 as `342ac3b`.
 Date: 2026-10-26
 
 ## Recommendation
