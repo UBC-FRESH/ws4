@@ -1784,6 +1784,12 @@ tail-check state, and prepare an explicit policy for provisional use.
   - [x] Add `ws4 hydrology readiness` direct/dataset modes.
   - [x] Add tests and fixture variants.
   - [x] Add design note, reference docs, roadmap, and changelog.
+- [ ] P59.2 Gate hydrology screening and optimization on readiness evidence (#423)
+  - [ ] Add readiness policy constants and enforcement helper.
+  - [ ] Extend screen CLI and flood-screen config.
+  - [ ] Enforce readiness at `FloodRiskModel` construction.
+  - [ ] Add tests for policy/status, CLI, and optimizer refusal.
+  - [ ] Add design note, reference docs, roadmap, and changelog.
 
 Acceptance:
 
