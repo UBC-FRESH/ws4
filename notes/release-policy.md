@@ -33,8 +33,9 @@ The Python package uses **semantic versioning** (`MAJOR.MINOR.PATCH`).
 ## Artifacts and hosting
 
 - Artifacts attach to the GitHub release (`ws4-<version>.tar.gz`, `ws4-<version>-py3-none-any.whl`).
-- Publishing to PyPI is out of scope until an external account is approved; it would be a separate
-  decision with its own credentials.
+- PyPI publication is supported for approved releases. The 0.2.0 release was published on
+  2026-10-26. Credentials are injected at upload time from a secure external file/token and are
+  never committed.
 
 ## Support
 
