@@ -60,7 +60,7 @@ def check(  # pragma: no cover - needs a browser
         page.on("pageerror", lambda exc: errors.append(f"pageerror: {exc}"))
         page.goto(url, wait_until="domcontentloaded", timeout=60000)
         page.wait_for_timeout(wait_ms)
-        page.get_by_role("button", name="Targets").click()
+        page.locator("#ws-plan").click()
         page.wait_for_timeout(500)
         if page.locator(".account-leaf").count() == 0:
             print("the account tree is empty", file=sys.stderr)

@@ -40,6 +40,29 @@ worker writes its own ``telemetry-<island>.jsonl`` while it runs; the run's cano
 ``telemetry.jsonl`` is merged from them after the search, and the live reader follows the worker
 files so it sees the search at the solver's rate rather than behind one writer.
 
+Browser shell
+-------------
+
+The browser shell is organised around four workspaces:
+
+- **Map** — layers, treatment/cumulative views, and block detail.
+- **Plan** — the account browser, target editor, and solve controls.
+- **Results** — Reports, Compare, and Search as nested sections.
+- **Data** — the dataset summary plus LiDAR and Carbon when the selected run/dataset
+  actually has them.
+
+The supported planning surfaces start at **1024×768 in landscape**, including the iPad
+Pro landscape sizes; phone layouts are not a supported target. The primary navigation
+fits inside the sidebar at those widths and the sidebar width scales with the viewport
+instead of staying at a fixed 30 rem. Saved splitter widths are clamped to the current
+viewport.
+
+Run, workspace, sub-section, period, and selected block are reflected in the URL
+(``?run=…&view=…&sub=…&period=…&block=…``), so refresh and browser back/forward restore
+the view. The workspace tabs implement the WAI-ARIA tabs pattern with left/right arrow,
+Home, and End navigation. LiDAR and Carbon are nested Data sections rather than top-level
+tabs; a Data option is hidden when the selected data does not exist.
+
 Behind a proxy
 ---------------
 

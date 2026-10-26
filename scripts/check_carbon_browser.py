@@ -60,7 +60,8 @@ def check(  # pragma: no cover - needs a browser
         if run:
             page.select_option("#run", run)
             page.wait_for_timeout(wait_ms)
-        page.get_by_role("button", name="Carbon").click()
+        page.locator("#ws-data").click()
+        page.locator("#sub-carbon").click()
         page.wait_for_timeout(1200)
         status = page.locator("#carbon-status").inner_text()
         meta = page.locator("#carbon-meta").inner_text()

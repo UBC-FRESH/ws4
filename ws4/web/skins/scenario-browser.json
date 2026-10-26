@@ -3,6 +3,7 @@
   "title": "Scenario browser",
   "panels": [
     "legend",
+    "dataset",
     "lidar",
     "carbon",
     "reports",
