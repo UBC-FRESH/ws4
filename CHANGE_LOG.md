@@ -3033,3 +3033,13 @@ issue comments.
   8 passed; `python scripts/dashboard.py` -> **GREEN** (lint 0.07 s, format
   0.07 s, types 7.14 s, tests 129.22 s, validator 0.68 s, docs 17.69 s,
   docstrings 3.02 s).
+
+- P54 close-out: all three environmental-account children are merged: P54.1
+  DHI #463 as `b0438de`, P54.2 structure habitat #471 as `b4f7caa`, and P54.3
+  spatial resilience #475 as `865bef6`. Parent #375 and tasks #376/#377/#378 are
+  closed. The phase adds `feature.DHI.*`, `feature.SHI.*`, and
+  `resilience.*` accounts, report blocks, the DHI web layer, coverage/gap
+  diagnostics, and the exact Coops et al. (2016) definition without invented
+  weights. No objective, constraint, growth, or solver change. Post-merge
+  dashboard **GREEN** (lint 0.10 s, format 0.12 s, types 29.15 s, tests
+  134.53 s, validator 0.90 s, docs 17.51 s, docstrings 2.98 s).
