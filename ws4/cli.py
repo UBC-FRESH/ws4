@@ -13,6 +13,12 @@ from rich.table import Table
 
 from .build.compiler import build_canonical_dataset
 from .build.legacy import ingest_legacy_matrix
+from .disturbance import (
+    DisturbanceError,
+    events_for_block,
+    load_disturbance_events,
+    summarize_disturbance_events,
+)
 from .io.lidar import (
     FemicLidarError,
     integrate_lidar_mapping_into_dataset,
@@ -666,6 +672,58 @@ def report(
     target_list = load_targets(targets) if targets is not None else []
     write_report(values, target_list, out if out is not None else run)
     print(f"[bold green]Report written[/] → {out if out is not None else run}")
+
+
+@app.command()
+def disturbance(
+    events: Path = typer.Option(
+        ..., "--events", exists=True, help="A femic.disturbance.v1 JSON table"
+    ),
+    block_id: int | None = typer.Option(
+        None, "--block-id", help="Report only events that name this block"
+    ),
+    json_output: bool = typer.Option(False, "--json", help="Emit the summary as JSON"),
+) -> None:
+    """Summarize a FEMIC disturbance table without changing the model."""
+    try:
+        rows = load_disturbance_events(events)
+        if block_id is not None:
+            rows = events_for_block(rows, block_id)
+    except DisturbanceError as error:
+        raise typer.BadParameter(str(error)) from error
+    if not rows:
+        print(f"[yellow]No disturbance events[/] for block {block_id}")
+        return
+    summary = summarize_disturbance_events(rows)
+    if json_output:
+        print(json.dumps(summary, indent=2, sort_keys=True))
+        return
+    table = Table(title="Disturbance events")
+    table.add_column("event")
+    table.add_column("year")
+    table.add_column("type")
+    table.add_column("severity")
+    table.add_column("blocks")
+    table.add_column("area_ha", justify="right")
+    for event in rows:
+        blocks = ", ".join(str(block) for block in event.block_ids) or "-"
+        area = f"{event.area_ha:.1f}" if event.area_ha is not None else "-"
+        table.add_row(
+            event.event_id,
+            str(event.year),
+            event.event_type,
+            event.severity_class,
+            blocks,
+            area,
+        )
+    print(table)
+    affected_blocks = summary["affected_blocks"]
+    block_count = len(affected_blocks) if isinstance(affected_blocks, list) else 0
+    print(
+        f"[bold]events[/]: {summary['event_count']}  "
+        f"[bold]years[/]: {summary['year_min']}-{summary['year_max']}  "
+        f"[bold]blocks[/]: {block_count}"
+    )
 
 
 @app.command()

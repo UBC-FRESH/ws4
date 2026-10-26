@@ -1,0 +1,12 @@
+{
+  "event_id": "fire-2023-001",
+  "event_type": "fire",
+  "year": 2023,
+  "severity_class": "high",
+  "severity_value": 0.82,
+  "confidence": 0.95,
+  "fragment_ids": [1001, 1002],
+  "block_ids": [101],
+  "area_ha": 1200.0,
+  "source_id": "nbac"
+}

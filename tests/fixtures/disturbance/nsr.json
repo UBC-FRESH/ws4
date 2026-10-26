@@ -1,0 +1,12 @@
+{
+  "event_id": "nsr-2022-001",
+  "event_type": "partial_mortality",
+  "year": 2022,
+  "severity_class": "moderate",
+  "severity_value": 0.35,
+  "confidence": 0.7,
+  "fragment_ids": [2001],
+  "block_ids": [201],
+  "area_ha": 45.5,
+  "source_id": "hls-nsr"
+}
