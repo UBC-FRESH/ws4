@@ -2615,3 +2615,15 @@ issue comments.
   numbers. A FEMIC-built fixture bundle (`hydro-response-70f4214e01afe461`)
   validated and inspected successfully through the WS4 CLI. Dashboard **GREEN**
   (lint, format, types, 109.06 s tests, validator, docs, docstrings).
+
+- P57.2: added dataset-level registration for FEMIC hydrology bundles.
+  `register_femic_hydrology_bundle` writes the pin to `metadata.hydrology_products`
+  and `hydrology_products.json` and references the bundle without copying it.
+  `read_registered_femic_hydrology`, `load_registered_femic_hydrology_bundle`,
+  and `validate_registered_femic_hydrology` revalidate bundle id/version,
+  manifest SHA-256, and artifact sizes/checksums. Added
+  `ws4 hydrology register` and `--dataset` modes for `inspect|validate`.
+  Seven new tests cover idempotent registration, relative/external references,
+  tampering, stale manifests, missing datasets, and CLI success/failure.
+  Dashboard **GREEN** (lint, format, types, 111.09 s tests, validator, docs,
+  docstrings).

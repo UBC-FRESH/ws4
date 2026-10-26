@@ -83,8 +83,40 @@ The validator reports warnings for unknown optional roles. It does not infer
 missing watersheds from block IDs, does not repair a producer bundle, and does
 not turn a valid checksum into a hydrologic claim.
 
+Registration
+------------
+
+Register a validated bundle in a compiled dataset:
+
+.. code-block:: bash
+
+   ws4 hydrology register \
+     --dataset build/compiled \
+     --bundle data/femic/hydrology-response-2026.10.0 \
+     --bundle-id hydro-response-example \
+     --bundle-version 2026.10.0
+
+Registration writes the pin to ``manifest.json`` under
+``metadata.hydrology_products`` and to a ``hydrology_products.json`` sidecar.
+The bundle is referenced, not copied. A bundle inside the dataset is stored as a
+relative path; an external bundle keeps its absolute path. Do not copy a private
+bundle into a tracked dataset.
+
+Inspect and validate the registered pin:
+
+.. code-block:: bash
+
+   ws4 hydrology inspect --dataset build/compiled --json
+   ws4 hydrology validate --dataset build/compiled
+
+Revalidation checks the registered ``bundle_id``, ``bundle_version``, manifest
+SHA-256, and every artifact size/checksum. A changed bundle manifest fails even
+if its schema still parses.
+
 CLI
 ---
+
+Direct bundle inspection and validation remain available:
 
 .. code-block:: bash
 
@@ -98,6 +130,7 @@ CLI
 ``validate`` emits a deterministic JSON report by default and exits non-zero on
 an invalid bundle. ``inspect`` prints the bundle pin and artifact roles for a
 valid bundle; an invalid bundle prints the validation report and exits non-zero.
+Pass exactly one of a direct ``BUNDLE`` argument or ``--dataset``.
 
 Flood-Risk Table
 ----------------
@@ -121,6 +154,7 @@ Boundary
 --------
 
 - Use only a pinned, validated bundle.
+- Registration references the bundle; it does not copy, download, or re-run FEMIC.
 - Preserve the producer CRS, units, return periods, caveats, and provenance.
 - Refuse queries outside the recorded applicability domain.
 - Do not use the bundle as a regulatory flood map or design-flood service.

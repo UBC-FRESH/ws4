@@ -1663,12 +1663,12 @@ frequency fitting, or surrogate training.
   - [x] Add `ws4 hydrology inspect|validate` and JSON error reporting.
   - [x] Add contract/failure tests and a synthetic fixture builder.
   - [x] Add the design note, reference docs, roadmap, and changelog entry.
-- [ ] P57.2 Register a pinned FEMIC hydrology bundle in a compiled dataset (#399)
-  - [ ] Add sidecar/registration helpers and bundle-reference resolution.
-  - [ ] Write and read `metadata.hydrology_products` and the sidecar.
-  - [ ] Revalidate a registered bundle against its pin.
-  - [ ] Add `ws4 hydrology register` and dataset `inspect|validate` modes.
-  - [ ] Add tests, design note, reference docs, roadmap, and changelog.
+- [x] P57.2 Register a pinned FEMIC hydrology bundle in a compiled dataset (#399)
+  - [x] Add sidecar/registration helpers and bundle-reference resolution.
+  - [x] Write and read `metadata.hydrology_products` and the sidecar.
+  - [x] Revalidate a registered bundle against its pin.
+  - [x] Add `ws4 hydrology register` and dataset `inspect|validate` modes.
+  - [x] Add tests, design note, reference docs, roadmap, and changelog.
 
 Acceptance:
 

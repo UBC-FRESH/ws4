@@ -13,12 +13,16 @@ import json
 import math
 import re
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 
+from ws4.model.schema import load_manifest
+
 FEMIC_HYDROLOGY_MANIFEST_SCHEMA = "femic.hydrology.response.v1"
 FEMIC_HYDROLOGY_MANIFEST_NAME = "manifest.json"
+FEMIC_HYDROLOGY_SIDECAR_NAME = "hydrology_products.json"
+FEMIC_HYDROLOGY_METADATA_KEY = "hydrology_products"
 FEMIC_HYDROLOGY_RESPONSE_SURFACE_SCHEMA = "femic.hydrology.flood_response.v1"
 FEMIC_HYDROLOGY_FLOOD_RISK_SCHEMA = "femic.hydrology.flood_risk.v1"
 FEMIC_HYDROLOGY_DOMAIN_SCHEMA = "femic.hydrology.domain.v1"
@@ -385,6 +389,215 @@ def bundle_pin(bundle: FemicHydrologyBundle) -> dict[str, object]:
         "consumer_contract": bundle.consumer_contract,
         "caveats": list(bundle.caveats),
     }
+
+
+def register_femic_hydrology_bundle(
+    dataset_dir: Path,
+    bundle_dir: Path,
+    *,
+    expected_bundle_id: str | None = None,
+    expected_bundle_version: str | None = None,
+    registered_utc: str | None = None,
+) -> dict[str, object]:
+    """Register a validated FEMIC hydrology bundle in a compiled dataset.
+
+    Writes the pin to the dataset manifest metadata and a
+    ``hydrology_products.json`` sidecar. The bundle is referenced, not copied.
+
+    Parameters
+    ----------
+    dataset_dir : Path
+        Compiled WS4 dataset directory.
+    bundle_dir : Path
+        FEMIC hydrology bundle root to pin.
+    expected_bundle_id : str | None, optional
+        Required bundle identifier.
+    expected_bundle_version : str | None, optional
+        Required bundle version.
+    registered_utc : str | None, optional
+        Registration timestamp; defaults to the current UTC time.
+
+    Returns
+    -------
+    dict[str, object]
+        Registration record written to the dataset.
+
+    Raises
+    ------
+    FemicHydrologyError
+        If the dataset or bundle cannot be registered.
+    """
+    dataset_root = dataset_dir.expanduser().resolve()
+    manifest_path = dataset_root / FEMIC_HYDROLOGY_MANIFEST_NAME
+    if not manifest_path.is_file():
+        raise FemicHydrologyError(f"Dataset manifest is missing: {manifest_path}")
+    bundle = load_femic_hydrology_bundle(
+        bundle_dir,
+        expected_bundle_id=expected_bundle_id,
+        expected_bundle_version=expected_bundle_version,
+    )
+    try:
+        manifest = load_manifest(dataset_root)
+    except (OSError, ValueError) as exc:
+        raise FemicHydrologyError(f"Unable to read dataset manifest: {exc}") from exc
+    registration: dict[str, object] = {
+        **bundle_pin(bundle),
+        "bundle_dir": _bundle_reference(dataset_root, bundle.bundle_dir),
+        "registered_utc": registered_utc or datetime.now(UTC).isoformat(),
+    }
+    metadata = dict(manifest.metadata)
+    metadata[FEMIC_HYDROLOGY_METADATA_KEY] = registration
+    manifest = manifest.model_copy(update={"metadata": metadata})
+    manifest_path.write_text(manifest.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    sidecar = dataset_root / FEMIC_HYDROLOGY_SIDECAR_NAME
+    sidecar.write_text(
+        json.dumps(registration, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return registration
+
+
+def read_registered_femic_hydrology(dataset_dir: Path) -> dict[str, object] | None:
+    """Read the registered FEMIC hydrology pin from a dataset, if present.
+
+    Parameters
+    ----------
+    dataset_dir : Path
+        Compiled WS4 dataset directory.
+
+    Returns
+    -------
+    dict[str, object] | None
+        Registration record, or ``None`` when the dataset has no pin.
+    """
+    dataset_root = dataset_dir.expanduser().resolve()
+    sidecar = dataset_root / FEMIC_HYDROLOGY_SIDECAR_NAME
+    if sidecar.is_file():
+        try:
+            payload = json.loads(sidecar.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise FemicHydrologyError(f"Invalid hydrology sidecar: {sidecar}") from exc
+        if not isinstance(payload, Mapping):
+            raise FemicHydrologyError(f"Hydrology sidecar must be an object: {sidecar}")
+        return {str(key): item for key, item in payload.items()}
+    manifest_path = dataset_root / FEMIC_HYDROLOGY_MANIFEST_NAME
+    if not manifest_path.is_file():
+        return None
+    try:
+        manifest = load_manifest(dataset_root)
+    except (OSError, ValueError) as exc:
+        raise FemicHydrologyError(f"Unable to read dataset manifest: {exc}") from exc
+    value = manifest.metadata.get(FEMIC_HYDROLOGY_METADATA_KEY)
+    if isinstance(value, Mapping):
+        return {str(key): item for key, item in value.items()}
+    return None
+
+
+def load_registered_femic_hydrology_bundle(
+    dataset_dir: Path,
+) -> FemicHydrologyBundle:
+    """Load and revalidate the hydrology bundle pinned by a dataset.
+
+    Parameters
+    ----------
+    dataset_dir : Path
+        Compiled WS4 dataset directory.
+
+    Returns
+    -------
+    FemicHydrologyBundle
+        Validated bundle referenced by the dataset.
+
+    Raises
+    ------
+    FemicHydrologyError
+        If no pin exists, the pin is stale, or the bundle is invalid.
+    """
+    registration = read_registered_femic_hydrology(dataset_dir)
+    if registration is None:
+        raise FemicHydrologyError("Dataset has no registered FEMIC hydrology bundle.")
+    bundle_path = _registered_bundle_path(dataset_dir, registration)
+    bundle = load_femic_hydrology_bundle(
+        bundle_path,
+        expected_bundle_id=_registration_text(registration, "bundle_id"),
+        expected_bundle_version=_registration_text(registration, "bundle_version"),
+    )
+    _check_registered_manifest(bundle, registration)
+    return bundle
+
+
+def validate_registered_femic_hydrology(
+    dataset_dir: Path,
+) -> FemicHydrologyValidation:
+    """Revalidate the hydrology bundle pinned by a dataset.
+
+    Parameters
+    ----------
+    dataset_dir : Path
+        Compiled WS4 dataset directory.
+
+    Returns
+    -------
+    FemicHydrologyValidation
+        Validation report for the registered bundle.
+    """
+    registration = read_registered_femic_hydrology(dataset_dir)
+    if registration is None:
+        raise FemicHydrologyError("Dataset has no registered FEMIC hydrology bundle.")
+    bundle_path = _registered_bundle_path(dataset_dir, registration)
+    report = validate_femic_hydrology_bundle(
+        bundle_path,
+        expected_bundle_id=_registration_text(registration, "bundle_id"),
+        expected_bundle_version=_registration_text(registration, "bundle_version"),
+    )
+    if not report.is_valid:
+        return report
+    bundle = load_femic_hydrology_bundle(bundle_path)
+    try:
+        _check_registered_manifest(bundle, registration)
+    except FemicHydrologyError as exc:
+        return replace(
+            report,
+            is_valid=False,
+            errors=(*report.errors, str(exc)),
+        )
+    return report
+
+
+def _registered_bundle_path(
+    dataset_dir: Path,
+    registration: Mapping[str, object],
+) -> Path:
+    value = registration.get("bundle_dir")
+    if not isinstance(value, str) or not value.strip():
+        raise FemicHydrologyError("Registered hydrology pin has no bundle_dir.")
+    path = Path(value)
+    if path.is_absolute():
+        return path
+    return dataset_dir.expanduser().resolve() / path
+
+
+def _registration_text(registration: Mapping[str, object], key: str) -> str:
+    value = registration.get(key)
+    if not isinstance(value, str) or not value.strip():
+        raise FemicHydrologyError(f"Registered hydrology pin has no {key}.")
+    return value
+
+
+def _check_registered_manifest(
+    bundle: FemicHydrologyBundle,
+    registration: Mapping[str, object],
+) -> None:
+    expected = _registration_text(registration, "manifest_sha256")
+    if bundle.manifest_sha256 != expected:
+        raise FemicHydrologyError("Registered hydrology manifest digest does not match the bundle.")
+
+
+def _bundle_reference(dataset_root: Path, bundle_root: Path) -> str:
+    try:
+        return str(bundle_root.resolve().relative_to(dataset_root))
+    except ValueError:
+        return str(bundle_root.resolve())
 
 
 def read_femic_flood_risk(bundle: FemicHydrologyBundle) -> FemicFloodRiskTable:

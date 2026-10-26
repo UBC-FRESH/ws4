@@ -11,8 +11,12 @@ from ws4.io.hydrology import (
     FemicHydrologyError,
     bundle_pin,
     load_femic_hydrology_bundle,
+    load_registered_femic_hydrology_bundle,
     read_femic_flood_risk,
+    read_registered_femic_hydrology,
+    register_femic_hydrology_bundle,
     validate_femic_hydrology_bundle,
+    validate_registered_femic_hydrology,
 )
 
 runner = CliRunner()
@@ -418,3 +422,197 @@ def test_cli_inspect_fails_on_invalid_bundle(tmp_path: Path) -> None:
 
     assert result.exit_code == 1
     assert "missing" in result.output
+
+
+def _dataset(root: Path) -> Path:
+    root.mkdir(parents=True, exist_ok=True)
+    _write_json(
+        root / "manifest.json",
+        {
+            "schema_version": "0.1",
+            "tables": {},
+            "sources": [],
+            "options": {},
+            "metadata": {},
+        },
+    )
+    return root
+
+
+def test_register_bundle_in_dataset_writes_pin_and_sidecar(tmp_path: Path) -> None:
+    dataset = _dataset(tmp_path / "dataset")
+    manifest_path = _bundle(dataset / "inputs" / "bundle")
+
+    registration = register_femic_hydrology_bundle(
+        dataset,
+        manifest_path.parent,
+        registered_utc=GENERATED_UTC,
+    )
+    read = read_registered_femic_hydrology(dataset)
+    loaded = load_registered_femic_hydrology_bundle(dataset)
+    report = validate_registered_femic_hydrology(dataset)
+
+    assert registration["bundle_id"] == BUNDLE_ID
+    assert registration["bundle_dir"] == "inputs/bundle"
+    assert read == registration
+    assert (dataset / "hydrology_products.json").is_file()
+    assert (
+        json.loads((dataset / "manifest.json").read_text())["metadata"]["hydrology_products"]
+        == registration
+    )
+    assert loaded.bundle_id == BUNDLE_ID
+    assert report.is_valid
+    assert report.errors == ()
+
+
+def test_registration_is_idempotent_and_supports_external_reference(
+    tmp_path: Path,
+) -> None:
+    dataset = _dataset(tmp_path / "dataset")
+    manifest_path = _bundle(tmp_path / "external_bundle")
+
+    first = register_femic_hydrology_bundle(
+        dataset,
+        manifest_path.parent,
+        registered_utc=GENERATED_UTC,
+    )
+    second = register_femic_hydrology_bundle(
+        dataset,
+        manifest_path.parent,
+        registered_utc=GENERATED_UTC,
+    )
+
+    assert first == second
+    assert Path(str(first["bundle_dir"])).is_absolute()
+    assert read_registered_femic_hydrology(dataset) == first
+
+
+def test_registered_bundle_tampering_and_stale_manifest_fail(
+    tmp_path: Path,
+) -> None:
+    dataset = _dataset(tmp_path / "dataset")
+    bundle_root = tmp_path / "bundle"
+    manifest_path = _bundle(bundle_root)
+    register_femic_hydrology_bundle(
+        dataset,
+        bundle_root,
+        registered_utc=GENERATED_UTC,
+    )
+    artifact = bundle_root / "artifacts" / "response_surface" / "response_surface.json"
+    artifact.write_text(artifact.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+
+    report = validate_registered_femic_hydrology(dataset)
+    assert not report.is_valid
+    assert any("checksum mismatch" in error for error in report.errors)
+    with pytest.raises(FemicHydrologyError):
+        load_registered_femic_hydrology_bundle(dataset)
+
+    dataset = _dataset(tmp_path / "stale_dataset")
+    bundle_root = tmp_path / "stale_bundle"
+    manifest_path = _bundle(bundle_root)
+    register_femic_hydrology_bundle(
+        dataset,
+        bundle_root,
+        registered_utc=GENERATED_UTC,
+    )
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    payload["caveats"] = ["Changed after registration."]
+    _write_json(manifest_path, payload)
+
+    report = validate_registered_femic_hydrology(dataset)
+    assert not report.is_valid
+    assert any("manifest digest" in error for error in report.errors)
+
+
+def test_registration_requires_dataset_manifest_and_matching_pin(
+    tmp_path: Path,
+) -> None:
+    missing = tmp_path / "missing"
+    missing.mkdir()
+    with pytest.raises(FemicHydrologyError, match="Dataset manifest is missing"):
+        register_femic_hydrology_bundle(missing, _bundle(tmp_path / "bundle").parent)
+
+    dataset = _dataset(tmp_path / "dataset")
+    with pytest.raises(FemicHydrologyError, match="does not match expected"):
+        register_femic_hydrology_bundle(
+            dataset,
+            _bundle(tmp_path / "bundle2").parent,
+            expected_bundle_id="other",
+        )
+
+
+def test_no_registered_bundle_and_invalid_sidecar(tmp_path: Path) -> None:
+    dataset = _dataset(tmp_path / "dataset")
+    assert read_registered_femic_hydrology(dataset) is None
+    with pytest.raises(FemicHydrologyError, match="no registered"):
+        validate_registered_femic_hydrology(dataset)
+    (dataset / "hydrology_products.json").write_text("{bad", encoding="utf-8")
+    with pytest.raises(FemicHydrologyError, match="Invalid hydrology sidecar"):
+        read_registered_femic_hydrology(dataset)
+
+
+def test_cli_register_inspect_and_validate_dataset(tmp_path: Path) -> None:
+    dataset = _dataset(tmp_path / "dataset")
+    bundle_root = tmp_path / "bundle"
+    _bundle(bundle_root)
+
+    register = runner.invoke(
+        app,
+        [
+            "hydrology",
+            "register",
+            "--dataset",
+            str(dataset),
+            "--bundle",
+            str(bundle_root),
+            "--json",
+        ],
+    )
+    assert register.exit_code == 0, register.output
+    assert json.loads(register.output)["bundle_id"] == BUNDLE_ID
+
+    inspect = runner.invoke(
+        app,
+        ["hydrology", "inspect", "--dataset", str(dataset), "--json"],
+    )
+    assert inspect.exit_code == 0, inspect.output
+    assert json.loads(inspect.output)["bundle_id"] == BUNDLE_ID
+
+    validate = runner.invoke(
+        app,
+        ["hydrology", "validate", "--dataset", str(dataset)],
+    )
+    assert validate.exit_code == 0, validate.output
+    assert json.loads(validate.output)["is_valid"] is True
+
+    artifact = bundle_root / "artifacts" / "domain" / "domain.json"
+    artifact.write_text("{}\n", encoding="utf-8")
+    invalid = runner.invoke(
+        app,
+        ["hydrology", "validate", "--dataset", str(dataset)],
+    )
+    assert invalid.exit_code == 1
+    assert "checksum mismatch" in invalid.output
+
+
+def test_cli_requires_exactly_one_bundle_or_dataset(tmp_path: Path) -> None:
+    dataset = _dataset(tmp_path / "dataset")
+    bundle_root = tmp_path / "bundle"
+    _bundle(bundle_root)
+
+    neither = runner.invoke(app, ["hydrology", "validate"])
+    both = runner.invoke(
+        app,
+        [
+            "hydrology",
+            "validate",
+            str(bundle_root),
+            "--dataset",
+            str(dataset),
+        ],
+    )
+
+    assert neither.exit_code == 1
+    assert "exactly one" in neither.output
+    assert both.exit_code == 1
+    assert "exactly one" in both.output

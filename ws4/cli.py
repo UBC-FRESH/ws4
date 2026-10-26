@@ -17,7 +17,10 @@ from .io.hydrology import (
     FemicHydrologyError,
     bundle_pin,
     load_femic_hydrology_bundle,
+    load_registered_femic_hydrology_bundle,
+    register_femic_hydrology_bundle,
     validate_femic_hydrology_bundle,
+    validate_registered_femic_hydrology,
 )
 from .io.lidar import (
     FemicLidarError,
@@ -979,23 +982,73 @@ def lidar_integrate(
     print(f"block_rows: {result.block_rows}")
 
 
-hydrology_app = typer.Typer(help="Inspect and validate FEMIC hydrology response bundles.")
+hydrology_app = typer.Typer(
+    help="Register, inspect, and validate FEMIC hydrology response bundles."
+)
+
+
+@hydrology_app.command("register")
+def hydrology_register(
+    dataset: Path = typer.Option(
+        ..., "--dataset", exists=True, file_okay=False, help="Compiled WS4 dataset"
+    ),
+    bundle: Path = typer.Option(
+        ..., "--bundle", exists=True, file_okay=False, help="FEMIC hydrology bundle"
+    ),
+    bundle_id: str | None = typer.Option(None, "--bundle-id"),
+    bundle_version: str | None = typer.Option(None, "--bundle-version"),
+    json_output: bool = typer.Option(
+        False, "--json", help="Emit deterministic JSON registration record"
+    ),
+) -> None:
+    """Register a validated FEMIC hydrology bundle in a compiled dataset."""
+    try:
+        registration = register_femic_hydrology_bundle(
+            dataset,
+            bundle,
+            expected_bundle_id=bundle_id,
+            expected_bundle_version=bundle_version,
+        )
+    except FemicHydrologyError as error:
+        print(f"[bold red]Hydrology registration failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    if json_output:
+        print(json.dumps(registration, indent=2, sort_keys=True))
+        return
+    print(f"bundle_id: {registration['bundle_id']}")
+    print(f"bundle_version: {registration['bundle_version']}")
+    print(f"bundle_dir: {registration['bundle_dir']}")
+    print(f"manifest_sha256: {registration['manifest_sha256']}")
 
 
 @hydrology_app.command("inspect")
 def hydrology_inspect(
-    bundle: Path = typer.Argument(..., exists=True, help="Bundle directory or manifest"),
+    bundle: Path | None = typer.Argument(None, exists=True, help="Bundle directory or manifest"),
+    dataset: Path | None = typer.Option(
+        None,
+        "--dataset",
+        exists=True,
+        file_okay=False,
+        help="Inspect the hydrology bundle registered in a compiled dataset",
+    ),
     json_output: bool = typer.Option(
         False, "--json", help="Emit deterministic JSON instead of a summary"
     ),
 ) -> None:
     """Print the stable pin for a validated FEMIC hydrology bundle."""
+    if (bundle is None) == (dataset is None):
+        print("[bold red]Provide exactly one of BUNDLE or --dataset.[/]")
+        raise typer.Exit(code=1)
     try:
-        report = validate_femic_hydrology_bundle(bundle)
-        if not report.is_valid:
-            print(json.dumps(report.to_dict(), indent=2, sort_keys=True))
-            raise typer.Exit(code=1)
-        loaded = load_femic_hydrology_bundle(bundle)
+        if dataset is not None:
+            loaded = load_registered_femic_hydrology_bundle(dataset)
+        else:
+            assert bundle is not None
+            report = validate_femic_hydrology_bundle(bundle)
+            if not report.is_valid:
+                print(json.dumps(report.to_dict(), indent=2, sort_keys=True))
+                raise typer.Exit(code=1)
+            loaded = load_femic_hydrology_bundle(bundle)
         pin = bundle_pin(loaded)
     except FemicHydrologyError as error:
         print(f"[bold red]Hydrology inspect failed:[/] {error}")
@@ -1017,7 +1070,14 @@ def hydrology_inspect(
 
 @hydrology_app.command("validate")
 def hydrology_validate(
-    bundle: Path = typer.Argument(..., exists=True, help="Bundle directory or manifest"),
+    bundle: Path | None = typer.Argument(None, exists=True, help="Bundle directory or manifest"),
+    dataset: Path | None = typer.Option(
+        None,
+        "--dataset",
+        exists=True,
+        file_okay=False,
+        help="Validate the hydrology bundle registered in a compiled dataset",
+    ),
     bundle_id: str | None = typer.Option(None, "--bundle-id"),
     bundle_version: str | None = typer.Option(None, "--bundle-version"),
     json_output: bool = typer.Option(
@@ -1025,19 +1085,34 @@ def hydrology_validate(
     ),
 ) -> None:
     """Validate a FEMIC hydrology bundle and its artifact checksums."""
-    report = validate_femic_hydrology_bundle(
-        bundle,
-        expected_bundle_id=bundle_id,
-        expected_bundle_version=bundle_version,
-    )
+    if (bundle is None) == (dataset is None):
+        print("[bold red]Provide exactly one of BUNDLE or --dataset.[/]")
+        raise typer.Exit(code=1)
+    try:
+        if dataset is not None:
+            if bundle_id is not None or bundle_version is not None:
+                raise FemicHydrologyError(
+                    "--bundle-id/--bundle-version are only valid with a direct BUNDLE."
+                )
+            report = validate_registered_femic_hydrology(dataset)
+        else:
+            assert bundle is not None
+            report = validate_femic_hydrology_bundle(
+                bundle,
+                expected_bundle_id=bundle_id,
+                expected_bundle_version=bundle_version,
+            )
+    except FemicHydrologyError as error:
+        print(f"[bold red]Hydrology validation failed:[/] {error}")
+        raise typer.Exit(code=1) from error
     if json_output:
         print(json.dumps(report.to_dict(), indent=2, sort_keys=True))
     else:
         print(f"valid: {report.is_valid}")
         print(f"artifacts: {report.artifact_count}")
         print(f"total_bytes: {report.total_bytes}")
-        for error in report.errors:
-            print(f"error: {error}")
+        for message in report.errors:
+            print(f"error: {message}")
         for warning in report.warnings:
             print(f"warning: {warning}")
     if not report.is_valid:

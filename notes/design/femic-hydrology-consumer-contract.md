@@ -60,3 +60,18 @@ rewrite the manifest.
 - P57.4: read-only flood-risk screening for a schedule.
 - P57.5: optional `flood.*` accounts and objective/constraint integration, with
   the screening-only boundary preserved.
+
+## P57.2 registration decision
+
+A compiled dataset stores the validated pin under
+`metadata.hydrology_products` and in a `hydrology_products.json` sidecar. The
+bundle is referenced, not copied. A bundle inside the dataset is stored as a
+relative reference; an external bundle keeps its absolute path, which the
+operator must treat as an external-data boundary.
+
+Revalidation compares the registered bundle id/version, manifest SHA-256, and
+every artifact checksum. A changed manifest fails even when the JSON still
+parses. This catches stale pins without re-running FEMIC.
+
+Registration does not imply a watershed crosswalk, schedule lookup, or a
+flood-risk objective. Those remain P57.3+.
