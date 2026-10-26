@@ -64,6 +64,7 @@ exists and the maintainer approves it.
 | P59 LiDAR in the web UI | #417 | `feature/p59-lidar-ui` | complete |
 | P60 Harden hydrology use with validation evidence | #415 | `feature/p60-closeout` | complete |
 | P61 Carbon and libcbm in the web UI | #430 | `feature/p61-carbon-ui` | complete |
+| P62 Harden the hydrology consumer and explicit road/culvert exposure | #437 | `feature/p62-hydrology-consumer` | pr-open |
 | P63 UI foundation for desktop and iPad landscape | #442 | `feature/p63-ui-foundation` | complete |
 | P64 Patchworks-style target charts | #456 | `feature/p64-target-charts` | complete |
 | P65 Editable target charts | #464 | `feature/p65-editable-targets` | complete |
@@ -1895,6 +1896,54 @@ Acceptance:
 - Browser smoke passes on real TSA24 data and the non-carbon state is explicit.
 - `python scripts/dashboard.py` is green.
 
+## Phase 62: Harden the hydrology consumer and explicit road/culvert exposure
+
+Parent issue: #437
+Branch: `feature/p62-hydrology-consumer`
+Status: pr-open
+
+Goal: make the WS4 hydrology consumer fail closed when evidence is incomplete,
+and add an explicit road/culvert exposure input by watershed and period. This is
+a consumer-hardening phase, not a watershed flood pilot. Chapman is closed as
+data-blocked in FEMIC #383; Seymour depends on FEMIC #388 and has no reviewed
+bundle yet.
+
+Design note: `notes/design/ws4-hydrology-consumer-hardening.md`.
+Closeout report: `notes/reports/p62-closeout.md`.
+
+- [x] P62.1 Re-scope P62 and record the consumer boundary (#449)
+  - [x] Rewrite the parent issue and add the phase to the roadmap.
+  - [x] Write the design note and index it.
+  - [x] Add the changelog entry and read back every GitHub edit.
+- [x] P62.2 Add a fail-closed hydrology preflight report (#450)
+  - [x] Add the preflight report and CLI command.
+  - [x] Block invalid bundles, blocked readiness, weak policy, unreviewed crosswalks, and incomplete mapping.
+  - [x] Add tests and reference docs.
+- [x] P62.3 Add an explicit road/culvert exposure contract (#451)
+  - [x] Add the exposure schema, loader, and validation.
+  - [x] Bind the table to a schedule hash and require review metadata.
+  - [x] Add fixtures, tests, and reference docs.
+- [x] P62.4 Use exposure in screening and guard the optimizer (#452)
+  - [x] Add exposure features to one-schedule screening.
+  - [x] Record exposure identity, schedule hash, and refusals.
+  - [x] Refuse fixed exposure in the optimizer and add tests/docs.
+- [x] P62.5 Prove the consumer path on a synthetic fixture (#453)
+  - [x] Add the end-to-end fixture and success path.
+  - [x] Add the fail-closed matrix.
+  - [x] Update the docs and design note.
+- [x] P62.6 Validate, document, and close out P62 (#454)
+  - [x] Run the suites and dashboard.
+  - [x] Write the closeout report and update the roadmap/changelog.
+  - [x] Queue the single phase PR for approval.
+
+Acceptance:
+
+- `hydrology preflight` cannot report ready when a required condition fails.
+- Exposure is explicit, reviewed, schedule-bound, and never inferred.
+- Screening records exposure identity and schedule hash.
+- The optimizer refuses fixed exposure instead of reusing it across candidates.
+- The synthetic path covers success and fail-closed cases.
+- The closeout states that no real watershed or flood result exists.
 ## Phase 63: UI foundation for desktop and iPad landscape
 
 Parent issue: #442

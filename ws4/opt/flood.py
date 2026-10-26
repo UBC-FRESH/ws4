@@ -214,6 +214,11 @@ def load_flood_screen_config(path: Path) -> FloodScreenConfig:
         raise FloodRiskRefusalError(
             f"Unsupported flood-screen config schema {payload.get('schema_version')!r}."
         )
+    if "exposure" in payload or "exposure_path" in payload:
+        raise FloodRiskRefusalError(
+            "Flood-screen exposure is not supported in the optimizer until "
+            "schedule-derived exposure can be evaluated for each candidate."
+        )
     mapping_value = payload.get("mapping")
     if not isinstance(mapping_value, str) or not mapping_value.strip():
         raise FloodRiskRefusalError("Flood-screen config requires a mapping path.")

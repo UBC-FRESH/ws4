@@ -22,6 +22,12 @@ import pandas as pd
 
 from ws4.model.schema import load_manifest
 
+from .hydrology_exposure import (
+    HYDROLOGY_EXPOSURE_DERIVED_FEATURES,
+    HYDROLOGY_EXPOSURE_FEATURES,
+    HydrologyExposure,
+)
+
 FEMIC_HYDROLOGY_MANIFEST_SCHEMA = "femic.hydrology.response.v1"
 FEMIC_HYDROLOGY_MANIFEST_NAME = "manifest.json"
 FEMIC_HYDROLOGY_SIDECAR_NAME = "hydrology_products.json"
@@ -1194,6 +1200,12 @@ class HydrologyScreen:
         Mapping manifest digest.
     schedule_sha256 : str
         Schedule CSV digest.
+    exposure_id : str | None
+        Schedule-bound exposure identifier, when supplied.
+    exposure_sha256 : str | None
+        Exposure file digest, when supplied.
+    exposure_review_status : str | None
+        Exposure review state, when supplied.
     scenario_tolerance : float
         Maximum feature difference allowed when selecting a response scenario.
     covariates : dict[str, float]
@@ -1218,6 +1230,9 @@ class HydrologyScreen:
     mapping_id: str
     mapping_sha256: str
     schedule_sha256: str
+    exposure_id: str | None
+    exposure_sha256: str | None
+    exposure_review_status: str | None
     scenario_tolerance: float
     covariates: dict[str, float]
     rows: tuple[dict[str, object], ...]
@@ -1244,6 +1259,15 @@ class HydrologyScreen:
             "mapping_id": self.mapping_id,
             "mapping_sha256": self.mapping_sha256,
             "schedule_sha256": self.schedule_sha256,
+            "exposure": (
+                None
+                if self.exposure_id is None
+                else {
+                    "exposure_id": self.exposure_id,
+                    "exposure_sha256": self.exposure_sha256,
+                    "review_status": self.exposure_review_status,
+                }
+            ),
             "scenario_tolerance": self.scenario_tolerance,
             "covariates": self.covariates,
             "row_count": len(self.rows),
@@ -1314,6 +1338,7 @@ def screen_schedule_flood_risk(
     schedule_source: Path | pd.DataFrame,
     *,
     mapping_manifest_path: Path | None = None,
+    exposure: HydrologyExposure | None = None,
     covariates: Mapping[str, float] | None = None,
     scenario_tolerance: float = 0.05,
     periods: Sequence[int] | None = None,
@@ -1335,9 +1360,13 @@ def screen_schedule_flood_risk(
         ``offset``.
     mapping_manifest_path : Path | None, optional
         Mapping manifest path used to record its digest.
+    exposure : HydrologyExposure | None, optional
+        Explicit, reviewed exposure table bound to this schedule. Missing
+        declared watershed/period rows or a schedule-hash mismatch refuse.
     covariates : Mapping[str, float] | None, optional
-        Global response features not derived from the schedule, such as road
-        density. Missing scenario features cause refusal.
+        Global response features not derived from the schedule. They may not
+        duplicate exposure feature names. Missing scenario features cause
+        refusal.
     scenario_tolerance : float, optional
         Maximum absolute feature difference allowed when selecting a response
         scenario.
@@ -1370,7 +1399,19 @@ def screen_schedule_flood_risk(
     supplied = {str(name): float(value) for name, value in (covariates or {}).items()}
     if any(not math.isfinite(value) for value in supplied.values()):
         raise FemicHydrologyError("Covariate values must be finite.")
+    exposure_names = set(HYDROLOGY_EXPOSURE_FEATURES) | set(HYDROLOGY_EXPOSURE_DERIVED_FEATURES)
+    overlap = sorted(set(supplied) & exposure_names)
+    if exposure is not None and overlap:
+        raise FemicHydrologyError(
+            "Exposure features may not also be supplied as global covariates: " + ", ".join(overlap)
+        )
     schedule = _schedule_source(schedule_source)
+    schedule_sha = _schedule_digest(schedule_source)
+    if exposure is not None and exposure.schedule_sha256 != schedule_sha:
+        raise FemicHydrologyError(
+            "Exposure schedule hash does not match the schedule; regenerate the "
+            "exposure table for this schedule."
+        )
     block_records = {_int(row["block_id"], "mapping block_id"): row for row in mapping.blocks}
     dataset_blocks = _load_block_areas(dataset_dir.expanduser().resolve())
     watershed_areas = _watershed_areas(bundle)
@@ -1432,7 +1473,29 @@ def screen_schedule_flood_risk(
                     }
                 )
                 continue
-            features = {**supplied, "harvest_fraction": harvest_fraction}
+            exposure_features: dict[str, float] = {}
+            if exposure is not None:
+                if watershed_id not in exposure.watershed_ids or period not in exposure.periods:
+                    refusals.append(
+                        {
+                            "period": period,
+                            "watershed_id": watershed_id,
+                            "receptor_id": None,
+                            "return_period": None,
+                            "reason": (
+                                "Exposure has no declared row for watershed "
+                                f"{watershed_id!r} period {period}."
+                            ),
+                        }
+                    )
+                    continue
+                exposure_features = _exposure_screen_features(
+                    exposure,
+                    watershed_id,
+                    period,
+                    watershed_area,
+                )
+            features = {**supplied, "harvest_fraction": harvest_fraction, **exposure_features}
             selected = _select_scenario(scenarios, features, scenario_tolerance)
             if selected is None:
                 refusals.append(
@@ -1489,6 +1552,14 @@ def screen_schedule_flood_risk(
                         "harvest_fraction": harvest_fraction,
                         "scenario_name": scenario_name,
                         "scenario_covariates": dict(scenario_covariates),
+                        "exposure_used": exposure is not None,
+                        **{
+                            feature: exposure_features.get(feature)
+                            for feature in (
+                                *HYDROLOGY_EXPOSURE_FEATURES,
+                                *HYDROLOGY_EXPOSURE_DERIVED_FEATURES,
+                            )
+                        },
                         "response_ratio": ratio,
                         "baseline_peak_flow_m3s": risk.baseline_peak_flow_m3s,
                         "screening_peak_flow_m3s": risk.baseline_peak_flow_m3s * ratio,
@@ -1500,17 +1571,14 @@ def screen_schedule_flood_risk(
     if refusals and not allow_refused:
         reasons = "; ".join(str(item["reason"]) for item in refusals[:3])
         raise FemicHydrologyError(f"Schedule screening refused {len(refusals)} row(s): {reasons}")
-    schedule_sha = (
-        _sha256_file(schedule_source)
-        if isinstance(schedule_source, Path)
-        else hashlib.sha256(schedule_source.to_csv(index=False).encode("utf-8")).hexdigest()
-    )
     mapping_sha = _sha256_file(mapping_manifest_path) if mapping_manifest_path is not None else ""
     timestamp = generated_utc or datetime.now(UTC).isoformat()
     material = {
         "bundle_id": bundle.bundle_id,
         "mapping_id": mapping.mapping_id,
         "schedule_sha256": schedule_sha,
+        "exposure_id": exposure.exposure_id if exposure is not None else None,
+        "exposure_sha256": exposure.sha256 if exposure is not None else None,
         "rows": rows,
         "refusals": refusals,
         "covariates": supplied,
@@ -1525,6 +1593,10 @@ def screen_schedule_flood_risk(
     warnings: list[str] = []
     if mapping.review_status != "reviewed":
         warnings.append("Mapping is not reviewed; schedule screening is provisional.")
+    if exposure is not None and exposure.review_status != "reviewed":
+        warnings.append("Exposure is not reviewed; schedule screening is provisional.")
+    if exposure is not None and not _exposure_is_used(scenarios, exposure_names):
+        warnings.append("Exposure was supplied but no response-surface scenario uses its features.")
     if refusals:
         warnings.append(f"{len(refusals)} screening row(s) were refused.")
     coverage = {
@@ -1533,6 +1605,7 @@ def screen_schedule_flood_risk(
         "mapped_blocks": len(block_records),
         "screened_rows": len(rows),
         "refused_rows": len(refusals),
+        "exposure_used": exposure is not None,
     }
     caveats = (
         "Schedule screening uses a precomputed response-surface scenario, not a "
@@ -1541,6 +1614,8 @@ def screen_schedule_flood_risk(
         "pinned FEMIC flood-risk table.",
         "Screening only; not a regulatory flood map or operational safety determination.",
         "Hydrologist review and a completed process-model pilot remain required.",
+        "Exposure features are explicit inputs; they are not inferred from road "
+        "or culvert geometry.",
         *mapping.caveats,
     )
     return HydrologyScreen(
@@ -1552,6 +1627,9 @@ def screen_schedule_flood_risk(
         mapping_id=mapping.mapping_id,
         mapping_sha256=mapping_sha,
         schedule_sha256=schedule_sha,
+        exposure_id=exposure.exposure_id if exposure is not None else None,
+        exposure_sha256=exposure.sha256 if exposure is not None else None,
+        exposure_review_status=exposure.review_status if exposure is not None else None,
         scenario_tolerance=scenario_tolerance,
         covariates=supplied,
         rows=tuple(rows),
@@ -1589,6 +1667,16 @@ def write_hydrology_screen(screen: HydrologyScreen, out_dir: Path) -> dict[str, 
         "watershed_area_ha",
         "harvest_fraction",
         "scenario_name",
+        "exposure_used",
+        "road_built_km",
+        "road_used_km",
+        "road_decommissioned_km",
+        "culvert_count",
+        "culvert_exposed_count",
+        "road_built_density_km_per_km2",
+        "road_used_density_km_per_km2",
+        "road_decommissioned_density_km_per_km2",
+        "culvert_exposure_per_km2",
         "response_ratio",
         "baseline_peak_flow_m3s",
         "screening_peak_flow_m3s",
@@ -2861,6 +2949,39 @@ def _select_scenario(
     if best is None:
         return None
     return best[1], best[2]
+
+
+def _schedule_digest(schedule_source: Path | pd.DataFrame) -> str:
+    """Return the schedule digest used by the exposure binding."""
+    if isinstance(schedule_source, Path):
+        return _sha256_file(schedule_source)
+    return hashlib.sha256(schedule_source.to_csv(index=False).encode("utf-8")).hexdigest()
+
+
+def _exposure_screen_features(
+    exposure: HydrologyExposure,
+    watershed_id: str,
+    period: int,
+    watershed_area_ha: float,
+) -> dict[str, float]:
+    """Return raw and derived exposure features for one watershed/period."""
+    features = exposure.features_for(watershed_id, period)
+    area_km2 = watershed_area_ha / 100.0
+    features["road_built_density_km_per_km2"] = features["road_built_km"] / area_km2
+    features["road_used_density_km_per_km2"] = features["road_used_km"] / area_km2
+    features["road_decommissioned_density_km_per_km2"] = (
+        features["road_decommissioned_km"] / area_km2
+    )
+    features["culvert_exposure_per_km2"] = features["culvert_exposed_count"] / area_km2
+    return features
+
+
+def _exposure_is_used(
+    scenarios: tuple[tuple[str, dict[str, float]], ...],
+    exposure_names: set[str],
+) -> bool:
+    """Return whether any response scenario names an exposure feature."""
+    return any(set(covariates) & exposure_names for _name, covariates in scenarios)
 
 
 def _optional_bundle_payload(
