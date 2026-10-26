@@ -775,12 +775,27 @@ API
 
 .. autofunction:: ws4.opt.telemetry.read_records
 
-Profiling route evaluation
---------------------------
+Cached route events and profiling
+=================================
 
-Route configurations with per-segment accounts (`build`, `maintain`) or delivery
-targets use the full simulator on every evaluation. The route profile measures that
-path on a real schedule:
+A route configuration whose network is fully open and has no delivery target uses
+cached per-block route events for per-segment accounts (`build`, `maintain`) and
+additive deltas for `haul` and `volume`. Delivery targets, `initial_roads: existing`,
+and edge contrast keep the full simulator.
+
+Measure the cached path against the full simulation on a real schedule:
+
+.. code-block:: bash
+
+   python scripts/benchmark_route_events.py \
+     --dataset build/compiled \
+     --targets targets.yaml \
+     --route-config route.yaml \
+     --schedule runtime/runs/run-1/schedule.csv \
+     --years 50 --repeats 3 --out route-events.json
+
+It reports full, cold-cache, and warm-cache times, the event count, and the largest
+cell difference. To profile the full path and see its hot functions:
 
 .. code-block:: bash
 
@@ -791,6 +806,6 @@ path on a real schedule:
      --schedule runtime/runs/run-1/schedule.csv \
      --years 50 --repeats 3 --out route-profile.json
 
-It reports seconds per evaluation and the top cumulative functions. The design for the
-incremental ledger, its fallback conditions, and the parity plan are in
-`notes/design/ws4-incremental-route.md`.
+The design, fallback conditions, and parity plan are in
+`notes/design/ws4-incremental-route.md`. The P46 close-out records the c5 evidence in
+`notes/reports/p46-closeout.md`.

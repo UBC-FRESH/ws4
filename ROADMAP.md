@@ -64,6 +64,7 @@ exists and the maintainer approves it.
 | P44 Comparison and map operations | #341 | `feature/p44-compare-ops` | complete |
 | P45 Route evaluation performance | #368 | `feature/p45-route-profile` | complete |
 | P52 Consume FEMIC-compiled LidarBC products | #317 | `feature/p52-lidar-products` | complete |
+| P46 Cached route event ledger | #382 | `feature/p46-route-events` | pr-open |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1436,6 +1437,36 @@ Acceptance:
 
 - A repeatable profile reports seconds per evaluation and top costs.
 - The design note states fallback conditions and parity tests.
+- `python scripts/dashboard.py` is green.
+
+## Phase 46: Cached route event ledger
+
+Parent issue: #382
+Branch: `feature/p46-route-events`
+Status: pr-open
+
+Goal: remove the full simulator from route evaluations when the network is fully open and no
+delivery target is set, by caching per-block route events and replaying the ledger.
+
+- [x] P46.1 Cache block route events and replay the ledger (#383)
+  - [x] Add the event method and refactor the block route chain
+  - [x] Add the optimizer event cache and replay
+  - [x] Route per-segment accounts through the replay
+- [x] P46.2 Prove parity and gate the fallback cases (#384)
+  - [x] Shared-segment build/maintenance parity
+  - [x] Order and re-add parity
+  - [x] Fallback gate tests
+- [x] P46.3 Benchmark c5/GBR and close out (#385)
+  - [x] Add the benchmark script
+  - [x] Run c5
+  - [x] Record the missing GBR route config as a deviation
+  - [x] Write the close-out and docs
+
+Acceptance:
+
+- Incremental and full route values agree exactly on fixtures and c5.
+- Delivery and opened-road configurations still take the full path.
+- A repeatable benchmark reports cold and warm times.
 - `python scripts/dashboard.py` is green.
 
 ## Phase 47: Model boundary record

@@ -96,3 +96,12 @@ same path.
 
 Proceed to P46 only if the parity suite passes. The target is a measured speedup on c5
 and a GBR subset; no change to route semantics or report values is acceptable.
+
+## P46 outcome
+
+P46 implemented the safe first slice: cached per-block route events replayed in the
+full simulation's order. It removes the simulator from the route path for a fully open
+network with no delivery target, while the ledger still performs the exact build-once
+and per-period maintenance accounting. Delivery, opened-road growth, and unsupported
+accounts remain on the full path. Segment-level subtraction was not implemented; the
+warm cache is the measured win.
