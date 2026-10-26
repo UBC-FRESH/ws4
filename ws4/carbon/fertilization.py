@@ -659,8 +659,10 @@ def _fertilized_yield_rows(
     source["volume_m3_ha"] = pd.to_numeric(source["volume_m3_ha"], errors="raise").astype(float)
     curve_age = curve["age"].to_numpy(dtype=float)
     curve_volume = curve["volume_m3_ha"].to_numpy(dtype=float)
-    leading = source.loc[source["species"].astype(str) == leading_species]
-    leading_age = pd.to_numeric(leading["age"], errors="raise").to_numpy(dtype=float)
+    leading = source.loc[source["species"].astype(str) == leading_species].copy()
+    leading["age"] = pd.to_numeric(leading["age"], errors="raise").astype(float)
+    leading = leading.sort_values("age", kind="stable")
+    leading_age = leading["age"].to_numpy(dtype=float)
     leading_volume = pd.to_numeric(leading["volume_m3_ha"], errors="raise").to_numpy(dtype=float)
     rows: list[dict[str, object]] = []
     for row in source.itertuples(index=False):
