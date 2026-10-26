@@ -2936,3 +2936,9 @@ issue comments.
 - P64 close-out: pull request #461 squash-merged as `8b0d0e6`; parent #456 and tasks
   #457/#458/#459 closed; status set complete. The chart/live-convergence evidence is
   recorded in `notes/reports/p64-closeout.md`.
+
+- P62.6: ran the hydrology integration/contract/exposure/preflight suites and
+  the full dashboard after merging `origin/main` at `083c143`. Wrote
+  `notes/reports/p62-closeout.md`, set Phase 62 to `pr-open`, and queued the
+  single phase pull request #468 for approval. No merge, tag, release, or
+  settings change was made. Dashboard **GREEN**.
