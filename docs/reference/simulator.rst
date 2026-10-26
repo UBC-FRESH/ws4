@@ -56,6 +56,10 @@ When the simulator is given a road network (the Python API, ``Simulator.run(...,
 ``network_table.csv``, ``route_table.<destination>.csv``, ``route_cost_report.csv``, and — when the
 vertices table carries coordinates — ``used_roads.csv`` for the map overlay; see :doc:`roads`.
 
+When the simulator is given a DHI account (``Simulator.run(..., dhi_account=...)`` or the
+``--dhi-values`` and ``--dhi-metadata`` options), it also writes ``dhi_values.csv`` and
+``dhi_metadata.json``; see :doc:`dhi`. ``ws4 report`` adds ``report_dhi.csv``.
+
 When the simulator is given a block topology (``Simulator.run(..., topology_csv=...)``), it also
 writes:
 

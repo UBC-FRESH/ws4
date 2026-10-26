@@ -101,6 +101,10 @@ Endpoints
      - Carbon provenance, ``carbon.*`` account series, pool composition, flux series,
        ledger status, GCBM comparison rows, and artifact names. Pools and fluxes are summed
        by timestep; ``available`` is false when the run has no carbon artifacts.
+   * - ``GET /api/runs/{run}/dhi?format=json|geojson``
+     - DHI source metadata, band names, and normalized block values. ``format=geojson``
+       joins the values to ``--geometry``; without geometry it is a 404. ``available``
+       is false when the run has no DHI artifacts.
    * - ``GET /api/runs/{run}/reports``
      - The run's report files and their sizes.
    * - ``GET /api/runs/{run}/reports/{name}``

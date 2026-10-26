@@ -2892,3 +2892,31 @@ issue comments.
   targets (2 inactive cards), and a 400-iteration live c5 run whose achieved value moved
   1,260.74 -> 26,077.22 -> 35,150.61 without reload. `check_target_charts.py` exits 0; iPad
   1024 and desktop 1500 have no page overflow. Dashboard **GREEN**.
+
+- P54 roadmap entry: added the Phase 54 parent (#375) for environmental accounts
+  (DHI, structure habitat, resilience metrics), with children #376-#378. The
+  phase excludes carbon, which is owned by P51 (#357). Branch
+  `feature/p54-environmental-accounts`; planning note
+  `notes/p54-environmental-accounts.md`. No model or objective change.
+
+- P54.1: added the Dynamic Habitat Index biodiversity account.
+  `ws4 dhi ingest` samples one published DHI raster at block polygons, refuses a
+  block with no valid pixel, and writes `dhi_values.csv` plus a versioned
+  `dhi_metadata.json` (product, version, year range, CRS, scale, bbox, valid
+  pixels, licence, SHA-256). The account is `feature.DHI.<band>` (level,
+  `index_ha`), `feature.DHI.<band>.mean` (level, `index`), and
+  `feature.DHI.area` (level, `ha`); a treated block leaves the account for the
+  rest of the run. `ws4 simulate --dhi-values/--dhi-metadata` records the
+  trajectory and preserves the run-local provenance; `ws4 report` adds
+  `report_dhi.csv` with the scale/interpretation caveat. `GET
+  /api/runs/{run}/dhi` returns the values, and `?format=geojson` joins them to
+  block geometry as the web layer. The pilot uses a real SILVIS MODIS 6.1 Terra
+  NDVI 2003-2022 500 m subset; the four blocks are synthetic. Two schedules show
+  the surviving DHI area move from 40 ha to 20 ha. Tests cover coverage,
+  missing source version, every-block coverage, reproducibility, both
+  schedules, the report caveat, and the GeoJSON layer. Report:
+  `notes/reports/p54.1-dhi-account.md`.
+  Verification: `python -m pytest tests/test_dhi.py -q --no-cov` -> 10 passed;
+  `python scripts/dashboard.py` -> **GREEN** (lint 0.12 s, format 0.11 s,
+  types 10.47 s, tests 144.56 s, validator 1.02 s, docs 20.97 s,
+  docstrings 3.86 s).

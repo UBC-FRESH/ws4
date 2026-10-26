@@ -74,7 +74,11 @@ exists and the maintainer approves it.
 | P52 Consume FEMIC-compiled LidarBC products | #317 | `feature/p52-lidar-products` | complete |
 | P57 Consume FEMIC hydrology response bundles | #395 | `feature/p57-hydrology-response` | complete |
 | P46 Cached route event ledger | #382 | `feature/p46-route-events` | complete |
+| P54 Environmental accounts (habitat and resilience) | #375 | `feature/p54-environmental-accounts` | active |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
+
+P51 carbon (`#357`), P52 (`#317`), and P53 (`#371`) are tracked by their phase
+owners and are not repeated here. P54 uses the next free number after those.
 
 ## Lifecycle Map
 
@@ -1654,6 +1658,36 @@ Acceptance:
 - The package builds without the license-classifier warning.
 - Clean-checkout, dashboard, artifacts, isolated installs, entry points, and Pages pass.
 - No tag or release is created.
+
+## Phase 54: Environmental accounts (habitat and resilience)
+
+Parent issue: #375
+Branch: `feature/p54-environmental-accounts`
+Status: active
+
+Goal: make biodiversity, habitat structure, and landscape resilience first-class
+ws4 accounts, with units, provenance, and a report/web surface. The phase does
+not change the optimisation objective. Carbon is already owned by P51 (#357)
+and is not repeated here.
+
+- [x] P54.1 Add the DHI biodiversity account (#376)
+- [ ] P54.2 Add the structure habitat index (#377)
+- [ ] P54.3 Add spatial resilience metrics (#378)
+
+Acceptance:
+
+- Each account declares a name, unit, level/flow semantics, source, and version.
+- Each account is reproducible from the scenario and its declared inputs.
+- DHI and structure habitat accounts cover the AOI or report their gaps.
+- Identical schedules produce identical resilience metrics.
+- Every account appears in at least one report or web view.
+- No objective or constraint changes are made in this phase.
+
+Tracking: issue #375; the issue bodies carry scope, out-of-scope, acceptance,
+verification, artifacts, and risks. P52 (LiDAR consumption) and P53
+(release preparation) are tracked in their own phase issues.
+
+Detailed plan: `notes/p54-environmental-accounts.md`.
 
 ## Phase 55: Final 0.2.0 release candidate
 

@@ -1,0 +1,26 @@
+{
+  "bands": [
+    "cum",
+    "min",
+    "var"
+  ],
+  "bbox": [
+    -123.00182027806548,
+    49.198519795291325,
+    -122.6020699766323,
+    49.49945541547137
+  ],
+  "crs": "EPSG:4326",
+  "licence": "Public; no restrictions (SILVIS Lab)",
+  "notes": "Subset around 49.35N, 122.80W for the WS4 DHI pilot; 8-bit RGB composite normalized by 255.",
+  "resolution_m": 500.0,
+  "retrieved_utc": "2026-10-26T00:00:00+00:00",
+  "scale": 255.0,
+  "schema_version": "ws4.dhi.source.v1",
+  "source_id": "silvis-dhi-modis6.1-terra-ndvi-composite",
+  "source_path": "examples/dhi_pilot/dhi_ndvi_terra_500m_subset.tif",
+  "source_sha256": "beaa42872992fbc87a06350563b4def5808a237f42640b05c3add376421b7186",
+  "source_version": "MODIS 6.1 Terra NDVI Composite RGB (2003-2022)",
+  "valid_pixels": 5963,
+  "year_range": "2003-2022"
+}

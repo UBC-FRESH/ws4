@@ -17,6 +17,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from ..dhi import DhiAccount
 from ..model.checks import area_products_with_rate_curves, duplicate_product_keys
 from ..model.schema import dataset_reference
 from ..patch.accounts import PatchAccount, PatchLedger, load_patch_edges, load_patch_edges_detailed
@@ -1071,6 +1072,7 @@ class Simulator:
         spread_accounts: Sequence[SpreadAccount] = (),
         spread_edges: Sequence[tuple[int, int, float]] = (),
         spread_points: Mapping[int, Point] | None = None,
+        dhi_account: DhiAccount | None = None,
     ) -> pd.DataFrame:
         """Replay a schedule and return the account values, without writing files.
 
@@ -1100,6 +1102,10 @@ class Simulator:
             spread bearing is read from.
         spread_points : mapping of int to tuple of float or None, optional
             The ``(x, y)`` centroid of each block in metres.
+        dhi_account : DhiAccount or None, optional
+            Static Dynamic Habitat Index values per block. When given, the
+            simulator records the DHI total and area-weighted mean for the
+            blocks not yet treated. The account does not change growth.
 
         Returns
         -------
@@ -1128,10 +1134,26 @@ class Simulator:
         # treatment is applied; the first treatment offset (0) is the first simulation
         # step, and period 1 covers offsets 0 through period_width - 1.
         records.extend(self.account_values(-1))
+        dhi_area: dict[int, float] = {}
+        if dhi_account is not None:
+            dhi_area = self._spread_block_area()
+            dhi_account.validate(dhi_area)
+            records.extend(
+                {"offset": -1, "account": account, "value": value}
+                for account, value in dhi_account.account_values(dhi_area).items()
+            )
+        disturbed_blocks: set[int] = set()
         for offset in range(years):
             products_before = len(self._product_values)
-            self.apply_treatments(schedule, offset, model, ledger)
+            disturbed_blocks.update(self.apply_treatments(schedule, offset, model, ledger))
             records.extend(self.account_values(offset))
+            if dhi_account is not None:
+                records.extend(
+                    {"offset": offset, "account": account, "value": value}
+                    for account, value in dhi_account.account_values(
+                        dhi_area, excluded_blocks=disturbed_blocks
+                    ).items()
+                )
             produced: dict[str, float] = {}
             for record in self._product_values[products_before:]:
                 account = str(record["account"])
@@ -1192,6 +1214,7 @@ class Simulator:
         block_coordinates: Path | None = None,
         core_buffer_m: float | None = None,
         min_core_area_ha: float | None = None,
+        dhi_account: DhiAccount | None = None,
     ) -> pd.DataFrame:
         """Replay a schedule for the given horizon and write the run outputs.
 
@@ -1242,6 +1265,10 @@ class Simulator:
             Spread-connectivity accounts. When given with a topology and a coordinate table,
             they are computed per year, added to the account values, and written to
             ``spread_metrics.csv``.
+        dhi_account : DhiAccount or None, optional
+            Static Dynamic Habitat Index values per block. When given, the DHI
+            accounts are added to ``account_values.csv`` and the run-local
+            values/metadata are written for reports and the web API.
         block_coordinates : Path or None, optional
             A CSV of block centroids (a block id, an ``x`` and a ``y``), which a spread bearing
             is read from. Required with ``spread_accounts``.
@@ -1299,6 +1326,7 @@ class Simulator:
             spread_edges=spread_edges,
             spread_points=points,
             edges=graph,
+            dhi_account=dhi_account,
         )
         if ledger is not None and route_accounts:
             values = resolve_account_values(
@@ -1315,6 +1343,8 @@ class Simulator:
             if not shares.empty:
                 values = pd.concat([values, shares], ignore_index=True)
         values.to_csv(out_dir / "account_values.csv", index=False)
+        if dhi_account is not None:
+            dhi_account.write(out_dir)
         pd.DataFrame(self._product_values, columns=["offset", "account", "value"]).to_csv(
             out_dir / "product_values.csv", index=False
         )
