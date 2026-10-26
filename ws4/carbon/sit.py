@@ -237,7 +237,8 @@ def _validate_schedule(frame: pd.DataFrame) -> pd.DataFrame:
         raise CarbonSitError([Problem("CARBON-SCHEDULE-OFFSET", "schedule", str(exc))]) from exc
     result["block_id"] = pd.to_numeric(result["block_id"], errors="raise").astype(int)
     result["treatment"] = result["treatment"].astype(str)
-    return result.loc[:, ["block_id", "treatment", "offset"]].sort_values(
+    optional = [column for column in ("target_track", "target_area_ha") if column in result.columns]
+    return result.loc[:, ["block_id", "treatment", "offset", *optional]].sort_values(
         ["offset", "block_id"], kind="stable"
     )
 
@@ -272,13 +273,7 @@ def build_sit_tables(
     CarbonSitError
         When the package, dataset, or schedule cannot be compiled.
     """
-    root = Path(dataset_dir)
-    findings: list[Problem] = []
-    fragments = _read_table(root, "fragments", findings)
-    tracks = _read_table(root, "tracks", findings)
-    treatments = _read_table(root, "treatments", findings)
-    if findings:
-        raise CarbonSitError(findings)
+    fragments, tracks, treatments = read_dataset_tables(dataset_dir)
     return build_sit_tables_from_tables(
         package,
         fragments,
@@ -287,6 +282,36 @@ def build_sit_tables(
         schedule,
         allow_unmatched=allow_unmatched,
     )
+
+
+def read_dataset_tables(
+    dataset_dir: Path,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Read the three dataset tables used by the SIT compiler.
+
+    Parameters
+    ----------
+    dataset_dir : Path
+        The compiled dataset directory.
+
+    Returns
+    -------
+    tuple of pandas.DataFrame
+        The ``fragments``, ``tracks``, and ``treatments`` tables.
+
+    Raises
+    ------
+    CarbonSitError
+        When a required dataset table is missing.
+    """
+    root = Path(dataset_dir)
+    findings: list[Problem] = []
+    fragments = _read_table(root, "fragments", findings)
+    tracks = _read_table(root, "tracks", findings)
+    treatments = _read_table(root, "treatments", findings)
+    if findings:
+        raise CarbonSitError(findings)
+    return fragments, tracks, treatments
 
 
 def build_sit_tables_from_tables(
@@ -695,19 +720,38 @@ def _build_events(
             )
             continue
         grouped: dict[tuple[str, ...], float] = {}
-        for fragment in block_frame.itertuples(index=False):
-            track_name = track_names.get(int(str(fragment.track_id)))
-            if track_name is None or track_name not in resolution.mapping:
+        target_track = getattr(event, "target_track", None)
+        if isinstance(target_track, str) and target_track.strip():
+            target_name = target_track.strip()
+            if target_name not in classifier_by_track:
                 findings.append(
                     Problem(
                         "CARBON-UNMATCHED-TRACK",
-                        "fragments.track_id",
-                        f"block {block_id} has a track absent from the package",
+                        "schedule.target_track",
+                        f"recovery event targets {target_name!r}, which is not in the package",
                     )
                 )
                 continue
-            values = tuple(classifier_by_track.get(track_name, []))
-            grouped[values] = grouped.get(values, 0.0) + float(str(fragment.area_ha))
+            target_area = getattr(event, "target_area_ha", None)
+            if target_area is None or pd.isna(target_area):
+                area = float(pd.to_numeric(block_frame["area_ha"], errors="coerce").sum())
+            else:
+                area = float(str(target_area))
+            grouped[tuple(classifier_by_track[target_name])] = area
+        else:
+            for fragment in block_frame.itertuples(index=False):
+                track_name = track_names.get(int(str(fragment.track_id)))
+                if track_name is None or track_name not in resolution.mapping:
+                    findings.append(
+                        Problem(
+                            "CARBON-UNMATCHED-TRACK",
+                            "fragments.track_id",
+                            f"block {block_id} has a track absent from the package",
+                        )
+                    )
+                    continue
+                values = tuple(classifier_by_track.get(track_name, []))
+                grouped[values] = grouped.get(values, 0.0) + float(str(fragment.area_ha))
         for values, area in grouped.items():
             row: dict[str, object] = dict(zip(classifier_names, values, strict=True))
             row.update(dict.fromkeys(_EVENT_FIELDS, -1))

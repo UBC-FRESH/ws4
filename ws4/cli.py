@@ -16,13 +16,21 @@ from .build.legacy import ingest_legacy_matrix
 from .carbon import (
     CarbonEngineError,
     GcbmResultsError,
+    block_areas_from_dataset,
     build_sit_tables,
+    build_sit_tables_from_tables,
     compare_gcbm_to_carbon,
+    fertilization_accounts,
     load_carbon_package,
+    load_fertilization_config,
     merge_carbon_accounts,
+    read_dataset_tables,
     read_gcbm_results,
     read_schedule,
     run_libcbm,
+    with_fertilization_curves,
+    with_fertilization_disturbances,
+    with_fertilization_recovery,
     write_carbon_run,
     write_gcbm_results,
     write_sit_tables,
@@ -201,6 +209,12 @@ def carbon(
     density: bool = typer.Option(
         False, "--density", help="Write tC/ha instead of tC in the pool and flux tables"
     ),
+    fertilization_config: Path | None = typer.Option(
+        None,
+        "--fertilization-config",
+        exists=True,
+        help="Fertilization YAML; enables f1/f2/f3 curves, growth, and emissions accounts",
+    ),
     merge_into: Path | None = typer.Option(
         None,
         "--merge-into",
@@ -215,9 +229,42 @@ def carbon(
     if n_steps <= latest_offset:
         print("[red]--years must run past the latest scheduled offset[/red]")
         raise typer.Exit(code=1)
+    fertilization = None
     try:
         loaded = load_carbon_package(package)
-        tables = build_sit_tables(loaded, dataset, schedule_frame)
+        run_fertilization = None
+        simulation_schedule = schedule_frame
+        if fertilization_config is not None:
+            fertilization = load_fertilization_config(fertilization_config)
+            if fertilization.uses_curves:
+                fragments, tracks, treatments = read_dataset_tables(dataset)
+                loaded, tracks, treatments = with_fertilization_curves(
+                    loaded,
+                    tracks,
+                    treatments,
+                    fertilization,
+                )
+                simulation_schedule = with_fertilization_recovery(
+                    schedule_frame,
+                    fragments,
+                    tracks,
+                    fertilization,
+                )
+                tables = build_sit_tables_from_tables(
+                    loaded,
+                    fragments,
+                    tracks,
+                    treatments,
+                    simulation_schedule,
+                )
+            else:
+                loaded = with_fertilization_disturbances(loaded, fertilization)
+                run_fertilization = fertilization
+                tables = build_sit_tables(loaded, dataset, schedule_frame)
+        else:
+            tables = build_sit_tables(loaded, dataset, schedule_frame)
+        if years is None and not simulation_schedule.empty:
+            n_steps = max(n_steps, int(simulation_schedule["offset"].max()) + 1)
         if audit_sit:
             write_sit_tables(tables, out / "carbon_sit")
         run = run_libcbm(
@@ -226,7 +273,28 @@ def carbon(
             n_steps=n_steps,
             density=density,
             allow_defaults_mismatch=allow_defaults_mismatch,
+            fertilization=run_fertilization,
         )
+        extra_accounts = None
+        extra_manifest = None
+        if fertilization is not None:
+            extra_accounts = fertilization_accounts(
+                schedule_frame,
+                block_areas_from_dataset(dataset),
+                fertilization,
+            )
+            extra_manifest = fertilization.manifest()
+            if not extra_accounts.empty:
+                extra_manifest["total_area_ha"] = float(
+                    extra_accounts.loc[
+                        extra_accounts["account"] == "fertilization.area_ha", "value"
+                    ].sum()
+                )
+                extra_manifest["total_co2e_t"] = float(
+                    extra_accounts.loc[
+                        extra_accounts["account"] == "fertilization.co2e_t", "value"
+                    ].sum()
+                )
         result = write_carbon_run(
             run,
             out,
@@ -235,6 +303,8 @@ def carbon(
             schedule=schedule_frame,
             n_steps=n_steps,
             density=density,
+            extra_accounts=extra_accounts,
+            extra_manifest=extra_manifest,
         )
     except CarbonEngineError as exc:
         print(f"[red]Carbon run failed:[/red] {exc}")
@@ -447,6 +517,12 @@ def optimize(
         exists=True,
         help="FEMIC carbon package; enables carbon accounts and carbon.* targets",
     ),
+    carbon_fertilization: Path | None = typer.Option(
+        None,
+        "--carbon-fertilization",
+        exists=True,
+        help="Fertilization YAML; adds f1/f2/f3 growth response and emissions to the ledger",
+    ),
     cooling_mode: str = typer.Option(
         "geometric", "--cooling-mode", help="Temperature schedule: geometric or adaptive"
     ),
@@ -507,6 +583,9 @@ def optimize(
         split_weight=split_weight,
         patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",
         carbon_package_path=str(carbon_package) if carbon_package is not None else "",
+        carbon_fertilization_path=(
+            str(carbon_fertilization) if carbon_fertilization is not None else ""
+        ),
         spread_accounts_path=str(spread_accounts) if spread_accounts is not None else "",
         block_coordinates_path=str(block_coordinates) if block_coordinates is not None else "",
         cooling_mode=cooling_mode,

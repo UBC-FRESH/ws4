@@ -7,6 +7,18 @@ run happens.
 
 from __future__ import annotations
 
+from .fertilization import (
+    FERTILIZATION_TREATMENTS,
+    FertilizationApplication,
+    FertilizationConfig,
+    FertilizationConfigError,
+    block_areas_from_dataset,
+    fertilization_accounts,
+    load_fertilization_config,
+    with_fertilization_curves,
+    with_fertilization_disturbances,
+    with_fertilization_recovery,
+)
 from .gcbm import (
     GcbmResults,
     GcbmResultsError,
@@ -52,11 +64,13 @@ from .sit import (
     SitTables,
     build_sit_tables,
     build_sit_tables_from_tables,
+    read_dataset_tables,
     read_schedule,
     write_sit_tables,
 )
 
 __all__ = [
+    "FERTILIZATION_TREATMENTS",
     "CarbonEngineError",
     "CarbonLedger",
     "CarbonPackage",
@@ -64,6 +78,9 @@ __all__ = [
     "CarbonRun",
     "CarbonRunResult",
     "CarbonSitError",
+    "FertilizationApplication",
+    "FertilizationConfig",
+    "FertilizationConfigError",
     "FrameComparison",
     "GcbmResults",
     "GcbmResultsError",
@@ -71,6 +88,7 @@ __all__ = [
     "RunComparison",
     "SitTables",
     "TrackResolution",
+    "block_areas_from_dataset",
     "build_sit_tables",
     "build_sit_tables_from_tables",
     "carbon_accounts",
@@ -79,12 +97,15 @@ __all__ = [
     "compare_carbon_runs",
     "compare_frames",
     "compare_gcbm_to_carbon",
+    "fertilization_accounts",
     "gcbm_accounts",
     "installed_libcbm_version",
     "load_carbon_package",
+    "load_fertilization_config",
     "mass_balance",
     "merge_carbon_accounts",
     "package_fingerprint",
+    "read_dataset_tables",
     "read_gcbm_results",
     "read_schedule",
     "replay_equal",
@@ -92,6 +113,9 @@ __all__ = [
     "run_libcbm",
     "run_libcbm_tables",
     "validate_carbon_package",
+    "with_fertilization_curves",
+    "with_fertilization_disturbances",
+    "with_fertilization_recovery",
     "write_carbon_run",
     "write_gcbm_results",
     "write_sit_tables",

@@ -299,6 +299,10 @@ class OptimizeConfig:
     carbon_package_path : str
         The FEMIC carbon package. When set, carbon accounts are added to the objective and
         the run report, and ``carbon.*`` targets are allowed.
+    carbon_fertilization_path : str
+        The fertilization YAML. When set with ``carbon_package_path``, the carbon ledger
+        applies the materialized curve transitions or the growth multiplier and includes
+        the emissions accounts.
     spread_accounts_path : str
         A YAML file of spread-connectivity account definitions; needs ``topology_path`` for the
         adjacency and ``block_coordinates_path`` for the bearings.
@@ -367,6 +371,7 @@ class OptimizeConfig:
     warm_cache: bool = False
     patch_accounts_path: str = ""
     carbon_package_path: str = ""
+    carbon_fertilization_path: str = ""
     spread_accounts_path: str = ""
     block_coordinates_path: str = ""
     flood_screen_config_path: str = ""
@@ -387,6 +392,8 @@ class OptimizeConfig:
             raise ValueError(f"unknown metaheuristic: {self.metaheuristic!r}")
         if self.cooling_mode not in {"geometric", "adaptive"}:
             raise ValueError(f"unknown cooling_mode: {self.cooling_mode!r}")
+        if self.carbon_fertilization_path and not self.carbon_package_path:
+            raise ValueError("carbon fertilization needs a carbon package")
 
 
 #: The route-account kinds that are charged per segment per period rather than per block, so a
@@ -740,13 +747,20 @@ class Optimizer:
         if not self.cfg.carbon_package_path:
             return None
         if self._carbon_ledger_cache is None:
+            from ..carbon.fertilization import load_fertilization_config
             from ..carbon.ledger import CarbonLedger
             from ..carbon.package import load_carbon_package
 
+            fertilization = (
+                load_fertilization_config(Path(self.cfg.carbon_fertilization_path))
+                if self.cfg.carbon_fertilization_path
+                else None
+            )
             self._carbon_ledger_cache = CarbonLedger(
                 self.dataset_dir,
                 load_carbon_package(Path(self.cfg.carbon_package_path)),
                 self.cfg.years,
+                fertilization=fertilization,
             )
         return self._carbon_ledger_cache
 
@@ -1324,12 +1338,19 @@ class Optimizer:
         Raises
         ------
         ValueError
-            When a carbon target is present without a package.
+            When a carbon or fertilization target is present without a package
+            or without a fertilization configuration.
         """
-        if any(target.account.startswith("carbon.") for target in targets) and (
-            not self.cfg.carbon_package_path
-        ):
+        needs_carbon = any(
+            target.account.startswith(("carbon.", "fertilization.")) for target in targets
+        )
+        if needs_carbon and not self.cfg.carbon_package_path:
             raise ValueError("carbon targets need a carbon package; set --carbon-package")
+        needs_fertilization = any(target.account.startswith("fertilization.") for target in targets)
+        if needs_fertilization and not self.cfg.carbon_fertilization_path:
+            raise ValueError(
+                "fertilization targets need a fertilization config; set --carbon-fertilization"
+            )
 
     def _solve(
         self,
@@ -1712,6 +1733,7 @@ class Optimizer:
                 json.dumps(
                     {
                         "package": self.cfg.carbon_package_path,
+                        "fertilization": self.cfg.carbon_fertilization_path,
                         "years": self.cfg.years,
                         "ledger": "block-level",
                     },
