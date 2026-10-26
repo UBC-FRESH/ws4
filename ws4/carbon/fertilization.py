@@ -208,7 +208,8 @@ def load_fertilization_config(path: Path) -> FertilizationConfig:
         )
     factors = _mapping(raw.get("factors_kg_ha"), "factors_kg_ha", findings)
     gwp = _mapping(raw.get("gwp100"), "gwp100", findings)
-    growth = _mapping(raw.get("growth_response"), "growth_response", findings)
+    growth_value = raw.get("growth_response")
+    growth = {} if growth_value is None else _mapping(growth_value, "growth_response", findings)
     dose = _number(raw.get("dose_kg_n_ha"), "dose_kg_n_ha", findings)
     response_years = _integer(
         growth.get("response_years", raw.get("response_years")),
