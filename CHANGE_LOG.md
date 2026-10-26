@@ -3046,3 +3046,18 @@ issue comments.
 
 - P66 close-out: pull request #476 squash-merged as `ed1f15a`; parent #473 and task #474
   closed; status set complete. The assistant panel is absent when the service has no agent.
+
+- P54 adoption validation: replayed the real North Island compiled estate
+  (51,289 blocks, two 31-year schedules) with the DHI account and resilience
+  metrics. DHI sampled all 51,289 blocks at 500 m; the corrected BC Albers
+  geometry covered 442,452 ha. Baseline and `scenario_retain_low` diverged in
+  untreated area (381,092 vs 403,113 ha), largest component (132,005 vs
+  144,527 ha), and total opening area (61,360 vs 39,339 ha), while age Shannon
+  was nearly unchanged (2.692 vs 2.681). DHI total and mean moved in different
+  directions in the baseline, confirming that both are needed. The North Island
+  GeoJSON's declared CRS is wrong (4326 metadata on 3005 coordinates); the run
+  overrode it. The TFL 6 bundle still cannot compute the published structure
+  habitat index because the exact first-return metrics are absent. Report:
+  `notes/reports/p54-adoption-northisland.md`. Dashboard **GREEN** (lint
+  0.11 s, format 0.09 s, types 31.10 s, tests 153.86 s, validator 0.75 s,
+  docs 19.35 s, docstrings 3.83 s). No code or objective change.
