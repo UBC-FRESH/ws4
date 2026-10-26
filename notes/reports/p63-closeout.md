@@ -2,7 +2,7 @@
 
 Phase: P63, UI foundation for desktop and iPad landscape
 Parent issue: #442
-Pull request: this P63 PR
+Pull request: #447
 Status: queued for approval. Not merged.
 Date: 2026-10-26
 
