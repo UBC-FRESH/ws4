@@ -644,11 +644,13 @@ def _validate(package: CarbonPackage) -> list[Problem]:
     classifiers = _validate_classifiers(package.tables.get("classifiers"), findings)
     _validate_disturbance_types(package.tables.get("disturbance_types"), findings)
     _validate_age_classes(package.tables.get("age_classes"), findings)
+    boundary_pairs = _declared_boundary_pairs(package.tables.get("boundaries"))
     track_names = _validate_track_map(
         package.tables.get("track_carbon_map"),
         package.manifest,
         classifiers,
         species,
+        boundary_pairs,
         findings,
     )
     _validate_inventory(
@@ -862,6 +864,7 @@ def _validate_track_map(
     manifest: CarbonManifest,
     classifiers: Mapping[int, tuple[str, set[str]]],
     species: set[str],
+    boundary_pairs: set[tuple[str, str]],
     findings: list[Problem],
 ) -> set[str]:
     """Validate the track map and return its track names."""
@@ -963,14 +966,16 @@ def _validate_track_map(
                 )
             )
         if eco_boundary != manifest.boundaries.eco:
-            findings.append(
-                _problem(
-                    "CARBON-ECO-MISMATCH",
-                    "track_carbon_map.eco_boundary",
-                    f"{track_name!r} uses {eco_boundary!r}, manifest uses "
-                    f"{manifest.boundaries.eco!r}",
+            declared = (manifest.boundaries.admin, eco_boundary)
+            if declared not in boundary_pairs:
+                findings.append(
+                    _problem(
+                        "CARBON-ECO-MISMATCH",
+                        "track_carbon_map.eco_boundary",
+                        f"{track_name!r} uses {eco_boundary!r}, which is not declared "
+                        f"in boundaries.csv for {manifest.boundaries.admin!r}",
+                    )
                 )
-            )
         if not feature_label:
             findings.append(
                 _problem(
@@ -1203,6 +1208,18 @@ def _validate_curve_map(
                     f"{track_name!r} has an invalid share",
                 )
             )
+
+
+def _declared_boundary_pairs(frame: pd.DataFrame | None) -> set[tuple[str, str]]:
+    """Return the admin/eco pairs declared by the package."""
+    if frame is None or frame.empty:
+        return set()
+    if not {"admin_boundary", "eco_boundary"}.issubset(frame.columns):
+        return set()
+    return {
+        (str(admin).strip(), str(eco).strip())
+        for admin, eco in zip(frame["admin_boundary"], frame["eco_boundary"], strict=True)
+    }
 
 
 def _validate_boundaries(

@@ -3009,6 +3009,69 @@ def create_app(
         """Return the run's realized value for each target, over the target's own period."""
         return _realized_rows(run_dir(run))
 
+    @app.get("/api/runs/{run}/target-series")
+    def run_target_series(run: str) -> dict[str, Any]:
+        """Return every target account's bounds and active state for every run period."""
+        directory = run_dir(run)
+        if targets_path is None or not targets_path.is_file():
+            return {"periods": [], "accounts": []}
+        values = read_csv(directory, "account_values.csv")
+        years = sorted(
+            {
+                int(float(str(value)))
+                for value in values["offset"].tolist()
+                if int(float(str(value))) >= 0
+            }
+        )
+        width = _run_period_width(targets_path)
+        periods = _run_periods(years, width)
+        targets = load_targets(targets_path)
+        accounts: dict[str, dict[str, Any]] = {}
+        for target_index, target in enumerate(targets):
+            entry = accounts.setdefault(
+                target.account,
+                {
+                    "account": target.account,
+                    "flow": target.flow,
+                    "kind": target_kind(target),
+                    "periods": [
+                        {
+                            "index": int(str(period["index"])),
+                            "start": int(str(period["start"])),
+                            "end": int(str(period["end"])),
+                            "label": str(period["label"]),
+                            "minimum": None,
+                            "maximum": None,
+                            "active": False,
+                            "target_indices": [],
+                        }
+                        for period in periods
+                    ],
+                },
+            )
+            if target.period is not None and target.period > 0:
+                period_index = target.period - 1
+            else:
+                end = target.end_offset()
+                period_index = next(
+                    (
+                        int(str(period["index"]))
+                        for period in periods
+                        if int(str(period["start"])) <= end <= int(str(period["end"]))
+                    ),
+                    -1,
+                )
+            if period_index < 0 or period_index >= len(entry["periods"]):
+                continue
+            cell = entry["periods"][period_index]
+            if target.minimum is not None:
+                cell["minimum"] = float(target.minimum)
+            if target.maximum is not None:
+                cell["maximum"] = float(target.maximum)
+            cell["active"] = bool(cell["active"] or target.active)
+            cell["target_indices"].append(target_index)
+        return {"periods": periods, "accounts": list(accounts.values())}
+
     @app.put("/api/targets.json")
     @app.post("/api/targets.json")
     def put_targets_json(

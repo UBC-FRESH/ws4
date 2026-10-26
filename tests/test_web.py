@@ -1530,3 +1530,30 @@ def test_a_run_without_carbon_artifacts_is_explicit(tmp_path: Path) -> None:
     assert body["accounts"] == []
     assert body["pools"] is None
     assert body["files"] == []
+
+
+def test_the_target_series_endpoint_assigns_bounds_to_periods(tmp_path: Path) -> None:
+    """The chart contract returns every account's bounds and active state by period."""
+    client, targets_path = _app(tmp_path)
+    body = client.get("/api/runs/run1/target-series").json()
+    assert body["periods"]
+    accounts = {item["account"]: item for item in body["accounts"]}
+    assert {"feature.Volume", "product.Yield"} <= set(accounts)
+    feature = accounts["feature.Volume"]
+    assert feature["kind"] == "level"
+    assert feature["periods"][0]["minimum"] == 0.0
+    assert feature["periods"][0]["active"] is True
+    assert feature["periods"][0]["target_indices"] == [0]
+
+    targets_path.write_text(
+        "targets:\n"
+        "  - account: feature.Volume\n"
+        "    period: 1\n"
+        "    minimum: 12\n"
+        "    active: false\n",
+        encoding="utf-8",
+    )
+    body = client.get("/api/runs/run1/target-series").json()
+    feature = {item["account"]: item for item in body["accounts"]}["feature.Volume"]
+    assert feature["periods"][0]["minimum"] == 12.0
+    assert feature["periods"][0]["active"] is False

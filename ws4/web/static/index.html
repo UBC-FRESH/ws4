@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=71">
+  <link rel="stylesheet" href="static/style.css?v=72">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
 </head>
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v71</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v72</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Period
@@ -72,7 +72,7 @@
             <p id="new-target-status" class="hint"></p>
           </div>
         </div>
-        <div id="watch-panel" class="watch"></div>
+        <div id="watch-panel" class="watch" hidden></div>
         <div class="table-wrap"><table id="targets-table" hidden>
           <thead><tr><th>On</th><th>Account</th><th>Target period</th><th>Min</th><th>Max</th><th>Min w</th><th>Max w</th><th></th></tr></thead>
           <tbody></tbody>
@@ -265,6 +265,17 @@
       </section>
     </aside>
     <div id="splitter" title="Drag to resize the panel"></div>
+    <section id="target-canvas" class="target-canvas" hidden>
+      <div class="target-canvas-head">
+        <div>
+          <h2>Target charts</h2>
+          <p class="hint">Minimum, maximum, and achieved account levels for every period. Pin targets in the Plan table; inactive targets are indicators.</p>
+        </div>
+        <div id="target-chart-count" class="target-chart-count"></div>
+      </div>
+      <div id="target-chart-grid" class="target-chart-grid"></div>
+      <p id="target-chart-empty" class="target-chart-empty">Pin a target in the table to open its chart.</p>
+    </section>
     <div id="map-wrap" tabindex="-1" aria-label="Forest estate map. Click a block for details.">
       <div id="maplibre-map" hidden></div>
       <svg id="map" xmlns="http://www.w3.org/2000/svg">
@@ -282,6 +293,6 @@
     </div>
   </main>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=71"></script>
+  <script type="module" src="static/app.js?v=72"></script>
 </body>
 </html>

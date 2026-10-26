@@ -65,6 +65,8 @@ exists and the maintainer approves it.
 | P60 Harden hydrology use with validation evidence | #415 | `feature/p60-closeout` | complete |
 | P61 Carbon and libcbm in the web UI | #430 | `feature/p61-carbon-ui` | complete |
 | P62 Harden the hydrology consumer and explicit road/culvert exposure | #437 | `feature/p62-hydrology-consumer` | active |
+| P63 UI foundation for desktop and iPad landscape | #442 | `feature/p63-ui-foundation` | complete |
+| P64 Patchworks-style target charts | #456 | `feature/p64-target-charts` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -1940,6 +1942,50 @@ Acceptance:
 - The optimizer refuses fixed exposure instead of reusing it across candidates.
 - The synthetic path covers success and fail-closed cases.
 - The closeout states that no real watershed or flood result exists.
+## Phase 63: UI foundation for desktop and iPad landscape
+
+Parent issue: #442
+Branch: `feature/p63-ui-foundation`
+Status: complete
+
+Goal: rebuild the web shell around Map, Plan, Results, and Data and make it usable on an iPad
+Pro in landscape.
+
+- [x] P63.1 Rebuild the shell around four workspaces and iPad landscape (#443)
+- [x] P63.2 Add accessible tabs, keyboard navigation, and URL state (#444)
+- [x] P63.3 Add the Data workspace and capability-aware loading states (#445)
+- [x] P63.4 Verify iPad/desktop, update smokes, document, and close out (#446)
+
+Closeout report: `notes/reports/p63-closeout.md`.
+
+## Phase 64: Patchworks-style target charts
+
+Parent issue: #456
+Branch: `feature/p64-target-charts`
+Status: complete
+
+Goal: make target evaluation the primary analyst surface with a large, real-time chart per
+pinned target account showing every period's minimum, maximum, and achieved level.
+
+- [x] P64.1 Add the all-period target series model (#457)
+  - [x] Add the target-series endpoint and period assignment
+  - [x] Include inactive and flow targets
+  - [x] Add API tests
+- [x] P64.2 Build the Patchworks-style target chart canvas (#458)
+  - [x] Add the Plan chart canvas and chart shell
+  - [x] Render min/max/achieved bands and lines for every period
+  - [x] Add hover readout, all-period table, period click, and pinning
+- [x] P64.3 Verify live convergence and close out (#459)
+  - [x] Add the target-chart browser smoke
+  - [x] Run a live convergence check
+  - [x] Verify inactive targets, iPad/desktop, docs, and close-out
+
+Acceptance:
+
+- Any target account, active or inactive, can be pinned and charted.
+- Every period shows min/max/achieved with exact values on hover and in a table.
+- The chart updates from live solver snapshots.
+- `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes
 

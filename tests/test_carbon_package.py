@@ -292,6 +292,30 @@ def test_eco_boundary_mismatch_is_reported(tmp_path: Path) -> None:
     assert "CARBON-ECO-MISMATCH" in _codes(validate_carbon_package(root))
 
 
+def test_multi_boundary_package_is_valid(tmp_path: Path) -> None:
+    """A declared second admin/eco pair is accepted for a track."""
+    root = _write_package(tmp_path / "package")
+    boundaries = pd.read_csv(root / "boundaries.csv")
+    boundaries = pd.concat(
+        [
+            boundaries,
+            pd.DataFrame(
+                {
+                    "admin_boundary": ["British Columbia"],
+                    "eco_boundary": ["Pacific Maritime"],
+                }
+            ),
+        ],
+        ignore_index=True,
+    )
+    boundaries.to_csv(root / "boundaries.csv", index=False)
+    frame = pd.read_csv(root / "track_carbon_map.csv")
+    frame.loc[frame["track_name"] == "track2", "eco_boundary"] = "Pacific Maritime"
+    frame.to_csv(root / "track_carbon_map.csv", index=False)
+
+    assert validate_carbon_package(root) == []
+
+
 def test_table_hash_mismatch_is_reported(tmp_path: Path) -> None:
     """A changed table no longer matches the manifest hash."""
     root = _write_package(tmp_path / "package", hashes=True)
