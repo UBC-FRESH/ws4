@@ -2,6 +2,7 @@
   "id": "reviewer",
   "title": "Reviewer",
   "panels": [
+    "dataset",
     "lidar",
     "carbon",
     "targets",

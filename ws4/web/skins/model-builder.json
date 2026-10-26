@@ -3,6 +3,7 @@
   "title": "Model builder",
   "panels": [
     "legend",
+    "dataset",
     "lidar",
     "carbon",
     "reports",

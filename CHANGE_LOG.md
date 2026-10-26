@@ -2868,3 +2868,12 @@ issue comments.
 - P61 close-out: pull request #436 squash-merged as `b61224a`; parent #430 and tasks
   #431/#432/#433 closed; status set complete. Carbon/libcbm evidence and the GCBM
   comparison gap are recorded in `notes/reports/p61-closeout.md`.
+
+- P63.1-P63.3: rebuilt the web shell around Map, Plan, Results, and Data workspaces, moved
+  Reports/Compare/Search and Dataset/LiDAR/Carbon into nested navigation, made the sidebar and
+  header fit 1024-1500 px landscape, added WAI-ARIA tab semantics/keyboard movement/URL state,
+  a dataset panel, capability-aware Data options, and a map/run loading overlay. Phone layouts
+  are explicitly out of scope; iPad Pro landscape is the supported small surface.
+- P63.4: added `scripts/check_ui_shell.py` and verified 1024×768, 1194×834, 1366×1024, and
+  1500×1000 with no horizontal page scroll and usable map widths. LiDAR, carbon, compare, and
+  target browser smokes pass. Dashboard **GREEN**.

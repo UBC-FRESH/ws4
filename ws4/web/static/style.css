@@ -1,23 +1,32 @@
 :root { --ink:#1f2933; --muted:#616e7c; --line:#d9e2ec; --bg:#f7f9fb; --panel:#fff;
-        --treated:#c0392b; --untreated:#2f7d4f; }
+        --treated:#c0392b; --untreated:#2f7d4f; --panel-width: clamp(20rem, 32vw, 30rem); --focus:#1f6feb; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 body { margin:0; font:14px/1.45 system-ui, sans-serif; color:var(--ink); background:var(--bg); height:100vh; display:flex; flex-direction:column; }
-header { display:flex; gap:1.2rem; align-items:center; padding:.55rem .9rem; background:var(--panel); border-bottom:1px solid var(--line); }
+header { display:flex; gap:1rem; align-items:center; padding:.55rem .9rem; background:var(--panel); border-bottom:1px solid var(--line); min-width:0; }
+.brand { display:flex; align-items:center; gap:.4rem; min-width:0; }
+.dataset-name { color:var(--muted); font-size:.82rem; max-width:18rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 header strong { font-size:1.05rem; letter-spacing:.04em; }
 .build { color:var(--muted); font-size:.72rem; }
 header label { display:flex; gap:.4rem; align-items:center; color:var(--muted); }
 header select { max-width:16rem; }
 header .year { flex:1; }
 header input[type=range] { flex:1; min-width:8rem; }
-#status { color:var(--muted); font-variant-numeric:tabular-nums; }
-main { flex:1; display:grid; grid-template-columns:var(--panel-width,30rem) 6px 1fr; min-height:0; }
+#status { color:var(--muted); font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:22rem; }
+main { flex:1; display:grid; grid-template-columns:var(--panel-width) 6px 1fr; min-height:0; min-width:0; }
 aside { background:var(--panel); border-right:1px solid var(--line); padding:.6rem; overflow:auto; }
 #sidebar { display:flex; flex-direction:column; padding:0; overflow:hidden; }
 .sidebar-body { flex:1; min-height:0; overflow:auto; padding:0 .6rem .6rem; }
-nav.tabs { display:flex; gap:.25rem; margin:.6rem .6rem .6rem; }
-nav.tabs button { border:1px solid var(--line); background:#eef2f6; padding:.25rem .55rem; border-radius:.35rem; cursor:pointer; }
-nav.tabs button.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+.workspaces { display:flex; gap:.25rem; margin:.5rem .6rem .25rem; flex:none; }
+.workspaces button { flex:1; min-width:0; min-height:2rem; border:1px solid var(--line); background:#eef2f6; padding:.3rem .45rem; border-radius:.35rem; cursor:pointer; font:inherit; font-size:.82rem; }
+.workspaces button.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+.subnav { display:flex; gap:.2rem; margin:.15rem 0 .35rem; padding-bottom:.25rem; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+.subnav button { border:1px solid transparent; background:transparent; padding:.22rem .45rem; border-radius:.25rem; cursor:pointer; font:inherit; font-size:.78rem; color:var(--muted); }
+.subnav button.active { background:#e8f1ff; color:var(--ink); border-color:#c7d8f2; }
+.workspaces button:focus-visible, .subnav button:focus-visible, nav.tabs button:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+.skip-link { position:absolute; left:.5rem; top:-3rem; z-index:20; background:#fff; border:1px solid var(--ink); padding:.35rem .55rem; }
+.skip-link:focus { top:.5rem; }
+.dataset-name::before { content:"·"; margin-right:.4rem; color:var(--line); }
 .chat { flex:none; display:flex; flex-direction:column; gap:.3rem; height:var(--chat-height,15rem); min-height:8rem;
         padding:.45rem .55rem .55rem; border-top:1px solid var(--line); background:#fbfcfd; }
 #chat-splitter { flex:none; height:6px; cursor:row-resize; background:var(--line); }
@@ -42,7 +51,7 @@ nav.tabs button.active { background:var(--ink); color:#fff; border-color:var(--i
 .chat-form textarea { flex:1; resize:vertical; min-height:2.2rem; max-height:6rem; font:inherit;
                       font-size:.8rem; padding:.3rem; border:1px solid var(--line); border-radius:.35rem; }
 .chat-form button { padding:.35rem .6rem; }
-aside h2 { font-size:.8rem; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin:.8rem 0 .35rem; }
+aside h2 { font-size:.88rem; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin:.8rem 0 .35rem; }
 aside label { display:flex; gap:.4rem; align-items:center; margin:.25rem 0; }
 aside b { margin-left:auto; font-variant-numeric:tabular-nums; }
 .hint { color:var(--muted); font-size:.85rem; }
@@ -139,7 +148,7 @@ circle.compare-both, path.compare-both { fill:#6b4c9a; }
 .layer-group-title { font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:.15rem; }
 .layer-option { display:flex; align-items:center; gap:.35rem; font-size:.8rem; margin:.1rem 0; }
 .layer-option.disabled { color:var(--muted); }
-.layer-option .hint { margin-left:auto; font-size:.68rem; }
+.layer-option .hint { margin-left:auto; font-size:.75rem; }
 .layer-swatch { width:.55rem; height:.55rem; border-radius:.15rem; flex:none; }
 .block.current { fill:var(--treated); }
 .block.past { fill:#d9a066; }
@@ -261,3 +270,18 @@ path.block.compare-both { fill:#6b4c9a; }
 .carbon-bar-row span:last-child { text-align:right; color:var(--muted); }
 .carbon-files { margin:.2rem 0; padding-left:1rem; font-size:.8rem; }
 .carbon-files a { color:#1f6feb; }
+
+
+.map-loading { position:absolute; inset:0; display:flex; gap:.55rem; align-items:center; justify-content:center;
+               background:rgba(247,249,251,.82); color:var(--muted); font-size:.9rem; z-index:5; pointer-events:none; }
+.spinner { width:1rem; height:1rem; border:2px solid var(--line); border-top-color:var(--focus); border-radius:50%; animation:spin .8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+@media (max-width: 1200px) {
+  header { flex-wrap:wrap; gap:.45rem .8rem; }
+  header .year { flex-basis:100%; order:5; }
+  #status { flex-basis:100%; order:6; max-width:none; }
+  .dataset-name { max-width:11rem; }
+  aside { padding:.45rem; }
+  .workspaces { margin:.35rem .45rem .2rem; }
+  .sidebar-body { padding:0 .45rem .45rem; }
+}

@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '' };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, selectedBlock: null, pendingBlock: null, pendingPeriod: null, urlReady: false };
 
 const $ = (id) => document.getElementById(id);
 const TILE_VERSION = 'v8';
@@ -810,6 +810,7 @@ async function loadMap(preserveView = false) {
   state.mapRetries = 0;
   state.mapLoading = true;
   statusLine('loading map…');
+  setMapLoading(true, 'Loading map…');
   const lidarField = state.lidarField ? lidarFieldInfo(state.lidarField) : null;
   const layer = state.lidarField ? 'blocks' : mapLayerName();
   try {
@@ -875,6 +876,7 @@ async function loadMap(preserveView = false) {
     statusLine(`map unavailable: ${error.message}`);
   } finally {
     state.mapLoading = false;
+    setMapLoading(false);
   }
 }
 
@@ -1911,10 +1913,11 @@ async function loadLidar() {
       select.disabled = true;
       status.textContent = 'this dataset has no registered LiDAR fields';
       renderLidarLegend();
+      syncNavigation();
       return;
     }
     select.disabled = false;
-    status.textContent = `${info.fields.length} block fields · ${Number(info.block_count ?? 0).toLocaleString()} blocks`;
+    status.textContent = `${info.fields.length} block fields · ${Number(info.block_count ?? 0).toLocaleString()} block${Number(info.block_count ?? 0) === 1 ? '' : 's'}`;
     for (const [label, value] of [
       ['Bundle', info.bundle_id],
       ['Version', info.bundle_version],
@@ -1939,6 +1942,7 @@ async function loadLidar() {
     }
     select.value = current;
     renderLidarLegend();
+    syncNavigation();
   } catch (error) {
     state.lidar = null;
     state.lidarField = '';
@@ -1947,6 +1951,7 @@ async function loadLidar() {
     meta.replaceChildren();
     status.textContent = `LiDAR unavailable: ${error.message}`;
     renderLidarLegend();
+    syncNavigation();
   }
 }
 
@@ -2110,6 +2115,7 @@ async function loadCarbon() {
       renderCarbonCompare();
       renderCarbonFiles();
       drawCarbonChart();
+      syncNavigation();
       return;
     }
     select.disabled = false;
@@ -2152,6 +2158,7 @@ async function loadCarbon() {
     renderCarbonCompare();
     renderCarbonFiles();
     drawCarbonChart();
+    syncNavigation();
   } catch (error) {
     state.carbon = null;
     state.carbonAccount = '';
@@ -2163,6 +2170,7 @@ async function loadCarbon() {
     renderCarbonCompare();
     renderCarbonFiles();
     drawCarbonChart();
+    syncNavigation();
   }
 }
 
@@ -2258,6 +2266,7 @@ function setPeriod(index) {
   state.year = Number(period.end);
   slider.value = String(next);
   $('year-label').textContent = period.label ?? `Period ${next + 1}`;
+  updateUrl({ push: false });
   return period;
 }
 
@@ -2297,19 +2306,240 @@ async function loadPeriods() {
   setPeriod(index >= 0 ? index : 0);
 }
 
+
+const WORKSPACE_NAMES = ['map', 'plan', 'results', 'data'];
+const SUB_PANELS = {
+  results: ['reports', 'comparison', 'search'],
+  data: ['dataset', 'lidar', 'carbon'],
+};
+const SUB_SECTION = {
+  reports: 'tab-reports',
+  comparison: 'tab-comparison',
+  search: 'tab-search',
+  dataset: 'tab-dataset',
+  lidar: 'tab-lidar',
+  carbon: 'tab-carbon',
+};
+
+function skinPanels() {
+  return new Set(state.skin?.panels ?? [
+    'legend', 'dataset', 'lidar', 'carbon', 'targets', 'reports', 'comparison', 'search',
+  ]);
+}
+
+function workspaceAllowed(workspace) {
+  if (workspace === 'map') return true;
+  const panels = skinPanels();
+  if (workspace === 'plan') return panels.has('targets');
+  if (workspace === 'results') {
+    return SUB_PANELS.results.some((name) => panels.has(name));
+  }
+  if (workspace === 'data') {
+    if (panels.has('dataset')) return true;
+    return Boolean(state.lidar?.available || state.carbon?.available);
+  }
+  return false;
+}
+
+function subAllowed(workspace, sub) {
+  const panels = skinPanels();
+  if (workspace === 'results') return panels.has(sub);
+  if (workspace !== 'data') return true;
+  if (sub === 'dataset') return panels.has('dataset');
+  if (sub === 'lidar') return panels.has('lidar') && Boolean(state.lidar?.available);
+  if (sub === 'carbon') return panels.has('carbon') && Boolean(state.carbon?.available);
+  return false;
+}
+
+function visibleSubs(workspace) {
+  return (SUB_PANELS[workspace] ?? []).filter((sub) => subAllowed(workspace, sub));
+}
+
+function currentSub(workspace = state.workspace) {
+  return state.subview[workspace] ?? null;
+}
+
+function setMapLoading(visible, text = 'Loading map…') {
+  const overlay = $('map-loading');
+  if (!overlay) return;
+  overlay.hidden = !visible;
+  if (visible) $('map-loading-text').textContent = text;
+}
+
+function syncNavigation() {
+  const panels = skinPanels();
+  const workspaces = [...document.querySelectorAll('.workspaces [role="tab"]')];
+  for (const button of workspaces) {
+    const workspace = button.dataset.workspace;
+    button.hidden = !workspaceAllowed(workspace);
+    const active = workspace === state.workspace;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', active ? 'true' : 'false');
+    button.tabIndex = active ? 0 : -1;
+  }
+  if (!workspaceAllowed(state.workspace)) {
+    state.workspace = 'map';
+  }
+  for (const panel of document.querySelectorAll('.workspace')) {
+    panel.hidden = panel.id !== `workspace-${state.workspace}`;
+  }
+  if (state.workspace === 'map') $('tab-legend').hidden = false;
+  if (state.workspace === 'plan') $('tab-targets').hidden = false;
+  for (const workspace of ['results', 'data']) {
+    const nav = $(`${workspace}-nav`);
+    const buttons = [...(nav?.querySelectorAll('[role="tab"]') ?? [])];
+    const available = new Set(visibleSubs(workspace));
+    for (const button of buttons) {
+      button.hidden = !available.has(button.dataset.sub);
+    }
+    if (nav) nav.hidden = available.size <= 1;
+    if (state.workspace === workspace) {
+      if (!available.has(state.subview[workspace])) {
+        state.subview[workspace] = available[0] ?? null;
+      }
+      for (const button of buttons) {
+        const active = button.dataset.sub === state.subview[workspace];
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-selected', active ? 'true' : 'false');
+        button.tabIndex = active ? 0 : -1;
+      }
+      for (const sub of SUB_PANELS[workspace] ?? []) {
+        const section = $(SUB_SECTION[sub]);
+        if (section) section.hidden = sub !== state.subview[workspace];
+      }
+    }
+  }
+  const period = state.periods[state.periodIndex];
+  if (period) {
+    $('year-label').textContent = period.label ?? `Period ${state.periodIndex + 1}`;
+  }
+}
+
+function activateSubView() {
+  if (state.workspace === 'results') {
+    if (state.subview.results === 'comparison') {
+      syncCompareRuns();
+      loadComparison();
+    } else if (state.subview.results === 'search') {
+      loadSearch();
+    } else {
+      loadReports();
+      if (state.compareView) clearCompareView();
+    }
+    return;
+  }
+  if (state.workspace === 'data') {
+    if (state.subview.data === 'lidar') loadLidar();
+    else if (state.subview.data === 'carbon') loadCarbon();
+    else loadDataset();
+    return;
+  }
+  if (state.workspace !== 'results' && state.compareView) clearCompareView();
+}
+
+function setSubView(workspace, sub, { sync = true } = {}) {
+  if (!SUB_PANELS[workspace]) return;
+  const available = visibleSubs(workspace);
+  state.subview[workspace] = available.includes(sub) ? sub : (available[0] ?? null);
+  syncNavigation();
+  if (sync) {
+    updateUrl();
+    activateSubView();
+  }
+}
+
+function setWorkspace(workspace, { sync = true, activate = true } = {}) {
+  const requested = workspaceAllowed(workspace) ? workspace : 'map';
+  if (state.workspace !== requested && state.compareView && requested !== 'results') {
+    clearCompareView();
+  }
+  state.workspace = requested;
+  syncNavigation();
+  if (SUB_PANELS[requested]) {
+    const sub = currentSub(requested) ?? visibleSubs(requested)[0] ?? null;
+    state.subview[requested] = sub;
+    syncNavigation();
+  }
+  if (sync) updateUrl();
+  if (activate) activateSubView();
+}
+
+function updateUrl({ push = true } = {}) {
+  if (!state.urlReady) return;
+  const params = new URLSearchParams(window.location.search);
+  if (state.run) params.set('run', state.run);
+  else params.delete('run');
+  params.set('view', state.workspace);
+  const sub = currentSub();
+  if (sub) params.set('sub', sub);
+  else params.delete('sub');
+  params.set('period', String(state.periodIndex));
+  if (state.selectedBlock !== null) params.set('block', String(state.selectedBlock));
+  else params.delete('block');
+  const url = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
+  window.history[push ? 'pushState' : 'replaceState']({}, '', url);
+}
+
+function wireTablist(selector) {
+  const buttons = [...document.querySelectorAll(selector)];
+  for (const button of buttons) {
+    button.addEventListener('keydown', (event) => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      const visible = buttons.filter((candidate) => !candidate.hidden);
+      const index = visible.indexOf(button);
+      if (index < 0) return;
+      event.preventDefault();
+      const next = event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? visible.length - 1
+          : (index + (event.key === 'ArrowRight' ? 1 : -1) + visible.length) % visible.length;
+      visible[next].focus();
+      visible[next].click();
+    });
+  }
+}
+
+async function loadDataset() {
+  const status = $('dataset-status');
+  const meta = $('dataset-meta');
+  if (!status || !meta) return;
+  try {
+    const summary = state.datasetSummary ?? await api('api/summary');
+    state.datasetSummary = summary;
+    const manifest = summary.manifest ?? {};
+    const metadata = manifest.metadata ?? {};
+    const rows = [
+      ['Dataset', summary.dataset ?? '—'],
+      ['Schema', manifest.schema_version ?? '—'],
+      ['Created', manifest.created_utc ?? manifest.created_at ?? '—'],
+      ['CRS', manifest.crs ?? '—'],
+      ['Sources', Array.isArray(manifest.sources) ? `${manifest.sources.length} source(s)` : '—'],
+    ];
+    meta.replaceChildren();
+    for (const [label, value] of rows) meta.append(lidarMetaRow(label, value));
+    const extra = Object.keys(metadata).filter((key) => key !== 'lidar_products' && key !== 'lidar_fields');
+    status.textContent = extra.length
+      ? `compiled dataset · ${extra.length} metadata block(s)`
+      : 'compiled dataset';
+    $('dataset-note').textContent = metadata.lidar_products
+      ? 'LiDAR provenance is registered; open LiDAR for the pinned bundle and fields.'
+      : 'No LiDAR registration in this dataset.';
+    const datasetName = summary.dataset ?? 'dataset';
+    document.title = `WS4 — ${datasetName}${state.run ? ` — ${state.run}` : ''}`;
+    $('dataset-name').textContent = datasetName;
+  } catch (error) {
+    status.textContent = `dataset unavailable: ${error.message}`;
+    meta.replaceChildren();
+  }
+}
+
 function applySkin(skin) {
   state.skin = skin;
-  const panels = new Set(skin.panels ?? ['legend', 'lidar', 'carbon', 'targets', 'reports', 'comparison']);
-  for (const button of document.querySelectorAll('nav.tabs button')) {
-    button.hidden = !panels.has(button.dataset.tab);
-  }
-  const active = document.querySelector('nav.tabs button.active');
-  if (active && active.hidden) {
-    const first = [...document.querySelectorAll('nav.tabs button')].find((button) => !button.hidden);
-    if (first) first.click();
-  }
-  $('show-treated').closest('label').hidden = !(skin.layers ?? []).includes('treatments');
-  $('show-untreated').closest('label').hidden = !(skin.layers ?? []).includes('blocks');
+  syncNavigation();
+  const layers = skin.layers ?? [];
+  $('show-treated').closest('label').hidden = !layers.includes('treatments');
+  $('show-untreated').closest('label').hidden = !layers.includes('blocks');
   const readOnly = Boolean(skin.read_only) || !(skin.actions ?? []).includes('edit_targets');
   $('save-targets').hidden = readOnly || !document.querySelector('#targets-table:not([hidden])');
   $('start-run').hidden = Boolean(skin.read_only);
@@ -3152,7 +3382,7 @@ async function finishRun(id) {
   try {
     const summary = await api('api/summary');
     if (await fillRuns(summary, id)) {
-      await loadPeriods(); await loadLayers(); await loadLidar(); await loadCarbon(); await loadTargets(); await loadReports(); await loadMap();
+      await loadPeriods(); await loadLayers(); await loadLidar(); await loadCarbon(); await loadDataset(); await loadTargets(); await loadReports(); await loadMap();
     }
   } catch { /* the run is done; a refresh failure is not fatal */ }
   window.setTimeout(() => { $('run-panel').hidden = true; }, 6000);
@@ -3526,6 +3756,8 @@ function showDetail(block, supplied = null) {
   const feature = state.features.find((candidate) => String(candidate.properties?.block_id) === String(block));
   const properties = supplied ?? feature?.properties;
   if (!properties) return;
+  state.selectedBlock = block;
+  updateUrl({ push: false });
   if (state.compareView && state.compare) {
     const compare = supplied?.compare;
     const flags = compare
@@ -3781,6 +4013,18 @@ function wireControls() {
     if (state.live.active) togglePause(); else startRun();
   });
   $('stop-run').addEventListener('click', stopRun);
+  for (const button of document.querySelectorAll('.workspaces [data-workspace]')) {
+    button.addEventListener('click', () => setWorkspace(button.dataset.workspace));
+  }
+  for (const button of document.querySelectorAll('#results-nav [data-sub], #data-nav [data-sub]')) {
+    button.addEventListener('click', () => {
+      const workspace = button.closest('.workspace')?.id.replace('workspace-', '');
+      if (workspace) setSubView(workspace, button.dataset.sub);
+    });
+  }
+  wireTablist('.workspaces [role="tab"]');
+  wireTablist('#results-nav [role="tab"]');
+  wireTablist('#data-nav [role="tab"]');
   $('lidar-field').addEventListener('change', (event) => {
     state.lidarField = event.target.value;
     updateLidarRange();
@@ -3792,25 +4036,10 @@ function wireControls() {
   });
   $('run').addEventListener('change', async (event) => {
     state.run = event.target.value;
-    await loadSkins();
-    await loadAgent();
-    await loadPeriods();
-    await loadLayers();
-    await loadLidar();
-    await loadCarbon();
-    await loadTargets();
-    await loadReports();
-    syncCompareRuns();
-    $('compare-a').value = state.run;
-    if ($('compare-b').value === state.run) {
-      const other = [...$('compare-b').options].find((option) => option.value !== state.run);
-      if (other) $('compare-b').value = other.value;
-    }
-    if (state.compareView) {
-      await loadComparison();
-    } else {
-      await loadMap();
-    }
+    state.selectedBlock = null;
+    $('detail').replaceChildren();
+    await loadRunContext();
+    updateUrl();
   });
   $('year').addEventListener('input', (event) => {
     state.yearChosen = true;
@@ -3899,25 +4128,6 @@ function wireControls() {
   });
   $('show-treated').addEventListener('change', applyVisibility);
   $('show-untreated').addEventListener('change', applyVisibility);
-  for (const button of document.querySelectorAll('nav.tabs button')) {
-    button.addEventListener('click', () => {
-      for (const other of document.querySelectorAll('nav.tabs button')) other.classList.toggle('active', other === button);
-      const tab = button.dataset.tab;
-      for (const name of ['legend', 'lidar', 'carbon', 'targets', 'reports', 'comparison', 'search']) $(`tab-${name}`).hidden = name !== tab;
-      if (tab === 'lidar') {
-        loadLidar();
-      } else if (tab === 'carbon') {
-        loadCarbon();
-      } else if (tab === 'comparison') {
-        syncCompareRuns();
-        loadComparison();
-      } else if (tab === 'search') {
-        loadSearch();
-      } else if (state.compareView) {
-        clearCompareView();
-      }
-    });
-  }
   const svg = $('map');
   svg.addEventListener('click', (event) => {
     const target = event.target.closest('[data-block]');
@@ -3951,6 +4161,43 @@ function wireControls() {
   window.addEventListener('resize', () => { if (state.features.length) render(); });
 }
 
+async function loadRunContext() {
+  setMapLoading(true, 'Loading run…');
+  try {
+    await loadSkins();
+    await loadAgent();
+    await loadPeriods();
+    if (state.pendingPeriod !== null) {
+      setPeriod(Number(state.pendingPeriod));
+      state.pendingPeriod = null;
+    }
+    await loadLayers();
+    await loadLidar();
+    await loadCarbon();
+    await loadDataset();
+    await loadTargets();
+    await loadReports();
+    syncCompareRuns();
+    $('compare-a').value = state.run;
+    if ($('compare-b').value === state.run) {
+      const other = [...$('compare-b').options].find((option) => option.value !== state.run);
+      if (other) $('compare-b').value = other.value;
+    }
+    if (state.compareView) {
+      await loadComparison();
+    } else {
+      await loadMap();
+    }
+    if (state.pendingBlock !== null) {
+      showDetail(state.pendingBlock);
+      state.pendingBlock = null;
+    }
+    document.title = `WS4 — ${state.datasetSummary?.dataset ?? 'dataset'} — ${state.run}`;
+  } finally {
+    setMapLoading(false);
+  }
+}
+
 async function start() {
   if (!$('run-years') || !$('start-run') || !$('watch-panel')) {
     statusLine('this page is an older build — hard-reload (Ctrl-Shift-R) once');
@@ -3960,6 +4207,8 @@ async function start() {
   loadWatched();
   try {
     const summary = await api('api/summary');
+    state.datasetSummary = summary;
+    $('dataset-name').textContent = summary.dataset ?? '';
     const select = $('run');
     for (const run of summary.runs ?? []) {
       const option = document.createElement('option');
@@ -3967,25 +4216,67 @@ async function start() {
       option.textContent = `${run.id} (${run.kind ?? 'run'})`;
       select.append(option);
     }
-    const preferred = (summary.runs ?? []).find((run) => run.id === 'reference')
+    const params = new URLSearchParams(window.location.search);
+    const requestedRun = params.get('run');
+    const preferred = (summary.runs ?? []).find((run) => run.id === requestedRun)
+      ?? (summary.runs ?? []).find((run) => run.id === 'reference')
       ?? (summary.runs ?? []).find((run) => run.id === 'run-dated3')
       ?? (summary.runs ?? [])[0];
     if (!preferred) { statusLine('no runs found'); return; }
     select.value = preferred.id;
     state.run = preferred.id;
-    syncCompareRuns();
-    await loadSkins();
-    await loadAgent();
-    await loadPeriods();
-    await loadLayers();
-    await loadLidar();
-    await loadCarbon();
-    await loadTargets();
-    await loadReports();
-    await loadMap();
+    const requestedPeriod = Number(params.get('period'));
+    if (Number.isFinite(requestedPeriod) && requestedPeriod >= 0) {
+      state.pendingPeriod = requestedPeriod;
+    }
+    const requestedBlock = params.get('block');
+    if (requestedBlock !== null) state.pendingBlock = requestedBlock;
+    await loadRunContext();
+    const requestedView = params.get('view') ?? 'map';
+    setWorkspace(requestedView, { sync: false, activate: false });
+    const requestedSub = params.get('sub');
+    if (requestedSub && SUB_PANELS[state.workspace]) {
+      setSubView(state.workspace, requestedSub, { sync: false });
+    }
+    state.urlReady = true;
+    activateSubView();
+    updateUrl({ push: false });
   } catch (error) {
     statusLine(`service unavailable: ${error.message}`);
   }
 }
+
+window.addEventListener('popstate', async () => {
+  state.urlReady = false;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const requestedRun = params.get('run');
+    if (requestedRun && requestedRun !== state.run && $('run').querySelector(`option[value="${requestedRun}"]`)) {
+      state.run = requestedRun;
+      $('run').value = requestedRun;
+      await loadRunContext();
+    }
+    const requestedPeriod = Number(params.get('period'));
+    if (Number.isFinite(requestedPeriod) && requestedPeriod >= 0) {
+      setPeriod(requestedPeriod);
+    }
+    const requestedView = params.get('view') ?? 'map';
+    setWorkspace(requestedView, { sync: false });
+    const requestedSub = params.get('sub');
+    if (requestedSub && SUB_PANELS[state.workspace]) {
+      setSubView(state.workspace, requestedSub, { sync: false });
+      activateSubView();
+    }
+    const requestedBlock = params.get('block');
+    if (requestedBlock !== null) showDetail(requestedBlock);
+    else {
+      state.selectedBlock = null;
+      $('detail').replaceChildren();
+    }
+  } finally {
+    state.urlReady = true;
+    updateUrl({ push: false });
+  }
+});
 
 start();

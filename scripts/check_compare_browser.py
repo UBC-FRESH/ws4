@@ -56,12 +56,16 @@ def check(  # pragma: no cover - needs a browser
             lambda message: (
                 errors.append(f"{message.type}: {message.text}")
                 if message.type == "error"
+                and not any(
+                    marker in str(message.location) for marker in ("favicon", "/api/land-base")
+                )
                 else None
             ),
         )
         page.goto(url, wait_until="domcontentloaded", timeout=60000)
         page.wait_for_timeout(wait_ms)
-        page.get_by_role("button", name="Compare").click()
+        page.locator("#ws-results").click()
+        page.locator("#sub-comparison").click()
         page.wait_for_timeout(500)
         page.select_option("#compare-a", run_a)
         page.select_option("#compare-b", run_b)

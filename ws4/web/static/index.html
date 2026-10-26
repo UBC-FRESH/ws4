@@ -4,13 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=68">
+  <link rel="stylesheet" href="static/style.css?v=71">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
 </head>
 <body>
+  <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <strong>WS4</strong><span class="build">v70</span>
-    <label>Skin <select id="skin"></select></label>
+    <div class="brand"><strong>WS4</strong><span class="build">v71</span><span id="dataset-name" class="dataset-name"></span></div>
+    <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Period
       <input id="year" type="range" min="0" max="0" step="1" value="0">
@@ -20,17 +21,15 @@
   </header>
   <main>
     <aside id="sidebar">
-      <nav class="tabs">
-        <button data-tab="legend" class="active">Legend</button>
-        <button data-tab="lidar">LiDAR</button>
-        <button data-tab="carbon">Carbon</button>
-        <button data-tab="targets">Targets</button>
-        <button data-tab="reports">Reports</button>
-        <button data-tab="comparison">Compare</button>
-        <button data-tab="search">Search</button>
+      <nav class="workspaces" role="tablist" aria-label="Workspaces">
+        <button id="ws-map" role="tab" aria-selected="true" aria-controls="workspace-map" data-workspace="map" class="active">Map</button>
+        <button id="ws-plan" role="tab" aria-selected="false" aria-controls="workspace-plan" data-workspace="plan">Plan</button>
+        <button id="ws-results" role="tab" aria-selected="false" aria-controls="workspace-results" data-workspace="results">Results</button>
+        <button id="ws-data" role="tab" aria-selected="false" aria-controls="workspace-data" data-workspace="data">Data</button>
       </nav>
       <div class="sidebar-body">
-      <section id="tab-legend">
+      <div id="workspace-map" class="workspace" role="tabpanel" aria-labelledby="ws-map">
+<section id="tab-legend" role="tabpanel" aria-labelledby="ws-map">
         <h2>Layers</h2>
         <div id="layer-tree" class="layer-tree"></div>
         <p id="layers-hint" class="hint">loading layers…</p>
@@ -40,38 +39,9 @@
         <p class="hint">Treated blocks are every scheduled block; patch openings are the connected 5-40 ha groups.</p>
         <div id="detail" class="detail"></div>
       </section>
-      <section id="tab-lidar" hidden>
-        <h2>LiDAR</h2>
-        <p id="lidar-status" class="hint">loading LiDAR…</p>
-        <div id="lidar-meta" class="lidar-meta"></div>
-        <label class="lidar-field">Colour blocks by
-          <select id="lidar-field"><option value="">Off</option></select>
-        </label>
-        <div id="lidar-legend" class="lidar-legend" hidden>
-          <div id="lidar-legend-title" class="hint"></div>
-          <div class="lidar-bar"></div>
-          <div class="lidar-ends"><span id="lidar-min">—</span><span id="lidar-max">—</span></div>
-        </div>
-        <p class="hint">LiDAR values are block zonal summaries from the registered FEMIC bundle. Selecting a field turns off the MVT shortcut so the exact block join is visible; missing values stay neutral.</p>
-      </section>
-      <section id="tab-carbon" hidden>
-        <h2>Carbon</h2>
-        <p id="carbon-status" class="hint">loading carbon…</p>
-        <div id="carbon-meta" class="lidar-meta"></div>
-        <label class="lidar-field">Account
-          <select id="carbon-account"><option value="">—</option></select>
-        </label>
-        <svg id="carbon-chart" class="carbon-chart" viewBox="0 0 320 140" role="img" aria-label="carbon account trend"></svg>
-        <div id="carbon-composition" class="carbon-composition"></div>
-        <p id="carbon-ledger" class="hint"></p>
-        <h3>GCBM comparison</h3>
-        <div class="table-wrap"><table id="carbon-compare" hidden></table></div>
-        <p id="carbon-compare-empty" class="hint">no GCBM comparison in this run</p>
-        <h3>Artifacts</h3>
-        <ul id="carbon-files" class="carbon-files"></ul>
-        <p class="hint">Read-only: the service aggregates libcbm pools and fluxes by timestep and never reruns the carbon engine.</p>
-      </section>
-      <section id="tab-targets" hidden>
+      </div>
+      <div id="workspace-plan" class="workspace" role="tabpanel" aria-labelledby="ws-plan" hidden>
+<section id="tab-targets" role="tabpanel" aria-labelledby="ws-plan" hidden>
         <h2>Targets</h2>
         <p id="targets-empty" class="hint">no targets yet — pick an account below</p>
         <div id="account-browser" class="account-browser">
@@ -128,7 +98,72 @@
         <p id="targets-status" class="hint"></p>
         </div>
       </section>
-      <section id="tab-search" hidden>
+      </div>
+      <div id="workspace-results" class="workspace" role="tabpanel" aria-labelledby="ws-results" hidden>
+        <nav id="results-nav" class="subnav" role="tablist" aria-label="Results sections">
+          <button id="sub-reports" role="tab" aria-selected="true" aria-controls="tab-reports" data-sub="reports">Reports</button>
+          <button id="sub-comparison" role="tab" aria-selected="false" aria-controls="tab-comparison" data-sub="comparison">Compare</button>
+          <button id="sub-search" role="tab" aria-selected="false" aria-controls="tab-search" data-sub="search">Search</button>
+        </nav>
+<section id="tab-reports" role="tabpanel" aria-labelledby="sub-reports" hidden>
+        <h2>Standard reports</h2>
+        <ul id="standard-reports"></ul>
+        <p id="standard-reports-empty" class="hint">no standard reports for this run</p>
+        <div id="ending-summary" class="ending-summary" hidden>
+          <h2>Ending inventory <span id="ending-year" class="hint"></span></h2>
+          <p id="ending-flows" class="hint"></p>
+          <div class="table-wrap"><table id="ending-table">
+            <thead><tr><th>Account</th><th>Value</th></tr></thead>
+            <tbody></tbody>
+          </table></div>
+        </div>
+        <h2>Build a report</h2>
+        <div class="report-builder">
+          <label>Accounts <input id="report-accounts" list="account-names" placeholder="comma-separated; blank = all"></label>
+          <datalist id="account-names"></datalist>
+          <label>From <input id="report-from" type="number" min="0" step="1"></label>
+          <label>To <input id="report-to" type="number" min="0" step="1"></label>
+          <button id="build-report" type="button">Build</button>
+          <a id="report-export" hidden>Export CSV</a>
+        </div>
+        <p id="report-build-status" class="hint"></p>
+        <h2>All files</h2>
+        <ul id="reports"></ul>
+        <div id="report-preview"></div>
+      </section>
+<section id="tab-comparison" role="tabpanel" aria-labelledby="sub-comparison" hidden>
+        <h2>Compare runs</h2>
+        <div class="compare-runs">
+          <label>A <select id="compare-a"></select></label>
+          <label>B <select id="compare-b"></select></label>
+        </div>
+        <p class="hint">The map shows the selected year:
+          <span class="compare-swatch compare-a"></span> A only,
+          <span class="compare-swatch compare-b"></span> B only,
+          <span class="compare-swatch compare-both"></span> both.
+          Use the year control above.</p>
+        <p id="compare-summary" class="hint">choose two runs</p>
+        <h2>Ending inventory <span id="compare-ending-label" class="hint"></span></h2>
+        <p id="compare-ending-empty" class="hint"></p>
+        <div class="table-wrap"><table id="compare-ending" hidden>
+          <thead><tr><th>Account</th><th>A</th><th>B</th><th>Δ B−A</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+        <h2>Target status</h2>
+        <p id="compare-targets-empty" class="hint">no targets configured</p>
+        <div class="table-wrap"><table id="compare-targets" hidden>
+          <thead><tr><th>Account</th><th>Kind</th><th>Year</th><th>Min</th><th>Max</th><th>A</th><th>B</th><th>Δ B−A</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+        <h2>Accounts · year <span id="compare-year">0</span></h2>
+        <input id="compare-filter" type="search" placeholder="filter accounts" autocomplete="off">
+        <p id="compare-accounts-empty" class="hint"></p>
+        <div class="table-wrap"><table id="compare-accounts" hidden>
+          <thead><tr><th>Account</th><th>A</th><th>B</th><th>Δ B−A</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </section>
+<section id="tab-search" role="tabpanel" aria-labelledby="sub-search" hidden>
         <h2>Search artifacts</h2>
         <p id="search-empty" class="hint"></p>
         <label class="search-pick">Artifact <select id="search-select"></select></label>
@@ -166,64 +201,51 @@
         </table></div>
         <div id="search-detail" class="search-detail" hidden></div>
       </section>
-      <section id="tab-reports" hidden>
-        <h2>Standard reports</h2>
-        <ul id="standard-reports"></ul>
-        <p id="standard-reports-empty" class="hint">no standard reports for this run</p>
-        <div id="ending-summary" class="ending-summary" hidden>
-          <h2>Ending inventory <span id="ending-year" class="hint"></span></h2>
-          <p id="ending-flows" class="hint"></p>
-          <div class="table-wrap"><table id="ending-table">
-            <thead><tr><th>Account</th><th>Value</th></tr></thead>
-            <tbody></tbody>
-          </table></div>
+      </div>
+      <div id="workspace-data" class="workspace" role="tabpanel" aria-labelledby="ws-data" hidden>
+        <nav id="data-nav" class="subnav" role="tablist" aria-label="Data sections">
+          <button id="sub-dataset" role="tab" aria-selected="true" aria-controls="tab-dataset" data-sub="dataset">Dataset</button>
+          <button id="sub-lidar" role="tab" aria-selected="false" aria-controls="tab-lidar" data-sub="lidar">LiDAR</button>
+          <button id="sub-carbon" role="tab" aria-selected="false" aria-controls="tab-carbon" data-sub="carbon">Carbon</button>
+        </nav>
+        <section id="tab-dataset" role="tabpanel" aria-labelledby="sub-dataset" hidden>
+          <h2>Dataset</h2>
+          <p id="dataset-status" class="hint">loading dataset…</p>
+          <div id="dataset-meta" class="lidar-meta"></div>
+          <p id="dataset-note" class="hint"></p>
+        </section>
+<section id="tab-lidar" role="tabpanel" aria-labelledby="sub-lidar" hidden>
+        <h2>LiDAR</h2>
+        <p id="lidar-status" class="hint">loading LiDAR…</p>
+        <div id="lidar-meta" class="lidar-meta"></div>
+        <label class="lidar-field">Colour blocks by
+          <select id="lidar-field"><option value="">Off</option></select>
+        </label>
+        <div id="lidar-legend" class="lidar-legend" hidden>
+          <div id="lidar-legend-title" class="hint"></div>
+          <div class="lidar-bar"></div>
+          <div class="lidar-ends"><span id="lidar-min">—</span><span id="lidar-max">—</span></div>
         </div>
-        <h2>Build a report</h2>
-        <div class="report-builder">
-          <label>Accounts <input id="report-accounts" list="account-names" placeholder="comma-separated; blank = all"></label>
-          <datalist id="account-names"></datalist>
-          <label>From <input id="report-from" type="number" min="0" step="1"></label>
-          <label>To <input id="report-to" type="number" min="0" step="1"></label>
-          <button id="build-report" type="button">Build</button>
-          <a id="report-export" hidden>Export CSV</a>
-        </div>
-        <p id="report-build-status" class="hint"></p>
-        <h2>All files</h2>
-        <ul id="reports"></ul>
-        <div id="report-preview"></div>
+        <p class="hint">LiDAR values are block zonal summaries from the registered FEMIC bundle. Selecting a field turns off the MVT shortcut so the exact block join is visible; missing values stay neutral.</p>
       </section>
-      <section id="tab-comparison" hidden>
-        <h2>Compare runs</h2>
-        <div class="compare-runs">
-          <label>A <select id="compare-a"></select></label>
-          <label>B <select id="compare-b"></select></label>
-        </div>
-        <p class="hint">The map shows the selected year:
-          <span class="compare-swatch compare-a"></span> A only,
-          <span class="compare-swatch compare-b"></span> B only,
-          <span class="compare-swatch compare-both"></span> both.
-          Use the year control above.</p>
-        <p id="compare-summary" class="hint">choose two runs</p>
-        <h2>Ending inventory <span id="compare-ending-label" class="hint"></span></h2>
-        <p id="compare-ending-empty" class="hint"></p>
-        <div class="table-wrap"><table id="compare-ending" hidden>
-          <thead><tr><th>Account</th><th>A</th><th>B</th><th>Δ B−A</th></tr></thead>
-          <tbody></tbody>
-        </table></div>
-        <h2>Target status</h2>
-        <p id="compare-targets-empty" class="hint">no targets configured</p>
-        <div class="table-wrap"><table id="compare-targets" hidden>
-          <thead><tr><th>Account</th><th>Kind</th><th>Year</th><th>Min</th><th>Max</th><th>A</th><th>B</th><th>Δ B−A</th></tr></thead>
-          <tbody></tbody>
-        </table></div>
-        <h2>Accounts · year <span id="compare-year">0</span></h2>
-        <input id="compare-filter" type="search" placeholder="filter accounts" autocomplete="off">
-        <p id="compare-accounts-empty" class="hint"></p>
-        <div class="table-wrap"><table id="compare-accounts" hidden>
-          <thead><tr><th>Account</th><th>A</th><th>B</th><th>Δ B−A</th></tr></thead>
-          <tbody></tbody>
-        </table></div>
+<section id="tab-carbon" role="tabpanel" aria-labelledby="sub-carbon" hidden>
+        <h2>Carbon</h2>
+        <p id="carbon-status" class="hint">loading carbon…</p>
+        <div id="carbon-meta" class="lidar-meta"></div>
+        <label class="lidar-field">Account
+          <select id="carbon-account"><option value="">—</option></select>
+        </label>
+        <svg id="carbon-chart" class="carbon-chart" viewBox="0 0 320 140" role="img" aria-label="carbon account trend"></svg>
+        <div id="carbon-composition" class="carbon-composition"></div>
+        <p id="carbon-ledger" class="hint"></p>
+        <h3>GCBM comparison</h3>
+        <div class="table-wrap"><table id="carbon-compare" hidden></table></div>
+        <p id="carbon-compare-empty" class="hint">no GCBM comparison in this run</p>
+        <h3>Artifacts</h3>
+        <ul id="carbon-files" class="carbon-files"></ul>
+        <p class="hint">Read-only: the service aggregates libcbm pools and fluxes by timestep and never reruns the carbon engine.</p>
       </section>
+      </div>
       </div>
       <div id="chat-splitter" title="Drag to resize the assistant; double-click to reset"></div>
       <section id="chat-panel" class="chat">
@@ -243,7 +265,7 @@
       </section>
     </aside>
     <div id="splitter" title="Drag to resize the panel"></div>
-    <div id="map-wrap">
+    <div id="map-wrap" tabindex="-1" aria-label="Forest estate map. Click a block for details.">
       <div id="maplibre-map" hidden></div>
       <svg id="map" xmlns="http://www.w3.org/2000/svg">
         <defs>
@@ -255,10 +277,11 @@
         <g id="viewport"></g>
         <g id="roads-layer"></g>
       </svg>
+      <div id="map-loading" class="map-loading" hidden><span class="spinner" aria-hidden="true"></span><span id="map-loading-text">Loading map…</span></div>
       <div class="scale" id="scale"></div>
     </div>
   </main>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=70"></script>
+  <script type="module" src="static/app.js?v=71"></script>
 </body>
 </html>

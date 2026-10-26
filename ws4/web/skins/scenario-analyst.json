@@ -3,6 +3,7 @@
   "title": "Scenario analyst",
   "panels": [
     "legend",
+    "dataset",
     "lidar",
     "carbon",
     "targets",
