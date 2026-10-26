@@ -2807,3 +2807,7 @@ issue comments.
 - P59.3: re-integrated the real TFL 6 7-fragment/1-block validation dataset with six canonical
   fields (slope and CHM valid-pixels/mean/p95), ran `scripts/check_lidar_browser.py` (exit 0), and
   verified c5 reports no LiDAR. Dashboard **GREEN**.
+
+- P59 close-out: pull request #425 squash-merged as `1d1bb2a`; parent #417 and tasks
+  #418/#419/#420 closed; status set complete. The P52 overwrite repair and the real TFL 6
+  LiDAR UI smoke are recorded in `notes/reports/p59-closeout.md`.
