@@ -1843,6 +1843,8 @@ def create_app(
             "suitability model. The account removes a block when the schedule treats it and "
             "does not model regrowth, recovery, or species response."
         )
+        if output_format not in ("json", "geojson"):
+            raise HTTPException(status_code=400, detail="format must be 'json' or 'geojson'")
         if output_format == "geojson":
             features = base_features()
             if not features:

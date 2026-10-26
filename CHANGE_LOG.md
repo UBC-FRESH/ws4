@@ -2917,6 +2917,6 @@ issue comments.
   schedules, the report caveat, and the GeoJSON layer. Report:
   `notes/reports/p54.1-dhi-account.md`.
   Verification: `python -m pytest tests/test_dhi.py -q --no-cov` -> 10 passed;
-  `python scripts/dashboard.py` -> **GREEN** (lint 0.12 s, format 0.11 s,
-  types 10.47 s, tests 144.56 s, validator 1.02 s, docs 20.97 s,
-  docstrings 3.86 s).
+  `python scripts/dashboard.py` -> **GREEN** (lint 0.09 s, format 0.06 s,
+  types 0.76 s, tests 162.86 s, validator 0.99 s, docs 8.97 s,
+  docstrings 4.38 s).

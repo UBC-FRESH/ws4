@@ -349,9 +349,13 @@ def write_report(values: pd.DataFrame, targets: list[Target], out_dir: Path) -> 
     target_status(values, targets).to_csv(out_dir / "report_targets.csv", index=False)
     ending_inventory(values).to_csv(out_dir / "ending_inventory.csv", index=False)
     metadata_path = out_dir / "dhi_metadata.json"
-    metadata = (
-        json.loads(metadata_path.read_text(encoding="utf-8")) if metadata_path.is_file() else None
-    )
+    metadata: dict[str, object] | None = None
+    if metadata_path.is_file():
+        try:
+            loaded = json.loads(metadata_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            loaded = None
+        metadata = loaded if isinstance(loaded, dict) else None
     dhi = dhi_report(values, metadata)
     if not dhi.empty:
         dhi.to_csv(out_dir / "report_dhi.csv", index=False)

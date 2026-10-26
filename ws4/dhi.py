@@ -394,10 +394,10 @@ def sample_dhi_raster(
         raise DhiError(f"blocks file has duplicate {id_column!r} values")
     if frame.crs is None:
         raise DhiError("blocks file has no CRS")
-    if frame.crs.to_epsg() != 4326:
-        frame = frame.to_crs("EPSG:4326")
 
     with rasterio.open(raster) as source:
+        if frame.crs != source.crs:
+            frame = frame.to_crs(source.crs)
         if source.count < len(names):
             raise DhiError(
                 f"DHI raster has {source.count} bands; {len(names)} names were requested"
