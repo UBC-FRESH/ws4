@@ -416,7 +416,10 @@ def test_multi_boundary_config_uses_separate_mapping(tmp_path: Path) -> None:
     package = replace(package, tables=tables)
 
     config = build_sit_config(package)
-    spatial = config["mapping_config"]["spatial_units"]
+    mapping = config["mapping_config"]
+    assert isinstance(mapping, dict)
+    spatial = mapping["spatial_units"]
+    assert isinstance(spatial, dict)
 
     assert spatial["mapping_mode"] == "SeparateAdminEcoClassifiers"
     assert spatial["admin_classifier"] == "admin_boundary"
