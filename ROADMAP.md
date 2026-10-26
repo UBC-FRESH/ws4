@@ -66,7 +66,7 @@ exists and the maintainer approves it.
 | P44 Comparison and map operations | #341 | `feature/p44-compare-ops` | complete |
 | P45 Route evaluation performance | #368 | `feature/p45-route-profile` | complete |
 | P52 Consume FEMIC-compiled LidarBC products | #317 | `feature/p52-lidar-products` | complete |
-| P57 Consume FEMIC hydrology response bundles | #395 | `feature/p57-hydrology-response` | pr-open |
+| P57 Consume FEMIC hydrology response bundles | #395 | `feature/p57-hydrology-response` | complete |
 | P46 Cached route event ledger | #382 | `feature/p46-route-events` | complete |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
@@ -1672,11 +1672,14 @@ Acceptance:
 
 Parent issue: #395
 Branch: `feature/p57-hydrology-response`
-Status: pr-open
+Status: complete
 
 Goal: consume pinned FEMIC hydrology response and flood-risk bundles for
 screening-only spatial scheduling, without re-running FEMIC discovery,
 frequency fitting, or surrogate training.
+
+Closeout: pull request #411 squash-merged as `75399d3`; the phase report is
+`notes/reports/p57-closeout.md`.
 
 - [x] P57.1 Define and validate the FEMIC hydrology bundle consumer contract (#396)
   - [x] Add schema constants, immutable records, and a stable bundle pin.
