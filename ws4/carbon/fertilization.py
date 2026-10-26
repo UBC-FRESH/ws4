@@ -55,7 +55,13 @@ class FertilizationApplication:
 
 
 class FertilizationConfigError(ValueError):
-    """Raised when a fertilization configuration is invalid."""
+    """Raised when a fertilization configuration is invalid.
+
+    Parameters
+    ----------
+    findings : sequence of Problem
+        The configuration findings.
+    """
 
     def __init__(self, findings: Sequence[Problem]) -> None:
         """Store the findings and build a readable message."""
@@ -111,7 +117,13 @@ class FertilizationConfig:
 
     @property
     def uses_curves(self) -> bool:
-        """Return whether the configuration has materialized curve applications."""
+        """Return whether the configuration has materialized curve applications.
+
+        Returns
+        -------
+        bool
+            True when at least one curve application is configured.
+        """
         return bool(self.applications)
 
     def disturbance_rows(self, *, transition_reset_age: int = 0) -> list[dict[str, object]]:
@@ -141,7 +153,13 @@ class FertilizationConfig:
         ]
 
     def manifest(self) -> dict[str, object]:
-        """Return the configuration record written into a carbon manifest."""
+        """Return the configuration record written into a carbon manifest.
+
+        Returns
+        -------
+        dict of str to object
+            The mode, factors, response window, and curve applications.
+        """
         return {
             "schema_version": "0.1",
             "config": str(self.path) if self.path is not None else None,
