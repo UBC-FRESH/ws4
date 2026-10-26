@@ -214,6 +214,54 @@ and priority tiers as any other account. A `carbon.*` target without a package i
 before the search. The run writes carbon accounts into `account_values.csv` and the
 standard report, and records `carbon_ledger.json` beside the run.
 
+Fertilization
+-------------
+
+``ws4 carbon --fertilization-config <yaml>`` enables the ``f1``, ``f2``, and ``f3``
+fertilization treatments for a carbon run. The YAML can be the FEMIC public-assumption
+file; the loader accepts its ``dose_kg_n_ha``, ``factors_kg_ha``, ``gwp100``, and
+``growth_response`` sections. The three treatments are added to the in-memory disturbance
+table as no-op CBM disturbances.
+
+There are two growth modes. The **curve mode** is the full materialized path. Add an
+``applications`` list to the YAML, one entry per source track and treatment:
+
+.. code-block:: yaml
+
+   applications:
+     - treatment: f1
+       source_track: "AU(2401005)+IFM(managed)+ORIGIN(natural)+SILV_STATE(baseline)+RETENTION(0)+treatment()"
+       target_track: "AU(2401005)+IFM(managed)+ORIGIN(natural)+SILV_STATE(baseline)+RETENTION(0)+treatment()+F1"
+       curve: curves/f1-2401005-natural.csv
+
+The curve is the CSV written by ``femic carbon fertilization-curve``. WS4 copies the
+source track's classifier, map, yield, and curve rows to the target track, replaces the
+leading-species yield with the materialized curve, and adds a transition from the source
+track. The transition uses ``reset_age: -1`` so the stand keeps its age; CBM then grows
+the same stand on the fertilized curve. ``target_track`` is optional and defaults to
+``<source_track>+<TREATMENT>``. A curve applies to every block on that source track that
+receives the treatment. The treatment event still updates CBM's disturbance clock, so an
+eligibility rule based on years since disturbance sees fertilization as an event; the
+stand age is preserved.
+
+If no ``applications`` are declared, WS4 falls back to the **multiplier mode**: after a
+fertilizer event it applies the configured ``growth_multiplier`` (default ``1.10``) to
+annual growth for ``response_years`` (10 by default). Use the materialized curve for
+per-track responses; use the multiplier only for a scalar calibration or a quick run.
+
+The run writes these accounts into ``carbon_accounts.csv`` in both modes:
+
+- ``fertilization.area_ha`` and ``fertilization.dose_kg_n``
+- ``fertilization.co2_t``, ``fertilization.ch4_t``, ``fertilization.n2o_t``
+- ``fertilization.co2e_t``
+
+``carbon_manifest.json`` records the mode, curve applications, growth window,
+multiplier, factors, GWP values, and account totals under ``fertilization``.
+``ws4 optimize --carbon-package <package> --carbon-fertilization <yaml>`` passes the same
+configuration to the block ledger, so carbon targets and the run report include both the
+growth delta and the emissions. A schedule with no ``f1``/``f2``/``f3`` event is
+unchanged.
+
 GCBM results
 ------------
 

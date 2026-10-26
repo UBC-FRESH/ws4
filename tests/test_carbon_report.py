@@ -28,14 +28,16 @@ def _carbon_accounts(tmp_path: Path) -> Path:
     path = tmp_path / "carbon_accounts.csv"
     pd.DataFrame(
         {
-            "offset": [0, 1, 0, 1],
+            "offset": [0, 1, 0, 1, 0, 1],
             "account": [
                 "carbon.ecosystem.total",
                 "carbon.ecosystem.total",
                 "carbon.flux.net",
                 "carbon.flux.net",
+                "fertilization.co2e_t",
+                "fertilization.co2e_t",
             ],
-            "value": [200.0, 201.0, 0.0, 1.0],
+            "value": [200.0, 201.0, 0.0, 1.0, 10.0, 11.0],
         }
     ).to_csv(path, index=False)
     return path
@@ -53,6 +55,7 @@ def test_merge_carbon_accounts_preserves_non_carbon_and_is_idempotent(tmp_path: 
 
     assert first.shape == second.shape
     assert (second["account"] == "carbon.ecosystem.total").sum() == 2
+    assert (second["account"] == "fertilization.co2e_t").sum() == 2
     assert (second["account"] == "feature.volume").sum() == 2
     assert (run / "carbon_manifest.json").is_file()
     written = pd.read_csv(run / "account_values.csv")

@@ -16,6 +16,12 @@ from pathlib import Path
 
 import pandas as pd
 
+from .fertilization import (
+    FertilizationConfig,
+    fertilization_accounts,
+    with_fertilization_curves,
+    with_fertilization_disturbances,
+)
 from .libcbm import carbon_accounts, run_libcbm
 from .package import CarbonPackage
 from .sit import build_sit_tables_from_tables
@@ -36,19 +42,40 @@ class CarbonLedger:
     years : int
         The annual horizon. A chain event at offset ``years - 1`` is the last one
         the ledger can price.
+    fertilization : FertilizationConfig or None, optional
+        When set, fertilizer events use the materialized curve transitions or the
+        temporary growth multiplier, and the ledger includes the audited emissions
+        accounts. Defaults to None.
     """
 
-    def __init__(self, dataset_dir: Path, package: CarbonPackage, years: int) -> None:
+    def __init__(
+        self,
+        dataset_dir: Path,
+        package: CarbonPackage,
+        years: int,
+        *,
+        fertilization: FertilizationConfig | None = None,
+    ) -> None:
         """Load the dataset tables and initialize the cache."""
         if years <= 0:
             raise ValueError("carbon ledger years must be positive")
         root = Path(dataset_dir)
         self.dataset_dir = root
-        self.package = package
+        self.fertilization = fertilization
         self.years = int(years)
         self.fragments = pd.read_parquet(root / "fragments.parquet")
         self.tracks = pd.read_parquet(root / "tracks.parquet")
         self.treatments = pd.read_parquet(root / "treatments.parquet")
+        if fertilization is not None and fertilization.uses_curves:
+            package, self.tracks, self.treatments = with_fertilization_curves(
+                package,
+                self.tracks,
+                self.treatments,
+                fertilization,
+            )
+        elif fertilization is not None:
+            package = with_fertilization_disturbances(package, fertilization)
+        self.package = package
         self._cache: dict[tuple[int, Chain], dict[Cell, float]] = {}
         self._block_fragments = {
             int(str(block)): frame
@@ -57,9 +84,7 @@ class CarbonLedger:
         track_ids = set(
             pd.to_numeric(self.fragments["track_id"], errors="coerce").dropna().astype(int)
         )
-        self._tracks = self.tracks.loc[
-            pd.to_numeric(self.tracks["track_id"], errors="coerce").isin(track_ids)
-        ].copy()
+        self._tracks = self.tracks.copy()
         self._treatments = self.treatments.loc[
             pd.to_numeric(self.treatments["track_id"], errors="coerce").isin(track_ids)
         ].copy()
@@ -208,8 +233,25 @@ class CarbonLedger:
             self._treatments,
             schedule,
         )
-        run = run_libcbm(self.package, tables, n_steps=self.years)
+        run = run_libcbm(
+            self.package,
+            tables,
+            n_steps=self.years,
+            fertilization=(
+                self.fertilization
+                if self.fertilization is not None and not self.fertilization.uses_curves
+                else None
+            ),
+        )
         accounts = carbon_accounts(run)
+        if self.fertilization is not None:
+            emissions = fertilization_accounts(
+                schedule,
+                fragments.loc[:, ["block_id", "area_ha"]],
+                self.fertilization,
+            )
+            if not emissions.empty:
+                accounts = pd.concat([accounts, emissions], ignore_index=True)
         result = {
             (int(str(row.offset)), str(row.account)): float(str(row.value))
             for row in accounts.itertuples(index=False)

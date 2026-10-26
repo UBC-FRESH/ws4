@@ -10,14 +10,16 @@ from __future__ import annotations
 import hashlib
 import json
 import shutil
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from importlib import import_module
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
 from ..model.schema import dataset_reference
+from .fertilization import FERTILIZATION_TREATMENTS, FertilizationConfig
 from .package import CarbonPackage, package_fingerprint
 from .sit import SitTables
 
@@ -316,6 +318,7 @@ def run_libcbm(
     n_steps: int,
     density: bool = False,
     allow_defaults_mismatch: bool = False,
+    fertilization: FertilizationConfig | None = None,
 ) -> CarbonRun:
     """Run libcbm on compiled SIT tables using a package's mapping.
 
@@ -331,6 +334,9 @@ def run_libcbm(
         Return pools and fluxes as tC/ha rather than tC. Defaults to False.
     allow_defaults_mismatch : bool, optional
         Allow a package/defaults mismatch. Defaults to False.
+    fertilization : FertilizationConfig or None, optional
+        When set, apply the temporary growth response after fertilizer events.
+        Defaults to None.
 
     Returns
     -------
@@ -348,6 +354,7 @@ def run_libcbm(
         build_sit_config(package),
         n_steps=n_steps,
         density=density,
+        fertilization=fertilization,
     )
     return replace(run, defaults=defaults)
 
@@ -358,6 +365,7 @@ def run_libcbm_tables(
     *,
     n_steps: int,
     density: bool = False,
+    fertilization: FertilizationConfig | None = None,
 ) -> CarbonRun:
     """Run libcbm on SIT tables with an explicit mapping configuration.
 
@@ -375,6 +383,9 @@ def run_libcbm_tables(
         Number of annual timesteps.
     density : bool, optional
         Return pools and fluxes as tC/ha rather than tC. Defaults to False.
+    fertilization : FertilizationConfig or None, optional
+        When set, apply the temporary growth response after fertilizer events.
+        Defaults to None.
 
     Returns
     -------
@@ -388,6 +399,11 @@ def run_libcbm_tables(
     """
     if n_steps <= 0:
         raise CarbonEngineError("n_steps must be positive")
+    if fertilization is not None and fertilization.uses_curves:
+        raise CarbonEngineError(
+            "fertilization curve applications are compiled as transitions; "
+            "do not pass a curve configuration as a growth multiplier"
+        )
     defaults = cbm_defaults_reference()
     version = installed_libcbm_version()
     try:
@@ -419,12 +435,30 @@ def run_libcbm_tables(
         )
         with sit_cbm_factory.initialize_cbm(sit) as cbm:
             processor = sit_cbm_factory.create_sit_rule_based_processor(sit, cbm)
+            pre_dynamics = processor.pre_dynamics_func
+            if fertilization is not None:
+                fertilizer_ids = {
+                    int(key)
+                    for key, value in sit.disturbance_name_map.items()
+                    if str(value).strip().lower() in FERTILIZATION_TREATMENTS
+                }
+                if not fertilizer_ids:
+                    raise CarbonEngineError(
+                        "fertilization is configured but the SIT tables have no f1/f2/f3 "
+                        "disturbance types"
+                    )
+                pre_dynamics = _fertilization_pre_dynamics(
+                    pre_dynamics,
+                    fertilizer_ids=fertilizer_ids,
+                    response_years=fertilization.response_years,
+                    growth_multiplier=fertilization.growth_multiplier,
+                )
             cbm_simulator.simulate(
                 cbm,
                 n_steps=n_steps,
                 classifiers=classifiers,
                 inventory=inventory,
-                pre_dynamics_func=processor.pre_dynamics_func,
+                pre_dynamics_func=pre_dynamics,
                 reporting_func=output.append_simulation_result,
             )
     except Exception as exc:
@@ -442,6 +476,50 @@ def run_libcbm_tables(
         libcbm_version=version,
         defaults=defaults,
     )
+
+
+def _fertilization_pre_dynamics(
+    base: Callable[[int, Any], Any],
+    *,
+    fertilizer_ids: set[int],
+    response_years: int,
+    growth_multiplier: float,
+) -> Callable[[int, Any], Any]:
+    """Wrap a SIT pre-dynamics function with the temporary growth response.
+
+    Parameters
+    ----------
+    base : callable
+        The processor's pre-dynamics function.
+    fertilizer_ids : set of int
+        CBM disturbance-type ids for ``f1``, ``f2``, and ``f3``.
+    response_years : int
+        Number of years to keep the multiplier active.
+    growth_multiplier : float
+        Multiplier applied while the response is active.
+
+    Returns
+    -------
+    callable
+        A pre-dynamics function that writes ``growth_multiplier`` into the state
+        before each annual growth operation.
+    """
+
+    def pre_dynamics(timestep: int, cbm_vars: Any) -> Any:  # noqa: ANN401
+        result = base(timestep, cbm_vars)
+        state = result.state
+        disturbance = state["last_disturbance_type"].to_numpy()
+        elapsed = state["time_since_last_disturbance"].to_numpy()
+        values = [
+            growth_multiplier
+            if int(disturbance[index]) in fertilizer_ids and float(elapsed[index]) <= response_years
+            else 1.0
+            for index in range(len(disturbance))
+        ]
+        state["growth_multiplier"].assign(values)
+        return result
+
+    return pre_dynamics
 
 
 def carbon_accounts(run: CarbonRun) -> pd.DataFrame:
@@ -518,6 +596,8 @@ def write_carbon_run(
     schedule: pd.DataFrame,
     n_steps: int,
     density: bool = False,
+    extra_accounts: pd.DataFrame | None = None,
+    extra_manifest: Mapping[str, object] | None = None,
 ) -> CarbonRunResult:
     """Write the pools, fluxes, accounts, and manifest for a run.
 
@@ -537,6 +617,11 @@ def write_carbon_run(
         Number of simulated timesteps.
     density : bool, optional
         Whether the pool and flux values are densities. Defaults to False.
+    extra_accounts : pandas.DataFrame or None, optional
+        Additional ``offset``, ``account``, and ``value`` rows to append to the
+        carbon accounts. Used for the fertilization emissions audit.
+    extra_manifest : mapping of str to object or None, optional
+        Additional provenance to write under the ``fertilization`` manifest key.
 
     Returns
     -------
@@ -562,12 +647,18 @@ def write_carbon_run(
         value_name="value",
     ).to_csv(root / "carbon_flux_long.csv", index=False)
     accounts = carbon_accounts(run)
+    if extra_accounts is not None and not extra_accounts.empty:
+        accounts = pd.concat(
+            [accounts, extra_accounts.loc[:, ["offset", "account", "value"]]],
+            ignore_index=True,
+        )
+        accounts = accounts.sort_values(["offset", "account"], kind="stable").reset_index(drop=True)
     accounts.to_csv(accounts_path, index=False)
     ecosystem = accounts.loc[accounts["account"] == "carbon.ecosystem.total"]
     ecosystem_start = float(ecosystem["value"].iloc[0]) if not ecosystem.empty else 0.0
     ecosystem_end = float(ecosystem["value"].iloc[-1]) if not ecosystem.empty else 0.0
     schedule_hash = hashlib.sha256(schedule.to_csv(index=False).encode("utf-8")).hexdigest()
-    manifest = {
+    manifest: dict[str, object] = {
         "package_id": package.manifest.package_id,
         "package_fingerprint": package_fingerprint(package),
         "dataset": dataset_reference(Path(dataset_dir)),
@@ -582,6 +673,17 @@ def write_carbon_run(
             "path": str(run.defaults.path),
         },
     }
+    if extra_manifest is not None:
+        manifest["fertilization"] = dict(extra_manifest)
+    if extra_accounts is not None and not extra_accounts.empty:
+        fertilization = manifest.setdefault("fertilization", {})
+        assert isinstance(fertilization, dict)
+        for label, account in (
+            ("total_area_ha", "fertilization.area_ha"),
+            ("total_co2e_t", "fertilization.co2e_t"),
+        ):
+            values = extra_accounts.loc[extra_accounts["account"] == account, "value"]
+            fertilization[label] = float(pd.to_numeric(values, errors="coerce").sum())
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
     return CarbonRunResult(
         output_dir=root,
@@ -603,9 +705,9 @@ def merge_carbon_accounts(
 ) -> pd.DataFrame:
     """Merge ``carbon.*`` accounts into a simulation run's account values.
 
-    Existing ``carbon.*`` rows are replaced, so a rerun is idempotent. Non-carbon
-    accounts are preserved. The optional carbon manifest is copied into the run
-    directory as ``carbon_manifest.json``.
+    Existing ``carbon.*`` and ``fertilization.*`` rows are replaced, so a rerun
+    is idempotent. Non-carbon accounts are preserved. The optional carbon
+    manifest is copied into the run directory as ``carbon_manifest.json``.
 
     Parameters
     ----------
@@ -640,7 +742,9 @@ def merge_carbon_accounts(
         raise CarbonEngineError(
             "account_values.csv and carbon_accounts.csv need offset, account, and value"
         )
-    base = base.loc[~base["account"].astype(str).str.startswith("carbon.")].copy()
+    base = base.loc[
+        ~base["account"].astype(str).str.startswith(("carbon.", "fertilization."))
+    ].copy()
     carbon = carbon.loc[:, ["offset", "account", "value"]].copy()
     merged = pd.concat([base, carbon], ignore_index=True)
     merged = merged.sort_values(["offset", "account"], kind="stable").reset_index(drop=True)

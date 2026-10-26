@@ -272,13 +272,7 @@ def build_sit_tables(
     CarbonSitError
         When the package, dataset, or schedule cannot be compiled.
     """
-    root = Path(dataset_dir)
-    findings: list[Problem] = []
-    fragments = _read_table(root, "fragments", findings)
-    tracks = _read_table(root, "tracks", findings)
-    treatments = _read_table(root, "treatments", findings)
-    if findings:
-        raise CarbonSitError(findings)
+    fragments, tracks, treatments = read_dataset_tables(dataset_dir)
     return build_sit_tables_from_tables(
         package,
         fragments,
@@ -287,6 +281,36 @@ def build_sit_tables(
         schedule,
         allow_unmatched=allow_unmatched,
     )
+
+
+def read_dataset_tables(
+    dataset_dir: Path,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Read the three dataset tables used by the SIT compiler.
+
+    Parameters
+    ----------
+    dataset_dir : Path
+        The compiled dataset directory.
+
+    Returns
+    -------
+    tuple of pandas.DataFrame
+        The ``fragments``, ``tracks``, and ``treatments`` tables.
+
+    Raises
+    ------
+    CarbonSitError
+        When a required dataset table is missing.
+    """
+    root = Path(dataset_dir)
+    findings: list[Problem] = []
+    fragments = _read_table(root, "fragments", findings)
+    tracks = _read_table(root, "tracks", findings)
+    treatments = _read_table(root, "treatments", findings)
+    if findings:
+        raise CarbonSitError(findings)
+    return fragments, tracks, treatments
 
 
 def build_sit_tables_from_tables(

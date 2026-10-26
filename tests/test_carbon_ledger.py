@@ -23,6 +23,12 @@ def test_carbon_targets_require_a_package() -> None:
     )
 
 
+def test_carbon_fertilization_requires_a_package() -> None:
+    """A fertilization configuration without a carbon package is a configuration error."""
+    with pytest.raises(ValueError, match="carbon fertilization"):
+        OptimizeConfig(carbon_fertilization_path="fertilization.yaml")
+
+
 def test_ledger_matches_a_full_run(tmp_path: Path) -> None:
     """The block ledger reproduces the full-schedule carbon accounts."""
     pytest.importorskip("libcbm")
