@@ -139,8 +139,9 @@ def carbon(
 ) -> None:
     """Run libcbm for a compiled dataset, a carbon package, and a schedule."""
     schedule_frame = read_schedule(schedule)
-    n_steps = int(years) if years is not None else int(schedule_frame["offset"].max()) + 1
-    if n_steps <= int(schedule_frame["offset"].max()):
+    latest_offset = int(schedule_frame["offset"].max()) if not schedule_frame.empty else -1
+    n_steps = int(years) if years is not None else latest_offset + 1
+    if n_steps <= latest_offset:
         print("[red]--years must run past the latest scheduled offset[/red]")
         raise typer.Exit(code=1)
     try:

@@ -2599,3 +2599,13 @@ issue comments.
   the objective from 1003.25 to 887.08 and chose a clearcut on block 1; ecosystem carbon at
   offset 1 fell from 1203.25 to 1087.08 tC. Report:
   `notes/reports/p517-carbon-optimizer.md`. Dashboard **GREEN**.
+
+- P51.8: validated the real TSA24 and MKRF instances. Built the full TSA24 dataset
+  (536,458 fragments, 108 tracks) and carbon package (108 tracks, 6,016,466.4 ha); a
+  one-AU baseline (7,313 fragments) ran five years in 38 s (21.77M -> 21.95M tC). The full
+  536k-fragment run was stopped after 35m30 at ~99% CPU with no output. Carbon-aware search
+  on a 50-block TSA24 subset met a 134,000 tC ceiling (objective 0.0, 3 CC blocks; exact
+  verification 133,294.95 tC; ledger/exact difference ~0.03%). Built the full MKRF dataset
+  (3,183 fragments, 7,048 tracks) and a dataset-derived package (1,903 tracks); a five-block
+  subset met a 10,500 tC ceiling (objective 0.0, 2 CC blocks; exact 10,478.44 tC; ledger
+  exact). Report: `notes/reports/p518-carbon-validation.md`. Dashboard **GREEN**.
