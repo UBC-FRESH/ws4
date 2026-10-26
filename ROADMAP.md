@@ -1675,6 +1675,12 @@ frequency fitting, or surrogate training.
   - [x] Write fragment/block CSVs and a deterministic mapping manifest.
   - [x] Add `ws4 hydrology map` and coverage/refusal reporting.
   - [x] Add tests, design note, reference docs, roadmap, and changelog.
+- [ ] P57.4 Screen a schedule against FEMIC flood-risk response and risk rows (#403)
+  - [ ] Add mapping/schedule loaders and a typed screening result.
+  - [ ] Derive watershed harvest fractions and scenario applicability checks.
+  - [ ] Join response ratios and flood-risk rows; refuse outside tolerance.
+  - [ ] Add CSV/JSON writers and `ws4 hydrology screen`.
+  - [ ] Add tests, design note, reference docs, roadmap, and changelog.
 
 Acceptance:
 
