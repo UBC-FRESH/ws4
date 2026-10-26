@@ -62,7 +62,7 @@ exists and the maintainer approves it.
 | P56 Disturbance event consumer | #393 | `feature/p56-disturbance-consumer` | complete |
 | P58 Forest carbon accounting and carbon-aware planning | #357 | `feature/p58-carbon` | complete |
 | P59 LiDAR in the web UI | #417 | `feature/p59-lidar-ui` | complete |
-| P60 Harden hydrology use with validation evidence | #415 | `feature/p60-closeout` | pr-open |
+| P60 Harden hydrology use with validation evidence | #415 | `feature/p60-closeout` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -1827,10 +1827,14 @@ Acceptance:
 
 Parent issue: #415
 Branch: `feature/p60-closeout`
-Status: pr-open
+Status: complete
 
 Goal: read FEMIC validation-report and model-card evidence, report review and
 tail-check state, and prepare an explicit policy for provisional use.
+
+Closeout: pull request #428 squash-merged as `b2012bd`; the phase report is
+`notes/reports/p60-closeout.md`. It was renumbered from P59 after the LiDAR UI
+PR claimed P59.
 
 - [x] P60.1 Read and report FEMIC validation and model-card evidence (#416)
   - [x] Add evidence dataclasses and readiness assessment.

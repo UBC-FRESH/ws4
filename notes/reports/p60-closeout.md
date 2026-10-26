@@ -6,7 +6,7 @@ Pull request: #428, `feature/p60-closeout` into `main`
 Evidence head: `2bceea0` (P60.2), plus the report commit
 Report commit: the commit that adds this report. Its CI run is posted on the pull request.
 Date: 2026-10-26
-Status: queued for approval. Not merged. Main has advanced with P55/P59; this branch merged `origin/main` and re-ran the gates.
+Status: merged and closed on 2026-10-26 as `b2012bd`.
 
 ## Recommendation
 

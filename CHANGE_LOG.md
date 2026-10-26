@@ -2843,3 +2843,11 @@ issue comments.
   advanced with P55/P59 before the phase merge; the closeout branch merged
   `origin/main`, kept all phases, and re-ran the dashboard **GREEN** (lint,
   format, types, 112.04 s tests, validator, docs, docstrings).
+
+- P60 close-out merged: pull request #428 squash-merged as `b2012bd`; the
+  P60/P59 task branches were deleted. P60 was renumbered from P59 after the
+  LiDAR UI phase claimed P59. The phase report is
+  `notes/reports/p60-closeout.md`; child issues and parent #415 are closed.
+  Next recommendation: public-watershed pilot/tail-check remediation, or FHOPS
+  Phase 15 after P14. Post-merge dashboard **GREEN** (lint, format, types,
+  123.47 s tests, validator, docs, docstrings).
