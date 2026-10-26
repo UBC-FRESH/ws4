@@ -2602,3 +2602,10 @@ issue comments.
 - P46 close-out: pull request #386 squash-merged as `6c31d49`; parent #382 and tasks #383/#384/#385
   closed. P46 status set complete. The GBR benchmark deviation is recorded in the close-out:
   no production GBR route configuration exists in the workspace.
+
+- P56.1: added the read-only `femic.disturbance.v1` consumer (`ws4/disturbance.py`)
+  and `ws4 disturbance --events ... [--json] [--block-id ...]`. It loads the flat
+  FEMIC consumer rows or full event records, validates the fields ws4 needs, and
+  reports counts, types, years, severity classes, affected blocks/fragments, and
+  area. 13 unit tests and 4 CLI tests pass. No compiled-dataset, simulator, or
+  optimizer behavior changes.
