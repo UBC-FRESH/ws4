@@ -2609,3 +2609,11 @@ issue comments.
   (3,183 fragments, 7,048 tracks) and a dataset-derived package (1,903 tracks); a five-block
   subset met a 10,500 tC ceiling (objective 0.0, 2 CC blocks; exact 10,478.44 tC; ledger
   exact). Report: `notes/reports/p518-carbon-validation.md`. Dashboard **GREEN**.
+
+- P51.9: added `ws4/carbon/gcbm.py` and `ws4 gcbm`, reading the GCBM 2.5.x results
+  database without FLINT or Wine and mapping pools to `carbon.*` accounts. The supplied
+  GCBM package was run under Wine 9.0 on the bundled Standalone Template: 11,347 land units
+  in 85 s. The reader produced 120 locations / 12 steps and 67,388.5 -> 52,880.9 tC.
+  `compare_gcbm_to_carbon` and `--compare-carbon` are ready; a same-landscape TSA24/MKRF
+  comparison is deferred until the FEMIC walltowall export (P115.4). Report:
+  `notes/reports/p519-gcbm-results.md`. Dashboard **GREEN**.

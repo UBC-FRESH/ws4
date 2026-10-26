@@ -7,6 +7,15 @@ run happens.
 
 from __future__ import annotations
 
+from .gcbm import (
+    GcbmResults,
+    GcbmResultsError,
+    GcbmRunResult,
+    compare_gcbm_to_carbon,
+    gcbm_accounts,
+    read_gcbm_results,
+    write_gcbm_results,
+)
 from .ledger import CarbonLedger
 from .libcbm import (
     CarbonEngineError,
@@ -56,6 +65,9 @@ __all__ = [
     "CarbonRunResult",
     "CarbonSitError",
     "FrameComparison",
+    "GcbmResults",
+    "GcbmResultsError",
+    "GcbmRunResult",
     "RunComparison",
     "SitTables",
     "TrackResolution",
@@ -66,11 +78,14 @@ __all__ = [
     "check_cbm_defaults",
     "compare_carbon_runs",
     "compare_frames",
+    "compare_gcbm_to_carbon",
+    "gcbm_accounts",
     "installed_libcbm_version",
     "load_carbon_package",
     "mass_balance",
     "merge_carbon_accounts",
     "package_fingerprint",
+    "read_gcbm_results",
     "read_schedule",
     "replay_equal",
     "resolve_tracks",
@@ -78,5 +93,6 @@ __all__ = [
     "run_libcbm_tables",
     "validate_carbon_package",
     "write_carbon_run",
+    "write_gcbm_results",
     "write_sit_tables",
 ]

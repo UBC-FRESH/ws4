@@ -1521,7 +1521,7 @@ See `notes/design/ws4-carbon.md`.
 - [x] P51.6 Build the block-level carbon ledger (#363)
 - [x] P51.7 Add carbon targets to the optimizer (#364)
 - [x] P51.8 Validate carbon-aware planning on TSA24 and MKRF (#365)
-- [ ] P51.9 Consume GCBM outputs and compare spatial carbon (#366)
+- [x] P51.9 Consume GCBM outputs and compare spatial carbon (#366)
 - [ ] P51.10 Document, release, and close out the carbon phase (#367)
 
 Acceptance:

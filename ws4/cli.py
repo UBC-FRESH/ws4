@@ -15,12 +15,16 @@ from .build.compiler import build_canonical_dataset
 from .build.legacy import ingest_legacy_matrix
 from .carbon import (
     CarbonEngineError,
+    GcbmResultsError,
     build_sit_tables,
+    compare_gcbm_to_carbon,
     load_carbon_package,
     merge_carbon_accounts,
+    read_gcbm_results,
     read_schedule,
     run_libcbm,
     write_carbon_run,
+    write_gcbm_results,
     write_sit_tables,
 )
 from .model.schema import validate_dataset
@@ -192,6 +196,46 @@ def carbon(
     print(f"flux: {result.flux_path}")
     print(f"accounts: {result.accounts_path}")
     print(f"manifest: {result.manifest_path}")
+
+
+@app.command()
+def gcbm(
+    results: Path = typer.Option(..., "--results", exists=True, help="GCBM gcbm_output.db"),
+    out: Path = typer.Option(..., help="Output directory for the GCBM summary"),
+    compare_carbon: Path | None = typer.Option(
+        None,
+        "--compare-carbon",
+        exists=True,
+        help="Optional WS4 carbon run directory to compare against",
+    ),
+) -> None:
+    """Read a raw GCBM results database and optionally compare it with WS4."""
+    try:
+        loaded = read_gcbm_results(results)
+        summary = write_gcbm_results(loaded, out)
+    except GcbmResultsError as exc:
+        print(f"[red]GCBM results failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    print(f"[bold green]GCBM results summarized[/] → {out}")
+    print(
+        f"locations={loaded.locations['location_id'].nunique()} "
+        f"steps={loaded.dates['step'].nunique()} "
+        f"ecosystem_start_tc={summary.ecosystem_start_tc:.1f} "
+        f"ecosystem_end_tc={summary.ecosystem_end_tc:.1f}"
+    )
+    print(f"pools: {summary.pools_path}")
+    print(f"fluxes: {summary.fluxes_path}")
+    print(f"accounts: {summary.accounts_path}")
+    if compare_carbon is not None:
+        carbon_accounts = compare_carbon / "carbon_accounts.csv"
+        if not carbon_accounts.is_file():
+            print(f"[red]Missing WS4 carbon accounts:[/red] {carbon_accounts}")
+            raise typer.Exit(code=1)
+        comparison = compare_gcbm_to_carbon(pd.read_csv(summary.accounts_path), carbon_accounts)
+        comparison_path = out / "gcbm_compare.csv"
+        comparison.to_csv(comparison_path, index=False)
+        max_abs = float(comparison["difference_tc"].abs().max()) if not comparison.empty else 0.0
+        print(f"comparison: {comparison_path} max_abs_tc={max_abs:.3f}")
 
 
 @app.command()

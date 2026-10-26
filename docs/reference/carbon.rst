@@ -214,6 +214,20 @@ and priority tiers as any other account. A `carbon.*` target without a package i
 before the search. The run writes carbon accounts into `account_values.csv` and the
 standard report, and records `carbon_ledger.json` beside the run.
 
+GCBM results
+------------
+
+`ws4 gcbm --results gcbm_output.db --out <dir>` reads a raw GCBM results database
+without FLINT or Wine. It joins the GCBM pool and flux tables through the location and
+date dimensions, writes `gcbm_pools.csv`, `gcbm_fluxes.csv`, `gcbm_accounts.csv`, and
+`gcbm_manifest.json`, and exposes the same `carbon.*` account names as the WS4 path.
+`--compare-carbon <run-dir>` writes `gcbm_compare.csv` against a WS4
+`carbon_accounts.csv`.
+
+The reader is tabular. Mapping GCBM spatial GeoTIFFs to WS4 blocks needs a same-landscape
+GCBM export, which is the FEMIC walltowall bridge (P115.4). The P51.9 report records the
+real sample-run reading and that boundary.
+
 Validation and parity
 ---------------------
 
