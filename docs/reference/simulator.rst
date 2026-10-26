@@ -64,6 +64,9 @@ When it is given a structure habitat account (``structure_habitat_account=...`` 
 ``structure_habitat_values.csv``, ``structure_habitat_landscape.csv``, and
 ``structure_habitat_metadata.json``; see :doc:`structure-habitat`. ``ws4 report`` adds
 ``report_structure_habitat.csv``.
+When ``--resilience`` is given with a topology, it writes ``resilience_metrics.csv`` and
+``resilience_metadata.json``; see :doc:`resilience`. ``ws4 report`` adds
+``report_resilience.csv``.
 
 When the simulator is given a block topology (``Simulator.run(..., topology_csv=...)``), it also
 writes:

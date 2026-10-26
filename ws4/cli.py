@@ -96,6 +96,7 @@ from .opt.watch import run_watch
 from .patch.accounts import load_patch_accounts
 from .patch.edge import load_edge_elements
 from .report import write_report
+from .resilience import ResilienceError, compare_resilience_runs
 from .roads.accounts import load_route_config
 from .sim.engine import Simulator
 from .structure_habitat import (
@@ -212,6 +213,11 @@ def simulate(
         exists=True,
         help="Structure habitat metadata JSON paired with --structure-values.",
     ),
+    resilience: bool = typer.Option(
+        False,
+        "--resilience",
+        help="Compute connectivity, age-class, and fragmentation accounts (requires --topology).",
+    ),
 ) -> None:
     """Simulate a schedule over a compiled dataset and write a run directory."""
     if (dhi_values is None) != (dhi_metadata is None):
@@ -220,6 +226,8 @@ def simulate(
         raise typer.BadParameter(
             "--structure-values and --structure-metadata must be supplied together"
         )
+    if resilience and topology is None:
+        raise typer.BadParameter("--resilience requires --topology")
     try:
         dhi_account = (
             read_dhi_account(dhi_values, dhi_metadata)
@@ -254,6 +262,7 @@ def simulate(
         min_core_area_ha=min_core_area_ha,
         dhi_account=dhi_account,
         structure_habitat_account=structure_account,
+        resilience=resilience,
     )
     print(f"[bold green]Simulation complete[/] → {out}")
 
@@ -1799,6 +1808,29 @@ def hydrology_validate(
 
 
 app.add_typer(lidar_app, name="lidar")
+resilience_app = typer.Typer(
+    add_completion=False,
+    no_args_is_help=True,
+    help="Compare the descriptive resilience metrics of two runs.",
+)
+
+
+@resilience_app.command("compare")
+def resilience_compare(
+    run_a: Path = typer.Option(..., "--run-a", exists=True, file_okay=False),
+    run_b: Path = typer.Option(..., "--run-b", exists=True, file_okay=False),
+    output: Path = typer.Option(..., "--output", "-o", help="Comparison CSV."),
+) -> None:
+    """Compare the per-year resilience metrics of two simulated runs."""
+    try:
+        result = compare_resilience_runs(run_a, run_b)
+    except ResilienceError as error:
+        raise typer.BadParameter(str(error)) from error
+    output.parent.mkdir(parents=True, exist_ok=True)
+    result.to_csv(output, index=False)
+    print(f"[bold green]Resilience comparison[/] {len(result)} accounts → {output}")
+
+
 shi_app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
@@ -1959,6 +1991,7 @@ def dhi_ingest(
     print(f"[bold green]DHI values[/] {len(values)} blocks, bands {', '.join(names)} → {output}")
 
 
+app.add_typer(resilience_app, name="resilience")
 app.add_typer(shi_app, name="shi")
 app.add_typer(dhi_app, name="dhi")
 app.add_typer(hydrology_app, name="hydrology")

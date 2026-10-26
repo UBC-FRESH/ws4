@@ -21,6 +21,7 @@ from .opt.objective import (
     period_value,
     raw_penalty,
 )
+from .resilience import resilience_report
 from .structure_habitat import structure_habitat_report
 
 
@@ -371,3 +372,14 @@ def write_report(values: pd.DataFrame, targets: list[Target], out_dir: Path) -> 
     structure = structure_habitat_report(values, structure_metadata)
     if not structure.empty:
         structure.to_csv(out_dir / "report_structure_habitat.csv", index=False)
+    resilience_metadata_path = out_dir / "resilience_metadata.json"
+    resilience_metadata: dict[str, object] | None = None
+    if resilience_metadata_path.is_file():
+        try:
+            loaded_resilience = json.loads(resilience_metadata_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            loaded_resilience = None
+        resilience_metadata = loaded_resilience if isinstance(loaded_resilience, dict) else None
+    resilience = resilience_report(values, resilience_metadata)
+    if not resilience.empty:
+        resilience.to_csv(out_dir / "report_resilience.csv", index=False)

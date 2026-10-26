@@ -29,6 +29,11 @@ from ..patch.constraints import (
 )
 from ..patch.edge import EdgeElement, edge_values
 from ..patch.metrics import patch_metrics
+from ..resilience import (
+    ResilienceMetadata,
+    compute_resilience,
+    write_resilience_metadata,
+)
 from ..roads.accounts import (
     DuplicateAccount,
     MaintenanceCharge,
@@ -95,6 +100,7 @@ class Simulator:
         self._edge_values: list[dict[str, object]] = []
         self._spread_values: list[dict[str, object]] = []
         self._spread_membership: list[dict[str, object]] = []
+        self._resilience_values: list[dict[str, object]] = []
         # An integer-age table for gather-based evaluation (see :class:`CurveTable`).
         self._curve_table = CurveTable.from_curves(self.curves)
         # Index the treatments, products, and fragments once, so a year's treatments do not
@@ -1075,6 +1081,7 @@ class Simulator:
         spread_points: Mapping[int, Point] | None = None,
         dhi_account: DhiAccount | None = None,
         structure_habitat_account: StructureHabitatAccount | None = None,
+        resilience: bool = False,
     ) -> pd.DataFrame:
         """Replay a schedule and return the account values, without writing files.
 
@@ -1112,6 +1119,10 @@ class Simulator:
             Static Coops et al. (2016) structure habitat metrics per block. When
             given, the simulator records component means and class areas for the
             blocks not yet treated. The account does not change growth.
+        resilience : bool, optional
+            When True, compute the descriptive connectivity, age-class, and
+            fragmentation metrics from the topology and the simulated ages.
+            Requires ``edges`` and does not change growth or the objective.
 
         Returns
         -------
@@ -1130,6 +1141,7 @@ class Simulator:
         self._edge_values = []
         self._spread_values = []
         self._spread_membership = []
+        self._resilience_values = []
         spread_labels = sorted({account.criteria for account in spread_accounts})
         criteria_labels = sorted(
             {element.attribute1 for element in edge_elements}
@@ -1140,6 +1152,33 @@ class Simulator:
         # treatment is applied; the first treatment offset (0) is the first simulation
         # step, and period 1 covers offsets 0 through period_width - 1.
         records.extend(self.account_values(-1))
+        resilience_area: dict[int, float] = {}
+        resilience_edges: list[tuple[int, int, float]] = []
+        if resilience:
+            if not edges:
+                raise ValueError("resilience metrics need a topology (set edges or topology_csv)")
+            resilience_area = self._spread_block_area()
+            resilience_edges = list(edges)
+            resilience_fragment_ages = [
+                (float(age), float(area))
+                for age, area in zip(
+                    self.fragments["offset"], self.fragments["area_ha"], strict=True
+                )
+            ]
+            initial_metrics = compute_resilience(
+                resilience_fragment_ages,
+                resilience_edges,
+                resilience_area,
+                untreated_blocks=set(resilience_area),
+            )
+            records.extend(
+                {"offset": -1, "account": account, "value": value}
+                for account, value in initial_metrics.items()
+            )
+            self._resilience_values.extend(
+                {"offset": -1, "account": account, "value": value}
+                for account, value in initial_metrics.items()
+            )
         dhi_area: dict[int, float] = {}
         if dhi_account is not None:
             dhi_area = self._spread_block_area()
@@ -1161,7 +1200,8 @@ class Simulator:
         disturbed_blocks: set[int] = set()
         for offset in range(years):
             products_before = len(self._product_values)
-            disturbed_blocks.update(self.apply_treatments(schedule, offset, model, ledger))
+            current_disturbed = self.apply_treatments(schedule, offset, model, ledger)
+            disturbed_blocks.update(current_disturbed)
             records.extend(self.account_values(offset))
             if dhi_account is not None:
                 records.extend(
@@ -1176,6 +1216,28 @@ class Simulator:
                     for account, value in structure_habitat_account.account_values(
                         structure_area, excluded_blocks=disturbed_blocks
                     ).items()
+                )
+            if resilience:
+                fragment_ages = [
+                    (float(age), float(area))
+                    for age, area in zip(
+                        self.fragments["offset"], self.fragments["area_ha"], strict=True
+                    )
+                ]
+                metrics = compute_resilience(
+                    fragment_ages,
+                    resilience_edges,
+                    resilience_area,
+                    untreated_blocks=set(resilience_area) - disturbed_blocks,
+                    disturbed_blocks=current_disturbed,
+                )
+                records.extend(
+                    {"offset": offset, "account": account, "value": value}
+                    for account, value in metrics.items()
+                )
+                self._resilience_values.extend(
+                    {"offset": offset, "account": account, "value": value}
+                    for account, value in metrics.items()
                 )
             produced: dict[str, float] = {}
             for record in self._product_values[products_before:]:
@@ -1239,6 +1301,7 @@ class Simulator:
         min_core_area_ha: float | None = None,
         dhi_account: DhiAccount | None = None,
         structure_habitat_account: StructureHabitatAccount | None = None,
+        resilience: bool = False,
     ) -> pd.DataFrame:
         """Replay a schedule for the given horizon and write the run outputs.
 
@@ -1297,6 +1360,10 @@ class Simulator:
             Static Coops et al. (2016) structure metrics per block. When given,
             the structure accounts are added to ``account_values.csv`` and the
             run-local stand table, landscape summary, and metadata are written.
+        resilience : bool, optional
+            When True and ``topology_csv`` is given, compute the descriptive
+            connectivity, age-class, and fragmentation accounts and write
+            ``resilience_metrics.csv`` plus ``resilience_metadata.json``.
         block_coordinates : Path or None, optional
             A CSV of block centroids (a block id, an ``x`` and a ``y``), which a spread bearing
             is read from. Required with ``spread_accounts``.
@@ -1327,6 +1394,8 @@ class Simulator:
             if model is not None
             else None
         )
+        if resilience and topology_csv is None:
+            raise ValueError("resilience metrics need a topology (set topology_csv)")
         graph = load_patch_edges(topology_csv) if topology_csv is not None else []
         spread_edges: list[tuple[int, int, float]] = []
         points: dict[int, Point] = {}
@@ -1356,6 +1425,7 @@ class Simulator:
             edges=graph,
             dhi_account=dhi_account,
             structure_habitat_account=structure_habitat_account,
+            resilience=resilience,
         )
         if ledger is not None and route_accounts:
             values = resolve_account_values(
@@ -1376,6 +1446,14 @@ class Simulator:
             dhi_account.write(out_dir)
         if structure_habitat_account is not None:
             structure_habitat_account.write(out_dir, self._spread_block_area())
+        if resilience:
+            pd.DataFrame(self._resilience_values, columns=["offset", "account", "value"]).to_csv(
+                out_dir / "resilience_metrics.csv", index=False
+            )
+            write_resilience_metadata(
+                ResilienceMetadata(topology=str(topology_csv)),
+                out_dir / "resilience_metadata.json",
+            )
         pd.DataFrame(self._product_values, columns=["offset", "account", "value"]).to_csv(
             out_dir / "product_values.csv", index=False
         )
