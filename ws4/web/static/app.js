@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, selectedBlock: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, selectedBlock: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false };
 
 const $ = (id) => document.getElementById(id);
 const TILE_VERSION = 'v8';
@@ -2700,6 +2700,112 @@ function chartCell(account, period) {
   };
 }
 
+
+function targetChartCells(account) {
+  const source = state.targetSeries?.accounts?.find((item) => item.account === account);
+  const periods = source?.periods?.length ? source.periods : state.periods;
+  return (periods ?? []).map((period) => {
+    const value = periodAchieved(account, period);
+    return { ...chartCell(account, period), achieved: value };
+  });
+}
+
+function ensureChartRow(account, cell) {
+  const rows = (cell.target_indices ?? [])
+    .map((index) => state.targets[index])
+    .filter((row) => row && row.account === account);
+  if (rows.length) return rows[0];
+  const template = state.targets.find((row) => row.account === account) ?? {};
+  const width = Number(template.period_width ?? state.periodWidth ?? 1) || 1;
+  const row = {
+    index: state.targets.length,
+    account,
+    period: Number(cell.index) + 1,
+    year: Number(cell.end) + 1,
+    period_width: width,
+    flow: '',
+    minimum: null,
+    maximum: null,
+    min_weight: template.min_weight ?? 1,
+    max_weight: template.max_weight ?? 1,
+    normalization: template.normalization ?? 'none',
+    priority: template.priority ?? 1,
+    active: template.active !== false,
+    kind: 'level',
+  };
+  state.targets.push(row);
+  cell.target_indices = [row.index];
+  return row;
+}
+
+function setChartBound(account, cell, bound, value) {
+  const row = ensureChartRow(account, cell);
+  row[bound] = value;
+  cell[bound] = value;
+  cell.active = state.targets.some((candidate) => candidate.account === account && candidate.active !== false);
+  const source = state.targetSeries?.accounts?.find((item) => item.account === account);
+  const sourceCell = source?.periods?.find((item) => Number(item.index) === Number(cell.index));
+  if (sourceCell) {
+    sourceCell[bound] = value;
+    sourceCell.active = cell.active;
+    sourceCell.target_indices = cell.target_indices;
+  }
+}
+
+function applyChartBound(account, cell, bound, value, scope) {
+  const target = value === '' || value === null || value === undefined ? null : Number(value);
+  if (target !== null && !Number.isFinite(target)) return;
+  const cells = scope === 'all' ? targetChartCells(account) : [cell];
+  for (const item of cells) setChartBound(account, item, bound, target);
+  markChartDirty();
+  renderTargetCharts();
+}
+
+function setChartActive(account, active) {
+  for (const row of state.targets.filter((candidate) => candidate.account === account)) {
+    row.active = active;
+  }
+  const source = state.targetSeries?.accounts?.find((item) => item.account === account);
+  for (const cell of source?.periods ?? []) cell.active = active;
+  markChartDirty();
+  renderTargetCharts();
+}
+
+function markChartDirty() {
+  state.chartDirty = true;
+  const button = $('target-chart-save');
+  if (button) button.disabled = false;
+  const status = $('target-chart-status');
+  if (status) status.textContent = 'unsaved chart changes';
+}
+
+function setChartStatus(text) {
+  const status = $('target-chart-status');
+  if (status) status.textContent = text;
+  const button = $('target-chart-save');
+  if (button) button.disabled = !state.chartDirty;
+}
+
+async function saveTargetCharts() {
+  if (!state.chartDirty) return;
+  const pinned = new Set(targetChartAccounts());
+  const rows = state.targets.map(({ kind, ...row }) => ({ ...row }));
+  const saved = await postTargets(rows, 'saved target chart changes');
+  if (!saved) {
+    setChartStatus('chart save failed');
+    return;
+  }
+  state.chartDirty = false;
+  const currentRows = state.targets;
+  state.watched.clear();
+  for (const row of currentRows) {
+    if (pinned.has(row.account)) state.watched.add(String(row.index));
+  }
+  saveWatched();
+  setChartStatus('chart changes saved');
+  renderTargetCharts();
+}
+
 function renderTargetChart(account, periods) {
   const card = document.createElement('article');
   card.className = 'target-chart-card';
@@ -2726,6 +2832,59 @@ function renderTargetChart(account, periods) {
   meta.classList.add(current ? targetStatus(current, current.achieved) : 'unknown');
   title.append(name, meta);
   card.append(title);
+
+  let selectedCell = cells[Math.min(Math.max(0, state.periodIndex), Math.max(0, cells.length - 1))];
+  const controls = document.createElement('div');
+  controls.className = 'target-chart-controls';
+  const activeLabel = document.createElement('label');
+  const activeBox = document.createElement('input');
+  activeBox.type = 'checkbox';
+  activeBox.checked = active;
+  activeBox.addEventListener('change', () => setChartActive(account, activeBox.checked));
+  activeLabel.append(activeBox, 'Active');
+  const boundLabel = document.createElement('label');
+  boundLabel.append('Edit ');
+  const boundSelect = document.createElement('select');
+  for (const [value, text] of [['minimum', 'Minimum'], ['maximum', 'Maximum']]) {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = text;
+    boundSelect.append(option);
+  }
+  boundLabel.append(boundSelect);
+  const scopeLabel = document.createElement('label');
+  scopeLabel.append('Scope ');
+  const scopeSelect = document.createElement('select');
+  for (const [value, text] of [['period', 'This period'], ['all', 'All periods']]) {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = text;
+    scopeSelect.append(option);
+  }
+  scopeLabel.append(scopeSelect);
+  const valueLabel = document.createElement('label');
+  valueLabel.append('Value ');
+  const valueInput = document.createElement('input');
+  valueInput.type = 'number';
+  valueInput.step = 'any';
+  valueLabel.append(valueInput);
+  const applyButton = document.createElement('button');
+  applyButton.type = 'button';
+  applyButton.textContent = 'Apply';
+  const clearButton = document.createElement('button');
+  clearButton.type = 'button';
+  clearButton.textContent = 'Clear';
+  const syncValue = () => {
+    if (!selectedCell || document.activeElement === valueInput) return;
+    const value = selectedCell[boundSelect.value];
+    valueInput.value = value === null || value === undefined ? '' : String(value);
+  };
+  boundSelect.addEventListener('change', syncValue);
+  applyButton.addEventListener('click', () => applyChartBound(account, selectedCell, boundSelect.value, valueInput.value, scopeSelect.value));
+  clearButton.addEventListener('click', () => applyChartBound(account, selectedCell, boundSelect.value, null, scopeSelect.value));
+  controls.append(activeLabel, boundLabel, scopeLabel, valueLabel, applyButton, clearButton);
+  card.append(controls);
+  syncValue();
 
   const width = 540;
   const height = 210;
@@ -2780,7 +2939,9 @@ function renderTargetChart(account, periods) {
   const readout = document.createElement('div');
   readout.className = 'target-chart-readout';
   const showReadout = (cell) => {
+    selectedCell = cell;
     readout.textContent = `${cell.label ?? 'period'} · min ${cell.minimum === null || cell.minimum === undefined ? '—' : fullNumber(cell.minimum)} · max ${cell.maximum === null || cell.maximum === undefined ? '—' : fullNumber(cell.maximum)} · achieved ${cell.achieved === null || cell.achieved === undefined ? '—' : fullNumber(cell.achieved)} · ${targetStatus(cell, cell.achieved)}`;
+    syncValue();
   };
   if (cells.length) showReadout(cells[Math.min(state.periodIndex, cells.length - 1)]);
   cells.forEach((cell, index) => {
@@ -2836,6 +2997,47 @@ function renderTargetChart(account, periods) {
     hit.setAttribute('tabindex', '0');
     svg.append(hit);
   });
+
+  let drag = null;
+  const valueFromEvent = (event) => {
+    const rect = svg.getBoundingClientRect();
+    const py = ((event.clientY - rect.top) / Math.max(rect.height, 1)) * height;
+    const ratio = (py - top) / plotHeight;
+    const raw = domainHigh - ratio * (domainHigh - domainLow);
+    return Math.min(domainHigh, Math.max(domainLow, raw));
+  };
+  svg.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0) return;
+    const rect = svg.getBoundingClientRect();
+    const px = ((event.clientX - rect.left) / Math.max(rect.width, 1)) * width;
+    const index = Math.floor((px - left) / step);
+    if (index < 0 || index >= cells.length) return;
+    drag = { cell: cells[index], index, startY: event.clientY, moved: false };
+    showReadout(drag.cell);
+    svg.setPointerCapture?.(event.pointerId);
+  });
+  svg.addEventListener('pointermove', (event) => {
+    if (!drag) return;
+    if (Math.abs(event.clientY - drag.startY) > 3) drag.moved = true;
+    if (!drag.moved) return;
+    const value = valueFromEvent(event);
+    if (document.activeElement !== valueInput) valueInput.value = value.toFixed(2);
+    readout.textContent = `${drag.cell.label ?? 'period'} · drag ${boundSelect.value} to ${fullNumber(value)} · achieved ${drag.cell.achieved === null ? '—' : fullNumber(drag.cell.achieved)}`;
+  });
+  svg.addEventListener('pointerup', (event) => {
+    if (!drag) return;
+    const finished = drag;
+    drag = null;
+    svg.releasePointerCapture?.(event.pointerId);
+    if (finished.moved) {
+      applyChartBound(account, finished.cell, boundSelect.value, valueFromEvent(event), scopeSelect.value);
+    } else {
+      showReadout(finished.cell);
+      setPeriod(Number(finished.cell.index));
+      syncNavigation();
+    }
+  });
+  svg.addEventListener('pointercancel', () => { drag = null; });
 
   const points = cells
     .map((cell, index) => ({ cell, index }))
@@ -3463,6 +3665,8 @@ async function loadTargets() {
   const table = $('targets-table');
   const button = $('save-targets');
   try {
+    state.chartDirty = false;
+    setChartStatus('');
     state.targetCells = new Map();
     state.windowValues = new Map();
     const rows = await api('api/targets.json');
@@ -4413,6 +4617,7 @@ function wireControls() {
     if (skin) { applySkin(skin); await loadTargets(); }
   });
   $('save-targets').addEventListener('click', saveTargets);
+  $('target-chart-save').addEventListener('click', saveTargetCharts);
   $('account-search').addEventListener('input', renderAccountTree);
   $('account-multi').addEventListener('change', (event) => {
     if (!event.target.checked && state.selectedAccounts.size > 1) {
