@@ -98,6 +98,10 @@ module = ["rasterio", "rasterio.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+module = ["libcbm", "libcbm.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = ["threadpoolctl", "threadpoolctl.*"]
 ignore_missing_imports = true
 

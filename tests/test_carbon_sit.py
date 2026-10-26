@@ -322,7 +322,7 @@ def test_read_schedule_uses_offset_clock(tmp_path: Path) -> None:
 def test_optional_libcbm_parse(tmp_path: Path) -> None:
     """The generated tables parse in libcbm when it is installed."""
     libcbm = pytest.importorskip("libcbm")
-    from libcbm.input.sit import sit_cbm_factory, sit_reader  # type: ignore[import-not-found]
+    from libcbm.input.sit import sit_cbm_factory, sit_reader
 
     package = _write_package(tmp_path / "package")
     dataset = _write_dataset(tmp_path / "dataset")

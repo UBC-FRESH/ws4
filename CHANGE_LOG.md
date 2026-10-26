@@ -2791,3 +2791,10 @@ issue comments.
   P56 disturbance, and P46 route-event work; removed the stale "P51/P52 not in 0.2.0" gap; added
   the `lidar` and `carbon` install extras; recorded phase verification evidence and the remaining
   carbon/hydrology/LiDAR limits. Added the Phase 55 roadmap section and tracker row. No tag.
+
+- P55.2: verified the final head with `.[geo,opt,carbon,lidar]` installed. Clean-checkout and
+  dashboard pass; added a `libcbm` mypy override and installed the optional extras in the
+  quality/dashboard/pre-commit jobs so carbon/LiDAR tests run. sdist/wheel build, `twine check`,
+  isolated installs, entry points, carbon/lidar/disturbance/hydrology commands, synthetic smoke,
+  and Pages pass.
+- P55.3: no tag or release created. Candidate is ready for explicit tag approval.
