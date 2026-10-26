@@ -180,3 +180,15 @@ licence-restricted data need the applicable governance decision before use.
 - Spatial joins or inferred road/culvert locations.
 - Automatic schedule-derived exposure in the optimizer.
 - New external data acquisition.
+
+## P62.5 integration fixture
+
+`tests/test_hydrology_integration.py` builds a complete synthetic path: bundle,
+compiled dataset, reviewed crosswalk, reviewed schedule-bound exposure, and
+schedule. It runs validate, readiness, preflight, map, and screen through the
+CLI, then checks the manifest, exposure identity, and row CSV.
+
+The same file exercises the fail-closed matrix: tail-check block, unreviewed
+crosswalk, partial mapping, missing required exposure features, schedule-hash
+mismatch, and optimizer exposure refusal. The fixture is synthetic and makes no
+real watershed or flood claim.

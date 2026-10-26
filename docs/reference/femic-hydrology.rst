@@ -507,3 +507,16 @@ See Also
 - :doc:`optimizer`
 - The FEMIC producer contract in the FEMIC repository:
   ``docs/reference/contracts/hydrology-response-bundles.rst``.
+
+Verification
+------------
+
+The P62 integration fixture is `tests/test_hydrology_integration.py`. It runs
+`validate`, `readiness`, `preflight`, `map`, and `screen` over a synthetic
+bundle, dataset, crosswalk, exposure table, and schedule. It also checks the
+fail-closed cases: tail-check block, unreviewed crosswalk, partial mapping,
+missing required exposure features, schedule-hash mismatch, and optimizer
+exposure refusal.
+
+The fixture is synthetic. It is not a real watershed, road inventory, culvert
+dataset, flood map, or regulatory result.

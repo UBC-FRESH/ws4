@@ -1923,10 +1923,10 @@ Design note: `notes/design/ws4-hydrology-consumer-hardening.md`.
   - [x] Add exposure features to one-schedule screening.
   - [x] Record exposure identity, schedule hash, and refusals.
   - [x] Refuse fixed exposure in the optimizer and add tests/docs.
-- [ ] P62.5 Prove the consumer path on a synthetic fixture (#453)
-  - [ ] Add the end-to-end fixture and success path.
-  - [ ] Add the fail-closed matrix.
-  - [ ] Update the docs and design note.
+- [x] P62.5 Prove the consumer path on a synthetic fixture (#453)
+  - [x] Add the end-to-end fixture and success path.
+  - [x] Add the fail-closed matrix.
+  - [x] Update the docs and design note.
 - [ ] P62.6 Validate, document, and close out P62 (#454)
   - [ ] Run the suites and dashboard.
   - [ ] Write the closeout report and update the roadmap/changelog.

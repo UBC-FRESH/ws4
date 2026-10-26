@@ -2915,3 +2915,11 @@ issue comments.
   flood-screen config that names exposure until schedule-derived exposure can be
   evaluated per candidate. Added tests, docs, design note, and backlog entry.
   Dashboard **GREEN**.
+
+- P62.5: added `tests/test_hydrology_integration.py` with a synthetic
+  bundle/dataset/crosswalk/schedule-bound-exposure fixture. The success path
+  runs `validate`, `readiness`, `preflight`, `map`, and `screen` through the
+  CLI and checks the exposure identity, manifest, and row CSV. The fail-closed
+  matrix covers tail-check block, unreviewed crosswalk, partial mapping, missing
+  required exposure, schedule-hash mismatch, and optimizer refusal. Updated the
+  design note and reference docs. Dashboard **GREEN**.
