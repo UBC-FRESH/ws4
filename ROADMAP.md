@@ -56,11 +56,17 @@ exists and the maintainer approves it.
 | P48 Ground-plot volume and DBH validation | #324 | `feature/p48-ground-plots` | complete |
 | P49 Managed/young validation pre-registration | #335 | `feature/p49-preregistration` | complete |
 | P50 Runtime provenance and release verification | #345 | `feature/p50-runtime-provenance` | complete |
-| P51 Forest carbon accounting and carbon-aware planning | #357 | `feature/p51-carbon` | pr-open |
+| P51 Release-candidate verification | #351 | `feature/p51-release-candidate` | complete |
+| P53 Version 0.2.0 release preparation | #371 | `feature/p53-v020` | complete |
+| P56 Disturbance event consumer | #393 | `feature/p56-disturbance-consumer` | active |
+| P57 Forest carbon accounting and carbon-aware planning | #357 | `feature/p57-carbon` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
-| P44 Comparison and map operations | #341 | `feature/p44-compare-ops` | pr-open |
+| P44 Comparison and map operations | #341 | `feature/p44-compare-ops` | complete |
+| P45 Route evaluation performance | #368 | `feature/p45-route-profile` | complete |
+| P52 Consume FEMIC-compiled LidarBC products | #317 | `feature/p52-lidar-products` | complete |
+| P46 Cached route event ledger | #382 | `feature/p46-route-events` | complete |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1390,7 +1396,7 @@ Acceptance:
 
 Parent issue: #341
 Branch: `feature/p44-compare-ops`
-Status: pr-open
+Status: complete
 
 Goal: make the comparison path production-grade on large AOIs: durable compare tiles,
 a browser smoke, and a cold/warm scale gate.
@@ -1412,6 +1418,57 @@ Acceptance:
 - Pre-warm writes compare tiles.
 - Browser smoke verifies flags and details.
 - Benchmark records cold/warm and enforces budgets.
+- `python scripts/dashboard.py` is green.
+
+## Phase 45: Route evaluation performance
+
+Parent issue: #368
+Branch: `feature/p45-route-profile`
+Status: complete
+
+Goal: measure the current route evaluation and specify an incremental ledger before
+changing optimizer accounting.
+
+- [x] P45.1 Profile route evaluation and specify the incremental ledger (#369)
+  - [x] Add the profiling script
+  - [x] Run it on c5
+  - [x] Write the invariants and API
+  - [x] Document the profile command
+
+Acceptance:
+
+- A repeatable profile reports seconds per evaluation and top costs.
+- The design note states fallback conditions and parity tests.
+- `python scripts/dashboard.py` is green.
+
+## Phase 46: Cached route event ledger
+
+Parent issue: #382
+Branch: `feature/p46-route-events`
+Status: complete
+
+Goal: remove the full simulator from route evaluations when the network is fully open and no
+delivery target is set, by caching per-block route events and replaying the ledger.
+
+- [x] P46.1 Cache block route events and replay the ledger (#383)
+  - [x] Add the event method and refactor the block route chain
+  - [x] Add the optimizer event cache and replay
+  - [x] Route per-segment accounts through the replay
+- [x] P46.2 Prove parity and gate the fallback cases (#384)
+  - [x] Shared-segment build/maintenance parity
+  - [x] Order and re-add parity
+  - [x] Fallback gate tests
+- [x] P46.3 Benchmark c5/GBR and close out (#385)
+  - [x] Add the benchmark script
+  - [x] Run c5
+  - [x] Record the missing GBR route config as a deviation
+  - [x] Write the close-out and docs
+
+Acceptance:
+
+- Incremental and full route values agree exactly on fixtures and c5.
+- Delivery and opened-road configurations still take the full path.
+- A repeatable benchmark reports cold and warm times.
 - `python scripts/dashboard.py` is green.
 
 ## Phase 47: Model boundary record
@@ -1497,10 +1554,123 @@ Acceptance:
 - The report names the matrix path, sidecar hash, quality status, and command.
 - The instance docs link the report and both dashboards stay green.
 
-## Phase 51: Forest carbon accounting and carbon-aware planning
+## Phase 51: Release-candidate verification
+
+Parent issue: #351
+Branch: `feature/p51-release-candidate`
+Status: complete
+
+Goal: verify the current `main` as a release candidate without tagging or publishing: clean-checkout
+install, full gates, package build, isolated wheel install, entry points, docs/Pages, and a
+release-note/recommendation record.
+
+- [x] P51.1 Run the clean-checkout install and full gates (#352)
+- [x] P51.2 Build and install the artifacts and verify entry points (#353)
+- [x] P51.3 Audit release metadata, docs/Pages, and write the recommendation (#354)
+
+Acceptance:
+
+- The clean-checkout test and dashboard pass.
+- The sdist and wheel build and install in an isolated environment.
+- `ws4` and `python -m ws4.cli` work from the installed wheel.
+- Docs/Pages return 200 for the key pages.
+- The report states whether the candidate is ready for a tag and names any blocker.
+- No tag, release, version bump, or production-data change.
+
+## Phase 52: Consume FEMIC-compiled LidarBC products
+
+Parent issue: #317
+Branch: `feature/p52-lidar-products`
+Status: complete
+
+Goal: pin and validate FEMIC LidarBC bundles, map terrain/canopy products to
+fragment/block support, and preserve native-resolution provenance without
+reimplementing discovery or materialization.
+
+- [x] P52.1 Define the WS4 consumer contract for FEMIC LidarBC products (#318)
+  - [x] Pin bundle id/version and per-product checksums
+  - [x] Validate manifest, licence, CRS, resolution, vertical datum, and source tiles
+  - [x] Add polygon support summaries without reprojection
+  - [x] Validate shared slope/CHM parity with FHOPS
+- [x] P52.2 Register and consume FEMIC-compiled LidarBC products (#319)
+  - [x] Write the pin to the dataset manifest and sidecar
+  - [x] Reference the bundle without copying or re-downloading tiles
+  - [x] Add register/inspect/validate CLI and build integration
+  - [x] Add missing/corrupt/incompatible failure tests
+- [x] P52.3 Validate and map FEMIC native terrain products into WS4 (#320)
+  - [x] Map slope/CHM to fragment support
+  - [x] Map slope/CHM to dissolved block support
+  - [x] Record bundle pin, checksums, CRS, resolution, and aggregation rules
+  - [x] Add mapping fixtures and CRS/product failure tests
+- [x] P52.4 Integrate FEMIC canopy and precision-forestry metrics into WS4 (#321)
+  - [x] Map CHM height/cover/structure to fragment and block support
+  - [x] Add optional VRI uncertainty comparison
+  - [x] Add optional individual-tree summaries
+  - [x] Record lineage, units, support, and caveats
+  - [x] Add canopy/VRI/tree fixtures and CLI
+- [x] P52.5 Integrate terrain/canopy fields into the WS4 compiled dataset (#322)
+  - [x] Add optional prefixed LiDAR fields to fragment/block Parquet tables
+  - [x] Record bundle pin, mapping hashes, fields, and support keys in the manifest
+  - [x] Preserve validity for datasets without LiDAR fields
+  - [x] Verify simulator loading with expanded fields
+  - [x] Add `ws4 lidar integrate` and overwrite/failure tests
+- [x] P52.6 Validate, benchmark, document, and close out P52 (#323)
+  - [x] Run the end-to-end TFL 6 AOI validation
+  - [x] Confirm WS4/FHOPS/FEMIC parity within 1e-9
+  - [x] Record performance, storage, and OGL-BC evidence
+  - [x] Add the close-out report and validation metrics
+
+Acceptance:
+
+- WS4 can validate and pin a FEMIC bundle.
+- Polygon support summaries preserve the product CRS and native resolution.
+- Shared-AOI slope/CHM values match FHOPS within the documented tolerance.
+- No discovery or materialization is reimplemented in WS4.
+
+## Phase 53: Version 0.2.0 release preparation
+
+Parent issue: #371
+Branch: `feature/p53-v020`
+Status: complete
+
+Goal: apply the approved 0.2.0 version, write the release notes, fix the license metadata warning,
+and re-run the release gates without tagging.
+
+- [x] P53.1 Bump the version and citation metadata (#372)
+- [x] P53.2 Write the 0.2.0 release notes (#373)
+- [x] P53.3 Fix license metadata, re-run the gates, and request tag approval (#374)
+
+Acceptance:
+
+- All version fields read 0.2.0.
+- Release notes cover the changes since 0.1.0.
+- The package builds without the license-classifier warning.
+- Clean-checkout, dashboard, artifacts, isolated installs, entry points, and Pages pass.
+- No tag or release is created.
+
+## Phase 56: Disturbance event consumer
+
+Parent issue: #393
+Branch: `feature/p56-disturbance-consumer`
+Status: active
+
+Goal: consume `femic.disturbance.v1` consumer rows in a read-only report,
+without changing the compiled dataset, simulator, or optimizer.
+
+- [x] P56.1 Load and report disturbance events (#394)
+
+Acceptance:
+
+- The loader accepts the consumer-row shape and the full event record.
+- The report names the event year, type, severity class, and affected blocks.
+- A malformed event fails with a clear message.
+- `ws4 disturbance --json` emits a stable summary.
+- No compiled-dataset, simulator, or optimizer behavior changes.
+
+## Phase 57: Forest carbon accounting and carbon-aware planning
 
 Parent issue: #357
-Branch: `feature/p51-carbon`
+Branch: `feature/p57-carbon`
 Status: pr-open
 
 Goal: make carbon a first-class, reproducible outcome of a WS4 run and a target the optimizer can
@@ -1513,16 +1683,16 @@ ledger that reuses CBM's stand-level additivity, or through a clearly labeled su
 ledger cannot meet the search budget. The final schedule is always verified with the exact engine.
 See `notes/design/ws4-carbon.md`.
 
-- [x] P51.1 Load and validate FEMIC carbon packages (#358)
-- [x] P51.2 Compile CBM SIT tables from a WS4 dataset and schedule (#359)
-- [x] P51.3 Add the libcbm driver and the `ws4 carbon` command (#360)
-- [x] P51.4 Integrate carbon accounts, reports, and provenance (#361)
-- [x] P51.5 Validate parity, mass balance, and deterministic replay (#362)
-- [x] P51.6 Build the block-level carbon ledger (#363)
-- [x] P51.7 Add carbon targets to the optimizer (#364)
-- [x] P51.8 Validate carbon-aware planning on TSA24 and MKRF (#365)
-- [x] P51.9 Consume GCBM outputs and compare spatial carbon (#366)
-- [x] P51.10 Document, release, and close out the carbon phase (#367)
+- [x] P57.1 Load and validate FEMIC carbon packages (#358)
+- [x] P57.2 Compile CBM SIT tables from a WS4 dataset and schedule (#359)
+- [x] P57.3 Add the libcbm driver and the `ws4 carbon` command (#360)
+- [x] P57.4 Integrate carbon accounts, reports, and provenance (#361)
+- [x] P57.5 Validate parity, mass balance, and deterministic replay (#362)
+- [x] P57.6 Build the block-level carbon ledger (#363)
+- [x] P57.7 Add carbon targets to the optimizer (#364)
+- [x] P57.8 Validate carbon-aware planning on TSA24 and MKRF (#365)
+- [x] P57.9 Consume GCBM outputs and compare spatial carbon (#366)
+- [x] P57.10 Document, release, and close out the carbon phase (#367)
 
 Acceptance:
 
@@ -1536,7 +1706,7 @@ Acceptance:
 - TSA24 and MKRF carbon-aware runs are recorded with their trade-offs and runtimes.
 - GCBM outputs can be ingested and compared without making FLINT a WS4 runtime dependency.
 
-Closeout report: `notes/reports/p51-closeout.md`.
+Closeout report: `notes/reports/p57-closeout.md`.
 
 ## Detailed Next Steps Notes
 

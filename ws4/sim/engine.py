@@ -38,7 +38,7 @@ from ..roads.accounts import (
     resolve_account_values,
     resolve_allocation_values,
 )
-from ..roads.network import RouteNetwork
+from ..roads.network import Route, RouteNetwork
 from ..schedule import schedule_offset_frame
 from ..spread.accounts import (
     Point,
@@ -48,6 +48,9 @@ from ..spread.accounts import (
 )
 from .curve import CurveTable
 from .kernels import HAVE_NUMBA, ProductKernel
+
+#: One routed product: year, block, product, volume, destination, and route.
+RouteEvent = tuple[int, int, str, float, str, Route | None]
 
 
 def _as_int(value: object) -> int:
@@ -880,6 +883,74 @@ class Simulator:
                 totals[product_label] = totals.get(product_label, 0.0) + value
         return totals
 
+    def block_route_events(
+        self,
+        block_id: int,
+        events: Sequence[tuple[str, int]],
+        years: int,
+        route_model: RouteModel,
+    ) -> tuple[RouteEvent, ...]:
+        """Return one block's routed products over a horizon under a treatment chain.
+
+        The block's fragments are simulated in isolation (like :meth:`block_chain`), and
+        each produced product that the route model delivers is returned as
+        ``(year, block, product, volume, destination, route)``. The events are independent
+        of the rest of the schedule when every road is open and no delivery target is set,
+        which is what lets the optimizer cache and replay them.
+
+        Parameters
+        ----------
+        block_id : int
+            The block.
+        events : sequence of (str, int)
+            The treatments and the year each is applied.
+        years : int
+            The horizon, in years.
+        route_model : RouteModel
+            The route model (destinations, eligibility, surplus).
+
+        Returns
+        -------
+        tuple of (int, int, str, float, str, Route or None)
+            The routed products, in simulation order.
+        """
+        positions = self._block_index().get(int(block_id), [])
+        if not positions:
+            return ()
+        by_offset = {int(offset): str(treatment) for treatment, offset in events}
+        tracks = self.fragments["track_id"].to_numpy()[positions].astype(np.int64)
+        offsets = self.fragments["offset"].to_numpy()[positions].astype(np.int64)
+        areas = self.fragments["area_ha"].to_numpy()[positions].astype(float)
+        routed: list[RouteEvent] = []
+        for step in range(years):
+            treatment = by_offset.get(step)
+            if treatment is not None:
+                for index in range(len(positions)):
+                    key = (int(tracks[index]), treatment)
+                    transition = self._treatment_by_key.get(key)
+                    if transition is None:
+                        continue
+                    offset = int(offsets[index])
+                    area = float(areas[index])
+                    for curve_id, product_label in self._products_by_key.get(key, []):
+                        value = area * self._curve_value(curve_id, offset)
+                        if route_model.delivers(product_label):
+                            destination, route = route_model.assign(int(block_id), product_label)
+                            routed.append(
+                                (
+                                    step,
+                                    int(block_id),
+                                    product_label,
+                                    value,
+                                    destination,
+                                    route,
+                                )
+                            )
+                    tracks[index] = transition[0]
+                    offsets[index] = transition[1]
+            offsets += 1
+        return tuple(routed)
+
     def block_route_chain(
         self,
         block_id: int,
@@ -893,9 +964,8 @@ class Simulator:
         The block's fragments are simulated in isolation (like :meth:`block_chain`), but its
         produced products are routed with ``route_model`` and recorded into a fresh summary
         ledger; the ledger's account values are returned as ``(year, account) -> value``.
-        Route haul, maintenance, and volume are additive over blocks; build cost is not (it
-        is charged once per segment across the whole schedule), so the objective excludes
-        ``build`` accounts from the incremental path.
+        This is the additive view used when no per-segment account needs the whole schedule;
+        the optimizer replays :meth:`block_route_events` when build or maintenance is priced.
 
         Parameters
         ----------
@@ -915,34 +985,11 @@ class Simulator:
         dict of (int, str) to float
             The route account value per year and account (non-zero entries only).
         """
-        positions = self._block_index().get(int(block_id), [])
-        if not positions or not route_accounts:
+        if not route_accounts:
             return {}
-        by_offset = {int(offset): str(treatment) for treatment, offset in events}
-        tracks = self.fragments["track_id"].to_numpy()[positions].astype(np.int64)
-        offsets = self.fragments["offset"].to_numpy()[positions].astype(np.int64)
-        areas = self.fragments["area_ha"].to_numpy()[positions].astype(float)
         ledger = RouteCostLedger(route_model.network, collect=False)
-        for step in range(years):
-            treatment = by_offset.get(step)
-            if treatment is not None:
-                for index in range(len(positions)):
-                    key = (int(tracks[index]), treatment)
-                    transition = self._treatment_by_key.get(key)
-                    if transition is None:
-                        continue
-                    offset = int(offsets[index])
-                    area = float(areas[index])
-                    for curve_id, product_label in self._products_by_key.get(key, []):
-                        value = area * self._curve_value(curve_id, offset)
-                        if route_model.delivers(product_label):
-                            destination, route = route_model.assign(int(block_id), product_label)
-                            ledger.record(
-                                step, int(block_id), product_label, value, destination, route
-                            )
-                    tracks[index] = transition[0]
-                    offsets[index] = transition[1]
-            offsets += 1
+        for event in self.block_route_events(block_id, events, years, route_model):
+            ledger.record(*event)
         frame = ledger.account_values(route_accounts)
         return {
             (int(str(row.offset)), str(row.account)): float(str(row.value))

@@ -1,8 +1,8 @@
-# P51.7 carbon targets in the optimizer
+# P57.7 carbon targets in the optimizer
 
 Date: 2026-10-25
-Phase: P51
-Task: P51.6 and P51.7
+Phase: P57
+Task: P57.6 and P57.7
 Related: `notes/design/ws4-carbon.md`, `docs/reference/carbon.rst`
 
 ## 1. What was added
@@ -49,7 +49,7 @@ Result:
 - `carbon_ledger.json` records that the block-level ledger priced the run.
 
 The target maximum of 200 tC was not reachable on this two-block toy dataset, so the
-smoke demonstrates the mechanism and direction, not a satisfied carbon goal. P51.8 runs
+smoke demonstrates the mechanism and direction, not a satisfied carbon goal. P57.8 runs
 the real TSA24 and MKRF scenarios with a defensible target level.
 
 ## 4. Caveats

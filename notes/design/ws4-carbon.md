@@ -1,7 +1,7 @@
 # WS4 Carbon Accounting and Carbon-Aware Planning
 
 Status: draft
-Phase: P51
+Phase: P57
 Date: 2026-10-25
 Related: `ROADMAP.md` (Phase 51), `notes/design/ws4-architecture.md`,
 `notes/design/ws4-optimization-stack.md`, `notes/adr/0005`, `notes/adr/0012`
@@ -17,7 +17,7 @@ model vocabulary into the CBM Standard Import Tool (SIT) format, and the example
 open-source `libcbm` engine. WS3 also demonstrates a carbon-curve approximation (the "Neilson hack")
 for using CBM output inside an estate model.
 
-P51 turns that precedent into a WS4 capability without making the compiled dataset depend on a
+P57 turns that precedent into a WS4 capability without making the compiled dataset depend on a
 particular carbon engine.
 
 ## 2. Decision
@@ -176,13 +176,13 @@ compiled GCBM results for a spatial comparison. This is a separate lane:
 
 | Task | Deliverable |
 | --- | --- |
-| P51.1 | Package loader and contract tests |
-| P51.2 | SIT compiler and schedule events |
-| P51.3 | libcbm driver and `ws4 carbon` |
-| P51.4 | Carbon accounts, reports, provenance |
-| P51.5 | Parity, mass balance, replay |
-| P51.6 | Block-level carbon ledger |
-| P51.7 | Carbon targets in the optimizer |
-| P51.8 | TSA24 and MKRF validation |
-| P51.9 | GCBM output consumption and comparison |
-| P51.10 | Documentation, release, closeout |
+| P57.1 | Package loader and contract tests |
+| P57.2 | SIT compiler and schedule events |
+| P57.3 | libcbm driver and `ws4 carbon` |
+| P57.4 | Carbon accounts, reports, provenance |
+| P57.5 | Parity, mass balance, replay |
+| P57.6 | Block-level carbon ledger |
+| P57.7 | Carbon targets in the optimizer |
+| P57.8 | TSA24 and MKRF validation |
+| P57.9 | GCBM output consumption and comparison |
+| P57.10 | Documentation, release, closeout |

@@ -42,7 +42,7 @@ from ..roads.accounts import (
     resolve_account_values,
 )
 from ..schedule import schedule_offset_frame
-from ..sim.engine import Simulator
+from ..sim.engine import RouteEvent, Simulator
 from ..spread.accounts import (
     Point,
     SpreadAccount,
@@ -458,6 +458,7 @@ class Optimizer:
         self._delta_cache: dict[tuple[int, Chain], dict[tuple[int, str], float]] = {}
         self._route_delta_cache: dict[tuple[int, Chain], dict[tuple[int, str], float]] = {}
         self._carbon_ledger_cache: CarbonLedger | None = None
+        self._route_event_cache: dict[tuple[int, Chain, int], tuple[RouteEvent, ...]] = {}
         self.constraint_guard = ConstraintGuard(self)
         self.registry = self.constraint_guard.wrap(self.registry)
 
@@ -653,13 +654,10 @@ class Optimizer:
         model, route_accounts, duplicate_accounts = self.route()
         # Feature account values are additive over blocks, so a schedule is the
         # empty-schedule base plus a per-block delta — exact and far cheaper than a full
-        # re-simulation. Route accounts are additive too, except build (charged once per
-        # segment across the schedule); edge contrast is not additive. Those configurations
-        # fall back to the full evaluation.
-        additive_routes = not route_accounts or (
-            model is not None and all(account.kind != "build" for account in route_accounts)
-        )
-        if not self.edge_elements() and additive_routes:
+        # re-simulation. Route values use per-block deltas for additive accounts and cached
+        # block events for build and maintenance. Edge contrast is not additive, and delivery
+        # or opened-road configurations fall back inside `_incremental_values`.
+        if not self.edge_elements():
             values = self._incremental_values(schedule, duplicate_accounts, route_accounts)
         else:
             values = self._full_values(schedule, model, route_accounts, duplicate_accounts)
@@ -991,6 +989,50 @@ class Optimizer:
         self._route_delta_cache[key] = delta
         return delta
 
+    def _block_route_events(self, block: int, chain: Chain) -> tuple[RouteEvent, ...]:
+        """Return one block's routed products for a treatment chain, cached."""
+        key = (block, chain, self.cfg.years)
+        cached = self._route_event_cache.get(key)
+        if cached is not None:
+            return cached
+        model, _accounts, _duplicates = self.route()
+        events: tuple[RouteEvent, ...] = ()
+        if model is not None:
+            events = self.simulator().block_route_events(block, chain, self.cfg.years, model)
+        self._route_event_cache[key] = events
+        return events
+
+    def _route_event_values(
+        self,
+        schedule: Schedule,
+        model: RouteModel,
+        route_accounts: tuple[RouteAccount, ...],
+    ) -> dict[tuple[int, str], float] | None:
+        """Return route values from cached events, or None when the full path is required.
+
+        A block's events are independent of the rest of the schedule only while every road is
+        open and no delivery target allocates volume. The replay keeps the full simulation's
+        order: year first, then schedule-row order, then the block's own event order. That is
+        what preserves the first destination charged for a shared segment's build.
+        """
+        if model.delivery or model.network.opened is not None:
+            return None
+        by_year: dict[int, list[RouteEvent]] = {}
+        for block, chain in schedule.items():
+            if not chain:
+                continue
+            for event in self._block_route_events(block, chain):
+                by_year.setdefault(event[0], []).append(event)
+        ledger = RouteCostLedger(model.network, collect=False, maintenance=self.maintenance())
+        for year in sorted(by_year):
+            for event in by_year[year]:
+                ledger.record(*event)
+        frame = ledger.account_values(route_accounts)
+        return {
+            (int(str(row.offset)), str(row.account)): float(str(row.value))
+            for row in frame.itertuples(index=False)
+        }
+
     @staticmethod
     def _values_frame(totals: dict[tuple[int, str], float]) -> pd.DataFrame:
         """Render a ``(year, account) -> value`` mapping as an account-values frame."""
@@ -1010,28 +1052,35 @@ class Optimizer:
     ) -> pd.DataFrame:
         """Return the account values from the base plus per-block feature and route deltas."""
         model, _accounts, _duplicates = self.route()
-        if model is not None and (
-            model.delivery
-            or any(account.kind in _PER_SEGMENT_ACCOUNT_KINDS for account in route_accounts)
+        if (
+            model is not None
+            and route_accounts
+            and (model.delivery or model.network.opened is not None)
         ):
-            # Three things a per-block sum cannot see: build and maintenance, which are charged once
-            # per segment per period rather than once per block that uses it, maintenance's traffic
-            # term, and a delivery target, which is a volume for a whole year's blocks. So a
-            # configuration that declares any of them is evaluated by the full simulation instead,
-            # which is what makes the search and the run it reports agree.
+            # A delivery target allocates a whole year's volume across blocks, and an opened-road
+            # set makes a block's route depend on which block opened a segment first. Neither is a
+            # per-block sum, so the full simulation is the only exact path.
             return self._full_values(schedule, model, route_accounts, duplicate_accounts)
         self.simulator().reset()
         totals = dict(self._base_values())
         route_totals: dict[tuple[int, str], float] = {}
+        per_segment = any(account.kind in _PER_SEGMENT_ACCOUNT_KINDS for account in route_accounts)
         for block, chain in schedule.items():
             for cell, value in self._block_delta(block, chain).items():
                 totals[cell] = totals.get(cell, 0.0) + value
-            if route_accounts and chain:
+            if route_accounts and chain and not per_segment:
                 for cell, value in self._block_route_delta(block, chain).items():
                     route_totals[cell] = route_totals.get(cell, 0.0) + value
         values = self._values_frame(totals)
         if route_accounts:
-            route = self._values_frame(route_totals) if route_totals else None
+            route: pd.DataFrame | None
+            if per_segment and model is not None:
+                event_values = self._route_event_values(schedule, model, route_accounts)
+                if event_values is None:
+                    return self._full_values(schedule, model, route_accounts, duplicate_accounts)
+                route = self._values_frame(event_values) if event_values else None
+            else:
+                route = self._values_frame(route_totals) if route_totals else None
             values = resolve_account_values(values, route, duplicate_accounts)
         elif duplicate_accounts:
             values = resolve_account_values(values, None, duplicate_accounts)

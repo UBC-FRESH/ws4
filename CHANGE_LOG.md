@@ -2546,21 +2546,86 @@ issue comments.
 - P44.3: added `scripts/benchmark_compare.py` with cold/warm first-tile budgets. c5, six z9 tiles:
   2.063 s cold first, 0.003 s warm first, 13.336 s full cold, 0.018 s warm. Dashboard **GREEN**.
 
-- P51 activation: created parent issue #357 and tasks #358-#367 on `feature/p51-carbon`. The phase
+
+- P44 close-out: pull request #349 squash-merged as `05c3b44`; parent #341 and tasks #342/#343/#344
+  closed. P44 status set complete.
+
+- P52.1: added `ws4.io.lidar` to pin FEMIC LidarBC bundles, validate manifest
+  schema, OGL-BC licence, checksums, CRS, resolution, vertical datum, and
+  source-tile membership, and summarize slope/CHM rasters over polygon support.
+  Added the `ws4[lidar]` optional extra, contract note, reference docs, and
+  shared parity evidence against `lidarbc-995fb1f771f4d7fe` (max difference
+  0.0 versus FHOPS).
+
+- P52.2: added dataset-level FEMIC LidarBC registration. The pin is written to `manifest.json` metadata and `lidar_products.json`; `ws4 lidar register|inspect|validate` and `ws4 build --lidar-bundle` support the operator workflow. Failure fixtures cover missing datasets, wrong pins, and tampered bundles.
+
+- P52.3: added `map_femic_lidar_to_fragments` and `write_lidar_mapping`. Fragment support uses each fragment polygon; block support uses the dissolved block geometry. Outputs include fragment/block CSVs and a manifest with the bundle pin, checksums, CRS, native resolution, statistics, and aggregation rules. Added `ws4 lidar map` and coverage for missing products and CRS mismatch.
+
+- P52.4: added `map_femic_canopy_to_fragments` and `write_canopy_mapping`. CHM mean/p90/p95/max and 2/5/10 m cover map to fragment and dissolved-block support; optional VRI overlap adds area-weighted height/closure and uncertainty deltas; optional bundle tree products add tree counts, height mean/p95, and species counts. Added `ws4 lidar canopy` and tests for VRI/tree mapping and CRS failure.
+
+- P52.5: added `integrate_lidar_mapping_into_dataset` and `ws4 lidar integrate`. Mapping fields are written as optional `lidar_`-prefixed columns in fragment/block Parquet tables; the manifest records bundle pin, mapping hashes, field lists, support keys, and integration timestamp. Datasets without LiDAR fields remain valid; the simulator loads expanded tables unchanged. Re-integration requires `--overwrite`. A 50,000-fragment / 5,000-block synthetic integration with four fields completed in about 0.14 s; no simulator/optimizer code path changes.
+
+- P52.6: ran the real TFL 6 end-to-end consumer path on 7 fragments/1 block using `lidarbc-995fb1f771f4d7fe`. Register, map, integrate, validate, and simulator load all passed. WS4/FHOPS parity was `0.0`; WS4/FEMIC parity was `7.1e-15` (tolerance `1e-9`). Map `0.755 s`, integration `0.037 s`, bundle 13.4 MB, mapping 4.4 KB, dataset 52 KB, licence OGL-BC. Close-out report and metrics added; phase status set `pr-open`.
+
+- P52 close-out: pull request #381 squash-merged as `bd3bc18`; parent #317 and tasks #318/#319/#320/#321/#322/#323 closed. P52 status set complete.
+- P51.1/P51.2: clean-checkout verification at `f30cd5b` passes; the dashboard is green; the
+  sdist and wheel build and pass `twine check`; both install in isolated environments; both
+  entry points and a synthetic build/validate/simulate/report smoke pass.
+- P51.3: docs/Pages return 200; version metadata is consistently `0.1.0`, but `v0.1.0` is already
+  tagged at `d8ecd72` and released on 2026-10-15. The candidate is green but **not tag-ready**
+  until a new version and release notes are approved. No tag or release was created.
+
+- P45.1: added `scripts/profile_route.py` and profiled the c5 production route config on a
+  32-block schedule. Full route evaluation is 0.451 s/evaluation; `simulate` is the hot path
+  (0.407 s), not route assignment. Wrote `notes/design/ws4-incremental-route.md` with the
+  incremental aggregate design, the fallback cases (delivery, planned-network opening, other
+  route accounts), seven invariants, and the parity test plan. No incremental code landed.
+  Dashboard **GREEN**.
+- P45 close-out: pull request #370 squash-merged as `6e49f12`; parent #368 and task #369 closed.
+  P45 status set complete.
+- P53.1/P53.2: bump the package and citation metadata to `0.2.0`, add the 0.2.0 release notes,
+  and replace the deprecated license classifier with the SPDX `Apache-2.0` expression.
+- P53.3: clean-checkout, dashboard, sdist/wheel build, `twine check`, isolated installs, entry
+  points, synthetic smoke, and Pages checks pass on the 0.2.0 head. No tag or release was created;
+  tag approval is pending.
+
+
+- P46.1/P46.2: added `Simulator.block_route_events`, a per-(block, chain) optimizer event
+  cache, and an exact ledger replay for build/maintenance. The replay preserves the full
+  simulation's year, schedule-row, and event order. Delivery targets and `initial_roads:
+  existing` still take the full path. Parity is within `1.9e-8` on c5; fixture tests cover
+  shared-segment build-once, maintenance, both schedule orders, and both fallbacks.
+- P46.3: added `scripts/benchmark_route_events.py`. c5, 32 blocks, 64 events: full 0.303 s,
+  warm cached 0.037 s (8.25x), cold cached 1.789 s. No GBR route configuration exists in
+  the workspace, so the GBR half is recorded as a deviation rather than fabricated.
+  Dashboard **GREEN**.
+
+- P46 close-out: pull request #386 squash-merged as `6c31d49`; parent #382 and tasks #383/#384/#385
+  closed. P46 status set complete. The GBR benchmark deviation is recorded in the close-out:
+  no production GBR route configuration exists in the workspace.
+
+- P56.1: added the read-only `femic.disturbance.v1` consumer (`ws4/disturbance.py`)
+  and `ws4 disturbance --events ... [--json] [--block-id ...]`. It loads the flat
+  FEMIC consumer rows or full event records, validates the fields ws4 needs, and
+  reports counts, types, years, severity classes, affected blocks/fragments, and
+  area. 13 unit tests and 4 CLI tests pass. No compiled-dataset, simulator, or
+  optimizer behavior changes.
+
+- P57 activation: created parent issue #357 and tasks #358-#367 on `feature/p51-carbon`. The phase
   adds the FEMIC carbon-package loader, the CBM SIT compiler, the libcbm driver and `ws4 carbon`,
   carbon accounts and reports, parity and replay validation, a block-level carbon ledger, carbon
   targets in the optimizer, TSA24/MKRF validation, and GCBM output consumption. The design note is
   `notes/design/ws4-carbon.md`. Dashboard **GREEN** (lint, format, types, tests, validator, docs,
   docstrings).
 
-- P51.1: added the carbon package contract loader in `ws4/carbon/package.py`, with a closed
+- P57.1: added the carbon package contract loader in `ws4/carbon/package.py`, with a closed
   manifest schema, table/column/unit validation, table hashes, a stable package fingerprint, and
   the exact `track_name` join. Unmatched dataset tracks fail with `CARBON-UNMATCHED-TRACK` unless
   the caller explicitly allows them. Added 16 contract tests over a synthetic package, the
   consumer-side `docs/reference/carbon.rst` page, and the reference-index entry. Dashboard
   **GREEN** (lint, format, types, tests, validator, docs, docstrings).
 
-- P51.2: added `ws4/carbon/sit.py`, which compiles the package, compiled dataset, and schedule
+- P57.2: added `ws4/carbon/sit.py`, which compiles the package, compiled dataset, and schedule
   into SIT classifiers, disturbance types, age classes, inventory, yield, events, and
   transitions. Events take their area from the scheduled block's fragments and set
   `time_step = offset + 1`; treatments map through the package disturbance map. Retention
@@ -2570,7 +2635,7 @@ issue comments.
   and the audit writer; an optional libcbm test parses the tables when the engine is installed.
   The libcbm parse was verified manually against `libcbm==2.10.2`. Dashboard **GREEN**.
 
-- P51.3: added the optional `carbon` extra (`libcbm==2.10.2`), the `ws4/carbon/libcbm.py`
+- P57.3: added the optional `carbon` extra (`libcbm==2.10.2`), the `ws4/carbon/libcbm.py`
   driver, the `ws4 carbon` command, carbon account summaries, and the run manifest. The
   driver checks the package/defaults hash, builds the libcbm mapping config from the package,
   maps CBM species names directly, and writes pools, fluxes, long tables, accounts, and
@@ -2579,28 +2644,28 @@ issue comments.
   written. Two runs produced byte-identical accounts, pools, flux, and manifest; the audit
   SIT copy was written. Dashboard **GREEN**.
 
-- P51.4: added `merge_carbon_accounts`, the `ws4 carbon --merge-into` option, and a report
+- P57.4: added `merge_carbon_accounts`, the `ws4 carbon --merge-into` option, and a report
   test. Carbon rows are merged into a simulation run's `account_values.csv`,
   `carbon_manifest.json` is copied beside the run, existing `carbon.*` rows are replaced
   idempotently, and non-carbon accounts are preserved. The standard `ws4 report` now carries
   the carbon accounts. Tests cover idempotence and report inclusion.
-- P51.5: added `ws4/carbon/parity.py` (frame/run comparison, mass-balance table, byte-level
+- P57.5: added `ws4/carbon/parity.py` (frame/run comparison, mass-balance table, byte-level
   replay) and `scripts/carbon_parity.py`. WS3 `tsa24_clipped` and WS4 agree exactly on the
   20-year no-event trajectory (25 inventory rows, 24 yield rows, `max_abs = 0.0` on pools and
   flux). The real TSA24 mini run replays byte-identically and its accounts reconcile to the
-  pools. Report: `notes/reports/p515-parity.md`. Dashboard **GREEN**.
+  pools. Report: `notes/reports/p575-parity.md`. Dashboard **GREEN**.
 
-- P51.6: added `ws4/carbon/ledger.py`, a block-level carbon ledger keyed by
+- P57.6: added `ws4/carbon/ledger.py`, a block-level carbon ledger keyed by
   `(block, chain)`. It runs one block's CBM chain at a time and sums the blocks; the
   synthetic two-block fixture matches a full-schedule libcbm run exactly (`max_abs = 0.0`).
-- P51.7: added `--carbon-package` to `ws4 optimize`, carbon-aware incremental objective
+- P57.7: added `--carbon-package` to `ws4 optimize`, carbon-aware incremental objective
   deltas, the carbon target guard, and carbon accounts in the final run/report plus
   `carbon_ledger.json`. A quickstart smoke with a `carbon.ecosystem.total` ceiling reduced
   the objective from 1003.25 to 887.08 and chose a clearcut on block 1; ecosystem carbon at
   offset 1 fell from 1203.25 to 1087.08 tC. Report:
-  `notes/reports/p517-carbon-optimizer.md`. Dashboard **GREEN**.
+  `notes/reports/p577-carbon-optimizer.md`. Dashboard **GREEN**.
 
-- P51.8: validated the real TSA24 and MKRF instances. Built the full TSA24 dataset
+- P57.8: validated the real TSA24 and MKRF instances. Built the full TSA24 dataset
   (536,458 fragments, 108 tracks) and carbon package (108 tracks, 6,016,466.4 ha); a
   one-AU baseline (7,313 fragments) ran five years in 38 s (21.77M -> 21.95M tC). The full
   536k-fragment run was stopped after 35m30 at ~99% CPU with no output. Carbon-aware search
@@ -2608,17 +2673,17 @@ issue comments.
   verification 133,294.95 tC; ledger/exact difference ~0.03%). Built the full MKRF dataset
   (3,183 fragments, 7,048 tracks) and a dataset-derived package (1,903 tracks); a five-block
   subset met a 10,500 tC ceiling (objective 0.0, 2 CC blocks; exact 10,478.44 tC; ledger
-  exact). Report: `notes/reports/p518-carbon-validation.md`. Dashboard **GREEN**.
+  exact). Report: `notes/reports/p578-carbon-validation.md`. Dashboard **GREEN**.
 
-- P51.9: added `ws4/carbon/gcbm.py` and `ws4 gcbm`, reading the GCBM 2.5.x results
+- P57.9: added `ws4/carbon/gcbm.py` and `ws4 gcbm`, reading the GCBM 2.5.x results
   database without FLINT or Wine and mapping pools to `carbon.*` accounts. The supplied
   GCBM package was run under Wine 9.0 on the bundled Standalone Template: 11,347 land units
   in 85 s. The reader produced 120 locations / 12 steps and 67,388.5 -> 52,880.9 tC.
   `compare_gcbm_to_carbon` and `--compare-carbon` are ready; a same-landscape TSA24/MKRF
   comparison is deferred until the FEMIC walltowall export (P115.4). Report:
-  `notes/reports/p519-gcbm-results.md`. Dashboard **GREEN**.
+  `notes/reports/p579-gcbm-results.md`. Dashboard **GREEN**.
 
-- P51.10: queued the phase closeout. The closeout report is
-  `notes/reports/p51-closeout.md`; the roadmap status is `pr-open` and pull request #405 is queued. Remaining deferred
+- P57.10: queued the phase closeout. The closeout report is
+  `notes/reports/p57-closeout.md`; the roadmap status is `pr-open` and pull request #TBD is queued. Remaining deferred
   items are the full TSA24 landscape search, the same-landscape GCBM comparison (needs
   P115.4), species-resolved curves/crosswalk review, and CBM4. Dashboard **GREEN**.

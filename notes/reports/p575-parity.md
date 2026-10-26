@@ -1,8 +1,8 @@
-# P51.5 carbon parity, mass balance, and replay
+# P57.5 carbon parity, mass balance, and replay
 
 Date: 2026-10-25
-Phase: P51
-Task: P51.5
+Phase: P57
+Task: P57.5
 Related: `notes/design/ws4-carbon.md`, `docs/reference/carbon.rst`
 
 ## 1. Question
@@ -76,7 +76,7 @@ It compares `carbon_pools.csv` and `carbon_flux.csv` on `(timestep, identifier)`
 nonzero when a numeric column is outside the tolerance.
 
 The WS3-to-WS4 conversion is a local parity adapter. A durable shared fixture belongs to
-P51.8, where the TSA24 and MKRF production runs will use the same package and dataset
+P57.8, where the TSA24 and MKRF production runs will use the same package and dataset
 contract end to end.
 
 ## 6. Caveats
