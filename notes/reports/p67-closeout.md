@@ -2,7 +2,7 @@
 
 Phase: P67, Target chart period hit zones
 Parent issue: #479
-Pull request: this P67 PR
+Pull request: #482
 Status: queued for approval. Not merged.
 Date: 2026-10-26
 
