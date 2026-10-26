@@ -60,6 +60,7 @@ exists and the maintainer approves it.
 | P53 Version 0.2.0 release preparation | #371 | `feature/p53-v020` | complete |
 | P56 Disturbance event consumer | #393 | `feature/p56-disturbance-consumer` | complete |
 | P58 Forest carbon accounting and carbon-aware planning | #357 | `feature/p58-carbon` | complete |
+| P59 Harden hydrology use with validation evidence | #415 | `feature/p59-hydrology-readiness` | active |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -1767,6 +1768,30 @@ Acceptance:
 - GCBM outputs can be ingested and compared without making FLINT a WS4 runtime dependency.
 
 Closeout report: `notes/reports/p58-closeout.md`.
+
+## Phase 59: Harden hydrology use with validation evidence
+
+Parent issue: #415
+Branch: `feature/p59-hydrology-readiness`
+Status: active
+
+Goal: read FEMIC validation-report and model-card evidence, report review and
+tail-check state, and prepare an explicit policy for provisional use.
+
+- [ ] P59.1 Read and report FEMIC validation and model-card evidence (#416)
+  - [ ] Add evidence dataclasses and readiness assessment.
+  - [ ] Parse validation-report and model-card artifacts with schema checks.
+  - [ ] Add `ws4 hydrology readiness` direct/dataset modes.
+  - [ ] Add tests and fixture variants.
+  - [ ] Add design note, reference docs, roadmap, and changelog.
+
+Acceptance:
+
+- Missing evidence is reported as `not_available`, not approved.
+- Provisional evidence is reported explicitly.
+- Tail-check failures are surfaced as blocking evidence.
+- A reviewed, clean card is reported as ready.
+- No screen/optimizer behavior changes in P59.1.
 
 ## Detailed Next Steps Notes
 
