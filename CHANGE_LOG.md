@@ -2598,3 +2598,7 @@ issue comments.
   warm cached 0.037 s (8.25x), cold cached 1.789 s. No GBR route configuration exists in
   the workspace, so the GBR half is recorded as a deviation rather than fabricated.
   Dashboard **GREEN**.
+
+- P46 close-out: pull request #386 squash-merged as `6c31d49`; parent #382 and tasks #383/#384/#385
+  closed. P46 status set complete. The GBR benchmark deviation is recorded in the close-out:
+  no production GBR route configuration exists in the workspace.

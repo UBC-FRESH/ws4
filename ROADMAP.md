@@ -64,7 +64,7 @@ exists and the maintainer approves it.
 | P44 Comparison and map operations | #341 | `feature/p44-compare-ops` | complete |
 | P45 Route evaluation performance | #368 | `feature/p45-route-profile` | complete |
 | P52 Consume FEMIC-compiled LidarBC products | #317 | `feature/p52-lidar-products` | complete |
-| P46 Cached route event ledger | #382 | `feature/p46-route-events` | pr-open |
+| P46 Cached route event ledger | #382 | `feature/p46-route-events` | complete |
 | P10 Documentation and the API-first workflow | #104 | `feature/p10-docs-api` | complete |
 
 ## Lifecycle Map
@@ -1443,7 +1443,7 @@ Acceptance:
 
 Parent issue: #382
 Branch: `feature/p46-route-events`
-Status: pr-open
+Status: complete
 
 Goal: remove the full simulator from route evaluations when the network is fully open and no
 delivery target is set, by caching per-block route events and replaying the ledger.
