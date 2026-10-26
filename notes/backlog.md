@@ -363,3 +363,16 @@ items are enhancements and maintenance.
   web player exposes it beside the iteration and time limits.
 - **Shared embedded assistant.** The local OpenCode assistant is behind `--allow-agent`; a shared
   deployment needs authentication and a deliberate decision about shell/filesystem access.
+
+## Hydrology consumer follow-ups
+
+- **Optimizer-integrated road/culvert exposure.** `deferred`. P62.4 supports an
+  explicit exposure table for one schedule and refuses it in the optimizer,
+  because the optimizer evaluates many candidate schedules. The next step needs
+  a route-state contract that exposes built, used, decommissioned, and culvert
+  exposure per candidate, plus a reviewed response surface that uses those
+  features. Target: a later hydrology/roads phase.
+- **Real watershed hydrology pilot.** `blocked`. Chapman is closed/data-blocked
+  in FEMIC; Seymour depends on the ungauged domain audit and a reviewed bundle.
+  No WS4 screen should be reported as a watershed result until those inputs
+  exist.

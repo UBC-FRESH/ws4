@@ -5,9 +5,9 @@ WS4 consumes versioned FEMIC hydrology response bundles for screening-only
 spatial scheduling. It does not run FEMIC discovery, frequency fitting,
 surrogate training, or flood-risk calculation.
 
-This page covers the read-only consumer contract implemented in P57.1.
-Registration, WS4-to-FEMIC unit mapping, schedule lookup, and `flood.*`
-objective terms are later tasks.
+This page covers the read-only consumer contract implemented across P57, P60,
+and P62. It covers bundle validation, registration, mapping, readiness, and
+preflight; the actual flood model remains a producer-side input.
 
 Bundle Contract
 ---------------
@@ -133,10 +133,130 @@ Direct bundle inspection and validation remain available:
      --mapping build/hydrology_mapping --schedule schedule.csv \
      --out build/hydrology_screen
 
+   ws4 hydrology screen --dataset build/compiled \
+     --mapping build/hydrology_mapping --schedule schedule.csv \
+     --exposure schedule-exposure.json --out build/hydrology_screen
+
 ``validate`` emits a deterministic JSON report by default and exits non-zero on
 an invalid bundle. ``inspect`` prints the bundle pin and artifact roles for a
 valid bundle; an invalid bundle prints the validation report and exits non-zero.
 Pass exactly one of a direct ``BUNDLE`` argument or ``--dataset``.
+
+Preflight
+---------
+
+`ws4 hydrology preflight` combines the bundle pin, readiness evidence, crosswalk
+review state, and mapping coverage into one fail-closed report. It is
+orchestration over the existing validators; it does not run a schedule, write
+files, or contact the network.
+
+.. code-block:: bash
+
+   ws4 hydrology preflight \
+     --dataset build/compiled \
+     --crosswalk reviewed-crosswalk.csv \
+     --metadata reviewed-crosswalk.meta.json \
+     --policy require_reviewed \
+     --json
+
+The default preflight policy is ``require_reviewed``. The report sets
+``screening_ready`` to true only when:
+
+- the bundle is structurally valid;
+- the readiness state is allowed by the policy;
+- a crosswalk was supplied;
+- the crosswalk is reviewed under the selected policy; and
+- every fragment and block is mapped.
+
+A missing crosswalk is always a blocking reason, so a direct-bundle preflight
+can report readiness evidence but cannot declare screening safe. Partial
+mapping is available with ``--allow-partial`` for diagnosis, but unmapped
+fragments or blocks still block readiness.
+
+The command exits non-zero when ``screening_ready`` is false. A structurally
+valid bundle is not a hydrologically reviewed bundle, and a ready preflight is
+not a hydrologist review or a regulatory flood map.
+
+Road and Culvert Exposure
+-------------------------
+
+The exposure table is an explicit, schedule-bound input:
+
+.. code-block:: json
+
+   {
+     "schema_version": "ws4.hydrology.exposure.v1",
+     "exposure_id": "exposure-2026-001",
+     "generated_utc": "2026-10-26T00:00:00+00:00",
+     "source_id": "reviewed-road-and-culvert-inventory",
+     "review_status": "reviewed",
+     "reviewer_id": "reviewer-id",
+     "schedule_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "watershed_ids": ["watershed-1"],
+     "periods": [0, 1],
+     "rows": [
+       {
+         "watershed_id": "watershed-1",
+         "period": 0,
+         "road_built_km": 0.0,
+         "road_used_km": 1.25,
+         "road_decommissioned_km": 0.0,
+         "culvert_count": 4,
+         "culvert_exposed_count": 1
+       },
+       {
+         "watershed_id": "watershed-1",
+         "period": 1,
+         "road_built_km": 0.5,
+         "road_used_km": 1.75,
+         "road_decommissioned_km": 0.0,
+         "culvert_count": 4,
+         "culvert_exposed_count": 2
+       }
+     ],
+     "caveats": ["Screening input only."]
+   }
+
+`watershed_ids` and `periods` declare the complete grid. Every declared
+watershed/period pair must have exactly one row; a missing row is an error, not
+a zero. Lengths are finite non-negative numbers, counts are non-negative
+integers, reviewed metadata requires `reviewer_id`, and `schedule_sha256` must
+be a 64-character hex digest.
+
+The table is bound to one schedule hash. Reusing it for a different schedule is
+a refusal in the screening path, not a fallback. WS4 does not buffer roads,
+match culverts to streams, assign a watershed to a road, or infer missing
+periods. There is no geometry in this contract.
+
+Load it with ``ws4.io.hydrology_exposure.load_hydrology_exposure``. The
+returned object preserves the file SHA-256, source, review state, declared
+watersheds and periods, and the canonical feature values for a watershed and
+period.
+
+Screening With Exposure
+~~~~~~~~~~~~~~~~~~~~~~~
+
+`hydrology screen --exposure` checks the table's schedule hash against the
+schedule before reading response scenarios. A mismatch refuses. For each mapped
+watershed and period, the screen adds the raw exposure features and these
+calculated densities using the FEMIC watershed area:
+
+- ``road_built_density_km_per_km2``;
+- ``road_used_density_km_per_km2``;
+- ``road_decommissioned_density_km_per_km2``;
+- ``culvert_exposure_per_km2``.
+
+A global covariate may not duplicate an exposure feature. A missing declared
+watershed/period is a refusal, not a zero. The screen manifest records the
+exposure ID, file digest, review state, and ``coverage.exposure_used``. The row
+CSV carries the raw features and derived densities. If no response-surface
+scenario names an exposure feature, the result carries a warning that exposure
+was supplied but not used.
+
+The optimizer does not accept exposure yet. A flood-screen config that names
+``exposure`` or ``exposure_path`` is refused until exposure can be derived for
+each candidate schedule. A fixed table bound to one schedule is not a valid
+optimizer input.
 
 Validation Evidence
 -------------------
@@ -387,3 +507,16 @@ See Also
 - :doc:`optimizer`
 - The FEMIC producer contract in the FEMIC repository:
   ``docs/reference/contracts/hydrology-response-bundles.rst``.
+
+Verification
+------------
+
+The P62 integration fixture is `tests/test_hydrology_integration.py`. It runs
+`validate`, `readiness`, `preflight`, `map`, and `screen` over a synthetic
+bundle, dataset, crosswalk, exposure table, and schedule. It also checks the
+fail-closed cases: tail-check block, unreviewed crosswalk, partial mapping,
+missing required exposure features, schedule-hash mismatch, and optimizer
+exposure refusal.
+
+The fixture is synthetic. It is not a real watershed, road inventory, culvert
+dataset, flood map, or regulatory result.

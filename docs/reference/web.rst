@@ -222,8 +222,19 @@ Inactive targets are charted as indicators with a dashed card, not hidden. The c
 from the same SSE target snapshots that drive the live map, so the achieved line moves while
 the solver runs. Clicking a period selects it in the shell.
 
-The chart is a reader; the target table remains the editor for bounds, weights, activation,
-normalization, priority, and notes. Direct drag-to-edit in the chart is not part of this cut.
+Each chart is also an editor:
+
+- toggle the target account active/inactive;
+- choose minimum or maximum and type an exact value;
+- drag vertically on the chart to set the selected bound;
+- apply to the selected period or to all periods;
+- clear a bound without deleting the indicator row;
+- save through the validated targets JSON path.
+
+"All periods" creates a target row for each period that has no row yet, using the account's
+period width and the existing weights/priority as defaults. A save reloads the targets, chart,
+and table together; invalid bounds are refused by the same loader the optimizer uses. The target
+table remains the editor for weights, normalization, priority, and notes.
 
 Carbon
 ------

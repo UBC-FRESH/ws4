@@ -2883,6 +2883,46 @@ issue comments.
   navigation, Data sub-navigation, and iPad landscape evidence are recorded in
   `notes/reports/p63-closeout.md`.
 
+## 2026-10-26
+
+- P62.1: re-scoped P62 from a Chapman/Seymour watershed pilot to a bounded
+  hydrology consumer-hardening phase. Rewrote parent issue #437, added the
+  Phase 62 roadmap section and issue-tracker row, created P62.1-P62.6
+  (#449-#454), and wrote `notes/design/ws4-hydrology-consumer-hardening.md`.
+  Chapman remains closed/data-blocked; Seymour remains an upstream dependency on
+  FEMIC #388. No production code and no watershed result. Dashboard: **GREEN**.
+
+- P62.2: added `ws4 hydrology preflight` and
+  `ws4.hydrology.preflight.v1`. The report combines bundle pin, readiness,
+  policy, crosswalk review, and mapping coverage, defaults to
+  `require_reviewed`, and exits non-zero when `screening_ready` is false. A
+  missing crosswalk is always blocking; `--allow-partial` remains diagnostic.
+  Added unit/CLI tests and reference docs. Dashboard **GREEN**.
+
+- P62.3: added `ws4.hydrology.exposure.v1` and
+  `ws4.io.hydrology_exposure`. The loader requires a complete declared
+  watershed/period grid, non-negative finite road lengths, non-negative integer
+  culvert counts, explicit review metadata, and a 64-character schedule hash.
+  It preserves the file SHA-256 and performs no spatial inference. Added the
+  synthetic exposure fixture, tests, design note, and reference docs. Dashboard
+  **GREEN**.
+
+- P62.4: wired the explicit exposure table into one-schedule screening.
+  `hydrology screen --exposure` checks the schedule hash, rejects overlapping
+  global covariates, refuses missing watershed/period rows, and records the
+  exposure ID/digest/review state. Raw features and calculated densities enter
+  response-scenario selection and the row CSV. The optimizer refuses a
+  flood-screen config that names exposure until schedule-derived exposure can be
+  evaluated per candidate. Added tests, docs, design note, and backlog entry.
+  Dashboard **GREEN**.
+
+- P62.5: added `tests/test_hydrology_integration.py` with a synthetic
+  bundle/dataset/crosswalk/schedule-bound-exposure fixture. The success path
+  runs `validate`, `readiness`, `preflight`, `map`, and `screen` through the
+  CLI and checks the exposure identity, manifest, and row CSV. The fail-closed
+  matrix covers tail-check block, unreviewed crosswalk, partial mapping, missing
+  required exposure, schedule-hash mismatch, and optimizer refusal. Updated the
+  design note and reference docs. Dashboard **GREEN**.
 - P64.1/P64.2: added `/api/runs/{run}/target-series` and a Plan-space target chart canvas.
   Charts group target rows by account and show all run periods with red minimum, blue maximum,
   grey acceptable band, black achieved line, exact hover/selected-period readout, and an
@@ -2896,6 +2936,33 @@ issue comments.
 - P64 close-out: pull request #461 squash-merged as `8b0d0e6`; parent #456 and tasks
   #457/#458/#459 closed; status set complete. The chart/live-convergence evidence is
   recorded in `notes/reports/p64-closeout.md`.
+
+- P62.6: ran the hydrology integration/contract/exposure/preflight suites and
+  the full dashboard after merging `origin/main` at `0be35ad`. Wrote
+  `notes/reports/p62-closeout.md`, set Phase 62 to `pr-open`, and queued the
+  single phase pull request #468 for approval. CI run 40397685253 passed all
+  jobs. No merge, tag, release, or settings change was made. Dashboard
+  **GREEN**.
+
+- P65.1/P65.2: made the target charts editable. The chart now reconciles a period to its target
+  row, creates missing rows from account defaults, supports active/inactive toggles, exact min/max
+  entry, vertical drag, per-period or all-period application, clear-bound, dirty state, and save
+  through the existing validated targets JSON. Source-cell, target-row, chart, and target-table
+  updates stay in sync after save.
+- P65.3: verified c5 single-period edit/save/reload, all-period min creation, drag edit, and
+  inactive toggle; verified TSA 46 10-period edit/save/reload. `check_target_editing.py` exits 0.
+  Dashboard **GREEN**.
+
+- P65 close-out: pull request #469 squash-merged as `342ac3b`; parent #464 and tasks
+  #465/#466/#467 closed; status set complete. The edit/save/reload evidence is recorded in
+  `notes/reports/p65-closeout.md`.
+
+- P62 close-out: pull request #468 squash-merged as `55f7fdf`; parent #437
+  and tasks #449/#450/#451/#452/#453/#454 closed; status set complete. The
+  preflight, explicit exposure contract, schedule-bound screening, optimizer
+  refusal, and synthetic integration evidence are recorded in
+  `notes/reports/p62-closeout.md`. Dashboard **GREEN**; final pre-merge CI run
+  `40407187849` passed all five jobs.
 
 - P54 roadmap entry: added the Phase 54 parent (#375) for environmental accounts
   (DHI, structure habitat, resilience metrics), with children #376-#378. The
