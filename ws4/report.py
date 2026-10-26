@@ -7,6 +7,7 @@ whether each target was met.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping
 from pathlib import Path
 
@@ -247,6 +248,88 @@ def target_status(values: pd.DataFrame, targets: list[Target]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def dhi_report(
+    values: pd.DataFrame,
+    source: Mapping[str, object] | None = None,
+) -> pd.DataFrame:
+    """Summarize DHI accounts for the report directory.
+
+    Parameters
+    ----------
+    values : pandas.DataFrame
+        Account values with ``offset``, ``account``, and ``value``.
+    source : mapping or None, optional
+        DHI source metadata from ``dhi_metadata.json``.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row per DHI account with baseline, final, change, unit, source
+        provenance, and the interpretation caveat.
+    """
+    columns = [
+        "account",
+        "baseline",
+        "final",
+        "change",
+        "pct_change",
+        "unit",
+        "source_id",
+        "source_version",
+        "year_range",
+        "resolution_m",
+        "crs",
+        "licence",
+        "caveat",
+    ]
+    if values.empty or "account" not in values.columns:
+        return pd.DataFrame(columns=columns)
+    frame = values[values["account"].astype(str).str.startswith("feature.DHI.")]
+    if frame.empty:
+        return pd.DataFrame(columns=columns)
+    offsets = sorted(frame["offset"].astype(float).unique())
+    baseline_offset = -1.0 if -1.0 in offsets else offsets[0]
+    final_offset = offsets[-1]
+    source = source or {}
+    caveat = (
+        "DHI is a coarse productivity surrogate, not a species observation or a habitat "
+        "suitability model. The account removes a block when the schedule treats it and does "
+        "not model regrowth, recovery, or species response."
+    )
+    rows: list[dict[str, object]] = []
+    for account in sorted(frame["account"].astype(str).unique()):
+        series = frame[frame["account"].astype(str) == account]
+        baseline = float(
+            series.loc[series["offset"].astype(float) == baseline_offset, "value"].sum()
+        )
+        final = float(series.loc[series["offset"].astype(float) == final_offset, "value"].sum())
+        change = final - baseline
+        if account.endswith(".mean"):
+            unit = "index"
+        elif account.endswith(".area"):
+            unit = "ha"
+        else:
+            unit = "index_ha"
+        rows.append(
+            {
+                "account": account,
+                "baseline": baseline,
+                "final": final,
+                "change": change,
+                "pct_change": (100.0 * change / baseline) if baseline else None,
+                "unit": unit,
+                "source_id": source.get("source_id"),
+                "source_version": source.get("source_version"),
+                "year_range": source.get("year_range"),
+                "resolution_m": source.get("resolution_m"),
+                "crs": source.get("crs"),
+                "licence": source.get("licence"),
+                "caveat": caveat,
+            }
+        )
+    return pd.DataFrame(rows, columns=columns)
+
+
 def write_report(values: pd.DataFrame, targets: list[Target], out_dir: Path) -> None:
     """Write the account summary and the target status to a directory.
 
@@ -265,3 +348,14 @@ def write_report(values: pd.DataFrame, targets: list[Target], out_dir: Path) -> 
     account_summary(values).to_csv(out_dir / "report_accounts.csv", index=False)
     target_status(values, targets).to_csv(out_dir / "report_targets.csv", index=False)
     ending_inventory(values).to_csv(out_dir / "ending_inventory.csv", index=False)
+    metadata_path = out_dir / "dhi_metadata.json"
+    metadata: dict[str, object] | None = None
+    if metadata_path.is_file():
+        try:
+            loaded = json.loads(metadata_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            loaded = None
+        metadata = loaded if isinstance(loaded, dict) else None
+    dhi = dhi_report(values, metadata)
+    if not dhi.empty:
+        dhi.to_csv(out_dir / "report_dhi.csv", index=False)

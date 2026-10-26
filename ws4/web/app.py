@@ -1811,6 +1811,85 @@ def create_app(
             "files": files,
         }
 
+    @app.get("/api/runs/{run}/dhi")
+    def dhi_info(
+        run: str,
+        output_format: str = Query("json", alias="format"),
+    ) -> dict[str, Any]:
+        """Return the run's DHI values, optionally as a block GeoJSON layer."""
+        directory = run_dir(run)
+        values_path = directory / "dhi_values.csv"
+        metadata_path = directory / "dhi_metadata.json"
+        if not values_path.is_file() or not metadata_path.is_file():
+            return {"available": False, "reason": "run has no DHI artifacts"}
+        try:
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            raise HTTPException(status_code=422, detail="dhi_metadata.json is invalid") from None
+        frame = pd.read_csv(values_path)
+        if "block_id" not in frame.columns:
+            raise HTTPException(status_code=422, detail="dhi_values.csv has no block_id")
+        bands = [
+            str(column)
+            for column in frame.columns
+            if column != "block_id" and pd.api.types.is_numeric_dtype(frame[column])
+        ]
+        records = [
+            {str(key): value for key, value in row.items()}
+            for row in frame.to_dict(orient="records")
+        ]
+        caveat = (
+            "DHI is a coarse productivity surrogate, not a species observation or a habitat "
+            "suitability model. The account removes a block when the schedule treats it and "
+            "does not model regrowth, recovery, or species response."
+        )
+        if output_format not in ("json", "geojson"):
+            raise HTTPException(status_code=400, detail="format must be 'json' or 'geojson'")
+        if output_format == "geojson":
+            features = base_features()
+            if not features:
+                raise HTTPException(
+                    status_code=404,
+                    detail="DHI GeoJSON needs --geometry on the service",
+                )
+            by_block = {int(float(str(record["block_id"]))): record for record in records}
+            out: list[dict[str, Any]] = []
+            for feature in features:
+                properties = feature.get("properties", {})
+                block = properties.get("block_id")
+                if block is None:
+                    continue
+                record = by_block.get(int(float(str(block))))
+                if record is None:
+                    continue
+                values = {
+                    band: float(record[band]) for band in bands if not pd.isna(record.get(band))
+                }
+                out.append(
+                    {
+                        **feature,
+                        "properties": {
+                            **properties,
+                            **values,
+                            "dhi": next(iter(values.values()), None),
+                        },
+                    }
+                )
+            return {
+                "type": "FeatureCollection",
+                "features": out,
+                "metadata": metadata,
+                "bands": bands,
+                "caveat": caveat,
+            }
+        return {
+            "available": True,
+            "metadata": metadata,
+            "bands": bands,
+            "values": records,
+            "caveat": caveat,
+        }
+
     @app.get("/api/runs/{run}/summary")
     def run_summary(run: str) -> dict[str, Any]:
         """Return a run's ``summary.json``."""

@@ -35,6 +35,12 @@ from .carbon import (
     write_gcbm_results,
     write_sit_tables,
 )
+from .dhi import (
+    DhiError,
+    read_dhi_account,
+    sample_dhi_raster,
+    write_dhi_ingest,
+)
 from .disturbance import (
     DisturbanceError,
     events_for_block,
@@ -172,8 +178,30 @@ def simulate(
     min_core_area_ha: float = typer.Option(
         None, "--min-core-area-ha", help="Minimum core area, in hectares"
     ),
+    dhi_values: Path | None = typer.Option(
+        None,
+        "--dhi-values",
+        exists=True,
+        help="Optional DHI block values CSV from 'ws4 dhi ingest'.",
+    ),
+    dhi_metadata: Path | None = typer.Option(
+        None,
+        "--dhi-metadata",
+        exists=True,
+        help="DHI source metadata JSON paired with --dhi-values.",
+    ),
 ) -> None:
     """Simulate a schedule over a compiled dataset and write a run directory."""
+    if (dhi_values is None) != (dhi_metadata is None):
+        raise typer.BadParameter("--dhi-values and --dhi-metadata must be supplied together")
+    try:
+        dhi_account = (
+            read_dhi_account(dhi_values, dhi_metadata)
+            if dhi_values is not None and dhi_metadata is not None
+            else None
+        )
+    except DhiError as error:
+        raise typer.BadParameter(str(error)) from error
     sim = Simulator.from_dataset(dataset)
     elements = load_edge_elements(edge_elements) if edge_elements is not None else ()
     config = load_route_config(route_config) if route_config is not None else None
@@ -193,6 +221,7 @@ def simulate(
         edge_elements=elements,
         core_buffer_m=core_buffer_m,
         min_core_area_ha=min_core_area_ha,
+        dhi_account=dhi_account,
     )
     print(f"[bold green]Simulation complete[/] → {out}")
 
@@ -1738,6 +1767,74 @@ def hydrology_validate(
 
 
 app.add_typer(lidar_app, name="lidar")
+dhi_app = typer.Typer(
+    add_completion=False,
+    no_args_is_help=True,
+    help="Ingest Dynamic Habitat Index layers and attach them to blocks.",
+)
+
+
+@dhi_app.command("ingest")
+def dhi_ingest(
+    raster: Path = typer.Option(..., "--raster", exists=True, help="DHI GeoTIFF subset."),
+    blocks: Path = typer.Option(
+        ..., "--blocks", exists=True, help="Block polygons (GeoJSON/GPKG/shapefile)."
+    ),
+    output: Path = typer.Option(..., "--output", "-o", help="DHI block-values CSV."),
+    metadata: Path = typer.Option(..., "--metadata", help="DHI source metadata JSON."),
+    source_version: str = typer.Option(
+        ..., "--source-version", help="Required DHI product/source version."
+    ),
+    source_id: str = typer.Option(
+        "silvis-dhi-modis6.1-terra-ndvi-composite",
+        "--source-id",
+        help="DHI product identifier.",
+    ),
+    year_range: str = typer.Option(
+        "2003-2022", "--year-range", help="Composite or annual year range."
+    ),
+    licence: str = typer.Option(
+        "Public; no restrictions (SILVIS Lab)", "--licence", help="Source licence."
+    ),
+    band_names: str = typer.Option(
+        "cum,min,var", "--band-names", help="Comma-separated DHI band names."
+    ),
+    scale: float = typer.Option(255.0, "--scale", help="Raster scale divisor (0-255 -> 0-1)."),
+    resolution_m: float = typer.Option(
+        500.0, "--resolution-m", help="Nominal source resolution in metres."
+    ),
+    block_id_field: str | None = typer.Option(
+        None, "--block-id-field", help="Block id column (default: auto-detect)."
+    ),
+    retrieved_utc: str | None = typer.Option(
+        None, "--retrieved-utc", help="Optional retrieval timestamp for provenance."
+    ),
+    notes: str | None = typer.Option(None, "--notes", help="Optional provenance note."),
+) -> None:
+    """Sample one DHI raster at block polygons and write values + metadata."""
+    names = tuple(name.strip() for name in band_names.split(",") if name.strip())
+    try:
+        values, source = sample_dhi_raster(
+            raster,
+            blocks,
+            source_version=source_version,
+            source_id=source_id,
+            year_range=year_range,
+            licence=licence,
+            band_names=names,
+            scale=scale,
+            resolution_m=resolution_m,
+            block_id_field=block_id_field,
+            retrieved_utc=retrieved_utc,
+            notes=notes,
+        )
+        write_dhi_ingest(values, source, output, metadata)
+    except DhiError as error:
+        raise typer.BadParameter(str(error)) from error
+    print(f"[bold green]DHI values[/] {len(values)} blocks, bands {', '.join(names)} → {output}")
+
+
+app.add_typer(dhi_app, name="dhi")
 app.add_typer(hydrology_app, name="hydrology")
 
 if __name__ == "__main__":
