@@ -3,7 +3,7 @@
 Phase: P66, Assistant panel visibility
 Parent issue: #473
 Pull request: #476
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-26 as `ed1f15a`.
 Date: 2026-10-26
 
 ## Recommendation
