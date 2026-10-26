@@ -2,6 +2,7 @@
   "id": "reviewer",
   "title": "Reviewer",
   "panels": [
+    "lidar",
     "targets",
     "reports",
     "comparison",

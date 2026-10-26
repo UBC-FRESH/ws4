@@ -9,7 +9,7 @@
 </head>
 <body>
   <header>
-    <strong>WS4</strong><span class="build">v68</span>
+    <strong>WS4</strong><span class="build">v69</span>
     <label>Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Period
@@ -22,6 +22,7 @@
     <aside id="sidebar">
       <nav class="tabs">
         <button data-tab="legend" class="active">Legend</button>
+        <button data-tab="lidar">LiDAR</button>
         <button data-tab="targets">Targets</button>
         <button data-tab="reports">Reports</button>
         <button data-tab="comparison">Compare</button>
@@ -37,6 +38,20 @@
         <p class="hint">Click a block for its attributes. Wheel to zoom; drag to pan.</p>
         <p class="hint">Treated blocks are every scheduled block; patch openings are the connected 5-40 ha groups.</p>
         <div id="detail" class="detail"></div>
+      </section>
+      <section id="tab-lidar" hidden>
+        <h2>LiDAR</h2>
+        <p id="lidar-status" class="hint">loading LiDAR…</p>
+        <div id="lidar-meta" class="lidar-meta"></div>
+        <label class="lidar-field">Colour blocks by
+          <select id="lidar-field"><option value="">Off</option></select>
+        </label>
+        <div id="lidar-legend" class="lidar-legend" hidden>
+          <div id="lidar-legend-title" class="hint"></div>
+          <div class="lidar-bar"></div>
+          <div class="lidar-ends"><span id="lidar-min">—</span><span id="lidar-max">—</span></div>
+        </div>
+        <p class="hint">LiDAR values are block zonal summaries from the registered FEMIC bundle. Selecting a field turns off the MVT shortcut so the exact block join is visible; missing values stay neutral.</p>
       </section>
       <section id="tab-targets" hidden>
         <h2>Targets</h2>
@@ -226,6 +241,6 @@
     </div>
   </main>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=68"></script>
+  <script type="module" src="static/app.js?v=69"></script>
 </body>
 </html>

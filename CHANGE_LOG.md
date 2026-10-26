@@ -2798,3 +2798,12 @@ issue comments.
   isolated installs, entry points, carbon/lidar/disturbance/hydrology commands, synthetic smoke,
   and Pages pass.
 - P55.3: no tag or release created. Candidate is ready for explicit tag approval.
+
+- P59.1/P59.2: added `/api/lidar`, a canonical LiDAR field catalog and block join, a LiDAR tab with
+  provenance/field selection/range legend, map colouring, and block-detail values. The LiDAR layer
+  uses the explicit GeoJSON join rather than MVT; datasets without LiDAR keep an explicit disabled
+  state. Fixed the P52 overwrite path so re-integration drops canonical and `_x`/`_y` variants
+  before joining.
+- P59.3: re-integrated the real TFL 6 7-fragment/1-block validation dataset with six canonical
+  fields (slope and CHM valid-pixels/mean/p95), ran `scripts/check_lidar_browser.py` (exit 0), and
+  verified c5 reports no LiDAR. Dashboard **GREEN**.

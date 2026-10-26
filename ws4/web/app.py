@@ -58,6 +58,43 @@ SEARCH_JOB_LIMIT: int = 20
 
 _REPORT_SUFFIXES = {".csv", ".html", ".png", ".json", ".txt"}
 
+#: Canonical LiDAR field products, longest prefix first, and their display unit.
+_LIDAR_PRODUCTS = (
+    ("vri_closure", "VRI closure", "%"),
+    ("vri_height", "VRI height", "m"),
+    ("tree_height", "Tree height", "m"),
+    ("tree_count", "Tree count", "count"),
+    ("chm_cover", "CHM cover", "%"),
+    ("slope", "Slope", "%"),
+    ("chm", "Canopy height (CHM)", "m"),
+)
+
+
+def _lidar_field_label(field: str) -> tuple[str, str]:
+    """Return a human label and unit for a canonical ``lidar_*`` field."""
+    stem = field.removeprefix("lidar_")
+    product, label, unit = next(
+        ((prefix, text, unit) for prefix, text, unit in _LIDAR_PRODUCTS if stem.startswith(prefix)),
+        ("", "LiDAR", ""),
+    )
+    statistic = stem[len(product) :].strip("_").replace("_", " ")
+    if statistic == "valid pixels":
+        unit = "px"
+    if statistic:
+        label = f"{label} {statistic}"
+    return label, unit
+
+
+def _lidar_column(frame: pd.DataFrame, field: str) -> str | None:
+    """Return the column holding a field, preferring canonical then the newest suffix."""
+    if field in frame.columns:
+        return field
+    for suffix in ("_y", "_x"):
+        candidate = f"{field}{suffix}"
+        if candidate in frame.columns:
+            return candidate
+    return None
+
 
 def _run_directory(root: Path, name: str) -> Path:
     """Return a run directory under the root, refusing anything that escapes it."""
@@ -766,6 +803,7 @@ def create_app(
     overview_cache: list[dict[str, Any]] | None = None
     land_base_cache: list[dict[str, Any]] | None = None
     road_cache: list[dict[str, Any]] | None = None
+    lidar_cache: dict[str, Any] | None = None
 
     def land_base_features() -> list[dict[str, Any]]:
         """Return the optional non-forest underlay once, parsed."""
@@ -796,6 +834,97 @@ def create_app(
         if overview_cache is None:
             overview_cache = _geometry_features(overview_path) if overview_path is not None else []
         return overview_cache
+
+    def lidar_dataset() -> dict[str, Any]:
+        """Return the registered LiDAR metadata and canonical block values, once.
+
+        The Parquet block table is the authority; the manifest names the public fields. A
+        pre-P59 overwrite could leave ``_x``/``_y`` suffixes, so the canonical name wins and
+        a suffixed copy is used only when the canonical column is absent.
+        """
+        nonlocal lidar_cache
+        if lidar_cache is not None:
+            return lidar_cache
+        manifest: dict[str, Any] = {}
+        manifest_path = dataset / "manifest.json"
+        if manifest_path.is_file():
+            try:
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                manifest = {}
+        metadata = manifest.get("metadata", {})
+        metadata = metadata if isinstance(metadata, dict) else {}
+        registration = metadata.get("lidar_products")
+        if not isinstance(registration, dict):
+            sidecar = dataset / "lidar_products.json"
+            if sidecar.is_file():
+                try:
+                    registration = json.loads(sidecar.read_text(encoding="utf-8"))
+                except (OSError, ValueError):
+                    registration = None
+        registration = registration if isinstance(registration, dict) else {}
+        field_meta = metadata.get("lidar_fields")
+        field_meta = field_meta if isinstance(field_meta, dict) else {}
+        block_fields = [
+            str(field) for field in field_meta.get("block_fields", []) if str(field).strip()
+        ]
+        block_values: dict[int, dict[str, float]] = {}
+        available_fields: list[str] = []
+        table_path = dataset / "blocks.parquet"
+        if table_path.is_file():
+            try:
+                blocks = pd.read_parquet(table_path)
+            except (OSError, ValueError):
+                blocks = None
+            if blocks is not None and "block_id" in blocks.columns:
+                if not block_fields:
+                    block_fields = sorted(
+                        str(name)
+                        for name in blocks.columns
+                        if str(name).startswith("lidar_") and not str(name).endswith(("_x", "_y"))
+                    )
+                columns: dict[str, str] = {}
+                for field in block_fields:
+                    column = _lidar_column(blocks, field)
+                    if column is not None:
+                        columns[field] = column
+                available_fields = list(columns)
+                if available_fields:
+                    for row in blocks[["block_id", *columns.values()]].itertuples(index=False):
+                        values: dict[str, float] = {}
+                        for field, column in columns.items():
+                            value = getattr(row, column)
+                            if value is not None and not pd.isna(value):
+                                values[field] = float(value)
+                        if values:
+                            block_values[int(float(str(row.block_id)))] = values
+        products = registration.get("products", {})
+        lidar_cache = {
+            "available": bool(available_fields),
+            "bundle_id": registration.get("bundle_id"),
+            "bundle_version": registration.get("bundle_version"),
+            "source_id": registration.get("source_id"),
+            "licence_id": registration.get("licence_id"),
+            "native_crs": registration.get("native_crs"),
+            "registered_utc": registration.get("registered_utc"),
+            "generated_utc": field_meta.get("generated_utc"),
+            "products": sorted(str(name) for name in products)
+            if isinstance(products, dict)
+            else [],
+            "fields": [
+                {
+                    "name": field,
+                    "label": _lidar_field_label(field)[0],
+                    "unit": _lidar_field_label(field)[1],
+                    "support": "block",
+                }
+                for field in available_fields
+            ],
+            "fragment_field_count": len(field_meta.get("fragment_fields", [])),
+            "block_count": len(block_values),
+            "blocks": block_values,
+        }
+        return lidar_cache
 
     @app.get("/", response_class=HTMLResponse)
     def index() -> HTMLResponse:
@@ -1517,6 +1646,13 @@ def create_app(
             found.append({"id": directory.name, "kind": kind, "summary": summary})
         return {"dataset": dataset.name, "manifest": manifest, "runs": found}
 
+    @app.get("/api/lidar")
+    def lidar_info() -> dict[str, Any]:
+        """Return the registered LiDAR provenance and canonical field catalog."""
+        info = dict(lidar_dataset())
+        info.pop("blocks", None)
+        return info
+
     @app.get("/api/runs/{run}/summary")
     def run_summary(run: str) -> dict[str, Any]:
         """Return a run's ``summary.json``."""
@@ -1978,6 +2114,7 @@ def create_app(
         format: str = Query(default="projected"),
         bbox: str | None = Query(default=None),
         zoom: float | None = Query(default=None),
+        lidar: bool = Query(default=False),
     ) -> dict[str, Any]:
         """Return a GeoJSON FeatureCollection of every block for one map layer.
 
@@ -1987,11 +2124,14 @@ def create_app(
         ``blocks`` is the bare geometry. ``year`` is the period's end year and ``period_start``
         its first year; without it the period is one year. The layer is the base geometry; the
         properties carry the flags the client needs, so a layer change is one request and no
-        second join.
+        second join. ``lidar`` joins the dataset's canonical block LiDAR fields by
+        ``block_id``; it is independent of the treatment layer so the client can colour by
+        a terrain or canopy field.
         """
         directory = run_dir(run)
         if layer not in ("treatments", "cumulative", "patches", "compartments", "blocks"):
             raise HTTPException(status_code=422, detail=f"unknown layer {layer!r}")
+        lidar_blocks = lidar_dataset()["blocks"] if lidar else {}
         if geometry_path is None or not geometry_path.is_file():
             raise HTTPException(
                 status_code=409,
@@ -2112,6 +2252,8 @@ def create_app(
                 properties["treatments"] = []
                 properties["treated"] = False
                 properties["current"] = False
+            if lidar_blocks:
+                properties.update(lidar_blocks.get(number, {}))
             features.append(
                 {"type": "Feature", "geometry": base.get("geometry"), "properties": properties}
             )
@@ -2167,6 +2309,7 @@ def create_app(
             "compartment_classes": compartment_classes,
             "compartment_accounts": compartment_accounts,
             "account": account if layer == "compartments" else None,
+            "lidar": lidar,
         }
 
     payload_cache: dict[tuple[str, int | None, str, int | None, str, bool], dict[str, Any]] = {}
