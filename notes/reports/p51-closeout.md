@@ -75,6 +75,6 @@ ws4 gcbm --results gcbm_output.db --out <out>
 
 - Child tasks P51.1 to P51.10 are closed or recorded with their deferral above.
 - The phase branch is `feature/p51-carbon`.
-- Pull request: queued from `feature/p51-carbon` to `main`.
+- Pull request: #405, queued from `feature/p51-carbon` to `main`.
 - Merge, branch deletion, and parent-issue closure wait for maintainer approval of this
   report.
