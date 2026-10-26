@@ -127,10 +127,69 @@ Direct bundle inspection and validation remain available:
 
    ws4 hydrology inspect data/femic/hydrology-response-2026.10.0 --json
 
+   ws4 hydrology map --dataset build/compiled --crosswalk crosswalk.csv \
+     --out build/hydrology_mapping
+
 ``validate`` emits a deterministic JSON report by default and exits non-zero on
 an invalid bundle. ``inspect`` prints the bundle pin and artifact roles for a
 valid bundle; an invalid bundle prints the validation report and exits non-zero.
 Pass exactly one of a direct ``BUNDLE`` argument or ``--dataset``.
+
+Mapping WS4 Support
+--------------------
+
+Mapping requires an explicit, reviewed crosswalk. WS4 never infers a watershed
+from a block ID, a centroid, or a nearest-neighbor join. The crosswalk CSV has
+exactly one support key per row:
+
+.. code-block:: text
+
+   fragment_id,block_id,unit_id,watershed_id,receptor_id,notes
+   1,,unit-1,watershed-1,receptor-1,fragment-level review
+   2,,unit-1,watershed-1,receptor-1,fragment-level review
+   ,11,unit-2,watershed-2,receptor-2,block-level review
+
+A block-level row expands to every fragment in that block. A block mapping can
+also be derived from complete, consistent fragment rows. Fragments in one block
+must agree on ``unit_id``, ``watershed_id``, and ``receptor_id`` or mapping
+fails.
+
+Optional review metadata records the crosswalk identity and review state:
+
+.. code-block:: json
+
+   {
+     "schema_version": "ws4.hydrology.crosswalk.v1",
+     "crosswalk_id": "crosswalk-example",
+     "created_utc": "2026-10-26T00:00:00+00:00",
+     "review_status": "reviewed",
+     "reviewed_by": "reviewer-id",
+     "method": "Manual fragment/block review against FEMIC units",
+     "source": "Reviewed public domain bundle",
+     "caveats": ["Screening crosswalk only."]
+   }
+
+The optional ``crosswalk_sha256`` field pins the CSV. Missing metadata is
+recorded as ``not_reviewed`` with a warning; it is never silently treated as
+reviewed.
+
+Run the mapping:
+
+.. code-block:: bash
+
+   ws4 hydrology map \
+     --dataset build/compiled \
+     --crosswalk reviewed-crosswalk.csv \
+     --metadata reviewed-crosswalk.meta.json \
+     --out build/hydrology_mapping
+
+The command writes ``hydrology_fragments.csv``, ``hydrology_blocks.csv``, and
+``hydrology_mapping.json``. The manifest records the FEMIC bundle pin, crosswalk
+checksum, review status, coverage, warnings, and caveats. A crosswalk that does
+not cover every fragment and block fails unless ``--allow-partial`` is set; a
+partial mapping records the unmapped IDs.
+
+No spatial inference or FEMIC re-run is performed.
 
 Flood-Risk Table
 ----------------

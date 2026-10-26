@@ -1,22 +1,29 @@
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
 from pathlib import Path
 
+import pandas as pd
 import pytest
 from typer.testing import CliRunner
 from ws4.cli import app
 from ws4.io.hydrology import (
+    FemicHydrologyBundle,
     FemicHydrologyError,
+    HydrologyCrosswalk,
     bundle_pin,
     load_femic_hydrology_bundle,
+    load_hydrology_crosswalk,
     load_registered_femic_hydrology_bundle,
+    map_femic_hydrology_to_dataset,
     read_femic_flood_risk,
     read_registered_femic_hydrology,
     register_femic_hydrology_bundle,
     validate_femic_hydrology_bundle,
     validate_registered_femic_hydrology,
+    write_hydrology_mapping,
 )
 
 runner = CliRunner()
@@ -97,6 +104,8 @@ def _bundle(
     root: Path,
     *,
     include_validation_report: bool = False,
+    domain_payload: dict[str, object] | None = None,
+    ledger_payload: dict[str, object] | None = None,
 ) -> Path:
     root.mkdir(parents=True, exist_ok=True)
     artifacts = [
@@ -116,7 +125,8 @@ def _bundle(
             root,
             "domain",
             "femic.hydrology.domain.v1",
-            {
+            domain_payload
+            or {
                 "schema_version": "femic.hydrology.domain.v1",
                 "domain_id": "fixture-domain",
             },
@@ -125,7 +135,8 @@ def _bundle(
             root,
             "disturbance_ledger",
             "femic.hydrology.disturbance.v1",
-            {
+            ledger_payload
+            or {
                 "schema_version": "femic.hydrology.disturbance.v1",
                 "ledger_id": "fixture-ledger",
                 "domain_id": "fixture-domain",
@@ -616,3 +627,402 @@ def test_cli_requires_exactly_one_bundle_or_dataset(tmp_path: Path) -> None:
     assert "exactly one" in neither.output
     assert both.exit_code == 1
     assert "exactly one" in both.output
+
+
+def _domain_payload() -> dict[str, object]:
+    return {
+        "schema_version": "femic.hydrology.domain.v1",
+        "domain_id": "fixture-domain",
+        "watersheds": [
+            {"watershed_id": "watershed-1"},
+            {"watershed_id": "watershed-2"},
+        ],
+        "receptors": [
+            {"receptor_id": "receptor-1"},
+            {"receptor_id": "receptor-2"},
+        ],
+    }
+
+
+def _ledger_payload() -> dict[str, object]:
+    return {
+        "schema_version": "femic.hydrology.disturbance.v1",
+        "ledger_id": "fixture-ledger",
+        "domain_id": "fixture-domain",
+        "units": [
+            {"unit_id": "unit-1", "watershed_id": "watershed-1"},
+            {"unit_id": "unit-2", "watershed_id": "watershed-2"},
+        ],
+    }
+
+
+def _compiled_dataset(root: Path) -> Path:
+    _dataset(root)
+    pd.DataFrame(
+        {
+            "fragment_id": [1, 2, 3, 4],
+            "block_id": [10, 10, 11, 12],
+            "area_ha": [1.0, 2.0, 3.0, 4.0],
+        }
+    ).to_parquet(root / "fragments.parquet", index=False)
+    pd.DataFrame(
+        {
+            "block_id": [10, 11, 12],
+            "area_ha": [3.0, 3.0, 4.0],
+        }
+    ).to_parquet(root / "blocks.parquet", index=False)
+    manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+    manifest["tables"] = {
+        "fragments": "fragments.parquet",
+        "blocks": "blocks.parquet",
+    }
+    _write_json(root / "manifest.json", manifest)
+    return root
+
+
+def _write_crosswalk(path: Path, rows: list[dict[str, object]]) -> Path:
+    columns = (
+        "fragment_id",
+        "block_id",
+        "unit_id",
+        "watershed_id",
+        "receptor_id",
+        "notes",
+    )
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=columns)
+        writer.writeheader()
+        writer.writerows(rows)
+    return path
+
+
+def _write_metadata(
+    path: Path,
+    *,
+    crosswalk_sha256: str | None = None,
+    review_status: str = "reviewed",
+    reviewed_by: str | None = "reviewer-1",
+) -> Path:
+    payload = {
+        "schema_version": "ws4.hydrology.crosswalk.v1",
+        "crosswalk_id": "fixture-crosswalk",
+        "created_utc": GENERATED_UTC,
+        "review_status": review_status,
+        "reviewed_by": reviewed_by,
+        "method": "Explicit test crosswalk",
+        "source": "Synthetic test fixture",
+        "caveats": ["Synthetic crosswalk for contract tests."],
+    }
+    if crosswalk_sha256 is not None:
+        payload["crosswalk_sha256"] = crosswalk_sha256
+    _write_json(path, payload)
+    return path
+
+
+def _complete_fragment_rows() -> list[dict[str, object]]:
+    return [
+        {
+            "fragment_id": 1,
+            "block_id": "",
+            "unit_id": "unit-1",
+            "watershed_id": "watershed-1",
+            "receptor_id": "receptor-1",
+            "notes": "",
+        },
+        {
+            "fragment_id": 2,
+            "block_id": "",
+            "unit_id": "unit-1",
+            "watershed_id": "watershed-1",
+            "receptor_id": "receptor-1",
+            "notes": "",
+        },
+        {
+            "fragment_id": 3,
+            "block_id": "",
+            "unit_id": "unit-2",
+            "watershed_id": "watershed-2",
+            "receptor_id": "receptor-2",
+            "notes": "",
+        },
+        {
+            "fragment_id": 4,
+            "block_id": "",
+            "unit_id": "unit-2",
+            "watershed_id": "watershed-2",
+            "receptor_id": "receptor-2",
+            "notes": "",
+        },
+    ]
+
+
+def _mapping_fixture(
+    root: Path,
+    *,
+    rows: list[dict[str, object]] | None = None,
+    review_status: str = "reviewed",
+) -> tuple[Path, HydrologyCrosswalk, FemicHydrologyBundle]:
+    dataset = _compiled_dataset(root / "dataset")
+    bundle = load_femic_hydrology_bundle(
+        _bundle(
+            root / "bundle",
+            domain_payload=_domain_payload(),
+            ledger_payload=_ledger_payload(),
+        )
+    )
+    register_femic_hydrology_bundle(
+        dataset,
+        bundle.bundle_dir,
+        registered_utc=GENERATED_UTC,
+    )
+    crosswalk_path = _write_crosswalk(
+        root / "crosswalk.csv",
+        rows if rows is not None else _complete_fragment_rows(),
+    )
+    metadata = _write_metadata(
+        root / "crosswalk.meta.json",
+        crosswalk_sha256=hashlib.sha256(crosswalk_path.read_bytes()).hexdigest(),
+        review_status=review_status,
+    )
+    crosswalk = load_hydrology_crosswalk(crosswalk_path, metadata_path=metadata)
+    return dataset, crosswalk, bundle
+
+
+def test_map_complete_fragment_crosswalk_and_write_outputs(tmp_path: Path) -> None:
+    dataset, crosswalk, bundle = _mapping_fixture(tmp_path)
+    mapping = map_femic_hydrology_to_dataset(
+        dataset,
+        bundle,
+        crosswalk,
+        generated_utc=GENERATED_UTC,
+    )
+    paths = write_hydrology_mapping(mapping, tmp_path / "out")
+
+    assert mapping.review_status == "reviewed"
+    assert len(mapping.fragments) == 4
+    assert len(mapping.blocks) == 3
+    assert mapping.coverage["unmapped_fragments"] == []
+    assert mapping.coverage["unmapped_blocks"] == []
+    assert mapping.warnings == ()
+    assert paths["fragments"].is_file()
+    assert paths["blocks"].is_file()
+    assert paths["manifest"].is_file()
+    manifest = json.loads(paths["manifest"].read_text(encoding="utf-8"))
+    assert manifest["schema_version"] == "ws4.hydrology.mapping.v1"
+    assert manifest["mapping_id"] == mapping.mapping_id
+    assert manifest["review_status"] == "reviewed"
+    assert manifest["fragment_count"] == 4
+    assert manifest["block_count"] == 3
+
+
+def test_map_block_crosswalk_derives_fragments(tmp_path: Path) -> None:
+    rows = [
+        {
+            "fragment_id": "",
+            "block_id": 10,
+            "unit_id": "unit-1",
+            "watershed_id": "watershed-1",
+            "receptor_id": "receptor-1",
+            "notes": "",
+        },
+        {
+            "fragment_id": "",
+            "block_id": 11,
+            "unit_id": "unit-2",
+            "watershed_id": "watershed-2",
+            "receptor_id": "receptor-2",
+            "notes": "",
+        },
+        {
+            "fragment_id": "",
+            "block_id": 12,
+            "unit_id": "unit-2",
+            "watershed_id": "watershed-2",
+            "receptor_id": "receptor-2",
+            "notes": "",
+        },
+    ]
+    dataset, crosswalk, bundle = _mapping_fixture(tmp_path, rows=rows)
+    mapping = map_femic_hydrology_to_dataset(dataset, bundle, crosswalk)
+
+    assert len(mapping.fragments) == 4
+    assert len(mapping.blocks) == 3
+    assert all(row["source"] == "block_crosswalk" for row in mapping.fragments)
+    assert all(row["source"] == "block_crosswalk" for row in mapping.blocks)
+
+
+def test_map_partial_requires_opt_in_and_records_gaps(tmp_path: Path) -> None:
+    rows = [_complete_fragment_rows()[0]]
+    dataset, crosswalk, bundle = _mapping_fixture(tmp_path, rows=rows)
+
+    with pytest.raises(FemicHydrologyError, match="does not cover"):
+        map_femic_hydrology_to_dataset(dataset, bundle, crosswalk)
+
+    mapping = map_femic_hydrology_to_dataset(
+        dataset,
+        bundle,
+        crosswalk,
+        allow_partial=True,
+    )
+    assert mapping.coverage["unmapped_fragments"] == [2, 3, 4]
+    assert mapping.coverage["unmapped_blocks"] == [10, 11, 12]
+    assert any("Partial mapping" in warning for warning in mapping.warnings)
+
+
+def test_map_rejects_unknown_ids_and_bad_rows(tmp_path: Path) -> None:
+    rows = [_complete_fragment_rows()[0]]
+    dataset, _crosswalk, bundle = _mapping_fixture(tmp_path, rows=rows)
+
+    for replacement, message in (
+        ({"fragment_id": 99}, "fragment 99"),
+        ({"unit_id": "unit-99"}, "unit 'unit-99'"),
+        ({"watershed_id": "watershed-99"}, "watershed 'watershed-99'"),
+        ({"receptor_id": "receptor-99"}, "receptor 'receptor-99'"),
+    ):
+        bad = {**rows[0], **replacement}
+        path = _write_crosswalk(tmp_path / f"bad-{len(message)}.csv", [bad])
+        loaded = load_hydrology_crosswalk(path)
+        with pytest.raises(FemicHydrologyError, match=message):
+            map_femic_hydrology_to_dataset(
+                dataset,
+                bundle,
+                loaded,
+                allow_partial=True,
+            )
+
+    both = {**rows[0], "block_id": 10}
+    path = _write_crosswalk(tmp_path / "both.csv", [both])
+    with pytest.raises(FemicHydrologyError, match="exactly one"):
+        load_hydrology_crosswalk(path)
+
+    neither = {**rows[0], "fragment_id": ""}
+    path = _write_crosswalk(tmp_path / "neither.csv", [neither])
+    with pytest.raises(FemicHydrologyError, match="exactly one"):
+        load_hydrology_crosswalk(path)
+
+    duplicate = [rows[0], rows[0]]
+    path = _write_crosswalk(tmp_path / "duplicate.csv", duplicate)
+    with pytest.raises(FemicHydrologyError, match="Duplicate crosswalk support"):
+        load_hydrology_crosswalk(path)
+
+
+def test_map_rejects_conflicting_fragment_and_block_mappings(tmp_path: Path) -> None:
+    rows = [
+        {
+            "fragment_id": 1,
+            "block_id": "",
+            "unit_id": "unit-1",
+            "watershed_id": "watershed-1",
+            "receptor_id": "receptor-1",
+            "notes": "",
+        },
+        {
+            "fragment_id": 2,
+            "block_id": "",
+            "unit_id": "unit-2",
+            "watershed_id": "watershed-2",
+            "receptor_id": "receptor-2",
+            "notes": "",
+        },
+        {
+            "fragment_id": 3,
+            "block_id": "",
+            "unit_id": "unit-2",
+            "watershed_id": "watershed-2",
+            "receptor_id": "receptor-2",
+            "notes": "",
+        },
+        {
+            "fragment_id": 4,
+            "block_id": "",
+            "unit_id": "unit-2",
+            "watershed_id": "watershed-2",
+            "receptor_id": "receptor-2",
+            "notes": "",
+        },
+    ]
+    dataset, crosswalk, bundle = _mapping_fixture(tmp_path, rows=rows)
+    with pytest.raises(FemicHydrologyError, match="conflicting FEMIC mappings"):
+        map_femic_hydrology_to_dataset(dataset, bundle, crosswalk)
+
+    rows = _complete_fragment_rows()
+    rows[0] = {
+        **rows[0],
+        "unit_id": "unit-2",
+        "watershed_id": "watershed-2",
+        "receptor_id": "receptor-2",
+    }
+    rows.append(
+        {
+            "fragment_id": "",
+            "block_id": 10,
+            "unit_id": "unit-1",
+            "watershed_id": "watershed-1",
+            "receptor_id": "receptor-1",
+            "notes": "",
+        }
+    )
+    dataset, crosswalk, bundle = _mapping_fixture(tmp_path, rows=rows)
+    with pytest.raises(FemicHydrologyError, match="conflicts with the explicit block"):
+        map_femic_hydrology_to_dataset(dataset, bundle, crosswalk)
+
+
+def test_crosswalk_review_metadata_is_explicit(tmp_path: Path) -> None:
+    rows = _complete_fragment_rows()
+    path = _write_crosswalk(tmp_path / "crosswalk.csv", rows)
+    not_reviewed = load_hydrology_crosswalk(path)
+    assert not_reviewed.metadata.review_status == "not_reviewed"
+
+    metadata = _write_metadata(
+        tmp_path / "bad.meta.json",
+        crosswalk_sha256="0" * 64,
+    )
+    with pytest.raises(FemicHydrologyError, match="checksum"):
+        load_hydrology_crosswalk(path, metadata_path=metadata)
+
+    metadata = _write_metadata(
+        tmp_path / "review.meta.json",
+        crosswalk_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+        reviewed_by=None,
+    )
+    with pytest.raises(FemicHydrologyError, match="reviewed_by"):
+        load_hydrology_crosswalk(path, metadata_path=metadata)
+
+
+def test_map_records_not_reviewed_warning(tmp_path: Path) -> None:
+    dataset, crosswalk, bundle = _mapping_fixture(
+        tmp_path,
+        review_status="not_reviewed",
+    )
+    mapping = map_femic_hydrology_to_dataset(dataset, bundle, crosswalk)
+    assert mapping.review_status == "not_reviewed"
+    assert any("provisional" in warning for warning in mapping.warnings)
+
+
+def test_cli_map_writes_outputs(tmp_path: Path) -> None:
+    dataset, crosswalk, bundle = _mapping_fixture(tmp_path)
+    _ = bundle
+    metadata = tmp_path / "crosswalk.meta.json"
+    out = tmp_path / "mapping-out"
+
+    result = runner.invoke(
+        app,
+        [
+            "hydrology",
+            "map",
+            "--dataset",
+            str(dataset),
+            "--crosswalk",
+            str(crosswalk.path),
+            "--metadata",
+            str(metadata),
+            "--out",
+            str(out),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "mapping_id: ws4-hydro-mapping-" in result.stdout
+    assert (out / "hydrology_fragments.csv").is_file()
+    assert (out / "hydrology_blocks.csv").is_file()
+    assert (out / "hydrology_mapping.json").is_file()

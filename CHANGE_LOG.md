@@ -2627,3 +2627,17 @@ issue comments.
   tampering, stale manifests, missing datasets, and CLI success/failure.
   Dashboard **GREEN** (lint, format, types, 111.09 s tests, validator, docs,
   docstrings).
+
+- P57.3: added explicit WS4-to-FEMIC support mapping. A reviewed crosswalk CSV
+  names one `fragment_id` or `block_id` per row and a FEMIC unit, watershed, and
+  optional receptor. Block rows expand to fragments; block mappings are derived
+  from fragment rows only when every fragment is mapped and agrees. Mapping
+  validates dataset/FEMIC IDs, rejects conflicts, and writes
+  `hydrology_fragments.csv`, `hydrology_blocks.csv`, and a deterministic
+  `hydrology_mapping.json` with bundle pin, crosswalk checksum, review status,
+  coverage, warnings, and caveats. Added `ws4 hydrology map` and
+  `--allow-partial`. No spatial inference, geometry join, or FEMIC re-run.
+  Eight new tests cover complete/partial mapping, derivation, conflicts,
+  unknown IDs, duplicate/bad rows, review metadata, and CLI behavior.
+  Dashboard **GREEN** (lint, format, types, 106.01 s tests, validator, docs,
+  docstrings).

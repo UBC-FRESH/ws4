@@ -8,6 +8,7 @@ or surrogate training.
 
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
 import math
@@ -17,12 +18,21 @@ from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pandas as pd
+
 from ws4.model.schema import load_manifest
 
 FEMIC_HYDROLOGY_MANIFEST_SCHEMA = "femic.hydrology.response.v1"
 FEMIC_HYDROLOGY_MANIFEST_NAME = "manifest.json"
 FEMIC_HYDROLOGY_SIDECAR_NAME = "hydrology_products.json"
 FEMIC_HYDROLOGY_METADATA_KEY = "hydrology_products"
+HYDROLOGY_CROSSWALK_SCHEMA = "ws4.hydrology.crosswalk.v1"
+HYDROLOGY_MAPPING_SCHEMA = "ws4.hydrology.mapping.v1"
+HYDROLOGY_CROSSWALK_REVIEW_STATUSES: tuple[str, ...] = (
+    "not_reviewed",
+    "review_pending",
+    "reviewed",
+)
 FEMIC_HYDROLOGY_RESPONSE_SURFACE_SCHEMA = "femic.hydrology.flood_response.v1"
 FEMIC_HYDROLOGY_FLOOD_RISK_SCHEMA = "femic.hydrology.flood_risk.v1"
 FEMIC_HYDROLOGY_DOMAIN_SCHEMA = "femic.hydrology.domain.v1"
@@ -388,6 +398,437 @@ def bundle_pin(bundle: FemicHydrologyBundle) -> dict[str, object]:
         "uncertainty": bundle.uncertainty,
         "consumer_contract": bundle.consumer_contract,
         "caveats": list(bundle.caveats),
+    }
+
+
+@dataclass(frozen=True)
+class HydrologyCrosswalkMetadata:
+    """Review metadata for an explicit WS4-to-FEMIC crosswalk.
+
+    Attributes
+    ----------
+    crosswalk_id : str
+        Stable crosswalk identifier.
+    created_utc : str
+        Crosswalk creation timestamp.
+    review_status : str
+        One of ``not_reviewed``, ``review_pending``, or ``reviewed``.
+    reviewed_by : str | None
+        Reviewer identifier when reviewed.
+    method : str
+        Crosswalk method or source.
+    source : str
+        Source document or process.
+    caveats : tuple[str, ...]
+        Review caveats.
+    """
+
+    crosswalk_id: str
+    created_utc: str
+    review_status: str
+    reviewed_by: str | None
+    method: str
+    source: str
+    caveats: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class HydrologyCrosswalkRow:
+    """One explicit fragment/block to FEMIC unit mapping.
+
+    Attributes
+    ----------
+    fragment_id : int | None
+        WS4 fragment identifier, when the row is fragment-level.
+    block_id : int | None
+        WS4 block identifier, when the row is block-level.
+    unit_id : str
+        FEMIC disturbance-ledger unit identifier.
+    watershed_id : str
+        FEMIC watershed identifier.
+    receptor_id : str | None
+        Optional FEMIC flood-risk receptor identifier.
+    notes : str
+        Human review notes.
+    """
+
+    fragment_id: int | None
+    block_id: int | None
+    unit_id: str
+    watershed_id: str
+    receptor_id: str | None
+    notes: str
+
+
+@dataclass(frozen=True)
+class HydrologyCrosswalk:
+    """Loaded and checksummed explicit crosswalk.
+
+    Attributes
+    ----------
+    path : Path
+        Crosswalk CSV path.
+    sha256 : str
+        SHA-256 digest of the CSV bytes.
+    rows : tuple[HydrologyCrosswalkRow, ...]
+        Explicit mapping rows.
+    metadata : HydrologyCrosswalkMetadata
+        Review metadata.
+    """
+
+    path: Path
+    sha256: str
+    rows: tuple[HydrologyCrosswalkRow, ...]
+    metadata: HydrologyCrosswalkMetadata
+
+
+@dataclass(frozen=True)
+class HydrologyMapping:
+    """Validated WS4-to-FEMIC mapping.
+
+    Attributes
+    ----------
+    mapping_id : str
+        Deterministic mapping identifier.
+    generated_utc : str
+        Mapping generation timestamp.
+    bundle_id : str
+        FEMIC bundle identifier.
+    bundle_version : str
+        FEMIC bundle version.
+    manifest_sha256 : str
+        FEMIC manifest digest.
+    crosswalk_id : str
+        Crosswalk metadata identifier.
+    crosswalk_sha256 : str
+        Crosswalk CSV digest.
+    review_status : str
+        Crosswalk review status.
+    fragments : tuple[dict[str, object], ...]
+        Fragment mapping rows.
+    blocks : tuple[dict[str, object], ...]
+        Block mapping rows.
+    coverage : dict[str, object]
+        Dataset/mapped/unmapped counts and IDs.
+    warnings : tuple[str, ...]
+        Non-fatal mapping observations.
+    caveats : tuple[str, ...]
+        Mapping and review caveats.
+    """
+
+    mapping_id: str
+    generated_utc: str
+    bundle_id: str
+    bundle_version: str
+    manifest_sha256: str
+    crosswalk_id: str
+    crosswalk_sha256: str
+    review_status: str
+    fragments: tuple[dict[str, object], ...]
+    blocks: tuple[dict[str, object], ...]
+    coverage: dict[str, object]
+    warnings: tuple[str, ...]
+    caveats: tuple[str, ...]
+
+    def to_dict(self) -> dict[str, object]:
+        """Return the mapping manifest as a JSON-serializable mapping.
+
+        Returns
+        -------
+        dict[str, object]
+            Mapping identity, provenance, coverage, warnings, and caveats.
+        """
+        return {
+            "schema_version": HYDROLOGY_MAPPING_SCHEMA,
+            "mapping_id": self.mapping_id,
+            "generated_utc": self.generated_utc,
+            "bundle_id": self.bundle_id,
+            "bundle_version": self.bundle_version,
+            "manifest_sha256": self.manifest_sha256,
+            "crosswalk_id": self.crosswalk_id,
+            "crosswalk_sha256": self.crosswalk_sha256,
+            "review_status": self.review_status,
+            "fragment_count": len(self.fragments),
+            "block_count": len(self.blocks),
+            "coverage": self.coverage,
+            "warnings": list(self.warnings),
+            "caveats": list(self.caveats),
+        }
+
+
+def load_hydrology_crosswalk(
+    path: Path,
+    *,
+    metadata_path: Path | None = None,
+) -> HydrologyCrosswalk:
+    """Load and validate an explicit WS4-to-FEMIC crosswalk CSV.
+
+    Parameters
+    ----------
+    path : Path
+        Crosswalk CSV with one of ``fragment_id`` or ``block_id`` per row.
+    metadata_path : Path | None, optional
+        JSON review metadata. Missing metadata is recorded as ``not_reviewed``.
+
+    Returns
+    -------
+    HydrologyCrosswalk
+        Checksummed rows and review metadata.
+
+    Raises
+    ------
+    FemicHydrologyError
+        If the CSV or metadata is malformed.
+    """
+    resolved = path.expanduser().resolve()
+    try:
+        raw = resolved.read_bytes()
+    except OSError as exc:
+        raise FemicHydrologyError(f"Unable to read hydrology crosswalk: {resolved}: {exc}") from exc
+    digest = hashlib.sha256(raw).hexdigest()
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise FemicHydrologyError(f"Crosswalk is not UTF-8: {resolved}") from exc
+    try:
+        rows = _crosswalk_rows(text.splitlines(), digest=digest)
+    except csv.Error as exc:
+        raise FemicHydrologyError(f"Unable to parse crosswalk CSV: {exc}") from exc
+    metadata = _crosswalk_metadata(
+        metadata_path,
+        fallback_id=f"crosswalk-{digest[:16]}",
+        crosswalk_sha256=digest,
+    )
+    return HydrologyCrosswalk(
+        path=resolved,
+        sha256=digest,
+        rows=rows,
+        metadata=metadata,
+    )
+
+
+def map_femic_hydrology_to_dataset(
+    dataset_dir: Path,
+    bundle: FemicHydrologyBundle,
+    crosswalk: HydrologyCrosswalk,
+    *,
+    allow_partial: bool = False,
+    generated_utc: str | None = None,
+) -> HydrologyMapping:
+    """Map explicit crosswalk rows onto compiled WS4 fragments and blocks.
+
+    Parameters
+    ----------
+    dataset_dir : Path
+        Compiled WS4 dataset directory.
+    bundle : FemicHydrologyBundle
+        Registered and validated FEMIC bundle.
+    crosswalk : HydrologyCrosswalk
+        Explicit reviewed crosswalk.
+    allow_partial : bool, optional
+        Allow missing fragment/block coverage and record it as warnings.
+    generated_utc : str | None, optional
+        Mapping timestamp; defaults to the current UTC time.
+
+    Returns
+    -------
+    HydrologyMapping
+        Validated fragment/block rows, coverage, warnings, and caveats.
+
+    Raises
+    ------
+    FemicHydrologyError
+        If IDs are unknown, rows conflict, or coverage is incomplete without
+        ``allow_partial``.
+    """
+    dataset_root = dataset_dir.expanduser().resolve()
+    fragments, blocks = _load_dataset_support(dataset_root)
+    unit_to_watershed, watersheds, receptors = _bundle_domain_ids(bundle)
+    fragment_map: dict[int, dict[str, object]] = {}
+    block_map: dict[int, dict[str, object]] = {}
+    for row in crosswalk.rows:
+        if row.watershed_id not in watersheds:
+            raise FemicHydrologyError(
+                f"Crosswalk watershed {row.watershed_id!r} is not in the FEMIC domain."
+            )
+        if row.unit_id not in unit_to_watershed:
+            raise FemicHydrologyError(
+                f"Crosswalk unit {row.unit_id!r} is not in the FEMIC disturbance ledger."
+            )
+        expected_watershed = unit_to_watershed[row.unit_id]
+        if expected_watershed and expected_watershed != row.watershed_id:
+            raise FemicHydrologyError(
+                f"Crosswalk unit {row.unit_id!r} belongs to watershed "
+                f"{expected_watershed!r}, not {row.watershed_id!r}."
+            )
+        if row.receptor_id is not None and row.receptor_id not in receptors:
+            raise FemicHydrologyError(
+                f"Crosswalk receptor {row.receptor_id!r} is not in the FEMIC domain."
+            )
+        record = _mapping_record(
+            bundle=bundle,
+            crosswalk=crosswalk,
+            unit_id=row.unit_id,
+            watershed_id=row.watershed_id,
+            receptor_id=row.receptor_id,
+        )
+        if row.fragment_id is not None:
+            if row.fragment_id not in fragments:
+                raise FemicHydrologyError(
+                    f"Crosswalk fragment {row.fragment_id} is not in the dataset."
+                )
+            fragment_map[row.fragment_id] = {**record, "source": "fragment_crosswalk"}
+        if row.block_id is not None:
+            if row.block_id not in blocks:
+                raise FemicHydrologyError(f"Crosswalk block {row.block_id} is not in the dataset.")
+            block_map[row.block_id] = {**record, "source": "block_crosswalk"}
+
+    # Expand explicit block rows to fragments, and derive block rows from
+    # complete, consistent fragment rows.
+    fragment_to_block = {fragment_id: int(block_id) for fragment_id, block_id in fragments.items()}
+    for block_id, block_record in list(block_map.items()):
+        for fragment_id, parent in fragment_to_block.items():
+            if parent != block_id:
+                continue
+            existing = fragment_map.get(fragment_id)
+            if existing is not None and not _same_mapping(existing, block_record):
+                raise FemicHydrologyError(
+                    f"Fragment {fragment_id} conflicts with the explicit block {block_id} mapping."
+                )
+            fragment_map[fragment_id] = {
+                **block_record,
+                "source": "block_crosswalk",
+            }
+    for block_id in blocks:
+        block_fragments = [
+            fragment_id for fragment_id, parent in fragment_to_block.items() if parent == block_id
+        ]
+        mapped = [
+            fragment_map[fragment_id]
+            for fragment_id in block_fragments
+            if fragment_id in fragment_map
+        ]
+        if not mapped:
+            continue
+        if any(not _same_mapping(mapped[0], item) for item in mapped[1:]):
+            raise FemicHydrologyError(
+                f"Fragments in block {block_id} have conflicting FEMIC mappings."
+            )
+        existing = block_map.get(block_id)
+        if existing is not None and not _same_mapping(existing, mapped[0]):
+            raise FemicHydrologyError(f"Block {block_id} conflicts with its fragment mappings.")
+        if existing is None and len(mapped) == len(block_fragments):
+            block_map[block_id] = {**mapped[0], "source": "derived_from_fragments"}
+
+    all_fragment_ids = set(fragments)
+    all_block_ids = set(blocks)
+    unmapped_fragments = sorted(all_fragment_ids - set(fragment_map))
+    unmapped_blocks = sorted(all_block_ids - set(block_map))
+    coverage = {
+        "dataset_fragments": len(all_fragment_ids),
+        "mapped_fragments": len(fragment_map),
+        "unmapped_fragments": unmapped_fragments,
+        "dataset_blocks": len(all_block_ids),
+        "mapped_blocks": len(block_map),
+        "unmapped_blocks": unmapped_blocks,
+    }
+    warnings: list[str] = []
+    if crosswalk.metadata.review_status != "reviewed":
+        warnings.append(
+            "Crosswalk review status is "
+            f"{crosswalk.metadata.review_status!r}; mapping is provisional."
+        )
+    if unmapped_fragments or unmapped_blocks:
+        if not allow_partial:
+            raise FemicHydrologyError(
+                "Crosswalk does not cover the dataset: "
+                f"{len(unmapped_fragments)} fragment(s) and "
+                f"{len(unmapped_blocks)} block(s) are unmapped."
+            )
+        warnings.append(
+            "Partial mapping: "
+            f"{len(unmapped_fragments)} fragment(s) and "
+            f"{len(unmapped_blocks)} block(s) are unmapped."
+        )
+    fragment_rows = tuple(
+        _fragment_mapping_row(fragment_id, fragments[fragment_id], fragment_map[fragment_id])
+        for fragment_id in sorted(fragment_map)
+    )
+    block_rows = tuple(
+        _block_mapping_row(block_id, block_map[block_id]) for block_id in sorted(block_map)
+    )
+    timestamp = generated_utc or datetime.now(UTC).isoformat()
+    material = {
+        "bundle_id": bundle.bundle_id,
+        "bundle_version": bundle.bundle_version,
+        "manifest_sha256": bundle.manifest_sha256,
+        "crosswalk_sha256": crosswalk.sha256,
+        "fragments": fragment_rows,
+        "blocks": block_rows,
+        "coverage": coverage,
+    }
+    mapping_id = (
+        "ws4-hydro-mapping-"
+        + hashlib.sha256(
+            json.dumps(material, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()[:16]
+    )
+    caveats = tuple(
+        {
+            "Mapping is an explicit reviewed crosswalk; it is not a spatial join "
+            "or a watershed inference.",
+            "A mapping is not a hydrologic validation; preserve the FEMIC "
+            "screening-only and hydrologist-review conditions.",
+            *crosswalk.metadata.caveats,
+        }
+    )
+    return HydrologyMapping(
+        mapping_id=mapping_id,
+        generated_utc=timestamp,
+        bundle_id=bundle.bundle_id,
+        bundle_version=bundle.bundle_version,
+        manifest_sha256=bundle.manifest_sha256,
+        crosswalk_id=crosswalk.metadata.crosswalk_id,
+        crosswalk_sha256=crosswalk.sha256,
+        review_status=crosswalk.metadata.review_status,
+        fragments=fragment_rows,
+        blocks=block_rows,
+        coverage=coverage,
+        warnings=tuple(warnings),
+        caveats=caveats,
+    )
+
+
+def write_hydrology_mapping(mapping: HydrologyMapping, out_dir: Path) -> dict[str, Path]:
+    """Write hydrology mapping CSVs and manifest.
+
+    Parameters
+    ----------
+    mapping : HydrologyMapping
+        Validated mapping.
+    out_dir : Path
+        Output directory.
+
+    Returns
+    -------
+    dict[str, Path]
+        Paths keyed by ``fragments``, ``blocks``, and ``manifest``.
+    """
+    output = out_dir.expanduser().resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    fragments_path = output / "hydrology_fragments.csv"
+    blocks_path = output / "hydrology_blocks.csv"
+    _write_csv(fragments_path, mapping.fragments, _FRAGMENT_COLUMNS)
+    _write_csv(blocks_path, mapping.blocks, _BLOCK_COLUMNS)
+    manifest_path = output / "hydrology_mapping.json"
+    manifest_path.write_text(
+        json.dumps(mapping.to_dict(), indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return {
+        "fragments": fragments_path,
+        "blocks": blocks_path,
+        "manifest": manifest_path,
     }
 
 
@@ -1178,3 +1619,287 @@ def _optional_float(value: object, field_name: str) -> float | None:
     if value is None:
         return None
     return _float(value, field_name)
+
+
+_FRAGMENT_COLUMNS = (
+    "fragment_id",
+    "block_id",
+    "unit_id",
+    "watershed_id",
+    "receptor_id",
+    "source",
+)
+_BLOCK_COLUMNS = ("block_id", "unit_id", "watershed_id", "receptor_id", "source")
+
+
+def _crosswalk_rows(
+    lines: list[str],
+    *,
+    digest: str,
+) -> tuple[HydrologyCrosswalkRow, ...]:
+    reader = csv.DictReader(lines)
+    if reader.fieldnames is None:
+        raise FemicHydrologyError("Crosswalk CSV has no header.")
+    required = {"fragment_id", "block_id", "unit_id", "watershed_id"}
+    if not required.issubset(reader.fieldnames):
+        raise FemicHydrologyError(
+            "Crosswalk CSV is missing required columns: "
+            + ", ".join(sorted(required - set(reader.fieldnames)))
+            + "."
+        )
+    rows: list[HydrologyCrosswalkRow] = []
+    seen: set[tuple[str, int]] = set()
+    for index, payload in enumerate(reader, start=2):
+        fragment_id = _optional_int(payload.get("fragment_id"))
+        block_id = _optional_int(payload.get("block_id"))
+        if (fragment_id is None) == (block_id is None):
+            raise FemicHydrologyError(
+                f"Crosswalk row {index} must set exactly one of fragment_id/block_id."
+            )
+        if fragment_id is not None:
+            key = ("fragment", fragment_id)
+        else:
+            assert block_id is not None
+            key = ("block", block_id)
+        if key in seen:
+            raise FemicHydrologyError(f"Duplicate crosswalk support {key[0]} {key[1]}.")
+        seen.add(key)
+        rows.append(
+            HydrologyCrosswalkRow(
+                fragment_id=fragment_id,
+                block_id=block_id,
+                unit_id=_text(payload.get("unit_id"), f"crosswalk row {index} unit_id"),
+                watershed_id=_text(
+                    payload.get("watershed_id"), f"crosswalk row {index} watershed_id"
+                ),
+                receptor_id=_optional_text(payload.get("receptor_id")),
+                notes=_optional_text(payload.get("notes")) or "",
+            )
+        )
+    if not rows:
+        raise FemicHydrologyError("Crosswalk CSV contains no mapping rows.")
+    return tuple(rows)
+
+
+def _crosswalk_metadata(
+    path: Path | None,
+    *,
+    fallback_id: str,
+    crosswalk_sha256: str,
+) -> HydrologyCrosswalkMetadata:
+    if path is None:
+        return HydrologyCrosswalkMetadata(
+            crosswalk_id=fallback_id,
+            created_utc="",
+            review_status="not_reviewed",
+            reviewed_by=None,
+            method="unspecified",
+            source="",
+            caveats=("No crosswalk review metadata was supplied.",),
+        )
+    payload = _read_json_object(path, context="crosswalk metadata")
+    if payload.get("schema_version") != HYDROLOGY_CROSSWALK_SCHEMA:
+        raise FemicHydrologyError(
+            f"Unsupported crosswalk metadata schema {payload.get('schema_version')!r}."
+        )
+    recorded_sha = _optional_text(payload.get("crosswalk_sha256"))
+    if recorded_sha is not None and recorded_sha.lower() != crosswalk_sha256.lower():
+        raise FemicHydrologyError("Crosswalk metadata checksum does not match the CSV.")
+    review_status = _text(payload.get("review_status"), "crosswalk review_status")
+    if review_status not in HYDROLOGY_CROSSWALK_REVIEW_STATUSES:
+        raise FemicHydrologyError(f"Unsupported crosswalk review status {review_status!r}.")
+    reviewed_by = _optional_text(payload.get("reviewed_by"))
+    if review_status == "reviewed" and reviewed_by is None:
+        raise FemicHydrologyError("Reviewed crosswalk metadata requires reviewed_by.")
+    return HydrologyCrosswalkMetadata(
+        crosswalk_id=_text(payload.get("crosswalk_id"), "crosswalk_id"),
+        created_utc=_text(payload.get("created_utc"), "crosswalk created_utc"),
+        review_status=review_status,
+        reviewed_by=reviewed_by,
+        method=_text(payload.get("method"), "crosswalk method"),
+        source=_optional_text(payload.get("source")) or "",
+        caveats=_strict_strings(payload.get("caveats"), "crosswalk caveats"),
+    )
+
+
+def _load_dataset_support(
+    dataset_root: Path,
+) -> tuple[dict[int, int], set[int]]:
+    fragments_path = dataset_root / "fragments.parquet"
+    blocks_path = dataset_root / "blocks.parquet"
+    if not fragments_path.is_file():
+        raise FemicHydrologyError(f"Dataset fragments are missing: {fragments_path}")
+    if not blocks_path.is_file():
+        raise FemicHydrologyError(f"Dataset blocks are missing: {blocks_path}")
+    try:
+        fragment_frame = pd.read_parquet(fragments_path)
+        block_frame = pd.read_parquet(blocks_path)
+    except (OSError, ValueError) as exc:
+        raise FemicHydrologyError(f"Unable to read dataset support tables: {exc}") from exc
+    for column in ("fragment_id", "block_id"):
+        if column not in fragment_frame.columns:
+            raise FemicHydrologyError(f"fragments.parquet is missing {column!r}.")
+    if "block_id" not in block_frame.columns:
+        raise FemicHydrologyError("blocks.parquet is missing 'block_id'.")
+    fragments: dict[int, int] = {}
+    for fragment_id, block_id in zip(
+        fragment_frame["fragment_id"],
+        fragment_frame["block_id"],
+        strict=True,
+    ):
+        parsed_fragment = _int(fragment_id, "fragment_id")
+        parsed_block = _int(block_id, "block_id")
+        if parsed_fragment in fragments:
+            raise FemicHydrologyError(f"Duplicate dataset fragment {parsed_fragment}.")
+        fragments[parsed_fragment] = parsed_block
+    blocks: set[int] = set()
+    for block_id in block_frame["block_id"]:
+        parsed_block = _int(block_id, "block_id")
+        if parsed_block in blocks:
+            raise FemicHydrologyError(f"Duplicate dataset block {parsed_block}.")
+        blocks.add(parsed_block)
+    unknown_blocks = sorted(set(fragments.values()) - blocks)
+    if unknown_blocks:
+        raise FemicHydrologyError(
+            "Dataset fragments reference unknown blocks: "
+            + ", ".join(str(value) for value in unknown_blocks)
+            + "."
+        )
+    return fragments, blocks
+
+
+def _bundle_domain_ids(
+    bundle: FemicHydrologyBundle,
+) -> tuple[dict[str, str], set[str], set[str]]:
+    domain = _bundle_payload(bundle, "domain")
+    ledger = _bundle_payload(bundle, "disturbance_ledger")
+    domain_watersheds = {
+        _text(item.get("watershed_id"), "domain watershed_id")
+        for item in _dict_list(domain.get("watersheds"), "domain watersheds")
+    }
+    receptors = {
+        _text(item.get("receptor_id"), "domain receptor_id")
+        for item in _dict_list(domain.get("receptors"), "domain receptors")
+    }
+    units = _dict_list(ledger.get("units"), "disturbance-ledger units")
+    if not units:
+        raise FemicHydrologyError(
+            "FEMIC disturbance ledger has no units; cannot validate the crosswalk."
+        )
+    unit_to_watershed: dict[str, str] = {}
+    for unit in units:
+        unit_id = _text(unit.get("unit_id"), "ledger unit_id")
+        watershed_id = _text(unit.get("watershed_id"), "ledger watershed_id")
+        previous = unit_to_watershed.get(unit_id)
+        if previous is not None and previous != watershed_id:
+            raise FemicHydrologyError(f"FEMIC ledger unit {unit_id!r} has conflicting watersheds.")
+        unit_to_watershed[unit_id] = watershed_id
+    watersheds = domain_watersheds | set(unit_to_watershed.values())
+    if not watersheds:
+        raise FemicHydrologyError("FEMIC domain has no watersheds.")
+    return unit_to_watershed, watersheds, receptors
+
+
+def _bundle_payload(
+    bundle: FemicHydrologyBundle,
+    role: str,
+) -> dict[str, object]:
+    artifact = bundle.artifacts.get(role)
+    if artifact is None:
+        raise FemicHydrologyError(f"Bundle has no {role} artifact.")
+    member = _resolve_member(bundle.bundle_dir, artifact.relative_path)
+    return _read_json_object(member, context=f"{role} artifact")
+
+
+def _dict_list(value: object, context: str) -> list[dict[str, object]]:
+    if value is None:
+        return []
+    if not isinstance(value, list):
+        raise FemicHydrologyError(f"{context} must be a list.")
+    result: list[dict[str, object]] = []
+    for index, item in enumerate(value, start=1):
+        if not isinstance(item, Mapping):
+            raise FemicHydrologyError(f"{context} entry {index} must be an object.")
+        result.append({str(key): entry for key, entry in item.items()})
+    return result
+
+
+def _strict_strings(value: object, context: str) -> tuple[str, ...]:
+    if value is None:
+        return ()
+    if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
+        raise FemicHydrologyError(f"{context} must be a list of text.")
+    return tuple(item.strip() for item in value if item.strip())
+
+
+def _mapping_record(
+    *,
+    bundle: FemicHydrologyBundle,
+    crosswalk: HydrologyCrosswalk,
+    unit_id: str,
+    watershed_id: str,
+    receptor_id: str | None,
+) -> dict[str, object]:
+    return {
+        "bundle_id": bundle.bundle_id,
+        "bundle_version": bundle.bundle_version,
+        "manifest_sha256": bundle.manifest_sha256,
+        "crosswalk_id": crosswalk.metadata.crosswalk_id,
+        "crosswalk_sha256": crosswalk.sha256,
+        "unit_id": unit_id,
+        "watershed_id": watershed_id,
+        "receptor_id": receptor_id,
+    }
+
+
+def _same_mapping(left: Mapping[str, object], right: Mapping[str, object]) -> bool:
+    return all(
+        left.get(key) == right.get(key) for key in ("unit_id", "watershed_id", "receptor_id")
+    )
+
+
+def _fragment_mapping_row(
+    fragment_id: int,
+    block_id: int,
+    record: Mapping[str, object],
+) -> dict[str, object]:
+    return {
+        "fragment_id": fragment_id,
+        "block_id": block_id,
+        "unit_id": record["unit_id"],
+        "watershed_id": record["watershed_id"],
+        "receptor_id": record["receptor_id"],
+        "source": record["source"],
+    }
+
+
+def _block_mapping_row(
+    block_id: int,
+    record: Mapping[str, object],
+) -> dict[str, object]:
+    return {
+        "block_id": block_id,
+        "unit_id": record["unit_id"],
+        "watershed_id": record["watershed_id"],
+        "receptor_id": record["receptor_id"],
+        "source": record["source"],
+    }
+
+
+def _write_csv(
+    path: Path,
+    rows: tuple[dict[str, object], ...],
+    columns: tuple[str, ...],
+) -> None:
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=columns, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def _optional_int(value: object) -> int | None:
+    if value is None:
+        return None
+    if isinstance(value, str) and not value.strip():
+        return None
+    return _int(value, "support_id")

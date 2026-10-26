@@ -75,3 +75,20 @@ parses. This catches stale pins without re-running FEMIC.
 
 Registration does not imply a watershed crosswalk, schedule lookup, or a
 flood-risk objective. Those remain P57.3+.
+
+## P57.3 mapping decision
+
+Mapping is an explicit reviewed crosswalk, not a spatial join. A CSV row names
+either one `fragment_id` or one `block_id`, plus a FEMIC `unit_id`,
+`watershed_id`, and optional `receptor_id`. Block rows expand to their
+fragments; block rows are derived from fragment rows only when every fragment in
+the block is mapped and all mappings agree.
+
+Review metadata is a separate document. Missing metadata becomes
+`not_reviewed` with a warning; `reviewed` requires a reviewer id. The mapping
+manifest records the bundle pin, crosswalk SHA-256, review state, coverage, and
+unmapped IDs.
+
+Complete coverage is required by default. `--allow-partial` is for exploratory
+mapping and records the gap rather than hiding it. No centroid, nearest
+watershed, or geometry join is used.

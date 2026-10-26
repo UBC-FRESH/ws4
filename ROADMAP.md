@@ -1669,12 +1669,12 @@ frequency fitting, or surrogate training.
   - [x] Revalidate a registered bundle against its pin.
   - [x] Add `ws4 hydrology register` and dataset `inspect|validate` modes.
   - [x] Add tests, design note, reference docs, roadmap, and changelog.
-- [ ] P57.3 Map WS4 support to FEMIC units, watersheds, and receptors (#401)
-  - [ ] Add crosswalk and metadata loaders with checksum and review-state records.
-  - [ ] Validate dataset/FEMIC IDs and derive fragment/block mappings safely.
-  - [ ] Write fragment/block CSVs and a deterministic mapping manifest.
-  - [ ] Add `ws4 hydrology map` and coverage/refusal reporting.
-  - [ ] Add tests, design note, reference docs, roadmap, and changelog.
+- [x] P57.3 Map WS4 support to FEMIC units, watersheds, and receptors (#401)
+  - [x] Add crosswalk and metadata loaders with checksum and review-state records.
+  - [x] Validate dataset/FEMIC IDs and derive fragment/block mappings safely.
+  - [x] Write fragment/block CSVs and a deterministic mapping manifest.
+  - [x] Add `ws4 hydrology map` and coverage/refusal reporting.
+  - [x] Add tests, design note, reference docs, roadmap, and changelog.
 
 Acceptance:
 

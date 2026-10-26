@@ -17,10 +17,13 @@ from .io.hydrology import (
     FemicHydrologyError,
     bundle_pin,
     load_femic_hydrology_bundle,
+    load_hydrology_crosswalk,
     load_registered_femic_hydrology_bundle,
+    map_femic_hydrology_to_dataset,
     register_femic_hydrology_bundle,
     validate_femic_hydrology_bundle,
     validate_registered_femic_hydrology,
+    write_hydrology_mapping,
 )
 from .io.lidar import (
     FemicLidarError,
@@ -985,6 +988,59 @@ def lidar_integrate(
 hydrology_app = typer.Typer(
     help="Register, inspect, and validate FEMIC hydrology response bundles."
 )
+
+
+@hydrology_app.command("map")
+def hydrology_map(
+    dataset: Path = typer.Option(
+        ..., "--dataset", exists=True, file_okay=False, help="Compiled WS4 dataset"
+    ),
+    crosswalk: Path = typer.Option(
+        ..., "--crosswalk", exists=True, dir_okay=False, help="Explicit crosswalk CSV"
+    ),
+    metadata: Path | None = typer.Option(
+        None,
+        "--metadata",
+        exists=True,
+        dir_okay=False,
+        help="Optional crosswalk review metadata JSON",
+    ),
+    out: Path = typer.Option(..., "--out", help="Mapping output directory"),
+    allow_partial: bool = typer.Option(
+        False, "--allow-partial", help="Record unmapped supports instead of failing"
+    ),
+) -> None:
+    """Map explicit crosswalk rows to FEMIC units, watersheds, and receptors."""
+    try:
+        bundle = load_registered_femic_hydrology_bundle(dataset)
+        loaded = load_hydrology_crosswalk(crosswalk, metadata_path=metadata)
+        mapping = map_femic_hydrology_to_dataset(
+            dataset,
+            bundle,
+            loaded,
+            allow_partial=allow_partial,
+        )
+        paths = write_hydrology_mapping(mapping, out)
+    except FemicHydrologyError as error:
+        print(f"[bold red]Hydrology mapping failed:[/] {error}")
+        raise typer.Exit(code=1) from error
+    print(f"mapping_id: {mapping.mapping_id}")
+    print(f"review_status: {mapping.review_status}")
+    print(f"fragments: {len(mapping.fragments)}")
+    print(f"blocks: {len(mapping.blocks)}")
+    coverage = mapping.coverage
+    unmapped_fragments = coverage.get("unmapped_fragments", [])
+    unmapped_blocks = coverage.get("unmapped_blocks", [])
+    print(
+        "unmapped_fragments: "
+        f"{len(unmapped_fragments) if isinstance(unmapped_fragments, list) else 0}"
+    )
+    print(f"unmapped_blocks: {len(unmapped_blocks) if isinstance(unmapped_blocks, list) else 0}")
+    for warning in mapping.warnings:
+        print(f"warning: {warning}")
+    print(f"fragments_csv: {paths['fragments']}")
+    print(f"blocks_csv: {paths['blocks']}")
+    print(f"manifest: {paths['manifest']}")
 
 
 @hydrology_app.command("register")
