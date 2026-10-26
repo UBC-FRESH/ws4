@@ -3,6 +3,7 @@
   "title": "Model builder",
   "panels": [
     "legend",
+    "lidar",
     "reports",
     "comparison",
     "search"

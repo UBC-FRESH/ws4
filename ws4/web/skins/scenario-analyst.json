@@ -3,6 +3,7 @@
   "title": "Scenario analyst",
   "panels": [
     "legend",
+    "lidar",
     "targets",
     "reports",
     "comparison",

@@ -243,3 +243,13 @@ path.block.compare-both { fill:#6b4c9a; }
 .search-detail h3 { font-size:.82rem; margin:.2rem 0; }
 .search-detail pre { background:#f7f9fb; padding:.35rem; overflow:auto; max-height:10rem; }
 .search-detail ul { margin:.2rem 0 .4rem 1rem; padding:0; }
+
+.lidar-meta { display:flex; flex-direction:column; gap:.25rem; margin:.4rem 0 .6rem; }
+.lidar-row { display:flex; gap:.6rem; justify-content:space-between; font-size:.8rem; border-bottom:1px solid var(--line); padding:.18rem 0; }
+.lidar-row span:first-child { color:var(--muted); }
+.lidar-row span:last-child { text-align:right; overflow-wrap:anywhere; }
+.lidar-field { display:flex; align-items:center; gap:.4rem; font-size:.8rem; margin:.4rem 0; }
+.lidar-field select { font:inherit; font-size:.8rem; max-width:14rem; }
+.lidar-legend { margin:.5rem 0; }
+.lidar-bar { height:.55rem; border-radius:.2rem; background:linear-gradient(90deg,#2b6cb0,#e53e3e); border:1px solid var(--line); }
+.lidar-ends { display:flex; justify-content:space-between; color:var(--muted); font-size:.75rem; margin-top:.15rem; }

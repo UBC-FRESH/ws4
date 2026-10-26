@@ -61,6 +61,7 @@ exists and the maintainer approves it.
 | P55 Final 0.2.0 release candidate | #388 | `feature/p55-final-rc` | complete |
 | P56 Disturbance event consumer | #393 | `feature/p56-disturbance-consumer` | complete |
 | P58 Forest carbon accounting and carbon-aware planning | #357 | `feature/p58-carbon` | complete |
+| P59 LiDAR in the web UI | #417 | `feature/p59-lidar-ui` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -1789,6 +1790,37 @@ Acceptance:
 - GCBM outputs can be ingested and compared without making FLINT a WS4 runtime dependency.
 
 Closeout report: `notes/reports/p58-closeout.md`.
+
+## Phase 59: LiDAR in the web UI
+
+Parent issue: #417
+Branch: `feature/p59-lidar-ui`
+Status: pr-open
+
+Goal: expose registered FEMIC LiDAR provenance, canonical block fields, block detail, and a
+read-only block choropleth in the web application, and repair the P52 overwrite path.
+
+- [x] P59.1 Add the LiDAR API and canonical field contract (#418)
+  - [x] Add the API and field-label helper
+  - [x] Join fields into the map response when requested
+  - [x] Repair overwrite and add the duplicate-column regression test
+- [x] P59.2 Add the LiDAR panel, map coloring, and block details (#419)
+  - [x] Add the tab, provenance card, and unavailable state
+  - [x] Add the field selector, scale, and legend
+  - [x] Add block-detail values and reset behavior
+- [x] P59.3 Verify real data, document, and close out (#420)
+  - [x] Regenerate the TFL 6 validation dataset without duplicate columns
+  - [x] Run the browser/API smoke
+  - [x] Verify the c5 fallback and write the close-out
+
+Acceptance:
+
+- A registered dataset shows bundle pin, CRS, licence, products, and fields.
+- A dataset without LiDAR shows an explicit unavailable state.
+- Selected fields colour blocks and appear in the block detail.
+- Overwrite leaves one canonical column per field.
+- The TFL 6 validation dataset and c5 fallback are both exercised.
+- `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes
 

@@ -3,6 +3,7 @@
   "title": "Scenario browser",
   "panels": [
     "legend",
+    "lidar",
     "reports",
     "comparison",
     "search"

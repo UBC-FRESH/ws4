@@ -172,3 +172,12 @@ Shared Parity
 The WS4 and FHOPS consumer contracts were validated against FEMIC bundle
 ``lidarbc-995fb1f771f4d7fe`` over seven shared TFL 6 polygons. Slope and CHM
 mean/p95 values matched exactly (maximum absolute difference ``0.0``).
+
+Web UI
+------
+
+A dataset registered and integrated through P52 exposes its canonical block fields in the
+web application's **LiDAR** tab. The service reads the manifest pin and joins the fields by
+`block_id`; it does not open the rasters or re-run the mapping. See :doc:`web` for the
+endpoint and layer behavior. The P52 overwrite path drops old fields before joining, so a
+re-integrated dataset carries one canonical column per field rather than `_x`/`_y` copies.

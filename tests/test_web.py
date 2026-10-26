@@ -1376,3 +1376,71 @@ def test_low_zoom_blocks_are_sampled_but_detail_is_not() -> None:
     assert sampled[0] == 0
     assert _sample_low_zoom(list(range(10)), "blocks", 6) == list(range(10))
     assert _sample_low_zoom(list(range(10)), "treatments", 5) == list(range(10))
+
+
+def test_the_lidar_api_and_map_join_use_canonical_block_fields(tmp_path: Path) -> None:
+    """A registered dataset exposes its fields and joins them by block id."""
+    client, _ = _app(tmp_path)
+    dataset = tmp_path / "dataset"
+    manifest = {
+        "schema_version": "0.1",
+        "metadata": {
+            "lidar_products": {
+                "bundle_id": "lidarbc-test",
+                "bundle_version": "1.0",
+                "source_id": "lidarbc",
+                "licence_id": "OGL-BC",
+                "native_crs": "EPSG:3005",
+                "products": {"slope": {"sha256": "a"}, "chm": {"sha256": "b"}},
+            },
+            "lidar_fields": {
+                "bundle_id": "lidarbc-test",
+                "block_fields": ["lidar_slope_mean", "lidar_chm_p95"],
+                "fragment_fields": ["lidar_slope_mean"],
+            },
+        },
+    }
+    (dataset / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    pd.DataFrame(
+        [
+            {
+                "block_id": 1,
+                "lidar_slope_mean_x": 99.0,
+                "lidar_slope_mean_y": 14.0,
+                "lidar_chm_p95": 21.5,
+            },
+            {
+                "block_id": 2,
+                "lidar_slope_mean_x": 98.0,
+                "lidar_slope_mean_y": 8.0,
+                "lidar_chm_p95": 12.5,
+            },
+        ]
+    ).to_parquet(dataset / "blocks.parquet")
+    info = client.get("/api/lidar").json()
+    assert info["available"] is True
+    assert info["bundle_id"] == "lidarbc-test"
+    assert info["licence_id"] == "OGL-BC"
+    assert [field["name"] for field in info["fields"]] == [
+        "lidar_slope_mean",
+        "lidar_chm_p95",
+    ]
+    assert info["block_count"] == 2
+    body = client.get("/api/runs/run1/map", params={"year": 0, "lidar": True}).json()
+    assert body["lidar"] is True
+    properties = {
+        feature["properties"]["block_id"]: feature["properties"] for feature in body["features"]
+    }
+    # The canonical field is absent here, so the newest suffixed copy is the value.
+    assert properties[1]["lidar_slope_mean"] == 14.0
+    assert properties[2]["lidar_chm_p95"] == 12.5
+
+
+def test_the_lidar_api_is_explicitly_unavailable_without_fields(tmp_path: Path) -> None:
+    """A dataset without LiDAR remains a valid application state."""
+    client, _ = _app(tmp_path)
+    body = client.get("/api/lidar").json()
+    assert body["available"] is False
+    assert body["fields"] == []
+    assert body["block_count"] == 0
+    assert client.get("/api/runs/run1/map", params={"year": 0, "lidar": True}).status_code == 200

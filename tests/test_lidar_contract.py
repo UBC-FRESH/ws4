@@ -625,6 +625,11 @@ def test_integrate_lidar_fields_into_dataset(tmp_path: Path) -> None:
             paths["fragments"],
             block_mapping_path=paths["blocks"],
         )
+    # Reproduce a dataset written by the old overwrite path, which left suffixed copies.
+    legacy_fragments = pd.read_parquet(dataset / "fragments.parquet")
+    legacy_fragments = legacy_fragments.rename(columns={"lidar_chm_mean": "lidar_chm_mean_x"})
+    legacy_fragments["lidar_chm_mean_y"] = legacy_fragments["lidar_chm_mean_x"]
+    legacy_fragments.to_parquet(dataset / "fragments.parquet", index=False)
     overwritten = integrate_lidar_mapping_into_dataset(
         dataset,
         paths["fragments"],
@@ -632,6 +637,10 @@ def test_integrate_lidar_fields_into_dataset(tmp_path: Path) -> None:
         overwrite=True,
     )
     assert overwritten.fragment_rows == 3
+    fragments_table = pd.read_parquet(dataset / "fragments.parquet")
+    lidar_columns = [name for name in fragments_table.columns if name.startswith("lidar_")]
+    assert "lidar_chm_mean" in lidar_columns
+    assert not [name for name in lidar_columns if name.endswith(("_x", "_y"))]
 
 
 def test_integration_rejects_unknown_ids_and_missing_registration(tmp_path: Path) -> None:
