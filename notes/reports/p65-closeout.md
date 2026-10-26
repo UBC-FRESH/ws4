@@ -2,7 +2,7 @@
 
 Phase: P65, Editable target charts
 Parent issue: #464
-Pull request: this P65 PR
+Pull request: #469
 Status: queued for approval. Not merged.
 Date: 2026-10-26
 
