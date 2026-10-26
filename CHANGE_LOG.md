@@ -2684,6 +2684,6 @@ issue comments.
   `notes/reports/p579-gcbm-results.md`. Dashboard **GREEN**.
 
 - P57.10: queued the phase closeout. The closeout report is
-  `notes/reports/p57-closeout.md`; the roadmap status is `pr-open` and pull request #TBD is queued. Remaining deferred
+  `notes/reports/p57-closeout.md`; the roadmap status is `pr-open` and pull request #408 is queued. Remaining deferred
   items are the full TSA24 landscape search, the same-landscape GCBM comparison (needs
   P115.4), species-resolved curves/crosswalk review, and CBM4. Dashboard **GREEN**.
