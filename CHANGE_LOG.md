@@ -2786,3 +2786,14 @@ issue comments.
   parent #395 are closed with this merge cited. The next recommendation is a
   public-watershed pilot/tail-check hardening phase, or FHOPS Phase 15 after its
   P14 LidarBC phase merges.
+
+- P59.1: added FEMIC validation-evidence readiness reporting.
+  `assess_femic_hydrology_readiness` reads optional `validation_report` and
+  `model_card` artifacts and reports `not_available`, `provisional`,
+  `conditionally_ready`, `ready`, or `blocked`, with review status, usable fits,
+  tail-check failures, benchmark counts, and a deterministic evidence digest.
+  Added `ws4 hydrology readiness` for direct bundles and registered datasets.
+  Missing evidence is never treated as approval; tail failures always block.
+  Eight new tests cover missing, provisional, blocked, reviewed, conditional,
+  malformed/mismatched, deterministic, and CLI paths. Dashboard **GREEN**
+  (lint, format, types, 121.43 s tests, validator, docs, docstrings).

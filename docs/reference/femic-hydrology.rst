@@ -138,6 +138,33 @@ an invalid bundle. ``inspect`` prints the bundle pin and artifact roles for a
 valid bundle; an invalid bundle prints the validation report and exits non-zero.
 Pass exactly one of a direct ``BUNDLE`` argument or ``--dataset``.
 
+Validation Evidence
+-------------------
+
+P59.1 reads the optional FEMIC validation-report and model-card artifacts. The
+readiness command is a report, not a gate:
+
+.. code-block:: bash
+
+   ws4 hydrology readiness data/femic/hydrology-response-2026.10.0 --json
+   ws4 hydrology readiness --dataset build/compiled --json
+
+Statuses:
+
+- ``not_available``: no validation report or model card is packaged.
+- ``provisional``: evidence exists but the model card is not reviewed.
+- ``conditionally_ready``: reviewed with conditions.
+- ``ready``: reviewed, with a recorded hydrologist review and no tail-check
+  failures.
+- ``blocked``: a tail-check failure is recorded.
+
+The report carries the producer validation/model-card IDs, review status,
+usable fits, tail-check failures, benchmark pass/fail/not-evaluated counts,
+full-pilot readiness, and a deterministic evidence digest. Missing evidence is
+reported as missing; it is never treated as approval. The P59.1 command does
+not refuse screening or optimization; a later policy task decides how the
+evidence gates use.
+
 Mapping WS4 Support
 --------------------
 

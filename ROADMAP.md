@@ -1778,12 +1778,12 @@ Status: active
 Goal: read FEMIC validation-report and model-card evidence, report review and
 tail-check state, and prepare an explicit policy for provisional use.
 
-- [ ] P59.1 Read and report FEMIC validation and model-card evidence (#416)
-  - [ ] Add evidence dataclasses and readiness assessment.
-  - [ ] Parse validation-report and model-card artifacts with schema checks.
-  - [ ] Add `ws4 hydrology readiness` direct/dataset modes.
-  - [ ] Add tests and fixture variants.
-  - [ ] Add design note, reference docs, roadmap, and changelog.
+- [x] P59.1 Read and report FEMIC validation and model-card evidence (#416)
+  - [x] Add evidence dataclasses and readiness assessment.
+  - [x] Parse validation-report and model-card artifacts with schema checks.
+  - [x] Add `ws4 hydrology readiness` direct/dataset modes.
+  - [x] Add tests and fixture variants.
+  - [x] Add design note, reference docs, roadmap, and changelog.
 
 Acceptance:
 
