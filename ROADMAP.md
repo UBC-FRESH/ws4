@@ -1681,12 +1681,18 @@ frequency fitting, or surrogate training.
   - [x] Join response ratios and flood-risk rows; refuse outside tolerance.
   - [x] Add CSV/JSON writers and `ws4 hydrology screen`.
   - [x] Add tests, design note, reference docs, roadmap, and changelog.
-- [ ] P57.5 Price optional flood-risk accounts in the optimizer (#407)
-  - [ ] Add the flood-screen config and `FloodRiskModel`.
-  - [ ] Append `flood.*` rows and price normal targets on them.
-  - [ ] Refuse out-of-envelope schedules with the configured penalty.
-  - [ ] Add `--flood-screen-config` to optimize/watch/calibrate.
-  - [ ] Add tests, design note, reference docs, roadmap, and changelog.
+- [x] P57.5 Price optional flood-risk accounts in the optimizer (#407)
+  - [x] Add the flood-screen config and `FloodRiskModel`.
+  - [x] Append `flood.*` rows and price normal targets on them.
+  - [x] Refuse out-of-envelope schedules with the configured penalty.
+  - [x] Add `--flood-screen-config` to optimize/watch/calibrate.
+  - [x] Add tests, design note, reference docs, roadmap, and changelog.
+- [ ] P57.6 Validate, document, and close out the hydrology consumer phase (#410)
+  - [ ] Run the full hydrology contract suite and dashboard.
+  - [ ] Record end-to-end evidence and limitations.
+  - [ ] Write the close-out report and set P57 status to `pr-open`.
+  - [ ] Update changelog and post closeout comments.
+  - [ ] Queue the stacked PRs for maintainer approval.
 
 Acceptance:
 
