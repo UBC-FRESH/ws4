@@ -3,7 +3,7 @@
 Phase: P61, Carbon and libcbm in the web UI
 Parent issue: #430
 Pull request: #436
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-26 as `b61224a`.
 Date: 2026-10-26
 
 ## Recommendation
