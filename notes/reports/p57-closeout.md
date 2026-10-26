@@ -2,11 +2,11 @@
 
 Phase: P57 Consume FEMIC hydrology response bundles
 Parent issue: #395
-Pull request: #411, `feature/p57-closeout` into `main`
+Pull request: #411, `feature/p57-closeout` into `main`; squash-merged as `75399d3`
 Evidence head: `c35af30` (P57.5), plus the consolidation and main-merge commits
 Report commit: the commit that adds this report. Its CI run is posted on the pull request.
 Date: 2026-10-26
-Status: approved for single-phase squash merge; not merged.
+Status: merged and closed on 2026-10-26 as `75399d3`.
 
 ## Recommendation
 

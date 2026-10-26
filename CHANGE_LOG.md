@@ -2779,3 +2779,10 @@ issue comments.
 - P58 renumbering: the carbon phase was opened as P51 and then P57; both numbers were already
   claimed on `main` or by the active hydrology phase. A follow-up renumbers the carbon phase,
   its reports, roadmap section, and issue labels to P58. No runtime code or evidence changed.
+
+- P57 close-out merged: pull request #411 squash-merged as `75399d3`; the six
+  P57 branches were deleted. The phase report is
+  `notes/reports/p57-closeout.md`, and P57 is marked complete. Child issues and
+  parent #395 are closed with this merge cited. The next recommendation is a
+  public-watershed pilot/tail-check hardening phase, or FHOPS Phase 15 after its
+  P14 LidarBC phase merges.
