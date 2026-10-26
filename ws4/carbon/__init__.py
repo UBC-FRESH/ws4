@@ -17,6 +17,7 @@ from .fertilization import (
     load_fertilization_config,
     with_fertilization_curves,
     with_fertilization_disturbances,
+    with_fertilization_recovery,
 )
 from .gcbm import (
     GcbmResults,
@@ -114,6 +115,7 @@ __all__ = [
     "validate_carbon_package",
     "with_fertilization_curves",
     "with_fertilization_disturbances",
+    "with_fertilization_recovery",
     "write_carbon_run",
     "write_gcbm_results",
     "write_sit_tables",

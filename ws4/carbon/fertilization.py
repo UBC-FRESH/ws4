@@ -332,7 +332,9 @@ def with_fertilization_curves(
     rows to a new target track. The target yield uses the materialized curve for
     the leading species and preserves the source species shares for any other
     species. The dataset treatment table gains a source-to-target transition, and
-    the disturbance reset age is ``-1`` so the stand age is preserved.
+    the disturbance reset age is ``-1`` so the stand age is preserved. A matching
+    recovery transition returns the target track to the source track after the
+    response window.
 
     Parameters
     ----------
@@ -463,6 +465,17 @@ def with_fertilization_curves(
                 "retain": 0,
             }
         )
+        new_treatments.append(
+            {
+                "track_id": next_track_id,
+                "begin": 0,
+                "end": 9999,
+                "treatment": _recovery_treatment(application.treatment),
+                "new_track": source_id,
+                "offset": 0,
+                "retain": 0,
+            }
+        )
         next_track_id += 1
     if new_tracks:
         track_frame = pd.concat([track_frame, pd.DataFrame(new_tracks)], ignore_index=True)
@@ -478,6 +491,18 @@ def with_fertilization_curves(
         for row in config.disturbance_rows(transition_reset_age=-1)
         if str(row["user_dist_type"]).lower() not in present
     ]
+    for treatment in FERTILIZATION_TREATMENTS:
+        recovery = _recovery_treatment(treatment)
+        if recovery.lower() not in present:
+            rows.append(
+                {
+                    "user_dist_type": recovery,
+                    "default_dist_type": "Natural succession",
+                    "removes_biomass": "false",
+                    "transition_reset_age": -1,
+                    "regen_delay": 0,
+                }
+            )
     if rows:
         disturbance_frame = pd.concat(
             [disturbance_frame, pd.DataFrame(rows)],
@@ -489,6 +514,96 @@ def with_fertilization_curves(
     tables["curve_carbon_map"] = curves
     tables["disturbance_types"] = disturbance_frame
     return replace(package, tables=tables), track_frame, treatment_frame
+
+
+def with_fertilization_recovery(
+    schedule: pd.DataFrame,
+    fragments: pd.DataFrame,
+    tracks: pd.DataFrame,
+    config: FertilizationConfig,
+) -> pd.DataFrame:
+    """Append recovery events that end the temporary curve response.
+
+    Parameters
+    ----------
+    schedule : pandas.DataFrame
+        The original schedule with ``block_id``, ``treatment``, and ``offset``.
+    fragments : pandas.DataFrame
+        The block fragments, used to identify the source track.
+    tracks : pandas.DataFrame
+        The dataset tracks, used to map ``track_id`` to ``track_name``.
+    config : FertilizationConfig
+        Fertilization assumptions and curve applications.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The schedule with one recovery event per block, treatment, and target
+        track at ``offset + response_years``. Each recovery row carries the target
+        track's classifier and the source track's area. The original schedule is
+        returned when there are no curve applications or no matching events.
+    """
+    if not config.applications or schedule.empty:
+        return schedule
+    required = {"block_id", "treatment", "offset"}
+    if not required.issubset(schedule.columns) or not {"track_id", "name"}.issubset(tracks.columns):
+        return schedule
+    applications = {
+        (application.treatment, application.source_track): application
+        for application in config.applications
+    }
+    track_names = {int(str(row.track_id)): str(row.name) for row in tracks.itertuples(index=False)}
+    block_fragments = {
+        int(str(block)): frame for block, frame in fragments.groupby("block_id", sort=False)
+    }
+    records: dict[tuple[int, str, str], dict[str, object]] = {}
+    for event in schedule.itertuples(index=False):
+        treatment = str(event.treatment).strip().lower()
+        if treatment not in FERTILIZATION_TREATMENTS:
+            continue
+        block_id = int(str(event.block_id))
+        block_frame = block_fragments.get(block_id)
+        if block_frame is None:
+            continue
+        offset = int(str(event.offset)) + config.response_years
+        for fragment in block_frame.itertuples(index=False):
+            track_name = track_names.get(int(str(fragment.track_id)))
+            if track_name is None:
+                continue
+            application = applications.get((treatment, track_name))
+            if application is None:
+                continue
+            key = (block_id, treatment, application.target_track)
+            record = records.setdefault(
+                key,
+                {
+                    "block_id": block_id,
+                    "treatment": _recovery_treatment(treatment),
+                    "offset": offset,
+                    "target_track": application.target_track,
+                    "target_area_ha": 0.0,
+                },
+            )
+            record["target_area_ha"] = float(str(record["target_area_ha"])) + float(
+                str(fragment.area_ha)
+            )
+    if not records:
+        return schedule
+    frame = schedule.copy()
+    for column in ("target_track", "target_area_ha"):
+        if column not in frame.columns:
+            frame[column] = None
+    rows: list[dict[str, object]] = []
+    for record in records.values():
+        row = dict.fromkeys(frame.columns, None)
+        row.update(record)
+        rows.append(row)
+    return pd.concat([frame, pd.DataFrame(rows, columns=frame.columns)], ignore_index=True)
+
+
+def _recovery_treatment(treatment: str) -> str:
+    """Return the synthetic recovery treatment name."""
+    return f"{treatment}_recover"
 
 
 def _read_fertilized_curve(path: Path, treatment: str) -> pd.DataFrame:

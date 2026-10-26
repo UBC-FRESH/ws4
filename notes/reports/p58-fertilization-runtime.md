@@ -12,7 +12,9 @@ and in the optimizer ledger.
 - **Curve mode.** A fertilization YAML may list materialized curve applications
   (`treatment`, `source_track`, optional `target_track`, `curve`). WS4 adds the target
   track and its fertilized yield/curve rows in memory, adds a source-to-target transition,
-  and sets the transition reset age to `-1` so the stand keeps its age.
+  and sets the transition reset age to `-1` so the stand keeps its age. A synthetic
+  recovery event at `offset + response_years` returns the target track to the source track,
+  again preserving age, so the curve uplift is temporary.
 - **Multiplier fallback.** Without applications, an `f1`/`f2`/`f3` event applies the
   configured growth multiplier for the response window.
 - **Emissions.** `fertilization.area_ha`, `dose_kg_n`, `co2_t`, `ch4_t`, `n2o_t`, and
@@ -37,8 +39,9 @@ accounts.
     `AU(2401005)+IFM(unmanaged)+ORIGIN(natural)+SILV_STATE(baseline)+RETENTION(0)+treatment()`
     was materialized with `SW`, site index 20, response age 40;
   - the compiled SIT transitions show `f1` with `reset_age=-1` to the `+F1` target
-    track;
-  - the full 14-step curve run writes `fertilization.co2e_t = 215.007` for 22.3 ha and
+    track, and `f1_recover` at time step 11 back to the source track with the same
+    reset age;
+  - the full 11-step curve run writes `fertilization.co2e_t = 93.1474` for 17 ha and
     records `"mode": "curve"` plus the application in the manifest;
   - the block ledger for block 424 (17.0 ha) reports a `+1.0466 tC` ecosystem delta at
     offset 14 and `93.1474 tCO2e` of fertilization emissions.

@@ -15,6 +15,7 @@ from ws4.carbon.fertilization import (
     load_fertilization_config,
     with_fertilization_curves,
     with_fertilization_disturbances,
+    with_fertilization_recovery,
 )
 
 from test_carbon_sit import _schedule, _write_dataset, _write_package
@@ -254,6 +255,7 @@ def test_materialized_curve_transition_preserves_age(tmp_path: Path) -> None:
         config,
     )
     schedule = pd.DataFrame({"block_id": [2], "treatment": ["f1"], "offset": [0]})
+    schedule = with_fertilization_recovery(schedule, fragments, tracks, config)
     tables = build_sit_tables_from_tables(
         augmented,
         fragments,
@@ -261,7 +263,7 @@ def test_materialized_curve_transition_preserves_age(tmp_path: Path) -> None:
         treatments,
         schedule,
     )
-    fertilized = run_libcbm(augmented, tables, n_steps=3)
+    fertilized = run_libcbm(augmented, tables, n_steps=12)
     baseline_tables = build_sit_tables_from_tables(
         package,
         fragments,
@@ -269,10 +271,15 @@ def test_materialized_curve_transition_preserves_age(tmp_path: Path) -> None:
         base_treatments,
         pd.DataFrame({"block_id": [], "treatment": [], "offset": []}),
     )
-    baseline = run_libcbm(package, baseline_tables, n_steps=3)
+    baseline = run_libcbm(package, baseline_tables, n_steps=12)
 
     assert "track2+F1" in set(fertilized.classifiers["track"])
+    at_event = fertilized.classifiers.loc[fertilized.classifiers["timestep"] == 1]
+    assert "track2+F1" in set(at_event["track"])
+    at_recovery = fertilized.classifiers.loc[fertilized.classifiers["timestep"] == 11]
+    assert "track2" in set(at_recovery["track"])
     assert 21 in set(fertilized.state.loc[fertilized.state["timestep"] == 1, "age"])
+    assert 31 in set(fertilized.state.loc[fertilized.state["timestep"] == 11, "age"])
     assert (
         fertilized.pools.groupby("timestep")["HardwoodMerch"].sum().iloc[-1]
         > baseline.pools.groupby("timestep")["HardwoodMerch"].sum().iloc[-1]

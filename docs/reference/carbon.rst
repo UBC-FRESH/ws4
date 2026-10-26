@@ -238,7 +238,11 @@ The curve is the CSV written by ``femic carbon fertilization-curve``. WS4 copies
 source track's classifier, map, yield, and curve rows to the target track, replaces the
 leading-species yield with the materialized curve, and adds a transition from the source
 track. The transition uses ``reset_age: -1`` so the stand keeps its age; CBM then grows
-the same stand on the fertilized curve. ``target_track`` is optional and defaults to
+the same stand on the fertilized curve. WS4 also adds a recovery event at
+``offset + response_years`` that transitions the target track back to the source track,
+again without resetting the age, so the growth uplift is temporary. The recovery event is
+visible in the ``--audit-sit`` event and transition tables.
+``target_track`` is optional and defaults to
 ``<source_track>+<TREATMENT>``. A curve applies to every block on that source track that
 receives the treatment. The treatment event still updates CBM's disturbance clock, so an
 eligibility rule based on years since disturbance sees fertilization as an event; the

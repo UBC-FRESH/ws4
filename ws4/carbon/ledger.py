@@ -21,6 +21,7 @@ from .fertilization import (
     fertilization_accounts,
     with_fertilization_curves,
     with_fertilization_disturbances,
+    with_fertilization_recovery,
 )
 from .libcbm import carbon_accounts, run_libcbm
 from .package import CarbonPackage
@@ -226,6 +227,13 @@ class CarbonLedger:
                 "offset": [offset for _treatment, offset in chain],
             }
         )
+        if self.fertilization is not None and self.fertilization.uses_curves:
+            schedule = with_fertilization_recovery(
+                schedule,
+                fragments,
+                self._tracks,
+                self.fertilization,
+            )
         tables = build_sit_tables_from_tables(
             self.package,
             fragments,

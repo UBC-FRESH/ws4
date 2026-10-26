@@ -30,6 +30,7 @@ from .carbon import (
     run_libcbm,
     with_fertilization_curves,
     with_fertilization_disturbances,
+    with_fertilization_recovery,
     write_carbon_run,
     write_gcbm_results,
     write_sit_tables,
@@ -232,6 +233,7 @@ def carbon(
     try:
         loaded = load_carbon_package(package)
         run_fertilization = None
+        simulation_schedule = schedule_frame
         if fertilization_config is not None:
             fertilization = load_fertilization_config(fertilization_config)
             if fertilization.uses_curves:
@@ -242,12 +244,18 @@ def carbon(
                     treatments,
                     fertilization,
                 )
+                simulation_schedule = with_fertilization_recovery(
+                    schedule_frame,
+                    fragments,
+                    tracks,
+                    fertilization,
+                )
                 tables = build_sit_tables_from_tables(
                     loaded,
                     fragments,
                     tracks,
                     treatments,
-                    schedule_frame,
+                    simulation_schedule,
                 )
             else:
                 loaded = with_fertilization_disturbances(loaded, fertilization)
@@ -255,6 +263,8 @@ def carbon(
                 tables = build_sit_tables(loaded, dataset, schedule_frame)
         else:
             tables = build_sit_tables(loaded, dataset, schedule_frame)
+        if years is None and not simulation_schedule.empty:
+            n_steps = max(n_steps, int(simulation_schedule["offset"].max()) + 1)
         if audit_sit:
             write_sit_tables(tables, out / "carbon_sit")
         run = run_libcbm(
