@@ -3177,3 +3177,9 @@ issue comments.
   live runs. Account/period/min/max/status sorting preserves edits and target indices;
   min/max weights moved to the detail row. c5 and TSA 46 checks passed; dashboard GREEN;
   UI `v78`.
+
+- P71 target triage: pull request #516 squash-merged as `fd50042`. Plan now shows a
+  failing-first summary above the table and chart canvas, combines account and
+  status filters while preserving hidden edits, and can bulk-pin visible failing
+  targets or unpin the visible view. c5 and TSA 46 checks passed; dashboard GREEN;
+  UI `v79`.

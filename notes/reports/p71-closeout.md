@@ -6,7 +6,7 @@ Pull request: #516, `feature/p71-target-triage` into `main`
 Evidence head: `eb47bb9`, the head that CI run `40575401627` covers
 Report commit: the commit that adds this report. Its CI run is posted on the pull request.
 Date: 2026-10-27
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-27 as `fd50042`.
 
 ## Recommendation
 
