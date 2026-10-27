@@ -70,7 +70,7 @@ exists and the maintainer approves it.
 | P65 Editable target charts | #464 | `feature/p65-editable-targets` | complete |
 | P66 Assistant panel visibility | #473 | `feature/p66-assistant-visibility` | complete |
 | P67 Target chart period hit zones | #479 | `feature/p67-target-hit-zone` | complete |
-| P68 Map visual hierarchy | #486 | `feature/p68-map-hierarchy` | pr-open |
+| P68 Map visual hierarchy | #486 | `feature/p68-map-hierarchy` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2101,7 +2101,7 @@ Acceptance:
 
 Parent issue: #486
 Branch: `feature/p68-map-hierarchy`
-Status: pr-open
+Status: complete
 
 Goal: make the map readable as an analytical surface: neutral untreated blocks, a clear treated
 accent, selected-block emphasis, an on-map legend, and a cleaner layer panel.

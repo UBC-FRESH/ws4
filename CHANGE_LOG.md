@@ -3115,3 +3115,10 @@ issue comments.
   `examples/species_tfl6`. Verification: 7 species tests pass; dashboard GREEN
   (lint 0.08 s, format 0.07 s, types 1.18 s, tests 137.86 s, validator 0.84 s,
   docs 3.91 s, docstrings 2.82 s). No objective change.
+
+- P68 map visual hierarchy: pull request #491 squash-merged as `694232d`. Untreated
+  blocks use a neutral fill, treated blocks keep the red accent, selection has a dark
+  outline in MapLibre and SVG, and an on-map legend carries the layer, counts, and a
+  treated-only toggle. Map-engine and unavailable-layer controls are compact disclosures.
+  Browser smoke passed on c5 (1,171 treated / 11,396 untreated) and TSA 46 (2,427 /
+  167,127); dashboard GREEN. UI `v76`.
