@@ -72,3 +72,10 @@ same-footprint data is the remaining prerequisite.
   `DisturbanceTypeDimension`, `ClassifierSetDimension`).
 - GCBM flux indicators are retained in `gcbm_fluxes.csv`; the account layer currently
   uses pools plus stock change, not a full flux closure.
+
+## Later status (2026-10-27)
+
+The same-footprint TSA46 500-block coarse bridge was prepared and run under the FEMIC
+walltowall lane (`carbon-handoff/gcbm-tsa46-500-coarse/`). It is a format and readiness
+check, not a numerical parity result. GCBM and libcbm are separate CFS CBM
+implementations; WS4 does not target equality with GCBM.

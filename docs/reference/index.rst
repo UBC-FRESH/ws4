@@ -25,7 +25,9 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    * - :doc:`roads`
      - The network tables, least-cost routing, and the route accounts.
    * - :doc:`carbon`
-     - The FEMIC carbon package contract, its tables, and the track-name join.
+     - The FEMIC package contract, SIT compile, libcbm runtime, optimizer ledger,
+       fertilization, HWP lifecycle and system accounts, carbon yield curves, and the
+       GCBM bridge boundary.
    * - :doc:`dhi`
      - Dynamic Habitat Index ingest, account semantics, provenance, and web layer.
    * - :doc:`structure-habitat`

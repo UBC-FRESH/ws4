@@ -39,8 +39,10 @@ weights rescaled so the terms' peaks are comparable. See :doc:`write-targets`.
 **Which account do I target?**
 
 Standing values are ``feature.*``; what treatments produced are ``product.*``; the shape of the map
-is ``patch.*``; routed costs are ``route.*``. Run one simulation on an empty schedule and look at
-``account_values.csv``: that is the complete list of what your dataset can report.
+is ``patch.*``; routed costs are ``route.*``; carbon is ``carbon.*``, and with an HWP config the
+whole-sector balance is ``carbon.system.*`` and ``carbon.co2e.system.*``. Run one simulation on an
+empty schedule and look at ``account_values.csv``: that is the complete list of what your dataset
+can report.
 
 **Why is a patch or route run so much slower?**
 
@@ -69,6 +71,33 @@ not help the numeric core, which holds the GIL. See :doc:`automate-a-study`.
 
 No. It is a contract with a manifest that records the inputs' digests, and every command re-validates
 it. Change the inputs or the recipe and recompile. See :doc:`prepare-a-dataset`.
+
+**How do I add carbon to a study?**
+
+Use a FEMIC carbon package with ``ws4 carbon``, or ``--carbon-package`` on the optimizer.
+The package joins by exact track name, so rebuild it against the compiled dataset when the
+matrix changes. See :doc:`run-carbon` and :doc:`../reference/carbon`.
+
+**How do I count harvested wood products, half-life, and displacement?**
+
+Add ``--hwp-config`` to a carbon run or ``--carbon-hwp`` to an optimization. The public
+assumptions live in FEMIC's ``config/carbon/hwp.bc.yaml``. The model reports product
+pools, end-of-life emissions, displacement, and whole-system carbon. The parameters are
+scenario evidence, not a single calibrated truth; run a range. See
+:doc:`../reference/carbon`.
+
+**Why are carbon yield curves not the optimizer's result?**
+
+They are an audit and interchange artifact derived from single-stand libcbm runs using the
+simulated-clearcut method. The optimizer prices the exact block ledger; a curve-based LP
+or surrogate is a different path and must be verified with ``ws4 carbon``. See
+:doc:`run-carbon`.
+
+**Can I compare WS4 carbon with GCBM?**
+
+You can read and compare tabular GCBM output, but the comparison is a bridge check, not a
+parity claim. GCBM and libcbm are separate CFS implementations; do not tune one to match
+the other. See :doc:`../guides/limitations-and-boundaries`.
 
 **Where do I report a problem, or read what is deliberately missing?**
 

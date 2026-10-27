@@ -106,6 +106,41 @@ the linkages file.
 **Build cost appears in one period only.**
 That is the model: build once, maintain while used.
 
+Carbon
+------
+
+**``ModuleNotFoundError: libcbm``.**
+Carbon is an optional extra. Install ``ws4[carbon]``; a core install deliberately does not
+import the engine.
+
+**A carbon run fails on ``CARBON-UNMATCHED-TRACK``.**
+The package and compiled dataset disagree on an exact track name. Rebuild the package
+against that dataset; do not rename a track by hand.
+
+**The run complains that the CBM defaults hash differs.**
+The package and the installed defaults database are not the same. Rebuild the package, or
+use ``--allow-defaults-mismatch`` only for an explicit comparison and record it in the
+study provenance.
+
+**A carbon target is rejected before the search.**
+Add ``--carbon-package``. For an HWP or whole-system target, also add
+``--carbon-hwp <yaml>``; a missing lifecycle config is a configuration error, not a
+zero-emission result.
+
+**The ledger and the exact carbon run differ after harvesting.**
+The ledger is block-exact; a full run allocates an event by classifier set and area. When
+several blocks share a source track, the event can be distributed across stands. Verify
+the final schedule with ``ws4 carbon``.
+
+**HWP accounts are missing or all zero.**
+Pass ``--hwp-config`` (or ``--carbon-hwp``). If the configuration is present but the run
+has no harvest, the product pools stay at zero, which is expected. Check the
+``carbon.hwp.inflow`` series first.
+
+**A GCBM comparison is empty or misleading.**
+Check the GCBM 2.5.x schema and whether the project has the same footprint. The reader is
+tabular and is a bridge check; it is not a model-parity test.
+
 Getting help
 ------------
 

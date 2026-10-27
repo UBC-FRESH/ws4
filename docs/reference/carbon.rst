@@ -1,13 +1,108 @@
-Carbon Package Contract
-=======================
+.. _carbon:
+
+Carbon accounting and planning
+==============================
 
 WS4 does not derive the CBM science crosswalks itself. It reads a **carbon package**
 produced by FEMIC, validates it, joins it to the compiled dataset by track name, and then
 compiles the schedule-dependent SIT tables. The package is the cross-repo contract; the
 carbon engine is replaceable behind it.
 
+The page has three jobs: it is the consumer-side package contract, the runtime reference
+for the libcbm path and the optimizer ledger, and the map to the public evidence and the
+producer-side pages. The task walkthrough is :doc:`../howto/run-carbon`.
+
+.. contents:: On this page
+   :local:
+   :depth: 2
+
+Start here
+----------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 24 42 34
+
+   * - If you are
+     - Read
+     - Why
+   * - A planner or analyst
+     - :doc:`../howto/run-carbon`, then :ref:`carbon-running`, :ref:`carbon-targets`,
+       and :ref:`carbon-hwp`
+     - The shortest path from a compiled dataset and a FEMIC package to a carbon-aware
+       schedule.
+   * - A developer
+     - :ref:`carbon-package-layout`, :ref:`carbon-sit`, :ref:`carbon-api`, and
+       ``notes/design/ws4-carbon.md``
+     - The tables, the join key, the SIT boundary, and the historical design note.
+   * - A researcher or policy analyst
+     - :ref:`carbon-hwp`, :ref:`carbon-gcbm`, and :ref:`carbon-evidence`
+     - What is counted, what is assumed, and what the model does not claim.
+   * - An LLM agent
+     - This page, ``docs/llms.txt``, and ``AGENTS.md``
+     - The stable source-of-truth map before changing the carbon lane.
+
+At a glance
+-----------
+
+.. mermaid::
+
+   flowchart LR
+     F[FEMIC carbon package] --> P[WS4 package loader]
+     D[WS4 compiled dataset] --> S[SIT compiler]
+     C[Schedule] --> S
+     P --> S
+     S --> E[libcbm driver]
+     E --> A[carbon.* ecosystem accounts]
+     A --> L[block-level optimizer ledger]
+     A --> R[run report and web Carbon tab]
+     A --> H[HWP lifecycle]
+     H --> Y[system carbon and emissions]
+     G[GCBM results database] -. bridge only .-> W[GCBM reader]
+
+The package is static inventory and crosswalks. WS4 adds the schedule, the treatment
+transitions, and the product lifecycle. The block ledger can price a carbon target
+without rerunning a whole landscape; the exact ``ws4 carbon`` run remains the reported
+authority.
+
+Source-of-truth map
+-------------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 44 26
+
+   * - Question
+     - Read
+     - Stable location
+   * - What must a producer package contain?
+     - FEMIC forest carbon domain contract
+     - `FEMIC contract <https://ubc-fresh.github.io/femic/reference/contracts/carbon-domain.html>`_
+   * - How do I export and validate a package?
+     - FEMIC carbon package export guide
+     - `FEMIC export guide <https://ubc-fresh.github.io/femic/guides/carbon-export.html>`_
+   * - What are the HWP and displacement assumptions?
+     - FEMIC HWP lifecycle guide and public config
+     - `FEMIC HWP guide <https://ubc-fresh.github.io/femic/guides/hwp-lifecycle.html>`_
+   * - What is the public curve and HWP method?
+     - The thesis and ``fresh-yan`` records
+     - `Thesis <https://github.com/UBC-FRESH/yan-yancun-masc-thesis-paper>`_,
+       `fresh-yan <https://github.com/UBC-FRESH/fresh-yan>`_
+   * - How is WS4 wired?
+     - ``ws4/carbon/package.py``, ``sit.py``, ``libcbm.py``, ``hwp.py``,
+       ``curves.py``, ``ledger.py``
+     - This page and the package docstrings
+   * - What did the production runs show?
+     - ``notes/reports/p120-multi-boundary.md`` and the P58 reports
+     - ``notes/reports/``
+
+Producer contract and package boundary
+--------------------------------------
+
 The producer side is specified in FEMIC's ``docs/reference/contracts/carbon-domain.rst``.
 This page specifies what WS4 accepts and how it fails.
+
+.. _carbon-package-layout:
 
 Package layout
 --------------
@@ -150,6 +245,8 @@ and must be recorded in the run provenance.
 
 Duplicate track names in the dataset are rejected because a join would be ambiguous.
 
+.. _carbon-sit:
+
 SIT compilation
 ---------------
 
@@ -176,6 +273,8 @@ The compiler:
 The generated tables can be parsed by libcbm directly. The ``test_optional_libcbm_parse``
 test does so when libcbm is installed; otherwise it skips.
 
+.. _carbon-running:
+
 Running the engine
 ------------------
 
@@ -190,26 +289,32 @@ protocol, and writes the run outputs:
      --schedule schedules/baseline.csv \
      --out out/carbon/tsa24-baseline \
      --years 200 \
+     --hwp-config config/carbon/hwp.bc.yaml \
      --audit-sit
 
 ``--years`` defaults to the latest schedule offset plus one. ``--audit-sit`` writes the
 generated tables under ``carbon_sit/``. ``--density`` writes tC/ha instead of tC.
 ``--allow-defaults-mismatch`` is only for an explicit comparison; the default is a hard
 failure when the package's ``cbm_defaults`` hash differs from the installed database.
-``--merge-into <run-dir>`` merges the ``carbon.*`` accounts into an existing simulation
-run's ``account_values.csv`` and copies ``carbon_manifest.json`` beside it. Existing
-``carbon.*`` rows are replaced, so a rerun is idempotent; other accounts are preserved.
+``--hwp-config`` adds the harvested-wood-product lifecycle and whole-system accounts.
+``--merge-into <run-dir>`` merges the ``carbon.*`` and ``fertilization.*`` accounts into
+an existing simulation run's ``account_values.csv`` and copies ``carbon_manifest.json``
+beside it. Existing carbon/fertilization rows are replaced, so a rerun is idempotent;
+other accounts are preserved.
 
 The run writes:
 
 - ``carbon_pools.csv`` and ``carbon_pools_long.csv``
 - ``carbon_flux.csv`` and ``carbon_flux_long.csv``
-- ``carbon_accounts.csv`` with the ``carbon.*`` accounts
-- ``carbon_manifest.json`` with the package, dataset, schedule, engine, and defaults
-  provenance
+- ``carbon_accounts.csv`` with the ``carbon.*`` accounts and, when configured,
+  ``fertilization.*`` and HWP/system accounts
+- ``carbon_manifest.json`` with the package, dataset, schedule, engine, defaults, HWP,
+  and fertilization provenance
 
 The driver is optional: install ``ws4[carbon]`` (``libcbm==2.10.2``). A core WS4 install
 does not import libcbm.
+
+.. _carbon-targets:
 
 Carbon targets in the optimizer
 -------------------------------
@@ -217,12 +322,41 @@ Carbon targets in the optimizer
 `ws4 optimize --carbon-package <package>` enables carbon accounts and `carbon.*` targets.
 The block-level :class:`ws4.carbon.ledger.CarbonLedger` runs one block's treatment chain
 at a time, caches the carbon accounts, and sums the blocks for a schedule. Because CBM is
-stand-level and area-additive, the sum is exact; the ledger is not a surrogate.
+stand-level and area-additive, the block sum is exact; the ledger is not a surrogate.
 
 A carbon target uses the same weighted-goal objective, period semantics, normalization,
 and priority tiers as any other account. A `carbon.*` target without a package is rejected
-before the search. The run writes carbon accounts into `account_values.csv` and the
-standard report, and records `carbon_ledger.json` beside the run.
+before the search. Add `--carbon-hwp <yaml>` when the target is a system account such as
+``carbon.co2e.system.emissions``; the shell is the same as the ecosystem path. The run
+writes carbon accounts into `account_values.csv` and the standard report, and records
+`carbon_ledger.json` beside the run.
+
+Examples of directly targetable system objectives (all need both ``--carbon-package``
+and ``--carbon-hwp``):
+
+.. code-block:: yaml
+
+   targets:
+     # Maximize end-of-horizon whole-system carbon stock.
+     - account: carbon.system.total
+       period: 200
+       minimum: 900000000
+       period_width: 1
+     # Minimize cumulative net system emissions.
+     - account: carbon.co2e.system.emissions.cumulative
+       period: 200
+       maximum: 0
+       period_width: 1
+     # Favor long-lived solid-wood products over paper.
+     - account: carbon.hwp.solid_wood.total
+       period: 200
+       minimum: 1000000
+       period_width: 1
+
+The exact full-schedule run can differ slightly from the block ledger after a disturbance
+when several blocks share a source track: the SIT event is allocated by classifier set and
+area, while the ledger runs one block at a time. Re-run the winning schedule with
+``ws4 carbon`` and report that result. See :doc:`../guides/limitations-and-boundaries`.
 
 Fertilization
 -------------
@@ -276,6 +410,100 @@ configuration to the block ledger, so carbon targets and the run report include 
 growth delta and the emissions. A schedule with no ``f1``/``f2``/``f3`` event is
 unchanged.
 
+.. _carbon-hwp:
+
+Harvested wood products and system carbon
+-----------------------------------------
+
+Ecosystem carbon alone is not the forest-sector balance. With
+``--hwp-config <yaml>`` (or ``--carbon-hwp`` in the optimizer), WS4 turns the
+merchantable carbon transferred by each disturbance into an explicit HWP ledger. The
+public assumptions live in FEMIC's ``config/carbon/hwp.bc.yaml`` and are documented in the
+`FEMIC HWP lifecycle guide <https://ubc-fresh.github.io/femic/guides/hwp-lifecycle.html>`_.
+
+The method follows the corrected public accounting in ``fresh-yan``:
+
+- utilized inflow is ``merchantable carbon transferred x utilization_rate``;
+- utilized fibre is split into solid wood and paper;
+- each pool survives a period with the exact factor
+  ``2 ** (-period_length / half_life)``;
+- the loss from a product pool is an end-of-life emission to the atmosphere; and
+- displacement is a credit on product inflow, in tC avoided per tC product, converted to
+  CO2e with the 44/12 factor.
+
+The default public parameter file uses 85% utilization, a 50/50 paper/solid split, a
+two-year paper half-life, and a representative solid-wood half-life and displacement
+factor. Those are scenario parameters, not a calibrated estimate: run a grid over
+plausible half-lives and displacement factors and report the range.
+
+The HWP path adds these accounts to ``carbon_accounts.csv``:
+
+``carbon.hwp.solid_wood.total``, ``carbon.hwp.paper.total``, ``carbon.hwp.total``
+   Product pools in tC.
+``carbon.hwp.inflow``
+   Annual product inflow in tC.
+``carbon.hwp.decay`` and ``carbon.co2e.hwp.eol``
+   Annual product decay in tC and end-of-life emissions in tCO2e.
+``carbon.displacement.total`` and ``carbon.co2e.displacement``
+   Displacement credit in tC and tCO2e.
+``carbon.system.total`` and ``carbon.co2e.system.total``
+   Ecosystem carbon plus product pools, in tC and tCO2e.
+``carbon.co2e.hwp.total`` and ``carbon.co2e.ecosystem.emissions``
+   Product stock and ecosystem emissions in tCO2e.
+``carbon.co2e.system.emissions`` and ``carbon.co2e.system.emissions.cumulative``
+   Per-period and cumulative net system emissions, in tCO2e.
+
+``carbon.products.total`` remains the engine's own ``Products`` pool. It is not the HWP
+ledger: CBM's product pool carries CBM's decay assumptions, while ``carbon.hwp.*`` uses
+the explicit public half-life and displacement parameters. Do not add the two together.
+
+The lifecycle is a first version with a stated boundary: decay is immediate EOL emission
+and there is no landfill or inert long-lived product pool. The forest-sector balance is
+still complete in the sense that carbon leaving the ecosystem enters a product pool or the
+atmosphere exactly once. The public thesis and ``fresh-yan`` records are the method
+references; the WS4 implementation is ``ws4/carbon/hwp.py``.
+
+.. _carbon-curves:
+
+Carbon yield curves
+-------------------
+
+``ws4 carbon-curves`` compiles stock and emission curves per package track from
+single-stand libcbm runs. It ports the public "simulated clearcut" method:
+
+- a managed curve grows the source stand to a rotation age;
+- a clearcut transfers the pools and emits the disturbance losses;
+- the post-event trajectory becomes the age-0 managed curve; and
+- ``--mode cycle`` repeats the clearcut and extracts the last cycle, which represents a
+  regenerated stand rather than only a first rotation.
+
+.. code-block:: bash
+
+   ws4 carbon-curves \
+     --dataset output/ws4/tsa24/compiled \
+     --package output/carbon/tsa24 \
+     --out out/carbon/tsa24-curves \
+     --rotation-age 120 \
+     --years 300 \
+     --mode cycle
+
+The run writes ``carbon_curves.csv`` and ``carbon_curves_manifest.json``. The table is
+long by ``track_name`` and ``age`` and carries ecosystem, biomass, DOM, merchantable,
+product, total-emission, gross-growth, and net-emission values per hectare. ``age`` is
+time since the curve start: a natural curve starts from the one-year inventory convention,
+while a managed curve starts at the post-clearcut age 0. ``products_tc_ha`` is the CBM
+``Products`` pool, not the explicit HWP ledger; do not add it to ``carbon.hwp.*``. The
+manifest records the package fingerprint, dataset reference, rotation age, mode, the
+managed-source map, units, and the boundary that the curves are an audit/interchange
+artifact.
+
+The curve artifact is useful for a reduced LP or for external scenario formulation. The
+optimizer's exact path remains the block ledger; a curve-based surrogate must be labelled
+as a surrogate and verified with the exact engine before a result is reported. The public
+method and its reset-error evidence are in the thesis and the ``fresh-yan`` repository.
+
+.. _carbon-gcbm:
+
 GCBM results
 ------------
 
@@ -286,18 +514,37 @@ date dimensions, writes `gcbm_pools.csv`, `gcbm_fluxes.csv`, `gcbm_accounts.csv`
 `--compare-carbon <run-dir>` writes `gcbm_compare.csv` against a WS4
 `carbon_accounts.csv`.
 
-The reader is tabular. Mapping GCBM spatial GeoTIFFs to WS4 blocks needs a same-landscape
-GCBM export, which is the FEMIC walltowall bridge (P115.4). The P58.9 report records the
-real sample-run reading and that boundary.
+The reader is tabular. The FEMIC walltowall export is the producer-side bridge; a
+same-footprint 500-block coarse project has been prepared and run as a format/readiness
+check. That check is not a parity result: GCBM and libcbm are separate CFS CBM
+implementations, and WS4 deliberately does not target numerical equality with GCBM. See
+the P120 handoff report and ``notes/reports/p589-gcbm-results.md`` for the evidence and
+the remaining spatial-mapping boundary.
 
-Validation and parity
----------------------
+.. _carbon-evidence:
+
+Validation and evidence
+-----------------------
 
 ``scripts/carbon_parity.py`` compares two carbon run directories on
 ``(timestep, identifier)`` and exits nonzero when a pool or flux is outside the requested
 tolerance. ``ws4.carbon.parity`` exposes the same comparison, a mass-balance/account
 reconciliation table, and a byte-level replay check. The P58.5 report records the exact
 WS3/WS4 parity on the clipped TSA24 fixture and the real TSA24 replay evidence.
+
+The production evidence now includes:
+
+- exact WS3/WS4 parity on the clipped TSA24 fixture (``max_abs = 0.0``);
+- validated split-TSA packages and compiled-matrix runs for TSA08, TSA16, TSA40, and
+  TSA41, with the real CBM defaults hash and no mismatch override;
+- full-landscape 50-year all-block schedules for those four TSAs, with inventory and event
+  aggregation; and
+- a GCBM walltowall bridge run whose purpose is format/readiness, not numerical parity.
+
+The consolidated numbers, package ids, and caveats are in
+``notes/reports/p120-multi-boundary.md``. The TSA24 ledger/exact subset difference of
+about 0.03% after disturbances remains a documented caveat; the exact run is the reported
+outcome.
 
 Fingerprint
 -----------
@@ -349,6 +596,30 @@ The loader returns stable codes. The most useful ones:
      - The dataset has a track the package does not.
    * - ``CARBON-DUPLICATE-TRACK-NAME``
      - The dataset has duplicate track names.
+   * - ``CARBON-BOUNDARY-MISMATCH``
+     - The manifest primary boundary and the declared boundary table disagree.
+   * - ``CARBON-MAPPING``
+     - The manifest mapping contract is malformed or inconsistent.
+   * - ``CARBON-MISSING-YIELD``
+     - A package track has no yield row.
+   * - ``CARBON-TABLE-EMPTY``
+     - A required table has no rows.
+   * - ``CARBON-TABLE-INVALID``
+     - A table cannot be parsed or violates its row/column shape.
+   * - ``CARBON-UNKNOWN-TABLE``
+     - ``table_files`` names a table that is not part of the contract.
+   * - ``CARBON-RETENTION-UNSUPPORTED``
+     - The SIT compiler refuses a retention split rather than approximating it.
+   * - ``CARBON-SCHEDULE-COLUMN`` / ``CARBON-SCHEDULE-OFFSET``
+     - The schedule is missing a column or uses an invalid offset clock.
+   * - ``CARBON-DATASET-TABLE``
+     - A required compiled-dataset table is absent from the SIT compile.
+
+The package loader and the SIT compiler share the ``CARBON-`` prefix but are different
+surfaces: the first rejects a malformed package, the second rejects a package/schedule/
+dataset combination that cannot be compiled faithfully.
+
+.. _carbon-api:
 
 API
 ---
@@ -356,22 +627,39 @@ API
 .. code-block:: python
 
    from pathlib import Path
+
+   from ws4.carbon.hwp import load_hwp_config
    from ws4.carbon.package import load_carbon_package, resolve_tracks
 
    package = load_carbon_package(Path("carbon_package"))
    resolution = resolve_tracks(package, tracks)
    track_id = resolution.mapping["AU(1)+IFM(managed)+treatment()"]
+   hwp = load_hwp_config(Path("config/carbon/hwp.bc.yaml"))
 
 ``validate_carbon_package(path)`` returns every finding instead of raising.
 ``load_carbon_package(path)`` raises ``CarbonPackageError`` when the package is invalid.
+``generate_carbon_curves(package, dataset_dir, out_dir, ...)`` writes the simulated-
+clearcut curves. ``hwp_accounts(ecosystem, production, config)`` is the pure lifecycle
+function behind the HWP accounts.
 
-The next step
--------------
+Implementation status
+---------------------
 
-P58.4 merges the ``carbon.*`` accounts into the run report and the provenance surfaces.
-P58.5 validates parity with WS3, mass balance, and deterministic replay on the TSA24
-fixture.
+P58 delivered the package loader, SIT compiler, libcbm driver, run report and
+provenance, parity/replay checks, block ledger, carbon targets, and GCBM reader.
+The fertilization runtime followed in WS4 #441. P120 added split-TSA packages and
+compiled-matrix runs for TSA08, TSA16, TSA40, and TSA41, plus inventory/event
+aggregation for full-landscape schedules. The HWP lifecycle and simulated-clearcut curve
+compile are part of this same contract.
 
+The public evidence map is:
+
+- ``notes/reports/p58-closeout.md`` — P58 delivered work and deferred items;
+- ``notes/reports/p58-fertilization-runtime.md`` — fertilization curve, recovery, and
+  emissions;
+- ``notes/reports/p585-parity.md``, ``p587-carbon-optimizer.md``,
+  ``p588-carbon-validation.md``, ``p589-gcbm-results.md`` — validation and GCBM boundary;
+- ``notes/reports/p120-multi-boundary.md`` — production package and landscape evidence.
 
 Web UI
 ------
@@ -381,3 +669,16 @@ The **Carbon** tab in the optional web service reads the run's ``carbon_manifest
 ``gcbm_compare.csv``. It aggregates pools and fluxes by timestep and never reruns libcbm. See
 :doc:`web` for the endpoint. Carbon-only run directories are listed as ``carbon`` runs; their
 periods are read from the carbon account offsets.
+
+Related across repositories
+---------------------------
+
+- `FEMIC carbon package export <https://ubc-fresh.github.io/femic/guides/carbon-export.html>`_
+- `FEMIC forest carbon domain contract <https://ubc-fresh.github.io/femic/reference/contracts/carbon-domain.html>`_
+- `FEMIC HWP lifecycle and public assumptions <https://ubc-fresh.github.io/femic/guides/hwp-lifecycle.html>`_
+- `fresh-yan <https://github.com/UBC-FRESH/fresh-yan>`_ — public corrected accounting,
+  carbon curve generation, HWP grid, and reproducible records.
+- `yan-yancun-masc-thesis-paper <https://github.com/UBC-FRESH/yan-yancun-masc-thesis-paper>`_
+  — manuscript methods and evidence.
+- :doc:`../howto/run-carbon` — task walkthrough.
+- :doc:`../guides/limitations-and-boundaries` — runtime and evidence caveats.

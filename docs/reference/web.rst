@@ -266,7 +266,8 @@ Carbon
 
 The **Carbon** tab reads the P58 artifacts without running libcbm. It shows the package id,
 libcbm version, carbon units, CBM defaults version, package fingerprint, schedule hash, and the
-carbon ledger when one exists. Account names are rendered as human labels with inferred
+carbon ledger when one exists. HWP and whole-system accounts, when present, travel through the
+same ``carbon_accounts.csv`` path. Account names are rendered as human labels with inferred
 ``tC``, ``tCO2e``, or per-year units. The selector draws the run's own offset/value series on a
 chart with labelled year and value axes; hovering, focusing, or tapping a point shows the exact
 year and value, and the latest year is repeated above the chart. Pool composition is the latest

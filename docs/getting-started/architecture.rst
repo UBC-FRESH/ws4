@@ -66,6 +66,11 @@ The loop on the right is the search: a **move** changes a block's treatment chai
 delta is priced exactly without re-simulating, and the solver accepts or rejects it. The patch and
 route models participate in their own way — see "the pitfalls" below.
 
+Carbon is a sidecar to this flow rather than a dataset column: a FEMIC package plus a schedule
+compiles SIT tables, libcbm supplies ecosystem pools and fluxes, and an optional HWP ledger turns
+merchantable inflow into product, end-of-life, and displacement accounts. See
+:doc:`../reference/carbon`.
+
 The design principles
 ---------------------
 

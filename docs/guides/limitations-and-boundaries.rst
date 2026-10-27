@@ -54,6 +54,34 @@ on a large estate.
 reachable eligible one. A split between two mills is not expressible, and a product with no reachable
 eligible destination is recorded as surplus.
 
+Carbon
+------
+
+**Carbon is a sidecar, not a dataset column.** The compiled dataset remains the runtime
+contract. A FEMIC package supplies the static inventory and crosswalks; a schedule
+supplies events; libcbm supplies ecosystem pools and fluxes. If the package and dataset
+disagree on a track name, the join fails rather than guessing.
+
+**The HWP lifecycle is an explicit public parameter set, not a calibrated truth.** The
+paper/solid split, half-lives, displacement factors, and utilization rate are scenario
+inputs. Run a range. The first version treats product decay as immediate end-of-life
+emission to the atmosphere; landfill and inert long-lived pools are not represented.
+
+**The block ledger is exact for the block path, not a certificate for every full run.**
+CBM is area-additive, so the ledger sums blocks exactly. A full-schedule SIT event is
+allocated by classifier set and area; when several blocks share a source track, the exact
+landscape run can differ slightly after a disturbance. Re-run the winning schedule with
+``ws4 carbon`` and report that result.
+
+**Carbon yield curves are an interchange and audit artifact.** The simulated-clearcut
+curves expose the public method and a reduced account set, but the WS4 optimizer's exact
+path is the block ledger. A curve-based surrogate must be labelled as such and verified
+against the exact engine before a result is reported.
+
+**GCBM is a bridge, not a parity oracle.** GCBM and libcbm are separate CFS CBM
+implementations. Same-footprint bridge runs check export, format, and reader coverage;
+they do not establish numerical equivalence, and WS4 does not target it.
+
 Optimization
 ------------
 

@@ -16,7 +16,10 @@ model deliberately does not do yet.
    * - :doc:`limitations-and-boundaries`
      - The boundaries of the model and the tooling, so you do not build a study on a guess.
 
-The reference pages are the authority on mechanism; these guides are the authority on symptoms:
+Carbon is a task path rather than a troubleshooting-only topic: start with
+:doc:`../howto/run-carbon`, and use :doc:`../reference/carbon` for the package, HWP, curve,
+and GCBM contract. The reference pages are the authority on mechanism; these guides are
+the authority on symptoms:
 
 .. toctree::
    :maxdepth: 2

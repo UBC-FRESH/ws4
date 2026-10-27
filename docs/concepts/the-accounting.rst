@@ -34,5 +34,9 @@ snapshot of the map — how the openings are arranged in one offset — so a pat
 **end offset of its period** rather than summed across it. A flow target aggregates whole periods
 instead. Both are described in :doc:`the-objective`.
 
+Carbon accounts follow the same clock. Ecosystem pools are levels; HWP decay and system emissions are
+per-period flows; the system stock adds product pools to the ecosystem level. The HWP lifecycle is a
+sidecar account layer, not a dataset column; see :doc:`../reference/carbon`.
+
 Where to read more: :doc:`../reference/optimizer` for how periods enter the objective, and
 :doc:`../howto/write-targets` for the practical consequences.

@@ -33,6 +33,10 @@ guides marked both show each path where they differ.
      - both
      - Send products over a road network to mills, and target the haul, build, and maintenance
        accounts.
+   * - :doc:`run-carbon`
+     - both
+     - Run a FEMIC carbon package through a baseline, an optimizer target, and optional
+       fertilization, and read the carbon accounts.
    * - :doc:`watch-a-run`
      - both
      - Watch realized against target values while a search runs, one window per account.
@@ -61,6 +65,7 @@ Prerequisites
    even-flow
    patch-targets
    route-products
+   run-carbon
    watch-a-run
    automate-a-study
    faq

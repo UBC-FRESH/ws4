@@ -2,11 +2,13 @@
 
 The carbon package contract is produced by FEMIC and consumed here. The loader in
 :mod:`ws4.carbon.package` validates the package before any SIT compilation or engine
-run happens.
+run happens. :mod:`ws4.carbon.hwp` adds the explicit product lifecycle, and
+:mod:`ws4.carbon.curves` compiles the simulated-clearcut curve artifact.
 """
 
 from __future__ import annotations
 
+from .curves import CarbonCurveResult, generate_carbon_curves
 from .fertilization import (
     FERTILIZATION_TREATMENTS,
     FertilizationApplication,
@@ -27,6 +29,13 @@ from .gcbm import (
     gcbm_accounts,
     read_gcbm_results,
     write_gcbm_results,
+)
+from .hwp import (
+    HwpConfig,
+    HwpConfigError,
+    hwp_accounts,
+    hwp_manifest,
+    load_hwp_config,
 )
 from .ledger import CarbonLedger
 from .libcbm import (
@@ -71,6 +80,7 @@ from .sit import (
 
 __all__ = [
     "FERTILIZATION_TREATMENTS",
+    "CarbonCurveResult",
     "CarbonEngineError",
     "CarbonLedger",
     "CarbonPackage",
@@ -85,6 +95,8 @@ __all__ = [
     "GcbmResults",
     "GcbmResultsError",
     "GcbmRunResult",
+    "HwpConfig",
+    "HwpConfigError",
     "RunComparison",
     "SitTables",
     "TrackResolution",
@@ -99,9 +111,13 @@ __all__ = [
     "compare_gcbm_to_carbon",
     "fertilization_accounts",
     "gcbm_accounts",
+    "generate_carbon_curves",
+    "hwp_accounts",
+    "hwp_manifest",
     "installed_libcbm_version",
     "load_carbon_package",
     "load_fertilization_config",
+    "load_hwp_config",
     "mass_balance",
     "merge_carbon_accounts",
     "package_fingerprint",

@@ -3183,3 +3183,21 @@ issue comments.
   status filters while preserving hidden edits, and can bulk-pin visible failing
   targets or unpin the visible view. c5 and TSA 46 checks passed; dashboard GREEN;
   UI `v79`.
+
+## 2026-10-27
+
+- Carbon documentation audit and HWP/system-carbon pass. Added a WS4 carbon how-to and
+  role/source-of-truth map, expanded the carbon reference with HWP lifecycle, simulated-
+  clearcut carbon curves, system accounts, complete failure codes, and current production
+  evidence. Added `notes/reports/p120-multi-boundary.md` and
+  `notes/reports/carbon-docs-audit.md`; corrected the historical carbon design note.
+  Added WS4 `ws4/carbon/hwp.py`, `ws4/carbon/curves.py`, `config/carbon/hwp.bc.yaml`,
+  `ws4 carbon --hwp-config`, `ws4 optimize --carbon-hwp`, and `ws4 carbon-curves`, with
+  tests for the lifecycle, curve helpers, and target guards. Added FEMIC `carbon-overview`,
+  `hwp-lifecycle`, `hwp.bc.yaml`, `docs/llms.txt`, and cross-repo links; corrected the
+  multi-boundary and fertilization contract text. Verification:
+  `python scripts/dashboard.py` -> **GREEN** on all seven gates (lint, format, types, tests,
+  validator, docs, docstrings); targeted
+  `pytest tests/test_carbon_hwp.py tests/test_carbon_curves.py tests/test_carbon_ledger.py -q --no-cov`
+  -> 16 passed; FEMIC `sphinx-build -b html docs _build/html -W` -> build succeeded with no
+  warnings.

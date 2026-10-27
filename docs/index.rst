@@ -13,11 +13,18 @@ Who Is This Documentation For?
 
 * **New users** — forest planners, students, and land managers running a first wood supply
   simulation. Start with :doc:`getting-started/index`.
-* **Analysts** — people building scenarios, targeting even flow or patch size distributions,
-  routing products to mills, or repeating and scaling runs. See :doc:`howto/index` and
-  :doc:`guides/index`.
-* **LLM coding agents** — assistants that read and edit this repository. Follow ``AGENTS.md``
-  and :doc:`reference/index` for the contracts, invariants, and conventions to respect.
+* **Analysts and planners** — people building scenarios, targeting even flow or patch size
+  distributions, routing products to mills, accounting for carbon, or repeating and scaling
+  runs. See :doc:`howto/index` and :doc:`guides/index`.
+* **Researchers and policy analysts** — people asking what the model assumes, where the
+  evidence lives, and what a result does not claim. Start with :doc:`concepts/index`,
+  :doc:`reference/carbon`, and :doc:`guides/limitations-and-boundaries`.
+* **Instructors and students** — people learning forest estate modelling from a runnable,
+  inspectable example. Start with :doc:`getting-started/first-model` and the
+  :doc:`examples`.
+* **LLM coding agents** — assistants that read and edit this repository. Follow ``AGENTS.md``,
+  ``docs/llms.txt``, and :doc:`reference/index` for the contracts, invariants, and
+  conventions to respect.
 
 Quick Navigation
 ================
@@ -41,6 +48,10 @@ Quick Navigation
    * - :doc:`examples`
      - Everyone
      - Runnable notebooks, with their output, that you can read or adapt.
+   * - :doc:`reference/carbon` and :doc:`howto/run-carbon`
+     - Analysts, researchers, agents
+     - Carbon packages, libcbm runs, carbon targets, fertilization, HWP lifecycle, carbon
+       yield curves, and the GCBM bridge.
    * - :doc:`guides/index`
      - Power users
      - Troubleshooting, and what WS4 deliberately does not do yet.

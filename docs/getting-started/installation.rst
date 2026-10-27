@@ -48,6 +48,10 @@ Optional dependencies
      - The optional numerics and solver stack: ``numba`` (compiled patch-state kernels, which
        have an equivalent pure-Python fallback), ``scipy`` (the ``--mip-bound`` penalty bound,
        which raises a clear error without it), ``networkx``, and ``ray``.
+   * - ``carbon``
+     - ``pip install -e ".[carbon]"``
+     - The optional ``libcbm`` carbon engine behind ``ws4 carbon`` and carbon targets. A core
+       install does not import it; see :doc:`../howto/run-carbon`.
 
 Development and documentation builds need more:
 

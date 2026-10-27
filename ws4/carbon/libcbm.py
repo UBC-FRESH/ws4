@@ -3,6 +3,9 @@
 The driver is behind a small protocol so a future CBM4 backend can replace libcbm
 without changing the package contract, the SIT compiler, or the account names.
 libcbm is an optional dependency: importing this module never imports it.
+
+The account writer can also add the explicit HWP lifecycle and whole-system balance from
+:mod:`ws4.carbon.hwp`; that layer is separate from the engine's own ``Products`` pool.
 """
 
 from __future__ import annotations
@@ -20,6 +23,7 @@ import pandas as pd
 
 from ..model.schema import dataset_reference
 from .fertilization import FERTILIZATION_TREATMENTS, FertilizationConfig
+from .hwp import HwpConfig, hwp_accounts, hwp_manifest
 from .package import CarbonPackage, package_fingerprint
 from .sit import SitTables
 
@@ -81,6 +85,14 @@ DISTURBANCE_FLUXES: tuple[str, ...] = (
     "DisturbanceSWBranchSnagToAir",
     "DisturbanceHWStemSnagToAir",
     "DisturbanceHWBranchSnagToAir",
+)
+
+# Merchantable carbon that a disturbance transfers to the product pool. The HWP
+# lifecycle uses this transfer as its inflow; the CBM ``Products`` pool is not the
+# same ledger because it carries CBM's own product-decay assumptions.
+PRODUCTION_FLUXES: tuple[str, ...] = (
+    "DisturbanceSoftProduction",
+    "DisturbanceHardProduction",
 )
 
 CO2_PER_CARBON = 44.0 / 12.0
@@ -555,13 +567,16 @@ def _fertilization_pre_dynamics(
     return pre_dynamics
 
 
-def carbon_accounts(run: CarbonRun) -> pd.DataFrame:
+def carbon_accounts(run: CarbonRun, *, hwp: HwpConfig | None = None) -> pd.DataFrame:
     """Summarize a run into long carbon accounts.
 
     Parameters
     ----------
     run : CarbonRun
         The engine output.
+    hwp : HwpConfig or None, optional
+        When set, add the harvested-wood-product lifecycle accounts and the
+        whole-system carbon balance. Defaults to None.
 
     Returns
     -------
@@ -617,7 +632,23 @@ def carbon_accounts(run: CarbonRun) -> pd.DataFrame:
             "value": change.to_numpy(),
         }
     )
-    return pd.concat([accounts, changes], ignore_index=True)
+    result = pd.concat([accounts, changes], ignore_index=True)
+    if hwp is not None:
+        if hwp.period_length != 1:
+            raise CarbonEngineError(
+                "the current libcbm carbon run is annual; HWP period_length must be 1"
+            )
+        present = [column for column in PRODUCTION_FLUXES if column in flux.columns]
+        if not present:
+            raise CarbonEngineError(
+                "HWP accounting needs the libcbm disturbance production fluxes "
+                f"({', '.join(PRODUCTION_FLUXES)}); the run does not expose them"
+            )
+        production = _sum_columns(flux, PRODUCTION_FLUXES)
+        lifecycle = hwp_accounts(ecosystem, production, hwp)
+        result = pd.concat([result, lifecycle], ignore_index=True)
+        return result.sort_values(["offset", "account"], kind="stable").reset_index(drop=True)
+    return result
 
 
 def write_carbon_run(
@@ -629,6 +660,7 @@ def write_carbon_run(
     schedule: pd.DataFrame,
     n_steps: int,
     density: bool = False,
+    hwp: HwpConfig | None = None,
     extra_accounts: pd.DataFrame | None = None,
     extra_manifest: Mapping[str, object] | None = None,
 ) -> CarbonRunResult:
@@ -650,6 +682,8 @@ def write_carbon_run(
         Number of simulated timesteps.
     density : bool, optional
         Whether the pool and flux values are densities. Defaults to False.
+    hwp : HwpConfig or None, optional
+        When set, add the HWP lifecycle and system-balance accounts. Defaults to None.
     extra_accounts : pandas.DataFrame or None, optional
         Additional ``offset``, ``account``, and ``value`` rows to append to the
         carbon accounts. Used for the fertilization emissions audit.
@@ -679,7 +713,7 @@ def write_carbon_run(
         var_name="flux",
         value_name="value",
     ).to_csv(root / "carbon_flux_long.csv", index=False)
-    accounts = carbon_accounts(run)
+    accounts = carbon_accounts(run, hwp=hwp)
     if extra_accounts is not None and not extra_accounts.empty:
         accounts = pd.concat(
             [accounts, extra_accounts.loc[:, ["offset", "account", "value"]]],
@@ -706,6 +740,8 @@ def write_carbon_run(
             "path": str(run.defaults.path),
         },
     }
+    if hwp is not None:
+        manifest["hwp"] = hwp_manifest(hwp)
     if extra_manifest is not None:
         manifest["fertilization"] = dict(extra_manifest)
     if extra_accounts is not None and not extra_accounts.empty:

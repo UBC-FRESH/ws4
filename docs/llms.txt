@@ -27,6 +27,7 @@
 - [Even flow and non-declining yield](howto/even-flow.html): shape versus level, bands, and priming.
 - [Patch size-distribution targets](howto/patch-targets.html): topology, patch accounts, and the shape-aware operators.
 - [Route products to mills](howto/route-products.html): the network tables, the route configuration, and route accounts.
+- [Run a carbon study](howto/run-carbon.html): a FEMIC package through a baseline, carbon targets, fertilization, HWP lifecycle, carbon yield curves, and the GCBM bridge.
 - [Watch a run](howto/watch-a-run.html): the live target window, several accounts at once, and `--plain`.
 - [Automate a study](howto/automate-a-study.html): sweeps, in-memory targets, hand-driven solvers, and scaling.
 - [FAQ](howto/faq.html): short answers to the questions that come up first.
@@ -50,6 +51,7 @@
 - [Optimizer](reference/optimizer.html): the objective and its targets (including even flow and non-declining yield), the operator registry, the metaheuristics, and the MIP bound.
 - [Spatial structure and constraints](reference/spatial.html): the block topology, patch metrics, and opening and green-up rules.
 - [Roads](reference/roads.html): the network tables, shortest-path routing, and the route outputs.
+- [Carbon accounting and planning](reference/carbon.html): the FEMIC package contract, SIT compilation, libcbm, the optimizer ledger, fertilization, HWP lifecycle and system accounts, carbon yield curves, and the GCBM bridge.
 - [Performance and scale](reference/performance.html): the measured figures, the incremental objective, and how to reproduce the benchmark.
 - [FEMIC hydrology](reference/femic-hydrology.html): pinned response bundles, checksums, flood-risk rows, and applicability metadata.
 - [API reference](api/index.html): the repository tooling's public functions, with their parameters, types, and return values. The package API is rendered on the reference pages above.

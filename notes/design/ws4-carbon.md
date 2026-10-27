@@ -1,16 +1,19 @@
 # WS4 Carbon Accounting and Carbon-Aware Planning
 
-Status: draft
+Status: historical design note (P58 delivered; current contract is `docs/reference/carbon.rst`)
 Phase: P58
 Date: 2026-10-25
+Updated: 2026-10-27
 Related: `ROADMAP.md` (Phase 51), `notes/design/ws4-architecture.md`,
-`notes/design/ws4-optimization-stack.md`, `notes/adr/0005`, `notes/adr/0012`
+`notes/design/ws4-optimization-stack.md`, `notes/adr/0005`, `notes/adr/0012`,
+`notes/reports/p58-closeout.md`, `notes/reports/p120-multi-boundary.md`,
+`docs/reference/carbon.rst`
 
 ## 1. Context
 
 WS4 is a spatially explicit forest estate model. Its compiled dataset is the runtime contract, and
-the simulator and optimizer read only that dataset. Carbon is currently out of scope in
-`notes/design/ws4-scope.md`.
+the simulator and optimizer read only that dataset. Carbon was out of scope before P58; this note
+records the design that made it a first-class outcome and target.
 
 The lab already has a working CBM linkage in WS3: `ForestModel.to_cbm_sit()` compiles the lab's
 model vocabulary into the CBM Standard Import Tool (SIT) format, and the example helpers run the
@@ -67,6 +70,12 @@ WS4 compiled dataset        +  schedule
 The package is described in the FEMIC carbon-domain contract. WS4 consumes it through
 `ws4/carbon/package.py`; it must not re-implement the crosswalks.
 
+The HWP lifecycle is a post-engine account layer: it consumes the merchantable carbon
+transfer (`DisturbanceSoftProduction` and `DisturbanceHardProduction`) and adds product,
+end-of-life, displacement, and whole-system accounts. It is deliberately separate from
+the CBM `Products` pool. The simulated-clearcut curve compiler is a separate
+audit/interchange artifact; the block ledger remains the exact optimizer path.
+
 ## 5. Package join
 
 The join key is the **track name**, not the dataset-local `track_id`. Track ids are stable within a
@@ -84,7 +93,8 @@ the override is recorded in the run manifest.
 
 - **classifiers** from the package track map and species classifier;
 - **inventory** from `fragments` and the package defaults;
-- **yield** by sampling the dataset's merchantable volume curve on the package age grid;
+- **yield** from the package's authoritative yield table on the package age grid; the dataset's
+  curves are not resampled (the implementation changed during P58);
 - **events** from the schedule, with `time_step = offset + 1` and area taken from the same fragment
   portions the simulator treats;
 - **transitions** from `treatments` and the package disturbance map.
@@ -116,6 +126,11 @@ Account names use the `carbon.` prefix:
 - `carbon.co2e.flux.net`
 - `carbon.stock.change`
 
+With an HWP config, the run also reports `carbon.hwp.*`, `carbon.system.total`,
+`carbon.co2e.system.total`, `carbon.co2e.hwp.eol`, `carbon.co2e.displacement`, and
+`carbon.co2e.system.emissions(.cumulative)`. The HWP pools are separate from the CBM
+`Products` pool and must not be added to it.
+
 Every reported value names its unit. Mass is tonnes of carbon (tC); density is tC/ha; CO2e uses
 the 44/12 conversion and names the gas basis.
 
@@ -142,8 +157,9 @@ The FEMIC GCBM exporter produces a walltowall project and spatial layers. WS4 ma
 compiled GCBM results for a spatial comparison. This is a separate lane:
 
 - GCBM is not a WS4 runtime dependency.
-- The tested GCBM version and output schema are pinned in the comparison report.
+- GCBM and libcbm are separate CFS CBM implementations; WS4 does not target numerical parity.
 - Differences from resolution, boundaries, and disturbance layers are explained, not hidden.
+- A same-footprint bridge run is a format/readiness check, not a model-equivalence result.
 
 ## 10. Validation
 
@@ -164,13 +180,27 @@ compiled GCBM results for a spatial comparison. This is a separate lane:
 - The ledger can grow without bound; define a cache policy.
 - GCBM output schemas and spatial alignment can dominate a comparison.
 
-## 12. Open questions
+## 12. Current state and remaining questions
 
-1. Which retention cases must the first version support on MKRF?
-2. Does the first optimizer integration need exact carbon on every move, or is the ledger plus a
-   final exact run sufficient for the first acceptance?
-3. Which GCBM version and output tables are the comparison baseline?
+Implemented after this note was first written:
+
+- the package loader, SIT compiler, libcbm driver, account writer, and block ledger;
+- carbon targets in the optimizer and the exact final-schedule verification;
+- fertilization curves, the ten-year recovery transition, and the emissions accounts;
+- split-TSA packages and compiled-matrix runs for TSA08, TSA16, TSA40, and TSA41;
+- inventory/event aggregation for full-landscape 50-year schedules; and
+- the HWP lifecycle (`ws4/carbon/hwp.py`) and the simulated-clearcut carbon curve
+  compiler (`ws4/carbon/curves.py`).
+
+Remaining questions:
+
+1. Which retention cases must a later version represent exactly rather than reject?
+2. How should the block ledger and a full schedule reconcile when several blocks share a
+   source track and an event is allocated by classifier set?
+3. Which GCBM output tables are useful for a format comparison without implying parity?
 4. When CBM4 is released, does it expose a SIT-compatible package or a different input contract?
+5. How should landfill and inert long-lived product pools extend the current immediate-EOL
+   HWP model?
 
 ## 13. Task map
 

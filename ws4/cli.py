@@ -21,8 +21,10 @@ from .carbon import (
     build_sit_tables_from_tables,
     compare_gcbm_to_carbon,
     fertilization_accounts,
+    generate_carbon_curves,
     load_carbon_package,
     load_fertilization_config,
+    load_hwp_config,
     merge_carbon_accounts,
     read_dataset_tables,
     read_gcbm_results,
@@ -312,6 +314,12 @@ def carbon(
         exists=True,
         help="Fertilization YAML; enables f1/f2/f3 curves, growth, and emissions accounts",
     ),
+    hwp_config: Path | None = typer.Option(
+        None,
+        "--hwp-config",
+        exists=True,
+        help="HWP lifecycle YAML; adds product, EOL, displacement, and system accounts",
+    ),
     merge_into: Path | None = typer.Option(
         None,
         "--merge-into",
@@ -328,6 +336,7 @@ def carbon(
         raise typer.Exit(code=1)
     fertilization = None
     try:
+        hwp = load_hwp_config(hwp_config) if hwp_config is not None else None
         loaded = load_carbon_package(package)
         run_fertilization = None
         simulation_schedule = schedule_frame
@@ -400,6 +409,7 @@ def carbon(
             schedule=schedule_frame,
             n_steps=n_steps,
             density=density,
+            hwp=hwp,
             extra_accounts=extra_accounts,
             extra_manifest=extra_manifest,
         )
@@ -430,6 +440,46 @@ def carbon(
     print(f"flux: {result.flux_path}")
     print(f"accounts: {result.accounts_path}")
     print(f"manifest: {result.manifest_path}")
+
+
+@app.command("carbon-curves")
+def carbon_curves(
+    dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
+    package: Path = typer.Option(..., exists=True, help="FEMIC carbon package directory"),
+    out: Path = typer.Option(..., help="Output directory for the curve table and manifest"),
+    rotation_age: int = typer.Option(120, help="Rotation age for the simulated clearcut"),
+    years: int = typer.Option(300, help="Post-event annual curve points"),
+    mode: str = typer.Option("cycle", help="Curve mode: single or cycle"),
+    tracks: str = typer.Option(
+        "", "--tracks", help="Comma-separated package track names; defaults to all"
+    ),
+    allow_defaults_mismatch: bool = typer.Option(
+        False,
+        "--allow-defaults-mismatch",
+        help="Allow a package/cbm_defaults mismatch for an explicit comparison",
+    ),
+) -> None:
+    """Compile carbon stock and emission yield curves from single-stand libcbm runs."""
+    requested = [name.strip() for name in tracks.split(",") if name.strip()] or None
+    try:
+        loaded = load_carbon_package(package)
+        result = generate_carbon_curves(
+            loaded,
+            dataset,
+            out,
+            rotation_age=rotation_age,
+            years=years,
+            mode=mode,
+            tracks=requested,
+            allow_defaults_mismatch=allow_defaults_mismatch,
+        )
+    except (CarbonEngineError, ValueError) as exc:
+        print(f"[red]Carbon curve compile failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    print(
+        f"[bold green]Carbon curves complete[/] → {result.curves_path} "
+        f"({result.track_count} tracks, mode={result.mode}, rotation={result.rotation_age})"
+    )
 
 
 @app.command()
@@ -620,6 +670,12 @@ def optimize(
         exists=True,
         help="Fertilization YAML; adds f1/f2/f3 growth response and emissions to the ledger",
     ),
+    carbon_hwp: Path | None = typer.Option(
+        None,
+        "--carbon-hwp",
+        exists=True,
+        help="HWP lifecycle YAML; adds product, EOL, displacement, and system accounts",
+    ),
     cooling_mode: str = typer.Option(
         "geometric", "--cooling-mode", help="Temperature schedule: geometric or adaptive"
     ),
@@ -683,6 +739,7 @@ def optimize(
         carbon_fertilization_path=(
             str(carbon_fertilization) if carbon_fertilization is not None else ""
         ),
+        carbon_hwp_path=str(carbon_hwp) if carbon_hwp is not None else "",
         spread_accounts_path=str(spread_accounts) if spread_accounts is not None else "",
         block_coordinates_path=str(block_coordinates) if block_coordinates is not None else "",
         cooling_mode=cooling_mode,

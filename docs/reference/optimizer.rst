@@ -18,8 +18,9 @@ year is accepted. For an additive account (volume, area, a count) the account va
 the sum of its offsets, compared to the levels, so a decade target is ``period_width: 10``; the penalty
 is the weighted shortfall below the minimum plus the weighted excess above the maximum, and the
 objective is the total penalty (lower is better). A **patch** account is a snapshot of the map rather
-than an additive quantity, so a patch target is read at the end offset of its period. Targets load from
-a YAML file:
+than an additive quantity, so a patch target is read at the end offset of its period. A **carbon**
+account is additive at the block level; the block ledger prices the ecosystem and, with
+``--carbon-hwp``, the product/system accounts. See :doc:`carbon`. Targets load from a YAML file:
 
 .. code-block:: yaml
 
