@@ -3143,3 +3143,10 @@ issue comments.
   `examples/recovery_tsa23` and updated `docs/reference/recovery.rst`.
   Verification: 5 recovery tests pass; full dashboard GREEN (tests 131.50 s).
   No objective or constraint change.
+
+- P69 LiDAR and carbon display polish: pull request #500 squash-merged as `1743a04`.
+  LiDAR coverage and min/max are dataset-wide, the panel and on-map legend use a
+  colour-blind-safe viridis ramp with a missing-value swatch, and carbon accounts
+  have human labels, inferred units, labelled axes, and hover/tap tooltips. Empty
+  LiDAR/Carbon tabs stay compact. Real FEMIC LiDAR and TSA 46 GCBM checks passed;
+  dashboard GREEN; UI `v77`.
