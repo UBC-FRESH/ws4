@@ -13,6 +13,7 @@ from shapely.geometry import box
 from ws4.recovery import (
     RecoveryError,
     sample_recovery_raster,
+    sample_recovery_rasterized,
     summarize_recovery_status,
 )
 
@@ -93,3 +94,14 @@ def test_recovery_summary(tmp_path: Path) -> None:
     summary = summarize_recovery_status(status)
     assert set(summary["dominant_status"]) == {"faster", "not_recovered"}
     assert summary["blocks"].sum() == 2
+
+
+def test_recovery_rasterized_matches_footprint_status(tmp_path: Path) -> None:
+    """The rasterized full-estate path returns the same status semantics."""
+    raster, blocks = _fixture(tmp_path)
+    status, _source = sample_recovery_rasterized(raster, blocks, source_version="fixture-v1")
+    first = status[status.block_id == 1].iloc[0]
+    second = status[status.block_id == 2].iloc[0]
+    assert first.dominant_status == "not_recovered"
+    assert second.dominant_status == "faster"
+    assert status.valid_pixels.sum() > 0

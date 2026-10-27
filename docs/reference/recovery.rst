@@ -55,11 +55,23 @@ Commands
 Pilot
 -----
 
-``examples/recovery_tsa46`` is a real 5 km TSA 46 subset: 33 VRI blocks, 19,806
-ha. 31 blocks intersect the fire-recovery footprint and **all 31 are dominated
-by not recovered**; 2 blocks are outside the footprint. Burned recovery area is
-5,224 ha. The subset has only 13 class-2 pixels, so no block is dominated by
-slower recovery.
+``examples/recovery_tsa23`` applies the layer to the TSA 23 instance, which is
+the fire-oriented estate. The 30 m subset covers 102,128 blocks and 988,816 ha.
+
+- **1,555 blocks** are in the fire-recovery footprint.
+- **1,497 blocks are not recovered**: 21,948 ha, 5,727 ha burned.
+- **58 blocks are slower**: 745 ha, 176 ha burned.
+- No block is dominated by faster recovery.
+- 100,573 blocks are ``outside_footprint``, not failures.
+- The existing 2,000-row baseline schedule contains **29 not-recovered blocks**
+  (212 ha) and 2 slower blocks (8 ha); 1,969 scheduled blocks are outside the
+  footprint.
+
+The 29 scheduled not-recovered blocks are candidates for a scenario that defers
+harvest. The layer is not yet a constraint or objective term.
+
+The earlier ``examples/recovery_tsa46`` is retained as a 5 km mask-based smoke
+test.
 
 Caveats
 -------
