@@ -901,6 +901,8 @@ def create_app(
         ]
         block_values: dict[int, dict[str, float]] = {}
         available_fields: list[str] = []
+        field_stats: dict[str, dict[str, Any]] = {}
+        total_blocks = 0
         table_path = dataset / "blocks.parquet"
         if table_path.is_file():
             try:
@@ -908,6 +910,7 @@ def create_app(
             except (OSError, ValueError):
                 blocks = None
             if blocks is not None and "block_id" in blocks.columns:
+                total_blocks = len(blocks)
                 if not block_fields:
                     block_fields = sorted(
                         str(name)
@@ -921,6 +924,13 @@ def create_app(
                         columns[field] = column
                 available_fields = list(columns)
                 if available_fields:
+                    for field, column in columns.items():
+                        series = pd.to_numeric(blocks[column], errors="coerce").dropna()
+                        field_stats[field] = {
+                            "valid_count": int(series.count()),
+                            "min": float(series.min()) if not series.empty else None,
+                            "max": float(series.max()) if not series.empty else None,
+                        }
                     for row in blocks[["block_id", *columns.values()]].itertuples(index=False):
                         values: dict[str, float] = {}
                         for field, column in columns.items():
@@ -948,10 +958,12 @@ def create_app(
                     "label": _lidar_field_label(field)[0],
                     "unit": _lidar_field_label(field)[1],
                     "support": "block",
+                    **field_stats.get(field, {"valid_count": 0, "min": None, "max": None}),
                 }
                 for field in available_fields
             ],
             "fragment_field_count": len(field_meta.get("fragment_fields", [])),
+            "total_blocks": total_blocks,
             "block_count": len(block_values),
             "blocks": block_values,
         }

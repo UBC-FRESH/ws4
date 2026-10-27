@@ -1426,6 +1426,14 @@ def test_the_lidar_api_and_map_join_use_canonical_block_fields(tmp_path: Path) -
         "lidar_chm_p95",
     ]
     assert info["block_count"] == 2
+    assert info["total_blocks"] == 2
+    fields = {field["name"]: field for field in info["fields"]}
+    assert fields["lidar_slope_mean"]["valid_count"] == 2
+    assert fields["lidar_slope_mean"]["min"] == 8.0
+    assert fields["lidar_slope_mean"]["max"] == 14.0
+    assert fields["lidar_chm_p95"]["valid_count"] == 2
+    assert fields["lidar_chm_p95"]["min"] == 12.5
+    assert fields["lidar_chm_p95"]["max"] == 21.5
     body = client.get("/api/runs/run1/map", params={"year": 0, "lidar": True}).json()
     assert body["lidar"] is True
     properties = {
@@ -1443,6 +1451,7 @@ def test_the_lidar_api_is_explicitly_unavailable_without_fields(tmp_path: Path) 
     assert body["available"] is False
     assert body["fields"] == []
     assert body["block_count"] == 0
+    assert body["total_blocks"] == 0
     assert client.get("/api/runs/run1/map", params={"year": 0, "lidar": True}).status_code == 200
 
 

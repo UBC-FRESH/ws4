@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=76">
+  <link rel="stylesheet" href="static/style.css?v=77">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
 </head>
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v76</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v77</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Period
@@ -217,33 +217,55 @@
 <section id="tab-lidar" role="tabpanel" aria-labelledby="sub-lidar" hidden>
         <h2>LiDAR</h2>
         <p id="lidar-status" class="hint">loading LiDAR…</p>
+        <p id="lidar-empty" class="empty-state" hidden>No registered LiDAR fields for this dataset. Pick a LiDAR-registered dataset to colour blocks by canopy or terrain summaries.</p>
+        <div id="lidar-coverage-row" class="coverage-row" hidden>
+          <span id="lidar-coverage" class="coverage-badge"></span>
+          <span id="lidar-coverage-note" class="hint"></span>
+        </div>
         <div id="lidar-meta" class="lidar-meta"></div>
-        <label class="lidar-field">Colour blocks by
+        <label id="lidar-field-label" class="lidar-field">Colour blocks by
           <select id="lidar-field"><option value="">Off</option></select>
         </label>
         <div id="lidar-legend" class="lidar-legend" hidden>
           <div id="lidar-legend-title" class="hint"></div>
           <div class="lidar-bar"></div>
           <div class="lidar-ends"><span id="lidar-min">—</span><span id="lidar-max">—</span></div>
+          <div class="lidar-missing"><span class="lidar-missing-swatch"></span>No value / outside coverage</div>
         </div>
-        <p class="hint">LiDAR values are block zonal summaries from the registered FEMIC bundle. Selecting a field turns off the MVT shortcut so the exact block join is visible; missing values stay neutral.</p>
+        <p id="lidar-hint" class="hint">LiDAR values are dataset-wide block zonal summaries from the registered FEMIC bundle. Selecting a field turns off the MVT shortcut so the exact block join is visible; missing values stay neutral.</p>
       </section>
 <section id="tab-carbon" role="tabpanel" aria-labelledby="sub-carbon" hidden>
         <h2>Carbon</h2>
         <p id="carbon-status" class="hint">loading carbon…</p>
         <div id="carbon-meta" class="lidar-meta"></div>
-        <label class="lidar-field">Account
-          <select id="carbon-account"><option value="">—</option></select>
-        </label>
-        <svg id="carbon-chart" class="carbon-chart" viewBox="0 0 320 140" role="img" aria-label="carbon account trend"></svg>
-        <div id="carbon-composition" class="carbon-composition"></div>
-        <p id="carbon-ledger" class="hint"></p>
-        <h3>GCBM comparison</h3>
-        <div class="table-wrap"><table id="carbon-compare" hidden></table></div>
-        <p id="carbon-compare-empty" class="hint">no GCBM comparison in this run</p>
-        <h3>Artifacts</h3>
-        <ul id="carbon-files" class="carbon-files"></ul>
-        <p class="hint">Read-only: the service aggregates libcbm pools and fluxes by timestep and never reruns the carbon engine.</p>
+        <p id="carbon-empty" class="empty-state" hidden>This run has no carbon artifacts. Pick a carbon run to see accounts and pools.</p>
+        <div id="carbon-content" hidden>
+          <label class="lidar-field">Account
+            <select id="carbon-account"><option value="">—</option></select>
+          </label>
+          <div class="carbon-chart-head">
+            <strong id="carbon-chart-title">Carbon account</strong>
+            <span id="carbon-chart-current" class="hint"></span>
+          </div>
+          <div class="carbon-chart-wrap">
+            <svg id="carbon-chart" class="carbon-chart" viewBox="0 0 480 230" role="img" aria-label="carbon account trend"></svg>
+            <div id="carbon-tooltip" class="chart-tooltip" hidden></div>
+          </div>
+          <p id="carbon-chart-note" class="hint"></p>
+          <p id="carbon-composition-note" class="hint" hidden></p>
+          <div id="carbon-composition" class="carbon-composition"></div>
+          <p id="carbon-ledger" class="hint"></p>
+          <div id="carbon-gcbm-block" hidden>
+            <h3>GCBM comparison</h3>
+            <div class="table-wrap"><table id="carbon-compare" hidden></table></div>
+            <p id="carbon-compare-empty" class="hint">no GCBM comparison in this run</p>
+          </div>
+          <div id="carbon-files-block" hidden>
+            <h3>Artifacts</h3>
+            <ul id="carbon-files" class="carbon-files"></ul>
+          </div>
+        </div>
+        <p id="carbon-hint" class="hint">Read-only: the service aggregates libcbm pools and fluxes by timestep and never reruns the carbon engine.</p>
       </section>
       </div>
       </div>
@@ -298,6 +320,6 @@
     </div>
   </main>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=76"></script>
+  <script type="module" src="static/app.js?v=77"></script>
 </body>
 </html>
