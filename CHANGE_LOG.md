@@ -3077,3 +3077,6 @@ issue comments.
   `index_computable: false` result is a materialization gap, not a data-access
   blocker. Added `examples/structure_habitat_tfl6` and updated the structure
   reference page. Dashboard **GREEN** (tests 153.86 s; report-only change).
+
+- P67 close-out: pull request #482 squash-merged as `9ae8f5f`; parent #479 and task #480
+  closed; status set complete. Target chart period hit zones and highlight verified.
