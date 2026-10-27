@@ -72,8 +72,12 @@ are scheduled. Deferring those treatments changes harvested volume from
 138.50M to 137.12M m3 (-1.00%) and treated area by -3,579 (-1.13%). Deferring
 both not-recovered and slower blocks changes volume by -1.03%. The block area is
 larger than the treated-area change because some scheduled treatments are not
-operable. This is a scenario result; the layer is not yet a constraint or
-objective term.
+operable.
+
+On the full 20-year TSA 23 `abatement_bc/sim_6400000000` schedule, 491
+not-recovered blocks (7,502 ha) are scheduled. A 5-year deferral changes volume
+by -0.069%; a 10-year deferral by -0.093%. The aggregate effect is small, so the
+layer remains an informational overlay, not a hard constraint.
 
 The earlier ``examples/recovery_tsa46`` is retained as a 5 km mask-based smoke
 test.
