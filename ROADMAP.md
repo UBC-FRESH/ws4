@@ -69,7 +69,7 @@ exists and the maintainer approves it.
 | P64 Patchworks-style target charts | #456 | `feature/p64-target-charts` | complete |
 | P65 Editable target charts | #464 | `feature/p65-editable-targets` | complete |
 | P66 Assistant panel visibility | #473 | `feature/p66-assistant-visibility` | complete |
-| P67 Target chart period hit zones | #479 | `feature/p67-target-hit-zone` | pr-open |
+| P67 Target chart period hit zones | #479 | `feature/p67-target-hit-zone` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2078,7 +2078,7 @@ Acceptance:
 
 Parent issue: #479
 Branch: `feature/p67-target-hit-zone`
-Status: pr-open
+Status: complete
 
 Goal: make a click inside a target-chart period select that period, without the right-side
 workaround.

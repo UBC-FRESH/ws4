@@ -3,7 +3,7 @@
 Phase: P67, Target chart period hit zones
 Parent issue: #479
 Pull request: #482
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-27 as `9ae8f5f`.
 Date: 2026-10-26
 
 ## Recommendation
