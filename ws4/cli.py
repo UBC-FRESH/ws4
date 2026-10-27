@@ -98,6 +98,7 @@ from .patch.edge import load_edge_elements
 from .recovery import (
     RecoveryError,
     sample_recovery_raster,
+    sample_recovery_rasterized,
     summarize_recovery_status,
     write_recovery_status,
 )
@@ -1844,6 +1845,9 @@ def recovery_ingest(
         ..., "--source-version", help="Required source version or vintage."
     ),
     source_id: str = typer.Option("ntems-post-disturbance-recovery-rate", "--source-id"),
+    method: str = typer.Option(
+        "polygon", "--method", help="polygon or raster (raster is faster for full estates)."
+    ),
     disturbance_years: str = typer.Option(
         "1986-2012", "--disturbance-years", help="Disturbance window."
     ),
@@ -1856,8 +1860,11 @@ def recovery_ingest(
     notes: str | None = typer.Option(None, "--notes"),
 ) -> None:
     """Summarize recovery classes at block polygons."""
+    if method not in {"polygon", "raster"}:
+        raise typer.BadParameter("--method must be 'polygon' or 'raster'")
+    sampler = sample_recovery_raster if method == "polygon" else sample_recovery_rasterized
     try:
-        status, source = sample_recovery_raster(
+        status, source = sampler(
             raster,
             blocks,
             source_version=source_version,

@@ -3133,3 +3133,13 @@ issue comments.
   `examples/recovery_tsa46` and `docs/reference/recovery.rst`. Verification:
   4 recovery tests pass; full dashboard GREEN (tests 130.22 s). No objective
   change.
+
+- DIS-04 TSA23 full-estate recovery: added `--method raster` to `ws4 recovery
+  ingest` for full-estate block-id rasterization and bincount. Applied the
+  NTEMS fire recovery layer to all 102,128 TSA 23 blocks: 1,555 in footprint,
+  1,497 not recovered (21,948 ha, 5,727 ha burned), 58 slower (745 ha), no block
+  dominated by faster recovery. The existing 2,000-block baseline schedule has
+  29 not-recovered blocks (212 ha) and 2 slower blocks (8 ha). Added
+  `examples/recovery_tsa23` and updated `docs/reference/recovery.rst`.
+  Verification: 5 recovery tests pass; full dashboard GREEN (tests 131.50 s).
+  No objective or constraint change.

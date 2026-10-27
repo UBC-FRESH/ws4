@@ -296,6 +296,152 @@ def sample_recovery_raster(
     return status, metadata
 
 
+def sample_recovery_rasterized(
+    raster_path: str | Path,
+    blocks_path: str | Path,
+    *,
+    source_version: str,
+    source_id: str = RECOVERY_SOURCE_ID,
+    disturbance_years: str = "1986-2012",
+    observation_years: str = "1985-2017",
+    licence: str = RECOVERY_LICENCE,
+    citation: str = RECOVERY_CITATION,
+    block_id_field: str | None = None,
+    notes: str | None = None,
+) -> tuple[pd.DataFrame, RecoverySource]:
+    """Summarize recovery classes by rasterizing block ids once.
+
+    This is the efficient path for a full estate. It is equivalent to
+    :func:`sample_recovery_raster` except that block ids are rasterized onto the
+    recovery grid and counted with ``bincount``. Blocks whose ids are not
+    rasterized have no footprint status.
+
+    Parameters
+    ----------
+    raster_path : str or Path
+        Recovery-rate GeoTIFF.
+    blocks_path : str or Path
+        Block polygon layer.
+    source_version : str
+        Required source version or vintage.
+    source_id : str, optional
+        Product identifier.
+    disturbance_years : str, optional
+        Disturbance window.
+    observation_years : str, optional
+        Observation window.
+    licence : str, optional
+        Source licence.
+    citation : str, optional
+        Source citation.
+    block_id_field : str or None, optional
+        Block id column; auto-detected when omitted.
+    notes : str or None, optional
+        Optional provenance note.
+
+    Returns
+    -------
+    tuple of (pandas.DataFrame, RecoverySource)
+        Per-block status fractions and source metadata.
+    """
+    import geopandas as gpd
+    import rasterio
+    from rasterio.features import rasterize
+    from shapely.geometry import mapping
+
+    if not source_version.strip():
+        raise RecoveryError("recovery source_version must not be empty")
+    raster = Path(raster_path)
+    blocks = Path(blocks_path)
+    if not raster.is_file():
+        raise RecoveryError(f"recovery raster does not exist: {raster}")
+    if not blocks.is_file():
+        raise RecoveryError(f"blocks file does not exist: {blocks}")
+    frame = gpd.read_file(blocks)
+    if frame.crs is None:
+        raise RecoveryError("blocks file has no CRS")
+    id_column = _block_id_column(frame, block_id_field)
+    if frame[id_column].duplicated().any():
+        raise RecoveryError(f"blocks file has duplicate {id_column!r} values")
+    with rasterio.open(raster) as source:
+        if source.count != 1:
+            raise RecoveryError("recovery raster must have exactly one band")
+        if source.crs is None:
+            raise RecoveryError("recovery raster has no CRS")
+        projected = frame.to_crs(source.crs)
+        ids = projected[id_column].astype(int).to_numpy()
+        geometries = projected.geometry.to_numpy()
+        shapes = ((mapping(geom), int(block)) for block, geom in zip(ids, geometries, strict=True))
+        block_grid = rasterize(
+            shapes,
+            out_shape=(source.height, source.width),
+            fill=0,
+            all_touched=True,
+            dtype="int32",
+            transform=source.transform,
+        )
+        classes = source.read(1)
+        max_id = int(ids.max()) if ids.size else 0
+        counts = {
+            code: np.bincount(block_grid[classes == code].ravel(), minlength=max_id + 1)
+            for code in RECOVERY_CLASSES
+        }
+        resolution = float(abs(source.transform.a))
+        crs = source.crs.to_string()
+    areas = (
+        {int(getattr(row, id_column)): float(row.area_ha) for row in frame.itertuples(index=False)}
+        if "area_ha" in frame.columns
+        else {int(block): 0.0 for block in ids}
+    )
+    rows: list[dict[str, object]] = []
+    for block in sorted(areas):
+        n1, n2, n3 = (int(counts[code][block]) for code in RECOVERY_CLASSES)
+        valid = n1 + n2 + n3
+        if valid == 0:
+            rows.append(
+                {
+                    "block_id": block,
+                    "area_ha": areas[block],
+                    "burned_area_ha": 0.0,
+                    "valid_pixels": 0,
+                    "faster_fraction": 0.0,
+                    "slower_fraction": 0.0,
+                    "not_recovered_fraction": 0.0,
+                    "dominant_status": "outside_footprint",
+                    "dominant_fraction": 0.0,
+                }
+            )
+            continue
+        counts_by_class = {1: n1, 2: n2, 3: n3}
+        dominant = max(RECOVERY_CLASSES, key=lambda code: counts_by_class[code])
+        rows.append(
+            {
+                "block_id": block,
+                "area_ha": areas[block],
+                "burned_area_ha": valid * (resolution * resolution) / 10000.0,
+                "valid_pixels": valid,
+                "faster_fraction": n1 / valid,
+                "slower_fraction": n2 / valid,
+                "not_recovered_fraction": n3 / valid,
+                "dominant_status": RECOVERY_STATUS[dominant],
+                "dominant_fraction": counts_by_class[dominant] / valid,
+            }
+        )
+    status = pd.DataFrame(rows)
+    metadata = RecoverySource(
+        source_id=source_id,
+        source_version=source_version,
+        disturbance_years=disturbance_years,
+        observation_years=observation_years,
+        resolution_m=resolution,
+        crs=crs,
+        licence=licence,
+        citation=citation,
+        notes=notes,
+    )
+    return status, metadata
+
+
 def write_recovery_status(
     status: pd.DataFrame,
     source: RecoverySource,
@@ -362,6 +508,7 @@ __all__ = [
     "RecoveryError",
     "RecoverySource",
     "sample_recovery_raster",
+    "sample_recovery_rasterized",
     "summarize_recovery_status",
     "write_recovery_status",
 ]
