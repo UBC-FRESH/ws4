@@ -165,6 +165,8 @@ The compiler:
   transition tables;
 - takes event area from the dataset fragments in the scheduled block and sets
   ``time_step = offset + 1``;
+- sums identical inventory rows and identical events before libcbm, because CBM is
+  area-additive;
 - maps each WS4 treatment to its package disturbance type;
 - rejects a retention split with ``CARBON-RETENTION-UNSUPPORTED`` rather than
   approximating it;
