@@ -1139,9 +1139,19 @@ function renderCompareTargets(rowsA, rowsB) {
     const config = byConfig.get(key);
     const tr = document.createElement('tr');
     const account = document.createElement('td');
-    account.className = 'account';
+    account.className = 'account account-link';
     account.textContent = a?.account ?? b?.account ?? '';
-    account.title = account.textContent;
+    account.title = `${account.textContent} — open in Plan targets`;
+    account.tabIndex = 0;
+    account.setAttribute('role', 'button');
+    const open = () => openPlanForAccount(account.textContent);
+    account.addEventListener('click', open);
+    account.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        open();
+      }
+    });
     tr.append(account);
     const kind = document.createElement('td');
     kind.textContent = a?.kind ?? b?.kind ?? config?.kind ?? '';
@@ -2614,6 +2624,7 @@ function setPeriod(index) {
   state.year = Number(period.end);
   slider.value = String(next);
   $('year-label').textContent = period.label ?? `Period ${next + 1}`;
+  renderRunHealth();
   updateUrl({ push: false });
   return period;
 }
@@ -3806,6 +3817,7 @@ function updateTargetSummary() {
   if (!rows.length) {
     summary.hidden = true;
     if (chartSummary) chartSummary.textContent = '';
+    renderRunHealth();
     return;
   }
   const counts = targetStatusCounts();
@@ -3834,6 +3846,68 @@ function updateTargetSummary() {
       ? `${failing} failing · ${counts.met} met`
       : `${counts.met} met · 0 failing`;
   }
+  renderRunHealth();
+}
+
+function runHealthCounts() {
+  const counts = { met: 0, below: 0, above: 0, off: 0, unknown: 0 };
+  for (const row of state.targets) {
+    const entry = state.targetCells.get(String(row.index));
+    const status = statusOf(row, entry?.value);
+    if (status in counts) counts[status] += 1;
+  }
+  return counts;
+}
+
+function renderRunHealth() {
+  const card = $('run-health');
+  if (!card) return;
+  const counts = runHealthCounts();
+  const total = state.targets.length;
+  const failing = counts.below + counts.above;
+  const charts = targetChartAccounts().length;
+  const runInfo = (state.datasetSummary?.runs ?? []).find((run) => run.id === state.run);
+  const period = currentPeriod();
+  card.hidden = false;
+  $('run-health-run').textContent = state.run ?? 'no run';
+  $('run-health-meta').textContent = [
+    runInfo?.kind ?? 'run',
+    state.live.active ? 'live' : '',
+    period?.label ?? 'no periods',
+  ].filter(Boolean).join(' · ');
+  const badges = $('run-health-badges');
+  badges.replaceChildren();
+  const badge = (text, className = '') => {
+    const span = document.createElement('span');
+    if (className) span.className = className;
+    span.textContent = text;
+    badges.append(span);
+  };
+  badge(`${total} targets`);
+  badge(`${failing} failing`, failing ? 'failing' : '');
+  badge(`${counts.met} met`);
+  badge(`${counts.off} off`);
+  badge(`${charts} chart${charts === 1 ? '' : 's'}`);
+  badge(`LiDAR ${state.lidar?.available ? 'available' : '—'}`, state.lidar?.available ? 'available' : 'unavailable');
+  badge(`Carbon ${state.carbon?.available ? 'available' : '—'}`, state.carbon?.available ? 'available' : 'unavailable');
+  $('run-health-failing').disabled = failing === 0;
+}
+
+function openPlanForAccount(account) {
+  setWorkspace('plan');
+  const search = $('target-filter-search');
+  search.value = account;
+  $('target-filter-status').value = '';
+  applyTargetFilter();
+  search.focus();
+}
+
+function showFailingTargets() {
+  setWorkspace('plan');
+  $('target-filter-search').value = '';
+  $('target-filter-status').value = 'failing';
+  applyTargetFilter();
+  $('target-filter-search').focus();
 }
 
 function targetFilterMatches(row) {
@@ -3911,6 +3985,7 @@ function pinVisibleFailing() {
   saveWatched();
   renderWatchPanel();
   renderTargetCharts();
+  renderRunHealth();
   applyTargetFilter();
 }
 
@@ -3926,6 +4001,7 @@ function unpinVisibleTargets() {
   saveWatched();
   renderWatchPanel();
   renderTargetCharts();
+  renderRunHealth();
   applyTargetFilter();
 }
 
@@ -4336,6 +4412,7 @@ async function loadTargets() {
       $('target-sort-bar').hidden = true;
       $('target-filter-bar').hidden = true;
       $('target-summary').hidden = true;
+      renderRunHealth();
       return;
     }
     empty.hidden = true;
@@ -4406,6 +4483,7 @@ async function loadTargets() {
         saveWatched();
         renderWatchPanel();
         renderTargetCharts();
+        renderRunHealth();
       });
       const accountLine = document.createElement('span');
       accountLine.className = 'target-account-line';
@@ -5291,6 +5369,8 @@ function wireControls() {
   $('target-filter-clear').addEventListener('click', clearTargetFilters);
   $('target-pin-failing').addEventListener('click', pinVisibleFailing);
   $('target-unpin-visible').addEventListener('click', unpinVisibleTargets);
+  $('run-health-plan').addEventListener('click', () => setWorkspace('plan'));
+  $('run-health-failing').addEventListener('click', showFailingTargets);
   for (const button of document.querySelectorAll('.workspaces [data-workspace]')) {
     button.addEventListener('click', () => setWorkspace(button.dataset.workspace));
   }

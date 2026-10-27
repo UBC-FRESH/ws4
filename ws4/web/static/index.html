@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=79">
+  <link rel="stylesheet" href="static/style.css?v=80">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
 </head>
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v79</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v80</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Period
@@ -129,6 +129,17 @@
       </section>
       </div>
       <div id="workspace-results" class="workspace" role="tabpanel" aria-labelledby="ws-results" hidden>
+        <div id="run-health" class="run-health" hidden>
+          <div class="run-health-head">
+            <strong id="run-health-run"></strong>
+            <span id="run-health-meta" class="hint"></span>
+          </div>
+          <div id="run-health-badges" class="run-health-badges"></div>
+          <div class="run-health-actions">
+            <button id="run-health-plan" type="button">Open Plan</button>
+            <button id="run-health-failing" type="button">Show failing targets</button>
+          </div>
+        </div>
         <nav id="results-nav" class="subnav" role="tablist" aria-label="Results sections">
           <button id="sub-reports" role="tab" aria-selected="true" aria-controls="tab-reports" data-sub="reports">Reports</button>
           <button id="sub-comparison" role="tab" aria-selected="false" aria-controls="tab-comparison" data-sub="comparison">Compare</button>
@@ -350,6 +361,6 @@
     </div>
   </main>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=79"></script>
+  <script type="module" src="static/app.js?v=80"></script>
 </body>
 </html>
