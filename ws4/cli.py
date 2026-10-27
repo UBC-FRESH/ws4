@@ -95,6 +95,12 @@ from .opt.repro import dataset_quality
 from .opt.watch import run_watch
 from .patch.accounts import load_patch_accounts
 from .patch.edge import load_edge_elements
+from .recovery import (
+    RecoveryError,
+    sample_recovery_raster,
+    summarize_recovery_status,
+    write_recovery_status,
+)
 from .report import write_report
 from .resilience import ResilienceError, compare_resilience_runs
 from .roads.accounts import load_route_config
@@ -1820,6 +1826,55 @@ def hydrology_validate(
 
 
 app.add_typer(lidar_app, name="lidar")
+recovery_app = typer.Typer(
+    add_completion=False,
+    no_args_is_help=True,
+    help="Ingest a published post-fire recovery layer.",
+)
+
+
+@recovery_app.command("ingest")
+def recovery_ingest(
+    raster: Path = typer.Option(..., "--raster", exists=True, help="Recovery-rate GeoTIFF."),
+    blocks: Path = typer.Option(..., "--blocks", exists=True, help="Block polygons."),
+    output: Path = typer.Option(..., "--output", "-o", help="Block status CSV."),
+    metadata: Path = typer.Option(..., "--metadata", help="Source metadata JSON."),
+    summary: Path | None = typer.Option(None, "--summary", help="Optional summary CSV."),
+    source_version: str = typer.Option(
+        ..., "--source-version", help="Required source version or vintage."
+    ),
+    source_id: str = typer.Option("ntems-post-disturbance-recovery-rate", "--source-id"),
+    disturbance_years: str = typer.Option(
+        "1986-2012", "--disturbance-years", help="Disturbance window."
+    ),
+    observation_years: str = typer.Option(
+        "1985-2017", "--observation-years", help="Observation window."
+    ),
+    block_id_field: str | None = typer.Option(
+        None, "--block-id-field", help="Block id column (default: auto-detect)."
+    ),
+    notes: str | None = typer.Option(None, "--notes"),
+) -> None:
+    """Summarize recovery classes at block polygons."""
+    try:
+        status, source = sample_recovery_raster(
+            raster,
+            blocks,
+            source_version=source_version,
+            source_id=source_id,
+            disturbance_years=disturbance_years,
+            observation_years=observation_years,
+            block_id_field=block_id_field,
+            notes=notes,
+        )
+        write_recovery_status(status, source, output, metadata)
+        if summary is not None:
+            summarize_recovery_status(status).to_csv(summary, index=False)
+    except RecoveryError as error:
+        raise typer.BadParameter(str(error)) from error
+    print(f"[bold green]Recovery status[/] {len(status)} blocks → {output}")
+
+
 species_app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
@@ -2120,6 +2175,7 @@ def dhi_ingest(
     print(f"[bold green]DHI values[/] {len(values)} blocks, bands {', '.join(names)} → {output}")
 
 
+app.add_typer(recovery_app, name="recovery")
 app.add_typer(species_app, name="species")
 app.add_typer(resilience_app, name="resilience")
 app.add_typer(shi_app, name="shi")
