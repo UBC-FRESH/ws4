@@ -143,5 +143,10 @@ Record the result in the changelog entry for the milestone.
   between ingestion and execution.
 - **Reproducibility is a feature.** Every stochastic search records its seed; the simulator is
   deterministic given a schedule. Reason: results must be re-runnable and auditable.
-- **Keep third-party provenance out of the repository.** Notes describe WS4's own design and use
-  neutral vocabulary. Reason: the project must stand on its own before any external conversation.
+- **Carbon is a sidecar, not a dataset column.** Read `docs/reference/carbon.rst` and
+  `docs/howto/run-carbon.rst` before changing the package join, the SIT compiler, the libcbm
+  driver, the HWP lifecycle, or carbon targets. The package and curve method are cross-repo
+  contracts; GCBM is a bridge, not a parity target.
+- **Do not copy third-party documentation or code.** Public method references such as a thesis or a
+  public companion repository may be cited and linked, but the description stays in WS4's own words.
+  Reason: provenance is auditable without importing someone else's text or implementation.

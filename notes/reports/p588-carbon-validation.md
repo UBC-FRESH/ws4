@@ -98,3 +98,11 @@ verified by the exact engine.
 - The MKRF package excludes tracks without a merchantable feature curve.
 - Both carbon targets were chosen to be reachable on the subset. They are mechanism
   validation levels, not policy recommendations.
+
+## Later status (2026-10-27)
+
+P120 subsequently ran full-landscape 50-year schedules for TSA08, TSA16, TSA40, and
+TSA41 after inventory/event aggregation, and compiled real split-TSA matrices. The
+full TSA24 carbon-aware search remains a separate runtime/cache question; this note's
+subset result is still a mechanism validation, not a production optimum. See
+`notes/reports/p120-multi-boundary.md`.

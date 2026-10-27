@@ -23,6 +23,7 @@ from .fertilization import (
     with_fertilization_disturbances,
     with_fertilization_recovery,
 )
+from .hwp import HwpConfig
 from .libcbm import carbon_accounts, run_libcbm
 from .package import CarbonPackage
 from .sit import build_sit_tables_from_tables
@@ -47,6 +48,9 @@ class CarbonLedger:
         When set, fertilizer events use the materialized curve transitions or the
         temporary growth multiplier, and the ledger includes the audited emissions
         accounts. Defaults to None.
+    hwp : HwpConfig or None, optional
+        When set, add the HWP lifecycle and whole-system carbon accounts. Defaults
+        to None.
     """
 
     def __init__(
@@ -56,6 +60,7 @@ class CarbonLedger:
         years: int,
         *,
         fertilization: FertilizationConfig | None = None,
+        hwp: HwpConfig | None = None,
     ) -> None:
         """Load the dataset tables and initialize the cache."""
         if years <= 0:
@@ -63,6 +68,7 @@ class CarbonLedger:
         root = Path(dataset_dir)
         self.dataset_dir = root
         self.fertilization = fertilization
+        self.hwp = hwp
         self.years = int(years)
         self.fragments = pd.read_parquet(root / "fragments.parquet")
         self.tracks = pd.read_parquet(root / "tracks.parquet")
@@ -262,7 +268,7 @@ class CarbonLedger:
                 else None
             ),
         )
-        accounts = carbon_accounts(run)
+        accounts = carbon_accounts(run, hwp=self.hwp)
         if self.fertilization is not None:
             emissions = fertilization_accounts(
                 schedule,

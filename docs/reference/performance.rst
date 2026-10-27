@@ -41,6 +41,13 @@ route accounts are additive as well, so they are priced by a per-move route delt
 route **build** account, and duplicate accounts are not additive, so a configuration that uses any of
 them falls back to the full simulation.
 
+Carbon uses the same additive logic at block level: CBM is stand-level and area-additive, so the
+``CarbonLedger`` caches one block's treatment chain and sums the blocks. Inventory and event
+aggregation keep full-landscape schedules practical. P120 measured a one-step full-landscape baseline
+at 60-107 s for TSA08/16/40/41 after inventory aggregation (down from more than 20 minutes), and
+50-year all-block schedules at 358-738 s after event aggregation. The exact ``ws4 carbon`` run remains
+the authority; the ledger is the fast search path. See ``notes/reports/p120-multi-boundary.md``.
+
 Patch targets are not additive either: a patch spans adjacent blocks, so the optimizer prices them
 through a patch model instead (a move touches only the components near the moved block). Because the
 simulation is annual while the accounting is periodic, the patch statistics are maintained only at

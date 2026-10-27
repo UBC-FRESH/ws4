@@ -77,3 +77,11 @@ ws4 gcbm --results gcbm_output.db --out <out>
 - The phase branch is `feature/p58-carbon`.
 - Pull request: #408, approved for squash-merge from `feature/p58-carbon` to `main`.
 - Parent #357 closes after the merge; the branch is deleted after the merge.
+
+## Later status (2026-10-27)
+
+P120 delivered split-TSA packages and compiled-matrix/full-landscape runs for TSA08,
+TSA16, TSA40, and TSA41; inventory/event aggregation made the full schedules practical.
+The HWP lifecycle and simulated-clearcut carbon curves are now documented and implemented
+in the WS4 carbon lane. The GCBM same-footprint work remains a bridge/readiness check, not
+a parity result. The durable production evidence is `notes/reports/p120-multi-boundary.md`.

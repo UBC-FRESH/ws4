@@ -24,6 +24,9 @@ Beyond a level, there are two other shapes of constraint:
 * a **patch** target constrains the map: the size distribution of patches of a criterion feature. It is
   read at the end offset of its period, priced through a patch model, and it is what makes the search
   arrange harvesting into openings rather than simply count it.
+* a **carbon** target constrains an ecosystem, product, or whole-system account. Carbon accounts use
+  the same period and shape vocabulary; with an HWP configuration the system accounts add product
+  storage, end-of-life emissions, and displacement. See :doc:`../reference/carbon`.
 
 Weights are the whole tuning story. A weight that is much larger than the others makes its term
 dominant, which is what you want for something that must not be violated and what you do not want by

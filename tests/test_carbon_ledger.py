@@ -38,6 +38,28 @@ def test_fertilization_targets_require_a_fertilization_config() -> None:
         )
 
 
+def test_hwp_targets_require_a_hwp_config() -> None:
+    """An HWP or whole-system target needs the lifecycle assumptions."""
+    optimizer = Optimizer(Path("."), OptimizeConfig(carbon_package_path="pkg"))
+    with pytest.raises(ValueError, match="HWP config"):
+        optimizer._require_carbon_target_support(
+            [Target(account="carbon.co2e.system.emissions", maximum=1.0)]
+        )
+    configured = Optimizer(
+        Path("."),
+        OptimizeConfig(carbon_package_path="pkg", carbon_hwp_path="hwp.yaml"),
+    )
+    configured._require_carbon_target_support(
+        [Target(account="carbon.co2e.system.emissions", maximum=1.0)]
+    )
+
+
+def test_hwp_config_requires_a_carbon_package() -> None:
+    """HWP assumptions alone are not a carbon run."""
+    with pytest.raises(ValueError, match="carbon HWP accounting"):
+        OptimizeConfig(carbon_hwp_path="hwp.yaml")
+
+
 def test_ledger_matches_a_full_run(tmp_path: Path) -> None:
     """The block ledger reproduces the full-schedule carbon accounts."""
     pytest.importorskip("libcbm")

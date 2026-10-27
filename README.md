@@ -25,6 +25,9 @@ The design favors columnar datasets (Parquet/Arrow), vectorized kernels, and par
 - `notes/design/ws4-scope.md` — problem statement, users, scope, and success criteria.
 - `notes/design/ws4-architecture.md` — the architecture design.
 - `notes/adr/` — architecture decision records.
+- `docs/reference/carbon.rst` — carbon package, libcbm, HWP lifecycle, system accounts,
+  carbon curves, and the GCBM bridge.
+- `docs/howto/run-carbon.rst` — end-to-end carbon study walkthrough.
 
 ## Quick start
 
