@@ -61,8 +61,15 @@ diagnostic reports ``index_computable``, ``present``, ``missing``, and
 - No first-return height standard deviation field exists in the current FEMIC
   canopy summary.
 
-The real TFL 6 FEMIC bundle (`lidarbc-995fb1f771f4d7fe`) therefore reports
-``index_computable: false``. That is a coverage result, not a zero index.
+The current TFL 6 **FEMIC bundle** (`lidarbc-995fb1f771f4d7fe`) exposes the CHM
+products only, so a diagnostic of its canopy summary reports
+``index_computable: false``. That is a bundle-coverage result, not a zero index.
+
+The underlying LidarBC point clouds are publicly downloadable. The TFL 6
+real-data pilot in ``examples/structure_habitat_tfl6`` uses the two public
+OP24BMRS001 2024 LAZ tiles over the 1 km AOI, normalizes first returns with the
+FEMIC 1 m DEM, and computes the exact metrics for the seven VRI blocks. The
+bundle omission is a materialization gap, not a data-access blocker.
 
 Account
 -------
@@ -102,9 +109,12 @@ It is exploratory: there is no significance test, and a small common sample is
 labelled ``insufficient common blocks``. Negative or weak agreement is recorded,
 not filtered out.
 
-The pilot fixture has four synthetic blocks and is not evidence about the TFL 6
-landscape. Its DHI comparison happens to show negative rank agreement with DHI
-cumulative; that is a fixture result, not a management conclusion.
+The synthetic four-block fixture is not evidence about the TFL 6 landscape. The
+real TFL 6 pilot has seven VRI blocks: area-weighted mean height 22.95 m, cover
+69.82%, complexity 6.86 m. Its DHI comparison is exploratory: structure height
+and cover show strong positive rank agreement with DHI variation (Spearman 0.67
+and 0.80), while most other pairs are weak or negative. Seven blocks are not a
+validation dataset.
 
 Caveats
 -------

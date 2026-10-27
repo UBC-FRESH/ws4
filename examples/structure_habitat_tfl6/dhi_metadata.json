@@ -1,0 +1,26 @@
+{
+  "bands": [
+    "cum",
+    "min",
+    "var"
+  ],
+  "bbox": [
+    -127.68204290832819,
+    50.64031582630316,
+    -127.650601873384,
+    50.67175686124734
+  ],
+  "crs": "EPSG:4326",
+  "licence": "Public; no restrictions (SILVIS Lab)",
+  "notes": "TFL6 VRI AOI; WCS subset 2026-10-27.",
+  "resolution_m": 500.0,
+  "retrieved_utc": "2026-10-27T00:00:00+00:00",
+  "scale": 255.0,
+  "schema_version": "ws4.dhi.source.v1",
+  "source_id": "silvis-dhi-modis6.1-terra-ndvi-composite",
+  "source_path": "/tmp/opencode/tfl6_dhi.tif",
+  "source_sha256": "c23ae81b3087e762aaa0b6ebc4ce7831adacc7ac295df4e88620d1bd626a0b43",
+  "source_version": "MODIS 6.1 Terra NDVI Composite RGB (2003-2022)",
+  "valid_pixels": 49,
+  "year_range": "2003-2022"
+}

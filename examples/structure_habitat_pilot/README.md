@@ -79,9 +79,9 @@ run writes `structure_habitat_values.csv`, `structure_habitat_landscape.csv`,
 and `structure_habitat_metadata.json`; the report adds
 `report_structure_habitat.csv`.
 
-## Real TFL 6 gap
+## Real TFL 6 bundle gap
 
-The real FEMIC TFL 6 bundle exposes CHM-derived P95 and cover ≥2 m, not the
+The real FEMIC TFL 6 **bundle** exposes CHM-derived P95 and cover ≥2 m, not the
 published first-return P95, 1.37 m cover, or first-return height SD. The
 diagnostic therefore reports:
 
@@ -89,8 +89,9 @@ diagnostic therefore reports:
 - missing: all three required first-return metrics
 - proxies: `chm_p95` and `chm_cover_ge_2`, explicitly not substituted
 
-This is the intended failure mode: report the gap instead of inventing a new
-index from different metrics.
+This is the intended failure mode for the bundle: report the gap instead of
+inventing a new index from different metrics. The public LidarBC LAZ tiles are
+available and the exact index was computed in `examples/structure_habitat_tfl6`.
 
 ## Caveats
 
