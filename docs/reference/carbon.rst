@@ -102,7 +102,8 @@ Tables
    ``eco_boundary``. Area is positive; age and delay are non-negative; land class is
    0-22. A disturbance must appear as a user type or a default type in
    ``disturbance_types.csv``. When ``eco_boundary`` is present, WS4 splits a track's
-   dataset area across its inventory boundary shares.
+   dataset area across its inventory boundary shares. WS4 sums identical
+   classifier/age rows before handing the SIT inventory to libcbm.
 
 ``yield.csv``
    ``track_name``, ``species``, ``leading_species``, ``age``, ``volume_m3_ha``. The

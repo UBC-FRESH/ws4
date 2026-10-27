@@ -370,6 +370,30 @@ def test_optional_libcbm_parse(tmp_path: Path) -> None:
     assert libcbm is not None
 
 
+def test_duplicate_inventory_rows_are_aggregated(tmp_path: Path) -> None:
+    """Identical classifier/age fragments are summed into one SIT inventory row."""
+    package = _write_package(tmp_path / "package")
+    dataset = _write_dataset(tmp_path / "dataset")
+    fragments = pd.read_parquet(dataset / "fragments.parquet")
+    duplicate = fragments.iloc[[0]].copy()
+    duplicate["fragment_id"] = 3
+    duplicate["block_id"] = 3
+    duplicate["area_ha"] = 1.0
+    pd.concat([fragments, duplicate], ignore_index=True).to_parquet(
+        dataset / "fragments.parquet", index=False
+    )
+
+    tables = build_sit_tables(
+        package,
+        dataset,
+        pd.DataFrame({"block_id": [1], "treatment": ["CC"], "offset": [0]}),
+    )
+
+    track1 = tables.inventory.loc[tables.inventory["track"] == "track1"]
+    assert track1.shape[0] == 1
+    assert track1["area"].sum() == pytest.approx(4.0)
+
+
 def test_multi_boundary_package_uses_separate_admin_eco_classifiers(tmp_path: Path) -> None:
     """A package with two track boundaries compiles separate SIT classifiers."""
     from dataclasses import replace
