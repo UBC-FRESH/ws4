@@ -23,7 +23,10 @@ subset for planning interpretation.
 | `baseline_schedule_recovery.csv` | Existing baseline schedule joined to recovery status. |
 | `deferred_blocks.csv` | 411 scheduled not-recovered blocks. |
 | `recovery_scenario_comparison.csv` | Baseline vs deferral scenario volumes/area. |
-| `recovery_scenario_summary.json` | Scenario summary. |
+| `recovery_scenario_summary.json` | Immediate-deferral summary. |
+| `deferred_blocks_20y.csv` | 491 not-recovered blocks in the 20-year schedule. |
+| `recovery_window_comparison.csv` | Baseline vs 5/10-year deferral. |
+| `recovery_window_summary.json` | Deferral-window summary. |
 | `recovery_metadata.json` | Source, windows, CRS, class map, citation. |
 
 The full block geometry is the external TSA 23 instance file
@@ -76,6 +79,18 @@ Deferring treatments on the 411 not-recovered scheduled blocks:
 The block area of 6,048 ha is larger than the treated-area change because some
 scheduled treatments are not operable at the block's current track/age. The
 reduction is a scenario result, not an objective or constraint change.
+
+### 20-year deferral window
+
+On the full 20-year `abatement_bc/sim_6400000000` schedule:
+
+- baseline: 164.42M m3, treated 402,851
+- defer 5 years: 164.31M m3 (-0.069%), treated -742
+- defer 10 years: 164.27M m3 (-0.093%), treated -1,187
+
+42 blocks (1,032 ha) fall beyond the 20-year horizon under a 5-year shift;
+61 blocks (1,558 ha) under a 10-year shift. The aggregate effect is small, so a
+hard constraint is not justified by this pilot alone.
 
 ## Caveats
 

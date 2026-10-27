@@ -3160,3 +3160,13 @@ issue comments.
   operable. Added `deferred_blocks.csv`, scenario comparison, and summary to
   `examples/recovery_tsa23`, and updated the recovery docs. No objective or
   constraint change.
+
+- DIS-04 TSA23 deferral window: applied 5- and 10-year treatment shifts to the
+  491 not-recovered blocks (7,502 ha) in the full 20-year
+  `abatement_bc/sim_6400000000` schedule. Harvested volume moved from 164.42M to
+  164.31M m3 (-0.069%) and 164.27M m3 (-0.093%); treated amount fell by 742 and
+  1,187. 42 blocks (1,032 ha) fall beyond the horizon under a 5-year shift, 61
+  blocks (1,558 ha) under 10 years. The aggregate impact is small, so recovery
+  remains an informational overlay rather than a hard constraint. Added
+  `deferred_blocks_20y.csv`, window comparison, summary, and report. No
+  objective change.

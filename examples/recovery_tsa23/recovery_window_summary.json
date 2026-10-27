@@ -1,0 +1,11 @@
+{
+  "area_ha": 7502.1449624199995,
+  "baseline_volume_m3": 164420171.86755577,
+  "defer10_beyond_horizon": 61,
+  "defer10_delta_pct": -0.0933119333563458,
+  "defer10_treated_delta": -1187.4589877253748,
+  "defer5_beyond_horizon": 42,
+  "defer5_delta_pct": -0.068613850988518,
+  "defer5_treated_delta": -742.0742062978679,
+  "scheduled_not_recovered": 491
+}
