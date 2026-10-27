@@ -340,3 +340,4 @@ path.block.compare-both { fill:#6b4c9a; }
 .target-chart-table input { width:6rem; font:inherit; font-size:.68rem; padding:.05rem .15rem; text-align:right; }
 .target-chart-svg { cursor:crosshair; touch-action:none; }
 .target-chart-card.editing { border-color:#93b4e6; }
+.target-chart-selected-period { fill:#e8f1ff; fill-opacity:.55; pointer-events:none; }

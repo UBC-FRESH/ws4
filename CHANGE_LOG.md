@@ -3061,3 +3061,9 @@ issue comments.
   `notes/reports/p54-adoption-northisland.md`. Dashboard **GREEN** (lint
   0.11 s, format 0.09 s, types 31.10 s, tests 153.86 s, validator 0.75 s,
   docs 19.35 s, docstrings 3.83 s). No code or objective change.
+
+- P67.1: fixed target-chart period selection by making each period hit element the pointer
+  authority instead of relying only on inverse x-coordinate math. Added a selected-period
+  highlight and extended the chart smoke to click the centers of P1, P2, and the last period
+  and assert the selected period. c5 `run-base`: centers 0→P1, 1→P2, 20→P21; highlight present.
+  Version `v75`.

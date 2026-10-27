@@ -68,7 +68,8 @@ exists and the maintainer approves it.
 | P63 UI foundation for desktop and iPad landscape | #442 | `feature/p63-ui-foundation` | complete |
 | P64 Patchworks-style target charts | #456 | `feature/p64-target-charts` | complete |
 | P65 Editable target charts | #464 | `feature/p65-editable-targets` | complete |
-| P66 Assistant panel visibility | #473 | `feature/p66-assistant-visibility` | active |
+| P66 Assistant panel visibility | #473 | `feature/p66-assistant-visibility` | complete |
+| P67 Target chart period hit zones | #479 | `feature/p67-target-hit-zone` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2061,17 +2062,39 @@ Acceptance:
 
 Parent issue: #473
 Branch: `feature/p66-assistant-visibility`
-Status: active
+Status: complete
 
 Goal: stop the assistant panel from consuming sidebar space when the service has no agent.
 
-- [ ] P66.1 Hide the assistant panel when the service has no agent (#474)
+- [x] P66.1 Hide the assistant panel when the service has no agent (#474)
 
 Acceptance:
 
 - A service without `--allow-agent` uses zero vertical space for the assistant.
 - A service with an enabled, available assistant keeps the panel.
 - Browser check and dashboard are green.
+
+## Phase 67: Target chart period hit zones
+
+Parent issue: #479
+Branch: `feature/p67-target-hit-zone`
+Status: pr-open
+
+Goal: make a click inside a target-chart period select that period, without the right-side
+workaround.
+
+- [x] P67.1 Fix target chart period hit zones (#480)
+  - [x] Use the hit element as selection authority
+  - [x] Add the selected-period highlight
+  - [x] Add the period-center regression
+  - [x] Verify c5 and TSA 46
+
+Acceptance:
+
+- Period center clicks select the matching period.
+- P1/P2/last-period checks pass.
+- Selected period is highlighted.
+- `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes
 

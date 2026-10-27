@@ -68,17 +68,24 @@ def check(  # pragma: no cover - needs a browser
         readout = page.locator(".target-chart-readout").first.inner_text()
         page.locator(".target-chart-table summary").first.click()
         rows = page.locator(".target-chart-table tbody tr").first.count()
-        before = page.locator("#year").input_value()
-        target_index = 0 if before != "0" else 1
-        page.locator(".target-chart-period").nth(target_index).click()
-        page.wait_for_timeout(300)
-        after = page.locator("#year").input_value()
+        first_card = page.locator(".target-chart-card").first
+        hit_count = first_card.locator(".target-chart-period").count()
+        period_checks = []
+        for index in sorted({0, 1, hit_count - 1}):
+            hit = first_card.locator(".target-chart-period").nth(index)
+            box = hit.bounding_box()
+            assert box is not None
+            page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+            page.wait_for_timeout(200)
+            period_checks.append((index, page.locator("#year").input_value()))
+        highlight = first_card.locator(".target-chart-selected-period").count()
         page.screenshot(path="/tmp/opencode/p64-target-charts.png", full_page=True)
         browser.close()
     print(f"charts: {charts} · zones: {zones} · lines: {lines}")
     print(f"readout: {readout}")
     print(f"all-period rows: {rows}")
-    print(f"period click: {before} -> {after}")
+    print(f"period centers: {period_checks}")
+    print(f"selected highlight: {highlight}")
     if errors:
         print("console errors:")
         for line in errors[:10]:
@@ -91,7 +98,8 @@ def check(  # pragma: no cover - needs a browser
         and "max" in readout
         and "achieved" in readout
         and rows >= 1
-        and before != after
+        and highlight == 1
+        and all(int(value) == index for index, value in period_checks)
         and not errors
     )
     return 0 if ok else 1

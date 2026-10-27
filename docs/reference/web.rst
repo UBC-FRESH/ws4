@@ -229,7 +229,9 @@ shows every run period on the x axis:
 
 Inactive targets are charted as indicators with a dashed card, not hidden. The chart updates
 from the same SSE target snapshots that drive the live map, so the achieved line moves while
-the solver runs. Clicking a period selects it in the shell.
+the solver runs. Clicking a period selects it in the shell; the period hit element is the
+selection authority, so a click anywhere inside the visible column selects that column. The
+selected period is highlighted.
 
 Each chart is also an editor:
 
