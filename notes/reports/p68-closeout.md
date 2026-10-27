@@ -6,7 +6,7 @@ Pull request: #491, `feature/p68-map-hierarchy` into `main`
 Evidence head: `dcb83ee`, the head that CI run `40465804758` and the local dashboard cover
 Report commit: the commit that adds this report. Its CI run is posted on the pull request.
 Date: 2026-10-27
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-27 as `694232d`.
 
 ## Recommendation
 
