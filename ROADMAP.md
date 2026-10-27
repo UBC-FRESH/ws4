@@ -74,7 +74,7 @@ exists and the maintainer approves it.
 | P69 LiDAR and carbon display polish | #494 | `feature/p69-lidar-carbon-polish` | complete |
 | P70 Target table polish | #504 | `feature/p70-target-table` | complete |
 | P71 Target triage | #511 | `feature/p71-target-triage` | complete |
-| P72 Results run health and cross-links | #518 | `feature/p72-results-health` | pr-open |
+| P72 Results run health and cross-links | #518 | `feature/p72-results-health` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2244,7 +2244,7 @@ Acceptance:
 
 Parent issue: #518
 Branch: `feature/p72-results-health`
-Status: pr-open
+Status: complete
 
 Goal: give Results a compact run-health summary and make Compare target rows navigate to the Plan
 target filter, so an analyst can move from outcome context to target triage without hunting.
