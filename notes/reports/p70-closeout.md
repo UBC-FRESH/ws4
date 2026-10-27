@@ -6,7 +6,7 @@ Pull request: #508, `feature/p70-target-table` into `main`
 Evidence head: `35b3dff`, the head that CI run `40557044057` covers
 Report commit: the commit that adds this report. Its CI run is posted on the pull request.
 Date: 2026-10-27
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-27 as `cd2b113`.
 
 ## Recommendation
 
