@@ -67,8 +67,13 @@ the fire-oriented estate. The 30 m subset covers 102,128 blocks and 988,816 ha.
   (212 ha) and 2 slower blocks (8 ha); 1,969 scheduled blocks are outside the
   footprint.
 
-The 29 scheduled not-recovered blocks are candidates for a scenario that defers
-harvest. The layer is not yet a constraint or objective term.
+Using the 44,388-block `ft_warm` schedule, 411 not-recovered blocks (6,048 ha)
+are scheduled. Deferring those treatments changes harvested volume from
+138.50M to 137.12M m3 (-1.00%) and treated area by -3,579 (-1.13%). Deferring
+both not-recovered and slower blocks changes volume by -1.03%. The block area is
+larger than the treated-area change because some scheduled treatments are not
+operable. This is a scenario result; the layer is not yet a constraint or
+objective term.
 
 The earlier ``examples/recovery_tsa46`` is retained as a 5 km mask-based smoke
 test.

@@ -21,6 +21,9 @@ subset for planning interpretation.
 | `regen_status.csv` | Per-block status fractions for all 102,128 TSA 23 blocks. |
 | `regen_status_summary.csv` | Blocks/area by dominant status. |
 | `baseline_schedule_recovery.csv` | Existing baseline schedule joined to recovery status. |
+| `deferred_blocks.csv` | 411 scheduled not-recovered blocks. |
+| `recovery_scenario_comparison.csv` | Baseline vs deferral scenario volumes/area. |
+| `recovery_scenario_summary.json` | Scenario summary. |
 | `recovery_metadata.json` | Source, windows, CRS, class map, citation. |
 
 The full block geometry is the external TSA 23 instance file
@@ -51,18 +54,28 @@ it is the full-estate path. The smaller TSA 46 example uses polygon masks.
   - **58 slower**, 745 ha, 176 ha burned.
   - No block dominated by faster recovery.
 - 100,573 blocks are `outside_footprint`, not failures.
-- Existing baseline schedule: 2,000 blocks, all at offset 0.
-  - **29 scheduled blocks are not recovered** (212 ha).
-  - 2 scheduled blocks are slower (8 ha).
-  - 1,969 scheduled blocks are outside the footprint.
+- Existing `ft_warm` schedule: 44,388 blocks, offsets 0-4.
+  - **411 scheduled blocks are not recovered** (6,048 ha).
+  - 22 scheduled blocks are slower (255 ha).
+  - 43,955 scheduled blocks are outside the footprint.
 
 ## Interpretation
 
 The recovery layer is a Landsat spectral-recovery metric, not tree survival or
-stocking. The observation window ends in 2017. The 29 not-recovered blocks in
-the existing schedule are the first candidates for a **scenario** that defers
-harvest; this is not an objective or constraint change until the volume impact
-is reviewed.
+stocking. The observation window ends in 2017.
+
+### Deferral scenario
+
+Deferring treatments on the 411 not-recovered scheduled blocks:
+
+- harvested volume: **138.50M -> 137.12M m3** (-1.378M m3, **-1.00%**)
+- treated area: **317,710 -> 314,131** (-3,579; **-1.13%**)
+- deferring both not-recovered and slower blocks: -1.424M m3 (**-1.03%**),
+  -3,790 treated area.
+
+The block area of 6,048 ha is larger than the treated-area change because some
+scheduled treatments are not operable at the block's current track/age. The
+reduction is a scenario result, not an objective or constraint change.
 
 ## Caveats
 

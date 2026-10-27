@@ -3150,3 +3150,13 @@ issue comments.
   have human labels, inferred units, labelled axes, and hover/tap tooltips. Empty
   LiDAR/Carbon tabs stay compact. Real FEMIC LiDAR and TSA 46 GCBM checks passed;
   dashboard GREEN; UI `v77`.
+
+- DIS-04 TSA23 deferral scenario: joined the full TSA23 `ft_warm` schedule
+  (44,388 blocks) to recovery status and deferred treatments on the 411
+  not-recovered scheduled blocks (6,048 ha). Harvested volume moved from
+  138.50M to 137.12M m3 (-1.00%) and treated area by -3,579 (-1.13%); deferring
+  not-recovered plus slower blocks gives -1.03% volume. The treated-area
+  reduction is smaller than block area because some treatments are not
+  operable. Added `deferred_blocks.csv`, scenario comparison, and summary to
+  `examples/recovery_tsa23`, and updated the recovery docs. No objective or
+  constraint change.
