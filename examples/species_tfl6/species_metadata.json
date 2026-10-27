@@ -1,0 +1,241 @@
+{
+  "citation": "Hermosilla et al. 2024, Characterizing long-term tree species dynamics in Canada's forested ecosystems, Forest Ecology and Management 122313.",
+  "classes": [
+    {
+      "code": 0,
+      "name": "Non treed",
+      "nfi_code": null,
+      "scientific_name": null
+    },
+    {
+      "code": 1,
+      "name": "Amabilis fir",
+      "nfi_code": "ABIE.AMA",
+      "scientific_name": "Abies amabilis"
+    },
+    {
+      "code": 2,
+      "name": "Balsam fir",
+      "nfi_code": "ABIE.BAL",
+      "scientific_name": "Abies balsamea"
+    },
+    {
+      "code": 3,
+      "name": "Subalpine fir",
+      "nfi_code": "ABIE.LAS",
+      "scientific_name": "Abies lasiocarpa"
+    },
+    {
+      "code": 4,
+      "name": "Bigleaf maple",
+      "nfi_code": "ACER.MAC",
+      "scientific_name": "Acer macrophyllum"
+    },
+    {
+      "code": 5,
+      "name": "Red maple",
+      "nfi_code": "ACER.RUB",
+      "scientific_name": "Acer rubrum"
+    },
+    {
+      "code": 6,
+      "name": "Sugar maple",
+      "nfi_code": "ACER.SAH",
+      "scientific_name": "Acer saccharum"
+    },
+    {
+      "code": 7,
+      "name": "Gray alder",
+      "nfi_code": "ALNU.INC",
+      "scientific_name": "Alnus incana"
+    },
+    {
+      "code": 8,
+      "name": "Red alder",
+      "nfi_code": "ALNU.RUB",
+      "scientific_name": "Alnus rubra"
+    },
+    {
+      "code": 9,
+      "name": "Yellow birch",
+      "nfi_code": "BETU.ALL",
+      "scientific_name": "Betula alleghaniensis"
+    },
+    {
+      "code": 10,
+      "name": "White birch",
+      "nfi_code": "BETU.PAP",
+      "scientific_name": "Betula papyrifera"
+    },
+    {
+      "code": 11,
+      "name": "Yellow-cedar",
+      "nfi_code": "CHAM.NOO",
+      "scientific_name": "Chamaecyparis nootkatensis"
+    },
+    {
+      "code": 12,
+      "name": "Black ash",
+      "nfi_code": "FRAX.NIG",
+      "scientific_name": "Fraxinus nigra"
+    },
+    {
+      "code": 13,
+      "name": "Tamarack",
+      "nfi_code": "LARI.LAR",
+      "scientific_name": "Larix laricina"
+    },
+    {
+      "code": 14,
+      "name": "Western larch",
+      "nfi_code": "LARI.OCC",
+      "scientific_name": "Larix occidentalis"
+    },
+    {
+      "code": 15,
+      "name": "Norway spruce",
+      "nfi_code": "PICE.ABI",
+      "scientific_name": "Picea abies"
+    },
+    {
+      "code": 16,
+      "name": "Engelmann spruce",
+      "nfi_code": "PICE.ENG",
+      "scientific_name": "Picea engelmannii"
+    },
+    {
+      "code": 17,
+      "name": "White spruce",
+      "nfi_code": "PICE.GLA",
+      "scientific_name": "Picea glauca"
+    },
+    {
+      "code": 18,
+      "name": "Black spruce",
+      "nfi_code": "PICE.MAR",
+      "scientific_name": "Picea mariana"
+    },
+    {
+      "code": 19,
+      "name": "Red spruce",
+      "nfi_code": "PICE.RUB",
+      "scientific_name": "Picea rubens"
+    },
+    {
+      "code": 20,
+      "name": "Sitka spruce",
+      "nfi_code": "PICE.SIT",
+      "scientific_name": "Picea sitchensis"
+    },
+    {
+      "code": 21,
+      "name": "Whitebark pine",
+      "nfi_code": "PINU.ALB",
+      "scientific_name": "Pinus albicaulis"
+    },
+    {
+      "code": 22,
+      "name": "Jack pine",
+      "nfi_code": "PINU.BAN",
+      "scientific_name": "Pinus banksiana"
+    },
+    {
+      "code": 23,
+      "name": "Lodgepole pine",
+      "nfi_code": "PINU.CON",
+      "scientific_name": "Pinus contorta"
+    },
+    {
+      "code": 24,
+      "name": "Ponderosa pine",
+      "nfi_code": "PINU.PON",
+      "scientific_name": "Pinus ponderosa"
+    },
+    {
+      "code": 25,
+      "name": "Red pine",
+      "nfi_code": "PINU.RES",
+      "scientific_name": "Pinus resinosa"
+    },
+    {
+      "code": 26,
+      "name": "Eastern white pine",
+      "nfi_code": "PINU.STR",
+      "scientific_name": "Pinus strobus"
+    },
+    {
+      "code": 27,
+      "name": "Balsam poplar",
+      "nfi_code": "POPU.BAL",
+      "scientific_name": "Populus balsamifera"
+    },
+    {
+      "code": 28,
+      "name": "Largetooth aspen",
+      "nfi_code": "POPU.GRA",
+      "scientific_name": "Populus grandidentata"
+    },
+    {
+      "code": 29,
+      "name": "Trembling aspen",
+      "nfi_code": "POPU.TRE",
+      "scientific_name": "Populus tremuloides"
+    },
+    {
+      "code": 30,
+      "name": "Douglas-fir",
+      "nfi_code": "PSEU.MEN",
+      "scientific_name": "Pseudotsuga menziesii"
+    },
+    {
+      "code": 31,
+      "name": "Red oak",
+      "nfi_code": "QUER.RUB",
+      "scientific_name": "Quercus rubra"
+    },
+    {
+      "code": 32,
+      "name": "Eastern white-cedar",
+      "nfi_code": "THUJ.OCC",
+      "scientific_name": "Thuja occidentalis"
+    },
+    {
+      "code": 33,
+      "name": "Western redcedar",
+      "nfi_code": "THUJ.PLI",
+      "scientific_name": "Thuja plicata"
+    },
+    {
+      "code": 34,
+      "name": "Eastern hemlock",
+      "nfi_code": "TSUG.CAN",
+      "scientific_name": "Tsuga canadensis"
+    },
+    {
+      "code": 35,
+      "name": "Western hemlock",
+      "nfi_code": "TSUG.HET",
+      "scientific_name": "Tsuga heterophylla"
+    },
+    {
+      "code": 36,
+      "name": "Mountain hemlock",
+      "nfi_code": "TSUG.MER",
+      "scientific_name": "Tsuga mertensiana"
+    },
+    {
+      "code": 37,
+      "name": "White elm",
+      "nfi_code": "ULMU.AME",
+      "scientific_name": "Ulmus americana"
+    }
+  ],
+  "crs": "EPSG:3978",
+  "licence": "Open Government Licence - Canada",
+  "notes": "TFL6 VRI AOI; 2022 dominant species subset.",
+  "resolution_m": 30.0,
+  "schema_version": "ws4.species.source.v1",
+  "source_id": "ntems-ca-tree-species-classification",
+  "source_version": "CA_Tree_Species_Classification_2022",
+  "year": 2022
+}
