@@ -399,3 +399,28 @@ details.layer-group[open] > summary { margin-bottom:.2rem; }
 .target-status.off { background:#eef2f6; color:#667788; }
 .target-sort-bar { display:flex; align-items:center; gap:.55rem; margin:.15rem 0 .25rem; }
 .target-sort-bar[hidden] { display:none !important; }
+@media (max-width:1100px) {
+  #targets-table th, #targets-table td { padding:.1rem .06rem; }
+  #targets-table td.account { max-width:4.5rem; }
+  #targets-table input[type=number] { width:2.45rem; font-size:.68rem; padding:.06rem .08rem; }
+  .account-root { font-size:.5rem; padding:0 .1rem; }
+  .account-unit { font-size:.56rem; padding:0 .1rem; }
+  .target-status { font-size:.58rem; padding:.03rem .18rem; }
+  .target-period-year { font-size:.58rem; }
+}
+@media (max-width:1100px) {
+  #targets-table { table-layout:fixed; width:100%; }
+  #targets-table th, #targets-table td { overflow:hidden; }
+  #targets-table th:nth-child(1), #targets-table td:nth-child(1) { width:1.25rem; }
+  #targets-table th:nth-child(2), #targets-table td:nth-child(2) { width:5.3rem; }
+  #targets-table th:nth-child(3), #targets-table td:nth-child(3) { width:2.8rem; }
+  #targets-table th:nth-child(4), #targets-table td:nth-child(4),
+  #targets-table th:nth-child(5), #targets-table td:nth-child(5) { width:2.35rem; }
+  #targets-table th:nth-child(6), #targets-table td:nth-child(6) { width:3.35rem; }
+  #targets-table th:nth-child(7), #targets-table td:nth-child(7) { width:1.25rem; }
+  #targets-table td.account { max-width:none; }
+  #targets-table input[type=number] { width:100%; min-width:0; }
+  .target-account-label { max-width:100%; }
+  .target-status { font-size:.56rem; padding:.03rem .14rem; }
+  .remove-target { padding:0 .2rem; }
+}

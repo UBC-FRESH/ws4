@@ -576,7 +576,9 @@ stays as a secondary line under the account.
 Click the **On**, **Account**, **Target period**, **Min**, **Max**, or **Status** header to sort
 the view. A second click reverses the direction and **File order** restores the YAML order.
 Sorting moves only the rendered rows, so unsaved edits and the original target indices are
-preserved; saving after a sort writes the same document order.
+preserved; saving after a sort writes the same document order. At 1024 px the table switches to
+fixed compact columns so the status remains visible; the account title still carries the full
+path.
 
 Each target has a second, compact line with **Min w** and **Max w** penalty weights,
 **Normalization** (``none`` or ``auto``), **Priority** (a positive integer tier), **Kind**
