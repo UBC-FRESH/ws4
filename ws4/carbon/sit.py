@@ -720,7 +720,12 @@ def _build_inventory(
                 }
             )
             rows.append(row)
-    return pd.DataFrame(rows, columns=[*classifier_names, *_INVENTORY_FIELDS])
+    frame = pd.DataFrame(rows, columns=[*classifier_names, *_INVENTORY_FIELDS])
+    if frame.empty:
+        return frame
+    group_columns = [column for column in frame.columns if column != "area"]
+    grouped = frame.groupby(group_columns, as_index=False, dropna=False).agg(area=("area", "sum"))
+    return grouped.loc[:, list(frame.columns)]
 
 
 def _build_yield(
