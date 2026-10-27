@@ -1,0 +1,23 @@
+{
+  "bands": {
+    "class": "class_code 0-26, 255 nodata",
+    "metrics": [
+      "height_p95_m",
+      "cover_gt_1_37_pct",
+      "complexity_sd_gt_1_37_m"
+    ]
+  },
+  "caveat": "Cells with no first returns are nodata; 36 of 1156 grid cells are empty. Point classes 1,2,7,12 lack a high-vegetation class.",
+  "cell_size_m": 30.0,
+  "citation": "Coops et al. 2016, A forest structure habitat index based on airborne laser scanning data, Ecological Indicators 67:346-357, doi:10.1016/j.ecolind.2016.02.057",
+  "coordinate_reference_system": "EPSG:3005",
+  "empty_cells": 36,
+  "grid_cols": 34,
+  "grid_rows": 34,
+  "index_version": "coops-2016-v1",
+  "method": "First-return points within AOI, normalized with the FEMIC 1 m DEM, binned to 30 m cells; P95, cover > 1.37 m, SD of heights > 1.37 m.",
+  "schema_version": "ws4.structure_habitat.cells.v1",
+  "source_id": "lidarbc-tfl6-op24bmrs001",
+  "source_version": "OP24BMRS001 / 2024 LAZ / 8 ppm2",
+  "valid_cells": 1120
+}

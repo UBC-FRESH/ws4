@@ -26,9 +26,31 @@ with the FEMIC DEM, then:
 - `cover_gt_1_37_pct`: percentage of first returns above 1.37 m;
 - `complexity_sd_gt_1_37_m`: sample SD of first-return heights above 1.37 m.
 
-This is a block-level aggregation of the published point statistics, not a
-30 m cell raster product. The point counts are retained in `structure_metrics.csv`
-so support is auditable.
+The 30 m cell product is also included. It is the published support; the
+block-level metrics above are an aggregation for the WS4 account. The point
+counts are retained in `structure_metrics.csv` so support is auditable.
+
+## 30 m cell product
+
+`structure_habitat_30m.csv` contains 1,156 grid cells: 1,120 with first returns
+and 36 nodata cells. `structure_habitat_30m_class.tif` is the 0-26 class code;
+`structure_habitat_30m_metrics.tif` has the three continuous metrics.
+
+Cell-level summary over valid cells:
+
+- mean height **20.12 m**, median 21.66 m;
+- mean cover **70.60%**, median 85.42%;
+- mean complexity **5.92 m**, median 6.03 m;
+- mean first-return count **47,818 per cell** (5th percentile 18,807).
+
+Class counts: 700 `H2-C2-K2`, 107 `H1-C2-K2`, 78 `H0-C0-K0`, 41 each of
+`H1-C0-K2`, `H1-C1-K2`, and `H2-C1-K2`, then smaller classes.
+
+Block-level classification hides real within-block variation. For example,
+block `16624698` is `H2-C0-K2` at block level but **62.3% of its area is low
+height** and only 28.5% is high; block `23339462` is `H1-C0-K2` but 53.7% low /
+31.4% medium / 14.9% high. The cell product is the one to use when the question
+is about within-block structure; the block aggregate is the WS4 account.
 
 ## Results
 
