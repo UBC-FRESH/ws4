@@ -72,6 +72,7 @@ exists and the maintainer approves it.
 | P67 Target chart period hit zones | #479 | `feature/p67-target-hit-zone` | complete |
 | P68 Map visual hierarchy | #486 | `feature/p68-map-hierarchy` | complete |
 | P69 LiDAR and carbon display polish | #494 | `feature/p69-lidar-carbon-polish` | complete |
+| P70 Target table polish | #504 | `feature/p70-target-table` | active |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2165,6 +2166,42 @@ Acceptance:
 - Carbon accounts use human labels and units; the chart has labelled axes and a hover/tap readout.
 - Empty carbon/LiDAR states take little space and do not leave empty chart frames.
 - Real LiDAR and carbon datasets pass browser checks.
+- `python scripts/dashboard.py` is green.
+
+## Phase 70: Target table polish
+
+Parent issue: #504
+Branch: `feature/p70-target-table`
+Status: active
+
+Goal: make the target table a compact analyst surface: human account labels with inferred units,
+clear period labels, an inline met/below/above status column, and sortable columns without changing
+the target JSON contract or the target-chart editor.
+
+- [x] P70.1 Compact account labels, inferred units, period labels, and status (#505)
+  - [x] Add compact account labels and root badges
+  - [x] Add only unambiguous inferred units
+  - [x] Add period labels and the ending year
+  - [x] Add the status column and live updates
+- [x] P70.2 Edit-safe sortable target table (#506)
+  - [x] Sort Account, Period, Min, Max, and Status
+  - [x] Preserve edits and target indices
+  - [x] Add aria-sort and file-order reset
+- [ ] P70.3 Verify desktop/iPad, live status, document, and close out (#507)
+  - [x] Add the target-table browser smoke
+  - [x] Verify c5 and TSA 46
+  - [x] Verify a live run update
+  - [ ] Update docs and write the close-out
+
+Acceptance:
+
+- Account labels are compact and the full path remains available.
+- Units are shown only when confidently inferred.
+- Period labels distinguish per-period targets from whole-horizon targets.
+- Status is visible inline and updates during live runs.
+- Sorting preserves unsaved edits and reports the sort direction.
+- Target charts and saved targets are unchanged.
+- Desktop and iPad landscape remain usable.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes
