@@ -39,10 +39,16 @@ Contract
 CRS, licence, citation, full class map, and notes. A block with no valid species
 pixels is an error; it is not assigned a zero or a default species.
 
-The product is **dominant species only**. It does not contain species fractions,
-so the pilot does not claim a mixedwood fraction from it. VRI species
-percentages, ALS composition, or another composition source would be required for
-that.
+The public product is **dominant species only**. A second table,
+``species_fractions.csv``, carries explicit fraction sources such as VRI species
+percentages. It is long by block and species code with ``fraction`` and
+``is_leading``. A block with no species rows is omitted and listed in metadata
+when ``--allow-missing`` is explicit; percentages that do not sum to 100 within
+one point are an error.
+
+``species_fractions_summary.csv`` reports the leading fraction,
+**non-leading fraction = 1 - leading fraction**, and species count. That is the
+mixedwood/composition measure; no arbitrary binary mixedwood cutoff is applied.
 
 Commands
 --------
@@ -79,7 +85,9 @@ the AOI; it did not identify yellow-cedar (11). It gives western redcedar as the
 leading species for all seven blocks. Against VRI, four of six comparable blocks
 match (66.7%); block 16624698 is VRI western hemlock and block 16625195 is VRI
 yellow-cedar. One block has no VRI label and is reported as missing reference.
-The local agreement is not an accuracy estimate for the national product.
+The local agreement is not an accuracy estimate for the national product. VRI
+fractions show all six labelled blocks are mixed, with non-leading fractions
+from 0.40 to 0.60. The public dominant layer cannot represent those mixtures.
 
 Caveats
 -------

@@ -1,0 +1,18 @@
+block_id,species_code,species_name,nfi_code,fraction,is_leading
+23339490,33,Western redcedar,THUJ.PLI,0.45,True
+23339490,11,Yellow-cedar,CHAM.NOO,0.35,False
+23339490,35,Western hemlock,TSUG.HET,0.2,False
+23339461,33,Western redcedar,THUJ.PLI,0.4,True
+23339461,11,Yellow-cedar,CHAM.NOO,0.35,False
+23339461,35,Western hemlock,TSUG.HET,0.25,False
+23339458,33,Western redcedar,THUJ.PLI,0.45,True
+23339458,11,Yellow-cedar,CHAM.NOO,0.35,False
+23339458,35,Western hemlock,TSUG.HET,0.2,False
+16625195,11,Yellow-cedar,CHAM.NOO,0.6,True
+16625195,33,Western redcedar,THUJ.PLI,0.4,False
+16624698,35,Western hemlock,TSUG.HET,0.5,True
+16624698,11,Yellow-cedar,CHAM.NOO,0.35,False
+16624698,33,Western redcedar,THUJ.PLI,0.15,False
+19212607,33,Western redcedar,THUJ.PLI,0.45,True
+19212607,11,Yellow-cedar,CHAM.NOO,0.35,False
+19212607,35,Western hemlock,TSUG.HET,0.2,False

@@ -3104,3 +3104,14 @@ issue comments.
   passed; `python scripts/dashboard.py` -> **GREEN** (lint 0.10 s, format
   0.08 s, types 1.73 s, tests 144.85 s, validator 0.81 s, docs 3.81 s,
   docstrings 3.13 s). No objective change.
+
+- INV-05 species fractions: added `ws4 species fractions` and the
+  `ws4.species.fraction.v1` long table. VRI species percentages for the six
+  labelled TFL 6 blocks are ingested without normalization or imputation; block
+  23339462 has no VRI species rows and is listed as missing. The leading fraction
+  ranges 0.40-0.60 and the non-leading fraction is 0.40-0.60, so all six blocks
+  are mixed. The public NTEMS dominant layer cannot represent that mixture. Added
+  `species_fractions.csv`, summary, metadata, VRI input, and VRI code map to
+  `examples/species_tfl6`. Verification: 7 species tests pass; dashboard GREEN
+  (lint 0.08 s, format 0.07 s, types 1.18 s, tests 137.86 s, validator 0.84 s,
+  docs 3.91 s, docstrings 2.82 s). No objective change.

@@ -101,12 +101,15 @@ from .roads.accounts import load_route_config
 from .sim.engine import Simulator
 from .species import (
     SpeciesError,
+    build_species_fractions,
     compare_leading_species,
     read_class_map,
     read_species_composition,
     sample_species_raster,
     summarize_comparison,
+    summarize_species_fractions,
     write_species_composition,
+    write_species_fractions,
 )
 from .structure_habitat import (
     StructureHabitatError,
@@ -1822,6 +1825,47 @@ species_app = typer.Typer(
     no_args_is_help=True,
     help="Ingest and compare a species-composition layer.",
 )
+
+
+@species_app.command("fractions")
+def species_fractions(
+    table: Path = typer.Option(..., "--table", exists=True, help="CSV with species columns."),
+    class_map: Path = typer.Option(..., "--class-map", exists=True, help="Class map CSV/JSON."),
+    code_map: Path = typer.Option(..., "--code-map", exists=True, help="CSV vri_code,nfi_code."),
+    output: Path = typer.Option(..., "--output", "-o", help="Long fraction CSV."),
+    metadata: Path = typer.Option(..., "--metadata", help="Fraction metadata JSON."),
+    summary: Path | None = typer.Option(None, "--summary", help="Optional block summary CSV."),
+    source_version: str = typer.Option(
+        ..., "--source-version", help="Required source version or vintage."
+    ),
+    source_id: str = typer.Option("bc-vri-species-fractions", "--source-id"),
+    block_id_column: str = typer.Option("feature_id", "--block-id-column"),
+    allow_missing: bool = typer.Option(
+        False, "--allow-missing", help="Omit blocks with no species rows and list them."
+    ),
+) -> None:
+    """Build a long fraction table from explicit species percentage columns."""
+    frame = pd.read_csv(table)
+    codes = pd.read_csv(code_map)
+    if "vri_code" not in codes or "nfi_code" not in codes:
+        raise typer.BadParameter("code map needs vri_code and nfi_code columns")
+    mapping = {str(row.vri_code): int(str(row.nfi_code)) for row in codes.itertuples(index=False)}
+    try:
+        fractions, source = build_species_fractions(
+            frame,
+            class_map=read_class_map(class_map),
+            code_map=mapping,
+            source_id=source_id,
+            source_version=source_version,
+            block_id_column=block_id_column,
+            allow_missing=allow_missing,
+        )
+        write_species_fractions(fractions, source, output, metadata)
+        if summary is not None:
+            summarize_species_fractions(fractions).to_csv(summary, index=False)
+    except SpeciesError as error:
+        raise typer.BadParameter(str(error)) from error
+    print(f"[bold green]Species fractions[/] {len(fractions)} rows → {output}")
 
 
 @species_app.command("ingest")

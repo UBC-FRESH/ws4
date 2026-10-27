@@ -27,7 +27,12 @@ invent a mixedwood fraction from a dominant-species product.
 | `vri_reference.csv` | VRI leading species and species percentages. |
 | `species_composition.csv` | Long block/class fractions and leading flags. |
 | `species_metadata.json` | Source, year, resolution, CRS, licence, classes. |
-| `species_comparison.csv` | Public leading species vs VRI leading species. |
+| `vri_species_input.csv` | VRI species code/percentage columns for the pilot. |
+| `vri_code_map.csv` | VRI species code to NFI class. |
+| `species_fractions.csv` | Long VRI species fractions and leading flags. |
+| `species_fractions_summary.csv` | Leading fraction, non-leading fraction, species count. |
+| `species_fractions_metadata.json` | Fraction source, columns, code map, missing blocks. |
+| `species_comparison.csv` | NTEMS leading species vs VRI, with VRI fraction summary. |
 | `species_comparison_summary.json` | Compared blocks, matches, agreement, gaps. |
 
 ## Commands
@@ -42,6 +47,16 @@ ws4 species ingest \
   --source-version "CA_Tree_Species_Classification_2022" \
   --year 2022 \
   --block-id-field feature_id
+
+ws4 species fractions \
+  --table examples/species_tfl6/vri_species_input.csv \
+  --class-map examples/species_tfl6/class_map.csv \
+  --code-map examples/species_tfl6/vri_code_map.csv \
+  --output examples/species_tfl6/species_fractions.csv \
+  --metadata examples/species_tfl6/species_fractions_metadata.json \
+  --summary examples/species_tfl6/species_fractions_summary.csv \
+  --source-version "TFL6 VRI 2025 species percentages" \
+  --source-id bc-vri-tfl6 --allow-missing
 
 ws4 species compare \
   --composition examples/species_tfl6/species_composition.csv \

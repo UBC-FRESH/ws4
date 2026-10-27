@@ -1,0 +1,31 @@
+{
+  "block_count": 6,
+  "code_map": {
+    "CW": 33,
+    "HW": 35,
+    "YC": 11
+  },
+  "method": "Declared species percentages; no normalization or imputation.",
+  "missing_blocks": [
+    23339462
+  ],
+  "percent_columns": [
+    "species_pct_1",
+    "species_pct_2",
+    "species_pct_3",
+    "species_pct_4",
+    "species_pct_5",
+    "species_pct_6"
+  ],
+  "schema_version": "ws4.species.fraction.v1",
+  "source_id": "bc-vri-tfl6",
+  "source_version": "TFL6 VRI 2025 species percentages",
+  "species_columns": [
+    "species_cd_1",
+    "species_cd_2",
+    "species_cd_3",
+    "species_cd_4",
+    "species_cd_5",
+    "species_cd_6"
+  ]
+}
