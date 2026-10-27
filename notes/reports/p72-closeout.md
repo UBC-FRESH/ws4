@@ -6,7 +6,7 @@ Pull request: #522, `feature/p72-results-health` into `main`
 Evidence head: `aa84c1b`, the head that CI run `40597570859` covers
 Report commit: the commit that adds this report. Its CI run is posted on the pull request.
 Date: 2026-10-27
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-27 as `ba4199c`.
 
 ## Recommendation
 

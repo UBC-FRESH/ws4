@@ -3201,3 +3201,9 @@ issue comments.
   `pytest tests/test_carbon_hwp.py tests/test_carbon_curves.py tests/test_carbon_ledger.py -q --no-cov`
   -> 16 passed; FEMIC `sphinx-build -b html docs _build/html -W` -> build succeeded with no
   warnings.
+
+- P72 Results run health and cross-links: pull request #522 squash-merged as `ba4199c`.
+  Results shows a run-health card with target counts, pinned charts, and data availability;
+  Open Plan and Show failing targets move into target triage, and Compare target-status
+  accounts open the Plan account filter. c5 and TSA 46 checks passed; dashboard GREEN;
+  UI `v80`.
