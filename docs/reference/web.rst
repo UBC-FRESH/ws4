@@ -580,6 +580,15 @@ preserved; saving after a sort writes the same document order. At 1024 px the ta
 fixed compact columns so the status remains visible; the account title still carries the full
 path.
 
+A summary above the table and the chart canvas puts the failing count first — **9 targets ·
+5 failing · 4 met · 0 off** — and updates with live status chips. The filter bar combines an
+account substring with **Failing**, **Met**, **Off**, or **No value**; the visible/total count
+is always shown and **Clear** restores the full table. Filtering hides rows without removing
+them from the DOM, so unsaved inputs and the save payload are unchanged. **Pin failing** pins
+every currently visible target whose status is below or above, and **Unpin visible** clears
+the current view. Both update the watch panel and chart canvas immediately. The controls are
+native inputs and buttons, so keyboard order follows the visible form.
+
 Each target has a second, compact line with **Min w** and **Max w** penalty weights,
 **Normalization** (``none`` or ``auto``), **Priority** (a positive integer tier), **Kind**
 (``level``, ``flow.even``, or ``flow.ndy``, derived from the flow setting), and **Notes**.
