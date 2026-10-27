@@ -114,7 +114,9 @@ Endpoints
      - Rows of the run's ``account_values.csv``, filtered.
    * - ``GET /api/lidar``
      - The dataset's registered FEMIC LiDAR pin, licence, CRS, products, and canonical
-       ``lidar_*`` block fields. ``available`` is false for a dataset without LiDAR.
+       ``lidar_*`` block fields. Each field carries its dataset-wide valid count and min/max;
+       ``total_blocks`` is the full block table, not the map viewport. ``available`` is false
+       for a dataset without LiDAR.
    * - ``GET /api/runs/{run}/carbon``
      - Carbon provenance, ``carbon.*`` account series, pool composition, flux series,
        ledger status, GCBM comparison rows, and artifact names. Pools and fluxes are summed
@@ -213,11 +215,14 @@ LiDAR
 
 The **LiDAR** tab is read-only. It shows the registered bundle id, version, source, licence,
 native CRS, products, and the canonical block field catalog. Selecting a field colours the
-visible blocks from the Parquet block values and shows the in-view range; clicking a block
-adds all its LiDAR values to the detail panel. The layer deliberately uses the explicit GeoJSON
-join instead of the MVT shortcut, because MVT properties do not carry the LiDAR fields. Missing
-values stay neutral. A dataset without a registration keeps the tab visible with an explicit
-unavailable state.
+visible blocks from the Parquet block values and uses the field's **dataset-wide** min/max, not
+the range of the current viewport. A coverage badge reports valid blocks over the full block
+table, and the legend names the unit and missing-value treatment; the on-map legend repeats the
+same scale and coverage. The palette is a colour-blind-safe viridis ramp, and missing or
+out-of-coverage blocks stay neutral grey. Clicking a block adds all its LiDAR values to the
+detail panel. The layer deliberately uses the explicit GeoJSON join instead of the MVT shortcut,
+because MVT properties do not carry the LiDAR fields. A dataset without a registration keeps
+the tab visible with a compact unavailable state.
 
 The source must be a P52-registered FEMIC LidarBC bundle; the browser does not open rasters,
 reproject them, or derive new terrain or canopy values.
@@ -261,11 +266,15 @@ Carbon
 
 The **Carbon** tab reads the P58 artifacts without running libcbm. It shows the package id,
 libcbm version, carbon units, CBM defaults version, package fingerprint, schedule hash, and the
-carbon ledger when one exists. The account selector draws the run's own offset/value series;
-pool composition is the latest timestep of the aggregated biomass, DOM/soil, and product groups.
-Raw ``carbon_*`` and GCBM comparison files remain available through the reports endpoint. A
-carbon-only run is selectable even though it has no schedule or map; its period range comes from
-``carbon_accounts.csv``. A run without carbon keeps the tab with an explicit unavailable state.
+carbon ledger when one exists. Account names are rendered as human labels with inferred
+``tC``, ``tCO2e``, or per-year units. The selector draws the run's own offset/value series on a
+chart with labelled year and value axes; hovering, focusing, or tapping a point shows the exact
+year and value, and the latest year is repeated above the chart. Pool composition is the latest
+timestep of the aggregated biomass, DOM/soil, and product groups, with compact ``tC`` amounts
+and an accessible colour per group. Raw ``carbon_*`` and GCBM comparison files remain available
+through the reports endpoint. A carbon-only run is selectable even though it has no schedule or
+map; its period range comes from ``carbon_accounts.csv``. A run without carbon keeps the tab
+visible with a compact empty state instead of an empty chart frame.
 
 Layers
 ------
@@ -398,6 +407,15 @@ outline, on-map legend, treated-only toggle, compact unavailable layers, and the
 1194, and 1500 px layouts::
 
    python scripts/check_map_hierarchy.py http://127.0.0.1:8022/ --run run-dated3
+
+The data panels have an opt-in smoke that needs one LiDAR service, one carbon service, and an
+empty service (c5 or TSA 46). It checks dataset-wide coverage, the viridis palette, the carbon
+axes/tooltip/labels, and the compact unavailable states::
+
+   python scripts/check_data_panels.py \
+     --lidar-url http://127.0.0.1:8026/ \
+     --carbon-url http://127.0.0.1:8028/ --carbon-run ws4-tsa46-gcbm-baseline \
+     --empty-url http://127.0.0.1:8029/
 
 The browser path has an opt-in smoke:
 

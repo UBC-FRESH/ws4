@@ -117,34 +117,96 @@ async function loadUsedRoads() {
   }
 }
 
+const LIDAR_RAMP = [
+  [68, 1, 84],
+  [59, 82, 139],
+  [33, 145, 140],
+  [94, 201, 98],
+  [253, 231, 37],
+];
+const LIDAR_MISSING = '#d5dce5';
+
+function rampColor(stops, value) {
+  const scaled = Math.max(0, Math.min(1, value)) * (stops.length - 1);
+  const index = Math.min(stops.length - 2, Math.floor(scaled));
+  const fraction = scaled - index;
+  const left = stops[index];
+  const right = stops[index + 1];
+  const channel = (offset) => Math.round(left[offset] + (right[offset] - left[offset]) * fraction);
+  return `rgb(${channel(0)}, ${channel(1)}, ${channel(2)})`;
+}
+
 function lidarColor(value) {
   const range = state.lidarRange;
-  if (!range || !Number.isFinite(value)) return '#c9d2da';
+  if (!range || !Number.isFinite(value)) return LIDAR_MISSING;
   const span = range[1] - range[0];
-  const t = span > 0 ? Math.max(0, Math.min(1, (value - range[0]) / span)) : 0.5;
-  return `hsl(${Math.round(220 - 220 * t)} 72% 52%)`;
+  const t = span > 0 ? (value - range[0]) / span : 0.5;
+  return rampColor(LIDAR_RAMP, t);
 }
 
 function lidarFieldInfo(name) {
   return (state.lidar?.fields ?? []).find((field) => field.name === name) ?? null;
 }
 
+function lidarCoverage() {
+  const info = state.lidar;
+  if (!info?.available) return null;
+  const field = lidarFieldInfo(state.lidarField);
+  const valid = Number(field?.valid_count ?? info.block_count) || 0;
+  const total = Number(info.total_blocks) || 0;
+  return {
+    valid,
+    total,
+    fraction: total > 0 ? valid / total : null,
+    label: field ? field.label : 'any LiDAR field',
+  };
+}
+
+function lidarCoverageText() {
+  const coverage = lidarCoverage();
+  if (!coverage) return '';
+  const total = coverage.total.toLocaleString();
+  const pct = coverage.fraction === null ? '' : ` · ${(coverage.fraction * 100).toFixed(1)}%`;
+  return `${coverage.valid.toLocaleString()} / ${total} blocks${pct}`;
+}
+
+function renderLidarCoverage() {
+  const row = $('lidar-coverage-row');
+  const badge = $('lidar-coverage');
+  const note = $('lidar-coverage-note');
+  if (!row || !badge || !note) return;
+  const coverage = lidarCoverage();
+  if (!coverage || !coverage.total) {
+    row.hidden = true;
+    return;
+  }
+  row.hidden = false;
+  badge.textContent = lidarCoverageText();
+  note.textContent = state.lidarField
+    ? `${coverage.label} · dataset-wide`
+    : 'blocks with any LiDAR field';
+}
+
 function updateLidarRange() {
-  const field = state.lidarField;
+  const field = lidarFieldInfo(state.lidarField);
   if (!field) {
     state.lidarRange = null;
     renderLidarLegend();
+    renderLidarCoverage();
     return;
   }
-  const values = [];
-  for (const feature of state.features) {
-    const value = Number(feature.properties?.[field]);
-    if (Number.isFinite(value)) values.push(value);
+  if (Number.isFinite(field.min) && Number.isFinite(field.max)) {
+    state.lidarRange = [Number(field.min), Number(field.max)];
+  } else {
+    const values = [];
+    for (const feature of state.features) {
+      const value = Number(feature.properties?.[field.name]);
+      if (Number.isFinite(value)) values.push(value);
+    }
+    state.lidarRange = values.length ? [Math.min(...values), Math.max(...values)] : null;
   }
-  state.lidarRange = values.length
-    ? [Math.min(...values), Math.max(...values)]
-    : null;
   renderLidarLegend();
+  renderLidarCoverage();
 }
 
 function renderLidarLegend() {
@@ -167,7 +229,7 @@ function featureStyle(properties) {
     const value = Number(properties[state.lidarField]);
     return {
       treated: Boolean(properties.treated),
-      fill: Number.isFinite(value) ? lidarColor(value) : '#c9d2da',
+      fill: Number.isFinite(value) ? lidarColor(value) : LIDAR_MISSING,
       opacity: 1,
     };
   }
@@ -520,7 +582,7 @@ function render(refit = true) {
       const value = Number(properties[state.lidarField]);
       isTreated = Boolean(properties.treated);
       klass = isTreated ? 'treated' : 'untreated';
-      fill = Number.isFinite(value) ? lidarColor(value) : '#c9d2da';
+      fill = Number.isFinite(value) ? lidarColor(value) : LIDAR_MISSING;
     } else if (state.compareView && state.compare) {
       const flags = state.compare.blocks.get(String(properties.block_id)) ?? {};
       const inA = Boolean(flags.a);
@@ -688,6 +750,11 @@ function renderMapLegend() {
     }
     bar.append(swatch, range);
     legend.append(bar);
+    const coverage = document.createElement('div');
+    coverage.className = 'map-legend-row';
+    coverage.textContent = `Coverage ${lidarCoverageText()}`;
+    legend.append(coverage);
+    row('No value', LIDAR_MISSING);
   } else if (state.compareView && state.compare) {
     row('A only', '#c0392b');
     row('B only', '#1f6feb');
@@ -2023,12 +2090,19 @@ async function loadLidar() {
       select.replaceChildren(new Option('Off', ''));
       select.disabled = true;
       status.textContent = 'this dataset has no registered LiDAR fields';
+      $('lidar-empty').hidden = false;
+      $('lidar-hint').hidden = true;
+      $('lidar-field-label').hidden = true;
       renderLidarLegend();
+      renderLidarCoverage();
       syncNavigation();
       return;
     }
     select.disabled = false;
-    status.textContent = `${info.fields.length} block fields · ${Number(info.block_count ?? 0).toLocaleString()} block${Number(info.block_count ?? 0) === 1 ? '' : 's'}`;
+    $('lidar-empty').hidden = true;
+    $('lidar-hint').hidden = false;
+    $('lidar-field-label').hidden = false;
+    status.textContent = `${info.fields.length} block fields · ${Number(info.total_blocks ?? info.block_count ?? 0).toLocaleString()} blocks in the dataset`;
     for (const [label, value] of [
       ['Bundle', info.bundle_id],
       ['Version', info.bundle_version],
@@ -2052,7 +2126,8 @@ async function loadLidar() {
       select.append(option);
     }
     select.value = current;
-    renderLidarLegend();
+    updateLidarRange();
+    renderLidarCoverage();
     syncNavigation();
   } catch (error) {
     state.lidar = null;
@@ -2061,9 +2136,69 @@ async function loadLidar() {
     select.replaceChildren(new Option('Off', ''));
     meta.replaceChildren();
     status.textContent = `LiDAR unavailable: ${error.message}`;
+    $('lidar-empty').hidden = false;
+    $('lidar-empty').textContent = `LiDAR unavailable: ${error.message}`;
+    $('lidar-hint').hidden = true;
+    $('lidar-field-label').hidden = true;
     renderLidarLegend();
+    renderLidarCoverage();
     syncNavigation();
   }
+}
+
+const CARBON_ACCOUNT_LABELS = {
+  'carbon.biomass.total': 'Biomass carbon',
+  'carbon.co2e.ecosystem.total': 'Ecosystem CO₂e',
+  'carbon.co2e.flux.net': 'Net ecosystem CO₂e flux',
+  'carbon.co2e.products.total': 'Harvested product CO₂e',
+  'carbon.dom.total': 'Dead organic matter carbon',
+  'carbon.ecosystem.total': 'Ecosystem carbon',
+  'carbon.flux.decay': 'Heterotrophic respiration',
+  'carbon.flux.disturbance': 'Disturbance emissions',
+  'carbon.flux.net': 'Net ecosystem exchange',
+  'carbon.flux.npp': 'Net primary production',
+  'carbon.products.total': 'Harvested product carbon',
+  'carbon.stock.change': 'Carbon stock change',
+};
+const CARBON_GROUP_COLORS = ['#0072b2', '#e69f00', '#009e73', '#cc79a7', '#56b4e9', '#d55e00', '#f0e442', '#4d4d4d'];
+
+function carbonAccountLabel(name) {
+  if (CARBON_ACCOUNT_LABELS[name]) return CARBON_ACCOUNT_LABELS[name];
+  const stem = String(name).replace(/^carbon\./, '').replaceAll('.', ' ');
+  return stem.charAt(0).toUpperCase() + stem.slice(1);
+}
+
+function carbonAccountUnit(name) {
+  const flux = String(name).includes('.flux.') || String(name) === 'carbon.stock.change';
+  if (String(name).includes('co2e')) return flux ? 'tCO2e/yr' : 'tCO2e';
+  return flux ? 'tC/yr' : 'tC';
+}
+
+function carbonValue(value) {
+  return Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+function carbonCompact(value) {
+  const number = Number(value);
+  const abs = Math.abs(number);
+  if (abs >= 1e9) return `${(number / 1e9).toFixed(3)}B`;
+  if (abs >= 1e6) return `${(number / 1e6).toFixed(2)}M`;
+  if (abs >= 1e3) return `${(number / 1e3).toFixed(1)}k`;
+  return number.toLocaleString(undefined, { maximumFractionDigits: 1 });
+}
+
+function carbonAxisTick(value, span) {
+  const abs = Math.abs(Number(value));
+  const divisor = abs >= 1e9 ? 1e9 : abs >= 1e6 ? 1e6 : abs >= 1e3 ? 1e3 : 1;
+  const suffix = divisor === 1e9 ? 'B' : divisor === 1e6 ? 'M' : divisor === 1e3 ? 'k' : '';
+  const step = Math.abs(Number(span)) / divisor;
+  const decimals = step >= 100 ? 0 : step >= 10 ? 1 : step >= 1 ? 2 : 3;
+  return `${(Number(value) / divisor).toFixed(decimals)}${suffix}`;
+}
+
+function hideCarbonTooltip() {
+  const tooltip = $('carbon-tooltip');
+  if (tooltip) tooltip.hidden = true;
 }
 
 function carbonAccount() {
@@ -2073,57 +2208,133 @@ function carbonAccount() {
 function drawCarbonChart() {
   const svg = $('carbon-chart');
   if (!svg) return;
+  const tooltip = $('carbon-tooltip');
+  const title = $('carbon-chart-title');
+  const current = $('carbon-chart-current');
+  const note = $('carbon-chart-note');
   svg.replaceChildren();
+  hideCarbonTooltip();
   const account = carbonAccount();
-  const points = account?.values ?? [];
-  if (points.length < 1) return;
-  const width = 320;
-  const height = 140;
-  const pad = 22;
-  const xs = points.map((point) => Number(point.offset));
-  const ys = points.map((point) => Number(point.value));
+  const points = (account?.values ?? [])
+    .map((point) => ({ offset: Number(point.offset), value: Number(point.value) }))
+    .filter((point) => Number.isFinite(point.offset) && Number.isFinite(point.value));
+  const label = account ? carbonAccountLabel(account.account) : 'Carbon account';
+  const unit = account ? carbonAccountUnit(account.account) : '';
+  if (title) title.textContent = `${label}${unit ? ` · ${unit}` : ''}`;
+  svg.setAttribute('aria-label', `${label}${unit ? ` trend in ${unit}` : ' trend'}`);
+  if (!points.length) {
+    svg.hidden = true;
+    if (current) current.textContent = '';
+    if (note) note.textContent = account ? 'No account values in this run.' : 'Choose a carbon account.';
+    return;
+  }
+  svg.hidden = false;
+  const width = 480;
+  const height = 230;
+  const left = 64;
+  const right = 18;
+  const top = 24;
+  const bottom = 38;
+  const xs = points.map((point) => point.offset);
+  const ys = points.map((point) => point.value);
   const minX = Math.min(...xs);
   const maxX = Math.max(...xs);
-  const minY = Math.min(...ys, 0);
-  const maxY = Math.max(...ys);
-  const ySpan = maxY - minY || 1;
-  const xSpan = maxX - minX || 1;
-  const x = (value) => pad + ((value - minX) / xSpan) * (width - pad * 2);
-  const y = (value) => height - pad - ((value - minY) / ySpan) * (height - pad * 2);
-  const axis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  axis.setAttribute('x1', pad);
-  axis.setAttribute('x2', width - pad);
-  axis.setAttribute('y1', height - pad);
-  axis.setAttribute('y2', height - pad);
-  axis.setAttribute('stroke', '#d9e2ec');
-  svg.append(axis);
-  const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-  line.setAttribute('points', points.map((point) => `${x(point.offset).toFixed(1)},${y(point.value).toFixed(1)}`).join(' '));
-  line.setAttribute('fill', 'none');
-  line.setAttribute('stroke', '#2f7d4f');
-  line.setAttribute('stroke-width', '2');
-  svg.append(line);
-  for (const [label, value] of [[minX, minY], [maxX, maxY]]) {
-    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    text.setAttribute('x', label === minX ? pad : width - pad);
-    text.setAttribute('y', height - 5);
-    text.setAttribute('text-anchor', label === minX ? 'start' : 'end');
-    text.setAttribute('font-size', '9');
-    text.setAttribute('fill', '#616e7c');
-    text.textContent = `${label}: ${Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
-    svg.append(text);
+  let minY = Math.min(...ys);
+  let maxY = Math.max(...ys);
+  if (minY === maxY) {
+    const span = Math.abs(minY) * 0.05 || 1;
+    minY -= span;
+    maxY += span;
+  } else {
+    const span = (maxY - minY) * 0.08;
+    minY -= span;
+    maxY += span;
+    if (Math.min(...ys) >= 0 && minY < 0) minY = 0;
+    if (Math.max(...ys) <= 0 && maxY > 0) maxY = 0;
   }
+  const xSpan = maxX - minX || 1;
+  const ySpan = maxY - minY || 1;
+  const x = (value) => left + ((value - minX) / xSpan) * (width - left - right);
+  const y = (value) => height - bottom - ((value - minY) / ySpan) * (height - top - bottom);
+  const ns = 'http://www.w3.org/2000/svg';
+  const add = (name, attrs, text) => {
+    const node = document.createElementNS(ns, name);
+    for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value));
+    if (text !== undefined) node.textContent = text;
+    svg.append(node);
+    return node;
+  };
+  const ticks = 4;
+  for (let index = 0; index <= ticks; index += 1) {
+    const value = minY + (ySpan * index) / ticks;
+    const yValue = y(value);
+    add('line', { x1: left, x2: width - right, y1: yValue, y2: yValue, class: 'chart-grid' });
+    add('text', { x: left - 8, y: yValue + 3, 'text-anchor': 'end', class: 'chart-tick' }, carbonAxisTick(value, ySpan));
+  }
+  add('line', { x1: left, x2: left, y1: top, y2: height - bottom, class: 'chart-axis' });
+  add('line', { x1: left, x2: width - right, y1: height - bottom, y2: height - bottom, class: 'chart-axis' });
+  add('text', { x: left - 8, y: top - 8, 'text-anchor': 'end', class: 'chart-tick' }, unit);
+  const xTicks = [...new Set([minX, Math.round((minX + maxX) / 2), maxX])];
+  for (const value of xTicks) {
+    const xValue = x(value);
+    add('line', { x1: xValue, x2: xValue, y1: height - bottom, y2: height - bottom + 4, class: 'chart-axis' });
+    add('text', { x: xValue, y: height - bottom + 18, 'text-anchor': 'middle', class: 'chart-tick' }, `Year ${value}`);
+  }
+  const linePath = points.map((point, index) => `${index === 0 ? 'M' : 'L'}${x(point.offset).toFixed(1)},${y(point.value).toFixed(1)}`).join(' ');
+  if (points.length > 1) {
+    const area = `${linePath} L${x(points.at(-1).offset).toFixed(1)},${height - bottom} L${x(points[0].offset).toFixed(1)},${height - bottom} Z`;
+    add('path', { d: area, class: 'chart-area' });
+  }
+  add('path', { d: linePath, class: 'chart-line', fill: 'none' });
+  const wrapper = svg.closest('.carbon-chart-wrap');
+  const showTip = (point, target) => {
+    if (!tooltip || !wrapper) return;
+    const rect = target.getBoundingClientRect();
+    const box = wrapper.getBoundingClientRect();
+    tooltip.textContent = `Year ${point.offset} · ${carbonValue(point.value)} ${unit}`;
+    tooltip.style.left = `${rect.left + rect.width / 2 - box.left}px`;
+    tooltip.style.top = `${rect.top - box.top}px`;
+    tooltip.hidden = false;
+  };
+  for (const point of points) {
+    const dot = add('circle', {
+      cx: x(point.offset),
+      cy: y(point.value),
+      r: 4,
+      class: 'chart-point',
+      tabindex: 0,
+      role: 'button',
+      'aria-label': `Year ${point.offset}: ${carbonValue(point.value)} ${unit}`,
+    });
+    dot.addEventListener('mouseenter', () => showTip(point, dot));
+    dot.addEventListener('focus', () => showTip(point, dot));
+    dot.addEventListener('click', () => showTip(point, dot));
+    dot.addEventListener('mouseleave', hideCarbonTooltip);
+    dot.addEventListener('blur', hideCarbonTooltip);
+  }
+  if (current) current.textContent = `Latest · year ${points.at(-1).offset}: ${carbonCompact(points.at(-1).value)} ${unit}`;
+  if (note) note.textContent = `Hover or tap a point for the exact year and value. Values in ${unit}.`;
 }
 
 function renderCarbonComposition() {
   const box = $('carbon-composition');
+  const note = $('carbon-composition-note');
   if (!box) return;
   box.replaceChildren();
   const pools = state.carbon?.pools;
-  if (!pools?.composition?.length) return;
+  if (!pools?.composition?.length) {
+    box.hidden = true;
+    if (note) note.hidden = true;
+    return;
+  }
+  box.hidden = false;
   const index = Math.max(0, (pools.timesteps?.length ?? 1) - 1);
+  if (note) {
+    note.hidden = false;
+    note.textContent = `Pools at year ${pools.timesteps?.[index] ?? '—'} · tC`;
+  }
   const max = Math.max(...pools.composition.map((group) => Number(group.values[index] ?? 0)), 1);
-  for (const group of pools.composition) {
+  pools.composition.forEach((group, order) => {
     const value = Number(group.values[index] ?? 0);
     const row = document.createElement('div');
     row.className = 'carbon-bar-row';
@@ -2132,24 +2343,28 @@ function renderCarbonComposition() {
     const track = document.createElement('span');
     track.className = 'carbon-bar';
     track.style.width = `${Math.max(1, (value / max) * 100)}%`;
+    track.style.background = CARBON_GROUP_COLORS[order % CARBON_GROUP_COLORS.length];
     const amount = document.createElement('span');
-    amount.textContent = value.toLocaleString(undefined, { maximumFractionDigits: 1 });
+    amount.textContent = `${carbonCompact(value)} tC`;
     row.append(label, track, amount);
     box.append(row);
-  }
+  });
 }
 
 function renderCarbonCompare() {
   const table = $('carbon-compare');
   const empty = $('carbon-compare-empty');
-  if (!table || !empty) return;
+  const block = $('carbon-gcbm-block');
+  if (!table || !empty || !block) return;
   const gcbm = state.carbon?.gcbm;
   table.replaceChildren();
   if (!gcbm || !gcbm.rows?.length) {
     table.hidden = true;
     empty.hidden = false;
+    block.hidden = true;
     return;
   }
+  block.hidden = false;
   empty.hidden = true;
   table.hidden = false;
   const head = document.createElement('thead');
@@ -2178,9 +2393,12 @@ function renderCarbonCompare() {
 
 function renderCarbonFiles() {
   const list = $('carbon-files');
-  if (!list) return;
+  const block = $('carbon-files-block');
+  if (!list || !block) return;
   list.replaceChildren();
-  for (const file of state.carbon?.files ?? []) {
+  const files = state.carbon?.files ?? [];
+  block.hidden = files.length === 0;
+  for (const file of files) {
     const item = document.createElement('li');
     const link = document.createElement('a');
     link.href = `api/runs/${encodeURIComponent(state.run)}/reports/${encodeURIComponent(file.name)}`;
@@ -2211,7 +2429,10 @@ async function loadCarbon() {
   const status = $('carbon-status');
   const meta = $('carbon-meta');
   const select = $('carbon-account');
-  if (!status || !meta || !select) return;
+  const content = $('carbon-content');
+  const empty = $('carbon-empty');
+  const hint = $('carbon-hint');
+  if (!status || !meta || !select || !content || !empty || !hint) return;
   try {
     const info = await api(`api/runs/${encodeURIComponent(state.run)}/carbon`);
     state.carbon = info;
@@ -2222,6 +2443,11 @@ async function loadCarbon() {
       select.disabled = true;
       status.textContent = 'this run has no carbon artifacts';
       $('carbon-ledger').textContent = '';
+      $('carbon-ledger').hidden = true;
+      content.hidden = true;
+      empty.hidden = false;
+      empty.textContent = 'This run has no carbon artifacts. Pick a carbon run to see accounts and pools.';
+      hint.hidden = true;
       renderCarbonComposition();
       renderCarbonCompare();
       renderCarbonFiles();
@@ -2230,15 +2456,19 @@ async function loadCarbon() {
       return;
     }
     select.disabled = false;
+    content.hidden = false;
+    empty.hidden = true;
+    hint.hidden = false;
     const accounts = info.accounts ?? [];
     const ledger = info.ledger;
     status.textContent = `${accounts.length} carbon accounts${info.pools ? ' · pools' : ''}${info.flux ? ' · flux' : ''}${ledger ? ' · ledger' : ''}`;
     const manifest = info.manifest ?? {};
     const units = manifest.units ?? {};
+    const unitLabel = [units.carbon, units.co2e].filter(Boolean).join(' · ');
     const rows = [
       ['Package', manifest.package_id],
       ['libcbm', manifest.libcbm_version],
-      ['Units', units.carbon],
+      ['Units', unitLabel || units.carbon],
       ['Defaults', manifest.cbm_defaults?.version],
       ['Fingerprint', manifest.package_fingerprint ? String(manifest.package_fingerprint).slice(0, 12) : null],
       ['Schedule hash', manifest.schedule_sha256 ? String(manifest.schedule_sha256).slice(0, 12) : null],
@@ -2258,13 +2488,15 @@ async function loadCarbon() {
     for (const account of accounts) {
       const option = document.createElement('option');
       option.value = account.account;
-      option.textContent = account.account;
+      option.textContent = `${carbonAccountLabel(account.account)} (${carbonAccountUnit(account.account)})`;
+      option.title = account.account;
       select.append(option);
     }
     select.value = current;
+    $('carbon-ledger').hidden = !ledger;
     $('carbon-ledger').textContent = ledger
       ? `Ledger: ${ledger.ledger ?? 'present'} · ${ledger.years ?? '—'} years${ledger.package ? ` · ${ledger.package}` : ''}`
-      : 'No carbon ledger recorded for this run.';
+      : '';
     renderCarbonComposition();
     renderCarbonCompare();
     renderCarbonFiles();
@@ -2277,6 +2509,11 @@ async function loadCarbon() {
     select.replaceChildren();
     select.disabled = true;
     status.textContent = `carbon unavailable: ${error.message}`;
+    content.hidden = true;
+    empty.hidden = false;
+    empty.textContent = `Carbon unavailable: ${error.message}`;
+    hint.hidden = true;
+    $('carbon-ledger').hidden = true;
     renderCarbonComposition();
     renderCarbonCompare();
     renderCarbonFiles();
@@ -2457,8 +2694,8 @@ function subAllowed(workspace, sub) {
   if (workspace === 'results') return panels.has(sub);
   if (workspace !== 'data') return true;
   if (sub === 'dataset') return panels.has('dataset');
-  if (sub === 'lidar') return panels.has('lidar') && Boolean(state.lidar?.available);
-  if (sub === 'carbon') return panels.has('carbon') && Boolean(state.carbon?.available);
+  if (sub === 'lidar') return panels.has('lidar');
+  if (sub === 'carbon') return panels.has('carbon');
   return false;
 }
 
