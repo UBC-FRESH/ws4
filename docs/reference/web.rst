@@ -507,6 +507,16 @@ read-only skin may not carry a mutating action. The browser applies the manifest
 disabling the target editor; the rule lives on the server, so a client cannot enable what the manifest
 does not list.
 
+Results run health
+-------------------
+
+The **Results** workspace opens with a run-health card above Reports, Compare, and Search. It
+shows the run id, kind, current period, total targets, failing count, met count, off count, pinned
+chart count, and whether LiDAR and Carbon artifacts are available. The failing count is styled as
+the first warning. **Open Plan** switches to the target table; **Show failing targets** switches to
+Plan and activates the failing status filter. The counts use the same target rows and realized
+values as the Plan summary, so a scheduler can move from results to triage with one click.
+
 Comparison
 ----------
 
@@ -515,10 +525,12 @@ compare-tile endpoint. At the selected year the map colors blocks treated only i
 in both; the vector tile carries the flag in its ``compare`` property, and the full-run counts come
 from ``compare-stats``. The target table shows each target's kind, period value and status for both
 runs, the ending-inventory table compares the final feature values from each run's summary, and the
-account table lists the per-account delta ``B − A``, sorted by absolute change and filterable. The
-report tables appear before the map request finishes, so a large AOI does not hide them. The server
-computes nothing new: the target values use the same ``period_value`` rule, and a run with no values
-at the year is named rather than silently shown as zero everywhere.
+account table lists the per-account delta ``B − A``, sorted by absolute change and filterable. A
+target-status account is a keyboard-focusable link: activating it opens Plan and fills the target
+account filter with that account, ready to inspect or pin the target. The report tables appear
+before the map request finishes, so a large AOI does not hide them. The server computes nothing
+new: the target values use the same ``period_value`` rule, and a run with no values at the year is
+named rather than silently shown as zero everywhere.
 
 Chat agent
 ----------

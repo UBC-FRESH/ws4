@@ -74,6 +74,7 @@ exists and the maintainer approves it.
 | P69 LiDAR and carbon display polish | #494 | `feature/p69-lidar-carbon-polish` | complete |
 | P70 Target table polish | #504 | `feature/p70-target-table` | complete |
 | P71 Target triage | #511 | `feature/p71-target-triage` | complete |
+| P72 Results run health and cross-links | #518 | `feature/p72-results-health` | active |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2237,6 +2238,36 @@ Acceptance:
 - Bulk pin updates the chart canvas and watch panel.
 - The filter controls are usable by keyboard and at 1024 px.
 - Target charts and the target YAML contract are unchanged.
+- `python scripts/dashboard.py` is green.
+
+## Phase 72: Results run health and cross-links
+
+Parent issue: #518
+Branch: `feature/p72-results-health`
+Status: active
+
+Goal: give Results a compact run-health summary and make Compare target rows navigate to the Plan
+target filter, so an analyst can move from outcome context to target triage without hunting.
+
+- [x] P72.1 Add the Results run-health card and Plan actions (#519)
+  - [x] Show run, kind, period, target counts, charts, and data availability
+  - [x] Add Open Plan and Show failing targets
+- [x] P72.2 Cross-link Compare target-status accounts to Plan (#520)
+  - [x] Make the account a keyboard-focusable link
+  - [x] Verify the target-status row has one account cell and eight columns
+- [ ] P72.3 Verify c5/TSA 46, document, and close out (#521)
+  - [x] Add the Results health browser smoke
+  - [x] Verify c5 and TSA 46
+  - [x] Verify 1024 px
+  - [ ] Update docs and write the close-out
+
+Acceptance:
+
+- Health counts match the Plan target summary for the selected run.
+- Show failing targets opens Plan with the failing filter active.
+- Compare target account links open Plan with the account filtered.
+- Compare target-status rows have one account cell and aligned columns.
+- Results is usable at 1024 px.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes
