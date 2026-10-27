@@ -3170,3 +3170,10 @@ issue comments.
   remains an informational overlay rather than a hard constraint. Added
   `deferred_blocks_20y.csv`, window comparison, summary, and report. No
   objective change.
+
+- P70 target-table polish: pull request #508 squash-merged as `cd2b113`. The target
+  table now uses compact account labels with root badges, unambiguous inferred units,
+  P<n>/All period labels, and inline met/below/above/off status chips that update on
+  live runs. Account/period/min/max/status sorting preserves edits and target indices;
+  min/max weights moved to the detail row. c5 and TSA 46 checks passed; dashboard GREEN;
+  UI `v78`.

@@ -72,7 +72,7 @@ exists and the maintainer approves it.
 | P67 Target chart period hit zones | #479 | `feature/p67-target-hit-zone` | complete |
 | P68 Map visual hierarchy | #486 | `feature/p68-map-hierarchy` | complete |
 | P69 LiDAR and carbon display polish | #494 | `feature/p69-lidar-carbon-polish` | complete |
-| P70 Target table polish | #504 | `feature/p70-target-table` | pr-open |
+| P70 Target table polish | #504 | `feature/p70-target-table` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2172,7 +2172,7 @@ Acceptance:
 
 Parent issue: #504
 Branch: `feature/p70-target-table`
-Status: pr-open
+Status: complete
 
 Goal: make the target table a compact analyst surface: human account labels with inferred units,
 clear period labels, an inline met/below/above status column, and sortable columns without changing
