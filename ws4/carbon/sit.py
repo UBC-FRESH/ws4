@@ -903,7 +903,14 @@ def _build_events(
                 }
             )
             rows.append(row)
-    return pd.DataFrame(rows, columns=[*classifier_names, *_EVENT_FIELDS])
+    frame = pd.DataFrame(rows, columns=[*classifier_names, *_EVENT_FIELDS])
+    if frame.empty:
+        return frame
+    group_columns = [column for column in frame.columns if column != "target"]
+    aggregated = frame.groupby(group_columns, as_index=False, dropna=False).agg(
+        target=("target", "sum")
+    )
+    return aggregated.loc[:, list(frame.columns)]
 
 
 def _build_transitions(

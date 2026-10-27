@@ -370,6 +370,26 @@ def test_optional_libcbm_parse(tmp_path: Path) -> None:
     assert libcbm is not None
 
 
+def test_duplicate_events_are_aggregated(tmp_path: Path) -> None:
+    """Identical events in one timestep are summed into one SIT event."""
+    package = _write_package(tmp_path / "package")
+    dataset = _write_dataset(tmp_path / "dataset")
+    fragments = pd.read_parquet(dataset / "fragments.parquet")
+    duplicate = fragments.iloc[[0]].copy()
+    duplicate["fragment_id"] = 3
+    duplicate["block_id"] = 3
+    duplicate["area_ha"] = 1.0
+    pd.concat([fragments, duplicate], ignore_index=True).to_parquet(
+        dataset / "fragments.parquet", index=False
+    )
+    schedule = pd.DataFrame({"block_id": [1, 3], "treatment": ["CC", "CC"], "offset": [0, 0]})
+
+    tables = build_sit_tables(package, dataset, schedule)
+
+    assert tables.events.shape[0] == 1
+    assert tables.events["target"].iloc[0] == pytest.approx(4.0)
+
+
 def test_duplicate_inventory_rows_are_aggregated(tmp_path: Path) -> None:
     """Identical classifier/age fragments are summed into one SIT inventory row."""
     package = _write_package(tmp_path / "package")
