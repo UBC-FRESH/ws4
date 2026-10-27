@@ -1,0 +1,39 @@
+code,name,nfi_code,scientific_name
+0,Non treed,,
+1,Amabilis fir,ABIE.AMA,Abies amabilis
+2,Balsam fir,ABIE.BAL,Abies balsamea
+3,Subalpine fir,ABIE.LAS,Abies lasiocarpa
+4,Bigleaf maple,ACER.MAC,Acer macrophyllum
+5,Red maple,ACER.RUB,Acer rubrum
+6,Sugar maple,ACER.SAH,Acer saccharum
+7,Gray alder,ALNU.INC,Alnus incana
+8,Red alder,ALNU.RUB,Alnus rubra
+9,Yellow birch,BETU.ALL,Betula alleghaniensis
+10,White birch,BETU.PAP,Betula papyrifera
+11,Yellow-cedar,CHAM.NOO,Chamaecyparis nootkatensis
+12,Black ash,FRAX.NIG,Fraxinus nigra
+13,Tamarack,LARI.LAR,Larix laricina
+14,Western larch,LARI.OCC,Larix occidentalis
+15,Norway spruce,PICE.ABI,Picea abies
+16,Engelmann spruce,PICE.ENG,Picea engelmannii
+17,White spruce,PICE.GLA,Picea glauca
+18,Black spruce,PICE.MAR,Picea mariana
+19,Red spruce,PICE.RUB,Picea rubens
+20,Sitka spruce,PICE.SIT,Picea sitchensis
+21,Whitebark pine,PINU.ALB,Pinus albicaulis
+22,Jack pine,PINU.BAN,Pinus banksiana
+23,Lodgepole pine,PINU.CON,Pinus contorta
+24,Ponderosa pine,PINU.PON,Pinus ponderosa
+25,Red pine,PINU.RES,Pinus resinosa
+26,Eastern white pine,PINU.STR,Pinus strobus
+27,Balsam poplar,POPU.BAL,Populus balsamifera
+28,Largetooth aspen,POPU.GRA,Populus grandidentata
+29,Trembling aspen,POPU.TRE,Populus tremuloides
+30,Douglas-fir,PSEU.MEN,Pseudotsuga menziesii
+31,Red oak,QUER.RUB,Quercus rubra
+32,Eastern white-cedar,THUJ.OCC,Thuja occidentalis
+33,Western redcedar,THUJ.PLI,Thuja plicata
+34,Eastern hemlock,TSUG.CAN,Tsuga canadensis
+35,Western hemlock,TSUG.HET,Tsuga heterophylla
+36,Mountain hemlock,TSUG.MER,Tsuga mertensiana
+37,White elm,ULMU.AME,Ulmus americana

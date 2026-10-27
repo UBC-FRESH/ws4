@@ -99,6 +99,15 @@ from .report import write_report
 from .resilience import ResilienceError, compare_resilience_runs
 from .roads.accounts import load_route_config
 from .sim.engine import Simulator
+from .species import (
+    SpeciesError,
+    compare_leading_species,
+    read_class_map,
+    read_species_composition,
+    sample_species_raster,
+    summarize_comparison,
+    write_species_composition,
+)
 from .structure_habitat import (
     StructureHabitatError,
     compare_to_dhi,
@@ -1808,6 +1817,82 @@ def hydrology_validate(
 
 
 app.add_typer(lidar_app, name="lidar")
+species_app = typer.Typer(
+    add_completion=False,
+    no_args_is_help=True,
+    help="Ingest and compare a species-composition layer.",
+)
+
+
+@species_app.command("ingest")
+def species_ingest(
+    raster: Path = typer.Option(..., "--raster", exists=True, help="Species GeoTIFF."),
+    blocks: Path = typer.Option(..., "--blocks", exists=True, help="Block polygons."),
+    class_map: Path = typer.Option(
+        ..., "--class-map", exists=True, help="CSV/JSON class-code map."
+    ),
+    output: Path = typer.Option(..., "--output", "-o", help="Composition CSV."),
+    metadata: Path = typer.Option(..., "--metadata", help="Source metadata JSON."),
+    source_version: str = typer.Option(
+        ..., "--source-version", help="Required source version or vintage."
+    ),
+    source_id: str = typer.Option("ntems-ca-tree-species-classification", "--source-id"),
+    year: int = typer.Option(2022, "--year"),
+    licence: str = typer.Option("Open Government Licence - Canada", "--licence"),
+    block_id_field: str | None = typer.Option(
+        None, "--block-id-field", help="Block id column (default: auto-detect)."
+    ),
+    notes: str | None = typer.Option(None, "--notes"),
+) -> None:
+    """Sample a dominant-species raster at block polygons."""
+    try:
+        composition, source = sample_species_raster(
+            raster,
+            blocks,
+            read_class_map(class_map),
+            source_version=source_version,
+            source_id=source_id,
+            year=year,
+            licence=licence,
+            block_id_field=block_id_field,
+            notes=notes,
+        )
+        write_species_composition(composition, source, output, metadata)
+    except SpeciesError as error:
+        raise typer.BadParameter(str(error)) from error
+    print(f"[bold green]Species composition[/] {len(composition)} rows → {output}")
+
+
+@species_app.command("compare")
+def species_compare(
+    composition: Path = typer.Option(..., "--composition", exists=True),
+    metadata: Path = typer.Option(..., "--metadata", exists=True),
+    reference: Path = typer.Option(..., "--reference", exists=True),
+    output: Path = typer.Option(..., "--output", "-o", help="Comparison CSV."),
+    block_id_column: str = typer.Option("block_id", "--block-id-column"),
+    reference_code_column: str = typer.Option("leading_species_code", "--reference-code-column"),
+    summary: Path | None = typer.Option(None, "--summary", help="Optional JSON summary."),
+) -> None:
+    """Compare public leading species with a reference table."""
+    try:
+        table, _source = read_species_composition(composition, metadata)
+        result = compare_leading_species(
+            table,
+            pd.read_csv(reference),
+            block_id_column=block_id_column,
+            reference_code_column=reference_code_column,
+        )
+    except SpeciesError as error:
+        raise typer.BadParameter(str(error)) from error
+    output.parent.mkdir(parents=True, exist_ok=True)
+    result.to_csv(output, index=False)
+    report = summarize_comparison(result)
+    if summary is not None:
+        summary.parent.mkdir(parents=True, exist_ok=True)
+        summary.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    print(f"[bold green]Species comparison[/] {report} → {output}")
+
+
 resilience_app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
@@ -1991,6 +2076,7 @@ def dhi_ingest(
     print(f"[bold green]DHI values[/] {len(values)} blocks, bands {', '.join(names)} → {output}")
 
 
+app.add_typer(species_app, name="species")
 app.add_typer(resilience_app, name="resilience")
 app.add_typer(shi_app, name="shi")
 app.add_typer(dhi_app, name="dhi")

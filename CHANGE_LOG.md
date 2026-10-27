@@ -3090,3 +3090,17 @@ issue comments.
   variation: block 16624698 is H2-C0-K2 at block level but 62.3% of its area is
   low height. Report-only change; docs build and validator pass. No objective
   change.
+
+- INV-05 species composition pilot: added `ws4.species` and `ws4 species
+  ingest/compare` for a public dominant-species raster. The contract stores
+  block/class fractions and a leading species, plus required source version,
+  year, CRS, licence, citation, and class map; it does not infer mixedwood
+  fractions from a dominant-only layer. The TFL 6 pilot uses the NTEMS 2022
+  30 m layer: public classes 0/33/35, western redcedar leading all seven VRI
+  blocks, 4/6 comparable blocks agreeing with VRI (66.7%); blocks 16624698 and
+  16625195 disagree, and one block has no VRI label. Added
+  `examples/species_tfl6` and `docs/reference/species-composition.rst`.
+  Verification: `python -m pytest tests/test_species.py -q --no-cov` -> 5
+  passed; `python scripts/dashboard.py` -> **GREEN** (lint 0.10 s, format
+  0.08 s, types 1.73 s, tests 144.85 s, validator 0.81 s, docs 3.81 s,
+  docstrings 3.13 s). No objective change.

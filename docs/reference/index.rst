@@ -32,6 +32,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - The published Coops et al. structure index, required metrics, accounts, and gaps.
    * - :doc:`resilience`
      - Connectivity, age-class diversity, and fragmentation accounts from existing state.
+   * - :doc:`species-composition`
+     - Dominant-species ingest, block fractions, and VRI comparison.
    * - :doc:`performance`
      - The measured figures and how to reproduce them.
    * - :doc:`web`
@@ -58,6 +60,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    dhi
    structure-habitat
    resilience
+   species-composition
    performance
    web
    femic-lidar
