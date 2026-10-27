@@ -73,7 +73,7 @@ exists and the maintainer approves it.
 | P68 Map visual hierarchy | #486 | `feature/p68-map-hierarchy` | complete |
 | P69 LiDAR and carbon display polish | #494 | `feature/p69-lidar-carbon-polish` | complete |
 | P70 Target table polish | #504 | `feature/p70-target-table` | complete |
-| P71 Target triage | #511 | `feature/p71-target-triage` | pr-open |
+| P71 Target triage | #511 | `feature/p71-target-triage` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2209,7 +2209,7 @@ Acceptance:
 
 Parent issue: #511
 Branch: `feature/p71-target-triage`
-Status: pr-open
+Status: complete
 
 Goal: make a large target set triageable without losing the target-table editor: filter by status
 and account, see a failing-first summary, and bulk-pin the failing rows into the chart canvas.
