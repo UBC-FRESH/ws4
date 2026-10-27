@@ -19,6 +19,7 @@ import pandas as pd
 
 SPECIES_SOURCE_SCHEMA_VERSION = "ws4.species.source.v1"
 SPECIES_COMPOSITION_SCHEMA_VERSION = "ws4.species.composition.v1"
+SPECIES_FRACTION_SCHEMA_VERSION = "ws4.species.fraction.v1"
 DEFAULT_SOURCE_ID = "ntems-ca-tree-species-classification"
 DEFAULT_LICENCE = "Open Government Licence - Canada"
 
@@ -553,18 +554,222 @@ def summarize_comparison(comparison: pd.DataFrame) -> dict[str, object]:
     }
 
 
+def build_species_fractions(
+    frame: pd.DataFrame,
+    *,
+    class_map: Sequence[SpeciesClass],
+    code_map: Mapping[str, int],
+    source_id: str,
+    source_version: str,
+    species_columns: Sequence[str] = (
+        "species_cd_1",
+        "species_cd_2",
+        "species_cd_3",
+        "species_cd_4",
+        "species_cd_5",
+        "species_cd_6",
+    ),
+    percent_columns: Sequence[str] = (
+        "species_pct_1",
+        "species_pct_2",
+        "species_pct_3",
+        "species_pct_4",
+        "species_pct_5",
+        "species_pct_6",
+    ),
+    block_id_column: str = "feature_id",
+    allow_missing: bool = False,
+) -> tuple[pd.DataFrame, dict[str, object]]:
+    """Build a long species-fraction table from explicit species columns.
+
+    Fractions are taken from the declared percentage columns. They are never
+    normalized silently: a block whose percentages do not sum to 100 within
+    one percentage point is an error.
+
+    Parameters
+    ----------
+    frame : pandas.DataFrame
+        Block table with species code and percentage columns.
+    class_map : sequence of SpeciesClass
+        Raster/NFI class map used to name the codes.
+    code_map : mapping of str to int
+        Source species code to NFI class code.
+    source_id : str
+        Source identifier.
+    source_version : str
+        Required source version or vintage.
+    species_columns : sequence of str, optional
+        Species code columns.
+    percent_columns : sequence of str, optional
+        Percentage columns, parallel to ``species_columns``.
+    block_id_column : str, optional
+        Block id column.
+    allow_missing : bool, optional
+        When True, blocks with no species rows are omitted and listed in the
+        metadata instead of failing the whole table.
+
+    Returns
+    -------
+    tuple of (pandas.DataFrame, dict)
+        Long fraction rows and a JSON-ready metadata mapping.
+
+    Raises
+    ------
+    SpeciesError
+        If columns, codes, percentages, or block coverage are invalid.
+    """
+    if not source_version.strip():
+        raise SpeciesError("species source_version must not be empty")
+    if len(species_columns) != len(percent_columns):
+        raise SpeciesError("species and percent columns must have equal length")
+    if block_id_column not in frame:
+        raise SpeciesError(f"species fraction table needs {block_id_column!r}")
+    missing_columns = [
+        column for column in [*species_columns, *percent_columns] if column not in frame
+    ]
+    if missing_columns:
+        raise SpeciesError("species fraction table is missing: " + ", ".join(missing_columns))
+    classes = {item.code: item for item in class_map}
+    rows: list[dict[str, object]] = []
+    missing_blocks: list[int] = []
+    for record in frame.to_dict("records"):
+        block = int(str(record[block_id_column]))
+        pairs: list[tuple[str, float]] = []
+        for species_column, percent_column in zip(species_columns, percent_columns, strict=True):
+            species = record.get(species_column)
+            percent = record.get(percent_column)
+            if pd.isna(species) or pd.isna(percent):
+                continue
+            pairs.append((str(species).strip(), float(percent)))
+        if not pairs:
+            if allow_missing:
+                missing_blocks.append(block)
+                continue
+            raise SpeciesError(f"species fraction block {block} has no species rows")
+        total = sum(percent for _species, percent in pairs)
+        if abs(total - 100.0) > 1.0:
+            raise SpeciesError(f"species fractions for block {block} sum to {total:g}, not 100")
+        leading_code = max(pairs, key=lambda item: item[1])[0]
+        for species, percent in pairs:
+            if species not in code_map:
+                raise SpeciesError(f"species code {species!r} is not in the code map")
+            code = int(code_map[species])
+            if code not in classes:
+                raise SpeciesError(f"NFI class {code} for {species!r} is not in the class map")
+            rows.append(
+                {
+                    "block_id": block,
+                    "species_code": code,
+                    "species_name": classes[code].name,
+                    "nfi_code": classes[code].nfi_code,
+                    "fraction": percent / 100.0,
+                    "is_leading": species == leading_code,
+                }
+            )
+    if not rows:
+        raise SpeciesError("species fraction table is empty")
+    metadata = {
+        "schema_version": SPECIES_FRACTION_SCHEMA_VERSION,
+        "source_id": source_id,
+        "source_version": source_version,
+        "method": "Declared species percentages; no normalization or imputation.",
+        "block_count": len({row["block_id"] for row in rows}),
+        "missing_blocks": missing_blocks,
+        "species_columns": list(species_columns),
+        "percent_columns": list(percent_columns),
+        "code_map": dict(code_map),
+    }
+    return pd.DataFrame(
+        rows,
+        columns=[
+            "block_id",
+            "species_code",
+            "species_name",
+            "nfi_code",
+            "fraction",
+            "is_leading",
+        ],
+    ), metadata
+
+
+def write_species_fractions(
+    fractions: pd.DataFrame,
+    metadata: Mapping[str, object],
+    output_csv: str | Path,
+    metadata_json: str | Path,
+) -> None:
+    """Write a species-fraction table and metadata.
+
+    Parameters
+    ----------
+    fractions : pandas.DataFrame
+        Long fraction table.
+    metadata : mapping
+        JSON-ready metadata.
+    output_csv : str or Path
+        Destination CSV.
+    metadata_json : str or Path
+        Destination metadata JSON.
+    """
+    output = Path(output_csv)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    fractions.to_csv(output, index=False)
+    metadata_path = Path(metadata_json)
+    metadata_path.parent.mkdir(parents=True, exist_ok=True)
+    metadata_path.write_text(
+        json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+
+def summarize_species_fractions(fractions: pd.DataFrame) -> pd.DataFrame:
+    """Summarize leading species and non-leading fraction by block.
+
+    Parameters
+    ----------
+    fractions : pandas.DataFrame
+        Long fraction table from :func:`build_species_fractions`.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row per block with leading code/name/fraction, non-leading fraction,
+        and species count.
+    """
+    rows: list[dict[str, object]] = []
+    for block, group in fractions.groupby("block_id", sort=True):
+        leading = group[group["is_leading"].astype(bool)]
+        if len(leading) != 1:
+            raise SpeciesError(f"block {block} must have exactly one leading species")
+        lead = leading.iloc[0]
+        rows.append(
+            {
+                "block_id": int(str(block)),
+                "leading_species_code": int(lead["species_code"]),
+                "leading_species_name": str(lead["species_name"]),
+                "leading_fraction": float(lead["fraction"]),
+                "non_leading_fraction": 1.0 - float(lead["fraction"]),
+                "species_count": len(group),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
 __all__ = [
     "DEFAULT_LICENCE",
     "DEFAULT_SOURCE_ID",
     "SPECIES_COMPOSITION_SCHEMA_VERSION",
+    "SPECIES_FRACTION_SCHEMA_VERSION",
     "SPECIES_SOURCE_SCHEMA_VERSION",
     "SpeciesClass",
     "SpeciesError",
     "SpeciesSource",
+    "build_species_fractions",
     "compare_leading_species",
     "read_class_map",
     "read_species_composition",
     "sample_species_raster",
     "summarize_comparison",
+    "summarize_species_fractions",
     "write_species_composition",
+    "write_species_fractions",
 ]

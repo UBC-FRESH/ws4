@@ -1,8 +1,8 @@
-block_id,public_code,public_name,reference_code,match,_merge
-16624698,33,Western redcedar,35.0,False,both
-16625195,33,Western redcedar,11.0,False,both
-19212607,33,Western redcedar,33.0,True,both
-23339458,33,Western redcedar,33.0,True,both
-23339461,33,Western redcedar,33.0,True,both
-23339462,33,Western redcedar,,False,left_only
-23339490,33,Western redcedar,33.0,True,both
+block_id,public_code,public_name,reference_code,match,_merge,leading_species_code,leading_species_name,leading_fraction,non_leading_fraction,species_count
+16624698,33,Western redcedar,35.0,False,both,35.0,Western hemlock,0.5,0.5,3.0
+16625195,33,Western redcedar,11.0,False,both,11.0,Yellow-cedar,0.6,0.4,2.0
+19212607,33,Western redcedar,33.0,True,both,33.0,Western redcedar,0.45,0.55,3.0
+23339458,33,Western redcedar,33.0,True,both,33.0,Western redcedar,0.45,0.55,3.0
+23339461,33,Western redcedar,33.0,True,both,33.0,Western redcedar,0.4,0.6,3.0
+23339462,33,Western redcedar,,False,left_only,,,,,
+23339490,33,Western redcedar,33.0,True,both,33.0,Western redcedar,0.45,0.55,3.0

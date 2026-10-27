@@ -14,10 +14,12 @@ from shapely.geometry import box
 from ws4.species import (
     SpeciesClass,
     SpeciesError,
+    build_species_fractions,
     compare_leading_species,
     read_class_map,
     sample_species_raster,
     summarize_comparison,
+    summarize_species_fractions,
 )
 
 CLASSES = (
@@ -148,3 +150,62 @@ def test_compare_leading_species_and_summary() -> None:
     assert summary["missing_reference"] == 1
     assert comparison.loc[comparison["block_id"] == 1, "match"].iloc[0]
     assert not comparison.loc[comparison["block_id"] == 2, "match"].iloc[0]
+
+
+def test_build_species_fractions_and_summary() -> None:
+    """Explicit VRI percentages become fractions and a non-leading share."""
+    frame = pd.DataFrame(
+        {
+            "feature_id": [1, 2, 3],
+            "species_cd_1": ["CW", "YC", None],
+            "species_pct_1": [45.0, 60.0, None],
+            "species_cd_2": ["YC", "CW", None],
+            "species_pct_2": [35.0, 40.0, None],
+            "species_cd_3": ["HW", None, None],
+            "species_pct_3": [20.0, None, None],
+        }
+    )
+    fractions, metadata = build_species_fractions(
+        frame,
+        class_map=CLASSES,
+        code_map={"CW": 33, "YC": 11, "HW": 35},
+        source_id="vri-fixture",
+        source_version="fixture-v1",
+        species_columns=("species_cd_1", "species_cd_2", "species_cd_3"),
+        percent_columns=("species_pct_1", "species_pct_2", "species_pct_3"),
+        block_id_column="feature_id",
+        allow_missing=True,
+    )
+    summary = summarize_species_fractions(fractions)
+
+    assert metadata["missing_blocks"] == [3]
+    assert metadata["block_count"] == 2
+    assert fractions.loc[fractions["block_id"] == 1, "fraction"].sum() == pytest.approx(1.0)
+    assert summary.loc[summary["block_id"] == 1, "leading_species_code"].iloc[0] == 33
+    assert summary.loc[summary["block_id"] == 1, "non_leading_fraction"].iloc[0] == pytest.approx(
+        0.55
+    )
+    assert summary.loc[summary["block_id"] == 2, "leading_species_code"].iloc[0] == 11
+
+
+def test_species_fractions_reject_percentages_that_do_not_sum_to_100() -> None:
+    """Percentages are not silently normalized."""
+    frame = pd.DataFrame(
+        {
+            "feature_id": [1],
+            "species_cd_1": ["CW"],
+            "species_pct_1": [70.0],
+            "species_cd_2": ["YC"],
+            "species_pct_2": [20.0],
+        }
+    )
+    with pytest.raises(SpeciesError, match="sum to"):
+        build_species_fractions(
+            frame,
+            class_map=CLASSES,
+            code_map={"CW": 33, "YC": 11},
+            source_id="vri-fixture",
+            source_version="fixture-v1",
+            species_columns=("species_cd_1", "species_cd_2"),
+            percent_columns=("species_pct_1", "species_pct_2"),
+        )

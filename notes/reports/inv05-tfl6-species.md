@@ -41,3 +41,15 @@ accuracy estimate for the national product.
 - `python -m pytest tests/test_species.py -q --no-cov` -> 5 passed.
 - `python -m sphinx -b html docs ... -W` -> passed.
 - Files: `examples/species_tfl6/`.
+
+## Species fractions and mixedwood
+
+VRI species percentages were ingested into `ws4.species.fraction.v1` for the six
+blocks with species labels. Block 23339462 has no VRI species rows and is listed
+as missing, not imputed. Percentages must sum to 100 within one point; they are
+not normalized silently.
+
+All six blocks are mixed. The leading fraction ranges 0.40-0.60 and the
+non-leading fraction (1 - leading) also ranges 0.40-0.60. The NTEMS dominant
+layer cannot represent this; it calls all blocks western redcedar. The fraction
+table is the composition source, not a derived product from the dominant layer.
