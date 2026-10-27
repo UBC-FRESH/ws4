@@ -1,0 +1,9 @@
+{
+  "baseline_volume_m3": 138502036.51642016,
+  "defer_nr_treated_delta": -3579.4097562558018,
+  "defer_nr_volume_delta_pct": -0.9950140294977105,
+  "defer_nr_volume_m3": 137123921.82194173,
+  "not_recovered_area_ha": 6048.378767069999,
+  "not_recovered_blocks": 411,
+  "scheduled_blocks": 44388
+}
