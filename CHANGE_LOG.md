@@ -3122,3 +3122,14 @@ issue comments.
   treated-only toggle. Map-engine and unavailable-layer controls are compact disclosures.
   Browser smoke passed on c5 (1,171 treated / 11,396 untreated) and TSA 46 (2,427 /
   167,127); dashboard GREEN. UI `v76`.
+
+- DIS-04 post-fire recovery pilot: added `ws4.recovery` and
+  `ws4 recovery ingest` for the public NTEMS post-disturbance recovery-rate
+  layer (fire 1986-2012, observation 1985-2017, 30 m, OGL-C). The contract
+  reports faster/slower/not-recovered fractions and a dominant status; blocks
+  outside the fire footprint are `outside_footprint`, never imputed as failure.
+  The real TSA46 5 km pilot has 33 VRI blocks, 31 in the footprint; all 31 are
+  dominated by not recovered, with 5,224 ha of burned recovery area. Added
+  `examples/recovery_tsa46` and `docs/reference/recovery.rst`. Verification:
+  4 recovery tests pass; full dashboard GREEN (tests 130.22 s). No objective
+  change.

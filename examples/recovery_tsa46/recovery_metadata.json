@@ -1,0 +1,17 @@
+{
+  "citation": "White et al. 2022, Mapping, validating, and interpreting spatio-temporal trends in post-disturbance forest recovery, Remote Sensing of Environment 271, 112904.",
+  "crs": "EPSG:3978",
+  "disturbance_years": "1986-2012",
+  "licence": "Open Government Licence - Canada",
+  "notes": "TSA46 5 km fire-recovery pilot around 1021022,798654 EPSG:3005.",
+  "observation_years": "1985-2017",
+  "resolution_m": 30.0,
+  "schema_version": "ws4.recovery.source.v1",
+  "source_id": "ntems-post-disturbance-recovery-rate",
+  "source_version": "NTEMS post-disturbance recovery rate / White et al. 2022",
+  "status_classes": {
+    "1": "faster",
+    "2": "slower",
+    "3": "not_recovered"
+  }
+}

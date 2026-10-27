@@ -34,6 +34,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - Connectivity, age-class diversity, and fragmentation accounts from existing state.
    * - :doc:`species-composition`
      - Dominant-species ingest, block fractions, and VRI comparison.
+   * - :doc:`recovery`
+     - Post-fire spectral recovery ingest, block status, and caveats.
    * - :doc:`performance`
      - The measured figures and how to reproduce them.
    * - :doc:`web`
@@ -61,6 +63,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    structure-habitat
    resilience
    species-composition
+   recovery
    performance
    web
    femic-lidar
