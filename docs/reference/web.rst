@@ -561,17 +561,33 @@ period (period 1 is the first one), **Width** is its length in years, and **Min*
 target per selected account in a single validated save. Duplicate account/period targets,
 missing bounds, min above max, and invalid priorities are refused in the browser before
 the request. The table's **Target period** column is the optimizer's one-based period; the
-map control labels its periods by year range, so the two clocks are not confused. **Min w** and
-**Max w** are the penalty weights. **Add target** validates the complete list through
-``POST /api/targets.json``, writes the configured YAML, and refreshes the table. The
-form defaults the width to the width already used by the file, or ten years when the
-file is empty.
+map control labels its periods by year range, so the two clocks are not confused. The table
+shows **P1**, **P2**, and so on for per-period rows and **All** for a whole-horizon row, with
+the ending year underneath and the full period description in the title.
 
-Each target has a second, compact line with **Normalization** (``none`` or ``auto``),
-**Priority** (a positive integer tier), **Kind** (``level``, ``flow.even``, or
-``flow.ndy``, derived from the flow setting), and **Notes**. The run controls —
-Save targets, Solve/Pause/Stop, the live detail, and the status lines — are sticky at
-the bottom of the sidebar, so a long targets table does not hide the controls.
+The target table is a compact view of the same document. Account names are shortened to
+their path below the root (for example **Yield · managed · Conifer**), with the root shown as
+a small badge and the full path in the title. Units are inferred from the account name where
+the name is unambiguous — ``ha``, ``m³``, ``%``, ``tC``, and ``tCO2e`` — and are left blank
+rather than guessed. A **Status** column shows **met**, **below min**, **above max**, **off**,
+or a dash for no achieved value, and updates from live run snapshots. The achieved value
+stays as a secondary line under the account.
+
+Click the **On**, **Account**, **Target period**, **Min**, **Max**, or **Status** header to sort
+the view. A second click reverses the direction and **File order** restores the YAML order.
+Sorting moves only the rendered rows, so unsaved edits and the original target indices are
+preserved; saving after a sort writes the same document order. At 1024 px the table switches to
+fixed compact columns so the status remains visible; the account title still carries the full
+path.
+
+Each target has a second, compact line with **Min w** and **Max w** penalty weights,
+**Normalization** (``none`` or ``auto``), **Priority** (a positive integer tier), **Kind**
+(``level``, ``flow.even``, or ``flow.ndy``, derived from the flow setting), and **Notes**.
+**Add target** validates the complete list through ``POST /api/targets.json``, writes the
+configured YAML, and refreshes the table. The form defaults the width to the width already
+used by the file, or ten years when the file is empty. The run controls — Save targets,
+Solve/Pause/Stop, the live detail, and the status lines — are sticky at the bottom of the
+sidebar, so a long targets table does not hide the controls.
 
 The table's **Remove** button deletes one target through the same endpoint. The API
 refuses an empty targets document, so the last target must be removed in the YAML or

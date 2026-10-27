@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=77">
+  <link rel="stylesheet" href="static/style.css?v=78">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
 </head>
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v77</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v78</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Period
@@ -74,9 +74,21 @@
         </div>
         <div id="watch-panel" class="watch" hidden></div>
         <div class="table-wrap"><table id="targets-table" hidden>
-          <thead><tr><th>On</th><th>Account</th><th>Target period</th><th>Min</th><th>Max</th><th>Min w</th><th>Max w</th><th></th></tr></thead>
+          <thead><tr>
+            <th><button type="button" class="sort-button" data-sort="active" title="Sort by active state">On</button></th>
+            <th><button type="button" class="sort-button" data-sort="account" title="Sort by account">Account</button></th>
+            <th><button type="button" class="sort-button" data-sort="period" title="Sort by target period">Target period</button></th>
+            <th><button type="button" class="sort-button" data-sort="minimum" title="Sort by minimum">Min</button></th>
+            <th><button type="button" class="sort-button" data-sort="maximum" title="Sort by maximum">Max</button></th>
+            <th><button type="button" class="sort-button" data-sort="status" title="Sort by status">Status</button></th>
+            <th><span class="visually-hidden">Actions</span></th>
+          </tr></thead>
           <tbody></tbody>
         </table></div>
+        <div id="target-sort-bar" class="target-sort-bar" hidden>
+          <span id="target-sort-status" class="hint"></span>
+          <button id="target-sort-reset" type="button" class="link-button">File order</button>
+        </div>
         <div class="run-controls">
         <button id="save-targets" hidden>Save targets</button>
         <div class="run-row">
@@ -320,6 +332,6 @@
     </div>
   </main>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=77"></script>
+  <script type="module" src="static/app.js?v=78"></script>
 </body>
 </html>

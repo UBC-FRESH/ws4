@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 } };
 
 const $ = (id) => document.getElementById(id);
 const TILE_VERSION = 'v8';
@@ -3671,16 +3671,30 @@ function renderWatchPanel() {
   }
 }
 
+function setTargetStatus(entry, status) {
+  if (!entry.status) return;
+  entry.status.className = `target-status ${status}`;
+  entry.status.textContent = targetStatusLabel(status);
+  entry.status.title = status === 'unknown'
+    ? 'no achieved value for this run'
+    : status === 'off'
+      ? 'target is inactive'
+      : `achieved value is ${status}`;
+  if (entry.tr) entry.tr.dataset.status = status;
+}
+
 function paintTarget(entry, value) {
   entry.value = value;
   const row = entry.row;
-  if (row.active === false) {
-    entry.text.textContent = 'off';
+  const status = statusOf(row, value);
+  setTargetStatus(entry, status);
+  if (status === 'off') {
+    entry.text.textContent = value === undefined || value === null ? '—' : formatAccountValue(value);
     if (entry.band) entry.band.style.display = 'none';
     if (entry.marker) entry.marker.style.display = 'none';
     return;
   }
-  if (value === undefined || value === null) {
+  if (status === 'unknown') {
     entry.text.textContent = '—';
     if (entry.band) entry.band.style.display = 'none';
     if (entry.marker) entry.marker.style.display = 'none';
@@ -3704,10 +3718,66 @@ function paintTarget(entry, value) {
     entry.marker.style.display = '';
     entry.marker.style.left = position(value);
   }
-  let status = 'met';
-  if (row.minimum !== null && value < row.minimum) status = 'below';
-  else if (row.maximum !== null && value > row.maximum) status = 'above';
-  entry.text.textContent = `${Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 })} · ${status}`;
+  entry.text.textContent = formatAccountValue(value);
+}
+
+const TARGET_STATUS_RANK = { met: 0, below: 1, above: 2, off: 3, unknown: 4 };
+
+function targetSortValue(row, key) {
+  if (key === 'account') return String(row.dataset.account ?? '').toLowerCase();
+  if (key === 'active') return row.dataset.active === '1' ? 0 : 1;
+  if (key === 'period') return row.dataset.period === '' ? -1 : Number(row.dataset.period);
+  if (key === 'minimum' || key === 'maximum') {
+    const value = Number(row.dataset[key]);
+    return Number.isFinite(value) ? value : Number.POSITIVE_INFINITY;
+  }
+  if (key === 'status') return TARGET_STATUS_RANK[row.dataset.status] ?? 99;
+  return Number(row.dataset.index);
+}
+
+function applyTargetSort() {
+  const table = $('targets-table');
+  const body = table?.querySelector('tbody');
+  if (!table || !body) return;
+  const { key, direction } = state.targetSort;
+  const rows = [...body.querySelectorAll('tr:not(.target-detail)')];
+  const sortKey = key ?? 'index';
+  const ordered = rows.sort((left, right) => {
+    const a = targetSortValue(left, sortKey);
+    const b = targetSortValue(right, sortKey);
+    if (a < b) return -1 * direction;
+    if (a > b) return 1 * direction;
+    return Number(left.dataset.index) - Number(right.dataset.index);
+  });
+  for (const row of ordered) {
+    const detail = row.nextElementSibling;
+    body.append(row);
+    if (detail?.classList.contains('target-detail')) body.append(detail);
+  }
+  for (const button of document.querySelectorAll('#targets-table thead .sort-button')) {
+    const th = button.closest('th');
+    const active = button.dataset.sort === key;
+    const sortDirection = active ? (direction > 0 ? 'ascending' : 'descending') : 'none';
+    th?.setAttribute('aria-sort', sortDirection);
+    button.dataset.direction = sortDirection;
+  }
+  const bar = $('target-sort-bar');
+  const status = $('target-sort-status');
+  if (bar) bar.hidden = table.hidden || !rows.length;
+  if (status) {
+    status.textContent = key
+      ? `${key === 'minimum' ? 'Min' : key === 'maximum' ? 'Max' : key.charAt(0).toUpperCase() + key.slice(1)} ${direction > 0 ? 'ascending' : 'descending'}`
+      : 'file order';
+  }
+}
+
+function sortTargetTable(key) {
+  const same = state.targetSort.key === key;
+  state.targetSort = {
+    key,
+    direction: same ? -state.targetSort.direction : 1,
+  };
+  applyTargetSort();
 }
 
 function updateLiveTargets(values, iteration, series = []) {
@@ -3737,6 +3807,59 @@ function updateLiveTargets(values, iteration, series = []) {
 
 function accountKind(account) {
   return String(account).startsWith('product.') ? 'flow' : 'level';
+}
+
+const ACCOUNT_TERMS = {
+  conif: 'Conifer',
+  dec: 'Deciduous',
+  dom: 'DOM',
+  ndy: 'NDY',
+  even: 'Even flow',
+  managed: 'managed',
+  unmanaged: 'unmanaged',
+};
+
+function accountTableLabel(account) {
+  const parts = String(account).split('.');
+  if (parts.length < 2) return { root: '', label: String(account) };
+  const root = parts.shift();
+  const label = parts.map((part) => {
+    const key = part.toLowerCase();
+    if (ACCOUNT_TERMS[key]) return ACCOUNT_TERMS[key];
+    return part
+      .split('_')
+      .map((word) => (word.length <= 3 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)))
+      .join(' ');
+  }).join(' · ');
+  return { root, label };
+}
+
+function accountUnit(account, flow = false) {
+  if (flow) return '%';
+  const path = String(account).toLowerCase();
+  if (path.includes('co2e')) return 'tCO2e';
+  if (path.startsWith('carbon.')) return 'tC';
+  if (path.startsWith('patch.') && path.endsWith('.size')) return '%';
+  if (path.includes('.area.') || path.endsWith('.area')) return 'ha';
+  if (path.includes('.yield.') || path.includes('.volume.') || path.endsWith('.volume')) return 'm³';
+  return '';
+}
+
+function targetPeriodLabel(row) {
+  if (row.period === null || row.period === undefined) {
+    return { label: 'All', title: `whole horizon, ending year ${row.year ?? '—'}` };
+  }
+  return { label: `P${row.period}`, title: `period ${row.period}, ending year ${row.year ?? '—'}` };
+}
+
+function targetStatusLabel(status) {
+  return {
+    met: 'met',
+    below: 'below min',
+    above: 'above max',
+    off: 'off',
+    unknown: '—',
+  }[status] ?? status;
 }
 
 function accountLastValue(account) {
@@ -4057,6 +4180,7 @@ async function loadTargets() {
       empty.hidden = false;
       table.hidden = true;
       button.hidden = true;
+      $('target-sort-bar').hidden = true;
       return;
     }
     empty.hidden = true;
@@ -4089,6 +4213,13 @@ async function loadTargets() {
     rows.forEach((row, index) => {
       const tr = document.createElement('tr');
       tr.classList.toggle('inactive', row.active === false);
+      tr.dataset.index = String(index);
+      tr.dataset.account = row.account;
+      tr.dataset.period = row.period ?? '';
+      tr.dataset.minimum = row.minimum ?? '';
+      tr.dataset.maximum = row.maximum ?? '';
+      tr.dataset.active = row.active === false ? '0' : '1';
+      tr.dataset.status = 'unknown';
       const key = String(row.index);
       const on = document.createElement('td');
       const onBox = document.createElement('input');
@@ -4117,21 +4248,57 @@ async function loadTargets() {
         renderWatchPanel();
         renderTargetCharts();
       });
+      const accountLine = document.createElement('span');
+      accountLine.className = 'target-account-line';
+      const labelInfo = accountTableLabel(row.account);
+      if (labelInfo.root) {
+        const root = document.createElement('span');
+        root.className = 'account-root';
+        root.textContent = labelInfo.root;
+        root.title = `account root: ${labelInfo.root}`;
+        accountLine.append(root);
+      }
       const label = document.createElement('span');
-      label.textContent = row.account;
+      label.className = 'target-account-label';
+      label.textContent = labelInfo.label;
       label.title = row.account;
+      accountLine.append(label);
+      const unit = accountUnit(row.account, Boolean(row.flow));
+      if (unit) {
+        const unitBadge = document.createElement('span');
+        unitBadge.className = 'account-unit';
+        unitBadge.textContent = unit;
+        unitBadge.title = 'unit inferred from the account name';
+        accountLine.append(unitBadge);
+      }
       const valueLine = document.createElement('div');
       valueLine.className = 'account-value';
-      account.append(box, label, valueLine);
+      account.append(box, accountLine, valueLine);
       tr.append(account);
       const year = document.createElement('td');
-      year.textContent = row.period ?? row.year;
+      year.className = 'target-period';
+      const period = targetPeriodLabel(row);
+      const periodLabel = document.createElement('span');
+      periodLabel.className = 'target-period-label';
+      periodLabel.textContent = period.label;
+      const periodYear = document.createElement('span');
+      periodYear.className = 'target-period-year';
+      periodYear.textContent = `year ${row.year ?? '—'}`;
+      year.title = period.title;
+      year.append(periodLabel, periodYear);
       tr.append(year);
-      for (const field of ['minimum', 'maximum', 'min_weight', 'max_weight']) {
+      for (const field of ['minimum', 'maximum']) {
         const td = document.createElement('td');
         td.append(numberInput(row[field], field, index));
         tr.append(td);
       }
+      const statusCell = document.createElement('td');
+      statusCell.className = 'target-status-cell';
+      const statusBadge = document.createElement('span');
+      statusBadge.className = 'target-status unknown';
+      statusBadge.textContent = '—';
+      statusCell.append(statusBadge);
+      tr.append(statusCell);
       const actions = document.createElement('td');
       const remove = document.createElement('button');
       remove.type = 'button';
@@ -4144,15 +4311,26 @@ async function loadTargets() {
       actions.append(remove);
       tr.append(actions);
       state.targetCells.set(String(row.index), {
-        row, text: valueLine, band: null, marker: null, value: values[row.index],
+        row, tr, text: valueLine, status: statusBadge, band: null, marker: null,
+        value: values[row.index],
       });
       body.append(tr);
       const detail = document.createElement('tr');
       detail.className = 'target-detail';
       const detailCell = document.createElement('td');
-      detailCell.colSpan = 8;
+      detailCell.colSpan = 7;
       const inner = document.createElement('div');
       inner.className = 'target-detail-inner';
+      const minWeightLabel = document.createElement('label');
+      minWeightLabel.append('Min w');
+      const minWeight = numberInput(row.min_weight ?? 1, 'min_weight', index);
+      minWeight.min = '0';
+      minWeightLabel.append(minWeight);
+      const maxWeightLabel = document.createElement('label');
+      maxWeightLabel.append('Max w');
+      const maxWeight = numberInput(row.max_weight ?? 1, 'max_weight', index);
+      maxWeight.min = '0';
+      maxWeightLabel.append(maxWeight);
       const normLabel = document.createElement('label');
       normLabel.append('Normalize');
       const norm = document.createElement('select');
@@ -4185,12 +4363,13 @@ async function loadTargets() {
       const notesLabel = document.createElement('label');
       notesLabel.append('Notes');
       notesLabel.append(textInput(row.notes ?? '', 'notes', index));
-      inner.append(normLabel, priorityLabel, kindLabel, notesLabel);
+      inner.append(minWeightLabel, maxWeightLabel, normLabel, priorityLabel, kindLabel, notesLabel);
       detailCell.append(inner);
       detail.append(detailCell);
       body.append(detail);
     });
     for (const entry of state.targetCells.values()) paintTarget(entry, entry.value);
+    applyTargetSort();
     for (const row of rows) {
       if (row.flow) continue;
       const value = values[row.index];
@@ -4205,6 +4384,7 @@ async function loadTargets() {
     empty.textContent = `targets unavailable: ${error.message}`;
     table.hidden = true;
     button.hidden = true;
+    $('target-sort-bar').hidden = true;
   }
 }
 
@@ -4939,6 +5119,13 @@ function wireControls() {
     if (state.live.active) togglePause(); else startRun();
   });
   $('stop-run').addEventListener('click', stopRun);
+  for (const button of document.querySelectorAll('#targets-table thead .sort-button')) {
+    button.addEventListener('click', () => sortTargetTable(button.dataset.sort));
+  }
+  $('target-sort-reset').addEventListener('click', () => {
+    state.targetSort = { key: null, direction: 1 };
+    applyTargetSort();
+  });
   for (const button of document.querySelectorAll('.workspaces [data-workspace]')) {
     button.addEventListener('click', () => setWorkspace(button.dataset.workspace));
   }
