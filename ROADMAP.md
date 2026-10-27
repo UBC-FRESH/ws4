@@ -73,6 +73,7 @@ exists and the maintainer approves it.
 | P68 Map visual hierarchy | #486 | `feature/p68-map-hierarchy` | complete |
 | P69 LiDAR and carbon display polish | #494 | `feature/p69-lidar-carbon-polish` | complete |
 | P70 Target table polish | #504 | `feature/p70-target-table` | complete |
+| P71 Target triage | #511 | `feature/p71-target-triage` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2202,6 +2203,40 @@ Acceptance:
 - Sorting preserves unsaved edits and reports the sort direction.
 - Target charts and saved targets are unchanged.
 - Desktop and iPad landscape remain usable.
+- `python scripts/dashboard.py` is green.
+
+## Phase 71: Target triage
+
+Parent issue: #511
+Branch: `feature/p71-target-triage`
+Status: pr-open
+
+Goal: make a large target set triageable without losing the target-table editor: filter by status
+and account, see a failing-first summary, and bulk-pin the failing rows into the chart canvas.
+
+- [x] P71.1 Failing-first summary and target filters (#512)
+  - [x] Add the total/failing/met/off summary
+  - [x] Add account and status filters
+  - [x] Preserve edits and target indices while filtering
+  - [x] Add visible/total counts and clear
+- [x] P71.2 Bulk pin visible failing targets (#513)
+  - [x] Pin visible below/above rows
+  - [x] Unpin visible rows
+  - [x] Sync pin boxes, watch panel, and charts
+- [x] P71.3 Verify c5/TSA 46, document, and close out (#514)
+  - [x] Add the target-triage browser smoke
+  - [x] Verify c5 and TSA 46
+  - [x] Verify 1024 px
+  - [x] Update docs and write the close-out
+
+Acceptance:
+
+- Failing targets are the first thing the summary reports.
+- Filtering shows only matching rows and reports visible/total counts.
+- Filtering does not alter saved data or unsaved input values.
+- Bulk pin updates the chart canvas and watch panel.
+- The filter controls are usable by keyboard and at 1024 px.
+- Target charts and the target YAML contract are unchanged.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes

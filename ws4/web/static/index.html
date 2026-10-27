@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=78">
+  <link rel="stylesheet" href="static/style.css?v=79">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
 </head>
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v78</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v79</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Period
@@ -43,6 +43,7 @@
       <div id="workspace-plan" class="workspace" role="tabpanel" aria-labelledby="ws-plan" hidden>
 <section id="tab-targets" role="tabpanel" aria-labelledby="ws-plan" hidden>
         <h2>Targets</h2>
+        <div id="target-summary" class="target-summary" aria-live="polite" hidden></div>
         <p id="targets-empty" class="hint">no targets yet — pick an account below</p>
         <div id="account-browser" class="account-browser">
           <div class="account-browser-head">
@@ -73,6 +74,22 @@
           </div>
         </div>
         <div id="watch-panel" class="watch" hidden></div>
+        <div id="target-filter-bar" class="target-filter-bar" hidden>
+          <label class="visually-hidden" for="target-filter-search">Filter targets by account</label>
+          <input id="target-filter-search" type="search" placeholder="Filter accounts…" autocomplete="off">
+          <label class="visually-hidden" for="target-filter-status">Filter targets by status</label>
+          <select id="target-filter-status">
+            <option value="">All statuses</option>
+            <option value="failing">Failing</option>
+            <option value="met">Met</option>
+            <option value="off">Off</option>
+            <option value="unknown">No value</option>
+          </select>
+          <button id="target-filter-clear" type="button" class="link-button">Clear</button>
+          <span id="target-filter-count" class="hint"></span>
+          <button id="target-pin-failing" type="button">Pin failing</button>
+          <button id="target-unpin-visible" type="button">Unpin visible</button>
+        </div>
         <div class="table-wrap"><table id="targets-table" hidden>
           <thead><tr>
             <th><button type="button" class="sort-button" data-sort="active" title="Sort by active state">On</button></th>
@@ -307,6 +324,7 @@
         </div>
         <div class="target-canvas-actions">
           <span id="target-chart-count" class="target-chart-count"></span>
+          <span id="target-chart-summary" class="hint"></span>
           <button id="target-chart-save" type="button" disabled>Save chart changes</button>
           <span id="target-chart-status" class="hint"></span>
         </div>
@@ -332,6 +350,6 @@
     </div>
   </main>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=78"></script>
+  <script type="module" src="static/app.js?v=79"></script>
 </body>
 </html>
