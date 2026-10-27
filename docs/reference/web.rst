@@ -51,6 +51,15 @@ The browser shell is organised around four workspaces:
 - **Data** — the dataset summary plus LiDAR and Carbon when the selected run/dataset
   actually has them.
 
+The **Map** workspace uses a neutral fill for untreated blocks and a red accent for treated
+blocks, so treatment reads as the subject and the estate remains visible as context. An
+on-map legend names the current layer and repeats the treated/untreated counts from the
+sidebar; its **Treated only** button hides untreated blocks without losing the legend. The
+legend follows the active view (A/B/both comparison, base attribute, cumulative earlier
+periods, or the LiDAR scale). Clicking a block adds a dark outline and fills the detail
+panel; the outline is available in both MapLibre and the SVG fallback. **Map engine** and
+**Unavailable layers** are compact disclosure rows, not active controls.
+
 The supported planning surfaces start at **1024×768 in landscape**, including the iPad
 Pro landscape sizes; phone layouts are not a supported target. The primary navigation
 fits inside the sidebar at those widths and the sidebar width scales with the viewport
@@ -383,6 +392,12 @@ static assets, the API summary, a viewport map, and an MVT tile through the pref
 
 It also asserts that the shell and script use relative URLs, which is what makes a
 path prefix work without a rewrite rule.
+
+The browser path has an opt-in map-hierarchy smoke. It checks the neutral fill, selected
+outline, on-map legend, treated-only toggle, compact unavailable layers, and the 1024,
+1194, and 1500 px layouts::
+
+   python scripts/check_map_hierarchy.py http://127.0.0.1:8022/ --run run-dated3
 
 The browser path has an opt-in smoke:
 

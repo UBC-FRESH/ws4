@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=75">
+  <link rel="stylesheet" href="static/style.css?v=76">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
 </head>
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v75</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v76</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Period
@@ -293,10 +293,11 @@
         <g id="roads-layer"></g>
       </svg>
       <div id="map-loading" class="map-loading" hidden><span class="spinner" aria-hidden="true"></span><span id="map-loading-text">Loading map…</span></div>
+      <div id="map-legend" class="map-legend" role="region" aria-label="Map legend" hidden></div>
       <div class="scale" id="scale"></div>
     </div>
   </main>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=75"></script>
+  <script type="module" src="static/app.js?v=76"></script>
 </body>
 </html>

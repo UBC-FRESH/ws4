@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, selectedBlock: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false };
 
 const $ = (id) => document.getElementById(id);
 const TILE_VERSION = 'v8';
@@ -205,10 +205,11 @@ function featureStyle(properties) {
       treated = chain ? chain.some((event) => inCurrentPeriod(event[1])) : false;
     }
   }
-  if (!fill) fill = treated ? '#c0392b' : '#2f7d4f';
-  if (!treated && !(state.layerMode === 'base' && state.baseAttribute)) opacity = 0.55;
+  if (!fill) fill = treated ? '#c0392b' : '#d9e4dc';
+  if (!treated && !(state.layerMode === 'base' && state.baseAttribute)) opacity = 0.78;
+  const selected = String(properties.block_id) === String(state.selectedBlock);
   const visible = treated ? $('show-treated').checked : $('show-untreated').checked;
-  return { treated, fill, opacity: visible ? opacity : 0 };
+  return { treated, fill, opacity: visible ? opacity : 0, selected };
 }
 
 function ensureMapLibre() {
@@ -287,10 +288,25 @@ function ensureMapLibre() {
         source: 'used-roads',
         paint: { 'line-color': '#6d28d9', 'line-width': 1.6, 'line-opacity': 0.9 },
       });
+      map.addSource('selected-block', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addLayer({
+        id: 'selected-block-line',
+        type: 'line',
+        source: 'selected-block',
+        filter: ['any', ['==', ['geometry-type'], 'Polygon'], ['==', ['geometry-type'], 'MultiPolygon']],
+        paint: { 'line-color': '#111827', 'line-width': 2.2, 'line-opacity': 1 },
+      });
+      map.addLayer({
+        id: 'selected-block-point',
+        type: 'circle',
+        source: 'selected-block',
+        filter: ['==', ['geometry-type'], 'Point'],
+        paint: { 'circle-radius': 5, 'circle-color': 'rgba(0,0,0,0)', 'circle-stroke-color': '#111827', 'circle-stroke-width': 2 },
+      });
       for (const interactive of ['blocks-fill', 'blocks-points']) {
         map.on('click', interactive, (event) => {
           const feature = event.features?.[0];
-          if (feature) showDetail(feature.properties.block_id);
+          if (feature) showDetail(feature.properties.block_id, null, feature.geometry ?? null);
         });
         map.on('mouseenter', interactive, () => { map.getCanvas().style.cursor = 'pointer'; });
         map.on('mouseleave', interactive, () => { map.getCanvas().style.cursor = ''; });
@@ -402,7 +418,7 @@ function renderMapLibre(refit = true) {
     const style = featureStyle(properties);
     return {
       ...feature,
-      properties: { ...properties, _fill: style.fill, _opacity: style.opacity },
+      properties: { ...properties, _fill: style.fill, _opacity: style.opacity, _selected: style.selected },
     };
   });
   const source = map.getSource('blocks');
@@ -423,6 +439,8 @@ function renderMapLibre(refit = true) {
   $('untreated-label').textContent = baseMode ? 'Blocks' : 'Untreated';
   const period = currentPeriod();
   $('scale').textContent = `period ${state.periodIndex + 1}${period ? ` · years ${period.start}-${period.end}` : ''} · MapLibre`;
+  renderMapLegend();
+  updateSelectedOverlay();
   if (refit) fitMapLibre(features);
 }
 
@@ -550,6 +568,7 @@ function render(refit = true) {
       }
       klass = isTreated ? 'treated' : 'untreated';
     }
+    if (String(properties.block_id) === String(state.selectedBlock)) klass += ' selected';
     const group = groups[isTreated ? 'treated' : 'untreated'];
     if (geometry?.type === 'Point') {
       const [cx, cy] = base.project(geometry.coordinates);
@@ -591,6 +610,7 @@ function render(refit = true) {
   $('untreated-label').textContent = baseMode ? 'Blocks' : 'Untreated';
   $('scale').textContent = `period ${state.periodIndex + 1} · year ${state.year} · 1 px ≈ ${Math.round(1 / base.scale)} m`;
   applyVisibility();
+  renderMapLegend();
   if (refit) renderRoads();
 }
 
@@ -602,12 +622,100 @@ function applyVisibility() {
   }
   if (state.lidarField) {
     for (const element of document.querySelectorAll('#viewport .block')) element.style.display = '';
+    renderMapLegend();
     return;
   }
   const showTreated = $('show-treated').checked;
   const showUntreated = $('show-untreated').checked;
   for (const element of document.querySelectorAll('#viewport .treated')) element.style.display = showTreated ? '' : 'none';
   for (const element of document.querySelectorAll('#viewport .untreated')) element.style.display = showUntreated ? '' : 'none';
+  renderMapLegend();
+}
+
+function updateSelectedOverlay() {
+  const map = state.mapLibre;
+  if (!map || !map.getSource) return;
+  const source = map.getSource('selected-block');
+  if (!source) return;
+  const geometry = state.selectedGeometry;
+  const data = geometry
+    ? { type: 'Feature', properties: {}, geometry }
+    : { type: 'FeatureCollection', features: [] };
+  source.setData(data);
+}
+
+function renderMapLegend() {
+  const legend = $('map-legend');
+  if (!legend) return;
+  if ($('map-wrap').hidden) { legend.hidden = true; return; }
+  legend.replaceChildren();
+  const title = document.createElement('div');
+  title.className = 'map-legend-title';
+  title.textContent = layerLabel();
+  legend.append(title);
+  const row = (label, color, count, className = '') => {
+    const line = document.createElement('div');
+    line.className = 'map-legend-row';
+    const swatch = document.createElement('span');
+    swatch.className = `map-legend-swatch ${className}`.trim();
+    if (color) swatch.style.background = color;
+    const text = document.createElement('span');
+    text.textContent = label;
+    line.append(swatch, text);
+    if (count !== undefined) {
+      const value = document.createElement('span');
+      value.className = 'map-legend-count';
+      value.textContent = count;
+      line.append(value);
+    }
+    legend.append(line);
+    return line;
+  };
+  if (state.lidarField) {
+    const field = lidarFieldInfo(state.lidarField);
+    const bar = document.createElement('div');
+    bar.className = 'map-legend-row';
+    const swatch = document.createElement('span');
+    swatch.className = 'map-legend-swatch lidar';
+    swatch.style.width = '3rem';
+    swatch.style.height = '.45rem';
+    const range = document.createElement('span');
+    if (state.lidarRange) {
+      const unit = field?.unit ? ` ${field.unit}` : '';
+      range.textContent = `${Number(state.lidarRange[0]).toLocaleString(undefined, { maximumFractionDigits: 2 })}${unit} → ${Number(state.lidarRange[1]).toLocaleString(undefined, { maximumFractionDigits: 2 })}${unit}`;
+    } else {
+      range.textContent = 'LiDAR values';
+    }
+    bar.append(swatch, range);
+    legend.append(bar);
+  } else if (state.compareView && state.compare) {
+    row('A only', '#c0392b');
+    row('B only', '#1f6feb');
+    row('Both', '#6b4c9a');
+  } else if (state.layerMode === 'base' && state.baseAttribute) {
+    const info = baseAttributeInfo(state.baseAttribute);
+    const note = document.createElement('div');
+    note.className = 'map-legend-row';
+    note.textContent = `Blocks coloured by ${info?.label ?? state.baseAttribute}`;
+    legend.append(note);
+  } else {
+    const treatedLabel = state.layerMode === 'cumulative' ? 'Treated now' : 'Treated';
+    row(treatedLabel, '#c0392b', $('n-treated').textContent, 'treated');
+    if (state.layerMode === 'cumulative' && state.layers?.cumulative) {
+      row('Treated earlier', '#e6c49e', undefined, 'past');
+    }
+    row('Untreated', null, $('n-untreated').textContent, 'untreated');
+    const showUntreated = $('show-untreated').checked;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = showUntreated ? 'Treated only' : 'Show all blocks';
+    button.addEventListener('click', () => {
+      $('show-untreated').checked = !$('show-untreated').checked;
+      applyVisibility();
+    });
+    legend.append(button);
+  }
+  legend.hidden = false;
 }
 
 function resetLiveMap() {
@@ -673,17 +781,17 @@ function vectorColorExpression() {
       '#2f7d4f'];
   }
   const grid = state.layerMode === 'blocks' || (state.layers && !state.layers.treatments)
-    ? ['interpolate', ['linear'], ['coalesce', ['get', 'treated_share'], 0], 0, '#2f7d4f', 1, '#2f7d4f']
+    ? ['interpolate', ['linear'], ['coalesce', ['get', 'treated_share'], 0], 0, '#d9e4dc', 1, '#d9e4dc']
     : ['interpolate', ['linear'], ['coalesce', ['get', 'treated_share'], 0],
-      0, '#f4a261', 0.02, '#e76f51', 0.05, '#d62828', 0.15, '#8b0000'];
+      0, '#d9e4dc', 0.02, '#e8b26a', 0.05, '#d97706', 0.15, '#b91c1c'];
   if (state.layerMode === 'cumulative' && state.layers?.cumulative) {
     return ['case',
       ['has', 'treated_share'], grid,
       ['all', ['==', ['get', 'treated'], true], ['==', ['get', 'current'], false]], '#f0d2b0',
       ['==', ['get', 'treated'], true], '#c0392b',
-      '#2f7d4f'];
+      '#d9e4dc'];
   }
-  return ['case', ['has', 'treated_share'], grid, ['==', ['get', 'treated'], true], '#c0392b', '#2f7d4f'];
+  return ['case', ['has', 'treated_share'], grid, ['==', ['get', 'treated'], true], '#c0392b', '#d9e4dc'];
 }
 
 function vectorOpacityExpression() {
@@ -697,7 +805,7 @@ function vectorOpacityExpression() {
   return ['case',
     ['has', 'treated_share'], 0.85,
     ['==', ['get', 'treated'], true], showTreated ? 1 : 0,
-    showUntreated ? 0.55 : 0];
+    showUntreated ? 0.78 : 0];
 }
 
 function updateVectorPaint() {
@@ -731,8 +839,8 @@ function installVectorSource(url) {
       'source-layer': 'blocks',
       filter: ['any', ['==', ['geometry-type'], 'Polygon'], ['==', ['geometry-type'], 'MultiPolygon']],
       paint: {
-        'fill-color': '#2f7d4f',
-        'fill-opacity': 0.55,
+        'fill-color': '#d9e4dc',
+        'fill-opacity': 0.78,
         'fill-outline-color': 'rgba(0,0,0,0.22)',
       },
     };
@@ -744,8 +852,8 @@ function installVectorSource(url) {
       filter: ['==', ['geometry-type'], 'Point'],
       paint: {
         'circle-radius': 3,
-        'circle-color': '#2f7d4f',
-        'circle-opacity': 0.55,
+        'circle-color': '#d9e4dc',
+        'circle-opacity': 0.78,
         'circle-stroke-color': 'rgba(0,0,0,0.25)',
         'circle-stroke-width': 0.4,
       },
@@ -760,7 +868,7 @@ function installVectorSource(url) {
     for (const interactive of ['blocks-vector-fill', 'blocks-vector-points']) {
       map.on('click', interactive, (event) => {
         const feature = event.features?.[0];
-        if (feature) showDetail(feature.properties.block_id, feature.properties);
+        if (feature) showDetail(feature.properties.block_id, feature.properties, feature.geometry ?? null);
       });
       map.on('mouseenter', interactive, () => { map.getCanvas().style.cursor = 'pointer'; });
       map.on('mouseleave', interactive, () => { map.getCanvas().style.cursor = ''; });
@@ -840,6 +948,7 @@ async function loadMap(preserveView = false) {
         state.mapTotals = null;
         statusLine(`MVT · ${layer} · period ${state.periodIndex + 1}${span}`);
       }
+      renderMapLegend();
       if (state.showUsedRoads) loadUsedRoads();
       return;
     }
@@ -1648,6 +1757,16 @@ function renderLayerTree() {
     tree.append(box);
     return box;
   };
+  const detailsGroup = (title) => {
+    const box = document.createElement('details');
+    box.className = 'layer-group';
+    const heading = document.createElement('summary');
+    heading.className = 'layer-group-title';
+    heading.textContent = title;
+    box.append(heading);
+    tree.append(box);
+    return box;
+  };
   const modeGroup = group('Colour by');
   const addMode = (value, label, enabled) => {
     const wrapper = document.createElement('label');
@@ -1673,7 +1792,7 @@ function renderLayerTree() {
   addMode('cumulative', 'Cumulative through period', Boolean(info.cumulative) && layers.includes('treatments'));
   addMode('patches', 'Patch size class', Boolean(info.patches) && layers.includes('patches'));
   addMode('compartments', 'Spread compartments', Boolean(info.compartments) && layers.includes('compartments'));
-  const engineGroup = group('Map engine');
+  const engineGroup = detailsGroup('Map engine');
   for (const [value, label, enabled] of [
     ['maplibre', 'MapLibre (WebGL)', typeof window.maplibregl !== 'undefined'],
     ['svg', 'SVG (fallback)', true],
@@ -1858,24 +1977,16 @@ function renderLayerTree() {
     }
   }
   if (!info.roads || !info.compartments || !info.used_roads) {
-    const unavailable = group('Not written by this run');
+    const unavailable = detailsGroup('Unavailable layers');
     for (const [label, available, reason] of [
       ['Used roads (run)', info.used_roads, info.used_roads_reason],
       ['Spread compartments', info.compartments, info.compartments_reason],
     ]) {
       if (available) continue;
-      const wrapper = document.createElement('label');
-      wrapper.className = 'layer-option disabled';
-      const input = document.createElement('input');
-      input.type = 'checkbox';
-      input.disabled = true;
-      const text = document.createElement('span');
-      text.textContent = label;
-      const why = document.createElement('span');
-      why.className = 'hint';
-      why.textContent = reason ?? 'unavailable';
-      wrapper.append(input, text, why);
-      unavailable.append(wrapper);
+      const line = document.createElement('p');
+      line.className = 'hint layer-unavailable';
+      line.textContent = `${label}: ${reason ?? 'not written by this run'}`;
+      unavailable.append(line);
     }
   }
   if (!info.treatments && !info.patches) {
@@ -4309,11 +4420,22 @@ async function buildReport() {
   }
 }
 
-function showDetail(block, supplied = null) {
+function showDetail(block, supplied = null, geometry = null) {
   const feature = state.features.find((candidate) => String(candidate.properties?.block_id) === String(block));
   const properties = supplied ?? feature?.properties;
   if (!properties) return;
   state.selectedBlock = block;
+  $('map-wrap').dataset.selectedBlock = String(block);
+  if (state.mapEngine === 'maplibre') {
+    state.selectedGeometry = geometry ?? feature?.geometry ?? null;
+  }
+  for (const [id, element] of state.blockElements) {
+    element.classList.toggle('selected', String(id) === String(block));
+  }
+  if (state.mapEngine === 'maplibre') {
+    if (!state.vectorActive) renderMapLibre(false);
+    updateSelectedOverlay();
+  }
   updateUrl({ push: false });
   if (state.compareView && state.compare) {
     const compare = supplied?.compare;
@@ -4604,6 +4726,9 @@ function wireControls() {
   $('run').addEventListener('change', async (event) => {
     state.run = event.target.value;
     state.selectedBlock = null;
+    state.selectedGeometry = null;
+    delete $('map-wrap').dataset.selectedBlock;
+    updateSelectedOverlay();
     $('detail').replaceChildren();
     await loadRunContext();
     updateUrl();

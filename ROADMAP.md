@@ -70,6 +70,7 @@ exists and the maintainer approves it.
 | P65 Editable target charts | #464 | `feature/p65-editable-targets` | complete |
 | P66 Assistant panel visibility | #473 | `feature/p66-assistant-visibility` | complete |
 | P67 Target chart period hit zones | #479 | `feature/p67-target-hit-zone` | complete |
+| P68 Map visual hierarchy | #486 | `feature/p68-map-hierarchy` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2094,6 +2095,39 @@ Acceptance:
 - Period center clicks select the matching period.
 - P1/P2/last-period checks pass.
 - Selected period is highlighted.
+- `python scripts/dashboard.py` is green.
+
+## Phase 68: Map visual hierarchy
+
+Parent issue: #486
+Branch: `feature/p68-map-hierarchy`
+Status: pr-open
+
+Goal: make the map readable as an analytical surface: neutral untreated blocks, a clear treated
+accent, selected-block emphasis, an on-map legend, and a cleaner layer panel.
+
+- [x] P68.1 Neutral map palette and selected-block outline (#487)
+  - [x] Update SVG and MapLibre default styles
+  - [x] Add selected-block state to both renderers
+  - [x] Verify current, patch, compartment, base, compare, and LiDAR backgrounds
+- [x] P68.2 On-map legend, treated-only filter, and compact layer panel (#488)
+  - [x] Add legend markup and rendering
+  - [x] Add the treated-only filter
+  - [x] Compact settings and unavailable layers
+  - [x] Verify overlay layout at 1024, 1194, and 1500 px
+- [x] P68.3 Verify desktop and iPad landscape, document, and close out (#489)
+  - [x] Add the map hierarchy browser smoke
+  - [x] Verify c5 and TSA 46
+  - [x] Update docs and write the close-out
+
+Acceptance:
+
+- Untreated blocks read as context and treated blocks are the accent.
+- The on-map legend updates with the layer and counts.
+- A selected block has a visible outline in SVG and MapLibre.
+- Treated-only is one click and reversible.
+- Unavailable layers are compact, not active controls.
+- Desktop and iPad landscape remain usable.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes
