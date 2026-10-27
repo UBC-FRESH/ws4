@@ -1,0 +1,10 @@
+structure_metric,dhi_band,n,pearson_r,spearman_r,direction,strength,note
+height_p95_m,cum,7,-0.1591844193145566,-0.15762208124782012,none,weak,exploratory; no significance test
+height_p95_m,min,7,-0.13752319244929614,-0.14414999403128945,none,weak,exploratory; no significance test
+height_p95_m,var,7,0.6478741684712691,0.6728384948943099,positive,strong,exploratory; no significance test
+cover_gt_1_37_pct,cum,7,-0.47002752645677964,-0.19702760155977517,none,weak,exploratory; no significance test
+cover_gt_1_37_pct,min,7,0.1603071958416523,-0.18018749253911182,none,weak,exploratory; no significance test
+cover_gt_1_37_pct,var,7,0.864841911985464,0.8001322641986389,positive,strong,exploratory; no significance test
+complexity_sd_gt_1_37_m,cum,7,0.13132086733056073,0.17732484140379767,none,weak,exploratory; no significance test
+complexity_sd_gt_1_37_m,min,7,-0.2775250533914329,-0.3243374865704013,negative,moderate,exploratory; no significance test
+complexity_sd_gt_1_37_m,var,7,0.16571005727975213,0.0181848241863327,none,weak,exploratory; no significance test

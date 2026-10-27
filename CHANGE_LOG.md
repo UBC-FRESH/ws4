@@ -3067,3 +3067,13 @@ issue comments.
   highlight and extended the chart smoke to click the centers of P1, P2, and the last period
   and assert the selected period. c5 `run-base`: centers 0→P1, 1→P2, 20→P21; highlight present.
   Version `v75`.
+
+- P54.2 real TFL 6 point-cloud follow-up: downloaded the two public LidarBC
+  OP24BMRS001 2024 LAZ tiles for the TFL 6 1 km AOI (8 points/m², OGL-BC) and
+  computed the published Coops et al. (2016) metrics from first returns
+  normalized with the FEMIC 1 m DEM. Seven VRI blocks: area-weighted mean height
+  22.95 m, cover 69.82%, complexity 6.86 m; five H2-C2-K2, one H1-C0-K2, one
+  H2-C0-K2. The FEMIC bundle still exposes CHM products only, so its
+  `index_computable: false` result is a materialization gap, not a data-access
+  blocker. Added `examples/structure_habitat_tfl6` and updated the structure
+  reference page. Dashboard **GREEN** (tests 153.86 s; report-only change).

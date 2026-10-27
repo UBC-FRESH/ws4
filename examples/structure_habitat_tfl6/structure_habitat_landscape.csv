@@ -1,0 +1,13 @@
+component,value,unit,class
+height,22.94876777839796,m,all
+height,0.0,% area,low
+height,5.223435991909748,% area,medium
+height,94.77656400809025,% area,high
+cover,69.82390757804765,%,all
+cover,11.85314084805707,% area,low
+cover,0.0,% area,medium
+cover,88.14685915194293,% area,high
+complexity,6.859645770438194,m,all
+complexity,0.0,% area,low
+complexity,0.0,% area,medium
+complexity,100.0,% area,high
