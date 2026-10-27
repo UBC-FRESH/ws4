@@ -71,6 +71,7 @@ exists and the maintainer approves it.
 | P66 Assistant panel visibility | #473 | `feature/p66-assistant-visibility` | complete |
 | P67 Target chart period hit zones | #479 | `feature/p67-target-hit-zone` | complete |
 | P68 Map visual hierarchy | #486 | `feature/p68-map-hierarchy` | complete |
+| P69 LiDAR and carbon display polish | #494 | `feature/p69-lidar-carbon-polish` | active |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2128,6 +2129,42 @@ Acceptance:
 - Treated-only is one click and reversible.
 - Unavailable layers are compact, not active controls.
 - Desktop and iPad landscape remain usable.
+- `python scripts/dashboard.py` is green.
+
+## Phase 69: LiDAR and carbon display polish
+
+Parent issue: #494
+Branch: `feature/p69-lidar-carbon-polish`
+Status: active
+
+Goal: make the LiDAR and Carbon panels read like data products instead of debug views: show
+dataset-wide coverage and scales, use an accessible palette with units, give the carbon trend real
+axes and tooltips, and make empty states compact.
+
+- [x] P69.1 Dataset-wide LiDAR coverage and accessible palette (#495)
+  - [x] Extend the LiDAR API and tests
+  - [x] Add coverage and selected-field UI
+  - [x] Add the accessible palette and legend
+  - [x] Verify on the real FEMIC LiDAR instance
+- [x] P69.2 Carbon labels, axes, tooltips, and empty states (#496)
+  - [x] Add account labels and units
+  - [x] Build the axes, points, and tooltip
+  - [x] Add the compact empty state
+  - [x] Verify on the real TSA 46 GCBM carbon run
+- [ ] P69.3 Verify real data and empty states, document, and close out (#497)
+  - [x] Add the browser smoke
+  - [x] Verify real LiDAR and carbon data
+  - [x] Verify empty states on c5 and TSA 46
+  - [ ] Update docs and write the close-out
+
+Acceptance:
+
+- LiDAR coverage is dataset-wide, not viewport-derived.
+- The selected LiDAR field shows valid blocks, percentage, unit, and dataset-wide range.
+- The LiDAR palette is colour-blind-safe and the map legend agrees with the panel.
+- Carbon accounts use human labels and units; the chart has labelled axes and a hover/tap readout.
+- Empty carbon/LiDAR states take little space and do not leave empty chart frames.
+- Real LiDAR and carbon datasets pass browser checks.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes

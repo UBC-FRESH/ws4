@@ -7,6 +7,7 @@ patterns that the validator checks for.
 
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 import sys
@@ -572,6 +573,26 @@ def git(root: Path, *args: str) -> None:
         Arguments passed to git after ``-C``.
     """
     subprocess.run(["git", "-C", str(root), *args], check=True, capture_output=True)
+
+
+@pytest.mark.parametrize(
+    ("pattern", "candidate", "expected"),
+    [
+        ("*.py", "a.py", True),
+        ("*.py", "a/b.py", False),
+        ("a?.py", "ab.py", True),
+        ("a?.py", "abc.py", False),
+        ("[abc].py", "b.py", True),
+        ("[!abc].py", "d.py", True),
+        ("[!abc].py", "a.py", False),
+        ("[abc.py", "[abc.py", True),
+    ],
+)
+def test_glob_to_regex_covers_gitignore_wildcards(
+    pattern: str, candidate: str, expected: bool
+) -> None:
+    """The validator's gitignore glob translation handles wildcards and brackets."""
+    assert bool(re.fullmatch(cw._glob_to_regex(pattern), candidate)) is expected
 
 
 @GIT_REQUIRED
