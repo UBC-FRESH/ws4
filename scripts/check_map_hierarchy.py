@@ -9,9 +9,10 @@ from __future__ import annotations
 
 import argparse
 import sys
+from typing import Any
 
 
-def find_block(page) -> bool:  # pragma: no cover - needs a browser
+def find_block(page: Any) -> bool:  # noqa: ANN401  # pragma: no cover - needs a browser
     """Click likely block locations until the detail panel names one.
 
     Parameters
@@ -103,45 +104,58 @@ def check(  # pragma: no cover - needs a browser
             legend = page.locator("#map-legend")
             assert legend.is_visible(), "on-map legend is not visible"
             text = legend.inner_text()
-            assert "Treated" in text and "Untreated" in text, text
+            assert "Treated" in text, text
+            assert "Untreated" in text, text
             treated_swatch = legend.locator(".map-legend-swatch.treated").first
             untreated_swatch = legend.locator(".map-legend-swatch.untreated").first
-            assert page.evaluate(
-                "element => getComputedStyle(element).backgroundColor",
-                untreated_swatch.element_handle(),
-            ) == "rgb(217, 228, 220)"
+            assert (
+                page.evaluate(
+                    "element => getComputedStyle(element).backgroundColor",
+                    untreated_swatch.element_handle(),
+                )
+                == "rgb(217, 228, 220)"
+            )
             assert treated_swatch.is_visible()
 
             map_box = page.locator("#map-wrap").bounding_box()
             legend_box = legend.bounding_box()
-            assert map_box and legend_box
-            assert legend_box["x"] >= map_box["x"] and legend_box["y"] >= map_box["y"]
+            assert map_box is not None
+            assert legend_box is not None
+            assert legend_box["x"] >= map_box["x"]
+            assert legend_box["y"] >= map_box["y"]
             assert legend_box["x"] + legend_box["width"] <= map_box["x"] + map_box["width"]
             assert legend_box["y"] + legend_box["height"] <= map_box["y"] + map_box["height"]
 
-            summaries = [text.lower() for text in page.locator("details.layer-group summary").all_inner_texts()]
+            summaries = [
+                text.lower()
+                for text in page.locator("details.layer-group summary").all_inner_texts()
+            ]
             assert "unavailable layers" in summaries, summaries
             unavailable = page.locator("details.layer-group", has_text="Unavailable layers")
             assert unavailable.locator("input").count() == 0, "unavailable layers still use inputs"
 
             assert find_block(page), "could not select a block"
-            assert page.locator("#map-wrap").get_attribute("data-selected-block"), "selection not recorded"
-            assert page.locator("#detail").inner_text().startswith("Block "), "detail did not update"
+            selected = page.locator("#map-wrap").get_attribute("data-selected-block")
+            assert selected, "selection not recorded"
+            detail = page.locator("#detail").inner_text()
+            assert detail.startswith("Block "), "detail did not update"
 
             toggle = legend.locator("button")
             assert toggle.inner_text() == "Treated only", toggle.inner_text()
             toggle.click()
             page.wait_for_timeout(700)
-            assert not page.locator("#show-untreated").is_checked(), "treated-only did not hide untreated"
+            untreated = page.locator("#show-untreated")
+            assert not untreated.is_checked(), "treated-only did not hide untreated"
             assert page.locator("#map-legend button").inner_text() == "Show all blocks"
             page.locator("#map-legend button").click()
             page.wait_for_timeout(700)
-            assert page.locator("#show-untreated").is_checked(), "show-all did not restore untreated"
+            assert untreated.is_checked(), "show-all did not restore untreated"
 
             page.locator("#ws-plan").click()
             page.wait_for_timeout(900)
             assert not page.locator("#map-wrap").is_visible(), "map remained visible in Plan"
-            assert page.locator("#map-legend").is_visible() is False, "legend remained visible in Plan"
+            legend_in_plan = page.locator("#map-legend").is_visible()
+            assert legend_in_plan is False, "legend remained visible in Plan"
             page.locator("#ws-map").click()
             page.wait_for_timeout(700)
             assert page.locator("#map-legend").is_visible(), "legend did not return with the map"
