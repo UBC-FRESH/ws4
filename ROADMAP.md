@@ -71,7 +71,7 @@ exists and the maintainer approves it.
 | P66 Assistant panel visibility | #473 | `feature/p66-assistant-visibility` | complete |
 | P67 Target chart period hit zones | #479 | `feature/p67-target-hit-zone` | complete |
 | P68 Map visual hierarchy | #486 | `feature/p68-map-hierarchy` | complete |
-| P69 LiDAR and carbon display polish | #494 | `feature/p69-lidar-carbon-polish` | active |
+| P69 LiDAR and carbon display polish | #494 | `feature/p69-lidar-carbon-polish` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2135,7 +2135,7 @@ Acceptance:
 
 Parent issue: #494
 Branch: `feature/p69-lidar-carbon-polish`
-Status: active
+Status: pr-open
 
 Goal: make the LiDAR and Carbon panels read like data products instead of debug views: show
 dataset-wide coverage and scales, use an accessible palette with units, give the carbon trend real
@@ -2151,11 +2151,11 @@ axes and tooltips, and make empty states compact.
   - [x] Build the axes, points, and tooltip
   - [x] Add the compact empty state
   - [x] Verify on the real TSA 46 GCBM carbon run
-- [ ] P69.3 Verify real data and empty states, document, and close out (#497)
+- [x] P69.3 Verify real data and empty states, document, and close out (#497)
   - [x] Add the browser smoke
   - [x] Verify real LiDAR and carbon data
   - [x] Verify empty states on c5 and TSA 46
-  - [ ] Update docs and write the close-out
+  - [x] Update docs and write the close-out
 
 Acceptance:
 
