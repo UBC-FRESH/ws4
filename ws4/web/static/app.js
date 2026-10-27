@@ -3769,6 +3769,7 @@ function applyTargetSort() {
       ? `${key === 'minimum' ? 'Min' : key === 'maximum' ? 'Max' : key.charAt(0).toUpperCase() + key.slice(1)} ${direction > 0 ? 'ascending' : 'descending'}`
       : 'file order';
   }
+  applyTargetFilter();
 }
 
 function sortTargetTable(key) {
@@ -3778,6 +3779,154 @@ function sortTargetTable(key) {
     direction: same ? -state.targetSort.direction : 1,
   };
   applyTargetSort();
+}
+
+function targetRows() {
+  return [...document.querySelectorAll('#targets-table tbody tr:not(.target-detail)')];
+}
+
+function targetRowStatus(row) {
+  return row.dataset.status || 'unknown';
+}
+
+function targetStatusCounts() {
+  const counts = { met: 0, below: 0, above: 0, off: 0, unknown: 0 };
+  for (const row of targetRows()) {
+    const status = targetRowStatus(row);
+    if (status in counts) counts[status] += 1;
+  }
+  return counts;
+}
+
+function updateTargetSummary() {
+  const summary = $('target-summary');
+  const chartSummary = $('target-chart-summary');
+  const rows = targetRows();
+  if (!summary) return;
+  if (!rows.length) {
+    summary.hidden = true;
+    if (chartSummary) chartSummary.textContent = '';
+    return;
+  }
+  const counts = targetStatusCounts();
+  const failing = counts.below + counts.above;
+  summary.hidden = false;
+  summary.replaceChildren();
+  const part = (text, className = '') => {
+    const span = document.createElement('span');
+    if (className) span.className = className;
+    span.textContent = text;
+    summary.append(span);
+  };
+  part(`${rows.length} targets`);
+  summary.append(document.createTextNode(' · '));
+  part(`${failing} failing`, failing ? 'target-summary-failing' : '');
+  summary.append(document.createTextNode(' · '));
+  part(`${counts.met} met`);
+  summary.append(document.createTextNode(' · '));
+  part(`${counts.off} off`);
+  if (counts.unknown) {
+    summary.append(document.createTextNode(' · '));
+    part(`${counts.unknown} no value`);
+  }
+  if (chartSummary) {
+    chartSummary.textContent = failing
+      ? `${failing} failing · ${counts.met} met`
+      : `${counts.met} met · 0 failing`;
+  }
+}
+
+function targetFilterMatches(row) {
+  const search = $('target-filter-search')?.value.trim().toLowerCase() ?? '';
+  const status = $('target-filter-status')?.value ?? '';
+  const account = String(row.dataset.account ?? '').toLowerCase();
+  const rowStatus = targetRowStatus(row);
+  if (search && !account.includes(search)) return false;
+  if (status === 'failing') return rowStatus === 'below' || rowStatus === 'above';
+  if (status) return rowStatus === status;
+  return true;
+}
+
+function applyTargetFilter() {
+  const table = $('targets-table');
+  const bar = $('target-filter-bar');
+  const count = $('target-filter-count');
+  if (!table || !bar || !count) return;
+  if (table.hidden) {
+    bar.hidden = true;
+    return;
+  }
+  const rows = targetRows();
+  let visible = 0;
+  let visibleFailing = 0;
+  let visibleTotal = 0;
+  for (const row of rows) {
+    const show = targetFilterMatches(row);
+    row.hidden = !show;
+    const detail = row.nextElementSibling;
+    if (detail?.classList.contains('target-detail')) detail.hidden = !show;
+    if (show) {
+      visible += 1;
+      if (['below', 'above'].includes(targetRowStatus(row))) visibleFailing += 1;
+    }
+    visibleTotal += 1;
+  }
+  bar.hidden = false;
+  count.textContent = visible === visibleTotal
+    ? `${visible} visible`
+    : `${visible} of ${visibleTotal} visible`;
+  const pin = $('target-pin-failing');
+  const unpin = $('target-unpin-visible');
+  if (pin) pin.disabled = visibleFailing === 0;
+  if (unpin) unpin.disabled = visible === 0;
+}
+
+function clearTargetFilters() {
+  $('target-filter-search').value = '';
+  $('target-filter-status').value = '';
+  applyTargetFilter();
+  $('target-filter-search').focus();
+}
+
+function setRowPinned(row, pinned) {
+  const box = row.querySelector('td.account input[type="checkbox"]');
+  if (box) box.checked = pinned;
+  const index = String(row.dataset.index);
+  if (pinned) state.watched.add(index); else state.watched.delete(index);
+}
+
+function pinVisibleFailing() {
+  let changed = false;
+  for (const row of targetRows()) {
+    if (row.hidden) continue;
+    if (!['below', 'above'].includes(targetRowStatus(row))) continue;
+    const index = String(row.dataset.index);
+    if (!state.watched.has(index)) {
+      state.watched.add(index);
+      changed = true;
+    }
+    setRowPinned(row, true);
+  }
+  if (!changed) return;
+  saveWatched();
+  renderWatchPanel();
+  renderTargetCharts();
+  applyTargetFilter();
+}
+
+function unpinVisibleTargets() {
+  let changed = false;
+  for (const row of targetRows()) {
+    if (row.hidden) continue;
+    const index = String(row.dataset.index);
+    if (state.watched.delete(index)) changed = true;
+    setRowPinned(row, false);
+  }
+  if (!changed) return;
+  saveWatched();
+  renderWatchPanel();
+  renderTargetCharts();
+  applyTargetFilter();
 }
 
 function updateLiveTargets(values, iteration, series = []) {
@@ -3797,7 +3946,11 @@ function updateLiveTargets(values, iteration, series = []) {
     const entry = state.targetCells.get(indexKey);
     if (entry) paintTarget(entry, value);
   }
-  if (painted) renderWatchPanel();
+  if (painted) {
+    updateTargetSummary();
+    applyTargetFilter();
+    renderWatchPanel();
+  }
   if (targetChartAccounts().some((account) => liveSeries.has(account))) renderTargetCharts();
   if (painted && iteration !== undefined) {
     $('run-status').textContent = `live target state at iteration ${iteration} (${painted} cells)`;
@@ -4181,11 +4334,15 @@ async function loadTargets() {
       table.hidden = true;
       button.hidden = true;
       $('target-sort-bar').hidden = true;
+      $('target-filter-bar').hidden = true;
+      $('target-summary').hidden = true;
       return;
     }
     empty.hidden = true;
     table.hidden = false;
     button.hidden = false;
+    $('target-filter-bar').hidden = false;
+    $('target-summary').hidden = false;
     if (!state.yearChosen) {
       selectPeriodForYear(Number(rows[0].year));
     }
@@ -4233,6 +4390,8 @@ async function loadTargets() {
         if (entry) paintTarget(entry, entry.value);
         renderWatchPanel();
         renderTargetCharts();
+        updateTargetSummary();
+        applyTargetFilter();
       });
       on.append(onBox);
       tr.append(on);
@@ -4369,6 +4528,7 @@ async function loadTargets() {
       body.append(detail);
     });
     for (const entry of state.targetCells.values()) paintTarget(entry, entry.value);
+    updateTargetSummary();
     applyTargetSort();
     for (const row of rows) {
       if (row.flow) continue;
@@ -5126,6 +5286,11 @@ function wireControls() {
     state.targetSort = { key: null, direction: 1 };
     applyTargetSort();
   });
+  $('target-filter-search').addEventListener('input', applyTargetFilter);
+  $('target-filter-status').addEventListener('change', applyTargetFilter);
+  $('target-filter-clear').addEventListener('click', clearTargetFilters);
+  $('target-pin-failing').addEventListener('click', pinVisibleFailing);
+  $('target-unpin-visible').addEventListener('click', unpinVisibleTargets);
   for (const button of document.querySelectorAll('.workspaces [data-workspace]')) {
     button.addEventListener('click', () => setWorkspace(button.dataset.workspace));
   }
