@@ -3080,3 +3080,13 @@ issue comments.
 
 - P67 close-out: pull request #482 squash-merged as `9ae8f5f`; parent #479 and task #480
   closed; status set complete. Target chart period hit zones and highlight verified.
+
+- P54.2 TFL6 30 m cell support: binned the first returns from the two public
+  LidarBC LAZ tiles into 30 m cells after FEMIC DEM normalization. 1,120 valid
+  cells, 36 nodata; cell means 20.12 m height, 70.60% cover, 5.92 m complexity;
+  700 cells H2-C2-K2. Added the cell table, class raster, metrics raster, block
+  class-area table, and block-vs-cell comparison to
+  `examples/structure_habitat_tfl6`. Block aggregation hides within-block
+  variation: block 16624698 is H2-C0-K2 at block level but 62.3% of its area is
+  low height. Report-only change; docs build and validator pass. No objective
+  change.
