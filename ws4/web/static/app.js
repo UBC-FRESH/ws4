@@ -3246,8 +3246,10 @@ function chartCell(account, period) {
   const rows = state.targets.filter(
     (row) => row.account === account && targetCellPeriodIndex(row, periods) === Number(period.index),
   );
-  const minimum = rows.find((row) => row.minimum !== null && row.minimum !== undefined);
-  const maximum = rows.find((row) => row.maximum !== null && row.maximum !== undefined);
+  const levelRows = rows.filter((row) => !row.flow);
+  const flowRow = rows.find((row) => row.flow);
+  const minimum = levelRows.find((row) => row.minimum !== null && row.minimum !== undefined);
+  const maximum = levelRows.find((row) => row.maximum !== null && row.maximum !== undefined);
   return {
     index: Number(period.index),
     start: Number(period.start),
@@ -3255,6 +3257,7 @@ function chartCell(account, period) {
     label: period.label,
     minimum: minimum ? Number(minimum.minimum) : null,
     maximum: maximum ? Number(maximum.maximum) : null,
+    flow: flowRow ? flowRow.flow : '',
     active: rows.some((row) => row.active !== false),
     target_indices: rows.map((row) => row.index),
   };
@@ -3388,9 +3391,10 @@ function renderTargetChart(account, periods) {
   const meta = document.createElement('span');
   meta.className = 'meta';
   const current = cells[Math.min(Math.max(0, state.periodIndex), cells.length - 1)];
+  const flow = cells.find((cell) => cell.flow)?.flow ?? '';
   meta.textContent = current && current.achieved !== null
-    ? `P${Number(current.index) + 1} · ${compactNumber(current.achieved)} · ${targetStatus(current, current.achieved)}${active ? '' : ' · inactive'}`
-    : active ? 'no value' : 'inactive';
+    ? `P${Number(current.index) + 1} · ${compactNumber(current.achieved)} · ${targetStatus(current, current.achieved)}${flow ? ` · ${flow} flow` : ''}${active ? '' : ' · inactive'}`
+    : active ? (flow ? `${flow} flow` : 'no value') : 'inactive';
   meta.classList.add(current ? targetStatus(current, current.achieved) : 'unknown');
   title.append(name, meta);
   card.append(title);

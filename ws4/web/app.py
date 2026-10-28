@@ -3165,10 +3165,15 @@ def create_app(
             if period_index < 0 or period_index >= len(entry["periods"]):
                 continue
             cell = entry["periods"][period_index]
-            if target.minimum is not None:
-                cell["minimum"] = float(target.minimum)
-            if target.maximum is not None:
-                cell["maximum"] = float(target.maximum)
+            if target.flow:
+                # Flow targets are percent bands. They belong in the table and the
+                # optimizer, but must not replace a level bound on the same account.
+                cell["flow"] = target.flow
+            else:
+                if target.minimum is not None:
+                    cell["minimum"] = float(target.minimum)
+                if target.maximum is not None:
+                    cell["maximum"] = float(target.maximum)
             cell["active"] = bool(cell["active"] or target.active)
             cell["target_indices"].append(target_index)
         return {"periods": periods, "accounts": list(accounts.values())}

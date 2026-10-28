@@ -1574,10 +1574,18 @@ def test_the_target_series_endpoint_assigns_bounds_to_periods(tmp_path: Path) ->
         "  - account: feature.Volume\n"
         "    period: 1\n"
         "    minimum: 12\n"
+        "    active: false\n"
+        "  - account: feature.Volume\n"
+        "    period: 1\n"
+        "    flow: even\n"
+        "    minimum: -1\n"
+        "    maximum: 1\n"
         "    active: false\n",
         encoding="utf-8",
     )
     body = client.get("/api/runs/run1/target-series").json()
     feature = {item["account"]: item for item in body["accounts"]}["feature.Volume"]
     assert feature["periods"][0]["minimum"] == 12.0
+    assert feature["periods"][0]["maximum"] is None
+    assert feature["periods"][0]["flow"] == "even"
     assert feature["periods"][0]["active"] is False
