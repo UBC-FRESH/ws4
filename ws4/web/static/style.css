@@ -454,3 +454,5 @@ details.layer-group[open] > summary { margin-bottom:.2rem; }
 @media (max-width:1100px) {
   .run-health { margin:.3rem .35rem .35rem; }
 }
+.live-badge { display:inline-block; padding:.1rem .32rem; border-radius:999px; background:#d9f2e2; color:#12643a; font-size:.66rem; font-weight:700; letter-spacing:.05em; }
+.live-badge[hidden] { display:none !important; }
