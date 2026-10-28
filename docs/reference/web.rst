@@ -679,6 +679,17 @@ download. A target's **On** checkbox is written through the same save as the bou
 target stays in the YAML, is shown as ``inactive`` in the target report, and is not priced. The
 target table and watched cards use the same active flag.
 
+C5 base scenario
+----------------
+
+The c5 sample carries one browsable baseline run and one documented scenario. The scenario
+``examples/c5_base/targets.yaml`` covers 20 periods of 10 years (periods 1–20), sets a
+1,000,000 per-period harvest floor on ``product.total.Yield``, adds an even-flow band of ±1%
+against the final-period reference, and requires ``feature.total.Yield`` in the final period to
+stay at or above **23,900,770.58** — 90% of the 26,556,411.75 initial growing stock. The same
+file is installed at ``scenarios/c5-base/targets.yaml`` in the sample. The README beside it gives
+the optimize command and the ``scripts/max_flow.py`` probe command for a higher advisory ceiling.
+
 Front end
 ---------
 

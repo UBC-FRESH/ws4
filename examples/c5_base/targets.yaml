@@ -1,0 +1,310 @@
+targets:
+- account: product.total.Yield
+  period: 1
+  year: 10
+  period_width: 10
+  flow: ''
+  minimum: 1000000.0
+  maximum: null
+  min_weight: 1.0
+  max_weight: 1.0
+  normalization: none
+  priority: 1
+  active: true
+  notes: 'Base harvest floor: 1.0M per 10-year period; the max-flow probe can raise
+    it.'
+- account: product.total.Yield
+  period: 2
+  year: 20
+  period_width: 10
+  flow: ''
+  minimum: 1000000.0
+  maximum: null
+  min_weight: 1.0
+  max_weight: 1.0
+  normalization: none
+  priority: 1
+  active: true
+  notes: 'Base harvest floor: 1.0M per 10-year period; the max-flow probe can raise
+    it.'
+- account: product.total.Yield
+  period: 3
+  year: 30
+  period_width: 10
+  flow: ''
+  minimum: 1000000.0
+  maximum: null
+  min_weight: 1.0
+  max_weight: 1.0
+  normalization: none
+  priority: 1
+  active: true
+  notes: 'Base harvest floor: 1.0M per 10-year period; the max-flow probe can raise
+    it.'
+- account: product.total.Yield
+  period: 4
+  year: 40
+  period_width: 10
+  flow: ''
+  minimum: 1000000.0
+  maximum: null
+  min_weight: 1.0
+  max_weight: 1.0
+  normalization: none
+  priority: 1
+  active: true
+  notes: 'Base harvest floor: 1.0M per 10-year period; the max-flow probe can raise
+    it.'
+- account: product.total.Yield
+  period: 5
+  year: 50
+  period_width: 10
+  flow: ''
+  minimum: 1000000.0
+  maximum: null
+  min_weight: 1.0
+  max_weight: 1.0
+  normalization: none
+  priority: 1
+  active: true
+  notes: 'Base harvest floor: 1.0M per 10-year period; the max-flow probe can raise
+    it.'
+- account: product.total.Yield
+  period: 6
+  year: 60
+  period_width: 10
+  flow: ''
+  minimum: 1000000.0
+  maximum: null
+  min_weight: 1.0
+  max_weight: 1.0
+  normalization: none
+  priority: 1
+  active: true
+  notes: 'Base harvest floor: 1.0M per 10-year period; the max-flow probe can raise
+    it.'
+- account: product.total.Yield
+  period: 7
+  year: 70
+  period_width: 10
+  flow: ''
+  minimum: 1000000.0
+  maximum: null
+  min_weight: 1.0
+  max_weight: 1.0
+  normalization: none
+  priority: 1
+  active: true
+  notes: 'Base harvest floor: 1.0M per 10-year period; the max-flow probe can raise
+    it.'
+- account: product.total.Yield
+  period: 8
+  year: 80
+  period_width: 10
+  flow: ''
+  minimum: 1000000.0
+  maximum: null
+  min_weight: 1.0
+  max_weight: 1.0
+  normalization: none
+  priority: 1
+  active: true
+  notes: 'Base harvest floor: 1.0M per 10-year period; the max-flow probe can raise
+    it.'
+- account: product.total.Yield
+  period: 9
+  year: 90
+  period_width: 10
+  flow: ''
+  minimum: 1000000.0
+  maximum: null
+  min_weight: 1.0
+  max_weight: 1.0
+  normalization: none
+  priority: 1
+  active: true
+  notes: 'Base harvest floor: 1.0M per 10-year period; the max-flow probe can raise
+    it.'
+- account: product.total.Yield
+  period: 10
+  year: 100
+  period_width: 10
+  flow: ''
+  minimum: 1000000.0
+  maximum: null
+  min_weight: 1.0
+  max_weight: 1.0
+  normalization: none
+  priority: 1
+  active: true
+  notes: 'Base harvest floor: 1.0M per 10-year period; the max-flow probe can raise
+    it.'
+- account: product.total.Yield
+  period: 11
+  year: 110
+  period_width: 10
+  flow: ''
+  minimum: 1000000.0
+  maximum: null
+  min_weight: 1.0
+  max_weight: 1.0
+  normalization: none
+  priority: 1
+  active: true
+  notes: 'Base harvest floor: 1.0M per 10-year period; the max-flow probe can raise
+    it.'
+- account: product.total.Yield
+  period: 12
+  year: 120
+  period_width: 10
+  flow: ''
+  minimum: 1000000.0
+  maximum: null
+  min_weight: 1.0
+  max_weight: 1.0
+  normalization: none
+  priority: 1
+  active: true
+  notes: 'Base harvest floor: 1.0M per 10-year period; the max-flow probe can raise
+    it.'
+- account: product.total.Yield
+  period: 13
+  year: 130
+  period_width: 10
+  flow: ''
+  minimum: 1000000.0
+  maximum: null
+  min_weight: 1.0
+  max_weight: 1.0
+  normalization: none
+  priority: 1
+  active: true
+  notes: 'Base harvest floor: 1.0M per 10-year period; the max-flow probe can raise
+    it.'
+- account: product.total.Yield
+  period: 14
+  year: 140
+  period_width: 10
+  flow: ''
+  minimum: 1000000.0
+  maximum: null
+  min_weight: 1.0
+  max_weight: 1.0
+  normalization: none
+  priority: 1
+  active: true
+  notes: 'Base harvest floor: 1.0M per 10-year period; the max-flow probe can raise
+    it.'
+- account: product.total.Yield
+  period: 15
+  year: 150
+  period_width: 10
+  flow: ''
+  minimum: 1000000.0
+  maximum: null
+  min_weight: 1.0
+  max_weight: 1.0
+  normalization: none
+  priority: 1
+  active: true
+  notes: 'Base harvest floor: 1.0M per 10-year period; the max-flow probe can raise
+    it.'
+- account: product.total.Yield
+  period: 16
+  year: 160
+  period_width: 10
+  flow: ''
+  minimum: 1000000.0
+  maximum: null
+  min_weight: 1.0
+  max_weight: 1.0
+  normalization: none
+  priority: 1
+  active: true
+  notes: 'Base harvest floor: 1.0M per 10-year period; the max-flow probe can raise
+    it.'
+- account: product.total.Yield
+  period: 17
+  year: 170
+  period_width: 10
+  flow: ''
+  minimum: 1000000.0
+  maximum: null
+  min_weight: 1.0
+  max_weight: 1.0
+  normalization: none
+  priority: 1
+  active: true
+  notes: 'Base harvest floor: 1.0M per 10-year period; the max-flow probe can raise
+    it.'
+- account: product.total.Yield
+  period: 18
+  year: 180
+  period_width: 10
+  flow: ''
+  minimum: 1000000.0
+  maximum: null
+  min_weight: 1.0
+  max_weight: 1.0
+  normalization: none
+  priority: 1
+  active: true
+  notes: 'Base harvest floor: 1.0M per 10-year period; the max-flow probe can raise
+    it.'
+- account: product.total.Yield
+  period: 19
+  year: 190
+  period_width: 10
+  flow: ''
+  minimum: 1000000.0
+  maximum: null
+  min_weight: 1.0
+  max_weight: 1.0
+  normalization: none
+  priority: 1
+  active: true
+  notes: 'Base harvest floor: 1.0M per 10-year period; the max-flow probe can raise
+    it.'
+- account: product.total.Yield
+  period: 20
+  year: 200
+  period_width: 10
+  flow: ''
+  minimum: 1000000.0
+  maximum: null
+  min_weight: 1.0
+  max_weight: 1.0
+  normalization: none
+  priority: 1
+  active: true
+  notes: 'Base harvest floor: 1.0M per 10-year period; the max-flow probe can raise
+    it.'
+- account: product.total.Yield
+  period: 1
+  year: 20
+  period_width: 10
+  flow: even
+  flow_start_period: 1
+  flow_end_period: 20
+  minimum: -1.0
+  maximum: 1.0
+  min_weight: 10000.0
+  max_weight: 10000.0
+  shape: non_linear
+  normalization: none
+  priority: 1
+  active: true
+  notes: 'Even-flow band: each period within 1% of the final-period reference.'
+- account: feature.total.Yield
+  period: 20
+  year: 200
+  period_width: 10
+  flow: ''
+  minimum: 23900770.58
+  maximum: null
+  min_weight: 10.0
+  max_weight: 1.0
+  normalization: none
+  priority: 1
+  active: true
+  notes: 'Final growing stock floor: 90% of initial 26556411.75 = 23900770.58.'
