@@ -370,6 +370,48 @@ class TrackResolution:
     extra: tuple[str, ...]
 
 
+def filter_carbon_package(package: CarbonPackage, track_names: set[str]) -> CarbonPackage:
+    """Return a package view restricted to the named tracks.
+
+    The package tables are large relative to one block's reachable tracks. The
+    ledger uses this view so the boundary, yield, and curve tables are not rebuilt
+    for every package track on every block. The manifest, table hashes, and package
+    fingerprint stay those of the original package; this view is a runtime
+    optimisation, not a new producer package.
+
+    Parameters
+    ----------
+    package : CarbonPackage
+        The loaded package.
+    track_names : set of str
+        Track names to keep. Names absent from the package are ignored.
+
+    Returns
+    -------
+    CarbonPackage
+        A package whose track-scoped tables contain only the requested tracks.
+    """
+    names = {str(name) for name in track_names}
+    tables = dict(package.tables)
+    for table_name, column in (
+        ("track_carbon_map", "track_name"),
+        ("inventory", "track_name"),
+        ("yield", "track_name"),
+        ("curve_carbon_map", "track_name"),
+    ):
+        table = tables.get(table_name)
+        if table is None or column not in table.columns:
+            continue
+        tables[table_name] = table.loc[table[column].astype(str).isin(names)].copy()
+    return CarbonPackage(
+        path=package.path,
+        manifest=package.manifest,
+        tables=tables,
+        table_hashes=package.table_hashes,
+        fingerprint=package.fingerprint,
+    )
+
+
 class CarbonPackageError(ValueError):
     """Raised when a carbon package cannot be loaded or validated.
 

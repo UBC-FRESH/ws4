@@ -3225,8 +3225,20 @@ issue comments.
   periods while account values are absent, and shows a LIVE badge. c5 and TSA 46 attach checks
   passed; dashboard GREEN; UI `v83`.
 
+## 2026-10-28
+
 - P76 c5 base scenario: pull request #547 squash-merged as `9ac4136`. Archived 112
   accumulated test-run/scenario entries, kept one baseline run cropped to years 0-199,
   and added a documented 20 x 10-year even-flow base scenario with a 1M/period
   harvest floor and a final growing-stock floor at 90% of initial (23,900,770.58).
   Scenario contract test passes; dashboard GREEN; UI `v83`.
+
+- Carbon ledger performance: added `filter_carbon_package` and a cached per-block
+  reachable-track context in `CarbonLedger`. A 500-block TSA46 empty base fell from
+  3 h 47 min before iteration 1 to 713 s, and a 20-iteration 500-block max-stock search
+  completed in 870 s with 20 iterations. Exact `ws4 carbon` replay agreed with the
+  ledger to about 9e-6 relative on the tested schedule; the remaining difference is
+  cross-block aggregation in the exact SIT run. Added
+  `notes/reports/carbon-ledger-performance.md` and a performance note in
+  `docs/reference/performance.rst`. This makes a bounded 500-block search start, but a
+  batched/precomputed base is still the next production step.
