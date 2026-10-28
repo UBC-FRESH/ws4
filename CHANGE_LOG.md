@@ -3207,3 +3207,9 @@ issue comments.
   Open Plan and Show failing targets move into target triage, and Compare target-status
   accounts open the Plan account filter. c5 and TSA 46 checks passed; dashboard GREEN;
   UI `v80`.
+
+- P73 live map updates: pull request #529 squash-merged as `6e3b29b`. MapLibre now
+  uses block-id feature state from schedule SSE events while a solver runs, so treated
+  blocks, counts, and the map legend update without reloads or per-event tile requests.
+  MVT features carry ids and the tile cache is v9. c5 and TSA 46 live-map checks passed;
+  dashboard GREEN; UI `v81`.
