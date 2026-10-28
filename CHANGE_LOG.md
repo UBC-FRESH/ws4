@@ -3213,3 +3213,8 @@ issue comments.
   blocks, counts, and the map legend update without reloads or per-event tile requests.
   MVT features carry ids and the tile cache is v9. c5 and TSA 46 live-map checks passed;
   dashboard GREEN; UI `v81`.
+
+- P74 live map hardening: pull request #535 squash-merged as `b518324`. The full live
+  schedule is reapplied after pan/zoom and source reloads, and a map-legend toggle switches
+  between the live schedule and the static pre-run treatment MVT without stopping the solve.
+  c5 and TSA 46 live checks passed; dashboard GREEN; UI `v82`.

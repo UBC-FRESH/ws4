@@ -6,7 +6,7 @@ Pull request: #535, `feature/p74-live-map-hardening` into `main`
 Evidence head: `d1ea370`, the head that CI run `40618407600` covers
 Report commit: the commit that adds this report. Its CI run is posted on the pull request.
 Date: 2026-10-28
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-28 as `b518324`.
 
 ## Recommendation
 
