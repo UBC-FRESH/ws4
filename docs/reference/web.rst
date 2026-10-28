@@ -340,6 +340,14 @@ service returns the intersecting block polygons. The shell keeps the full-run tr
 counts from the response while the map draws only the viewport. This keeps a management-unit map
 from loading every polygon up front.
 
+While a solver is live, the shell switches the MapLibre block source to the bare ``blocks`` layer
+and applies the SSE ``schedule`` events as feature state on the changed block ids. The live layer
+recolors blocks immediately, updates the treated/untreated counts and the on-map legend, and
+resets the feature state when an island switch resets the schedule. It does not request a new
+tile or GeoJSON payload for every event. Finishing or stopping the run returns to the static MVT
+treatment layer. Pinned target charts use the parallel ``targets`` SSE snapshots and update their
+achieved lines while the solver is active.
+
 The shell uses the MVT tile endpoint for the block, treatment, and cumulative layers. The vector
 source requests only the tiles MapLibre needs at the current zoom. Below zoom 6, treatment layers
 show treated block polygons; at zoom 6 and above they show every block polygon. The tile layer is
