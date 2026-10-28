@@ -3,7 +3,7 @@
 Phase: P79, Flow targets are not level bands
 Parent issue: #559
 Pull request: #561, `feature/p79-flow-bands` into `main`
-Evidence head: `pending`, CI run `pending`
+Evidence head: `e515203`, CI run `40728364308`
 Date: 2026-10-28
 Status: queued for approval. Not merged.
 
@@ -21,7 +21,7 @@ Status: queued for approval. Not merged.
 | Flow targets remain priced and visible in the table. | Target table still has the 43 rows; the flow rows remain active. | Met |
 | c5 base charts read correctly at 20 periods. | 3 charts · 20 periods; conifer and deciduous level floors; stock final-period indicator. | Met |
 | Regression test covers level + flow. | Target-series test writes a level and an even-flow target and asserts the level minimum remains 12.0, maximum null, flow even. | Met |
-| Dashboard green. | Pending final gate run. | Pending |
+| Dashboard green. | All seven gates green; CI `40728364308`. | Met |
 
 ## What changed
 
