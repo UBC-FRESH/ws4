@@ -79,6 +79,7 @@ exists and the maintainer approves it.
 | P74 Live map hardening | #531 | `feature/p74-live-map-hardening` | complete |
 | P75 Live run attach and reconnect | #537 | `feature/p75-live-attach` | complete |
 | P76 C5 base scenario | #543 | `feature/p76-c5-base-scenario` | complete |
+| P77 C5 even-flow ceiling | #550 | `feature/p77-c5-max-flow` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2406,6 +2407,28 @@ Acceptance:
 - The README gives an exact run command.
 - The live c5 service opens cleanly on the new scenario.
 - `python scripts/dashboard.py` is green.
+
+## Phase 77: C5 even-flow ceiling
+
+Parent issue: #550
+Branch: `feature/p77-c5-max-flow`
+Status: pr-open
+
+Goal: run the advisory max-flow probe against the cleaned c5 base scenario and record the highest
+verified even-flow harvest level with the 90% final growing-stock floor intact.
+
+- [x] P77.1 Run and record the c5 even-flow probe (#551)
+  - [x] Fix the base scenario to use the priced species accounts
+  - [x] Run max-flow with even flow and the stock floor
+  - [x] Record the negative advisory result and reproducer
+  - [x] Add the scenario contract test
+
+Acceptance:
+
+- The probe completes and writes its report.
+- The stock floor remains in the target set.
+- The README records the advisory ceiling and how to reproduce it.
+- The result is not presented as a certified maximum.
 
 ## Detailed Next Steps Notes
 
