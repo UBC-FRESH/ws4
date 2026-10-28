@@ -6,7 +6,7 @@ Pull request: #541, `feature/p75-live-attach` into `main`
 Evidence head: `b9c4e42`, the head that CI run `40645760372` covers
 Report commit: the commit that adds this report. Its CI run is posted on the pull request.
 Date: 2026-10-28
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-28 as `2abca53`.
 
 ## Recommendation
 

@@ -3218,3 +3218,9 @@ issue comments.
   schedule is reapplied after pan/zoom and source reloads, and a map-legend toggle switches
   between the live schedule and the static pre-run treatment MVT without stopping the solve.
   c5 and TSA 46 live checks passed; dashboard GREEN; UI `v82`.
+
+- P75 live run attach and reconnect: pull request #541 squash-merged as `2abca53`.
+  The shell discovers running search runs before they have a summary, attaches to their SSE
+  stream after page load or refresh, replays target/schedule snapshots, falls back to target-row
+  periods while account values are absent, and shows a LIVE badge. c5 and TSA 46 attach checks
+  passed; dashboard GREEN; UI `v83`.
