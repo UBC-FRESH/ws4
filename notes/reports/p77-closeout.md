@@ -5,7 +5,7 @@ Parent issue: #550
 Pull request: #552, `feature/p77-c5-max-flow` into `main`
 Evidence head: `f447d42`, the head that CI run `40656171477` covers
 Date: 2026-10-28
-Status: ready for approval. Not merged.
+Status: merged and closed on 2026-10-28 as `b5b0bae`.
 
 ## Recommendation
 
