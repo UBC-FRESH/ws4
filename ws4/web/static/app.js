@@ -486,7 +486,7 @@ function renderMapLibre(refit = true) {
   const source = map.getSource('blocks');
   if (source) source.setData({ type: 'FeatureCollection', features });
   setMapLibreRoads();
-  if (state.live.active && state.vectorActive) {
+  if (liveView() && state.vectorActive) {
     renderLiveCounts();
   } else {
     let treated = 0;
@@ -717,8 +717,22 @@ function renderMapLegend() {
   legend.replaceChildren();
   const title = document.createElement('div');
   title.className = 'map-legend-title';
-  title.textContent = layerLabel();
+  if (state.live.active) {
+    title.textContent = `${state.live.display === 'static' ? 'Static' : 'Live'} · ${layerLabel()}`;
+  } else {
+    title.textContent = layerLabel();
+  }
   legend.append(title);
+  if (state.live.active && state.mapEngine === 'maplibre') {
+    const liveLabel = document.createElement('label');
+    liveLabel.className = 'map-legend-row map-live-toggle';
+    const liveBox = document.createElement('input');
+    liveBox.type = 'checkbox';
+    liveBox.checked = state.live.display !== 'static';
+    liveBox.addEventListener('change', () => setLiveDisplay(liveBox.checked ? 'live' : 'static'));
+    liveLabel.append(liveBox, document.createTextNode('Live schedule'));
+    legend.append(liveLabel);
+  }
   const row = (label, color, count, className = '') => {
     const line = document.createElement('div');
     line.className = 'map-legend-row';
@@ -806,7 +820,7 @@ function resetLiveMap() {
 
 function updateLiveBlocks(blocks, reset = false) {
   if (state.mapEngine === 'maplibre') {
-    if (state.live.active && state.vectorActive) {
+    if (liveView() && state.vectorActive) {
       const map = state.mapLibre;
       if (reset) clearLiveFeatureState();
       for (const block of blocks) {
@@ -990,6 +1004,31 @@ function renderLiveCounts() {
   $('n-untreated').textContent = Math.max(0, total - treated).toLocaleString();
 }
 
+function liveView() {
+  return state.live.active && state.live.display !== 'static';
+}
+
+function applyLiveSchedule() {
+  const map = state.mapLibre;
+  if (!map || !liveView() || !state.vectorActive) return;
+  for (const [block, chain] of state.live.schedule) {
+    const treated = chain.some((event) => inCurrentPeriod(event[1]));
+    try {
+      map.setFeatureState(
+        { source: 'blocks-vector', sourceLayer: 'blocks', id: Number(block) },
+        { liveTreated: treated },
+      );
+    } catch { /* a tile without the feature id keeps its neutral colour */ }
+  }
+}
+
+function setLiveDisplay(display) {
+  if (!state.live.active) return;
+  state.live.display = display === 'static' ? 'static' : 'live';
+  state.mapTotals = null;
+  loadMap(true);
+}
+
 function installVectorSource(url) {
   const map = state.mapLibre;
   if (!map) return false;
@@ -1095,7 +1134,7 @@ async function loadMap(preserveView = false) {
   statusLine('loading map…');
   setMapLoading(true, 'Loading map…');
   const lidarField = state.lidarField ? lidarFieldInfo(state.lidarField) : null;
-  const layer = state.lidarField || state.live.active ? 'blocks' : mapLayerName();
+  const layer = state.lidarField || liveView() ? 'blocks' : mapLayerName();
   try {
     const period = currentPeriod();
     const end = period ? Number(period.end) : state.year;
@@ -1112,11 +1151,12 @@ async function loadMap(preserveView = false) {
       if (period) stats += `&period_start=${period.start}`;
       try {
         const body = await api(stats);
-        if (state.live.active) {
+        if (liveView()) {
           const total = Number(body.total_treated ?? 0) + Number(body.total_untreated ?? 0);
           state.mapTotals = { treated: 0, untreated: total };
           clearLiveFeatureState();
           setLiveVectorMode(true);
+          applyLiveSchedule();
           renderLiveCounts();
           statusLine(`live · ${total.toLocaleString()} blocks · ${layer} · period ${state.periodIndex + 1}${span}`);
         } else {
@@ -4817,6 +4857,7 @@ async function finishRun(id) {
   runWatch.done = true;
   stopRunWatch();
   state.live.active = false;
+  state.live.display = 'live';
   $('start-run').textContent = 'Solve';
   $('stop-run').hidden = true;
   state.runPaused = false;
@@ -4925,7 +4966,7 @@ async function startRun() {
   const islands = Number($('run-islands')?.value || 1);
   status.textContent = '';
   runWatch = { id: null, timer: null, source: null, started: Date.now(), done: false, islands: 1 };
-  state.live = { active: true, schedule: new Map(), total: 0 };
+  state.live = { active: true, schedule: new Map(), total: 0, display: 'live' };
   // a live search always has a schedule; the map must follow it, not a previous patch/cumulative view
   state.layerMode = 'current';
   state.mapTotals = null;
