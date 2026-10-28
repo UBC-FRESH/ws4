@@ -4,7 +4,7 @@ Phase: P78, Warm c5 max-flow probe
 Parent issue: #554
 Pull request: #556, `feature/p78-c5-warm-max-flow` into `main`
 Date: 2026-10-28
-Status: ready for review. Not merged.
+Status: merged and closed on 2026-10-28 as `dc71963`.
 
 ## Result
 

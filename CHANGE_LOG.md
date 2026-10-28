@@ -3248,3 +3248,8 @@ issue comments.
   ±1% even flow, 90% final stock floor). The max-flow probe completed with an
   advisory ceiling of 0 and no verified positive floor; recorded as a negative
   result, not a certified maximum. Dashboard GREEN; UI `v83`.
+
+- P78 warm c5 max-flow probe: pull request #556 squash-merged as `dc71963`. A
+  20,000-iteration, four-probe even-flow run still returned advisory ceiling 0
+  with the 90% final stock floor. Recorded as negative evidence; the base scenario
+  remains a policy floor, not a certified maximum. Dashboard GREEN; UI `v83`.
