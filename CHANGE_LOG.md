@@ -3233,6 +3233,12 @@ issue comments.
   harvest floor and a final growing-stock floor at 90% of initial (23,900,770.58).
   Scenario contract test passes; dashboard GREEN; UI `v83`.
 
+- P77 c5 even-flow ceiling: pull request #552 squash-merged as `b5b0bae`. The base
+  scenario now uses the priced conifer/deciduous accounts (700k/50k per decade,
+  ±1% even flow, 90% final stock floor). The max-flow probe completed with an
+  advisory ceiling of 0 and no verified positive floor; recorded as a negative
+  result, not a certified maximum. Dashboard GREEN; UI `v83`.
+
 - Carbon ledger performance: added `filter_carbon_package` and a cached per-block
   reachable-track context in `CarbonLedger`. A 500-block TSA46 empty base fell from
   3 h 47 min before iteration 1 to 713 s, and a 20-iteration 500-block max-stock search
@@ -3242,9 +3248,3 @@ issue comments.
   `notes/reports/carbon-ledger-performance.md` and a performance note in
   `docs/reference/performance.rst`. This makes a bounded 500-block search start, but a
   batched/precomputed base is still the next production step.
-
-- P77 c5 even-flow ceiling: pull request #552 squash-merged as `b5b0bae`. The base
-  scenario now uses the priced conifer/deciduous accounts (700k/50k per decade,
-  ±1% even flow, 90% final stock floor). The max-flow probe completed with an
-  advisory ceiling of 0 and no verified positive floor; recorded as a negative
-  result, not a certified maximum. Dashboard GREEN; UI `v83`.
