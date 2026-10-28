@@ -12,6 +12,7 @@ import pytest
 from ws4.carbon.package import (
     CarbonPackage,
     CarbonPackageError,
+    filter_carbon_package,
     load_carbon_package,
     package_fingerprint,
     resolve_tracks,
@@ -191,6 +192,18 @@ def test_load_valid_package(tmp_path: Path) -> None:
     assert package.manifest.package_id == "femic-carbon-fixture"
     assert set(package.tables) == set(TABLES)
     assert len(package.fingerprint) == 64
+
+
+def test_filter_carbon_package_keeps_track_scoped_tables(tmp_path: Path) -> None:
+    """A runtime view keeps only the named tracks and preserves provenance."""
+    package = load_carbon_package(_write_package(tmp_path / "package"))
+    filtered = filter_carbon_package(package, {"track1"})
+    assert filtered.fingerprint == package.fingerprint
+    assert filtered.manifest.package_id == package.manifest.package_id
+    assert filtered.table("track_carbon_map")["track_name"].tolist() == ["track1"]
+    assert set(filtered.table("yield")["track_name"]) == {"track1"}
+    assert set(filtered.table("inventory")["track_name"]) == {"track1"}
+    assert set(filtered.table("curve_carbon_map")["track_name"]) == {"track1"}
 
 
 def test_validate_valid_package(tmp_path: Path) -> None:

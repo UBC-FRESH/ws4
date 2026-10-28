@@ -25,7 +25,7 @@ from .fertilization import (
 )
 from .hwp import HwpConfig
 from .libcbm import carbon_accounts, run_libcbm
-from .package import CarbonPackage
+from .package import CarbonPackage, filter_carbon_package
 from .sit import build_sit_tables_from_tables
 
 Cell = tuple[int, str]
@@ -82,30 +82,44 @@ class CarbonLedger:
             )
         elif fertilization is not None:
             package = with_fertilization_disturbances(package, fertilization)
-        self.package = package
         self._cache: dict[tuple[int, Chain], dict[Cell, float]] = {}
         self._block_fragments = {
             int(str(block)): frame
             for block, frame in self.fragments.groupby("block_id", sort=False)
         }
-        track_ids = set(
+        fragment_track_ids = set(
             pd.to_numeric(self.fragments["track_id"], errors="coerce").dropna().astype(int)
         )
-        if fertilization is not None and fertilization.uses_curves:
-            self._tracks = self.tracks.copy()
-            relevant = pd.to_numeric(self.treatments["track_id"], errors="coerce").isin(track_ids)
-            if "new_track" in self.treatments.columns:
-                relevant = relevant | pd.to_numeric(
-                    self.treatments["new_track"], errors="coerce"
-                ).isin(track_ids)
-            self._treatments = self.treatments.loc[relevant].copy()
-        else:
-            self._tracks = self.tracks.loc[
-                pd.to_numeric(self.tracks["track_id"], errors="coerce").isin(track_ids)
-            ].copy()
-            self._treatments = self.treatments.loc[
-                pd.to_numeric(self.treatments["track_id"], errors="coerce").isin(track_ids)
-            ].copy()
+        known_track_ids = set(
+            pd.to_numeric(self.tracks["track_id"], errors="coerce").dropna().astype(int)
+        )
+        treatment_source = pd.to_numeric(self.treatments["track_id"], errors="coerce")
+        treatment_target = (
+            pd.to_numeric(self.treatments["new_track"], errors="coerce")
+            if "new_track" in self.treatments.columns
+            else pd.Series(index=self.treatments.index, dtype="float64")
+        )
+        selected_ids = fragment_track_ids & known_track_ids
+        while True:
+            reachable = treatment_source.isin(selected_ids)
+            destinations = {
+                int(value)
+                for value in treatment_target.loc[reachable].dropna().tolist()
+                if int(value) > 0
+            }
+            new_ids = (destinations & known_track_ids) - selected_ids
+            if not new_ids:
+                break
+            selected_ids |= new_ids
+        self._tracks = self.tracks.loc[
+            pd.to_numeric(self.tracks["track_id"], errors="coerce").isin(selected_ids)
+        ].copy()
+        self._treatments = self.treatments.loc[treatment_source.isin(selected_ids)].copy()
+        self.package = filter_carbon_package(
+            package,
+            set(self._tracks["name"].astype(str)),
+        )
+        self._context_cache: dict[int, tuple[CarbonPackage, pd.DataFrame, pd.DataFrame]] = {}
 
     @property
     def block_ids(self) -> tuple[int, ...]:
@@ -228,6 +242,51 @@ class CarbonLedger:
                 totals[cell] = totals.get(cell, 0.0) + value
         return totals
 
+    def _context(self, block: int) -> tuple[CarbonPackage, pd.DataFrame, pd.DataFrame]:
+        """Return the package, tracks, and treatments reachable from one block.
+
+        The package and treatment table are filtered once per block so the SIT
+        builder does not rescan every package track for every block and chain.
+        """
+        cached = self._context_cache.get(int(block))
+        if cached is not None:
+            return cached
+        fragments = self._block_fragments.get(int(block))
+        if fragments is None:
+            raise ValueError(f"carbon ledger has no block {block}")
+        track_ids = set(pd.to_numeric(fragments["track_id"], errors="coerce").dropna().astype(int))
+        track_ids &= set(
+            pd.to_numeric(self._tracks["track_id"], errors="coerce").dropna().astype(int)
+        )
+        treatment_source = pd.to_numeric(self._treatments["track_id"], errors="coerce")
+        treatment_target = (
+            pd.to_numeric(self._treatments["new_track"], errors="coerce")
+            if "new_track" in self._treatments.columns
+            else pd.Series(index=self._treatments.index, dtype="float64")
+        )
+        selected = set(track_ids)
+        known_ids = set(
+            pd.to_numeric(self._tracks["track_id"], errors="coerce").dropna().astype(int)
+        )
+        while True:
+            destinations = {
+                int(value)
+                for value in treatment_target.loc[treatment_source.isin(selected)].dropna().tolist()
+                if int(value) > 0
+            }
+            new_ids = (destinations & known_ids) - selected
+            if not new_ids:
+                break
+            selected |= new_ids
+        tracks = self._tracks.loc[
+            pd.to_numeric(self._tracks["track_id"], errors="coerce").isin(selected)
+        ].copy()
+        treatments = self._treatments.loc[treatment_source.isin(selected)].copy()
+        package = filter_carbon_package(self.package, set(tracks["name"].astype(str)))
+        result = (package, tracks, treatments)
+        self._context_cache[int(block)] = result
+        return result
+
     def _run(self, block: int, chain: Chain) -> dict[Cell, float]:
         """Run and cache one block/chain's carbon accounts."""
         key = (int(block), tuple(chain))
@@ -251,15 +310,16 @@ class CarbonLedger:
                 self._tracks,
                 self.fertilization,
             )
+        package, tracks, treatments = self._context(block)
         tables = build_sit_tables_from_tables(
-            self.package,
+            package,
             fragments,
-            self._tracks,
-            self._treatments,
+            tracks,
+            treatments,
             schedule,
         )
         run = run_libcbm(
-            self.package,
+            package,
             tables,
             n_steps=self.years,
             fertilization=(
