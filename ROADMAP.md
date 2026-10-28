@@ -75,6 +75,7 @@ exists and the maintainer approves it.
 | P70 Target table polish | #504 | `feature/p70-target-table` | complete |
 | P71 Target triage | #511 | `feature/p71-target-triage` | complete |
 | P72 Results run health and cross-links | #518 | `feature/p72-results-health` | complete |
+| P73 Live map updates | #525 | `feature/p73-live-map` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2268,6 +2269,40 @@ Acceptance:
 - Compare target account links open Plan with the account filtered.
 - Compare target-status rows have one account cell and aligned columns.
 - Results is usable at 1024 px.
+- `python scripts/dashboard.py` is green.
+
+## Phase 73: Live map updates
+
+Parent issue: #525
+Branch: `feature/p73-live-map`
+Status: pr-open
+
+Goal: make treated blocks and counts update in the Map workspace while a solver is running, on the
+default MapLibre path, not only in the SVG fallback or after the run finishes.
+
+- [x] P73.1 Live MapLibre block feature state (#526)
+  - [x] Use the bare blocks layer while live
+  - [x] Add feature ids to MVT tiles
+  - [x] Apply schedule events as feature state
+  - [x] Reset state on island changes
+- [x] P73.2 Live counts, legend, and block detail (#527)
+  - [x] Use live schedule counts and dataset totals
+  - [x] Keep block detail and the legend in sync
+  - [x] Avoid per-event tile or GeoJSON reloads
+- [x] P73.3 Verify live map and target charts, document, close out (#528)
+  - [x] Add the live-map browser smoke
+  - [x] Verify c5 and TSA 46
+  - [x] Verify target charts
+  - [x] Update docs and write the close-out
+
+Acceptance:
+
+- MapLibre blocks recolor while the solver runs.
+- Treated counts change without a page reload.
+- Island/reset schedule events rebuild the live map.
+- The static map returns after finish.
+- Target charts continue to update live.
+- Live mode remains usable on c5 and TSA 46.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes

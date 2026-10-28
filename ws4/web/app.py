@@ -313,7 +313,7 @@ def _intersects(bbox: tuple[float, float, float, float], feature: dict[str, Any]
 
 
 TILE_EXTENT: int = 4096
-TILE_CACHE_VERSION: str = "v8"
+TILE_CACHE_VERSION: str = "v9"
 
 
 def _safe_cache_name(value: str) -> str:
@@ -2802,15 +2802,16 @@ def create_app(
             tile_properties = _scalar_properties(properties)
             tile_properties["compare"] = flag
             tile_properties["treated"] = flag != "none"
-            features.append(
-                {
-                    "geometry": _tile_coordinates(
-                        mercator_geometry,
-                        (mercator.left, mercator.bottom, mercator.right, mercator.top),
-                    ),
-                    "properties": tile_properties,
-                }
-            )
+            feature = {
+                "geometry": _tile_coordinates(
+                    mercator_geometry,
+                    (mercator.left, mercator.bottom, mercator.right, mercator.top),
+                ),
+                "properties": tile_properties,
+            }
+            if tile_properties.get("block_id") is not None:
+                feature["id"] = int(float(str(tile_properties["block_id"])))
+            features.append(feature)
         payload = mapbox_vector_tile.encode(
             [{"name": "blocks", "features": features}],
             default_options={"extents": TILE_EXTENT, "y_coord_down": True},
@@ -2923,15 +2924,17 @@ def create_app(
             if geometry.is_empty:
                 continue
             mercator_geometry = shapely_transform(geometry, project)
-            features.append(
-                {
-                    "geometry": _tile_coordinates(
-                        mercator_geometry,
-                        (mercator.left, mercator.bottom, mercator.right, mercator.top),
-                    ),
-                    "properties": _scalar_properties(properties),
-                }
-            )
+            tile_properties = _scalar_properties(properties)
+            feature = {
+                "geometry": _tile_coordinates(
+                    mercator_geometry,
+                    (mercator.left, mercator.bottom, mercator.right, mercator.top),
+                ),
+                "properties": tile_properties,
+            }
+            if tile_properties.get("block_id") is not None:
+                feature["id"] = int(float(str(tile_properties["block_id"])))
+            features.append(feature)
         payload = mapbox_vector_tile.encode(
             [{"name": "blocks", "features": features}],
             default_options={"extents": TILE_EXTENT, "y_coord_down": True},
