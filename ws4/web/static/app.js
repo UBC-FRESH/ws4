@@ -4,7 +4,7 @@
 const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 } };
 
 const $ = (id) => document.getElementById(id);
-const TILE_VERSION = 'v8';
+const TILE_VERSION = 'v9';
 const statusLine = (text) => { $('status').textContent = text; };
 
 async function api(path) {
@@ -486,14 +486,18 @@ function renderMapLibre(refit = true) {
   const source = map.getSource('blocks');
   if (source) source.setData({ type: 'FeatureCollection', features });
   setMapLibreRoads();
-  let treated = 0;
-  for (const feature of state.features) {
-    if (featureStyle(feature.properties ?? {}).treated) treated += 1;
+  if (state.live.active && state.vectorActive) {
+    renderLiveCounts();
+  } else {
+    let treated = 0;
+    for (const feature of state.features) {
+      if (featureStyle(feature.properties ?? {}).treated) treated += 1;
+    }
+    const treatedTotal = state.mapTotals ? state.mapTotals.treated : treated;
+    const untreatedTotal = state.mapTotals ? state.mapTotals.untreated : state.features.length - treated;
+    $('n-treated').textContent = treatedTotal.toLocaleString();
+    $('n-untreated').textContent = untreatedTotal.toLocaleString();
   }
-  const treatedTotal = state.mapTotals ? state.mapTotals.treated : treated;
-  const untreatedTotal = state.mapTotals ? state.mapTotals.untreated : state.features.length - treated;
-  $('n-treated').textContent = treatedTotal.toLocaleString();
-  $('n-untreated').textContent = untreatedTotal.toLocaleString();
   const baseMode = state.layerMode === 'base' && Boolean(state.baseAttribute);
   $('treated-label').textContent = layerLabel();
   const skinHasTreatments = state.skin?.layers ? state.skin.layers.includes('treatments') : true;
@@ -800,8 +804,27 @@ function resetLiveMap() {
   applyVisibility();
 }
 
-function updateLiveBlocks(blocks) {
+function updateLiveBlocks(blocks, reset = false) {
   if (state.mapEngine === 'maplibre') {
+    if (state.live.active && state.vectorActive) {
+      const map = state.mapLibre;
+      if (reset) clearLiveFeatureState();
+      for (const block of blocks) {
+        const chain = state.live.schedule.get(String(block));
+        const treated = chain
+          ? chain.some((event) => inCurrentPeriod(event[1]))
+          : false;
+        try {
+          map.setFeatureState(
+            { source: 'blocks-vector', sourceLayer: 'blocks', id: Number(block) },
+            { liveTreated: treated },
+          );
+        } catch { /* a tile without the feature id simply keeps its neutral colour */ }
+      }
+      renderLiveCounts();
+      renderMapLegend();
+      return;
+    }
     if (state.live.active && state.layerMode === 'current') renderMapLibre(false);
     return;
   }
@@ -885,6 +908,86 @@ function updateVectorPaint() {
     map.setPaintProperty(id, id.endsWith('fill') ? 'fill-color' : 'circle-color', color);
     map.setPaintProperty(id, id.endsWith('fill') ? 'fill-opacity' : 'circle-opacity', opacity);
   }
+  if (state.live.active) updateLiveVectorPaint();
+}
+
+function ensureLiveVectorLayers(map) {
+  if (map.getLayer('live-vector-fill')) return;
+  map.addLayer({
+    id: 'live-vector-fill',
+    type: 'fill',
+    source: 'blocks-vector',
+    'source-layer': 'blocks',
+    filter: ['any', ['==', ['geometry-type'], 'Polygon'], ['==', ['geometry-type'], 'MultiPolygon']],
+    paint: {
+      'fill-color': ['case', ['boolean', ['feature-state', 'liveTreated'], false], '#c0392b', '#d9e4dc'],
+      'fill-opacity': 0.78,
+      'fill-outline-color': 'rgba(0,0,0,0.22)',
+    },
+  });
+  map.addLayer({
+    id: 'live-vector-points',
+    type: 'circle',
+    source: 'blocks-vector',
+    'source-layer': 'blocks',
+    filter: ['==', ['geometry-type'], 'Point'],
+    paint: {
+      'circle-radius': 3,
+      'circle-color': ['case', ['boolean', ['feature-state', 'liveTreated'], false], '#c0392b', '#d9e4dc'],
+      'circle-opacity': 0.78,
+      'circle-stroke-color': 'rgba(0,0,0,0.25)',
+      'circle-stroke-width': 0.4,
+    },
+  });
+}
+
+function setLiveVectorMode(live) {
+  const map = state.mapLibre;
+  if (!map) return;
+  for (const id of ['live-vector-fill', 'live-vector-points']) {
+    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', live ? 'visible' : 'none');
+  }
+  for (const id of ['blocks-vector-fill', 'blocks-vector-points']) {
+    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', live ? 'none' : (state.vectorActive ? 'visible' : 'none'));
+  }
+  if (live) updateLiveVectorPaint();
+}
+
+function updateLiveVectorPaint() {
+  const map = state.mapLibre;
+  if (!map || !map.getLayer('live-vector-fill')) return;
+  const showTreated = $('show-treated').checked;
+  const showUntreated = $('show-untreated').checked;
+  const fillOpacity = ['case',
+    ['boolean', ['feature-state', 'liveTreated'], false], showTreated ? 1 : 0,
+    showUntreated ? 0.78 : 0];
+  const pointOpacity = ['case',
+    ['boolean', ['feature-state', 'liveTreated'], false], showTreated ? 1 : 0,
+    showUntreated ? 0.78 : 0];
+  map.setPaintProperty('live-vector-fill', 'fill-opacity', fillOpacity);
+  map.setPaintProperty('live-vector-points', 'circle-opacity', pointOpacity);
+}
+
+function clearLiveFeatureState() {
+  const map = state.mapLibre;
+  const source = map?.getSource('blocks-vector');
+  if (!map || !source) return;
+  try { map.removeFeatureState({ source: 'blocks-vector', sourceLayer: 'blocks' }); } catch { /* source may be replacing */ }
+}
+
+function liveTreatedCount() {
+  let treated = 0;
+  for (const chain of state.live.schedule.values()) {
+    if (chain.some((event) => inCurrentPeriod(event[1]))) treated += 1;
+  }
+  return treated;
+}
+
+function renderLiveCounts() {
+  const treated = liveTreatedCount();
+  const total = state.mapTotals ? state.mapTotals.treated + state.mapTotals.untreated : 0;
+  $('n-treated').textContent = treated.toLocaleString();
+  $('n-untreated').textContent = Math.max(0, total - treated).toLocaleString();
 }
 
 function installVectorSource(url) {
@@ -942,6 +1045,7 @@ function installVectorSource(url) {
     }
     state.vectorUrl = url;
   }
+  ensureLiveVectorLayers(map);
   state.vectorActive = true;
   for (const id of ['blocks-vector-fill', 'blocks-vector-points']) {
     if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'visible');
@@ -949,6 +1053,7 @@ function installVectorSource(url) {
   for (const id of ['blocks-fill', 'blocks-points']) {
     if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none');
   }
+  setLiveVectorMode(Boolean(state.live.active));
   updateVectorPaint();
   return true;
 }
@@ -971,6 +1076,9 @@ function hideVectorLayers() {
   for (const id of ['blocks-fill', 'blocks-points']) {
     if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'visible');
   }
+  for (const id of ['live-vector-fill', 'live-vector-points']) {
+    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none');
+  }
 }
 
 async function loadMap(preserveView = false) {
@@ -987,7 +1095,7 @@ async function loadMap(preserveView = false) {
   statusLine('loading map…');
   setMapLoading(true, 'Loading map…');
   const lidarField = state.lidarField ? lidarFieldInfo(state.lidarField) : null;
-  const layer = state.lidarField ? 'blocks' : mapLayerName();
+  const layer = state.lidarField || state.live.active ? 'blocks' : mapLayerName();
   try {
     const period = currentPeriod();
     const end = period ? Number(period.end) : state.year;
@@ -1004,13 +1112,23 @@ async function loadMap(preserveView = false) {
       if (period) stats += `&period_start=${period.start}`;
       try {
         const body = await api(stats);
-        state.mapTotals = {
-          treated: body.total_treated ?? 0,
-          untreated: body.total_untreated ?? 0,
-        };
-        $('n-treated').textContent = Number(state.mapTotals.treated).toLocaleString();
-        $('n-untreated').textContent = Number(state.mapTotals.untreated).toLocaleString();
-        statusLine(`${state.mapTotals.treated.toLocaleString()} treated blocks · ${layer} · MVT · period ${state.periodIndex + 1}${span}`);
+        if (state.live.active) {
+          const total = Number(body.total_treated ?? 0) + Number(body.total_untreated ?? 0);
+          state.mapTotals = { treated: 0, untreated: total };
+          clearLiveFeatureState();
+          setLiveVectorMode(true);
+          renderLiveCounts();
+          statusLine(`live · ${total.toLocaleString()} blocks · ${layer} · period ${state.periodIndex + 1}${span}`);
+        } else {
+          state.mapTotals = {
+            treated: body.total_treated ?? 0,
+            untreated: body.total_untreated ?? 0,
+          };
+          setLiveVectorMode(false);
+          $('n-treated').textContent = Number(state.mapTotals.treated).toLocaleString();
+          $('n-untreated').textContent = Number(state.mapTotals.untreated).toLocaleString();
+          statusLine(`${state.mapTotals.treated.toLocaleString()} treated blocks · ${layer} · MVT · period ${state.periodIndex + 1}${span}`);
+        }
       } catch {
         state.mapTotals = null;
         statusLine(`MVT · ${layer} · period ${state.periodIndex + 1}${span}`);
@@ -1038,15 +1156,17 @@ async function loadMap(preserveView = false) {
     }
     const body = await api(query);
     state.features = body.features ?? [];
-    state.mapTotals = body.overview
-      ? { treated: body.total_treated ?? 0, untreated: body.total_untreated ?? 0 }
-      : null;
+    state.mapTotals = state.live.active
+      ? null
+      : body.overview
+        ? { treated: body.total_treated ?? 0, untreated: body.total_untreated ?? 0 }
+        : null;
     updateLidarRange();
     render(!preserveView);
     const place = state.mapEngine === 'maplibre' ? 'in view' : '';
     const noun = body.overview_mode === 'treated' ? 'treated blocks' : 'blocks';
     const sourceLabel = lidarField ? `LiDAR: ${lidarField.label}` : layer;
-    statusLine(`${state.features.length.toLocaleString()} ${noun} ${place} · ${sourceLabel} · period ${state.periodIndex + 1}${span}`);
+    statusLine(`${state.features.length.toLocaleString()} ${noun} ${place} · ${sourceLabel}${state.live.active ? ' · live' : ''} · period ${state.periodIndex + 1}${span}`);
     if (state.showUsedRoads) loadUsedRoads();
   } catch (error) {
     statusLine(`map unavailable: ${error.message}`);
@@ -4808,8 +4928,10 @@ async function startRun() {
   state.live = { active: true, schedule: new Map(), total: 0 };
   // a live search always has a schedule; the map must follow it, not a previous patch/cumulative view
   state.layerMode = 'current';
+  state.mapTotals = null;
   renderLayerTree();
   resetLiveMap();
+  if (state.mapEngine === 'maplibre' && !state.lidarField) loadMap(true);
   state.runPaused = false;
   state.history = [];
   drawSpark();
@@ -4845,7 +4967,7 @@ async function startRun() {
       for (const [block, chain] of payload.changed ?? []) {
         state.live.schedule.set(String(block), chain);
       }
-      updateLiveBlocks((payload.changed ?? []).map(([block]) => block));
+      updateLiveBlocks((payload.changed ?? []).map(([block]) => block), Boolean(payload.reset));
     });
     events.addEventListener('progress', (event) => {
       const step = JSON.parse(event.data);
@@ -4871,9 +4993,11 @@ async function startRun() {
   } catch (error) {
     window.clearTimeout(timer);
     state.live.active = false;
+    state.mapTotals = null;
     $('start-run').disabled = false;
     $('start-run').textContent = 'Solve';
     $('stop-run').hidden = true;
+    if (state.mapEngine === 'maplibre' && !state.lidarField) loadMap();
     const reason = error.name === 'AbortError' ? 'the request timed out after 20 s' : error.message;
     showRun(`not started: ${reason}`, false);
   }
