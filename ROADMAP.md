@@ -76,6 +76,7 @@ exists and the maintainer approves it.
 | P71 Target triage | #511 | `feature/p71-target-triage` | complete |
 | P72 Results run health and cross-links | #518 | `feature/p72-results-health` | complete |
 | P73 Live map updates | #525 | `feature/p73-live-map` | complete |
+| P74 Live map hardening | #531 | `feature/p74-live-map-hardening` | active |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2303,6 +2304,39 @@ Acceptance:
 - The static map returns after finish.
 - Target charts continue to update live.
 - Live mode remains usable on c5 and TSA 46.
+- `python scripts/dashboard.py` is green.
+
+## Phase 74: Live map hardening
+
+Parent issue: #531
+Branch: `feature/p74-live-map-hardening`
+Status: active
+
+Goal: keep the live MapLibre view correct across pan, zoom, and map-source changes, and let the
+analyst switch between the solver's live schedule and the static pre-run treatment map.
+
+- [x] P74.1 Reapply the full live schedule after viewport reloads (#532)
+  - [x] Reapply schedule entries after pan/zoom
+  - [x] Reapply after source URL changes
+  - [x] Preserve feature-state colours
+- [x] P74.2 Live/static map toggle (#533)
+  - [x] Add the map-legend toggle
+  - [x] Switch between live and static treatment MVT
+  - [x] Keep counts and legend mode-specific
+- [ ] P74.3 Verify pan, zoom, and toggle, document, close out (#534)
+  - [x] Extend the live-map browser smoke
+  - [x] Verify c5 and TSA 46
+  - [x] Verify target charts
+  - [ ] Update docs and write the close-out
+
+Acceptance:
+
+- Panning or zooming does not drop treated-block colours.
+- Live/Static toggles between the current schedule and the static treatment map.
+- Counts and legend match the active mode.
+- The toggle is keyboard-accessible and hidden when no run is active.
+- Target charts continue to update live in either map mode.
+- c5 and TSA 46 smoke pass.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes
