@@ -76,7 +76,7 @@ exists and the maintainer approves it.
 | P71 Target triage | #511 | `feature/p71-target-triage` | complete |
 | P72 Results run health and cross-links | #518 | `feature/p72-results-health` | complete |
 | P73 Live map updates | #525 | `feature/p73-live-map` | complete |
-| P74 Live map hardening | #531 | `feature/p74-live-map-hardening` | active |
+| P74 Live map hardening | #531 | `feature/p74-live-map-hardening` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2310,7 +2310,7 @@ Acceptance:
 
 Parent issue: #531
 Branch: `feature/p74-live-map-hardening`
-Status: active
+Status: pr-open
 
 Goal: keep the live MapLibre view correct across pan, zoom, and map-source changes, and let the
 analyst switch between the solver's live schedule and the static pre-run treatment map.
@@ -2323,11 +2323,11 @@ analyst switch between the solver's live schedule and the static pre-run treatme
   - [x] Add the map-legend toggle
   - [x] Switch between live and static treatment MVT
   - [x] Keep counts and legend mode-specific
-- [ ] P74.3 Verify pan, zoom, and toggle, document, close out (#534)
+- [x] P74.3 Verify pan, zoom, and toggle, document, close out (#534)
   - [x] Extend the live-map browser smoke
   - [x] Verify c5 and TSA 46
   - [x] Verify target charts
-  - [ ] Update docs and write the close-out
+  - [x] Update docs and write the close-out
 
 Acceptance:
 
