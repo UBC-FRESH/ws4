@@ -132,6 +132,18 @@ def test_summary_lists_the_dataset_and_its_runs(tmp_path: Path) -> None:
     assert body["runs"][0]["summary"]["status"] == "ok"
 
 
+def test_summary_lists_a_live_run_before_it_has_a_summary(tmp_path: Path) -> None:
+    """A run with telemetry but no summary is still discoverable as a live search."""
+    client, _ = _app(tmp_path)
+    live = tmp_path / "runs" / "web-live"
+    live.mkdir()
+    (live / "telemetry.jsonl").write_text('{"type": "step"}\n', encoding="utf-8")
+    body = client.get("/api/summary").json()
+    entry = next(item for item in body["runs"] if item["id"] == "web-live")
+    assert entry["kind"] == "search"
+    assert entry["summary"]["status"] == "running"
+
+
 def test_accounts_are_filtered_by_year_and_account(tmp_path: Path) -> None:
     """The endpoint filters the run's own CSV; it does not recompute a value."""
     client, _ = _app(tmp_path)

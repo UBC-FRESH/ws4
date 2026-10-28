@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=82">
+  <link rel="stylesheet" href="static/style.css?v=83">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
 </head>
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v82</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v83</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Period
@@ -334,6 +334,7 @@
           <p class="hint">Minimum, maximum, and achieved account levels for every period. Pin targets in the Plan table; inactive targets are indicators.</p>
         </div>
         <div class="target-canvas-actions">
+          <span id="target-chart-live" class="live-badge" hidden>LIVE</span>
           <span id="target-chart-count" class="target-chart-count"></span>
           <span id="target-chart-summary" class="hint"></span>
           <button id="target-chart-save" type="button" disabled>Save chart changes</button>
@@ -361,6 +362,6 @@
     </div>
   </main>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=82"></script>
+  <script type="module" src="static/app.js?v=83"></script>
 </body>
 </html>

@@ -3204,25 +3204,68 @@ function targetStatus(row, value) {
   return 'met';
 }
 
+function targetPeriodsFromRows() {
+  const width = Number(
+    state.targets.find((row) => Number(row.period_width) > 0)?.period_width
+      ?? state.periodWidth
+      ?? 1,
+  ) || 1;
+  let count = 1;
+  for (const row of state.targets) {
+    if (Number(row.period) > count) count = Number(row.period);
+    if (row.period === null || row.period === undefined) {
+      const year = Number(row.year);
+      if (Number.isFinite(year)) count = Math.max(count, Math.ceil(year / width));
+    }
+  }
+  return Array.from({ length: count }, (_unused, index) => ({
+    index,
+    start: index * width,
+    end: (index + 1) * width - 1,
+    label: `Years ${index * width}-${(index + 1) * width - 1}`,
+  }));
+}
+
+function targetCellPeriodIndex(row, periods) {
+  if (row.period !== null && row.period !== undefined && Number(row.period) > 0) {
+    return Number(row.period) - 1;
+  }
+  const year = Number(row.year);
+  const found = periods.findIndex(
+    (period) => Number(period.start) <= year && year <= Number(period.end),
+  );
+  if (found >= 0) return found;
+  return Math.max(0, Math.floor((year - 1) / Math.max(1, Number(row.period_width) || 1)));
+}
+
 function chartCell(account, period) {
   const source = state.targetSeries?.accounts?.find((item) => item.account === account);
   const cell = source?.periods?.find((item) => Number(item.index) === Number(period.index));
-  return cell ?? {
+  if (cell) return cell;
+  const periods = targetPeriodsFromRows();
+  const rows = state.targets.filter(
+    (row) => row.account === account && targetCellPeriodIndex(row, periods) === Number(period.index),
+  );
+  const minimum = rows.find((row) => row.minimum !== null && row.minimum !== undefined);
+  const maximum = rows.find((row) => row.maximum !== null && row.maximum !== undefined);
+  return {
     index: Number(period.index),
     start: Number(period.start),
     end: Number(period.end),
     label: period.label,
-    minimum: null,
-    maximum: null,
-    active: false,
-    target_indices: [],
+    minimum: minimum ? Number(minimum.minimum) : null,
+    maximum: maximum ? Number(maximum.maximum) : null,
+    active: rows.some((row) => row.active !== false),
+    target_indices: rows.map((row) => row.index),
   };
 }
 
 
 function targetChartCells(account) {
   const source = state.targetSeries?.accounts?.find((item) => item.account === account);
-  const periods = source?.periods?.length ? source.periods : state.periods;
+  const periods = source?.periods?.length
+    ? source.periods
+    : (state.periods.length ? state.periods : targetPeriodsFromRows());
   return (periods ?? []).map((period) => {
     const value = periodAchieved(account, period);
     return { ...chartCell(account, period), achieved: value };
@@ -3665,7 +3708,7 @@ function renderTargetCharts() {
   const accounts = targetChartAccounts();
   const periods = state.targetSeries?.periods?.length
     ? state.targetSeries.periods
-    : state.periods;
+    : (state.periods.length ? state.periods : targetPeriodsFromRows());
   grid.replaceChildren();
   if (!accounts.length || !periods.length) {
     empty.hidden = false;
@@ -4022,6 +4065,8 @@ function runHealthCounts() {
 function renderRunHealth() {
   const card = $('run-health');
   if (!card) return;
+  const liveBadge = $('target-chart-live');
+  if (liveBadge) liveBadge.hidden = !state.live.active;
   const counts = runHealthCounts();
   const total = state.targets.length;
   const failing = counts.below + counts.above;
@@ -4944,6 +4989,91 @@ async function stopRun() {
   }
 }
 
+function openRunStream(runId, islands = 1) {
+  const events = new EventSource(`api/runs/${encodeURIComponent(runId)}/events`);
+  runWatch.source = events;
+  events.addEventListener('started', () => showRun(
+    `run ${runId} · ${islands} island${Number(islands) === 1 ? '' : 's'} · connected · ${elapsed()}`,
+    true,
+  ));
+  events.addEventListener('schedule', (event) => {
+    const payload = JSON.parse(event.data);
+    if (payload.reset) state.live.schedule = new Map();
+    for (const [block, chain] of payload.changed ?? []) {
+      state.live.schedule.set(String(block), chain);
+    }
+    updateLiveBlocks((payload.changed ?? []).map(([block]) => block), Boolean(payload.reset));
+  });
+  events.addEventListener('progress', (event) => {
+    const step = JSON.parse(event.data);
+    state.live.total = Number(step.total ?? step.iteration);
+    state.history.push({ iteration: step.total ?? step.iteration, objective: Number(step.objective) });
+    if (state.history.length > 2000) state.history.shift();
+    drawSpark();
+    if (!state.runPaused) {
+      const shown = step.total ?? step.iteration;
+      const island = step.island ? ` · ${step.island}` : '';
+      showRun(
+        `run ${runId} · ${Number(shown).toLocaleString()} iterations · best ${Number(step.objective).toFixed(2)}${stepDetail(step)}${island} · ${elapsed()}`,
+        true,
+      );
+    }
+  });
+  events.addEventListener('targets', (event) => {
+    const payload = JSON.parse(event.data);
+    updateLiveTargets(payload.values ?? [], payload.iteration, payload.series ?? []);
+  });
+  events.addEventListener('done', () => finishRun(runId));
+  events.addEventListener('error', () => {
+    if (state.live.active) showRun(`run ${runId} · reconnecting…`, true);
+  });
+}
+
+async function attachLiveRun(runId) {
+  if (!runId) return false;
+  if (runWatch.id === runId && runWatch.source && state.live.active) return true;
+  let status;
+  try {
+    status = await api(`api/runs/${encodeURIComponent(runId)}/status`);
+  } catch {
+    return false;
+  }
+  if (!status.running) return false;
+  stopRunWatch();
+  runWatch = { id: runId, timer: null, source: null, started: Date.now(), done: false, islands: 1 };
+  state.live = { active: true, schedule: new Map(), total: 0, display: 'live' };
+  state.layerMode = 'current';
+  state.mapTotals = null;
+  state.runPaused = Boolean(status.paused);
+  state.history = [];
+  drawSpark();
+  renderLayerTree();
+  resetLiveMap();
+  if (state.mapEngine === 'maplibre' && !state.lidarField) loadMap(true);
+  $('start-run').disabled = false;
+  $('start-run').textContent = state.runPaused ? 'Resume' : 'Pause';
+  $('stop-run').hidden = false;
+  pollRun(runId);
+  runWatch.timer = setInterval(() => pollRun(runId), 2000);
+  openRunStream(runId, 1);
+  renderRunHealth();
+  return true;
+}
+
+async function findLiveRun(runs) {
+  const candidates = runs
+    .filter((run) => run.kind === 'search' || String(run.id).startsWith('web-'))
+    .sort((left, right) => String(right.id).localeCompare(String(left.id)))
+    .slice(0, 10);
+  for (const run of candidates) {
+    try {
+      const status = await api(`api/runs/${encodeURIComponent(run.id)}/status`);
+      if (status.running) return run.id;
+    } catch { /* a finished or missing run is not live */ }
+  }
+  return null;
+}
+
 async function startRun() {
   stopRunWatch();
   const status = $('run-status');
@@ -4999,38 +5129,7 @@ async function startRun() {
     $('stop-run').hidden = false;
     pollRun(run.id);
     runWatch.timer = setInterval(() => pollRun(run.id), 2000);
-    const events = new EventSource(`api/runs/${encodeURIComponent(run.id)}/events`);
-    runWatch.source = events;
-    events.addEventListener('started', () => showRun(`run ${run.id} · ${run.islands ?? 1} island${Number(run.islands ?? 1) === 1 ? '' : 's'} · connected · ${elapsed()}`, true));
-    events.addEventListener('schedule', (event) => {
-      const payload = JSON.parse(event.data);
-      if (payload.reset) state.live.schedule = new Map();
-      for (const [block, chain] of payload.changed ?? []) {
-        state.live.schedule.set(String(block), chain);
-      }
-      updateLiveBlocks((payload.changed ?? []).map(([block]) => block), Boolean(payload.reset));
-    });
-    events.addEventListener('progress', (event) => {
-      const step = JSON.parse(event.data);
-      state.live.total = Number(step.total ?? step.iteration);
-      state.history.push({ iteration: step.total ?? step.iteration, objective: Number(step.objective) });
-      if (state.history.length > 2000) state.history.shift();
-      drawSpark();
-      if (!state.runPaused) {
-        const shown = step.total ?? step.iteration;
-        const island = step.island ? ` · ${step.island}` : '';
-        showRun(
-          `run ${run.id} · ${Number(shown).toLocaleString()} iterations · best ${Number(step.objective).toFixed(2)}${stepDetail(step)}${island} · ${elapsed()}`,
-          true,
-        );
-      }
-    });
-    events.addEventListener('targets', (event) => {
-      const payload = JSON.parse(event.data);
-      updateLiveTargets(payload.values ?? [], payload.iteration, payload.series ?? []);
-    });
-    events.addEventListener('done', () => finishRun(run.id));
-    events.addEventListener('error', () => { /* the poll decides; the proxy may buffer SSE */ });
+    openRunStream(run.id, runWatch.islands);
   } catch (error) {
     window.clearTimeout(timer);
     state.live.active = false;
@@ -5558,6 +5657,11 @@ function wireControls() {
     drawCarbonChart();
   });
   $('run').addEventListener('change', async (event) => {
+    stopRunWatch();
+    state.live.active = false;
+    state.live.display = 'live';
+    state.live.schedule = new Map();
+    state.mapTotals = null;
     state.run = event.target.value;
     state.selectedBlock = null;
     state.selectedGeometry = null;
@@ -5565,6 +5669,7 @@ function wireControls() {
     updateSelectedOverlay();
     $('detail').replaceChildren();
     await loadRunContext();
+    await attachLiveRun(state.run);
     updateUrl();
   });
   $('year').addEventListener('input', (event) => {
@@ -5745,7 +5850,9 @@ async function start() {
     }
     const params = new URLSearchParams(window.location.search);
     const requestedRun = params.get('run');
+    const liveRun = requestedRun ? null : await findLiveRun(summary.runs ?? []);
     const preferred = (summary.runs ?? []).find((run) => run.id === requestedRun)
+      ?? (liveRun ? (summary.runs ?? []).find((run) => run.id === liveRun) : null)
       ?? (summary.runs ?? []).find((run) => run.id === 'reference')
       ?? (summary.runs ?? []).find((run) => run.id === 'run-dated3')
       ?? (summary.runs ?? [])[0];
@@ -5768,6 +5875,7 @@ async function start() {
     state.urlReady = true;
     activateSubView();
     updateUrl({ push: false });
+    await attachLiveRun(state.run);
   } catch (error) {
     statusLine(`service unavailable: ${error.message}`);
   }
@@ -5781,7 +5889,12 @@ window.addEventListener('popstate', async () => {
     if (requestedRun && requestedRun !== state.run && $('run').querySelector(`option[value="${requestedRun}"]`)) {
       state.run = requestedRun;
       $('run').value = requestedRun;
+      stopRunWatch();
+      state.live.active = false;
+      state.live.display = 'live';
+      state.live.schedule = new Map();
       await loadRunContext();
+      await attachLiveRun(state.run);
     }
     const requestedPeriod = Number(params.get('period'));
     if (Number.isFinite(requestedPeriod) && requestedPeriod >= 0) {

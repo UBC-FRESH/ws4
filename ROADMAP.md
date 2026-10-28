@@ -77,6 +77,7 @@ exists and the maintainer approves it.
 | P72 Results run health and cross-links | #518 | `feature/p72-results-health` | complete |
 | P73 Live map updates | #525 | `feature/p73-live-map` | complete |
 | P74 Live map hardening | #531 | `feature/p74-live-map-hardening` | complete |
+| P75 Live run attach and reconnect | #537 | `feature/p75-live-attach` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2337,6 +2338,38 @@ Acceptance:
 - The toggle is keyboard-accessible and hidden when no run is active.
 - Target charts continue to update live in either map mode.
 - c5 and TSA 46 smoke pass.
+- `python scripts/dashboard.py` is green.
+
+## Phase 75: Live run attach and reconnect
+
+Parent issue: #537
+Branch: `feature/p75-live-attach`
+Status: pr-open
+
+Goal: make an open browser attach to an already-running solver, replay target and schedule state,
+and keep target charts and the live map updating after a refresh or from a CLI-started run.
+
+- [x] P75.1 Reusable live-run attach and replay (#538)
+  - [x] Extract the SSE stream helper
+  - [x] Attach after page load and run change
+  - [x] Replay target/schedule state
+- [x] P75.2 Find a running run and show live state (#539)
+  - [x] Discover recent running search runs
+  - [x] Prefer them when no explicit run is requested
+  - [x] Show a LIVE badge in Plan
+- [x] P75.3 Verify external and refresh attach, document, close out (#540)
+  - [x] Add the attach browser smoke
+  - [x] Verify c5 and TSA 46
+  - [x] Verify target charts and map
+  - [x] Update docs and write the close-out
+
+Acceptance:
+
+- A CLI-started live run is found and shown as live after page load.
+- Target charts update from its target snapshots.
+- The live map attaches and updates.
+- Refresh and transient reconnect restore the stream and replay state.
+- A finished run returns to static mode.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes

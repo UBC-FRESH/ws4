@@ -814,6 +814,8 @@ def create_app(
                 (directory / "summary.json").is_file()
                 or (directory / "account_values.csv").is_file()
                 or (directory / "carbon_manifest.json").is_file()
+                or (directory / "run_manifest.json").is_file()
+                or (directory / "telemetry.jsonl").is_file()
             )
         ]
 
@@ -1686,6 +1688,11 @@ def create_app(
             elif (directory / "carbon_manifest.json").is_file():
                 kind = "carbon"
                 summary = {"status": "ok", "kind": kind}
+            elif (directory / "telemetry.jsonl").is_file() or (
+                directory / "run_manifest.json"
+            ).is_file():
+                kind = "search"
+                summary = {"status": "running", "kind": kind}
             else:
                 kind = "simulate"
                 summary = {"status": "ok", "kind": kind}

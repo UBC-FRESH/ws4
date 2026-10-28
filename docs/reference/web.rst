@@ -348,8 +348,15 @@ tile or GeoJSON payload for every event. A **Live schedule** checkbox in the map
 between the live schedule and the static pre-run treatment MVT without stopping the solve; counts
 and the legend follow the selected mode. Panning or zooming reloads the viewport and reapplies the
 full current schedule to the new tiles. Finishing or stopping the run returns to the static MVT
-treatment layer. Pinned target charts use the parallel ``targets`` SSE snapshots and update their
-achieved lines in either map mode.
+treatment layer.
+
+The shell also attaches to a run that was started outside the browser. On load or run change it
+checks the selected run's status; when no explicit run was requested it scans recent search runs
+for a running one and selects it. The SSE stream replays the current schedule and target snapshot,
+so pinned charts and the map resume after a refresh or transient disconnect. A live run has no
+``account_values.csv`` yet, so target charts derive their period grid and target cells from the
+targets document until the snapshot series arrives. Pinned target charts use the parallel
+``targets`` SSE snapshots and update their achieved lines in either map mode.
 
 The shell uses the MVT tile endpoint for the block, treatment, and cumulative layers. The vector
 source requests only the tiles MapLibre needs at the current zoom. Below zoom 6, treatment layers
