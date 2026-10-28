@@ -21,12 +21,16 @@ package carried 10,664 track names even though a block reaches only a few.
   source and destination tracks.
 - `_run()` now compiles SIT from the block context. Repeated chains reuse the context;
   no package-wide yield or boundary scan is repeated per block.
+- `CarbonLedger(base_workers=n)` / `ws4 optimize --carbon-workers n` computes the
+  empty-schedule base in fork workers. The optimizer forces one worker when `islands` or
+  process-parallel `starts` are active, to avoid nested pools.
 
 ## Measured effect
 
 | Case | Before | After |
 | --- | ---: | ---: |
-| 500-block empty base | 3 h 47 min before iteration 1 | **713 s (~12 min)** |
+| 500-block empty base, serial | 3 h 47 min before iteration 1 | **699 s (~12 min)** |
+| 500-block empty base, 8 workers | n/a | **107 s** (bit-identical values) |
 | 10-block empty base | ~3.7 min (estimated) | **14.9 s** |
 | 500-block 20-iteration search | did not start | **870 s total, 20 iterations completed** |
 
@@ -38,10 +42,10 @@ cross-block aggregation in the exact SIT run, not from the package filter.
 
 ## Remaining bottleneck
 
-The remaining cost is one libcbm run per block. A batched base (for example a block
-classifier in the SIT inventory, or a precomputed per-track/age unit curve) is the next
-production step. The current change makes a 500-block search start and finish a bounded
-iteration set; it does not make the ledger interactive.
+The remaining cost is one libcbm run per block. Eight workers make the 500-block base
+about two minutes, which is usable for a long search; a batched base (for example a block
+classifier in the SIT inventory, or a precomputed per-track/age unit curve) is still the
+next step for interactive use.
 
 ## Evidence
 

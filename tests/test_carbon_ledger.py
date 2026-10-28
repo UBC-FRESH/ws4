@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -91,6 +92,24 @@ def test_ledger_matches_a_full_run(tmp_path: Path) -> None:
     assert common
     max_difference = max(abs(ledger_values[cell] - full_values[cell]) for cell in common)
     assert max_difference == pytest.approx(0.0, abs=1e-6)
+
+
+def test_parallel_base_matches_serial(tmp_path: Path) -> None:
+    """Fork workers produce the same empty-schedule base as a serial ledger."""
+    if os.name != "posix":
+        pytest.skip("fork-based carbon workers are POSIX-only")
+    pytest.importorskip("libcbm")
+    from ws4.carbon.ledger import CarbonLedger
+    from ws4.carbon.libcbm import cbm_defaults_reference
+
+    from test_carbon_sit import _write_dataset, _write_package
+
+    package = _write_package(tmp_path / "package")
+    package.manifest.cbm_defaults.sha256 = cbm_defaults_reference().sha256
+    dataset = _write_dataset(tmp_path / "dataset")
+    serial = CarbonLedger(dataset, package, years=5)
+    parallel = CarbonLedger(dataset, package, years=5, base_workers=2)
+    assert parallel.base_values() == serial.base_values()
 
 
 def test_ledger_empty_matches_the_empty_schedule(tmp_path: Path) -> None:

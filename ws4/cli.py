@@ -676,6 +676,11 @@ def optimize(
         exists=True,
         help="HWP lifecycle YAML; adds product, EOL, displacement, and system accounts",
     ),
+    carbon_workers: int = typer.Option(
+        1,
+        "--carbon-workers",
+        help="Fork workers for the carbon ledger base; use 1 with islands/process starts",
+    ),
     cooling_mode: str = typer.Option(
         "geometric", "--cooling-mode", help="Temperature schedule: geometric or adaptive"
     ),
@@ -740,6 +745,7 @@ def optimize(
             str(carbon_fertilization) if carbon_fertilization is not None else ""
         ),
         carbon_hwp_path=str(carbon_hwp) if carbon_hwp is not None else "",
+        carbon_workers=carbon_workers,
         spread_accounts_path=str(spread_accounts) if spread_accounts is not None else "",
         block_coordinates_path=str(block_coordinates) if block_coordinates is not None else "",
         cooling_mode=cooling_mode,

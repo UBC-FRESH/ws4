@@ -3233,16 +3233,6 @@ issue comments.
   harvest floor and a final growing-stock floor at 90% of initial (23,900,770.58).
   Scenario contract test passes; dashboard GREEN; UI `v83`.
 
-- Carbon ledger performance: added `filter_carbon_package` and a cached per-block
-  reachable-track context in `CarbonLedger`. A 500-block TSA46 empty base fell from
-  3 h 47 min before iteration 1 to 713 s, and a 20-iteration 500-block max-stock search
-  completed in 870 s with 20 iterations. Exact `ws4 carbon` replay agreed with the
-  ledger to about 9e-6 relative on the tested schedule; the remaining difference is
-  cross-block aggregation in the exact SIT run. Added
-  `notes/reports/carbon-ledger-performance.md` and a performance note in
-  `docs/reference/performance.rst`. This makes a bounded 500-block search start, but a
-  batched/precomputed base is still the next production step.
-
 - P77 c5 even-flow ceiling: pull request #552 squash-merged as `b5b0bae`. The base
   scenario now uses the priced conifer/deciduous accounts (700k/50k per decade,
   ±1% even flow, 90% final stock floor). The max-flow probe completed with an
@@ -3253,3 +3243,14 @@ issue comments.
   20,000-iteration, four-probe even-flow run still returned advisory ceiling 0
   with the 90% final stock floor. Recorded as negative evidence; the base scenario
   remains a policy floor, not a certified maximum. Dashboard GREEN; UI `v83`.
+
+- Carbon ledger performance: added `filter_carbon_package`, a cached per-block
+  reachable-track context, and optional fork workers for the empty-schedule base
+  (`--carbon-workers`). A 500-block TSA46 empty base fell from 3 h 47 min before
+  iteration 1 to 699 s serial and **107 s with 8 workers** (bit-identical values), and a
+  20-iteration 500-block max-stock search completed in 870 s with 20 iterations. Exact
+  `ws4 carbon` replay agreed with the ledger to about 9e-6 relative on the tested
+  schedule; the remaining difference is cross-block aggregation in the exact SIT run.
+  Added `notes/reports/carbon-ledger-performance.md` and a performance note in
+  `docs/reference/performance.rst`. A batched/precomputed base remains the next step for
+  interactive use.
