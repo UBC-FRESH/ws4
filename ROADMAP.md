@@ -81,7 +81,7 @@ exists and the maintainer approves it.
 | P76 C5 base scenario | #543 | `feature/p76-c5-base-scenario` | complete |
 | P77 C5 even-flow ceiling | #550 | `feature/p77-c5-max-flow` | complete |
 | P78 Warm c5 max-flow probe | #554 | `feature/p78-c5-warm-max-flow` | complete |
-| P79 Flow targets are not level bands | #559 | `feature/p79-flow-bands` | pr-open |
+| P79 Flow targets are not level bands | #559 | `feature/p79-flow-bands` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2456,7 +2456,7 @@ Acceptance:
 
 Parent issue: #559
 Branch: `feature/p79-flow-bands`
-Status: pr-open
+Status: complete
 
 Goal: stop flow targets from overwriting level min/max in target charts.
 

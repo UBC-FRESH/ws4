@@ -3254,3 +3254,8 @@ issue comments.
   Added `notes/reports/carbon-ledger-performance.md` and a performance note in
   `docs/reference/performance.rst`. A batched/precomputed base remains the next step for
   interactive use.
+
+- P79 flow-target chart fix: pull request #561 squash-merged as `79a3529`. Flow targets
+  remain in the target table and solver but no longer overwrite level min/max in
+  target charts; charts label flow separately. The c5 base now shows conifer 700k,
+  deciduous 50k, and the final stock floor. Dashboard GREEN; UI `v84`.
