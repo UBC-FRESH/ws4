@@ -77,7 +77,7 @@ exists and the maintainer approves it.
 | P72 Results run health and cross-links | #518 | `feature/p72-results-health` | complete |
 | P73 Live map updates | #525 | `feature/p73-live-map` | complete |
 | P74 Live map hardening | #531 | `feature/p74-live-map-hardening` | complete |
-| P75 Live run attach and reconnect | #537 | `feature/p75-live-attach` | pr-open |
+| P75 Live run attach and reconnect | #537 | `feature/p75-live-attach` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2344,7 +2344,7 @@ Acceptance:
 
 Parent issue: #537
 Branch: `feature/p75-live-attach`
-Status: pr-open
+Status: complete
 
 Goal: make an open browser attach to an already-running solver, replay target and schedule state,
 and keep target charts and the live map updating after a refresh or from a CLI-started run.
