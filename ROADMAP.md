@@ -78,6 +78,7 @@ exists and the maintainer approves it.
 | P73 Live map updates | #525 | `feature/p73-live-map` | complete |
 | P74 Live map hardening | #531 | `feature/p74-live-map-hardening` | complete |
 | P75 Live run attach and reconnect | #537 | `feature/p75-live-attach` | complete |
+| P76 C5 base scenario | #543 | `feature/p76-c5-base-scenario` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2370,6 +2371,40 @@ Acceptance:
 - The live map attaches and updates.
 - Refresh and transient reconnect restore the stream and replay state.
 - A finished run returns to static mode.
+- `python scripts/dashboard.py` is green.
+
+## Phase 76: C5 base scenario
+
+Parent issue: #543
+Branch: `feature/p76-c5-base-scenario`
+Status: pr-open
+
+Goal: clean the c5 sample's accumulated test runs and replace its scenario mess with one documented,
+runnable 20-period × 10-year even-flow base scenario that maintains at least 90% of the initial
+growing stock in the final period.
+
+- [x] P76.1 Archive old c5 runs and fragments (#544)
+  - [x] Move test runs and fragments outside the sample
+  - [x] Keep one baseline run
+  - [x] Crop the baseline to 200 years
+- [x] P76.2 Add the c5 base scenario (#545)
+  - [x] Add 20 × 10-year harvest floors
+  - [x] Add the even-flow band
+  - [x] Add the 90% final growing-stock floor
+  - [x] Add README and max-flow command
+- [x] P76.3 Verify and close out (#546)
+  - [x] Validate the targets loader and scenario test
+  - [x] Verify the c5 service and 20-period charts
+  - [x] Document the scenario
+  - [x] Write the close-out
+
+Acceptance:
+
+- The c5 sample contains one baseline run and one base scenario.
+- The scenario validates through the targets loader.
+- It has periods 1–20 with width 10 and a final growing-stock floor of 90% initial.
+- The README gives an exact run command.
+- The live c5 service opens cleanly on the new scenario.
 - `python scripts/dashboard.py` is green.
 
 ## Detailed Next Steps Notes
