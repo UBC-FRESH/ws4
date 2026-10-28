@@ -6,7 +6,7 @@ Pull request: #547, `feature/p76-c5-base-scenario` into `main`
 Evidence head: `0678d32`, the head that CI run `40650166791` covers
 Report commit: the commit that adds this report. Its CI run is posted on the pull request.
 Date: 2026-10-28
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-28 as `9ac4136`.
 
 ## Recommendation
 
