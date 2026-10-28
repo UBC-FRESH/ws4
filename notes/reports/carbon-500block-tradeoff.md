@@ -64,14 +64,44 @@ Exact replay:
   ledger (0.0009% and 0.09% relative). The residual is the known cross-block aggregation
   difference when an event schedule is replayed in one batched SIT run.
 
+## Forced min emissions (df = 2.4, cap 200,000 tCO2e)
+
+A second min-emissions run used the high-displacement config and a cap well below the
+seed's 230,572 tCO2e, with 100 iterations and the same 350k–390k m3 harvest band.
+
+| Metric | Value |
+| --- | ---: |
+| Wall time | 432 s |
+| Iterations | 100 |
+| Yield | 360,215.89 m3 |
+| System carbon | 2,028,044.63 tC |
+| Cumulative emissions | 223,576.76 tCO2e |
+| HWP | 41,488.15 tC |
+| Emissions vs cap | +23,576.76 tCO2e |
+| Exact cumulative emissions | 223,373.96 tCO2e |
+
+The winning schedule is byte-identical to the max-stock 93-block schedule: blocks 89 and
+387 removed, block 24 moved to `CC@30`. The search found it at iteration 4 and did not
+improve over the next 96 iterations. The cap gap is therefore a search-quality result,
+not evidence that 200k is unreachable.
+
+Exact replay differed by +18.25 tC on system carbon, +202.80 tCO2e on cumulative
+emissions, and -15.49 tC on HWP (all under 0.1%). The exact emissions are still above
+the cap by 23,373.96 tCO2e.
+
 ## Reading
 
 - At the public default displacement factor, this subset has no stock/emissions
   trade-off: reducing harvest improves both system carbon and emissions.
-- At high displacement, a small schedule difference appears, but the search is mostly
-  staying at the seed. The 50-iteration SA moved only three blocks.
+- At high displacement, the max-stock and forced-min-emissions searches converge to the
+  same 93-block schedule. That schedule dominates the 95-block seed on both carbon
+  accounts but gives up 12,201.75 m3 of managed yield; the real trade-off visible here is
+  carbon versus yield, not stock versus emissions.
 - Both carbon targets are aggressive relative to the feasible schedule; the search
   result is a bounded mechanism result, not a policy optimum.
+- Search quality is now the limiting factor: the incumbent appears by iteration 4 and
+  then stays flat. A more exploratory run, better operators, or a batched/precomputed
+  base is needed before interpreting the cap gap as infeasibility.
 - The exact engine remains the authority; the ledger is within 0.09% on the tested
   schedules.
 

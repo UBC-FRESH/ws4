@@ -3267,4 +3267,8 @@ issue comments.
   4,023.1 tC of system carbon while cutting 6,995.7 tCO2e of cumulative emissions, at a
   cost of 12,201.8 m3 of managed yield versus the seed. Exact replay agreed within
   0.09% on cumulative emissions; the max-stock target and the default min-emissions
-  target were not met. Evidence: `notes/reports/carbon-500block-tradeoff.md`.
+  target were not met. A forced min-emissions follow-up (cap 200k tCO2e, 100 iterations)
+  selected the same 93-block schedule as max-stock; exact cumulative emissions were
+  223,373.96 tCO2e, still above the cap by 23,373.96. The search found the incumbent at
+  iteration 4 and then stagnated, so this is a search-quality result, not an
+  infeasibility proof. Evidence: `notes/reports/carbon-500block-tradeoff.md`.
