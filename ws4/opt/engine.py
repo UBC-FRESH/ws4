@@ -307,6 +307,9 @@ class OptimizeConfig:
         The HWP lifecycle YAML. When set with ``carbon_package_path``, the carbon ledger
         adds the product pools, end-of-life emissions, displacement, and whole-system
         carbon accounts.
+    carbon_workers : int
+        Fork workers for the carbon ledger's empty-schedule base. One is serial. The
+        optimizer forces one when ``islands`` or process-parallel starts are active.
     spread_accounts_path : str
         A YAML file of spread-connectivity account definitions; needs ``topology_path`` for the
         adjacency and ``block_coordinates_path`` for the bearings.
@@ -377,6 +380,7 @@ class OptimizeConfig:
     carbon_package_path: str = ""
     carbon_fertilization_path: str = ""
     carbon_hwp_path: str = ""
+    carbon_workers: int = 1
     spread_accounts_path: str = ""
     block_coordinates_path: str = ""
     flood_screen_config_path: str = ""
@@ -401,6 +405,8 @@ class OptimizeConfig:
             raise ValueError("carbon fertilization needs a carbon package")
         if self.carbon_hwp_path and not self.carbon_package_path:
             raise ValueError("carbon HWP accounting needs a carbon package")
+        if self.carbon_workers < 1:
+            raise ValueError("carbon_workers must be positive")
 
 
 #: The route-account kinds that are charged per segment per period rather than per block, so a
@@ -769,12 +775,16 @@ class Optimizer:
                 if self.cfg.carbon_hwp_path
                 else None
             )
+            base_workers = self.cfg.carbon_workers
+            if self.cfg.islands > 0 or self.cfg.starts > 1:
+                base_workers = 1
             self._carbon_ledger_cache = CarbonLedger(
                 self.dataset_dir,
                 load_carbon_package(Path(self.cfg.carbon_package_path)),
                 self.cfg.years,
                 fertilization=fertilization,
                 hwp=hwp,
+                base_workers=base_workers,
             )
         return self._carbon_ledger_cache
 

@@ -12,6 +12,8 @@ The cache is keyed by ``(block, chain)``. A chain is the block's sequence of
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import get_context
 from pathlib import Path
 
 import pandas as pd
@@ -51,6 +53,10 @@ class CarbonLedger:
     hwp : HwpConfig or None, optional
         When set, add the HWP lifecycle and whole-system carbon accounts. Defaults
         to None.
+    base_workers : int, optional
+        Fork-based worker processes for the empty-schedule base. Defaults to one
+        (serial). Use more than one only in a serial optimizer process; the
+        optimizer disables it when islands or process-parallel starts are active.
     """
 
     def __init__(
@@ -61,10 +67,14 @@ class CarbonLedger:
         *,
         fertilization: FertilizationConfig | None = None,
         hwp: HwpConfig | None = None,
+        base_workers: int = 1,
     ) -> None:
         """Load the dataset tables and initialize the cache."""
         if years <= 0:
             raise ValueError("carbon ledger years must be positive")
+        if base_workers <= 0:
+            raise ValueError("carbon ledger base_workers must be positive")
+        self.base_workers = int(base_workers)
         root = Path(dataset_dir)
         self.dataset_dir = root
         self.fertilization = fertilization
@@ -211,11 +221,34 @@ class CarbonLedger:
             The summed empty-schedule accounts.
         """
         totals: dict[Cell, float] = {}
-        for block in self.block_ids:
-            for cell, value in self.empty(block).items():
+        for _block, values in self._empty_by_block():
+            for cell, value in values.items():
                 if accounts is None or cell[1] in accounts:
                     totals[cell] = totals.get(cell, 0.0) + value
         return totals
+
+    def _empty_by_block(self) -> list[tuple[int, dict[Cell, float]]]:
+        """Return every block's empty-schedule accounts, optionally in worker processes."""
+        blocks = self.block_ids
+        if self.base_workers <= 1 or len(blocks) <= 1:
+            return [(block, self.empty(block)) for block in blocks]
+        try:
+            context = get_context("fork")
+        except ValueError:
+            return [(block, self.empty(block)) for block in blocks]
+        global _BASE_WORKER_LEDGER
+        _BASE_WORKER_LEDGER = self
+        try:
+            workers = min(self.base_workers, len(blocks))
+            chunksize = max(1, len(blocks) // (workers * 4))
+            with ProcessPoolExecutor(max_workers=workers, mp_context=context) as pool:
+                results = list(pool.map(_empty_worker, blocks, chunksize=chunksize))
+            pairs = list(zip(blocks, results, strict=True))
+            for block, values in pairs:
+                self._cache[(block, ())] = values
+            return pairs
+        finally:
+            _BASE_WORKER_LEDGER = None
 
     def schedule_values(
         self,
@@ -343,3 +376,13 @@ class CarbonLedger:
         }
         self._cache[key] = result
         return result
+
+
+_BASE_WORKER_LEDGER: CarbonLedger | None = None
+
+
+def _empty_worker(block: int) -> dict[Cell, float]:
+    """Return one block's empty accounts in a fork worker."""
+    if _BASE_WORKER_LEDGER is None:
+        raise RuntimeError("carbon base worker has no ledger")
+    return _BASE_WORKER_LEDGER.empty(block)

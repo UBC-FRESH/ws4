@@ -3239,12 +3239,13 @@ issue comments.
   advisory ceiling of 0 and no verified positive floor; recorded as a negative
   result, not a certified maximum. Dashboard GREEN; UI `v83`.
 
-- Carbon ledger performance: added `filter_carbon_package` and a cached per-block
-  reachable-track context in `CarbonLedger`. A 500-block TSA46 empty base fell from
-  3 h 47 min before iteration 1 to 713 s, and a 20-iteration 500-block max-stock search
-  completed in 870 s with 20 iterations. Exact `ws4 carbon` replay agreed with the
-  ledger to about 9e-6 relative on the tested schedule; the remaining difference is
-  cross-block aggregation in the exact SIT run. Added
-  `notes/reports/carbon-ledger-performance.md` and a performance note in
-  `docs/reference/performance.rst`. This makes a bounded 500-block search start, but a
-  batched/precomputed base is still the next production step.
+- Carbon ledger performance: added `filter_carbon_package`, a cached per-block
+  reachable-track context, and optional fork workers for the empty-schedule base
+  (`--carbon-workers`). A 500-block TSA46 empty base fell from 3 h 47 min before
+  iteration 1 to 699 s serial and **107 s with 8 workers** (bit-identical values), and a
+  20-iteration 500-block max-stock search completed in 870 s with 20 iterations. Exact
+  `ws4 carbon` replay agreed with the ledger to about 9e-6 relative on the tested
+  schedule; the remaining difference is cross-block aggregation in the exact SIT run.
+  Added `notes/reports/carbon-ledger-performance.md` and a performance note in
+  `docs/reference/performance.rst`. A batched/precomputed base remains the next step for
+  interactive use.
