@@ -120,6 +120,19 @@ def check(  # pragma: no cover - needs a browser
             live_status = page.locator("#status").inner_text()
             assert live_status != baseline or live_counts != baseline, "map counts did not change"
 
+            canvas = page.locator("#maplibre-map canvas")
+            box = canvas.bounding_box()
+            assert box is not None, "map canvas is missing"
+            x = box["x"] + box["width"] / 2
+            y = box["y"] + box["height"] / 2
+            page.mouse.move(x, y)
+            page.mouse.down()
+            page.mouse.move(x + 100, y + 50, steps=8)
+            page.mouse.up()
+            page.wait_for_timeout(3500)
+            assert page.locator("#status").inner_text().startswith("live"), "pan left live mode"
+            assert page.locator("#n-treated").inner_text() != "0", "pan dropped live colours"
+
             page.locator("#ws-plan").click()
             page.wait_for_timeout(1200)
             chart_after = chart_achieved(page)
@@ -131,6 +144,28 @@ def check(  # pragma: no cover - needs a browser
             page.wait_for_timeout(700)
             assert page.locator("#status").inner_text().startswith("live"), "map left live mode"
             assert page.locator("#n-treated").inner_text() != "0", "live count reset"
+
+            toggle = page.locator("#map-legend input[type='checkbox']")
+            assert toggle.count() == 1, "live/static toggle is missing"
+            toggle.uncheck()
+            page.wait_for_function(
+                """() => {
+                    const text = document.querySelector('#status').textContent;
+                    return !text.startsWith('live') && !text.startsWith('loading');
+                }""",
+                timeout=60000,
+            )
+            static_count = page.locator("#n-treated").inner_text()
+            assert static_count != "", "static count is empty"
+            assert static_count != "0", "static count is zero"
+            page.locator("#map-legend input[type='checkbox']").check()
+            page.wait_for_function(
+                "() => document.querySelector('#status').textContent.startsWith('live')",
+                timeout=60000,
+            )
+            page.wait_for_timeout(1000)
+            assert page.locator("#n-treated").inner_text() != "0", "live toggle cleared counts"
+
             if page.locator("#stop-run").is_visible():
                 page.locator("#stop-run").click()
             page.wait_for_function(

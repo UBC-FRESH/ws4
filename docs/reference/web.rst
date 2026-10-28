@@ -344,9 +344,12 @@ While a solver is live, the shell switches the MapLibre block source to the bare
 and applies the SSE ``schedule`` events as feature state on the changed block ids. The live layer
 recolors blocks immediately, updates the treated/untreated counts and the on-map legend, and
 resets the feature state when an island switch resets the schedule. It does not request a new
-tile or GeoJSON payload for every event. Finishing or stopping the run returns to the static MVT
+tile or GeoJSON payload for every event. A **Live schedule** checkbox in the map legend switches
+between the live schedule and the static pre-run treatment MVT without stopping the solve; counts
+and the legend follow the selected mode. Panning or zooming reloads the viewport and reapplies the
+full current schedule to the new tiles. Finishing or stopping the run returns to the static MVT
 treatment layer. Pinned target charts use the parallel ``targets`` SSE snapshots and update their
-achieved lines while the solver is active.
+achieved lines in either map mode.
 
 The shell uses the MVT tile endpoint for the block, treatment, and cumulative layers. The vector
 source requests only the tiles MapLibre needs at the current zoom. Below zoom 6, treatment layers
