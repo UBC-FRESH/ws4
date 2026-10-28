@@ -79,7 +79,7 @@ exists and the maintainer approves it.
 | P74 Live map hardening | #531 | `feature/p74-live-map-hardening` | complete |
 | P75 Live run attach and reconnect | #537 | `feature/p75-live-attach` | complete |
 | P76 C5 base scenario | #543 | `feature/p76-c5-base-scenario` | complete |
-| P77 C5 even-flow ceiling | #550 | `feature/p77-c5-max-flow` | pr-open |
+| P77 C5 even-flow ceiling | #550 | `feature/p77-c5-max-flow` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2412,7 +2412,7 @@ Acceptance:
 
 Parent issue: #550
 Branch: `feature/p77-c5-max-flow`
-Status: pr-open
+Status: complete
 
 Goal: run the advisory max-flow probe against the cleaned c5 base scenario and record the highest
 verified even-flow harvest level with the 90% final growing-stock floor intact.
