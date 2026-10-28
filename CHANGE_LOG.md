@@ -3239,6 +3239,11 @@ issue comments.
   advisory ceiling of 0 and no verified positive floor; recorded as a negative
   result, not a certified maximum. Dashboard GREEN; UI `v83`.
 
+- P78 warm c5 max-flow probe: pull request #556 squash-merged as `dc71963`. A
+  20,000-iteration, four-probe even-flow run still returned advisory ceiling 0
+  with the 90% final stock floor. Recorded as negative evidence; the base scenario
+  remains a policy floor, not a certified maximum. Dashboard GREEN; UI `v83`.
+
 - Carbon ledger performance: added `filter_carbon_package`, a cached per-block
   reachable-track context, and optional fork workers for the empty-schedule base
   (`--carbon-workers`). A 500-block TSA46 empty base fell from 3 h 47 min before

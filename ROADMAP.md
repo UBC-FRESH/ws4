@@ -80,6 +80,7 @@ exists and the maintainer approves it.
 | P75 Live run attach and reconnect | #537 | `feature/p75-live-attach` | complete |
 | P76 C5 base scenario | #543 | `feature/p76-c5-base-scenario` | complete |
 | P77 C5 even-flow ceiling | #550 | `feature/p77-c5-max-flow` | complete |
+| P78 Warm c5 max-flow probe | #554 | `feature/p78-c5-warm-max-flow` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2429,6 +2430,26 @@ Acceptance:
 - The stock floor remains in the target set.
 - The README records the advisory ceiling and how to reproduce it.
 - The result is not presented as a certified maximum.
+
+## Phase 78: Warm c5 max-flow probe
+
+Parent issue: #554
+Branch: `feature/p78-c5-warm-max-flow`
+Status: complete
+
+Goal: determine whether a longer probe verifies a positive c5 even-flow ceiling with the
+90% final growing-stock floor.
+
+- [x] P78.1 Run the longer c5 even-flow probe (#555)
+  - [x] Run 20,000 iterations / 4 probes
+  - [x] Record the zero advisory ceiling honestly
+  - [x] Update the scenario README
+
+Acceptance:
+
+- Probe completes or a timeout is recorded.
+- Result and reproducer are recorded.
+- Dashboard green.
 
 ## Detailed Next Steps Notes
 

@@ -31,10 +31,12 @@ python scripts/max_flow.py \
   --years 200 --period-width 10 --iterations 3000 --probes 6 --flow even --flow-tolerance 1
 ```
 
-The 2026-10-28 run of that command returned an advisory ceiling of **0** and did
-not verify a positive floor. The base scenario therefore remains a policy floor,
+The 2026-10-28 runs of the probe returned an advisory ceiling of **0** and did not
+verify a positive floor: 3,000 iterations / 6 probes and 20,000 iterations / 4 probes
+both returned `ceiling 0, feasible false`. The base scenario therefore remains a policy floor,
 not a certified maximum. Report:
-`/srv/shared-data/gep/ws4/archive/c5-base-max-flow-20261028c/max_flow.md`.
+`/srv/shared-data/gep/ws4/archive/c5-base-max-flow-20261028c/max_flow.md and
+`.../c5-base-max-flow-20261028d/max_flow.md``.
 
 The sample runs root contains only `run-base` as a browsing baseline. Old test
 runs and scenario fragments are archived under
