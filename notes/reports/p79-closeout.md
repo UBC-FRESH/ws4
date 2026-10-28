@@ -5,7 +5,7 @@ Parent issue: #559
 Pull request: #561, `feature/p79-flow-bands` into `main`
 Evidence head: `e515203`, CI run `40728364308`
 Date: 2026-10-28
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-28 as `79a3529`.
 
 ## Recommendation
 
