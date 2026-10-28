@@ -78,7 +78,7 @@ exists and the maintainer approves it.
 | P73 Live map updates | #525 | `feature/p73-live-map` | complete |
 | P74 Live map hardening | #531 | `feature/p74-live-map-hardening` | complete |
 | P75 Live run attach and reconnect | #537 | `feature/p75-live-attach` | complete |
-| P76 C5 base scenario | #543 | `feature/p76-c5-base-scenario` | pr-open |
+| P76 C5 base scenario | #543 | `feature/p76-c5-base-scenario` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2377,7 +2377,7 @@ Acceptance:
 
 Parent issue: #543
 Branch: `feature/p76-c5-base-scenario`
-Status: pr-open
+Status: complete
 
 Goal: clean the c5 sample's accumulated test runs and replace its scenario mess with one documented,
 runnable 20-period × 10-year even-flow base scenario that maintains at least 90% of the initial
