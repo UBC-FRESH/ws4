@@ -3259,3 +3259,12 @@ issue comments.
   remain in the target table and solver but no longer overwrite level min/max in
   target charts; charts label flow separately. The c5 base now shows conifer 700k,
   deciduous 50k, and the final stock floor. Dashboard GREEN; UI `v84`.
+
+- 500-block TSA46 system-carbon trade-off: ran max-stock and min-emissions searches
+  with the parallel base (50 iterations, 8 workers, about five minutes each). At the
+  public HWP default both objectives selected the same 93-block schedule; at
+  displacement 2.4 the max-stock schedule dropped two blocks and shifted one, gaining
+  4,023.1 tC of system carbon while cutting 6,995.7 tCO2e of cumulative emissions, at a
+  cost of 12,201.8 m3 of managed yield versus the seed. Exact replay agreed within
+  0.09% on cumulative emissions; the max-stock target and the default min-emissions
+  target were not met. Evidence: `notes/reports/carbon-500block-tradeoff.md`.
