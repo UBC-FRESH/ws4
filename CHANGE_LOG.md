@@ -3224,3 +3224,9 @@ issue comments.
   stream after page load or refresh, replays target/schedule snapshots, falls back to target-row
   periods while account values are absent, and shows a LIVE badge. c5 and TSA 46 attach checks
   passed; dashboard GREEN; UI `v83`.
+
+- P76 c5 base scenario: pull request #547 squash-merged as `9ac4136`. Archived 112
+  accumulated test-run/scenario entries, kept one baseline run cropped to years 0-199,
+  and added a documented 20 x 10-year even-flow base scenario with a 1M/period
+  harvest floor and a final growing-stock floor at 90% of initial (23,900,770.58).
+  Scenario contract test passes; dashboard GREEN; UI `v83`.
