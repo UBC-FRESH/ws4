@@ -6,7 +6,7 @@ Pull request: #529, `feature/p73-live-map` into `main`
 Evidence head: `9328212`, the head that CI run `40611012972` covers
 Report commit: the commit that adds this report. Its CI run is posted on the pull request.
 Date: 2026-10-28
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-28 as `6e3b29b`.
 
 ## Recommendation
 

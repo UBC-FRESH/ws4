@@ -75,7 +75,7 @@ exists and the maintainer approves it.
 | P70 Target table polish | #504 | `feature/p70-target-table` | complete |
 | P71 Target triage | #511 | `feature/p71-target-triage` | complete |
 | P72 Results run health and cross-links | #518 | `feature/p72-results-health` | complete |
-| P73 Live map updates | #525 | `feature/p73-live-map` | pr-open |
+| P73 Live map updates | #525 | `feature/p73-live-map` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2275,7 +2275,7 @@ Acceptance:
 
 Parent issue: #525
 Branch: `feature/p73-live-map`
-Status: pr-open
+Status: complete
 
 Goal: make treated blocks and counts update in the Map workspace while a solver is running, on the
 default MapLibre path, not only in the SVG fallback or after the run finishes.
