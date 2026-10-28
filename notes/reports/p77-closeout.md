@@ -2,10 +2,10 @@
 
 Phase: P77, C5 even-flow ceiling
 Parent issue: #550
-Pull request: not opened yet
-Evidence head: working tree at `5ce9990` plus the probe artifacts
+Pull request: #552, `feature/p77-c5-max-flow` into `main`
+Evidence head: `f447d42`, the head that CI run `40656171477` covers
 Date: 2026-10-28
-Status: queued for approval. Not merged.
+Status: ready for approval. Not merged.
 
 ## Recommendation
 
@@ -53,7 +53,9 @@ validator 0.88 s, docs 15.49 s, docstrings 2.56 s. Overall **GREEN**.
 
 ## 4. CI evidence
 
-To be filled by the pull request run.
+| Run ID | Head commit | Conclusion |
+| --- | --- | --- |
+| 40656171477 | `f447d42` | success |
 
 ## 5. Limits
 
