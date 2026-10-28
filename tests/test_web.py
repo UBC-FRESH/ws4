@@ -1253,6 +1253,7 @@ def test_the_tile_endpoint_returns_mvt_features(tmp_path: Path) -> None:
     decoded = mapbox_vector_tile.decode(response.content)
     features = decoded["blocks"]["features"]
     assert [feature["properties"]["block_id"] for feature in features] == [1]
+    assert features[0]["id"] == 1
     assert features[0]["properties"]["treated"] is True
 
 
@@ -1300,8 +1301,10 @@ def test_compare_stats_and_tile_carry_the_ab_flag(tmp_path: Path) -> None:
     )
     assert response.status_code == 200
     decoded = mapbox_vector_tile.decode(response.content)
-    flags = {feature["properties"]["compare"] for feature in decoded["blocks"]["features"]}
+    features = decoded["blocks"]["features"]
+    flags = {feature["properties"]["compare"] for feature in features}
     assert flags == {"a", "both"}
+    assert all(isinstance(feature["id"], int) for feature in features)
 
 
 def test_the_tile_endpoint_keeps_only_the_tile_at_high_zoom(tmp_path: Path) -> None:
