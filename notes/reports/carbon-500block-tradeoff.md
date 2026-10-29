@@ -120,6 +120,26 @@ loop, so the run spent 60 minutes in seeding and executed zero iterations. This 
 separate engineering issue: seeding needs a deadline check and block-level parallelism
 before it is a viable diagnostic path.
 
+## Stand-state ledger reproduction (2026-10-29)
+
+The 500-block high-displacement cases were rerun after the block-scoped ledger was
+replaced by the stand-state cache. Results reproduce exactly:
+
+| Case | Schedule SHA | Objective | System C | Exact system C | Emissions | Exact emissions |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Max stock | `5e66d423…` (unchanged) | 0.03426446 | 2,028,044.63 | 2,028,026.38 | 223,576.76 | 223,373.96 |
+| Min emissions | `5112d187…` (unchanged) | 0.0 | 2,024,021.54 | 2,024,021.54 | 230,572.49 | 230,572.49 |
+
+- Both schedules are byte-identical to the previously merged high-df schedules.
+- Ledger accounts reproduce to ~1e-10.
+- Exact replay reproduces the previous exact outputs.
+- Runtime: max-stock 282 s, min-emissions 307 s.
+- The max-stock ledger/exact gap is unchanged: +18.25 tC system, +202.80 tCO2e
+  cumulative. It is a property of the offset-30 stand state, not the ledger refactor.
+
+The corrected aspatial stand-state ledger is therefore validated against the old
+block-scoped results and the exact batched engine.
+
 ## Reading
 
 - At the public default displacement factor, this subset has no stock/emissions
