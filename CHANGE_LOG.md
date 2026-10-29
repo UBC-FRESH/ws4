@@ -3271,7 +3271,12 @@ issue comments.
   selected the same 93-block schedule as max-stock; exact cumulative emissions were
   223,373.96 tCO2e, still above the cap by 23,373.96. The search found the incumbent at
   iteration 4 and then stagnated, so this is a search-quality result, not an
-  infeasibility proof. Evidence: `notes/reports/carbon-500block-tradeoff.md`.
+  infeasibility proof. A three-seed, 200-iteration diagnostic (seeds 1/2/3, same seed
+  schedule) reproduced the plateau: exact emissions 223,373.96 / 230,572.49 / 223,716.95
+  tCO2e, all above a 210k cap, with seed 1 lowest-emission and seed 3 highest-stock.
+  The no-warm-start `--seed-greedy` path was abandoned after 60 minutes because
+  floor-mode seeding is serial and deadline-blind (~85 min projected for 3,093 chains).
+  Evidence: `notes/reports/carbon-500block-tradeoff.md`.
 
 - P80 c5 seeded even-flow: pull request #567 squash-merged as `e858db9`. Added a
   real 200-year seed, `flow_reference_period: 1`, ±5% flow bands, and the MAI
