@@ -131,7 +131,10 @@ def period_values(
 
 
 def flow_feasibility(
-    values: Mapping[int, float], flow: str, tolerance: float
+    values: Mapping[int, float],
+    flow: str,
+    tolerance: float,
+    reference_period: int | None = None,
 ) -> tuple[bool, float | None]:
     """Return whether a period profile satisfies an NDY or even-flow condition.
 
@@ -143,6 +146,8 @@ def flow_feasibility(
         ``"ndy"`` or ``"even"``.
     tolerance : float
         The allowed percent change, as a percentage.
+    reference_period : int or None, optional
+        The 1-based period even flow is compared against. None uses the final period.
 
     Returns
     -------
@@ -167,10 +172,17 @@ def flow_feasibility(
                 return False, None
             changes.append(100.0 * (current - previous) / previous)
         return min(changes) >= -tolerance, min(changes)
-    reference = ordered[-1]
+    reference_index = (reference_period - 1) if reference_period is not None else len(ordered) - 1
+    if reference_index < 0 or reference_index >= len(ordered):
+        return False, None
+    reference = ordered[reference_index]
     if reference <= 0.0:
         return False, None
-    changes = [100.0 * (value - reference) / reference for value in ordered[:-1]]
+    changes = [
+        100.0 * (value - reference) / reference
+        for position, value in enumerate(ordered)
+        if position != reference_index
+    ]
     worst = max(changes, key=abs) if changes else 0.0
     return all(abs(change) <= tolerance for change in changes), worst
 
@@ -232,6 +244,7 @@ def _probe_targets(
     period_width: int,
     flow: str = "",
     flow_tolerance: float = 0.0,
+    flow_reference_period: int | None = None,
 ) -> Path:
     """Write a target file with the flow floor and the other targets preserved."""
     periods = years // period_width
@@ -260,6 +273,7 @@ def _probe_targets(
                 maximum=flow_tolerance if flow == "even" else None,
                 min_weight=1.0,
                 max_weight=1.0,
+                flow_reference_period=flow_reference_period,
             )
         )
     return write_targets(path, [*others, *floors, *flow_targets])
@@ -288,6 +302,8 @@ def run_max_flow(
     constraint_strategy: str = "reject",
     flow: str = "",
     flow_tolerance: float = 0.0,
+    flow_reference_period: int | None = None,
+    initial_schedule: Path | None = None,
 ) -> dict[str, Any]:
     """Binary-search the highest feasible constant flow floor.
 
@@ -336,6 +352,11 @@ def run_max_flow(
         ``"ndy"`` or ``"even"`` to require a flow shape in every probe. Empty disables it.
     flow_tolerance : float, optional
         The allowed percent change for the flow condition. Defaults to zero.
+    flow_reference_period : int or None, optional
+        The reference period for an even-flow target. One makes the first period the
+        reference; None keeps the optimizer default.
+    initial_schedule : Path or None, optional
+        A primed schedule passed to every probe.
 
     Returns
     -------
@@ -386,6 +407,7 @@ def run_max_flow(
             period_width,
             flow,
             flow_tolerance,
+            flow_reference_period,
         )
         config = OptimizeConfig(
             targets_path=str(target_path),
@@ -400,6 +422,7 @@ def run_max_flow(
             core_buffer_m=core_buffer_m,
             min_core_area_ha=min_core_area_ha,
             constraint_strategy=constraint_strategy,
+            initial_schedule_path=str(initial_schedule) if initial_schedule is not None else "",
         )
         last_config = config
         try:
@@ -408,7 +431,9 @@ def run_max_flow(
             values = period_values(frame, account, years, period_width)
             floor_feasible = all(value >= level * (1.0 - tolerance) for value in values.values())
             flow_feasible, worst_change = (
-                flow_feasibility(values, flow, flow_tolerance) if flow else (True, None)
+                flow_feasibility(values, flow, flow_tolerance, flow_reference_period)
+                if flow
+                else (True, None)
             )
             feasible = (
                 bool(summary.get("constraint_feasible", True)) and floor_feasible and flow_feasible
@@ -462,6 +487,8 @@ def run_max_flow(
         "constraint_strategy": constraint_strategy,
         "flow": flow,
         "flow_tolerance": flow_tolerance,
+        "flow_reference_period": flow_reference_period,
+        "initial_schedule": str(initial_schedule) if initial_schedule is not None else None,
         "tolerance": tolerance,
         "high_bound": initial_high,
         "ceiling": low,
