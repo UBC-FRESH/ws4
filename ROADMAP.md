@@ -82,7 +82,7 @@ exists and the maintainer approves it.
 | P77 C5 even-flow ceiling | #550 | `feature/p77-c5-max-flow` | complete |
 | P78 Warm c5 max-flow probe | #554 | `feature/p78-c5-warm-max-flow` | complete |
 | P79 Flow targets are not level bands | #559 | `feature/p79-flow-bands` | complete |
-| P80 C5 seeded even-flow | #565 | `feature/p80-c5-seeded-evenflow` | pr-open |
+| P80 C5 seeded even-flow | #565 | `feature/p80-c5-seeded-evenflow` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2479,7 +2479,7 @@ Acceptance:
 
 Parent issue: #565
 Branch: `feature/p80-c5-seeded-evenflow`
-Status: pr-open
+Status: complete
 
 Goal: make the c5 even-flow scenario use a real seed and the proven first-period reference.
 
