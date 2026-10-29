@@ -103,6 +103,18 @@ TARGETS="$PWD/targets_balanced.yaml" bash run_watch_evenflow.sh 100000
 The level targets are no longer an over-maximum pull; they are near the observed feasible
 harvest. The stock weight is a starting calibration, not a final policy weight.
 
+The 100,000-iteration pilot (`/srv/shared-data/gep/ws4/archive/c5-balanced-100k/watch.log`)
+finished in 1,368 seconds. It still did **not** meet the joint targets:
+
+- conifer flow: period 1 = 1.52M; periods 2–20 range 1.12M–1.35M; worst about **−26%**
+- deciduous flow: 115k–132k against 125k; worst about **−8%**
+- final growing stock: **18.7M** against 23.9M
+
+The stock weight of 10 was not enough to close a 5.2M stock gap, and the conifer flow
+plateau did not improve when the level pull was lowered. The next decision is whether to
+lower the harvest levels further, raise the stock weight substantially, or relax the
+90% final-stock goal.
+
 ## Caveats
 
 The `targets.yaml` file remains the lighter base scenario (conifer **700,000**, deciduous
