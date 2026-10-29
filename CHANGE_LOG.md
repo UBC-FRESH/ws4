@@ -3300,3 +3300,12 @@ issue comments.
   in 4m06s, down from 17m17s, and selected the same 51-block schedule. Exact cumulative
   emissions were 51,886 tCO2e against a 210k cap. Evidence:
   `notes/reports/greedy-seeding-performance.md`.
+- Carbon ledger stand-state cache: replaced block-scoped CBM runs with per-hectare
+  stand states keyed by `(track_id, age, treatment chain)`; blocks are area-weighted
+  sums of their fragments. The 500-block TSA46 subset has 535 fragments but only 319
+  `(track, age)` states, and the empty base fell from 107 s to **58.5 s** with 8
+  workers. `CarbonLedger.prepare` pre-prices seed states once; the capped 500-block
+  no-warm-start smoke fell from 4m06s to **1m58s** with the same schedule and objective.
+  Base values match the old path to floating-point noise. The remaining cost is one CBM
+  spin-up/simulation per state; a batched or track-level curve cache is the next step.
+  Evidence: `notes/reports/carbon-ledger-performance.md`.

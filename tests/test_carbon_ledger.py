@@ -112,6 +112,29 @@ def test_parallel_base_matches_serial(tmp_path: Path) -> None:
     assert parallel.base_values() == serial.base_values()
 
 
+def test_ledger_prices_duplicate_stand_states_once(tmp_path: Path) -> None:
+    """Two blocks with the same track and age share one per-hectare carbon state."""
+    pytest.importorskip("libcbm")
+    from ws4.carbon.ledger import CarbonLedger
+    from ws4.carbon.libcbm import cbm_defaults_reference
+
+    from test_carbon_sit import _write_dataset, _write_package
+
+    dataset = _write_dataset(tmp_path / "dataset")
+    fragments = pd.read_parquet(dataset / "fragments.parquet")
+    duplicate = fragments.iloc[[0]].copy()
+    duplicate["fragment_id"] = 3
+    duplicate["block_id"] = 3
+    pd.concat([fragments, duplicate], ignore_index=True).to_parquet(
+        dataset / "fragments.parquet", index=False
+    )
+    package = _write_package(tmp_path / "package")
+    package.manifest.cbm_defaults.sha256 = cbm_defaults_reference().sha256
+    ledger = CarbonLedger(dataset, package, years=5)
+    ledger.base_values()
+    assert len(ledger._unit_cache) == 2
+
+
 def test_ledger_empty_matches_the_empty_schedule(tmp_path: Path) -> None:
     """The ledger's base values match a full empty-schedule run."""
     pytest.importorskip("libcbm")

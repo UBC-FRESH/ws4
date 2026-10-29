@@ -1351,9 +1351,13 @@ class Optimizer:
                 "contrast, each of which rewrites or extends the account values"
             )
         account = self.cfg.seed_account if seed_account is None else seed_account
+        seed_candidates = self._seed_candidates(goals, account or None)
+        carbon = self.carbon_ledger()
+        if carbon is not None:
+            carbon.prepare(seed_candidates, candidate_limit=self.cfg.seed_candidates)
         return greedy_schedule(
             evaluator,
-            self._seed_candidates(goals, account or None),
+            seed_candidates,
             goal_account=account or None,
             workers=self.cfg.workers if workers is None else workers,
             candidate_limit=self.cfg.seed_candidates,
@@ -1464,9 +1468,16 @@ class Optimizer:
         if initial is None and self.cfg.greedy_seed:
             evaluator = self.delta_evaluator(targets)
             if evaluator is not None:
+                seed_candidates = self._seed_candidates(targets, self.cfg.seed_account or None)
+                carbon = self.carbon_ledger()
+                if carbon is not None:
+                    carbon.prepare(
+                        seed_candidates,
+                        candidate_limit=self.cfg.seed_candidates,
+                    )
                 initial = greedy_schedule(
                     evaluator,
-                    self._seed_candidates(targets, self.cfg.seed_account or None),
+                    seed_candidates,
                     goal_account=self.cfg.seed_account or None,
                     workers=self.cfg.workers,
                     deadline=limit,

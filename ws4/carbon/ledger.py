@@ -1,12 +1,14 @@
-"""A block-level carbon ledger for the optimizer.
+"""An area-weighted carbon ledger for the optimizer.
 
-CBM is stand-level and area-additive. This ledger runs one block's treatment chain at a
-time, caches the carbon accounts, and sums the blocks for a schedule. The optimizer can
-then price a carbon target with exact CBM output and per-move deltas, rather than a
-whole-schedule engine run on every candidate.
+CBM is aspatial and linear in area. This ledger prices a **stand state** once,
+keyed by ``(track_id, age, chain)``, and turns a block into the area-weighted sum of
+its fragments' stand states. A chain is the sequence of ``(treatment, offset)`` events
+the optimizer represents for a block.
 
-The cache is keyed by ``(block, chain)``. A chain is the block's sequence of
-``(treatment, offset)`` events, as the optimizer's schedule represents it.
+This is the important decomposition: blocks are spatial containers, but they are not
+carbon states. Running libcbm once per block would repeat the same stand calculation for
+every block that shares a track and age, then add the pieces back together. The ledger
+does the opposite: one stand-state calculation, shared by every block that contains it.
 """
 
 from __future__ import annotations
@@ -129,7 +131,8 @@ class CarbonLedger:
             package,
             set(self._tracks["name"].astype(str)),
         )
-        self._context_cache: dict[int, tuple[CarbonPackage, pd.DataFrame, pd.DataFrame]] = {}
+        self._unit_cache: dict[tuple[int, int, Chain], dict[Cell, float]] = {}
+        self._track_context_cache: dict[int, tuple[CarbonPackage, pd.DataFrame, pd.DataFrame]] = {}
 
     @property
     def block_ids(self) -> tuple[int, ...]:
@@ -220,33 +223,77 @@ class CarbonLedger:
         dict of (int, str) to float
             The summed empty-schedule accounts.
         """
+        empty_keys: set[tuple[int, int, Chain]] = {
+            (int(str(row.track_id)), int(str(row.age)), ())
+            for row in self.fragments.itertuples(index=False)
+        }
+        self._prepare_units(empty_keys)
         totals: dict[Cell, float] = {}
-        for _block, values in self._empty_by_block():
-            for cell, value in values.items():
+        for row in self.fragments.itertuples(index=False):
+            track = int(str(row.track_id))
+            age = int(str(row.age))
+            area = float(str(row.area_ha))
+            unit = self._unit_cache[(track, age, ())]
+            for cell, value in unit.items():
                 if accounts is None or cell[1] in accounts:
-                    totals[cell] = totals.get(cell, 0.0) + value
+                    totals[cell] = totals.get(cell, 0.0) + area * value
         return totals
 
-    def _empty_by_block(self) -> list[tuple[int, dict[Cell, float]]]:
-        """Return every block's empty-schedule accounts, optionally in worker processes."""
-        blocks = self.block_ids
-        if self.base_workers <= 1 or len(blocks) <= 1:
-            return [(block, self.empty(block)) for block in blocks]
+    def prepare(
+        self,
+        chains_by_block: Mapping[int, Sequence[Chain]],
+        *,
+        candidate_limit: int | None = None,
+    ) -> None:
+        """Price every stand state a seed will score, once.
+
+        Parameters
+        ----------
+        chains_by_block : mapping of int to sequence of Chain
+            Candidate chains per block.
+        candidate_limit : int or None, optional
+            The same per-block cap the seed will use. None scores every chain.
+        """
+        if candidate_limit is not None and candidate_limit < 1:
+            raise ValueError("carbon seed candidate_limit must be positive")
+        keys: set[tuple[int, int, Chain]] = set()
+        for block, options in chains_by_block.items():
+            fragments = self._block_fragments.get(int(block))
+            if fragments is None:
+                continue
+            limited = options[:candidate_limit] if candidate_limit is not None else options
+            for row in fragments.itertuples(index=False):
+                track = int(str(row.track_id))
+                age = int(str(row.age))
+                keys.add((track, age, ()))
+                for chain in limited:
+                    keys.add((track, age, tuple(chain)))
+        self._prepare_units(keys)
+
+    def _prepare_units(self, keys: set[tuple[int, int, Chain]]) -> None:
+        """Price missing stand-state keys once, optionally in fork workers."""
+        missing = [key for key in sorted(keys) if key not in self._unit_cache]
+        if not missing:
+            return
+        if self.base_workers <= 1 or len(missing) <= 1:
+            for track, age, chain in missing:
+                self._unit_accounts(track, age, chain)
+            return
         try:
             context = get_context("fork")
         except ValueError:
-            return [(block, self.empty(block)) for block in blocks]
+            for track, age, chain in missing:
+                self._unit_accounts(track, age, chain)
+            return
         global _BASE_WORKER_LEDGER
         _BASE_WORKER_LEDGER = self
         try:
-            workers = min(self.base_workers, len(blocks))
-            chunksize = max(1, len(blocks) // (workers * 4))
+            workers = min(self.base_workers, len(missing))
+            chunksize = max(1, len(missing) // (workers * 4))
             with ProcessPoolExecutor(max_workers=workers, mp_context=context) as pool:
-                results = list(pool.map(_empty_worker, blocks, chunksize=chunksize))
-            pairs = list(zip(blocks, results, strict=True))
-            for block, values in pairs:
-                self._cache[(block, ())] = values
-            return pairs
+                results = list(pool.map(_unit_worker, missing, chunksize=chunksize))
+            for key, values in zip(missing, results, strict=True):
+                self._unit_cache[key] = values
         finally:
             _BASE_WORKER_LEDGER = None
 
@@ -275,20 +322,12 @@ class CarbonLedger:
                 totals[cell] = totals.get(cell, 0.0) + value
         return totals
 
-    def _context(self, block: int) -> tuple[CarbonPackage, pd.DataFrame, pd.DataFrame]:
-        """Return the package, tracks, and treatments reachable from one block.
-
-        The package and treatment table are filtered once per block so the SIT
-        builder does not rescan every package track for every block and chain.
-        """
-        cached = self._context_cache.get(int(block))
+    def _track_context(self, track_id: int) -> tuple[CarbonPackage, pd.DataFrame, pd.DataFrame]:
+        """Return the package, tracks, and treatments reachable from one track."""
+        cached = self._track_context_cache.get(int(track_id))
         if cached is not None:
             return cached
-        fragments = self._block_fragments.get(int(block))
-        if fragments is None:
-            raise ValueError(f"carbon ledger has no block {block}")
-        track_ids = set(pd.to_numeric(fragments["track_id"], errors="coerce").dropna().astype(int))
-        track_ids &= set(
+        known_ids = set(
             pd.to_numeric(self._tracks["track_id"], errors="coerce").dropna().astype(int)
         )
         treatment_source = pd.to_numeric(self._treatments["track_id"], errors="coerce")
@@ -297,10 +336,7 @@ class CarbonLedger:
             if "new_track" in self._treatments.columns
             else pd.Series(index=self._treatments.index, dtype="float64")
         )
-        selected = set(track_ids)
-        known_ids = set(
-            pd.to_numeric(self._tracks["track_id"], errors="coerce").dropna().astype(int)
-        )
+        selected = {int(track_id)} & known_ids
         while True:
             destinations = {
                 int(value)
@@ -317,21 +353,27 @@ class CarbonLedger:
         treatments = self._treatments.loc[treatment_source.isin(selected)].copy()
         package = filter_carbon_package(self.package, set(tracks["name"].astype(str)))
         result = (package, tracks, treatments)
-        self._context_cache[int(block)] = result
+        self._track_context_cache[int(track_id)] = result
         return result
 
-    def _run(self, block: int, chain: Chain) -> dict[Cell, float]:
-        """Run and cache one block/chain's carbon accounts."""
-        key = (int(block), tuple(chain))
-        cached = self._cache.get(key)
+    def _unit_accounts(self, track_id: int, age: int, chain: Chain) -> dict[Cell, float]:
+        """Return one hectare of one stand state and treatment chain."""
+        key = (int(track_id), int(age), tuple(chain))
+        cached = self._unit_cache.get(key)
         if cached is not None:
             return cached
-        fragments = self._block_fragments.get(int(block))
-        if fragments is None:
-            raise ValueError(f"carbon ledger has no block {block}")
+        fragments = pd.DataFrame(
+            {
+                "fragment_id": [1],
+                "block_id": [1],
+                "track_id": [int(track_id)],
+                "area_ha": [1.0],
+                "age": [int(age)],
+            }
+        )
         schedule = pd.DataFrame(
             {
-                "block_id": [int(block)] * len(chain),
+                "block_id": [1] * len(chain),
                 "treatment": [treatment for treatment, _offset in chain],
                 "offset": [offset for _treatment, offset in chain],
             }
@@ -343,7 +385,7 @@ class CarbonLedger:
                 self._tracks,
                 self.fertilization,
             )
-        package, tracks, treatments = self._context(block)
+        package, tracks, treatments = self._track_context(track_id)
         tables = build_sit_tables_from_tables(
             package,
             fragments,
@@ -374,6 +416,25 @@ class CarbonLedger:
             (int(str(row.offset)), str(row.account)): float(str(row.value))
             for row in accounts.itertuples(index=False)
         }
+        self._unit_cache[key] = result
+        return result
+
+    def _run(self, block: int, chain: Chain) -> dict[Cell, float]:
+        """Return one block's carbon accounts as an area-weighted stand-state sum."""
+        key = (int(block), tuple(chain))
+        cached = self._cache.get(key)
+        if cached is not None:
+            return cached
+        fragments = self._block_fragments.get(int(block))
+        if fragments is None:
+            raise ValueError(f"carbon ledger has no block {block}")
+        result: dict[Cell, float] = {}
+        for row in fragments.itertuples(index=False):
+            track = int(str(row.track_id))
+            age = int(str(row.age))
+            area = float(str(row.area_ha))
+            for cell, value in self._unit_accounts(track, age, tuple(chain)).items():
+                result[cell] = result.get(cell, 0.0) + area * value
         self._cache[key] = result
         return result
 
@@ -381,8 +442,9 @@ class CarbonLedger:
 _BASE_WORKER_LEDGER: CarbonLedger | None = None
 
 
-def _empty_worker(block: int) -> dict[Cell, float]:
-    """Return one block's empty accounts in a fork worker."""
+def _unit_worker(key: tuple[int, int, Chain]) -> dict[Cell, float]:
+    """Return one stand state's per-hectare accounts in a fork worker."""
     if _BASE_WORKER_LEDGER is None:
         raise RuntimeError("carbon base worker has no ledger")
-    return _BASE_WORKER_LEDGER.empty(block)
+    track, age, chain = key
+    return _BASE_WORKER_LEDGER._unit_accounts(track, age, chain)

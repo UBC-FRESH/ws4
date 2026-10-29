@@ -29,10 +29,14 @@ The projected scan was about 85 minutes for 3,093 chains.
 | Candidate policy | Seed chains | Wall time | Seed phase | Search |
 | --- | ---: | ---: | ---: | ---: |
 | all chains (before) | 3,093 | 17m17s | ~15–16 min | 20 iterations |
-| top 1 per block (default) | 500 | **4m06s** | ~3m27s | 20 iterations |
+| top 1 per block (capped) | 500 | 4m06s | ~3m27s | 20 iterations |
+| top 1 per block + stand-state cache | 500 unique states pre-priced | **1m58s** | ~1m | 20 iterations |
 
 - The capped seed produced exactly the same 51-block schedule as the exhaustive seed,
   so the cap cost no quality here.
+- The stand-state cache prices 319 `(track, age)` states and the reachable chain states
+  once; the seed then reads cached per-hectare accounts instead of rerunning CBM per
+  block in each fork worker.
 - Yield 325,362.73 m3 (below the 350k floor);
 - cumulative emissions 52,045.54 tCO2e (cap met);
 - exact replay: 51,886.24 tCO2e, still well below the cap;
