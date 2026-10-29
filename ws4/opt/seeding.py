@@ -173,6 +173,7 @@ def greedy_schedule(
     goal_account: str | None = None,
     workers: int = 1,
     deadline: float | None = None,
+    candidate_limit: int | None = None,
 ) -> Schedule:
     """Return an initial schedule built by construction against the run's targets.
 
@@ -211,6 +212,10 @@ def greedy_schedule(
     deadline : float or None, optional
         An absolute ``time.monotonic()`` deadline. Scoring and selection stop at the
         deadline and return the partial seed. None (the default) has no deadline.
+    candidate_limit : int or None, optional
+        Score at most this many of each block's candidate chains. None (the default)
+        scores every chain. The optimizer defaults to a small limit because a seed is a
+        starting point, not an exhaustive search.
 
     Returns
     -------
@@ -227,8 +232,12 @@ def greedy_schedule(
         raise ValueError(f"a limit of {limit} moves is not a schedule")
     if workers < 1:
         raise ValueError(f"a seed worker count of {workers} is not positive")
+    if candidate_limit is not None and candidate_limit < 1:
+        raise ValueError(f"a candidate limit of {candidate_limit} is not positive")
     if deadline is not None and time.monotonic() >= deadline:
         return {}
+    if candidate_limit is not None:
+        candidates = {block: options[:candidate_limit] for block, options in candidates.items()}
     targets = evaluator.targets
     years = evaluator.optimizer.cfg.years
     cells = [target_cells(target, years) for target in targets]

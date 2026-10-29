@@ -48,14 +48,18 @@ at 60-107 s for TSA08/16/40/41 after inventory aggregation (down from more than 
 50-year all-block schedules at 358-738 s after event aggregation. The exact ``ws4 carbon`` run remains
 the authority; the ledger is the fast search path. See ``notes/reports/p120-multi-boundary.md``.
 
-The ledger filters the package tables to the tracks reachable from each block before compiling
-SIT. On the 500-block TSA46 subset that reduced the empty-schedule base from roughly 3.7 hours to
-about 12 minutes; a 10-block case is about 15 seconds. ``ws4 optimize --carbon-workers <n>`` forks
-the empty-schedule base across ``n`` processes when the search is serial; the optimizer forces one
-worker when ``islands`` or process-parallel starts are active. Eight workers took the 500-block base
-from 699 s to **107 s** with bit-identical values (init plus base: 116 s). The remaining cost is the
-per-block libcbm run, so a batched or precomputed base is still the next production step. The exact
-``ws4 carbon`` run and the ledger still agree to floating-point tolerance on the tested schedules.
+The ledger prices a **stand state** once, keyed by ``(track, age, treatment chain)``, then
+area-weights the blocks. The 500-block TSA46 subset has 535 fragments but only **319 unique
+``(track, age)`` states**, so the empty base now prices 319 states rather than 500 blocks. With
+eight workers the base takes about **58 s**; the exact value matches the old serial base to
+floating-point summation noise. ``ws4 optimize --carbon-workers <n>`` forks stand states when the
+search is serial; the optimizer forces one worker when ``islands`` or process-parallel starts are
+active. A capped no-warm-start seed now completes the 500-block case in about **2 minutes** total,
+down from 4–17 minutes, because the seed prices each reachable state once before forking.
+
+The remaining cost is still one libcbm spin-up/simulation per state, so a batched stand-state
+compile or a track-level curve cache is the next production step. The exact ``ws4 carbon`` run
+and the ledger still agree to floating-point tolerance on the tested schedules.
 
 Patch targets are not additive either: a patch spans adjacent blocks, so the optimizer prices them
 through a patch model instead (a move touches only the components near the moved block). Because the

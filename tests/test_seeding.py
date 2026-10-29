@@ -168,6 +168,7 @@ class _FloorEvaluator:
         ]
         self.optimizer = SimpleNamespace(cfg=SimpleNamespace(years=1))
         self.totals: dict[tuple[int, str], float] = {}
+        self.calls: list[tuple[int, tuple[tuple[str, int], ...]]] = []
 
     def reset(self, schedule: dict[int, tuple[tuple[str, int], ...]]) -> None:
         self.totals = {
@@ -178,6 +179,7 @@ class _FloorEvaluator:
     def contribution(
         self, block: int, chain: tuple[tuple[str, int], ...]
     ) -> dict[tuple[int, str], float]:
+        self.calls.append((block, chain))
         return {
             (0, "feature.Volume"): 6.0,
             (0, "product.Cost"): 1.0,
@@ -212,6 +214,32 @@ def test_parallel_floor_seed_matches_serial() -> None:
         workers=2,
     )
     assert parallel == serial
+
+
+def test_a_floor_seed_caps_candidates_per_block() -> None:
+    """A seed scores only the first chain per block when the cap is one."""
+    evaluator = _FloorEvaluator()
+    candidates: Candidates = {
+        block: [(("CC", 0),), (("CC", 5),), (("CC", 10),)] for block in range(1, 4)
+    }
+    schedule = greedy_schedule(
+        cast(IncrementalObjective, evaluator),
+        candidates,
+        candidate_limit=1,
+    )
+    assert len(schedule) == 3
+    assert len(evaluator.calls) == 6
+    assert {block for block, _chain in evaluator.calls} == {1, 2, 3}
+
+
+def test_a_seed_rejects_a_nonpositive_candidate_cap() -> None:
+    """A zero or negative candidate cap is a configuration error."""
+    with pytest.raises(ValueError, match="candidate limit"):
+        greedy_schedule(
+            cast(IncrementalObjective, _FloorEvaluator()),
+            {1: [(("CC", 0),)]},
+            candidate_limit=0,
+        )
 
 
 def test_a_goal_seed_reduces_the_named_maximum_under_its_cost_ceilings() -> None:
