@@ -3309,3 +3309,8 @@ issue comments.
   Base values match the old path to floating-point noise. The remaining cost is one CBM
   spin-up/simulation per state; a batched or track-level curve cache is the next step.
   Evidence: `notes/reports/carbon-ledger-performance.md`.
+- Stand-state reproduction: reran the 500-block high-displacement max-stock and
+  min-emissions cases on the new ledger. Both schedules are byte-identical to the prior
+  high-df schedules, objectives and ledger accounts reproduce to float noise, and exact
+  replay reproduces the prior exact values. Runtime 282 s / 307 s. Evidence:
+  `notes/reports/carbon-500block-tradeoff.md`.
