@@ -2,9 +2,9 @@
 
 Phase: P80, C5 seeded even-flow
 Parent issue: #565
-Pull request: to be opened
+Pull request: #567
 Date: 2026-10-29
-Status: ready for review. Not merged.
+Status: merged and closed on 2026-10-29 as `e858db9`.
 
 ## What changed
 
