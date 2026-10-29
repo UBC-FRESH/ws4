@@ -84,6 +84,7 @@ exists and the maintainer approves it.
 | P79 Flow targets are not level bands | #559 | `feature/p79-flow-bands` | complete |
 | P80 C5 seeded even-flow | #565 | `feature/p80-c5-seeded-evenflow` | complete |
 | P81 Seed schedules from the UI | #570 | `feature/p81-ui-seed` | complete |
+| P82 Seeded max-flow | #575 | `feature/p82-seeded-max-flow` | active |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2517,6 +2518,27 @@ Acceptance:
 - The service accepts --initial-schedule.
 - The UI command includes it.
 - A Solve from c5 uses the seed.
+- Dashboard green.
+
+## Phase 82: Seeded max-flow
+
+Parent issue: #575
+Branch: `feature/p82-seeded-max-flow`
+Status: active
+
+Goal: run the c5 even-flow ceiling search with the 200-year seed and first-period reference.
+
+- [x] P82.1 Seed the max-flow probe (#576)
+  - [x] Add --initial-schedule
+  - [x] Add --flow-reference-period
+  - [x] Run a seeded c5 probe
+  - [x] Record the negative flow result honestly
+
+Acceptance:
+
+- max_flow accepts the seed and reference period.
+- Probe report exists.
+- Zero ceiling is not presented as a maximum.
 - Dashboard green.
 
 ## Detailed Next Steps Notes

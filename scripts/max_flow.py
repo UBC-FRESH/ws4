@@ -68,6 +68,18 @@ def main(argv: list[str] | None = None) -> int:
         default=0.0,
         help="Allowed percent change for the flow condition",
     )
+    parser.add_argument(
+        "--flow-reference-period",
+        type=int,
+        default=None,
+        help="Flow reference period (1 makes the first period the reference)",
+    )
+    parser.add_argument(
+        "--initial-schedule",
+        type=Path,
+        default=None,
+        help="Primed schedule CSV used to seed every probe",
+    )
     args = parser.parse_args(argv)
     report = run_max_flow(
         dataset=args.dataset,
@@ -91,6 +103,8 @@ def main(argv: list[str] | None = None) -> int:
         constraint_strategy=args.constraint_strategy,
         flow=args.flow,
         flow_tolerance=args.flow_tolerance,
+        flow_reference_period=args.flow_reference_period,
+        initial_schedule=args.initial_schedule,
     )
     print(str(report["markdown"]))
     print(
