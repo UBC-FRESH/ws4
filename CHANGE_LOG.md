@@ -3287,3 +3287,15 @@ issue comments.
 - P81 UI seed schedules: pull request #572 squash-merged as `7d9cfd8`. `ws4 serve`
   accepts `--initial-schedule` and passes it to every UI-started optimize command.
   c5 is running with `seed_200y.csv`; UI v85.
+
+## 2026-10-29
+
+- Greedy seeding: floor mode now uses the same fork-worker scoring path as the
+  reduction-goal mode and both modes stop at the run deadline. The optimizer passes its
+  deadline into `greedy_schedule`, so a large seed returns a partial schedule instead of
+  consuming the whole budget before iteration 1. Validation: `tests/test_seeding.py`
+  (8 passed, including deadline and serial/parallel equivalence); dashboard GREEN.
+  A 500-block no-warm-start smoke completed seeding (51 CC blocks) and 20/20 search
+  iterations in 17m17s, with exact cumulative emissions 51,886 tCO2e against a 210k cap.
+  Seeding is still expensive (~15-16 min), so cheaper seed scoring is the next step.
+  Evidence: `notes/reports/greedy-seeding-performance.md`.

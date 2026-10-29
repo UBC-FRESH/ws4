@@ -250,6 +250,11 @@ The seed is a starting point, not an enforcement: the search remains free to sof
 bound. The goal seed is exact for the simulator's account deltas, so its result is checked
 by the same ``report_targets.csv`` as a normal run.
 
+Both seed modes score blocks in fork workers when ``--threads`` is greater than one, and
+both stop at the run deadline. If the deadline is reached during seeding, the partial
+schedule becomes the starting point and the remaining search loop still runs. This keeps
+a large seed from consuming the entire budget before iteration 1.
+
 For a large feature goal with product cost ceilings, the seed first shortlists the 40,000
 blocks with the cheapest direct feature-curve reduction per dollar, then prices the
 shortlisted chains exactly. The screen is a heuristic for speed; it never substitutes an

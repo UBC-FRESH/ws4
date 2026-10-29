@@ -11,6 +11,7 @@ the targets the run declares, so a floor is any target with a ``minimum`` and a 
 from __future__ import annotations
 
 import multiprocessing
+import time
 from collections.abc import Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
@@ -50,7 +51,9 @@ def target_cells(target: Target, years: int) -> tuple[tuple[int, str], ...]:
     return tuple((offset, target.account) for offset in target.cell_offsets())
 
 
-def target_value(cells: Sequence[tuple[int, str]], totals: dict[tuple[int, str], float]) -> float:
+def target_value(
+    cells: Sequence[tuple[int, str]], totals: Mapping[tuple[int, str], float]
+) -> float:
     """Return what a target reads, given the running totals of its cells.
 
     Parameters
@@ -82,6 +85,7 @@ class _GoalContext:
     goal_cells: Sequence[tuple[int, str]]
     ceilings: Sequence[int]
     goal_value: float
+    deadline: float | None
 
 
 _GOAL_CONTEXT: _GoalContext | None = None
@@ -89,6 +93,8 @@ _GOAL_CONTEXT: _GoalContext | None = None
 
 def _score_goal_block(context: _GoalContext, block: int) -> list[tuple[float, int, Chain]]:
     """Score one block's candidate chains against a reduction goal."""
+    if context.deadline is not None and time.monotonic() >= context.deadline:
+        return []
     scored: list[tuple[float, int, Chain]] = []
     for chain in context.candidates.get(block, []):
         if not chain:
@@ -112,12 +118,61 @@ def _score_goal_block_worker(block: int) -> list[tuple[float, int, Chain]]:
     return _score_goal_block(_GOAL_CONTEXT, block)
 
 
+@dataclass
+class _FloorContext:
+    """The immutable state a worker needs to score one block's chains against floors."""
+
+    evaluator: IncrementalObjective
+    candidates: Candidates
+    targets: Sequence[Target]
+    cells: Sequence[Sequence[tuple[int, str]]]
+    totals: Mapping[tuple[int, str], float]
+    floors: Sequence[int]
+    ceilings: Sequence[int]
+    deadline: float | None
+
+
+_FLOOR_CONTEXT: _FloorContext | None = None
+
+
+def _score_floor_block(context: _FloorContext, block: int) -> list[tuple[float, int, Chain]]:
+    """Score one block's candidate chains against the declared floors."""
+    if context.deadline is not None and time.monotonic() >= context.deadline:
+        return []
+    scored: list[tuple[float, int, Chain]] = []
+    for chain in context.candidates.get(block, []):
+        if not chain:
+            continue
+        contribution = context.evaluator.contribution(block, chain)
+        gain = 0.0
+        for index in context.floors:
+            target = context.targets[index]
+            before = target_value(context.cells[index], context.totals)
+            after = before + sum(contribution.get(cell, 0.0) for cell in context.cells[index])
+            gain += penalty(before, target) - penalty(after, target)
+        if gain <= 0.0:
+            continue
+        cost = 0.0
+        for index in context.ceilings:
+            cost += sum(max(contribution.get(cell, 0.0), 0.0) for cell in context.cells[index])
+        scored.append((gain / (cost + _UNIT_COST), block, chain))
+    return scored
+
+
+def _score_floor_block_worker(block: int) -> list[tuple[float, int, Chain]]:
+    """Fork-pool entry point; the context is inherited from the parent."""
+    if _FLOOR_CONTEXT is None:
+        return []
+    return _score_floor_block(_FLOOR_CONTEXT, block)
+
+
 def greedy_schedule(
     evaluator: IncrementalObjective,
     candidates: Candidates,
     limit: int | None = None,
     goal_account: str | None = None,
     workers: int = 1,
+    deadline: float | None = None,
 ) -> Schedule:
     """Return an initial schedule built by construction against the run's targets.
 
@@ -150,9 +205,12 @@ def greedy_schedule(
         must name exactly one active target with a maximum; its other maximum targets are the cost
         ceilings. None (the default) uses the floor mode.
     workers : int, optional
-        The number of forked processes used to score reduction-goal candidates. The default, 1,
+        The number of forked processes used to score candidate chains. The default, 1,
         scores serially. Forking preserves the evaluator and its caches; results are ranked in the
         parent, so the schedule is unchanged.
+    deadline : float or None, optional
+        An absolute ``time.monotonic()`` deadline. Scoring and selection stop at the
+        deadline and return the partial seed. None (the default) has no deadline.
 
     Returns
     -------
@@ -169,6 +227,8 @@ def greedy_schedule(
         raise ValueError(f"a limit of {limit} moves is not a schedule")
     if workers < 1:
         raise ValueError(f"a seed worker count of {workers} is not positive")
+    if deadline is not None and time.monotonic() >= deadline:
+        return {}
     targets = evaluator.targets
     years = evaluator.optimizer.cfg.years
     cells = [target_cells(target, years) for target in targets]
@@ -191,7 +251,7 @@ def greedy_schedule(
         goal_value = target_value(goal_cells, totals)
         if goal.maximum is not None and goal_value <= goal.maximum:
             return {}
-        context = _GoalContext(
+        goal_context = _GoalContext(
             evaluator=evaluator,
             candidates=candidates,
             targets=targets,
@@ -201,10 +261,11 @@ def greedy_schedule(
             goal_cells=goal_cells,
             ceilings=ceilings,
             goal_value=goal_value,
+            deadline=deadline,
         )
         if workers > 1:
             global _GOAL_CONTEXT
-            _GOAL_CONTEXT = context
+            _GOAL_CONTEXT = goal_context
             try:
                 mp_context = multiprocessing.get_context("fork")
                 with ProcessPoolExecutor(
@@ -220,7 +281,9 @@ def greedy_schedule(
             finally:
                 _GOAL_CONTEXT = None
         else:
-            scored = [entry for block in candidates for entry in _score_goal_block(context, block)]
+            scored = [
+                entry for block in candidates for entry in _score_goal_block(goal_context, block)
+            ]
         scored.sort(key=lambda entry: -entry[0])
         chosen: Schedule = {}
         spent: dict[int, float] = {
@@ -229,6 +292,8 @@ def greedy_schedule(
         }
         current = goal_value
         for _score, block, chain in scored:
+            if deadline is not None and time.monotonic() >= deadline:
+                break
             if block in chosen:
                 continue
             if limit is not None and len(chosen) >= limit:
@@ -259,29 +324,43 @@ def greedy_schedule(
     if not floors:
         return {}
     evaluator.reset({})
-    totals = dict(evaluator.totals)
-    scored = []
-    for block, options in candidates.items():
-        for chain in options:
-            if not chain:
-                continue
-            contribution = evaluator.contribution(block, chain)
-            gain = 0.0
-            for index in floors:
-                target = targets[index]
-                before = target_value(cells[index], totals)
-                after = before + sum(contribution.get(cell, 0.0) for cell in cells[index])
-                gain += penalty(before, target) - penalty(after, target)
-            if gain <= 0.0:
-                continue
-            cost = 0.0
-            for index in ceilings:
-                cost += sum(max(contribution.get(cell, 0.0), 0.0) for cell in cells[index])
-            scored.append((gain / (cost + _UNIT_COST), block, chain))
+    floor_context = _FloorContext(
+        evaluator=evaluator,
+        candidates=candidates,
+        targets=targets,
+        cells=cells,
+        totals=dict(evaluator.totals),
+        floors=floors,
+        ceilings=ceilings,
+        deadline=deadline,
+    )
+    if workers > 1:
+        global _FLOOR_CONTEXT
+        _FLOOR_CONTEXT = floor_context
+        try:
+            mp_context = multiprocessing.get_context("fork")
+            with ProcessPoolExecutor(
+                max_workers=min(workers, len(candidates)),
+                mp_context=mp_context,
+            ) as pool:
+                chunks = pool.map(
+                    _score_floor_block_worker,
+                    candidates.keys(),
+                    chunksize=max(1, len(candidates) // (workers * 4)),
+                )
+                scored = [entry for chunk in chunks for entry in chunk]
+        finally:
+            _FLOOR_CONTEXT = None
+    else:
+        scored = [
+            entry for block in candidates for entry in _score_floor_block(floor_context, block)
+        ]
     scored.sort(key=lambda entry: -entry[0])
     chosen = {}
     spent = dict.fromkeys(ceilings, 0.0)
     for _score, block, chain in scored:
+        if deadline is not None and time.monotonic() >= deadline:
+            break
         if block in chosen:
             continue
         if limit is not None and len(chosen) >= limit:
