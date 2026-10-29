@@ -47,6 +47,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
   ledger benchmark.
 - `reports/carbon-500block-tradeoff.md` — 500-block TSA46 max-stock/min-emissions
   searches, default and high-displacement HWP, with exact replay.
+- `reports/greedy-seeding-performance.md` — parallel/deadline-aware floor seeding and
+  the 500-block no-warm-start smoke.
 - `adr/0001-fragment-compilation.md` — fragments are the compilation unit; blocks are a runtime aggregate.
 - `adr/0002-columnar-matrix-dataset.md` — the compiled dataset is versioned and columnar.
 - `adr/0003-spatial-structure-first-class.md` — spatial structure is part of the model.

@@ -8,6 +8,8 @@ set rather than a random draw.
 
 from __future__ import annotations
 
+import os
+import time
 from pathlib import Path
 from types import SimpleNamespace
 from typing import cast
@@ -154,6 +156,62 @@ class _GoalEvaluator:
             3: {(4, "feature.Hazard"): -10.0, (4, "product.Cost"): 10.0},
         }
         return values.get(block, {})
+
+
+class _FloorEvaluator:
+    """A tiny floor seed: one volume floor and one cost ceiling."""
+
+    def __init__(self) -> None:
+        self.targets = [
+            Target("feature.Volume", period=1, minimum=10.0),
+            Target("product.Cost", period=1, maximum=10.0),
+        ]
+        self.optimizer = SimpleNamespace(cfg=SimpleNamespace(years=1))
+        self.totals: dict[tuple[int, str], float] = {}
+
+    def reset(self, schedule: dict[int, tuple[tuple[str, int], ...]]) -> None:
+        self.totals = {
+            (0, "feature.Volume"): 0.0,
+            (0, "product.Cost"): 0.0,
+        }
+
+    def contribution(
+        self, block: int, chain: tuple[tuple[str, int], ...]
+    ) -> dict[tuple[int, str], float]:
+        return {
+            (0, "feature.Volume"): 6.0,
+            (0, "product.Cost"): 1.0,
+        }
+
+
+def test_a_floor_seed_stops_at_its_deadline() -> None:
+    """A deadline that has already passed returns no seed rather than pricing every chain."""
+    evaluator = _FloorEvaluator()
+    candidates: Candidates = {block: [(("CC", 0),)] for block in range(1, 51)}
+    schedule = greedy_schedule(
+        cast(IncrementalObjective, evaluator),
+        candidates,
+        deadline=time.monotonic() - 1.0,
+    )
+    assert schedule == {}
+
+
+def test_parallel_floor_seed_matches_serial() -> None:
+    """Forked floor scoring returns the same schedule as the serial path."""
+    if os.name != "posix":
+        pytest.skip("fork-based seed workers are POSIX-only")
+    candidates: Candidates = {block: [(("CC", 0),)] for block in range(1, 4)}
+    serial = greedy_schedule(
+        cast(IncrementalObjective, _FloorEvaluator()),
+        candidates,
+        workers=1,
+    )
+    parallel = greedy_schedule(
+        cast(IncrementalObjective, _FloorEvaluator()),
+        candidates,
+        workers=2,
+    )
+    assert parallel == serial
 
 
 def test_a_goal_seed_reduces_the_named_maximum_under_its_cost_ceilings() -> None:

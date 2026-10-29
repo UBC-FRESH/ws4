@@ -1461,6 +1461,7 @@ class Optimizer:
                     self._seed_candidates(targets, self.cfg.seed_account or None),
                     goal_account=self.cfg.seed_account or None,
                     workers=self.cfg.workers,
+                    deadline=limit,
                 )
         if initial is None and self.cfg.warm_start:
             initial = {block: options[0] for block, options in candidates.items() if options}
