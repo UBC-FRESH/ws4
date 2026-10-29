@@ -89,20 +89,50 @@ Exact replay differed by +18.25 tC on system carbon, +202.80 tCO2e on cumulative
 emissions, and -15.49 tC on HWP (all under 0.1%). The exact emissions are still above
 the cap by 23,373.96 tCO2e.
 
+## Multi-seed diagnostic (df = 2.4, cap 210,000 tCO2e)
+
+The forced-cap run was repeated with three seeds, 200 iterations each, the same 95-block
+initial schedule, and no `--seed-greedy`.
+
+| Seed | Yield (m3) | System C (tC) | Emissions (tCO2e) | Exact emissions | HWP (tC) |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 360,215.89 | 2,028,044.63 | 223,576.76 | 223,373.96 | 41,488.15 |
+| 2 | 372,417.64 | 2,024,021.54 | 230,572.49 | 230,572.49 | 42,070.77 |
+| 3 | 358,752.69 | 2,028,398.67 | 223,727.59 | 223,716.95 | 41,356.98 |
+
+- All three runs used the full 200 iterations and finished in 10–12 minutes.
+- All three missed the 210,000 cap by 13,374–20,572 tCO2e.
+- Seed 1 gives the lowest exact emissions; seed 3 gives the highest exact system stock.
+  The difference is small: ~343 tCO2e less emissions for ~373 tC less stock.
+- The three schedules differ only in one to three CC rows; the plateau is reproducible.
+- Ledger/exact differences: seed 2 is bit-identical; seeds 1 and 3 drift by up to
+  ~203 tCO2e (0.09%) on cumulative emissions.
+
+Within this 500-block subset and 200-iteration budget, **223–224k tCO2e is a stable
+search plateau**, not a single-seed artifact. The 210k cap is not reached by any seed.
+
+### `--seed-greedy` finding
+
+The no-warm-start path with `--seed-greedy` did not complete. Floor-mode greedy seeding
+is serial and prices every candidate chain through the carbon ledger: 3,093 chains at
+~1.6 s each is ~85 minutes. The 25-minute `--time-limit` is checked only in the search
+loop, so the run spent 60 minutes in seeding and executed zero iterations. This is a
+separate engineering issue: seeding needs a deadline check and block-level parallelism
+before it is a viable diagnostic path.
+
 ## Reading
 
 - At the public default displacement factor, this subset has no stock/emissions
   trade-off: reducing harvest improves both system carbon and emissions.
-- At high displacement, the max-stock and forced-min-emissions searches converge to the
-  same 93-block schedule. That schedule dominates the 95-block seed on both carbon
-  accounts but gives up 12,201.75 m3 of managed yield; the real trade-off visible here is
-  carbon versus yield, not stock versus emissions.
-- Both carbon targets are aggressive relative to the feasible schedule; the search
-  result is a bounded mechanism result, not a policy optimum.
-- Search quality is now the limiting factor: the incumbent appears by iteration 4 and
-  then stays flat. A more exploratory run, better operators, or a batched/precomputed
-  base is needed before interpreting the cap gap as infeasibility.
-- The exact engine remains the authority; the ledger is within 0.09% on the tested
+- At high displacement, max-stock and min-emissions converge to a narrow schedule
+  frontier. The max-stock endpoint gives up ~12,200 m3 of managed yield versus the seed.
+  The visible trade-off is carbon versus yield; stock and emissions move together.
+- The 210k cap is not reached across three seeds. The repeated plateau at 223–224k is
+  evidence for a near-frontier result within this search/search budget, not proof of
+  infeasibility.
+- The remaining blocker for a true no-warm-start diagnostic is greedy seeding, not the
+  carbon ledger. Floor-mode seeding is serial, deadline-blind, and expensive.
+- The exact engine remains the authority; ledger drift is under 0.1% on tested
   schedules.
 
 ## Artifacts
