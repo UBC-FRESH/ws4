@@ -65,6 +65,25 @@ bash run_watch_evenflow.sh 100000
 The watcher uses `targets_stage2.yaml` and `seed_stage1.csv`. A 100,000-iteration run is
 intentionally long; do not judge stability from the first few thousand iterations.
 
+## 100,000-iteration verification
+
+The fixed-priority 100,000-iteration run is recorded in
+`/srv/shared-data/gep/ws4/archive/c5-stage2-priorityfix-100k/watch.log`. It finished at
+69.6 evaluations/s after 1,436 seconds.
+
+It did **not** meet all targets:
+
+- conifer even flow: period 1 = 1.52M; periods 2–20 range 1.13M–1.35M, worst deviation
+  about **−25.7%**
+- deciduous even flow: 118k–135k against a 124k reference, worst deviation about
+  **+8.9%**
+- final growing stock: **18.5M** against the 23.9M target
+
+The priority fix made the flow term count; it did not make this target set jointly
+feasible. The 2,000,000/200,000 level pull, the 90% final-stock target, and ±5% even flow
+are in tension. The next run should change the target balance rather than only add
+iterations.
+
 ## Caveats
 
 The `targets.yaml` file remains the lighter base scenario (conifer **700,000**, deciduous
