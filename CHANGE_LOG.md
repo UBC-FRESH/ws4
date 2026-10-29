@@ -3321,3 +3321,9 @@ issue comments.
   205,537 to 300,609/350,368/370,197 m3 and system carbon falls from 2.058M to 2.024M tC.
   Ledger-vs-exact differences are 0.08–0.29% on emissions. Evidence:
   `notes/reports/carbon-harvest-frontier.md`.
+- Four-TSA production HWP carbon sweep: exact full-landscape runs for TSA08/16/40/41,
+  50-year all-block schedules, public-default HWP. Offset-50 system carbon is 882.46M /
+  428.54M / 402.53M / 303.40M tC, of which HWP is 38.27M / 24.02M / 23.39M / 20.90M tC;
+  cumulative system emissions are 633.88M / 669.80M / 546.30M / 470.30M tCO2e. The
+  ecosystem series is bit-identical to the prior no-HWP runs (offset 50). Evidence:
+  `notes/reports/carbon-4tsa-hwp-production.md`.
