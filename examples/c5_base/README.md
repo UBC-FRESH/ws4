@@ -111,9 +111,18 @@ finished in 1,368 seconds. It still did **not** meet the joint targets:
 - final growing stock: **18.7M** against 23.9M
 
 The stock weight of 10 was not enough to close a 5.2M stock gap, and the conifer flow
-plateau did not improve when the level pull was lowered. The next decision is whether to
-lower the harvest levels further, raise the stock weight substantially, or relax the
-90% final-stock goal.
+plateau did not improve when the level pull was lowered.
+
+A 20,000-iteration sensitivity with the stock weight at **100** is recorded in
+`/srv/shared-data/gep/ws4/archive/c5-balanced-stock100-20k/watch.log`. It moved the final
+stock only to **20.0M**, still 3.9M short, while making the flow much worse:
+
+- conifer: period 1 = 1.52M, falling to **0.77M** by period 17; worst about **−49%**
+- deciduous: 100k–121k; worst about **−20%**
+
+Weight alone trades flow for stock; it does not close the stock gap. The 23.9M target is
+not compatible with the current 1.2M/125k harvest and ±5% flow. The next test should lower
+the harvest levels, not raise the stock weight again.
 
 ## Caveats
 
