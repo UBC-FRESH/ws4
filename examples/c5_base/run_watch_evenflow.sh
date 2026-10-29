@@ -18,6 +18,7 @@ ROOT="/srv/shared-data/gep/ws4/ws4/tmp/parity2025"
 ITERATIONS="${1:-100000}"
 REFRESH="${REFRESH:-5}"
 SEED="${SEED:-$ROOT/scenarios/c5-base/seed_stage1.csv}"
+TARGETS="${TARGETS:-$ROOT/scenarios/c5-base/targets_stage2.yaml}"
 
 if [[ ! -f "$SEED" ]]; then
   echo "missing stage-1 seed: $SEED" >&2
@@ -25,10 +26,15 @@ if [[ ! -f "$SEED" ]]; then
   exit 1
 fi
 
+if [[ ! -f "$TARGETS" ]]; then
+  echo "missing targets file: $TARGETS" >&2
+  exit 1
+fi
+
 args=(
   watch
   --dataset "$ROOT/c5_compiled"
-  --targets "$ROOT/scenarios/c5-base/targets_stage2.yaml"
+  --targets "$TARGETS"
   --account product.Yield.managed.Conif
   --account product.Yield.managed.Decid
   --account feature.total.Yield

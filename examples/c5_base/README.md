@@ -84,6 +84,25 @@ feasible. The 2,000,000/200,000 level pull, the 90% final-stock target, and ±5%
 are in tension. The next run should change the target balance rather than only add
 iterations.
 
+## Balanced target variant
+
+`targets_balanced.yaml` is the pilot for the joint target balance:
+
+- conifer level: **1,200,000 per period**, weight 1
+- deciduous level: **125,000 per period**, weight 1
+- even flow: **±5%**, weight 10,000, reference period 1
+- final stock: **23,900,770.58**, weight **10** (pilot calibration)
+- every row: `priority: 1`
+
+Run it with the same stage-1 seed:
+
+```bash
+TARGETS="$PWD/targets_balanced.yaml" bash run_watch_evenflow.sh 100000
+```
+
+The level targets are no longer an over-maximum pull; they are near the observed feasible
+harvest. The stock weight is a starting calibration, not a final policy weight.
+
 ## Caveats
 
 The `targets.yaml` file remains the lighter base scenario (conifer **700,000**, deciduous
