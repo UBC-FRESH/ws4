@@ -1242,6 +1242,9 @@ def serve(
     allow_runs: bool = typer.Option(
         False, "--allow-runs", help="Allow the UI to start a search with the configured targets"
     ),
+    initial_schedule: Path | None = typer.Option(
+        None, "--initial-schedule", exists=True, help="Primed schedule for web-started searches"
+    ),
     allow_agent: bool = typer.Option(
         False,
         "--allow-agent",
@@ -1280,6 +1283,7 @@ def serve(
             geometry_overview=geometry_overview,
             land_base=land_base,
             allow_runs=allow_runs,
+            initial_schedule=initial_schedule,
             allow_agent=allow_agent,
             agent_model=agent_model,
             agent_cwd=agent_cwd,
