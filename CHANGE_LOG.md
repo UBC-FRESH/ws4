@@ -3277,3 +3277,9 @@ issue comments.
   The no-warm-start `--seed-greedy` path was abandoned after 60 minutes because
   floor-mode seeding is serial and deadline-blind (~85 min projected for 3,093 chains).
   Evidence: `notes/reports/carbon-500block-tradeoff.md`.
+
+- P80 c5 seeded even-flow: pull request #567 squash-merged as `e858db9`. Added a
+  real 200-year seed, `flow_reference_period: 1`, ±5% flow bands, and the MAI
+  rotation age (112 years; THLB 71,138 ha; ~635 ha/year). A 100-iteration seeded
+  run meets most species floors; final stock remains a soft target. Dashboard GREEN;
+  UI `v84`.
