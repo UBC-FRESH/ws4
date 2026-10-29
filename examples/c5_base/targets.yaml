@@ -524,10 +524,11 @@ targets:
   year: 10
   period_width: 10
   flow: even
+  flow_reference_period: 1
   flow_start_period: 1
   flow_end_period: 20
-  minimum: -1.0
-  maximum: 1.0
+  minimum: -5
+  maximum: 5
   min_weight: 10000.0
   max_weight: 10000.0
   shape: non_linear
@@ -540,10 +541,11 @@ targets:
   year: 10
   period_width: 10
   flow: even
+  flow_reference_period: 1
   flow_start_period: 1
   flow_end_period: 20
-  minimum: -1.0
-  maximum: 1.0
+  minimum: -5
+  maximum: 5
   min_weight: 10000.0
   max_weight: 10000.0
   shape: non_linear

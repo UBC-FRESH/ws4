@@ -82,6 +82,7 @@ exists and the maintainer approves it.
 | P77 C5 even-flow ceiling | #550 | `feature/p77-c5-max-flow` | complete |
 | P78 Warm c5 max-flow probe | #554 | `feature/p78-c5-warm-max-flow` | complete |
 | P79 Flow targets are not level bands | #559 | `feature/p79-flow-bands` | complete |
+| P80 C5 seeded even-flow | #565 | `feature/p80-c5-seeded-evenflow` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2472,6 +2473,28 @@ Acceptance:
 - Level charts show level bounds, not -1/+1.
 - Flow targets remain priced and visible in the table.
 - c5 base charts read correctly at 20 periods.
+- Dashboard green.
+
+## Phase 80: C5 seeded even-flow
+
+Parent issue: #565
+Branch: `feature/p80-c5-seeded-evenflow`
+Status: pr-open
+
+Goal: make the c5 even-flow scenario use a real seed and the proven first-period reference.
+
+- [x] P80.1 Seed c5 even-flow (#566)
+  - [x] Add a 200-year seed
+  - [x] Use flow_reference_period 1 and ±5%
+  - [x] Document MAI rotation age 112
+  - [x] Run a 100-iteration seeded optimization
+  - [x] Record the remaining stock tension
+
+Acceptance:
+
+- Seed is installed and documented.
+- H/I target charts read correctly.
+- The soft stock target remains a target, not a hard constraint.
 - Dashboard green.
 
 ## Detailed Next Steps Notes
