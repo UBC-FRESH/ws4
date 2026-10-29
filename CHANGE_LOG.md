@@ -3314,3 +3314,10 @@ issue comments.
   high-df schedules, objectives and ledger accounts reproduce to float noise, and exact
   replay reproduces the prior exact values. Runtime 282 s / 307 s. Evidence:
   `notes/reports/carbon-500block-tradeoff.md`.
+- TSA46 harvest-floor frontier: ran 500-block high-displacement min-emissions points at
+  0/100k/200k/300k/350k/370k m3 yield floors. With priority 1 on yield (priority 1 is the
+  strongest tier) every floor is met; the 0–200k segment is flat, then exact cumulative
+  emissions rise from 160,457 to 195,345/216,749/229,691 tCO2e as yield rises from
+  205,537 to 300,609/350,368/370,197 m3 and system carbon falls from 2.058M to 2.024M tC.
+  Ledger-vs-exact differences are 0.08–0.29% on emissions. Evidence:
+  `notes/reports/carbon-harvest-frontier.md`.

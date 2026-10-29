@@ -178,10 +178,11 @@ penalty.
        minimum: 10
        normalization: auto
 
-``priority`` is a positive integer tier. Targets at the same tier add normally. When more
-than one tier is present, a lower-priority tier is multiplied by ``PRIORITY_SCALE`` per step
-(``1e9``), so a small higher-priority penalty outranks a larger lower-priority one in the
-scalar search. This is a priority-weighted objective, **not a certified lexicographic
+``priority`` is a positive integer tier, and **priority 1 is the strongest tier**. Targets
+at the same tier add normally. When more than one tier is present, a lower-priority tier
+is multiplied by ``PRIORITY_SCALE`` per step (``1e9``), so a small priority-1 penalty
+outranks a larger priority-2 one in the scalar search. This is a priority-weighted
+objective, **not a certified lexicographic
 solve**; the run report still carries every target's raw and normalized penalty so a
 reviewer can inspect the trade-off. The default priority is one, which leaves the current
 objective unchanged.
