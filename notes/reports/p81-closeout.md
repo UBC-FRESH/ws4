@@ -3,9 +3,9 @@
 Phase: P81, Seed schedules from the UI
 Parent issue: #570
 Pull request: #572, `feature/p81-ui-seed` into `main`
-Evidence head: pending CI
+Evidence head: `9a5bb73`
 Date: 2026-10-29
-Status: queued for approval. Not merged.
+Status: merged and closed on 2026-10-29 as `7d9cfd8`.
 
 ## Acceptance
 

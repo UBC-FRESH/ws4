@@ -3283,3 +3283,7 @@ issue comments.
   rotation age (112 years; THLB 71,138 ha; ~635 ha/year). A 100-iteration seeded
   run meets most species floors; final stock remains a soft target. Dashboard GREEN;
   UI `v84`.
+
+- P81 UI seed schedules: pull request #572 squash-merged as `7d9cfd8`. `ws4 serve`
+  accepts `--initial-schedule` and passes it to every UI-started optimize command.
+  c5 is running with `seed_200y.csv`; UI v85.
