@@ -83,6 +83,7 @@ exists and the maintainer approves it.
 | P78 Warm c5 max-flow probe | #554 | `feature/p78-c5-warm-max-flow` | complete |
 | P79 Flow targets are not level bands | #559 | `feature/p79-flow-bands` | complete |
 | P80 C5 seeded even-flow | #565 | `feature/p80-c5-seeded-evenflow` | complete |
+| P81 Seed schedules from the UI | #570 | `feature/p81-ui-seed` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2495,6 +2496,27 @@ Acceptance:
 - Seed is installed and documented.
 - H/I target charts read correctly.
 - The soft stock target remains a target, not a hard constraint.
+- Dashboard green.
+
+## Phase 81: Seed schedules from the UI
+
+Parent issue: #570
+Branch: `feature/p81-ui-seed`
+Status: pr-open
+
+Goal: let the web UI start seeded searches so the c5 even-flow scenario works from Solve.
+
+- [x] P81.1 Add the service seed option (#571)
+  - [x] Add --initial-schedule to ws4 serve
+  - [x] Pass it to every UI-started optimize command
+  - [x] Verify the c5 web-started command includes seed_200y.csv
+  - [x] Keep no-seed services unchanged
+
+Acceptance:
+
+- The service accepts --initial-schedule.
+- The UI command includes it.
+- A Solve from c5 uses the seed.
 - Dashboard green.
 
 ## Detailed Next Steps Notes

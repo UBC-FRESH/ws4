@@ -324,6 +324,11 @@ transforms the source CRS with pyproj. Start the service with the CRS the geomet
    ws4 serve --dataset build/compiled --runs runs --geometry blocks_full.geojson \
      --geometry-overview blocks_overview.geojson --crs EPSG:26911
 
+A service that starts searches can seed every UI run with
+``--initial-schedule PATH``. The c5 base scenario needs this: its even-flow target uses the
+first period as the reference, so a primed schedule must carry wood before the comparison
+is meaningful. The seed path is recorded in the run health context.
+
 ``--geometry`` is the detail layer; ``--geometry-overview`` is an optional coarser layer used by
 tiles below zoom 8. Without the overview, every zoom uses the detail layer. Add ``--tile-cache PATH`` to keep the MVT tiles across restarts. Tiles are written under
 ``PATH/<run>/<layer>/year-<year>/period-<start>/<z>/<x>/<y>.mvt`` and served with

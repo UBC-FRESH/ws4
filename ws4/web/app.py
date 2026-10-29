@@ -695,6 +695,7 @@ def create_app(
     geometry_overview: Path | None = None,
     land_base: Path | None = None,
     allow_runs: bool = False,
+    initial_schedule: Path | None = None,
     allow_agent: bool = False,
     agent_model: str = "opencode-go/deepseek-v4.1-flash",
     agent_cwd: Path | None = None,
@@ -731,6 +732,9 @@ def create_app(
     allow_runs : bool, optional
         When true, ``POST /api/runs`` may start a search with the configured dataset and targets.
         False (the default) keeps the service read-only apart from the targets file.
+    initial_schedule : Path or None, optional
+        A primed schedule passed to every web-started search. It is needed for flow targets
+        whose reference period must carry wood before the even-flow comparison is meaningful.
     allow_agent : bool, optional
         When true, ``POST /api/chat`` may run one turn through the OpenCode CLI. The agent can
         read and change files and run commands as the service user, so this is off by default and
@@ -771,6 +775,9 @@ def create_app(
     overview_path = Path(geometry_overview).resolve() if geometry_overview is not None else None
     land_base_path = Path(land_base).resolve() if land_base is not None else None
     targets_path = Path(targets).resolve() if targets is not None else None
+    initial_schedule_path = (
+        Path(initial_schedule).resolve() if initial_schedule is not None else None
+    )
     topology_path = Path(topology).resolve() if topology is not None else None
     patch_accounts_path = Path(patch_accounts).resolve() if patch_accounts is not None else None
     spread_accounts_path = Path(spread_accounts).resolve() if spread_accounts is not None else None
@@ -1030,6 +1037,8 @@ def create_app(
         ]
         if time_limit:
             command.extend(["--time-limit", time_limit])
+        if initial_schedule_path is not None:
+            command.extend(["--initial-schedule", str(initial_schedule_path)])
         for flag, path in (
             ("--topology", topology_path),
             ("--patch-accounts", patch_accounts_path),
