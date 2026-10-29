@@ -310,6 +310,10 @@ class OptimizeConfig:
     carbon_workers : int
         Fork workers for the carbon ledger's empty-schedule base. One is serial. The
         optimizer forces one when ``islands`` or process-parallel starts are active.
+    seed_candidates : int
+        The most candidate chains per block that ``--seed-greedy`` scores. A seed is a
+        starting point, so the default is one; raise it only when a wider shortlist is
+        worth the extra full-chain evaluations.
     spread_accounts_path : str
         A YAML file of spread-connectivity account definitions; needs ``topology_path`` for the
         adjacency and ``block_coordinates_path`` for the bearings.
@@ -381,6 +385,7 @@ class OptimizeConfig:
     carbon_fertilization_path: str = ""
     carbon_hwp_path: str = ""
     carbon_workers: int = 1
+    seed_candidates: int = 1
     spread_accounts_path: str = ""
     block_coordinates_path: str = ""
     flood_screen_config_path: str = ""
@@ -407,6 +412,8 @@ class OptimizeConfig:
             raise ValueError("carbon HWP accounting needs a carbon package")
         if self.carbon_workers < 1:
             raise ValueError("carbon_workers must be positive")
+        if self.seed_candidates < 1:
+            raise ValueError("seed_candidates must be positive")
 
 
 #: The route-account kinds that are charged per segment per period rather than per block, so a
@@ -1317,8 +1324,8 @@ class Optimizer:
         seed_account : str or None, optional
             The reduction goal account, or None to use the configuration's ``seed_account``.
         workers : int or None, optional
-            Forked processes for reduction-goal scoring, or None to use the configuration's
-            ``workers``. The floor mode is serial.
+            Forked processes for candidate scoring, or None to use the configuration's
+            ``workers``. Both seed modes support the fork path.
 
         Returns
         -------
@@ -1349,6 +1356,7 @@ class Optimizer:
             self._seed_candidates(goals, account or None),
             goal_account=account or None,
             workers=self.cfg.workers if workers is None else workers,
+            candidate_limit=self.cfg.seed_candidates,
         )
 
     def _require_carbon_target_support(self, targets: Sequence[Target]) -> None:
@@ -1462,6 +1470,7 @@ class Optimizer:
                     goal_account=self.cfg.seed_account or None,
                     workers=self.cfg.workers,
                     deadline=limit,
+                    candidate_limit=self.cfg.seed_candidates,
                 )
         if initial is None and self.cfg.warm_start:
             initial = {block: options[0] for block, options in candidates.items() if options}

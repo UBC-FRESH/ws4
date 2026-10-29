@@ -26,18 +26,22 @@ The projected scan was about 85 minutes for 3,093 chains.
 500-block TSA46, high-displacement HWP, carbon cap 210,000 tCO2e, 25-minute limit,
 8 seed workers, no initial schedule:
 
-- seed completed with 51 CC blocks;
-- 20/20 search iterations ran;
-- wall time 17m17s, of which roughly 15–16 minutes was seeding;
-- yield 325,362.73 m3 (below the 350k floor);
+| Candidate policy | Seed chains | Wall time | Seed phase | Search |
+| --- | ---: | ---: | ---: | ---: |
+| all chains (before) | 3,093 | 17m17s | ~15–16 min | 20 iterations |
+| top 1 per block (default) | 500 | **4m06s** | ~3m27s | 20 iterations |
+
+- The capped seed produced exactly the same 51-block schedule as the exhaustive seed,
+  so the cap cost no quality here.
+- Yield 325,362.73 m3 (below the 350k floor);
 - cumulative emissions 52,045.54 tCO2e (cap met);
 - exact replay: 51,886.24 tCO2e, still well below the cap;
 - exact/ledger drift at offset 49 was 0.31% on cumulative emissions.
 
-The seed is now deadline-safe and parallel, but it is still expensive. The 500-block
-case spends most of a 25-minute run in seeding, and the seed stopped at 51 blocks because
-the carbon ceiling bound before the yield floor. The next step is cheaper seed scoring
-(shortlist or batched contributions), not more deadline plumbing.
+The cap is the important fix: 3,093 full 50-year ledgers for a starting schedule was
+never justified. The seed is now 4 minutes end-to-end on the 500-block case, with
+identical selected blocks. If a wider shortlist is ever needed, `--seed-candidates`
+raises the cap explicitly; batched scoring remains the longer-term improvement.
 
 ## Verification
 
