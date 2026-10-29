@@ -18,9 +18,11 @@ def test_c5_base_scenario_has_twenty_decades_and_a_ninety_percent_floor() -> Non
     periods = sorted({int(row["period"]) for row in rows if row.get("period") is not None})
     assert periods == list(range(1, 21))
     assert all(row.get("period_width") == 10 for row in rows if row.get("period"))
+    assert all(row.get("flow_reference_period") == 1 for row in rows if row.get("flow"))
     flow = [row for row in rows if row.get("flow") == "even"]
     assert len(flow) == 2
     assert all(row["flow_end_period"] == 20 for row in flow)
+    assert all(row["minimum"] == -5 and row["maximum"] == 5 for row in flow)
     floor = [row for row in rows if row["account"] == "feature.total.Yield" and row["period"] == 20]
     assert len(floor) == 1
     assert floor[0]["minimum"] == round(INITIAL_GROWING_STOCK * 0.9, 2)
