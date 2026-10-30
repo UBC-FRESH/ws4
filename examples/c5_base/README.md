@@ -136,6 +136,27 @@ Lowering the level pull did not move the period-1 conifer spike, and the stock t
 remains far short. The next useful step is to explain why period 1 is pinned at 1.52M
 before changing target weights again.
 
+## Split-block candidate fix
+
+The pin was a candidate-generation bug. Blocks split across several tracks can have a
+first fragment whose track has no treatments; `Optimizer.candidates()` took that first
+track and returned no options. The fix uses the largest treatment-bearing fragment.
+
+With the fix, a 20,000-iteration balanced pilot (`c5-balanced-fixed-20k`) gives:
+
+- conifer: period 1 = **743k**; periods 2–14 = **776–793k**; periods 15–20 = **683–704k**
+- conifer deviation: about **+6.7% / −8.1%**
+- deciduous: **67–75k**, about ±6%
+- final stock: about **20.6M** against 23.9M
+
+The flow is now responsive and nearly even, but not yet inside ±5%, and the stock target
+is still short. The run was also much slower at **3.27 eval/s** because the corrected
+candidate set is larger.
+
+The watch chart also had a level-display bug: it summed ten annual feature values for
+stock (displaying 206M instead of about 20.6M). That is fixed; feature levels now show the
+period-end value.
+
 ## Caveats
 
 The `targets.yaml` file remains the lighter base scenario (conifer **700,000**, deciduous
