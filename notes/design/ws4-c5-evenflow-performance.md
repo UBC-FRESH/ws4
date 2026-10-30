@@ -56,7 +56,7 @@ not present this as a solved even-flow case.
 - Acceptance: objective and account values are bit-identical on the regression fixtures;
   the 100k benchmark is faster than the 36.1 s baseline.
 
-### P83.3 Bounded/batched LNS (next issue after #586)
+### P83.3 Bounded/batched LNS (#587)
 
 - Keep the 64-block destroy cap.
 - Batch contribution construction for the changed blocks and sum the effect rows.
