@@ -3353,3 +3353,9 @@ issue comments.
   0.0002% ledger gap. The CLI defaults LNS to zero for carbon runs because bulk moves
   create many new CBM states and were both slower and no better in the tested cases.
   Evidence: `notes/reports/carbon-tsa41-5k-optimization.md`.
+- TSA41 5k 200-iteration carbon search: 9m27s, exact cumulative emissions
+  **12,460,557 tCO2e** against the 12,816,648 baseline (-356,091, -2.78%), with
+  9.807M m3 managed yield above the 9.5M floor. The 30-iteration run was
+  12,801,867 tCO2e, so the extra 170 iterations bought another 2.66%. Exact replay
+  matches the reported target cell. Evidence:
+  `notes/reports/carbon-tsa41-5k-200-iterations.md`.
