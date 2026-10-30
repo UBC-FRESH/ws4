@@ -33,3 +33,23 @@ python examples/gpu_effects/search_c5.py \
 The effect table is target-specific.  Rebuild it when the active accounts, period widths,
 or feature checkpoints change.  A first run pays the row build; later runs can reuse the
 same table while the target set and block slice stay fixed.
+
+`run_full_model.py` is the full-model, exact-replay runner. It reuses a content-validated
+simulator cache and candidate cache, loads a lean effect table, writes the best schedule,
+and verifies it with a fresh `IncrementalObjective`:
+
+```bash
+python examples/gpu_effects/run_full_model.py \
+  --dataset /path/to/compiled \
+  --targets /path/to/targets.yaml \
+  --seed-schedule /path/to/seed.csv \
+  --table /path/to/effects-lean.pt \
+  --candidates-cache /path/to/candidates.pkl \
+  --simulator-cache /path/to/simulator-cache.pkl \
+  --out /path/to/best.csv \
+  --years 200 --population 64 --generations 1000 --seed 7
+```
+
+Pass `--rebuild-cache` after changing the dataset or candidate horizon. The caches are
+explicit local artifacts, not model outputs shipped by WS4.
+

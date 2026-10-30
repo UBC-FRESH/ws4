@@ -13,6 +13,11 @@ from pathlib import Path
 
 import pytest
 from ws4.build.compiler import build_canonical_dataset
+from ws4.opt.candidate_cache import (
+    CandidateCacheError,
+    load_or_build_candidates,
+    load_or_build_simulator,
+)
 from ws4.opt.engine import OptimizeConfig, Optimizer
 from ws4.opt.gpu_effects import EffectTable
 from ws4.opt.gpu_ga import GenomePopulation
@@ -314,6 +319,39 @@ def test_saved_table_and_population_state_round_trip(tmp_path: Path) -> None:
     actual = loaded.evaluate()
     assert torch.equal(actual, expected)
     assert loaded.schedule(loaded.best_genome) == population.schedule(population.best_genome)
+
+
+def test_simulator_cache_round_trip_is_exact(tmp_path: Path) -> None:
+    """A cached simulator evaluates the same schedule as a freshly loaded one."""
+    optimizer, evaluator = _optimizer(tmp_path)
+    seed = _seed(optimizer)
+    expected = _exact(evaluator, seed)
+    cache = tmp_path / "simulator.pkl"
+    load_or_build_simulator(optimizer, cache, rebuild=True)
+
+    other = Optimizer.from_dataset(
+        optimizer.dataset_dir, OptimizeConfig(years=4, iterations=1, seed=1)
+    )
+    simulator = load_or_build_simulator(other, cache)
+    assert len(simulator.fragments) == len(optimizer.simulator().fragments)
+    verifier = IncrementalObjective(other, evaluator.targets)
+    verifier.reset(seed)
+    _assert_close(verifier.objective, expected)
+
+
+def test_candidate_cache_round_trip_and_mismatch(tmp_path: Path) -> None:
+    """The candidate cache reuses a matching map and rejects a different horizon."""
+    optimizer, _evaluator = _optimizer(tmp_path)
+    cache = tmp_path / "candidates.pkl"
+    first = load_or_build_candidates(optimizer, cache, rebuild=True)
+    second = load_or_build_candidates(optimizer, cache)
+    assert second == first
+
+    other = Optimizer.from_dataset(
+        optimizer.dataset_dir, OptimizeConfig(years=3, iterations=1, seed=1)
+    )
+    with pytest.raises(CandidateCacheError, match="does not match"):
+        load_or_build_candidates(other, cache)
 
 
 def test_lean_table_round_trip_keeps_population_exact(tmp_path: Path) -> None:
