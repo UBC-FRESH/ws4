@@ -183,3 +183,28 @@ c5 2,000-block slice.  The full evidence is in
 
 The next step is table persistence and a wider target-coverage check.  Do not port the
 sequential single-move loop.
+
+## P83.7 full TSA23 ft_econ scale check (2026-10-30)
+
+Full `compiled_ft_econ` with the 20 x 10-year even-flow target:
+
+- 66,584 candidate blocks
+- **20,237,498 candidate chains**
+- candidate generation: **72.3 s**
+- estimated sparse table: **~1.3 GB** (20.2M row offsets plus ~70M nonzeros), before the
+  Python row-index/list overhead
+- the current `EffectTable.build` stages all rows and all CPU deltas at once; a full build
+  is not yet practical
+
+A 5,000-block subset was built and searched:
+
+- rows 1,590,695; nnz 1,999,367; sparse table **44.7 MB**
+- table build **64.5 s**; upload 0.13 s
+- GPU search: 2.50 s vs CPU 11.08 s (4.43x), but GPU objective **315.4M** vs CPU **76.5M**
+- including the cold table build: **0.17x**
+- GPU best-of-batch quality is poor; one accepted proposal per round is not enough
+
+Conclusion: full TSA23 needs a streaming/persistent effect build and a better batched
+search/acceptance rule. Do not claim full-model GPU acceleration yet. The CPU 20 x 10-year
+run remains the working result.
+

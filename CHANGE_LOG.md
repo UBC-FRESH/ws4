@@ -3408,3 +3408,12 @@ issue comments.
   gives 2.10x.  The CPU SA remains the reference and fallback.  Evidence:
   `notes/reports/p83-6-2-gpu-effects.md` and `notes/design/ws4-gpu-search.md`.  Dashboard
   result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.
+
+
+- P83.7 TSA23 full-model scale check: 66,584 candidate blocks and **20,237,498 candidate
+  chains**; candidate generation 72.3 s. A full sparse table is estimated at ~1.3 GB before
+  Python row-index/list overhead, so the current all-at-once builder is not practical. A
+  5,000-block subset built a 44.7 MB sparse table in 64.5 s and ran GPU search 4.43x faster
+  than CPU by wall time, but the GPU objective was much worse (315.4M vs 76.5M) and the
+  cold-build ratio was 0.17x. Full-model GPU acceleration is not claimed; the CPU 20 x
+  10-year TSA23 run remains the working result.
