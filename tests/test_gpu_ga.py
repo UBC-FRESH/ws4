@@ -316,6 +316,43 @@ def test_saved_table_and_population_state_round_trip(tmp_path: Path) -> None:
     assert loaded.schedule(loaded.best_genome) == population.schedule(population.best_genome)
 
 
+def test_lean_table_round_trip_keeps_population_exact(tmp_path: Path) -> None:
+    """A lean archive without the full row index prices the same population."""
+    optimizer, evaluator = _optimizer(tmp_path)
+    table = EffectTable.build(optimizer, evaluator, device="cpu")
+    seed = _seed(optimizer)
+    candidates = optimizer.candidates()
+    expected_population = GenomePopulation(
+        optimizer,
+        evaluator,
+        table,
+        population=8,
+        seed=11,
+        seed_schedule=seed,
+        candidates=candidates,
+    )
+    expected = expected_population.evaluate().clone()
+
+    table_path = table.save(
+        tmp_path / "effects-lean.pt", include_row_index=False, candidates=candidates
+    )
+    loaded = EffectTable.load(table_path, device="cpu")
+    assert loaded.row_index == {}
+    assert loaded.block_starts
+    population = GenomePopulation(
+        optimizer,
+        evaluator,
+        loaded,
+        population=8,
+        seed=11,
+        seed_schedule=seed,
+        candidates=candidates,
+    )
+    assert torch.equal(population.evaluate(), expected)
+    result = population.run(2)
+    _assert_close(result.objective, _exact(evaluator, result.schedule))
+
+
 def test_deadline_stops_breeding_after_the_initial_evaluation(tmp_path: Path) -> None:
     """A wall-clock deadline returns the seeded population without extra generations."""
     optimizer, evaluator = _optimizer(tmp_path)
