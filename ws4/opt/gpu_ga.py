@@ -416,6 +416,29 @@ class GenomePopulation:
             )
         return genomes
 
+    def reset(self, seed_schedule: Mapping[int, Chain] | None, *, seed: int | None = None) -> None:
+        """Reset the population for a new independent run.
+
+        The effect table, option map, and base state stay resident.  When ``seed`` is
+        given, the random stream is reset before the population is initialized.
+
+        Parameters
+        ----------
+        seed_schedule : mapping of int to tuple of (str, int) or None
+            The accepted schedule.  None uses the first candidate of every block.
+        seed : int or None, optional
+            New random seed.  None keeps the existing random stream.
+
+        Raises
+        ------
+        ValueError
+            When a seed chain is not in the table's option list for its block.
+        """
+        if seed is not None:
+            self.seed = seed
+            self.generator.manual_seed(seed)
+        self.reseed(seed_schedule)
+
     def reseed(self, seed_schedule: Mapping[int, Chain] | None) -> None:
         """Replace the population with a fresh initialization from a schedule.
 

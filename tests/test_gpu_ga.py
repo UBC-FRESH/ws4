@@ -21,6 +21,7 @@ from ws4.opt.candidate_cache import (
 from ws4.opt.engine import OptimizeConfig, Optimizer
 from ws4.opt.gpu_effects import EffectTable
 from ws4.opt.gpu_ga import GenomePopulation
+from ws4.opt.gpu_session import GpuSearchSession
 from ws4.opt.incremental import IncrementalObjective
 from ws4.opt.objective import Target
 
@@ -352,6 +353,28 @@ def test_candidate_cache_round_trip_and_mismatch(tmp_path: Path) -> None:
     )
     with pytest.raises(CandidateCacheError, match="does not match"):
         load_or_build_candidates(other, cache)
+
+
+def test_session_reuses_the_plan_across_seeds(tmp_path: Path) -> None:
+    """A resident session keeps its option map while resetting the random stream."""
+    optimizer, evaluator = _optimizer(tmp_path)
+    table = EffectTable.build(optimizer, evaluator, device="cpu")
+    seed = _seed(optimizer)
+    session = GpuSearchSession(
+        optimizer,
+        evaluator,
+        table,
+        candidates=optimizer.candidates(),
+        seed_schedule=seed,
+        population=8,
+        initial_seed=17,
+    )
+    option_rows = session.population.option_rows
+    first = session.run(21, 2)
+    second = session.run(22, 2)
+    assert session.population.option_rows is option_rows
+    _assert_close(first.objective, _exact(evaluator, first.schedule))
+    _assert_close(second.objective, _exact(evaluator, second.schedule))
 
 
 def test_lean_table_round_trip_keeps_population_exact(tmp_path: Path) -> None:

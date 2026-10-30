@@ -3389,9 +3389,7 @@ issue comments.
   HWP config, horizon). The 5k repeat run fell from **207 s to 31.9 s**. Added an
   exact binary MILP knapsack (`--solver auto|ga|milp`) for one minimum-cost and one
   maximum-benefit target; it certifies the effect-table optimum and falls back to
-  the GPU population otherwise. Exact replay remains authoritative. Added
-  `--state-cache` for `fresh-cbm` stand-state tables; the pilot adapter matches
-  exact ledger base/effects to 2e-11 / 9e-13. Evidence:
+  the GPU population otherwise. Exact replay remains authoritative. Evidence:
   `notes/reports/carbon-tsa41-5k-removal-ga.md`.
 - P83.3 LNS delta speed: added a direct `Simulator._block_chain_short` path for chains
   with no event or one event (the dominant candidate shape), filtered per-account feature
@@ -3577,3 +3575,29 @@ issue comments.
   the 386 s CPU reference (2.51x, one seed, table build excluded). Fixed portfolio remains
   a negative result against the single GA. Evidence: `notes/reports/p83-closeout.md`.
   Dashboard: GREEN.
+
+- P83 lean effect-table archive: `EffectTable` now records each block's candidate row
+  start and seed-only extra rows, and `save(..., include_row_index=False)` omits the
+  20M-entry Python row dictionary. On the full TSA23 ft_econ 20x10 model the table load
+  fell from **125.7 s to 0.72 s**; single-seed end-to-end runs were **96.4 / 82.6 / 83.8 s**
+  for seeds 7/8/9 against the 386 s CPU reference (**4.0-4.7x**), all with exact objective
+  0.0. The lean archive is 567,864,334 bytes; the one-time migration took 109.2 s to load
+  the old archive and 4.9 s to write it. Evidence: `notes/reports/p83-lean-table.md`.
+  Dashboard: GREEN.
+
+- P83 candidate/simulator caches: added content-fingerprinted caches for the simulator and
+  candidate-chain map, plus the checked-in `examples/gpu_effects/run_full_model.py` runner.
+  The full TSA23 ft_econ 20x10 repeated run fell from 96.4 s to **32.9 s** for seed 7;
+  seeds 8/9 were 33.7/35.5 s, all with exact objective 0.0. That is **10.9-11.7x** the
+  386 s CPU reference. Cache loads are 4.15 s (simulator) and 5.97 s (candidates); one-time
+  builds are 34.7 s and 69.4 s. Evidence: `notes/reports/p83-candidate-cache.md`.
+  Dashboard: GREEN.
+
+- P83 resident GPU session: added `GpuSearchSession` and `GenomePopulation.reset`, plus a
+  checked-in multi-seed runner. The session reuses the simulator, candidate map, lean table,
+  option map, and base state; each seed resets only its random stream, population, and
+  incumbent. A three-seed full TSA23 batch took **83.2 s** with exact objective 0.0 on all
+  seeds, versus about 100 s for three independent cached processes. The first single run is
+  unchanged; the session is a repeated-search facility, not a network daemon. Evidence:
+  `notes/reports/p83-gpu-session.md`. Dashboard: GREEN.
+
