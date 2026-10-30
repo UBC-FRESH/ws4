@@ -3327,3 +3327,9 @@ issue comments.
   cumulative system emissions are 633.88M / 669.80M / 546.30M / 470.30M tCO2e. The
   ecosystem series is bit-identical to the prior no-HWP runs (offset 50). Evidence:
   `notes/reports/carbon-4tsa-hwp-production.md`.
+- Four-TSA HWP sensitivity: ran low (35-y solid half-life, df 0.45), default
+  (100 y, 1.0), and high (200 y, 2.4) exact full-landscape scenarios. HWP is
+  2.4–3.8% / 4.3–6.9% / 5.1–8.1% of system carbon at low/default/high; cumulative
+  emissions vary by 1.6–2.4×. TSA41 remains lowest and TSA16 highest, while TSA08 and
+  TSA40 swap between the default and high scenarios. Evidence:
+  `notes/reports/carbon-4tsa-hwp-sensitivity.md`.
