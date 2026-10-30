@@ -739,9 +739,9 @@ def _island_worker(job: tuple[Any, ...]) -> None:
 
     Module-level so ``multiprocessing`` can pickle it. The job carries the dataset path, the
     per-island configuration, the targets and watched accounts, the seed, the streaming
-    interval, and the queue.
+    interval, the queue, and an optional starting schedule.
     """
-    dataset_dir, cfg, targets, accounts, seed, interval, queue = job
+    dataset_dir, cfg, targets, accounts, seed, interval, queue, seed_schedule = job
     optimizer = Optimizer.from_dataset(Path(dataset_dir), cfg)
     evaluator = optimizer.delta_evaluator(targets, accounts)
     if evaluator is None:
@@ -750,11 +750,9 @@ def _island_worker(job: tuple[Any, ...]) -> None:
     candidates = optimizer.candidates()
     if cfg.warm_cache:
         evaluator.warm(candidates)
-    initial = (
-        {block: chains[0] for block, chains in candidates.items() if chains}
-        if cfg.warm_start
-        else None
-    )
+    initial = seed_schedule
+    if initial is None and cfg.warm_start:
+        initial = {block: chains[0] for block, chains in candidates.items() if chains}
     seen = [math.inf]
     last = [0.0]
 
@@ -808,8 +806,26 @@ def _run_islands(
     accounts: tuple[str, ...],
     state: WatchState,
     refresh: float,
+    initial: Schedule | None = None,
 ) -> None:
-    """Run the islands in parallel, keeping the global best in ``state``."""
+    """Run the islands in parallel, keeping the global best in ``state``.
+
+    Parameters
+    ----------
+    optimizer : Optimizer
+        The configured optimizer.
+    targets : sequence of Target
+        The goals.
+    accounts : tuple of str
+        The watched accounts.
+    state : WatchState
+        The shared best-incumbent state.
+    refresh : float
+        The minimum seconds between streamed reports.
+    initial : dict or None, optional
+        A starting schedule shared by every island. A seeded flow run needs this; otherwise
+        each island starts empty and the reference period carries no wood.
+    """
     from multiprocessing import Process, Queue
 
     cfg = optimizer.cfg
@@ -823,6 +839,7 @@ def _run_islands(
             cfg.seed + index,
             max(refresh, 0.1),
             queue,
+            initial,
         )
         for index in range(max(1, cfg.islands))
     ]
@@ -925,13 +942,13 @@ def run_watch(
     if state.islands > 1:
         if live is not None:
             with live:
-                _run_islands(optimizer, targets, accounts_tuple, state, refresh)
+                _run_islands(optimizer, targets, accounts_tuple, state, refresh, initial=initial)
                 live.update(
                     render_frame(state, optimizer, time.monotonic() - started), refresh=True
                 )
             console.print()
         else:
-            _run_islands(optimizer, targets, accounts_tuple, state, refresh)
+            _run_islands(optimizer, targets, accounts_tuple, state, refresh, initial=initial)
             state.windows = state.current_windows()
             console.print(render_frame(state, optimizer, time.monotonic() - started))
         elapsed_islands = time.monotonic() - started
