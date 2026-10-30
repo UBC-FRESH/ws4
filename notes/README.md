@@ -59,6 +59,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
   and exact verification.
 - `reports/carbon-tsa41-5k-optimization.md` — 5k production-scale carbon search,
   initial-state precompute, and the LNS cost finding.
+- `reports/carbon-tsa41-5k-200-iterations.md` — 200-iteration TSA41 5k carbon
+  search and exact replay.
 - `adr/0001-fragment-compilation.md` — fragments are the compilation unit; blocks are a runtime aggregate.
 - `adr/0002-columnar-matrix-dataset.md` — the compiled dataset is versioned and columnar.
 - `adr/0003-spatial-structure-first-class.md` — spatial structure is part of the model.

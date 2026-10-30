@@ -51,6 +51,9 @@ emissions by **14,782 tCO2e (0.115%)** while holding more total system carbon. M
 yield is 10,128,928 m3, above the 9.5M floor. The incremental objective differs from
 the exact replay by 21 tCO2e (0.0002%).
 
+A 200-iteration follow-up reaches **12,460,557 tCO2e** (-2.78% vs baseline); see
+`reports/carbon-tsa41-5k-200-iterations.md`.
+
 ## Caveats
 
 - The 5k sample is 3.36% of TSA41 area, 68 of 70 tracks, and 1,748 of 5,273 full-landscape
