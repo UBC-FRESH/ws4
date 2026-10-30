@@ -132,3 +132,20 @@ Conclusion: the effect table alone does not make the LNS search faster. The next
 prototype must change the search structure (parallel chains/islands with batched
 acceptance, or a population search), not just move the current LNS to the GPU.
 
+## P83.6.2 parallel-chain GPU prototype (2026-10-30)
+
+A batched parallel-chain prototype was run on a 2,000-block c5 slice with a float64
+effect table (456,278 rows, 401 cells; 8.4 s build):
+
+- 1,024 independent chains
+- 50 generations
+- 51,200 single-block moves
+- **1.30 s steady state**
+- **39,451 moves/s**, **38,441 accepted moves/s**
+- best objective 2.551B vs 2.602B seed on the slice
+
+This is about **14x** the current c5 CPU no-LNS end-to-end rate (~2,700/s), and unlike the
+GPU LNS prototype it keeps the GPU busy with independent work. It is not yet a target
+quality result, not integrated into `ws4`, and not scaled to the full dataset. The next
+step is to make the chain state/acceptance device-resident and run it on the full model.
+

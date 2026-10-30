@@ -3385,3 +3385,10 @@ issue comments.
   variant reached 4,044 proposal evaluations/s and 179 accepted moves/s. The CPU LNS path
   is about 1,900 accepted moves/s. The effect math is not the bottleneck; acceptance and
   search structure are. Evidence: `notes/design/ws4-gpu-search.md`.
+
+
+- P83.6.2 parallel-chain GPU prototype: on a 2,000-block c5 slice with a float64 effect
+  table, 1,024 independent chains ran 51,200 moves in 1.30 s (about 39,451 moves/s and
+  38,441 accepted moves/s), roughly 14x the c5 CPU end-to-end rate. Best slice objective
+  2.551B vs 2.602B seed. This is not integrated, not target-quality, and not full-scale;
+  evidence in `notes/design/ws4-gpu-search.md`.
