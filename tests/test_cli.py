@@ -294,6 +294,7 @@ def test_gpu_run_help_documents_the_cache_and_table_inputs() -> None:
     """The GPU command exposes its persistent cache and effect-table inputs."""
     result = run_ws4("gpu-run", "--help")
     assert result.returncode == 0, result.stdout + result.stderr
-    assert "--cache-dir" in result.stdout
-    assert "--table" in result.stdout
-    assert "--seeds" in result.stdout
+    combined = re.sub(r"\x1b\[[0-9;]*m", "", result.stdout + result.stderr)
+    assert "--cache-dir" in combined
+    assert "--table" in combined
+    assert "--seeds" in combined
