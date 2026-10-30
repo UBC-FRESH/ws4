@@ -3593,3 +3593,11 @@ issue comments.
   builds are 34.7 s and 69.4 s. Evidence: `notes/reports/p83-candidate-cache.md`.
   Dashboard: GREEN.
 
+- P83 resident GPU session: added `GpuSearchSession` and `GenomePopulation.reset`, plus a
+  checked-in multi-seed runner. The session reuses the simulator, candidate map, lean table,
+  option map, and base state; each seed resets only its random stream, population, and
+  incumbent. A three-seed full TSA23 batch took **83.2 s** with exact objective 0.0 on all
+  seeds, versus about 100 s for three independent cached processes. The first single run is
+  unchanged; the session is a repeated-search facility, not a network daemon. Evidence:
+  `notes/reports/p83-gpu-session.md`. Dashboard: GREEN.
+
