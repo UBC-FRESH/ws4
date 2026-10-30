@@ -115,3 +115,10 @@ dominate the end-to-end cost, so a warm/reused process would be even faster.
   limited results.
 - The CPU 386 s reference and the GPU run are not a controlled benchmark matrix; they are the
   best available full-model result for the same target.
+
+## Follow-up
+
+The normal archive's `row_index` load was later removed by the lean archive; the full-model
+end-to-end time fell from 153.6 s to 96.4 s for seed 7, with seeds 8 and 9 at 82.6 s and
+83.8 s. See `notes/reports/p83-lean-table.md`.
+

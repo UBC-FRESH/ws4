@@ -268,3 +268,16 @@ The full-model GPU population path is now quality-competitive on this seed. The 
 (1,340 s) is excluded, and this remains a one-seed result. Evidence:
 `notes/reports/p83-7-full-tsa23.md`.
 
+## Lean table archive (2026-10-30)
+
+The normal archive stored the 20.2M-entry `(block, chain) -> row` dictionary and spent
+125.7 s loading it. The table already assigns candidate rows consecutively, so the reusable
+population path only needs each block's first candidate row.
+
+`EffectTable.save(..., include_row_index=False, candidates=...)` now writes a lean archive
+with the CSR tensors, `block_starts`, and `extra_rows`, but no full row dictionary.
+`EffectTable.load` accepts either shape. On the full TSA23 model the lean load is **0.72 s**.
+With dataset/candidate load included, the measured seeds 7/8/9 end-to-end times are
+**96.4 / 82.6 / 83.8 s** at exact objective 0.0, against the 386 s CPU reference. The
+dataset/candidate load is now the dominant cost. Evidence: `notes/reports/p83-lean-table.md`.
+
