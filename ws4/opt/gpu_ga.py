@@ -305,27 +305,40 @@ class GenomePopulation:
             block_chains = chains_by_block[block]
             candidate_count = len(candidates.get(block, ()))
             if candidate_count:
-                try:
-                    first = self.table.row_id(block, block_chains[0])
-                    last = self.table.row_id(block, block_chains[candidate_count - 1])
-                except KeyError as exc:
-                    raise ValueError(
-                        f"the effect table has no row for block {block}; rebuild it with "
-                        "this chain in extra_pairs"
-                    ) from exc
-                if last - first == candidate_count - 1:
+                first = self.table.block_starts.get(block)
+                if first is not None:
+                    if first + candidate_count > self.table.rows:
+                        raise ValueError(
+                            f"the effect table's candidate row range for block {block} is "
+                            "outside the table; rebuild it with this candidate set"
+                        )
                     rows[index, :candidate_count] = torch.arange(
                         first, first + candidate_count, dtype=torch.int64, device=self.device
                     )
                 else:
-                    for position in range(candidate_count):
-                        try:
-                            rows[index, position] = self.table.row_id(block, block_chains[position])
-                        except KeyError as exc:
-                            raise ValueError(
-                                f"the effect table has no row for block {block}; rebuild it "
-                                "with this chain in extra_pairs"
-                            ) from exc
+                    try:
+                        first = self.table.row_id(block, block_chains[0])
+                        last = self.table.row_id(block, block_chains[candidate_count - 1])
+                    except KeyError as exc:
+                        raise ValueError(
+                            f"the effect table has no row for block {block}; rebuild it with "
+                            "this chain in extra_pairs"
+                        ) from exc
+                    if last - first == candidate_count - 1:
+                        rows[index, :candidate_count] = torch.arange(
+                            first, first + candidate_count, dtype=torch.int64, device=self.device
+                        )
+                    else:
+                        for position in range(candidate_count):
+                            try:
+                                rows[index, position] = self.table.row_id(
+                                    block, block_chains[position]
+                                )
+                            except KeyError as exc:
+                                raise ValueError(
+                                    f"the effect table has no row for block {block}; rebuild it "
+                                    "with this chain in extra_pairs"
+                                ) from exc
             for position in range(candidate_count, len(block_chains)):
                 try:
                     rows[index, position] = self.table.row_id(block, block_chains[position])

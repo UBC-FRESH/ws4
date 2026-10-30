@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import itertools
 import time
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -103,9 +103,15 @@ class EffectTable:
     values : torch.Tensor
         The float64 effect value of each nonzero.
     row_index : dict of (int, tuple) to int
-        The row for each ``(block, chain)`` pair.  The empty chain maps to row zero.
+        The row for each ``(block, chain)`` pair.  The empty chain maps to row zero.  A
+        lean archive omits this dictionary to keep loading fast.
     blocks : tuple of int
         The blocks whose candidate chains the table contains.
+    block_starts : dict of int to int, optional
+        The first candidate row for each block.  A lean archive uses this instead of the
+        full row index when the population builds its option map.
+    extra_rows : dict of (int, tuple) to int, optional
+        Seed-only rows that are not candidate rows.
 
     Attributes
     ----------
@@ -121,6 +127,8 @@ class EffectTable:
     blocks: tuple[int, ...]
     build_seconds: float = 0.0
     _max_row_width: int = 1
+    block_starts: dict[int, int] = field(default_factory=dict)
+    extra_rows: dict[tuple[int, Chain], int] = field(default_factory=dict)
 
     @classmethod
     def build(
@@ -166,9 +174,14 @@ class EffectTable:
         chosen = tuple(sorted(candidates) if blocks is None else blocks)
         # Assign compact row ids without materializing a row tuple for every chain.
         row_index: dict[tuple[int, Chain], int] = {(0, ()): 0}
+        block_starts: dict[int, int] = {}
+        extra_rows: dict[tuple[int, Chain], int] = {}
         next_row = 1
         for block in chosen:
-            for chain in candidates.get(block, ()):
+            chains = candidates.get(block, ())
+            if chains:
+                block_starts[block] = next_row
+            for chain in chains:
                 row_index[(block, chain)] = next_row
                 next_row += 1
         extra: list[tuple[int, Chain]] = []
@@ -176,6 +189,7 @@ class EffectTable:
             if pair in row_index:
                 continue
             row_index[pair] = next_row
+            extra_rows[pair] = next_row
             next_row += 1
             extra.append(pair)
         cells = target_cells(evaluator)
@@ -224,6 +238,8 @@ class EffectTable:
                 (later - earlier for earlier, later in itertools.pairwise(indptr)),
                 default=0,
             ),
+            block_starts=block_starts,
+            extra_rows=extra_rows,
         )
         return table if device is None else table.to(device)
 
@@ -306,13 +322,27 @@ class EffectTable:
             values=self.values.to(device),
         )
 
-    def save(self, path: str | Path) -> Path:
-        """Write the sparse table and row index to one torch archive.
+    def save(
+        self,
+        path: str | Path,
+        *,
+        include_row_index: bool = True,
+        candidates: Candidates | None = None,
+    ) -> Path:
+        """Write the sparse table to one torch archive.
 
         Parameters
         ----------
         path : str or pathlib.Path
             Destination file.
+        include_row_index : bool, optional
+            Store the full ``(block, chain)`` row dictionary.  Set this to False for a
+            lean archive that keeps only the sparse tensors and each block's candidate row
+            start; loading it avoids unpickling the tens of millions of row-index entries.
+            Defaults to True.
+        candidates : mapping of int to sequence of tuple, optional
+            Candidate chains, used to derive block starts and seed-only rows when a lean
+            archive is written from a table that predates the ``block_starts`` field.
 
         Returns
         -------
@@ -322,16 +352,44 @@ class EffectTable:
         _require_torch()
         destination = Path(path)
         destination.parent.mkdir(parents=True, exist_ok=True)
+        row_index = self.row_index if include_row_index else {}
+        block_starts = dict(self.block_starts)
+        extra_rows = dict(self.extra_rows)
+        if not include_row_index:
+            if not block_starts:
+                if candidates is not None:
+                    block_starts = {
+                        block: self.row_id(block, chains[0])
+                        for block, chains in candidates.items()
+                        if chains
+                    }
+                else:
+                    for (block, chain), row in self.row_index.items():
+                        if not chain:
+                            continue
+                        previous = block_starts.get(block)
+                        if previous is None or row < previous:
+                            block_starts[block] = row
+            if not extra_rows and candidates is not None:
+                for (block, chain), row in self.row_index.items():
+                    if not chain:
+                        continue
+                    start = block_starts.get(block)
+                    if start is None or not (start <= row < start + len(candidates.get(block, ()))):
+                        extra_rows[(block, chain)] = row
+            row_index = {}
         torch.save(
             {
                 "cells": self.cells,
                 "indptr": self.indptr,
                 "indices": self.indices,
                 "values": self.values,
-                "row_index": self.row_index,
+                "row_index": row_index if include_row_index else None,
                 "blocks": self.blocks,
                 "build_seconds": self.build_seconds,
                 "max_row_width": self._max_row_width,
+                "block_starts": block_starts,
+                "extra_rows": extra_rows,
             },
             destination,
         )
@@ -360,10 +418,12 @@ class EffectTable:
             indptr=payload["indptr"],
             indices=payload["indices"],
             values=payload["values"],
-            row_index=payload["row_index"],
+            row_index=payload.get("row_index") or {},
             blocks=tuple(payload["blocks"]),
             build_seconds=float(payload.get("build_seconds", 0.0)),
             _max_row_width=int(payload.get("max_row_width", 1)),
+            block_starts=dict(payload.get("block_starts") or {}),
+            extra_rows=dict(payload.get("extra_rows") or {}),
         )
         return table if device is None else table.to(device)
 
@@ -387,7 +447,15 @@ class EffectTable:
         KeyError
             When the pair is not in this table.
         """
-        return 0 if not chain else self.row_index[(block, chain)]
+        if not chain:
+            return 0
+        row = self.row_index.get((block, chain))
+        if row is not None:
+            return row
+        try:
+            return self.extra_rows[(block, chain)]
+        except KeyError:
+            raise KeyError((block, chain)) from None
 
     def gather(self, row_ids: torch_type.Tensor) -> torch_type.Tensor:
         """Return the dense float64 effect rows for the given row ids.

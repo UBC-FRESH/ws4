@@ -3568,3 +3568,13 @@ issue comments.
   the 386 s CPU reference (2.51x, one seed, table build excluded). Fixed portfolio remains
   a negative result against the single GA. Evidence: `notes/reports/p83-closeout.md`.
   Dashboard: GREEN.
+
+- P83 lean effect-table archive: `EffectTable` now records each block's candidate row
+  start and seed-only extra rows, and `save(..., include_row_index=False)` omits the
+  20M-entry Python row dictionary. On the full TSA23 ft_econ 20x10 model the table load
+  fell from **125.7 s to 0.72 s**; single-seed end-to-end runs were **96.4 / 82.6 / 83.8 s**
+  for seeds 7/8/9 against the 386 s CPU reference (**4.0-4.7x**), all with exact objective
+  0.0. The lean archive is 567,864,334 bytes; the one-time migration took 109.2 s to load
+  the old archive and 4.9 s to write it. Evidence: `notes/reports/p83-lean-table.md`.
+  Dashboard: GREEN.
+
