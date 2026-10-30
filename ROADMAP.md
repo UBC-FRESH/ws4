@@ -2557,7 +2557,7 @@ enough for the 100,000-iteration budget and record the actual target result.
   - [x] Correct the priority-tier mistake and the split-block candidate set
   - [x] Add the feature-checkpoint, flow-delta, incumbent-journal, and startup speedups
   - [x] Record the 100k negative target result
-  - [ ] Reach ±5% flow and the 23.9M stock goal, or record the target tension as final
+  - [x] Reach ±5% flow and the 23.9M stock goal, or record the target tension as final
 - [x] P83.2 Optimize the seeded search state and startup (#586)
 - [x] P83.3 Batch or bound the LNS move (#587)
 - [x] P83.4 Allow seeded process-pool islands (#588)
@@ -2568,7 +2568,7 @@ enough for the 100,000-iteration budget and record the actual target result.
 - [x] P83.9 Master/worker metaheuristic portfolio (#597)
   - [x] P83.6.1 Benchmark a bounded batch effect/delta evaluator
   - [x] P83.6.2 Add the sparse float64 effect engine and batched LNS prototype
-  - [ ] Decide whether to persist the effect table for a production optional path
+  - [x] Decide whether to persist the effect table for a production optional path
 
 Acceptance:
 

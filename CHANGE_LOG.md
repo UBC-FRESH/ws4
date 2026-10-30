@@ -3475,3 +3475,11 @@ issue comments.
   seed. The 1,340 s table build is excluded and this is a one-seed result. Schedule:
   `/srv/shared-data/gep/ws4/archive/tsa23-gpu-full/ga1000-schedule.csv`. Evidence:
   `notes/reports/p83-7-full-tsa23.md`. Dashboard: GREEN.
+
+- P83 close-out: the c5 79% final-stock policy and the full-model TSA23 GPU result are
+  recorded together. c5 remains objective 39,133,750 in 36.1 s with conifer flow
+  -8.12%/+6.01% and an accepted 22,494.59 stock shortfall; plus/minus 5% conifer flow is
+  not claimed. TSA23 ft_econ 20 x 10 reached exact objective 0.0 in 153.6 s total against
+  the 386 s CPU reference (2.51x, one seed, table build excluded). Fixed portfolio remains
+  a negative result against the single GA. Evidence: `notes/reports/p83-closeout.md`.
+  Dashboard: GREEN.
