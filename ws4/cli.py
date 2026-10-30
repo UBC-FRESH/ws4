@@ -649,6 +649,21 @@ def optimize(
     split_weight: float = typer.Option(
         0.0, "--split-weight", help="Weight of the patch split operator (0 disables it)"
     ),
+    flow_repair_trials: int = typer.Option(
+        0,
+        "--flow-repair-trials",
+        min=0,
+        help=(
+            "Exact flow-directed repair moves to try after the search (0 disables it); "
+            "only improvements that lower the flow penalty without raising another one"
+        ),
+    ),
+    flow_repair_chains: int = typer.Option(
+        4,
+        "--flow-repair-chains",
+        min=1,
+        help="Directed candidate chains to price per block in the flow repair pass",
+    ),
     patch_accounts: Path = typer.Option(
         None, "--patch-accounts", exists=True, help="Patch size-distribution accounts (YAML)"
     ),
@@ -743,6 +758,8 @@ def optimize(
         coalesce_max_area_ha=coalesce_max_area_ha,
         merge_weight=merge_weight,
         split_weight=split_weight,
+        flow_repair_trials=flow_repair_trials,
+        flow_repair_chains=flow_repair_chains,
         patch_accounts_path=str(patch_accounts) if patch_accounts is not None else "",
         carbon_package_path=str(carbon_package) if carbon_package is not None else "",
         carbon_fertilization_path=(

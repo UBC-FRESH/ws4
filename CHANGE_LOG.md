@@ -3341,3 +3341,13 @@ issue comments.
   than the no-LNS 100k result. Eight seeded 100k starts completed in 58.5 s and selected
   the same 39,133,750 objective as the best single start; multi-start is a throughput
   capability, not a single-run speed or quality win. The next task is P83.5 (#589).
+
+- P83.5 flow-directed repair: added a bounded post-search pass that shifts harvest from
+  periods above an even-flow target into periods below it, accepting only exact objective
+  improvements that lower the target's flow penalty without raising another flow target's
+  penalty. On the c5 balanced scenario at 20k search iterations it took 16.2 s (vs 12.9 s
+  baseline), cut the summed flow penalty by 35% (430,171 to 280,718), and moved conifer
+  from -8.43%/+6.44% to -7.72%/+6.26% and deciduous from -5.35%/+5.08% to -5.31%/+4.85%.
+  Objective improved 44,719,123 to 44,671,405; stock fell 20.11M to 20.10M. The ±5% band
+  is still not met. Exactness and focused tests: 97 passed. Evidence and risks:
+  `notes/design/ws4-c5-evenflow-performance.md` (P83.5).

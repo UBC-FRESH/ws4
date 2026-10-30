@@ -153,3 +153,50 @@ the result in this note and the changelog.
 - Next bounded move is P83.5 flow-directed moves (#589); do not claim a target win from
   LNS or multiple starts.
 
+## P83.5 evidence (2026-10-30)
+
+- Added `ws4/opt/flow_repair.py`: a bounded post-search repair pass over an incumbent
+  schedule. For each even-flow target on an accumulating account it ranks scheduled blocks
+  by the volume they contribute to periods above the target's maximum, tries that block's
+  candidate chains whose first event falls below the target's minimum, and prices each
+  proposal with `IncrementalObjective.delta`. A move is applied only when the exact
+  full-objective delta is negative, the target's own flow penalty falls, and no other
+  even-flow target's penalty rises. The pass is bounded by candidate trials, not wall
+  clock. The CLI exposes it as `--flow-repair-trials` and `--flow-repair-chains` (default
+  0 = off). Target semantics are unchanged.
+- Exactness: `tests/test_flow_repair.py` compares the repaired objective with a fresh
+  incremental evaluator and with `Optimizer._evaluate`, checks that accepted moves lower
+  both the objective and the flow penalty, and checks the no-flow and invalid-bound cases.
+  Focused suite (`test_flow_repair`, `test_flow_targets`, `test_incremental`,
+  `test_optimizer`): 97 passed.
+- Benchmarks use seed 1, `--lns-weight 0`, years 200, balanced targets, and
+  `seed_stage1.csv`; the repair pass used 20,000 trials and 8 chains per block:
+
+  | run | search iters | wall s | objective | final stock | conifer flow | decid flow |
+  | --- | ---: | ---: | ---: | ---: | --- | --- |
+  | baseline | 5,000 | 7.8 | 51,620,713 | 19.20M | -9.33% / +7.63% | -6.28% / +8.72% |
+  | + repair | 5,000 | 12.2 | 51,344,366 | 19.18M | -8.27% / +5.38% | -2.64% / +7.50% |
+  | baseline | 10,000 | 9.4 | 47,266,580 | 19.73M | -8.66% / +6.39% | -5.36% / +4.91% |
+  | + repair | 10,000 | 13.1 | 47,174,058 | 19.72M | -7.44% / +6.07% | -5.35% / +4.81% |
+  | baseline | 20,000 | 12.9 | 44,719,123 | 20.11M | -8.43% / +6.44% | -5.35% / +5.08% |
+  | + repair | 20,000 | 16.2 | 44,671,405 | 20.10M | -7.72% / +6.26% | -5.31% / +4.85% |
+
+- At 20k the pass accepted 16 moves in 1.9 s. The summed flow penalty fell from 430,171
+  to 280,718 (-35%); every reported minimum and maximum moved toward zero, but the stock
+  fell by 6.6k and the objective only improved by 47.7k. The ±5% flow band is **not**
+  reached at 20k, so this is a gap reduction, not a target win.
+- The gain is largest at short search budgets: 5k + repair improved the conifer worst
+  gap from -9.33%/+7.63% to -8.27%/+5.38%, and 10k + repair reached a better conifer
+  minimum (-7.44%) than the 20k baseline (-8.43%). A longer search lowers the objective
+  and raises stock but leaves a harder flow shape for the same repair budget, so the pass
+  is not a substitute for more search and its result depends on the incumbent.
+- Remaining risks: a move is accepted on the full objective and the flow penalty, not on
+  the worst single period, so a later accepted move can shift which period is worst. The
+  pass only sees candidate chains, so a seed chain that is not in the candidate list
+  cannot be preserved by an event-level shift. It only repairs accumulating accounts; the
+  pre-existing feature-account flow gap noted under P83.3 is unchanged. A 30k-trial,
+  8-chain run is similar (objective 44.6687M, conifer -7.71%/+6.18%, decid -5.31%/+4.85%),
+  so 20k trials is the better default.
+- Next bounded move is P83.6 (GPU batch path); do not claim a ±5% target win from this
+  repair.
+

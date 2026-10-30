@@ -53,6 +53,7 @@ from .constraints import ConstraintGuard
 from .control import RunControl
 from .core import Problem
 from .flood import FloodRiskModel, FloodRiskRefusalError
+from .flow_repair import repair_flow_gap
 from .incremental import IncrementalObjective
 from .mip import bound_for, relaxation_for
 from .objective import Target, load_targets, objective
@@ -327,6 +328,12 @@ class OptimizeConfig:
         The selection weight of the merge operator, which treats gap blocks.
     split_weight : float
         The selection weight of the split operator, which clears articulation blocks.
+    flow_repair_trials : int
+        The number of exact candidate moves a bounded flow-directed repair pass may price after
+        the search, or 0 to disable it. The pass shifts harvest from periods above an even-flow
+        target into periods below it and accepts only exact improvements.
+    flow_repair_chains : int
+        The most directed candidate chains the repair pass prices for one block.
     """
 
     threads: int = 1
@@ -390,6 +397,8 @@ class OptimizeConfig:
     flood_screen_config_path: str = ""
     merge_weight: float = 0.0
     split_weight: float = 0.0
+    flow_repair_trials: int = 0
+    flow_repair_chains: int = 4
 
     def __post_init__(self) -> None:
         """Reject an unknown temperature schedule before the search starts."""
@@ -411,6 +420,10 @@ class OptimizeConfig:
             raise ValueError("carbon HWP accounting needs a carbon package")
         if self.carbon_workers < 1:
             raise ValueError("carbon_workers must be positive")
+        if self.flow_repair_trials < 0:
+            raise ValueError("flow_repair_trials must be zero (off) or positive")
+        if self.flow_repair_chains < 1:
+            raise ValueError("flow_repair_chains must be positive")
 
 
 #: The route-account kinds that are charged per segment per period rather than per block, so a
@@ -1824,6 +1837,30 @@ class Optimizer:
         if pool_search:
             _merge_worker_telemetry(out_dir)
 
+        repair: dict[str, Any] | None = None
+        if self.cfg.flow_repair_trials > 0:
+            evaluator = self.delta_evaluator(targets)
+            if evaluator is not None:
+                evaluator.reset(best)
+                repaired = repair_flow_gap(
+                    evaluator,
+                    self.candidates(),
+                    max_trials=self.cfg.flow_repair_trials,
+                    chains_per_block=self.cfg.flow_repair_chains,
+                    deadline=self._deadline,
+                )
+                best, best_obj = repaired.schedule, repaired.objective
+                repair = {
+                    "trials": repaired.trials,
+                    "moves": repaired.moves,
+                    "objective_before": repaired.objective_before,
+                    "objective_after": repaired.objective,
+                    "flow_before": repaired.flow_before,
+                    "flow_after": repaired.flow_after,
+                    "flow_penalty_before": repaired.flow_penalty_before,
+                    "flow_penalty_after": repaired.flow_penalty_after,
+                }
+
         schedule_path = out_dir / "schedule.csv"
         self._schedule_frame(best).to_csv(schedule_path, index=False)
         model, route_accounts, duplicate_accounts = self.route()
@@ -1927,6 +1964,8 @@ class Optimizer:
             "time_limit_reached": bool(expired(self._deadline)),
             "dataset": dataset_reference(self.dataset_dir),
         }
+        if repair is not None:
+            summary["flow_repair"] = repair
         if self.cfg.mip_bound:
             bound = bound_for(
                 self.dataset_dir,
