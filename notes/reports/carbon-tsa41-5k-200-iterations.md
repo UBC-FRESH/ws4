@@ -1,4 +1,4 @@
-# TSA41 5,000-block, 200-iteration carbon search
+# TSA41 5,000-block, 200- and 500-iteration carbon search
 
 Date: 2026-10-30
 Status: bounded production sample complete; exact replay matches
@@ -12,7 +12,7 @@ Scope: TSA41 5k sample, CC-only schedule, public-default HWP, 50 years
 - HWP: `config/carbon/hwp.bc.yaml` (public defaults)
 - Initial schedule: 5,000 `CC@0` events
 - Targets: managed yield floor 9.5M m3; minimize cumulative system emissions
-- Search: SA, seed 1, 200 iterations, LNS disabled (carbon CLI default)
+- Search: SA, seed 1, 200 / 500 iterations, LNS disabled (carbon CLI default)
 
 ## Result
 
@@ -38,6 +38,24 @@ Exact replay:
 - `account_values.csv` target: **12,460,557.245 tCO2e**
 - no ledger/exact difference at the target cell
 
+## 500-iteration follow-up
+
+The same setup was rerun for 500 iterations:
+
+| Metric | 200 iterations | 500 iterations |
+| --- | ---: | ---: |
+| Scheduled blocks | 4,970 | **4,934** |
+| Managed yield (m3) | 9,807,027 | **9,500,401** |
+| Exact cumulative emissions @49 (tCO2e) | 12,460,557 | **12,240,329** |
+| Reduction vs baseline | 356,091 (2.78%) | **576,319 (4.50%)** |
+| System carbon @49 (tC) | 11,522,239 | **11,578,794** |
+| HWP carbon @49 (tC) | 724,570 | **732,344** |
+
+Wall time was **19m37s**. The extra 300 iterations bought another **220,228
+tCO2e (1.76%)** and the yield floor is still met, but only by 401 m3; this run is
+at the floor, not inside it. Exact replay matches the target cell:
+**12,240,329.178 tCO2e**.
+
 ## Yield-floor sensitivity
 
 The same 200-iteration search was rerun with stricter floors:
@@ -58,8 +76,9 @@ Exact replay of the 10.0M schedule matches its reported target:
 
 ## Reading
 
-- More iterations still buy meaningful carbon reductions on the 5k sample; the
-  problem was search budget, not only model speed.
+- More iterations still buy meaningful carbon reductions on the 5k sample: 500
+  iterations reach 4.50% below baseline, versus 2.78% at 200. Search budget, not
+  model runtime, is now the main limit.
 - The result is a local improvement from an all-CC start, not a carbon optimum.
 - Exact `ws4 carbon` remains the reporting authority.
 
@@ -68,8 +87,9 @@ Exact replay of the 10.0M schedule matches its reported target:
 - 3.36% of TSA41 area, 68 of 70 tracks, 1,748 of 5,273 full-landscape states.
 - CC-only; fire events are excluded because the simulator treats them as no-ops
   and they enlarge the incremental/exact gap.
-- The 9.5M yield floor is met with a 307k m3 margin; a 10.0M floor gives back
-  about 283k tCO2e of the reduction.
+- The 200-iteration run meets the 9.5M yield floor with a 307k m3 margin; the
+  500-iteration run sits at 9.5004M. A 10.0M floor gives back about 283k tCO2e of
+  the 200-iteration reduction.
 
 ## Artifacts
 
@@ -78,3 +98,5 @@ Exact replay of the 10.0M schedule matches its reported target:
 - `/tmp/opencode/tsa41-5k-opt-200-y98/`
 - `/tmp/opencode/tsa41-5k-opt-200-y100/`
 - `/tmp/opencode/tsa41-5k-opt-200-y100-exact/`
+- `/tmp/opencode/tsa41-5k-opt-500/`
+- `/tmp/opencode/tsa41-5k-opt-500-exact/`
