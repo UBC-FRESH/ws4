@@ -165,3 +165,21 @@ That is about **57x** the c5 CPU no-LNS end-to-end rate. The table is still a 2,
 slice; full TSA23 requires sparse storage and a full candidate/effect build before this is
 production-ready.
 
+## P83.6.2 evidence (2026-10-30)
+
+The sparse CSR float64 engine and a bounded best-of-batch LNS prototype were built on the
+c5 2,000-block slice.  The full evidence is in
+`notes/reports/p83-6-2-gpu-effects.md`.
+
+- Sparse table: 456,278 rows, 1,578,701 nonzeros, 28.7 MB, versus 1.36 GiB dense float64.
+- Exactness: single moves max abs error 0; 64-block LNS batches 4.4e-11.
+- Steady-state LNS: 1,024 moves x 64 blocks is 374.8x the CPU contribution lookup.
+- Batched LNS search: 2.77-2.90x the stock CPU search at better objective on three seeds,
+  but 1.34-1.40x for a single cold run because of the one-time 9.5 s table build.  Reusing
+  the table across the three seeds gives 2.10x including the build.
+- Against a faster CPU variant with the same direct proposal sampler, the GPU is 2.4-4.0x
+  faster but 1-3% worse in objective on two seeds.  The stock CPU path remains the
+  reference and fallback.
+
+The next step is table persistence and a wider target-coverage check.  Do not port the
+sequential single-move loop.

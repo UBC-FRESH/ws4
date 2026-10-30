@@ -2563,6 +2563,9 @@ enough for the 100,000-iteration budget and record the actual target result.
 - [x] P83.4 Allow seeded process-pool islands (#588)
 - [x] P83.5 Add flow-directed moves or an LP period-volume seed (#589)
 - [ ] P83.6 Evaluate a GPU batch path (#592)
+  - [x] P83.6.1 Benchmark a bounded batch effect/delta evaluator
+  - [x] P83.6.2 Add the sparse float64 effect engine and batched LNS prototype
+  - [ ] Decide whether to persist the effect table for a production optional path
 
 Acceptance:
 

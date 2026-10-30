@@ -3398,3 +3398,13 @@ issue comments.
   on the GPU, 1,024 chains ran 51,200 moves in 0.332 s (154,327 moves/s; 150,255
   accepted/s) on the 2,000-block c5 slice, about 57x the CPU no-LNS rate. Best slice
   objective 2.566B vs 2.602B seed; effect-table build 8.6 s. Not integrated or full-scale.
+- P83.6.2 sparse GPU effect engine and batched LNS: added a sparse CSR float64 effect table
+  over the c5 2,000-block slice (456,278 rows, 1.58M nonzeros, 28.7 MB versus 1.36 GiB
+  dense), batched gather/subtract/segmented-sum, and a bounded best-of-batch LNS prototype.
+  Exactness is 0 absolute error for single moves and 4.4e-11 for 64-block LNS batches.  The
+  1,024-move LNS batch is 374.8x the CPU contribution lookup.  The batched search is
+  2.77-2.90x the stock CPU search at better objective on three seeds, but only 1.34-1.40x
+  for a single cold run because of the 9.5 s table build; reusing the table over three seeds
+  gives 2.10x.  The CPU SA remains the reference and fallback.  Evidence:
+  `notes/reports/p83-6-2-gpu-effects.md` and `notes/design/ws4-gpu-search.md`.  Dashboard
+  result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.
