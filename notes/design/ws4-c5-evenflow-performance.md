@@ -200,3 +200,18 @@ the result in this note and the changelog.
 - Next bounded move is P83.6 (GPU batch path); do not claim a ±5% target win from this
   repair.
 
+## P83.5 100k repair check (2026-10-30)
+
+The 100k no-LNS run plus 20,000 repair trials / 8 chains completed in **38.3 s**. Repair
+accepted only **3 moves** and made a very small change:
+
+- objective 39,133,750 -> **39,133,480**
+- conifer flow -8.12%/+6.01% -> **-7.98%/+5.93%**
+- deciduous flow -5.28%/+4.74% -> **-5.16%/+4.74%**
+- final stock **20.96M** (unchanged), against 23.9M
+
+This is a negative result for the target set, not a search failure: the repair improves the
+gap only marginally and cannot close a 2.9M stock gap. The next decision is target policy:
+lower harvest levels, raise the stock weight/relax the 90% stock goal, or accept the flow
+gap and close P83.1 as a negative evidence report.
+

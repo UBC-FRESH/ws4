@@ -3342,6 +3342,12 @@ issue comments.
   the same 39,133,750 objective as the best single start; multi-start is a throughput
   capability, not a single-run speed or quality win. The next task is P83.5 (#589).
 
+- P83.5 100k repair check: 38.3 s with 20k repair trials/8 chains; only 3 moves accepted.
+  Objective 39,133,750 -> 39,133,480; conifer flow -8.12%/+6.01% ->
+  -7.98%/+5.93%; deciduous -5.28%/+4.74% -> -5.16%/+4.74%; stock 20.96M vs 23.9M.
+  The ±5% flow and 90% stock targets remain unmet; this is target tension, not a search
+  budget issue. Next decision: change target policy or close P83.1 with negative evidence.
+
 - P83.5 flow-directed repair: added a bounded post-search pass that shifts harvest from
   periods above an even-flow target into periods below it, accepting only exact objective
   improvements that lower the target's flow penalty without raising another flow target's
