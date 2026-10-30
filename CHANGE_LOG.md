@@ -3428,3 +3428,17 @@ issue comments.
 
 - P83.7 table persistence: added `EffectTable.save`/`load` and a round-trip test. The
   full-model CSR build can now be reused instead of paid on every search; 14 GPU tests pass.
+
+
+- P83.8 GPU-native population search: added `ws4/opt/gpu_ga.py` (candidate-index genomes,
+  seed/random/mutant initialization, tournament selection, uniform crossover, elitism,
+  ring and AGrp island exchange, batched exact fitness, state save/load) and
+  `tests/test_gpu_ga.py`.  On the c5 2,000-block slice a 256-genome, 500-generation run
+  reached 36.09-36.17M in 1.30-1.58 s against stock CPU SA at 40.94-45.15M in 28.0-41.2 s
+  (20.8-26.0x search-only; 2.5-3.6x including the 9.6 s table build), and beat the batched
+  GPU LNS on all three seeds.  The TSA23 5,000-block subset reached 75.34-75.41M against
+  76.51-76.54M CPU in 1.23-4.27 s, but the 59 s cold table build makes a single run slower
+  than CPU (0.04-0.16x).  Seven-worker ring and AGrp exchange were slower and no better
+  than one island on c5.  Exactness was checked against `IncrementalObjective` for level
+  and even-flow genomes; the full 20.2M-row table was not rebuilt.  Evidence:
+  `notes/reports/p83-8-gpu-population.md`.  Dashboard: GREEN.

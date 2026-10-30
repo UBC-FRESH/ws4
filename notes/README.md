@@ -41,6 +41,7 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `design/ws4-gpu-search.md` — the P83.6 GPU-native batch/population search design.
 - `design/ws4-gpu-population-search.md` — the P83.8 candidate-index GPU population search plan.
 - `design/ws4-metaheuristic-portfolio.md` — the P83.9 SA/tabu/ILS/GA/LNS master/worker portfolio plan.
+- `reports/p83-8-gpu-population.md` — the P83.8 candidate-index population search, c5 2k and TSA23 5k benchmarks.
 - `design/ws4-optimizer-core.md` — event chains and per-move objective deltas (proposed).
 - `design/ws4-hydrology-consumer-hardening.md` — P62 preflight, exposure, and optimizer-boundary plan.
 - `design/ws4-carbon.md` — historical P58 carbon design note; the current contract is
