@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import random
 from pathlib import Path
 
@@ -117,6 +118,46 @@ def test_block_chain_narrows_feature_offsets_without_changing_products(tmp_path:
         if cell[0] == 3 or str(cell[1]).startswith("product.")
     }
     assert narrow == expected
+
+
+def test_flow_delta_tracks_a_random_walk_exactly(tmp_path: Path) -> None:
+    """The cached period balances reproduce the full flow objective for every move."""
+    optimizer = _optimizer(tmp_path, years=4)
+    targets = [
+        Target(
+            "feature.Volume",
+            0,
+            period_width=1,
+            flow="even",
+            flow_reference_period=1,
+            minimum=-5.0,
+            maximum=5.0,
+            min_weight=10_000.0,
+            max_weight=10_000.0,
+            shape="non_linear",
+        )
+    ]
+    candidates = optimizer.candidates()
+    schedule: Schedule = {block: options[0] for block, options in candidates.items() if options}
+    evaluator = IncrementalObjective(optimizer, targets)
+    evaluator.reset(schedule)
+    rng = random.Random(11)
+    for _ in range(40):
+        move = optimizer.registry.pick(rng).apply(schedule, rng, candidates)
+        if move is None:
+            continue
+        changed = _changed_blocks(schedule, move)
+        expected = optimizer._evaluate(move, targets)
+        if not (math.isfinite(expected) and math.isfinite(evaluator.objective)):
+            evaluator.apply(changed, move)
+            schedule = move
+            continue
+        assert evaluator.objective + evaluator.delta(changed, move) == pytest.approx(
+            expected, abs=1e-7
+        )
+        evaluator.apply(changed, move)
+        assert evaluator.objective == pytest.approx(expected, abs=1e-7)
+        schedule = move
 
 
 def test_feature_target_uses_the_same_objective_with_narrow_offsets(tmp_path: Path) -> None:

@@ -607,6 +607,9 @@ def optimize(
     lns_destroy: float = typer.Option(
         0.1, "--lns-destroy", help="Fraction of the schedule an LNS move destroys"
     ),
+    lns_max_destroy: int = typer.Option(
+        64, "--lns-max-destroy", help="Maximum blocks one LNS move destroys"
+    ),
     warm_cache: bool = typer.Option(
         False, "--warm-cache", help="Precompute every candidate chain's contribution first"
     ),
@@ -728,6 +731,7 @@ def optimize(
         constraint_strategy=constraint_strategy,
         lns_weight=lns_weight,
         lns_destroy=lns_destroy,
+        lns_max_destroy=lns_max_destroy,
         warm_cache=warm_cache,
         greedy_seed=seed_greedy,
         seed_account=seed_account,
@@ -907,6 +911,9 @@ def watch(
     lns_destroy: float = typer.Option(
         0.1, "--lns-destroy", help="Fraction of the schedule an LNS move destroys"
     ),
+    lns_max_destroy: int = typer.Option(
+        64, "--lns-max-destroy", help="Maximum blocks one LNS move destroys"
+    ),
     warm_cache: bool = typer.Option(
         False, "--warm-cache", help="Precompute every candidate chain's contribution first"
     ),
@@ -974,6 +981,7 @@ def watch(
         targets_path=str(targets),
         lns_weight=lns_weight,
         lns_destroy=lns_destroy,
+        lns_max_destroy=lns_max_destroy,
         warm_cache=warm_cache,
         greedy_seed=seed_greedy,
         seed_account=seed_account,

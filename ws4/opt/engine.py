@@ -114,18 +114,17 @@ def load_schedule_csv(path: Path) -> Schedule:
         raise ValueError(
             f"schedule {path} is missing required columns: {', '.join(sorted(missing))}"
         )
-    schedule: Schedule = {}
-    for block, group in frame.groupby("block_id", sort=False):
-        schedule[int(float(str(block)))] = tuple(
-            sorted(
-                (
-                    (str(treatment), int(float(str(offset))))
-                    for treatment, offset in zip(group["treatment"], group["offset"], strict=True)
-                ),
-                key=lambda event: event[1],
-            )
+    grouped: dict[int, list[tuple[str, int]]] = {}
+    for block, treatment, offset in frame[["block_id", "treatment", "offset"]].itertuples(
+        index=False, name=None
+    ):
+        grouped.setdefault(int(float(str(block))), []).append(
+            (str(treatment), int(float(str(offset))))
         )
-    return schedule
+    return {
+        block: tuple(sorted(events, key=lambda event: event[1]))
+        for block, events in grouped.items()
+    }
 
 
 def _apply_thread_limit(threads: int) -> None:
@@ -279,6 +278,9 @@ class OptimizeConfig:
         The selection weight of the large-neighbourhood search operator.
     lns_destroy : float
         The fraction of the schedule the large-neighbourhood search destroys.
+    lns_max_destroy : int
+        The maximum number of blocks one LNS move may destroy. A cap keeps the move's cost
+        bounded as the schedule grows.
     cluster_weight : float
         The selection weight of the cluster operator; 0 disables it and its topology.
     cluster_size : int
@@ -369,6 +371,7 @@ class OptimizeConfig:
     swap_weight: float = 0.5
     lns_weight: float = 0.2
     lns_destroy: float = 0.1
+    lns_max_destroy: int = 64
     cluster_weight: float = 0.0
     cluster_size: int = 8
     coalesce_weight: float = 0.0
@@ -444,7 +447,11 @@ class Optimizer:
                 ToggleOperator(weight=cfg.toggle_weight),
                 ShiftOperator(weight=cfg.shift_weight),
                 SwapOperator(weight=cfg.swap_weight),
-                LnsOperator(weight=cfg.lns_weight, destroy_fraction=cfg.lns_destroy),
+                LnsOperator(
+                    weight=cfg.lns_weight,
+                    destroy_fraction=cfg.lns_destroy,
+                    max_destroy=cfg.lns_max_destroy,
+                ),
                 ClusterOperator(
                     weight=cfg.cluster_weight,
                     size=cfg.cluster_size,
@@ -568,7 +575,7 @@ class Optimizer:
             The candidate treatment chains per block (single rotations first, earliest
             first, then multi-rotation chains).
         """
-        simulator = Simulator.from_dataset(self.dataset_dir)
+        simulator = self.simulator()
         by_track: dict[int, list[tuple[str, int, int, int, int]]] = {}
         for row in simulator.treatments.itertuples(index=False):
             by_track.setdefault(int(float(str(row.track_id))), []).append(
@@ -631,7 +638,7 @@ class Optimizer:
             stop = last_year if end <= 0 else min(last_year, end - age)
             if start > stop:
                 continue
-            single.extend(((label, year),) for year in range(start, stop + 1))
+            single.extend([((label, year),) for year in range(start, stop + 1)])
         single.sort(key=lambda chain: chain[0][1])
         if rotations <= 1 or not single:
             return single[:_MAX_CHAINS]
@@ -1761,7 +1768,8 @@ class Optimizer:
         schedule_path = out_dir / "schedule.csv"
         self._schedule_frame(best).to_csv(schedule_path, index=False)
         model, route_accounts, duplicate_accounts = self.route()
-        simulator = Simulator.from_dataset(self.dataset_dir)
+        simulator = self.simulator()
+        simulator.reset()
         values = simulator.run(
             schedule_path,
             years=self.cfg.years,

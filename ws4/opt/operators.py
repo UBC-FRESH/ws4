@@ -357,10 +357,13 @@ class LnsOperator(_OperatorBase):
 
     name = "lns"
 
-    def __init__(self, weight: float = 0.2, destroy_fraction: float = 0.1) -> None:
-        """Set the operator's selection weight and the fraction destroyed."""
+    def __init__(
+        self, weight: float = 0.2, destroy_fraction: float = 0.1, max_destroy: int = 64
+    ) -> None:
+        """Set the operator's selection weight, fraction destroyed, and block cap."""
         self.weight = weight
         self.destroy_fraction = destroy_fraction
+        self.max_destroy = max(1, int(max_destroy))
 
     def propose_inplace(
         self, schedule: Schedule, rng: random.Random, candidates: Candidates
@@ -384,7 +387,10 @@ class LnsOperator(_OperatorBase):
         if not schedule:
             return None
         blocks, _ = _index(candidates)
-        count = max(1, int(len(schedule) * self.destroy_fraction))
+        count = min(
+            max(1, int(len(schedule) * self.destroy_fraction)),
+            self.max_destroy,
+        )
         chosen: set[int] = set()
         limit = count * 4 + 8
         tries = 0
