@@ -3442,3 +3442,19 @@ issue comments.
   than one island on c5.  Exactness was checked against `IncrementalObjective` for level
   and even-flow genomes; the full 20.2M-row table was not rebuilt.  Evidence:
   `notes/reports/p83-8-gpu-population.md`.  Dashboard: GREEN.
+- P83.9 fixed round-robin master/worker portfolio: added
+  `ws4/opt/meta_portfolio.py` with one bounded master archive, seven fixed worker slots
+  (SA, tabu, ILS, GA, LNS, diverse restart), explicit seed-and-return migration records,
+  method-contribution counters, and a fresh exact `IncrementalObjective` check of every
+  worker return and of the final incumbent. Regular workers use the AGrp master-best
+  seeding rule; the restart slot uses the far end of the archive. CPU workers use
+  candidate-preserving toggle/shift/LNS moves so their elites stay representable by the
+  candidate-index GA genome. Added `GenomePopulation.reseed` and an optional run deadline
+  so a persistent GA slot takes a new elite and shares the wall-clock budget. On a c5
+  2,000-block slice at an equal 15 s search budget (shared 9 s table build excluded), the
+  portfolio reached 35.91M / 36.15M / 36.07M against the single GPU GA's 35.79M / 35.68M /
+  35.85M on seeds 7/8/9, so the fixed mix is 0.33-1.33% worse (mean +0.75%). The GA
+  produced the incumbent on two seeds, SA on one, and LNS never improved or entered the
+  archive. Evidence: `notes/reports/p83-9-meta-portfolio.md` and
+  `notes/design/ws4-metaheuristic-portfolio.md`. Dashboard result:
+  `python scripts/dashboard.py` reports `OVERALL: GREEN`.

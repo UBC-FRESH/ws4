@@ -8,6 +8,7 @@ same tensor code runs on CUDA.
 from __future__ import annotations
 
 import math
+import time
 from pathlib import Path
 
 import pytest
@@ -313,6 +314,41 @@ def test_saved_table_and_population_state_round_trip(tmp_path: Path) -> None:
     actual = loaded.evaluate()
     assert torch.equal(actual, expected)
     assert loaded.schedule(loaded.best_genome) == population.schedule(population.best_genome)
+
+
+def test_deadline_stops_breeding_after_the_initial_evaluation(tmp_path: Path) -> None:
+    """A wall-clock deadline returns the seeded population without extra generations."""
+    optimizer, evaluator = _optimizer(tmp_path)
+    table = EffectTable.build(optimizer, evaluator, device="cpu")
+    population = GenomePopulation(
+        optimizer, evaluator, table, population=4, seed=15, seed_schedule=_seed(optimizer)
+    )
+    result = population.run(100, deadline=time.monotonic())
+    assert result.generations == 0
+    assert result.evaluations == 4
+    assert len(result.history) == 1
+    assert result.objective <= result.initial_objective
+
+
+def test_reseed_replaces_the_population_and_resets_the_incumbent(tmp_path: Path) -> None:
+    """A persistent worker can take a new elite without sharing master state."""
+    optimizer, evaluator = _optimizer(tmp_path)
+    table = EffectTable.build(optimizer, evaluator, device="cpu")
+    seed = _seed(optimizer)
+    population = GenomePopulation(
+        optimizer, evaluator, table, population=8, seed=13, seed_schedule=seed
+    )
+    population.run(2)
+    new_seed = {block: chains[-1] for block, chains in optimizer.candidates().items()}
+    population.reseed(new_seed)
+    assert population.generation == 0
+    assert population.best_objective == math.inf
+    assert population.history == []
+    assert population.schedule(population.genomes[0]) == new_seed
+    result = population.run(1)
+    assert result.initial_objective == pytest.approx(
+        _exact(evaluator, new_seed), rel=1e-9, abs=1e-6
+    )
 
 
 def test_effect_table_missing_a_seed_chain_raises(tmp_path: Path) -> None:

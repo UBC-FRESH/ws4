@@ -374,6 +374,34 @@ class GenomePopulation:
             )
         return genomes
 
+    def reseed(self, seed_schedule: Mapping[int, Chain] | None) -> None:
+        """Replace the population with a fresh initialization from a schedule.
+
+        A persistent worker uses this at a migration boundary: its effect table, option
+        mapping, and random stream stay local, while the new elite becomes the seed genome
+        and the incumbent counters reset.  No external population or master state is
+        shared.
+
+        Parameters
+        ----------
+        seed_schedule : mapping of int to tuple of (str, int) or None
+            The accepted schedule.  None uses the first candidate of every block.
+
+        Raises
+        ------
+        ValueError
+            When a seed chain is not in the table's option list for its block.
+        """
+        self.genomes = self._initialize(seed_schedule)
+        self.scores = None
+        self.totals = None
+        self.generation = 0
+        self.best_genome = self.genomes[0].clone()
+        self.best_objective = math.inf
+        self.best_generation = 0
+        self.best_island = 0
+        self.history = []
+
     def _rows(self, genomes: torch_type.Tensor) -> torch_type.Tensor:
         """Return the effect-table row ids of every genome and block."""
         return self.option_rows[self.block_index.unsqueeze(0), genomes]
@@ -539,7 +567,9 @@ class GenomePopulation:
             self.best_generation = self.generation
             self.best_island = index // size
 
-    def run(self, generations: int, *, check: int = 0) -> PopulationResult:
+    def run(
+        self, generations: int, *, check: int = 0, deadline: float | None = None
+    ) -> PopulationResult:
         """Evolve the initial population for a fixed number of generations.
 
         Parameters
@@ -551,11 +581,16 @@ class GenomePopulation:
             Compare the first ``check`` initial genomes with a fresh
             :class:`IncrementalObjective` and raise when they differ.  Zero disables the
             check.  Defaults to zero.
+        deadline : float or None, optional
+            A :func:`time.monotonic` value to stop breeding at, or None to run the
+            generation budget out.  The initial population is always evaluated.  Defaults
+            to None.
 
         Returns
         -------
         PopulationResult
             The incumbent schedule, its exact objective, and run counters.
+            ``generations`` is the number actually evolved.
 
         Raises
         ------
@@ -577,7 +612,10 @@ class GenomePopulation:
         self.history.append(self.best_objective)
         initial_objective = float(scores[0])
         evaluations = self.population
+        completed = 0
         for generation in range(1, generations + 1):
+            if deadline is not None and time.monotonic() >= deadline:
+                break
             if (
                 self.islands > 1
                 and self.migration_interval > 0
@@ -590,12 +628,13 @@ class GenomePopulation:
             self._update_best(scores)
             self.history.append(self.best_objective)
             evaluations += self.population
+            completed = generation
         elapsed = time.perf_counter() - started
         return PopulationResult(
             schedule=self.schedule(self.best_genome),
             objective=self.best_objective,
             initial_objective=initial_objective,
-            generations=generations,
+            generations=completed,
             evaluations=evaluations,
             seconds=elapsed,
             best_generation=self.best_generation,

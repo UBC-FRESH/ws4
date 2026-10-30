@@ -170,3 +170,19 @@ CPU/GPU methods:
 - no adaptive credit yet.
 
 Then add the adaptive allocation only after the fixed portfolio is measured.
+
+## First fixed round-robin prototype (2026-10-30)
+
+`ws4/opt/meta_portfolio.py` now implements the fixed allocation: one master archive, seven
+worker slots (two SA, tabu, ILS, GA, LNS, diverse-restart SA), explicit migration records,
+and a fresh exact `IncrementalObjective` verification of every return.  Regular workers are
+seeded from the master's best elite (the AGrp rule); the restart slot walks the archive from
+the far end.  CPU workers use candidate-preserving toggle/shift/LNS moves so their elites
+remain representable by the candidate-index GA genome.
+
+On a c5 2,000-block slice at a 15-second equal search budget, the portfolio was 0.33-1.33%
+worse than the best single method (mean +0.75%), and LNS never contributed an elite.  The
+fixed mix gives the GA only 400-800 generations against the single method's 2,079-2,805.
+The negative result and method contributions are in
+`notes/reports/p83-9-meta-portfolio.md`.  This is the baseline the adaptive-credit step must
+beat.
