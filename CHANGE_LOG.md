@@ -3333,3 +3333,11 @@ issue comments.
   emissions vary by 1.6–2.4×. TSA41 remains lowest and TSA16 highest, while TSA08 and
   TSA40 swap between the default and high scenarios. Evidence:
   `notes/reports/carbon-4tsa-hwp-sensitivity.md`.
+- TSA41 500-block carbon-aware optimization: bounded production subset, CC-only
+  schedule, public-default HWP. Thirty iterations reduced exact cumulative emissions
+  from 1,281,211 to 1,258,901 tCO2e (-1.74%) while meeting a 430k m3 yield floor;
+  system carbon rose by 6,163 tC. The ledger read 0.90% high versus the exact engine.
+  The 5k sample was not usable: its initial evaluation exceeded the 20-minute budget
+  before iteration 1. Fire events were excluded because the simulator treats them as
+  no-ops and they enlarged the ledger/exact gap to 5.2%. Evidence:
+  `notes/reports/carbon-tsa41-500-optimization.md`.
