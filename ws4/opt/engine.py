@@ -491,10 +491,12 @@ class Optimizer:
         ] = {}
         self._last_values: pd.DataFrame | None = None
         self._delta_cache: dict[
-            tuple[int, Chain, frozenset[int] | None], dict[tuple[int, str], float]
+            tuple[int, Chain, frozenset[int] | None, frozenset[str] | None],
+            dict[tuple[int, str], float],
         ] = {}
         self._empty_delta_cache: dict[
-            tuple[int, frozenset[int] | None], dict[tuple[int, str], float]
+            tuple[int, frozenset[int] | None, frozenset[str] | None],
+            dict[tuple[int, str], float],
         ] = {}
         self._route_delta_cache: dict[tuple[int, Chain], dict[tuple[int, str], float]] = {}
         self._carbon_ledger_cache: CarbonLedger | None = None
@@ -1057,13 +1059,14 @@ class Optimizer:
             self._product_delta_cache[product_key] = product_delta
             return product_delta
         feature_key = None if feature_offsets is None else frozenset(feature_offsets)
-        key = (block, chain, feature_key)
+        account_key = None if accounts is None else frozenset(accounts)
+        key = (block, chain, feature_key, account_key)
         cached = self._delta_cache.get(key)
         if cached is not None:
             return cached
         simulator = self.simulator()
         treated = simulator.block_chain(block, chain, self.cfg.years, feature_key, accounts)
-        empty_key = (block, feature_key)
+        empty_key = (block, feature_key, account_key)
         empty = self._empty_delta_cache.get(empty_key)
         if empty is None:
             empty = simulator.block_chain(block, (), self.cfg.years, feature_key, accounts)
