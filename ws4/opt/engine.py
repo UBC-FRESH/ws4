@@ -13,7 +13,7 @@ import math
 import os
 import random
 import time
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Collection, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
@@ -53,6 +53,7 @@ from .constraints import ConstraintGuard
 from .control import RunControl
 from .core import Problem
 from .flood import FloodRiskModel, FloodRiskRefusalError
+from .flow_repair import repair_flow_gap
 from .incremental import IncrementalObjective
 from .mip import bound_for, relaxation_for
 from .objective import Target, load_targets, objective
@@ -114,18 +115,17 @@ def load_schedule_csv(path: Path) -> Schedule:
         raise ValueError(
             f"schedule {path} is missing required columns: {', '.join(sorted(missing))}"
         )
-    schedule: Schedule = {}
-    for block, group in frame.groupby("block_id", sort=False):
-        schedule[int(float(str(block)))] = tuple(
-            sorted(
-                (
-                    (str(treatment), int(float(str(offset))))
-                    for treatment, offset in zip(group["treatment"], group["offset"], strict=True)
-                ),
-                key=lambda event: event[1],
-            )
+    grouped: dict[int, list[tuple[str, int]]] = {}
+    for block, treatment, offset in frame[["block_id", "treatment", "offset"]].itertuples(
+        index=False, name=None
+    ):
+        grouped.setdefault(int(float(str(block))), []).append(
+            (str(treatment), int(float(str(offset))))
         )
-    return schedule
+    return {
+        block: tuple(sorted(events, key=lambda event: event[1]))
+        for block, events in grouped.items()
+    }
 
 
 def _apply_thread_limit(threads: int) -> None:
@@ -194,7 +194,8 @@ class OptimizeConfig:
     targets_path : str
         The YAML file of goal-programming targets.
     initial_schedule_path : str
-        A ``block_id,treatment,period`` CSV to start the search from. Serial starts only.
+        A ``block_id,treatment,period`` CSV to start the search from. It is shared by every
+        start and island.
     weights_path : str
         Accepted for compatibility and not read. The weights that apply are each target's own
         ``min_weight`` and ``max_weight``; ``ws4 calibrate`` rescales them into a targets file.
@@ -279,6 +280,9 @@ class OptimizeConfig:
         The selection weight of the large-neighbourhood search operator.
     lns_destroy : float
         The fraction of the schedule the large-neighbourhood search destroys.
+    lns_max_destroy : int
+        The maximum number of blocks one LNS move may destroy. A cap keeps the move's cost
+        bounded as the schedule grows.
     cluster_weight : float
         The selection weight of the cluster operator; 0 disables it and its topology.
     cluster_size : int
@@ -328,6 +332,12 @@ class OptimizeConfig:
         The selection weight of the merge operator, which treats gap blocks.
     split_weight : float
         The selection weight of the split operator, which clears articulation blocks.
+    flow_repair_trials : int
+        The number of exact candidate moves a bounded flow-directed repair pass may price after
+        the search, or 0 to disable it. The pass shifts harvest from periods above an even-flow
+        target into periods below it and accepts only exact improvements.
+    flow_repair_chains : int
+        The most directed candidate chains the repair pass prices for one block.
     """
 
     threads: int = 1
@@ -373,6 +383,7 @@ class OptimizeConfig:
     swap_weight: float = 0.5
     lns_weight: float = 0.2
     lns_destroy: float = 0.1
+    lns_max_destroy: int = 64
     cluster_weight: float = 0.0
     cluster_size: int = 8
     coalesce_weight: float = 0.0
@@ -391,6 +402,8 @@ class OptimizeConfig:
     flood_screen_config_path: str = ""
     merge_weight: float = 0.0
     split_weight: float = 0.0
+    flow_repair_trials: int = 0
+    flow_repair_chains: int = 4
 
     def __post_init__(self) -> None:
         """Reject an unknown temperature schedule before the search starts."""
@@ -412,6 +425,10 @@ class OptimizeConfig:
             raise ValueError("carbon HWP accounting needs a carbon package")
         if self.carbon_workers < 1:
             raise ValueError("carbon_workers must be positive")
+        if self.flow_repair_trials < 0:
+            raise ValueError("flow_repair_trials must be zero (off) or positive")
+        if self.flow_repair_chains < 1:
+            raise ValueError("flow_repair_chains must be positive")
         if self.seed_candidates < 1:
             raise ValueError("seed_candidates must be positive")
 
@@ -451,7 +468,11 @@ class Optimizer:
                 ToggleOperator(weight=cfg.toggle_weight),
                 ShiftOperator(weight=cfg.shift_weight),
                 SwapOperator(weight=cfg.swap_weight),
-                LnsOperator(weight=cfg.lns_weight, destroy_fraction=cfg.lns_destroy),
+                LnsOperator(
+                    weight=cfg.lns_weight,
+                    destroy_fraction=cfg.lns_destroy,
+                    max_destroy=cfg.lns_max_destroy,
+                ),
                 ClusterOperator(
                     weight=cfg.cluster_weight,
                     size=cfg.cluster_size,
@@ -492,7 +513,14 @@ class Optimizer:
         ] = {}
         self._last_values: pd.DataFrame | None = None
         self._sim_delta_cache: dict[tuple[int, Chain], dict[tuple[int, str], float]] = {}
-        self._delta_cache: dict[tuple[int, Chain], dict[tuple[int, str], float]] = {}
+        self._delta_cache: dict[
+            tuple[int, Chain, frozenset[int] | None, frozenset[str] | None],
+            dict[tuple[int, str], float],
+        ] = {}
+        self._empty_delta_cache: dict[
+            tuple[int, frozenset[int] | None, frozenset[str] | None],
+            dict[tuple[int, str], float],
+        ] = {}
         self._route_delta_cache: dict[tuple[int, Chain], dict[tuple[int, str], float]] = {}
         self._carbon_ledger_cache: CarbonLedger | None = None
         self._route_event_cache: dict[tuple[int, Chain, int], tuple[RouteEvent, ...]] = {}
@@ -572,7 +600,7 @@ class Optimizer:
             The candidate treatment chains per block (single rotations first, earliest
             first, then multi-rotation chains).
         """
-        simulator = Simulator.from_dataset(self.dataset_dir)
+        simulator = self.simulator()
         by_track: dict[int, list[tuple[str, int, int, int, int]]] = {}
         for row in simulator.treatments.itertuples(index=False):
             by_track.setdefault(int(float(str(row.track_id))), []).append(
@@ -584,9 +612,16 @@ class Optimizer:
                     int(float(str(row.offset))),
                 )
             )
-        grouped = simulator.fragments.groupby("block_id")
-        track_of = grouped["track_id"].first().to_dict()
-        age_of = grouped["age"].min().to_dict()
+        fragments = simulator.fragments
+        # A block can be split across several tracks (for example, where a package boundary
+        # cuts it). Some of those tracks carry no treatments at all, so taking the first
+        # fragment's track can leave the whole block with an empty candidate list even
+        # though another fragment can be treated. Pick the largest treatment-bearing
+        # fragment for the block instead.
+        eligible = fragments[fragments["track_id"].isin(by_track)]
+        selected = eligible.loc[eligible.groupby("block_id")["area_ha"].idxmax()]
+        track_of = selected.set_index("block_id")["track_id"].to_dict()
+        age_of = selected.set_index("block_id")["age"].to_dict()
         options: Candidates = {}
         rotations = min(_MAX_ROTATIONS, max(1, self.cfg.years))
         for raw_block, raw_track in track_of.items():
@@ -628,7 +663,7 @@ class Optimizer:
             stop = last_year if end <= 0 else min(last_year, end - age)
             if start > stop:
                 continue
-            single.extend(((label, year),) for year in range(start, stop + 1))
+            single.extend([((label, year),) for year in range(start, stop + 1)])
         single.sort(key=lambda chain: chain[0][1])
         if rotations <= 1 or not single:
             return single[:_MAX_CHAINS]
@@ -1017,6 +1052,56 @@ class Optimizer:
         self._base_cache = base
         return base
 
+    def _block_deltas(
+        self,
+        pairs: Sequence[tuple[int, Chain]],
+        accounts: set[str] | None = None,
+        feature_offsets: Collection[int] | None = None,
+    ) -> dict[tuple[int, Chain], dict[tuple[int, str], float]]:
+        """Return several blocks' exact deltas, sharing the move's empty-chain work.
+
+        This is the batch entry point for LNS: one move re-assigns many blocks, and each
+        new chain needs both its own contribution and the block's untreated baseline. The
+        baseline is chain-independent, so it is computed once per block before the treated
+        deltas (and left in the same cache :meth:`_block_delta` reads). Duplicate pairs are
+        collapsed. The returned mapping preserves the first request order.
+
+        Parameters
+        ----------
+        pairs : sequence of (int, Chain)
+            The ``(block, chain)`` pairs to price.
+        accounts : set of str or None, optional
+            The tracked accounts, as :meth:`_block_delta` takes them.
+        feature_offsets : collection of int or None, optional
+            The feature checkpoints, as :meth:`_block_delta` takes them.
+
+        Returns
+        -------
+        dict of (int, Chain) to dict of (int, str) to float
+            The delta per distinct pair.
+        """
+        feature_key = None if feature_offsets is None else frozenset(feature_offsets)
+        account_key = None if accounts is None else frozenset(accounts)
+        product_only = accounts is not None and all(
+            name.startswith("product.") for name in accounts
+        )
+        if not product_only:
+            simulator = self.simulator()
+            for block in {block for block, _chain in pairs}:
+                empty_key = (block, feature_key, account_key)
+                if empty_key in self._empty_delta_cache:
+                    continue
+                self._empty_delta_cache[empty_key] = simulator.block_chain(
+                    block, (), self.cfg.years, feature_key, accounts
+                )
+        results: dict[tuple[int, Chain], dict[tuple[int, str], float]] = {}
+        for block, chain in pairs:
+            key = (block, chain)
+            if key in results:
+                continue
+            results[key] = self._block_delta(block, chain, accounts, feature_offsets)
+        return results
+
     def _simulator_block_delta(self, block: int, chain: Chain) -> dict[tuple[int, str], float]:
         """Return a block's simulator-only delta for a treatment chain, cached."""
         key = (block, chain)
@@ -1035,7 +1120,11 @@ class Optimizer:
         return delta
 
     def _block_delta(
-        self, block: int, chain: Chain, accounts: set[str] | None = None
+        self,
+        block: int,
+        chain: Chain,
+        accounts: set[str] | None = None,
+        feature_offsets: Collection[int] | None = None,
     ) -> dict[tuple[int, str], float]:
         """Return a block's account-value delta for a treatment chain, cached.
 
@@ -1048,6 +1137,10 @@ class Optimizer:
         accounts : set of str or None, optional
             When given and the names are all product accounts, the delta is the products
             the chain makes, computed without stepping every year.
+        feature_offsets : collection of int or None, optional
+            When given, feature cells are evaluated only at these years. This keeps the
+            delta path from stepping and interpolating every feature curve for every year
+            when the target only reads a few period ends.
 
         Returns
         -------
@@ -1063,11 +1156,23 @@ class Optimizer:
             product_delta = {cell: value for cell, value in products.items() if cell[1] in accounts}
             self._product_delta_cache[product_key] = product_delta
             return product_delta
-        key = (block, chain)
+        feature_key = None if feature_offsets is None else frozenset(feature_offsets)
+        account_key = None if accounts is None else frozenset(accounts)
+        key = (block, chain, feature_key, account_key)
         cached = self._delta_cache.get(key)
         if cached is not None:
             return cached
-        delta = dict(self._simulator_block_delta(block, chain))
+        simulator = self.simulator()
+        treated = simulator.block_chain(block, chain, self.cfg.years, feature_key, accounts)
+        empty_key = (block, feature_key, account_key)
+        empty = self._empty_delta_cache.get(empty_key)
+        if empty is None:
+            empty = simulator.block_chain(block, (), self.cfg.years, feature_key, accounts)
+            self._empty_delta_cache[empty_key] = empty
+        delta = {
+            cell: treated.get(cell, 0.0) - empty.get(cell, 0.0)
+            for cell in set(treated) | set(empty)
+        }
         carbon = self.carbon_ledger()
         if carbon is not None and (
             accounts is None or any(name.startswith("carbon.") for name in accounts)
@@ -1626,7 +1731,9 @@ class Optimizer:
         seconds = parse_time_limit(self.cfg.time_limit)
         self._deadline = time.monotonic() + seconds if seconds is not None else None
 
-    def search(self, out_dir: Path | None = None) -> tuple[Schedule, float, list[Target]]:
+    def search(
+        self, out_dir: Path | None = None, initial: Schedule | None = None
+    ) -> tuple[Schedule, float, list[Target]]:
         """Run the search and return the incumbent.
 
         When ``islands`` is set (and there is more than one), the islands run in parallel
@@ -1639,6 +1746,8 @@ class Optimizer:
         ----------
         out_dir : Path or None, optional
             The run directory; workers write ``telemetry-<island>.jsonl`` beside the summary.
+        initial : Schedule or None, optional
+            A starting schedule shared by every start or island.
 
         Returns
         -------
@@ -1648,7 +1757,7 @@ class Optimizer:
         targets = load_targets(Path(self.cfg.targets_path)) if self.cfg.targets_path else []
         self._start_clock()
         if self.cfg.islands > 1 and self.cfg.workers > 1:
-            best, best_obj = self._island_search(out_dir)
+            best, best_obj = self._island_search(out_dir, initial=initial)
             return best, best_obj, targets
         starts = max(1, self.cfg.starts)
         if self.cfg.workers > 1 and starts > 1:
@@ -1661,6 +1770,7 @@ class Optimizer:
                     f"start-{start}",
                     self._deadline,
                     worker_dir,
+                    initial,
                 )
                 for start in range(starts)
             ]
@@ -1670,18 +1780,23 @@ class Optimizer:
         else:
             best, best_obj = {}, math.inf
             for start in range(starts):
-                candidate, candidate_obj = self._solve(self.cfg.seed + start)
+                candidate, candidate_obj = self._solve(self.cfg.seed + start, initial=initial)
                 if candidate_obj < best_obj:
                     best, best_obj = candidate, candidate_obj
         return best, best_obj, targets
 
-    def _island_search(self, out_dir: Path | None = None) -> tuple[Schedule, float]:
+    def _island_search(
+        self, out_dir: Path | None = None, initial: Schedule | None = None
+    ) -> tuple[Schedule, float]:
         """Run the island model: parallel islands with elite migration.
 
         Parameters
         ----------
         out_dir : Path or None, optional
             The run directory; each island writes its own telemetry file.
+        initial : Schedule or None, optional
+            The starting schedule for the first episode. Later episodes migrate the best
+            incumbent.
 
         Returns
         -------
@@ -1701,7 +1816,7 @@ class Optimizer:
                     str(self.dataset_dir),
                     island_config,
                     seed,
-                    best if best else None,
+                    best if best else initial,
                     f"episode-{episode}-island-{index}",
                     self._deadline,
                     worker_dir,
@@ -1743,13 +1858,8 @@ class Optimizer:
             if self.cfg.initial_schedule_path
             else None
         )
-        if initial is not None and pool_search:
-            raise ValueError(
-                "initial_schedule_path is not supported with a process-pool search; "
-                "run with one start and one worker"
-            )
         if pool_search:
-            best, best_obj, targets = self.search(out_dir=out_dir)
+            best, best_obj, targets = self.search(out_dir=out_dir, initial=initial)
         else:
             best, best_obj = {}, math.inf
             for start in range(max(1, self.cfg.starts)):
@@ -1776,10 +1886,35 @@ class Optimizer:
         if pool_search:
             _merge_worker_telemetry(out_dir)
 
+        repair: dict[str, Any] | None = None
+        if self.cfg.flow_repair_trials > 0:
+            evaluator = self.delta_evaluator(targets)
+            if evaluator is not None:
+                evaluator.reset(best)
+                repaired = repair_flow_gap(
+                    evaluator,
+                    self.candidates(),
+                    max_trials=self.cfg.flow_repair_trials,
+                    chains_per_block=self.cfg.flow_repair_chains,
+                    deadline=self._deadline,
+                )
+                best, best_obj = repaired.schedule, repaired.objective
+                repair = {
+                    "trials": repaired.trials,
+                    "moves": repaired.moves,
+                    "objective_before": repaired.objective_before,
+                    "objective_after": repaired.objective,
+                    "flow_before": repaired.flow_before,
+                    "flow_after": repaired.flow_after,
+                    "flow_penalty_before": repaired.flow_penalty_before,
+                    "flow_penalty_after": repaired.flow_penalty_after,
+                }
+
         schedule_path = out_dir / "schedule.csv"
         self._schedule_frame(best).to_csv(schedule_path, index=False)
         model, route_accounts, duplicate_accounts = self.route()
-        simulator = Simulator.from_dataset(self.dataset_dir)
+        simulator = self.simulator()
+        simulator.reset()
         values = simulator.run(
             schedule_path,
             years=self.cfg.years,
@@ -1878,6 +2013,8 @@ class Optimizer:
             "time_limit_reached": bool(expired(self._deadline)),
             "dataset": dataset_reference(self.dataset_dir),
         }
+        if repair is not None:
+            summary["flow_repair"] = repair
         if self.cfg.mip_bound:
             bound = bound_for(
                 self.dataset_dir,
@@ -2061,7 +2198,7 @@ def _merge_worker_telemetry(out_dir: Path) -> None:
 
 
 def _run_start(
-    job: tuple[str, OptimizeConfig, int, str, float | None, str],
+    job: tuple[str, OptimizeConfig, int, str, float | None, str, Schedule | None],
 ) -> tuple[Schedule, float]:
     """Run one start in a worker process.
 
@@ -2070,16 +2207,16 @@ def _run_start(
     Parameters
     ----------
     job : tuple
-        ``(dataset_dir, config, seed, island, deadline, out_dir)``.
+        ``(dataset_dir, config, seed, island, deadline, out_dir, initial)``.
 
     Returns
     -------
     tuple of (Schedule, float)
         The best schedule and its objective for that start.
     """
-    dataset_dir, cfg, seed, island, deadline, out_dir = job
+    dataset_dir, cfg, seed, island, deadline, out_dir, initial = job
     optimizer = Optimizer.from_dataset(Path(dataset_dir), cfg)
-    return _solve_with_logger(optimizer, seed, island, deadline, out_dir)
+    return _solve_with_logger(optimizer, seed, island, deadline, out_dir, initial=initial)
 
 
 def _island_job(
