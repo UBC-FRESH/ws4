@@ -575,9 +575,16 @@ class Optimizer:
                     int(float(str(row.offset))),
                 )
             )
-        grouped = simulator.fragments.groupby("block_id")
-        track_of = grouped["track_id"].first().to_dict()
-        age_of = grouped["age"].min().to_dict()
+        fragments = simulator.fragments
+        # A block can be split across several tracks (for example, where a package boundary
+        # cuts it). Some of those tracks carry no treatments at all, so taking the first
+        # fragment's track can leave the whole block with an empty candidate list even
+        # though another fragment can be treated. Pick the largest treatment-bearing
+        # fragment for the block instead.
+        eligible = fragments[fragments["track_id"].isin(by_track)]
+        selected = eligible.loc[eligible.groupby("block_id")["area_ha"].idxmax()]
+        track_of = selected.set_index("block_id")["track_id"].to_dict()
+        age_of = selected.set_index("block_id")["age"].to_dict()
         options: Candidates = {}
         rotations = min(_MAX_ROTATIONS, max(1, self.cfg.years))
         for raw_block, raw_track in track_of.items():

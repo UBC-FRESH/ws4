@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 from ws4.build.legacy import ingest_legacy_matrix
 from ws4.model.schema import validate_dataset
+from ws4.opt.engine import OptimizeConfig, Optimizer
 
 _LEGACY: dict[str, pd.DataFrame] = {
     "blocks.csv": pd.DataFrame({"BLOCK": [1], "TRACK": [1], "OFFSET": [0], "AREA": [5.0]}),
@@ -131,3 +132,21 @@ def test_a_split_block_without_a_track_column_is_refused(tmp_path: Path) -> None
     matrix, _with_track, without_track = _write_split_matrix(tmp_path)
     with pytest.raises(ValueError, match="needs a TRACK column"):
         ingest_legacy_matrix(matrix, without_track, tmp_path / "compiled")
+
+
+def test_candidates_use_a_treatment_bearing_split_fragment(tmp_path: Path) -> None:
+    """A split block with a treatment-less first fragment still has candidates."""
+    matrix, with_track, _without_track = _write_split_matrix(tmp_path)
+    names = pd.read_csv(matrix / "tracknames.csv")
+    names = pd.concat(
+        [names, pd.DataFrame({"TRACK": [2], "STRATA": ["all2"]})], ignore_index=True
+    )
+    names.to_csv(matrix / "tracknames.csv", index=False)
+    blocks = pd.read_csv(matrix / "blocks.csv").iloc[::-1].reset_index(drop=True)
+    blocks.to_csv(matrix / "blocks.csv", index=False)
+    fragments = pd.read_csv(with_track).iloc[::-1].reset_index(drop=True)
+    fragments.to_csv(with_track, index=False)
+
+    dataset = ingest_legacy_matrix(matrix, with_track, tmp_path / "compiled")
+    options = Optimizer.from_dataset(dataset, OptimizeConfig(years=10)).candidates()
+    assert options[1]
