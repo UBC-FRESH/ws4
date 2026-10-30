@@ -184,3 +184,19 @@ directly.
 
 Use this structure in P83.8, but keep the GPU implementation and exact WS4 target
 semantics separate from the old knapsack code.
+## First c5 benchmark (2026-10-30)
+
+A 2,000-block c5 slice with a 456,278-row sparse table, population 128, 100 generations,
+4 islands with AGrp elite exchange, was compared with the CPU SA/LNS path at 5,000
+iterations and seed 7:
+
+- CPU objective: 60,885,406 in 10.25 s
+- GA objective: **55,360,084** in **0.687 s**
+- speedup: **14.9x**; GA quality better than CPU
+- GA evaluations: 12,928; best at generation 100, island 0
+- table build: 9.78 s; upload: 0.12 s; peak VRAM: 144 MB
+- cold ratio including table build: **0.97x**
+
+The table must be reused for the population run to pay off; the search itself is already
+much faster and better than this CPU baseline. This is a slice prototype, not a full-model
+claim.

@@ -293,6 +293,29 @@ class _ObjectivePricer:
             )
         return total
 
+    def scores(self, totals: torch_type.Tensor) -> torch_type.Tensor:
+        """Return the exact absolute objective for each row of cell totals.
+
+        The incremental objective's scalar is the sum of the per-target penalties when
+        every target shares one priority tier, which is the contract this prototype
+        enforces.  A flow target is priced from its period balances; a level target from
+        its target cells.
+
+        Parameters
+        ----------
+        totals : torch.Tensor
+            A ``[rows, columns]`` tensor of account totals.
+
+        Returns
+        -------
+        torch.Tensor
+            One exact objective per row.
+        """
+        total = self._level_penalty(totals)
+        for spec in self.flow:
+            total = total + self._flow_penalty(totals @ spec.mask.T, spec)
+        return total
+
     def _level_penalty(self, totals: torch_type.Tensor) -> torch_type.Tensor:
         values = totals @ self.level_mask.T
         return _penalty(values, *self.level_params).sum(dim=1)
@@ -301,6 +324,14 @@ class _ObjectivePricer:
         balance = values[:, spec.reference]
         percentages = (
             100.0 * (values - balance.unsqueeze(1)) / balance.unsqueeze(1).clamp_min(1e-300)
+        )
+        # The CPU evaluator reports every non-reference period as infinite when the
+        # reference balance is not positive; clamping to a huge finite value would change
+        # the penalty whenever the target has a maximum bound.
+        percentages = torch.where(
+            (balance <= 0.0).unsqueeze(1),
+            torch.full_like(percentages, math.inf),
+            percentages,
         )
         penalty = _penalty(
             percentages,
@@ -314,7 +345,7 @@ class _ObjectivePricer:
             spec.scale,
         )
         mask = torch.arange(values.shape[1], device=self.device) != spec.reference
-        return (penalty * mask).sum(dim=1)
+        return torch.where(mask.unsqueeze(0), penalty, torch.zeros_like(penalty)).sum(dim=1)
 
 
 def _check_supported(evaluator: IncrementalObjective) -> None:
@@ -327,6 +358,8 @@ def _check_supported(evaluator: IncrementalObjective) -> None:
         raise NotImplementedError("the batched prototype does not price spatial rules")
     if evaluator._has_route_accounts:
         raise NotImplementedError("the batched prototype does not price route accounts")
+    if any(target.flow == "ndy" for target in evaluator.targets):
+        raise NotImplementedError("the batched prototype does not price ndy flow")
 
 
 class BatchedLnsSearch:
