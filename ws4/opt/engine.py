@@ -486,6 +486,9 @@ class Optimizer:
         self._delta_cache: dict[
             tuple[int, Chain, frozenset[int] | None], dict[tuple[int, str], float]
         ] = {}
+        self._empty_delta_cache: dict[
+            tuple[int, frozenset[int] | None], dict[tuple[int, str], float]
+        ] = {}
         self._route_delta_cache: dict[tuple[int, Chain], dict[tuple[int, str], float]] = {}
         self._carbon_ledger_cache: CarbonLedger | None = None
         self._route_event_cache: dict[tuple[int, Chain, int], tuple[RouteEvent, ...]] = {}
@@ -1052,8 +1055,12 @@ class Optimizer:
         if cached is not None:
             return cached
         simulator = self.simulator()
-        treated = simulator.block_chain(block, chain, self.cfg.years, feature_key)
-        empty = simulator.block_chain(block, (), self.cfg.years, feature_key)
+        treated = simulator.block_chain(block, chain, self.cfg.years, feature_key, accounts)
+        empty_key = (block, feature_key)
+        empty = self._empty_delta_cache.get(empty_key)
+        if empty is None:
+            empty = simulator.block_chain(block, (), self.cfg.years, feature_key, accounts)
+            self._empty_delta_cache[empty_key] = empty
         delta = {
             cell: treated.get(cell, 0.0) - empty.get(cell, 0.0)
             for cell in set(treated) | set(empty)

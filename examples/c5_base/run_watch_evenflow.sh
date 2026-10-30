@@ -19,6 +19,7 @@ ITERATIONS="${1:-100000}"
 REFRESH="${REFRESH:-5}"
 SEED="${SEED:-$ROOT/scenarios/c5-base/seed_stage1.csv}"
 TARGETS="${TARGETS:-$ROOT/scenarios/c5-base/targets_stage2.yaml}"
+LNS_WEIGHT="${LNS_WEIGHT:-0}"
 
 if [[ ! -f "$SEED" ]]; then
   echo "missing stage-1 seed: $SEED" >&2
@@ -44,6 +45,7 @@ args=(
   --seed 1
   --refresh "$REFRESH"
   --islands 0
+  --lns-weight "$LNS_WEIGHT"
   --initial-schedule "$SEED"
 )
 

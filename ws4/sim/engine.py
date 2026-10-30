@@ -700,6 +700,7 @@ class Simulator:
         events: Sequence[tuple[str, int]],
         years: int,
         feature_offsets: Collection[int] | None = None,
+        accounts: Collection[str] | None = None,
     ) -> dict[tuple[int, str], float]:
         """Return one block's account values over a horizon under a chain of treatments.
 
@@ -721,6 +722,9 @@ class Simulator:
         feature_offsets : collection of int, optional
             Return feature cells only at these years. Products are always returned at their
             treatment years. ``None`` returns every feature year.
+        accounts : collection of str, optional
+            Restrict feature and product labels to these accounts. ``None`` returns all
+            labels carried by the block's tracks.
 
         Returns
         -------
@@ -737,6 +741,7 @@ class Simulator:
         offsets = arrays_offset[positions]
         areas = arrays_area[positions]
         wanted = None if feature_offsets is None else set(feature_offsets)
+        wanted_accounts = None if accounts is None else set(accounts)
         totals: dict[tuple[int, str], float] = {}
         # Offset -1 is the pre-simulation snapshot.
         if wanted is None or -1 in wanted:
@@ -744,6 +749,8 @@ class Simulator:
                 area = float(areas[index])
                 offset = int(offsets[index])
                 for curve_id, label in self._track_features.get(int(tracks[index]), ()):
+                    if wanted_accounts is not None and label not in wanted_accounts:
+                        continue
                     value = area * self._curve_value(curve_id, offset)
                     key = (-1, label)
                     totals[key] = totals.get(key, 0.0) + value
@@ -770,6 +777,11 @@ class Simulator:
                             for curve_id, product_label in self._products_by_key.get(
                                 (current, treatment), []
                             ):
+                                if (
+                                    wanted_accounts is not None
+                                    and product_label not in wanted_accounts
+                                ):
+                                    continue
                                 value = area * self._curve_value(curve_id, offset)
                                 key = (step, product_label)
                                 totals[key] = totals.get(key, 0.0) + value
@@ -780,6 +792,8 @@ class Simulator:
                         area = float(areas[index])
                         offset = int(offsets[index])
                         for curve_id, label in self._track_features.get(int(tracks[index]), ()):
+                            if wanted_accounts is not None and label not in wanted_accounts:
+                                continue
                             value = area * self._curve_value(curve_id, offset)
                             key = (step, label)
                             totals[key] = totals.get(key, 0.0) + value
@@ -796,6 +810,11 @@ class Simulator:
                         for curve_id, product_label in self._products_by_key.get(
                             (current, treatment), []
                         ):
+                            if (
+                                wanted_accounts is not None
+                                and product_label not in wanted_accounts
+                            ):
+                                continue
                             value = area * self._curve_value(curve_id, offset)
                             key = (step, product_label)
                             totals[key] = totals.get(key, 0.0) + value
@@ -805,6 +824,8 @@ class Simulator:
                 area = float(areas[index])
                 offset = int(offsets[index])
                 for curve_id, label in self._track_features.get(int(tracks[index]), ()):
+                    if wanted_accounts is not None and label not in wanted_accounts:
+                        continue
                     value = area * self._curve_value(curve_id, offset)
                     key = (step, label)
                     totals[key] = totals.get(key, 0.0) + value

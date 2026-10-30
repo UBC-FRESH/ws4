@@ -148,6 +148,11 @@ class IncrementalObjective:
                 and not is_patch(account)
             ):
                 self._feature_offsets[account] = frozenset(range(-1, horizon))
+        self._wanted_feature_offsets = frozenset(
+            offset
+            for account in self.accounts
+            for offset in self._feature_offsets.get(account, ())
+        )
         self._targets_by_cell: dict[Cell, list[int]] = {}
         for index, target in enumerate(self.targets):
             for year in self._target_offsets[index]:
@@ -194,15 +199,10 @@ class IncrementalObjective:
         cached = self._contributions.get(key)
         if cached is not None:
             return cached
-        wanted_offsets = frozenset(
-            offset
-            for account in self.accounts
-            for offset in self._feature_offsets.get(account, ())
-        )
         contribution = {
             cell: value
             for cell, value in self.optimizer._block_delta(
-                block, chain, self.accounts, wanted_offsets
+                block, chain, self.accounts, self._wanted_feature_offsets
             ).items()
             if cell[1] in self.accounts and value != 0.0
         }
