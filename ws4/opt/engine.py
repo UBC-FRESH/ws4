@@ -486,10 +486,12 @@ class Optimizer:
         self._active_patch: PatchModel | None = None
         self._patch_accounts_cache: tuple[PatchAccount, ...] | None = None
         self._base_cache: dict[tuple[int, str], float] | None = None
+        self._simulator_base_cache: dict[tuple[int, str], float] | None = None
         self._product_delta_cache: dict[
             tuple[int, Chain, tuple[str, ...]], dict[tuple[int, str], float]
         ] = {}
         self._last_values: pd.DataFrame | None = None
+        self._sim_delta_cache: dict[tuple[int, Chain], dict[tuple[int, str], float]] = {}
         self._delta_cache: dict[tuple[int, Chain], dict[tuple[int, str], float]] = {}
         self._route_delta_cache: dict[tuple[int, Chain], dict[tuple[int, str], float]] = {}
         self._carbon_ledger_cache: CarbonLedger | None = None
@@ -982,10 +984,10 @@ class Optimizer:
                 )
         return values
 
-    def _base_values(self) -> dict[tuple[int, str], float]:
-        """Return the empty-schedule account values as a mapping, computed once."""
-        if self._base_cache is not None:
-            return self._base_cache
+    def _simulator_base_values(self) -> dict[tuple[int, str], float]:
+        """Return the empty-schedule simulator accounts, without the carbon ledger."""
+        if self._simulator_base_cache is not None:
+            return self._simulator_base_cache
         simulator = self.simulator()
         simulator.reset()
         empty = pd.DataFrame(
@@ -1001,11 +1003,36 @@ class Optimizer:
             (int(str(row.offset)), str(row.account)): float(str(row.value))
             for row in values.itertuples(index=False)
         }
+        self._simulator_base_cache = base
+        return base
+
+    def _base_values(self) -> dict[tuple[int, str], float]:
+        """Return the empty-schedule account values as a mapping, computed once."""
+        if self._base_cache is not None:
+            return self._base_cache
+        base = dict(self._simulator_base_values())
         carbon = self.carbon_ledger()
         if carbon is not None:
             base.update(carbon.base_values())
         self._base_cache = base
         return base
+
+    def _simulator_block_delta(self, block: int, chain: Chain) -> dict[tuple[int, str], float]:
+        """Return a block's simulator-only delta for a treatment chain, cached."""
+        key = (block, chain)
+        cached = self._sim_delta_cache.get(key)
+        if cached is not None:
+            return cached
+        simulator = self.simulator()
+        treated = simulator.block_chain(block, chain, self.cfg.years)
+        empty = simulator.block_chain(block, (), self.cfg.years)
+        delta = {
+            cell: treated.get(cell, 0.0) - empty.get(cell, 0.0)
+            for cell in set(treated) | set(empty)
+        }
+        delta = {cell: value for cell, value in delta.items() if value != 0.0}
+        self._sim_delta_cache[key] = delta
+        return delta
 
     def _block_delta(
         self, block: int, chain: Chain, accounts: set[str] | None = None
@@ -1040,15 +1067,11 @@ class Optimizer:
         cached = self._delta_cache.get(key)
         if cached is not None:
             return cached
-        simulator = self.simulator()
-        treated = simulator.block_chain(block, chain, self.cfg.years)
-        empty = simulator.block_chain(block, (), self.cfg.years)
-        delta = {
-            cell: treated.get(cell, 0.0) - empty.get(cell, 0.0)
-            for cell in set(treated) | set(empty)
-        }
+        delta = dict(self._simulator_block_delta(block, chain))
         carbon = self.carbon_ledger()
-        if carbon is not None:
+        if carbon is not None and (
+            accounts is None or any(name.startswith("carbon.") for name in accounts)
+        ):
             for cell, value in carbon.block_delta(block, chain, accounts).items():
                 delta[cell] = delta.get(cell, 0.0) + value
         delta = {cell: value for cell, value in delta.items() if value != 0.0}

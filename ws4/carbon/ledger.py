@@ -37,7 +37,10 @@ Chain = tuple[tuple[str, int], ...]
 
 
 class CarbonLedger:
-    """Per-block CBM runs and their cached carbon accounts.
+    """Area-weighted carbon ledger with a batch path and a stand-state cache.
+
+    The initial schedule and final replay are evaluated in one libcbm model. Search
+    moves use the stand-state cache so a move prices only the blocks it touches.
 
     Parameters
     ----------
@@ -223,20 +226,71 @@ class CarbonLedger:
         dict of (int, str) to float
             The summed empty-schedule accounts.
         """
-        empty_keys: set[tuple[int, int, Chain]] = {
-            (int(str(row.track_id)), int(str(row.age)), ())
-            for row in self.fragments.itertuples(index=False)
-        }
-        self._prepare_units(empty_keys)
+        return self.schedule_values({}, accounts)
+
+    def _batch_values(
+        self,
+        schedule: Mapping[int, Sequence[tuple[str, int]]],
+        accounts: set[str] | None = None,
+    ) -> dict[Cell, float]:
+        """Run one libcbm model for every block and return the summed accounts.
+
+        This is the exact whole-schedule path. It avoids one model initialisation per
+        stand state: the inventory is all fragments, and only scheduled blocks carry
+        events. The result is the same area-weighted total the per-state ledger builds,
+        but the fixed model cost is paid once instead of once per state.
+        """
+        rows: list[dict[str, object]] = []
+        for block, chain in schedule.items():
+            if int(block) not in self._block_fragments:
+                raise ValueError(f"carbon ledger has no block {block}")
+            for treatment, offset in chain:
+                rows.append(
+                    {
+                        "block_id": int(block),
+                        "treatment": str(treatment),
+                        "offset": int(offset),
+                    }
+                )
+        schedule_frame = pd.DataFrame(rows, columns=["block_id", "treatment", "offset"])
+        if self.fertilization is not None and self.fertilization.uses_curves:
+            schedule_frame = with_fertilization_recovery(
+                schedule_frame,
+                self.fragments,
+                self._tracks,
+                self.fertilization,
+            )
+        tables = build_sit_tables_from_tables(
+            self.package,
+            self.fragments,
+            self._tracks,
+            self._treatments,
+            schedule_frame,
+        )
+        run = run_libcbm(
+            self.package,
+            tables,
+            n_steps=self.years,
+            fertilization=(
+                self.fertilization
+                if self.fertilization is not None and not self.fertilization.uses_curves
+                else None
+            ),
+        )
+        values = carbon_accounts(run, hwp=self.hwp)
+        if self.fertilization is not None:
+            emissions = fertilization_accounts(
+                schedule_frame,
+                self.fragments.loc[:, ["block_id", "area_ha"]],
+                self.fertilization,
+            )
+            if not emissions.empty:
+                values = pd.concat([values, emissions], ignore_index=True)
         totals: dict[Cell, float] = {}
-        for row in self.fragments.itertuples(index=False):
-            track = int(str(row.track_id))
-            age = int(str(row.age))
-            area = float(str(row.area_ha))
-            unit = self._unit_cache[(track, age, ())]
-            for cell, value in unit.items():
-                if accounts is None or cell[1] in accounts:
-                    totals[cell] = totals.get(cell, 0.0) + area * value
+        for row in values.itertuples(index=False):
+            cell = (int(str(row.offset)), str(row.account))
+            if accounts is None or cell[1] in accounts:
+                totals[cell] = totals.get(cell, 0.0) + float(str(row.value))
         return totals
 
     def prepare(
@@ -302,7 +356,7 @@ class CarbonLedger:
         schedule: Mapping[int, Sequence[tuple[str, int]]],
         accounts: set[str] | None = None,
     ) -> dict[Cell, float]:
-        """Return the carbon totals for a schedule.
+        """Return the carbon totals for a schedule in one whole-schedule run.
 
         Parameters
         ----------
@@ -316,11 +370,7 @@ class CarbonLedger:
         dict of (int, str) to float
             The summed carbon accounts.
         """
-        totals = self.base_values(accounts)
-        for block, chain in schedule.items():
-            for cell, value in self.block_delta(int(block), tuple(chain), accounts).items():
-                totals[cell] = totals.get(cell, 0.0) + value
-        return totals
+        return self._batch_values(schedule, accounts)
 
     def _track_context(self, track_id: int) -> tuple[CarbonPackage, pd.DataFrame, pd.DataFrame]:
         """Return the package, tracks, and treatments reachable from one track."""

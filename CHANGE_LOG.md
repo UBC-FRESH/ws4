@@ -3341,3 +3341,15 @@ issue comments.
   before iteration 1. Fire events were excluded because the simulator treats them as
   no-ops and they enlarged the ledger/exact gap to 5.2%. Evidence:
   `notes/reports/carbon-tsa41-500-optimization.md`.
+
+## 2026-10-30
+
+- Carbon search now evaluates the initial schedule with **one whole-schedule libcbm run**
+  instead of building one model per stand state, and it fills carbon totals from that
+  batch while pricing only non-carbon cells incrementally. It also skips the initial
+  per-state precompute entirely. The 5,000-block TSA41 sample fell from **8m07s to
+  2m25s** for 30 iterations; the 500-block sample fell to **1m40s**. Exact replay of
+  the 5k schedule is 12,801,867 tCO2e against a 12,816,648 baseline (-0.115%), with a
+  0.0002% ledger gap. The CLI defaults LNS to zero for carbon runs because bulk moves
+  create many new CBM states and were both slower and no better in the tested cases.
+  Evidence: `notes/reports/carbon-tsa41-5k-optimization.md`.
