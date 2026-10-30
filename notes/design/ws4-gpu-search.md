@@ -149,3 +149,19 @@ GPU LNS prototype it keeps the GPU busy with independent work. It is not yet a t
 quality result, not integrated into `ws4`, and not scaled to the full dataset. The next
 step is to make the chain state/acceptance device-resident and run it on the full model.
 
+### Device-resident chain state
+
+The next prototype kept the K×B chain-row matrix and K×C totals on the GPU, updating only
+accepted rows with tensor indexing. On the same 2,000-block slice:
+
+- 1,024 chains, 50 generations, 51,200 moves
+- **0.332 s steady state**
+- **154,327 moves/s**
+- **150,255 accepted moves/s**
+- best objective 2.566B vs 2.602B seed
+- effect-table build 8.6 s
+
+That is about **57x** the c5 CPU no-LNS end-to-end rate. The table is still a 2,000-block
+slice; full TSA23 requires sparse storage and a full candidate/effect build before this is
+production-ready.
+

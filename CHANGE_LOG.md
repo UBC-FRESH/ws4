@@ -3392,3 +3392,9 @@ issue comments.
   38,441 accepted moves/s), roughly 14x the c5 CPU end-to-end rate. Best slice objective
   2.551B vs 2.602B seed. This is not integrated, not target-quality, and not full-scale;
   evidence in `notes/design/ws4-gpu-search.md`.
+
+
+- P83.6.2 device-resident GPU chains: with the K x B chain-row state and K x C totals kept
+  on the GPU, 1,024 chains ran 51,200 moves in 0.332 s (154,327 moves/s; 150,255
+  accepted/s) on the 2,000-block c5 slice, about 57x the CPU no-LNS rate. Best slice
+  objective 2.566B vs 2.602B seed; effect-table build 8.6 s. Not integrated or full-scale.
