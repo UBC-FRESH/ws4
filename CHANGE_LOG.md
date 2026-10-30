@@ -3369,3 +3369,11 @@ issue comments.
   managed yield 9.5004M above the 9.5M floor. The extra 300 iterations beyond
   200 bought 220,228 tCO2e (1.76%). Exact replay matches. Evidence:
   `notes/reports/carbon-tsa41-5k-200-iterations.md`.
+- TSA41 5k exact removal-effect table + GPU population search: built exact
+  keep/remove effects for the current `CC@0` chain (5,000 blocks; 444 s prepare,
+  19 s base, 15 s effects), ran a 2.3 s GPU population, and exact-replayed the
+  winner. **1,604 blocks removed**, yield 9,500,005 m3, exact cumulative
+  emissions **5,692,533 tCO2e** against 12,816,648 (-55.58%). System carbon rose
+  to 13,537,673 tC; HWP fell to 597,348 tC. The incremental prediction was 1.6%
+  low; exact replay is the reported value. This is removal-only and restricted to
+  the 5k sample. Evidence: `notes/reports/carbon-tsa41-5k-removal-ga.md`.
