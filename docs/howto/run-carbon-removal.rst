@@ -39,7 +39,9 @@ hit skips the 156 s build; on the 5k case the repeat run was 32 s instead of 207
 ``--state-cache`` points at a ``fresh-cbm`` stand-state table. If supplied, carbon
 cells are read from that exact cache instead of rebuilding them with
 ``CarbonLedger.prepare``; non-carbon cells still come from the WS4 simulator. The
-cache must cover every block's track, age, and current ``CC`` offset.
+cache must cover every block's track, age, and current ``CC`` offset. On the 5k
+case, a state-cache run with MILP and exact replay took **50.6 s**; the same run
+without the cache took 207 s.
 Use ``--cache-dir`` to choose another location or ``--no-cache`` to force a rebuild.
 
 ``--solver auto`` uses the exact MILP knapsack when the target shape is one
