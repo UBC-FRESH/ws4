@@ -3578,3 +3578,11 @@ issue comments.
   the old archive and 4.9 s to write it. Evidence: `notes/reports/p83-lean-table.md`.
   Dashboard: GREEN.
 
+- P83 candidate/simulator caches: added content-fingerprinted caches for the simulator and
+  candidate-chain map, plus the checked-in `examples/gpu_effects/run_full_model.py` runner.
+  The full TSA23 ft_econ 20x10 repeated run fell from 96.4 s to **32.9 s** for seed 7;
+  seeds 8/9 were 33.7/35.5 s, all with exact objective 0.0. That is **10.9-11.7x** the
+  386 s CPU reference. Cache loads are 4.15 s (simulator) and 5.97 s (candidates); one-time
+  builds are 34.7 s and 69.4 s. Evidence: `notes/reports/p83-candidate-cache.md`.
+  Dashboard: GREEN.
+

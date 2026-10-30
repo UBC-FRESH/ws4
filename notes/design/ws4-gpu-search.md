@@ -281,3 +281,16 @@ With dataset/candidate load included, the measured seeds 7/8/9 end-to-end times 
 **96.4 / 82.6 / 83.8 s** at exact objective 0.0, against the 386 s CPU reference. The
 dataset/candidate load is now the dominant cost. Evidence: `notes/reports/p83-lean-table.md`.
 
+## Simulator and candidate caches (2026-10-30)
+
+A profile split the remaining 96 s lean-table run into a 34.3 s simulator load, 32.6 s of
+candidate generation, 11.8 s population construction, and a 6-10 s search. Both build
+products are deterministic functions of the compiled dataset and candidate horizon.
+
+`ws4/opt/candidate_cache.py` persists them as content-fingerprinted pickle caches. On the
+full TSA23 model the cached loads are **4.15 s** (simulator) and **5.97 s** (candidates);
+the one-time builds are 34.7 s and 69.4 s. The checked-in runner
+`examples/gpu_effects/run_full_model.py` measures **32.9 / 33.7 / 35.5 s** end-to-end for
+seeds 7/8/9, with fresh exact objective 0.0. Evidence:
+`notes/reports/p83-candidate-cache.md`.
+
