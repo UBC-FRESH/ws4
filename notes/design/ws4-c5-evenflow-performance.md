@@ -231,3 +231,10 @@ short. A 79% stock target (about 20.98M) would be met; ±5% conifer flow is stil
 The next decision is policy: accept this compromise, relax the flow band, or change the
 harvest/reference structure.
 
+## Policy choice (2026-10-30)
+
+The 79% final-stock target (**20,979,565.28**) is accepted as the c5 flow-policy
+compromise; the conifer flow gap remains. `targets_balanced_stock79.yaml` records that
+policy. The next work is GPU-native search design and prototype in
+`notes/design/ws4-gpu-search.md` (P83.6, issue #592).
+
