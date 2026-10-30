@@ -75,6 +75,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[geo,opt,carbon,lidar]"
           python -m pip install -r requirements-dev.txt
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple torch
 
       - name: Lint
         run: python -m ruff check .
@@ -119,6 +120,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[geo,opt,carbon,lidar]"
           python -m pip install -r requirements-dev.txt
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple torch
 
       - name: Install pandoc (nbsphinx renders the example notebooks)
         run: sudo apt-get update && sudo apt-get install -y pandoc
@@ -159,6 +161,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[geo,opt,carbon,lidar]"
           python -m pip install -r requirements-dev.txt
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple torch
 
       - name: Run every pre-commit hook
         run: pre-commit run --all-files --show-diff-on-failure
