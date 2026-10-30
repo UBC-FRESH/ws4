@@ -208,3 +208,20 @@ Conclusion: full TSA23 needs a streaming/persistent effect build and a better ba
 search/acceptance rule. Do not claim full-model GPU acceleration yet. The CPU 20 x 10-year
 run remains the working result.
 
+## P83.7 full sparse table build (2026-10-30)
+
+The streaming builder completed on the full TSA23 `compiled_ft_econ` model:
+
+- candidate rows: **20,237,499**
+- target cells: **200**
+- nonzeros: **25,320,796**
+- sparse table bytes: **567 MB**
+- build seconds: **1,340 s** (~22 min)
+- peak CPU RSS: **~29 GB**
+- upload to GPU: **568 MB**
+
+So the full table is feasible, but the cold build is too slow for interactive use and the
+table is not persisted yet. The 5,000-block prototype still has poor search quality; full
+GPU search quality is not measured. Next steps are table save/load (or a persisted CSR
+sidecar) and a better batched search/acceptance rule.
+

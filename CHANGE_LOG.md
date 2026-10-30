@@ -3417,3 +3417,10 @@ issue comments.
   than CPU by wall time, but the GPU objective was much worse (315.4M vs 76.5M) and the
   cold-build ratio was 0.17x. Full-model GPU acceleration is not claimed; the CPU 20 x
   10-year TSA23 run remains the working result.
+
+
+- P83.7 full TSA23 sparse table build: the streaming builder produced 20,237,499 rows,
+  25,320,796 nonzeros, and a 567 MB sparse float64 table in 1,340 s (~22 min), with 200
+  target cells, ~29 GB peak CPU RSS, and 568 MB upload to the GPU. The full table is
+  feasible but too slow to rebuild interactively and is not yet persisted; full GPU search
+  quality is still unmeasured. The CPU 20x10 TSA23 run remains the working result.
