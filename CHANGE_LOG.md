@@ -3372,3 +3372,9 @@ issue comments.
   batches 191x. Float32 exactness was not production-grade (max abs 0.0059, max rel
   0.0069), so the next step is float64/sparse and a batched search, not a GPU port of SA.
   Evidence: `notes/design/ws4-gpu-search.md`.
+
+
+- P83.1/P83.2 closeout: P83.1 is closed with the 79% final-stock policy
+  (20,979,565.28) and an accepted 22,494.59 shortfall (0.085% of initial stock), plus the
+  remaining conifer flow gap. P83.2 is closed as a neutral performance probe. The next
+  work is P83.6 GPU-native search; dashboard GREEN.

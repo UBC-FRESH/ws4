@@ -2552,13 +2552,13 @@ Plan: `notes/design/ws4-c5-evenflow-performance.md`
 Goal: add the c5 stage-1/stage-2 target path, then make the seeded even-flow search fast
 enough for the 100,000-iteration budget and record the actual target result.
 
-- [ ] P83.1 Run the two-stage c5 flow schedule (#580)
+- [x] P83.1 Run the two-stage c5 flow schedule (#580)
   - [x] Add stage-1 and stage-2 targets, seed, and watcher
   - [x] Correct the priority-tier mistake and the split-block candidate set
   - [x] Add the feature-checkpoint, flow-delta, incumbent-journal, and startup speedups
   - [x] Record the 100k negative target result
   - [ ] Reach ±5% flow and the 23.9M stock goal, or record the target tension as final
-- [ ] P83.2 Optimize the seeded search state and startup (#586)
+- [x] P83.2 Optimize the seeded search state and startup (#586)
 - [x] P83.3 Batch or bound the LNS move (#587)
 - [x] P83.4 Allow seeded process-pool islands (#588)
 - [x] P83.5 Add flow-directed moves or an LP period-volume seed (#589)

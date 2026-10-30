@@ -227,14 +227,16 @@ A relaxed 80% final-stock target (**21,245,129.40**) was tested with 100k search
 
 Relaxing the stock target to 80% brings deciduous inside ±5% and improves the conifer
 gap, but the conifer band remains outside ±5% and the stock target is still slightly
-short. A 79% stock target (about 20.98M) would be met; ±5% conifer flow is still not.
-The next decision is policy: accept this compromise, relax the flow band, or change the
-harvest/reference structure.
+short. A 78.91% stock target (about 20.956M) would be met; the selected 79% target is
+20,979,565.28 and the result is 20,957,070.69, a 22,494.59 shortfall (0.085% of initial
+stock). P83.1 accepts that rounding-level shortfall and the conifer gap as the policy
+compromise; ±5% conifer flow is not claimed.
 
 ## Policy choice (2026-10-30)
 
 The 79% final-stock target (**20,979,565.28**) is accepted as the c5 flow-policy
-compromise; the conifer flow gap remains. `targets_balanced_stock79.yaml` records that
-policy. The next work is GPU-native search design and prototype in
-`notes/design/ws4-gpu-search.md` (P83.6, issue #592).
+compromise with a **22,494.59** shortfall, and the conifer flow gap remains.
+`targets_balanced_stock79.yaml` records that policy. P83.1 and P83.2 are closed; the next
+work is the GPU-native search prototype in `notes/design/ws4-gpu-search.md` (P83.6,
+issue #592).
 
