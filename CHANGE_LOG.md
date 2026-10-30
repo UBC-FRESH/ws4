@@ -3364,3 +3364,11 @@ issue comments.
   flow -7.81%/+5.83%, deciduous -5.02%/+4.62%, and stock 20.957M (0.29M below the relaxed
   target). Deciduous is now inside ±5%; conifer is not. The compromise and decision point
   are recorded in `notes/design/ws4-c5-evenflow-performance.md`.
+
+
+- P83.6.1 GPU batch probe: a 1,000-block c5 slice built exact effect rows in 4.29 s
+  (~52,850 rows/s); full-table estimate 26.5 s and 2.09 GiB dense float32. Single-block
+  GPU deltas were slower than CPU, while 1,024-row batches were 50x and 64-block LNS
+  batches 191x. Float32 exactness was not production-grade (max abs 0.0059, max rel
+  0.0069), so the next step is float64/sparse and a batched search, not a GPU port of SA.
+  Evidence: `notes/design/ws4-gpu-search.md`.

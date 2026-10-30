@@ -91,3 +91,24 @@ These support a population/batch execution model, not a one-move GPU port.
 - A negative result is acceptable; it must say whether the limit is launch overhead,
   transfer, table size, or search quality.
 - Dashboard green before closing.
+
+## P83.6.1 benchmark result (2026-10-30)
+
+Bounded benchmark: 1,000 blocks / 226,661 candidate chains / 401 target cells, RTX PRO 6000,
+torch 2.14.1+cu130.
+
+- Exact CPU effect-row build: 4.29 s (~52,850 rows/s)
+- Full-table estimate: 26.5 s build, **2.09 GiB dense float32**, ~44 MB sparse
+- Single-block GPU delta: **slower than CPU** (0.03x); kernel launch dominates
+- 64-row batch: **2.17x**
+- 1,024-row batch: **50x**
+- 64-block LNS: **191x**
+- 1,024-block LNS: **514x**
+- Float32 exactness was not production-grade: max absolute error 0.0059 and max relative
+  error 0.0069 on LNS batches. The prototype also computes a float64 table; it needs a
+  clean exactness run before use.
+
+Conclusion: the GPU is for **batched effects/LNS/population work**, not single sequential
+moves. The next prototype should use float64 or corrected accumulation and a sparse
+device representation, then a batched search around the effect rows.
+
