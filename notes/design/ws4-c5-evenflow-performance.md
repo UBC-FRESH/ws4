@@ -100,5 +100,22 @@ not present this as a solved even-flow case.
 
 ## Next bounded move
 
-Implement P83.2 (dense target state) and rerun the 100k benchmark. Record the result in this
-note and the changelog before moving to P83.3.
+P83.2 was a neutral probe, not a claimed speedup. The next bounded move is P83.3 (batched
+LNS contributions) or P83.5 (flow-directed moves), then rerun the 100k benchmark and record
+the result in this note and the changelog.
+
+## P83.2 evidence (2026-10-30)
+
+- Precomputed target cell metadata (target cells, accumulation flags, end cells) removed
+  repeated `cell_offsets()` and priority-set construction from the delta path. The 100k
+  objective is unchanged. Timing was **not a clear win**: 44.3 s in one run against the
+  36.1 s baseline; a 20k run was 14.8 s against 12.4 s. Treat this as neutral until a
+  quieter benchmark says otherwise.
+- The process-pool path now accepts an initial schedule and shares it with every start or
+  island. Eight 20k starts completed in **24.2 s** (160k evaluations, ~6.7k eval/s
+  aggregate), but a single 20k run was faster in wall-clock. This is a throughput and
+  multi-seed capability, not a single-run speedup. Keep it off by default until a
+  multi-seed quality test justifies it.
+- Next bounded performance move: batch LNS contributions or flow-directed moves. Do not
+  claim the dense metadata as a speedup yet.
+

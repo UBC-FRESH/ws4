@@ -3315,3 +3315,11 @@ issue comments.
   remaining plan is recorded in `notes/design/ws4-c5-evenflow-performance.md` (P83.1;
   continuation task #586). Focused suite: 112 passed. `python scripts/dashboard.py`:
   **GREEN** on lint, format, types, tests, validator, docs, and docstrings.
+
+- P83.2 performance probe: precomputed target cell metadata and allowed a shared initial
+  schedule in the process-pool search. The metadata preserved the objective but was
+  neutral in wall-clock (44.3 s / 100k vs the 36.1 s baseline; 14.8 s / 20k vs 12.4 s).
+  Eight 20k starts completed in 24.2 s for 160k evaluations (aggregate throughput), not
+  a single-run speedup. The result and caution are recorded in
+  `notes/design/ws4-c5-evenflow-performance.md`; the next performance move is batched LNS
+  or flow-directed moves.

@@ -165,6 +165,25 @@ class IncrementalObjective:
         for index, target in enumerate(self.targets):
             for year in self._target_offsets[index]:
                 self._targets_by_cell.setdefault((year, target.account), []).append(index)
+        self._target_cells: list[tuple[Cell, ...]] = []
+        self._target_accumulating: list[bool] = []
+        self._target_end_cells: list[Cell | None] = []
+        for target in self.targets:
+            accumulating = accumulates(target.account)
+            self._target_accumulating.append(accumulating)
+            if target.flow:
+                self._target_cells.append(())
+                self._target_end_cells.append(None)
+            elif accumulating:
+                self._target_cells.append(
+                    tuple((year, target.account) for year in target.cell_offsets())
+                )
+                self._target_end_cells.append(None)
+            else:
+                end = target.end_offset()
+                self._target_cells.append(((end, target.account),))
+                self._target_end_cells.append((end, target.account))
+        self._mixed_priorities = len({target.priority for target in self.targets}) > 1
         self._flow_period_cells: dict[int, tuple[tuple[Cell, ...], ...]] = {}
         self._flow_cell_to_index: dict[int, dict[Cell, int]] = {}
         self._flow_reference_index: dict[int, int | None] = {}
@@ -495,7 +514,7 @@ class IncrementalObjective:
         self._pending_move = (pending, list(changed), schedule)
         if not pending:
             return self.spatial.delta(changed, schedule)
-        if len({target.priority for target in self.targets}) > 1:
+        if self._mixed_priorities:
             after_totals = dict(self.totals)
             for cell, value in pending.items():
                 after_totals[cell] = after_totals.get(cell, 0.0) + value
@@ -511,16 +530,15 @@ class IncrementalObjective:
             if target.flow:
                 total += self._flow_delta(index, pending)
                 continue
-            if accumulates(target.account):
-                before = sum(
-                    self.totals.get((year, target.account), 0.0) for year in target.cell_offsets()
-                )
-                change = sum(
-                    pending.get((year, target.account), 0.0) for year in target.cell_offsets()
-                )
+            if self._target_accumulating[index]:
+                cells = self._target_cells[index]
+                before = sum(self.totals.get(cell, 0.0) for cell in cells)
+                change = sum(pending.get(cell, 0.0) for cell in cells)
             else:
-                before = self.totals.get((target.end_offset(), target.account), 0.0)
-                change = pending.get((target.end_offset(), target.account), 0.0)
+                end_cell = self._target_end_cells[index]
+                assert end_cell is not None
+                before = self.totals.get(end_cell, 0.0)
+                change = pending.get(end_cell, 0.0)
             total += penalty(before + change, target) - penalty(before, target)
         return total + self.spatial.delta(changed, schedule)
 

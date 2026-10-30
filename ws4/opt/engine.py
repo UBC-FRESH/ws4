@@ -193,7 +193,8 @@ class OptimizeConfig:
     targets_path : str
         The YAML file of goal-programming targets.
     initial_schedule_path : str
-        A ``block_id,treatment,period`` CSV to start the search from. Serial starts only.
+        A ``block_id,treatment,period`` CSV to start the search from. It is shared by every
+        start and island.
     weights_path : str
         Accepted for compatibility and not read. The weights that apply are each target's own
         ``min_weight`` and ``max_weight``; ``ws4 calibrate`` rescales them into a targets file.
@@ -1618,7 +1619,9 @@ class Optimizer:
         seconds = parse_time_limit(self.cfg.time_limit)
         self._deadline = time.monotonic() + seconds if seconds is not None else None
 
-    def search(self, out_dir: Path | None = None) -> tuple[Schedule, float, list[Target]]:
+    def search(
+        self, out_dir: Path | None = None, initial: Schedule | None = None
+    ) -> tuple[Schedule, float, list[Target]]:
         """Run the search and return the incumbent.
 
         When ``islands`` is set (and there is more than one), the islands run in parallel
@@ -1631,6 +1634,8 @@ class Optimizer:
         ----------
         out_dir : Path or None, optional
             The run directory; workers write ``telemetry-<island>.jsonl`` beside the summary.
+        initial : Schedule or None, optional
+            A starting schedule shared by every start or island.
 
         Returns
         -------
@@ -1640,7 +1645,7 @@ class Optimizer:
         targets = load_targets(Path(self.cfg.targets_path)) if self.cfg.targets_path else []
         self._start_clock()
         if self.cfg.islands > 1 and self.cfg.workers > 1:
-            best, best_obj = self._island_search(out_dir)
+            best, best_obj = self._island_search(out_dir, initial=initial)
             return best, best_obj, targets
         starts = max(1, self.cfg.starts)
         if self.cfg.workers > 1 and starts > 1:
@@ -1653,6 +1658,7 @@ class Optimizer:
                     f"start-{start}",
                     self._deadline,
                     worker_dir,
+                    initial,
                 )
                 for start in range(starts)
             ]
@@ -1662,18 +1668,23 @@ class Optimizer:
         else:
             best, best_obj = {}, math.inf
             for start in range(starts):
-                candidate, candidate_obj = self._solve(self.cfg.seed + start)
+                candidate, candidate_obj = self._solve(self.cfg.seed + start, initial=initial)
                 if candidate_obj < best_obj:
                     best, best_obj = candidate, candidate_obj
         return best, best_obj, targets
 
-    def _island_search(self, out_dir: Path | None = None) -> tuple[Schedule, float]:
+    def _island_search(
+        self, out_dir: Path | None = None, initial: Schedule | None = None
+    ) -> tuple[Schedule, float]:
         """Run the island model: parallel islands with elite migration.
 
         Parameters
         ----------
         out_dir : Path or None, optional
             The run directory; each island writes its own telemetry file.
+        initial : Schedule or None, optional
+            The starting schedule for the first episode. Later episodes migrate the best
+            incumbent.
 
         Returns
         -------
@@ -1693,7 +1704,7 @@ class Optimizer:
                     str(self.dataset_dir),
                     island_config,
                     seed,
-                    best if best else None,
+                    best if best else initial,
                     f"episode-{episode}-island-{index}",
                     self._deadline,
                     worker_dir,
@@ -1735,13 +1746,8 @@ class Optimizer:
             if self.cfg.initial_schedule_path
             else None
         )
-        if initial is not None and pool_search:
-            raise ValueError(
-                "initial_schedule_path is not supported with a process-pool search; "
-                "run with one start and one worker"
-            )
         if pool_search:
-            best, best_obj, targets = self.search(out_dir=out_dir)
+            best, best_obj, targets = self.search(out_dir=out_dir, initial=initial)
         else:
             best, best_obj = {}, math.inf
             for start in range(max(1, self.cfg.starts)):
@@ -2054,7 +2060,7 @@ def _merge_worker_telemetry(out_dir: Path) -> None:
 
 
 def _run_start(
-    job: tuple[str, OptimizeConfig, int, str, float | None, str],
+    job: tuple[str, OptimizeConfig, int, str, float | None, str, Schedule | None],
 ) -> tuple[Schedule, float]:
     """Run one start in a worker process.
 
@@ -2063,16 +2069,16 @@ def _run_start(
     Parameters
     ----------
     job : tuple
-        ``(dataset_dir, config, seed, island, deadline, out_dir)``.
+        ``(dataset_dir, config, seed, island, deadline, out_dir, initial)``.
 
     Returns
     -------
     tuple of (Schedule, float)
         The best schedule and its objective for that start.
     """
-    dataset_dir, cfg, seed, island, deadline, out_dir = job
+    dataset_dir, cfg, seed, island, deadline, out_dir, initial = job
     optimizer = Optimizer.from_dataset(Path(dataset_dir), cfg)
-    return _solve_with_logger(optimizer, seed, island, deadline, out_dir)
+    return _solve_with_logger(optimizer, seed, island, deadline, out_dir, initial=initial)
 
 
 def _island_job(
