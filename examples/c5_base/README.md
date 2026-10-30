@@ -84,6 +84,25 @@ feasible. The 2,000,000/200,000 level pull, the 90% final-stock target, and ±5%
 are in tension. The next run should change the target balance rather than only add
 iterations.
 
+## Fast-LNS watcher
+
+`run_watch_c5_fast_lns.sh` runs the accepted stock-79 policy with the latest bounded
+LNS path:
+
+- LNS weight `0.2`
+- destroy fraction `0.1`
+- max destroy **64 blocks**
+- `targets_balanced_stock79.yaml`
+- `seed_stage1.csv`
+
+```bash
+bash run_watch_c5_fast_lns.sh 100000
+PLAIN=1 bash run_watch_c5_fast_lns.sh 100000
+```
+
+The script uses the latest WS4 source at `/tmp/opencode/ws4-p83` by default; set
+`WS4_REPO` if that worktree moves.
+
 ## Balanced target variant
 
 `targets_balanced.yaml` is the pilot for the joint target balance:
