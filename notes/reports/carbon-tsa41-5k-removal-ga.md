@@ -118,6 +118,24 @@ The full-scale result is a keep/remove policy, not a full treatment schedule. It
 shows that the exact effect-table path scales beyond the sample and remains
 practical.
 
+## Effect cache and exact solver
+
+The effect table is now persisted under a content-addressed cache keyed by the
+dataset tables, package fingerprint, schedule, targets, HWP config, and horizon.
+
+- first 5k run: **207 s** (173 s table build, 3.8 s MILP, exact replay)
+- repeat run with cache hit: **31.9 s**
+- cache entries for the 5k case are on the order of the effect table itself
+  (tens of KB), not the full libcbm state universe
+
+`--solver auto` uses the binary MILP knapsack when the target set is one
+minimum-cost target and one maximum-benefit target, and falls back to the
+population otherwise. On the 5k effect table the MILP optimum is 5,785,622
+incremental; the exact replay is 5,694,966 tCO2e. The GA schedule exact-replays at
+5,692,533 tCO2e, slightly lower because exact whole-schedule SIT aggregation
+differs from the additive effect table. Exact replay remains the reporting
+authority.
+
 ## Production command
 
 `ws4 carbon-removal` implements this path:

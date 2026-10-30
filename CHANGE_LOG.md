@@ -3384,6 +3384,13 @@ issue comments.
   (-42.14%). System carbon 377,351,327 tC; HWP 18,309,825 tC. Table build 976 s,
   population search 78.6 s, 20.3 min total including exact replay. Evidence:
   `notes/reports/carbon-tsa41-5k-removal-ga.md`.
+- Carbon removal effect cache: the exact effect table is persisted under a
+  content-addressed cache (dataset tables, package fingerprint, schedule, targets,
+  HWP config, horizon). The 5k repeat run fell from **207 s to 31.9 s**. Added an
+  exact binary MILP knapsack (`--solver auto|ga|milp`) for one minimum-cost and one
+  maximum-benefit target; it certifies the effect-table optimum and falls back to
+  the GPU population otherwise. Exact replay remains authoritative. Evidence:
+  `notes/reports/carbon-tsa41-5k-removal-ga.md`.
 - P83.3 LNS delta speed: added a direct `Simulator._block_chain_short` path for chains
   with no event or one event (the dominant candidate shape), filtered per-account feature
   and product row tables, `Optimizer._block_deltas` (shared empty-chain work and duplicate

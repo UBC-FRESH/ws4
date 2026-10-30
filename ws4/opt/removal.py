@@ -15,6 +15,7 @@ the global removal pattern matters more than local chain shifts. Exact
 from __future__ import annotations
 
 import importlib
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
@@ -72,6 +73,89 @@ class RemovalEffects:
     target_cells: tuple[tuple[int, ...], ...]
     targets: tuple[Target, ...]
     build_seconds: float = 0.0
+
+    def save(self, directory: str | Path) -> Path:
+        """Write the effect table to a cache directory.
+
+        Parameters
+        ----------
+        directory : path-like
+            Destination directory. It is created when needed.
+
+        Returns
+        -------
+        pathlib.Path
+            The written directory.
+        """
+        destination = Path(directory)
+        destination.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(
+            destination / "effects.npz",
+            blocks=np.asarray(self.blocks, dtype=np.int64),
+            base=self.base,
+            effects=self.effects,
+        )
+        metadata = {
+            "cells": [list(cell) for cell in self.cells],
+            "target_cells": [list(columns) for columns in self.target_cells],
+            "build_seconds": self.build_seconds,
+        }
+        (destination / "meta.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+        return destination
+
+    @classmethod
+    def load(
+        cls,
+        directory: str | Path,
+        schedule: Mapping[int, Chain],
+        targets: Sequence[Target],
+    ) -> RemovalEffects:
+        """Load an effect table and attach the current targets.
+
+        Parameters
+        ----------
+        directory : path-like
+            Cache directory written by :meth:`save`.
+        schedule : mapping of int to tuple
+            The current schedule; its chains are not stored in the cache.
+        targets : sequence of Target
+            The active targets for this run.
+
+        Returns
+        -------
+        RemovalEffects
+            The cached effects with the current target objects.
+
+        Raises
+        ------
+        ValueError
+            When the cache schema or block set does not match the schedule.
+        """
+        source = Path(directory)
+        metadata = json.loads((source / "meta.json").read_text(encoding="utf-8"))
+        with np.load(source / "effects.npz") as payload:
+            blocks = tuple(int(value) for value in payload["blocks"])
+            base = np.asarray(payload["base"], dtype=np.float64)
+            effects = np.asarray(payload["effects"], dtype=np.float64)
+        if tuple(sorted(int(block) for block in schedule)) != blocks:
+            raise ValueError("cached removal effects do not match the schedule blocks")
+        cells = tuple((int(cell[0]), str(cell[1])) for cell in metadata["cells"])
+        target_cells = tuple(
+            tuple(int(column) for column in columns) for columns in metadata["target_cells"]
+        )
+        active = tuple(target for target in targets if target.active)
+        if len(target_cells) != len(active):
+            raise ValueError("cached removal effects do not match the active targets")
+        return cls(
+            blocks=blocks,
+            schedule={block: tuple(schedule[block]) for block in blocks},
+            cells=cells,
+            base=base,
+            effects=effects,
+            target_cells=target_cells,
+            targets=active,
+            build_seconds=float(metadata.get("build_seconds", 0.0)),
+        )
 
     def target_matrix(self) -> np.ndarray:
         """Return the block-to-target effect matrix.
@@ -402,6 +486,96 @@ def solve_removal(
         objective=best_objective,
         values={cell: float(best_values[column]) for column, cell in enumerate(effects.cells)},
         generations=generations,
+        search_seconds=perf_counter() - started,
+    )
+
+
+def solve_removal_milp(
+    effects: RemovalEffects,
+    *,
+    time_limit: float | None = None,
+) -> RemovalResult:
+    """Solve the removal decision exactly as a binary knapsack.
+
+    The eligible shape is one minimum (cost) target and one maximum (benefit)
+    target. That is the carbon/yield case: maximize carbon benefit subject to the
+    yield floor. Other target sets raise rather than silently optimizing a
+    different objective.
+
+    Parameters
+    ----------
+    effects : RemovalEffects
+        The exact effect table.
+    time_limit : float or None, optional
+        HiGHS time limit in seconds. None uses the solver default.
+
+    Returns
+    -------
+    RemovalResult
+        The certified optimum for the binary effect table.
+
+    Raises
+    ------
+    RuntimeError
+        When SciPy is not installed.
+    ValueError
+        When the target shape is not the supported min-cost/max-benefit pair.
+    """
+    import importlib
+
+    try:
+        milp = importlib.import_module("scipy.optimize").milp
+        linear_constraint = importlib.import_module("scipy.optimize").LinearConstraint
+        bounds_type = importlib.import_module("scipy.optimize").Bounds
+    except (ImportError, AttributeError) as exc:  # pragma: no cover - optional dependency
+        raise RuntimeError("the exact removal solver needs scipy") from exc
+
+    targets = effects.targets
+    cost_index = next(
+        (index for index, target in enumerate(targets) if target.minimum is not None), None
+    )
+    benefit_index = next(
+        (index for index, target in enumerate(targets) if target.maximum is not None), None
+    )
+    if cost_index is None or benefit_index is None:
+        raise ValueError("the exact removal solver needs one minimum and one maximum target")
+    matrix = effects.target_matrix()
+    values = effects.base_targets() + matrix.sum(axis=0)
+    cost_effect = matrix[:, cost_index]
+    benefit_effect = matrix[:, benefit_index]
+    floor = targets[cost_index].minimum
+    if floor is None:
+        raise ValueError("the cost target has no minimum")
+    budget = float(values[cost_index] - floor)
+    if budget < 0.0:
+        raise ValueError("the initial schedule is already below the cost floor")
+
+    started = perf_counter()
+    result = milp(
+        c=-benefit_effect,
+        constraints=linear_constraint(cost_effect, -np.inf, budget),
+        integrality=np.ones(len(effects.blocks), dtype=np.int64),
+        bounds=bounds_type(0.0, 1.0),
+        options={"time_limit": time_limit} if time_limit is not None else {},
+    )
+    if result.x is None:
+        raise RuntimeError(f"exact removal solver failed: {result.message}")
+    removed = np.rint(result.x).astype(bool)
+    keep = ~removed
+    values = effects.base + keep.astype(np.float64) @ effects.effects
+    target_values = effects.base_targets() + keep.astype(np.float64) @ matrix
+    objective = float(_objective(target_values[None, :], targets)[0])
+    schedule = {
+        block: effects.schedule[block]
+        for block, include in zip(effects.blocks, keep, strict=True)
+        if bool(include)
+    }
+    return RemovalResult(
+        schedule=schedule,
+        keep=keep,
+        objective=objective,
+        values={cell: float(values[column]) for column, cell in enumerate(effects.cells)},
+        generations=0,
         search_seconds=perf_counter() - started,
     )
 
