@@ -3295,12 +3295,89 @@ issue comments.
   deadline into `greedy_schedule`, so a large seed returns a partial schedule instead of
   consuming the whole budget before iteration 1. Validation: `tests/test_seeding.py`
   (8 passed, including deadline and serial/parallel equivalence); dashboard GREEN.
-  A 500-block no-warm-start smoke completed seeding (51 CC blocks) and 20/20 search
-  iterations in 17m17s, with exact cumulative emissions 51,886 tCO2e against a 210k cap.
-  Seeding is still expensive (~15-16 min), so cheaper seed scoring is the next step.
-  Evidence: `notes/reports/greedy-seeding-performance.md`.
+  The default `--seed-candidates 1` scores only the first chain per block; the 500-block
+  no-warm-start smoke then completed seeding (51 CC blocks) and 20/20 search iterations
+  in 4m06s, down from 17m17s, and selected the same 51-block schedule. Exact cumulative
+  emissions were 51,886 tCO2e against a 210k cap. Evidence:
+  `notes/reports/greedy-seeding-performance.md`.
+- Carbon ledger stand-state cache: replaced block-scoped CBM runs with per-hectare
+  stand states keyed by `(track_id, age, treatment chain)`; blocks are area-weighted
+  sums of their fragments. The 500-block TSA46 subset has 535 fragments but only 319
+  `(track, age)` states, and the empty base fell from 107 s to **58.5 s** with 8
+  workers. `CarbonLedger.prepare` pre-prices seed states once; the capped 500-block
+  no-warm-start smoke fell from 4m06s to **1m58s** with the same schedule and objective.
+  Base values match the old path to floating-point noise. The remaining cost is one CBM
+  spin-up/simulation per state; a batched or track-level curve cache is the next step.
+  Evidence: `notes/reports/carbon-ledger-performance.md`.
+- Stand-state reproduction: reran the 500-block high-displacement max-stock and
+  min-emissions cases on the new ledger. Both schedules are byte-identical to the prior
+  high-df schedules, objectives and ledger accounts reproduce to float noise, and exact
+  replay reproduces the prior exact values. Runtime 282 s / 307 s. Evidence:
+  `notes/reports/carbon-500block-tradeoff.md`.
+- TSA46 harvest-floor frontier: ran 500-block high-displacement min-emissions points at
+  0/100k/200k/300k/350k/370k m3 yield floors. With priority 1 on yield (priority 1 is the
+  strongest tier) every floor is met; the 0–200k segment is flat, then exact cumulative
+  emissions rise from 160,457 to 195,345/216,749/229,691 tCO2e as yield rises from
+  205,537 to 300,609/350,368/370,197 m3 and system carbon falls from 2.058M to 2.024M tC.
+  Ledger-vs-exact differences are 0.08–0.29% on emissions. Evidence:
+  `notes/reports/carbon-harvest-frontier.md`.
+- Four-TSA production HWP carbon sweep: exact full-landscape runs for TSA08/16/40/41,
+  50-year all-block schedules, public-default HWP. Offset-50 system carbon is 882.46M /
+  428.54M / 402.53M / 303.40M tC, of which HWP is 38.27M / 24.02M / 23.39M / 20.90M tC;
+  cumulative system emissions are 633.88M / 669.80M / 546.30M / 470.30M tCO2e. The
+  ecosystem series is bit-identical to the prior no-HWP runs (offset 50). Evidence:
+  `notes/reports/carbon-4tsa-hwp-production.md`.
+- Four-TSA HWP sensitivity: ran low (35-y solid half-life, df 0.45), default
+  (100 y, 1.0), and high (200 y, 2.4) exact full-landscape scenarios. HWP is
+  2.4–3.8% / 4.3–6.9% / 5.1–8.1% of system carbon at low/default/high; cumulative
+  emissions vary by 1.6–2.4×. TSA41 remains lowest and TSA16 highest, while TSA08 and
+  TSA40 swap between the default and high scenarios. Evidence:
+  `notes/reports/carbon-4tsa-hwp-sensitivity.md`.
+- TSA41 500-block carbon-aware optimization: bounded production subset, CC-only
+  schedule, public-default HWP. Thirty iterations reduced exact cumulative emissions
+  from 1,281,211 to 1,258,901 tCO2e (-1.74%) while meeting a 430k m3 yield floor;
+  system carbon rose by 6,163 tC. The ledger read 0.90% high versus the exact engine.
+  The 5k sample was not usable: its initial evaluation exceeded the 20-minute budget
+  before iteration 1. Fire events were excluded because the simulator treats them as
+  no-ops and they enlarged the ledger/exact gap to 5.2%. Evidence:
+  `notes/reports/carbon-tsa41-500-optimization.md`.
 
 ## 2026-10-30
+
+- Carbon search now evaluates the initial schedule with **one whole-schedule libcbm run**
+  instead of building one model per stand state, and it fills carbon totals from that
+  batch while pricing only non-carbon cells incrementally. It also skips the initial
+  per-state precompute entirely. The 5,000-block TSA41 sample fell from **8m07s to
+  2m25s** for 30 iterations; the 500-block sample fell to **1m40s**. Exact replay of
+  the 5k schedule is 12,801,867 tCO2e against a 12,816,648 baseline (-0.115%), with a
+  0.0002% ledger gap. The CLI defaults LNS to zero for carbon runs because bulk moves
+  create many new CBM states and were both slower and no better in the tested cases.
+  Evidence: `notes/reports/carbon-tsa41-5k-optimization.md`.
+- TSA41 5k 200-iteration carbon search: 9m27s, exact cumulative emissions
+  **12,460,557 tCO2e** against the 12,816,648 baseline (-356,091, -2.78%), with
+  9.807M m3 managed yield above the 9.5M floor. The 30-iteration run was
+  12,801,867 tCO2e, so the extra 170 iterations bought another 2.66%. Exact replay
+  matches the reported target cell. Evidence:
+  `notes/reports/carbon-tsa41-5k-200-iterations.md`.
+- TSA41 5k yield-floor frontier (200 iterations): 9.5M and 9.8M floors both
+  realize 9.807M m3 and 12,460,557 tCO2e; a 10.0M floor realizes 10.000M m3
+  and **12,743,634 tCO2e**, giving back 283,077 tCO2e of the reduction. Exact
+  replay matches the 10.0M target. Evidence:
+  `notes/reports/carbon-tsa41-5k-200-iterations.md`.
+- TSA41 5k 500-iteration carbon search: 19m37s, exact cumulative emissions
+  **12,240,329 tCO2e** against the 12,816,648 baseline (-576,319, -4.50%), with
+  managed yield 9.5004M above the 9.5M floor. The extra 300 iterations beyond
+  200 bought 220,228 tCO2e (1.76%). Exact replay matches. Evidence:
+  `notes/reports/carbon-tsa41-5k-200-iterations.md`.
+- TSA41 5k exact removal-effect table + GPU population search: built exact
+  keep/remove effects for the current `CC@0` chain (5,000 blocks; 444 s prepare,
+  19 s base, 15 s effects), ran a 2.3 s GPU population, and exact-replayed the
+  winner. **1,604 blocks removed**, yield 9,500,005 m3, exact cumulative
+  emissions **5,692,533 tCO2e** against 12,816,648 (-55.58%). System carbon rose
+  to 13,537,673 tC; HWP fell to 597,348 tC. The incremental prediction was 1.6%
+  low; exact replay is the reported value. This is removal-only and restricted to
+  the 5k sample. Evidence: `notes/reports/carbon-tsa41-5k-removal-ga.md`.
+
 
 - P83.3 LNS delta speed: added a direct `Simulator._block_chain_short` path for chains
   with no event or one event (the dominant candidate shape), filtered per-account feature

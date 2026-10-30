@@ -314,6 +314,10 @@ class OptimizeConfig:
     carbon_workers : int
         Fork workers for the carbon ledger's empty-schedule base. One is serial. The
         optimizer forces one when ``islands`` or process-parallel starts are active.
+    seed_candidates : int
+        The most candidate chains per block that ``--seed-greedy`` scores. A seed is a
+        starting point, so the default is one; raise it only when a wider shortlist is
+        worth the extra full-chain evaluations.
     spread_accounts_path : str
         A YAML file of spread-connectivity account definitions; needs ``topology_path`` for the
         adjacency and ``block_coordinates_path`` for the bearings.
@@ -392,6 +396,7 @@ class OptimizeConfig:
     carbon_fertilization_path: str = ""
     carbon_hwp_path: str = ""
     carbon_workers: int = 1
+    seed_candidates: int = 1
     spread_accounts_path: str = ""
     block_coordinates_path: str = ""
     flood_screen_config_path: str = ""
@@ -424,6 +429,8 @@ class OptimizeConfig:
             raise ValueError("flow_repair_trials must be zero (off) or positive")
         if self.flow_repair_chains < 1:
             raise ValueError("flow_repair_chains must be positive")
+        if self.seed_candidates < 1:
+            raise ValueError("seed_candidates must be positive")
 
 
 #: The route-account kinds that are charged per segment per period rather than per block, so a
@@ -500,10 +507,12 @@ class Optimizer:
         self._active_patch: PatchModel | None = None
         self._patch_accounts_cache: tuple[PatchAccount, ...] | None = None
         self._base_cache: dict[tuple[int, str], float] | None = None
+        self._simulator_base_cache: dict[tuple[int, str], float] | None = None
         self._product_delta_cache: dict[
             tuple[int, Chain, tuple[str, ...]], dict[tuple[int, str], float]
         ] = {}
         self._last_values: pd.DataFrame | None = None
+        self._sim_delta_cache: dict[tuple[int, Chain], dict[tuple[int, str], float]] = {}
         self._delta_cache: dict[
             tuple[int, Chain, frozenset[int] | None, frozenset[str] | None],
             dict[tuple[int, str], float],
@@ -1010,10 +1019,10 @@ class Optimizer:
                 )
         return values
 
-    def _base_values(self) -> dict[tuple[int, str], float]:
-        """Return the empty-schedule account values as a mapping, computed once."""
-        if self._base_cache is not None:
-            return self._base_cache
+    def _simulator_base_values(self) -> dict[tuple[int, str], float]:
+        """Return the empty-schedule simulator accounts, without the carbon ledger."""
+        if self._simulator_base_cache is not None:
+            return self._simulator_base_cache
         simulator = self.simulator()
         simulator.reset()
         empty = pd.DataFrame(
@@ -1029,6 +1038,14 @@ class Optimizer:
             (int(str(row.offset)), str(row.account)): float(str(row.value))
             for row in values.itertuples(index=False)
         }
+        self._simulator_base_cache = base
+        return base
+
+    def _base_values(self) -> dict[tuple[int, str], float]:
+        """Return the empty-schedule account values as a mapping, computed once."""
+        if self._base_cache is not None:
+            return self._base_cache
+        base = dict(self._simulator_base_values())
         carbon = self.carbon_ledger()
         if carbon is not None:
             base.update(carbon.base_values())
@@ -1085,6 +1102,23 @@ class Optimizer:
             results[key] = self._block_delta(block, chain, accounts, feature_offsets)
         return results
 
+    def _simulator_block_delta(self, block: int, chain: Chain) -> dict[tuple[int, str], float]:
+        """Return a block's simulator-only delta for a treatment chain, cached."""
+        key = (block, chain)
+        cached = self._sim_delta_cache.get(key)
+        if cached is not None:
+            return cached
+        simulator = self.simulator()
+        treated = simulator.block_chain(block, chain, self.cfg.years)
+        empty = simulator.block_chain(block, (), self.cfg.years)
+        delta = {
+            cell: treated.get(cell, 0.0) - empty.get(cell, 0.0)
+            for cell in set(treated) | set(empty)
+        }
+        delta = {cell: value for cell, value in delta.items() if value != 0.0}
+        self._sim_delta_cache[key] = delta
+        return delta
+
     def _block_delta(
         self,
         block: int,
@@ -1140,7 +1174,9 @@ class Optimizer:
             for cell in set(treated) | set(empty)
         }
         carbon = self.carbon_ledger()
-        if carbon is not None:
+        if carbon is not None and (
+            accounts is None or any(name.startswith("carbon.") for name in accounts)
+        ):
             for cell, value in carbon.block_delta(block, chain, accounts).items():
                 delta[cell] = delta.get(cell, 0.0) + value
         delta = {cell: value for cell, value in delta.items() if value != 0.0}
@@ -1416,8 +1452,8 @@ class Optimizer:
         seed_account : str or None, optional
             The reduction goal account, or None to use the configuration's ``seed_account``.
         workers : int or None, optional
-            Forked processes for reduction-goal scoring, or None to use the configuration's
-            ``workers``. The floor mode is serial.
+            Forked processes for candidate scoring, or None to use the configuration's
+            ``workers``. Both seed modes support the fork path.
 
         Returns
         -------
@@ -1443,11 +1479,16 @@ class Optimizer:
                 "contrast, each of which rewrites or extends the account values"
             )
         account = self.cfg.seed_account if seed_account is None else seed_account
+        seed_candidates = self._seed_candidates(goals, account or None)
+        carbon = self.carbon_ledger()
+        if carbon is not None:
+            carbon.prepare(seed_candidates, candidate_limit=self.cfg.seed_candidates)
         return greedy_schedule(
             evaluator,
-            self._seed_candidates(goals, account or None),
+            seed_candidates,
             goal_account=account or None,
             workers=self.cfg.workers if workers is None else workers,
+            candidate_limit=self.cfg.seed_candidates,
         )
 
     def _require_carbon_target_support(self, targets: Sequence[Target]) -> None:
@@ -1555,12 +1596,20 @@ class Optimizer:
         if initial is None and self.cfg.greedy_seed:
             evaluator = self.delta_evaluator(targets)
             if evaluator is not None:
+                seed_candidates = self._seed_candidates(targets, self.cfg.seed_account or None)
+                carbon = self.carbon_ledger()
+                if carbon is not None:
+                    carbon.prepare(
+                        seed_candidates,
+                        candidate_limit=self.cfg.seed_candidates,
+                    )
                 initial = greedy_schedule(
                     evaluator,
-                    self._seed_candidates(targets, self.cfg.seed_account or None),
+                    seed_candidates,
                     goal_account=self.cfg.seed_account or None,
                     workers=self.cfg.workers,
                     deadline=limit,
+                    candidate_limit=self.cfg.seed_candidates,
                 )
         if initial is None and self.cfg.warm_start:
             initial = {block: options[0] for block, options in candidates.items() if options}

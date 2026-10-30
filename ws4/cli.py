@@ -601,8 +601,10 @@ def optimize(
         "--constraint-strategy",
         help="Spatial policy: penalize (default), reject, or repair",
     ),
-    lns_weight: float = typer.Option(
-        0.2, "--lns-weight", help="Weight of the LNS operator (0 disables it)"
+    lns_weight: float | None = typer.Option(
+        None,
+        "--lns-weight",
+        help="Weight of the LNS operator (0 disables it); carbon runs default to 0",
     ),
     lns_destroy: float = typer.Option(
         0.1, "--lns-destroy", help="Fraction of the schedule an LNS move destroys"
@@ -622,6 +624,11 @@ def optimize(
         "",
         "--seed-account",
         help="With --seed-greedy, reduce this target account to its maximum instead of floors",
+    ),
+    seed_candidates: int = typer.Option(
+        1,
+        "--seed-candidates",
+        help="Maximum candidate chains per block scored by --seed-greedy",
     ),
     cluster_weight: float = typer.Option(
         0.0, "--cluster-weight", help="Weight of the topology cluster operator (0 disables it)"
@@ -713,6 +720,9 @@ def optimize(
     ),
 ) -> None:
     """Search for a schedule that satisfies the targets and write a summary."""
+    effective_lns = (
+        lns_weight if lns_weight is not None else (0.0 if carbon_package is not None else 0.2)
+    )
     cfg = OptimizeConfig(
         threads=threads,
         workers=threads,
@@ -744,12 +754,13 @@ def optimize(
         spatial_weight=spatial_weight,
         allow_spatial_override=spatial_override,
         constraint_strategy=constraint_strategy,
-        lns_weight=lns_weight,
+        lns_weight=effective_lns,
         lns_destroy=lns_destroy,
         lns_max_destroy=lns_max_destroy,
         warm_cache=warm_cache,
         greedy_seed=seed_greedy,
         seed_account=seed_account,
+        seed_candidates=seed_candidates,
         cluster_weight=cluster_weight,
         cluster_size=cluster_size,
         coalesce_weight=coalesce_weight,

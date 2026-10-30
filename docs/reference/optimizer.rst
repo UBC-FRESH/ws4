@@ -178,10 +178,11 @@ penalty.
        minimum: 10
        normalization: auto
 
-``priority`` is a positive integer tier. Targets at the same tier add normally. When more
-than one tier is present, a lower-priority tier is multiplied by ``PRIORITY_SCALE`` per step
-(``1e9``), so a small higher-priority penalty outranks a larger lower-priority one in the
-scalar search. This is a priority-weighted objective, **not a certified lexicographic
+``priority`` is a positive integer tier, and **priority 1 is the strongest tier**. Targets
+at the same tier add normally. When more than one tier is present, a lower-priority tier
+is multiplied by ``PRIORITY_SCALE`` per step (``1e9``), so a small priority-1 penalty
+outranks a larger priority-2 one in the scalar search. This is a priority-weighted
+objective, **not a certified lexicographic
 solve**; the run report still carries every target's raw and normalized penalty so a
 reviewer can inspect the trade-off. The default priority is one, which leaves the current
 objective unchanged.
@@ -213,7 +214,10 @@ per block, and the operator registry. The operators are:
 Each operator carries a selection weight. ``toggle``, ``shift``, ``swap`` and ``lns`` are enabled
 by default; ``cluster``, ``merge`` and ``split`` ship at weight zero, so a configuration must give
 them a weight (``--cluster-weight``, ``--merge-weight``, ``--split-weight``, or
-``OptimizeConfig.cluster_weight`` and friends) before they are selected.
+``OptimizeConfig.cluster_weight`` and friends) before they are selected. The CLI disables ``lns``
+by default when a carbon package is present: a bulk move creates many new stand-state carbon
+evaluations, and on the tested 500-block and 5,000-block cases the single-block operators were
+both faster and at least as good. Pass ``--lns-weight`` explicitly to re-enable it.
 
 The solvers are simulated annealing (``sa``), tabu search (``tabu``), iterated local search
 (``ils``), and threshold accepting (``threshold``), selected by ``--engine``
@@ -253,7 +257,9 @@ by the same ``report_targets.csv`` as a normal run.
 Both seed modes score blocks in fork workers when ``--threads`` is greater than one, and
 both stop at the run deadline. If the deadline is reached during seeding, the partial
 schedule becomes the starting point and the remaining search loop still runs. This keeps
-a large seed from consuming the entire budget before iteration 1.
+a large seed from consuming the entire budget before iteration 1. ``--seed-candidates``
+caps the chains scored per block; the default is one, because a seed is a starting point
+and scoring every offset variant is usually not worth a full 50-year evaluation.
 
 For a large feature goal with product cost ceilings, the seed first shortlists the 40,000
 blocks with the cheapest direct feature-curve reduction per dollar, then prices the
