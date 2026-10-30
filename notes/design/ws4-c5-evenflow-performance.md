@@ -215,3 +215,19 @@ gap only marginally and cannot close a 2.9M stock gap. The next decision is targ
 lower harvest levels, raise the stock weight/relax the 90% stock goal, or accept the flow
 gap and close P83.1 as a negative evidence report.
 
+## Stock-policy sensitivity (2026-10-30)
+
+A relaxed 80% final-stock target (**21,245,129.40**) was tested with 100k search plus
+100k repair trials / 32 chains:
+
+- objective **12,574,416**
+- conifer flow **-7.81% / +5.83%**
+- deciduous flow **-5.02% / +4.62%**
+- final stock **20.957M**, still 0.29M below the relaxed 80% target
+
+Relaxing the stock target to 80% brings deciduous inside ±5% and improves the conifer
+gap, but the conifer band remains outside ±5% and the stock target is still slightly
+short. A 79% stock target (about 20.98M) would be met; ±5% conifer flow is still not.
+The next decision is policy: accept this compromise, relax the flow band, or change the
+harvest/reference structure.
+

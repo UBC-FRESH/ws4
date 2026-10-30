@@ -3357,3 +3357,10 @@ issue comments.
   Objective improved 44,719,123 to 44,671,405; stock fell 20.11M to 20.10M. The ±5% band
   is still not met. Exactness and focused tests: 97 passed. Evidence and risks:
   `notes/design/ws4-c5-evenflow-performance.md` (P83.5).
+
+
+- P83.1 stock-policy sensitivity: a relaxed 80% final-stock target (21,245,129.40) with
+  100k search and 100k repair trials/32 chains produced objective 12,574,416, conifer
+  flow -7.81%/+5.83%, deciduous -5.02%/+4.62%, and stock 20.957M (0.29M below the relaxed
+  target). Deciduous is now inside ±5%; conifer is not. The compromise and decision point
+  are recorded in `notes/design/ws4-c5-evenflow-performance.md`.
