@@ -2560,7 +2560,7 @@ enough for the 100,000-iteration budget and record the actual target result.
   - [ ] Reach ±5% flow and the 23.9M stock goal, or record the target tension as final
 - [ ] P83.2 Optimize the seeded search state and startup (#586)
 - [x] P83.3 Batch or bound the LNS move (#587)
-- [ ] P83.4 Allow seeded process-pool islands (#588)
+- [x] P83.4 Allow seeded process-pool islands (#588)
 - [ ] P83.5 Add flow-directed moves or an LP period-volume seed (#589)
 - [ ] P83.6 Evaluate a GPU batch path
 
