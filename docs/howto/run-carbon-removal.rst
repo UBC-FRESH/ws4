@@ -33,6 +33,15 @@ Command
      --seed 1 \
      --out runs/carbon-removal
 
+The exact effect table is cached under ``~/.cache/ws4/removal`` by default. A cache
+hit skips the 156 s build; on the 5k case the repeat run was 32 s instead of 207 s.
+Use ``--cache-dir`` to choose another location or ``--no-cache`` to force a rebuild.
+
+``--solver auto`` uses the exact MILP knapsack when the target shape is one
+minimum-cost target and one maximum-benefit target (the carbon/yield case), and
+falls back to the population search otherwise. The MILP certifies the optimum of
+the binary effect table; exact ``ws4 carbon`` replay remains the reported value.
+
 The command writes:
 
 - ``schedule.csv`` — the winning keep/remove schedule;
@@ -55,9 +64,9 @@ The effect table is the cost. It is parallel across exact stand states. Once the
 rows exist, the CUDA population search is effectively free. For 5,000 TSA41
 blocks with the current ``CC@0`` chain and HWP:
 
-- 156 s table build with 64 workers;
+- 156 s first table build with 64 workers;
 - 2.5 s population search;
-- 187 s total including exact replay.
+- 32 s repeat run with a cache hit and exact replay.
 
 Without CUDA the same search falls back to a NumPy implementation. It is slower
 and should be used only for small cases or tests.

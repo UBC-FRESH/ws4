@@ -6,11 +6,13 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 from ws4.opt.objective import Target, period_value
 from ws4.opt.removal import (
     RemovalEffects,
     RemovalResult,
     solve_removal,
+    solve_removal_milp,
     write_removal_schedule,
 )
 
@@ -91,3 +93,24 @@ def test_period_value_reads_accumulating_product_cells() -> None:
     values = {(0, "product.Yield.managed.Total"): 12.0}
     target = Target(account="product.Yield.managed.Total", period=1)
     assert period_value(values, target) == 12.0
+
+
+def test_effect_table_round_trip(tmp_path: Path) -> None:
+    """The exact effect table is cacheable without rebuilding."""
+    effects = _effects()
+    path = effects.save(tmp_path / "cache")
+    loaded = RemovalEffects.load(path, effects.schedule, effects.targets)
+    np.testing.assert_array_equal(loaded.blocks, effects.blocks)
+    np.testing.assert_array_equal(loaded.base, effects.base)
+    np.testing.assert_array_equal(loaded.effects, effects.effects)
+    assert loaded.target_cells == effects.target_cells
+
+
+def test_milp_finds_the_binary_optimum() -> None:
+    """The exact knapsack removes the high-emission block."""
+    pytest.importorskip("scipy")
+    result = solve_removal_milp(_effects())
+    assert 1 not in result.schedule
+    assert len(result.schedule) == 3
+    assert result.values[CELLS[0]] == 30.0
+    assert result.values[CELLS[1]] == 3.0

@@ -457,14 +457,65 @@ def carbon_removal(
     population: int = typer.Option(2048, "--population", help="Genomes per generation"),
     generations: int = typer.Option(3000, "--generations", help="GA generations"),
     seed: int = typer.Option(1, "--seed", help="GA seed"),
+    solver: str = typer.Option("auto", "--solver", help="Removal solver: auto, ga, or milp"),
+    milp_time_limit: float | None = typer.Option(
+        None, "--milp-time-limit", help="Optional HiGHS time limit in seconds"
+    ),
+    cache_dir: Path | None = typer.Option(
+        None, "--cache-dir", help="Effect-table cache; defaults to ~/.cache/ws4/removal"
+    ),
+    no_cache: bool = typer.Option(
+        False, "--no-cache", help="Rebuild without reading/writing cache"
+    ),
     verify: bool = typer.Option(
         True, "--verify/--no-verify", help="Run exact replay after the search"
     ),
 ) -> None:
     """Optimize a binary keep/remove pattern with exact carbon effects."""
+    import hashlib
+
+    from .carbon.package import load_carbon_package, package_fingerprint
     from .opt.engine import OptimizeConfig, Optimizer, load_schedule_csv
     from .opt.objective import load_targets, penalty, period_value
-    from .opt.removal import build_removal_effects, solve_removal, write_removal_schedule
+    from .opt.removal import (
+        RemovalEffects,
+        build_removal_effects,
+        solve_removal,
+        solve_removal_milp,
+        write_removal_schedule,
+    )
+
+    def file_hash(path: Path) -> str:
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
+
+    def cache_key() -> str:
+        digest = hashlib.sha256()
+        parts = [
+            "carbon-removal-v1",
+            str(years),
+            package_fingerprint(load_carbon_package(package)),
+            file_hash(schedule),
+            file_hash(targets),
+        ]
+        for path in sorted(dataset.glob("*.parquet")):
+            parts.append(f"{path.name}:{file_hash(path)}")
+        manifest = dataset / "manifest.json"
+        if manifest.is_file():
+            parts.append(f"manifest.json:{file_hash(manifest)}")
+        if hwp_config is not None:
+            parts.append(f"hwp:{file_hash(hwp_config)}")
+        for part in parts:
+            digest.update(part.encode("utf-8"))
+            digest.update(b"\0")
+        return digest.hexdigest()
+
+    if solver not in {"auto", "ga", "milp"}:
+        print("[red]--solver must be auto, ga, or milp[/red]")
+        raise typer.Exit(code=1)
 
     out.mkdir(parents=True, exist_ok=True)
     cfg = OptimizeConfig(
@@ -478,24 +529,60 @@ def carbon_removal(
     optimizer = Optimizer(dataset, cfg)
     initial = load_schedule_csv(schedule)
     loaded_targets = load_targets(targets)
-    effects = build_removal_effects(optimizer, initial, loaded_targets)
-    result = solve_removal(
-        effects,
-        population=population,
-        generations=generations,
-        seed=seed,
-    )
+    cache_path: Path | None = None
+    cache_state = "disabled"
+    if not no_cache:
+        root = cache_dir if cache_dir is not None else Path.home() / ".cache" / "ws4" / "removal"
+        cache_path = root / cache_key()
+        cache_state = "miss"
+    effects: RemovalEffects | None = None
+    if cache_path is not None and (cache_path / "meta.json").is_file():
+        try:
+            effects = RemovalEffects.load(cache_path, initial, loaded_targets)
+            cache_state = "hit"
+        except (OSError, ValueError, KeyError):
+            effects = None
+    if effects is None:
+        effects = build_removal_effects(optimizer, initial, loaded_targets)
+        if cache_path is not None:
+            effects.save(cache_path)
+    if solver == "milp":
+        result = solve_removal_milp(effects, time_limit=milp_time_limit)
+        solver_used = "milp"
+    elif solver == "auto":
+        try:
+            result = solve_removal_milp(effects, time_limit=milp_time_limit)
+            solver_used = "milp"
+        except (RuntimeError, ValueError):
+            result = solve_removal(
+                effects,
+                population=population,
+                generations=generations,
+                seed=seed,
+            )
+            solver_used = "ga"
+    else:
+        result = solve_removal(
+            effects,
+            population=population,
+            generations=generations,
+            seed=seed,
+        )
+        solver_used = "ga"
     schedule_path = out / "schedule.csv"
     write_removal_schedule(result, schedule_path)
     removed = len(effects.blocks) - len(result.schedule)
     summary: dict[str, object] = {
         "blocks": len(effects.blocks),
         "removed": removed,
-        "build_seconds": effects.build_seconds,
+        "build_seconds": 0.0 if cache_state == "hit" else effects.build_seconds,
+        "effect_table_seconds": effects.build_seconds,
         "search_seconds": result.search_seconds,
         "population": population,
         "generations": generations,
         "seed": seed,
+        "solver": solver_used,
+        "cache": cache_state,
     }
     exact_values: dict[tuple[int, str], float] | None = None
     if verify:
@@ -532,8 +619,10 @@ def carbon_removal(
     (out / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     print(f"[bold green]Removal search complete[/] → {out}")
     print(
-        f"blocks={len(effects.blocks)} removed={removed} "
-        f"build={effects.build_seconds:.1f}s search={result.search_seconds:.1f}s"
+        f"blocks={len(effects.blocks)} removed={removed} solver={solver_used} "
+        f"cache={cache_state} "
+        f"build={0.0 if cache_state == 'hit' else effects.build_seconds:.1f}s "
+        f"search={result.search_seconds:.1f}s"
     )
     if exact_values is not None:
         print(f"targets: {out / 'report_targets.csv'}")
