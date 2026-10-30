@@ -810,10 +810,7 @@ class Simulator:
                         for curve_id, product_label in self._products_by_key.get(
                             (current, treatment), []
                         ):
-                            if (
-                                wanted_accounts is not None
-                                and product_label not in wanted_accounts
-                            ):
+                            if wanted_accounts is not None and product_label not in wanted_accounts:
                                 continue
                             value = area * self._curve_value(curve_id, offset)
                             key = (step, product_label)

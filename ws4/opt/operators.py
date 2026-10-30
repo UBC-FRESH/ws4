@@ -353,6 +353,8 @@ class LnsOperator(_OperatorBase):
         The operator's selection weight. Defaults to 0.2.
     destroy_fraction : float, optional
         The fraction of the assigned blocks to destroy and repair. Defaults to 0.1.
+    max_destroy : int, optional
+        The maximum number of blocks one move may destroy. Defaults to 64.
     """
 
     name = "lns"
@@ -360,7 +362,17 @@ class LnsOperator(_OperatorBase):
     def __init__(
         self, weight: float = 0.2, destroy_fraction: float = 0.1, max_destroy: int = 64
     ) -> None:
-        """Set the operator's selection weight, fraction destroyed, and block cap."""
+        """Set the operator's selection weight, fraction destroyed, and block cap.
+
+        Parameters
+        ----------
+        weight : float, optional
+            The selection weight.
+        destroy_fraction : float, optional
+            The fraction of the schedule to destroy.
+        max_destroy : int, optional
+            The maximum number of blocks one move may destroy.
+        """
         self.weight = weight
         self.destroy_fraction = destroy_fraction
         self.max_destroy = max(1, int(max_destroy))

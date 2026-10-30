@@ -147,6 +147,22 @@ def period_end_values(
 
     A feature-level account is a snapshot, not a flow. Summing its annual values would
     multiply the stock by the period width and make the chart disagree with the target.
+
+    Parameters
+    ----------
+    values : pandas.DataFrame
+        Account values with ``offset``, ``account``, and ``value`` columns.
+    accounts : sequence of str
+        The account labels to read.
+    period_width : int
+        The number of years per period.
+    years : int
+        The simulation horizon.
+
+    Returns
+    -------
+    list of float
+        One period-end value per period, summed across accounts.
     """
     n_periods = (years + period_width - 1) // period_width
     totals = [0.0] * max(0, n_periods)

@@ -138,9 +138,7 @@ def test_candidates_use_a_treatment_bearing_split_fragment(tmp_path: Path) -> No
     """A split block with a treatment-less first fragment still has candidates."""
     matrix, with_track, _without_track = _write_split_matrix(tmp_path)
     names = pd.read_csv(matrix / "tracknames.csv")
-    names = pd.concat(
-        [names, pd.DataFrame({"TRACK": [2], "STRATA": ["all2"]})], ignore_index=True
-    )
+    names = pd.concat([names, pd.DataFrame({"TRACK": [2], "STRATA": ["all2"]})], ignore_index=True)
     names.to_csv(matrix / "tracknames.csv", index=False)
     blocks = pd.read_csv(matrix / "blocks.csv").iloc[::-1].reset_index(drop=True)
     blocks.to_csv(matrix / "blocks.csv", index=False)

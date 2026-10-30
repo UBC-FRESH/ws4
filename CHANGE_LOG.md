@@ -3299,3 +3299,19 @@ issue comments.
   iterations in 17m17s, with exact cumulative emissions 51,886 tCO2e against a 210k cap.
   Seeding is still expensive (~15-16 min), so cheaper seed scoring is the next step.
   Evidence: `notes/reports/greedy-seeding-performance.md`.
+
+## 2026-10-30
+
+- P83 performance: the seeded c5 even-flow path was profiled and optimized without
+  changing target semantics. Reused the simulator across candidate generation, seed reset,
+  and report replay; replaced the per-group seed parser with one pass; evaluated feature
+  cells only at target period ends; restricted block-chain work to tracked accounts;
+  cached flow-period balances and priced only touched periods; replaced full incumbent
+  copies with an accepted-move journal; and capped LNS destruction at 64 blocks. The
+  original broken 20k seeded run took 6,118 s (3.27 eval/s); the same class of run now
+  takes 12.4 s, and a 100k no-LNS run takes 36.1 s (~2,770 eval/s end-to-end, objective
+  39,133,750). The 100k result still misses the joint targets: conifer flow worst
+  -8.12% / +6.01%, deciduous -5.28% / +4.74%, final stock 20.96M against 23.9M. The
+  remaining plan is recorded in `notes/design/ws4-c5-evenflow-performance.md` (P83.1;
+  continuation task #586). Focused suite: 112 passed. `python scripts/dashboard.py`:
+  **GREEN** on lint, format, types, tests, validator, docs, and docstrings.

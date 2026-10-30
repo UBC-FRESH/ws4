@@ -159,9 +159,7 @@ class IncrementalObjective:
             ):
                 self._feature_offsets[account] = frozenset(range(-1, horizon))
         self._wanted_feature_offsets = frozenset(
-            offset
-            for account in self.accounts
-            for offset in self._feature_offsets.get(account, ())
+            offset for account in self.accounts for offset in self._feature_offsets.get(account, ())
         )
         self._targets_by_cell: dict[Cell, list[int]] = {}
         for index, target in enumerate(self.targets):
@@ -183,8 +181,7 @@ class IncrementalObjective:
             for position, end in enumerate(ends):
                 period_cells = (
                     tuple(
-                        (year, target.account)
-                        for year in range(max(0, end - width + 1), end + 1)
+                        (year, target.account) for year in range(max(0, end - width + 1), end + 1)
                     )
                     if accumulates(target.account)
                     else ((end, target.account),)
@@ -224,8 +221,9 @@ class IncrementalObjective:
             return []
         if target.flow == "ndy":
             return [
-                math.inf if values[position - 1] <= 0.0 else
-                100.0 * (values[position] - values[position - 1]) / values[position - 1]
+                math.inf
+                if values[position - 1] <= 0.0
+                else 100.0 * (values[position] - values[position - 1]) / values[position - 1]
                 for position in range(1, len(values))
             ]
         reference = self._flow_reference_index[index]
@@ -271,9 +269,7 @@ class IncrementalObjective:
             after_values = list(current)
             for position, value in after.items():
                 after_values[position] = value
-            after_current = self._flow_penalty_values(
-                index, self._flow_values(index, after_values)
-            )
+            after_current = self._flow_penalty_values(index, self._flow_values(index, after_values))
             return self._penalty_difference(before_current, after_current)
         if target.flow == "even":
             reference = self._flow_reference_index[index]
