@@ -159,6 +159,26 @@ incremental; the exact replay is 5,694,966 tCO2e. The GA schedule exact-replays 
 differs from the additive effect table. Exact replay remains the reporting
 authority.
 
+## Full TSA41 state-cache run
+
+The full 148,828-block TSA41 removal run was repeated with the partially built
+state cache:
+
+| Metric | Without state cache | With state cache |
+| --- | ---: | ---: |
+| Blocks | 148,828 | 148,828 |
+| Removed | 37,954 | 37,954 |
+| Yield (m3) | 280,016,800 | 280,016,800 |
+| Exact emissions @49 (tCO2e) | 213,103,705 | 213,103,705 |
+| Effect-table build | 976 s | **0.0 s** |
+| Population search | 78.6 s | 79.9 s |
+| Total including exact replay | 1,217.7 s | **1,069.5 s** |
+
+The state-cache run was executed while the full cache builder was still using 64
+workers, so the exact replay was contended. Even so, the table-build phase
+disappeared and the schedule reproduced exactly. The remaining cost is the exact
+replay, not carbon state construction.
+
 ## Production command
 
 `ws4 carbon-removal` implements this path:

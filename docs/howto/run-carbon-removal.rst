@@ -41,7 +41,9 @@ cells are read from that exact cache instead of rebuilding them with
 ``CarbonLedger.prepare``; non-carbon cells still come from the WS4 simulator. The
 cache must cover every block's track, age, and current ``CC`` offset. On the 5k
 case, a state-cache run with MILP and exact replay took **50.6 s**; the same run
-without the cache took 207 s.
+without the cache took 207 s. On full TSA41, the state-cache run removed the
+976 s table build and reproduced the exact 213,103,705 tCO2e schedule; the
+remaining 17.8 min was dominated by exact replay.
 Use ``--cache-dir`` to choose another location or ``--no-cache`` to force a rebuild.
 
 ``--solver auto`` uses the exact MILP knapsack when the target shape is one
