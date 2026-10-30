@@ -3608,3 +3608,11 @@ issue comments.
   ledger to **2.0e-11** on base values and **9.1e-13** on block effects. The full
   TSA41 state-cache build is running separately. Evidence:
   `notes/reports/carbon-tsa41-5k-removal-ga.md`.
+
+- P83 GPU command: added `ws4 gpu-run`, which loads the content-validated simulator and
+  candidate caches, a persisted effect table, and the resident session; it runs one or more
+  comma-separated seeds, writes schedules, and replays every result with a fresh
+  `IncrementalObjective`. The command does not rebuild the target-specific table and
+  exposes `--rebuild-caches`. Documented in `docs/reference/optimizer.rst`; CLI help test
+  added. Dashboard: GREEN.
+

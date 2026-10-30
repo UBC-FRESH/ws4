@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -2488,6 +2489,130 @@ def dhi_ingest(
     except DhiError as error:
         raise typer.BadParameter(str(error)) from error
     print(f"[bold green]DHI values[/] {len(values)} blocks, bands {', '.join(names)} → {output}")
+
+
+@app.command("gpu-run")
+def gpu_run(
+    dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
+    targets: Path = typer.Option(..., exists=True, help="Targets YAML"),
+    seed_schedule: Path = typer.Option(..., exists=True, help="Initial schedule CSV"),
+    table: Path = typer.Option(..., exists=True, help="Persisted effect table"),
+    cache_dir: Path = typer.Option(
+        Path("runtime/gpu-cache"), help="Simulator and candidate cache directory"
+    ),
+    out_dir: Path = typer.Option(Path("runtime/gpu-run"), help="Schedule output directory"),
+    seeds: str = typer.Option("7", "--seeds", help="Comma-separated search seeds"),
+    years: int = typer.Option(200, help="Simulation horizon in years"),
+    population: int = typer.Option(64, help="Population size"),
+    generations: int = typer.Option(1000, help="Generations per seed"),
+    device: str = typer.Option("cuda", help="Torch device"),
+    rebuild_caches: bool = typer.Option(
+        False, "--rebuild-caches", help="Rebuild simulator and candidate caches"
+    ),
+    json_out: Path | None = typer.Option(None, help="Write the run record JSON here"),
+) -> None:
+    """Run the exact GPU population search, reusing persistent model caches."""
+    try:
+        seed_values = [int(value) for value in seeds.replace(",", " ").split()]
+    except ValueError as error:
+        raise typer.BadParameter("--seeds must be comma-separated integers") from error
+    if not seed_values:
+        raise typer.BadParameter("--seeds must contain at least one integer")
+
+    from .opt.archive import write_schedule
+    from .opt.candidate_cache import (
+        load_or_build_candidates,
+        load_or_build_simulator,
+    )
+    from .opt.engine import load_schedule_csv
+    from .opt.gpu_effects import EffectTable
+    from .opt.gpu_session import GpuSearchSession
+    from .opt.incremental import IncrementalObjective
+    from .opt.objective import load_targets
+
+    started = time.perf_counter()
+    optimizer = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(years=years, targets_path=str(targets), iterations=1, threads=1),
+    )
+    target_list = load_targets(targets)
+    initial = load_schedule_csv(seed_schedule)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        load_or_build_simulator(optimizer, cache_dir / "simulator.pkl", rebuild=rebuild_caches)
+        candidates = load_or_build_candidates(
+            optimizer, cache_dir / "candidates.pkl", rebuild=rebuild_caches
+        )
+        effect_table = EffectTable.load(table, device=device)
+        session = GpuSearchSession(
+            optimizer,
+            IncrementalObjective(optimizer, target_list),
+            effect_table,
+            candidates=candidates,
+            seed_schedule=initial,
+            population=population,
+            initial_seed=seed_values[0],
+            random_fraction=0.05,
+            initial_mutation_rate=0.02,
+            mutation_rate=0.002,
+            islands=1,
+        )
+    except RuntimeError as error:
+        print(f"[red]{error}[/]")
+        raise typer.Exit(code=1) from error
+    session_started = time.perf_counter()
+    out_dir.mkdir(parents=True, exist_ok=True)
+    records: list[dict[str, object]] = []
+    last_done = session_started
+    for seed in seed_values:
+        result = session.run(seed, generations, check=1)
+        search_done = time.perf_counter()
+        schedule_path = out_dir / f"seed-{seed}.csv"
+        write_schedule(schedule_path, result.schedule)
+        verifier = IncrementalObjective(optimizer, target_list)
+        verifier.reset(result.schedule)
+        verify_done = time.perf_counter()
+        records.append(
+            {
+                "seed": seed,
+                "schedule": str(schedule_path),
+                "initial_objective": result.initial_objective,
+                "device_objective": result.objective,
+                "verified_objective": verifier.objective,
+                "exact_match": verifier.objective == result.objective,
+                "best_generation": result.best_generation,
+                "evaluations": result.evaluations,
+                "search_s": search_done - last_done,
+                "verify_s": verify_done - search_done,
+            }
+        )
+        last_done = verify_done
+    payload = {
+        "dataset": str(dataset),
+        "targets": str(targets),
+        "table": str(table),
+        "cache_dir": str(cache_dir),
+        "out_dir": str(out_dir),
+        "years": years,
+        "population": population,
+        "generations": generations,
+        "session_build_s": session_started - started,
+        "total_s": time.perf_counter() - started,
+        "runs": records,
+    }
+    summary = Table(title="GPU run")
+    for key in ("session_build_s", "total_s"):
+        summary.add_row(key, f"{payload[key]:.3f}")
+    for record in records:
+        summary.add_row(
+            f"seed {record['seed']}",
+            f"objective={record['verified_objective']} exact={record['exact_match']} "
+            f"search={record['search_s']:.3f}s",
+        )
+    print(summary)
+    if json_out is not None:
+        json_out.parent.mkdir(parents=True, exist_ok=True)
+        json_out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
 
 
 app.add_typer(recovery_app, name="recovery")
