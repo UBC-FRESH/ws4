@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import shutil
 import warnings
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from pathlib import Path
 
 import numpy as np
@@ -695,7 +695,11 @@ class Simulator:
         return dict(enumerate(series.tolist()))
 
     def block_chain(
-        self, block_id: int, events: Sequence[tuple[str, int]], years: int
+        self,
+        block_id: int,
+        events: Sequence[tuple[str, int]],
+        years: int,
+        feature_offsets: Collection[int] | None = None,
     ) -> dict[tuple[int, str], float]:
         """Return one block's account values over a horizon under a chain of treatments.
 
@@ -714,6 +718,9 @@ class Simulator:
             The treatments and the year each is applied.
         years : int
             The horizon, in years.
+        feature_offsets : collection of int, optional
+            Return feature cells only at these years. Products are always returned at their
+            treatment years. ``None`` returns every feature year.
 
         Returns
         -------
@@ -729,15 +736,54 @@ class Simulator:
         tracks = arrays_track[positions]
         offsets = arrays_offset[positions]
         areas = arrays_area[positions]
+        wanted = None if feature_offsets is None else set(feature_offsets)
         totals: dict[tuple[int, str], float] = {}
         # Offset -1 is the pre-simulation snapshot.
-        for index in range(len(positions)):
-            area = float(areas[index])
-            offset = int(offsets[index])
-            for curve_id, label in self._track_features.get(int(tracks[index]), ()):
-                value = area * self._curve_value(curve_id, offset)
-                key = (-1, label)
-                totals[key] = totals.get(key, 0.0) + value
+        if wanted is None or -1 in wanted:
+            for index in range(len(positions)):
+                area = float(areas[index])
+                offset = int(offsets[index])
+                for curve_id, label in self._track_features.get(int(tracks[index]), ()):
+                    value = area * self._curve_value(curve_id, offset)
+                    key = (-1, label)
+                    totals[key] = totals.get(key, 0.0) + value
+        if wanted is not None:
+            # A target usually reads a feature at a handful of period ends. Jump between
+            # treatment years and those checkpoints instead of stepping every feature
+            # curve through all 200 years.
+            checkpoints = sorted({step for step in wanted if step >= 0} | set(by_offset))
+            current_year = 0
+            for step in checkpoints:
+                if step >= years:
+                    break
+                if step > current_year:
+                    offsets += step - current_year
+                    current_year = step
+                treatment = by_offset.get(step)
+                if treatment is not None:
+                    for index in range(len(positions)):
+                        current = int(tracks[index])
+                        transition = self._treatment_by_key.get((current, treatment))
+                        if transition is not None:
+                            area = float(areas[index])
+                            offset = int(offsets[index])
+                            for curve_id, product_label in self._products_by_key.get(
+                                (current, treatment), []
+                            ):
+                                value = area * self._curve_value(curve_id, offset)
+                                key = (step, product_label)
+                                totals[key] = totals.get(key, 0.0) + value
+                            tracks[index] = transition[0]
+                            offsets[index] = transition[1]
+                if step in wanted:
+                    for index in range(len(positions)):
+                        area = float(areas[index])
+                        offset = int(offsets[index])
+                        for curve_id, label in self._track_features.get(int(tracks[index]), ()):
+                            value = area * self._curve_value(curve_id, offset)
+                            key = (step, label)
+                            totals[key] = totals.get(key, 0.0) + value
+            return totals
         for step in range(years):
             treatment = by_offset.get(step)
             if treatment is not None:

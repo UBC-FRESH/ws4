@@ -13,7 +13,7 @@ import math
 import os
 import random
 import time
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Collection, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
@@ -483,7 +483,9 @@ class Optimizer:
             tuple[int, Chain, tuple[str, ...]], dict[tuple[int, str], float]
         ] = {}
         self._last_values: pd.DataFrame | None = None
-        self._delta_cache: dict[tuple[int, Chain], dict[tuple[int, str], float]] = {}
+        self._delta_cache: dict[
+            tuple[int, Chain, frozenset[int] | None], dict[tuple[int, str], float]
+        ] = {}
         self._route_delta_cache: dict[tuple[int, Chain], dict[tuple[int, str], float]] = {}
         self._carbon_ledger_cache: CarbonLedger | None = None
         self._route_event_cache: dict[tuple[int, Chain, int], tuple[RouteEvent, ...]] = {}
@@ -1008,7 +1010,11 @@ class Optimizer:
         return base
 
     def _block_delta(
-        self, block: int, chain: Chain, accounts: set[str] | None = None
+        self,
+        block: int,
+        chain: Chain,
+        accounts: set[str] | None = None,
+        feature_offsets: Collection[int] | None = None,
     ) -> dict[tuple[int, str], float]:
         """Return a block's account-value delta for a treatment chain, cached.
 
@@ -1021,6 +1027,10 @@ class Optimizer:
         accounts : set of str or None, optional
             When given and the names are all product accounts, the delta is the products
             the chain makes, computed without stepping every year.
+        feature_offsets : collection of int or None, optional
+            When given, feature cells are evaluated only at these years. This keeps the
+            delta path from stepping and interpolating every feature curve for every year
+            when the target only reads a few period ends.
 
         Returns
         -------
@@ -1036,13 +1046,14 @@ class Optimizer:
             product_delta = {cell: value for cell, value in products.items() if cell[1] in accounts}
             self._product_delta_cache[product_key] = product_delta
             return product_delta
-        key = (block, chain)
+        feature_key = None if feature_offsets is None else frozenset(feature_offsets)
+        key = (block, chain, feature_key)
         cached = self._delta_cache.get(key)
         if cached is not None:
             return cached
         simulator = self.simulator()
-        treated = simulator.block_chain(block, chain, self.cfg.years)
-        empty = simulator.block_chain(block, (), self.cfg.years)
+        treated = simulator.block_chain(block, chain, self.cfg.years, feature_key)
+        empty = simulator.block_chain(block, (), self.cfg.years, feature_key)
         delta = {
             cell: treated.get(cell, 0.0) - empty.get(cell, 0.0)
             for cell in set(treated) | set(empty)

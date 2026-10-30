@@ -104,6 +104,31 @@ def test_spatial_penalty_is_in_the_incremental_objective(tmp_path: Path) -> None
     assert evaluator.objective == pytest.approx(optimizer._evaluate(schedule, []))
 
 
+def test_block_chain_narrows_feature_offsets_without_changing_products(tmp_path: Path) -> None:
+    """Jumping to feature checkpoints preserves the product cells and the selected year."""
+    optimizer = _optimizer(tmp_path)
+    simulator = optimizer.simulator()
+    chain = (("CC", 0),)
+    full = simulator.block_chain(1, chain, 4)
+    narrow = simulator.block_chain(1, chain, 4, frozenset({3}))
+    expected = {
+        cell: value
+        for cell, value in full.items()
+        if cell[0] == 3 or str(cell[1]).startswith("product.")
+    }
+    assert narrow == expected
+
+
+def test_feature_target_uses_the_same_objective_with_narrow_offsets(tmp_path: Path) -> None:
+    """A feature target is still exact when only its period-end cell is evaluated."""
+    optimizer = _optimizer(tmp_path)
+    targets = [Target("feature.Volume", period=2, minimum=100.0)]
+    evaluator = IncrementalObjective(optimizer, targets)
+    schedule: Schedule = {1: (("CC", 0),), 2: (("CC", 1),)}
+    evaluator.reset(schedule)
+    assert evaluator.objective == pytest.approx(optimizer._evaluate(schedule, targets))
+
+
 def test_spatial_delta_tracks_a_random_walk(tmp_path: Path) -> None:
     """delta() prices spatial moves exactly and apply() keeps the state consistent."""
     optimizer = _spatial_optimizer(tmp_path, max_opening_ha=10.0)

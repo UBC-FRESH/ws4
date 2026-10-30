@@ -132,6 +132,22 @@ class IncrementalObjective:
             return tuple(target.cell_offsets())
 
         self._target_offsets: list[tuple[int, ...]] = [years_for(target) for target in self.targets]
+        self._feature_offsets: dict[str, frozenset[int]] = {}
+        for target, offsets in zip(self.targets, self._target_offsets, strict=True):
+            if target.flow or accumulates(target.account):
+                continue
+            self._feature_offsets[target.account] = frozenset(
+                (*self._feature_offsets.get(target.account, ()), *offsets)
+            )
+        # A watched feature account that has no target still needs its full series for the
+        # viewer; only targeted feature accounts get the narrowed offset set.
+        for account in self.accounts:
+            if (
+                not accumulates(account)
+                and account not in self._feature_offsets
+                and not is_patch(account)
+            ):
+                self._feature_offsets[account] = frozenset(range(-1, horizon))
         self._targets_by_cell: dict[Cell, list[int]] = {}
         for index, target in enumerate(self.targets):
             for year in self._target_offsets[index]:
@@ -178,9 +194,16 @@ class IncrementalObjective:
         cached = self._contributions.get(key)
         if cached is not None:
             return cached
+        wanted_offsets = frozenset(
+            offset
+            for account in self.accounts
+            for offset in self._feature_offsets.get(account, ())
+        )
         contribution = {
             cell: value
-            for cell, value in self.optimizer._block_delta(block, chain, self.accounts).items()
+            for cell, value in self.optimizer._block_delta(
+                block, chain, self.accounts, wanted_offsets
+            ).items()
             if cell[1] in self.accounts and value != 0.0
         }
         for cell, value in self.optimizer._block_route_delta(block, chain).items():
