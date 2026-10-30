@@ -33,7 +33,7 @@ try:  # pragma: no cover - which branch runs depends on the environment
     HAVE_TORCH = True
 except ImportError:  # pragma: no cover
     HAVE_TORCH = False
-    torch = None  # type: ignore[assignment]  # torch is optional; methods raise without it.
+    torch = None  # type: ignore[assignment, unused-ignore]  # optional; methods raise without it.
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -280,9 +280,9 @@ class EffectTable:
             The total tensor storage in bytes.
         """
         return (
-            self.indptr.numel() * self.indptr.element_size()
-            + self.indices.numel() * self.indices.element_size()
-            + self.values.numel() * self.values.element_size()
+            int(self.indptr.numel()) * int(self.indptr.element_size())
+            + int(self.indices.numel()) * int(self.indices.element_size())
+            + int(self.values.numel()) * int(self.values.element_size())
         )
 
     def to(self, device: str | torch_type.device) -> EffectTable:

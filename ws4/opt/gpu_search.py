@@ -31,7 +31,7 @@ try:  # pragma: no cover - which branch runs depends on the environment
     HAVE_TORCH = True
 except ImportError:  # pragma: no cover
     HAVE_TORCH = False
-    torch = None  # type: ignore[assignment]  # torch is optional; methods raise without it.
+    torch = None  # type: ignore[assignment, unused-ignore]  # optional; methods raise without it.
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
