@@ -3458,3 +3458,10 @@ issue comments.
   archive. Evidence: `notes/reports/p83-9-meta-portfolio.md` and
   `notes/design/ws4-metaheuristic-portfolio.md`. Dashboard result:
   `python scripts/dashboard.py` reports `OVERALL: GREEN`.
+
+
+- P83.8 full TSA23 population run: loaded the persisted 567 MB table (114 s), built the
+  66,584-block option map in 410 s, then ran 64 genomes for 10 generations in 9.3 s. The
+  objective fell from 21.02M to 9.12M but is nowhere near the CPU 20x10 result (0). The
+  option-map construction is now the setup bottleneck; full-model GPU search is not yet
+  competitive.

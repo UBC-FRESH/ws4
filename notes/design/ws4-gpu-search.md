@@ -231,3 +231,21 @@ sidecar) and a better batched search/acceptance rule.
 torch archive. A round-trip test covers the sparse tensors, blocks, row index, and deltas.
 This makes the one-time 22-minute full-model build reusable; the next run can load the
 table instead of rebuilding.
+
+## P83.8 full TSA23 population run (2026-10-30)
+
+Using the persisted 567 MB sparse table on the full `compiled_ft_econ` model:
+
+- dataset/candidates: 74.5 s
+- table load: 113.9 s
+- population option-map construction: **410.1 s**
+- 64 genomes, 10 generations: **9.3 s** search
+- objective: 21.02M initial -> **9.12M**
+- 704 genome evaluations; best at generation 10
+- VRAM: 1.14 GB; host RSS: 12.5 GB
+
+The table itself is fine; the full model's **option-map construction** is now the dominant setup
+cost. Ten generations are nowhere near the CPU 20x10 result (objective 0), so this is a
+negative/partial result, not a full-model win. Persisting the population/option map and
+running a longer budget is the next storage/performance problem.
+
