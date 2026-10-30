@@ -3302,6 +3302,17 @@ issue comments.
 
 ## 2026-10-30
 
+- P83.3 LNS delta speed: added a direct `Simulator._block_chain_short` path for chains
+  with no event or one event (the dominant candidate shape), filtered per-account feature
+  and product row tables, `Optimizer._block_deltas` (shared empty-chain work and duplicate
+  collapsing), and `IncrementalObjective.prefetch` for multi-block moves. One-block moves
+  are unchanged. A full ragged-numpy batch was prototyped and measured slower on c5
+  (1.3 fragments per block, one feature checkpoint) and is not kept. The 20k c5 LNS CLI
+  run (`--lns-weight 0.2 --lns-max-destroy 64`) fell from 17.2-17.3 s to 16.1-16.3 s; the
+  search loop alone fell from 8.1-8.5 s to 6.6-7.3 s. The objective is unchanged to 1e-8.
+  Focused suite 127 passed; `python scripts/dashboard.py` **GREEN** on all seven gates.
+  Evidence and the feature-flow caveat: `notes/design/ws4-c5-evenflow-performance.md`.
+
 - P83 performance: the seeded c5 even-flow path was profiled and optimized without
   changing target semantics. Reused the simulator across candidate generation, seed reset,
   and report replay; replaced the per-group seed parser with one pass; evaluated feature

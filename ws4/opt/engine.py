@@ -1022,6 +1022,56 @@ class Optimizer:
         self._base_cache = base
         return base
 
+    def _block_deltas(
+        self,
+        pairs: Sequence[tuple[int, Chain]],
+        accounts: set[str] | None = None,
+        feature_offsets: Collection[int] | None = None,
+    ) -> dict[tuple[int, Chain], dict[tuple[int, str], float]]:
+        """Return several blocks' exact deltas, sharing the move's empty-chain work.
+
+        This is the batch entry point for LNS: one move re-assigns many blocks, and each
+        new chain needs both its own contribution and the block's untreated baseline. The
+        baseline is chain-independent, so it is computed once per block before the treated
+        deltas (and left in the same cache :meth:`_block_delta` reads). Duplicate pairs are
+        collapsed. The returned mapping preserves the first request order.
+
+        Parameters
+        ----------
+        pairs : sequence of (int, Chain)
+            The ``(block, chain)`` pairs to price.
+        accounts : set of str or None, optional
+            The tracked accounts, as :meth:`_block_delta` takes them.
+        feature_offsets : collection of int or None, optional
+            The feature checkpoints, as :meth:`_block_delta` takes them.
+
+        Returns
+        -------
+        dict of (int, Chain) to dict of (int, str) to float
+            The delta per distinct pair.
+        """
+        feature_key = None if feature_offsets is None else frozenset(feature_offsets)
+        account_key = None if accounts is None else frozenset(accounts)
+        product_only = accounts is not None and all(
+            name.startswith("product.") for name in accounts
+        )
+        if not product_only:
+            simulator = self.simulator()
+            for block in {block for block, _chain in pairs}:
+                empty_key = (block, feature_key, account_key)
+                if empty_key in self._empty_delta_cache:
+                    continue
+                self._empty_delta_cache[empty_key] = simulator.block_chain(
+                    block, (), self.cfg.years, feature_key, accounts
+                )
+        results: dict[tuple[int, Chain], dict[tuple[int, str], float]] = {}
+        for block, chain in pairs:
+            key = (block, chain)
+            if key in results:
+                continue
+            results[key] = self._block_delta(block, chain, accounts, feature_offsets)
+        return results
+
     def _block_delta(
         self,
         block: int,

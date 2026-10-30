@@ -436,6 +436,50 @@ class IncrementalObjective:
             self.patch.revert()
         self.spatial.revert()
 
+    def prefetch(self, changed: Sequence[int], schedule: Schedule) -> None:
+        """Fill the contribution cache for a move's blocks before pricing it.
+
+        A one-block move has one contribution to price, so the lazy cache is already the
+        right path. A large-neighbourhood move re-assigns tens of blocks at once, and each
+        new chain would otherwise miss the cache one at a time. This collects the missing
+        ``(block, chain)`` pairs into one :meth:`Optimizer._block_deltas` call (which shares
+        the chain-independent empty-chain work), then stores the filtered contributions the
+        pending sum reads. One-block moves never call it.
+
+        Parameters
+        ----------
+        changed : sequence of int
+            The blocks the move changes.
+        schedule : dict of int to tuple of (str, int)
+            The schedule after the move.
+        """
+        pairs: list[tuple[int, Chain]] = []
+        seen: set[tuple[int, Chain]] = set()
+        for block in changed:
+            for chain in (schedule.get(block), self.assignments.get(block)):
+                if chain is None:
+                    continue
+                pair = (block, chain)
+                if pair in self._contributions or pair in seen:
+                    continue
+                seen.add(pair)
+                pairs.append(pair)
+        if not pairs:
+            return
+        deltas = self.optimizer._block_deltas(pairs, self.accounts, self._wanted_feature_offsets)
+        for pair, delta in deltas.items():
+            block, chain = pair
+            contribution = {
+                cell: value
+                for cell, value in delta.items()
+                if cell[1] in self.accounts and value != 0.0
+            }
+            if self._has_route_accounts:
+                for cell, value in self.optimizer._block_route_delta(block, chain).items():
+                    if cell[1] in self.accounts and value != 0.0:
+                        contribution[cell] = contribution.get(cell, 0.0) + value
+            self._contributions[pair] = contribution
+
     def _pending(self, changed: Sequence[int], schedule: Schedule) -> dict[Cell, float]:
         """Return the per-cell change a move makes."""
         pending: dict[Cell, float] = {}
@@ -510,6 +554,8 @@ class IncrementalObjective:
         float
             The objective after minus the objective before.
         """
+        if len(changed) > 1:
+            self.prefetch(changed, schedule)
         pending = self._pending(changed, schedule)
         self._pending_move = (pending, list(changed), schedule)
         if not pending:

@@ -119,3 +119,27 @@ the result in this note and the changelog.
 - Next bounded performance move: batch LNS contributions or flow-directed moves. Do not
   claim the dense metadata as a speedup yet.
 
+## P83.3 evidence (2026-10-30)
+
+- A full ragged-numpy `block_chain_many` batch was prototyped first and was **exact but
+  slower** on c5: blocks average 1.3 fragments and the balanced target set has a single
+  feature checkpoint (offset 199), so numpy per-batch overhead exceeded the per-block
+  Python loop (0.6-0.8x at 64 pairs). It was not kept.
+- The exact win is a direct path for the dominant chain shape (no event or one event):
+  `Simulator._block_chain_short` skips the checkpoint set and the fourteen-feature /
+  eighteen-product scan, using cached filtered row tables. A cold `_block_delta` over 2000
+  pairs fell from 0.057-0.062 s to 0.031-0.034 s (about 1.8x).
+- `IncrementalObjective.prefetch` plus `Optimizer._block_deltas` now fill the contribution
+  cache for a multi-block move before `delta` prices it; one-block moves never call it.
+  Random-walk tests compare the batched/multi-block deltas with the single-pair path and
+  `_evaluate`, including product, feature, and product-flow targets.
+- CLI LNS benchmark (`--lns-weight 0.2 --lns-max-destroy 64`, seed 1, balanced targets,
+  `seed_stage1.csv`): 20k 17.2-17.3 s before, 16.1-16.3 s after; 5k 9.7 s before, 9.0-9.5 s
+  after. The search loop alone (no telemetry) is 8.1-8.5 s before and 6.6-7.3 s after at
+  20k. The objective is unchanged to 1e-8 (float summation order differs).
+- A pre-existing gap remains out of scope: a **flow target on a feature account** leaves
+  the flow window's feature years out of `_wanted_feature_offsets`, so the incremental
+  totals understate that account. Product flow (the c5 scenario) is unaffected. Recorded
+  here so the next task does not mistake it for a regression.
+
+

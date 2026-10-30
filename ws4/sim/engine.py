@@ -95,6 +95,19 @@ class Simulator:
         self._initial_offset = self.fragments["offset"].to_numpy(copy=True)
         self._arrays: tuple[np.ndarray, np.ndarray, np.ndarray] | None = None
         self._product_kernel: ProductKernel | None = None
+        # Filtered feature/product lists per tracked account set. A block-chain call that
+        # reads three accounts should not scan all fourteen features and eighteen products
+        # of every track it touches.
+        self._feature_list_cache: dict[frozenset[str], dict[int, list[tuple[int, str]]]] = {}
+        self._product_list_cache: dict[
+            frozenset[str], dict[tuple[int, str], list[tuple[int, str]]]
+        ] = {}
+        # The same lists with each curve resolved to its integer table row, for the
+        # single-event fast path (no per-call curve-id lookup).
+        self._feature_row_cache: dict[frozenset[str] | None, dict[int, list[tuple[int, str]]]] = {}
+        self._product_row_cache: dict[
+            tuple[frozenset[str] | None, str], dict[int, list[tuple[int, str]]]
+        ] = {}
         self._product_values: list[dict[str, object]] = []
         self._route_values: list[dict[str, object]] = []
         self._edge_values: list[dict[str, object]] = []
@@ -735,6 +748,8 @@ class Simulator:
         positions = self._block_index().get(int(block_id), [])
         if not positions:
             return {}
+        if feature_offsets is not None and len(events) <= 1:
+            return self._block_chain_short(positions, events, years, feature_offsets, accounts)
         by_offset = {int(offset): str(treatment) for treatment, offset in events}
         arrays_track, arrays_offset, arrays_area = self._fragment_arrays()
         tracks = arrays_track[positions]
@@ -742,15 +757,20 @@ class Simulator:
         areas = arrays_area[positions]
         wanted = None if feature_offsets is None else set(feature_offsets)
         wanted_accounts = None if accounts is None else set(accounts)
+        if wanted_accounts is None:
+            features = self._track_features
+            products = self._products_by_key
+        else:
+            accounts_key = frozenset(wanted_accounts)
+            features = self._feature_lists(accounts_key)
+            products = self._product_lists(accounts_key)
         totals: dict[tuple[int, str], float] = {}
         # Offset -1 is the pre-simulation snapshot.
         if wanted is None or -1 in wanted:
             for index in range(len(positions)):
                 area = float(areas[index])
                 offset = int(offsets[index])
-                for curve_id, label in self._track_features.get(int(tracks[index]), ()):
-                    if wanted_accounts is not None and label not in wanted_accounts:
-                        continue
+                for curve_id, label in features.get(int(tracks[index]), ()):
                     value = area * self._curve_value(curve_id, offset)
                     key = (-1, label)
                     totals[key] = totals.get(key, 0.0) + value
@@ -774,14 +794,7 @@ class Simulator:
                         if transition is not None:
                             area = float(areas[index])
                             offset = int(offsets[index])
-                            for curve_id, product_label in self._products_by_key.get(
-                                (current, treatment), []
-                            ):
-                                if (
-                                    wanted_accounts is not None
-                                    and product_label not in wanted_accounts
-                                ):
-                                    continue
+                            for curve_id, product_label in products.get((current, treatment), ()):
                                 value = area * self._curve_value(curve_id, offset)
                                 key = (step, product_label)
                                 totals[key] = totals.get(key, 0.0) + value
@@ -791,9 +804,7 @@ class Simulator:
                     for index in range(len(positions)):
                         area = float(areas[index])
                         offset = int(offsets[index])
-                        for curve_id, label in self._track_features.get(int(tracks[index]), ()):
-                            if wanted_accounts is not None and label not in wanted_accounts:
-                                continue
+                        for curve_id, label in features.get(int(tracks[index]), ()):
                             value = area * self._curve_value(curve_id, offset)
                             key = (step, label)
                             totals[key] = totals.get(key, 0.0) + value
@@ -807,11 +818,7 @@ class Simulator:
                     if transition is not None:
                         area = float(areas[index])
                         offset = int(offsets[index])
-                        for curve_id, product_label in self._products_by_key.get(
-                            (current, treatment), []
-                        ):
-                            if wanted_accounts is not None and product_label not in wanted_accounts:
-                                continue
+                        for curve_id, product_label in products.get((current, treatment), ()):
                             value = area * self._curve_value(curve_id, offset)
                             key = (step, product_label)
                             totals[key] = totals.get(key, 0.0) + value
@@ -820,13 +827,149 @@ class Simulator:
             for index in range(len(positions)):
                 area = float(areas[index])
                 offset = int(offsets[index])
-                for curve_id, label in self._track_features.get(int(tracks[index]), ()):
-                    if wanted_accounts is not None and label not in wanted_accounts:
-                        continue
+                for curve_id, label in features.get(int(tracks[index]), ()):
                     value = area * self._curve_value(curve_id, offset)
                     key = (step, label)
                     totals[key] = totals.get(key, 0.0) + value
             offsets += 1
+        return totals
+
+    def _feature_lists(self, accounts: frozenset[str]) -> dict[int, list[tuple[int, str]]]:
+        """Return the cached feature rows per track, filtered to the tracked accounts."""
+        cached = self._feature_list_cache.get(accounts)
+        if cached is not None:
+            return cached
+        index = {
+            track: [item for item in items if item[1] in accounts]
+            for track, items in self._track_features.items()
+        }
+        self._feature_list_cache[accounts] = index
+        return index
+
+    def _product_lists(
+        self, accounts: frozenset[str]
+    ) -> dict[tuple[int, str], list[tuple[int, str]]]:
+        """Return the cached product rows per (track, treatment), filtered to the accounts."""
+        cached = self._product_list_cache.get(accounts)
+        if cached is not None:
+            return cached
+        index = {
+            key: [item for item in items if item[1] in accounts]
+            for key, items in self._products_by_key.items()
+        }
+        self._product_list_cache[accounts] = index
+        return index
+
+    def _table_value(self, row: int, age: int) -> float:
+        """Return a precomputed curve row's value at an integer age (clamped)."""
+        table = self._curve_table.table
+        if age >= self._curve_table.age_max:
+            return float(table[row, self._curve_table.age_max])
+        if age <= 0:
+            return float(table[row, 0])
+        return float(table[row, age])
+
+    def _feature_rows(self, accounts: Collection[str] | None) -> dict[int, list[tuple[int, str]]]:
+        """Return the cached table rows per track, filtered to the tracked accounts."""
+        key = None if accounts is None else frozenset(accounts)
+        cached = self._feature_row_cache.get(key)
+        if cached is not None:
+            return cached
+        index: dict[int, list[tuple[int, str]]] = {}
+        for track, items in self._track_features.items():
+            rows: list[tuple[int, str]] = []
+            for curve_id, label in items:
+                if key is not None and label not in key:
+                    continue
+                row = self._curve_table.row(curve_id)
+                if row is not None:
+                    rows.append((row, label))
+            if rows:
+                index[track] = rows
+        self._feature_row_cache[key] = index
+        return index
+
+    def _product_rows(
+        self, accounts: Collection[str] | None, treatment: str
+    ) -> dict[int, list[tuple[int, str]]]:
+        """Return the cached product table rows per track for one treatment."""
+        key = (None if accounts is None else frozenset(accounts), treatment)
+        cached = self._product_row_cache.get(key)
+        if cached is not None:
+            return cached
+        accounts_key = key[0]
+        index: dict[int, list[tuple[int, str]]] = {}
+        for (track, treat), items in self._products_by_key.items():
+            if treat != treatment:
+                continue
+            rows: list[tuple[int, str]] = []
+            for curve_id, label in items:
+                if accounts_key is not None and label not in accounts_key:
+                    continue
+                row = self._curve_table.row(curve_id)
+                if row is not None:
+                    rows.append((row, label))
+            if rows:
+                index[track] = rows
+        self._product_row_cache[key] = index
+        return index
+
+    def _block_chain_short(
+        self,
+        positions: Sequence[int],
+        events: Sequence[tuple[str, int]],
+        years: int,
+        feature_offsets: Collection[int],
+        accounts: Collection[str] | None,
+    ) -> dict[tuple[int, str], float]:
+        """Price a block with no treatment or one treatment, without the checkpoint loop.
+
+        This is the shape almost every candidate chain has, so it is worth a direct path:
+        advance to the event year once, record the products on the pre-treatment track,
+        then read the features at each target checkpoint on the right side of the event.
+        """
+        arrays_track, arrays_offset, arrays_area = self._fragment_arrays()
+        features = self._feature_rows(accounts)
+        wanted = frozenset(feature_offsets)
+        snapshot = -1 in wanted
+        event = events[0] if events else None
+        treatment = str(event[0]) if event is not None else None
+        event_year = int(event[1]) if event is not None else -1
+        applied = event is not None and event_year < years
+        products = self._product_rows(accounts, treatment) if applied and treatment else {}
+        totals: dict[tuple[int, str], float] = {}
+        for position in positions:
+            track = int(arrays_track[position])
+            offset = int(arrays_offset[position])
+            area = float(arrays_area[position])
+            if snapshot:
+                for row, label in features.get(track, ()):
+                    key = (-1, label)
+                    totals[key] = totals.get(key, 0.0) + area * self._table_value(row, offset)
+            after_track = -1
+            after_offset = 0
+            if applied and treatment is not None:
+                transition = self._treatment_by_key.get((track, treatment))
+                if transition is not None:
+                    after_track, after_offset = transition
+                    produced_at = offset + event_year
+                    for row, label in products.get(track, ()):
+                        key = (event_year, label)
+                        totals[key] = totals.get(key, 0.0) + area * self._table_value(
+                            row, produced_at
+                        )
+            for year in wanted:
+                if year < 0 or year >= years:
+                    continue
+                if after_track >= 0 and year >= event_year:
+                    track_at = after_track
+                    offset_at = after_offset + (year - event_year)
+                else:
+                    track_at = track
+                    offset_at = offset + year
+                for row, label in features.get(track_at, ()):
+                    key = (year, label)
+                    totals[key] = totals.get(key, 0.0) + area * self._table_value(row, offset_at)
         return totals
 
     def block_chain_products(
