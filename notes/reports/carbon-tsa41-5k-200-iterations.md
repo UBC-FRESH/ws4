@@ -38,6 +38,24 @@ Exact replay:
 - `account_values.csv` target: **12,460,557.245 tCO2e**
 - no ledger/exact difference at the target cell
 
+## Yield-floor sensitivity
+
+The same 200-iteration search was rerun with stricter floors:
+
+| Yield floor (m3) | Realized yield (m3) | Exact emissions @49 (tCO2e) | Reduction vs baseline |
+| ---: | ---: | ---: | ---: |
+| 9,500,000 | 9,807,027 | 12,460,557 | 356,091 (2.78%) |
+| 9,800,000 | 9,807,027 | 12,460,557 | 356,091 (2.78%) |
+| 10,000,000 | 10,000,084 | 12,743,634 | 73,014 (0.57%) |
+
+The 9.8M floor is non-binding: the 9.5M run already lands at 9.807M. Moving
+to a 10.0M floor gives back **283,077 tCO2e** of the reduction, or about
+0.68% of baseline emissions. The frontier is therefore steep near the
+baseline yield, not a smooth small trade-off.
+
+Exact replay of the 10.0M schedule matches its reported target:
+**12,743,634.203 tCO2e**.
+
 ## Reading
 
 - More iterations still buy meaningful carbon reductions on the 5k sample; the
@@ -50,10 +68,13 @@ Exact replay:
 - 3.36% of TSA41 area, 68 of 70 tracks, 1,748 of 5,273 full-landscape states.
 - CC-only; fire events are excluded because the simulator treats them as no-ops
   and they enlarge the incremental/exact gap.
-- The yield floor is met with a 307k m3 margin; a stricter floor would trade away
-  part of the emissions reduction.
+- The 9.5M yield floor is met with a 307k m3 margin; a 10.0M floor gives back
+  about 283k tCO2e of the reduction.
 
 ## Artifacts
 
 - `/tmp/opencode/tsa41-5k-opt-200/`
 - `/tmp/opencode/tsa41-5k-opt-200-exact/`
+- `/tmp/opencode/tsa41-5k-opt-200-y98/`
+- `/tmp/opencode/tsa41-5k-opt-200-y100/`
+- `/tmp/opencode/tsa41-5k-opt-200-y100-exact/`

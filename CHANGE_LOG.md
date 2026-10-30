@@ -3359,3 +3359,8 @@ issue comments.
   12,801,867 tCO2e, so the extra 170 iterations bought another 2.66%. Exact replay
   matches the reported target cell. Evidence:
   `notes/reports/carbon-tsa41-5k-200-iterations.md`.
+- TSA41 5k yield-floor frontier (200 iterations): 9.5M and 9.8M floors both
+  realize 9.807M m3 and 12,460,557 tCO2e; a 10.0M floor realizes 10.000M m3
+  and **12,743,634 tCO2e**, giving back 283,077 tCO2e of the reduction. Exact
+  replay matches the 10.0M target. Evidence:
+  `notes/reports/carbon-tsa41-5k-200-iterations.md`.
