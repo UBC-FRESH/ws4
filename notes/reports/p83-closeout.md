@@ -7,8 +7,8 @@ Date: 2026-10-30
 P83 added the two-stage c5 even-flow path, closed the c5 target tension with an explicit
 policy decision, and produced a full-model TSA23 GPU path that matches the CPU objective.
 
-The c5 result keeps its accepted gaps. The TSA23 full-model result is exact and faster for
-one seed. These are separate results; the c5 flow gap is not a TSA23 claim.
+The c5 result keeps its accepted gaps. The TSA23 full-model result is exact and faster on
+three seeds. These are separate results; the c5 flow gap is not a TSA23 claim.
 
 ## c5 two-stage even-flow
 
@@ -51,10 +51,12 @@ Final run, 64 genomes, 1,000 generations, seed 7:
 - Best generation 117; 64,064 evaluations.
 - CPU 20 x 10 reference: 386 s at objective 0.
 - Total speedup: **2.51x** for this seed.
-- Schedule: `/srv/shared-data/gep/ws4/archive/tsa23-gpu-full/ga1000-schedule.csv`
+- Seed 8: exact **0.0** in 132.3 s; seed 9: exact **0.0** in 142.5 s, with one shared setup.
+- Schedules: `/srv/shared-data/gep/ws4/archive/tsa23-gpu-full/ga1000-schedule.csv` and
+  `ga1000-seed{8,9}.csv`.
 - Evidence: `notes/reports/p83-7-full-tsa23.md`.
 
-The 1,340 s table build is excluded. This is a one-seed, one-target result.
+The 1,340 s table build is excluded. This is a three-seed, one-target result.
 
 ## Population and portfolio findings
 

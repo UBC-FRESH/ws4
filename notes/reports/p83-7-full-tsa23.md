@@ -5,13 +5,23 @@ Date: 2026-10-30
 ## Result
 
 The full TSA23 `ft_econ` 20 x 10 target is now solved by the GPU candidate-index population
-search at **objective 0.0**, with a **fresh exact** `IncrementalObjective` replay matching the
-device result. The full run took **153.6 s**, including loading the dataset and the persisted
-effect table. The CPU 20 x 10 reference took **386 s** for objective 0, so this is a **2.51x**
-total wall-clock speedup for this seed.
+search at **objective 0.0** on three seeds, with a **fresh exact** `IncrementalObjective`
+replay matching every device result. The first full run took **153.6 s**, including loading
+the dataset and the persisted effect table. The CPU 20 x 10 reference took **386 s** for
+objective 0, so this is a **2.51x** total wall-clock speedup for that seed.
 
-This is a full-model result, not a 2k/5k slice. It is also a one-seed result with table-build
-cost excluded; the table was built earlier and reused.
+This is a full-model result, not a 2k/5k slice. It is a one-target, three-seed result with
+table-build cost excluded; the table was built earlier and reused.
+
+| Seed | Best objective | Best generation | Search s | Total s |
+|---:|---:|---:|---:|---:|
+| 7 | 0.0 | 117 | 12.6 | 153.6 |
+| 8 | 0.0 | 105 | 8.2 | 132.3 |
+| 9 | 0.0 | 104 | 3.3 | 142.5 |
+
+Seeds 8 and 9 were run in one process that loaded the dataset and table once, so their
+`Total s` values share the 106.2 s setup. All three schedules are saved under
+`/srv/shared-data/gep/ws4/archive/tsa23-gpu-full/`.
 
 ## Model and table
 
@@ -95,7 +105,7 @@ dominate the end-to-end cost, so a warm/reused process would be even faster.
 
 ## Scope and limits
 
-- One seed, one target configuration, and one persisted table.
+- Three seeds, one target configuration, and one persisted table.
 - The GPU population path keeps the established exactness contract: one priority tier, no
   patch accounts, no route accounts, and no spatial rules.
 - The table must contain the seed chains; extra seed-only rows are supported, but this run did

@@ -3549,8 +3549,11 @@ issue comments.
   seed in 153.6 s total (dataset 83.3 s, table load 125.7 s, population construction
   140.0 s, search 12.6 s), with a fresh exact `IncrementalObjective` replay also 0.0. The
   CPU 20 x 10 reference took 386 s at objective 0, so this is a 2.51x total speedup for this
-  seed. The 1,340 s table build is excluded and this is a one-seed result. Schedule:
-  `/srv/shared-data/gep/ws4/archive/tsa23-gpu-full/ga1000-schedule.csv`. Evidence:
+  seed. Seeds 8 and 9 also reached exact objective 0.0 in 132.3 s and 142.5 s with a shared
+  setup, so the full-model result reproduces on three seeds. The 1,340 s table build is
+  excluded. Schedules:
+  `/srv/shared-data/gep/ws4/archive/tsa23-gpu-full/ga1000-schedule.csv` and
+  `ga1000-seed{8,9}.csv`. Evidence:
   `notes/reports/p83-7-full-tsa23.md`. Dashboard: GREEN.
 
 - P83 close-out: the c5 79% final-stock policy and the full-model TSA23 GPU result are
