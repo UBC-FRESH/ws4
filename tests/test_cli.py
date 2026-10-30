@@ -288,3 +288,13 @@ def test_disturbance_rejects_a_malformed_event(tmp_path: Path) -> None:
     combined = re.sub(r"\x1b\[[0-9;]*m", "", result.stdout + result.stderr)
     assert result.returncode != 0
     assert "missing disturbance fields" in combined
+
+
+def test_gpu_run_help_documents_the_cache_and_table_inputs() -> None:
+    """The GPU command exposes its persistent cache and effect-table inputs."""
+    result = run_ws4("gpu-run", "--help")
+    assert result.returncode == 0, result.stdout + result.stderr
+    combined = re.sub(r"\x1b\[[0-9;]*m", "", result.stdout + result.stderr)
+    assert "--cache-dir" in combined
+    assert "--table" in combined
+    assert "--seeds" in combined

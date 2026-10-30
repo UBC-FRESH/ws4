@@ -517,6 +517,28 @@ target (m3 per period) and a patch size-class target (percent of patch area) con
              --period-width 10 --years 200 --iterations 5000 --warm-start \
              --patch-accounts patches.yaml --topology topology.csv
 
+GPU search
+----------
+
+``ws4 gpu-run`` is the checked-in path for the exact sparse GPU population search. It loads
+the simulator and candidate caches from ``--cache-dir``, loads a persisted effect table,
+runs the resident session for every ``--seeds`` value, writes one schedule per seed, and
+replays every result with a fresh ``IncrementalObjective``. The effect table is
+target-specific and is supplied by the caller; this command does not rebuild it.
+
+.. code-block:: bash
+
+   ws4 gpu-run --dataset build/compiled --targets targets.yaml \
+               --seed-schedule seed.csv --table effects-lean.pt \
+               --cache-dir runtime/gpu-cache --out-dir runtime/gpu-run \
+               --seeds 7,8,9 --years 200 --generations 1000
+
+The simulator and candidate caches are content-fingerprinted against the compiled dataset;
+pass ``--rebuild-caches`` after changing it. The GPU extra is optional and must be
+installed separately. Without a GPU device, use ``--device cpu`` for a small exactness run.
+The GPU path keeps the prototype contract: one priority tier, no patch accounts, no route
+accounts, and no spatial rules.
+
 Patch size distribution
 -----------------------
 
