@@ -3334,3 +3334,10 @@ issue comments.
   a single-run speedup. The result and caution are recorded in
   `notes/design/ws4-c5-evenflow-performance.md`; the next performance move is batched LNS
   or flow-directed moves.
+
+
+- P83.3/P83.4 100k checks: capped LNS (64 blocks) completed 100k in 53.1 s with
+  objective 39,501,948 and flow worst -7.99%/+6.08%, stock 20.98M; this is not better
+  than the no-LNS 100k result. Eight seeded 100k starts completed in 58.5 s and selected
+  the same 39,133,750 objective as the best single start; multi-start is a throughput
+  capability, not a single-run speed or quality win. The next task is P83.5 (#589).

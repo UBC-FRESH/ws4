@@ -142,4 +142,14 @@ the result in this note and the changelog.
   totals understate that account. Product flow (the c5 scenario) is unaffected. Recorded
   here so the next task does not mistake it for a regression.
 
+## P83.3/P83.4 100k checks (2026-10-30)
+
+- P83.3 LNS 100k (cap 64): **53.1 s**, objective **39,501,948**; conifer flow
+  **-7.99% / +6.08%**, deciduous **-5.57% / +4.93%**, stock **20.98M**. This is not better
+  than the no-LNS 100k result (36.1 s, objective 39,133,750).
+- P83.4 eight seeded 100k starts: **58.5 s**, best objective **39,133,750** (the same
+  result as the best single start). Aggregate throughput rose, but single-run quality and
+  wall-clock did not improve. Keep multi-start off by default.
+- Next bounded move is P83.5 flow-directed moves (#589); do not claim a target win from
+  LNS or multiple starts.
 
