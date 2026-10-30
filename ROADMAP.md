@@ -2563,7 +2563,7 @@ enough for the 100,000-iteration budget and record the actual target result.
 - [x] P83.4 Allow seeded process-pool islands (#588)
 - [x] P83.5 Add flow-directed moves or an LP period-volume seed (#589)
 - [x] P83.6 Evaluate a GPU batch path (#592)
-- [ ] P83.7 Full-model sparse GPU search for TSA23 ft_econ (#595)
+- [x] P83.7 Full-model sparse GPU search for TSA23 ft_econ (#595)
 - [x] P83.8 GPU-native population search (#596)
 - [x] P83.9 Master/worker metaheuristic portfolio (#597)
   - [x] P83.6.1 Benchmark a bounded batch effect/delta evaluator

@@ -249,3 +249,22 @@ cost. Ten generations are nowhere near the CPU 20x10 result (objective 0), so th
 negative/partial result, not a full-model win. Persisting the population/option map and
 running a longer budget is the next storage/performance problem.
 
+### 1,000-generation follow-up
+
+The option-map build now resolves each block's contiguous candidate row range instead of
+doing 20.2M Python dict lookups. On the same full model:
+
+- dataset/candidates: 83.3 s
+- table load: 125.7 s
+- population construction: 140.0 s (option map about 14.3 s)
+- 64 genomes, 1,000 generations: 12.6 s search
+- objective: 21,023,339.72 initial -> **0.0**
+- fresh exact `IncrementalObjective` replay: **0.0** (matches the device score)
+- best generation: 117; evaluations: 64,064
+- total wall-clock: **153.6 s**
+- CPU 20 x 10 reference: 386 s at objective 0, so **2.51x** total speedup
+
+The full-model GPU population path is now quality-competitive on this seed. The table build
+(1,340 s) is excluded, and this remains a one-seed result. Evidence:
+`notes/reports/p83-7-full-tsa23.md`.
+

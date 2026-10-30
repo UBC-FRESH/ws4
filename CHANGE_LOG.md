@@ -3465,3 +3465,13 @@ issue comments.
   objective fell from 21.02M to 9.12M but is nowhere near the CPU 20x10 result (0). The
   option-map construction is now the setup bottleneck; full-model GPU search is not yet
   competitive.
+
+- P83.7 full TSA23 GPU population result: after replacing 20.2M Python row lookups with
+  contiguous per-block row ranges, the persisted 567 MB table now supports a practical
+  full-model run. 64 genomes x 1,000 generations reached **objective 0.0** from a 21.02M
+  seed in 153.6 s total (dataset 83.3 s, table load 125.7 s, population construction
+  140.0 s, search 12.6 s), with a fresh exact `IncrementalObjective` replay also 0.0. The
+  CPU 20 x 10 reference took 386 s at objective 0, so this is a 2.51x total speedup for this
+  seed. The 1,340 s table build is excluded and this is a one-seed result. Schedule:
+  `/srv/shared-data/gep/ws4/archive/tsa23-gpu-full/ga1000-schedule.csv`. Evidence:
+  `notes/reports/p83-7-full-tsa23.md`. Dashboard: GREEN.
