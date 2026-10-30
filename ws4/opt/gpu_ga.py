@@ -296,10 +296,39 @@ class GenomePopulation:
             device=self.device,
         )
         rows = torch.zeros((len(self.blocks), width), dtype=torch.int64, device=self.device)
+        # ``EffectTable.build`` assigns every block's candidate rows consecutively, in
+        # candidate order, before appending any seed-only extra rows.  Resolve the first
+        # and last candidate row per block and fill the run with ``arange`` instead of
+        # doing one Python dict lookup for every one of the tens of millions of chains.
+        # A non-contiguous table falls back to the exact per-chain lookup.
         for index, block in enumerate(self.blocks):
-            for position, chain in enumerate(chains_by_block[block]):
+            block_chains = chains_by_block[block]
+            candidate_count = len(candidates.get(block, ()))
+            if candidate_count:
                 try:
-                    rows[index, position] = self.table.row_id(block, chain)
+                    first = self.table.row_id(block, block_chains[0])
+                    last = self.table.row_id(block, block_chains[candidate_count - 1])
+                except KeyError as exc:
+                    raise ValueError(
+                        f"the effect table has no row for block {block}; rebuild it with "
+                        "this chain in extra_pairs"
+                    ) from exc
+                if last - first == candidate_count - 1:
+                    rows[index, :candidate_count] = torch.arange(
+                        first, first + candidate_count, dtype=torch.int64, device=self.device
+                    )
+                else:
+                    for position in range(candidate_count):
+                        try:
+                            rows[index, position] = self.table.row_id(block, block_chains[position])
+                        except KeyError as exc:
+                            raise ValueError(
+                                f"the effect table has no row for block {block}; rebuild it "
+                                "with this chain in extra_pairs"
+                            ) from exc
+            for position in range(candidate_count, len(block_chains)):
+                try:
+                    rows[index, position] = self.table.row_id(block, block_chains[position])
                 except KeyError as exc:
                     raise ValueError(
                         f"the effect table has no row for block {block}; rebuild it with "
