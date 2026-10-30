@@ -14,17 +14,20 @@ the global removal pattern matters more than local chain shifts. Exact
 
 from __future__ import annotations
 
+import importlib
 from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-try:  # optional GPU backend
-    import torch
+# The GPU backend is optional; importing it dynamically keeps the base install and
+# strict type checks independent of whether the `gpu` extra is present.
+try:
+    torch: Any = importlib.import_module("torch")
 except ImportError:  # pragma: no cover - exercised only without the gpu extra
-    torch = None  # type: ignore[assignment]  # optional dependency
+    torch = None
 
 from .objective import PRIORITY_SCALE, Target, accumulates
 
@@ -488,7 +491,7 @@ def _solve_removal_torch(
         priorities.max() - priorities,
     )
 
-    def scores_for(genomes: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def scores_for(genomes: Any) -> tuple[Any, Any]:  # noqa: ANN401 - optional torch tensor
         values = base_targets + genomes.to(torch.float64) @ target_effects
         shortfall = torch.clamp(minimum - values, min=0.0)
         shortfall = torch.where(nonlinear, shortfall * shortfall, shortfall)
