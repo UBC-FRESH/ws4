@@ -140,6 +140,32 @@ def period_totals(
     return totals
 
 
+def period_end_values(
+    values: pd.DataFrame, accounts: Sequence[str], period_width: int, years: int
+) -> list[float]:
+    """Read a level account at each period's end, summing multiple accounts.
+
+    A feature-level account is a snapshot, not a flow. Summing its annual values would
+    multiply the stock by the period width and make the chart disagree with the target.
+    """
+    n_periods = (years + period_width - 1) // period_width
+    totals = [0.0] * max(0, n_periods)
+    wanted = set(accounts)
+    if values.empty or not wanted or period_width <= 0 or years <= 0:
+        return totals
+    for row in values.itertuples(index=False):
+        account = str(row.account)
+        if account not in wanted:
+            continue
+        offset = int(float(str(row.offset)))
+        if offset < 0 or offset >= years:
+            continue
+        period = offset // period_width
+        if offset == min(years - 1, (period + 1) * period_width - 1):
+            totals[period] += float(str(row.value))
+    return totals
+
+
 def _period_levels(
     targets: Sequence[Target], account: str, period_width: int, years: int, mean: bool = False
 ) -> tuple[list[float | None], list[float | None]]:
@@ -332,7 +358,14 @@ def target_window(
             high = account_maxima[period]
             if high is not None:
                 maxima[period] = (maxima[period] or 0.0) + high
-    realized = period_totals(values, accounts, period_width, years, mean)
+    level_accounts = all(
+        account.startswith("feature.") and not is_percentage(account) for account in accounts
+    )
+    realized = (
+        period_end_values(values, accounts, period_width, years)
+        if level_accounts
+        else period_totals(values, accounts, period_width, years, mean)
+    )
     return TargetWindow(
         account=label if label is not None else "+".join(accounts),
         period_width=period_width,
