@@ -3364,3 +3364,8 @@ issue comments.
   and **12,743,634 tCO2e**, giving back 283,077 tCO2e of the reduction. Exact
   replay matches the 10.0M target. Evidence:
   `notes/reports/carbon-tsa41-5k-200-iterations.md`.
+- TSA41 5k 500-iteration carbon search: 19m37s, exact cumulative emissions
+  **12,240,329 tCO2e** against the 12,816,648 baseline (-576,319, -4.50%), with
+  managed yield 9.5004M above the 9.5M floor. The extra 300 iterations beyond
+  200 bought 220,228 tCO2e (1.76%). Exact replay matches. Evidence:
+  `notes/reports/carbon-tsa41-5k-200-iterations.md`.
