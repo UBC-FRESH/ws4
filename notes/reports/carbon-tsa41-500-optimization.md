@@ -4,6 +4,11 @@ Date: 2026-10-30
 Status: bounded production subset complete; exact verification recorded
 Scope: TSA41 500-block sample, CC-only schedule, public-default HWP, 50 years
 
+Follow-up: the whole-schedule carbon evaluation in
+`reports/carbon-tsa41-5k-optimization.md` reruns this case in 1m40s and reports
+1,263,223 tCO2e exact at offset 49. The table below records the original per-state
+run; the later batch run is the current path.
+
 ## Scope and caveat
 
 This is a 500-block production subset (6,587 ha, 0.337% of TSA41), not the full

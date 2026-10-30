@@ -145,12 +145,34 @@ class IncrementalObjective:
         schedule : dict of int to tuple of (str, int)
             The schedule to evaluate.
         """
-        base = self.optimizer._base_values()
+        carbon_names = {name for name in self.accounts if name.startswith("carbon.")}
+        carbon = self.optimizer.carbon_ledger() if carbon_names else None
+        base = (
+            self.optimizer._simulator_base_values()
+            if self.optimizer.carbon_ledger() is not None
+            else self.optimizer._base_values()
+        )
         self.totals = {cell: value for cell, value in base.items() if cell[1] in self.accounts}
         self.assignments = dict(schedule)
         for block, assignment in schedule.items():
-            for cell, value in self.contribution(block, assignment).items():
+            if carbon is None:
+                contribution = self.contribution(block, assignment)
+            else:
+                contribution = {
+                    cell: value
+                    for cell, value in self.optimizer._simulator_block_delta(
+                        block, assignment
+                    ).items()
+                    if cell[1] in self.accounts and not cell[1].startswith("carbon.")
+                }
+                for cell, value in self.optimizer._block_route_delta(block, assignment).items():
+                    if cell[1] in self.accounts:
+                        contribution[cell] = contribution.get(cell, 0.0) + value
+            for cell, value in contribution.items():
                 self.totals[cell] = self.totals.get(cell, 0.0) + value
+        if carbon is not None:
+            for cell, value in carbon.schedule_values(schedule, carbon_names).items():
+                self.totals[cell] = value
         if self.patch is not None:
             self.patch.reset(schedule)
             for cell, value in self.patch.cell_map().items():

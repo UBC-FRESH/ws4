@@ -214,7 +214,10 @@ per block, and the operator registry. The operators are:
 Each operator carries a selection weight. ``toggle``, ``shift``, ``swap`` and ``lns`` are enabled
 by default; ``cluster``, ``merge`` and ``split`` ship at weight zero, so a configuration must give
 them a weight (``--cluster-weight``, ``--merge-weight``, ``--split-weight``, or
-``OptimizeConfig.cluster_weight`` and friends) before they are selected.
+``OptimizeConfig.cluster_weight`` and friends) before they are selected. The CLI disables ``lns``
+by default when a carbon package is present: a bulk move creates many new stand-state carbon
+evaluations, and on the tested 500-block and 5,000-block cases the single-block operators were
+both faster and at least as good. Pass ``--lns-weight`` explicitly to re-enable it.
 
 The solvers are simulated annealing (``sa``), tabu search (``tabu``), iterated local search
 (``ils``), and threshold accepting (``threshold``), selected by ``--engine``

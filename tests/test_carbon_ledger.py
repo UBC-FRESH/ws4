@@ -131,7 +131,7 @@ def test_ledger_prices_duplicate_stand_states_once(tmp_path: Path) -> None:
     package = _write_package(tmp_path / "package")
     package.manifest.cbm_defaults.sha256 = cbm_defaults_reference().sha256
     ledger = CarbonLedger(dataset, package, years=5)
-    ledger.base_values()
+    ledger.prepare({block: [()] for block in ledger.block_ids})
     assert len(ledger._unit_cache) == 2
 
 

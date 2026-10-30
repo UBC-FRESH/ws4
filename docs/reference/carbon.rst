@@ -327,6 +327,12 @@ is not a surrogate. A seed can pre-price every reachable state through
 ``CarbonLedger.prepare`` so fork workers share the cache instead of rerunning identical
 stands.
 
+The initial schedule and the reported target values use a **whole-schedule batch**:
+one libcbm model holds every fragment, only scheduled blocks carry events, and the fixed
+model cost is paid once. Search moves still use the stand-state cache, so a move prices
+only the blocks it touches. The batch total and the stand-state sum are the same
+area-weighted accounts; the batch path is much faster for large initial schedules.
+
 A carbon target uses the same weighted-goal objective, period semantics, normalization,
 and priority tiers as any other account. A `carbon.*` target without a package is rejected
 before the search. Add `--carbon-hwp <yaml>` when the target is a system account such as
@@ -356,11 +362,12 @@ and ``--carbon-hwp``):
        minimum: 1000000
        period_width: 1
 
-The exact full-schedule run can differ slightly from the area-weighted ledger after a
-disturbance when several stands share a source track: the batched SIT run aggregates
-events by classifier set and area, while the ledger prices stand states and sums their
-area-weighted accounts. Re-run the winning schedule with ``ws4 carbon`` and report that
-result. See :doc:`../guides/limitations-and-boundaries`.
+The exact full-schedule run can differ slightly from the incremental stand-state sum after
+a disturbance when several stands share a source track: the batched SIT run aggregates
+events by classifier set and area, while the incremental move path prices stand states
+and sums their area-weighted accounts. The target report uses the batch total, but the
+search objective can lag it. Re-run the winning schedule with ``ws4 carbon`` and report
+that result. See :doc:`../guides/limitations-and-boundaries`.
 
 Fertilization
 -------------
