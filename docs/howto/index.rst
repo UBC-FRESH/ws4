@@ -66,6 +66,7 @@ Prerequisites
    patch-targets
    route-products
    run-carbon
+   run-carbon-removal
    watch-a-run
    automate-a-study
    faq

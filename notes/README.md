@@ -61,8 +61,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
   initial-state precompute, and the LNS cost finding.
 - `reports/carbon-tsa41-5k-200-iterations.md` — 200/500-iteration TSA41 5k carbon
   search, yield-floor frontier, and exact replay.
-- `reports/carbon-tsa41-5k-removal-ga.md` — exact removal-effect table and GPU
-  population search on the TSA41 5k sample.
+- `reports/carbon-tsa41-5k-removal-ga.md` — exact removal-effect table, GPU
+  population search, and full TSA41 scale result.
 - `adr/0001-fragment-compilation.md` — fragments are the compilation unit; blocks are a runtime aggregate.
 - `adr/0002-columnar-matrix-dataset.md` — the compiled dataset is versioned and columnar.
 - `adr/0003-spatial-structure-first-class.md` — spatial structure is part of the model.
