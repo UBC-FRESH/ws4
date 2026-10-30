@@ -3605,6 +3605,8 @@ issue comments.
 - Carbon state-cache consumer: added `ws4 carbon-removal --state-cache` for
   `fresh-cbm` stand-state tables. Carbon cells come from the exact cache; non-carbon
   cells still come from the WS4 simulator. The pilot adapter matches the exact
-  ledger to **2.0e-11** on base values and **9.1e-13** on block effects. The full
-  TSA41 state-cache build is running separately. Evidence:
+  ledger to **2.0e-11** on base values and **9.1e-13** on block effects. A 5k run
+  against the partially built TSA41 cache took **50.6 s** end-to-end with MILP and
+  exact replay, versus **207 s** without the cache. The full TSA41 state-cache
+  build is running separately. Evidence:
   `notes/reports/carbon-tsa41-5k-removal-ga.md`.

@@ -102,7 +102,15 @@ offsets `-1, 0, 1, 2`:
 - base values: max absolute difference **2.0e-11**
 - block effects: max absolute difference **9.1e-13**
 
-The full TSA41 cache build is separate; see the `fresh-cbm` repository.
+A 5k run using the partially built TSA41 cache:
+
+- effect-table build: **0.0 s**
+- MILP search: **4.1 s**
+- total including exact replay: **50.6 s**
+- same MILP genome: 1,597 removals, exact **5,694,966 tCO2e**
+
+Without the state cache, the same 5k run was **207 s**. The full TSA41 cache
+build is separate; see the `fresh-cbm` repository.
 
 ## Full TSA41 scale
 
