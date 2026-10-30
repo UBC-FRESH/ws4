@@ -157,3 +157,30 @@ Create `ws4/opt/gpu_ga.py` with:
 - exactness tests against `IncrementalObjective`.
 
 Do not wire it into the CLI until the prototype is exact and measured.
+
+## AGrp-derived master/worker structure
+
+The MQT 8000 archive's working hierarchical prototype is the parallel GA (`AGrp`), not a
+four-method hybrid. Its structure is worth reusing:
+
+- the master owns the main population and selection policy;
+- seven subordinate workers run GA searches seeded with the master's best solution;
+- a finished worker returns an elite;
+- the master replaces the worst population member and launches the next worker;
+- the channel is a job server, not shared RAM or a shared file.
+
+For WS4, the GPU analogue is:
+
+- master owns the population, elite archive, and migration policy;
+- each GPU island evaluates a batch of genomes or independent chains;
+- elites migrate to the master at generation boundaries;
+- the next batch is seeded from the current elite set;
+- no device-wide barrier and no Python per-solution loop.
+
+The important measured result is quality: AGrp reduced mean relative error from 0.191% to
+0.053% and found the optimum 45% vs 15% of the time. Wall-clock/per-iteration claims from
+the old course archive are not cleanly tabulated, so do not reuse them; measure WS4
+directly.
+
+Use this structure in P83.8, but keep the GPU implementation and exact WS4 target
+semantics separate from the old knapsack code.
