@@ -124,6 +124,18 @@ Weight alone trades flow for stock; it does not close the stock gap. The 23.9M t
 not compatible with the current 1.2M/125k harvest and ±5% flow. The next test should lower
 the harvest levels, not raise the stock weight again.
 
+A 20,000-iteration lower-harvest pilot (conifer 1.05M, deciduous 105k, stock weight 10)
+is recorded in `/srv/shared-data/gep/ws4/archive/c5-lower-harvest-20k/watch.log`. It also
+did not meet the set:
+
+- conifer: period 1 still **1.52M**; worst deviation about **−32%**
+- deciduous: 110k–123k against a 114k reference; worst about **+8%**
+- final stock: **19.0M** against 23.9M
+
+Lowering the level pull did not move the period-1 conifer spike, and the stock target
+remains far short. The next useful step is to explain why period 1 is pinned at 1.52M
+before changing target weights again.
+
 ## Caveats
 
 The `targets.yaml` file remains the lighter base scenario (conifer **700,000**, deciduous
