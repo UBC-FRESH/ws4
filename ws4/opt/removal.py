@@ -490,6 +490,144 @@ def solve_removal(
     )
 
 
+def build_removal_effects_from_state_cache(
+    optimizer: Optimizer,
+    schedule: Mapping[int, Chain],
+    targets: Sequence[Target],
+    cache_dir: str | Path,
+) -> RemovalEffects:
+    """Build exact removal effects from a fresh-cbm state cache.
+
+    This avoids ``CarbonLedger.prepare``: carbon cells are area-weighted rows from
+    the cached stand-state table, while non-carbon cells still come from the WS4
+    simulator. The state cache must cover every block's track, age, and current
+    chain offset.
+
+    Parameters
+    ----------
+    optimizer : Optimizer
+        The optimizer whose dataset and simulator define the block mapping.
+    schedule : mapping of int to tuple
+        The current chain per block. Only empty or one ``CC`` event is supported.
+    targets : sequence of Target
+        The active targets.
+    cache_dir : path-like
+        ``fresh-cbm`` state-cache directory.
+
+    Returns
+    -------
+    RemovalEffects
+        The exact effects and target projection.
+
+    Raises
+    ------
+    RuntimeError
+        When ``fresh-cbm`` is not installed.
+    ValueError
+        When a chain or state is outside the cache contract.
+    """
+    from importlib import import_module
+
+    try:
+        state_cache_type = import_module("fresh_cbm").StateCache
+    except ImportError as exc:  # pragma: no cover - optional companion package
+        raise RuntimeError("the state-cache path needs the fresh-cbm package") from exc
+
+    import pandas as pd
+
+    if not schedule:
+        raise ValueError("the removal search needs a non-empty schedule")
+    active = tuple(target for target in targets if target.active)
+    if not active:
+        raise ValueError("the removal search needs at least one active target")
+    cell_offsets = [
+        [(offset, target.account) for offset in _target_cells(target)] for target in active
+    ]
+    cells = tuple(sorted({cell for group in cell_offsets for cell in group}))
+    cell_index = {cell: index for index, cell in enumerate(cells)}
+    target_cells = tuple(tuple(cell_index[cell] for cell in group) for group in cell_offsets)
+
+    cache = state_cache_type.load(cache_dir)
+    cache_offsets = {int(value) for value in cache.manifest["offsets"]}
+    row_map = {
+        (int(row.track_id), int(row.age)): int(row.state_id)
+        for row in cache.index.itertuples(index=False)
+    }
+    account_column = {name: index for index, name in enumerate(cache.accounts)}
+    carbon_columns = {
+        cell: account_column[cell[1]]
+        for cell in cells
+        if cell[1].startswith("carbon.")
+        if cell[1] in account_column
+    }
+    missing_accounts = {
+        cell[1] for cell in cells if cell[1].startswith("carbon.") and cell[1] not in account_column
+    }
+    if missing_accounts:
+        raise ValueError(f"state cache is missing accounts: {sorted(missing_accounts)}")
+    arrays: dict[int, Any] = {}
+
+    def values_for(offset: int) -> Any:  # noqa: ANN401 - numpy memmap or array
+        if offset not in arrays:
+            name = "empty.npy" if offset < 0 else f"offset_{offset:02d}.npy"
+            arrays[offset] = np.load(cache.root / "values" / name, mmap_mode="r")
+        return arrays[offset]
+
+    fragments = pd.read_parquet(Path(optimizer.dataset_dir) / "fragments.parquet")
+    block_fragments: dict[int, list[tuple[int, int, float]]] = {}
+    for row in fragments.itertuples(index=False):
+        block_fragments.setdefault(int(str(row.block_id)), []).append(
+            (int(str(row.track_id)), int(str(row.age)), float(str(row.area_ha)))
+        )
+
+    base = np.zeros(len(cells), dtype=np.float64)
+    for cell, column in carbon_columns.items():
+        for track, age, area in (
+            (int(str(row.track_id)), int(str(row.age)), float(str(row.area_ha)))
+            for row in fragments.itertuples(index=False)
+        ):
+            state = row_map.get((track, age))
+            if state is None:
+                raise ValueError(f"state cache has no track/age {track}/{age}")
+            base[cell_index[cell]] += area * float(values_for(-1)[state, cell[0], column])
+    simulator_base = optimizer._simulator_base_values()
+    for cell in cells:
+        if not cell[1].startswith("carbon."):
+            base[cell_index[cell]] = simulator_base.get(cell, 0.0)
+
+    effects = np.zeros((len(schedule), len(cells)), dtype=np.float64)
+    blocks = tuple(sorted(int(block) for block in schedule))
+    for block_row, block in enumerate(blocks):
+        chain = tuple(schedule[block])
+        if chain and (len(chain) != 1 or str(chain[0][0]).upper() != "CC"):
+            raise ValueError("the state-cache removal path supports only empty or one CC event")
+        offset = -1 if not chain else int(chain[0][1])
+        if chain and offset not in cache_offsets:
+            raise ValueError(f"state cache has no CC offset {offset}")
+        for track, age, area in block_fragments.get(block, ()):
+            state = row_map.get((track, age))
+            if state is None:
+                raise ValueError(f"state cache has no track/age {track}/{age}")
+            for cell, column in carbon_columns.items():
+                current = float(values_for(offset)[state, cell[0], column])
+                empty = float(values_for(-1)[state, cell[0], column])
+                effects[block_row, cell_index[cell]] += area * (current - empty)
+        simulator_delta = optimizer._simulator_block_delta(block, chain)
+        for cell in cells:
+            if not cell[1].startswith("carbon."):
+                effects[block_row, cell_index[cell]] = simulator_delta.get(cell, 0.0)
+    return RemovalEffects(
+        blocks=blocks,
+        schedule={block: tuple(schedule[block]) for block in blocks},
+        cells=cells,
+        base=base,
+        effects=effects,
+        target_cells=target_cells,
+        targets=active,
+        build_seconds=0.0,
+    )
+
+
 def solve_removal_milp(
     effects: RemovalEffects,
     *,

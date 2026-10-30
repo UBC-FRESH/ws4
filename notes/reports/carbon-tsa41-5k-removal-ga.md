@@ -89,6 +89,21 @@ run is the reported value.
   violate it.
 - Exact `ws4 carbon` remains the authority.
 
+## State-cache adapter
+
+`ws4 carbon-removal --state-cache PATH` now builds the carbon cells from a
+`fresh-cbm` stand-state table instead of `CarbonLedger.prepare`. Non-carbon cells
+still come from the WS4 simulator; the current chain must be empty or one `CC`
+event present in the cache.
+
+The adapter was checked against the exact ledger on a 20-state pilot cache with
+offsets `-1, 0, 1, 2`:
+
+- base values: max absolute difference **2.0e-11**
+- block effects: max absolute difference **9.1e-13**
+
+The full TSA41 cache build is separate; see the `fresh-cbm` repository.
+
 ## Full TSA41 scale
 
 The same command was run on the full TSA41 matrix, not just the 5k sample:

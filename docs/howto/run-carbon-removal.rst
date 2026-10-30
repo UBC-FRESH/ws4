@@ -35,6 +35,11 @@ Command
 
 The exact effect table is cached under ``~/.cache/ws4/removal`` by default. A cache
 hit skips the 156 s build; on the 5k case the repeat run was 32 s instead of 207 s.
+
+``--state-cache`` points at a ``fresh-cbm`` stand-state table. If supplied, carbon
+cells are read from that exact cache instead of rebuilding them with
+``CarbonLedger.prepare``; non-carbon cells still come from the WS4 simulator. The
+cache must cover every block's track, age, and current ``CC`` offset.
 Use ``--cache-dir`` to choose another location or ``--no-cache`` to force a rebuild.
 
 ``--solver auto`` uses the exact MILP knapsack when the target shape is one

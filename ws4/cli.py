@@ -453,6 +453,13 @@ def carbon_removal(
     hwp_config: Path | None = typer.Option(
         None, "--hwp-config", exists=True, help="HWP lifecycle YAML"
     ),
+    state_cache: Path | None = typer.Option(
+        None,
+        "--state-cache",
+        exists=True,
+        file_okay=False,
+        help="fresh-cbm state-cache directory for lookup instead of CarbonLedger.prepare",
+    ),
     workers: int = typer.Option(32, "--workers", help="Carbon fork workers for the effect table"),
     population: int = typer.Option(2048, "--population", help="Genomes per generation"),
     generations: int = typer.Option(3000, "--generations", help="GA generations"),
@@ -480,6 +487,7 @@ def carbon_removal(
     from .opt.removal import (
         RemovalEffects,
         build_removal_effects,
+        build_removal_effects_from_state_cache,
         solve_removal,
         solve_removal_milp,
         write_removal_schedule,
@@ -508,6 +516,11 @@ def carbon_removal(
             parts.append(f"manifest.json:{file_hash(manifest)}")
         if hwp_config is not None:
             parts.append(f"hwp:{file_hash(hwp_config)}")
+        if state_cache is not None:
+            manifest = state_cache / "manifest.json"
+            if not manifest.is_file():
+                raise ValueError(f"state cache has no manifest: {state_cache}")
+            parts.append(f"state-cache:{file_hash(manifest)}")
         for part in parts:
             digest.update(part.encode("utf-8"))
             digest.update(b"\0")
@@ -543,7 +556,12 @@ def carbon_removal(
         except (OSError, ValueError, KeyError):
             effects = None
     if effects is None:
-        effects = build_removal_effects(optimizer, initial, loaded_targets)
+        if state_cache is not None:
+            effects = build_removal_effects_from_state_cache(
+                optimizer, initial, loaded_targets, state_cache
+            )
+        else:
+            effects = build_removal_effects(optimizer, initial, loaded_targets)
         if cache_path is not None:
             effects.save(cache_path)
     if solver == "milp":
@@ -583,6 +601,7 @@ def carbon_removal(
         "seed": seed,
         "solver": solver_used,
         "cache": cache_state,
+        "state_cache": str(state_cache) if state_cache is not None else None,
     }
     exact_values: dict[tuple[int, str], float] | None = None
     if verify:
