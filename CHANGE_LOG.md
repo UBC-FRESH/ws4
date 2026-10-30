@@ -3377,3 +3377,189 @@ issue comments.
   to 13,537,673 tC; HWP fell to 597,348 tC. The incremental prediction was 1.6%
   low; exact replay is the reported value. This is removal-only and restricted to
   the 5k sample. Evidence: `notes/reports/carbon-tsa41-5k-removal-ga.md`.
+
+
+- P83.3 LNS delta speed: added a direct `Simulator._block_chain_short` path for chains
+  with no event or one event (the dominant candidate shape), filtered per-account feature
+  and product row tables, `Optimizer._block_deltas` (shared empty-chain work and duplicate
+  collapsing), and `IncrementalObjective.prefetch` for multi-block moves. One-block moves
+  are unchanged. A full ragged-numpy batch was prototyped and measured slower on c5
+  (1.3 fragments per block, one feature checkpoint) and is not kept. The 20k c5 LNS CLI
+  run (`--lns-weight 0.2 --lns-max-destroy 64`) fell from 17.2-17.3 s to 16.1-16.3 s; the
+  search loop alone fell from 8.1-8.5 s to 6.6-7.3 s. The objective is unchanged to 1e-8.
+  Focused suite 127 passed; `python scripts/dashboard.py` **GREEN** on all seven gates.
+  Evidence and the feature-flow caveat: `notes/design/ws4-c5-evenflow-performance.md`.
+
+- P83 performance: the seeded c5 even-flow path was profiled and optimized without
+  changing target semantics. Reused the simulator across candidate generation, seed reset,
+  and report replay; replaced the per-group seed parser with one pass; evaluated feature
+  cells only at target period ends; restricted block-chain work to tracked accounts;
+  cached flow-period balances and priced only touched periods; replaced full incumbent
+  copies with an accepted-move journal; and capped LNS destruction at 64 blocks. The
+  original broken 20k seeded run took 6,118 s (3.27 eval/s); the same class of run now
+  takes 12.4 s, and a 100k no-LNS run takes 36.1 s (~2,770 eval/s end-to-end, objective
+  39,133,750). The 100k result still misses the joint targets: conifer flow worst
+  -8.12% / +6.01%, deciduous -5.28% / +4.74%, final stock 20.96M against 23.9M. The
+  remaining plan is recorded in `notes/design/ws4-c5-evenflow-performance.md` (P83.1;
+  continuation task #586). Focused suite: 112 passed. `python scripts/dashboard.py`:
+  **GREEN** on lint, format, types, tests, validator, docs, and docstrings.
+
+- P83.2 performance probe: precomputed target cell metadata and allowed a shared initial
+  schedule in the process-pool search. The metadata preserved the objective but was
+  neutral in wall-clock (44.3 s / 100k vs the 36.1 s baseline; 14.8 s / 20k vs 12.4 s).
+  Eight 20k starts completed in 24.2 s for 160k evaluations (aggregate throughput), not
+  a single-run speedup. The result and caution are recorded in
+  `notes/design/ws4-c5-evenflow-performance.md`; the next performance move is batched LNS
+  or flow-directed moves.
+
+
+- P83.3/P83.4 100k checks: capped LNS (64 blocks) completed 100k in 53.1 s with
+  objective 39,501,948 and flow worst -7.99%/+6.08%, stock 20.98M; this is not better
+  than the no-LNS 100k result. Eight seeded 100k starts completed in 58.5 s and selected
+  the same 39,133,750 objective as the best single start; multi-start is a throughput
+  capability, not a single-run speed or quality win. The next task is P83.5 (#589).
+
+- P83.5 100k repair check: 38.3 s with 20k repair trials/8 chains; only 3 moves accepted.
+  Objective 39,133,750 -> 39,133,480; conifer flow -8.12%/+6.01% ->
+  -7.98%/+5.93%; deciduous -5.28%/+4.74% -> -5.16%/+4.74%; stock 20.96M vs 23.9M.
+  The ±5% flow and 90% stock targets remain unmet; this is target tension, not a search
+  budget issue. Next decision: change target policy or close P83.1 with negative evidence.
+
+- P83.5 flow-directed repair: added a bounded post-search pass that shifts harvest from
+  periods above an even-flow target into periods below it, accepting only exact objective
+  improvements that lower the target's flow penalty without raising another flow target's
+  penalty. On the c5 balanced scenario at 20k search iterations it took 16.2 s (vs 12.9 s
+  baseline), cut the summed flow penalty by 35% (430,171 to 280,718), and moved conifer
+  from -8.43%/+6.44% to -7.72%/+6.26% and deciduous from -5.35%/+5.08% to -5.31%/+4.85%.
+  Objective improved 44,719,123 to 44,671,405; stock fell 20.11M to 20.10M. The ±5% band
+  is still not met. Exactness and focused tests: 97 passed. Evidence and risks:
+  `notes/design/ws4-c5-evenflow-performance.md` (P83.5).
+
+
+- P83.1 stock-policy sensitivity: a relaxed 80% final-stock target (21,245,129.40) with
+  100k search and 100k repair trials/32 chains produced objective 12,574,416, conifer
+  flow -7.81%/+5.83%, deciduous -5.02%/+4.62%, and stock 20.957M (0.29M below the relaxed
+  target). Deciduous is now inside ±5%; conifer is not. The compromise and decision point
+  are recorded in `notes/design/ws4-c5-evenflow-performance.md`.
+
+
+- P83.6.1 GPU batch probe: a 1,000-block c5 slice built exact effect rows in 4.29 s
+  (~52,850 rows/s); full-table estimate 26.5 s and 2.09 GiB dense float32. Single-block
+  GPU deltas were slower than CPU, while 1,024-row batches were 50x and 64-block LNS
+  batches 191x. Float32 exactness was not production-grade (max abs 0.0059, max rel
+  0.0069), so the next step is float64/sparse and a batched search, not a GPU port of SA.
+  Evidence: `notes/design/ws4-gpu-search.md`.
+
+
+- P83.1/P83.2 closeout: P83.1 is closed with the 79% final-stock policy
+  (20,979,565.28) and an accepted 22,494.59 shortfall (0.085% of initial stock), plus the
+  remaining conifer flow gap. P83.2 is closed as a neutral performance probe. The next
+  work is P83.6 GPU-native search; dashboard GREEN.
+
+
+- P83.6.2 end-to-end GPU LNS prototype: a 2,000-block c5 slice with a float64 effect table
+  ran at 5,391 proposal evaluations/s but only 84 accepted moves/s; a disjoint-neighborhood
+  variant reached 4,044 proposal evaluations/s and 179 accepted moves/s. The CPU LNS path
+  is about 1,900 accepted moves/s. The effect math is not the bottleneck; acceptance and
+  search structure are. Evidence: `notes/design/ws4-gpu-search.md`.
+
+
+- P83.6.2 parallel-chain GPU prototype: on a 2,000-block c5 slice with a float64 effect
+  table, 1,024 independent chains ran 51,200 moves in 1.30 s (about 39,451 moves/s and
+  38,441 accepted moves/s), roughly 14x the c5 CPU end-to-end rate. Best slice objective
+  2.551B vs 2.602B seed. This is not integrated, not target-quality, and not full-scale;
+  evidence in `notes/design/ws4-gpu-search.md`.
+
+
+- P83.6.2 device-resident GPU chains: with the K x B chain-row state and K x C totals kept
+  on the GPU, 1,024 chains ran 51,200 moves in 0.332 s (154,327 moves/s; 150,255
+  accepted/s) on the 2,000-block c5 slice, about 57x the CPU no-LNS rate. Best slice
+  objective 2.566B vs 2.602B seed; effect-table build 8.6 s. Not integrated or full-scale.
+- P83.6.2 sparse GPU effect engine and batched LNS: added a sparse CSR float64 effect table
+  over the c5 2,000-block slice (456,278 rows, 1.58M nonzeros, 28.7 MB versus 1.36 GiB
+  dense), batched gather/subtract/segmented-sum, and a bounded best-of-batch LNS prototype.
+  Exactness is 0 absolute error for single moves and 4.4e-11 for 64-block LNS batches.  The
+  1,024-move LNS batch is 374.8x the CPU contribution lookup.  The batched search is
+  2.77-2.90x the stock CPU search at better objective on three seeds, but only 1.34-1.40x
+  for a single cold run because of the 9.5 s table build; reusing the table over three seeds
+  gives 2.10x.  The CPU SA remains the reference and fallback.  Evidence:
+  `notes/reports/p83-6-2-gpu-effects.md` and `notes/design/ws4-gpu-search.md`.  Dashboard
+  result: `python scripts/dashboard.py` reports `OVERALL: GREEN`.
+
+
+- P83.7 TSA23 full-model scale check: 66,584 candidate blocks and **20,237,498 candidate
+  chains**; candidate generation 72.3 s. A full sparse table is estimated at ~1.3 GB before
+  Python row-index/list overhead, so the current all-at-once builder is not practical. A
+  5,000-block subset built a 44.7 MB sparse table in 64.5 s and ran GPU search 4.43x faster
+  than CPU by wall time, but the GPU objective was much worse (315.4M vs 76.5M) and the
+  cold-build ratio was 0.17x. Full-model GPU acceleration is not claimed; the CPU 20 x
+  10-year TSA23 run remains the working result.
+
+
+- P83.7 full TSA23 sparse table build: the streaming builder produced 20,237,499 rows,
+  25,320,796 nonzeros, and a 567 MB sparse float64 table in 1,340 s (~22 min), with 200
+  target cells, ~29 GB peak CPU RSS, and 568 MB upload to the GPU. The full table is
+  feasible but too slow to rebuild interactively and is not yet persisted; full GPU search
+  quality is still unmeasured. The CPU 20x10 TSA23 run remains the working result.
+
+
+- P83.7 table persistence: added `EffectTable.save`/`load` and a round-trip test. The
+  full-model CSR build can now be reused instead of paid on every search; 14 GPU tests pass.
+
+
+- P83.8 GPU-native population search: added `ws4/opt/gpu_ga.py` (candidate-index genomes,
+  seed/random/mutant initialization, tournament selection, uniform crossover, elitism,
+  ring and AGrp island exchange, batched exact fitness, state save/load) and
+  `tests/test_gpu_ga.py`.  On the c5 2,000-block slice a 256-genome, 500-generation run
+  reached 36.09-36.17M in 1.30-1.58 s against stock CPU SA at 40.94-45.15M in 28.0-41.2 s
+  (20.8-26.0x search-only; 2.5-3.6x including the 9.6 s table build), and beat the batched
+  GPU LNS on all three seeds.  The TSA23 5,000-block subset reached 75.34-75.41M against
+  76.51-76.54M CPU in 1.23-4.27 s, but the 59 s cold table build makes a single run slower
+  than CPU (0.04-0.16x).  Seven-worker ring and AGrp exchange were slower and no better
+  than one island on c5.  Exactness was checked against `IncrementalObjective` for level
+  and even-flow genomes; the full 20.2M-row table was not rebuilt.  Evidence:
+  `notes/reports/p83-8-gpu-population.md`.  Dashboard: GREEN.
+- P83.9 fixed round-robin master/worker portfolio: added
+  `ws4/opt/meta_portfolio.py` with one bounded master archive, seven fixed worker slots
+  (SA, tabu, ILS, GA, LNS, diverse restart), explicit seed-and-return migration records,
+  method-contribution counters, and a fresh exact `IncrementalObjective` check of every
+  worker return and of the final incumbent. Regular workers use the AGrp master-best
+  seeding rule; the restart slot uses the far end of the archive. CPU workers use
+  candidate-preserving toggle/shift/LNS moves so their elites stay representable by the
+  candidate-index GA genome. Added `GenomePopulation.reseed` and an optional run deadline
+  so a persistent GA slot takes a new elite and shares the wall-clock budget. On a c5
+  2,000-block slice at an equal 15 s search budget (shared 9 s table build excluded), the
+  portfolio reached 35.91M / 36.15M / 36.07M against the single GPU GA's 35.79M / 35.68M /
+  35.85M on seeds 7/8/9, so the fixed mix is 0.33-1.33% worse (mean +0.75%). The GA
+  produced the incumbent on two seeds, SA on one, and LNS never improved or entered the
+  archive. Evidence: `notes/reports/p83-9-meta-portfolio.md` and
+  `notes/design/ws4-metaheuristic-portfolio.md`. Dashboard result:
+  `python scripts/dashboard.py` reports `OVERALL: GREEN`.
+
+
+- P83.8 full TSA23 population run: loaded the persisted 567 MB table (114 s), built the
+  66,584-block option map in 410 s, then ran 64 genomes for 10 generations in 9.3 s. The
+  objective fell from 21.02M to 9.12M but is nowhere near the CPU 20x10 result (0). The
+  option-map construction is now the setup bottleneck; full-model GPU search is not yet
+  competitive.
+
+- P83.7 full TSA23 GPU population result: after replacing 20.2M Python row lookups with
+  contiguous per-block row ranges, the persisted 567 MB table now supports a practical
+  full-model run. 64 genomes x 1,000 generations reached **objective 0.0** from a 21.02M
+  seed in 153.6 s total (dataset 83.3 s, table load 125.7 s, population construction
+  140.0 s, search 12.6 s), with a fresh exact `IncrementalObjective` replay also 0.0. The
+  CPU 20 x 10 reference took 386 s at objective 0, so this is a 2.51x total speedup for this
+  seed. Seeds 8 and 9 also reached exact objective 0.0 in 132.3 s and 142.5 s with a shared
+  setup, so the full-model result reproduces on three seeds. The 1,340 s table build is
+  excluded. Schedules:
+  `/srv/shared-data/gep/ws4/archive/tsa23-gpu-full/ga1000-schedule.csv` and
+  `ga1000-seed{8,9}.csv`. Evidence:
+  `notes/reports/p83-7-full-tsa23.md`. Dashboard: GREEN.
+
+- P83 close-out: the c5 79% final-stock policy and the full-model TSA23 GPU result are
+  recorded together. c5 remains objective 39,133,750 in 36.1 s with conifer flow
+  -8.12%/+6.01% and an accepted 22,494.59 stock shortfall; plus/minus 5% conifer flow is
+  not claimed. TSA23 ft_econ 20 x 10 reached exact objective 0.0 in 153.6 s total against
+  the 386 s CPU reference (2.51x, one seed, table build excluded). Fixed portfolio remains
+  a negative result against the single GA. Evidence: `notes/reports/p83-closeout.md`.
+  Dashboard: GREEN.

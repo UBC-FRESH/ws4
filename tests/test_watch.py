@@ -157,6 +157,24 @@ def test_period_labels_start_at_one() -> None:
     assert period_label(4) == "5"
 
 
+def test_a_feature_level_is_read_at_period_end_not_summed() -> None:
+    """A feature snapshot is a level; the window reads its last year, not a ten-year sum."""
+    values = pd.DataFrame(
+        [
+            {"offset": offset, "account": "feature.total.Yield", "value": value}
+            for offset, value in enumerate([10.0, 20.0, 30.0, 40.0])
+        ]
+    )
+    window = target_window(
+        values,
+        [Target("feature.total.Yield", period=1, period_width=2, minimum=35.0)],
+        ("feature.total.Yield",),
+        2,
+        4,
+    )
+    assert window.realized == (20.0, 40.0)
+
+
 def test_a_percentage_account_is_averaged_over_a_period() -> None:
     """A patch size-class share is a mean over the period, not a sum."""
     account = "patch.h.10_50.size"

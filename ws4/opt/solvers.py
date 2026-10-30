@@ -371,6 +371,9 @@ def solve_sa_delta(
     evaluator.reset(current)
     current_obj = evaluator.objective
     best, best_obj = dict(current), current_obj
+    # Accepted moves since the last incumbent update. Replaying this short journal is much
+    # cheaper than copying the whole 7k-block schedule every time the best improves.
+    best_journal: list[tuple[int, Chain | None]] = []
     schedule = TemperatureSchedule(
         initial=temperature,
         cooling=cooling,
@@ -397,14 +400,23 @@ def solve_sa_delta(
                 evaluator.apply(changed, current)
                 current_obj = move_obj
                 accepted += 1
+                for block in changed:
+                    best_journal.append((block, current.get(block)))
                 if move_obj < best_obj:
-                    best, best_obj = dict(current), move_obj
+                    for block, chain in best_journal:
+                        if chain is None:
+                            best.pop(block, None)
+                        else:
+                            best[block] = chain
+                    best_journal.clear()
+                    best_obj = move_obj
                     last_improvement = iteration
                 if reversion_due(accepted, reversion):
                     current = dict(best)
                     evaluator.reset(current)
                     current_obj = best_obj
                     accepted = 0
+                    best_journal.clear()
             else:
                 restore(current, undo)
                 evaluator.revert()

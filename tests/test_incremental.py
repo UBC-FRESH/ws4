@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import random
 from pathlib import Path
 
@@ -11,7 +12,7 @@ from ws4.build.compiler import build_canonical_dataset
 from ws4.opt.engine import OptimizeConfig, Optimizer
 from ws4.opt.incremental import IncrementalObjective
 from ws4.opt.objective import Target, objective
-from ws4.opt.operators import CoalesceOperator, Schedule
+from ws4.opt.operators import CoalesceOperator, LnsOperator, Schedule
 from ws4.opt.solvers import _changed_blocks, solve_sa_delta
 
 _FIXTURE = Path(__file__).resolve().parents[1] / "examples" / "synthetic"
@@ -102,6 +103,71 @@ def test_spatial_penalty_is_in_the_incremental_objective(tmp_path: Path) -> None
     # Both blocks in one 5 ha opening exceeds 3 ha by 2; the same-year pair is 5 short.
     assert evaluator.objective == pytest.approx(7.0)
     assert evaluator.objective == pytest.approx(optimizer._evaluate(schedule, []))
+
+
+def test_block_chain_narrows_feature_offsets_without_changing_products(tmp_path: Path) -> None:
+    """Jumping to feature checkpoints preserves the product cells and the selected year."""
+    optimizer = _optimizer(tmp_path)
+    simulator = optimizer.simulator()
+    chain = (("CC", 0),)
+    full = simulator.block_chain(1, chain, 4)
+    narrow = simulator.block_chain(1, chain, 4, frozenset({3}))
+    expected = {
+        cell: value
+        for cell, value in full.items()
+        if cell[0] == 3 or str(cell[1]).startswith("product.")
+    }
+    assert narrow == expected
+
+
+def test_flow_delta_tracks_a_random_walk_exactly(tmp_path: Path) -> None:
+    """The cached period balances reproduce the full flow objective for every move."""
+    optimizer = _optimizer(tmp_path, years=4)
+    targets = [
+        Target(
+            "feature.Volume",
+            0,
+            period_width=1,
+            flow="even",
+            flow_reference_period=1,
+            minimum=-5.0,
+            maximum=5.0,
+            min_weight=10_000.0,
+            max_weight=10_000.0,
+            shape="non_linear",
+        )
+    ]
+    candidates = optimizer.candidates()
+    schedule: Schedule = {block: options[0] for block, options in candidates.items() if options}
+    evaluator = IncrementalObjective(optimizer, targets)
+    evaluator.reset(schedule)
+    rng = random.Random(11)
+    for _ in range(40):
+        move = optimizer.registry.pick(rng).apply(schedule, rng, candidates)
+        if move is None:
+            continue
+        changed = _changed_blocks(schedule, move)
+        expected = optimizer._evaluate(move, targets)
+        if not (math.isfinite(expected) and math.isfinite(evaluator.objective)):
+            evaluator.apply(changed, move)
+            schedule = move
+            continue
+        assert evaluator.objective + evaluator.delta(changed, move) == pytest.approx(
+            expected, abs=1e-7
+        )
+        evaluator.apply(changed, move)
+        assert evaluator.objective == pytest.approx(expected, abs=1e-7)
+        schedule = move
+
+
+def test_feature_target_uses_the_same_objective_with_narrow_offsets(tmp_path: Path) -> None:
+    """A feature target is still exact when only its period-end cell is evaluated."""
+    optimizer = _optimizer(tmp_path)
+    targets = [Target("feature.Volume", period=2, minimum=100.0)]
+    evaluator = IncrementalObjective(optimizer, targets)
+    schedule: Schedule = {1: (("CC", 0),), 2: (("CC", 1),)}
+    evaluator.reset(schedule)
+    assert evaluator.objective == pytest.approx(optimizer._evaluate(schedule, targets))
 
 
 def test_spatial_delta_tracks_a_random_walk(tmp_path: Path) -> None:
@@ -385,3 +451,144 @@ def test_incremental_matches_priority_and_normalized_targets(tmp_path: Path) -> 
     evaluator.apply([block], {block: optimizer.candidates()[block][0]})
     assert evaluator.objective == pytest.approx(before + delta)
     assert evaluator.objective == pytest.approx(objective(evaluator.values_frame(), targets))
+
+
+def test_short_chain_path_matches_the_full_series(tmp_path: Path) -> None:
+    """The single-event fast path returns exactly the full-series cells it narrows."""
+    optimizer = _optimizer(tmp_path, years=6)
+    simulator = optimizer.simulator()
+    accounts = {"feature.Volume", "product.Volume"}
+    wanted = frozenset({-1, 1, 3, 5})
+    chains = [
+        (),
+        (("CC", 0),),
+        (("CC", 2),),
+        (("CC", 5),),
+        (("CC", 0), ("CC", 3)),
+    ]
+    for block in (1, 2):
+        for chain in chains:
+            for accts in (accounts, None):
+                full = simulator.block_chain(block, chain, 6, None, accts)
+                narrow = simulator.block_chain(block, chain, 6, wanted, accts)
+                expected = {
+                    cell: value
+                    for cell, value in full.items()
+                    if cell[0] in wanted or str(cell[1]).startswith("product.")
+                }
+                assert narrow == expected
+
+
+def test_block_deltas_match_the_single_pair_path(tmp_path: Path) -> None:
+    """The batch entry point prices every pair exactly as the single-pair path does."""
+    optimizer = _optimizer(tmp_path, years=6)
+    targets = [
+        Target("feature.Volume", period=2, minimum=100.0),
+        Target("product.Volume", period=1, minimum=300.0, maximum=400.0),
+    ]
+    evaluator = IncrementalObjective(optimizer, targets)
+    evaluator.reset({})
+    candidates = optimizer.candidates()
+    rng = random.Random(3)
+    blocks = [block for block, chains in candidates.items() if chains]
+    pairs = [
+        (block, rng.choice(candidates[block])) for block in rng.sample(blocks, min(12, len(blocks)))
+    ]
+    expected = {
+        pair: optimizer._block_delta(
+            pair[0], pair[1], evaluator.accounts, evaluator._wanted_feature_offsets
+        )
+        for pair in pairs
+    }
+    optimizer._delta_cache.clear()
+    optimizer._empty_delta_cache.clear()
+    actual = optimizer._block_deltas(
+        [*pairs, pairs[0]], evaluator.accounts, evaluator._wanted_feature_offsets
+    )
+    assert len(actual) == len(expected)
+    for pair, delta in expected.items():
+        assert actual[pair] == delta
+
+
+def test_block_deltas_product_only_matches_the_single_pair_path(tmp_path: Path) -> None:
+    """The product-only shortcut is used without feature checkpoints and stays exact."""
+    optimizer = _optimizer(tmp_path, years=6)
+    candidates = optimizer.candidates()
+    rng = random.Random(5)
+    blocks = [block for block, chains in candidates.items() if chains]
+    pairs = [
+        (block, rng.choice(candidates[block])) for block in rng.sample(blocks, min(8, len(blocks)))
+    ]
+    accounts = {"product.Volume"}
+    expected = {pair: optimizer._block_delta(pair[0], pair[1], accounts) for pair in pairs}
+    optimizer._delta_cache.clear()
+    optimizer._product_delta_cache.clear()
+    actual = optimizer._block_deltas(pairs, accounts, None)
+    assert actual == expected
+
+
+def test_prefetch_fills_the_contribution_cache_for_a_move(tmp_path: Path) -> None:
+    """prefetch stores every changed pair's contribution before delta prices the move."""
+    optimizer = _optimizer(tmp_path, years=6)
+    evaluator = IncrementalObjective(optimizer, _targets())
+    candidates = optimizer.candidates()
+    schedule = {block: chains[0] for block, chains in candidates.items() if chains}
+    evaluator.reset({})
+    moved = dict(schedule)
+    changed = list(moved)[:2]
+    for block in changed:
+        options = candidates[block]
+        moved[block] = options[1] if len(options) > 1 else options[0]
+    evaluator.prefetch(changed, moved)
+    for block in changed:
+        assert (block, moved[block]) in evaluator._contributions
+
+
+def test_lns_multi_block_delta_is_exact_with_feature_and_flow_targets(tmp_path: Path) -> None:
+    """A destroyed-and-repaired move prices all its blocks exactly, flow included."""
+    optimizer = _optimizer(tmp_path, years=4)
+    targets = [
+        Target(
+            "product.Volume",
+            0,
+            period_width=1,
+            flow="even",
+            flow_reference_period=1,
+            minimum=-5.0,
+            maximum=5.0,
+            min_weight=10_000.0,
+            max_weight=10_000.0,
+            shape="non_linear",
+        ),
+        Target("feature.Volume", period=2, minimum=100.0),
+        Target("product.Volume", period=1, minimum=300.0, maximum=400.0),
+    ]
+    candidates = optimizer.candidates()
+    schedule: Schedule = {block: options[0] for block, options in candidates.items() if options}
+    evaluator = IncrementalObjective(optimizer, targets)
+    evaluator.reset(schedule)
+    operator = LnsOperator(weight=1.0, destroy_fraction=1.0, max_destroy=8)
+    rng = random.Random(13)
+    multi_block_moves = 0
+    finite_moves = 0
+    for _ in range(30):
+        move = operator.apply(schedule, rng, candidates)
+        if move is None:
+            continue
+        changed = _changed_blocks(schedule, move)
+        if len(changed) < 2:
+            continue
+        multi_block_moves += 1
+        expected = optimizer._evaluate(move, targets)
+        delta = evaluator.delta(changed, move)
+        if not (math.isfinite(expected) and math.isfinite(evaluator.objective + delta)):
+            evaluator.apply(changed, move)
+            schedule = move
+            continue
+        finite_moves += 1
+        assert evaluator.objective + delta == pytest.approx(expected, abs=1e-7)
+        evaluator.apply(changed, move)
+        assert evaluator.objective == pytest.approx(expected, abs=1e-7)
+        schedule = move
+    assert multi_block_moves > 0
+    assert finite_moves > 0

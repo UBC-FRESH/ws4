@@ -85,6 +85,7 @@ exists and the maintainer approves it.
 | P80 C5 seeded even-flow | #565 | `feature/p80-c5-seeded-evenflow` | complete |
 | P81 Seed schedules from the UI | #570 | `feature/p81-ui-seed` | complete |
 | P82 Seeded max-flow | #575 | `feature/p82-seeded-max-flow` | active |
+| P83 Two-stage c5 even-flow | #579 | `feature/p83-two-stage-flow` | active |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2539,6 +2540,41 @@ Acceptance:
 - max_flow accepts the seed and reference period.
 - Probe report exists.
 - Zero ceiling is not presented as a maximum.
+- Dashboard green.
+
+## Phase 83: Two-stage c5 even-flow
+
+Parent issue: #579
+Branch: `feature/p83-two-stage-flow`
+Status: active
+Plan: `notes/design/ws4-c5-evenflow-performance.md`
+
+Goal: add the c5 stage-1/stage-2 target path, then make the seeded even-flow search fast
+enough for the 100,000-iteration budget and record the actual target result.
+
+- [x] P83.1 Run the two-stage c5 flow schedule (#580)
+  - [x] Add stage-1 and stage-2 targets, seed, and watcher
+  - [x] Correct the priority-tier mistake and the split-block candidate set
+  - [x] Add the feature-checkpoint, flow-delta, incumbent-journal, and startup speedups
+  - [x] Record the 100k negative target result
+  - [x] Reach ±5% flow and the 23.9M stock goal, or record the target tension as final
+- [x] P83.2 Optimize the seeded search state and startup (#586)
+- [x] P83.3 Batch or bound the LNS move (#587)
+- [x] P83.4 Allow seeded process-pool islands (#588)
+- [x] P83.5 Add flow-directed moves or an LP period-volume seed (#589)
+- [x] P83.6 Evaluate a GPU batch path (#592)
+- [x] P83.7 Full-model sparse GPU search for TSA23 ft_econ (#595)
+- [x] P83.8 GPU-native population search (#596)
+- [x] P83.9 Master/worker metaheuristic portfolio (#597)
+  - [x] P83.6.1 Benchmark a bounded batch effect/delta evaluator
+  - [x] P83.6.2 Add the sparse float64 effect engine and batched LNS prototype
+  - [x] Decide whether to persist the effect table for a production optional path
+
+Acceptance:
+
+- The 100k benchmark and its exact objective are recorded.
+- The performance improvements preserve the target semantics and pass the regression tests.
+- The even-flow and stock result is reported honestly, including any remaining gap.
 - Dashboard green.
 
 ## Detailed Next Steps Notes
