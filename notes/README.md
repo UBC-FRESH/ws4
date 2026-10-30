@@ -46,6 +46,7 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p83-closeout.md` — phase close-out: c5 policy result, GPU search, population, and portfolio findings.
 - `reports/p83-lean-table.md` — lean effect-table archive and the full TSA23 4x end-to-end result.
 - `reports/p83-candidate-cache.md` — simulator/candidate caches and the full TSA23 11x end-to-end result.
+- `reports/p83-gpu-session.md` — resident session reuse across repeated full-model seeds.
 - `design/ws4-optimizer-core.md` — event chains and per-move objective deltas (proposed).
 - `design/ws4-hydrology-consumer-hardening.md` — P62 preflight, exposure, and optimizer-boundary plan.
 - `design/ws4-carbon.md` — historical P58 carbon design note; the current contract is
