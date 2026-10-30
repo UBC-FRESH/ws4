@@ -112,3 +112,23 @@ Conclusion: the GPU is for **batched effects/LNS/population work**, not single s
 moves. The next prototype should use float64 or corrected accumulation and a sparse
 device representation, then a batched search around the effect rows.
 
+## P83.6.2 end-to-end prototype (2026-10-30)
+
+A standalone 2,000-block c5 slice was built into a sparse-derived **float64** effect table
+(456,278 rows, 401 target cells; CPU build 8.1 s). The prototype then ran batched LNS in
+two modes:
+
+- 64 independent proposals per batch, best proposal accepted: **5,391 proposal
+  evaluations/s**, but only **84 accepted moves/s**.
+- 31 disjoint 64-block neighborhoods per batch, accept the improving subset:
+  **4,044 proposal evaluations/s**, **179 accepted moves/s**.
+
+The current CPU LNS path is about **1,900 accepted moves/s**. The GPU effect math is not
+the bottleneck; acceptance, objective scoring, and neighborhood coupling dominate. A
+simple greedy batch is also a poor search: only 137 moves were accepted across 3,100
+proposals.
+
+Conclusion: the effect table alone does not make the LNS search faster. The next
+prototype must change the search structure (parallel chains/islands with batched
+acceptance, or a population search), not just move the current LNS to the GPU.
+

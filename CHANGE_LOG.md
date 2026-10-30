@@ -3378,3 +3378,10 @@ issue comments.
   (20,979,565.28) and an accepted 22,494.59 shortfall (0.085% of initial stock), plus the
   remaining conifer flow gap. P83.2 is closed as a neutral performance probe. The next
   work is P83.6 GPU-native search; dashboard GREEN.
+
+
+- P83.6.2 end-to-end GPU LNS prototype: a 2,000-block c5 slice with a float64 effect table
+  ran at 5,391 proposal evaluations/s but only 84 accepted moves/s; a disjoint-neighborhood
+  variant reached 4,044 proposal evaluations/s and 179 accepted moves/s. The CPU LNS path
+  is about 1,900 accepted moves/s. The effect math is not the bottleneck; acceptance and
+  search structure are. Evidence: `notes/design/ws4-gpu-search.md`.
