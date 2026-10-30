@@ -24,6 +24,7 @@ from __future__ import annotations
 import itertools
 import time
 from dataclasses import dataclass, replace
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 try:  # pragma: no cover - which branch runs depends on the environment
@@ -130,6 +131,7 @@ class EffectTable:
         extra_pairs: Sequence[tuple[int, Chain]] = (),
         device: str | torch_type.device | None = None,
         candidates: Candidates | None = None,
+        chunk_blocks: int = 4096,
     ) -> EffectTable:
         """Build an effect table for a block slice through the exact CPU delta path.
 
@@ -149,6 +151,9 @@ class EffectTable:
         candidates : mapping of int to list of tuple, optional
             The candidate chains, when the caller already has them.  This avoids
             rebuilding the candidate set for every table.
+        chunk_blocks : int, optional
+            The number of blocks whose effect rows are staged at once.  Streaming keeps
+            the full-model build from holding every Python delta in memory.
 
         Returns
         -------
@@ -159,35 +164,54 @@ class EffectTable:
         started = time.perf_counter()
         candidates = optimizer.candidates() if candidates is None else candidates
         chosen = tuple(sorted(candidates) if blocks is None else blocks)
-        rows: list[tuple[int, Chain]] = [(0, ())]
+        # Assign compact row ids without materializing a row tuple for every chain.
         row_index: dict[tuple[int, Chain], int] = {(0, ()): 0}
+        next_row = 1
         for block in chosen:
             for chain in candidates.get(block, ()):
-                row_index[(block, chain)] = len(rows)
-                rows.append((block, chain))
+                row_index[(block, chain)] = next_row
+                next_row += 1
+        extra: list[tuple[int, Chain]] = []
         for pair in extra_pairs:
             if pair in row_index:
                 continue
-            row_index[pair] = len(rows)
-            rows.append(pair)
-        pairs = rows[1:]
-        deltas = optimizer._block_deltas(
-            pairs, evaluator.accounts, evaluator._wanted_feature_offsets
-        )
+            row_index[pair] = next_row
+            next_row += 1
+            extra.append(pair)
         cells = target_cells(evaluator)
         cell_index = {cell: column for column, cell in enumerate(cells)}
-        # The first CSR row is the empty chain, which has no nonzeros.
+        # Row zero is the empty chain and has no nonzeros.
         indptr: list[int] = [0, 0]
         indices: list[int] = []
         values: list[float] = []
-        for pair in pairs:
-            for cell, value in deltas[pair].items():
-                column = cell_index.get(cell)
-                if column is None or value == 0.0:
-                    continue
-                indices.append(column)
-                values.append(float(value))
-            indptr.append(len(indices))
+
+        def append_pairs(pairs: Sequence[tuple[int, Chain]]) -> None:
+            """Price a chunk of pairs and append their CSR rows in row order."""
+            if not pairs:
+                return
+            deltas = optimizer._block_deltas(
+                pairs, evaluator.accounts, evaluator._wanted_feature_offsets
+            )
+            for pair in pairs:
+                for cell, value in deltas[pair].items():
+                    column = cell_index.get(cell)
+                    if column is None or value == 0.0:
+                        continue
+                    indices.append(column)
+                    values.append(float(value))
+                indptr.append(len(indices))
+            # The table owns the values now; release the per-chunk Python deltas.
+            optimizer._delta_cache.clear()
+            optimizer._empty_delta_cache.clear()
+
+        chunk = max(1, int(chunk_blocks))
+        for start in range(0, len(chosen), chunk):
+            pairs: list[tuple[int, Chain]] = []
+            for block in chosen[start : start + chunk]:
+                for chain in candidates.get(block, ()):
+                    pairs.append((block, chain))
+            append_pairs(pairs)
+        append_pairs(extra)
         table = cls(
             cells=cells,
             indptr=torch.tensor(indptr, dtype=torch.int64),
@@ -281,6 +305,67 @@ class EffectTable:
             indices=self.indices.to(device),
             values=self.values.to(device),
         )
+
+    def save(self, path: str | Path) -> Path:
+        """Write the sparse table and row index to one torch archive.
+
+        Parameters
+        ----------
+        path : str or pathlib.Path
+            Destination file.
+
+        Returns
+        -------
+        pathlib.Path
+            The written path.
+        """
+        _require_torch()
+        destination = Path(path)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(
+            {
+                "cells": self.cells,
+                "indptr": self.indptr,
+                "indices": self.indices,
+                "values": self.values,
+                "row_index": self.row_index,
+                "blocks": self.blocks,
+                "build_seconds": self.build_seconds,
+                "max_row_width": self._max_row_width,
+            },
+            destination,
+        )
+        return destination
+
+    @classmethod
+    def load(cls, path: str | Path, device: str | torch_type.device | None = None) -> EffectTable:
+        """Load a table written by :meth:`save`.
+
+        Parameters
+        ----------
+        path : str or pathlib.Path
+            The torch archive.
+        device : str or torch.device or None, optional
+            Move the sparse tensors to this device on load.
+
+        Returns
+        -------
+        EffectTable
+            The loaded table.
+        """
+        _require_torch()
+        payload = torch.load(Path(path), weights_only=False)
+        table = cls(
+            cells=tuple(payload["cells"]),
+            indptr=payload["indptr"],
+            indices=payload["indices"],
+            values=payload["values"],
+            row_index=payload["row_index"],
+            blocks=tuple(payload["blocks"]),
+            build_seconds=float(payload.get("build_seconds", 0.0)),
+            _max_row_width=int(payload.get("max_row_width", 1)),
+        )
+        return table if device is None else table.to(device)
 
     def row_id(self, block: int, chain: Chain) -> int:
         """Return the table row for a block and chain, or zero for the empty chain.

@@ -252,6 +252,22 @@ def test_segmented_delta_respects_signs_and_duplicate_segments(tmp_path: Path) -
     assert torch.equal(actual, expected)
 
 
+def test_table_save_and_load_round_trip(tmp_path: Path) -> None:
+    """A persisted table preserves the sparse tensors, row index, and deltas."""
+    optimizer, evaluator = _optimizer(tmp_path, blocks=8)
+    table = EffectTable.build(optimizer, evaluator)
+    path = table.save(tmp_path / "effects.pt")
+    loaded = EffectTable.load(path)
+    assert loaded.cells == table.cells
+    assert loaded.blocks == table.blocks
+    assert loaded.rows == table.rows
+    assert loaded.nnz == table.nnz
+    assert torch.equal(loaded.indptr, table.indptr)
+    assert torch.equal(loaded.indices, table.indices)
+    assert torch.equal(loaded.values, table.values)
+    assert loaded.row_index == table.row_index
+
+
 def test_empty_chain_maps_to_the_zero_row(tmp_path: Path) -> None:
     """The reserved row zero is all zeros and ``row_id`` maps an empty chain to it."""
     optimizer, evaluator = _optimizer(tmp_path, blocks=4)

@@ -225,3 +225,9 @@ table is not persisted yet. The 5,000-block prototype still has poor search qual
 GPU search quality is not measured. Next steps are table save/load (or a persisted CSR
 sidecar) and a better batched search/acceptance rule.
 
+### Table persistence
+
+`EffectTable.save` / `EffectTable.load` now persist the CSR tensors and row index as one
+torch archive. A round-trip test covers the sparse tensors, blocks, row index, and deltas.
+This makes the one-time 22-minute full-model build reusable; the next run can load the
+table instead of rebuilding.

@@ -3424,3 +3424,7 @@ issue comments.
   target cells, ~29 GB peak CPU RSS, and 568 MB upload to the GPU. The full table is
   feasible but too slow to rebuild interactively and is not yet persisted; full GPU search
   quality is still unmeasured. The CPU 20x10 TSA23 run remains the working result.
+
+
+- P83.7 table persistence: added `EffectTable.save`/`load` and a round-trip test. The
+  full-model CSR build can now be reused instead of paid on every search; 14 GPU tests pass.
