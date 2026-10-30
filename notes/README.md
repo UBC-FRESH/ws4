@@ -53,6 +53,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
   frontier with exact replay.
 - `reports/carbon-4tsa-hwp-production.md` — full-landscape TSA08/16/40/41 HWP carbon
   sweep.
+- `reports/carbon-4tsa-hwp-sensitivity.md` — low/default/high HWP sensitivity across
+  the four TSAs.
 - `adr/0001-fragment-compilation.md` — fragments are the compilation unit; blocks are a runtime aggregate.
 - `adr/0002-columnar-matrix-dataset.md` — the compiled dataset is versioned and columnar.
 - `adr/0003-spatial-structure-first-class.md` — spatial structure is part of the model.
