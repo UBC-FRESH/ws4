@@ -37,13 +37,12 @@ Costs:
 
 | Step | Wall |
 | --- | ---: |
-| `CarbonLedger.prepare` for 5,000 current chains | **444 s** |
-| empty base values | 19 s |
-| 5,000 per-block effects | 15 s |
-| GPU population search | **2.3 s** |
-| exact `ws4 carbon` replay | 63 s |
+| effect-table build (prepare + base + per-block rows, 64 workers) | **156 s** |
+| GPU population search | **2.5 s** |
+| exact replay / target report | ~28 s |
 
-The table build is the cost; the search is effectively free once the rows exist.
+The table build is the cost; the search is effectively free once the rows exist. The
+whole command, including exact replay, is **187 s** with 64 workers.
 
 ## Result
 
@@ -89,6 +88,54 @@ run is the reported value.
 - The exact schedule is at the yield floor; small rounding or model changes can
   violate it.
 - Exact `ws4 carbon` remains the authority.
+
+## Full TSA41 scale
+
+The same command was run on the full TSA41 matrix, not just the 5k sample:
+
+- Dataset: `tsa41-p120-matrix-full` — 148,828 blocks, 5,273 unique stand states
+- Initial schedule: all 148,828 blocks at `CC@0`
+- Target: yield floor 280M m3, minimize cumulative emissions
+- 64 carbon workers, population 2,048, 3,000 generations, seed 1
+
+| Metric | Baseline | Removal GA |
+| --- | ---: | ---: |
+| Blocks kept | 148,828 | **110,874** |
+| Blocks removed | 0 | **37,954 (25.5%)** |
+| Managed yield (m3) | 296,740,125 | **280,016,800** |
+| Exact cumulative emissions @49 (tCO2e) | 368,283,052 | **213,103,705** |
+| Reduction vs baseline | — | **42.14%** |
+| System carbon @49 (tC) | — | **377,351,327** |
+| HWP carbon @49 (tC) | — | **18,309,825** |
+
+Costs: **976 s** table build, **78.6 s** population search, **1,217.7 s**
+(20.3 min) total including exact replay. Exact target values:
+
+- yield: 280,016,800.085 m3
+- cumulative emissions: 213,103,705.410 tCO2e
+
+The full-scale result is a keep/remove policy, not a full treatment schedule. It
+shows that the exact effect-table path scales beyond the sample and remains
+practical.
+
+## Production command
+
+`ws4 carbon-removal` implements this path:
+
+```bash
+ws4 carbon-removal \
+  --dataset /tmp/opencode/tsa41-5k-dataset \
+  --package /srv/shared-data/gep/ws4/carbon-handoff/tsa41-p120-matrix-package \
+  --schedule /tmp/opencode/tsa41-5k-cc-only.schedule.csv \
+  --targets /tmp/opencode/tsa41-5k-targets-min-emissions.yaml \
+  --years 50 --hwp-config config/carbon/hwp.bc.yaml \
+  --workers 64 --population 2048 --generations 3000 --seed 1 \
+  --out /tmp/opencode/tsa41-5k-carbon-removal-gpu2
+```
+
+The table build is parallel across exact stand states; the population runs on CUDA
+when available. `--no-verify` skips the exact replay, but the reported result is
+only authoritative with it.
 
 ## Artifacts
 

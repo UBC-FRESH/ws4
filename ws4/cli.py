@@ -442,6 +442,103 @@ def carbon(
     print(f"manifest: {result.manifest_path}")
 
 
+@app.command("carbon-removal")
+def carbon_removal(
+    dataset: Path = typer.Option(..., exists=True, file_okay=False, help="Compiled dataset"),
+    package: Path = typer.Option(..., exists=True, help="FEMIC carbon package"),
+    schedule: Path = typer.Option(..., exists=True, help="CSV: initial block/treatment/offset"),
+    targets: Path = typer.Option(..., exists=True, help="Target YAML"),
+    out: Path = typer.Option(..., help="Output directory"),
+    years: int = typer.Option(50, help="Annual simulation horizon"),
+    hwp_config: Path | None = typer.Option(
+        None, "--hwp-config", exists=True, help="HWP lifecycle YAML"
+    ),
+    workers: int = typer.Option(32, "--workers", help="Carbon fork workers for the effect table"),
+    population: int = typer.Option(2048, "--population", help="Genomes per generation"),
+    generations: int = typer.Option(3000, "--generations", help="GA generations"),
+    seed: int = typer.Option(1, "--seed", help="GA seed"),
+    verify: bool = typer.Option(
+        True, "--verify/--no-verify", help="Run exact replay after the search"
+    ),
+) -> None:
+    """Optimize a binary keep/remove pattern with exact carbon effects."""
+    from .opt.engine import OptimizeConfig, Optimizer, load_schedule_csv
+    from .opt.objective import load_targets, penalty, period_value
+    from .opt.removal import build_removal_effects, solve_removal, write_removal_schedule
+
+    out.mkdir(parents=True, exist_ok=True)
+    cfg = OptimizeConfig(
+        years=years,
+        targets_path=str(targets),
+        carbon_package_path=str(package),
+        carbon_hwp_path=str(hwp_config) if hwp_config is not None else "",
+        carbon_workers=workers,
+        threads=workers,
+    )
+    optimizer = Optimizer(dataset, cfg)
+    initial = load_schedule_csv(schedule)
+    loaded_targets = load_targets(targets)
+    effects = build_removal_effects(optimizer, initial, loaded_targets)
+    result = solve_removal(
+        effects,
+        population=population,
+        generations=generations,
+        seed=seed,
+    )
+    schedule_path = out / "schedule.csv"
+    write_removal_schedule(result, schedule_path)
+    removed = len(effects.blocks) - len(result.schedule)
+    summary: dict[str, object] = {
+        "blocks": len(effects.blocks),
+        "removed": removed,
+        "build_seconds": effects.build_seconds,
+        "search_seconds": result.search_seconds,
+        "population": population,
+        "generations": generations,
+        "seed": seed,
+    }
+    exact_values: dict[tuple[int, str], float] | None = None
+    if verify:
+        frame = optimizer._full_values(result.schedule, None, (), ())
+        exact_values = {
+            (int(str(row.offset)), str(row.account)): float(str(row.value))
+            for row in frame.itertuples(index=False)
+        }
+        rows: list[dict[str, object]] = []
+        for target in loaded_targets:
+            if not target.active:
+                continue
+            value = period_value(exact_values, target)
+            rows.append(
+                {
+                    "account": target.account,
+                    "period": target.period,
+                    "year": target.year,
+                    "value": value,
+                    "minimum": target.minimum,
+                    "maximum": target.maximum,
+                    "penalty": penalty(value, target),
+                }
+            )
+        pd.DataFrame(rows).to_csv(out / "report_targets.csv", index=False)
+        pd.DataFrame(
+            [
+                {"offset": offset, "account": account, "value": value}
+                for (offset, account), value in exact_values.items()
+            ]
+        ).to_csv(out / "account_values.csv", index=False)
+        summary["exact"] = True
+    summary["schedule"] = str(schedule_path)
+    (out / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    print(f"[bold green]Removal search complete[/] → {out}")
+    print(
+        f"blocks={len(effects.blocks)} removed={removed} "
+        f"build={effects.build_seconds:.1f}s search={result.search_seconds:.1f}s"
+    )
+    if exact_values is not None:
+        print(f"targets: {out / 'report_targets.csv'}")
+
+
 @app.command("carbon-curves")
 def carbon_curves(
     dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),

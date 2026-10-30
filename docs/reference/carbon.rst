@@ -369,6 +369,11 @@ and sums their area-weighted accounts. The target report uses the batch total, b
 search objective can lag it. Re-run the winning schedule with ``ws4 carbon`` and report
 that result. See :doc:`../guides/limitations-and-boundaries`.
 
+For a global keep/remove decision, ``ws4 carbon-removal`` builds an exact per-block
+effect table and searches the bits on the GPU. This is useful when the constraint is a
+yield floor and the carbon objective is driven by which blocks are harvested, not by
+small treatment-year shifts. See :doc:`../howto/run-carbon-removal`.
+
 Fertilization
 -------------
 
