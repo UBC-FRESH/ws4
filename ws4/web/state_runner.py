@@ -175,15 +175,46 @@ def main() -> int:
     if completed.returncode != 0:
         return completed.returncode
 
-    # Preserve the search metadata alongside the simulator summary.
+    # Preserve the search metadata alongside the simulator summary. The web
+    # reader uses summary.json as the completed-run signal, so write a small
+    # state-run summary even though the browser reads accounts from the CSV.
+    objective = None
+    telemetry = out / "telemetry.jsonl"
+    if telemetry.is_file():
+        for line in telemetry.read_text(encoding="utf-8").splitlines():
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if record.get("type") == "step" and isinstance(record.get("objective"), (int, float)):
+                objective = float(record["objective"])
+    try:
+        blocks_scheduled = int(pd.read_csv(out / "schedule.csv")["block_id"].nunique())
+    except Exception:
+        blocks_scheduled = 0
+    metadata = {
+        "engine": "ws4 state-watch",
+        "iterations": args.iterations,
+        "years": args.years,
+        "period_width": args.period_width,
+        "accounts": args.accounts,
+        "status": "complete",
+        "objective": objective,
+    }
     (out / "state_search.json").write_text(
+        json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
+    )
+    (out / "summary.json").write_text(
         json.dumps(
             {
-                "engine": "ws4 state-watch",
+                "incumbent_objective": objective,
                 "iterations": args.iterations,
-                "years": args.years,
-                "period_width": args.period_width,
-                "accounts": args.accounts,
+                "seed": 1,
+                "metaheuristic": "state-watch",
+                "islands": 1,
+                "engine": "state",
+                "blocks_scheduled": blocks_scheduled,
+                "state_search": metadata,
             },
             indent=2,
         )
