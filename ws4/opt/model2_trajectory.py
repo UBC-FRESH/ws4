@@ -903,10 +903,12 @@ def run_state_watch(
     last_update = [0.0]
 
     def paint(iteration: int, current: BlockAccountState, best: float) -> None:
+        if logger is not None:
+            logger.step(iteration, best)
         if plain:
             return
         now = time.monotonic()
-        if not plain and now - last_update[0] < refresh and iteration != iterations:
+        if now - last_update[0] < refresh and iteration != iterations:
             return
         last_update[0] = now
         view.best_objective = best
@@ -914,8 +916,6 @@ def run_state_watch(
         view.windows = view.current_windows()
         view.iteration = iteration
         view.evaluations = iteration + 1
-        if logger is not None:
-            logger.step(iteration, best)
         if live is not None:
             live.update(
                 render_frame(view, optimizer, now - started),
@@ -952,7 +952,8 @@ def run_state_watch(
     if live is None:
         console.print(render_frame(view, optimizer, time.monotonic() - started))
     if logger is not None:
-        logger.step(iterations, objective)
+        if iterations == 0:
+            logger.step(0, objective)
         logger.close()
     if schedule_out is not None:
         from .archive import write_schedule
