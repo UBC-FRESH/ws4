@@ -46,6 +46,23 @@ This array is the WS4 analogue of Patchworks's resident block account state. The
 is the first memory/size and exactness test; the array is not applied to TSA24/29 in this
 phase.
 
+
+### Live chart read path
+
+The target charts are a direct projection of the resident state, not a second evaluation:
+
+```text
+chart.page[period, account] = sum(state[period, :, account])
+```
+
+The watcher reads these period/account totals after each move and repaints. A block-row
+update adjusts the affected period totals incrementally; the chart never re-simulates a
+block or calls the exact evaluator.
+
+The exact evaluator remains the checkpoint/final verification path. The live chart path is
+allowed to be a fast projection of the same resident pages, not a separate accounting
+implementation.
+
 ## Architecture target
 
 ```text
