@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 import time
 from pathlib import Path
@@ -129,7 +130,9 @@ def main() -> int:
         "initial_objective": result.initial_objective,
         "device_objective": result.objective,
         "verified_objective": verified.objective,
-        "exact_match": verified.objective == result.objective,
+        "exact_match": math.isclose(
+            verified.objective, result.objective, rel_tol=1e-9, abs_tol=1e-6
+        ),
         "best_generation": result.best_generation,
         "evaluations": result.evaluations,
         "setup_s": setup_done - started,

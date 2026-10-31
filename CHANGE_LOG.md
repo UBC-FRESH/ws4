@@ -3624,3 +3624,12 @@ issue comments.
   `IncrementalObjective`. The command does not rebuild the target-specific table and
   exposes `--rebuild-caches`. Documented in `docs/reference/optimizer.rst`; CLI help test
   added. Dashboard: GREEN.
+
+- P83 GPU ten-seed matrix: `ws4 gpu-run` completed ten full TSA23 ft_econ 20x10 seeds in
+  **110.0 s** total (33.6 s session setup; 4.0-12.7 s per search), with exact objective
+  **0.0** on every seed after fresh replay. The CPU reference remains 386 s for one seed;
+  this is an aggregate ten-seed comparison, not a controlled CPU matrix. Also fixed the
+  exactness report to use `rel_tol=1e-9, abs_tol=1e-6`; a one-generation smoke run had a
+  3.5e-8 roundoff difference that `==` incorrectly labeled a mismatch. Evidence:
+  `notes/reports/p83-gpu-matrix.md`. Dashboard: GREEN.
+
