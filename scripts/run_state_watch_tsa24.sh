@@ -20,6 +20,8 @@
 #   INITIAL         initial schedule CSV
 #   CANDIDATE_CACHE candidate pickle cache
 #   WORK            seed-state cache directory
+#   SEED_STATE      override the resident seed-state archive
+#   SCHEDULE_OUT    write the final schedule CSV here
 
 set -euo pipefail
 
@@ -31,7 +33,7 @@ TARGETS="${TARGETS:-$TSA24_ROOT/config/ws4/targets/evenflow_tsa24.yaml}"
 INITIAL="${INITIAL:-$TSA24_ROOT/runtime/seed_area_control_tsa24.csv}"
 CANDIDATE_CACHE="${CANDIDATE_CACHE:-$TSA24_ROOT/runtime/gpu-cache/candidates.pkl}"
 WORK="${WORK:-$TSA24_ROOT/runtime/state-watch}"
-SEED_STATE="$WORK/tsa24-seed-state.npz"
+SEED_STATE="${SEED_STATE:-$WORK/tsa24-seed-state.npz}"
 ITERATIONS="${ITERATIONS:-100000}"
 if [[ $# -gt 0 && "$1" =~ ^[0-9]+$ ]]; then
   ITERATIONS="$1"
@@ -98,6 +100,9 @@ args=(
 
 if [[ "${PLAIN:-0}" == "1" ]]; then
   args+=(--plain)
+fi
+if [[ -n "${SCHEDULE_OUT:-}" ]]; then
+  args+=(--schedule-out "$SCHEDULE_OUT")
 fi
 
 exec "$PYTHON" -m ws4.cli "${args[@]}" "$@"
