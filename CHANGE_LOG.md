@@ -3633,3 +3633,9 @@ issue comments.
   3.5e-8 roundoff difference that `==` incorrectly labeled a mismatch. Evidence:
   `notes/reports/p83-gpu-matrix.md`. Dashboard: GREEN.
 
+
+- Carbon state-cache adapter test: `tests/test_removal_state_cache.py` now builds a
+  synthetic cache and verifies that carbon cells come from the exact cache while
+  non-carbon cells come from the simulator. The public `fresh-cbm` package also
+  gained CI, JSON-Schema manifest validation, and install/build checks on Python
+  3.11/3.12. Dashboard: GREEN.
