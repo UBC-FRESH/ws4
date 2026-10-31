@@ -9,7 +9,7 @@ from ws4.opt.model2_index import CandidateIndex
 
 def test_candidate_index_round_trip(tmp_path: Path) -> None:
     """The compact index reconstructs the original candidate map."""
-    candidates = {
+    candidates: dict[int, list[tuple[tuple[str, int], ...]]] = {
         1: [(("CC", 0),), (("CC", 10),)],
         2: [(("CT", 5), ("CC", 30))],
     }
