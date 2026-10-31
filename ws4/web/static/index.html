@@ -109,7 +109,7 @@
         <div class="run-controls">
         <button id="save-targets" hidden>Save targets</button>
         <div class="run-row">
-          <label>Max iters <input id="run-iterations" type="number" value="" min="0" step="1" placeholder="∞" title="blank or 0 = run until stopped"></label>
+          <label>Max iters <input id="run-iterations" type="number" value="5000" min="0" step="1" title="state engine default: 5,000 iterations; 0 = use the service default"></label>
           <label>Patience <input id="run-patience" type="number" value="0" min="0" step="1" title="stop after N iterations without an improvement; 0 = off"></label>
           <label>Time <input id="run-time-limit" type="text" placeholder="HH:MM:SS" size="9"></label>
           <label>Years <input id="run-years" type="number" value="50" min="1" step="1"></label>
@@ -123,7 +123,7 @@
           <span id="run-detail">idle</span>
           <svg id="spark" width="140" height="26" aria-label="objective trajectory"></svg>
         </div>
-        <p id="run-status" class="hint">Runs use the resident-state accelerated engine on one CPU core; no island workers.</p>
+        <p id="run-status" class="hint">Runs use the resident-state accelerated engine on one CPU core; no island workers. Default search: 5,000 iterations.</p>
         <p id="targets-status" class="hint"></p>
         </div>
       </section>
