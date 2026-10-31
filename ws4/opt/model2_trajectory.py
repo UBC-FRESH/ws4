@@ -220,6 +220,11 @@ class BlockAccountState:
         self.years = years
         self.period_width = period_width
         self.periods = (years + period_width - 1) // period_width
+        # A feature is a level: its period value is read at the period end.  Only these
+        # checkpoints are needed; products still read their actual event offsets.
+        self.feature_offsets = tuple(
+            min(years - 1, (period + 1) * period_width - 1) for period in range(self.periods)
+        )
         shape = (self.periods, len(self.blocks), len(self.accounts))
         # Feature/state accounts are resident track-derived pages.  Product accounts are
         # event rows attached to treatments; their values are kept separately and added to
@@ -243,7 +248,7 @@ class BlockAccountState:
         import numpy as np
 
         cells = self.trajectory.block_cells(
-            block, events, feature_offsets=range(self.years), accounts=self.accounts
+            block, events, feature_offsets=self.feature_offsets, accounts=self.accounts
         )
         state_row = np.zeros((self.periods, len(self.accounts)), dtype=np.float64)
         event_row = np.zeros((self.periods, len(self.accounts)), dtype=np.float64)
