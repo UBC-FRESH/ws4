@@ -109,9 +109,9 @@
         <div class="run-controls">
         <button id="save-targets" hidden>Save targets</button>
         <div class="run-row">
-          <label>Max iters <input id="run-iterations" type="number" value="100000" min="0" step="1" title="state engine default: 100,000 iterations; 0 = use the service default"></label>
+          <label>Max iters <input id="run-iterations" type="number" value="" min="0" step="1" title="blank or 0 = effectively unlimited iterations; wall-clock limit applies"></label>
           <label>Patience <input id="run-patience" type="number" value="0" min="0" step="1" title="stop after N iterations without an improvement; 0 = off"></label>
-          <label>Time <input id="run-time-limit" type="text" placeholder="HH:MM:SS" size="9"></label>
+          <label>Time <input id="run-time-limit" type="text" value="00:01:00" placeholder="HH:MM:SS" size="9"></label>
           <label>Years <input id="run-years" type="number" value="50" min="1" step="1"></label>
           <span class="state-engine-pill" title="Resident-state accelerated search; one CPU core">state · 1 core</span>
           <label>Seed <input id="run-seed" type="number" value="1" step="1"></label>
@@ -123,7 +123,7 @@
           <span id="run-detail">idle</span>
           <svg id="spark" width="140" height="26" aria-label="objective trajectory"></svg>
         </div>
-        <p id="run-status" class="hint">Runs use the resident-state accelerated engine on one CPU core; no island workers. Default search: 100,000 iterations.</p>
+        <p id="run-status" class="hint">Runs use the resident-state accelerated engine on one CPU core; no island workers. Unlimited iterations, stopped by the 1-minute wall-clock limit.</p>
         <p id="targets-status" class="hint"></p>
         </div>
       </section>

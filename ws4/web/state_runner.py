@@ -61,7 +61,8 @@ def main() -> int:
     parser.add_argument("--initial-schedule", type=Path)
     parser.add_argument("--seed-state", type=Path)
     parser.add_argument("--period-width", type=int, default=10)
-    parser.add_argument("--iterations", type=int, default=100000)
+    parser.add_argument("--iterations", type=int, default=1_000_000_000)
+    parser.add_argument("--max-seconds", type=float, default=60.0)
     parser.add_argument("--years", type=int, default=200)
     parser.add_argument("--accounts", default="")
     parser.add_argument("--lns-weight", type=float, default=0.2)
@@ -112,6 +113,8 @@ def main() -> int:
         str(args.targets),
         "--iterations",
         str(args.iterations),
+        "--max-seconds",
+        str(args.max_seconds),
         "--years",
         str(args.years),
         "--period-width",
@@ -179,6 +182,7 @@ def main() -> int:
     # reader uses summary.json as the completed-run signal, so write a small
     # state-run summary even though the browser reads accounts from the CSV.
     objective = None
+    iterations_run = 0
     telemetry = out / "telemetry.jsonl"
     if telemetry.is_file():
         for line in telemetry.read_text(encoding="utf-8").splitlines():
@@ -186,15 +190,21 @@ def main() -> int:
                 record = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            if record.get("type") == "step" and isinstance(record.get("objective"), (int, float)):
-                objective = float(record["objective"])
+            if record.get("type") == "step":
+                try:
+                    iterations_run = max(iterations_run, int(record.get("iteration", 0)))
+                except (TypeError, ValueError):
+                    pass
+                if isinstance(record.get("objective"), (int, float)):
+                    objective = float(record["objective"])
     try:
         blocks_scheduled = int(pd.read_csv(out / "schedule.csv")["block_id"].nunique())
     except Exception:
         blocks_scheduled = 0
     metadata = {
         "engine": "ws4 state-watch",
-        "iterations": args.iterations,
+        "iterations": iterations_run,
+        "iteration_limit": args.iterations,
         "years": args.years,
         "period_width": args.period_width,
         "accounts": args.accounts,
@@ -208,7 +218,8 @@ def main() -> int:
         json.dumps(
             {
                 "incumbent_objective": objective,
-                "iterations": args.iterations,
+                "iterations": iterations_run,
+                "iteration_limit": args.iterations,
                 "seed": 1,
                 "metaheuristic": "state-watch",
                 "islands": 1,

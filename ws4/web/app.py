@@ -1040,6 +1040,15 @@ def create_app(
             initial = state_settings.get("initial_schedule") or initial_schedule_path
             if initial is not None and not state_settings.get("initial_schedule"):
                 command.extend(["--initial-schedule", str(initial)])
+            # State runs are bounded by wall clock, not a useful iteration count.
+            max_seconds = state_settings.get("max_seconds", 60)
+            if time_limit:
+                try:
+                    hours, minutes, seconds = (int(part) for part in time_limit.split(":"))
+                    max_seconds = hours * 3600 + minutes * 60 + seconds
+                except (TypeError, ValueError):
+                    pass
+            command.extend(["--max-seconds", str(max_seconds)])
             for key, flag in (
                 ("accounts", "--accounts"),
                 ("period_width", "--period-width"),
@@ -1124,7 +1133,7 @@ def create_app(
             # State-watch is deliberately one core; the islands control is not used.
             islands = 1
             if continuous:
-                iterations = int(state_settings.get("default_iterations", 100000))
+                iterations = int(state_settings.get("default_iterations", 1_000_000_000))
                 continuous = False
         if not 1 <= iterations <= 1_000_000_000 or not 1 <= years <= 1000:
             raise HTTPException(status_code=422, detail="iterations or years are out of range")

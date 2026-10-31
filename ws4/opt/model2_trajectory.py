@@ -590,6 +590,7 @@ def run_state_sa(
     swap_weight: float = 0.5,
     warmup_iterations: int = 1000,
     initial: dict[int, tuple[tuple[str, int], ...]] | None = None,
+    max_seconds: float | None = None,
     on_step: Callable[[int, BlockAccountState, float], None] | None = None,
 ) -> tuple[dict[int, tuple[tuple[str, int], ...]], float]:
     """Run a small SA loop over compact block option indices using resident pages.
@@ -620,6 +621,7 @@ def run_state_sa(
     """
     import math
     import random
+    import time
 
     from .model2_index import CandidateIndex
 
@@ -741,7 +743,10 @@ def run_state_sa(
         return previous
 
     warmup = max(0, min(warmup_iterations, iterations))
+    deadline = time.monotonic() + max_seconds if max_seconds and max_seconds > 0 else None
     for iteration in range(1, iterations + 1):
+        if deadline is not None and time.monotonic() >= deadline:
+            break
         previous = random_move() if iteration <= warmup else mixed_move()
         candidate = calculator.value()
         delta = candidate - current
@@ -810,6 +815,7 @@ def run_state_watch(
     schedule_out: Path | None = None,
     telemetry_path: Path | None = None,
     initial: dict[int, tuple[tuple[str, int], ...]] | None = None,
+    max_seconds: float | None = None,
     lns_weight: float = 0.2,
     lns_destroy: float = 0.1,
     lns_max_destroy: int = 64,
@@ -901,8 +907,11 @@ def run_state_watch(
         )
     )
     last_update = [0.0]
+    actual_iterations = 0
 
     def paint(iteration: int, current: BlockAccountState, best: float) -> None:
+        nonlocal actual_iterations
+        actual_iterations = iteration
         if logger is not None:
             logger.step(iteration, best)
         if plain:
@@ -932,6 +941,7 @@ def run_state_watch(
             iterations=iterations,
             initial=initial,
             on_step=paint,
+            max_seconds=max_seconds,
             lns_weight=lns_weight,
             lns_destroy=lns_destroy,
             lns_max_destroy=lns_max_destroy,
@@ -939,8 +949,8 @@ def run_state_watch(
         view.best_objective = objective
         view.best_values = state_values(state)
         view.windows = view.current_windows()
-        view.iteration = iterations
-        view.evaluations = iterations + 1
+        view.iteration = actual_iterations
+        view.evaluations = actual_iterations + 1
         if live is not None:
             live.update(
                 render_frame(view, optimizer, time.monotonic() - started),
@@ -962,8 +972,8 @@ def run_state_watch(
     return {
         "objective": objective,
         "penalty": sum(window.total_penalty() for window in view.windows),
-        "evaluations": iterations + 1,
-        "iterations": iterations,
+        "evaluations": actual_iterations + 1,
+        "iterations": actual_iterations,
         "blocks": len(state.blocks),
         "elapsed": time.monotonic() - started,
         "schedule": schedule,

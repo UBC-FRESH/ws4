@@ -2641,6 +2641,9 @@ def state_watch(
     years: int = typer.Option(200, help="Simulation horizon"),
     period_width: int = typer.Option(10, help="Years per displayed period"),
     iterations: int = typer.Option(100000, help="SA iterations"),
+    max_seconds: float | None = typer.Option(
+        None, "--max-seconds", help="Stop after this many wall-clock seconds."
+    ),
     accounts: str = typer.Option("", "--accounts", help="Comma-separated watched accounts"),
     refresh: float = typer.Option(2.0, help="Seconds between live repaints"),
     plain: bool = typer.Option(False, "--plain", help="Print one final frame"),
@@ -2704,6 +2707,7 @@ def state_watch(
         schedule_out=schedule_out,
         telemetry_path=telemetry,
         initial=initial,
+        max_seconds=max_seconds,
         lns_weight=lns_weight,
         lns_destroy=lns_destroy,
         lns_max_destroy=lns_max_destroy,
