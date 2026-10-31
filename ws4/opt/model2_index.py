@@ -21,7 +21,23 @@ _INDEX_VERSION = 1
 
 @dataclass
 class CandidateIndex:
-    """Flat candidate-chain index keyed by block and option position."""
+    """Flat candidate-chain index keyed by block and option position.
+
+    Parameters
+    ----------
+    blocks : numpy.ndarray
+        Sorted block ids.
+    chain_offsets : numpy.ndarray
+        Offsets into the chain/event arrays, one per block plus a sentinel.
+    event_offsets : numpy.ndarray
+        Offsets into the event arrays, one per chain plus a sentinel.
+    event_years : numpy.ndarray
+        Treatment year per event.
+    event_labels : numpy.ndarray
+        Integer treatment-label id per event.
+    labels : tuple of str
+        Treatment-label dictionary.
+    """
 
     blocks: np.ndarray
     chain_offsets: np.ndarray
@@ -32,7 +48,18 @@ class CandidateIndex:
 
     @classmethod
     def build(cls, candidates: Candidates) -> CandidateIndex:
-        """Build a compact index from a candidate mapping."""
+        """Build a compact index from a candidate mapping.
+
+        Parameters
+        ----------
+        candidates : mapping of int to sequence of tuple
+            Candidate chains per block.
+
+        Returns
+        -------
+        CandidateIndex
+            The compact index.
+        """
         labels: dict[str, int] = {}
         blocks: list[int] = []
         chain_offsets: list[int] = [0]
@@ -59,7 +86,18 @@ class CandidateIndex:
         )
 
     def save(self, path: str | Path) -> Path:
-        """Write the index to one compressed NumPy archive."""
+        """Write the index to one compressed NumPy archive.
+
+        Parameters
+        ----------
+        path : str or pathlib.Path
+            Destination file.
+
+        Returns
+        -------
+        pathlib.Path
+            The written path.
+        """
         destination = Path(path)
         destination.parent.mkdir(parents=True, exist_ok=True)
         np.savez_compressed(
@@ -76,7 +114,18 @@ class CandidateIndex:
 
     @classmethod
     def load(cls, path: str | Path) -> CandidateIndex:
-        """Load an index written by :meth:`save`."""
+        """Load an index written by :meth:`save`.
+
+        Parameters
+        ----------
+        path : str or pathlib.Path
+            Archive path.
+
+        Returns
+        -------
+        CandidateIndex
+            The loaded index.
+        """
         with np.load(Path(path), allow_pickle=False) as payload:
             version = int(payload["version"][0])
             if version != _INDEX_VERSION:
@@ -91,7 +140,20 @@ class CandidateIndex:
             )
 
     def chain(self, block: int, option: int) -> Chain:
-        """Return one candidate chain by block and option index."""
+        """Return one candidate chain by block and option index.
+
+        Parameters
+        ----------
+        block : int
+            Block id.
+        option : int
+            Candidate option position.
+
+        Returns
+        -------
+        tuple of (str, int)
+            The candidate chain.
+        """
         import bisect
 
         position = bisect.bisect_left(self.blocks.tolist(), int(block))
@@ -108,7 +170,18 @@ class CandidateIndex:
         )
 
     def option_count(self, block: int) -> int:
-        """Return the number of options for one block."""
+        """Return the number of options for one block.
+
+        Parameters
+        ----------
+        block : int
+            Block id.
+
+        Returns
+        -------
+        int
+            Number of candidate options.
+        """
         import bisect
 
         position = bisect.bisect_left(self.blocks.tolist(), int(block))
@@ -117,7 +190,13 @@ class CandidateIndex:
         return int(self.chain_offsets[position + 1] - self.chain_offsets[position])
 
     def to_candidates(self) -> Candidates:
-        """Reconstruct the candidate lists from the flat arrays."""
+        """Reconstruct the candidate lists from the flat arrays.
+
+        Returns
+        -------
+        dict of int to list of tuple
+            Candidate chains per block.
+        """
         candidates: Candidates = {}
         years = self.event_years.tolist()
         labels = self.event_labels.tolist()
