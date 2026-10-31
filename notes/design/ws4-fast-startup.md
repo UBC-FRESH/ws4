@@ -22,6 +22,30 @@ Patchworks keeps **precompiled track state trajectories** and builds a block tra
 each track. Its SA scheduler can start from a blank block schedule immediately because
 evaluating a block is a slice/splice operation, not a simulator run.
 
+
+## Resident block/account/period array
+
+The primary in-memory state is a dense, page-per-period array:
+
+```text
+state[period, block, account]
+```
+
+- one page per simulation period;
+- each page has one row per block and one column per account;
+- the blank schedule fills the base pages;
+- a schedule move writes only the changed block rows for the affected periods;
+- SA reads objective/target values by slicing pages, not by re-evaluating blocks;
+- undo restores the previous row values for the changed block.
+
+Track/age trajectories and splice offsets are the **source of row updates**. They are not
+the resident search state. No per-block simulator object and no candidate-by-cell
+combination is retained.
+
+This array is the WS4 analogue of Patchworks's resident block account state. The c5 sample
+is the first memory/size and exactness test; the array is not applied to TSA24/29 in this
+phase.
+
 ## Architecture target
 
 ```text
