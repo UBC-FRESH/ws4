@@ -56,11 +56,12 @@ The resident model has two contributions to a period page:
 ```text
 state[period, block, feature_account]       # track/age pages
 event[period, block, product_account]       # treatment-event rows
-chart[period, account] = state_total + event_total
+chart[period, account] = the value for that account's source only
 ```
 
-A schedule move updates both the block's feature row and its event rows. The chart projection
-adds the two totals; it does not read product values from a track trajectory.
+A schedule move updates both the block's feature row and its event rows. Each chart account
+reads only its own source: a feature account reads the state pages; a product account reads
+the event rows. The chart must not sum feature and product account values together.
 
 ### Live chart read path
 

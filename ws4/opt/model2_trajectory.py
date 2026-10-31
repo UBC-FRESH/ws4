@@ -236,13 +236,15 @@ class BlockAccountState:
             self.event_state[:, index, :] = event_row
             self.state_totals += state_row
             self.event_totals += event_row
-            self.period_totals += state_row + event_row
+        self._project()
 
     def _period_rows(self, block: int, events: Sequence[tuple[str, int]]) -> tuple[Any, Any]:
         """Return feature/state and treatment-event period rows."""
         import numpy as np
 
-        cells = self.trajectory.block_cells(block, events, accounts=self.accounts)
+        cells = self.trajectory.block_cells(
+            block, events, feature_offsets=range(self.years), accounts=self.accounts
+        )
         state_row = np.zeros((self.periods, len(self.accounts)), dtype=np.float64)
         event_row = np.zeros((self.periods, len(self.accounts)), dtype=np.float64)
         latest: dict[tuple[int, int], tuple[int, float]] = {}
@@ -261,6 +263,14 @@ class BlockAccountState:
         for (period, column), (_offset, value) in latest.items():
             state_row[period, column] += value
         return state_row, event_row
+
+    def _project(self) -> None:
+        """Rebuild the per-account chart projection from the correct source."""
+        for column, account in enumerate(self.accounts):
+            if account.startswith("feature."):
+                self.period_totals[:, column] = self.state_totals[:, column]
+            else:
+                self.period_totals[:, column] = self.event_totals[:, column]
 
     def set_block(self, block: int, events: Sequence[tuple[str, int]]) -> None:
         """Replace one block's rows and update the chart projection."""
