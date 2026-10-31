@@ -27,6 +27,7 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `design/ws4-architecture.md` — the architecture design.
 - `design/ws4-optimization-stack.md` — the optimization stack and the execution substrate.
 - `design/ws4-matrix-builder-and-interop.md` — the ForestModelXML recipe, the matrix builder, and legacy ingestion.
+- `design/ws4-fast-startup.md` — P84 resident Model II startup and state-watch plan.
 - `design/ws4-performance.md` — the post-release performance and scalability plan (profiling, bottlenecks, targets).
 - `design/ws4-curve-grid.md` — the shared age-grid curve-table spike (data-layout change for the numeric core).
 - `design/ws4-join-rebuild.md` — the fast fragment-to-feature join rebuild spike (cold-path cost).
@@ -87,3 +88,4 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `adr/0010-telemetry-meta-portfolio.md` — telemetry-driven tuning and a meta-meta-heuristic portfolio.
 - `adr/0011-forestmodelxml-and-legacy-ingestion.md` — adopt the established ForestModelXML format and support legacy datasets.
 - `adr/0012-file-and-programmatic-paths.md` — two model-construction paths, file-based and programmatic.
+- `reports/p84-state-watch.md` — resident Model II state watcher on the c5 sample.
