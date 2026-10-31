@@ -3608,8 +3608,10 @@ issue comments.
   ledger to **2.0e-11** on base values and **9.1e-13** on block effects. A 5k run
   against the partially built TSA41 cache took **50.6 s** end-to-end with MILP and
   exact replay, versus **207 s** without the cache. The full TSA41 state-cache
-  build is running separately. Evidence:
-  `notes/reports/carbon-tsa41-5k-removal-ga.md`.
+  build is running separately. A full 148,828-block TSA41 run with the partial
+  cache removed the 976 s table build and reproduced the exact 213,103,705 tCO2e
+  schedule; total 1,069.5 s while the cache builder was still competing for CPU.
+  Evidence: `notes/reports/carbon-tsa41-5k-removal-ga.md`.
 
 - P83 GPU command: added `ws4 gpu-run`, which loads the content-validated simulator and
   candidate caches, a persisted effect table, and the resident session; it runs one or more
@@ -3617,4 +3619,3 @@ issue comments.
   `IncrementalObjective`. The command does not rebuild the target-specific table and
   exposes `--rebuild-caches`. Documented in `docs/reference/optimizer.rst`; CLI help test
   added. Dashboard: GREEN.
-
