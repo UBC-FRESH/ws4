@@ -3639,3 +3639,11 @@ issue comments.
   non-carbon cells come from the simulator. The public `fresh-cbm` package also
   gained CI, JSON-Schema manifest validation, and install/build checks on Python
   3.11/3.12. Dashboard: GREEN.
+
+- P84 resident Model II state watcher: added a compact candidate index and a c5-only
+  resident-state watcher (`ws4 state-watch`) with `state[period, block, account]` pages,
+  separate treatment-event product rows, a period-total chart projection, and blank-schedule
+  SA. c5 state objective matched the fresh exact evaluator; wall-clock was 6.44 s versus
+  the 6.03 s one-iteration baseline. This is an exact architecture prototype, not yet a
+  speed win. Evidence: `notes/reports/p84-state-watch.md`. No TSA24/29 run.
+

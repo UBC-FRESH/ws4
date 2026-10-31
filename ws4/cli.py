@@ -2618,6 +2618,66 @@ def gpu_run(
         json_out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
 
 
+@app.command("state-watch")
+def state_watch(
+    dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
+    targets: Path = typer.Option(..., exists=True, help="Targets YAML"),
+    candidate_index: Path = typer.Option(..., exists=True, help="Compact candidate index .npz"),
+    years: int = typer.Option(200, help="Simulation horizon"),
+    period_width: int = typer.Option(10, help="Years per displayed period"),
+    iterations: int = typer.Option(100000, help="SA iterations"),
+    accounts: str = typer.Option("", "--accounts", help="Comma-separated watched accounts"),
+    refresh: float = typer.Option(2.0, help="Seconds between live repaints"),
+    plain: bool = typer.Option(False, "--plain", help="Print one final frame"),
+    schedule_out: Path | None = typer.Option(None, help="Write final schedule CSV"),
+) -> None:
+    """Watch the resident Model II state with a compact candidate index."""
+    from .opt.engine import OptimizeConfig, Optimizer
+    from .opt.incremental import IncrementalObjective
+    from .opt.model2_index import CandidateIndex
+    from .opt.model2_trajectory import BlockAccountState, TrackTrajectory, run_state_watch
+    from .opt.objective import load_targets
+
+    target_list = load_targets(targets)
+    account_list = tuple(value.strip() for value in accounts.split(",") if value.strip())
+    if not account_list:
+        account_list = tuple(sorted({target.account for target in target_list}))
+    optimizer = Optimizer.from_dataset(
+        dataset,
+        OptimizeConfig(years=years, targets_path=str(targets), iterations=1, threads=1),
+    )
+    trajectory = TrackTrajectory.build(optimizer.simulator(), years, account_list)
+    state = BlockAccountState(
+        trajectory,
+        sorted(int(block) for block in optimizer.simulator().fragments["block_id"].unique()),
+        account_list,
+        years=years,
+        period_width=period_width,
+    )
+    index = CandidateIndex.load(candidate_index)
+    summary = run_state_watch(
+        state,
+        index,
+        target_list,
+        account_list,
+        optimizer,
+        iterations=iterations,
+        period_width=period_width,
+        refresh=refresh,
+        plain=plain,
+        schedule_out=schedule_out,
+    )
+    exact = IncrementalObjective(optimizer, target_list)
+    exact.reset(summary["schedule"])
+    if not math.isclose(exact.objective, summary["objective"], rel_tol=1e-9, abs_tol=1e-6):
+        raise typer.Exit(code=1)
+    table = Table(title="State watch")
+    for key in ("objective", "penalty", "evaluations", "iterations", "blocks", "elapsed"):
+        table.add_row(key, str(summary[key]))
+    table.add_row("verified_objective", str(exact.objective))
+    print(table)
+
+
 app.add_typer(recovery_app, name="recovery")
 app.add_typer(species_app, name="species")
 app.add_typer(resilience_app, name="resilience")

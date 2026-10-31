@@ -9,7 +9,9 @@ will use.
 
 from __future__ import annotations
 
+from collections.abc import Callable, Collection
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -38,11 +40,16 @@ class TrackTrajectory:
     feature_values: dict[int, dict[str, list[float]]]
 
     @classmethod
-    def build(cls, simulator: Simulator, years: int) -> TrackTrajectory:
+    def build(
+        cls, simulator: Simulator, years: int, accounts: Collection[str] | None = None
+    ) -> TrackTrajectory:
         """Precompute track feature trajectories for the full horizon."""
+        wanted = None if accounts is None else set(accounts)
         values: dict[int, dict[str, list[float]]] = {}
         for track, features in simulator._track_features.items():
-            labels = {label: curve for curve, label in features}
+            labels = {
+                label: curve for curve, label in features if wanted is None or label in wanted
+            }
             track_values = {
                 label: [simulator._curve_value(curve, age) for age in range(years)]
                 for label, curve in labels.items()
@@ -325,21 +332,32 @@ def run_state_sa(
     seed: int = 1,
     temperature: float = 1000.0,
     cooling: float = 0.99,
+    on_step: Callable[[int, BlockAccountState, float], None] | None = None,
 ) -> tuple[dict[int, tuple[tuple[str, int], ...]], float]:
     """Run a small SA loop over compact block option indices using resident pages."""
     import math
     import random
 
+    from .model2_index import CandidateIndex
+
     rng = random.Random(seed)
-    blocks = [block for block in state.blocks if candidates.get(block)]
+    index = candidates if isinstance(candidates, CandidateIndex) else None
+    blocks = (
+        [int(block) for block in index.blocks.tolist()]
+        if index is not None
+        else [block for block in state.blocks if candidates.get(block)]
+    )
     schedule: dict[int, tuple[tuple[str, int], ...]] = {}
     current = state_objective(state, targets)
     best = current
     best_schedule: dict[int, tuple[tuple[str, int], ...]] = {}
     temp = temperature
-    for _ in range(iterations):
+    for iteration in range(1, iterations + 1):
         block = rng.choice(blocks)
-        chain = rng.choice(candidates[block])
+        if index is not None:
+            chain = index.chain(block, rng.randrange(index.option_count(block)))
+        else:
+            chain = rng.choice(candidates[block])
         previous = schedule.get(block)
         schedule[block] = chain
         state.set_block(block, chain)
@@ -351,7 +369,123 @@ def run_state_sa(
                 best = candidate
                 best_schedule = dict(schedule)
         else:
-            schedule.pop(block, None) if previous is None else schedule.__setitem__(block, previous)
+            if previous is None:
+                schedule.pop(block, None)
+            else:
+                schedule[block] = previous
             state.set_block(block, previous or ())
+        if on_step is not None:
+            on_step(iteration, state, best)
         temp *= cooling
     return best_schedule, best
+
+
+def state_values(state: BlockAccountState) -> Any:  # noqa: ANN401
+    """Return the resident period totals as an offset/account/value frame."""
+    import pandas as pd
+
+    rows: list[dict[str, Any]] = []
+    for period in range(state.periods):
+        year = min(state.years - 1, (period + 1) * state.period_width - 1)
+        for column, account in enumerate(state.accounts):
+            rows.append(
+                {
+                    "offset": year,
+                    "account": account,
+                    "value": float(state.period_totals[period, column]),
+                }
+            )
+    return pd.DataFrame(rows)
+
+
+def run_state_watch(
+    state: BlockAccountState,
+    candidates: Any,  # noqa: ANN401
+    targets: Sequence[Any],
+    accounts: Sequence[str],
+    optimizer: Any,  # noqa: ANN401
+    *,
+    iterations: int,
+    period_width: int = 10,
+    label: str | None = None,
+    refresh: float = 2.0,
+    plain: bool = False,
+    console: Any | None = None,  # noqa: ANN401
+    schedule_out: Path | None = None,
+) -> dict[str, Any]:
+    """Run the resident-state SA and paint target windows from the period pages."""
+    import time
+
+    from rich.console import Console
+    from rich.live import Live
+
+    from .watch import WatchState, render_frame
+
+    console = console if console is not None else Console()
+    view = WatchState(
+        label=label if label is not None else "+".join(accounts),
+        accounts=tuple(accounts),
+        period_width=period_width,
+        years=state.years,
+        targets=tuple(targets),
+    )
+    view.blocks = len(state.blocks)
+    cfg = optimizer.cfg
+    cfg.iterations = iterations
+    cfg.metaheuristic = "state-sa"
+    started = time.monotonic()
+    live: Any = (
+        None
+        if plain
+        else Live(
+            console=console,
+            auto_refresh=True,
+            refresh_per_second=1.0 / max(refresh, 0.1),
+        )
+    )
+    last_update = [0.0]
+
+    def paint(iteration: int, current: BlockAccountState, best: float) -> None:
+        now = time.monotonic()
+        if not plain and now - last_update[0] < refresh and iteration != iterations:
+            return
+        last_update[0] = now
+        view.best_objective = best
+        view.best_values = state_values(current)
+        view.windows = view.current_windows()
+        view.iteration = iteration
+        view.evaluations = iteration + 1
+        if live is not None:
+            live.update(
+                render_frame(view, optimizer, now - started),
+                refresh=True,
+            )
+
+    schedule, objective = run_state_sa(
+        state, candidates, targets, iterations=iterations, on_step=paint
+    )
+    state.set_schedule(schedule)
+    view.best_objective = objective
+    view.best_values = state_values(state)
+    view.windows = view.current_windows()
+    view.iteration = iterations
+    view.evaluations = iterations + 1
+    if live is not None:
+        with live:
+            live.update(render_frame(view, optimizer, time.monotonic() - started))
+        console.print()
+    else:
+        console.print(render_frame(view, optimizer, time.monotonic() - started))
+    if schedule_out is not None:
+        from .archive import write_schedule
+
+        write_schedule(schedule_out, schedule)
+    return {
+        "objective": objective,
+        "penalty": sum(window.total_penalty() for window in view.windows),
+        "evaluations": iterations + 1,
+        "iterations": iterations,
+        "blocks": len(state.blocks),
+        "elapsed": time.monotonic() - started,
+        "schedule": schedule,
+    }
