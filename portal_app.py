@@ -17,7 +17,8 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
+import httpx
 
 from ws4.web.app import create_app
 
@@ -347,10 +348,49 @@ def _landing() -> str:
   <h1>Open a forest model.</h1>
   <p class="lead">Launch any public FEMIC instance in the WS4 web UI. Searches use the resident-state accelerated engine on one CPU core. Choose a model below to edit targets, run a schedule, inspect the map, reports, and the embedded assistant.</p>
   <div class="doors">{''.join(cards)}</div>
-  <footer>WS4 public demo · {ready} runnable instance{'s' if ready != 1 else ''} · resident-state search · one CPU core · embedded agent enabled</footer>
+  <footer>WS4 public demo · {ready} runnable instance{'s' if ready != 1 else ''} · resident-state search · one CPU core · embedded agent enabled · <a href="/studio/">FHOPS Scenario Studio</a></footer>
 </main>
 </body>
 </html>'''
+
+
+STUDIO_UPSTREAM = os.environ.get("FHOPS_STUDIO_URL", "http://127.0.0.1:8791")
+
+
+@app.get("/studio")
+def studio_root_redirect() -> RedirectResponse:
+    return RedirectResponse("/studio/", status_code=302)
+
+
+@app.get("/replay")
+def replay_redirect(request: Request) -> RedirectResponse:
+    target = "/studio/replay"
+    if request.url.query:
+        target += "?" + request.url.query
+    return RedirectResponse(target, status_code=302)
+
+
+@app.api_route("/studio/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"])
+async def studio_proxy(request: Request, path: str) -> Response:
+    query = request.url.query
+    upstream = STUDIO_UPSTREAM.rstrip("/") + "/" + path
+    if query:
+        upstream += "?" + query
+    headers = {
+        key: value for key, value in request.headers.items()
+        if key.lower() not in {"host", "content-length", "connection", "accept-encoding"}
+    }
+    headers["x-forwarded-prefix"] = "/studio"
+    try:
+        async with httpx.AsyncClient(timeout=120.0, follow_redirects=False) as client:
+            answer = await client.request(request.method, upstream, content=await request.body(), headers=headers)
+    except httpx.HTTPError as exc:
+        return JSONResponse({"detail": f"Studio upstream unavailable: {exc}"}, status_code=502)
+    response_headers = {
+        key: value for key, value in answer.headers.items()
+        if key.lower() not in {"content-encoding", "content-length", "transfer-encoding", "connection", "set-cookie"}
+    }
+    return Response(content=answer.content, status_code=answer.status_code, headers=response_headers)
 
 
 @app.get("/", response_class=HTMLResponse)
