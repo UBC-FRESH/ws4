@@ -7,6 +7,7 @@ import math
 import shutil
 import time
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 import typer
@@ -2622,7 +2623,12 @@ def gpu_run(
 def state_watch(
     dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
     targets: Path = typer.Option(..., exists=True, help="Targets YAML"),
-    candidate_index: Path = typer.Option(..., exists=True, help="Compact candidate index .npz"),
+    candidate_index: Path | None = typer.Option(
+        None, "--candidate-index", exists=True, help="Compact candidate index .npz"
+    ),
+    candidate_cache: Path | None = typer.Option(
+        None, "--candidate-cache", exists=True, help="Treated candidate pickle cache"
+    ),
     initial_schedule: Path | None = typer.Option(
         None, "--initial-schedule", exists=True, help="Initial schedule CSV"
     ),
@@ -2667,7 +2673,16 @@ def state_watch(
         period_width=period_width,
         skip_empty=seed_state is not None,
     )
-    index = CandidateIndex.load(candidate_index)
+    if candidate_index is None and candidate_cache is None:
+        raise typer.BadParameter("provide --candidate-index or --candidate-cache")
+    if candidate_index is not None:
+        index: Any = CandidateIndex.load(candidate_index)
+    else:
+        import pickle
+
+        with Path(candidate_cache).open("rb") as stream:  # type: ignore[arg-type]
+            payload = pickle.load(stream)
+        index = payload.get("candidates", payload) if isinstance(payload, dict) else payload
     initial = load_schedule_csv(initial_schedule) if initial_schedule is not None else None
     if seed_state is not None:
         state.load_seed(seed_state)
