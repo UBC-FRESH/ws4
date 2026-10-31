@@ -179,6 +179,20 @@ workers, so the exact replay was contended. Even so, the table-build phase
 disappeared and the schedule reproduced exactly. The remaining cost is the exact
 replay, not carbon state construction.
 
+## State-cache release
+
+The TSA41 cache finished:
+
+- 5,273 states × 51 chains
+- **2.85 GB**, 55 release assets
+- build: **10,991 s (3h03)**
+- validation: 102 sampled state/offset rows, **max absolute error 0**
+- release: https://github.com/UBC-FRESH/fresh-cbm/releases/tag/v0.1.0-tsa41
+
+The release includes `manifest.json`, `index.parquet`, all 52 value arrays,
+`SHA256SUMS`, and `release.json`. The repository remains private pending a
+visibility decision.
+
 ## Production command
 
 `ws4 carbon-removal` implements this path:
