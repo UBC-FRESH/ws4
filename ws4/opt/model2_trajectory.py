@@ -898,27 +898,34 @@ def run_state_watch(
                 refresh=True,
             )
 
-    schedule, objective = run_state_sa(
-        state,
-        candidates,
-        targets,
-        iterations=iterations,
-        initial=initial,
-        on_step=paint,
-        lns_weight=lns_weight,
-        lns_destroy=lns_destroy,
-        lns_max_destroy=lns_max_destroy,
-    )
-    view.best_objective = objective
-    view.best_values = state_values(state)
-    view.windows = view.current_windows()
-    view.iteration = iterations
-    view.evaluations = iterations + 1
     if live is not None:
-        with live:
-            live.update(render_frame(view, optimizer, time.monotonic() - started))
-        console.print()
-    else:
+        live.start(refresh=True)
+    try:
+        schedule, objective = run_state_sa(
+            state,
+            candidates,
+            targets,
+            iterations=iterations,
+            initial=initial,
+            on_step=paint,
+            lns_weight=lns_weight,
+            lns_destroy=lns_destroy,
+            lns_max_destroy=lns_max_destroy,
+        )
+        view.best_objective = objective
+        view.best_values = state_values(state)
+        view.windows = view.current_windows()
+        view.iteration = iterations
+        view.evaluations = iterations + 1
+        if live is not None:
+            live.update(
+                render_frame(view, optimizer, time.monotonic() - started),
+                refresh=True,
+            )
+    finally:
+        if live is not None:
+            live.stop()
+    if live is None:
         console.print(render_frame(view, optimizer, time.monotonic() - started))
     if schedule_out is not None:
         from .archive import write_schedule
