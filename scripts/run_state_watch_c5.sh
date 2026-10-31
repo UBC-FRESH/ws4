@@ -2,12 +2,13 @@
 # Run the live c5 resident-state watcher.
 #
 # Usage:
-#   bash scripts/run_state_watch_c5.sh
-#   ITERATIONS=20000 REFRESH=1 bash scripts/run_state_watch_c5.sh
-#   PLAIN=1 bash scripts/run_state_watch_c5.sh
+#   bash scripts/run_state_watch_c5.sh [iterations]
+#   bash scripts/run_state_watch_c5.sh 100000
+#   REFRESH=1 PLAIN=1 bash scripts/run_state_watch_c5.sh 20000
 #
 # Environment:
-#   ITERATIONS   Search iterations (default: 100000)
+#   ITERATIONS   Default search iterations when no positional value is given
+#                (default: 100000)
 #   REFRESH      Live repaint seconds (default: 2)
 #   PLAIN=1      Print one final frame instead of the live TUI
 #   C5_ROOT      c5 fixture root (default: /srv/shared-data/gep/ws4/ws4/tmp/parity2025)
@@ -30,6 +31,10 @@ SEED="${SEED:-$C5_ROOT/scenarios/c5-base/seed_stage1.csv}"
 INDEX="$WORK/c5-candidates.npz"
 SEED_STATE="$WORK/c5-seed-state.npz"
 ITERATIONS="${ITERATIONS:-100000}"
+if [[ $# -gt 0 && "$1" =~ ^[0-9]+$ ]]; then
+  ITERATIONS="$1"
+  shift
+fi
 REFRESH="${REFRESH:-2}"
 
 export PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}"
