@@ -40,3 +40,7 @@ ws4_skeleton.zip
 # Coverage
 .coverage
 coverage.xml
+
+# WS4 public portal
+runs/
+cache/

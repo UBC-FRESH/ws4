@@ -113,7 +113,7 @@
           <label>Patience <input id="run-patience" type="number" value="0" min="0" step="1" title="stop after N iterations without an improvement; 0 = off"></label>
           <label>Time <input id="run-time-limit" type="text" placeholder="HH:MM:SS" size="9"></label>
           <label>Years <input id="run-years" type="number" value="50" min="1" step="1"></label>
-          <label>Islands <input id="run-islands" type="number" value="8" min="1" max="64" step="1" title="parallel independent searches; 1 = one core"></label>
+          <span class="state-engine-pill" title="Resident-state accelerated search; one CPU core">state · 1 core</span>
           <label>Seed <input id="run-seed" type="number" value="1" step="1"></label>
           <button id="start-run" title="start the solver; it runs until you stop it">Solve</button>
           <button id="stop-run" hidden>Stop</button>
@@ -123,7 +123,7 @@
           <span id="run-detail">idle</span>
           <svg id="spark" width="140" height="26" aria-label="objective trajectory"></svg>
         </div>
-        <p id="run-status" class="hint"></p>
+        <p id="run-status" class="hint">Runs use the resident-state accelerated engine on one CPU core; no island workers.</p>
         <p id="targets-status" class="hint"></p>
         </div>
       </section>

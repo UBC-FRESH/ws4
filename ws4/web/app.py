@@ -696,6 +696,7 @@ def create_app(
     land_base: Path | None = None,
     allow_runs: bool = False,
     initial_schedule: Path | None = None,
+    state_config: dict[str, Any] | None = None,
     allow_agent: bool = False,
     agent_model: str = "opencode-go/deepseek-v4.1-flash",
     agent_cwd: Path | None = None,
@@ -778,6 +779,7 @@ def create_app(
     initial_schedule_path = (
         Path(initial_schedule).resolve() if initial_schedule is not None else None
     )
+    state_settings = dict(state_config) if state_config is not None else None
     topology_path = Path(topology).resolve() if topology is not None else None
     patch_accounts_path = Path(patch_accounts).resolve() if patch_accounts is not None else None
     spread_accounts_path = Path(spread_accounts).resolve() if spread_accounts is not None else None
@@ -1009,6 +1011,55 @@ def create_app(
         """Return the CLI command for a web-started search; only known options are passed."""
         if targets_path is None:
             raise HTTPException(status_code=422, detail="the service was started without --targets")
+        if state_settings is not None:
+            command = [
+                sys.executable,
+                "-m",
+                "ws4.web.state_runner",
+                "--dataset",
+                str(dataset),
+                "--targets",
+                str(targets_path),
+                "--out",
+                str(out),
+                "--iterations",
+                str(iterations),
+                "--years",
+                str(years),
+            ]
+            for key, flag in (
+                ("candidate_index", "--candidate-index"),
+                ("candidate_cache", "--candidate-cache"),
+                ("seed_state", "--seed-state"),
+                ("initial_schedule", "--initial-schedule"),
+            ):
+                value = state_settings.get(key)
+                if value:
+                    command.extend([flag, str(value)])
+            initial = state_settings.get("initial_schedule") or initial_schedule_path
+            if initial is not None and not state_settings.get("initial_schedule"):
+                command.extend(["--initial-schedule", str(initial)])
+            for key, flag in (
+                ("accounts", "--accounts"),
+                ("period_width", "--period-width"),
+                ("lns_weight", "--lns-weight"),
+                ("lns_destroy", "--lns-destroy"),
+                ("lns_max_destroy", "--lns-max-destroy"),
+            ):
+                value = state_settings.get(key)
+                if value not in (None, ""):
+                    command.extend([flag, str(value)])
+            for key, flag in (
+                ("topology", "--topology"),
+                ("patch_accounts", "--patch-accounts"),
+                ("spread_accounts", "--spread-accounts"),
+                ("block_coordinates", "--block-coordinates"),
+                ("route_config", "--route-config"),
+            ):
+                value = state_settings.get(key)
+                if value:
+                    command.extend([flag, str(value)])
+            return command
         command = [
             sys.executable,
             "-m",
@@ -1068,6 +1119,12 @@ def create_app(
         islands = 1 if requested_islands is None else int(requested_islands)
         time_limit = str(payload.get("time_limit", "") or "")
         patience = int(payload.get("patience", 0) or 0)
+        if state_settings is not None:
+            # State-watch is deliberately one core; the islands control is not used.
+            islands = 1
+            if continuous:
+                iterations = int(state_settings.get("default_iterations", 5000))
+                continuous = False
         if not 1 <= iterations <= 1_000_000_000 or not 1 <= years <= 1000:
             raise HTTPException(status_code=422, detail="iterations or years are out of range")
         if not 0 <= patience <= 1_000_000_000:
@@ -1093,6 +1150,7 @@ def create_app(
             "seed": seed,
             "years": years,
             "islands": islands,
+            "engine": "state" if state_settings is not None else "optimize",
             "time_limit": time_limit,
             "patience": patience,
         }
@@ -1107,6 +1165,8 @@ def create_app(
         path = directory / "control.json"
         path.write_text(json.dumps({"action": action}) + "\n", encoding="utf-8")
         process = processes.get(run)
+        if action == "stop" and process is not None and process.poll() is None:
+            process.terminate()
         return {
             "id": run,
             "action": action,

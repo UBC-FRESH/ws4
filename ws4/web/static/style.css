@@ -456,3 +456,15 @@ details.layer-group[open] > summary { margin-bottom:.2rem; }
 }
 .live-badge { display:inline-block; padding:.1rem .32rem; border-radius:999px; background:#d9f2e2; color:#12643a; font-size:.66rem; font-weight:700; letter-spacing:.05em; }
 .live-badge[hidden] { display:none !important; }
+
+.state-engine-pill {
+  align-self: center;
+  border: 1px solid #5b7c68;
+  border-radius: 999px;
+  padding: .28rem .6rem;
+  background: #eef7f1;
+  color: #205c3a;
+  font-size: .74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}

@@ -626,10 +626,12 @@ def run_state_sa(
     rng = random.Random(seed)
     index = candidates if isinstance(candidates, CandidateIndex) else None
     blocks = (
-        [int(block) for block in index.blocks.tolist()]
+        [int(block) for block in index.blocks.tolist() if index.option_count(int(block)) > 0]
         if index is not None
         else [block for block in state.blocks if candidates.get(block)]
     )
+    if not blocks:
+        raise ValueError("state search has no blocks with candidate options")
     schedule: dict[int, tuple[tuple[str, int], ...]] = dict(initial or {})
     if schedule and not state._seed_loaded:
         state.set_schedule(schedule)
@@ -648,7 +650,11 @@ def run_state_sa(
 
     def option(block: int) -> tuple[tuple[str, int], ...]:
         if index is not None:
-            return index.chain(block, rng.randrange(index.option_count(block)))
+            count = index.option_count(block)
+            if count <= 0:
+                block = rng.choice(blocks)
+                count = index.option_count(block)
+            return index.chain(block, rng.randrange(max(1, count)))
         return rng.choice(candidates[block])
 
     def random_move() -> dict[int, tuple[tuple[str, int], ...] | None]:
@@ -802,6 +808,7 @@ def run_state_watch(
     plain: bool = False,
     console: Any | None = None,  # noqa: ANN401
     schedule_out: Path | None = None,
+    telemetry_path: Path | None = None,
     initial: dict[int, tuple[tuple[str, int], ...]] | None = None,
     lns_weight: float = 0.2,
     lns_destroy: float = 0.1,
@@ -857,6 +864,21 @@ def run_state_watch(
     from .watch import WatchState, render_frame
 
     console = console if console is not None else Console()
+    logger = None
+    if telemetry_path is not None:
+        from .telemetry import RunLogger
+
+        logger = RunLogger(
+            telemetry_path,
+            run_id=label if label is not None else "state-watch",
+            config={
+                "dataset": "",
+                "targets": str(optimizer.cfg.targets_path or ""),
+                "iterations": iterations,
+                "period_width": period_width,
+                "years": state.years,
+            },
+        )
     view = WatchState(
         label=label if label is not None else "+".join(accounts),
         accounts=tuple(accounts),
@@ -892,6 +914,8 @@ def run_state_watch(
         view.windows = view.current_windows()
         view.iteration = iteration
         view.evaluations = iteration + 1
+        if logger is not None:
+            logger.step(iteration, best)
         if live is not None:
             live.update(
                 render_frame(view, optimizer, now - started),
@@ -927,6 +951,9 @@ def run_state_watch(
             live.stop()
     if live is None:
         console.print(render_frame(view, optimizer, time.monotonic() - started))
+    if logger is not None:
+        logger.step(iterations, objective)
+        logger.close()
     if schedule_out is not None:
         from .archive import write_schedule
 
