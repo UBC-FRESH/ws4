@@ -60,5 +60,7 @@ ITERATIONS="$STATE_ITERATIONS" \
 SCHEDULE_OUT="$STATE_SCHEDULE" \
 bash "$ROOT/scripts/run_state_watch_tsa24.sh"
 
+cp "$STATE_SCHEDULE" "$WORK/gpu-next-seed.csv"
 echo "GPU elite:       $GPU_SCHEDULE"
 echo "State-refined:   $STATE_SCHEDULE"
+echo "Next GPU seed:   $WORK/gpu-next-seed.csv"
