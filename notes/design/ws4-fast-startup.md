@@ -1,6 +1,6 @@
 # P84: Fast Model II startup via spliced track trajectories
 
-Status: active
+Status: prototype complete (c5 acceptance)
 Phase: P84
 Issue: #613
 Date: 2026-10-31
@@ -141,10 +141,27 @@ the event yields, with the block's area multiplying every cell.
 
 ### P84.4 Blank-schedule SA and watcher
 
-- Start SA from a blank schedule; no seeded categorical reset.
+- Start SA from a blank schedule; no seeded categorical reset is required.
 - Use spliced objective increments for search; exact replay at checkpoints/final.
 - Make the watcher load the resident substrate once.
 - Acceptance: c5 startup breakdown and first frame recorded; no TSA24/29 acceptance run.
+
+### P84.5 Incremental resident rows
+
+- Cache one absolute feature/event row per `(block, candidate option)` on first use.
+- Apply the cached row to the state pages and the period totals; do not call the splice
+  evaluator again for a cached option.
+- Build rows directly from fragment segments, with watched product curves filtered once.
+- Bound the option cache so a long search cannot grow without limit.
+- Persist and reload seeded resident pages so the seed initialization is paid once.
+- Acceptance: exact final objective and a faster search than the uncached path.
+
+### P84.6 Move-policy parity
+
+- Use toggle, shift, swap, and bounded LNS moves, matching the baseline operator mix.
+- Warm up with assignment/LNS diversification before switching to the mixed operators.
+- Cache candidate-index positions so operator selection does not rebuild index lists.
+- Acceptance: c5 1k and 100k comparisons against the baseline watcher.
 
 ## Non-goals
 
@@ -152,8 +169,17 @@ the event yields, with the block's area multiplying every cell.
 - No change to target semantics or exactness.
 - No claim of parity with Patchworks until c5 splicing is exact and measured.
 
+## Acceptance results
+
+On c5, the resident-state watcher is now faster than the baseline at 1k and 100k while
+remaining exact. The 1k resident run is 5.04 s wall / 32.31M objective versus 6.95 s /
+44.93M for the baseline. The 100k resident run is 71.46 s wall / 10.46M versus 120.88 s /
+10.29M for the baseline. The 100k state run is therefore faster but slightly behind in
+quality; the 1k run is better on both. See `notes/reports/p84-state-watch.md` for the
+full breakdown.
+
 ## Baseline
 
-Current c5 sample `watch --iterations 1 --plain` is ~6.0 s wall, with candidate generation
-~3.2 s and ~1.4M candidate chains. The target is to eliminate both candidate generation and
-the full categorical seed reset from startup.
+The original baseline `watch --iterations 1 --plain` was ~6.0 s wall, with candidate
+generation ~3.2 s and ~1.4M candidate chains. The state path replaces candidate
+generation with the compact index and avoids a per-move splice rebuild.

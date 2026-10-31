@@ -292,6 +292,7 @@ class BlockAccountState:
         *,
         years: int,
         period_width: int,
+        skip_empty: bool = False,
     ) -> None:
         import numpy as np
 
@@ -317,39 +318,132 @@ class BlockAccountState:
         self.state_totals = np.zeros((self.periods, len(self.accounts)), dtype=np.float64)
         self.event_totals = np.zeros((self.periods, len(self.accounts)), dtype=np.float64)
         self.period_totals = np.zeros((self.periods, len(self.accounts)), dtype=np.float64)
-        for block in self.blocks:
-            state_row, event_row = self._period_rows(block, ())
-            index = self.block_index[block]
-            self.state[:, index, :] = state_row
-            self.event_state[:, index, :] = event_row
-            self.state_totals += state_row
-            self.event_totals += event_row
+        # Per-block/option absolute rows; the SA applies these cached rows to the pages.
+        from collections import OrderedDict
+
+        self._row_cache: OrderedDict[tuple[int, tuple[tuple[str, int], ...]], tuple[Any, Any]] = (
+            OrderedDict()
+        )
+        self._row_cache_limit = 250_000
+        self._seed_loaded = False
+        self._fragment_cache: dict[int, tuple[list[int], list[int], list[float]]] = {}
+        # Filter treatment products down to the watched product accounts once.
+        self._product_curves: dict[tuple[int, str], tuple[tuple[Any, int], ...]] = {}
+        for (track, treatment), products in self.trajectory.simulator._products_by_key.items():
+            wanted = tuple(
+                (curve, self.account_index[label])
+                for curve, label in products
+                if label in self.account_index and not label.startswith("feature.")
+            )
+            if wanted:
+                self._product_curves[(int(track), str(treatment))] = wanted
+        if not skip_empty:
+            for block in self.blocks:
+                state_row, event_row = self._row_for(block, ())
+                index = self.block_index[block]
+                self.state[:, index, :] = state_row
+                self.event_state[:, index, :] = event_row
+                self.state_totals += state_row
+                self.event_totals += event_row
         self._project()
 
+    def _row_for(self, block: int, events: Sequence[tuple[str, int]]) -> tuple[Any, Any]:
+        """Return cached state/event period rows for one block option."""
+        key = (int(block), tuple((str(treatment), int(year)) for treatment, year in events))
+        cached = self._row_cache.get(key)
+        if cached is None:
+            cached = self._period_rows(int(block), key[1])
+            if len(self._row_cache) >= self._row_cache_limit:
+                self._row_cache.popitem(last=False)
+            self._row_cache[key] = cached
+        else:
+            self._row_cache.move_to_end(key)
+        return cached
+
+    def _fragments(self, block: int) -> tuple[list[int], list[int], list[float]]:
+        """Return cached fragment tracks, initial ages, and areas for one block."""
+        cached = self._fragment_cache.get(int(block))
+        if cached is None:
+            simulator = self.trajectory.simulator
+            positions = simulator._block_index().get(int(block), [])
+            arrays_track, arrays_offset, arrays_area = simulator._fragment_arrays()
+            cached = (
+                [int(value) for value in arrays_track[positions]],
+                [int(value) for value in arrays_offset[positions]],
+                [float(value) for value in arrays_area[positions]],
+            )
+            self._fragment_cache[int(block)] = cached
+        return cached
+
     def _period_rows(self, block: int, events: Sequence[tuple[str, int]]) -> tuple[Any, Any]:
-        """Return feature/state and treatment-event period rows."""
+        """Return feature/state and treatment-event period rows.
+
+        The implementation walks each fragment's splice segments directly.  It avoids
+        materializing a checkpoint dictionary for every candidate option, which is the hot
+        path for SA and LNS moves.
+        """
         import numpy as np
 
-        cells = self.trajectory.block_cells(
-            block, events, feature_offsets=self.feature_offsets, accounts=self.accounts
-        )
+        simulator = self.trajectory.simulator
+        tracks, offsets, areas = self._fragments(int(block))
+        if not tracks:
+            return (
+                np.zeros((self.periods, len(self.accounts)), dtype=np.float64),
+                np.zeros((self.periods, len(self.accounts)), dtype=np.float64),
+            )
+        feature_columns = [
+            (column, account)
+            for column, account in enumerate(self.accounts)
+            if account.startswith("feature.")
+        ]
+        ordered = sorted((int(offset), str(treatment)) for treatment, offset in events)
         state_row = np.zeros((self.periods, len(self.accounts)), dtype=np.float64)
         event_row = np.zeros((self.periods, len(self.accounts)), dtype=np.float64)
-        latest: dict[tuple[int, int], tuple[int, float]] = {}
-        for (offset, account), value in cells.items():
-            if offset < 0 or offset >= self.years or account not in self.account_index:
-                continue
-            period = offset // self.period_width
-            column = self.account_index[account]
-            if account.startswith("feature."):
-                previous = latest.get((period, column))
-                if previous is None or offset >= previous[0]:
-                    latest[(period, column)] = (offset, float(value))
-            else:
-                # Product/treatment event rows.
-                event_row[period, column] += float(value)
-        for (period, column), (_offset, value) in latest.items():
-            state_row[period, column] += value
+        # Per-fragment segment arrays.  Segment i is active from starts[i] through the next
+        # segment start; its track/age are the anchors used by SplicedTimeline.state_at.
+        segments: list[tuple[list[int], list[int], list[int], float]] = []
+        for fragment_track, fragment_offset, area in zip(tracks, offsets, areas, strict=True):
+            starts = [0]
+            segment_tracks = [fragment_track]
+            segment_ages = [fragment_offset]
+            current_track = fragment_track
+            current_offset = fragment_offset
+            current_start = 0
+            for offset, treatment in ordered:
+                if offset < current_start or offset >= self.years:
+                    continue
+                age = current_offset + offset - current_start
+                transition = simulator._treatment_by_key.get((current_track, treatment))
+                if transition is None:
+                    continue
+                for curve, column in self._product_curves.get((current_track, treatment), ()):
+                    event_row[offset // self.period_width, column] += area * simulator._curve_value(
+                        curve, age
+                    )
+                current_track = int(transition[0])
+                current_offset = int(transition[1])
+                current_start = offset
+                starts.append(offset)
+                segment_tracks.append(current_track)
+                segment_ages.append(current_offset)
+            segments.append((starts, segment_tracks, segment_ages, area))
+        from bisect import bisect_right
+
+        feature_values = self.trajectory.feature_values
+        for period, offset in enumerate(self.feature_offsets):
+            for starts, segment_tracks, segment_ages, area in segments:
+                active = bisect_right(starts, offset) - 1
+                track = segment_tracks[active]
+                age = segment_ages[active] + offset - starts[active]
+                feature_track = feature_values.get(track, {})
+                for column, label in feature_columns:
+                    series = feature_track.get(label)
+                    if series is not None and 0 <= age < len(series):
+                        state_row[period, column] += area * series[age]
+                    else:
+                        state_row[period, column] += area * self.trajectory._feature(
+                            track, age, label
+                        )
         return state_row, event_row
 
     def _project(self) -> None:
@@ -359,6 +453,74 @@ class BlockAccountState:
                 self.period_totals[:, column] = self.state_totals[:, column]
             else:
                 self.period_totals[:, column] = self.event_totals[:, column]
+
+    def save_seed(self, path: str | Path) -> Path:
+        """Persist the current resident pages as a seed-state cache.
+
+        Parameters
+        ----------
+        path : str or pathlib.Path
+            Destination archive.
+
+        Returns
+        -------
+        pathlib.Path
+            The written path.
+        """
+        import numpy as np
+
+        destination = Path(path)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(
+            destination,
+            state=self.state,
+            event_state=self.event_state,
+            state_totals=self.state_totals,
+            event_totals=self.event_totals,
+            accounts=np.asarray(self.accounts),
+            blocks=np.asarray(self.blocks, dtype=np.int64),
+            periods=np.asarray([self.periods], dtype=np.int64),
+            years=np.asarray([self.years], dtype=np.int64),
+            period_width=np.asarray([self.period_width], dtype=np.int64),
+        )
+        return destination
+
+    def load_seed(self, path: str | Path) -> None:
+        """Load a seed-state cache into these pages.
+
+        Parameters
+        ----------
+        path : str or pathlib.Path
+            Archive written by :meth:`save_seed`.
+
+        Raises
+        ------
+        ValueError
+            When the cache does not match the resident page shape or identity.
+        """
+        import numpy as np
+
+        with np.load(Path(path), allow_pickle=False) as payload:
+            state = payload["state"]
+            event_state = payload["event_state"]
+            if state.shape != self.state.shape or event_state.shape != self.event_state.shape:
+                raise ValueError("seed-state cache does not match the resident page shape")
+            if tuple(str(value) for value in payload["accounts"].tolist()) != self.accounts:
+                raise ValueError("seed-state cache does not match the account list")
+            if tuple(int(value) for value in payload["blocks"].tolist()) != self.blocks:
+                raise ValueError("seed-state cache does not match the block list")
+            if int(payload["periods"][0]) != self.periods:
+                raise ValueError("seed-state cache does not match the period count")
+            if int(payload["years"][0]) != self.years:
+                raise ValueError("seed-state cache does not match the horizon")
+            if int(payload["period_width"][0]) != self.period_width:
+                raise ValueError("seed-state cache does not match the period width")
+            self.state = state.copy()
+            self.event_state = event_state.copy()
+            self.state_totals = payload["state_totals"].copy()
+            self.event_totals = payload["event_totals"].copy()
+        self._project()
+        self._seed_loaded = True
 
     def set_block(self, block: int, events: Sequence[tuple[str, int]]) -> None:
         """Replace one block's rows and update the chart projection.
@@ -373,7 +535,7 @@ class BlockAccountState:
         index = self.block_index[int(block)]
         previous_state = self.state[:, index, :]
         previous_event = self.event_state[:, index, :]
-        current_state, current_event = self._period_rows(int(block), events)
+        current_state, current_event = self._row_for(int(block), events)
         self.state_totals += current_state - previous_state
         self.event_totals += current_event - previous_event
         self.period_totals += (current_state + current_event) - (previous_state + previous_event)
@@ -396,10 +558,6 @@ class BlockAccountState:
 def state_objective(state: BlockAccountState, targets: Sequence[Any]) -> float:
     """Return the target objective from the resident period pages.
 
-    The pages already hold a period's accumulated product or its period-end feature value.
-    This builds the minimal year-indexed view expected by :func:`objective_terms` and
-    evaluates the same target definitions as the exact evaluator.
-
     Parameters
     ----------
     state : BlockAccountState
@@ -412,17 +570,7 @@ def state_objective(state: BlockAccountState, targets: Sequence[Any]) -> float:
     float
         Scalar weighted objective.
     """
-    import pandas as pd
-
-    from .objective import objective_terms, priority_total
-
-    rows: list[dict[str, Any]] = []
-    for period in range(state.periods):
-        year = min(state.years - 1, (period + 1) * state.period_width - 1)
-        for column, account in enumerate(state.accounts):
-            value = float(state.period_totals[period, column])
-            rows.append({"offset": year, "account": account, "value": value})
-    return priority_total(targets, objective_terms(pd.DataFrame(rows), targets))
+    return StateObjective(state, targets).value()
 
 
 def run_state_sa(
@@ -434,6 +582,14 @@ def run_state_sa(
     seed: int = 1,
     temperature: float = 1000.0,
     cooling: float = 0.99,
+    lns_weight: float = 0.2,
+    lns_destroy: float = 0.1,
+    lns_max_destroy: int = 64,
+    toggle_weight: float = 1.0,
+    shift_weight: float = 1.0,
+    swap_weight: float = 0.5,
+    warmup_iterations: int = 1000,
+    initial: dict[int, tuple[tuple[str, int], ...]] | None = None,
     on_step: Callable[[int, BlockAccountState, float], None] | None = None,
 ) -> tuple[dict[int, tuple[tuple[str, int], ...]], float]:
     """Run a small SA loop over compact block option indices using resident pages.
@@ -474,21 +630,114 @@ def run_state_sa(
         if index is not None
         else [block for block in state.blocks if candidates.get(block)]
     )
-    schedule: dict[int, tuple[tuple[str, int], ...]] = {}
-    current = state_objective(state, targets)
+    schedule: dict[int, tuple[tuple[str, int], ...]] = dict(initial or {})
+    if schedule and not state._seed_loaded:
+        state.set_schedule(schedule)
+    calculator = StateObjective(state, targets)
+    current = calculator.value()
     best = current
-    best_schedule: dict[int, tuple[tuple[str, int], ...]] = {}
+    best_schedule = dict(schedule)
     temp = temperature
-    for iteration in range(1, iterations + 1):
-        block = rng.choice(blocks)
+    operator_names = ("toggle", "shift", "swap", "lns")
+    operator_weights = (
+        max(0.0, toggle_weight),
+        max(0.0, shift_weight),
+        max(0.0, swap_weight),
+        max(0.0, lns_weight) if schedule else 0.0,
+    )
+
+    def option(block: int) -> tuple[tuple[str, int], ...]:
         if index is not None:
-            chain = index.chain(block, rng.randrange(index.option_count(block)))
-        else:
-            chain = rng.choice(candidates[block])
-        previous = schedule.get(block)
+            return index.chain(block, rng.randrange(index.option_count(block)))
+        return rng.choice(candidates[block])
+
+    def random_move() -> dict[int, tuple[tuple[str, int], ...] | None]:
+        """Diversify with single-block assignments or a bounded LNS move."""
+        use_lns = bool(schedule) and lns_weight > 0.0 and rng.random() < lns_weight
+        if use_lns:
+            count = max(1, int(len(schedule) * lns_destroy))
+            count = min(count, lns_max_destroy, len(schedule))
+            changed = rng.sample(list(schedule), count)
+            previous: dict[int, tuple[tuple[str, int], ...] | None] = {
+                block: schedule[block] for block in changed
+            }
+            for block in changed:
+                chain = option(block)
+                schedule[block] = chain
+                state.set_block(block, chain)
+            return previous
+        block = rng.choice(blocks)
+        previous = {block: schedule.get(block)}
+        chain = option(block)
         schedule[block] = chain
         state.set_block(block, chain)
-        candidate = state_objective(state, targets)
+        return previous
+
+    def mixed_move() -> dict[int, tuple[tuple[str, int], ...] | None]:
+        """Apply one weighted toggle/shift/swap/LNS move."""
+        operator = (
+            rng.choices(operator_names, weights=operator_weights, k=1)[0]
+            if sum(operator_weights) > 0.0
+            else "toggle"
+        )
+        if operator == "lns" and schedule:
+            count = max(1, int(len(schedule) * lns_destroy))
+            count = min(count, lns_max_destroy, len(schedule))
+            changed = rng.sample(list(schedule), count)
+            previous: dict[int, tuple[tuple[str, int], ...] | None] = {
+                block: schedule[block] for block in changed
+            }
+            for block in changed:
+                chain = option(block)
+                schedule[block] = chain
+                state.set_block(block, chain)
+            return previous
+        if operator == "swap" and len(schedule) >= 2:
+            first, second = rng.sample(list(schedule), 2)
+            previous = {
+                first: schedule[first],
+                second: schedule[second],
+            }
+            schedule[first], schedule[second] = schedule[second], schedule[first]
+            state.set_block(first, schedule[first])
+            state.set_block(second, schedule[second])
+            return previous
+        if operator == "shift" and schedule:
+            shifted: int | None = None
+            if index is not None:
+                for _ in range(12):
+                    probe = rng.choice(blocks)
+                    if probe in schedule and index.option_count(probe) > 1:
+                        shifted = probe
+                        break
+            if shifted is None:
+                assigned = [
+                    candidate_block
+                    for candidate_block in schedule
+                    if index is None or index.option_count(candidate_block) > 1
+                ]
+                shifted = rng.choice(assigned) if assigned else rng.choice(list(schedule))
+            previous = {shifted: schedule[shifted]}
+            chain = option(shifted)
+            schedule[shifted] = chain
+            state.set_block(shifted, chain)
+            return previous
+        toggled = rng.choice(blocks)
+        old = schedule.get(toggled)
+        previous = {toggled: old}
+        if old is not None and rng.random() < 0.5:
+            schedule.pop(toggled, None)
+            state.set_block(toggled, ())
+        else:
+            chain = option(toggled)
+            schedule[toggled] = chain
+            state.set_block(toggled, chain)
+        return previous
+
+    warmup = max(0, min(warmup_iterations, iterations))
+    for iteration in range(1, iterations + 1):
+        previous = random_move() if iteration <= warmup else mixed_move()
+        candidate = calculator.value()
         delta = candidate - current
         if delta <= 0.0 or rng.random() < math.exp(-delta / max(temp, 1e-12)):
             current = candidate
@@ -496,14 +745,17 @@ def run_state_sa(
                 best = candidate
                 best_schedule = dict(schedule)
         else:
-            if previous is None:
-                schedule.pop(block, None)
-            else:
-                schedule[block] = previous
-            state.set_block(block, previous or ())
+            for block, old in previous.items():
+                if old is None:
+                    schedule.pop(block, None)
+                else:
+                    schedule[block] = old
+                state.set_block(block, old or ())
         if on_step is not None:
             on_step(iteration, state, best)
         temp *= cooling
+    if best < current:
+        state.set_schedule(best_schedule)
     return best_schedule, best
 
 
@@ -550,6 +802,10 @@ def run_state_watch(
     plain: bool = False,
     console: Any | None = None,  # noqa: ANN401
     schedule_out: Path | None = None,
+    initial: dict[int, tuple[tuple[str, int], ...]] | None = None,
+    lns_weight: float = 0.2,
+    lns_destroy: float = 0.1,
+    lns_max_destroy: int = 64,
 ) -> dict[str, Any]:
     """Run the resident-state SA and paint target windows from the period pages.
 
@@ -579,6 +835,14 @@ def run_state_watch(
         Console to draw on.
     schedule_out : pathlib.Path or None, optional
         Write the final schedule CSV here.
+    initial : dict or None, optional
+        Initial schedule to apply before the SA moves.
+    lns_weight : float, optional
+        Probability of a bounded LNS move.
+    lns_destroy : float, optional
+        Fraction of assigned blocks destroyed.
+    lns_max_destroy : int, optional
+        Maximum blocks destroyed.
 
     Returns
     -------
@@ -617,6 +881,8 @@ def run_state_watch(
     last_update = [0.0]
 
     def paint(iteration: int, current: BlockAccountState, best: float) -> None:
+        if plain:
+            return
         now = time.monotonic()
         if not plain and now - last_update[0] < refresh and iteration != iterations:
             return
@@ -633,9 +899,16 @@ def run_state_watch(
             )
 
     schedule, objective = run_state_sa(
-        state, candidates, targets, iterations=iterations, on_step=paint
+        state,
+        candidates,
+        targets,
+        iterations=iterations,
+        initial=initial,
+        on_step=paint,
+        lns_weight=lns_weight,
+        lns_destroy=lns_destroy,
+        lns_max_destroy=lns_max_destroy,
     )
-    state.set_schedule(schedule)
     view.best_objective = objective
     view.best_values = state_values(state)
     view.windows = view.current_windows()
@@ -660,3 +933,67 @@ def run_state_watch(
         "elapsed": time.monotonic() - started,
         "schedule": schedule,
     }
+
+
+class StateObjective:
+    """Direct target pricing from the resident period pages.
+
+    The target set is prepared once; evaluating a move reads only the relevant
+    `period_totals` cells.  Feature and product pages come from ``state.period_totals``;
+    flow terms read the page sequence, not a rebuilt DataFrame.
+    """
+
+    def __init__(self, state: BlockAccountState, targets: Sequence[Any]) -> None:
+        """Precompute target account/period locations."""
+        from .objective import PRIORITY_SCALE
+
+        self.state = state
+        self.targets = tuple(targets)
+        self.account_index = {account: index for index, account in enumerate(state.accounts)}
+        self.width = state.period_width
+        self.years = state.years
+        self.periods = state.periods
+        self._prepared: list[tuple[Any, int | None, int | None]] = []
+        for target in self.targets:
+            if not target.active:
+                continue
+            column = self.account_index.get(target.account)
+            if column is None:
+                continue
+            if target.flow:
+                self._prepared.append((target, column, None))
+                continue
+            period = (target.end_offset() + 1) // self.width
+            if 0 < period <= self.periods:
+                self._prepared.append((target, column, period - 1))
+        priorities = {target.priority for target, _column, _period in self._prepared}
+        highest = max(priorities) if priorities else 0
+        self._factors = [
+            PRIORITY_SCALE ** (highest - target.priority)
+            for target, _column, _period in self._prepared
+        ]
+
+    def _index_for_flow(self, account: str) -> dict[tuple[int, str], float]:
+        """Return the period-end index expected by the flow target evaluator."""
+        column = self.account_index[account]
+        return {
+            (min(self.years - 1, (period + 1) * self.width - 1), account): float(
+                self.state.period_totals[period, column]
+            )
+            for period in range(self.periods)
+        }
+
+    def value(self) -> float:
+        """Return the scalar objective from current period totals."""
+        from .objective import flow_penalty, penalty
+
+        total = 0.0
+        for (target, column, period), factor in zip(self._prepared, self._factors, strict=True):
+            if period is None:
+                assert column is not None
+                term = flow_penalty(self._index_for_flow(target.account), target, self.years)
+            else:
+                assert column is not None
+                term = penalty(float(self.state.period_totals[period, column]), target)
+            total += factor * term
+        return total

@@ -2623,6 +2623,15 @@ def state_watch(
     dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
     targets: Path = typer.Option(..., exists=True, help="Targets YAML"),
     candidate_index: Path = typer.Option(..., exists=True, help="Compact candidate index .npz"),
+    initial_schedule: Path | None = typer.Option(
+        None, "--initial-schedule", exists=True, help="Initial schedule CSV"
+    ),
+    seed_state: Path | None = typer.Option(
+        None, "--seed-state", exists=True, help="Cached resident seed-state .npz"
+    ),
+    write_seed_state: Path | None = typer.Option(
+        None, "--write-seed-state", help="Write the seeded resident pages here"
+    ),
     years: int = typer.Option(200, help="Simulation horizon"),
     period_width: int = typer.Option(10, help="Years per displayed period"),
     iterations: int = typer.Option(100000, help="SA iterations"),
@@ -2630,6 +2639,9 @@ def state_watch(
     refresh: float = typer.Option(2.0, help="Seconds between live repaints"),
     plain: bool = typer.Option(False, "--plain", help="Print one final frame"),
     schedule_out: Path | None = typer.Option(None, help="Write final schedule CSV"),
+    lns_weight: float = typer.Option(0.2, help="Probability of a bounded LNS move"),
+    lns_destroy: float = typer.Option(0.1, help="Fraction of assigned blocks destroyed"),
+    lns_max_destroy: int = typer.Option(64, help="Maximum blocks destroyed"),
 ) -> None:
     """Watch the resident Model II state with a compact candidate index."""
     from .opt.engine import OptimizeConfig, Optimizer
@@ -2653,8 +2665,16 @@ def state_watch(
         account_list,
         years=years,
         period_width=period_width,
+        skip_empty=seed_state is not None,
     )
     index = CandidateIndex.load(candidate_index)
+    initial = load_schedule_csv(initial_schedule) if initial_schedule is not None else None
+    if seed_state is not None:
+        state.load_seed(seed_state)
+    elif write_seed_state is not None and initial is not None:
+        state.set_schedule(initial)
+        state.save_seed(write_seed_state)
+        state._seed_loaded = True
     summary = run_state_watch(
         state,
         index,
@@ -2666,6 +2686,10 @@ def state_watch(
         refresh=refresh,
         plain=plain,
         schedule_out=schedule_out,
+        initial=initial,
+        lns_weight=lns_weight,
+        lns_destroy=lns_destroy,
+        lns_max_destroy=lns_max_destroy,
     )
     exact = IncrementalObjective(optimizer, target_list)
     exact.reset(summary["schedule"])

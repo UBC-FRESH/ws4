@@ -7,7 +7,7 @@ transition index.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -45,6 +45,15 @@ class CandidateIndex:
     event_years: np.ndarray
     event_labels: np.ndarray
     labels: tuple[str, ...]
+    _positions: dict[int, int] | None = field(default=None, init=False, repr=False, compare=False)
+
+    def _position(self, block: int) -> int | None:
+        """Return the array position for one block, building the lookup once."""
+        if self._positions is None:
+            self._positions = {
+                int(value): index for index, value in enumerate(self.blocks.tolist())
+            }
+        return self._positions.get(int(block))
 
     @classmethod
     def build(cls, candidates: Candidates) -> CandidateIndex:
@@ -154,10 +163,8 @@ class CandidateIndex:
         tuple of (str, int)
             The candidate chain.
         """
-        import bisect
-
-        position = bisect.bisect_left(self.blocks.tolist(), int(block))
-        if position >= len(self.blocks) or int(self.blocks[position]) != int(block):
+        position = self._position(block)
+        if position is None:
             raise KeyError(block)
         chain_position = int(self.chain_offsets[position]) + int(option)
         if chain_position >= int(self.chain_offsets[position + 1]):
@@ -182,10 +189,8 @@ class CandidateIndex:
         int
             Number of candidate options.
         """
-        import bisect
-
-        position = bisect.bisect_left(self.blocks.tolist(), int(block))
-        if position >= len(self.blocks) or int(self.blocks[position]) != int(block):
+        position = self._position(block)
+        if position is None:
             return 0
         return int(self.chain_offsets[position + 1] - self.chain_offsets[position])
 
