@@ -43,7 +43,22 @@ class TrackTrajectory:
     def build(
         cls, simulator: Simulator, years: int, accounts: Collection[str] | None = None
     ) -> TrackTrajectory:
-        """Precompute track feature trajectories for the full horizon."""
+        """Precompute track feature trajectories for the full horizon.
+
+        Parameters
+        ----------
+        simulator : Simulator
+            Compiled Model II simulator.
+        years : int
+            Horizon in years.
+        accounts : collection of str or None, optional
+            Feature labels to precompute; None precomputes every feature label.
+
+        Returns
+        -------
+        TrackTrajectory
+            The precomputed feature trajectories.
+        """
         wanted = None if accounts is None else set(accounts)
         values: dict[int, dict[str, list[float]]] = {}
         for track, features in simulator._track_features.items():
@@ -79,6 +94,22 @@ class TrackTrajectory:
 
         This mirrors :meth:`Simulator.block_chain` but features are read from the
         precomputed track trajectories.  Products remain event lookups.
+
+        Parameters
+        ----------
+        block_id : int
+            The block.
+        events : sequence of (str, int)
+            Treatment events and their simulation offsets.
+        feature_offsets : collection of int or None, optional
+            Offsets at which feature cells are returned.
+        accounts : collection of str or None, optional
+            Restrict cells to these account labels.
+
+        Returns
+        -------
+        dict of (int, str) to float
+            Absolute account cells for the block.
         """
         simulator = self.simulator
         positions = simulator._block_index().get(int(block_id), [])
@@ -133,7 +164,17 @@ class TrackTrajectory:
 
 @dataclass(frozen=True)
 class SpliceSegment:
-    """One track segment in a block's Model II timeline."""
+    """One track segment in a block's Model II timeline.
+
+    Parameters
+    ----------
+    start : int
+        Horizon offset where the segment begins.
+    track : int
+        Track id for the segment.
+    age : int
+        Track-relative age at the segment start.
+    """
 
     start: int
     track: int
@@ -146,6 +187,17 @@ class SplicedTimeline:
     The timeline stores only splice offsets and track/age anchors.  Reading a horizon offset
     is a binary search plus one track/age vector lookup; no splice combination is
     materialized.
+
+    Parameters
+    ----------
+    trajectory : TrackTrajectory
+        Precomputed track trajectories.
+    tracks : sequence of int
+        Initial track ids per fragment.
+    ages : sequence of int
+        Initial track-relative ages per fragment.
+    events : sequence of (str, int)
+        Treatment events and their horizon offsets.
     """
 
     def __init__(
@@ -189,7 +241,18 @@ class SplicedTimeline:
         self._bisect = bisect_right
 
     def state_at(self, offset: int) -> dict[str, float]:
-        """Return every cached track feature at one horizon offset."""
+        """Return every cached track feature at one horizon offset.
+
+        Parameters
+        ----------
+        offset : int
+            Horizon offset.
+
+        Returns
+        -------
+        dict of str to float
+            Feature values keyed by label.
+        """
         index = self._bisect(self._starts, offset) - 1
         segment = self.segments[max(0, index)]
         age = segment.age + offset - segment.start
@@ -206,6 +269,19 @@ class BlockAccountState:
     The state is indexed ``[period, block, account]``.  Updating a block writes only that
     block's row for each period and adjusts the running ``period_totals`` projection used by
     the watcher charts.
+
+    Parameters
+    ----------
+    trajectory : TrackTrajectory
+        Precomputed track trajectories.
+    blocks : sequence of int
+        Block ids in the state.
+    accounts : sequence of str
+        Account labels in the state.
+    years : int
+        Simulation horizon.
+    period_width : int
+        Years per period.
     """
 
     def __init__(
@@ -285,7 +361,15 @@ class BlockAccountState:
                 self.period_totals[:, column] = self.event_totals[:, column]
 
     def set_block(self, block: int, events: Sequence[tuple[str, int]]) -> None:
-        """Replace one block's rows and update the chart projection."""
+        """Replace one block's rows and update the chart projection.
+
+        Parameters
+        ----------
+        block : int
+            The block.
+        events : sequence of (str, int)
+            Treatment events and offsets.
+        """
         index = self.block_index[int(block)]
         previous_state = self.state[:, index, :]
         previous_event = self.event_state[:, index, :]
@@ -297,7 +381,13 @@ class BlockAccountState:
         self.event_state[:, index, :] = current_event
 
     def set_schedule(self, schedule: dict[int, tuple[tuple[str, int], ...]]) -> None:
-        """Apply a complete schedule to the resident state."""
+        """Apply a complete schedule to the resident state.
+
+        Parameters
+        ----------
+        schedule : dict of int to tuple of (str, int)
+            The block schedule.
+        """
         for block, events in schedule.items():
             if int(block) in self.block_index:
                 self.set_block(int(block), events)
@@ -309,6 +399,18 @@ def state_objective(state: BlockAccountState, targets: Sequence[Any]) -> float:
     The pages already hold a period's accumulated product or its period-end feature value.
     This builds the minimal year-indexed view expected by :func:`objective_terms` and
     evaluates the same target definitions as the exact evaluator.
+
+    Parameters
+    ----------
+    state : BlockAccountState
+        Resident period pages.
+    targets : sequence of Target
+        Goal-programming targets.
+
+    Returns
+    -------
+    float
+        Scalar weighted objective.
     """
     import pandas as pd
 
@@ -334,7 +436,32 @@ def run_state_sa(
     cooling: float = 0.99,
     on_step: Callable[[int, BlockAccountState, float], None] | None = None,
 ) -> tuple[dict[int, tuple[tuple[str, int], ...]], float]:
-    """Run a small SA loop over compact block option indices using resident pages."""
+    """Run a small SA loop over compact block option indices using resident pages.
+
+    Parameters
+    ----------
+    state : BlockAccountState
+        Resident period pages.
+    candidates : CandidateIndex or mapping
+        Compact candidate index or candidate mapping.
+    targets : sequence of Target
+        Goal-programming targets.
+    iterations : int
+        Number of SA moves.
+    seed : int, optional
+        Random seed.
+    temperature : float, optional
+        Initial SA temperature.
+    cooling : float, optional
+        Geometric cooling factor.
+    on_step : callable or None, optional
+        Callback ``(iteration, state, best_objective)``.
+
+    Returns
+    -------
+    tuple of (dict, float)
+        Best schedule and objective.
+    """
     import math
     import random
 
@@ -381,7 +508,18 @@ def run_state_sa(
 
 
 def state_values(state: BlockAccountState) -> Any:  # noqa: ANN401
-    """Return the resident period totals as an offset/account/value frame."""
+    """Return the resident period totals as an offset/account/value frame.
+
+    Parameters
+    ----------
+    state : BlockAccountState
+        Resident period pages.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row per period and account.
+    """
     import pandas as pd
 
     rows: list[dict[str, Any]] = []
@@ -413,7 +551,40 @@ def run_state_watch(
     console: Any | None = None,  # noqa: ANN401
     schedule_out: Path | None = None,
 ) -> dict[str, Any]:
-    """Run the resident-state SA and paint target windows from the period pages."""
+    """Run the resident-state SA and paint target windows from the period pages.
+
+    Parameters
+    ----------
+    state : BlockAccountState
+        Resident period pages.
+    candidates : CandidateIndex or mapping
+        Compact candidate index or candidate mapping.
+    targets : sequence of Target
+        Goal-programming targets.
+    accounts : sequence of str
+        Accounts to display.
+    optimizer : Optimizer
+        The optimizer whose configuration labels the frame.
+    iterations : int
+        Number of SA moves.
+    period_width : int, optional
+        Years per displayed period.
+    label : str or None, optional
+        Display label.
+    refresh : float, optional
+        Seconds between live repaints.
+    plain : bool, optional
+        Print one final frame.
+    console : rich.console.Console or None, optional
+        Console to draw on.
+    schedule_out : pathlib.Path or None, optional
+        Write the final schedule CSV here.
+
+    Returns
+    -------
+    dict
+        Objective, penalty, evaluations, iterations, blocks, elapsed, and schedule.
+    """
     import time
 
     from rich.console import Console
