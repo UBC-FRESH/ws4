@@ -190,8 +190,7 @@ The TSA41 cache finished:
 - release: https://github.com/UBC-FRESH/fresh-cbm/releases/tag/v0.1.0-tsa41
 
 The release includes `manifest.json`, `index.parquet`, all 52 value arrays,
-`SHA256SUMS`, and `release.json`. The repository remains private pending a
-visibility decision.
+`SHA256SUMS`, and `release.json`. The repository and release are **public**.
 
 ## Production command
 

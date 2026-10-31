@@ -3614,7 +3614,8 @@ issue comments.
   The cache build finished in **10,991 s (3h03)**: 5,273 states × 51 chains,
   **2.85 GB**, 55 release assets. Validation of 102 sampled state/offset rows
   matched exact libcbm with **max absolute error 0**. Release:
-  https://github.com/UBC-FRESH/fresh-cbm/releases/tag/v0.1.0-tsa41. Evidence:
+  https://github.com/UBC-FRESH/fresh-cbm/releases/tag/v0.1.0-tsa41. The
+  repository and release are public. Evidence:
   `notes/reports/carbon-tsa41-5k-removal-ga.md`.
 
 - P83 GPU command: added `ws4 gpu-run`, which loads the content-validated simulator and
