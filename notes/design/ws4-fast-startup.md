@@ -47,6 +47,21 @@ is the first memory/size and exactness test; the array is not applied to TSA24/2
 phase.
 
 
+
+### Product accounts are event rows
+
+Product accounts are not track-age state. They are attached to treatment events in a block.
+The resident model has two contributions to a period page:
+
+```text
+state[period, block, feature_account]       # track/age pages
+event[period, block, product_account]       # treatment-event rows
+chart[period, account] = state_total + event_total
+```
+
+A schedule move updates both the block's feature row and its event rows. The chart projection
+adds the two totals; it does not read product values from a track trajectory.
+
 ### Live chart read path
 
 The target charts are a direct projection of the resident state, not a second evaluation:

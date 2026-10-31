@@ -10,7 +10,7 @@ will use.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import Collection, Sequence
@@ -191,3 +191,91 @@ class SplicedTimeline:
             label: series[age] if 0 <= age < len(series) else 0.0
             for label, series in values.items()
         }
+
+
+class BlockAccountState:
+    """Resident block x account x period pages and the chart projection.
+
+    The state is indexed ``[period, block, account]``.  Updating a block writes only that
+    block's row for each period and adjusts the running ``period_totals`` projection used by
+    the watcher charts.
+    """
+
+    def __init__(
+        self,
+        trajectory: TrackTrajectory,
+        blocks: Sequence[int],
+        accounts: Sequence[str],
+        *,
+        years: int,
+        period_width: int,
+    ) -> None:
+        import numpy as np
+
+        self.trajectory = trajectory
+        self.blocks = tuple(sorted(int(block) for block in blocks))
+        self.accounts = tuple(accounts)
+        self.account_index = {account: index for index, account in enumerate(self.accounts)}
+        self.block_index = {block: index for index, block in enumerate(self.blocks)}
+        self.years = years
+        self.period_width = period_width
+        self.periods = (years + period_width - 1) // period_width
+        shape = (self.periods, len(self.blocks), len(self.accounts))
+        # Feature/state accounts are resident track-derived pages.  Product accounts are
+        # event rows attached to treatments; their values are kept separately and added to
+        # the chart projection only when the event occurs.
+        self.state = np.zeros(shape, dtype=np.float64)
+        self.event_state = np.zeros(shape, dtype=np.float64)
+        self.state_totals = np.zeros((self.periods, len(self.accounts)), dtype=np.float64)
+        self.event_totals = np.zeros((self.periods, len(self.accounts)), dtype=np.float64)
+        self.period_totals = np.zeros((self.periods, len(self.accounts)), dtype=np.float64)
+        for block in self.blocks:
+            state_row, event_row = self._period_rows(block, ())
+            index = self.block_index[block]
+            self.state[:, index, :] = state_row
+            self.event_state[:, index, :] = event_row
+            self.state_totals += state_row
+            self.event_totals += event_row
+            self.period_totals += state_row + event_row
+
+    def _period_rows(self, block: int, events: Sequence[tuple[str, int]]) -> tuple[Any, Any]:
+        """Return feature/state and treatment-event period rows."""
+        import numpy as np
+
+        cells = self.trajectory.block_cells(block, events, accounts=self.accounts)
+        state_row = np.zeros((self.periods, len(self.accounts)), dtype=np.float64)
+        event_row = np.zeros((self.periods, len(self.accounts)), dtype=np.float64)
+        latest: dict[tuple[int, int], tuple[int, float]] = {}
+        for (offset, account), value in cells.items():
+            if offset < 0 or offset >= self.years or account not in self.account_index:
+                continue
+            period = offset // self.period_width
+            column = self.account_index[account]
+            if account.startswith("feature."):
+                previous = latest.get((period, column))
+                if previous is None or offset >= previous[0]:
+                    latest[(period, column)] = (offset, float(value))
+            else:
+                # Product/treatment event rows.
+                event_row[period, column] += float(value)
+        for (period, column), (_offset, value) in latest.items():
+            state_row[period, column] += value
+        return state_row, event_row
+
+    def set_block(self, block: int, events: Sequence[tuple[str, int]]) -> None:
+        """Replace one block's rows and update the chart projection."""
+        index = self.block_index[int(block)]
+        previous_state = self.state[:, index, :]
+        previous_event = self.event_state[:, index, :]
+        current_state, current_event = self._period_rows(int(block), events)
+        self.state_totals += current_state - previous_state
+        self.event_totals += current_event - previous_event
+        self.period_totals += (current_state + current_event) - (previous_state + previous_event)
+        self.state[:, index, :] = current_state
+        self.event_state[:, index, :] = current_event
+
+    def set_schedule(self, schedule: dict[int, tuple[tuple[str, int], ...]]) -> None:
+        """Apply a complete schedule to the resident state."""
+        for block, events in schedule.items():
+            if int(block) in self.block_index:
+                self.set_block(int(block), events)
