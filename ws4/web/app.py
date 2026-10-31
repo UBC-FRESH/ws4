@@ -998,6 +998,7 @@ def create_app(
         return {"status": "ok"}
 
     processes: dict[str, subprocess.Popen[bytes]] = {}
+    chat_jobs: dict[str, dict[str, Any]] = {}
 
     def _run_command(
         out: Path,
@@ -1495,6 +1496,66 @@ def create_app(
             "timeout": agent_timeout,
         }
 
+    def _chat_parse(completed: subprocess.CompletedProcess[str], session: str) -> dict[str, Any]:
+        """Parse one completed OpenCode JSON turn."""
+        session_id = session
+        texts: list[str] = []
+        actions: list[dict[str, str]] = []
+        errors: list[str] = []
+        for line in completed.stdout.splitlines():
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(event, dict):
+                continue
+            candidate = event.get("sessionID")
+            if isinstance(candidate, str) and candidate.startswith("ses"):
+                session_id = candidate
+            part = event.get("part")
+            if not isinstance(part, dict):
+                continue
+            if event.get("type") == "text":
+                text = part.get("text")
+                if isinstance(text, str) and text.strip():
+                    texts.append(text.strip())
+            elif event.get("type") == "tool_use":
+                tool = part.get("tool")
+                state = part.get("state")
+                summary = ""
+                if isinstance(state, dict):
+                    title = state.get("title")
+                    if isinstance(title, str):
+                        summary = title
+                    inputs = state.get("input")
+                    if isinstance(inputs, dict):
+                        for key in ("command", "filePath", "path", "pattern", "url", "description"):
+                            value = inputs.get(key)
+                            if isinstance(value, str) and value.strip():
+                                summary = value.strip()
+                                break
+                if isinstance(tool, str):
+                    action = {"tool": tool, "summary": summary[:160]}
+                    if action not in actions:
+                        actions.append(action)
+            elif event.get("type") == "error":
+                failure = event.get("error")
+                if isinstance(failure, dict) and isinstance(failure.get("message"), str):
+                    errors.append(failure["message"])
+        reply = "\n\n".join(texts).strip()
+        if not reply:
+            detail = (
+                errors[-1]
+                if errors
+                else (completed.stderr.strip() or "the agent returned no text")
+            )
+            raise RuntimeError(detail[:500])
+        return {"reply": reply, "session": session_id, "actions": actions[-12:]}
+
+    def _chat_failure(job: dict[str, Any], detail: str) -> None:
+        """Record a failed background agent turn."""
+        job.update({"status": "error", "detail": detail, "finished": time.time()})
+
     @app.post("/api/chat")
     def chat(body: dict[str, Any] | None = None) -> dict[str, Any]:
         """Run one chat turn through the local OpenCode coding agent.
@@ -1503,6 +1564,9 @@ def create_app(
         with the service user's permissions in ``agent_working_directory``; the caller must have
         enabled ``allow_agent``. The reply is the agent's text, with the tools it used summarised
         so the panel can show that something actually ran.
+
+        ``async`` in the request starts a background turn and returns a job id. The browser polls
+        ``GET /api/chat/{job}``; this avoids a long-held request being cut off by a reverse proxy.
         """
         if not allow_agent:
             raise HTTPException(
@@ -1554,6 +1618,43 @@ def create_app(
         environment = dict(os.environ)
         for name in ("OPENCODE_SESSION_ID", "OPENCODE_TERMINAL"):
             environment.pop(name, None)
+
+        if bool(payload.get("async")):
+            # Keep the active set bounded; finished jobs are retained for a short poll window.
+            if len(chat_jobs) >= 20:
+                for key in sorted(chat_jobs, key=lambda item: chat_jobs[item].get("started", 0))[:8]:
+                    chat_jobs.pop(key, None)
+            job_id = f"chat-{int(time.time() * 1000)}-{threading.get_ident()}"
+            job: dict[str, Any] = {
+                "id": job_id,
+                "status": "running",
+                "started": time.time(),
+                "message": message,
+            }
+            chat_jobs[job_id] = job
+
+            def worker() -> None:
+                try:
+                    completed = subprocess.run(
+                        command,
+                        cwd=str(agent_working_directory),
+                        capture_output=True,
+                        text=True,
+                        timeout=agent_timeout,
+                        check=False,
+                        env=environment,
+                    )
+                    job.update({"status": "done", "result": _chat_parse(completed, session), "finished": time.time()})
+                except subprocess.TimeoutExpired:
+                    _chat_failure(job, f"the agent did not answer within {agent_timeout:g} seconds")
+                except OSError as error:
+                    _chat_failure(job, f"could not start opencode: {error}")
+                except RuntimeError as error:
+                    _chat_failure(job, str(error))
+
+            threading.Thread(target=worker, daemon=True).start()
+            return {"job": job_id, "status": "running"}
+
         try:
             completed = subprocess.run(
                 command,
@@ -1573,57 +1674,22 @@ def create_app(
             raise HTTPException(
                 status_code=503, detail=f"could not start opencode: {error}"
             ) from error
-        session_id = session
-        texts: list[str] = []
-        actions: list[dict[str, str]] = []
-        errors: list[str] = []
-        for line in completed.stdout.splitlines():
-            try:
-                event = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            if not isinstance(event, dict):
-                continue
-            candidate = event.get("sessionID")
-            if isinstance(candidate, str) and candidate.startswith("ses"):
-                session_id = candidate
-            part = event.get("part")
-            if not isinstance(part, dict):
-                continue
-            if event.get("type") == "text":
-                text = part.get("text")
-                if isinstance(text, str) and text.strip():
-                    texts.append(text.strip())
-            elif event.get("type") == "tool_use":
-                tool = part.get("tool")
-                state = part.get("state")
-                summary = ""
-                if isinstance(state, dict):
-                    title = state.get("title")
-                    if isinstance(title, str):
-                        summary = title
-                    inputs = state.get("input")
-                    if isinstance(inputs, dict):
-                        for key in ("command", "filePath", "path", "pattern", "url", "description"):
-                            value = inputs.get(key)
-                            if isinstance(value, str) and value.strip():
-                                summary = value.strip()
-                                break
-                if isinstance(tool, str):
-                    action = {"tool": tool, "summary": summary[:160]}
-                    if action not in actions:
-                        actions.append(action)
-            elif event.get("type") == "error":
-                failure = event.get("error")
-                if isinstance(failure, dict) and isinstance(failure.get("message"), str):
-                    errors.append(failure["message"])
-        reply = "\n\n".join(texts).strip()
-        if not reply:
-            detail = (
-                errors[-1] if errors else (completed.stderr.strip() or "the agent returned no text")
-            )
-            raise HTTPException(status_code=502, detail=detail[:500])
-        return {"reply": reply, "session": session_id, "actions": actions[-12:]}
+        try:
+            return _chat_parse(completed, session)
+        except RuntimeError as error:
+            raise HTTPException(status_code=502, detail=str(error)) from error
+
+    @app.get("/api/chat/{job}")
+    def chat_status(job: str) -> dict[str, Any]:
+        """Return the result of a background chat turn started with ``async``."""
+        record = chat_jobs.get(job)
+        if record is None:
+            raise HTTPException(status_code=404, detail=f"unknown chat job {job!r}")
+        if record.get("status") == "done":
+            return {"status": "done", **record["result"]}
+        if record.get("status") == "error":
+            return {"status": "error", "detail": record.get("detail", "chat failed")}
+        return {"status": "running", "job": job}
 
     @app.get("/api/land-base")
     def land_base_geojson(format: str = Query(default="projected")) -> dict[str, Any]:

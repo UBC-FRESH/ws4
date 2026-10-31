@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import time
 from pathlib import Path
 from typing import Any, cast
 
@@ -1149,6 +1150,34 @@ def test_the_chat_agent_returns_text_tools_and_the_session(
     assert isinstance(command, list)
     assert "--session" in command
     assert "ses_test" in command
+
+
+def test_async_chat_returns_a_job_and_a_result(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The browser can poll a long agent turn instead of holding one proxy request open."""
+    client = _chat_client(tmp_path)
+    stdout = json.dumps(
+        {"type": "text", "sessionID": "ses_async", "part": {"text": "async hello"}}
+    )
+
+    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(command, 0, stdout, "")
+
+    monkeypatch.setattr("ws4.web.app.shutil.which", lambda name: "/usr/bin/opencode")
+    monkeypatch.setattr("ws4.web.app.subprocess.run", fake_run)
+    response = client.post("/api/chat", json={"message": "hi", "async": True})
+    assert response.status_code == 200
+    job_id = response.json()["job"]
+    result: dict[str, Any] = {}
+    for _ in range(100):
+        result = client.get(f"/api/chat/{job_id}").json()
+        if result["status"] != "running":
+            break
+        time.sleep(0.02)
+    assert result["status"] == "done"
+    assert result["reply"] == "async hello"
+    assert result["session"] == "ses_async"
 
 
 def test_the_chat_agent_reports_a_missing_cli(

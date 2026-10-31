@@ -5542,6 +5542,7 @@ async function sendChat(event) {
         session: state.chatSession || null,
         run: state.run || null,
         year: state.year,
+        async: true,
       }),
     });
     let response = await request();
@@ -5550,8 +5551,19 @@ async function sendChat(event) {
       await new Promise((resolve) => window.setTimeout(resolve, 2000));
       response = await request();
     }
-    const payload = await response.json().catch(() => ({}));
+    let payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload.detail || `chat failed (${response.status})`);
+    if (payload.job) {
+      // The agent turn runs in the background; short status polls keep proxy
+      // timeouts from cutting off long tool-using turns.
+      while (payload.status === 'running') {
+        await new Promise((resolve) => window.setTimeout(resolve, 1000));
+        const poll = await fetch(`api/chat/${encodeURIComponent(payload.job)}`);
+        payload = await poll.json().catch(() => ({}));
+        if (!poll.ok) throw new Error(payload.detail || `chat failed (${poll.status})`);
+      }
+      if (payload.status === 'error') throw new Error(payload.detail || 'chat failed');
+    }
     state.chatSession = payload.session || state.chatSession;
     thinking.classList.remove('thinking');
     thinking.innerHTML = renderMarkdown(payload.reply || '(no reply)');
