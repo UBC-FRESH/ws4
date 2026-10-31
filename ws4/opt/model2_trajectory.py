@@ -294,3 +294,64 @@ class BlockAccountState:
         for block, events in schedule.items():
             if int(block) in self.block_index:
                 self.set_block(int(block), events)
+
+
+def state_objective(state: BlockAccountState, targets: Sequence[Any]) -> float:
+    """Return the target objective from the resident period pages.
+
+    The pages already hold a period's accumulated product or its period-end feature value.
+    This builds the minimal year-indexed view expected by :func:`objective_terms` and
+    evaluates the same target definitions as the exact evaluator.
+    """
+    import pandas as pd
+
+    from .objective import objective_terms, priority_total
+
+    rows: list[dict[str, Any]] = []
+    for period in range(state.periods):
+        year = min(state.years - 1, (period + 1) * state.period_width - 1)
+        for column, account in enumerate(state.accounts):
+            value = float(state.period_totals[period, column])
+            rows.append({"offset": year, "account": account, "value": value})
+    return priority_total(targets, objective_terms(pd.DataFrame(rows), targets))
+
+
+def run_state_sa(
+    state: BlockAccountState,
+    candidates: Any,  # noqa: ANN401
+    targets: Sequence[Any],
+    *,
+    iterations: int,
+    seed: int = 1,
+    temperature: float = 1000.0,
+    cooling: float = 0.99,
+) -> tuple[dict[int, tuple[tuple[str, int], ...]], float]:
+    """Run a small SA loop over compact block option indices using resident pages."""
+    import math
+    import random
+
+    rng = random.Random(seed)
+    blocks = [block for block in state.blocks if candidates.get(block)]
+    schedule: dict[int, tuple[tuple[str, int], ...]] = {}
+    current = state_objective(state, targets)
+    best = current
+    best_schedule: dict[int, tuple[tuple[str, int], ...]] = {}
+    temp = temperature
+    for _ in range(iterations):
+        block = rng.choice(blocks)
+        chain = rng.choice(candidates[block])
+        previous = schedule.get(block)
+        schedule[block] = chain
+        state.set_block(block, chain)
+        candidate = state_objective(state, targets)
+        delta = candidate - current
+        if delta <= 0.0 or rng.random() < math.exp(-delta / max(temp, 1e-12)):
+            current = candidate
+            if candidate < best:
+                best = candidate
+                best_schedule = dict(schedule)
+        else:
+            schedule.pop(block, None) if previous is None else schedule.__setitem__(block, previous)
+            state.set_block(block, previous or ())
+        temp *= cooling
+    return best_schedule, best
