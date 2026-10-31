@@ -16,6 +16,7 @@
 #   POPULATION=64
 #   WORK=<TSA24>/runtime/hybrid
 #   PLAIN=1       also make the state refinement headless
+#   FEEDBACK=1    run a second GPU pass seeded with the state-refined schedule
 #   TSA24_ROOT=/srv/shared-data/gep/ws4/femic/external/femic-tsa24-instance
 
 set -euo pipefail
@@ -64,3 +65,9 @@ cp "$STATE_SCHEDULE" "$WORK/gpu-next-seed.csv"
 echo "GPU elite:       $GPU_SCHEDULE"
 echo "State-refined:   $STATE_SCHEDULE"
 echo "Next GPU seed:   $WORK/gpu-next-seed.csv"
+
+if [[ "${FEEDBACK:-0}" == "1" ]]; then
+  echo "3/3 GPU-GA feedback: generations=$GPU_GENERATIONS seed from state-refined"
+  GENERATIONS="$GPU_GENERATIONS"   POPULATION="$POPULATION"   SEED="$GPU_SEED"   PLAIN=1   SEED_SCHEDULE="$STATE_SCHEDULE"   SCHEDULE_OUT="$WORK/gpu-feedback.csv"   bash "$TSA24_ROOT/scripts/run_gpu_watch_tsa24_100k.sh"
+  echo "GPU feedback:    $WORK/gpu-feedback.csv"
+fi
