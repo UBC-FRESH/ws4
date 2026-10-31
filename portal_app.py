@@ -247,7 +247,7 @@ def _build_mount(instance: Instance, mount_path: str) -> None:
         "initial_schedule": spec.get("initial"),
         "period_width": 10,
         "years": 200,
-        "default_iterations": 5000,
+        "default_iterations": 100000,
         "lns_weight": 0.2,
         "lns_destroy": 0.1,
         "lns_max_destroy": 64,

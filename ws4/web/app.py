@@ -1124,7 +1124,7 @@ def create_app(
             # State-watch is deliberately one core; the islands control is not used.
             islands = 1
             if continuous:
-                iterations = int(state_settings.get("default_iterations", 5000))
+                iterations = int(state_settings.get("default_iterations", 100000))
                 continuous = False
         if not 1 <= iterations <= 1_000_000_000 or not 1 <= years <= 1000:
             raise HTTPException(status_code=422, detail="iterations or years are out of range")

@@ -61,7 +61,7 @@ def main() -> int:
     parser.add_argument("--initial-schedule", type=Path)
     parser.add_argument("--seed-state", type=Path)
     parser.add_argument("--period-width", type=int, default=10)
-    parser.add_argument("--iterations", type=int, default=5000)
+    parser.add_argument("--iterations", type=int, default=100000)
     parser.add_argument("--years", type=int, default=200)
     parser.add_argument("--accounts", default="")
     parser.add_argument("--lns-weight", type=float, default=0.2)
