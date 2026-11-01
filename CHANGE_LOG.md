@@ -3655,3 +3655,13 @@ issue comments.
   c5 1k: 5.04 s wall / 32.31M objective versus baseline 6.95 s / 44.93M; c5 100k:
   71.46 s / 10.46M versus baseline 120.88 s / 10.29M. Final objectives are exact.
   P84.5 (#624) records the incremental state work. Full dashboard: **GREEN**.
+- P85: GPU acceleration and interactive target cache. Parent #618, branch
+  `feature/p85-gpu-acceleration`. Compact candidate cache, vectorized option map,
+  base-total and parsed-schedule sidecars, priority-tier GPU pricing, live target reload,
+  target-independent effect-cell basis, and lazy column extension. TSA24 hot launch fell
+  from 92.8 s to 11.9 s; the 20k PLAIN run reached 8,388 eval/s in 152.6 s. The old
+  per-generation live renderer measured 755 eval/s; the throttled live path measured
+  6,247 eval/s on a 2k run. Tests: 37 passed across the GPU population, effect-table, and
+  search suites; ruff and strict mypy clean; workflow validator 0 errors/0 warnings.
+  Cloud packaging for the TSA24 instance is deferred to that repository. Full dashboard:
+  **GREEN** (lint, format, types, tests, validator, docs, docstrings).

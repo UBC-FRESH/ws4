@@ -2717,6 +2717,142 @@ def state_watch(
     print(table)
 
 
+@app.command("gpu-watch")
+def gpu_watch(
+    dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
+    targets: Path = typer.Option(..., exists=True, help="Targets YAML"),
+    seed_schedule: Path = typer.Option(..., exists=True, help="Initial schedule CSV"),
+    table: Path = typer.Option(..., exists=True, help="Persisted effect table"),
+    cache_dir: Path = typer.Option(
+        Path("runtime/gpu-cache"), help="Simulator/candidate cache directory"
+    ),
+    accounts: str = typer.Option(
+        "", "--accounts", help="Comma-separated watched accounts; defaults to target accounts"
+    ),
+    years: int = typer.Option(200, help="Simulation horizon in years"),
+    period_width: int = typer.Option(10, help="Years per displayed period"),
+    population: int = typer.Option(64, help="Population size"),
+    generations: int = typer.Option(1000, help="Generations to run"),
+    seed: int = typer.Option(7, help="Population seed"),
+    device: str = typer.Option("cuda", help="Torch device"),
+    refresh: float = typer.Option(2.0, help="Seconds between live repaints"),
+    plain: bool = typer.Option(False, "--plain", help="Print one final frame"),
+    rebuild_caches: bool = typer.Option(
+        False, "--rebuild-caches", help="Rebuild simulator/candidate caches"
+    ),
+    schedule_out: Path | None = typer.Option(None, help="Write the final schedule CSV here"),
+) -> None:
+    """Watch the GPU population's exact target windows generation by generation."""
+    import pickle
+    from typing import Any
+
+    import torch
+
+    from .opt.candidate_cache import (
+        CompactCandidates,
+        load_or_build_candidates,
+        load_or_build_simulator,
+    )
+    from .opt.engine import load_schedule_csv
+    from .opt.gpu_effects import EffectTable
+    from .opt.gpu_ga import GenomePopulation
+    from .opt.gpu_watch import run_gpu_watch
+    from .opt.incremental import IncrementalObjective
+    from .opt.objective import load_targets
+
+    target_list = load_targets(targets)
+    account_list = tuple(value.strip() for value in accounts.split(",") if value.strip())
+    if not account_list:
+        account_list = tuple(sorted({target.account for target in target_list}))
+    schedule_cache = Path(str(seed_schedule) + ".pkl")
+    schedule_stat = seed_schedule.stat()
+    if schedule_cache.is_file():
+        try:
+            with schedule_cache.open("rb") as stream:
+                cached_schedule = pickle.load(stream)
+            if (
+                cached_schedule.get("source") == str(seed_schedule)
+                and cached_schedule.get("mtime_ns") == schedule_stat.st_mtime_ns
+                and cached_schedule.get("size") == schedule_stat.st_size
+            ):
+                initial = cached_schedule["schedule"]
+            else:
+                initial = None
+        except (OSError, pickle.UnpicklingError, EOFError):
+            initial = None
+    else:
+        initial = None
+    base_cache = table.with_name(table.name + ".base.pt")
+    base_totals = None
+    if base_cache.is_file():
+        try:
+            base_totals = torch.load(base_cache, map_location=device, weights_only=True)
+        except (OSError, RuntimeError):
+            base_totals = None
+    try:
+        optimizer = Optimizer.from_dataset(
+            dataset,
+            OptimizeConfig(years=years, targets_path=str(targets), iterations=1, threads=1),
+        )
+        load_or_build_simulator(optimizer, cache_dir / "simulator.pkl", rebuild=rebuild_caches)
+        candidates: Any
+        compact_path = cache_dir / "candidates-compact.npz"
+        if compact_path.is_file() and not rebuild_caches:
+            candidates = CompactCandidates.load(compact_path)
+        else:
+            candidates = load_or_build_candidates(
+                optimizer, cache_dir / "candidates.pkl", rebuild=rebuild_caches
+            )
+        effect_table = EffectTable.load(table, device=device)
+        if initial is None:
+            initial = load_schedule_csv(seed_schedule)
+            with schedule_cache.open("wb") as stream:
+                pickle.dump(
+                    {
+                        "source": str(seed_schedule),
+                        "mtime_ns": schedule_stat.st_mtime_ns,
+                        "size": schedule_stat.st_size,
+                        "schedule": initial,
+                    },
+                    stream,
+                    protocol=pickle.HIGHEST_PROTOCOL,
+                )
+        population_instance = GenomePopulation(
+            optimizer,
+            IncrementalObjective(optimizer, target_list),
+            effect_table,
+            population=population,
+            seed=seed,
+            seed_schedule=initial,
+            candidates=candidates,
+            base_totals=base_totals,
+            random_fraction=0.05,
+            initial_mutation_rate=0.02,
+            mutation_rate=0.002,
+            islands=1,
+        )
+        if base_totals is None:
+            torch.save(population_instance.base_totals.detach().cpu(), base_cache)
+        summary = run_gpu_watch(
+            population_instance,
+            target_list,
+            account_list,
+            generations=generations,
+            period_width=period_width,
+            refresh=refresh,
+            plain=plain,
+            schedule_out=schedule_out,
+            targets_path=targets,
+        )
+    except RuntimeError as error:
+        print(f"[red]{error}[/]")
+        raise typer.Exit(code=1) from error
+    table_view = Table(title="GPU watch")
+    for key in ("objective", "penalty", "evaluations", "generations", "blocks", "elapsed"):
+        table_view.add_row(key, str(summary[key]))
+    print(table_view)
+
+
 app.add_typer(recovery_app, name="recovery")
 app.add_typer(species_app, name="species")
 app.add_typer(resilience_app, name="resilience")
