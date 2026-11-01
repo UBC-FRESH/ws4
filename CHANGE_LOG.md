@@ -3672,3 +3672,16 @@ issue comments.
   the maximum even-flow harvest; and a 1e9 priority-tier gap is near-lexicographic while
   weights are the softer dominance control. Added the normative note
   `notes/design/weighted-goal-programming-aspirations.md`. Sphinx `-W` build passed.
+- P87: Launched Phase 87 (Stand density management and AU Explorer) on
+  `feature/p87-sdmd-au-explorer`, parent issue #628, with child issues #629 to #636. The layer is
+  a diagnostic and constraint layer, not a growth model, and its scope, risks, and parallelisation
+  order are in `notes/plans/ws4-sdmd-au-explorer.md`. The maintainer requested the phase directly
+  alongside other parallel expansion sessions, so it starts from `main` while Phase 86 is
+  `pr-open`.
+- P87.1: Added the SDMD schema contract. `ws4/sdmd/schema.py` defines the six tables (plots, trees,
+  stands, SDMD points, regimes, and AU constraints), nullable coercion, frame and dataset
+  validation with stable `SDMD-*` finding codes, value domains, and cross-table reference checks.
+  Added ADR 0013, `docs/reference/sdmd.rst`, and a two-AU, ten-plot fixture under
+  `tests/fixtures/sdmd/` with 38 contract tests. No ingestion, UI, or solver work is included.
+  Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates
+  (lint, format, types, tests, validator, docs, docstrings).

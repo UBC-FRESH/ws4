@@ -38,6 +38,9 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - Dominant-species ingest, block fractions, and VRI comparison.
    * - :doc:`recovery`
      - Post-fire spectral recovery ingest, block status, and caveats.
+   * - :doc:`sdmd`
+     - The stand density management contracts, the AU Explorer boundary, and the
+       validation codes.
    * - :doc:`performance`
      - The measured figures and how to reproduce them.
    * - :doc:`web`
@@ -67,6 +70,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    species-composition
    recovery
    performance
+   sdmd
    web
    femic-lidar
    disturbance

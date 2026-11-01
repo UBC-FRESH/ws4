@@ -89,6 +89,7 @@ exists and the maintainer approves it.
 | P84 Precompiled scheduling substrate and fast startup | #613 | `feature/p84-incremental-state` | complete |
 | P85 GPU acceleration and interactive target cache | #618 | `feature/p85-gpu-acceleration` | complete |
 | P86 Weighted goal-programming target semantics | #625 | `feature/p86-target-semantics` | pr-open |
+| P87 Stand density management and AU Explorer | #628 | `feature/p87-sdmd-au-explorer` | active |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2670,6 +2671,65 @@ Acceptance:
 - Dashboard green.
 
 
+## Phase 87: Stand density management and AU Explorer
+
+Parent issue: #628
+Branch: `feature/p87-sdmd-au-explorer`
+Status: active
+Plan: `notes/plans/ws4-sdmd-au-explorer.md`
+Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
+
+Goal: add a stand-density-management layer that places AU yield evidence, observed
+PSP plots, and compiled FVS trajectories on a species/region diagram, compares
+silviculture regimes as paths, and turns the reviewed result into solver
+constraints. The SDMD is a diagnostic and constraint layer, not a growth model.
+
+- [ ] P87.1 SDMD and regime schemas with an ADR (#629)
+  - [ ] Add `ws4.sdmd.schema` with the six table contracts.
+  - [ ] Add coercion, frame validation, and dataset validation with stable codes.
+  - [ ] Add ADR 0013 and the reference page.
+  - [ ] Add the two-AU, ten-plot fixture and tests.
+- [ ] P87.2 PSP, VRI, and LiDAR ingestion (#630)
+  - [ ] Add the PSP plot and tree-list adapter.
+  - [ ] Add the VRI AU assignment adapter.
+  - [ ] Add the LiDAR structure adapter and refuse canopy-only TPH.
+  - [ ] Label provenance, review status, and synthetic rows.
+- [ ] P87.3 SDMD digitization and AU placement (#631)
+  - [ ] Store one reviewed diagram as ordered vector isopleths.
+  - [ ] Build SDMD points, the AU envelope, and the AU report.
+  - [ ] Place observed plots and FVS trajectories, and flag extrapolation.
+- [ ] P87.4 Regime state machine and constraints (#632)
+  - [ ] Add the even-aged regime library.
+  - [ ] Validate state transitions and AU constraints.
+  - [ ] Flag selection regimes as outside the diagram.
+- [ ] P87.5 AU Explorer API (#633)
+  - [ ] Add the read endpoints.
+  - [ ] Add the validated constraint-write endpoint.
+  - [ ] Add the option-count preview.
+- [ ] P87.6 AU Explorer web tab (#634)
+  - [ ] Add the tab, filters, and URL state.
+  - [ ] Add the yield and SDMD charts.
+  - [ ] Add the regime path, constraint editor, and provenance panel.
+- [ ] P87.7 Solver constraint integration (#635)
+  - [ ] Filter regimes and enforce entry, interval, and removal rules.
+  - [ ] Reject trajectories outside the allowed SDMD zones.
+  - [ ] Measure and record the option-space reduction.
+- [ ] P87.8 Provenance, docs, and closeout (#636)
+  - [ ] Run the eight validation gates.
+  - [ ] Update the ADR, design note, docs, notes, and changelog.
+  - [ ] Write the close-out report and queue the pull request.
+
+Acceptance:
+
+- The six contracts and their validators can fail, and the two-AU fixture passes.
+- Ingestion labels synthetic rows and refuses canopy-only LiDAR as total TPH.
+- The SDMD is reviewed vector data, and out-of-envelope trajectories are flagged.
+- Only AU-allowed regimes reach the solver, with a measured option reduction.
+- The AU Explorer renders the API contract with provenance and caveats.
+- The gates reject the 863 m3/ha initial volume and flag the 1,173 m3/ha trajectory.
+- `python scripts/dashboard.py` is green on every commit.
+
+
 ## Detailed Next Steps Notes
 
 1. Phase 0 is complete: pull request #8 squash-merged as `97330a8`, the branch deleted, and parent
@@ -2836,3 +2896,9 @@ Acceptance:
     same cost per metre and hauls 22% farther at 0.46× the cost per unit-km, because its solve chooses
     the road set and the assignment jointly. Reports: `p17-opened-roads.md`, `p17-tradeoff.md`,
     `p17-closeout.md`. Next: P18.
+24. Phase 87 (Stand density management and AU Explorer) is active on
+    `feature/p87-sdmd-au-explorer`, parent issue #628, with tasks #629 to #636. The maintainer
+    requested it directly alongside other parallel expansion sessions, so it starts from `main`
+    while Phase 86 is `pr-open`. The plan is `notes/plans/ws4-sdmd-au-explorer.md`; the layer is a
+    diagnostic and constraint layer (ADR 0013), not a growth model. P87.1 is the first bounded
+    move: the schema, the ADR, a two-AU fixture, and tests, with no ingestion, UI, or solver work.

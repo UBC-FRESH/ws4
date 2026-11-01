@@ -7,6 +7,7 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `adr/` — architecture decision records. One decision per file. Never rewrite an accepted ADR;
   supersede it with a new one.
 - `design/` — scope, architecture, and focused design notes.
+- `plans/` — multi-task phase plans that are too long for the roadmap.
 - `reports/` — phase close-out reports.
 
 ## Index
@@ -54,6 +55,7 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p83-gpu-matrix.md` — ten-seed full TSA23 GPU matrix and exactness-comparison fix.
 - `design/ws4-optimizer-core.md` — event chains and per-move objective deltas (proposed).
 - `design/ws4-hydrology-consumer-hardening.md` — P62 preflight, exposure, and optimizer-boundary plan.
+- `plans/ws4-sdmd-au-explorer.md` — P87 plan: schema, ingestion, SDMD digitisation, regimes, API, web tab, and solver constraints.
 - `design/ws4-carbon.md` — historical P58 carbon design note; the current contract is
   `docs/reference/carbon.rst`.
 - `reports/p120-multi-boundary.md` — split-TSA production packages and full-landscape
@@ -91,4 +93,5 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `adr/0010-telemetry-meta-portfolio.md` — telemetry-driven tuning and a meta-meta-heuristic portfolio.
 - `adr/0011-forestmodelxml-and-legacy-ingestion.md` — adopt the established ForestModelXML format and support legacy datasets.
 - `adr/0012-file-and-programmatic-paths.md` — two model-construction paths, file-based and programmatic.
+- `adr/0013-sdmd-as-constraint-layer.md` — the SDMD layer is diagnostic and a constraint source, not a growth model.
 - `reports/p84-state-watch.md` — resident Model II state watcher on the c5 sample.
