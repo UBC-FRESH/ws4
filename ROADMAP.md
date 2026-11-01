@@ -89,7 +89,7 @@ exists and the maintainer approves it.
 | P84 Precompiled scheduling substrate and fast startup | #613 | `feature/p84-incremental-state` | complete |
 | P85 GPU acceleration and interactive target cache | #618 | `feature/p85-gpu-acceleration` | complete |
 | P86 Weighted goal-programming target semantics | #625 | `feature/p86-target-semantics` | pr-open |
-| P88 Factorized GPU account search | #637 | `feature/p88-factorized-gpu` | active |
+| P88 Factorized GPU account search | #637 | `feature/p88-factorized-gpu` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2675,7 +2675,7 @@ Acceptance:
 
 Parent issue: #637
 Branch: `feature/p88-factorized-gpu`
-Status: active
+Status: pr-open
 Plan: `notes/design/factorized-account-basis.md`
 Report: `notes/reports/p88-factorized-gpu.md`
 

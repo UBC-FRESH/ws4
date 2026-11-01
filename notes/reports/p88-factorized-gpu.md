@@ -3,7 +3,7 @@
 Parent issue: #637
 Branch: `feature/p88-factorized-gpu`
 Evidence commit: `28f0c64`
-Pull request: pending
+Pull request: #642
 
 ## Result
 
