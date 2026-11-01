@@ -561,6 +561,10 @@ class BlockAccountState:
 def state_objective(state: BlockAccountState, targets: Sequence[Any]) -> float:
     """Return the target objective from the resident period pages.
 
+    The pages already hold a period's accumulated product or its period-end feature value.
+    This builds the minimal year-indexed view expected by :func:`objective_terms` and
+    evaluates the same target definitions as the exact evaluator.
+
     Parameters
     ----------
     state : BlockAccountState
