@@ -54,6 +54,9 @@ Success: no issues found
 
 python scripts/check_workflow.py
 0 error(s), 0 warning(s)
+
+python scripts/dashboard.py
+OVERALL: GREEN. Every gate passed.
 ```
 
 Full evidence is in `notes/reports/gpu-acceleration-tsa24.md`, and the cache design is in

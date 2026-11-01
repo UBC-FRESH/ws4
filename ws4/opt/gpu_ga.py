@@ -68,7 +68,7 @@ if TYPE_CHECKING:
     from .engine import Optimizer
     from .gpu_effects import EffectTable
     from .incremental import IncrementalObjective
-    from .operators import Candidates, Schedule
+    from .operators import Schedule
 
 
 def _require_torch() -> None:
@@ -186,7 +186,11 @@ class GenomePopulation:
         candidate of every block.
     candidates : mapping of int to list of tuple, optional
         The per-block candidate chains.  None calls ``optimizer.candidates()``.  Passing a
-        precomputed mapping is useful when a persisted table is reloaded.
+        precomputed mapping is useful when a persisted table is reloaded. A compact
+        candidate store with the same option protocol is also accepted.
+    base_totals : torch.Tensor, optional
+        Cell totals for the empty schedule. None computes them from the optimizer; a
+        persisted sidecar can supply them to avoid the empty-schedule simulation.
     random_fraction : float, optional
         The fraction of the initial population that is uniformly random.  Defaults to 0.15.
     initial_mutation_rate : float, optional
@@ -232,7 +236,7 @@ class GenomePopulation:
         population: int = 64,
         seed: int = 1,
         seed_schedule: Mapping[int, Chain] | None = None,
-        candidates: Candidates | None = None,
+        candidates: Any = None,  # noqa: ANN401
         base_totals: torch_type.Tensor | None = None,
         random_fraction: float = 0.15,
         initial_mutation_rate: float = 0.05,
@@ -312,7 +316,7 @@ class GenomePopulation:
 
     def _options(
         self,
-        candidates: Candidates,
+        candidates: Any,  # noqa: ANN401
         seed_schedule: Mapping[int, Chain] | None,
     ) -> tuple[torch_type.Tensor, torch_type.Tensor]:
         """Return option lengths and padded table row ids for every block.

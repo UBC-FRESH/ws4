@@ -137,6 +137,8 @@ class EffectTable:
         full row index when the population builds its option map.
     extra_rows : dict of (int, tuple) to int, optional
         Seed-only rows that are not candidate rows.
+    basis_accounts : tuple of str, optional
+        Accounts represented by the cell basis. Empty on legacy target-coupled tables.
 
     Attributes
     ----------

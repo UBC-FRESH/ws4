@@ -326,6 +326,21 @@ class CompactCandidates:
     The mapping is read-only and keeps the candidate/event arrays out of Python objects.
     It supports the small candidate protocol the GPU population needs: option counts,
     one chain by position, all chains for one block, and a chain-position lookup.
+
+    Parameters
+    ----------
+    blocks : numpy.ndarray
+        Sorted block ids.
+    chain_offsets : numpy.ndarray
+        Offset of each block's first chain, plus a sentinel.
+    event_offsets : numpy.ndarray
+        Offset of each chain's first event, plus a sentinel.
+    event_years : numpy.ndarray
+        Treatment year for each event.
+    event_labels : numpy.ndarray
+        Integer treatment-label id for each event.
+    labels : tuple of str
+        Treatment-label dictionary.
     """
 
     def __init__(
@@ -347,7 +362,18 @@ class CompactCandidates:
 
     @classmethod
     def from_candidates(cls, candidates: Candidates) -> CompactCandidates:
-        """Build the flat representation from a candidate mapping."""
+        """Build the flat representation from a candidate mapping.
+
+        Parameters
+        ----------
+        candidates : mapping of int to sequence of tuple
+            Candidate chains per block.
+
+        Returns
+        -------
+        CompactCandidates
+            The flat representation.
+        """
         blocks: list[int] = []
         chain_offsets = array("q", [0])
         event_offsets = array("q", [0])
@@ -379,7 +405,18 @@ class CompactCandidates:
         )
 
     def save(self, path: str | Path) -> Path:
-        """Write the compact mapping to one uncompressed NumPy archive."""
+        """Write the compact mapping to one uncompressed NumPy archive.
+
+        Parameters
+        ----------
+        path : str or pathlib.Path
+            Destination archive.
+
+        Returns
+        -------
+        pathlib.Path
+            The written path.
+        """
         import numpy as np
 
         destination = Path(path)
@@ -397,7 +434,18 @@ class CompactCandidates:
 
     @classmethod
     def load(cls, path: str | Path) -> CompactCandidates:
-        """Load a compact mapping with memory-mapped candidate/event arrays."""
+        """Load a compact mapping with memory-mapped candidate/event arrays.
+
+        Parameters
+        ----------
+        path : str or pathlib.Path
+            Archive written by :meth:`save`.
+
+        Returns
+        -------
+        CompactCandidates
+            The loaded mapping.
+        """
         import numpy as np
 
         with np.load(Path(path), mmap_mode="r", allow_pickle=False) as payload:
@@ -418,14 +466,38 @@ class CompactCandidates:
         return self._positions.get(int(block))
 
     def option_count(self, block: int) -> int:
-        """Return the number of candidate chains for one block."""
+        """Return the number of candidate chains for one block.
+
+        Parameters
+        ----------
+        block : int
+            Block id.
+
+        Returns
+        -------
+        int
+            The option count, or zero when the block is absent.
+        """
         position = self._position(block)
         if position is None:
             return 0
         return int(self.chain_offsets[position + 1] - self.chain_offsets[position])
 
     def chain_at(self, block: int, option: int) -> tuple[tuple[str, int], ...]:
-        """Return one candidate chain by block and option position."""
+        """Return one candidate chain by block and option position.
+
+        Parameters
+        ----------
+        block : int
+            Block id.
+        option : int
+            Candidate option position.
+
+        Returns
+        -------
+        tuple of (str, int)
+            The candidate chain.
+        """
         position = self._position(block)
         if position is None:
             raise KeyError(block)
@@ -440,18 +512,55 @@ class CompactCandidates:
         )
 
     def chains(self, block: int) -> tuple[tuple[tuple[str, int], ...], ...]:
-        """Return every chain for one block as Python tuples."""
+        """Return every chain for one block as Python tuples.
+
+        Parameters
+        ----------
+        block : int
+            Block id.
+
+        Returns
+        -------
+        tuple of tuple of (str, int)
+            The block's candidate chains.
+        """
         return tuple(self.chain_at(block, option) for option in range(self.option_count(block)))
 
     def index_of(self, block: int, chain: tuple[tuple[str, int], ...]) -> int | None:
-        """Return the option position for a chain, or None."""
+        """Return the option position for a chain, or None.
+
+        Parameters
+        ----------
+        block : int
+            Block id.
+        chain : tuple of (str, int)
+            Candidate chain to find.
+
+        Returns
+        -------
+        int or None
+            The option position, or None when the chain is absent.
+        """
         for option in range(self.option_count(block)):
             if self.chain_at(block, option) == chain:
                 return option
         return None
 
     def get(self, block: int, default: Any = None) -> Any:  # noqa: ANN401
-        """Return one block's chains, matching the mapping interface."""
+        """Return one block's chains, matching the mapping interface.
+
+        Parameters
+        ----------
+        block : int
+            Block id.
+        default : object, optional
+            Value returned when the block is absent.
+
+        Returns
+        -------
+        object
+            The block's chains or ``default``.
+        """
         if self._position(block) is None:
             return default
         return self.chains(block)

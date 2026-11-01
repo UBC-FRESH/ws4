@@ -3656,4 +3656,5 @@ issue comments.
   per-generation live renderer measured 755 eval/s; the throttled live path measured
   6,247 eval/s on a 2k run. Tests: 37 passed across the GPU population, effect-table, and
   search suites; ruff and strict mypy clean; workflow validator 0 errors/0 warnings.
-  Cloud packaging for the TSA24 instance is deferred to that repository.
+  Cloud packaging for the TSA24 instance is deferred to that repository. Full dashboard:
+  **GREEN** (lint, format, types, tests, validator, docs, docstrings).
