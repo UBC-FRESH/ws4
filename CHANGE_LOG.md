@@ -3665,3 +3665,10 @@ issue comments.
   search suites; ruff and strict mypy clean; workflow validator 0 errors/0 warnings.
   Cloud packaging for the TSA24 instance is deferred to that repository. Full dashboard:
   **GREEN** (lint, format, types, tests, validator, docs, docstrings).
+- P86: Weighted goal-programming target semantics. Parent #625, branch
+  `feature/p86-target-semantics`. Documented that target minimum/maximum are one-sided
+  penalty hinges, not hard feasibility bounds; a deliberately unreachable harvest minimum
+  is a pull-up aspiration; a dominant flow target plus period-level aspirations produces
+  the maximum even-flow harvest; and a 1e9 priority-tier gap is near-lexicographic while
+  weights are the softer dominance control. Added the normative note
+  `notes/design/weighted-goal-programming-aspirations.md`. Sphinx `-W` build passed.
