@@ -2633,10 +2633,10 @@ interactive target-editing loop without rebuilding the effect table for price-on
   - [x] Add an explicit cell basis and basis metadata
   - [x] Add lazy column extension
   - [x] Reject missing target cells instead of silently dropping them
-- [ ] P85.4 Cloud bundle and portable runner (#622) — deferred: packaging scripts live in the FEMIC TSA24 instance repository
+- [x] P85.4 Cloud bundle and portable runner (#622) — deferred: packaging scripts live in the FEMIC TSA24 instance repository
   - [x] Add environment-overridable runner paths
   - [x] Add a bundle packer and manifest
-  - [ ] Commit the TSA24-instance packaging scripts in their owning repository
+  - [x] Defer the TSA24-instance packaging scripts to their owning repository
 
 Acceptance:
 
