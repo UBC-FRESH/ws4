@@ -87,7 +87,7 @@ exists and the maintainer approves it.
 | P82 Seeded max-flow | #575 | `feature/p82-seeded-max-flow` | active |
 | P83 Two-stage c5 even-flow | #579 | `feature/p83-two-stage-flow` | active |
 | P84 Precompiled scheduling substrate and fast startup | #613 | `feature/p84-incremental-state` | pr-open |
-| P85 GPU acceleration and interactive target cache | #618 | `feature/p85-gpu-acceleration` | pr-open |
+| P85 GPU acceleration and interactive target cache | #618 | `feature/p85-gpu-acceleration` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2613,7 +2613,7 @@ Acceptance:
 
 Parent issue: #618
 Branch: `feature/p85-gpu-acceleration`
-Status: pr-open
+Status: complete
 Plan: `notes/design/gpu-effect-cache-interactivity.md`
 Report: `notes/reports/gpu-acceleration-tsa24.md`
 
