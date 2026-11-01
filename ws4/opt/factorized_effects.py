@@ -311,6 +311,10 @@ class FactorizedEffectArrays:
         Offset of each block's first option, plus a sentinel.
     segment_offsets : numpy.ndarray
         Offset of each option's first segment, plus a sentinel.
+    option_fragment_offsets : numpy.ndarray
+        Offset of each option's first fragment, plus a sentinel.
+    fragment_offsets : numpy.ndarray
+        Offset of each fragment's first segment, plus a sentinel.
     segment_start, segment_track, segment_age : numpy.ndarray
         Segment anchors.
     segment_area : numpy.ndarray
@@ -560,6 +564,8 @@ class FactorizedEffectArrays:
             Block id to candidate option position.
         period_width : int
             Years per accounting period.
+        years : int
+            Simulation horizon.
         simulator : object
             Simulator providing track/age curve lookup.
 
@@ -617,6 +623,8 @@ class FactorizedEffectArrays:
             Block id to candidate option position.
         period_width : int
             Years per accounting period.
+        years : int
+            Simulation horizon.
         simulator : object
             Simulator providing product curve lookup.
 
@@ -794,6 +802,17 @@ class PaddedFactorizedEvents:
     Events are point contributions. TSA24 has at most three events per option, so a
     ``[options, events]`` layout is small enough to keep on the device without an
     all-account matrix.
+
+    Parameters
+    ----------
+    offset, track, age, label, area : torch.Tensor
+        ``[options, events]`` event tensors.
+    valid : torch.Tensor
+        Boolean validity mask with the same shape.
+    chain_offsets : torch.Tensor
+        Block-to-option offset tensor.
+    blocks : torch.Tensor
+        Sorted block ids.
     """
 
     def __init__(
@@ -819,7 +838,18 @@ class PaddedFactorizedEvents:
 
     @classmethod
     def estimated_bytes(cls, arrays: FactorizedEffectArrays) -> int:
-        """Return the padded CPU event array bytes before torch conversion."""
+        """Return the padded CPU event array bytes before torch conversion.
+
+        Parameters
+        ----------
+        arrays : FactorizedEffectArrays
+            Flat descriptor arrays.
+
+        Returns
+        -------
+        int
+            Estimated padded bytes.
+        """
         import numpy as np
 
         options = arrays.option_count
@@ -938,7 +968,18 @@ class PaddedFactorizedEvents:
         return output[:, selected]
 
     def to(self, device: str) -> PaddedFactorizedEvents:
-        """Move the padded event tensors to another device."""
+        """Move the padded event tensors to another device.
+
+        Parameters
+        ----------
+        device : str
+            Torch device string.
+
+        Returns
+        -------
+        PaddedFactorizedEvents
+            The same layout on the requested device.
+        """
         return PaddedFactorizedEvents(
             offset=self.offset.to(device),
             track=self.track.to(device),
@@ -1176,7 +1217,18 @@ class FactorizedAccountSet:
         self._product_accounts: set[str] | None = None
 
     def supports(self, account: str) -> bool:
-        """Return whether the simulator exposes the account label."""
+        """Return whether the simulator exposes the account label.
+
+        Parameters
+        ----------
+        account : str
+            Feature or product account label.
+
+        Returns
+        -------
+        bool
+            ``True`` when the simulator has that account.
+        """
         if account.startswith("product."):
             if self._product_accounts is None:
                 self._product_accounts = {
@@ -1202,7 +1254,24 @@ class FactorizedAccountSet:
         years: int,
         device: str = "cpu",
     ) -> FactorizedAccountSet:
-        """Build the account set from flat descriptor arrays."""
+        """Build the account set from flat descriptor arrays.
+
+        Parameters
+        ----------
+        arrays : FactorizedEffectArrays
+            Flat descriptor arrays.
+        simulator : object
+            Simulator providing curve lookup.
+        years : int
+            Simulation horizon.
+        device : str
+            Torch device string.
+
+        Returns
+        -------
+        FactorizedAccountSet
+            The account set on ``device``.
+        """
         feature_max_track = max(0, int(arrays.segment_track.max(initial=0)))
         feature_max_age = max(1, int(arrays.segment_age.max(initial=0)) + int(years))
         product_max_track = max(0, int(arrays.event_track.max(initial=0)))
@@ -1233,7 +1302,26 @@ class FactorizedAccountSet:
         device: str = "cpu",
         arrays: FactorizedEffectArrays | None = None,
     ) -> FactorizedAccountSet:
-        """Build the account set from a persisted descriptor archive."""
+        """Build the account set from a persisted descriptor archive.
+
+        Parameters
+        ----------
+        path : str or pathlib.Path
+            Persisted archive path.
+        simulator : object
+            Simulator providing curve lookup.
+        years : int
+            Simulation horizon.
+        device : str
+            Torch device string.
+        arrays : FactorizedEffectArrays or None, optional
+            Already-loaded arrays; None loads ``path``.
+
+        Returns
+        -------
+        FactorizedAccountSet
+            The account set on ``device``.
+        """
         payload = arrays if arrays is not None else FactorizedEffectArrays.load(path)
         return cls.from_arrays(payload, simulator, years=years, device=device)
 

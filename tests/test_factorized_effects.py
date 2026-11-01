@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from tests.test_gpu_ga import _optimizer
 from ws4.opt.factorized_effects import (
     FactorizedAccountSet,
     FactorizedEffectArrays,
@@ -15,6 +14,8 @@ from ws4.opt.factorized_effects import (
     build_feature_value_table,
     build_product_value_table,
 )
+
+from test_gpu_ga import _optimizer
 
 torch = pytest.importorskip("torch")
 

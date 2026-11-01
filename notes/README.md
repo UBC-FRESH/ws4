@@ -28,6 +28,7 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `design/ws4-optimization-stack.md` — the optimization stack and the execution substrate.
 - `design/weighted-goal-programming-aspirations.md` — targets are weighted aspirations, not hard bounds; maximum even-flow harvest and priority-tier caveats.
 - `design/gpu-effect-cache-interactivity.md` — target-independent GPU cache basis, lazy column extension, and live target editing.
+- `design/factorized-account-basis.md` — P88 structural account basis, padded device layouts, one-account lookups, and target switching.
 - `design/research-paper-ideas.md` — benchmark-reproduction and generic-solver paper ideas; planning only.
 - `design/ws4-matrix-builder-and-interop.md` — the ForestModelXML recipe, the matrix builder, and legacy ingestion.
 - `design/ws4-fast-startup.md` — P84 resident Model II startup and state-watch plan.
@@ -45,6 +46,7 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `design/ws4-gpu-search.md` — the P83.6 GPU-native batch/population search design.
 - `design/ws4-gpu-population-search.md` — the P83.8 candidate-index GPU population search plan.
 - `design/ws4-metaheuristic-portfolio.md` — the P83.9 SA/tabu/ILS/GA/LNS master/worker portfolio plan.
+- `reports/p88-factorized-gpu.md` — the P88 full TSA24 factorized feature/product pricers, mixed account switch, and memory evidence.
 - `reports/p83-8-gpu-population.md` — the P83.8 candidate-index population search, c5 2k and TSA23 5k benchmarks.
 - `reports/p83-7-full-tsa23.md` — the full-model TSA23 20 x 10 GPU population run and exact replay.
 - `reports/p83-closeout.md` — phase close-out: c5 policy result, GPU search, population, and portfolio findings.

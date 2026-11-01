@@ -89,6 +89,7 @@ exists and the maintainer approves it.
 | P84 Precompiled scheduling substrate and fast startup | #613 | `feature/p84-incremental-state` | complete |
 | P85 GPU acceleration and interactive target cache | #618 | `feature/p85-gpu-acceleration` | complete |
 | P86 Weighted goal-programming target semantics | #625 | `feature/p86-target-semantics` | pr-open |
+| P88 Factorized GPU account search | #637 | `feature/p88-factorized-gpu` | active |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2669,6 +2670,39 @@ Acceptance:
 - Sphinx builds with warnings as errors.
 - Dashboard green.
 
+
+## Phase 88: Factorized GPU account search
+
+Parent issue: #637
+Branch: `feature/p88-factorized-gpu`
+Status: active
+Plan: `notes/design/factorized-account-basis.md`
+Report: `notes/reports/p88-factorized-gpu.md`
+
+Goal: replace the rejected all-account effects matrix with an account-independent
+structural basis and padded GPU feature/product pricers, then switch target accounts
+without rebuilding an all-account table.
+
+- [x] P88.1 Post-P85 effect-table safety and bounded lean build (#638)
+  - [x] Preflight the builder and cap worker memory
+  - [x] Keep the lean build without the full row-index dictionary
+  - [x] Record the OOM postmortem
+- [x] P88.2 Persisted factorized basis and padded GPU pricers (#639)
+  - [x] Persist the flat segment/event descriptors
+  - [x] Add padded feature and product tensors
+  - [x] Match the full TSA24 exact evaluator
+- [x] P88.3 Wire target account switching into the resident population (#640)
+  - [x] Price missing target cells through one-account lookups
+  - [x] Leave the sparse table unchanged on an account switch
+  - [x] Cover the switch with a population exactness test
+- [ ] P88.4 Benchmark report, docs, and phase closeout (#641)
+
+Acceptance:
+
+- Full TSA24 feature and product batches of 64 genomes match the exact evaluator.
+- Mixed feature/product target cells are priced without an all-account matrix.
+- Host and GPU memory are bounded and recorded.
+- The phase closes with a report, verification, and a `Part of #637` pull request.
 
 ## Detailed Next Steps Notes
 
