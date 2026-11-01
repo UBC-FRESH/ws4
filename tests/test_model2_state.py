@@ -20,3 +20,6 @@ def test_candidate_index_round_trip(tmp_path: Path) -> None:
     index.save(path)
     loaded = CandidateIndex.load(path)
     assert loaded.to_candidates() == candidates
+    assert loaded.option_count(1) == 2
+    assert loaded.chain(1, 1) == (("CC", 10),)
+    assert loaded.option_count(999) == 0

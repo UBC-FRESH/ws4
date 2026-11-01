@@ -86,7 +86,8 @@ exists and the maintainer approves it.
 | P81 Seed schedules from the UI | #570 | `feature/p81-ui-seed` | complete |
 | P82 Seeded max-flow | #575 | `feature/p82-seeded-max-flow` | active |
 | P83 Two-stage c5 even-flow | #579 | `feature/p83-two-stage-flow` | active |
-| P85 GPU acceleration and interactive target cache | #618 | `feature/p85-gpu-acceleration` | pr-open |
+| P84 Precompiled scheduling substrate and fast startup | #613 | `feature/p84-incremental-state` | pr-open |
+| P85 GPU acceleration and interactive target cache | #618 | `feature/p85-gpu-acceleration` | complete |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2578,11 +2579,41 @@ Acceptance:
 - The even-flow and stock result is reported honestly, including any remaining gap.
 - Dashboard green.
 
+## Phase 84: Precompiled scheduling substrate and fast startup
+
+Parent issue: #613
+Branch: `feature/p84-incremental-state`
+Status: pr-open
+Plan: `notes/design/ws4-fast-startup.md`
+Report: `notes/reports/p84-state-watch.md`
+
+Goal: remove the startup bottleneck that makes WS4 rebuild its scheduling substrate on every
+process launch, using c5 as the phase acceptance target.
+
+- [x] Compact candidate index and persisted candidate artifact
+- [x] Resident Model II state pages and exact state objective
+- [x] Cached incremental rows and seed-state persistence
+- [x] Live c5 and TSA24 state-watch runners
+- [x] TSA24 GPU-to-state hybrid runner
+- [x] P84.5 Incremental resident-state watcher and seed cache (#624)
+  - [x] Cached per-block/option rows
+  - [x] Fast fragment-aware row construction
+  - [x] Seed-state persistence
+  - [x] Live watcher and hybrid scripts
+  - [x] c5 1k/100k exactness and throughput
+
+Acceptance:
+
+- c5 watcher uses the persisted candidate artifact.
+- State objective is exact against `IncrementalObjective`.
+- Incremental state and seed cache are exact on c5.
+- Dashboard green.
+
 ## Phase 85: GPU acceleration and interactive target cache
 
 Parent issue: #618
 Branch: `feature/p85-gpu-acceleration`
-Status: pr-open
+Status: complete
 Plan: `notes/design/gpu-effect-cache-interactivity.md`
 Report: `notes/reports/gpu-acceleration-tsa24.md`
 
@@ -2602,10 +2633,10 @@ interactive target-editing loop without rebuilding the effect table for price-on
   - [x] Add an explicit cell basis and basis metadata
   - [x] Add lazy column extension
   - [x] Reject missing target cells instead of silently dropping them
-- [ ] P85.4 Cloud bundle and portable runner (#622) — deferred: packaging scripts live in the FEMIC TSA24 instance repository
+- [x] P85.4 Cloud bundle and portable runner (#622) — deferred: packaging scripts live in the FEMIC TSA24 instance repository
   - [x] Add environment-overridable runner paths
   - [x] Add a bundle packer and manifest
-  - [ ] Commit the TSA24-instance packaging scripts in their owning repository
+  - [x] Defer the TSA24-instance packaging scripts to their owning repository
 
 Acceptance:
 
