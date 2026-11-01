@@ -10,6 +10,9 @@ Objective
 ---------
 
 A target names one account and one accounting **period**, with a ``minimum``, a ``maximum``, or both.
+The target is an **aspiration with a one-sided penalty**, not a hard feasibility bound: a minimum
+charges shortfall and leaves over-performance free unless a maximum is also supplied. A minimum set
+above the achievable level is therefore a legitimate pull-up device, not an infeasible constraint.
 **The simulation step is one year and is not configurable.** Treatments, growth, transitions and road
 events are all simulated annually, at a simulation *offset* (offset 0 is the first year); the
 **account** time step is a whole number of years — the period length — and is what ``period_width``
@@ -138,9 +141,17 @@ to move inside:
        max_weight: 10000
        shape: non_linear
 
-That pairing is the useful idiom: the band constrains only the *shape*, the minimum target pulls the
-level up, and the pair converges on the **highest even-flow level** the forest can sustain without the
-level ever being specified — so the same two targets work across scenarios.
+That pairing is the useful idiom: the band constrains only the *shape*, while the level target pulls the
+profile up. The level target can be deliberately higher than any achievable level; it then acts as a
+persistent pull-up aspiration rather than a promise. With a dominant flow target, the pair converges on
+the **maximum even-flow harvest** the forest can sustain, without the level ever being specified — so
+the same two targets work across scenarios.
+
+The amount of “dominance” matters. A high flow **weight** leaves the level term active as a pull and
+still lets shape win most trade-offs. A **priority-tier** gap is much more nearly lexicographic: because
+adjacent tiers are separated by ``PRIORITY_SCALE`` (``1e9``), a lower-tier level target has almost no
+influence unless the higher-tier flow penalty is effectively tied. Use a tier gap when that hard
+ordering is intended; use weights when the goal is “dominant but still balanced.”
 
 Because both flow kinds divide by a balance, the term is **infinite while that balance is zero** — for
 ``even`` the reference period, for ``ndy`` every period a comparison starts from. That is definitional,
