@@ -3685,3 +3685,11 @@ issue comments.
   `tests/fixtures/sdmd/` with 38 contract tests. No ingestion, UI, or solver work is included.
   Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates
   (lint, format, types, tests, validator, docs, docstrings).
+- P87.2: Added the SDMD ingest adapters in `ws4/sdmd/ingest.py`: PSP plot and tree-list
+  normalization with aliases and schema refusal, VRI AU assignment, deterministic leading-species
+  derivation, plot-to-AU matching by BEC/TSA/species/age/site with an explicit unmatched report,
+  synthetic gap-fill labelling, and LiDAR structure evidence. A canopy-only LiDAR TPH is refused as
+  total density, a `nemora` row without a `synthetic:` label is refused, and ambiguous AU matches are
+  reported rather than guessed. Added 30 contract tests and the ingestion section of
+  `docs/reference/sdmd.rst`. Dashboard result: `python scripts/dashboard.py` reports
+  `OVERALL: GREEN` on all seven gates.

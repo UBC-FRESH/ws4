@@ -2689,11 +2689,11 @@ constraints. The SDMD is a diagnostic and constraint layer, not a growth model.
   - [x] Add coercion, frame validation, and dataset validation with stable codes.
   - [x] Add ADR 0013 and the reference page.
   - [x] Add the two-AU, ten-plot fixture and tests.
-- [ ] P87.2 PSP, VRI, and LiDAR ingestion (#630)
-  - [ ] Add the PSP plot and tree-list adapter.
-  - [ ] Add the VRI AU assignment adapter.
-  - [ ] Add the LiDAR structure adapter and refuse canopy-only TPH.
-  - [ ] Label provenance, review status, and synthetic rows.
+- [x] P87.2 PSP, VRI, and LiDAR ingestion (#630)
+  - [x] Add the PSP plot and tree-list adapter.
+  - [x] Add the VRI AU assignment adapter and reported matching.
+  - [x] Add the LiDAR structure adapter and refuse canopy-only TPH.
+  - [x] Label provenance, review status, and synthetic rows.
 - [ ] P87.3 SDMD digitization and AU placement (#631)
   - [ ] Store one reviewed diagram as ordered vector isopleths.
   - [ ] Build SDMD points, the AU envelope, and the AU report.

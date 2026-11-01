@@ -76,6 +76,52 @@ Findings use stable codes:
 The fixture in ``tests/fixtures/sdmd/`` has two AUs and ten plots and validates
 cleanly. It is the contract that later tasks reuse.
 
+Ingestion
+---------
+
+The adapters in ``ws4.sdmd.ingest`` take a DataFrame and return a typed contract
+table. They do not read a proprietary file format and do not fetch data; the
+caller is responsible for obtaining the public source under its licence.
+
+.. code-block:: python
+
+   from ws4.sdmd.ingest import (
+       label_synthetic,
+       leading_species,
+       match_plots_to_aus,
+       read_lidar_evidence,
+       read_psp_plots,
+       read_psp_trees,
+       read_vri_aus,
+   )
+
+   plots = read_psp_plots(raw_plots)
+   trees = read_psp_trees(raw_trees, plots=plots)
+   aus = read_vri_aus(raw_vri)
+   species = leading_species(trees)
+   result = match_plots_to_aus(plots, aus, leading_species=species)
+   matched, unmatched = result.matched, result.unmatched
+   lidar = read_lidar_evidence(raw_lidar)
+
+``read_psp_plots`` and ``read_psp_trees`` accept the canonical column names and a
+small set of short aliases, coerce the types, and refuse a schema or domain
+finding. ``read_vri_aus`` requires one row per AU with a BEC/TSA key, a species
+group, and optional age and site-index windows.
+
+``match_plots_to_aus`` fills a blank ``au_id`` only when exactly one AU matches on
+region, BEC, TSA, species group, age, and site index. No match and more than one
+match go to ``unmatched`` with a ``match_reason``; neither is guessed. A
+preassigned ``au_id`` is kept only when the VRI table contains it.
+
+``label_synthetic`` prefixes the source with ``synthetic:`` and sets the review
+status to ``provisional``. ``read_psp_plots`` refuses a row that names ``nemora``
+without that label, so a gap-fill cannot enter as an observation.
+
+``read_lidar_evidence`` accepts piece size, clump fraction, canopy cover, and a
+total TPH. A row whose ``tph_basis`` is ``canopy_only`` may carry structure, but a
+TPH on such a row is refused: canopy-derived density is not total stand density.
+The basis is a closed set, and every row must carry at least one metric.
+
 Evidence roles and limits
 -------------------------
 

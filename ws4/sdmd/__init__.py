@@ -6,6 +6,17 @@ growth evidence. It is not a growth model. See ``notes/adr/0013-sdmd-as-constrai
 
 from __future__ import annotations
 
+from .ingest import (
+    AuMatchResult,
+    SdmdIngestError,
+    label_synthetic,
+    leading_species,
+    match_plots_to_aus,
+    read_lidar_evidence,
+    read_psp_plots,
+    read_psp_trees,
+    read_vri_aus,
+)
 from .schema import (
     AU_CONSTRAINTS,
     PLOTS,
@@ -41,10 +52,19 @@ __all__ = [
     "SDMD_ZONES",
     "STANDS",
     "TREES",
+    "AuMatchResult",
     "Column",
     "Problem",
+    "SdmdIngestError",
     "Table",
     "coerce_to_schema",
+    "label_synthetic",
+    "leading_species",
+    "match_plots_to_aus",
+    "read_lidar_evidence",
+    "read_psp_plots",
+    "read_psp_trees",
+    "read_vri_aus",
     "table_schema",
     "validate_dataset",
     "validate_frame",
