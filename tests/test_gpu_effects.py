@@ -353,3 +353,27 @@ def test_gpu_pricer_rejects_target_cells_missing_from_the_basis(tmp_path: Path) 
     )
     with pytest.raises(ValueError, match="missing target cells"):
         BatchedLnsSearch(optimizer, changed, table)
+
+
+def test_parallel_lean_table_matches_sequential(tmp_path: Path) -> None:
+    """Forked chunk pricing produces the same sparse lean table."""
+    optimizer, evaluator = _optimizer(tmp_path)
+    candidates = optimizer.candidates()
+    sequential = EffectTable.build(
+        optimizer,
+        evaluator,
+        candidates=candidates,
+        include_row_index=False,
+    )
+    parallel = EffectTable.build(
+        optimizer,
+        evaluator,
+        candidates=candidates,
+        include_row_index=False,
+        workers=2,
+    )
+    assert parallel.cells == sequential.cells
+    assert parallel.blocks == sequential.blocks
+    assert torch.equal(parallel.indptr, sequential.indptr)
+    assert torch.equal(parallel.indices, sequential.indices)
+    assert torch.equal(parallel.values, sequential.values)

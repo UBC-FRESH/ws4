@@ -66,6 +66,7 @@ if TYPE_CHECKING:
     import torch as torch_type
 
     from .engine import Optimizer
+    from .factorized_effects import FactorizedAccountSet
     from .gpu_effects import EffectTable
     from .incremental import IncrementalObjective
     from .operators import Schedule
@@ -216,6 +217,9 @@ class GenomePopulation:
         Defaults to zero, which disables migration.
     migrants : int, optional
         The number of best genomes copied from one island to the next.  Defaults to one.
+    factorized : FactorizedAccountSet or None, optional
+        One-account factorized lookup used for target cells that are absent from the
+        sparse effect table.  None keeps the table-only path.
 
     Raises
     ------
@@ -247,6 +251,7 @@ class GenomePopulation:
         exchange: str = "ring",
         migration_interval: int = 0,
         migrants: int = 1,
+        factorized: FactorizedAccountSet | None = None,
     ) -> None:
         _require_torch()
         _check_supported(evaluator)
@@ -291,6 +296,8 @@ class GenomePopulation:
         self.generator = torch.Generator(device=self.device)
         self.generator.manual_seed(seed)
         self.pricer = _ObjectivePricer(evaluator, table.cells, self.device)
+        self.factorized = factorized
+        self._extra_cells: tuple[tuple[int, str], ...] = ()
         self.blocks = tuple(table.blocks)
         if not self.blocks:
             raise ValueError("the effect table has no blocks")
@@ -461,9 +468,26 @@ class GenomePopulation:
             )
         return genomes
 
-    def _ensure_target_cells(self, evaluator: IncrementalObjective) -> None:
-        """Extend the resident table lazily when a target reads new cells."""
-        required = {
+    def ensure_cells(self, cells: Any) -> None:  # noqa: ANN401
+        """Append any missing account/offset cells to the resident table.
+
+        Parameters
+        ----------
+        cells : iterable of (int, str)
+            Account/offset cells required by a target or a watched account.
+        """
+        missing = set(cells) - set(self.table.cells)
+        if not missing:
+            return
+        table, base = self.table.extend_cells(self.optimizer, sorted(missing), self._candidates)
+        self.table = table
+        if base:
+            extra = torch.tensor(base, dtype=torch.float64, device=self.device)
+            self.base_totals = torch.cat((self.base_totals, extra))
+
+    def _required_cells(self, evaluator: IncrementalObjective) -> set[tuple[int, str]]:
+        """Return the target cells the evaluator reads."""
+        return {
             cell
             for index, target in enumerate(evaluator.targets)
             if target.active
@@ -476,14 +500,23 @@ class GenomePopulation:
                 ),
             )
         }
+
+    def _ensure_target_cells(self, evaluator: IncrementalObjective) -> None:
+        """Resolve target cells through the table or factorized account set."""
+        required = self._required_cells(evaluator)
         missing = required - set(self.table.cells)
-        if not missing:
+        if missing and self.factorized is not None:
+            unsupported = sorted(
+                {account for _offset, account in missing if not self.factorized.supports(account)}
+            )
+            if unsupported:
+                raise ValueError(
+                    "factorized target accounts are not available: " + ", ".join(unsupported)
+                )
+            self._extra_cells = tuple(sorted(missing))
             return
-        table, base = self.table.extend_cells(self.optimizer, sorted(missing), self._candidates)
-        self.table = table
-        if base:
-            extra = torch.tensor(base, dtype=torch.float64, device=self.device)
-            self.base_totals = torch.cat((self.base_totals, extra))
+        self._extra_cells = ()
+        self.ensure_cells(required)
 
     def update_targets(self, targets: Any) -> None:  # noqa: ANN401
         """Re-price the existing population under a new target list.
@@ -494,12 +527,15 @@ class GenomePopulation:
         Parameters
         ----------
         targets : sequence of Target
-            The new active target set. Its cells must exist in ``self.table.cells``.
+            The new active target set. Cells already in ``self.table.cells`` stay on the
+            sparse path; other feature/product cells are priced by ``self.factorized``
+            when it is configured.
 
         Raises
         ------
         ValueError
-            When the new target set reads a cell that is absent from the effect table.
+            When a new target cell is absent from the table and no factorized account
+            set can price it.
         """
         from .incremental import IncrementalObjective
 
@@ -509,7 +545,8 @@ class GenomePopulation:
             extra_accounts=self.table.basis_accounts,
         )
         self._ensure_target_cells(evaluator)
-        pricer = _ObjectivePricer(evaluator, self.table.cells, self.device)
+        pricer_cells = (*self.table.cells, *self._extra_cells)
+        pricer = _ObjectivePricer(evaluator, pricer_cells, self.device)
         self.evaluator = evaluator
         self.pricer = pricer
         self.best_objective = math.inf
@@ -609,6 +646,10 @@ class GenomePopulation:
         totals = self.base_totals.unsqueeze(0) + self.table.segmented_delta(
             rows.reshape(-1), segments
         )
+        if self._extra_cells:
+            assert self.factorized is not None
+            extra = self.factorized.totals(source, self._extra_cells)
+            totals = torch.cat((totals, extra.to(device=self.device, dtype=torch.float64)), dim=1)
         scores = self.pricer.scores(totals)
         self.scores = scores
         self.totals = totals
