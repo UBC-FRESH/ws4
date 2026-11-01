@@ -26,6 +26,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `design/ws4-scope.md` — problem statement, users, scope, and success criteria.
 - `design/ws4-architecture.md` — the architecture design.
 - `design/ws4-optimization-stack.md` — the optimization stack and the execution substrate.
+- `design/gpu-effect-cache-interactivity.md` — target-independent GPU cache basis, lazy column extension, and live target editing.
+- `design/research-paper-ideas.md` — benchmark-reproduction and generic-solver paper ideas; planning only.
 - `design/ws4-matrix-builder-and-interop.md` — the ForestModelXML recipe, the matrix builder, and legacy ingestion.
 - `design/ws4-fast-startup.md` — P84 resident Model II startup and state-watch plan.
 - `design/ws4-performance.md` — the post-release performance and scalability plan (profiling, bottlenecks, targets).

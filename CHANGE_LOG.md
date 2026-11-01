@@ -3647,3 +3647,13 @@ issue comments.
   the 6.03 s one-iteration baseline. This is an exact architecture prototype, not yet a
   speed win. Evidence: `notes/reports/p84-state-watch.md`. No TSA24/29 run.
 
+
+- P85: GPU acceleration and interactive target cache. Parent #618, branch
+  `feature/p85-gpu-acceleration`. Compact candidate cache, vectorized option map,
+  base-total and parsed-schedule sidecars, priority-tier GPU pricing, live target reload,
+  target-independent effect-cell basis, and lazy column extension. TSA24 hot launch fell
+  from 92.8 s to 11.9 s; the 20k PLAIN run reached 8,388 eval/s in 152.6 s. The old
+  per-generation live renderer measured 755 eval/s; the throttled live path measured
+  6,247 eval/s on a 2k run. Tests: 37 passed across the GPU population, effect-table, and
+  search suites; ruff and strict mypy clean; workflow validator 0 errors/0 warnings.
+  Cloud packaging for the TSA24 instance is deferred to that repository.

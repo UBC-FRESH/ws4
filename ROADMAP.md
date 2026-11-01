@@ -86,6 +86,7 @@ exists and the maintainer approves it.
 | P81 Seed schedules from the UI | #570 | `feature/p81-ui-seed` | complete |
 | P82 Seeded max-flow | #575 | `feature/p82-seeded-max-flow` | active |
 | P83 Two-stage c5 even-flow | #579 | `feature/p83-two-stage-flow` | active |
+| P85 GPU acceleration and interactive target cache | #618 | `feature/p85-gpu-acceleration` | active |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2576,6 +2577,44 @@ Acceptance:
 - The performance improvements preserve the target semantics and pass the regression tests.
 - The even-flow and stock result is reported honestly, including any remaining gap.
 - Dashboard green.
+
+## Phase 85: GPU acceleration and interactive target cache
+
+Parent issue: #618
+Branch: `feature/p85-gpu-acceleration`
+Status: active
+Plan: `notes/design/gpu-effect-cache-interactivity.md`
+Report: `notes/reports/gpu-acceleration-tsa24.md`
+
+Goal: make the TSA24 GPU population search fast to launch, fast to run, and usable in an
+interactive target-editing loop without rebuilding the effect table for price-only changes.
+
+- [x] P85.1 Fast GPU launch and compact caches (#619)
+  - [x] Add the compact candidate cache and lazy accessor
+  - [x] Vectorize the GPU option map
+  - [x] Persist base totals and the parsed seed schedule
+  - [x] Record launch measurements
+- [x] P85.2 Priority-tier pricing and live target reload (#620)
+  - [x] Price priority tiers in the batched GPU objective
+  - [x] Add live target reload and resident re-pricing
+  - [x] Throttle live rendering and target polling
+- [x] P85.3 Target-independent effect-cell basis and lazy extension (#621)
+  - [x] Add an explicit cell basis and basis metadata
+  - [x] Add lazy column extension
+  - [x] Reject missing target cells instead of silently dropping them
+- [ ] P85.4 Cloud bundle and portable runner (#622)
+  - [x] Add environment-overridable runner paths
+  - [x] Add a bundle packer and manifest
+  - [ ] Commit the TSA24-instance packaging scripts in their owning repository
+
+Acceptance:
+
+- Hot TSA24 launch and search throughput are measured and materially below the pre-P85 baseline.
+- Priority-tier pricing matches the exact CPU objective.
+- Target edits re-price the resident population without a full table rebuild.
+- Cell-basis and lazy-extension behavior are covered by tests.
+- The cloud bundle is documented; its scripts remain outside this repository's branch.
+
 
 ## Detailed Next Steps Notes
 
