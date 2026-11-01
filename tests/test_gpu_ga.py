@@ -15,6 +15,7 @@ import pytest
 from ws4.build.compiler import build_canonical_dataset
 from ws4.opt.candidate_cache import (
     CandidateCacheError,
+    CompactCandidates,
     load_or_build_candidates,
     load_or_build_simulator,
 )
@@ -458,3 +459,65 @@ def test_effect_table_missing_a_seed_chain_raises(tmp_path: Path) -> None:
     seed = {block: (("CC", 999),)}
     with pytest.raises(ValueError, match="extra_pairs"):
         GenomePopulation(optimizer, evaluator, table, population=4, seed_schedule=seed)
+
+
+def test_compact_candidates_match_the_mapping_and_price_exactly(tmp_path: Path) -> None:
+    """The flat candidate cache preserves option order and population scores."""
+    optimizer, evaluator = _optimizer(tmp_path)
+    table = EffectTable.build(optimizer, evaluator, device="cpu")
+    candidates = optimizer.candidates()
+    seed = _seed(optimizer)
+    compact = CompactCandidates.from_candidates(candidates)
+    path = compact.save(tmp_path / "candidates-compact.npz")
+    loaded = CompactCandidates.load(path)
+    for block in candidates:
+        assert loaded.option_count(block) == len(candidates[block])
+        assert loaded.chains(block) == tuple(candidates[block])
+    expected_population = GenomePopulation(
+        optimizer,
+        evaluator,
+        table,
+        population=8,
+        seed=11,
+        seed_schedule=seed,
+        candidates=candidates,
+    )
+    compact_population = GenomePopulation(
+        optimizer,
+        evaluator,
+        table,
+        population=8,
+        seed=11,
+        seed_schedule=seed,
+        candidates=loaded,
+    )
+    assert torch.equal(compact_population.evaluate(), expected_population.evaluate())
+    expected_schedule = expected_population.schedule(expected_population.genomes[0])
+    compact_schedule = compact_population.schedule(compact_population.genomes[0])
+    assert compact_schedule == expected_schedule
+
+
+def test_update_targets_reprices_without_rebuilding_the_population(tmp_path: Path) -> None:
+    """A live target edit replaces the pricer and leaves the option map resident."""
+    optimizer, evaluator = _optimizer(tmp_path)
+    table = EffectTable.build(optimizer, evaluator, device="cpu")
+    seed = _seed(optimizer)
+    population = GenomePopulation(
+        optimizer,
+        evaluator,
+        table,
+        population=8,
+        seed=21,
+        seed_schedule=seed,
+    )
+    original_rows = population.option_rows
+    original_genomes = population.genomes.clone()
+    changed = [Target("product.Volume", period=2, period_width=1, minimum=5.0, min_weight=7.0)]
+    population.update_targets(changed)
+    assert population.option_rows is original_rows
+    assert (1, "product.Volume") in population.table.cells
+    assert population.base_totals.numel() == len(population.table.cells)
+    assert torch.equal(population.genomes, original_genomes)
+    verifier = IncrementalObjective(optimizer, changed)
+    verifier.reset(population.schedule(population.best_genome))
+    _assert_close(population.best_objective, verifier.objective)

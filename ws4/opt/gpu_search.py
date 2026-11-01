@@ -6,8 +6,8 @@ proposal of the batch under a Metropolis rule.  The CPU simulated annealer remai
 reference and the fallback.
 
 The exactness contract is narrow on purpose.  The pricer reproduces the incremental
-objective for a target set with one priority tier, no patch accounts, no route accounts,
-and no spatial rules, which is the c5 configuration.  Anything else raises
+objective for an additive target set with priority tiers, no patch accounts, no route
+accounts, and no spatial rules.  Anything else raises
 :class:`NotImplementedError` rather than returning a silently different objective.
 
 Proposal generation is the same distribution as :class:`~ws4.opt.operators.LnsOperator`
@@ -32,6 +32,8 @@ try:  # pragma: no cover - which branch runs depends on the environment
 except ImportError:  # pragma: no cover
     HAVE_TORCH = False
     torch = None  # type: ignore[assignment]  # torch is optional; methods raise without it.
+
+from .objective import PRIORITY_SCALE
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -116,6 +118,7 @@ class _FlowSpec:
     whi: torch_type.Tensor
     nonlinear: torch_type.Tensor
     scale: torch_type.Tensor
+    factor: float = 1.0
 
 
 def _penalty(
@@ -151,9 +154,36 @@ class _ObjectivePricer:
         self.device = device
         self.columns = len(cells)
         self.cell_index = {cell: column for column, cell in enumerate(cells)}
-        level_targets = [
-            (index, target) for index, target in enumerate(evaluator.targets) if not target.flow
+        required = {
+            cell
+            for index, target in enumerate(evaluator.targets)
+            if target.active
+            for cell in (
+                *evaluator._target_cells[index],
+                *(
+                    cell
+                    for period in evaluator._flow_period_cells.get(index, ())
+                    for cell in period
+                ),
+            )
+        }
+        missing = required - set(self.cell_index)
+        if missing:
+            preview = ", ".join(f"({offset}, {account})" for offset, account in sorted(missing)[:5])
+            raise ValueError(
+                "effect table is missing target cells: "
+                f"{preview}{' ...' if len(missing) > 5 else ''}; "
+                "rebuild it with a target-independent cell basis or include these cells"
+            )
+        active = [
+            (index, target) for index, target in enumerate(evaluator.targets) if target.active
         ]
+        highest = max((target.priority for _index, target in active), default=1)
+
+        def factor(target: Target) -> float:
+            return float(PRIORITY_SCALE ** (highest - target.priority))
+
+        level_targets = [(index, target) for index, target in active if not target.flow]
         self.level_mask = torch.zeros(
             (len(level_targets), self.columns), dtype=torch.float64, device=device
         )
@@ -164,8 +194,13 @@ class _ObjectivePricer:
                     self.level_mask[row, column] = 1.0
         level_params = self._params([target for _index, target in level_targets])
         self.level_params = level_params
+        self.level_factors = torch.tensor(
+            [factor(target) for _index, target in level_targets],
+            dtype=torch.float64,
+            device=device,
+        )
         self.flow: list[_FlowSpec] = []
-        for index, target in enumerate(evaluator.targets):
+        for index, target in active:
             if not target.flow:
                 continue
             periods = evaluator._flow_period_cells[index]
@@ -191,6 +226,7 @@ class _ObjectivePricer:
                     whi=params[5],
                     nonlinear=params[6],
                     scale=params[7],
+                    factor=factor(target),
                 )
             )
 
@@ -318,7 +354,8 @@ class _ObjectivePricer:
 
     def _level_penalty(self, totals: torch_type.Tensor) -> torch_type.Tensor:
         values = totals @ self.level_mask.T
-        return _penalty(values, *self.level_params).sum(dim=1)
+        penalties = _penalty(values, *self.level_params)
+        return (penalties * self.level_factors.unsqueeze(0)).sum(dim=1)
 
     def _flow_penalty(self, values: torch_type.Tensor, spec: _FlowSpec) -> torch_type.Tensor:
         balance = values[:, spec.reference]
@@ -345,13 +382,14 @@ class _ObjectivePricer:
             spec.scale,
         )
         mask = torch.arange(values.shape[1], device=self.device) != spec.reference
-        return torch.where(mask.unsqueeze(0), penalty, torch.zeros_like(penalty)).sum(dim=1)
+        return (
+            torch.where(mask.unsqueeze(0), penalty, torch.zeros_like(penalty)).sum(dim=1)
+            * spec.factor
+        )
 
 
 def _check_supported(evaluator: IncrementalObjective) -> None:
     """Reject a target configuration the prototype cannot price exactly."""
-    if evaluator._mixed_priorities:
-        raise NotImplementedError("the batched prototype needs one priority tier")
     if evaluator.patch is not None:
         raise NotImplementedError("the batched prototype does not price patch accounts")
     if evaluator.spatial.enabled:
