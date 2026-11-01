@@ -2744,7 +2744,6 @@ def gpu_watch(
 ) -> None:
     """Watch the GPU population's exact target windows generation by generation."""
     import pickle
-    from typing import Any
 
     import torch
 
