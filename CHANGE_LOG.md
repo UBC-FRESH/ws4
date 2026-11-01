@@ -3654,4 +3654,4 @@ issue comments.
   candidate-index positions, live c5/TSA24 watchers, and a GPU-to-state hybrid runner.
   c5 1k: 5.04 s wall / 32.31M objective versus baseline 6.95 s / 44.93M; c5 100k:
   71.46 s / 10.46M versus baseline 120.88 s / 10.29M. Final objectives are exact.
-  P84.5 (#624) records the incremental state work.
+  P84.5 (#624) records the incremental state work. Full dashboard: **GREEN**.
