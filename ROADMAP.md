@@ -2684,11 +2684,11 @@ PSP plots, and compiled FVS trajectories on a species/region diagram, compares
 silviculture regimes as paths, and turns the reviewed result into solver
 constraints. The SDMD is a diagnostic and constraint layer, not a growth model.
 
-- [ ] P87.1 SDMD and regime schemas with an ADR (#629)
-  - [ ] Add `ws4.sdmd.schema` with the six table contracts.
-  - [ ] Add coercion, frame validation, and dataset validation with stable codes.
-  - [ ] Add ADR 0013 and the reference page.
-  - [ ] Add the two-AU, ten-plot fixture and tests.
+- [x] P87.1 SDMD and regime schemas with an ADR (#629)
+  - [x] Add `ws4.sdmd.schema` with the six table contracts.
+  - [x] Add coercion, frame validation, and dataset validation with stable codes.
+  - [x] Add ADR 0013 and the reference page.
+  - [x] Add the two-AU, ten-plot fixture and tests.
 - [ ] P87.2 PSP, VRI, and LiDAR ingestion (#630)
   - [ ] Add the PSP plot and tree-list adapter.
   - [ ] Add the VRI AU assignment adapter.
