@@ -369,3 +369,69 @@ def test_population_target_switch_uses_factorized_cells(tmp_path: Path) -> None:
         exact = IncrementalObjective(optimizer, targets)
         exact.reset(population.schedule(population.genomes[index]))
         assert float(scores[index]) == pytest.approx(exact.objective)
+
+
+def test_watcher_display_uses_factorized_cells_without_table_extension(
+    tmp_path: Path,
+) -> None:
+    """A watched feature account is read from factorized cells, not the table."""
+    from io import StringIO
+
+    from rich.console import Console
+    from ws4.opt.gpu_effects import EffectTable
+    from ws4.opt.gpu_ga import GenomePopulation
+    from ws4.opt.gpu_watch import run_gpu_watch
+    from ws4.opt.incremental import IncrementalObjective
+    from ws4.opt.objective import Target
+
+    optimizer, _evaluator = _optimizer(tmp_path)
+    candidates = optimizer.candidates()
+    arrays = FactorizedEffectArrays.build(optimizer, candidates, years=4)
+    accounts = FactorizedAccountSet.from_arrays(arrays, optimizer.simulator(), years=4)
+    targets = [Target("product.Volume", period=1, period_width=1, minimum=1.0)]
+    evaluator = IncrementalObjective(optimizer, targets)
+    table = EffectTable.build(optimizer, evaluator, candidates=candidates)
+    seed = {block: chains[0] for block, chains in candidates.items() if chains}
+    population = GenomePopulation(
+        optimizer,
+        evaluator,
+        table,
+        population=8,
+        seed_schedule=seed,
+        candidates=candidates,
+        factorized=accounts,
+    )
+    cells = len(population.table.cells)
+    stream = StringIO()
+    summary = run_gpu_watch(
+        population,
+        targets,
+        ("feature.Volume",),
+        generations=1,
+        period_width=1,
+        plain=True,
+        console=Console(file=stream, width=120),
+    )
+    assert summary["objective"] < float("inf")
+    assert len(population.table.cells) == cells
+    assert "feature.Volume" in stream.getvalue()
+
+
+def test_factorized_account_cache_round_trips(tmp_path: Path) -> None:
+    """A persisted padded cache reproduces the built account values."""
+    import numpy as np
+    import torch
+
+    optimizer, _evaluator = _optimizer(tmp_path)
+    candidates = optimizer.candidates()
+    arrays = FactorizedEffectArrays.build(optimizer, candidates, years=4)
+    simulator = optimizer.simulator()
+    accounts = FactorizedAccountSet.from_arrays(arrays, simulator, years=4)
+    cache = accounts.save_cache(tmp_path / "factorized.padded.pt")
+    loaded = FactorizedAccountSet.load_cache(cache, simulator, device="cpu")
+    rng = np.random.default_rng(29)
+    genomes = torch.as_tensor(rng.integers(0, 2, size=(3, len(candidates))), dtype=torch.int64)
+    cells = [(1, "feature.Volume"), (2, "product.Volume")]
+    expected = accounts.totals(genomes, cells)
+    actual = loaded.totals(genomes, cells)
+    assert torch.equal(actual, expected)

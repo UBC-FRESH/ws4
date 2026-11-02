@@ -90,7 +90,8 @@ exists and the maintainer approves it.
 | P85 GPU acceleration and interactive target cache | #618 | `feature/p85-gpu-acceleration` | complete |
 | P86 Weighted goal-programming target semantics | #625 | `feature/p86-target-semantics` | pr-open |
 | P87 Stand density management and AU Explorer | #628 | `feature/p87-sdmd-au-explorer` | pr-open |
-| P88 Factorized GPU account search | #637 | `feature/p88-factorized-gpu` | pr-open |
+| P88 Factorized GPU account search | #637 | `feature/p88-factorized-gpu` | complete |
+| P89 Mixed-target factorized search and live switching | #643 | `feature/p89-mixed-target-search` | pr-open |
 | P90 Forest condition report cards | #650 | `feature/p90-forest-condition-cards` | pr-open |
 | P91 Condition card from a WS4 run | #655 | `feature/p91-condition-run-card` | pr-open |
 | P92 Condition-card API | #659 | `feature/p92-condition-card-api` | pr-open |
@@ -2748,9 +2749,10 @@ Acceptance:
 
 Parent issue: #637
 Branch: `feature/p88-factorized-gpu`
-Status: pr-open
+Status: complete
 Plan: `notes/design/factorized-account-basis.md`
 Report: `notes/reports/p88-factorized-gpu.md`
+Merge: `f582500` (PR #642)
 
 Goal: replace the rejected all-account effects matrix with an account-independent
 structural basis and padded GPU feature/product pricers, then switch target accounts
@@ -2768,7 +2770,7 @@ without rebuilding an all-account table.
   - [x] Price missing target cells through one-account lookups
   - [x] Leave the sparse table unchanged on an account switch
   - [x] Cover the switch with a population exactness test
-- [ ] P88.4 Benchmark report, docs, and phase closeout (#641)
+- [x] P88.4 Benchmark report, docs, and phase closeout (#641)
 
 Acceptance:
 
@@ -2776,6 +2778,33 @@ Acceptance:
 - Mixed feature/product target cells are priced without an all-account matrix.
 - Host and GPU memory are bounded and recorded.
 - The phase closes with a report, verification, and a `Part of #637` pull request.
+
+## Phase 89: Mixed-target factorized search and live switching
+
+Parent issue: #643
+Branch: `feature/p89-mixed-target-search`
+Status: pr-open
+Plan: `notes/design/factorized-account-basis.md`
+Report: `notes/reports/p89-mixed-target-search.md`
+
+Goal: use the P88 factorized account basis end to end for a mixed feature/product target
+population, watcher account switching, and a bounded live display path.
+
+- [x] P89.1 Full TSA24 mixed-target population run (#644)
+- [x] P89.2 Watcher target switching through factorized accounts (#645)
+- [x] P89.3 Bounded live display account path (#646)
+- [x] P89.4 Benchmark report, docs, and phase closeout (#647)
+- [x] P89.5 Persist padded factorized cache (#649)
+- [x] P89.6 TSA24 final growing-stock floor (#652)
+- [x] P89.7 All-period ±5% even flow with stock floor (#654)
+
+Acceptance:
+
+- The full mixed-target population matches the exact evaluator.
+- Watcher account switches leave `EffectTable.cells` unchanged.
+- Display values stay bounded and separate from the objective table.
+- Throughput, latency, host memory, and GPU memory are recorded.
+- Dashboard green.
 
 ## Phase 90: Forest condition report cards
 
@@ -2851,7 +2880,6 @@ Acceptance:
 - Tests and dashboard pass.
 
 Design: `notes/design/ws4-forest-condition-card.md`.
-
 ## Detailed Next Steps Notes
 
 1. Phase 0 is complete: pull request #8 squash-merged as `97330a8`, the branch deleted, and parent
