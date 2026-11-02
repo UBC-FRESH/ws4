@@ -3680,3 +3680,17 @@ issue comments.
   feature/product four-cell switch error 3.5e-9 in 0.093 s. The rejected all-account
   matrix is not built; the lean builder caps workers and refuses an over-budget basis.
   Report: `notes/reports/p88-factorized-gpu.md`.
+
+## 2026-11-02
+
+- Added `ws4.forest_condition` with `ws4.forest_condition.report.v1` typed
+  report and indicator records, validation, JSON round-trip, and Markdown
+  rendering.
+- Added a report-only fixture at `examples/forest_condition` combining the
+  BA-only inventory indicator with a DHI indicator.
+- Added `docs/reference/forest-condition.rst` and the design note
+  `notes/design/ws4-forest-condition-card.md`.
+- The card is report-only: alerts are advisory; no objective, constraint,
+  growth, schedule, solver, or treatment eligibility changed.
+- Added ten focused tests.
+- Dashboard: **GREEN** on lint, format, types, tests, validator, docs, and docstrings.

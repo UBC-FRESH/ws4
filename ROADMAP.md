@@ -90,6 +90,7 @@ exists and the maintainer approves it.
 | P85 GPU acceleration and interactive target cache | #618 | `feature/p85-gpu-acceleration` | complete |
 | P86 Weighted goal-programming target semantics | #625 | `feature/p86-target-semantics` | pr-open |
 | P88 Factorized GPU account search | #637 | `feature/p88-factorized-gpu` | pr-open |
+| P90 Forest condition report cards | #650 | `feature/p90-forest-condition-cards` | active |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2870,3 +2871,31 @@ Acceptance:
     same cost per metre and hauls 22% farther at 0.46× the cost per unit-km, because its solve chooses
     the road set and the assignment jointly. Reports: `p17-opened-roads.md`, `p17-tradeoff.md`,
     `p17-closeout.md`. Next: P18.
+## Phase 90: Forest condition report cards
+
+Parent issue: #650
+Branch: `feature/p90-forest-condition-cards`
+Status: active
+
+Goal: add a report-only forest-condition card contract and static pilot that
+packages existing WS4 indicators with provenance, uncertainty, applicability,
+advisory alerts, and review status. The phase does not compute new condition
+indicators or change solver behavior.
+
+- [ ] P90.1 Implement the forest-condition report card (#651)
+  - [ ] Add typed report and indicator models
+  - [ ] Add validation and JSON round-trip
+  - [ ] Add Markdown rendering
+  - [ ] Add fixture and tests
+  - [ ] Add docs, roadmap, and changelog entries
+  - [ ] Run dashboard and open the PR
+
+Acceptance:
+
+- JSON round-trip preserves all fields.
+- Invalid status, missing provenance, and non-finite values fail validation.
+- Markdown names every indicator, its source, applicability, and limitations.
+- Tests cover valid, invalid, and empty-indicator cases.
+- Dashboard green.
+
+Design: `notes/design/ws4-forest-condition-card.md`.
