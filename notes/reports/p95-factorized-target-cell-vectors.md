@@ -1,7 +1,7 @@
 # P95 factorized target-cell vector cache
 
 Date: 2026-11-02
-Status: complete
+Status: complete; PR #685
 
 ## Result
 
@@ -44,3 +44,7 @@ unmanaged age-class caveats remain.
 ```
 
 Contains the two schedules, exact results, comparison harness, and checksums.
+
+## Pull request
+
+PR #685 contains the vector cache and benchmark note. The archive is outside git.

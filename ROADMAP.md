@@ -97,7 +97,7 @@ exists and the maintainer approves it.
 | P92 Condition-card API | #659 | `feature/p92-condition-card-api` | pr-open |
 | P93 Condition-card Reports UI | #662 | `feature/p93-condition-card-ui` | pr-open |
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
-| P95 Factorized target-cell vectors | #675 | `feature/p95-factorized-cell-vectors` | active |
+| P95 Factorized target-cell vectors | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -3118,8 +3118,9 @@ Acceptance:
 
 Parent issue: #675
 Branch: `feature/p95-factorized-cell-vectors`
-Status: active
+Status: pr-open
 Report: `notes/reports/p95-factorized-target-cell-vectors.md`
+PR: #685
 
 Goal: cache one `[options]` value vector per requested factorized target cell and gather it
 through the candidate rows, instead of rebuilding the padded layout every generation.
