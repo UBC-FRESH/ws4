@@ -3906,3 +3906,9 @@ issue comments.
 - P101.1: added `ws4 storyboard`, a one-page Markdown narrative that reuses the
   account-derived condition card. Derived indicators stay review-required;
   alerts stay advisory. Added tests and docs. Dashboard green on all seven gates.
+
+## 2026-11-02
+
+- P99: scenario profile UI. Added `ws4 serve --scenario-profiles`, list/detail/apply API
+  endpoints, and a Targets-tab selector that validates and loads a named profile into the
+  editable targets file. Report: `notes/reports/tsa24-profile-ui.md`.

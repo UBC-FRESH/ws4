@@ -17,6 +17,56 @@ async function api(path) {
   return response.json();
 }
 
+async function apiPost(path) {
+  const response = await fetch(path, { method: 'POST', headers: { accept: 'application/json' } });
+  if (!response.ok) {
+    let detail = response.statusText;
+    try { detail = (await response.json()).detail ?? detail; } catch { /* not json */ }
+    throw new Error(detail);
+  }
+  return response.json();
+}
+
+async function loadProfiles() {
+  const bar = $('profile-bar');
+  const select = $('profile-select');
+  const status = $('profile-status');
+  try {
+    const profiles = await api('api/scenario-profiles');
+    select.replaceChildren();
+    for (const profile of profiles) {
+      const option = document.createElement('option');
+      option.value = profile.name;
+      option.textContent = profile.description
+        ? `${profile.name} — ${profile.description}`
+        : profile.name;
+      select.appendChild(option);
+    }
+    bar.hidden = profiles.length === 0;
+    status.textContent = profiles.length ? `${profiles.length} profiles` : '';
+  } catch {
+    bar.hidden = true;
+  }
+}
+
+async function applyProfile() {
+  const select = $('profile-select');
+  const button = $('apply-profile');
+  const status = $('profile-status');
+  if (!select.value) return;
+  button.disabled = true;
+  status.textContent = `loading ${select.value}…`;
+  try {
+    const result = await apiPost(`api/scenario-profiles/${encodeURIComponent(select.value)}/apply`);
+    status.textContent = `loaded ${select.value}: ${result.targets} targets`;
+    await loadTargets();
+  } catch (error) {
+    status.textContent = `profile failed: ${error.message}`;
+  } finally {
+    button.disabled = false;
+  }
+}
+
 function coordinates(geometry) {
   if (!geometry) return [];
   if (geometry.type === 'Point') return [geometry.coordinates];
@@ -3778,6 +3828,7 @@ function applySkin(skin) {
   $('show-untreated').closest('label').hidden = !layers.includes('blocks');
   const readOnly = Boolean(skin.read_only) || !(skin.actions ?? []).includes('edit_targets');
   $('save-targets').hidden = readOnly || !document.querySelector('#targets-table:not([hidden])');
+  $('apply-profile').disabled = readOnly;
   $('start-run').hidden = Boolean(skin.read_only);
   for (const input of document.querySelectorAll('#targets-table input')) input.disabled = readOnly;
   renderLayerTree();
@@ -5624,7 +5675,7 @@ async function finishRun(id) {
   try {
     const summary = await api('api/summary');
     if (await fillRuns(summary, id)) {
-      await loadPeriods(); await loadLayers(); await loadLidar(); await loadCarbon(); await loadDataset(); await loadTargets(); await loadReports(); await loadMap();
+      await loadPeriods(); await loadLayers(); await loadLidar(); await loadCarbon(); await loadDataset(); await loadTargets(); await loadProfiles(); await loadReports(); await loadMap();
     }
   } catch { /* the run is done; a refresh failure is not fatal */ }
   window.setTimeout(() => { $('run-panel').hidden = true; }, 6000);
@@ -6520,6 +6571,7 @@ function wireControls() {
     if (skin) { applySkin(skin); await loadTargets(); }
   });
   $('save-targets').addEventListener('click', saveTargets);
+  $('apply-profile').addEventListener('click', applyProfile);
   $('target-chart-save').addEventListener('click', saveTargetCharts);
   $('account-search').addEventListener('input', renderAccountTree);
   $('account-multi').addEventListener('change', (event) => {
@@ -6624,6 +6676,7 @@ async function loadRunContext() {
     await loadCarbon();
     await loadDataset();
     await loadTargets();
+    await loadProfiles();
     await loadReports();
     syncCompareRuns();
     $('compare-a').value = state.run;

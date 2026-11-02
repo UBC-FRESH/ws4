@@ -101,6 +101,7 @@ exists and the maintainer approves it.
 | P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | pr-open |
 | P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | pr-open |
 | P98 LTSY scenario profile library | #699 | `feature/p98-ltsy-profiles` | pr-open |
+| P99 Scenario profile UI | #704 | `feature/p99-profile-ui` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
@@ -3226,6 +3227,33 @@ Acceptance:
 - Profiles validate and duplicate/missing target cases fail loudly.
 - `PROFILE=baseline|base|nostock` selects the correct target and schedule.
 - The default remains `base`.
+- Dashboard green.
+
+
+## Phase 99: Scenario profile UI
+
+Parent issue: #704
+Branch: `feature/p99-profile-ui`
+Status: active
+Report: `notes/reports/tsa24-profile-ui.md`
+
+Goal: expose the named LTSY profile library through the web API and Targets tab.
+
+- [x] P99.1 Add the profile API and serve option (#705)
+  - [x] Add list/detail/apply endpoints
+  - [x] Wire `ws4 serve --scenario-profiles`
+  - [x] Validate apply writes
+- [x] P99.2 Add the Targets-tab profile selector (#706)
+  - [x] Add the selector and apply control
+  - [x] Refresh targets after apply
+  - [x] Disable under read-only skins
+- [x] P99.3 Test, record, and close out (#707)
+
+Acceptance:
+
+- The API lists profiles and returns clean errors.
+- Applying a profile validates and writes the target file.
+- The UI selector is present and refreshes targets.
 - Dashboard green.
 
 

@@ -10,6 +10,7 @@ reads. The service computes no value the CLI cannot reproduce.
 
    pip install 'ws4[web]'
    ws4 serve --dataset build/compiled --runs runs --targets targets.yaml \
+       --scenario-profiles config/ws4/profiles/ltsy.yaml \
              --geometry blocks.geojson --sdmd-dir data/sdmd
 
 ``--sdmd-dir`` mounts the stand density management read API and its validated
@@ -195,6 +196,13 @@ Endpoints
        the file is left unchanged.
    * - ``GET/PUT /api/targets.json``
      - The parsed targets as JSON, for an editor that does not parse YAML.
+   * - ``GET /api/scenario-profiles``
+     - The named profiles from the optional ``--scenario-profiles`` library.
+   * - ``GET /api/scenario-profiles/{name}``
+     - One resolved profile, including its target path, accounts, and schedule output.
+   * - ``POST /api/scenario-profiles/{name}/apply``
+     - Validate the profile's target file and replace the configured targets YAML. The service
+       must have an editable ``--targets`` file; invalid target data is refused.
    * - ``GET /api/runs/{run}/targets``
      - Each target's realized value over the target's own period — the optimizer's
        ``period_value`` rule: a product sums its offsets, a feature reads the period's end offset.
