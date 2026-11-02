@@ -36,6 +36,26 @@ Each indicator carries:
 ``trend``
     ``improving``, ``stable``, ``declining``, or ``not_available``.
 
+From a run
+----------
+
+.. code-block:: bash
+
+   ws4 condition-card \
+     --run runtime/my-run \
+     --out runtime/my-run/condition \
+     --markdown
+
+The command reads ``account_values.csv`` and summarizes each ``feature.*``
+account.  The final value becomes the indicator value; the first-to-final change
+sets the trend.  Every derived indicator is marked ``review_required``, has no
+RMSE, and records ``ws4.account_values`` as its source.  This is a reporting
+view of a run, not an independent condition validation.
+
+The command writes ``forest_condition_card.json`` and, with ``--markdown``,
+``forest_condition_card.md``.  Missing columns, an empty table, non-numeric or
+non-finite values, and a table with no feature accounts are rejected.
+
 Example
 -------
 
