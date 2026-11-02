@@ -2726,7 +2726,7 @@ population, watcher account switching, and a bounded live display path.
 - [x] P89.4 Benchmark report, docs, and phase closeout (#647)
 - [x] P89.5 Persist padded factorized cache (#649)
 - [x] P89.6 TSA24 final growing-stock floor (#652)
-- [ ] P89.7 All-period ±5% even flow with stock floor (#654)
+- [x] P89.7 All-period ±5% even flow with stock floor (#654)
 
 Acceptance:
 
