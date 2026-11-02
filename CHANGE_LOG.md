@@ -3694,3 +3694,4 @@ issue comments.
   growth, schedule, solver, or treatment eligibility changed.
 - Added ten focused tests.
 - Dashboard: **GREEN** on lint, format, types, tests, validator, docs, and docstrings.
+- Closeout report: `notes/reports/p90-closeout.md`.
