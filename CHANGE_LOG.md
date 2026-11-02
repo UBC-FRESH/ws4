@@ -3695,3 +3695,12 @@ issue comments.
 - Added ten focused tests.
 - Dashboard: **GREEN** on lint, format, types, tests, validator, docs, and docstrings.
 - Closeout report: `notes/reports/p90-closeout.md`.
+
+## 2026-11-02
+
+- P91.1: added `build_report_from_accounts` and `ws4 condition-card` to derive a
+  review-required forest-condition card from a run's `account_values.csv`.
+  Feature accounts become indicators with final value, first/last trend,
+  explicit source/version, and `review_required` status. Added CLI coverage and
+  docs. Dashboard green on all seven gates; 13 focused tests passed.
+- Closeout report: `notes/reports/p91-closeout.md`.
