@@ -3870,3 +3870,11 @@ issue comments.
   the floor only when it becomes binding or after feature pricing is cheaper. Report:
   `notes/reports/tsa24-ltsy-scenario-comparison.md`. Archive:
   `/srv/shared-data/gep/ws4/archive/tsa24-ltsy-scenario-comparison/`.
+
+## 2026-11-02
+
+- P95: factorized target-cell vector cache. Added cached `[options]` feature/product
+  vectors and a population gather path. The all-period ±5% stock-floor search fell from
+  **218.9 s to 44.0 s** without changing the byte-identical schedule; the no-stock run
+  was 43.0 s. The stock floor can therefore stay in the search as a guard at about 2%
+  overhead. Report: `notes/reports/p95-factorized-target-cell-vectors.md`.
