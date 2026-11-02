@@ -3919,3 +3919,10 @@ issue comments.
   and a fixed assistant overlay available from every workspace. The overlay opens over the
   current view, closes with × or Escape, and keeps the existing chat session/API behavior.
   Report: `notes/reports/tsa24-ask-overlay.md`.
+
+## 2026-11-02
+
+- P103: profile-aware web runs. Added `ws4.opt.gpu_profile_run`, optional table/factorized/
+  cache/seed resources on scenario profiles, a `POST /api/runs` profile branch, and a
+  Generations/Run profile control. Worker exact replay and a hot-cache smoke are recorded.
+  Report: `notes/reports/tsa24-profile-runs.md`.
