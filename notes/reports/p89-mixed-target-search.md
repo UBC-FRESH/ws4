@@ -202,6 +202,16 @@ nearly flat, with periods 3 and 16 just outside that band. The stock floor is co
 met. The level aspirations in periods 11-20 remain below their 100M pull; this run is an
 even-flow/stock experiment, not a level-target success.
 
+## Scenario archive
+
+The all-period ±5% scenario and its 5,000-generation output are archived under:
+
+```text
+/srv/shared-data/gep/ws4/archive/tsa24-ltsy-allperiods5-20261102/
+```
+
+see `notes/reports/tsa24-ltsy-allperiods5.md`.
+
 ## Limits
 
 - The structural build is still one-time and model-specific.
