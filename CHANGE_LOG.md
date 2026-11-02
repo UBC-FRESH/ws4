@@ -3704,3 +3704,10 @@ issue comments.
   explicit source/version, and `review_required` status. Added CLI coverage and
   docs. Dashboard green on all seven gates; 13 focused tests passed.
 - Closeout report: `notes/reports/p91-closeout.md`.
+
+## 2026-11-02
+
+- P92.1: added `GET /api/runs/{run}/condition-card`, a read-only adapter over
+  the P91 account-derived card builder. The endpoint returns a review-required
+  `ws4.forest_condition.report.v1` card, 404 without accounts, and 422 for
+  invalid account data. Added API tests and docs. Dashboard green on all seven gates.
