@@ -3744,3 +3744,12 @@ issue comments.
   Flewelling 1979; McCarter and Long 1986; Reineke 1933), plus the CJFR review
   `10.1139/cjfr-2020-0289` for the static/dynamic/structural framing. Dashboard result:
   `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
+- P87.5: Added the AU Explorer API in `ws4/sdmd/api.py`. A `SdmdStore` loads the six SDMD
+  tables, the optional diagram, saved constraint sets, and optional trajectory files. The FastAPI
+  router exposes regions, AUs, AU detail, plots, yield, SDMD points with placements, regimes with
+  constraint findings, trajectories assessed against the observed envelope, and the option-count
+  preview. `POST /api/sdmd/au/{au_id}/constraints` requires a complete set for the AU, validates
+  every row through the schema and `check_regime`, writes atomically to
+  `constraints/<au_id>.json`, and leaves the stored set unchanged on failure. `ws4 serve
+  --sdmd-dir` mounts the router. Added 14 API tests, including the mounted-app path. Dashboard
+  result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.

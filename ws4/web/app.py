@@ -691,6 +691,7 @@ def create_app(
     dataset: Path,
     runs: Path,
     targets: Path | None = None,
+    sdmd_dir: Path | None = None,
     geometry: Path | None = None,
     geometry_overview: Path | None = None,
     land_base: Path | None = None,
@@ -720,6 +721,11 @@ def create_app(
     targets : Path or None, optional
         The targets YAML the optimizer reads. When given, it is readable and replaceable through the
         API; a replacement is validated with the optimizer's own loader before it is written.
+    sdmd_dir : Path or None, optional
+        A directory of SDMD tables (``plots.csv``, ``trees.csv``, ``stands.csv``,
+        ``sdmd_points.csv``, ``regimes.csv``, ``au_constraints.csv``), an optional
+        ``diagram.json``, and optional ``trajectories/``. When given, the
+        ``/api/sdmd`` router is mounted.
     geometry : Path or None, optional
         A GeoJSON file of block polygons or points, joined on ``block_id``. Without it the map
         endpoint refuses with the missing artefact named.
@@ -775,6 +781,7 @@ def create_app(
     overview_path = Path(geometry_overview).resolve() if geometry_overview is not None else None
     land_base_path = Path(land_base).resolve() if land_base is not None else None
     targets_path = Path(targets).resolve() if targets is not None else None
+    sdmd_path = Path(sdmd_dir).resolve() if sdmd_dir is not None else None
     initial_schedule_path = (
         Path(initial_schedule).resolve() if initial_schedule is not None else None
     )
@@ -791,6 +798,13 @@ def create_app(
     agent_working_directory = Path(agent_cwd).resolve() if agent_cwd is not None else Path.cwd()
     app = FastAPI(title="WS4", version="0.1.0")
     app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
+    if sdmd_path is not None:
+        from ..sdmd.api import SdmdApiError, SdmdStore, create_sdmd_router
+
+        try:
+            app.include_router(create_sdmd_router(SdmdStore.from_directory(sdmd_path)))
+        except SdmdApiError as error:
+            raise ValueError(f"invalid SDMD directory {sdmd_path}: {error}") from error
 
     @app.middleware("http")
     async def no_cache_static(

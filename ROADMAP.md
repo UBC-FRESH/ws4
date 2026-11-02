@@ -2706,10 +2706,11 @@ constraints. The SDMD is a diagnostic and constraint layer, not a growth model.
   - [ ] Add the even-aged regime library.
   - [ ] Validate state transitions and AU constraints.
   - [ ] Flag selection regimes as outside the diagram.
-- [ ] P87.5 AU Explorer API (#633)
-  - [ ] Add the read endpoints.
-  - [ ] Add the validated constraint-write endpoint.
-  - [ ] Add the option-count preview.
+- [x] P87.5 AU Explorer API (#633)
+  - [x] Add the read endpoints.
+  - [x] Add the validated constraint-write endpoint.
+  - [x] Add the option-count preview.
+  - [x] Mount the router in `ws4 serve` and document `--sdmd-dir`.
 - [ ] P87.6 AU Explorer web tab (#634)
   - [ ] Add the tab, filters, and URL state.
   - [ ] Add the yield and SDMD charts.

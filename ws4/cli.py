@@ -1431,6 +1431,13 @@ def serve(
     dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
     runs: Path = typer.Option(..., exists=True, help="Directory holding run directories"),
     targets: Path | None = typer.Option(None, "--targets", help="Targets YAML to read and replace"),
+    sdmd_dir: Path | None = typer.Option(
+        None,
+        "--sdmd-dir",
+        exists=True,
+        file_okay=False,
+        help="Directory of SDMD tables, diagram, and trajectories",
+    ),
     geometry: Path | None = typer.Option(
         None, "--geometry", help="GeoJSON of block points or polygons"
     ),
@@ -1523,6 +1530,7 @@ def serve(
             dataset=dataset,
             runs=runs,
             targets=targets,
+            sdmd_dir=sdmd_dir,
             geometry=geometry,
             geometry_overview=geometry_overview,
             land_base=land_base,

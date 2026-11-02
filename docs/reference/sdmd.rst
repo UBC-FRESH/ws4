@@ -278,6 +278,42 @@ clipped.
 The module's docstrings and the equation registry carry the per-equation
 citations. No R code or third-party text is copied into this repository.
 
+AU Explorer API
+---------------
+
+``ws4.sdmd.api`` provides a FastAPI router over a directory of the six tables,
+an optional ``diagram.json``, and optional ``trajectories/<au_id>/<regime_id>.json``
+files. The main web app mounts it when ``ws4 serve`` receives ``--sdmd-dir``:
+
+.. code-block:: bash
+
+   ws4 serve --dataset build/compiled --runs runs \
+             --sdmd-dir data/sdmd
+
+The read endpoints are:
+
+- ``GET /api/sdmd/regions``
+- ``GET /api/sdmd/aus?region=...``
+- ``GET /api/sdmd/au/{au_id}``
+- ``GET /api/sdmd/au/{au_id}/plots``
+- ``GET /api/sdmd/au/{au_id}/yield``
+- ``GET /api/sdmd/au/{au_id}/sdmd``
+- ``GET /api/sdmd/au/{au_id}/regimes``
+- ``GET /api/sdmd/au/{au_id}/trajectory?regime_id=...``
+- ``GET /api/sdmd/au/{au_id}/constraint-preview``
+
+``POST /api/sdmd/au/{au_id}/constraints`` writes a complete constraint set. The
+validator requires one entry per regime for the AU, a matching ``au_id``, valid
+field types, the schema limits, and a passing :func:`check_regime` for every
+entry. A deliberate ``allowed: false`` is valid; any other finding refuses the
+write with ``422`` and leaves the stored set unchanged. A successful write is
+atomic and is stored at ``constraints/<au_id>.json``; the next store load reads
+it back.
+
+``GET /api/sdmd/au/{au_id}/trajectory`` reads a stored trajectory and assesses it
+against the AU's observed envelope. When the file is absent, the response is
+``status: "unavailable"`` with a named data gap rather than an invented path.
+
 Public sources
 ~~~~~~~~~~~~~~
 

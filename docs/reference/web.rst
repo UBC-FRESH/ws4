@@ -10,7 +10,12 @@ reads. The service computes no value the CLI cannot reproduce.
 
    pip install 'ws4[web]'
    ws4 serve --dataset build/compiled --runs runs --targets targets.yaml \
-             --geometry blocks.geojson
+             --geometry blocks.geojson --sdmd-dir data/sdmd
+
+``--sdmd-dir`` mounts the stand density management read API and its validated
+constraint-write endpoint under ``/api/sdmd``. The directory holds the six SDMD
+tables, an optional ``diagram.json``, and optional trajectories. See
+:doc:`sdmd`.
 
 The bind is ``127.0.0.1`` by default and a non-loopback address is refused unless ``--allow-remote``
 is passed; no authentication is provided in this cut. Starting a search is a separate permission:
