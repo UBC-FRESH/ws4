@@ -220,6 +220,64 @@ check, and `option_counts` reports the regime and entry counts before and after.
 A forbidden entry never reaches the model: the caller turns a non-empty finding
 list into a refusal. Solver filtering itself is P87.7.
 
+Stand density equations
+-----------------------
+
+``ws4.sdmd.equations`` is an independent Python implementation of the density
+equations used by the BC stand density management diagrams. It does **not** call,
+wrap, or vendor the R application or the ``standview`` package. The equation
+forms and coefficients come from the published sources; the unit handling follows
+the BC app so the two implementations can be compared.
+
+Sources and ideas:
+
+- The BC Government SDMD Shiny application, `bcgov/SDMD
+  <https://github.com/bcgov/SDMD>`_ (Apache-2.0), for the equation-set selection,
+  the metric/English conversion path, and the maximum-SDI defaults and ranges.
+- The ``standview`` R package by M. W. Ritchie (USFS), `mwritchie/standview
+  <https://github.com/mwritchie/standview>`_, for the diagram calculation logic
+  that the BC app uses.
+- The published equations: Long and Shaw (2005) ponderosa pine; Jang, Ritchie,
+  and Zhang (2021) ponderosa pine; Long and Shaw (2012) Sierra Nevada
+  mixed-conifer; Drew and Flewelling (1979) Douglas-fir; McCarter and Long (1986)
+  lodgepole pine; and Reineke (1933) for the stand density index.
+- The static/dynamic/structural framing and the review of SDMD variants:
+  `10.1139/cjfr-2020-0289 <https://doi.org/10.1139/cjfr-2020-0289>`_.
+- The BC stand density management page, which publishes the diagram set:
+  `Stand density management
+  <https://www2.gov.bc.ca/gov/content/industry/forestry/managing-our-forest-resources/silviculture/silvicultural-systems/silvicultural-interventions/stand-density-management>`_.
+
+Five equation sets have a complete volume and top-height calculation: 2, 3, 6, 7,
+and 9. Each set declares whether it has volume, top height, crown cover, or
+biomass, and its maximum-SDI default and range. The public functions take metric
+inputs and return metric outputs.
+
+.. code-block:: python
+
+   from ws4.sdmd import (
+       basal_area_m2_ha,
+       relative_density,
+       stand_density_index,
+       top_height_m,
+       volume_m3_ha,
+       volume_isoline,
+   )
+
+   volume = volume_m3_ha(3, tph=1000.0, qmd_cm=25.0)
+   height = top_height_m(3, tph=1000.0, qmd_cm=25.0)
+   sdi = stand_density_index(1000.0, 25.0)
+   rd = relative_density(1000.0, 25.0, max_sdi=988.0)
+   isoline = volume_isoline(3, target_m3_ha=300.0, tph_values=(500.0, 1000.0))
+
+``stand_density_index`` defaults to a 25.4 cm reference, the 10-inch convention
+the BC app uses for its metric maximum-SDI values. Pass ``reference_cm=25.0`` for
+the common metric convention. ``volume_isoline`` inverts a volume equation by
+bisection on QMD; densities that cannot reach the target are omitted rather than
+clipped.
+
+The module's docstrings and the equation registry carry the per-equation
+citations. No R code or third-party text is copied into this repository.
+
 Public sources
 ~~~~~~~~~~~~~~
 
@@ -237,6 +295,10 @@ it is an inference that a forester must confirm against the AU's leading species
 and stand origin. For the pilot AU ``IDFdk3`` the diagram is ``fdin`` (natural) or
 ``fdip`` (planted) for Interior Douglas-fir, with lodgepole pine and western
 redcedar as main associates.
+
+The catalog records the index-page label and the PDF title separately: the BC
+page labels `swn`/`swp` as "White pine", but the PDFs are white spruce, and the
+catalog keeps "White pine" as an alias so the page label still resolves.
 
 The Farnden 1996 method report (Pacific Forestry Centre Information Report
 BC-X-360) is public and is recorded in the catalog with its URL and checksum. The

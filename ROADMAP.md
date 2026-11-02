@@ -2701,6 +2701,7 @@ constraints. The SDMD is a diagnostic and constraint layer, not a growth model.
   - [x] Build the AU envelope, placement, and report statuses.
   - [x] Place observed plots and FVS trajectories, and flag extrapolation.
   - [x] Refuse an unreviewed digitisation in a report.
+  - [x] Re-implement the BC SDMD equation core in Python with source attribution.
 - [ ] P87.4 Regime state machine and constraints (#632)
   - [ ] Add the even-aged regime library.
   - [ ] Validate state transitions and AU constraints.

@@ -67,7 +67,8 @@ or planted), with `pln`/`plp` and `cwn`/`cwp` as main associates and
 
 - **White spruce, not white pine.** The BC index page labels `swn`/`swp` as
   "White pine". The PDFs themselves say "WHITE SPRUCE", version 1.30. The catalog
-  follows the PDF.
+  records both: `page_label` is the index-page label, `pdf_title` is the PDF title,
+  and `swn`/`swp` carry "White pine" as an alias.
 - **Shore pine is not lodgepole pine.** The `CDF` and `CWH` occurrences for
   lodgepole pine are shore pine (*Pinus contorta* var. *contorta*). The `pln`/`plp`
   diagrams describe the interior variety (*var. latifolia*). Do not use them for

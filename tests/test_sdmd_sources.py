@@ -28,6 +28,9 @@ class _Diagram(TypedDict):
     sha256: str
     bec_main: list[str]
     bec_basis: str
+    page_label: str
+    pdf_title: str
+    aliases: list[str]
 
 
 class _Report(TypedDict):
@@ -154,3 +157,15 @@ def test_alpine_rows_have_no_diagram() -> None:
     alpine = variants.loc[variants["zone"] == "BAFA"]
     assert not alpine.empty
     assert alpine["sdmd_main"].fillna("").str.strip().eq("").all()
+
+
+def test_page_labels_cover_all_fourteen_diagrams() -> None:
+    """The catalog mirrors every label on the BC index page."""
+    diagrams = _catalog()["diagrams"]
+    labels = {item["page_label"] for item in diagrams}
+    assert len(labels) == 14
+    assert "White pine (natural)" in labels
+    assert "White pine (planted)" in labels
+    mislabelled = [item for item in diagrams if "White pine" in item["aliases"]]
+    assert {item["diagram_id"] for item in mislabelled} == {"swn", "swp"}
+    assert all(item["pdf_title"] == "White spruce" for item in mislabelled)

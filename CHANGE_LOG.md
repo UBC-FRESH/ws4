@@ -3732,3 +3732,15 @@ issue comments.
   reference section, and an internally consistent fixture. The IDFdk3-FDI allowed set drops from
   7 regimes and 11 entries to 6 regimes and 7 entries. Dashboard result:
   `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
+- P87.3: Added `ws4/sdmd/equations.py`, an independent Python implementation of the SDMD
+  calculation logic used by the BC Government SDMD Shiny app and the `standview` R package. It
+  does not call or wrap R. It implements the five complete equation sets (2, 3, 6, 7, and 9) for
+  volume and top height, plus equation 3's crown cover and biomass, the Reineke SDI and relative
+  density, the self-thinning diameter, and a bisection volume isoline. Metric inputs and outputs
+  follow the BC app's English-unit conversion path. 27 regression tests compare the output with
+  reference values generated from the R implementation. The module docstrings, the equation
+  registry, and `docs/reference/sdmd.rst` cite the BC app (Apache-2.0), the `standview` package,
+  and the published equations (Long and Shaw 2005/2012; Jang, Ritchie, and Zhang 2021; Drew and
+  Flewelling 1979; McCarter and Long 1986; Reineke 1933), plus the CJFR review
+  `10.1139/cjfr-2020-0289` for the static/dynamic/structural framing. Dashboard result:
+  `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
