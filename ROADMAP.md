@@ -101,7 +101,7 @@ exists and the maintainer approves it.
 | P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | pr-open |
 | P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | pr-open |
 | P98 LTSY scenario profile library | #699 | `feature/p98-ltsy-profiles` | pr-open |
-| P99 Scenario profile UI | #704 | `feature/p99-profile-ui` | active |
+| P99 Scenario profile UI | #704 | `feature/p99-profile-ui` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
@@ -3234,8 +3234,9 @@ Acceptance:
 
 Parent issue: #704
 Branch: `feature/p99-profile-ui`
-Status: active
+Status: pr-open
 Report: `notes/reports/tsa24-profile-ui.md`
+PR: #708
 
 Goal: expose the named LTSY profile library through the web API and Targets tab.
 

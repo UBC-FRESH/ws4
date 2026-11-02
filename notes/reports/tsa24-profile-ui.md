@@ -1,7 +1,7 @@
 # TSA24 scenario-profile UI
 
 Date: 2026-11-02
-Status: complete
+Status: complete; PR #708
 
 ## Surface
 
@@ -50,3 +50,7 @@ returns 409.
 - The selector changes the target file; it does not start a GPU watcher.
 - Profile edits are not part of the UI.
 - The profile library remains an instance-owned YAML file.
+
+## Pull request
+
+PR #708 contains the API, web selector, tests, and docs. The profile YAML and instance files remain outside this git branch.
