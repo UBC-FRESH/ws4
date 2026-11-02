@@ -378,7 +378,7 @@ class ConstraintGuard:
         dict of str to object
             The strategy, enabled flag, move counts, and initial repairs.
         """
-        return {
+        summary: dict[str, object] = {
             "strategy": self.strategy,
             "enabled": self.enabled,
             "proposed": self.stats["proposed"],
@@ -387,9 +387,11 @@ class ConstraintGuard:
             "repaired": self.stats["repaired"],
             "initial_removed": self.initial_removed,
             "initial_repairs": self.initial_repairs,
-            "sdmd_guard": self.schedule_check is not None,
-            "sdmd_rejected": self.stats["sdmd_rejected"],
         }
+        if self.schedule_check is not None:
+            summary["sdmd_guard"] = True
+            summary["sdmd_rejected"] = self.stats["sdmd_rejected"]
+        return summary
 
     def _state(
         self, schedule: Mapping[int, Any]
