@@ -97,6 +97,7 @@ exists and the maintainer approves it.
 | P92 Condition-card API | #659 | `feature/p92-condition-card-api` | pr-open |
 | P93 Condition-card Reports UI | #662 | `feature/p93-condition-card-ui` | pr-open |
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
+| P95 Condition-card provenance | #670 | `feature/p95-condition-provenance` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -3112,3 +3113,22 @@ Acceptance:
     the 863 m3/ha gate fails against an 800 limit and 1,173 m3/ha is flagged above 1,133.8.
     Trajectory-zone rejection and a cap across blocks in one AU are deferred with the reasons
     in #635. Next: approve the close-out, then launch the next free phase (P95 today; P91-P94 are taken).
+## Phase 95: Condition-card provenance and uncertainty
+
+Parent issue: #670
+Branch: `feature/p95-condition-provenance`
+Status: pr-open
+
+Goal: show uncertainty and provenance in the condition-card Reports panel.
+
+- [x] P95.1 Show uncertainty and provenance in the condition panel (#671)
+  - [x] Add uncertainty to the card table
+  - [x] Add the provenance block
+  - [x] Add tests and docs
+  - [x] Run dashboard and open the PR
+
+Acceptance:
+
+- Missing uncertainty renders as `not stated`.
+- Provenance keys/values render in the panel.
+- Dashboard passes.

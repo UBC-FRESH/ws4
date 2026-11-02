@@ -3844,6 +3844,7 @@ issue comments.
   the P91 account-derived card builder. The endpoint returns a review-required
   `ws4.forest_condition.report.v1` card, 404 without accounts, and 422 for
   invalid account data. Added API tests and docs. Dashboard green on all seven gates.
+- Closeout report: `notes/reports/p95-closeout.md`.
 - Closeout report: `notes/reports/p92-closeout.md`.
 - P89: Mixed-target factorized search and live switching. Parent #643, branch
   `feature/p89-mixed-target-search`. The full TSA24 mixed feature/product population kept
@@ -3870,3 +3871,10 @@ issue comments.
   the floor only when it becomes binding or after feature pricing is cheaper. Report:
   `notes/reports/tsa24-ltsy-scenario-comparison.md`. Archive:
   `/srv/shared-data/gep/ws4/archive/tsa24-ltsy-scenario-comparison/`.
+
+## 2026-11-02
+
+- P95.1: added uncertainty and provenance to the condition-card Reports panel.
+  Missing uncertainty renders as `not stated`; provenance entries render as text
+  nodes. Added static assertions and web docs. Dashboard green on all seven gates.
+- Closeout report: `notes/reports/p95-closeout.md`.
