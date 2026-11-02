@@ -62,6 +62,35 @@ as evidence that the all-period ±5% flow band and the 90% stock floor can coexi
 next review should be age-class, ending-inventory, and policy-focused, not another run of
 the same search.
 
+## Post-run replay
+
+The accepted schedule was replayed through the simulator (82.54 s, 13.4 GB peak RSS):
+
+| State at offset 199 | Value |
+|---|---:|
+| Managed growing stock | **477,487,194.22 m3** |
+| Unmanaged growing stock | 521,061,508.61 m3 |
+| Total growing stock | 998,548,702.83 m3 |
+| Final age classes represented | 64 |
+| Age-class evenness | 0.920 |
+
+Age-class shares, initial -> final:
+
+| Class | Initial | Final |
+|---|---:|---:|
+| <40 years | 22.4% | **12.5%** |
+| 40-199 years | 62.6% | **39.0%** |
+| >=200 years | 15.0% | **48.4%** |
+
+The stock floor is met, but the margin comes from a large shift toward old forest. The
+oldest classes rise from 15% to 48% of the area while young area halves. That is an
+important policy caveat: the scenario is not automatically desirable just because the
+stock floor is satisfied.
+
+Replay artifacts are under `postrun/`: `account_values.csv`, `product_values.csv`,
+`ending_inventory` rows in `account_values.csv`, `age_class_initial.csv`,
+`age_class_final.csv`, and `postrun_summary.json`.
+
 ## Interpretation
 
 This is a good LTSY formulation candidate because:
