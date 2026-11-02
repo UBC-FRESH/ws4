@@ -2955,6 +2955,7 @@ pilot AU report and validation evidence.
   - [x] Extract and order the `fdip` isopleths.
   - [ ] Record the maintainer's review, reviewer, and review date.
   - [x] Add the pilot diagram file, fixture, tests, and method note.
+  - [x] Digitise the natural and planted lodgepole pine `pln`/`plp` diagrams.
 - [ ] P95.2 Generate FVS-BC and PSP trajectories for the pilot AUs (#682)
   - [x] Run the no-cut and CT60 FVS-BC scenarios.
   - [x] Add the PSP observed check.
@@ -2963,8 +2964,9 @@ pilot AU report and validation evidence.
   - [x] Build the real TSA 23 IDFdk3 PSP extract and store it in
     `ws4/sdmd/data/pilot-tsa23-idfdk3/`.
   - [x] Run one real no-cut and CT60 FVS-BC path from that tree list.
-  - [x] Mine the public CCISS tables for species traits, IDFdk3 stocking, and a
-    BEC crosswalk; record the derived extracts and limits.
+  - [x] Mine the public CCISS tables for species traits, IDFdk3 stocking,
+    feasibility, site index, and a BEC crosswalk; record the derived extracts and
+    limits.
   - [ ] Run the FVS scenarios for a representative AU-level tree list and the
     remaining pilot species.
 - [x] P95.3 Enforce the SDMD-zone rule and the per-AU entry cap (#683)
@@ -2978,8 +2980,9 @@ pilot AU report and validation evidence.
     6 → 5 / 7 → 6 (PLI).
   - [x] Write the pilot evidence report in `notes/reports/p95-pilot-evidence.md`.
   - [x] Define `AU-IDFdk3-TSA23-FDI` and replace the synthetic FDI PSP/FVS input.
-  - [ ] Replace the remaining synthetic PLI evidence and use a representative
-    AU-level FVS tree list.
+  - [x] Define `AU-IDFdk3-TSA23-PLI` with the natural lodgepole pine diagram and
+    real PSP/FVS evidence.
+  - [ ] Use a representative AU-level FVS tree list for both species.
   - [ ] Write the close-out report and queue the pull request.
 
 Acceptance:

@@ -1,0 +1,48 @@
+{
+  "schema_version": "ws4.sdmd.trajectory.v1",
+  "au_id": "AU-IDFdk3-TSA23-PLI",
+  "regime_id": "REG-A-CT60",
+  "source": "fresh-fvsbc (FVS-BC) TSA23 IDFdk3 PLI PSP tree list 4025305-PSP2",
+  "source_version": "fresh-fvsbc 0.20.0; FVS BC variant",
+  "scenario": "THINBBA at age 60, 60% basal area removal",
+  "generated_utc": "2026-11-02T17:56:04+00:00",
+  "review_status": "provisional",
+  "points": [
+    [
+      2016.38,
+      0.083838
+    ],
+    [
+      1907.65,
+      0.100574
+    ],
+    [
+      1806.34,
+      0.118223
+    ],
+    [
+      1712.44,
+      0.136637
+    ],
+    [
+      1621.01,
+      0.156602
+    ],
+    [
+      1537.0,
+      0.177454
+    ],
+    [
+      1457.92,
+      0.199461
+    ],
+    [
+      568.34,
+      0.232931
+    ],
+    [
+      555.99,
+      0.267934
+    ]
+  ]
+}

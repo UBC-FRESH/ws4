@@ -53,3 +53,29 @@ Reviewer of record: Gregory Paradis (maintainer). Status: both diagrams
 provisional, awaiting review. The planted top-height assignment is the weaker of
 the two and is the first item to check. After review, set `review.status` to `reviewed`, add the reviewer and the
 UTC date, and rerun the diagram and validation tests.
+
+
+## Lodgepole pine planted diagram
+
+The planted lodgepole pine PDF (`plp`, version 1.20) is digitised into
+`ws4/sdmd/data/sdmd/idf-dk3-pli-planted.json`.
+
+- The axis calibration uses the printed TPH ticks 200-4000 and the mean-tree-volume
+  ticks 0.005-2.0 m3.
+- The dashed curves are the printed QMD 10, 15, 20, 25, 30, 35, and 40 cm labels.
+- The dotted curves are the printed top-height 6, 10, 14, 18, 22, 26, and 30 m
+  labels. Unlabelled intermediate dotted curves are not stored.
+- The thick dash-dot pair is stored as `competition` (lower) and `self_thinning`
+  (upper).
+- The low dotted curve near the printed Crown Closure label is stored as the 60%
+  crown-closure boundary.
+- Every path is sorted by increasing TPH. The source SHA-256 matches the
+  catalogued `plp` PDF.
+
+The natural lodgepole pine diagram (`pln`, version 1.20) is digitised into
+`ws4/sdmd/data/sdmd/idf-dk3-pli-natural.json` with top height 6-34 m, QMD 10-40
+cm, the competition/self-thinning boundaries, and the 60% crown-closure curve. A
+real TSA 23 / IDFdk3 / PLI PSP store uses it in
+`ws4/sdmd/data/pilot-tsa23-idfdk3-pli/`. Both lodgepole pine diagrams are
+`provisional`; the QMD/top-height label assignments and the crown-closure curves
+are the review items.

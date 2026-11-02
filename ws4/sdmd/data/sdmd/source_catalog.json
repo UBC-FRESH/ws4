@@ -535,6 +535,28 @@
       "review_status": "provisional",
       "reviewer": "",
       "notes": "Vector extraction from the catalogued PDF. The planted top-height labels are offset from the curves; the 8-46 m assignment is provisional and needs the maintainer's review."
+    },
+    {
+      "diagram_id": "idf-dk3-pli-planted",
+      "source_diagram_id": "plp",
+      "file": "idf-dk3-pli-planted.json",
+      "source_sha256": "1c7a013936bd408a87d422d62fc1bdb75980d30d4cff3f109d39e4af249a850d",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/plp.pdf",
+      "source_version": "1.20",
+      "review_status": "provisional",
+      "reviewer": "",
+      "notes": "Vector extraction from the catalogued PDF. Top-height curves are the printed 6, 10, 14, 18, 22, 26, and 30 m labels; QMD curves are the printed 10-40 cm labels; the thick dash-dot pair is competition and self-thinning. The crown-closure curve follows the printed 60% line. Provisional pending maintainer review."
+    },
+    {
+      "diagram_id": "idf-dk3-pli-natural",
+      "source_diagram_id": "pln",
+      "file": "idf-dk3-pli-natural.json",
+      "source_sha256": "abdbab87eda2aff7f78b7209aae0169d778e672b5eccce5003471fb65ec4efa3",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/pln.pdf",
+      "source_version": "1.20",
+      "review_status": "provisional",
+      "reviewer": "",
+      "notes": "Vector extraction from the catalogued PDF. Top-height curves are the printed 6, 10, 14, 18, 22, 26, 30, and 34 m labels; QMD curves are the printed 10-40 cm labels; the thick dash-dot pair is competition and self-thinning; the low dotted curve at the Crown Closure label is the 60% boundary. Provisional pending maintainer review."
     }
   ]
 }

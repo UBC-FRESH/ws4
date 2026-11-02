@@ -3951,3 +3951,29 @@ issue comments.
   on the ninth, which supports a real PLI AU; CCISS has no SDMD isopleths, so the
   missing `pln` diagram still needs digitisation. The method and limits are in
   `notes/reference/cciss-data-mining.md`; four contract tests cover the extracts.
+- P95.2: extended the CCISS mining into the packaged `ccissr` tables. Added
+  `idfdk3_suitability.csv` (38 species/site-series feasibility rows) and
+  `idfdk3_sibec.csv` (32 mean site-index rows), and enriched
+  `idfdk3_stocking.csv` with edatopic codes, special codes, stocking delay, and
+  assessment windows. `Pl` is feasible at rating 1-4 across the nine IDFdk3
+  site series; SIBEC gives `Pl` 15.7-19.9 m and `Fd` 13.3-20.7 m. Two more
+  contract tests cover the tables. The note records the full object inventory,
+  including `S1`, `SIBEC`, `E1`, `SS`, `N1`, `stocking_standards`,
+  `stocking_info`, `stocking_height`, `cfrg_rules`, and `models_info`.
+- P95.2: digitised the public planted lodgepole pine diagram (`plp`, version
+  1.20) into `idf-dk3-pli-planted.json`. The vector extraction stores QMD
+  10-40 cm, top height 6-30 m, the competition and self-thinning boundaries,
+  and the 60% crown-closure curve. The source SHA-256 matches the catalogued
+  PDF; the diagram is provisional. Added a source-catalog entry and a diagram
+  contract test. This gives the PLI AU a real SDMD instead of placing lodgepole
+  pine points on the Interior Douglas-fir diagram. The natural `pln` diagram is
+  still not digitised.
+- P95.2: digitised the natural lodgepole pine diagram (`pln`, version 1.20)
+  into `idf-dk3-pli-natural.json` and added it to the source catalog. Built the
+  real `AU-IDFdk3-TSA23-PLI` store from 11 public PSP Pl-leading clusters, ages
+  20-120, with the natural lodgepole pine diagram and two FVS paths from cluster
+  4025305-PSP2 (`SITECODE PL,55`, CT60 at age 60). The store passes plot support,
+  density, regime completeness, and option reduction; it warns on the provisional
+  diagram, missing initial volume, and extrapolated paths. Added PLI gate and
+  trajectory tests. This removes the need to place lodgepole pine points on the
+  Interior Douglas-fir diagram.

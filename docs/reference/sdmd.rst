@@ -442,8 +442,14 @@ catalog keeps "White pine" as an alias so the page label still resolves.
 The Farnden 1996 method report (Pacific Forestry Centre Information Report
 BC-X-360) is public and is recorded in the catalog with its URL and checksum. The
 PDFs are referenced, not copied into the repository. The natural and planted Interior Douglas-fir PDFs are digitised into
-``idf-dk3-fdi-natural.json`` and ``idf-dk3-fdi-planted.json``; the method, curve
-assignments, and review checklist are in
+``idf-dk3-fdi-natural.json`` and ``idf-dk3-fdi-planted.json``. The natural
+lodgepole pine PDF (`pln`, version 1.20) is digitised into
+``idf-dk3-pli-natural.json`` with QMD 10-40 cm, top height 6-34 m, the
+competition/self-thinning boundaries, and the 60% crown-closure curve. The
+planted PDF (`plp`, version 1.20) is digitised into ``idf-dk3-pli-planted.json``
+with top height 6-30 m. The real PLI pilot store is
+``ws4/sdmd/data/pilot-tsa23-idfdk3-pli/``. The method,
+curve assignments, and review checklist are in
 ``notes/reference/bc-sdmd-digitisation.md``. Both are **provisional** until the
 maintainer reviews the curves; the planted top-height assignment is the weaker of
 the two. The synthetic ``idf-dk3-fdi-illustrative.json`` remains the test fixture,
@@ -455,7 +461,8 @@ The CCISS project (Apache-2.0) supplies complementary species and BEC evidence: 
 BC tree species codes, silvics traits for the six SDMD species, IDFdk3 stocking
 targets, and a BEC crosswalk. The derived files are
 ``ws4/sdmd/data/sdmd/tree_species.csv``, ``species_traits.csv``,
-``idfdk3_stocking.csv``, and ``bec_crosswalk.csv``; the method and limits are in
+``idfdk3_stocking.csv``, ``idfdk3_suitability.csv``, ``idfdk3_sibec.csv``, and
+``bec_crosswalk.csv``; the method and limits are in
 ``notes/reference/cciss-data-mining.md``. CCISS does not contain SDMD isopleths,
 so it cannot replace the missing lodgepole pine diagram.
 

@@ -45,6 +45,22 @@ PILOT_DIAGRAM = (
     / "sdmd"
     / "idf-dk3-fdi-natural.json"
 )
+PLI_PLANTED_DIAGRAM = (
+    Path(__file__).resolve().parents[1]
+    / "ws4"
+    / "sdmd"
+    / "data"
+    / "sdmd"
+    / "idf-dk3-pli-planted.json"
+)
+PLI_NATURAL_DIAGRAM = (
+    Path(__file__).resolve().parents[1]
+    / "ws4"
+    / "sdmd"
+    / "data"
+    / "sdmd"
+    / "idf-dk3-pli-natural.json"
+)
 PLANTED_DIAGRAM = (
     Path(__file__).resolve().parents[1]
     / "ws4"
@@ -553,3 +569,37 @@ def test_pilot_planted_diagram_places_a_managed_point() -> None:
     diagram = load_diagram(PLANTED_DIAGRAM)
     assert place_point(diagram, 1000.0, 0.3).zone == "density-management"
     assert place_point(diagram, 1000.0, 0.02).zone == "understocked"
+
+
+def test_lodgepole_planted_diagram_is_complete_and_valid() -> None:
+    """The public planted lodgepole pine PDF yields the required curve families."""
+    diagram = load_diagram(PLI_PLANTED_DIAGRAM)
+    assert diagram.species_group == "PLI"
+    assert diagram.source.version == "1.20"
+    assert validate_diagram(diagram) == []
+    top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
+    qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
+    assert top == [6, 10, 14, 18, 22, 26, 30]
+    assert qmd == [10, 15, 20, 25, 30, 35, 40]
+    boundaries = [
+        item.kind
+        for item in diagram.isopleths
+        if item.kind in {"crown_closure", "competition", "self_thinning"}
+    ]
+    assert sorted(boundaries) == ["competition", "crown_closure", "self_thinning"]
+    placement = place_point(diagram, 1370.0, 0.184445)
+    assert placement.zone == "density-management"
+
+
+def test_lodgepole_natural_diagram_is_complete_and_valid() -> None:
+    """The public natural lodgepole pine PDF yields the required curve families."""
+    diagram = load_diagram(PLI_NATURAL_DIAGRAM)
+    assert diagram.species_group == "PLI"
+    assert diagram.source.version == "1.20"
+    assert validate_diagram(diagram) == []
+    top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
+    qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
+    assert top == [6, 10, 14, 18, 22, 26, 30, 34]
+    assert qmd == [10, 15, 20, 25, 30, 35, 40]
+    placement = place_point(diagram, 1370.0, 0.184445)
+    assert placement.zone == "competition"

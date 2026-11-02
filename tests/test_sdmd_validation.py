@@ -22,6 +22,8 @@ DIAGRAM = (
 AU = "AU-IDFdk3-FDI"
 REAL_AU = "AU-IDFdk3-TSA23-FDI"
 REAL_PILOT = Path(__file__).resolve().parents[1] / "ws4" / "sdmd" / "data" / "pilot-tsa23-idfdk3"
+PLI_AU = "AU-IDFdk3-TSA23-PLI"
+PLI_PILOT = Path(__file__).resolve().parents[1] / "ws4" / "sdmd" / "data" / "pilot-tsa23-idfdk3-pli"
 
 
 def _store_dir(tmp_path: Path, *, diagram: bool = True) -> Path:
@@ -233,5 +235,30 @@ def test_real_tsa23_pilot_has_two_stored_paths() -> None:
     store = SdmdStore.from_directory(REAL_PILOT)
     for regime in ("REG-A-UNTREATED", "REG-A-CT60"):
         payload = store.trajectory(REAL_AU, regime)
+        assert payload["status"] in {"inside", "extrapolated"}
+        assert payload["points"]
+
+
+def test_real_tsa23_pli_pilot_passes_the_observed_gates() -> None:
+    """The public TSA 23 IDFdk3 lodgepole pine extract passes plot and density support."""
+    store = SdmdStore.from_directory(PLI_PILOT)
+    report = validate_au(store, PLI_AU)
+    statuses = _statuses(report)
+    assert statuses["plot-support"] == "pass"
+    assert statuses["density-plausibility"] == "pass"
+    assert statuses["regime-completeness"] == "pass"
+    gate = next(item for item in report.gates if item.gate == "plot-support")
+    assert gate.evidence["psp_points"] == 11
+    assert gate.evidence["synthetic_points"] == 0
+    assert store.diagram is not None
+    assert store.diagram.diagram_id == "idf-dk3-pli-natural"
+    assert store.diagram.species_group == "PLI"
+
+
+def test_real_tsa23_pli_pilot_has_two_stored_paths() -> None:
+    """The PLI AU stores the untreated and CT60 FVS paths."""
+    store = SdmdStore.from_directory(PLI_PILOT)
+    for regime in ("REG-A-UNTREATED", "REG-A-CT60"):
+        payload = store.trajectory(PLI_AU, regime)
         assert payload["status"] in {"inside", "extrapolated"}
         assert payload["points"]

@@ -176,7 +176,7 @@ def test_digitised_diagrams_are_catalogued() -> None:
     """Both pilot digitizations name their source PDF and remain provisional."""
     catalog = _catalog()
     entries = catalog["digitizations"]
-    assert len(entries) == 2
+    assert len(entries) == 4
     for entry in entries:
         assert entry["review_status"] == "provisional"
         source = next(

@@ -74,6 +74,30 @@ is `THINBBA` at age 60 with 60% basal-area removal. Both the untreated and CT60 
 are stored as `provisional`; the CT60 path regenerates aspen after thinning, which is
 the model's response rather than a recommendation.
 
+## 2b. Real TSA 23 IDFdk3 lodgepole pine pilot
+
+The second real AU is `AU-IDFdk3-TSA23-PLI`, stored in
+`ws4/sdmd/data/pilot-tsa23-idfdk3-pli/`. It uses 11 reviewed public PSP cluster
+visits, ages 20 to 120, selected from TSA 23 / IDFdk3 / PL-leading sites.
+
+| Gate | Result |
+| --- | --- |
+| plot-support | pass: 11 plots, 11 PSP-backed, 0 synthetic |
+| density-plausibility | pass: within 0.2% |
+| sdmd-fit | warn: natural lodgepole pine diagram is provisional |
+| trajectory-plausibility | warn: both paths leave the observed envelope |
+| initial-volume | warn: no initial volume supplied |
+| regime-completeness | pass: 7 regimes |
+| solver-option-reduction | pass: 7 → 6 regimes, 11 → 7 entries |
+| ui-payload-contract | pass |
+| Overall | warn |
+
+The diagram is the digitised natural lodgepole pine `pln` (version 1.20), not the
+Interior Douglas-fir diagram. The FVS paths use cluster `4025305-PSP2` (age 50),
+`SITECODE PL,55`, eight cycles, and CT60 at age 60. Tree counts are scaled to the
+species-summary TPH; the FVS start volume remains above the observed value, which
+is named in the store's `SOURCE.md`.
+
 ## 3. Public PSP check of the pilot AU definition
 
 The pilot fixture names TSA-24 and BEC `IDFdk3`. The public FAIB PSP header
