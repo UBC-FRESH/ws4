@@ -226,7 +226,7 @@ def test_real_tsa23_pilot_passes_the_observed_gates() -> None:
     gate = next(item for item in report.gates if item.gate == "plot-support")
     assert gate.evidence["psp_points"] == 11
     assert gate.evidence["synthetic_points"] == 0
-    assert statuses["sdmd-fit"] == "warn"
+    assert statuses["sdmd-fit"] == "pass"
     assert statuses["trajectory-plausibility"] == "warn"
 
 

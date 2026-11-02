@@ -514,7 +514,7 @@ def test_build_au_report_requires_coordinate_columns() -> None:
 
 
 def test_pilot_natural_diagram_is_a_valid_provisional_vector() -> None:
-    """The digitised natural Interior Douglas-fir diagram is complete and provisional."""
+    """The digitised natural Interior Douglas-fir diagram is complete and reviewed."""
     diagram = load_diagram(PILOT_DIAGRAM)
     assert validate_diagram(diagram) == []
     kinds: dict[str, int] = {}
@@ -527,7 +527,8 @@ def test_pilot_natural_diagram_is_a_valid_provisional_vector() -> None:
         "competition": 1,
         "self_thinning": 1,
     }
-    assert diagram.review.status == "provisional"
+    assert diagram.review.status == "reviewed"
+    assert diagram.review.reviewer
     assert diagram.source.kind == "published"
     assert "BC-X-360" in diagram.source.citation
     assert len(diagram.source.citation) > 40
@@ -542,15 +543,15 @@ def test_pilot_natural_diagram_places_the_density_zones() -> None:
     assert place_point(diagram, 1000.0, 0.5).zone == "outside"
 
 
-def test_pilot_natural_diagram_is_not_used_by_a_report_until_reviewed() -> None:
-    """A provisional digitisation is still refused by the report path."""
+def test_pilot_natural_diagram_is_used_by_a_report() -> None:
+    """The reviewed natural Interior Douglas-fir diagram is accepted by the report path."""
     diagram = load_diagram(PILOT_DIAGRAM)
-    with pytest.raises(SdmdReportError, match="needs a reviewed diagram"):
-        build_au_report(au_id="AU-IDFdk3-FDI", diagram=diagram, observed=_points())
+    report = build_au_report(au_id="AU-IDFdk3-FDI", diagram=diagram, observed=_points())
+    assert report.review_status == "reviewed"
 
 
 def test_pilot_planted_diagram_is_a_valid_provisional_vector() -> None:
-    """The planted Interior Douglas-fir diagram is structurally complete and provisional."""
+    """The planted Interior Douglas-fir diagram is structurally complete and reviewed."""
     diagram = load_diagram(PLANTED_DIAGRAM)
     assert validate_diagram(diagram) == []
     kinds: dict[str, int] = {}
@@ -561,7 +562,8 @@ def test_pilot_planted_diagram_is_a_valid_provisional_vector() -> None:
     assert kinds["crown_closure"] == 1
     assert kinds["competition"] == 1
     assert kinds["self_thinning"] == 1
-    assert diagram.review.status == "provisional"
+    assert diagram.review.status == "reviewed"
+    assert diagram.review.reviewer
     assert "planted" in diagram.source.citation
 
 

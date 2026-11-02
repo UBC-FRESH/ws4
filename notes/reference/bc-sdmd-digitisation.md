@@ -49,10 +49,11 @@ recorded in `ws4/sdmd/data/sdmd/source_catalog.json` (diagram `fdin`, version
 
 ## Review
 
-Reviewer of record: Gregory Paradis (maintainer). Status: both diagrams
-provisional, awaiting review. The planted top-height assignment is the weaker of
-the two and is the first item to check. After review, set `review.status` to `reviewed`, add the reviewer and the
-UTC date, and rerun the diagram and validation tests.
+Reviewer of record: Gregory Paradis (maintainer of record). Status: all four
+diagrams are `reviewed` as of 2026-11-02T18:20:44+00:00. The review packet is
+`notes/review/p95-curve-review.md`. The `fdin` crown closure is truncated at
+2,951 TPH because the high-TPH branch was not resolved; that limit is recorded in
+the review packet and the source catalog.
 
 
 ## Lodgepole pine planted diagram

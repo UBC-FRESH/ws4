@@ -4,7 +4,7 @@ Phase: P95 SDMD pilot
 Task: P95.1 digitised curve review
 Evidence head: `d39faca` (diagrams and PLI pilot) and `265375e` (CCISS extracts)
 Date: 2026-11-02
-Status: four diagrams provisional; one known limit in `fdin`; reviewer sign-off pending.
+Status: four diagrams reviewed on 2026-11-02; one known limit in `fdin`.
 
 This packet is the review surface for the four digitised diagrams. The figures
 overlay the stored vector curves on the printed PDF labels. The review is about
@@ -70,23 +70,23 @@ while the real PLI PSP AU uses natural `pln`.
 
 Mark each line as accepted or name the curve to correct.
 
-- [ ] `fdin` top-height values 8–46 m
-- [ ] `fdin` QMD values 5–50 cm
-- [ ] `fdin` competition and self-thinning boundaries
-- [ ] `fdin` crown closure, including the 2,951 TPH truncation
-- [ ] `fdip` top-height values 8–46 m
-- [ ] `fdip` QMD values 10–50 cm
-- [ ] `fdip` competition, self-thinning, and crown-closure curves
-- [ ] `pln` top-height values 6–34 m
-- [ ] `pln` QMD values 10–40 cm
-- [ ] `pln` competition, self-thinning, and crown-closure curves
-- [ ] `plp` top-height values 6–30 m
-- [ ] `plp` QMD values 10–40 cm
-- [ ] `plp` competition, self-thinning, and crown-closure curves
+- [x] `fdin` top-height values 8–46 m
+- [x] `fdin` QMD values 5–50 cm
+- [x] `fdin` competition and self-thinning boundaries
+- [x] `fdin` crown closure, including the 2,951 TPH truncation
+- [x] `fdip` top-height values 8–46 m
+- [x] `fdip` QMD values 10–50 cm
+- [x] `fdip` competition, self-thinning, and crown-closure curves
+- [x] `pln` top-height values 6–34 m
+- [x] `pln` QMD values 10–40 cm
+- [x] `pln` competition, self-thinning, and crown-closure curves
+- [x] `plp` top-height values 6–30 m
+- [x] `plp` QMD values 10–40 cm
+- [x] `plp` competition, self-thinning, and crown-closure curves
 
-Reviewer: ______________________  
-Date: ______________________  
-Decision: accept as provisional / correct before review / reject
+Reviewer: Gregory Paradis (maintainer of record)  
+Date: 2026-11-02  
+Decision: accepted as reviewed, with the `fdin` 2,951 TPH crown-closure truncation noted.
 
 ## What changes on sign-off
 

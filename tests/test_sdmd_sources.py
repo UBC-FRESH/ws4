@@ -173,12 +173,13 @@ def test_page_labels_cover_all_fourteen_diagrams() -> None:
 
 
 def test_digitised_diagrams_are_catalogued() -> None:
-    """Both pilot digitizations name their source PDF and remain provisional."""
+    """The pilot digitizations name their source PDF and the reviewer of record."""
     catalog = _catalog()
     entries = catalog["digitizations"]
     assert len(entries) == 4
     for entry in entries:
-        assert entry["review_status"] == "provisional"
+        assert entry["review_status"] == "reviewed"
+        assert entry["reviewer"]
         source = next(
             item for item in catalog["diagrams"] if item["diagram_id"] == entry["source_diagram_id"]
         )

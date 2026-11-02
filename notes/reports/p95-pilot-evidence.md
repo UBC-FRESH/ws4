@@ -60,7 +60,7 @@ field derivation are in the store's `SOURCE.md`.
 | --- | --- |
 | plot-support | pass: 11 plots, 11 PSP-backed, 0 synthetic |
 | density-plausibility | pass: within 0.1% |
-| sdmd-fit | warn: provisional diagram |
+| sdmd-fit | pass: reviewed diagram |
 | trajectory-plausibility | warn: both paths leave the observed envelope |
 | initial-volume | warn: no initial volume supplied |
 | regime-completeness | pass: 7 regimes |

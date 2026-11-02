@@ -3984,3 +3984,9 @@ issue comments.
   that point and the unresolved high-TPH branch is named in the packet and source
   catalog. Added a monotonicity/domain test for the truncated curve. The diagrams
   remain provisional pending the maintainer's sign-off.
+- P95.1: recorded the maintainer review for all four diagrams. `fdin`, `fdip`,
+  `pln`, and `plp` are now `reviewed` with reviewer Gregory Paradis (maintainer
+  of record) and reviewed_utc 2026-11-02T18:20:44+00:00. The pilot store copies
+  of `diagram.json` were updated, so the FDI and PLI `sdmd-fit` gates now pass.
+  The review packet records the acceptance and the `fdin` crown-closure
+  truncation. Updated the source-catalog review fields and the tests.
