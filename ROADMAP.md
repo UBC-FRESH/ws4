@@ -98,7 +98,7 @@ exists and the maintainer approves it.
 | P93 Condition-card Reports UI | #662 | `feature/p93-condition-card-ui` | pr-open |
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
 | P95 Factorized target-cell vectors | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
-| P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | active |
+| P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -3147,8 +3147,9 @@ Acceptance:
 
 Parent issue: #686
 Branch: `feature/p96-base-ltsy-profile`
-Status: active
+Status: pr-open
 Report: `notes/reports/tsa24-ltsy-base-profile.md`
+PR: #689
 
 Goal: make the accepted all-period ±5% + managed-stock guard formulation the practical
 base LTSY watcher profile.

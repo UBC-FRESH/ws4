@@ -1,7 +1,7 @@
 # TSA24 base LTSY watcher profile
 
 Date: 2026-11-02
-Status: base profile active
+Status: base profile active; PR #689
 
 The default TSA24 LTSY watcher now runs the accepted all-period ±5% formulation with the
 managed-stock guard.
@@ -55,3 +55,7 @@ README, and checksums.
 This is a base LTSY formulation, not a definitive sustainable scenario. Managed
 old-seral area is very low, and the unmanaged estate reaches 100% ≥200 years over the
 200-year horizon. A 20,000-generation confirmation is intentionally not planned.
+
+## Pull request
+
+PR #689 contains the profile note and planning updates. The watcher and archive live outside this git branch.
