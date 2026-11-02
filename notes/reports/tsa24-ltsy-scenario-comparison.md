@@ -1,7 +1,7 @@
 # TSA24 LTSY scenario comparison
 
 Date: 2026-11-02
-Status: 5,000-generation comparison complete; PR pending
+Status: 5,000-generation comparison complete; PR #673
 
 Three LTSY formulations were compared on the same TSA24 model, seed schedule, population
 (64), random seed (7), and 5,000-generation budget:

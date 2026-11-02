@@ -3006,7 +3006,7 @@ Parent issue: #664
 Branch: `feature/p94-ltsy-scenario-comparison`
 Status: pr-open
 Report: `notes/reports/tsa24-ltsy-scenario-comparison.md`
-PR: pending
+PR: #673
 
 Goal: compare baseline LTSY, all-period ±5% with the stock floor, and all-period ±5%
 without the stock floor on one seed and a 5,000-generation budget.
