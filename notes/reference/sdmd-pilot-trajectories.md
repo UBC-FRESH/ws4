@@ -43,4 +43,6 @@ input mismatch, not a defect in the assessment.
   test; the synthetic point is excluded and named. The fixture labels are still not
   a real PSP extract.
 
-P95.2 remains open until a real PSP input is available.
+P95.2 remains open until a real PSP input is available. The public FAIB PSP
+header has no `IDFdk3` sites in TSA 24, so the pilot label is synthetic; TSA 23
+has 145 `IDFdk3` sites. See `notes/reports/p95-pilot-evidence.md`.

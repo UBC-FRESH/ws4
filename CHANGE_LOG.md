@@ -3919,3 +3919,12 @@ issue comments.
   points only. Tests cover the synthetic warning, a missing PSP plot, and an
   under-supported envelope. The demo store reports 4 PSP-backed plus 1 synthetic
   point for FDI and 5 PSP-backed points for PLI.
+- P95.4: recorded the pilot evidence. Both AUs run all eight gates and warn:
+  the diagrams are provisional, at least one trajectory leaves the PSP-backed
+  envelope, and no initial volume is supplied. The option reduction is 7 → 6
+  regimes and 11 → 7 entries for FDI, and 6 → 5 regimes and 7 → 6 entries for
+  PLI. The report is `notes/reports/p95-pilot-evidence.md`. Public FAIB PSP
+  header counts show TSA 24 has no IDFdk3 sites (558 sites; SBS 517, ESSF 23,
+  ICH 13, SBPS 5) while TSA 23 has 145. The pilot label is therefore synthetic,
+  and the phase remains open until a real AU is defined and its PSP/FVS input
+  replaces the fixture.

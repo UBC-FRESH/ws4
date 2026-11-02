@@ -2966,9 +2966,12 @@ pilot AU report and validation evidence.
   - [x] Add the cross-block `SdmdScheduleGuard` and its negative tests.
   - [x] Wire the guard into the optimizer move loop and record the rejection count.
 - [ ] P95.4 Pilot report, validation, and closeout (#684)
-  - [ ] Run the eight gates on both pilot AUs.
-  - [ ] Write the pilot AU report and the close-out report.
-  - [ ] Queue the pull request.
+  - [x] Run the eight gates on both pilot AUs (both `warn`, method-only).
+  - [x] Record the option reduction: 7 → 6 regimes / 11 → 7 entries (FDI) and
+    6 → 5 / 7 → 6 (PLI).
+  - [x] Write the pilot evidence report in `notes/reports/p95-pilot-evidence.md`.
+  - [ ] Define a real AU and replace the synthetic PSP/FVS input.
+  - [ ] Write the close-out report and queue the pull request.
 
 Acceptance:
 
