@@ -2,47 +2,47 @@
   "schema_version": "ws4.sdmd.trajectory.v1",
   "au_id": "AU-IDFdk3-TSA23-PLI",
   "regime_id": "REG-A-CT60",
-  "source": "fresh-fvsbc (FVS-BC) TSA23 IDFdk3 PLI PSP tree list 4025305-PSP2",
+  "source": "fresh-fvsbc (FVS-BC) TSA23 IDFdk3 PL representative tree list 4025096-PSP1",
   "source_version": "fresh-fvsbc 0.20.0; FVS BC variant",
-  "scenario": "THINBBA at age 60, 60% basal area removal",
-  "generated_utc": "2026-11-02T17:56:04+00:00",
+  "scenario": "THINBBA at the first 10-year cycle, 60% basal area removal",
+  "generated_utc": "2026-11-02T18:26:54+00:00",
   "review_status": "provisional",
   "points": [
     [
       2016.38,
-      0.083838
+      0.170765
     ],
     [
-      1907.65,
-      0.100574
+      1885.41,
+      0.191942
     ],
     [
-      1806.34,
-      0.118223
+      733.9,
+      0.227674
     ],
     [
-      1712.44,
-      0.136637
+      711.66,
+      0.267922
     ],
     [
-      1621.01,
-      0.156602
+      679.54,
+      0.311066
     ],
     [
-      1537.0,
-      0.177454
+      647.42,
+      0.358492
     ],
     [
-      1457.92,
-      0.199461
+      620.23,
+      0.406918
+    ],
+    [
+      593.05,
+      0.458486
     ],
     [
       568.34,
-      0.232931
-    ],
-    [
-      555.99,
-      0.267934
+      0.511908
     ]
   ]
 }

@@ -2968,7 +2968,7 @@ pilot AU report and validation evidence.
   - [x] Mine the public CCISS tables for species traits, IDFdk3 stocking,
     feasibility, site index, and a BEC crosswalk; record the derived extracts and
     limits.
-  - [ ] Run the FVS scenarios for a representative AU-level tree list and the
+  - [x] Run the FVS scenarios for a representative AU-level tree list and the
     remaining pilot species.
 - [x] P95.3 Enforce the SDMD-zone rule and the per-AU entry cap (#683)
   - [x] Load per-track trajectories into the filter.
@@ -2983,7 +2983,7 @@ pilot AU report and validation evidence.
   - [x] Define `AU-IDFdk3-TSA23-FDI` and replace the synthetic FDI PSP/FVS input.
   - [x] Define `AU-IDFdk3-TSA23-PLI` with the natural lodgepole pine diagram and
     real PSP/FVS evidence.
-  - [ ] Use a representative AU-level FVS tree list for both species.
+  - [x] Use a representative AU-level FVS tree list for both species.
   - [ ] Write the close-out report and queue the pull request.
 
 Acceptance:

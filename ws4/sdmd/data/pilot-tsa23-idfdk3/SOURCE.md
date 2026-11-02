@@ -57,11 +57,15 @@ one-digit field cannot represent a larger ratio; a missing branch height uses
 ## FVS trajectory
 
 - Model: `fresh-fvsbc` 0.20.0, BC variant.
-- Tree list: the live trees of cluster `4024538-PSP1` (age 52).
+- Tree list: the live trees of cluster `4025005-PSP1` (age 89), the median-age
+  cluster of the 11 observations. Tree counts are scaled by `1063 / 1230.2 =
+  0.864` so the FVS initial TPH matches the AU median TPH.
 - Site: `SITECODE FD,60`.
 - Stand: `STDINFO CAR IDFdk3/01 0 200 35 16`.
 - Horizon: 8 cycles of 10 years; `RANNSEED 1`.
-- CT60: `THINBBA` at age 60 with 60% basal-area removal.
+- CT60: `THINBBA` at the first 10-year cycle with 60% basal-area removal. The
+  projection starts at age 89, so this is a first-entry treatment, not a literal
+  age-60 entry.
 - Conversion: `tph = tpa * 2.4710538146716536`; `volume_m3_ha = tcuft *
   0.06997084548`; `mean_tree_volume_m3 = volume_m3_ha / tph`.
 

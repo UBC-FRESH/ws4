@@ -3990,3 +3990,11 @@ issue comments.
   of `diagram.json` were updated, so the FDI and PLI `sdmd-fit` gates now pass.
   The review packet records the acceptance and the `fdin` crown-closure
   truncation. Updated the source-catalog review fields and the tests.
+- P95.2: replaced the single-young-cluster FVS paths with representative
+  median-age clusters scaled to the AU median TPH. FDI uses cluster
+  4025005-PSP1 (age 89, scale 0.864); PLI uses cluster 4025096-PSP1 (age 62,
+  scale 1.670). CT60 is applied at the first 10-year cycle, which is a
+  first-entry treatment for these older stands rather than a literal age-60
+  entry; both SOURCE.md files record that. The pilot gates still pass plot,
+  density, diagram, regime, and option checks; trajectory and initial-volume
+  warnings remain.
