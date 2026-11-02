@@ -3726,3 +3726,4 @@ issue comments.
   which fetches the P92 endpoint and renders review state, indicators, alerts,
   and limits with text nodes. Added HTML assertions and web docs.
 - Dashboard green on all seven gates; 71 web tests passed.
+- Closeout report: `notes/reports/p93-closeout.md`.
