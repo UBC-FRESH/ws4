@@ -98,6 +98,7 @@ exists and the maintainer approves it.
 | P93 Condition-card Reports UI | #662 | `feature/p93-condition-card-ui` | pr-open |
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
 | P95 Factorized target-cell vectors | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
+| P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | active |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -3140,4 +3141,29 @@ Acceptance:
 - Vector values match the padded evaluator.
 - The stock and no-stock schedules remain identical.
 - The stock search is materially faster than 218.9 s.
+- Dashboard green.
+
+## Phase 96: Base LTSY watcher profile
+
+Parent issue: #686
+Branch: `feature/p96-base-ltsy-profile`
+Status: active
+Report: `notes/reports/tsa24-ltsy-base-profile.md`
+
+Goal: make the accepted all-period ±5% + managed-stock guard formulation the practical
+base LTSY watcher profile.
+
+- [x] P96.1 Default the LTSY watcher to the base profile (#687)
+  - [x] Set the default target
+  - [x] Use a base-profile schedule path
+  - [x] Run a hot-cache smoke generation
+- [x] P96.2 Record the base profile and close out (#688)
+  - [x] Add the note and archive
+  - [x] Update roadmap, changelog, and notes index
+
+Acceptance:
+
+- `run_ltsy_watch.sh` uses the base target by default.
+- The smoke run writes the base-profile schedule.
+- The note distinguishes base profile from definitive sustainability.
 - Dashboard green.
