@@ -3693,3 +3693,13 @@ issue comments.
   reported rather than guessed. Added 30 contract tests and the ingestion section of
   `docs/reference/sdmd.rst`. Dashboard result: `python scripts/dashboard.py` reports
   `OVERALL: GREEN` on all seven gates.
+- P87.3: Added the vector SDMD diagram contract and AU report. `ws4/sdmd/diagram.py` validates a
+  JSON diagram's source and review, interpolates isopleths in log space, places a point in the
+  understocked, density-management, competition, or outside zone, and builds a convex observed
+  envelope. `ws4/sdmd/compile.py` assesses trajectories against the envelope and rejects an initial
+  volume above the supplied evidence limit; an upper-tail trajectory is reported as extrapolation,
+  not as a result. A report refuses a diagram that is not reviewed unless method work opts in, and
+  then records the gap. The committed diagram is an **illustrative synthetic fixture**: the real
+  IDFdk3/FDI digitisation remains data-blocked pending a licensed copy and a forester's review, and
+  no third-party diagram content was copied. Added 40 tests and the diagram/report reference section.
+  Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.

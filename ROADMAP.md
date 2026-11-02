@@ -2694,10 +2694,13 @@ constraints. The SDMD is a diagnostic and constraint layer, not a growth model.
   - [x] Add the VRI AU assignment adapter and reported matching.
   - [x] Add the LiDAR structure adapter and refuse canopy-only TPH.
   - [x] Label provenance, review status, and synthetic rows.
-- [ ] P87.3 SDMD digitization and AU placement (#631)
-  - [ ] Store one reviewed diagram as ordered vector isopleths.
-  - [ ] Build SDMD points, the AU envelope, and the AU report.
-  - [ ] Place observed plots and FVS trajectories, and flag extrapolation.
+- [x] P87.3 SDMD digitization and AU placement (#631) — the vector contract, placement, envelope,
+  and report are complete; the published IDFdk3/FDI digitisation is data-blocked pending a licensed,
+  forester-reviewed copy.
+  - [x] Add the vector diagram contract and an illustrative reviewed-gated fixture.
+  - [x] Build the AU envelope, placement, and report statuses.
+  - [x] Place observed plots and FVS trajectories, and flag extrapolation.
+  - [x] Refuse an unreviewed digitisation in a report.
 - [ ] P87.4 Regime state machine and constraints (#632)
   - [ ] Add the even-aged regime library.
   - [ ] Validate state transitions and AU constraints.

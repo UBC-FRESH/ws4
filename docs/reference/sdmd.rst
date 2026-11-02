@@ -122,6 +122,73 @@ total TPH. A row whose ``tph_basis`` is ``canopy_only`` may carry structure, but
 TPH on such a row is refused: canopy-derived density is not total stand density.
 The basis is a closed set, and every row must carry at least one metric.
 
+Diagram and AU report
+---------------------
+
+A diagram is a JSON file with ordered vector isopleths, never a raster. The x axis
+is trees per hectare and the y axis is mean tree volume; interpolation is linear in
+log10 space, which is how the classic diagram is read. ``load_diagram`` validates
+the identity, the source, the review record, and every curve before the diagram is
+used.
+
+Each diagram needs at least two ``top_height`` curves, at least two ``qmd`` curves,
+and exactly one each of ``crown_closure``, ``competition``, and ``self_thinning``.
+A ``reviewed`` diagram must name a reviewer and a review time. An unreviewed or
+provisional diagram cannot enter an AU report unless the caller passes
+``allow_unreviewed=True`` for method work, and the report records the gap.
+
+.. code-block:: python
+
+   from ws4.sdmd import (
+       Trajectory,
+       assess_trajectory,
+       build_au_report,
+       load_diagram,
+       observed_envelope,
+       place_point,
+   )
+
+   diagram = load_diagram("ws4/sdmd/data/sdmd/idf-dk3-fdi-illustrative.json")
+   placement = place_point(diagram, tph=1000.0, mean_tree_volume_m3=1.2)
+   envelope = observed_envelope([(980.0, 0.757), (2200.0, 0.128), (1700.0, 0.543)])
+   assessment = assess_trajectory(
+       Trajectory(label="fvs", points=((1700.0, 0.543), (1350.0, 0.793))),
+       envelope,
+   )
+   report = build_au_report(
+       au_id="AU-IDFdk3-FDI",
+       diagram=diagram,
+       observed=points,
+       trajectories=(Trajectory(label="ct60", points=ct60_points),),
+       initial_volume_m3_ha=500.0,
+       initial_volume_limit_m3_ha=800.0,
+       allow_unreviewed=True,
+   )
+
+``place_point`` names the zone: ``understocked`` below the crown-closure line,
+``density-management`` between closure and competition, ``competition`` below the
+self-thinning line, and ``outside`` above it or beyond the digitised axis domain.
+It also interpolates top height and QMD, and flags a point outside the isopleth
+range.
+
+``observed_envelope`` builds the convex hull of an AU's observed points in log
+space. ``assess_trajectory`` returns ``inside`` or ``extrapolated`` and names the
+first point outside. ``build_au_report`` combines the observed evidence, the
+trajectories, and the initial volume into one status: ``supported``,
+``extrapolated``, ``rejected``, or ``unsupported``. The initial-volume check
+rejects a volume above the supplied evidence limit; an upper-tail trajectory that
+leaves the observed envelope is flagged as extrapolation even when the volume
+appears in a few old plots.
+
+Data status
+~~~~~~~~~~~
+
+The committed JSON is an **illustrative synthetic diagram** for the fixture and the
+tests. It is not a digitisation of a published diagram, and it must not be
+presented as one. The real IDFdk3/FDI diagram remains data-blocked pending a
+licensed digital copy and a forester's review of the digitised isopleths. The
+schema and the review gate are ready for that copy; the fixture exercises them.
+
 Evidence roles and limits
 -------------------------
 
