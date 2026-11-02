@@ -3912,3 +3912,10 @@ issue comments.
   records `sdmd_guard` and `sdmd_rejected`. Added a guard-hook test, an optimizer
   integration test, and a CLI test. P95.3 is complete and closed; the summary
   counter is the enforcement benchmark.
+- P95.2: added the PSP observed check to gate 1. A point must name PSP, be
+  reviewed, match a reviewed PSP plot at its age, and have a tree list; a missing
+  plot or tree list fails the gate, and a synthetic point warns and is excluded
+  from the observed envelope. Gate 4 now builds its envelope from PSP-backed
+  points only. Tests cover the synthetic warning, a missing PSP plot, and an
+  under-supported envelope. The demo store reports 4 PSP-backed plus 1 synthetic
+  point for FDI and 5 PSP-backed points for PLI.

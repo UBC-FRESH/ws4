@@ -2957,7 +2957,7 @@ pilot AU report and validation evidence.
   - [x] Add the pilot diagram file, fixture, tests, and method note.
 - [ ] P95.2 Generate FVS-BC and PSP trajectories for the pilot AUs (#682)
   - [x] Run the no-cut and CT60 FVS-BC scenarios.
-  - [ ] Add the PSP observed check.
+  - [x] Add the PSP observed check.
   - [x] Store paths with source metadata and assess them.
   - [x] Run the trajectory and physical gates.
 - [x] P95.3 Enforce the SDMD-zone rule and the per-AU entry cap (#683)

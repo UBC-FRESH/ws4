@@ -391,7 +391,9 @@ Validation gates
 
 `ws4.sdmd.validation` runs eight gates for one AU:
 
-1. **Plot support** — at least three observed plots.
+1. **Plot support** — at least three observed plots and at least three PSP-backed
+   points. Each point must have a reviewed PSP plot at its age and a tree list;
+   synthetic points are labelled and excluded from the observed envelope.
 2. **Density plausibility** — reported basal area agrees with TPH and QMD.
 3. **SDMD fit** — the diagram exists, is reviewed, and the points are inside it.
 4. **Trajectory plausibility** — every stored path is physical and assessed against

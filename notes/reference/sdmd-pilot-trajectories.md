@@ -38,7 +38,9 @@ input mismatch, not a defect in the assessment.
 - The CT60 treatment is one `THINBBA` block; it is not a full regime library run.
 - The trajectories are `provisional`. They must not be presented as real AU yield
   evidence.
-- The PSP observed check is still open: the envelope is the synthetic fixture's, not
-  a PSP envelope.
+- The PSP observed check now requires a reviewed PSP plot at the point age and a
+  tree list. The current envelope is built from the fixture points that pass that
+  test; the synthetic point is excluded and named. The fixture labels are still not
+  a real PSP extract.
 
-P95.2 remains open until the PSP check and a real input are available.
+P95.2 remains open until a real PSP input is available.
