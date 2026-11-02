@@ -97,6 +97,7 @@ exists and the maintainer approves it.
 | P92 Condition-card API | #659 | `feature/p92-condition-card-api` | pr-open |
 | P93 Condition-card Reports UI | #662 | `feature/p93-condition-card-ui` | pr-open |
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
+| P95 Factorized target-cell vectors | #675 | `feature/p95-factorized-cell-vectors` | active |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -3112,3 +3113,30 @@ Acceptance:
     the 863 m3/ha gate fails against an 800 limit and 1,173 m3/ha is flagged above 1,133.8.
     Trajectory-zone rejection and a cap across blocks in one AU are deferred with the reasons
     in #635. Next: approve the close-out, then launch the next free phase (P95 today; P91-P94 are taken).
+
+## Phase 95: Factorized target-cell vectors
+
+Parent issue: #675
+Branch: `feature/p95-factorized-cell-vectors`
+Status: active
+Report: `notes/reports/p95-factorized-target-cell-vectors.md`
+
+Goal: cache one `[options]` value vector per requested factorized target cell and gather it
+through the candidate rows, instead of rebuilding the padded layout every generation.
+
+- [x] P95.1 Add factorized option-value vectors (#676)
+  - [x] Add the feature/product option-value builder
+  - [x] Use the vector path in the population
+  - [x] Keep the display path on the padded evaluator
+- [x] P95.2 Benchmark and verify the stock-cell speedup (#677)
+  - [x] Compare stock and no-stock schedules
+  - [x] Verify exact replay and schedule identity
+  - [x] Record memory
+- [x] P95.3 Record the result and close out (#678)
+
+Acceptance:
+
+- Vector values match the padded evaluator.
+- The stock and no-stock schedules remain identical.
+- The stock search is materially faster than 218.9 s.
+- Dashboard green.
