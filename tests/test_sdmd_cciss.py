@@ -59,6 +59,8 @@ def test_idfdk3_stocking_prefers_lodgepole_pine() -> None:
     assert int(acceptable.sum()) == 1
     assert frame["target_stems_ha"].min() == 800
     assert frame["target_stems_ha"].max() == 1200
+    assert frame["edatopic"].notna().all()
+    assert set(frame["stocking_delay_years"]) == {4.0, 7.0}
 
 
 def test_bec_crosswalk_names_the_version_differences() -> None:
@@ -67,3 +69,20 @@ def test_bec_crosswalk_names_the_version_differences() -> None:
     counts = frame["note"].value_counts().to_dict()
     assert counts == {"both": 183, "cciss-only": 34, "sdmd-only": 30}
     assert frame.loc[frame["bec"] == "IDFdk3", "note"].item() == "both"
+
+
+def test_idfdk3_suitability_rates_lodgepole_pine() -> None:
+    """CCISS feasibility gives lodgepole pine a rating on every IDFdk3 site series."""
+    frame = _read("idfdk3_suitability.csv")
+    pine = frame.loc[(frame["species_code"] == "Pli") & (frame["site_series"] != "Ro")]
+    assert len(pine) == 9
+    assert pine["feasible_rating"].between(1, 4).all()
+    assert set(pine["site_series"]) == {f"{number:02d}" for number in range(1, 10)}
+
+
+def test_idfdk3_sibec_gives_species_site_index() -> None:
+    """SIBEC supplies site index for the species used in the IDFdk3 pilot."""
+    frame = _read("idfdk3_sibec.csv")
+    assert set(frame["species_code"]) >= {"Fd", "Pl", "Sx"}
+    assert frame["mean_site_index_m"].between(13, 23).all()
+    assert len(frame) == 32
