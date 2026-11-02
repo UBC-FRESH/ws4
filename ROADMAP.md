@@ -2961,9 +2961,10 @@ pilot AU report and validation evidence.
   - [x] Store paths with source metadata and assess them.
   - [x] Run the trajectory and physical gates.
 - [ ] P95.3 Enforce the SDMD-zone rule and the per-AU entry cap (#683)
-  - [ ] Load per-track trajectories into the filter.
-  - [ ] Reject a regime outside the required zone.
-  - [ ] Enforce the cross-block entry cap and benchmark the reduction.
+  - [x] Load per-track trajectories into the filter.
+  - [x] Reject a regime outside the required zone.
+  - [x] Add the cross-block `SdmdScheduleGuard` and its negative tests.
+  - [ ] Wire the guard into the optimizer move loop and record the benchmark.
 - [ ] P95.4 Pilot report, validation, and closeout (#684)
   - [ ] Run the eight gates on both pilot AUs.
   - [ ] Write the pilot AU report and the close-out report.

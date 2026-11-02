@@ -3897,3 +3897,10 @@ issue comments.
   observed envelope: PLI no-cut is inside; the other three are extrapolated. Added 4
   trajectory tests and `notes/reference/sdmd-pilot-trajectories.md`. These are method
   runs, not real AU evidence; the PSP observed check remains open.
+- P95.3: added the trajectory-zone rule to the option-space filter and a
+  `SdmdScheduleGuard` for the per-AU entry cap and interval. The filter accepts a
+  diagram and trajectory directory and rejects a regime whose stored path never reaches
+  the required zone; a missing trajectory fails closed. The guard maps blocks to AUs,
+  counts selected entries, and returns entry-cap and interval findings. Added three
+  guard/zone tests and passed the existing solver suite. The optimizer move-loop hook
+  and the before/after benchmark remain open.

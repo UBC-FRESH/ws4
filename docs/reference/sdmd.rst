@@ -374,9 +374,14 @@ track AU and treatment aliases:
    treatments:
      CC: REG-A-CLEARCUT
 
-A cap across blocks in one AU, and a rejection of a trajectory that leaves the
-allowed SDMD zones, need AU state and per-track trajectories that the compiled
-matrix does not carry. They are named as follow-up work, not claimed here.
+The filter can also enforce the required SDMD zone: pass a diagram and a
+trajectory directory, and a track is kept only when its stored trajectory reaches
+the constraint's `required_sdmd_zone`. A missing trajectory fails closed.
+
+`SdmdScheduleGuard` checks a whole schedule for the per-AU entry cap and minimum
+interval. It maps each block to its AU, counts the selected entries, and returns
+`SDMD-SCHEDULE-ENTRIES` or `SDMD-SCHEDULE-INTERVAL` findings. The guard is tested
+and available; wiring it into the optimizer's move loop is the remaining step.
 
 Validation gates
 ----------------
