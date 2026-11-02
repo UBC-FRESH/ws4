@@ -92,7 +92,7 @@ exists and the maintainer approves it.
 | P88 Factorized GPU account search | #637 | `feature/p88-factorized-gpu` | pr-open |
 | P90 Forest condition report cards | #650 | `feature/p90-forest-condition-cards` | pr-open |
 | P91 Condition card from a WS4 run | #655 | `feature/p91-condition-run-card` | pr-open |
-| P92 Condition-card API | #659 | `feature/p92-condition-card-api` | active |
+| P92 Condition-card API | #659 | `feature/p92-condition-card-api` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2930,15 +2930,15 @@ Design: `notes/design/ws4-forest-condition-card.md`.
 
 Parent issue: #659
 Branch: `feature/p92-condition-card-api`
-Status: active
+Status: pr-open
 
 Goal: expose the P91 account-derived forest-condition card through the WS4 HTTP API.
 
-- [ ] P92.1 Add the condition-card API and tests (#660)
-  - [ ] Add the endpoint
-  - [ ] Add API tests for success, 404, and 422
-  - [ ] Update docs and changelog
-  - [ ] Run dashboard and open the PR
+- [x] P92.1 Add the condition-card API and tests (#660)
+  - [x] Add the endpoint
+  - [x] Add API tests for success, 404, and 422
+  - [x] Update docs and changelog
+  - [x] Run dashboard and open the PR
 
 Acceptance:
 

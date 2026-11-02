@@ -3711,3 +3711,4 @@ issue comments.
   the P91 account-derived card builder. The endpoint returns a review-required
   `ws4.forest_condition.report.v1` card, 404 without accounts, and 422 for
   invalid account data. Added API tests and docs. Dashboard green on all seven gates.
+- Closeout report: `notes/reports/p92-closeout.md`.
