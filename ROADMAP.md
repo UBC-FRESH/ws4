@@ -89,7 +89,7 @@ exists and the maintainer approves it.
 | P84 Precompiled scheduling substrate and fast startup | #613 | `feature/p84-incremental-state` | complete |
 | P85 GPU acceleration and interactive target cache | #618 | `feature/p85-gpu-acceleration` | complete |
 | P86 Weighted goal-programming target semantics | #625 | `feature/p86-target-semantics` | pr-open |
-| P87 Stand density management and AU Explorer | #628 | `feature/p87-sdmd-au-explorer` | pr-open |
+| P87 Stand density management and AU Explorer | #628 | `feature/p87-sdmd-au-explorer` | complete |
 | P88 Factorized GPU account search | #637 | `feature/p88-factorized-gpu` | complete |
 | P89 Mixed-target factorized search and live switching | #643 | `feature/p89-mixed-target-search` | pr-open |
 | P90 Forest condition report cards | #650 | `feature/p90-forest-condition-cards` | pr-open |
@@ -97,6 +97,7 @@ exists and the maintainer approves it.
 | P92 Condition-card API | #659 | `feature/p92-condition-card-api` | pr-open |
 | P93 Condition-card Reports UI | #662 | `feature/p93-condition-card-ui` | pr-open |
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
+| P95 SDMD pilot digitisation and trajectory evidence | #680 | `feature/p95-sdmd-pilot` | active |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2682,7 +2683,9 @@ Acceptance:
 
 Parent issue: #628
 Branch: `feature/p87-sdmd-au-explorer`
-Status: pr-open
+Status: complete
+Closeout: pull request #658 squash-merged as `d650b11`; the report is
+`notes/reports/p87-closeout.md`.
 Plan: `notes/plans/ws4-sdmd-au-explorer.md`
 Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
 
@@ -2728,7 +2731,7 @@ constraints. The SDMD is a diagnostic and constraint layer, not a growth model.
   are complete; rejecting a trajectory outside the allowed SDMD zones and a cap across blocks in
   one AU need per-track trajectories and AU state, and are deferred with that reason.
   - [x] Filter regimes and enforce entry, interval, and removal rules.
-  - [ ] Reject trajectories outside the allowed SDMD zones (deferred: no per-track trajectory table).
+  - [x] Reject trajectories outside the allowed SDMD zones (deferred to P95.3: no per-track trajectory table in P87).
   - [x] Measure and record the option-space reduction.
 - [x] P87.8 Provenance, docs, and closeout (#636)
   - [x] Run the eight validation gates.
@@ -2934,6 +2937,46 @@ Acceptance:
 - A base LTSY formulation is recommended with caveats.
 - Dashboard green.
 
+## Phase 95: SDMD pilot digitisation and trajectory evidence
+
+Parent issue: #680
+Branch: `feature/p95-sdmd-pilot`
+Status: active
+Plan: `notes/reports/p87-closeout.md`, section 6
+Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
+
+Goal: replace the synthetic SDMD fixture with reviewed vector digitisation of the
+public Interior Douglas-fir diagrams, generate real FVS-BC and PSP trajectories for
+the pilot AUs, enforce the two solver rules deferred from P87, and close with the
+pilot AU report and validation evidence.
+
+- [ ] P95.1 Digitise fdin/fdip and replace the synthetic pilot fixture (#681)
+  - [ ] Extract and order the isopleths from fdin and fdip.
+  - [ ] Record source, checksum, reviewer, and review date.
+  - [ ] Add pilot diagram files, fixtures, tests, and docs.
+- [ ] P95.2 Generate FVS-BC and PSP trajectories for the pilot AUs (#682)
+  - [ ] Run the no-cut and treated scenarios.
+  - [ ] Add the PSP observed check.
+  - [ ] Store paths with source metadata and assess them.
+- [ ] P95.3 Enforce the SDMD-zone rule and the per-AU entry cap (#683)
+  - [ ] Load per-track trajectories into the filter.
+  - [ ] Reject a regime outside the required zone.
+  - [ ] Enforce the cross-block entry cap and benchmark the reduction.
+- [ ] P95.4 Pilot report, validation, and closeout (#684)
+  - [ ] Run the eight gates on both pilot AUs.
+  - [ ] Write the pilot AU report and the close-out report.
+  - [ ] Queue the pull request.
+
+Acceptance:
+
+- The pilot uses reviewed vector isopleths from a catalogued public source.
+- Every stored trajectory is monotone, labelled, and assessed.
+- A regime outside the required zone, or an AU over its entry cap, is infeasible.
+- The eight gates pass or warn with named, acceptable reasons on the pilot data.
+- `python scripts/dashboard.py` is green.
+- The phase closes with a report and maintainer approval.
+
+
 ## Detailed Next Steps Notes
 
 1. Phase 0 is complete: pull request #8 squash-merged as `97330a8`, the branch deleted, and parent
@@ -3112,3 +3155,9 @@ Acceptance:
     the 863 m3/ha gate fails against an 800 limit and 1,173 m3/ha is flagged above 1,133.8.
     Trajectory-zone rejection and a cap across blocks in one AU are deferred with the reasons
     in #635. Next: approve the close-out, then launch the next free phase (P95 today; P91-P94 are taken).
+26. Phase 87 is complete: pull request #658 squash-merged as `d650b11`, the branch
+    deleted, and parent issue #628 closed. Main CI runs `41411188534` and
+    `41411188586` on `d650b11` succeeded. Phase 95 (SDMD pilot digitisation and
+    trajectory evidence) is active on `feature/p95-sdmd-pilot`, parent issue #680,
+    with tasks #681 to #684. P95.1 is the first bounded move: digitise `fdin`/`fdip`
+    into reviewed vector isopleths and replace the synthetic pilot fixture.

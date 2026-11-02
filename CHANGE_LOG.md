@@ -3870,3 +3870,8 @@ issue comments.
   the floor only when it becomes binding or after feature pricing is cheaper. Report:
   `notes/reports/tsa24-ltsy-scenario-comparison.md`. Archive:
   `/srv/shared-data/gep/ws4/archive/tsa24-ltsy-scenario-comparison/`.
+- P87 complete: pull request #658 squash-merged as `d650b11`, the branch deleted, and
+  parent issue #628 closed. Main CI runs `41411188534` and `41411188586` succeeded.
+- P95: Launched the SDMD pilot phase on `feature/p95-sdmd-pilot`, parent issue #680,
+  with tasks #681 to #684. P95.1 is the first bounded move: digitise `fdin`/`fdip`
+  into reviewed vector isopleths and replace the synthetic pilot fixture.
