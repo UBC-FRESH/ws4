@@ -3727,3 +3727,9 @@ issue comments.
   and limits with text nodes. Added HTML assertions and web docs.
 - Dashboard green on all seven gates; 71 web tests passed.
 - Closeout report: `notes/reports/p93-closeout.md`.
+
+## 2026-11-02
+
+- P94.1: added uncertainty and provenance to the condition-card Reports panel.
+  Missing uncertainty renders as `not stated`; provenance entries render as text
+  nodes. Added static assertions and web docs. Dashboard green on all seven gates.

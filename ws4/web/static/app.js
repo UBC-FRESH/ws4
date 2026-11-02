@@ -5322,7 +5322,7 @@ function renderConditionCard(card) {
     const table = document.createElement('table');
     const head = document.createElement('thead');
     const headRow = document.createElement('tr');
-    for (const label of ['Indicator', 'Value', 'Source', 'Status', 'Applicability']) {
+    for (const label of ['Indicator', 'Value', 'Source', 'Status', 'Uncertainty', 'Applicability']) {
       const th = document.createElement('th');
       th.textContent = label;
       headRow.append(th);
@@ -5336,6 +5336,9 @@ function renderConditionCard(card) {
         `${item.value} ${item.unit}`,
         `${item.source} (${item.source_version})`,
         item.status,
+        item.uncertainty == null
+          ? 'not stated'
+          : `${item.uncertainty} ${item.unit}${item.uncertainty_kind ? ` (${item.uncertainty_kind})` : ''}`,
         item.applicability ?? 'not stated',
       ];
       for (const value of values) {
@@ -5358,6 +5361,20 @@ function renderConditionCard(card) {
     for (const alert of alerts) {
       const item = document.createElement('li');
       item.textContent = `${alert.code} · ${alert.severity}: ${alert.message}`;
+      list.append(item);
+    }
+    target.append(list);
+  }
+  const provenance = card.provenance && typeof card.provenance === 'object' ? card.provenance : {};
+  const provenanceEntries = Object.entries(provenance);
+  if (provenanceEntries.length) {
+    const heading = document.createElement('p');
+    heading.textContent = 'Provenance';
+    target.append(heading);
+    const list = document.createElement('ul');
+    for (const [key, value] of provenanceEntries) {
+      const item = document.createElement('li');
+      item.textContent = `${key}: ${value}`;
       list.append(item);
     }
     target.append(list);
