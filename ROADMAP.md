@@ -101,6 +101,7 @@ exists and the maintainer approves it.
 | P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | pr-open |
 | P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
+| P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -3217,3 +3218,19 @@ Acceptance:
 - Missing uncertainty renders as `not stated`.
 - Provenance keys/values render in the panel.
 - Dashboard passes.
+
+## Phase 101: Scenario storyboard export
+
+Parent issue: #696
+Branch: `feature/p101-storyboard`
+Status: pr-open
+
+Goal: write a one-page scenario narrative from an existing run.
+
+- [x] P101.1 Add the storyboard export and tests (#697)
+  - [x] Add `build_storyboard`
+  - [x] Add CLI `ws4 storyboard`
+  - [x] Add tests/docs
+  - [x] Run dashboard and open the PR
+
+Acceptance: valid run writes Markdown; invalid accounts fail; storyboard names scenario, indicators, provenance, and limits; dashboard passes.
