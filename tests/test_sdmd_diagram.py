@@ -266,7 +266,7 @@ def test_observed_envelope_builds_a_hull() -> None:
     envelope = observed_envelope(points)
     assert len(envelope) >= 3
     assert inside_envelope((1500.0, 0.6), envelope)
-    assert not inside_envelope((3000.0, 5.0), envelope)
+    assert not inside_envelope((900.0, 1.5), envelope)
 
 
 def test_observed_envelope_rejects_too_few_points() -> None:
@@ -311,10 +311,22 @@ def test_assess_trajectory_reports_the_first_outside_point() -> None:
         ((980.0, 0.757), (2200.0, 0.128), (1700.0, 0.543), (1350.0, 0.793))
     )
     result = assess_trajectory(
-        Trajectory(label="fvs", points=((1700.0, 0.543), (3000.0, 5.0))), envelope
+        Trajectory(label="fvs", points=((1700.0, 0.543), (900.0, 1.5))), envelope
     )
     assert result.status == "extrapolated"
-    assert result.first_outside == (3000.0, 5.0)
+    assert result.first_outside == (900.0, 1.5)
+
+
+def test_assess_trajectory_refuses_a_density_and_volume_increase() -> None:
+    """A path cannot gain trees and mean stem volume at the same time."""
+    envelope = observed_envelope(
+        ((980.0, 0.757), (2200.0, 0.128), (1700.0, 0.543), (1350.0, 0.793))
+    )
+    with pytest.raises(SdmdReportError, match="SDMD-TRAJECTORY-DENSITY"):
+        assess_trajectory(
+            Trajectory(label="impossible", points=((2400.0, 0.214), (3000.0, 5.0))),
+            envelope,
+        )
 
 
 def test_assess_trajectory_rejects_an_empty_trajectory() -> None:
@@ -354,7 +366,7 @@ def test_build_au_report_flags_an_extrapolated_trajectory() -> None:
         au_id="AU-IDFdk3-FDI",
         diagram=_reviewed(_diagram()),
         observed=_points(),
-        trajectories=(Trajectory(label="kc-1173", points=((2400.0, 0.214), (3000.0, 5.0))),),
+        trajectories=(Trajectory(label="kc-1173", points=((2400.0, 0.214), (900.0, 1.5))),),
     )
     assert result.status == "extrapolated"
     assert result.trajectories[0].status == "extrapolated"

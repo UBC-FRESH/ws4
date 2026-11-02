@@ -3781,3 +3781,9 @@ issue comments.
   path is drawn with numbered points and a plain-language explanation. The browser smoke
   now selects a trajectory, checks the orange path, changes the yield metric, and checks
   the iPad-landscape layout.
+- P87.3 fix: added `validate_trajectory`, which refuses a trajectory step where both
+  TPH and mean tree volume increase. That is physically impossible on a self-thinning
+  path, and the earlier demo FUEL50 file did exactly that. The demo now uses a plausible
+  low-density, larger-tree path that is still outside the observed envelope, and the
+  regression suite checks both the refusal and the extrapolation case. The browser demo
+  now has four real paths: clearcut, CT60, shelterwood, and FUEL50 (extrapolated).

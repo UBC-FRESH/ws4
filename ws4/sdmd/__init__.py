@@ -13,6 +13,7 @@ from .compile import (
     TrajectoryAssessment,
     assess_trajectory,
     build_au_report,
+    validate_trajectory,
 )
 from .diagram import (
     DiagramPlacement,
@@ -154,6 +155,7 @@ __all__ = [
     "validate_dataset",
     "validate_diagram",
     "validate_frame",
+    "validate_trajectory",
     "volume_isoline",
     "volume_m3_ha",
 ]

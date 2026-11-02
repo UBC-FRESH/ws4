@@ -174,8 +174,10 @@ It also interpolates top height and QMD, and flags a point outside the isopleth
 range.
 
 ``observed_envelope`` builds the convex hull of an AU's observed points in log
-space. ``assess_trajectory`` returns ``inside`` or ``extrapolated`` and names the
-first point outside. ``build_au_report`` combines the observed evidence, the
+space. ``validate_trajectory`` refuses a path where density and mean tree volume
+both increase between points: a stand cannot gain trees and stem volume at once.
+``assess_trajectory`` returns ``inside`` or ``extrapolated`` and names the first
+point outside. ``build_au_report`` combines the observed evidence, the
 trajectories, and the initial volume into one status: ``supported``,
 ``extrapolated``, ``rejected``, or ``unsupported``. The initial-volume check
 rejects a volume above the supplied evidence limit; an upper-tail trajectory that

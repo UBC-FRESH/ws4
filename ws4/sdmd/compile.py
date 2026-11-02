@@ -20,6 +20,7 @@ from .diagram import (
     inside_envelope,
     observed_envelope,
 )
+from .schema import Problem
 
 
 class SdmdReportError(ValueError):
@@ -148,6 +149,49 @@ class AuReport:
         }
 
 
+def validate_trajectory(trajectory: Trajectory) -> list[Problem]:
+    """Check a trajectory for a physically impossible density-volume step.
+
+    A stand cannot gain trees and mean tree volume at the same time. Density may fall
+    while volume rises (self-thinning or a thinning), and a reset may raise density
+    while volume falls, but both rising is refused.
+
+    Parameters
+    ----------
+    trajectory : Trajectory
+        The trajectory.
+
+    Returns
+    -------
+    list of Problem
+        One finding per impossible step, or an empty list.
+    """
+    problems: list[Problem] = []
+    points = trajectory.points
+    for index in range(1, len(points)):
+        previous_tph, previous_volume = points[index - 1]
+        tph, volume = points[index]
+        if tph <= 0 or volume <= 0:
+            problems.append(
+                Problem(
+                    "SDMD-TRAJECTORY-VALUE",
+                    trajectory.label,
+                    f"point {index + 1} is not positive",
+                )
+            )
+            continue
+        if tph > previous_tph + 1e-9 and volume > previous_volume + 1e-9:
+            problems.append(
+                Problem(
+                    "SDMD-TRAJECTORY-DENSITY",
+                    trajectory.label,
+                    f"TPH and mean tree volume both increase between points "
+                    f"{index} and {index + 1}",
+                )
+            )
+    return problems
+
+
 def assess_trajectory(
     trajectory: Trajectory,
     envelope: Sequence[tuple[float, float]],
@@ -174,6 +218,10 @@ def assess_trajectory(
     """
     if not trajectory.points:
         raise SdmdReportError(f"trajectory {trajectory.label!r} has no points")
+    problems = validate_trajectory(trajectory)
+    if problems:
+        detail = "; ".join(f"{item.code}: {item.message}" for item in problems)
+        raise SdmdReportError(detail)
     for point in trajectory.points:
         if not inside_envelope(point, envelope):
             return TrajectoryAssessment(
