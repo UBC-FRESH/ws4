@@ -126,6 +126,7 @@ from .species import (
     write_species_composition,
     write_species_fractions,
 )
+from .storyboard import build_storyboard
 from .structure_habitat import (
     StructureHabitatError,
     compare_to_dhi,
@@ -1391,6 +1392,32 @@ def condition_card(
     if markdown:
         (out_dir / "forest_condition_card.md").write_text(report.to_markdown(), encoding="utf-8")
     print(f"[bold green]Forest condition card[/] → {out_dir}")
+
+
+@app.command()
+def storyboard(
+    run: Path = typer.Option(..., "--run", exists=True, file_okay=False, help="A run directory"),
+    out: Path | None = typer.Option(None, "--out", help="Markdown output path"),
+    generated_utc: str | None = typer.Option(
+        None, "--generated-utc", help="Fixed ISO-8601 timestamp for reproducible output"
+    ),
+) -> None:
+    """Write a one-page scenario storyboard from a run's account values."""
+    values = pd.read_csv(run / "account_values.csv")
+    try:
+        text = build_storyboard(
+            values,
+            scenario_id=run.name,
+            generated_utc=generated_utc or datetime.now(UTC).isoformat(),
+            source_version=run.name,
+            provenance={"run": run.name},
+        )
+    except ValueError as error:
+        raise typer.BadParameter(str(error)) from error
+    destination = out if out is not None else run / "storyboard.md"
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(text, encoding="utf-8")
+    print(f"[bold green]Storyboard[/] → {destination}")
 
 
 @app.command()

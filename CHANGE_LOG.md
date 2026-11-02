@@ -3896,3 +3896,9 @@ issue comments.
   Missing uncertainty renders as `not stated`; provenance entries render as text
   nodes. Added static assertions and web docs. Dashboard green on all seven gates.
 - Closeout report: `notes/reports/p100-closeout.md`.
+
+## 2026-11-02
+
+- P101.1: added `ws4 storyboard`, a one-page Markdown narrative that reuses the
+  account-derived condition card. Derived indicators stay review-required;
+  alerts stay advisory. Added tests and docs. Dashboard green on all seven gates.
