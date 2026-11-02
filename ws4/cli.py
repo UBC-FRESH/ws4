@@ -1496,6 +1496,12 @@ def serve(
     dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
     runs: Path = typer.Option(..., exists=True, help="Directory holding run directories"),
     targets: Path | None = typer.Option(None, "--targets", help="Targets YAML to read and replace"),
+    scenario_profiles: Path | None = typer.Option(
+        None,
+        "--scenario-profiles",
+        exists=True,
+        help="Scenario-profile YAML library for the web selector",
+    ),
     sdmd_dir: Path | None = typer.Option(
         None,
         "--sdmd-dir",
@@ -1595,6 +1601,7 @@ def serve(
             dataset=dataset,
             runs=runs,
             targets=targets,
+            scenario_profiles=scenario_profiles,
             sdmd_dir=sdmd_dir,
             geometry=geometry,
             geometry_overview=geometry_overview,

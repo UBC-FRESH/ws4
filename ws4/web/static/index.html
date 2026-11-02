@@ -44,6 +44,11 @@
       <div id="workspace-plan" class="workspace" role="tabpanel" aria-labelledby="ws-plan" hidden>
 <section id="tab-targets" role="tabpanel" aria-labelledby="ws-plan" hidden>
         <h2>Targets</h2>
+        <div id="profile-bar" class="run-row" hidden>
+          <label>Profile <select id="profile-select" aria-label="Scenario profile"></select></label>
+          <button id="apply-profile" type="button">Load profile</button>
+          <span id="profile-status" class="hint"></span>
+        </div>
         <div id="target-summary" class="target-summary" aria-live="polite" hidden></div>
         <p id="targets-empty" class="hint">no targets yet — pick an account below</p>
         <div id="account-browser" class="account-browser">
