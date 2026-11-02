@@ -4,7 +4,7 @@ Phase: P87 Stand density management and AU Explorer
 Parent issue: #628
 Pull request: #658, `feature/p87-sdmd-au-explorer` into `main`
 Evidence head: `e2b758c`
-Report commit: this metadata-only commit; its CI run is posted on the pull request
+Report commit: `f3fb67f` (notes and changelog only; that change does not trigger a code CI run)
 Date: 2026-11-02
 Status: queued for approval. Not merged.
 
@@ -87,7 +87,7 @@ Validation command output at the evidence head:
 
 | Run ID | Head commit | Conclusion | Notes |
 | --- | --- | --- | --- |
-| 41402135881 | `e2b758c` | success | Quality gates, clean-checkout contract, notebook outputs, pre-commit parity, and the green dashboard summary all passed. |
+| 41402135881 | `e2b758c` | success | Quality gates, clean-checkout contract, notebook outputs, pre-commit parity, and the green dashboard summary all passed. The report commit `f3fb67f` changes only notes and the changelog, so it has no code CI run. |
 
 ## 5. Deviations
 
