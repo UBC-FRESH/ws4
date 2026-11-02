@@ -725,3 +725,8 @@ The Reports tab includes a **Load condition card** button. It calls
 applicability, and advisory alerts. The browser uses text nodes, not HTML
 interpolation. The card is report-only; a missing or invalid account table is
 reported in the panel without changing the run.
+
+The condition-card table also shows the uncertainty field and a provenance
+block. Missing uncertainty is shown as "not stated"; every value is rendered as
+a text node. These fields make the card reviewable without turning it into an
+operational alert.

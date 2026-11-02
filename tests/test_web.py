@@ -168,6 +168,9 @@ def test_condition_card_is_built_from_a_run(tmp_path: Path) -> None:
     assert body["review_status"] == "draft"
     assert body["indicators"][0]["name"] == "feature.Volume"
     assert body["indicators"][0]["status"] == "review_required"
+    script = client.get("/static/app.js").text
+    assert "Uncertainty" in script
+    assert "Provenance" in script
 
 
 def test_condition_card_api_rejects_missing_and_bad_runs(tmp_path: Path) -> None:
