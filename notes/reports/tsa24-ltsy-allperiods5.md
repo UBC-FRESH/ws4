@@ -1,7 +1,7 @@
 # TSA24 all-period ±5% even flow with a final stock floor
 
 Date: 2026-11-02
-Status: scenario formulation and 5,000-generation probe complete
+Status: scenario formulation and 5,000-generation probe accepted; 20,000-generation confirmation not planned
 
 This is a candidate LTSY scenario. It combines an all-period ±5% even-flow band with a
 final managed-growing-stock floor at 90% of the initial stock.
@@ -48,6 +48,19 @@ Managed growing stock at period 20: **477M m³**, above the **370M m³** floor.
 The periods 11–20 harvest level is about **54M m³ per period**, well below the 100M level
 aspiration. The remaining objective is dominated by that level shortfall, not flow
 instability.
+
+## Reproducibility and decision
+
+The rerun produced the same 5,000-generation schedule bit-for-bit:
+
+```text
+SHA-256 44bdba7a6cf95a056410ccda4ab86ed74d144fd5c72e63e9430323060440eb1b
+```
+
+A 20,000-generation confirmation is not planned. The 5,000-generation probe is accepted
+as evidence that the all-period ±5% flow band and the 90% stock floor can coexist. The
+next review should be age-class, ending-inventory, and policy-focused, not another run of
+the same search.
 
 ## Interpretation
 
