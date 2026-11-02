@@ -19,7 +19,7 @@ final managed-growing-stock floor at 90% of the initial stock.
 
 Exact target file, runner scripts, and output schedule:
 
-[`archive/tsa24-ltsy-allperiods5-20261102/`](../../../archive/tsa24-ltsy-allperiods5-20261102/)
+`/srv/shared-data/gep/ws4/archive/tsa24-ltsy-allperiods5-20261102/`
 
 ## 5,000-generation probe
 
