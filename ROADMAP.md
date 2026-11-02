@@ -100,6 +100,7 @@ exists and the maintainer approves it.
 | P95 Factorized target-cell vectors | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
 | P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | pr-open |
 | P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | pr-open |
+| P98 LTSY scenario profile library | #699 | `feature/p98-ltsy-profiles` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
@@ -3199,6 +3200,34 @@ Acceptance:
 - Two-generation throughput is materially above 12.9 genomes/s.
 - Exact objective and table-cell count are unchanged.
 - Dashboard green.
+## Phase 98: LTSY scenario profile library
+
+Parent issue: #699
+Branch: `feature/p98-ltsy-profiles`
+Status: active
+Report: `notes/reports/tsa24-ltsy-profiles.md`
+
+Goal: add named LTSY profiles and a watcher selector, with a JSON/CLI surface for a UI
+layer.
+
+- [x] P98.1 Add the profile library and CLI (#700)
+  - [x] Add the profile schema and loader
+  - [x] Add list/show/JSON/shell CLI output
+  - [x] Test validation and CLI behavior
+- [x] P98.2 Wire the watcher profile selector (#701)
+  - [x] Add the TSA24 profile YAML
+  - [x] Add `PROFILE=` selection
+  - [x] Verify baseline and base selectors
+- [x] P98.3 Record and close out (#702)
+
+Acceptance:
+
+- Profiles validate and duplicate/missing target cases fail loudly.
+- `PROFILE=baseline|base|nostock` selects the correct target and schedule.
+- The default remains `base`.
+- Dashboard green.
+
+
 ## Phase 100: Condition-card provenance and uncertainty
 
 Parent issue: #670
