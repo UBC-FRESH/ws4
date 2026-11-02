@@ -91,6 +91,7 @@ exists and the maintainer approves it.
 | P86 Weighted goal-programming target semantics | #625 | `feature/p86-target-semantics` | pr-open |
 | P88 Factorized GPU account search | #637 | `feature/p88-factorized-gpu` | pr-open |
 | P90 Forest condition report cards | #650 | `feature/p90-forest-condition-cards` | pr-open |
+| P91 Condition card from a WS4 run | #655 | `feature/p91-condition-run-card` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2897,5 +2898,29 @@ Acceptance:
 - Markdown names every indicator, its source, applicability, and limitations.
 - Tests cover valid, invalid, and empty-indicator cases.
 - Dashboard green.
+
+Design: `notes/design/ws4-forest-condition-card.md`.
+
+## Phase 91: Condition card from a WS4 run
+
+Parent issue: #655
+Branch: `feature/p91-condition-run-card`
+Status: pr-open
+
+Goal: derive a review-required forest-condition card from an existing WS4 run's
+`account_values.csv`.
+
+- [x] P91.1 Add the account-derived card builder and CLI (#656)
+  - [x] Add account-derived report builder
+  - [x] Add the CLI command
+  - [x] Add fixture/CLI tests and docs
+  - [x] Run dashboard and open the PR
+
+Acceptance:
+
+- A valid account table produces JSON and Markdown.
+- Missing columns, empty tables, non-finite values, and empty feature accounts fail clearly.
+- Every derived indicator is `review_required` and source/version is explicit.
+- Tests and dashboard pass.
 
 Design: `notes/design/ws4-forest-condition-card.md`.

@@ -6,6 +6,7 @@ import json
 import math
 import shutil
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -52,6 +53,8 @@ from .disturbance import (
     load_disturbance_events,
     summarize_disturbance_events,
 )
+from .forest_condition import build_report_from_accounts
+from .forest_condition import write_report as write_condition_report
 from .io.hydrology import (
     HYDROLOGY_READINESS_POLICIES,
     FemicHydrologyError,
@@ -1355,6 +1358,39 @@ def report(
     target_list = load_targets(targets) if targets is not None else []
     write_report(values, target_list, out if out is not None else run)
     print(f"[bold green]Report written[/] → {out if out is not None else run}")
+
+
+@app.command("condition-card")
+def condition_card(
+    run: Path = typer.Option(..., "--run", exists=True, file_okay=False, help="A run directory"),
+    out: Path | None = typer.Option(
+        None, "--out", help="Output directory (defaults to <run>/condition)"
+    ),
+    markdown: bool = typer.Option(False, "--markdown", help="Also write Markdown"),
+    generated_utc: str | None = typer.Option(
+        None, "--generated-utc", help="Fixed ISO-8601 timestamp for reproducible cards"
+    ),
+) -> None:
+    """Build a review-required forest-condition card from a run's account values."""
+    values = pd.read_csv(run / "account_values.csv")
+    try:
+        report = build_report_from_accounts(
+            values,
+            report_id=f"{run.name}-condition",
+            scenario_id=run.name,
+            generated_utc=generated_utc or datetime.now(UTC).isoformat(),
+            period="run",
+            source_version=run.name,
+            provenance={"run": run.name},
+        )
+    except ValueError as error:
+        raise typer.BadParameter(str(error)) from error
+    out_dir = out if out is not None else run / "condition"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    write_condition_report(report, out_dir / "forest_condition_card.json")
+    if markdown:
+        (out_dir / "forest_condition_card.md").write_text(report.to_markdown(), encoding="utf-8")
+    print(f"[bold green]Forest condition card[/] → {out_dir}")
 
 
 @app.command()

@@ -15,6 +15,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, cast
 
+import pandas as pd
+
 SCHEMA_VERSION = "ws4.forest_condition.report.v1"
 INDICATOR_STATUSES: frozenset[str] = frozenset(
     {"ok", "outside_domain", "missing", "review_required"}
@@ -467,6 +469,101 @@ class ForestConditionReport:
             ]
         )
         return "\n".join(lines)
+
+
+def build_report_from_accounts(
+    values: pd.DataFrame,
+    *,
+    report_id: str,
+    scenario_id: str,
+    generated_utc: str,
+    period: str,
+    source_version: str = "unversioned",
+    review_status: ReviewStatus = "draft",
+    provenance: Mapping[str, str] | None = None,
+) -> ForestConditionReport:
+    """Build a review-required card from WS4 account values.
+
+    Parameters
+    ----------
+    values : pandas.DataFrame
+        Account values with ``offset``, ``account``, and ``value`` columns.
+    report_id : str
+        Stable report identifier.
+    scenario_id : str
+        WS4 scenario or run identifier.
+    generated_utc : str
+        ISO-8601 generation timestamp.
+    period : str
+        Reporting period.
+    source_version : str, optional
+        Run or dataset version to record with every derived indicator.
+    review_status : {"draft", "provisional", "reviewed"}, optional
+        Review state of the card.
+    provenance : mapping of str to str, optional
+        Additional source metadata.
+
+    Returns
+    -------
+    ForestConditionReport
+        A card whose feature-account indicators are all ``review_required``.
+
+    Raises
+    ------
+    ValueError
+        If the table is empty, lacks required columns, has non-finite values, or
+        contains no feature accounts.
+    """
+    required = {"offset", "account", "value"}
+    missing = required.difference(values.columns)
+    if missing:
+        raise ValueError(f"account values are missing columns: {sorted(missing)}")
+    if values.empty:
+        raise ValueError("account values are empty")
+    frame = values.copy()
+    frame["offset"] = pd.to_numeric(frame["offset"], errors="coerce")
+    frame["value"] = pd.to_numeric(frame["value"], errors="coerce")
+    if frame["offset"].isna().any() or frame["value"].isna().any():
+        raise ValueError("account values contain non-finite or non-numeric values")
+    if not frame["value"].map(math.isfinite).all():
+        raise ValueError("account values contain non-finite values")
+    feature = frame[frame["account"].astype(str).str.startswith("feature.")]
+    if feature.empty:
+        raise ValueError("account values contain no feature.* accounts")
+    indicators: list[ConditionIndicator] = []
+    for account, group in feature.groupby("account", sort=True):
+        ordered = group.sort_values("offset")
+        first = float(ordered["value"].iloc[0])
+        final = float(ordered["value"].iloc[-1])
+        if math.isclose(final, first, rel_tol=1e-9, abs_tol=1e-9):
+            trend = "stable"
+        elif final > first:
+            trend = "improving"
+        else:
+            trend = "declining"
+        indicators.append(
+            ConditionIndicator(
+                name=str(account),
+                value=final,
+                unit="native",
+                source="ws4.account_values",
+                source_version=source_version,
+                applicability="derived from run accounts; review required",
+                status="review_required",
+                trend=trend,
+                note="Account-derived; not an independent condition indicator.",
+            )
+        )
+    return ForestConditionReport(
+        report_id=report_id,
+        scenario_id=scenario_id,
+        generated_utc=generated_utc,
+        period=period,
+        indicators=tuple(indicators),
+        review_status=review_status,
+        alerts=(),
+        provenance=provenance,
+    )
 
 
 def load_report(path: str | Path) -> ForestConditionReport:
