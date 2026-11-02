@@ -38,6 +38,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - Dominant-species ingest, block fractions, and VRI comparison.
    * - :doc:`recovery`
      - Post-fire spectral recovery ingest, block status, and caveats.
+   * - :doc:`forest-condition`
+     - The report-only forest-condition card schema, advisory alerts, and limits.
    * - :doc:`performance`
      - The measured figures and how to reproduce them.
    * - :doc:`web`
@@ -66,6 +68,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    resilience
    species-composition
    recovery
+   forest-condition
    performance
    web
    femic-lidar

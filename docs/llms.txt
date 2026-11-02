@@ -54,4 +54,5 @@
 - [Carbon accounting and planning](reference/carbon.html): the FEMIC package contract, SIT compilation, libcbm, the optimizer ledger, fertilization, HWP lifecycle and system accounts, carbon yield curves, and the GCBM bridge.
 - [Performance and scale](reference/performance.html): the measured figures, the incremental objective, and how to reproduce the benchmark.
 - [FEMIC hydrology](reference/femic-hydrology.html): pinned response bundles, checksums, flood-risk rows, and applicability metadata.
+- [Forest condition report card](reference/forest-condition.html): the report-only indicator, provenance, advisory-alert, and review-status contract.
 - [API reference](api/index.html): the repository tooling's public functions, with their parameters, types, and return values. The package API is rendered on the reference pages above.
