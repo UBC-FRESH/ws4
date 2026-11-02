@@ -95,7 +95,7 @@ exists and the maintainer approves it.
 | P91 Condition card from a WS4 run | #655 | `feature/p91-condition-run-card` | pr-open |
 | P92 Condition-card API | #659 | `feature/p92-condition-card-api` | pr-open |
 | P93 Condition-card Reports UI | #662 | `feature/p93-condition-card-ui` | pr-open |
-| P94 Condition-card provenance | #670 | `feature/p94-condition-provenance` | active |
+| P94 Condition-card provenance | #670 | `feature/p94-condition-provenance` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -3005,15 +3005,15 @@ Acceptance:
 
 Parent issue: #670
 Branch: `feature/p94-condition-provenance`
-Status: active
+Status: pr-open
 
 Goal: show uncertainty and provenance in the condition-card Reports panel.
 
-- [ ] P94.1 Show uncertainty and provenance in the condition panel (#671)
-  - [ ] Add uncertainty to the card table
-  - [ ] Add the provenance block
-  - [ ] Add tests and docs
-  - [ ] Run dashboard and open the PR
+- [x] P94.1 Show uncertainty and provenance in the condition panel (#671)
+  - [x] Add uncertainty to the card table
+  - [x] Add the provenance block
+  - [x] Add tests and docs
+  - [x] Run dashboard and open the PR
 
 Acceptance:
 
