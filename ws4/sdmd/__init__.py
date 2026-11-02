@@ -79,6 +79,13 @@ from .schema import (
     validate_dataset,
     validate_frame,
 )
+from .solver import (
+    SdmdFilterReport,
+    SdmdSolverError,
+    SdmdSolverMap,
+    filter_dataset,
+    load_solver_map,
+)
 
 __all__ = [
     "AU_CONSTRAINTS",
@@ -107,8 +114,11 @@ __all__ = [
     "SdmdDiagram",
     "SdmdDiagramError",
     "SdmdEquationError",
+    "SdmdFilterReport",
     "SdmdIngestError",
     "SdmdReportError",
+    "SdmdSolverError",
+    "SdmdSolverMap",
     "Table",
     "Trajectory",
     "TrajectoryAssessment",
@@ -119,12 +129,14 @@ __all__ = [
     "coerce_to_schema",
     "crown_cover_pct",
     "equation_spec",
+    "filter_dataset",
     "inside_envelope",
     "interpolate_value",
     "isopleth_y",
     "label_synthetic",
     "leading_species",
     "load_diagram",
+    "load_solver_map",
     "match_plots_to_aus",
     "observed_envelope",
     "place_point",

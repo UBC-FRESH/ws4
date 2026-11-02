@@ -3762,3 +3762,13 @@ issue comments.
   smoke test that renders the tab at desktop and iPad-landscape sizes, plus 3 static
   contract tests. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`
   on all seven gates.
+- P87.7: Added the SDMD option-space filter in `ws4/sdmd/solver.py` and the
+  `ws4 sdmd filter-dataset` command. It reads the compiled tracks and treatments, maps a
+  track to its AU from the `AU(...)` name or a YAML sidecar, matches treatment labels to
+  regimes, and drops every treatment row for a track that fails `check_regime`, the entry
+  window, the entry cap, the minimum interval, or the removal fraction. It writes a filtered
+  dataset copy and reports tracks/treatments before and after with one reason record per
+  dropped track. 10 tests cover allowed rows, each forbidden case, strict mode, the sidecar
+  map, the CLI, and the report. A cap across blocks in one AU and trajectory-zone rejection
+  need AU state and per-track trajectories, and are recorded as limits. Dashboard result:
+  `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.

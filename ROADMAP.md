@@ -2715,10 +2715,12 @@ constraints. The SDMD is a diagnostic and constraint layer, not a growth model.
   - [ ] Add the tab, filters, and URL state.
   - [ ] Add the yield and SDMD charts.
   - [ ] Add the regime path, constraint editor, and provenance panel.
-- [ ] P87.7 Solver constraint integration (#635)
-  - [ ] Filter regimes and enforce entry, interval, and removal rules.
-  - [ ] Reject trajectories outside the allowed SDMD zones.
-  - [ ] Measure and record the option-space reduction.
+- [x] P87.7 Solver constraint integration (#635) — the dataset filter and option-space reduction
+  are complete; rejecting a trajectory outside the allowed SDMD zones and a cap across blocks in
+  one AU need per-track trajectories and AU state, and are deferred with that reason.
+  - [x] Filter regimes and enforce entry, interval, and removal rules.
+  - [ ] Reject trajectories outside the allowed SDMD zones (deferred: no per-track trajectory table).
+  - [x] Measure and record the option-space reduction.
 - [ ] P87.8 Provenance, docs, and closeout (#636)
   - [ ] Run the eight validation gates.
   - [ ] Update the ADR, design note, docs, notes, and changelog.

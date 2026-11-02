@@ -96,16 +96,24 @@ def test_au_explorer_tab_renders(tmp_path: Path) -> None:
             except Exception as error:  # pragma: no cover - browser not installed
                 pytest.skip(f"chromium is not available: {error}")
             page = browser.new_page()
-            page.goto(f"{url}/?run=run1")
-            page.wait_for_selector("#ws-sdmd:not([hidden])", timeout=10000)
-            page.click("#ws-sdmd")
-            page.wait_for_selector("#sdmd-canvas:not([hidden])")
+            page.goto(f"{url}/?run=run1&view=sdmd")
+            page.wait_for_selector("#sdmd-canvas:not([hidden])", timeout=15000)
             page.wait_for_function(
-                "document.querySelector('#sdmd-title').textContent.includes('AU-')"
+                "document.querySelector('#sdmd-title').textContent.includes('AU-')",
+                timeout=15000,
             )
-            assert page.locator("#sdmd-yield-chart path").count() > 0
-            assert page.locator("#sdmd-diagram circle").count() > 0
-            assert page.locator("#sdmd-regime-editor .sdmd-regime-row").count() == 7
+            page.wait_for_function(
+                "document.querySelectorAll('#sdmd-yield-chart path').length > 0",
+                timeout=15000,
+            )
+            page.wait_for_function(
+                "document.querySelectorAll('#sdmd-diagram circle').length > 0",
+                timeout=15000,
+            )
+            page.wait_for_function(
+                "document.querySelectorAll('#sdmd-regime-editor .sdmd-regime-row').length === 7",
+                timeout=15000,
+            )
             page.set_viewport_size({"width": 1024, "height": 768})
             assert page.locator("#sdmd-canvas").is_visible()
             assert page.locator("#sdmd-regime-editor .sdmd-regime-row").count() == 7

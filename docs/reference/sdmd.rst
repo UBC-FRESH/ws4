@@ -331,6 +331,43 @@ with ``--sdmd-dir``. It is a reader over the API above, with no build step.
 - ``Use in scenario`` records the AU in the URL for the solver handoff.
 - The selected AU and workspace are URL state, so a link opens the same view.
 
+Solver integration
+------------------
+
+The optimizer reads the compiled matrix, so the safe integration is to remove forbidden
+treatment rows before it builds candidate chains. ``ws4.sdmd.solver.filter_dataset``
+reads ``tracks.parquet`` and ``treatments.parquet``, maps each track to an AU from
+the ``AU(...)`` field in the track name or a sidecar map, matches each treatment
+label to a regime, and drops every treatment row for a track that fails the
+constraint checks.
+
+.. code-block:: bash
+
+   ws4 sdmd filter-dataset \
+     --dataset build/compiled \
+     --out build/compiled-sdmd \
+     --regimes regimes.csv \
+     --constraints au_constraints.csv \
+     --map sdmd-map.yaml
+
+The filter enforces the per-track entry-age window, entry cap, minimum interval,
+and removal fraction. It writes a dataset copy with every other table unchanged and
+reports ``tracks_before``, ``tracks_after``, ``treatments_before``, and
+``treatments_after``, plus one record per dropped track with its reasons. Unmapped
+tracks are kept by default; ``--strict`` drops them. A sidecar map can override the
+track AU and treatment aliases:
+
+.. code-block:: yaml
+
+   tracks:
+     16: AU-IDFdk3-FDI
+   treatments:
+     CC: REG-A-CLEARCUT
+
+A cap across blocks in one AU, and a rejection of a trajectory that leaves the
+allowed SDMD zones, need AU state and per-track trajectories that the compiled
+matrix does not carry. They are named as follow-up work, not claimed here.
+
 Public sources
 ~~~~~~~~~~~~~~
 
