@@ -3899,6 +3899,10 @@ issue comments.
 
 ## 2026-11-02
 
+- P98: LTSY scenario profile library. Added a validated YAML profile library, a
+  `scenario-profiles` CLI with list/show/JSON/shell output, and `PROFILE=base|baseline|nostock`
+  selection in the TSA24 watcher. `base` remains the default. Report:
+  `notes/reports/tsa24-ltsy-profiles.md`.
 - P101.1: added `ws4 storyboard`, a one-page Markdown narrative that reuses the
   account-derived condition card. Derived indicators stay review-required;
   alerts stay advisory. Added tests and docs. Dashboard green on all seven gates.
