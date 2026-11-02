@@ -306,3 +306,4 @@ def test_gpu_watch_help_documents_the_factorized_archive() -> None:
     assert result.returncode == 0, result.stdout + result.stderr
     combined = re.sub(r"\x1b\[[0-9;]*m", "", result.stdout + result.stderr)
     assert "--factorized" in combined
+    assert "--factorized-cache" in combined

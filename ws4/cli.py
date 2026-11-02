@@ -2765,6 +2765,11 @@ def gpu_watch(
         exists=True,
         help="Optional persisted factorized descriptor archive for display cells",
     ),
+    factorized_cache: Path | None = typer.Option(
+        None,
+        "--factorized-cache",
+        help="Optional persisted padded-tensor cache; created on first use",
+    ),
     cache_dir: Path = typer.Option(
         Path("runtime/gpu-cache"), help="Simulator/candidate cache directory"
     ),
@@ -2847,18 +2852,32 @@ def gpu_watch(
             )
         effect_table = EffectTable.load(table, device=device)
         factorized_accounts = None
+        if factorized_cache is not None and factorized is None:
+            raise ValueError("--factorized-cache requires --factorized")
         if factorized is not None:
             import numpy as np
 
-            arrays = FactorizedEffectArrays.load(factorized)
-            if not np.array_equal(np.asarray(effect_table.blocks, dtype=np.int64), arrays.blocks):
+            if factorized_cache is not None and factorized_cache.is_file():
+                factorized_accounts = FactorizedAccountSet.load_cache(
+                    factorized_cache,
+                    optimizer.simulator(),
+                    device=device,
+                )
+            else:
+                arrays = FactorizedEffectArrays.load(factorized)
+                factorized_accounts = FactorizedAccountSet.from_arrays(
+                    arrays,
+                    optimizer.simulator(),
+                    years=years,
+                    device=device,
+                )
+                if factorized_cache is not None:
+                    factorized_accounts.save_cache(factorized_cache)
+            if not np.array_equal(
+                np.asarray(effect_table.blocks, dtype=np.int64),
+                np.asarray(factorized_accounts.blocks, dtype=np.int64),
+            ):
                 raise ValueError("factorized archive blocks do not match the effect table")
-            factorized_accounts = FactorizedAccountSet.from_arrays(
-                arrays,
-                optimizer.simulator(),
-                years=years,
-                device=device,
-            )
         if initial is None:
             initial = load_schedule_csv(seed_schedule)
             with schedule_cache.open("wb") as stream:

@@ -93,6 +93,32 @@ schedule was written to `runtime/tsa24-ltsy-factorized-smoke.csv` (2.9 MB).
 This is a two-generation smoke run, not a production search result. The harvest level
 remained below the 100M period aspiration in periods 11-20.
 
+## Padded cache startup
+
+The structural cache is now separate from the 2.9 GB flat artifact:
+
+- cache: `runtime/factorized/tsa24-factorized.padded.pt`
+- size: **6.0 GB**
+- cold start with rebuild and cache write: **252.0 s**
+- hot start with cache load: **19.44 s**
+- hot watcher loop: **1.64 s**
+
+The hot start is a **13x** improvement. The feature/product curve tables are still built
+in memory per account because they are only a few hundred kilobytes; the cache stores the
+large padded structural tensors and lookup metadata.
+
+CLI:
+
+```bash
+python -m ws4.cli gpu-watch \
+  --factorized runtime/factorized/tsa24-factorized.npz \
+  --factorized-cache runtime/factorized/tsa24-factorized.padded.pt \
+  ...
+```
+
+The TSA24 wrapper passes `FACTORIZED_CACHE` through. The hot run reproduced the same
+objective and 128 evaluations as the cold run.
+
 ## Limits
 
 - The structural build is still one-time and model-specific.

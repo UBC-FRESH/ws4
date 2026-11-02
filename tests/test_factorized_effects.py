@@ -415,3 +415,23 @@ def test_watcher_display_uses_factorized_cells_without_table_extension(
     assert summary["objective"] < float("inf")
     assert len(population.table.cells) == cells
     assert "feature.Volume" in stream.getvalue()
+
+
+def test_factorized_account_cache_round_trips(tmp_path: Path) -> None:
+    """A persisted padded cache reproduces the built account values."""
+    import numpy as np
+    import torch
+
+    optimizer, _evaluator = _optimizer(tmp_path)
+    candidates = optimizer.candidates()
+    arrays = FactorizedEffectArrays.build(optimizer, candidates, years=4)
+    simulator = optimizer.simulator()
+    accounts = FactorizedAccountSet.from_arrays(arrays, simulator, years=4)
+    cache = accounts.save_cache(tmp_path / "factorized.padded.pt")
+    loaded = FactorizedAccountSet.load_cache(cache, simulator, device="cpu")
+    rng = np.random.default_rng(29)
+    genomes = torch.as_tensor(rng.integers(0, 2, size=(3, len(candidates))), dtype=torch.int64)
+    cells = [(1, "feature.Volume"), (2, "product.Volume")]
+    expected = accounts.totals(genomes, cells)
+    actual = loaded.totals(genomes, cells)
+    assert torch.equal(actual, expected)
