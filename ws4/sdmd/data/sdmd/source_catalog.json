@@ -512,5 +512,18 @@
     "BEC applicability is a zone-level inference from the BC Tree Species Compendium, not a statement printed on the diagrams.",
     "The BC web page labels swn/swp as 'White pine'; the PDFs themselves say 'WHITE SPRUCE', version 1.30. page_label records the web label and pdf_title records the PDF title.",
     "All diagrams are one-page PDFs. The full Farnden 1996 report carries the methods, equations and appendices."
+  ],
+  "digitizations": [
+    {
+      "diagram_id": "idf-dk3-fdi-natural",
+      "source_diagram_id": "fdin",
+      "file": "idf-dk3-fdi-natural.json",
+      "source_sha256": "e8e81fd3b5b0f0ccf71d2be6d5fb4d681f06c538365c2e1b93223a0bf849a6f6",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/fdin.pdf",
+      "source_version": "1.10",
+      "review_status": "provisional",
+      "reviewer": "",
+      "notes": "Vector extraction from the catalogued PDF; isopleth values assigned from the printed labels and the QMD 5 cm sequence. Awaiting maintainer review."
+    }
   ]
 }

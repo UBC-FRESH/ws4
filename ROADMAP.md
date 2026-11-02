@@ -2951,9 +2951,10 @@ the pilot AUs, enforce the two solver rules deferred from P87, and close with th
 pilot AU report and validation evidence.
 
 - [ ] P95.1 Digitise fdin/fdip and replace the synthetic pilot fixture (#681)
-  - [ ] Extract and order the isopleths from fdin and fdip.
-  - [ ] Record source, checksum, reviewer, and review date.
-  - [ ] Add pilot diagram files, fixtures, tests, and docs.
+  - [x] Extract and order the `fdin` isopleths.
+  - [ ] Extract and order the `fdip` isopleths.
+  - [ ] Record the maintainer's review, reviewer, and review date.
+  - [x] Add the pilot diagram file, fixture, tests, and method note.
 - [ ] P95.2 Generate FVS-BC and PSP trajectories for the pilot AUs (#682)
   - [ ] Run the no-cut and treated scenarios.
   - [ ] Add the PSP observed check.

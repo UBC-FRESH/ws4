@@ -3875,3 +3875,10 @@ issue comments.
 - P95: Launched the SDMD pilot phase on `feature/p95-sdmd-pilot`, parent issue #680,
   with tasks #681 to #684. P95.1 is the first bounded move: digitise `fdin`/`fdip`
   into reviewed vector isopleths and replace the synthetic pilot fixture.
+- P95.1: digitised the natural Interior Douglas-fir diagram (`fdin`, version 1.10) into
+  `ws4/sdmd/data/sdmd/idf-dk3-fdi-natural.json`: 10 top-height isopleths, 10 QMD
+  isopleths, crown closure, competition, and self-thinning boundaries, read from the
+  PDF vector paths and calibrated against the printed log axes. Recorded the source
+  SHA-256 and a digitisation catalog entry. The diagram is **provisional**; the
+  maintainer review and the planted `fdip` diagram are still open. Added 4 diagram
+  tests, a source-catalog test, and `notes/reference/bc-sdmd-digitisation.md`.

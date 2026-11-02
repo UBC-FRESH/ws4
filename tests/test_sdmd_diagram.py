@@ -37,6 +37,14 @@ DIAGRAM_PATH = (
     / "idf-dk3-fdi-illustrative.json"
 )
 FIXTURE = Path(__file__).resolve().parent / "fixtures" / "sdmd"
+PILOT_DIAGRAM = (
+    Path(__file__).resolve().parents[1]
+    / "ws4"
+    / "sdmd"
+    / "data"
+    / "sdmd"
+    / "idf-dk3-fdi-natural.json"
+)
 
 
 def _diagram() -> SdmdDiagram:
@@ -478,3 +486,39 @@ def test_build_au_report_requires_coordinate_columns() -> None:
             diagram=_reviewed(_diagram()),
             observed=pd.DataFrame({"age": [10]}),
         )
+
+
+def test_pilot_natural_diagram_is_a_valid_provisional_vector() -> None:
+    """The digitised natural Interior Douglas-fir diagram is complete and provisional."""
+    diagram = load_diagram(PILOT_DIAGRAM)
+    assert validate_diagram(diagram) == []
+    kinds: dict[str, int] = {}
+    for isopleth in diagram.isopleths:
+        kinds[isopleth.kind] = kinds.get(isopleth.kind, 0) + 1
+    assert kinds == {
+        "top_height": 10,
+        "qmd": 10,
+        "crown_closure": 1,
+        "competition": 1,
+        "self_thinning": 1,
+    }
+    assert diagram.review.status == "provisional"
+    assert diagram.source.kind == "published"
+    assert "BC-X-360" in diagram.source.citation
+    assert len(diagram.source.citation) > 40
+
+
+def test_pilot_natural_diagram_places_the_density_zones() -> None:
+    """The digitised curves separate understocked, managed, competition, and outside."""
+    diagram = load_diagram(PILOT_DIAGRAM)
+    assert place_point(diagram, 1000.0, 0.01).zone == "understocked"
+    assert place_point(diagram, 500.0, 0.05).zone == "density-management"
+    assert place_point(diagram, 1000.0, 0.2).zone == "competition"
+    assert place_point(diagram, 1000.0, 0.5).zone == "outside"
+
+
+def test_pilot_natural_diagram_is_not_used_by_a_report_until_reviewed() -> None:
+    """A provisional digitisation is still refused by the report path."""
+    diagram = load_diagram(PILOT_DIAGRAM)
+    with pytest.raises(SdmdReportError, match="needs a reviewed diagram"):
+        build_au_report(au_id="AU-IDFdk3-FDI", diagram=diagram, observed=_points())
