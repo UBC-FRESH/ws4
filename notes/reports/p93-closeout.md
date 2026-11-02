@@ -4,7 +4,7 @@
 
 Phase: P93
 Parent issue: #662
-Pull request: TBD
+Pull request: https://github.com/UBC-FRESH/ws4/pull/669
 Evidence head: `P93.1` commit on `feature/p93-condition-card-ui`
 Report date: 2026-11-02
 Status: pr-open; awaiting review
@@ -25,7 +25,7 @@ Status: pr-open; awaiting review
 | Error/empty messages | JS branches | met |
 | Docs | web reference | met |
 | Tests/dashboard | 71 web tests; dashboard green | met |
-| PR queued | TBD | pending |
+| PR queued | #669 | met |
 
 ## Workflow compliance
 
@@ -43,7 +43,7 @@ tests, validator, docs, and docstrings.
 
 ## CI evidence
 
-To be recorded after the phase pull request is opened.
+PR #669 is open; check CI on the final head.
 
 ## Deviations and risks
 
