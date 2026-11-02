@@ -133,7 +133,9 @@ used.
 
 Each diagram needs at least two ``top_height`` curves, at least two ``qmd`` curves,
 and exactly one each of ``crown_closure``, ``competition``, and ``self_thinning``.
-A ``reviewed`` diagram must name a reviewer and a review time. An unreviewed or
+A ``reviewed`` diagram must name a reviewer and a review time. The maintainer
+(G. Paradis) is the reviewer of record for this pilot; an RPF can be named later
+without a schema change. An unreviewed or
 provisional diagram cannot enter an AU report unless the caller passes
 ``allow_unreviewed=True`` for method work, and the report records the gap.
 
@@ -186,7 +188,7 @@ Data status
 The committed JSON is an **illustrative synthetic diagram** for the fixture and the
 tests. It is not a digitisation of a published diagram, and it must not be
 presented as one. The real IDFdk3/FDI diagram remains data-blocked pending a
-licensed digital copy and a forester's review of the digitised isopleths. The
+source copy and the maintainer's review sign-off on the digitised isopleths. The
 schema and the review gate are ready for that copy; the fixture exercises them.
 
 Evidence roles and limits

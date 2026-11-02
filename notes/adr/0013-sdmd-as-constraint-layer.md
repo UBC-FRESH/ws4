@@ -45,8 +45,9 @@ space before and after filtering so the reduction is measurable.
   growth evidence.
 - Ingestion must label synthetic gap-fill rows and must refuse canopy-only LiDAR
   as total TPH, because the schema requires provenance.
-- A diagram cannot be used in a report until a forester has reviewed the
-  digitisation. The review status is a first-class field.
+- A diagram cannot be used in a report until a named reviewer — normally the
+  maintainer, or an RPF the maintainer designates — has accepted the digitisation.
+  The review status and the reviewer are first-class fields.
 - Uneven-aged regimes need a different diagram or a different account; they are
   out of scope rather than forced onto an even-aged diagram.
 - The optimizer gains a smaller, better-posed option space, but the acceptance

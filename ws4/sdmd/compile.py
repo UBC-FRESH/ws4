@@ -3,7 +3,7 @@
 The report places an AU's observed points, builds their convex envelope, and assesses
 FVS or PSP trajectories against it. A trajectory that leaves the envelope is called an
 extrapolation, not a result. An initial volume above the supplied limit is rejected. A
-report cannot use a diagram that a forester has not reviewed.
+report cannot use a diagram that a named reviewer has not accepted.
 """
 
 from __future__ import annotations

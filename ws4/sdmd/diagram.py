@@ -7,8 +7,8 @@ density zone, and builds the observed envelope that the AU report uses to flag
 extrapolation.
 
 The committed diagram is illustrative and provisional. It is not a digitisation of a
-published diagram; a real diagram needs a licensed digital copy and a forester's review
-before a report may use it (ADR 0013).
+published diagram; a real diagram needs a source copy and a named review before a
+report may use it (ADR 0013).
 """
 
 from __future__ import annotations
@@ -68,7 +68,7 @@ class DiagramSource:
 
 @dataclass(frozen=True)
 class DiagramReview:
-    """The forester review of a digitisation.
+    """The named review of a digitisation.
 
     Attributes
     ----------

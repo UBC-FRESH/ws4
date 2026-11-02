@@ -193,7 +193,8 @@ Store each isopleth as ordered points and metadata. Do not store only a raster.
 
 The PDF supplied is a **how-to guide**, not the full species atlas. The actual
 IDFdk3/FDI diagram needs the Farnden 1996 source or a licensed digital copy.
-Digitization must be reviewed by a forester before use.
+Digitization must be signed off by a named reviewer before use: the maintainer,
+  or an RPF the maintainer designates.
 
 ## 8. AU report
 

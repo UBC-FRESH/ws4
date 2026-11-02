@@ -3672,6 +3672,8 @@ issue comments.
   the maximum even-flow harvest; and a 1e9 priority-tier gap is near-lexicographic while
   weights are the softer dominance control. Added the normative note
   `notes/design/weighted-goal-programming-aspirations.md`. Sphinx `-W` build passed.
+## 2026-11-01
+
 - P87: Launched Phase 87 (Stand density management and AU Explorer) on
   `feature/p87-sdmd-au-explorer`, parent issue #628, with child issues #629 to #636. The layer is
   a diagnostic and constraint layer, not a growth model, and its scope, risks, and parallelisation
@@ -3703,3 +3705,11 @@ issue comments.
   IDFdk3/FDI digitisation remains data-blocked pending a licensed copy and a forester's review, and
   no third-party diagram content was copied. Added 40 tests and the diagram/report reference section.
   Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
+
+## 2026-11-02
+
+- P87.3 clarification: the review gate is a named reviewer sign-off, not an unstaffed
+  "forester" role. Gregory Paradis is the reviewer of record for this pilot, and an RPF
+  can be named later without a schema change. The earlier "licensed digital copy"
+  wording overstated the dependency: the real gap is that the supplied PDF is a how-to
+  guide, not the diagram, and no source copy has been chosen yet. No code behaviour changed.

@@ -51,7 +51,7 @@ def _diagram() -> SdmdDiagram:
 
 
 def _reviewed(diagram: SdmdDiagram) -> SdmdDiagram:
-    """Return a copy of the diagram with a forester review recorded.
+    """Return a copy of the diagram with the maintainer review recorded.
 
     Parameters
     ----------
@@ -67,7 +67,7 @@ def _reviewed(diagram: SdmdDiagram) -> SdmdDiagram:
         diagram,
         review=DiagramReview(
             status="reviewed",
-            reviewer="test forester",
+            reviewer="G. Paradis",
             reviewed_utc="2026-11-02T00:00:00+00:00",
         ),
     )
