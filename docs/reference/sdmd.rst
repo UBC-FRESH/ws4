@@ -380,8 +380,11 @@ the constraint's `required_sdmd_zone`. A missing trajectory fails closed.
 
 `SdmdScheduleGuard` checks a whole schedule for the per-AU entry cap and minimum
 interval. It maps each block to its AU, counts the selected entries, and returns
-`SDMD-SCHEDULE-ENTRIES` or `SDMD-SCHEDULE-INTERVAL` findings. The guard is tested
-and available; wiring it into the optimizer's move loop is the remaining step.
+`SDMD-SCHEDULE-ENTRIES` or `SDMD-SCHEDULE-INTERVAL` findings. The optimizer wires
+it into every move when `--sdmd-dir` names a store with `regimes.csv` and
+`au_constraints.csv`; an infeasible seed raises rather than being repaired. The run
+summary records `constraint_stats.sdmd_guard` and the number of rejected moves as
+`constraint_stats.sdmd_rejected`, which is the enforcement benchmark.
 
 Validation gates
 ----------------

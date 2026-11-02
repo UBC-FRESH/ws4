@@ -3904,3 +3904,11 @@ issue comments.
   counts selected entries, and returns entry-cap and interval findings. Added three
   guard/zone tests and passed the existing solver suite. The optimizer move-loop hook
   and the before/after benchmark remain open.
+- P95.3: wired the SDMD schedule guard into the optimizer. `OptimizeConfig.sdmd_dir`
+  and `ws4 optimize --sdmd-dir` load the regime and AU constraint tables, build an
+  `SdmdScheduleGuard` over the simulator tables, and set it as the whole-schedule
+  predicate on `ConstraintGuard`. Every move is rejected when it would exceed the
+  per-AU entry cap or minimum interval; an infeasible seed raises. The run summary
+  records `sdmd_guard` and `sdmd_rejected`. Added a guard-hook test, an optimizer
+  integration test, and a CLI test. P95.3 stays open for the final option-count
+  benchmark table and the pilot review.

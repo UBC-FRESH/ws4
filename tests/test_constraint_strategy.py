@@ -144,3 +144,51 @@ def test_penalize_run_keeps_the_default_guard_disabled(tmp_path: Path) -> None:
     assert stats["enabled"] is False
     assert stats["proposed"] == 0
     assert isinstance(summary["constraint_feasible"], bool)
+
+
+def test_guard_rejects_a_schedule_that_breaks_a_schedule_check() -> None:
+    """A whole-schedule predicate rejects a move even when no spatial rule is active."""
+    guard = ConstraintGuard(_FakeOptimizer("penalize"))  # type: ignore[arg-type]
+    guard.set_schedule_check(lambda schedule: len(schedule) <= 1)
+    assert guard.consider({}, {1: _chain()}, [1]) == {1: _chain()}
+    assert guard.consider({1: _chain()}, {1: _chain(), 2: _chain()}, [2]) is None
+    assert guard.stats["sdmd_rejected"] == 1
+    assert guard.summary()["sdmd_guard"] is True
+
+
+def _sdmd_store(root: Path) -> Path:
+    """Write a one-regime SDMD store for the synthetic fixture."""
+    root.mkdir()
+    (root / "regimes.csv").write_text(
+        "regime_id,au_id,name,entry_age,entry_type,residual_ba_m2_ha,"
+        "removal_fraction,cycle_length,repeat_count,post_treatment_track,"
+        "eligibility_expr,operability_expr,constraint_ids,review_status\n"
+        "REG-1-CC,1,clearcut,40,clearcut,0,1,0,0,,,,,reviewed\n",
+        encoding="utf-8",
+    )
+    (root / "au_constraints.csv").write_text(
+        "au_id,regime_id,allowed,min_entry_age,max_entry_age,max_entries,"
+        "min_interval_years,max_removal_fraction,required_sdmd_zone,source,"
+        "review_status\n"
+        "1,REG-1-CC,True,0,120,1,0,1.0,,test,reviewed\n",
+        encoding="utf-8",
+    )
+    return root
+
+
+def test_optimizer_builds_the_sdmd_schedule_guard(tmp_path: Path) -> None:
+    """The configured store rejects two entries in one AU."""
+    dataset = build_canonical_dataset(
+        _FIXTURE / "recipe.xml", _FIXTURE / "fragments.csv", tmp_path / "compiled"
+    )
+    config = OptimizeConfig(
+        years=1, iterations=1, seed=1, sdmd_dir=str(_sdmd_store(tmp_path / "sdmd"))
+    )
+    optimizer = Optimizer.from_dataset(dataset, config)
+    check = optimizer._sdmd_schedule_check(str(tmp_path / "sdmd"))
+    assert check({1: [("CC", 40)]}) is True
+    assert check({1: [("CC", 40)], 2: [("CC", 60)]}) is False
+    summary = optimizer.run(tmp_path / "run")
+    stats = summary["constraint_stats"]
+    assert isinstance(stats, dict)
+    assert stats["sdmd_guard"] is True

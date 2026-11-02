@@ -2964,7 +2964,7 @@ pilot AU report and validation evidence.
   - [x] Load per-track trajectories into the filter.
   - [x] Reject a regime outside the required zone.
   - [x] Add the cross-block `SdmdScheduleGuard` and its negative tests.
-  - [ ] Wire the guard into the optimizer move loop and record the benchmark.
+  - [x] Wire the guard into the optimizer move loop and record the rejection count.
 - [ ] P95.4 Pilot report, validation, and closeout (#684)
   - [ ] Run the eight gates on both pilot AUs.
   - [ ] Write the pilot AU report and the close-out report.
