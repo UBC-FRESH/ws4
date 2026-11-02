@@ -19,7 +19,7 @@ keeps the seed representable without a repair pass.
 
 Fitness
 -------
-Fitness is the exact WS4 objective for one priority tier, no patch accounts, no route
+Fitness is the exact WS4 objective with priority-tier scaling, no patch accounts, no route
 accounts, and no spatial rules.  One genome's cell totals are the base totals plus the
 segmented sum of its effect rows.  The device pricer then reproduces the incremental
 objective's per-target penalty sum.  Anything outside that contract raises
@@ -46,7 +46,7 @@ import math
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 try:  # pragma: no cover - which branch runs depends on the environment
     import torch
@@ -58,15 +58,18 @@ except ImportError:  # pragma: no cover
 
 from .gpu_search import _ObjectivePricer
 
+Chain = tuple[tuple[str, int], ...]
+
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
     import torch as torch_type
 
     from .engine import Optimizer
+    from .factorized_effects import FactorizedAccountSet
     from .gpu_effects import EffectTable
     from .incremental import IncrementalObjective
-    from .operators import Candidates, Chain, Schedule
+    from .operators import Schedule
 
 
 def _require_torch() -> None:
@@ -76,6 +79,37 @@ def _require_torch() -> None:
             "the GPU population search needs torch; install the optional 'gpu' dependency "
             "(pip install 'ws4[gpu]')"
         )
+
+
+def _candidate_count(candidates: Any, block: int) -> int:  # noqa: ANN401
+    """Return one block's option count from a mapping or a compact candidate store."""
+    method = getattr(candidates, "option_count", None)
+    if callable(method):
+        return int(method(block))
+    return len(candidates.get(block, ()))
+
+
+def _candidate_chain(candidates: Any, block: int, index: int) -> Chain:  # noqa: ANN401
+    """Return one candidate chain from a mapping or compact store."""
+    method = getattr(candidates, "chain_at", None)
+    if callable(method):
+        return cast(Chain, method(block, index))
+    return cast(Chain, candidates[block][index])
+
+
+def _candidate_position(
+    candidates: Any,  # noqa: ANN401
+    block: int,
+    chain: Chain,
+) -> int | None:
+    """Return a chain's option position, or None when it is not a candidate."""
+    method = getattr(candidates, "index_of", None)
+    if callable(method):
+        return cast("int | None", method(block, chain))
+    try:
+        return list(candidates.get(block, ())).index(chain)
+    except ValueError:
+        return None
 
 
 @dataclass(frozen=True)
@@ -153,7 +187,11 @@ class GenomePopulation:
         candidate of every block.
     candidates : mapping of int to list of tuple, optional
         The per-block candidate chains.  None calls ``optimizer.candidates()``.  Passing a
-        precomputed mapping is useful when a persisted table is reloaded.
+        precomputed mapping is useful when a persisted table is reloaded. A compact
+        candidate store with the same option protocol is also accepted.
+    base_totals : torch.Tensor, optional
+        Cell totals for the empty schedule. None computes them from the optimizer; a
+        persisted sidecar can supply them to avoid the empty-schedule simulation.
     random_fraction : float, optional
         The fraction of the initial population that is uniformly random.  Defaults to 0.15.
     initial_mutation_rate : float, optional
@@ -179,6 +217,9 @@ class GenomePopulation:
         Defaults to zero, which disables migration.
     migrants : int, optional
         The number of best genomes copied from one island to the next.  Defaults to one.
+    factorized : FactorizedAccountSet or None, optional
+        One-account factorized lookup used for target cells that are absent from the
+        sparse effect table.  None keeps the table-only path.
 
     Raises
     ------
@@ -199,7 +240,8 @@ class GenomePopulation:
         population: int = 64,
         seed: int = 1,
         seed_schedule: Mapping[int, Chain] | None = None,
-        candidates: Candidates | None = None,
+        candidates: Any = None,  # noqa: ANN401
+        base_totals: torch_type.Tensor | None = None,
         random_fraction: float = 0.15,
         initial_mutation_rate: float = 0.05,
         mutation_rate: float = 0.002,
@@ -209,6 +251,7 @@ class GenomePopulation:
         exchange: str = "ring",
         migration_interval: int = 0,
         migrants: int = 1,
+        factorized: FactorizedAccountSet | None = None,
     ) -> None:
         _require_torch()
         _check_supported(evaluator)
@@ -253,14 +296,21 @@ class GenomePopulation:
         self.generator = torch.Generator(device=self.device)
         self.generator.manual_seed(seed)
         self.pricer = _ObjectivePricer(evaluator, table.cells, self.device)
+        self.factorized = factorized
+        self._extra_cells: tuple[tuple[int, str], ...] = ()
         self.blocks = tuple(table.blocks)
         if not self.blocks:
             raise ValueError("the effect table has no blocks")
         self.block_index = torch.arange(len(self.blocks), dtype=torch.int64, device=self.device)
-        self.lengths, self.option_rows, self.option_chains = self._options(
-            candidates if candidates is not None else optimizer.candidates(), seed_schedule
-        )
-        self.base_totals = self._base_totals()
+        self._candidates = candidates if candidates is not None else optimizer.candidates()
+        self._seed_schedule = seed_schedule
+        self.lengths, self.option_rows = self._options(self._candidates, seed_schedule)
+        if base_totals is None:
+            self.base_totals = self._base_totals()
+        else:
+            if base_totals.numel() != len(table.cells):
+                raise ValueError("base_totals does not match the effect-table cell count")
+            self.base_totals = base_totals.to(device=self.device, dtype=torch.float64)
         self.genomes = self._initialize(seed_schedule)
         self.scores: torch_type.Tensor | None = None
         self.totals: torch_type.Tensor | None = None
@@ -273,81 +323,67 @@ class GenomePopulation:
 
     def _options(
         self,
-        candidates: Candidates,
+        candidates: Any,  # noqa: ANN401
         seed_schedule: Mapping[int, Chain] | None,
-    ) -> tuple[torch_type.Tensor, torch_type.Tensor, dict[int, tuple[Chain, ...]]]:
-        """Return the option lengths, padded row ids, and chains for every block."""
-        chains_by_block: dict[int, tuple[Chain, ...]] = {}
-        for block in self.blocks:
-            chains = list(candidates.get(block, ()))
-            if seed_schedule is not None:
-                seed_chain = seed_schedule.get(block)
-                if seed_chain is not None and seed_chain not in chains:
-                    # An extra effect row keeps a seed chain that is not a candidate usable
-                    # as a genome option, so crossover and mutation need no repair pass.
-                    chains.append(seed_chain)
-            if not chains:
-                raise ValueError(f"block {block} has no candidate chains")
-            chains_by_block[block] = tuple(chains)
-        width = max(len(chains) for chains in chains_by_block.values())
-        lengths = torch.tensor(
-            [len(chains_by_block[block]) for block in self.blocks],
-            dtype=torch.int64,
-            device=self.device,
-        )
-        rows = torch.zeros((len(self.blocks), width), dtype=torch.int64, device=self.device)
-        # ``EffectTable.build`` assigns every block's candidate rows consecutively, in
-        # candidate order, before appending any seed-only extra rows.  Resolve the first
-        # and last candidate row per block and fill the run with ``arange`` instead of
-        # doing one Python dict lookup for every one of the tens of millions of chains.
-        # A non-contiguous table falls back to the exact per-chain lookup.
+    ) -> tuple[torch_type.Tensor, torch_type.Tensor]:
+        """Return option lengths and padded table row ids for every block.
+
+        Candidate rows are laid out consecutively by :class:`EffectTable`, so the common
+        candidate positions are filled with one vectorized ``arange`` per table.  Only
+        seed-only and empty-chain rows need individual lookups.
+        """
+        candidate_counts: list[int] = []
+        first_rows: list[int] = []
+        empty_blocks: list[tuple[int, Chain]] = []
+        extra_blocks: list[tuple[int, int, Chain]] = []
+        lengths: list[int] = []
         for index, block in enumerate(self.blocks):
-            block_chains = chains_by_block[block]
-            candidate_count = len(candidates.get(block, ()))
-            if candidate_count:
-                first = self.table.block_starts.get(block)
-                if first is not None:
-                    if first + candidate_count > self.table.rows:
-                        raise ValueError(
-                            f"the effect table's candidate row range for block {block} is "
-                            "outside the table; rebuild it with this candidate set"
-                        )
-                    rows[index, :candidate_count] = torch.arange(
-                        first, first + candidate_count, dtype=torch.int64, device=self.device
-                    )
-                else:
-                    try:
-                        first = self.table.row_id(block, block_chains[0])
-                        last = self.table.row_id(block, block_chains[candidate_count - 1])
-                    except KeyError as exc:
-                        raise ValueError(
-                            f"the effect table has no row for block {block}; rebuild it with "
-                            "this chain in extra_pairs"
-                        ) from exc
-                    if last - first == candidate_count - 1:
-                        rows[index, :candidate_count] = torch.arange(
-                            first, first + candidate_count, dtype=torch.int64, device=self.device
-                        )
-                    else:
-                        for position in range(candidate_count):
-                            try:
-                                rows[index, position] = self.table.row_id(
-                                    block, block_chains[position]
-                                )
-                            except KeyError as exc:
-                                raise ValueError(
-                                    f"the effect table has no row for block {block}; rebuild it "
-                                    "with this chain in extra_pairs"
-                                ) from exc
-            for position in range(candidate_count, len(block_chains)):
-                try:
-                    rows[index, position] = self.table.row_id(block, block_chains[position])
-                except KeyError as exc:
-                    raise ValueError(
-                        f"the effect table has no row for block {block}; rebuild it with "
-                        "this chain in extra_pairs"
-                    ) from exc
-        return lengths, rows, chains_by_block
+            count = _candidate_count(candidates, block)
+            candidate_counts.append(count)
+            first_rows.append(int(self.table.block_starts.get(block, -1)))
+            seed_chain = seed_schedule.get(block) if seed_schedule is not None else None
+            extra_chain = (
+                seed_chain
+                if seed_chain is not None
+                and _candidate_position(candidates, block, seed_chain) is None
+                else None
+            )
+            length = count + (1 if extra_chain is not None else 0)
+            if length == 0:
+                # Some compiled blocks have no treatment option.  Row zero is the
+                # empty-chain option, so keep them representable instead of aborting.
+                empty_blocks.append((index, ()))
+                length = 1
+            lengths.append(length)
+            if extra_chain is not None:
+                extra_blocks.append((index, count, extra_chain))
+        width = max(lengths)
+        count_tensor = torch.tensor(candidate_counts, dtype=torch.int64, device=self.device)
+        first_tensor = torch.tensor(first_rows, dtype=torch.int64, device=self.device)
+        positions = torch.arange(width, dtype=torch.int64, device=self.device)
+        candidate_rows = first_tensor.unsqueeze(1) + positions.unsqueeze(0)
+        mask = positions.unsqueeze(0) < count_tensor.unsqueeze(1)
+        rows = torch.zeros((len(self.blocks), width), dtype=torch.int64, device=self.device)
+        rows[mask] = candidate_rows[mask]
+        for index, chain in empty_blocks:
+            try:
+                rows[index, 0] = self.table.row_id(self.blocks[index], chain)
+            except KeyError as exc:
+                raise ValueError(
+                    f"the effect table has no row for empty block {self.blocks[index]}"
+                ) from exc
+        for index, position, chain in extra_blocks:
+            try:
+                rows[index, position] = self.table.row_id(self.blocks[index], chain)
+            except KeyError as exc:
+                raise ValueError(
+                    f"the effect table has no row for seed chain in block {self.blocks[index]}; "
+                    "rebuild it with extra_pairs"
+                ) from exc
+        return (
+            torch.tensor(lengths, dtype=torch.int64, device=self.device),
+            rows,
+        )
 
     def _base_totals(self) -> torch_type.Tensor:
         """Return the empty-schedule base totals as one float64 device vector."""
@@ -368,11 +404,27 @@ class GenomePopulation:
             chain = seed_schedule.get(block)
             if chain is None:
                 continue
-            options = self.option_chains[block]
+            candidate_count = _candidate_count(self._candidates, block)
+            first = self.table.block_starts.get(block)
             try:
-                indices[position] = options.index(chain)
-            except ValueError as exc:  # pragma: no cover - _options appends the chain
-                raise ValueError(f"the seed chain for block {block} is not an option") from exc
+                row = self.table.row_id(block, chain)
+            except KeyError:
+                row = None
+            if first is not None and row is not None and first <= row < first + candidate_count:
+                indices[position] = row - first
+            elif row is not None:
+                # Seed-only rows are appended after the candidate run.
+                indices[position] = candidate_count if candidate_count else 0
+            else:
+                # Lean tables omit the full row index; recover the position from the
+                # candidate order for this block.
+                candidate_position = _candidate_position(self._candidates, block, chain)
+                if candidate_position is None:
+                    raise ValueError(
+                        f"the effect table has no row for seed chain in block {block}; "
+                        "rebuild it with extra_pairs"
+                    )
+                indices[position] = candidate_position
         return indices
 
     def _random_indices(self, shape: tuple[int, ...]) -> torch_type.Tensor:
@@ -415,6 +467,96 @@ class GenomePopulation:
                 (random_count, len(self.blocks))
             )
         return genomes
+
+    def ensure_cells(self, cells: Any) -> None:  # noqa: ANN401
+        """Append any missing account/offset cells to the resident table.
+
+        Parameters
+        ----------
+        cells : iterable of (int, str)
+            Account/offset cells required by a target or a watched account.
+        """
+        missing = set(cells) - set(self.table.cells)
+        if not missing:
+            return
+        table, base = self.table.extend_cells(self.optimizer, sorted(missing), self._candidates)
+        self.table = table
+        if base:
+            extra = torch.tensor(base, dtype=torch.float64, device=self.device)
+            self.base_totals = torch.cat((self.base_totals, extra))
+
+    def _required_cells(self, evaluator: IncrementalObjective) -> set[tuple[int, str]]:
+        """Return the target cells the evaluator reads."""
+        return {
+            cell
+            for index, target in enumerate(evaluator.targets)
+            if target.active
+            for cell in (
+                *evaluator._target_cells[index],
+                *(
+                    cell
+                    for period in evaluator._flow_period_cells.get(index, ())
+                    for cell in period
+                ),
+            )
+        }
+
+    def _ensure_target_cells(self, evaluator: IncrementalObjective) -> None:
+        """Resolve target cells through the table or factorized account set."""
+        required = self._required_cells(evaluator)
+        missing = required - set(self.table.cells)
+        if missing and self.factorized is not None:
+            unsupported = sorted(
+                {account for _offset, account in missing if not self.factorized.supports(account)}
+            )
+            if unsupported:
+                raise ValueError(
+                    "factorized target accounts are not available: " + ", ".join(unsupported)
+                )
+            self._extra_cells = tuple(sorted(missing))
+            return
+        self._extra_cells = ()
+        self.ensure_cells(required)
+
+    def update_targets(self, targets: Any) -> None:  # noqa: ANN401
+        """Re-price the existing population under a new target list.
+
+        The effect table, base totals, candidate option map, and genomes stay resident.
+        Only the pricer and the evaluated scores are replaced.
+
+        Parameters
+        ----------
+        targets : sequence of Target
+            The new active target set. Cells already in ``self.table.cells`` stay on the
+            sparse path; other feature/product cells are priced by ``self.factorized``
+            when it is configured.
+
+        Raises
+        ------
+        ValueError
+            When a new target cell is absent from the table and no factorized account
+            set can price it.
+        """
+        from .incremental import IncrementalObjective
+
+        evaluator = IncrementalObjective(
+            self.optimizer,
+            targets,
+            extra_accounts=self.table.basis_accounts,
+        )
+        self._ensure_target_cells(evaluator)
+        pricer_cells = (*self.table.cells, *self._extra_cells)
+        pricer = _ObjectivePricer(evaluator, pricer_cells, self.device)
+        self.evaluator = evaluator
+        self.pricer = pricer
+        self.best_objective = math.inf
+        self.best_genome = self.genomes[0].clone()
+        self.best_generation = self.generation
+        self.best_island = 0
+        self.history = []
+        self.scores = self.evaluate()
+        self._update_best(self.scores)
+        self.history.append(self.best_objective)
 
     def reset(self, seed_schedule: Mapping[int, Chain] | None, *, seed: int | None = None) -> None:
         """Reset the population for a new independent run.
@@ -504,6 +646,10 @@ class GenomePopulation:
         totals = self.base_totals.unsqueeze(0) + self.table.segmented_delta(
             rows.reshape(-1), segments
         )
+        if self._extra_cells:
+            assert self.factorized is not None
+            extra = self.factorized.totals(source, self._extra_cells, vectors=True)
+            totals = torch.cat((totals, extra.to(device=self.device, dtype=torch.float64)), dim=1)
         scores = self.pricer.scores(totals)
         self.scores = scores
         self.totals = totals
@@ -523,10 +669,16 @@ class GenomePopulation:
             The chain of every block in the search slice.
         """
         indices = genome.tolist()
-        return {
-            block: self.option_chains[block][int(index)]
-            for block, index in zip(self.blocks, indices, strict=True)
-        }
+        schedule: Schedule = {}
+        for block, raw_index in zip(self.blocks, indices, strict=True):
+            index = int(raw_index)
+            if index < _candidate_count(self._candidates, block):
+                schedule[block] = _candidate_chain(self._candidates, block, index)
+            elif self._seed_schedule is not None and self._seed_schedule.get(block) is not None:
+                schedule[block] = self._seed_schedule[block]
+            else:
+                schedule[block] = ()
+        return schedule
 
     def _tournament(self, scores: torch_type.Tensor, count: int) -> torch_type.Tensor:
         """Return ``count`` parent indices, each the best of a random tournament."""
@@ -631,6 +783,39 @@ class GenomePopulation:
             self.best_genome = self.genomes[index].clone()
             self.best_generation = self.generation
             self.best_island = index // size
+
+    def advance(self) -> float:
+        """Evaluate once, or breed one generation and evaluate it.
+
+        Unlike :meth:`run`, this retains the generation counter, incumbent, and history so a
+        live watcher can display every generation.  The first call evaluates the initial
+        population; later calls breed and evaluate exactly one generation.
+
+        Returns
+        -------
+        float
+            The current global best objective.
+        """
+        if self.scores is None:
+            self.generation = 0
+            self.best_objective = math.inf
+            self.history = []
+            scores = self.evaluate()
+            self._update_best(scores)
+            self.history.append(self.best_objective)
+            return self.best_objective
+        if (
+            self.islands > 1
+            and self.migration_interval > 0
+            and (self.generation + 1) % self.migration_interval == 0
+        ):
+            self._migrate()
+        self.genomes = self._offspring()
+        self.generation += 1
+        scores = self.evaluate()
+        self._update_best(scores)
+        self.history.append(self.best_objective)
+        return self.best_objective
 
     def run(
         self, generations: int, *, check: int = 0, deadline: float | None = None

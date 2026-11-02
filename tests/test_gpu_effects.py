@@ -15,7 +15,8 @@ from typing import TYPE_CHECKING
 import pytest
 from ws4.build.compiler import build_canonical_dataset
 from ws4.opt.engine import OptimizeConfig, Optimizer
-from ws4.opt.gpu_effects import EffectTable, target_cells
+from ws4.opt.gpu_effects import EffectTable, target_cells, watchable_cells
+from ws4.opt.gpu_search import BatchedLnsSearch
 from ws4.opt.incremental import IncrementalObjective
 from ws4.opt.objective import Target
 
@@ -313,3 +314,66 @@ def test_cuda_table_matches_the_cpu_table(tmp_path: Path) -> None:
     expected = cpu.lns_deltas(ids, torch.zeros_like(ids))
     actual = cuda.lns_deltas(ids.to("cuda"), torch.zeros_like(ids).to("cuda")).cpu()
     assert torch.equal(actual, expected)
+
+
+def test_target_independent_cell_basis_survives_target_changes(tmp_path: Path) -> None:
+    """A watchable basis covers target changes that do not alter model or candidates."""
+    optimizer, _evaluator = _optimizer(tmp_path)
+    candidates = optimizer.candidates()
+    accounts = ("product.Volume", "product.Biomass", "feature.Volume")
+    cells = watchable_cells(accounts, years=4)
+    evaluator = IncrementalObjective(optimizer, _targets(), extra_accounts=accounts)
+    table = EffectTable.build(optimizer, evaluator, candidates=candidates, cells=cells)
+    assert table.basis_accounts == tuple(sorted(accounts))
+    assert set(table.cells) == set(cells)
+
+    changed = IncrementalObjective(
+        optimizer,
+        [
+            Target("product.Volume", period=2, period_width=1, minimum=3.0, min_weight=7.0),
+            Target("feature.Volume", period=4, period_width=1, maximum=100.0, priority=2),
+        ],
+        extra_accounts=accounts,
+    )
+    assert set(target_cells(changed)) <= set(table.cells)
+
+    path = table.save(tmp_path / "basis.pt", include_row_index=False, candidates=candidates)
+    loaded = EffectTable.load(path)
+    assert loaded.basis_accounts == table.basis_accounts
+    assert loaded.cells == table.cells
+
+
+def test_gpu_pricer_rejects_target_cells_missing_from_the_basis(tmp_path: Path) -> None:
+    """A target outside the persisted cell basis fails loudly, not silently."""
+    optimizer, evaluator = _optimizer(tmp_path)
+    table = EffectTable.build(optimizer, evaluator)
+    changed = IncrementalObjective(
+        optimizer,
+        [Target("feature.Area", period=1, period_width=1, minimum=1.0)],
+    )
+    with pytest.raises(ValueError, match="missing target cells"):
+        BatchedLnsSearch(optimizer, changed, table)
+
+
+def test_parallel_lean_table_matches_sequential(tmp_path: Path) -> None:
+    """Forked chunk pricing produces the same sparse lean table."""
+    optimizer, evaluator = _optimizer(tmp_path)
+    candidates = optimizer.candidates()
+    sequential = EffectTable.build(
+        optimizer,
+        evaluator,
+        candidates=candidates,
+        include_row_index=False,
+    )
+    parallel = EffectTable.build(
+        optimizer,
+        evaluator,
+        candidates=candidates,
+        include_row_index=False,
+        workers=2,
+    )
+    assert parallel.cells == sequential.cells
+    assert parallel.blocks == sequential.blocks
+    assert torch.equal(parallel.indptr, sequential.indptr)
+    assert torch.equal(parallel.indices, sequential.indices)
+    assert torch.equal(parallel.values, sequential.values)

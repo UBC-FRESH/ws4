@@ -86,6 +86,25 @@ exists and the maintainer approves it.
 | P81 Seed schedules from the UI | #570 | `feature/p81-ui-seed` | complete |
 | P82 Seeded max-flow | #575 | `feature/p82-seeded-max-flow` | active |
 | P83 Two-stage c5 even-flow | #579 | `feature/p83-two-stage-flow` | active |
+| P84 Precompiled scheduling substrate and fast startup | #613 | `feature/p84-incremental-state` | complete |
+| P85 GPU acceleration and interactive target cache | #618 | `feature/p85-gpu-acceleration` | complete |
+| P86 Weighted goal-programming target semantics | #625 | `feature/p86-target-semantics` | pr-open |
+| P87 Stand density management and AU Explorer | #628 | `feature/p87-sdmd-au-explorer` | pr-open |
+| P88 Factorized GPU account search | #637 | `feature/p88-factorized-gpu` | complete |
+| P89 Mixed-target factorized search and live switching | #643 | `feature/p89-mixed-target-search` | pr-open |
+| P90 Forest condition report cards | #650 | `feature/p90-forest-condition-cards` | pr-open |
+| P91 Condition card from a WS4 run | #655 | `feature/p91-condition-run-card` | pr-open |
+| P92 Condition-card API | #659 | `feature/p92-condition-card-api` | pr-open |
+| P93 Condition-card Reports UI | #662 | `feature/p93-condition-card-ui` | pr-open |
+| P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
+| P95 Factorized target-cell vectors | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
+| P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | pr-open |
+| P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | pr-open |
+| P98 LTSY scenario profile library | #699 | `feature/p98-ltsy-profiles` | pr-open |
+| P99 Scenario profile UI | #704 | `feature/p99-profile-ui` | pr-open |
+| P102 Ask overlay | #709 | `feature/p102-ask-overlay` | pr-open |
+| P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
+| P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2577,6 +2596,352 @@ Acceptance:
 - The even-flow and stock result is reported honestly, including any remaining gap.
 - Dashboard green.
 
+## Phase 84: Precompiled scheduling substrate and fast startup
+
+Parent issue: #613
+Branch: `feature/p84-incremental-state`
+Status: complete
+Plan: `notes/design/ws4-fast-startup.md`
+Report: `notes/reports/p84-state-watch.md`
+
+Goal: remove the startup bottleneck that makes WS4 rebuild its scheduling substrate on every
+process launch, using c5 as the phase acceptance target.
+
+- [x] Compact candidate index and persisted candidate artifact
+- [x] Resident Model II state pages and exact state objective
+- [x] Cached incremental rows and seed-state persistence
+- [x] Live c5 and TSA24 state-watch runners
+- [x] TSA24 GPU-to-state hybrid runner
+- [x] P84.5 Incremental resident-state watcher and seed cache (#624)
+  - [x] Cached per-block/option rows
+  - [x] Fast fragment-aware row construction
+  - [x] Seed-state persistence
+  - [x] Live watcher and hybrid scripts
+  - [x] c5 1k/100k exactness and throughput
+
+Acceptance:
+
+- c5 watcher uses the persisted candidate artifact.
+- State objective is exact against `IncrementalObjective`.
+- Incremental state and seed cache are exact on c5.
+- Dashboard green.
+
+## Phase 85: GPU acceleration and interactive target cache
+
+Parent issue: #618
+Branch: `feature/p85-gpu-acceleration`
+Status: complete
+Plan: `notes/design/gpu-effect-cache-interactivity.md`
+Report: `notes/reports/gpu-acceleration-tsa24.md`
+
+Goal: make the TSA24 GPU population search fast to launch, fast to run, and usable in an
+interactive target-editing loop without rebuilding the effect table for price-only changes.
+
+- [x] P85.1 Fast GPU launch and compact caches (#619)
+  - [x] Add the compact candidate cache and lazy accessor
+  - [x] Vectorize the GPU option map
+  - [x] Persist base totals and the parsed seed schedule
+  - [x] Record launch measurements
+- [x] P85.2 Priority-tier pricing and live target reload (#620)
+  - [x] Price priority tiers in the batched GPU objective
+  - [x] Add live target reload and resident re-pricing
+  - [x] Throttle live rendering and target polling
+- [x] P85.3 Target-independent effect-cell basis and lazy extension (#621)
+  - [x] Add an explicit cell basis and basis metadata
+  - [x] Add lazy column extension
+  - [x] Reject missing target cells instead of silently dropping them
+- [x] P85.4 Cloud bundle and portable runner (#622) — deferred: packaging scripts live in the FEMIC TSA24 instance repository
+  - [x] Add environment-overridable runner paths
+  - [x] Add a bundle packer and manifest
+  - [x] Defer the TSA24-instance packaging scripts to their owning repository
+
+Acceptance:
+
+- Hot TSA24 launch and search throughput are measured and materially below the pre-P85 baseline.
+- Priority-tier pricing matches the exact CPU objective.
+- Target edits re-price the resident population without a full table rebuild.
+- Cell-basis and lazy-extension behavior are covered by tests.
+- The cloud bundle is documented; its scripts remain outside this repository's branch.
+
+
+## Phase 86: Weighted goal-programming target semantics
+
+Parent issue: #625
+Branch: `feature/p86-target-semantics`
+Status: pr-open
+Plan: `notes/design/weighted-goal-programming-aspirations.md`
+
+Goal: document targets as weighted goal-programming aspirations rather than hard feasibility bounds.
+
+- [x] P86.1 Document weighted goal-programming target semantics (#626)
+  - [x] State that minimum/maximum are one-sided penalty hinges
+  - [x] Document the maximum even-flow harvest pattern
+  - [x] Distinguish soft weight dominance from the 1e9 priority tier
+  - [x] Add and index the normative design note
+
+Acceptance:
+
+- The concept, even-flow guide, and optimizer reference tell the same story.
+- Sphinx builds with warnings as errors.
+- Dashboard green.
+
+
+## Phase 87: Stand density management and AU Explorer
+
+Parent issue: #628
+Branch: `feature/p87-sdmd-au-explorer`
+Status: pr-open
+Plan: `notes/plans/ws4-sdmd-au-explorer.md`
+Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
+
+Goal: add a stand-density-management layer that places AU yield evidence, observed
+PSP plots, and compiled FVS trajectories on a species/region diagram, compares
+silviculture regimes as paths, and turns the reviewed result into solver
+constraints. The SDMD is a diagnostic and constraint layer, not a growth model.
+
+- [x] P87.1 SDMD and regime schemas with an ADR (#629)
+  - [x] Add `ws4.sdmd.schema` with the six table contracts.
+  - [x] Add coercion, frame validation, and dataset validation with stable codes.
+  - [x] Add ADR 0013 and the reference page.
+  - [x] Add the two-AU, ten-plot fixture and tests.
+- [x] P87.2 PSP, VRI, and LiDAR ingestion (#630)
+  - [x] Add the PSP plot and tree-list adapter.
+  - [x] Add the VRI AU assignment adapter and reported matching.
+  - [x] Add the LiDAR structure adapter and refuse canopy-only TPH.
+  - [x] Label provenance, review status, and synthetic rows.
+- [x] P87.3 SDMD digitization and AU placement (#631) — the vector contract, placement, envelope,
+  and report are complete. The public BC source set (14 diagrams, 7 species, natural and planted)
+  and a 229-row BEC variant coverage table are catalogued in `ws4/sdmd/data/sdmd/`.
+  - [x] Add the vector diagram contract and an illustrative reviewed-gated fixture.
+  - [x] Build the AU envelope, placement, and report statuses.
+  - [x] Place observed plots and FVS trajectories, and flag extrapolation.
+  - [x] Refuse an unreviewed digitisation in a report.
+  - [x] Re-implement the BC SDMD equation core in Python with source attribution.
+  - [x] Refuse a trajectory step where TPH and mean tree volume both increase.
+- [x] P87.4 Regime state machine and constraints (#632)
+  - [x] Add the even-aged regime library.
+  - [x] Validate state transitions and AU constraints.
+  - [x] Flag selection regimes as outside the diagram.
+- [x] P87.5 AU Explorer API (#633)
+  - [x] Add the read endpoints.
+  - [x] Add the validated constraint-write endpoint.
+  - [x] Add the option-count preview.
+  - [x] Mount the router in `ws4 serve` and document `--sdmd-dir`.
+- [x] P87.6 AU Explorer web tab (#634)
+  - [x] Add the tab, filters, and URL state.
+  - [x] Add the yield and SDMD charts.
+  - [x] Add the regime path, constraint editor, and provenance panel.
+  - [x] Add the isopleth overlay, interpretation panel, and trajectory explanation.
+- [x] P87.7 Solver constraint integration (#635) — the dataset filter and option-space reduction
+  are complete; rejecting a trajectory outside the allowed SDMD zones and a cap across blocks in
+  one AU need per-track trajectories and AU state, and are deferred with that reason.
+  - [x] Filter regimes and enforce entry, interval, and removal rules.
+  - [ ] Reject trajectories outside the allowed SDMD zones (deferred: no per-track trajectory table).
+  - [x] Measure and record the option-space reduction.
+- [x] P87.8 Provenance, docs, and closeout (#636)
+  - [x] Run the eight validation gates.
+  - [x] Record the option-count reduction and the rejected values.
+  - [x] Update the ADR, design note, docs, notes, and changelog.
+  - [x] Write the close-out report and queue the pull request.
+
+Acceptance:
+
+- The six contracts and their validators can fail, and the two-AU fixture passes.
+- Ingestion labels synthetic rows and refuses canopy-only LiDAR as total TPH.
+- The SDMD is reviewed vector data, and out-of-envelope trajectories are flagged.
+- Only AU-allowed regimes reach the solver, with a measured option reduction.
+- The AU Explorer renders the API contract with provenance and caveats.
+- The gates reject the 863 m3/ha initial volume and flag the 1,173 m3/ha trajectory.
+- `python scripts/dashboard.py` is green on every commit.
+
+
+## Phase 88: Factorized GPU account search
+
+Parent issue: #637
+Branch: `feature/p88-factorized-gpu`
+Status: complete
+Plan: `notes/design/factorized-account-basis.md`
+Report: `notes/reports/p88-factorized-gpu.md`
+Merge: `f582500` (PR #642)
+
+Goal: replace the rejected all-account effects matrix with an account-independent
+structural basis and padded GPU feature/product pricers, then switch target accounts
+without rebuilding an all-account table.
+
+- [x] P88.1 Post-P85 effect-table safety and bounded lean build (#638)
+  - [x] Preflight the builder and cap worker memory
+  - [x] Keep the lean build without the full row-index dictionary
+  - [x] Record the OOM postmortem
+- [x] P88.2 Persisted factorized basis and padded GPU pricers (#639)
+  - [x] Persist the flat segment/event descriptors
+  - [x] Add padded feature and product tensors
+  - [x] Match the full TSA24 exact evaluator
+- [x] P88.3 Wire target account switching into the resident population (#640)
+  - [x] Price missing target cells through one-account lookups
+  - [x] Leave the sparse table unchanged on an account switch
+  - [x] Cover the switch with a population exactness test
+- [x] P88.4 Benchmark report, docs, and phase closeout (#641)
+
+Acceptance:
+
+- Full TSA24 feature and product batches of 64 genomes match the exact evaluator.
+- Mixed feature/product target cells are priced without an all-account matrix.
+- Host and GPU memory are bounded and recorded.
+- The phase closes with a report, verification, and a `Part of #637` pull request.
+
+## Phase 89: Mixed-target factorized search and live switching
+
+Parent issue: #643
+Branch: `feature/p89-mixed-target-search`
+Status: pr-open
+Plan: `notes/design/factorized-account-basis.md`
+Report: `notes/reports/p89-mixed-target-search.md`
+
+Goal: use the P88 factorized account basis end to end for a mixed feature/product target
+population, watcher account switching, and a bounded live display path.
+
+- [x] P89.1 Full TSA24 mixed-target population run (#644)
+- [x] P89.2 Watcher target switching through factorized accounts (#645)
+- [x] P89.3 Bounded live display account path (#646)
+- [x] P89.4 Benchmark report, docs, and phase closeout (#647)
+- [x] P89.5 Persist padded factorized cache (#649)
+- [x] P89.6 TSA24 final growing-stock floor (#652)
+- [x] P89.7 All-period ±5% even flow with stock floor (#654)
+
+Acceptance:
+
+- The full mixed-target population matches the exact evaluator.
+- Watcher account switches leave `EffectTable.cells` unchanged.
+- Display values stay bounded and separate from the objective table.
+- Throughput, latency, host memory, and GPU memory are recorded.
+- Dashboard green.
+
+## Phase 90: Forest condition report cards
+
+Parent issue: #650
+Branch: `feature/p90-forest-condition-cards`
+Status: pr-open
+
+Goal: add a report-only forest-condition card contract and static pilot that
+packages existing WS4 indicators with provenance, uncertainty, applicability,
+advisory alerts, and review status. The phase does not compute new condition
+indicators or change solver behavior.
+
+- [x] P90.1 Implement the forest-condition report card (#651)
+  - [x] Add typed report and indicator models
+  - [x] Add validation and JSON round-trip
+  - [x] Add Markdown rendering
+  - [x] Add fixture and tests
+  - [x] Add docs, roadmap, and changelog entries
+  - [x] Run dashboard and open the PR
+
+Acceptance:
+
+- JSON round-trip preserves all fields.
+- Invalid status, missing provenance, and non-finite values fail validation.
+- Markdown names every indicator, its source, applicability, and limitations.
+- Tests cover valid, invalid, and empty-indicator cases.
+- Dashboard green.
+
+Design: `notes/design/ws4-forest-condition-card.md`.
+
+## Phase 91: Condition card from a WS4 run
+
+Parent issue: #655
+Branch: `feature/p91-condition-run-card`
+Status: pr-open
+
+Goal: derive a review-required forest-condition card from an existing WS4 run's
+`account_values.csv`.
+
+- [x] P91.1 Add the account-derived card builder and CLI (#656)
+  - [x] Add account-derived report builder
+  - [x] Add the CLI command
+  - [x] Add fixture/CLI tests and docs
+  - [x] Run dashboard and open the PR
+
+Acceptance:
+
+- A valid account table produces JSON and Markdown.
+- Missing columns, empty tables, non-finite values, and empty feature accounts fail clearly.
+- Every derived indicator is `review_required` and source/version is explicit.
+- Tests and dashboard pass.
+
+Design: `notes/design/ws4-forest-condition-card.md`.
+
+## Phase 92: Condition-card API
+
+Parent issue: #659
+Branch: `feature/p92-condition-card-api`
+Status: pr-open
+
+Goal: expose the P91 account-derived forest-condition card through the WS4 HTTP API.
+
+- [x] P92.1 Add the condition-card API and tests (#660)
+  - [x] Add the endpoint
+  - [x] Add API tests for success, 404, and 422
+  - [x] Update docs and changelog
+  - [x] Run dashboard and open the PR
+
+Acceptance:
+
+- A valid run returns a P90 card with `review_required` indicators.
+- Missing or invalid account data uses 404/422.
+- Tests and dashboard pass.
+
+Design: `notes/design/ws4-forest-condition-card.md`.
+## Phase 93: Condition-card Reports UI
+
+Parent issue: #662
+Branch: `feature/p93-condition-card-ui`
+Status: pr-open
+
+Goal: render the P92 condition-card API in the Reports tab.
+
+- [x] P93.1 Add the condition-card Reports panel (#663)
+  - [x] Add the Reports panel markup
+  - [x] Add the JS fetch/render function and button wiring
+  - [x] Add HTML tests and docs
+  - [x] Run dashboard and open the PR
+
+Acceptance:
+
+- The panel and button are present in the served HTML.
+- Valid cards render review state and indicators without innerHTML interpolation.
+- Errors and empty cards show clear messages.
+- Dashboard passes.
+## Phase 94: LTSY scenario comparison
+
+Parent issue: #664
+Branch: `feature/p94-ltsy-scenario-comparison`
+Status: pr-open
+Report: `notes/reports/tsa24-ltsy-scenario-comparison.md`
+PR: #673
+
+Goal: compare baseline LTSY, all-period ±5% with the stock floor, and all-period ±5%
+without the stock floor on one seed and a 5,000-generation budget.
+
+- [x] P94.1 Freeze comparison targets and harness (#667)
+  - [x] Add the no-stock control target
+  - [x] Add the reusable comparison harness
+  - [x] Record exact replay results
+- [x] P94.2 Run the three 5,000-generation scenarios (#668)
+  - [x] Run baseline
+  - [x] Run all-period ±5% with stock
+  - [x] Run all-period ±5% without stock
+- [x] P94.3 Compare stock, flow, and age-class outcomes (#665)
+  - [x] Replay schedules through the simulator
+  - [x] Compare managed/unmanaged stock and age classes
+  - [x] Record the recommendation
+- [x] P94.4 Record the base scenario and close out (#666)
+
+Acceptance:
+
+- The three formulations use the same seed, population, and generation budget.
+- The stock/no-stock schedules are compared honestly.
+- A base LTSY formulation is recommended with caveats.
+- Dashboard green.
+
 ## Detailed Next Steps Notes
 
 1. Phase 0 is complete: pull request #8 squash-merged as `97330a8`, the branch deleted, and parent
@@ -2743,3 +3108,214 @@ Acceptance:
     same cost per metre and hauls 22% farther at 0.46× the cost per unit-km, because its solve chooses
     the road set and the assignment jointly. Reports: `p17-opened-roads.md`, `p17-tradeoff.md`,
     `p17-closeout.md`. Next: P18.
+24. Phase 87 (Stand density management and AU Explorer) was launched on
+    `feature/p87-sdmd-au-explorer`, parent issue #628, with tasks #629 to #636. The maintainer
+    requested it directly alongside other parallel expansion sessions, so it starts from `main`
+    while Phase 86 is `pr-open`. The plan is `notes/plans/ws4-sdmd-au-explorer.md`; the layer is a
+    diagnostic and constraint layer (ADR 0013), not a growth model. P87.1 was the first bounded
+    move: the schema, the ADR, a two-AU fixture, and tests, with no ingestion, UI, or solver work.
+25. Phase 87 is `pr-open`: pull request #658 queues the SDMD and AU Explorer phase, with the
+    close-out report in `notes/reports/p87-closeout.md`. The fixture validation warns rather
+    than fails (provisional diagram, no supplied initial volume, one extrapolated demo path);
+    the 863 m3/ha gate fails against an 800 limit and 1,173 m3/ha is flagged above 1,133.8.
+    Trajectory-zone rejection and a cap across blocks in one AU are deferred with the reasons
+    in #635. Next: approve the close-out, then launch the next free phase (P95 today; P91-P94 are taken).
+
+## Phase 95: Factorized target-cell vectors
+
+Parent issue: #675
+Branch: `feature/p95-factorized-cell-vectors`
+Status: pr-open
+Report: `notes/reports/p95-factorized-target-cell-vectors.md`
+PR: #685
+
+Goal: cache one `[options]` value vector per requested factorized target cell and gather it
+through the candidate rows, instead of rebuilding the padded layout every generation.
+
+- [x] P95.1 Add factorized option-value vectors (#676)
+  - [x] Add the feature/product option-value builder
+  - [x] Use the vector path in the population
+  - [x] Keep the display path on the padded evaluator
+- [x] P95.2 Benchmark and verify the stock-cell speedup (#677)
+  - [x] Compare stock and no-stock schedules
+  - [x] Verify exact replay and schedule identity
+  - [x] Record memory
+- [x] P95.3 Record the result and close out (#678)
+
+Acceptance:
+
+- Vector values match the padded evaluator.
+- The stock and no-stock schedules remain identical.
+- The stock search is materially faster than 218.9 s.
+- Dashboard green.
+
+## Phase 96: Base LTSY watcher profile
+
+Parent issue: #686
+Branch: `feature/p96-base-ltsy-profile`
+Status: pr-open
+Report: `notes/reports/tsa24-ltsy-base-profile.md`
+PR: #689
+
+Goal: make the accepted all-period ±5% + managed-stock guard formulation the practical
+base LTSY watcher profile.
+
+- [x] P96.1 Default the LTSY watcher to the base profile (#687)
+  - [x] Set the default target
+  - [x] Use a base-profile schedule path
+  - [x] Run a hot-cache smoke generation
+- [x] P96.2 Record the base profile and close out (#688)
+  - [x] Add the note and archive
+  - [x] Update roadmap, changelog, and notes index
+
+Acceptance:
+
+- `run_ltsy_watch.sh` uses the base target by default.
+- The smoke run writes the base-profile schedule.
+- The note distinguishes base profile from definitive sustainability.
+- Dashboard green.
+
+## Phase 97: Mixed-target vector performance
+
+Parent issue: #691
+Branch: `feature/p97-mixed-target-vectors`
+Status: pr-open
+Report: `notes/reports/tsa24-mixed-vector-performance.md`
+PR: #695
+
+Goal: verify the P95 vector cache on the 11-cell mixed feature/product target and remove
+the mixed-target runner's padded rebuild.
+
+- [x] P97.1 Use the padded cache in the mixed-target runner (#692)
+  - [x] Add the cache path
+  - [x] Load the padded cache when present
+  - [x] Keep the build fallback
+- [x] P97.2 Benchmark the 11-cell mixed target (#693)
+  - [x] Measure switch and run speed
+  - [x] Verify exact objective
+  - [x] Check table-cell identity
+- [x] P97.3 Record the result and close out (#694)
+
+Acceptance:
+
+- The mixed target switch is materially faster than 4.53 s.
+- Two-generation throughput is materially above 12.9 genomes/s.
+- Exact objective and table-cell count are unchanged.
+- Dashboard green.
+## Phase 98: LTSY scenario profile library
+
+Parent issue: #699
+Branch: `feature/p98-ltsy-profiles`
+Status: pr-open
+Report: `notes/reports/tsa24-ltsy-profiles.md`
+PR: #703
+
+Goal: add named LTSY profiles and a watcher selector, with a JSON/CLI surface for a UI
+layer.
+
+- [x] P98.1 Add the profile library and CLI (#700)
+  - [x] Add the profile schema and loader
+  - [x] Add list/show/JSON/shell CLI output
+  - [x] Test validation and CLI behavior
+- [x] P98.2 Wire the watcher profile selector (#701)
+  - [x] Add the TSA24 profile YAML
+  - [x] Add `PROFILE=` selection
+  - [x] Verify baseline and base selectors
+- [x] P98.3 Record and close out (#702)
+
+Acceptance:
+
+- Profiles validate and duplicate/missing target cases fail loudly.
+- `PROFILE=baseline|base|nostock` selects the correct target and schedule.
+- The default remains `base`.
+- Dashboard green.
+
+
+## Phase 99: Scenario profile UI
+
+Parent issue: #704
+Branch: `feature/p99-profile-ui`
+Status: pr-open
+Report: `notes/reports/tsa24-profile-ui.md`
+PR: #708
+
+Goal: expose the named LTSY profile library through the web API and Targets tab.
+
+- [x] P99.1 Add the profile API and serve option (#705)
+  - [x] Add list/detail/apply endpoints
+  - [x] Wire `ws4 serve --scenario-profiles`
+  - [x] Validate apply writes
+- [x] P99.2 Add the Targets-tab profile selector (#706)
+  - [x] Add the selector and apply control
+  - [x] Refresh targets after apply
+  - [x] Disable under read-only skins
+- [x] P99.3 Test, record, and close out (#707)
+
+Acceptance:
+
+- The API lists profiles and returns clean errors.
+- Applying a profile validates and writes the target file.
+- The UI selector is present and refreshes targets.
+- Dashboard green.
+
+
+## Phase 100: Condition-card provenance and uncertainty
+
+Parent issue: #670
+Branch: `feature/p100-condition-provenance`
+Status: pr-open
+
+Goal: show uncertainty and provenance in the condition-card Reports panel.
+
+- [x] P100.1 Show uncertainty and provenance in the condition panel (#671)
+  - [x] Add uncertainty to the card table
+  - [x] Add the provenance block
+  - [x] Add tests and docs
+  - [x] Run dashboard and open the PR
+
+Acceptance:
+
+- Missing uncertainty renders as `not stated`.
+- Provenance keys/values render in the panel.
+- Dashboard passes.
+
+## Phase 101: Scenario storyboard export
+
+Parent issue: #696
+Branch: `feature/p101-storyboard`
+Status: pr-open
+
+Goal: write a one-page scenario narrative from an existing run.
+
+- [x] P101.1 Add the storyboard export and tests (#697)
+  - [x] Add `build_storyboard`
+  - [x] Add CLI `ws4 storyboard`
+  - [x] Add tests/docs
+  - [x] Run dashboard and open the PR
+
+Acceptance: valid run writes Markdown; invalid accounts fail; storyboard names scenario, indicators, provenance, and limits; dashboard passes.
+
+## Phase 102: Ask overlay
+
+Parent issue: #709
+Branch: `feature/p102-ask-overlay`
+Status: pr-open
+Report: `notes/reports/tsa24-ask-overlay.md`
+PR: #712
+
+Goal: replace the static sidebar chat panel with a compact header Ask pill and floating
+assistant overlay available from every workspace.
+
+- [x] P102.1 Move the assistant to an Ask overlay (#710)
+  - [x] Add the header pill and fixed overlay
+  - [x] Remove the sidebar panel and splitter
+  - [x] Add open/close/Escape/focus behavior
+- [x] P102.2 Validate, document, and close out (#711)
+
+Acceptance:
+
+- The assistant is available from every workspace.
+- It does not change or resize the active workspace.
+- Existing chat API/session behavior remains intact.
+- Dashboard green.
+

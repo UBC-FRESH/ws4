@@ -282,6 +282,9 @@ class BlockAccountState:
         Simulation horizon.
     period_width : int
         Years per period.
+    skip_empty : bool, optional
+        Skip the per-block empty-row initialization when a seed-state cache will be
+        loaded. Defaults to False.
     """
 
     def __init__(
@@ -558,6 +561,10 @@ class BlockAccountState:
 def state_objective(state: BlockAccountState, targets: Sequence[Any]) -> float:
     """Return the target objective from the resident period pages.
 
+    The pages already hold a period's accumulated product or its period-end feature value.
+    This builds the minimal year-indexed view expected by :func:`objective_terms` and
+    evaluates the same target definitions as the exact evaluator.
+
     Parameters
     ----------
     state : BlockAccountState
@@ -611,6 +618,24 @@ def run_state_sa(
         Initial SA temperature.
     cooling : float, optional
         Geometric cooling factor.
+    lns_weight : float, optional
+        Probability of selecting a bounded LNS move.
+    lns_destroy : float, optional
+        Fraction of the schedule destroyed by an LNS move.
+    lns_max_destroy : int, optional
+        Maximum number of blocks destroyed by one LNS move.
+    toggle_weight : float, optional
+        Selection weight for single-block toggle/assignment moves.
+    shift_weight : float, optional
+        Selection weight for block reassignment moves.
+    swap_weight : float, optional
+        Selection weight for two-block chain swaps.
+    warmup_iterations : int, optional
+        Number of assignment/LNS diversification moves before the mixed operator phase.
+    initial : dict of int to sequence of tuple, optional
+        Initial schedule to apply before the SA moves.
+    max_seconds : float or None, optional
+        Stop after this many wall-clock seconds.
     on_step : callable or None, optional
         Callback ``(iteration, state, best_objective)``.
 
@@ -848,8 +873,12 @@ def run_state_watch(
         Console to draw on.
     schedule_out : pathlib.Path or None, optional
         Write the final schedule CSV here.
+    telemetry_path : pathlib.Path or None, optional
+        Write JSONL progress telemetry here.
     initial : dict or None, optional
         Initial schedule to apply before the SA moves.
+    max_seconds : float or None, optional
+        Stop after this many wall-clock seconds.
     lns_weight : float, optional
         Probability of a bounded LNS move.
     lns_destroy : float, optional
@@ -984,8 +1013,15 @@ class StateObjective:
     """Direct target pricing from the resident period pages.
 
     The target set is prepared once; evaluating a move reads only the relevant
-    `period_totals` cells.  Feature and product pages come from ``state.period_totals``;
+    `period_totals` cells. Feature and product pages come from ``state.period_totals``;
     flow terms read the page sequence, not a rebuilt DataFrame.
+
+    Parameters
+    ----------
+    state : BlockAccountState
+        Resident period pages.
+    targets : sequence of Target
+        Goal-programming targets.
     """
 
     def __init__(self, state: BlockAccountState, targets: Sequence[Any]) -> None:
@@ -1029,7 +1065,13 @@ class StateObjective:
         }
 
     def value(self) -> float:
-        """Return the scalar objective from current period totals."""
+        """Return the scalar objective from current period totals.
+
+        Returns
+        -------
+        float
+            The weighted objective.
+        """
         from .objective import flow_penalty, penalty
 
         total = 0.0

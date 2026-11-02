@@ -1,0 +1,11 @@
+plot_id,visit_year,age,tph,ba_m2_ha,qmd_cm,top_height_m,mean_height_m,volume_m3_ha,crown_cover_pct,source,review_status
+PLOT-A01,2020,40,2400,72.4,19.6,16.9,13.9,513.9,51.0,psp,reviewed
+PLOT-A02,2015,60,2100,84.2,22.6,20.9,17.1,739.1,59.0,psp,reviewed
+PLOT-A03,2020,80,1700,88.2,25.7,24.9,20.4,922.4,67.0,psp,reviewed
+PLOT-A04,2015,100,1350,87.9,28.8,29.0,23.8,1070.6,75.0,psp,reviewed
+PLOT-A05,2020,120,1050,82.3,31.6,32.8,26.9,1133.8,83.0,synthetic,provisional
+PLOT-B01,2020,35,2200,46.5,16.4,14.4,11.8,281.2,49.0,psp,reviewed
+PLOT-B02,2015,55,1950,56.5,19.2,18.3,15.0,434.3,57.0,psp,reviewed
+PLOT-B03,2020,75,1600,61.4,22.1,22.2,18.2,572.5,65.0,psp,reviewed
+PLOT-B04,2015,95,1250,61.4,25.0,26.1,21.4,673.1,73.0,psp,reviewed
+PLOT-B05,2020,115,980,59.1,27.7,29.9,24.5,742.2,81.0,psp,reviewed

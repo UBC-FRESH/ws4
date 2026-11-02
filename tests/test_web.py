@@ -118,6 +118,8 @@ def test_the_landing_page_lists_the_dataset_and_its_runs(tmp_path: Path) -> None
     assert response.status_code == 200
     assert "WS4" in response.text
     assert 'id="run"' in response.text  # the application shell, not a server-rendered list
+    assert 'id="load-condition-card"' in response.text
+    assert 'id="condition-card"' in response.text
     assert client.get("/static/app.js").status_code == 200
     assert client.get("/health").json() == {"status": "ok"}
 
@@ -154,6 +156,35 @@ def test_accounts_are_filtered_by_year_and_account(tmp_path: Path) -> None:
         "/api/runs/run1/accounts", params={"year": 0, "account": "feature.Volume"}
     ).json()
     assert one == [{"offset": 0, "account": "feature.Volume", "value": 10.0, "year": 1}]
+
+
+def test_condition_card_is_built_from_a_run(tmp_path: Path) -> None:
+    """The condition-card endpoint returns a review-required P90 card."""
+    client, _ = _app(tmp_path)
+    response = client.get("/api/runs/run1/condition-card")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["schema_version"] == "ws4.forest_condition.report.v1"
+    assert body["report_id"] == "run1-condition"
+    assert body["review_status"] == "draft"
+    assert body["indicators"][0]["name"] == "feature.Volume"
+    assert body["indicators"][0]["status"] == "review_required"
+    script = client.get("/static/app.js").text
+    assert "Uncertainty" in script
+    assert "Provenance" in script
+
+
+def test_condition_card_api_rejects_missing_and_bad_runs(tmp_path: Path) -> None:
+    """Missing runs return 404 and invalid account tables return 422."""
+    client, _ = _app(tmp_path)
+    assert client.get("/api/runs/no-such-run/condition-card").status_code == 404
+    bad = tmp_path / "runs" / "bad"
+    bad.mkdir()
+    (bad / "account_values.csv").write_text(
+        "offset,account,value\n0,feature.Bad,nan\n", encoding="utf-8"
+    )
+    response = client.get("/api/runs/bad/condition-card")
+    assert response.status_code == 422
 
 
 def test_reports_are_listed_and_downloaded(tmp_path: Path) -> None:
@@ -1618,3 +1649,64 @@ def test_the_target_series_endpoint_assigns_bounds_to_periods(tmp_path: Path) ->
     assert feature["periods"][0]["maximum"] is None
     assert feature["periods"][0]["flow"] == "even"
     assert feature["periods"][0]["active"] is False
+
+
+def test_scenario_profiles_api_lists_and_applies(tmp_path: Path) -> None:
+    """The web API lists profiles and validates an applied target file."""
+    _client, targets = _app(tmp_path)
+    profile_target = tmp_path / "profile.yaml"
+    profile_target.write_text(
+        "targets:\n  - account: feature.Volume\n    period: 1\n    minimum: 999\n",
+        encoding="utf-8",
+    )
+    library = tmp_path / "profiles.yaml"
+    library.write_text(
+        "profiles:\n"
+        "  - name: base\n"
+        "    description: base profile\n"
+        "    targets: profile.yaml\n"
+        "    accounts: [feature.Volume]\n"
+        "    schedule_out: runtime/base.csv\n",
+        encoding="utf-8",
+    )
+    profile_client = TestClient(
+        create_app(
+            dataset=tmp_path / "dataset",
+            runs=tmp_path / "runs",
+            targets=targets,
+            scenario_profiles=library,
+        )
+    )
+    listed = profile_client.get("/api/scenario-profiles")
+    assert listed.status_code == 200
+    assert listed.json()[0]["name"] == "base"
+    detail = profile_client.get("/api/scenario-profiles/base")
+    assert detail.status_code == 200
+    assert detail.json()["accounts"] == ["feature.Volume"]
+    applied = profile_client.post("/api/scenario-profiles/base/apply")
+    assert applied.status_code == 200, applied.text
+    assert applied.json()["targets"] == 1
+    assert "minimum: 999" in targets.read_text(encoding="utf-8")
+    missing = profile_client.post("/api/scenario-profiles/nope/apply")
+    assert missing.status_code == 404
+
+
+def test_targets_tab_has_a_profile_selector(tmp_path: Path) -> None:
+    """The browser shell exposes the profile selector and apply control."""
+    client, _targets = _app(tmp_path)
+    html = client.get("/").text
+    assert 'id="profile-select"' in html
+    assert 'id="apply-profile"' in html
+    assert 'id="profile-status"' in html
+
+
+def test_chat_is_a_floating_ask_overlay(tmp_path: Path) -> None:
+    """The assistant is an overlay opened by the header Ask pill."""
+    client, _targets = _app(tmp_path)
+    html = client.get("/").text
+    assert 'id="chat-toggle"' in html
+    assert 'id="chat-close"' in html
+    assert html.index("</main>") < html.index('id="chat-panel"')
+    css = client.get("/static/style.css").text
+    assert ".chat-toggle" in css
+    assert "position:fixed" in css

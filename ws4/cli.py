@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import json
 import math
+import shlex
 import shutil
+import sys
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -52,6 +55,8 @@ from .disturbance import (
     load_disturbance_events,
     summarize_disturbance_events,
 )
+from .forest_condition import build_report_from_accounts
+from .forest_condition import write_report as write_condition_report
 from .io.hydrology import (
     HYDROLOGY_READINESS_POLICIES,
     FemicHydrologyError,
@@ -123,6 +128,7 @@ from .species import (
     write_species_composition,
     write_species_fractions,
 )
+from .storyboard import build_storyboard
 from .structure_habitat import (
     StructureHabitatError,
     compare_to_dhi,
@@ -1357,6 +1363,65 @@ def report(
     print(f"[bold green]Report written[/] → {out if out is not None else run}")
 
 
+@app.command("condition-card")
+def condition_card(
+    run: Path = typer.Option(..., "--run", exists=True, file_okay=False, help="A run directory"),
+    out: Path | None = typer.Option(
+        None, "--out", help="Output directory (defaults to <run>/condition)"
+    ),
+    markdown: bool = typer.Option(False, "--markdown", help="Also write Markdown"),
+    generated_utc: str | None = typer.Option(
+        None, "--generated-utc", help="Fixed ISO-8601 timestamp for reproducible cards"
+    ),
+) -> None:
+    """Build a review-required forest-condition card from a run's account values."""
+    values = pd.read_csv(run / "account_values.csv")
+    try:
+        report = build_report_from_accounts(
+            values,
+            report_id=f"{run.name}-condition",
+            scenario_id=run.name,
+            generated_utc=generated_utc or datetime.now(UTC).isoformat(),
+            period="run",
+            source_version=run.name,
+            provenance={"run": run.name},
+        )
+    except ValueError as error:
+        raise typer.BadParameter(str(error)) from error
+    out_dir = out if out is not None else run / "condition"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    write_condition_report(report, out_dir / "forest_condition_card.json")
+    if markdown:
+        (out_dir / "forest_condition_card.md").write_text(report.to_markdown(), encoding="utf-8")
+    print(f"[bold green]Forest condition card[/] → {out_dir}")
+
+
+@app.command()
+def storyboard(
+    run: Path = typer.Option(..., "--run", exists=True, file_okay=False, help="A run directory"),
+    out: Path | None = typer.Option(None, "--out", help="Markdown output path"),
+    generated_utc: str | None = typer.Option(
+        None, "--generated-utc", help="Fixed ISO-8601 timestamp for reproducible output"
+    ),
+) -> None:
+    """Write a one-page scenario storyboard from a run's account values."""
+    values = pd.read_csv(run / "account_values.csv")
+    try:
+        text = build_storyboard(
+            values,
+            scenario_id=run.name,
+            generated_utc=generated_utc or datetime.now(UTC).isoformat(),
+            source_version=run.name,
+            provenance={"run": run.name},
+        )
+    except ValueError as error:
+        raise typer.BadParameter(str(error)) from error
+    destination = out if out is not None else run / "storyboard.md"
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(text, encoding="utf-8")
+    print(f"[bold green]Storyboard[/] → {destination}")
+
+
 @app.command()
 def disturbance(
     events: Path = typer.Option(
@@ -1431,6 +1496,19 @@ def serve(
     dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
     runs: Path = typer.Option(..., exists=True, help="Directory holding run directories"),
     targets: Path | None = typer.Option(None, "--targets", help="Targets YAML to read and replace"),
+    scenario_profiles: Path | None = typer.Option(
+        None,
+        "--scenario-profiles",
+        exists=True,
+        help="Scenario-profile YAML library for the web selector",
+    ),
+    sdmd_dir: Path | None = typer.Option(
+        None,
+        "--sdmd-dir",
+        exists=True,
+        file_okay=False,
+        help="Directory of SDMD tables, diagram, and trajectories",
+    ),
     geometry: Path | None = typer.Option(
         None, "--geometry", help="GeoJSON of block points or polygons"
     ),
@@ -1523,6 +1601,8 @@ def serve(
             dataset=dataset,
             runs=runs,
             targets=targets,
+            scenario_profiles=scenario_profiles,
+            sdmd_dir=sdmd_dir,
             geometry=geometry,
             geometry_overview=geometry_overview,
             land_base=land_base,
@@ -2426,6 +2506,102 @@ def shi_compare(
     print(f"[bold green]DHI comparison[/] {len(result)} rows → {output}")
 
 
+sdmd_app = typer.Typer(
+    add_completion=False,
+    no_args_is_help=True,
+    help="Filter a compiled dataset with stand density management constraints.",
+)
+
+
+@sdmd_app.command("validate")
+def sdmd_validate(
+    sdmd_dir: Path = typer.Option(..., "--sdmd-dir", exists=True, file_okay=False),
+    au: str | None = typer.Option(None, "--au", help="One AU; default all"),
+    initial_volume: float | None = typer.Option(
+        None, "--initial-volume", help="AU initial volume, m3/ha"
+    ),
+    initial_volume_limit: float | None = typer.Option(
+        None, "--initial-volume-limit", help="Highest supported initial volume, m3/ha"
+    ),
+) -> None:
+    """Run the eight SDMD validation gates."""
+    from .sdmd.api import SdmdApiError, SdmdStore
+    from .sdmd.validation import validate_au
+
+    try:
+        store = SdmdStore.from_directory(sdmd_dir)
+        au_ids = [au] if au is not None else [str(item["au_id"]) for item in store.aus()]
+        failed = False
+        for au_id in au_ids:
+            report = validate_au(
+                store,
+                au_id,
+                initial_volume_m3_ha=initial_volume,
+                initial_volume_limit_m3_ha=initial_volume_limit,
+            )
+            table_view = Table(title=f"SDMD validation: {au_id} ({report.status})")
+            table_view.add_column("gate")
+            table_view.add_column("status")
+            table_view.add_column("detail")
+            for gate in report.gates:
+                table_view.add_row(gate.gate, gate.status, gate.detail)
+            print(table_view)
+            failed = failed or report.status == "fail"
+    except SdmdApiError as error:
+        print(f"[red]{error}[/]")
+        raise typer.Exit(code=1) from error
+    if failed:
+        raise typer.Exit(code=1)
+
+
+@sdmd_app.command("filter-dataset")
+def sdmd_filter_dataset(
+    dataset: Path = typer.Option(..., "--dataset", exists=True, file_okay=False),
+    out: Path = typer.Option(..., "--out", file_okay=False, help="Filtered dataset directory"),
+    regimes: Path = typer.Option(..., "--regimes", exists=True, dir_okay=False),
+    constraints: Path = typer.Option(..., "--constraints", exists=True, dir_okay=False),
+    map_path: Path | None = typer.Option(
+        None, "--map", exists=True, dir_okay=False, help="Optional track and treatment map"
+    ),
+    strict: bool = typer.Option(
+        False, "--strict", help="Drop tracks and treatments that cannot be mapped"
+    ),
+) -> None:
+    """Remove treatment rows that an AU constraint forbids."""
+    from .sdmd.constraints import load_constraints
+    from .sdmd.regimes import load_regime_library
+    from .sdmd.solver import SdmdSolverError, filter_dataset, load_solver_map
+
+    try:
+        library = load_regime_library(pd.read_csv(regimes))
+        limits = load_constraints(pd.read_csv(constraints))
+        mapping = load_solver_map(map_path) if map_path is not None else None
+        report = filter_dataset(dataset, out, library, limits, mapping=mapping, strict=strict)
+    except (SdmdSolverError, ValueError) as error:
+        print(f"[red]{error}[/]")
+        raise typer.Exit(code=1) from error
+    table_view = Table(title="SDMD option-space filter")
+    for key in (
+        "tracks_before",
+        "tracks_after",
+        "treatments_before",
+        "treatments_after",
+        "unmapped_tracks",
+        "unmapped_treatments",
+    ):
+        table_view.add_row(key, str(report.to_dict()[key]))
+    print(table_view)
+    for item in report.dropped:
+        reasons = item["reasons"]
+        text = (
+            "; ".join(str(reason) for reason in reasons)
+            if isinstance(reasons, list)
+            else str(reasons)
+        )
+        print(f"[yellow]drop track {item['track_id']}[/]: {text}")
+    print(f"[bold green]Wrote[/] {out}")
+
+
 dhi_app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
@@ -2723,11 +2899,255 @@ def state_watch(
     print(table)
 
 
+@app.command("scenario-profiles")
+def scenario_profiles(
+    profiles: Path = typer.Option(..., exists=True, help="Scenario-profile YAML library"),
+    name: str | None = typer.Option(None, help="Profile to show; omit to list all"),
+    json_output: bool = typer.Option(False, "--json", help="Emit JSON"),
+    shell: bool = typer.Option(False, "--shell", help="Emit shell exports for one profile"),
+) -> None:
+    """List or show named scenario profiles.
+
+    Parameters
+    ----------
+    profiles : pathlib.Path
+        Profile-library YAML.
+    name : str or None
+        Profile to show; None lists all profiles.
+    json_output : bool
+        Emit machine-readable JSON.
+    shell : bool
+        Emit shell exports for one profile.
+    """
+    from .opt.scenario_profiles import ProfileError, get_profile, load_profiles
+
+    try:
+        loaded = load_profiles(profiles)
+        selected = get_profile(loaded, name) if name is not None else None
+    except ProfileError as error:
+        print(f"[red]{error}[/]")
+        raise typer.Exit(code=1) from error
+    if shell:
+        if selected is None:
+            print("[red]--shell requires --name[/]")
+            raise typer.Exit(code=2)
+        sys.stdout.write(f"export TARGETS={shlex.quote(str(selected.targets))}\n")
+        sys.stdout.write("export ACCOUNTS=" + shlex.quote(",".join(selected.accounts)) + "\n")
+        if selected.schedule_out is not None:
+            sys.stdout.write(
+                "export SCHEDULE_OUT=" + shlex.quote(str(selected.schedule_out)) + "\n"
+            )
+        return
+    if selected is not None:
+        if json_output:
+            sys.stdout.write(json.dumps(selected.as_dict(), indent=2) + "\n")
+            return
+        table = Table(title=f"Scenario profile: {selected.name}")
+        for key, value in selected.as_dict().items():
+            table.add_row(key, str(value))
+        print(table)
+        return
+    rows = [profile.as_dict() for profile in loaded.values()]
+    if json_output:
+        sys.stdout.write(json.dumps(rows, indent=2) + "\n")
+        return
+    table = Table(title="Scenario profiles")
+    table.add_column("name")
+    table.add_column("targets")
+    table.add_column("accounts")
+    table.add_column("description")
+    for row in rows:
+        table.add_row(
+            str(row["name"]),
+            str(row["targets"]),
+            ",".join(row["accounts"]),
+            str(row["description"]),
+        )
+    print(table)
+
+
+@app.command("gpu-watch")
+def gpu_watch(
+    dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
+    targets: Path = typer.Option(..., exists=True, help="Targets YAML"),
+    seed_schedule: Path = typer.Option(..., exists=True, help="Initial schedule CSV"),
+    table: Path = typer.Option(..., exists=True, help="Persisted effect table"),
+    factorized: Path | None = typer.Option(
+        None,
+        "--factorized",
+        exists=True,
+        help="Optional persisted factorized descriptor archive for display cells",
+    ),
+    factorized_cache: Path | None = typer.Option(
+        None,
+        "--factorized-cache",
+        help="Optional persisted padded-tensor cache; created on first use",
+    ),
+    cache_dir: Path = typer.Option(
+        Path("runtime/gpu-cache"), help="Simulator/candidate cache directory"
+    ),
+    accounts: str = typer.Option(
+        "", "--accounts", help="Comma-separated watched accounts; defaults to target accounts"
+    ),
+    years: int = typer.Option(200, help="Simulation horizon in years"),
+    period_width: int = typer.Option(10, help="Years per displayed period"),
+    population: int = typer.Option(64, help="Population size"),
+    generations: int = typer.Option(1000, help="Generations to run"),
+    seed: int = typer.Option(7, help="Population seed"),
+    device: str = typer.Option("cuda", help="Torch device"),
+    refresh: float = typer.Option(2.0, help="Seconds between live repaints"),
+    plain: bool = typer.Option(False, "--plain", help="Print one final frame"),
+    rebuild_caches: bool = typer.Option(
+        False, "--rebuild-caches", help="Rebuild simulator/candidate caches"
+    ),
+    schedule_out: Path | None = typer.Option(None, help="Write the final schedule CSV here"),
+) -> None:
+    """Watch the GPU population's exact target windows generation by generation."""
+    import pickle
+
+    import torch
+
+    from .opt.candidate_cache import (
+        CompactCandidates,
+        load_or_build_candidates,
+        load_or_build_simulator,
+    )
+    from .opt.engine import load_schedule_csv
+    from .opt.factorized_effects import FactorizedAccountSet, FactorizedEffectArrays
+    from .opt.gpu_effects import EffectTable
+    from .opt.gpu_ga import GenomePopulation
+    from .opt.gpu_watch import run_gpu_watch
+    from .opt.incremental import IncrementalObjective
+    from .opt.objective import load_targets
+
+    target_list = load_targets(targets)
+    account_list = tuple(value.strip() for value in accounts.split(",") if value.strip())
+    if not account_list:
+        account_list = tuple(sorted({target.account for target in target_list}))
+    schedule_cache = Path(str(seed_schedule) + ".pkl")
+    schedule_stat = seed_schedule.stat()
+    if schedule_cache.is_file():
+        try:
+            with schedule_cache.open("rb") as stream:
+                cached_schedule = pickle.load(stream)
+            if (
+                cached_schedule.get("source") == str(seed_schedule)
+                and cached_schedule.get("mtime_ns") == schedule_stat.st_mtime_ns
+                and cached_schedule.get("size") == schedule_stat.st_size
+            ):
+                initial = cached_schedule["schedule"]
+            else:
+                initial = None
+        except (OSError, pickle.UnpicklingError, EOFError):
+            initial = None
+    else:
+        initial = None
+    base_cache = table.with_name(table.name + ".base.pt")
+    base_totals = None
+    if base_cache.is_file():
+        try:
+            base_totals = torch.load(base_cache, map_location=device, weights_only=True)
+        except (OSError, RuntimeError):
+            base_totals = None
+    try:
+        optimizer = Optimizer.from_dataset(
+            dataset,
+            OptimizeConfig(years=years, targets_path=str(targets), iterations=1, threads=1),
+        )
+        load_or_build_simulator(optimizer, cache_dir / "simulator.pkl", rebuild=rebuild_caches)
+        candidates: Any
+        compact_path = cache_dir / "candidates-compact.npz"
+        if compact_path.is_file() and not rebuild_caches:
+            candidates = CompactCandidates.load(compact_path)
+        else:
+            candidates = load_or_build_candidates(
+                optimizer, cache_dir / "candidates.pkl", rebuild=rebuild_caches
+            )
+        effect_table = EffectTable.load(table, device=device)
+        factorized_accounts = None
+        if factorized_cache is not None and factorized is None:
+            raise ValueError("--factorized-cache requires --factorized")
+        if factorized is not None:
+            import numpy as np
+
+            if factorized_cache is not None and factorized_cache.is_file():
+                factorized_accounts = FactorizedAccountSet.load_cache(
+                    factorized_cache,
+                    optimizer.simulator(),
+                    device=device,
+                )
+            else:
+                arrays = FactorizedEffectArrays.load(factorized)
+                factorized_accounts = FactorizedAccountSet.from_arrays(
+                    arrays,
+                    optimizer.simulator(),
+                    years=years,
+                    device=device,
+                )
+                if factorized_cache is not None:
+                    factorized_accounts.save_cache(factorized_cache)
+            if not np.array_equal(
+                np.asarray(effect_table.blocks, dtype=np.int64),
+                np.asarray(factorized_accounts.blocks, dtype=np.int64),
+            ):
+                raise ValueError("factorized archive blocks do not match the effect table")
+        if initial is None:
+            initial = load_schedule_csv(seed_schedule)
+            with schedule_cache.open("wb") as stream:
+                pickle.dump(
+                    {
+                        "source": str(seed_schedule),
+                        "mtime_ns": schedule_stat.st_mtime_ns,
+                        "size": schedule_stat.st_size,
+                        "schedule": initial,
+                    },
+                    stream,
+                    protocol=pickle.HIGHEST_PROTOCOL,
+                )
+        population_instance = GenomePopulation(
+            optimizer,
+            IncrementalObjective(optimizer, []),
+            effect_table,
+            population=population,
+            seed=seed,
+            seed_schedule=initial,
+            candidates=candidates,
+            base_totals=base_totals,
+            factorized=factorized_accounts,
+            random_fraction=0.05,
+            initial_mutation_rate=0.02,
+            mutation_rate=0.002,
+            islands=1,
+        )
+        population_instance.update_targets(target_list)
+        if base_totals is None:
+            torch.save(population_instance.base_totals.detach().cpu(), base_cache)
+        summary = run_gpu_watch(
+            population_instance,
+            target_list,
+            account_list,
+            generations=generations,
+            period_width=period_width,
+            refresh=refresh,
+            plain=plain,
+            schedule_out=schedule_out,
+            targets_path=targets,
+        )
+    except RuntimeError as error:
+        print(f"[red]{error}[/]")
+        raise typer.Exit(code=1) from error
+    table_view = Table(title="GPU watch")
+    for key in ("objective", "penalty", "evaluations", "generations", "blocks", "elapsed"):
+        table_view.add_row(key, str(summary[key]))
+    print(table_view)
+
+
 app.add_typer(recovery_app, name="recovery")
 app.add_typer(species_app, name="species")
 app.add_typer(resilience_app, name="resilience")
 app.add_typer(shi_app, name="shi")
 app.add_typer(dhi_app, name="dhi")
+app.add_typer(sdmd_app, name="sdmd")
 app.add_typer(hydrology_app, name="hydrology")
 
 if __name__ == "__main__":

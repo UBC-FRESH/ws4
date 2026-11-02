@@ -10,7 +10,13 @@ reads. The service computes no value the CLI cannot reproduce.
 
    pip install 'ws4[web]'
    ws4 serve --dataset build/compiled --runs runs --targets targets.yaml \
-             --geometry blocks.geojson
+       --scenario-profiles config/ws4/profiles/ltsy.yaml \
+             --geometry blocks.geojson --sdmd-dir data/sdmd
+
+``--sdmd-dir`` mounts the stand density management read API and its validated
+constraint-write endpoint under ``/api/sdmd``. The directory holds the six SDMD
+tables, an optional ``diagram.json``, and optional trajectories. See
+:doc:`sdmd`.
 
 The bind is ``127.0.0.1`` by default and a non-loopback address is refused unless ``--allow-remote``
 is passed; no authentication is provided in this cut. Starting a search is a separate permission:
@@ -43,12 +49,15 @@ files so it sees the search at the solver's rate rather than behind one writer.
 Browser shell
 -------------
 
-The browser shell is organised around four workspaces:
+The browser shell is organised around four workspaces, plus an optional **SDMD**
+workspace when the service is started with ``--sdmd-dir``:
 
 - **Map** — layers, treatment/cumulative views, and block detail.
 - **Plan** — the account browser, target editor, and solve controls.
 - **Results** — Reports, Compare, and Search as nested sections.
 - **Data** — the dataset summary plus LiDAR and Carbon when the selected run/dataset
+- **SDMD** — the AU Explorer: yield, stand density, regimes, and the constraint
+  editor, when ``--sdmd-dir`` is set. See :doc:`sdmd`.
   actually has them.
 
 The **Map** workspace uses a neutral fill for untreated blocks and a red accent for treated
@@ -72,14 +81,16 @@ the view. The workspace tabs implement the WAI-ARIA tabs pattern with left/right
 Home, and End navigation. LiDAR and Carbon are nested Data sections rather than top-level
 tabs; a Data option is hidden when the selected data does not exist.
 
-Assistant panel
----------------
+Assistant overlay
+-----------------
 
-The assistant panel and its drag splitter are rendered only when the service was started
-with ``--allow-agent`` **and** the ``opencode`` binary is available. Without both, the panel
-is absent and occupies no vertical space; the rest of the sidebar uses the recovered height.
-The browser cannot enable the assistant, because doing so would change the service's execution
-permissions. Start a separate service with ``--allow-agent`` when the assistant is wanted.
+The assistant is opened from a compact **✦ Ask** pill in the header and rendered as a
+floating overlay. It is available from every workspace, is closed by default, and does not
+move or resize the active workspace. The pill is shown only when the service was started
+with ``--allow-agent`` **and** the ``opencode`` binary is available. Without both, it is
+absent. The browser cannot enable the assistant, because doing so would change the service's
+execution permissions. Start a separate service with ``--allow-agent`` when the assistant is
+wanted.
 
 Behind a proxy
 ---------------
@@ -112,6 +123,10 @@ Endpoints
      - The run's ``summary.json``.
    * - ``GET /api/runs/{run}/accounts?year=&account=``
      - Rows of the run's ``account_values.csv``, filtered.
+   * - ``GET /api/runs/{run}/condition-card``
+     - A review-required ``ws4.forest_condition.report.v1`` card built from the run's
+       feature accounts. Returns 404 without ``account_values.csv`` and 422 for invalid
+       account data; it does not create operational alerts.
    * - ``GET /api/lidar``
      - The dataset's registered FEMIC LiDAR pin, licence, CRS, products, and canonical
        ``lidar_*`` block fields. Each field carries its dataset-wide valid count and min/max;
@@ -183,6 +198,13 @@ Endpoints
        the file is left unchanged.
    * - ``GET/PUT /api/targets.json``
      - The parsed targets as JSON, for an editor that does not parse YAML.
+   * - ``GET /api/scenario-profiles``
+     - The named profiles from the optional ``--scenario-profiles`` library.
+   * - ``GET /api/scenario-profiles/{name}``
+     - One resolved profile, including its target path, accounts, and schedule output.
+   * - ``POST /api/scenario-profiles/{name}/apply``
+     - Validate the profile's target file and replace the configured targets YAML. The service
+       must have an editable ``--targets`` file; invalid target data is refused.
    * - ``GET /api/runs/{run}/targets``
      - Each target's realized value over the target's own period — the optimizer's
        ``period_value`` rule: a product sums its offsets, a feature reads the period's end offset.
@@ -561,7 +583,7 @@ named rather than silently shown as zero everywhere.
 Chat agent
 ----------
 
-The lower-left chat panel is an embedded `OpenCode <https://opencode.ai>`_ coding agent. It runs
+The floating **✦ Ask** overlay is an embedded `OpenCode <https://opencode.ai>`_ coding agent. It runs
 the installed ``opencode`` CLI with the model named by ``--agent-model`` (default
 ``opencode-go/deepseek-v4.1-flash``). The CLI's own login supplies the provider key; WS4 does not
 read or store it. The agent works in ``--agent-cwd`` (default: the service's directory), so it can
@@ -575,9 +597,9 @@ This is a deliberate, separate permission and is **off by default**. The agent r
 service user's filesystem and shell permissions and auto-approves its own tool calls; anyone who
 can reach the service can therefore ask it to change files or run commands. Keep the service on
 loopback (the default) or behind an authenticating proxy, and do not enable it on a shared service.
-The panel keeps one OpenCode session per conversation and starts a new one with **New**; a session
-id is lost on reload, so a fresh page starts a fresh conversation. A horizontal drag bar above the
-panel resizes its height (8 rem minimum, leaving the layer panel usable); the height is kept in
+The overlay keeps one OpenCode session per conversation and starts a new one with **New**; a session
+id is lost on reload, so a fresh page starts a fresh conversation. It is fixed to the lower-right,
+closes with its × control or Escape, and focuses the input when opened.
 local storage, and double-clicking the bar restores the default.
 
 Targets
@@ -704,3 +726,17 @@ The browser application and the four skin manifests (model builder, scenario ana
 browser, reviewer) are specified in ``notes/design/ws4-web-frontend.md``. A skin is a JSON manifest
 over one application, checked against a registry; an unknown panel, layer or action is refused by
 name, and a read-only skin cannot edit a target.
+
+Condition-card panel
+--------------------
+
+The Reports tab includes a **Load condition card** button. It calls
+``GET /api/runs/{run}/condition-card`` and renders the review status, indicators,
+applicability, and advisory alerts. The browser uses text nodes, not HTML
+interpolation. The card is report-only; a missing or invalid account table is
+reported in the panel without changing the run.
+
+The condition-card table also shows the uncertainty field and a provenance
+block. Missing uncertainty is shown as "not stated"; every value is rendered as
+a text node. These fields make the card reviewable without turning it into an
+operational alert.

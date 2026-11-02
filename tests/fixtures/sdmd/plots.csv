@@ -1,0 +1,11 @@
+plot_id,region,bec_zone,bec_subzone,bec_variant,tsa,au_id,visit_year,stand_age,site_index,slope,aspect,elevation,plot_area_ha,sources,review_status
+PLOT-A01,Interior,IDF,dk,3,TSA-24,AU-IDFdk3-FDI,2020,40,18.5,13,145,890,0.04,psp,reviewed
+PLOT-A02,Interior,IDF,dk,3,TSA-24,AU-IDFdk3-FDI,2015,60,19.2,16,155,930,0.04,psp,reviewed
+PLOT-A03,Interior,IDF,dk,3,TSA-24,AU-IDFdk3-FDI,2020,80,20.1,19,165,970,0.04,psp,reviewed
+PLOT-A04,Interior,IDF,dk,3,TSA-24,AU-IDFdk3-FDI,2015,100,21.0,22,175,1010,0.04,psp,reviewed
+PLOT-A05,Interior,IDF,dk,3,TSA-24,AU-IDFdk3-FDI,2020,120,21.5,25,185,1050,0.04,synthetic,provisional
+PLOT-B01,Interior,IDF,dk,3,TSA-24,AU-IDFdk3-PLI,2020,35,15.2,13,145,890,0.04,psp,reviewed
+PLOT-B02,Interior,IDF,dk,3,TSA-24,AU-IDFdk3-PLI,2015,55,15.8,16,155,930,0.04,psp,reviewed
+PLOT-B03,Interior,IDF,dk,3,TSA-24,AU-IDFdk3-PLI,2020,75,16.4,19,165,970,0.04,psp,reviewed
+PLOT-B04,Interior,IDF,dk,3,TSA-24,AU-IDFdk3-PLI,2015,95,17.0,22,175,1010,0.04,psp,reviewed
+PLOT-B05,Interior,IDF,dk,3,TSA-24,AU-IDFdk3-PLI,2020,115,17.4,25,185,1050,0.04,psp,reviewed

@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=85">
+  <link rel="stylesheet" href="static/style.css?v=87">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
 </head>
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v85</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v88</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Period
@@ -18,6 +18,7 @@
       <output id="year-label">Years</output>
     </label>
     <span id="status">loading…</span>
+    <button id="chat-toggle" class="chat-toggle" type="button" aria-expanded="false" title="Ask the WS4 assistant" hidden>✦ Ask</button>
   </header>
   <main>
     <aside id="sidebar">
@@ -26,6 +27,7 @@
         <button id="ws-plan" role="tab" aria-selected="false" aria-controls="workspace-plan" data-workspace="plan">Plan</button>
         <button id="ws-results" role="tab" aria-selected="false" aria-controls="workspace-results" data-workspace="results">Results</button>
         <button id="ws-data" role="tab" aria-selected="false" aria-controls="workspace-data" data-workspace="data">Data</button>
+        <button id="ws-sdmd" role="tab" aria-selected="false" aria-controls="workspace-sdmd" data-workspace="sdmd" hidden>SDMD</button>
       </nav>
       <div class="sidebar-body">
       <div id="workspace-map" class="workspace" role="tabpanel" aria-labelledby="ws-map">
@@ -43,6 +45,11 @@
       <div id="workspace-plan" class="workspace" role="tabpanel" aria-labelledby="ws-plan" hidden>
 <section id="tab-targets" role="tabpanel" aria-labelledby="ws-plan" hidden>
         <h2>Targets</h2>
+        <div id="profile-bar" class="run-row" hidden>
+          <label>Profile <select id="profile-select" aria-label="Scenario profile"></select></label>
+          <button id="apply-profile" type="button">Load profile</button>
+          <span id="profile-status" class="hint"></span>
+        </div>
         <div id="target-summary" class="target-summary" aria-live="polite" hidden></div>
         <p id="targets-empty" class="hint">no targets yet — pick an account below</p>
         <div id="account-browser" class="account-browser">
@@ -149,6 +156,12 @@
         <h2>Standard reports</h2>
         <ul id="standard-reports"></ul>
         <p id="standard-reports-empty" class="hint">no standard reports for this run</p>
+        <h2>Condition card</h2>
+        <div class="report-builder">
+          <button id="load-condition-card" type="button">Load condition card</button>
+          <span id="condition-card-status" class="hint"></span>
+        </div>
+        <div id="condition-card" hidden></div>
         <div id="ending-summary" class="ending-summary" hidden>
           <h2>Ending inventory <span id="ending-year" class="hint"></span></h2>
           <p id="ending-flows" class="hint"></p>
@@ -308,23 +321,29 @@
         <p id="carbon-hint" class="hint">Read-only: the service aggregates libcbm pools and fluxes by timestep and never reruns the carbon engine.</p>
       </section>
       </div>
+      <div id="workspace-sdmd" class="workspace" role="tabpanel" aria-labelledby="ws-sdmd" hidden>
+        <section id="tab-sdmd" role="tabpanel" aria-labelledby="ws-sdmd">
+          <h2>AU Explorer</h2>
+          <p id="sdmd-status" class="hint">loading SDMD…</p>
+          <p id="sdmd-empty" class="empty-state" hidden>No SDMD tables are served. Start <code>ws4 serve</code> with <code>--sdmd-dir</code>.</p>
+          <div id="sdmd-filters">
+            <label>Region <select id="sdmd-region"><option value="">All regions</option></select></label>
+            <label>AU <select id="sdmd-au"></select></label>
+            <label>Source <select id="sdmd-source"><option value="">All sources</option></select></label>
+          </div>
+          <p id="sdmd-au-meta" class="hint"></p>
+          <h3>Constraints</h3>
+          <p class="hint">Every regime needs a row. A denied regime is valid; any other finding blocks the save.</p>
+          <div id="sdmd-regime-editor" class="sdmd-regime-editor"></div>
+          <div class="sdmd-editor-actions">
+            <button id="sdmd-save" type="button">Save constraint set</button>
+            <button id="sdmd-reset" type="button">Reset</button>
+          </div>
+          <p id="sdmd-preview" class="hint"></p>
+          <button id="sdmd-use" type="button">Use in scenario</button>
+        </section>
       </div>
-      <div id="chat-splitter" title="Drag to resize the assistant; double-click to reset" hidden></div>
-      <section id="chat-panel" class="chat" hidden>
-        <div class="chat-head">
-          <span>Assistant</span>
-          <span id="chat-model" class="chat-model">checking…</span>
-          <button id="chat-new" type="button" title="Start a new conversation">New</button>
-        </div>
-        <div id="chat-log" class="chat-log">
-          <p class="hint">Ask about WS4, a run, or what to do next. The assistant can read the repository and run commands when the service allows it.</p>
-        </div>
-        <form id="chat-form" class="chat-form">
-          <textarea id="chat-input" rows="2" placeholder="Ask WS4…" spellcheck="false"></textarea>
-          <button id="chat-send" type="submit">Send</button>
-        </form>
-        <p id="chat-status" class="hint"></p>
-      </section>
+      </div>
     </aside>
     <div id="splitter" title="Drag to resize the panel"></div>
     <section id="target-canvas" class="target-canvas" hidden>
@@ -344,6 +363,63 @@
       <div id="target-chart-grid" class="target-chart-grid"></div>
       <p id="target-chart-empty" class="target-chart-empty">Pin a target in the table to open its chart.</p>
     </section>
+    <section id="sdmd-canvas" class="sdmd-canvas" hidden>
+      <div class="sdmd-canvas-head">
+        <div>
+          <h2 id="sdmd-title">AU Explorer</h2>
+          <p id="sdmd-subtitle" class="hint">Choose an AU.</p>
+        </div>
+        <div class="sdmd-canvas-actions">
+          <label>Trajectory <select id="sdmd-trajectory"><option value="">None</option></select></label>
+          <span id="sdmd-trajectory-status" class="hint"></span>
+          <span id="sdmd-preview-badge" class="badge" hidden></span>
+        </div>
+      </div>
+      <div class="sdmd-layout">
+        <div class="sdmd-main">
+          <article class="sdmd-card sdmd-card-wide">
+            <div class="sdmd-card-head">
+              <h3>Stand density</h3>
+              <div id="sdmd-diagram-legend" class="sdmd-legend"></div>
+            </div>
+            <svg id="sdmd-diagram" class="sdmd-chart" viewBox="0 0 720 420" role="img" aria-label="stand density management diagram"></svg>
+            <p id="sdmd-diagram-readout" class="sdmd-readout">Hover a point for its density and zone.</p>
+            <p id="sdmd-diagram-note" class="hint"></p>
+          </article>
+          <article class="sdmd-card">
+            <div class="sdmd-card-head">
+              <h3>Yield</h3>
+              <label class="sdmd-metric">Metric
+                <select id="sdmd-yield-metric">
+                  <option value="volume_m3_ha">Volume (m³/ha)</option>
+                  <option value="tph">Density (TPH)</option>
+                  <option value="ba_m2_ha">Basal area (m²/ha)</option>
+                  <option value="qmd_cm">QMD (cm)</option>
+                  <option value="top_height_m">Top height (m)</option>
+                </select>
+              </label>
+            </div>
+            <svg id="sdmd-yield-chart" class="sdmd-chart" viewBox="0 0 720 260" role="img" aria-label="yield curve"></svg>
+            <p id="sdmd-yield-readout" class="sdmd-readout">Hover a point for its value.</p>
+            <p id="sdmd-yield-note" class="hint"></p>
+          </article>
+        </div>
+        <aside class="sdmd-side">
+          <article class="sdmd-card">
+            <h3>Interpretation</h3>
+            <div id="sdmd-interpretation" class="sdmd-interpretation"></div>
+          </article>
+          <article class="sdmd-card">
+            <h3>Selected regime</h3>
+            <div id="sdmd-regime-paths" class="hint"></div>
+          </article>
+          <article class="sdmd-card">
+            <h3>Provenance</h3>
+            <div id="sdmd-provenance" class="sdmd-provenance"></div>
+          </article>
+        </aside>
+      </div>
+    </section>
     <div id="map-wrap" tabindex="-1" aria-label="Forest estate map. Click a block for details.">
       <div id="maplibre-map" hidden></div>
       <svg id="map" xmlns="http://www.w3.org/2000/svg">
@@ -361,7 +437,25 @@
       <div class="scale" id="scale"></div>
     </div>
   </main>
+
+      <div id="chat-splitter" title="Drag to resize the assistant; double-click to reset" hidden></div>
+      <section id="chat-panel" class="chat" hidden>
+        <div class="chat-head">
+          <span>Assistant</span>
+          <span id="chat-model" class="chat-model">checking…</span>
+          <button id="chat-new" type="button" title="Start a new conversation">New</button>
+          <button id="chat-close" type="button" aria-label="Close assistant" title="Close assistant">×</button>
+        </div>
+        <div id="chat-log" class="chat-log">
+          <p class="hint">Ask about WS4, a run, or what to do next. The assistant can read the repository and run commands when the service allows it.</p>
+        </div>
+        <form id="chat-form" class="chat-form">
+          <textarea id="chat-input" rows="2" placeholder="Ask WS4…" spellcheck="false"></textarea>
+          <button id="chat-send" type="submit">Send</button>
+        </form>
+        <p id="chat-status" class="hint"></p>
+      </section>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=85"></script>
+  <script type="module" src="static/app.js?v=87"></script>
 </body>
 </html>

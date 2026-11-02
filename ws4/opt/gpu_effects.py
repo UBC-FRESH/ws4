@@ -15,17 +15,20 @@ Two operations cover the search prototypes:
 without it; constructing or evaluating a table raises :class:`RuntimeError` instead.  The
 CPU search remains the reference and the fallback.
 
-The table is target-specific.  Changing the active accounts, their period widths, or the
-feature checkpoints changes the columns, so the table must be rebuilt.
+The table can be built over a target-independent cell basis.  Target weights and bounds
+never change the columns; target accounts/periods inside the basis are price-only changes,
+and new columns can be appended with :meth:`EffectTable.extend_cells` without rebuilding
+the existing rows.
 """
 
 from __future__ import annotations
 
+import contextlib
 import itertools
 import time
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 try:  # pragma: no cover - which branch runs depends on the environment
     import torch
@@ -42,9 +45,10 @@ if TYPE_CHECKING:
 
     from .engine import Optimizer
     from .incremental import IncrementalObjective
-    from .operators import Candidates, Chain
+    from .operators import Candidates
 
 Cell = tuple[int, str]
+Chain = tuple[tuple[str, int], ...]
 
 
 def _require_torch() -> None:
@@ -84,6 +88,79 @@ def target_cells(evaluator: IncrementalObjective) -> tuple[Cell, ...]:
     return tuple(sorted(cells))
 
 
+def watchable_cells(accounts: Sequence[str], years: int) -> tuple[Cell, ...]:
+    """Return a target-independent account/offset basis for an effect table.
+
+    Every offset is included so target activation, period coverage, and flow windows can
+    change without changing the cache geometry.
+
+    Parameters
+    ----------
+    accounts : sequence of str
+        Accounts to include in the basis.
+    years : int
+        Simulation horizon.
+
+    Returns
+    -------
+    tuple of (int, str)
+        Sorted ``(offset, account)`` cells.
+    """
+    return tuple(
+        sorted((offset, str(account)) for account in accounts for offset in range(int(years)))
+    )
+
+
+def _option_count(candidates: Any, block: int) -> int:  # noqa: ANN401
+    """Return a block's candidate count from a mapping or compact store."""
+    method = getattr(candidates, "option_count", None)
+    if callable(method):
+        return int(method(block))
+    return len(candidates.get(block, ()))
+
+
+def _option_chain(candidates: Any, block: int, index: int) -> Chain:  # noqa: ANN401
+    """Return one candidate chain from a mapping or compact store."""
+    method = getattr(candidates, "chain_at", None)
+    if callable(method):
+        return cast(Chain, method(block, index))
+    return cast(Chain, candidates[block][index])
+
+
+_worker_optimizer: Any = None
+_worker_candidates: Any = None
+_worker_accounts: set[str] = set()
+_worker_feature_offsets: set[int] = set()
+_worker_cell_index: dict[Cell, int] = {}
+_worker_starts: dict[int, int] = {}
+
+
+def _price_effect_chunk(blocks: tuple[int, ...]) -> tuple[list[int], list[int], list[float]]:
+    """Price one block chunk in a forked worker and return COO entries."""
+    rows: list[int] = []
+    columns: list[int] = []
+    values: list[float] = []
+    for block in blocks:
+        start = _worker_starts.get(block)
+        if start is None:
+            continue
+        pairs: list[tuple[int, Chain]] = []
+        pair_rows: list[int] = []
+        for index in range(_option_count(_worker_candidates, block)):
+            pairs.append((block, _option_chain(_worker_candidates, block, index)))
+            pair_rows.append(start + index)
+        deltas = _worker_optimizer._block_deltas(pairs, _worker_accounts, _worker_feature_offsets)
+        for pair, row in zip(pairs, pair_rows, strict=True):
+            for cell, value in deltas[pair].items():
+                column = _worker_cell_index.get(cell)
+                if column is None or value == 0.0:
+                    continue
+                rows.append(row)
+                columns.append(column)
+                values.append(float(value))
+    return rows, columns, values
+
+
 @dataclass(frozen=True)
 class EffectTable:
     """A sparse float64 ``[rows, target_cells]`` effect table.
@@ -112,6 +189,8 @@ class EffectTable:
         full row index when the population builds its option map.
     extra_rows : dict of (int, tuple) to int, optional
         Seed-only rows that are not candidate rows.
+    basis_accounts : tuple of str, optional
+        Accounts represented by the cell basis. Empty on legacy target-coupled tables.
 
     Attributes
     ----------
@@ -129,6 +208,7 @@ class EffectTable:
     _max_row_width: int = 1
     block_starts: dict[int, int] = field(default_factory=dict)
     extra_rows: dict[tuple[int, Chain], int] = field(default_factory=dict)
+    basis_accounts: tuple[str, ...] = ()
 
     @classmethod
     def build(
@@ -140,6 +220,9 @@ class EffectTable:
         device: str | torch_type.device | None = None,
         candidates: Candidates | None = None,
         chunk_blocks: int = 4096,
+        cells: Sequence[Cell] | None = None,
+        include_row_index: bool = True,
+        workers: int = 1,
     ) -> EffectTable:
         """Build an effect table for a block slice through the exact CPU delta path.
 
@@ -162,6 +245,17 @@ class EffectTable:
         chunk_blocks : int, optional
             The number of blocks whose effect rows are staged at once.  Streaming keeps
             the full-model build from holding every Python delta in memory.
+        cells : sequence of (int, str) or None, optional
+            A target-independent cell basis.  None uses the evaluator's active target
+            cells.  The basis may include watched accounts and all offsets; targets are
+            then selected by the pricer without rebuilding the table.
+        include_row_index : bool, optional
+            Store the full ``(block, chain)`` row dictionary. Set False for a lean
+            build; ``block_starts`` and the saved lean archive are sufficient for the
+            GPU population. Defaults to True.
+        workers : int, optional
+            Number of forked worker processes. Workers are used only for lean builds.
+            Defaults to one.
 
         Returns
         -------
@@ -172,28 +266,118 @@ class EffectTable:
         started = time.perf_counter()
         candidates = optimizer.candidates() if candidates is None else candidates
         chosen = tuple(sorted(candidates) if blocks is None else blocks)
-        # Assign compact row ids without materializing a row tuple for every chain.
-        row_index: dict[tuple[int, Chain], int] = {(0, ()): 0}
+        # Assign compact row ids. A lean table needs only each block's first row;
+        # building the full 50M-entry row-index dictionary is unnecessary and slow.
+        row_index: dict[tuple[int, Chain], int] = {}
         block_starts: dict[int, int] = {}
         extra_rows: dict[tuple[int, Chain], int] = {}
         next_row = 1
         for block in chosen:
-            chains = candidates.get(block, ())
-            if chains:
+            count = _option_count(candidates, block)
+            if count:
                 block_starts[block] = next_row
-            for chain in chains:
-                row_index[(block, chain)] = next_row
-                next_row += 1
+            if include_row_index:
+                for index in range(count):
+                    row_index[(block, _option_chain(candidates, block, index))] = next_row + index
+            next_row += count
         extra: list[tuple[int, Chain]] = []
         for pair in extra_pairs:
-            if pair in row_index:
+            if pair in row_index or pair in extra_rows:
                 continue
             row_index[pair] = next_row
             extra_rows[pair] = next_row
             next_row += 1
             extra.append(pair)
-        cells = target_cells(evaluator)
-        cell_index = {cell: column for column, cell in enumerate(cells)}
+        chosen_cells = target_cells(evaluator) if cells is None else tuple(sorted(set(cells)))
+        cell_index = {cell: column for column, cell in enumerate(chosen_cells)}
+        basis_accounts = tuple(sorted({str(account) for _offset, account in chosen_cells}))
+        accounts = set(evaluator.accounts) | set(basis_accounts)
+        feature_offsets = set(evaluator._wanted_feature_offsets)
+        feature_offsets.update(
+            int(offset)
+            for offset, account in chosen_cells
+            if not str(account).startswith("product.")
+        )
+        if workers > 1 and not include_row_index:
+            import multiprocessing
+
+            if multiprocessing.get_start_method(allow_none=True) in {None, "fork"}:
+                global _worker_optimizer, _worker_candidates, _worker_accounts
+                global _worker_feature_offsets, _worker_cell_index, _worker_starts
+                with contextlib.suppress(RuntimeError):
+                    multiprocessing.set_start_method("fork", force=True)
+                _worker_optimizer = optimizer
+                _worker_candidates = candidates
+                _worker_accounts = accounts
+                _worker_feature_offsets = feature_offsets
+                _worker_cell_index = cell_index
+                _worker_starts = block_starts
+                chunk = max(64, min(512, max(1, int(chunk_blocks))))
+                tasks = [
+                    tuple(chosen[index : index + chunk]) for index in range(0, len(chosen), chunk)
+                ]
+                parallel_rows: list[int] = []
+                parallel_columns: list[int] = []
+                parallel_values: list[float] = []
+                with multiprocessing.get_context("fork").Pool(processes=workers) as pool:
+                    for chunk_rows, chunk_columns, chunk_values in pool.imap_unordered(
+                        _price_effect_chunk, tasks
+                    ):
+                        parallel_rows.extend(chunk_rows)
+                        parallel_columns.extend(chunk_columns)
+                        parallel_values.extend(chunk_values)
+                if extra:
+                    deltas = optimizer._block_deltas(extra, accounts, feature_offsets)
+                    for pair in extra:
+                        row = extra_rows[pair]
+                        for cell, value in deltas[pair].items():
+                            column = cell_index.get(cell)
+                            if column is None or value == 0.0:
+                                continue
+                            parallel_rows.append(row)
+                            parallel_columns.append(column)
+                            parallel_values.append(float(value))
+                if parallel_rows:
+                    row_tensor = torch.tensor(parallel_rows, dtype=torch.int64)
+                    column_tensor = torch.tensor(parallel_columns, dtype=torch.int64)
+                    value_tensor = torch.tensor(parallel_values, dtype=torch.float64)
+                    order = torch.argsort(row_tensor, stable=True)
+                    row_tensor = row_tensor[order]
+                    column_tensor = column_tensor[order]
+                    value_tensor = value_tensor[order]
+                    counts = torch.bincount(row_tensor, minlength=next_row)
+                    parallel_indptr = torch.cat(
+                        (
+                            torch.zeros(1, dtype=torch.int64),
+                            torch.cumsum(counts, dim=0),
+                        )
+                    )
+                    parallel_indices = column_tensor
+                    parallel_value_tensor = value_tensor
+                else:
+                    parallel_indptr = torch.zeros(next_row + 1, dtype=torch.int64)
+                    parallel_indices = torch.empty(0, dtype=torch.int64)
+                    parallel_value_tensor = torch.empty(0, dtype=torch.float64)
+                table = cls(
+                    cells=chosen_cells,
+                    basis_accounts=basis_accounts,
+                    indptr=parallel_indptr,
+                    indices=parallel_indices,
+                    values=parallel_value_tensor,
+                    row_index={},
+                    blocks=chosen,
+                    build_seconds=time.perf_counter() - started,
+                    _max_row_width=max(
+                        (
+                            int(later - earlier)
+                            for earlier, later in itertools.pairwise(parallel_indptr.tolist())
+                        ),
+                        default=0,
+                    ),
+                    block_starts=block_starts,
+                    extra_rows=extra_rows,
+                )
+                return table if device is None else table.to(device)
         # Row zero is the empty chain and has no nonzeros.
         indptr: list[int] = [0, 0]
         indices: list[int] = []
@@ -203,9 +387,7 @@ class EffectTable:
             """Price a chunk of pairs and append their CSR rows in row order."""
             if not pairs:
                 return
-            deltas = optimizer._block_deltas(
-                pairs, evaluator.accounts, evaluator._wanted_feature_offsets
-            )
+            deltas = optimizer._block_deltas(pairs, accounts, feature_offsets)
             for pair in pairs:
                 for cell, value in deltas[pair].items():
                     column = cell_index.get(cell)
@@ -222,12 +404,13 @@ class EffectTable:
         for start in range(0, len(chosen), chunk):
             pairs: list[tuple[int, Chain]] = []
             for block in chosen[start : start + chunk]:
-                for chain in candidates.get(block, ()):
-                    pairs.append((block, chain))
+                for index in range(_option_count(candidates, block)):
+                    pairs.append((block, _option_chain(candidates, block, index)))
             append_pairs(pairs)
         append_pairs(extra)
         table = cls(
-            cells=cells,
+            cells=chosen_cells,
+            basis_accounts=basis_accounts,
             indptr=torch.tensor(indptr, dtype=torch.int64),
             indices=torch.tensor(indices, dtype=torch.int64),
             values=torch.tensor(values, dtype=torch.float64),
@@ -381,6 +564,7 @@ class EffectTable:
         torch.save(
             {
                 "cells": self.cells,
+                "basis_accounts": self.basis_accounts,
                 "indptr": self.indptr,
                 "indices": self.indices,
                 "values": self.values,
@@ -415,6 +599,7 @@ class EffectTable:
         payload = torch.load(Path(path), weights_only=False)
         table = cls(
             cells=tuple(payload["cells"]),
+            basis_accounts=tuple(payload.get("basis_accounts") or ()),
             indptr=payload["indptr"],
             indices=payload["indices"],
             values=payload["values"],
@@ -426,6 +611,159 @@ class EffectTable:
             extra_rows=dict(payload.get("extra_rows") or {}),
         )
         return table if device is None else table.to(device)
+
+    def extend_cells(
+        self,
+        optimizer: Optimizer,
+        new_cells: Sequence[Cell],
+        candidates: Candidates,
+        *,
+        chunk_pairs: int = 4096,
+        max_extension_bytes: int = 4_000_000_000,
+    ) -> tuple[EffectTable, tuple[float, ...]]:
+        """Append account/offset columns without rebuilding existing rows.
+
+        Existing row ids, candidate order, and nonzeros are preserved.  The new columns
+        are appended in sorted order and the CSR is rebuilt from the old and new
+        coordinates.  The returned base-value tuple is aligned with the appended cells.
+
+        Parameters
+        ----------
+        optimizer : Optimizer
+            The exact delta source.
+        new_cells : sequence of (int, str)
+            Cells to add.  Cells already present are ignored.
+        candidates : mapping or compact candidate store
+            The candidate chains used to enumerate rows.
+        chunk_pairs : int, optional
+            Number of block/option pairs priced per CPU batch.
+        max_extension_bytes : int, optional
+            Refuse an extension whose conservative dense estimate exceeds this many
+            bytes. Defaults to four gigabytes.
+
+        Returns
+        -------
+        tuple of (EffectTable, tuple of float)
+            The extended table and the base values for the appended cells.
+        """
+        _require_torch()
+        existing = set(self.cells)
+        additions = tuple(sorted(set(new_cells) - existing))
+        if not additions:
+            return self, ()
+        estimated_bytes = self.rows * len(additions) * 16 + self.rows * 8
+        if estimated_bytes > max_extension_bytes:
+            raise ValueError(
+                "refusing large lazy effect-table extension: estimated "
+                f"{estimated_bytes / 1_000_000_000:.1f} GB for {len(additions)} cells; "
+                "use a separate display path or build a bounded basis"
+            )
+        base_offset = len(self.cells)
+        new_cell_index = {cell: index for index, cell in enumerate(additions)}
+        accounts = {str(account) for _offset, account in additions}
+        feature_offsets = {
+            int(offset) for offset, account in additions if not str(account).startswith("product.")
+        }
+
+        def option_count(block: int) -> int:
+            method = getattr(candidates, "option_count", None)
+            if callable(method):
+                return int(method(block))
+            return len(candidates.get(block, ()))
+
+        def option_chain(block: int, index: int) -> Chain:
+            method = getattr(candidates, "chain_at", None)
+            if callable(method):
+                return cast(Chain, method(block, index))
+            return candidates[block][index]
+
+        new_rows: list[int] = []
+        new_columns: list[int] = []
+        new_values: list[float] = []
+        pair_rows: list[tuple[int, Chain, int]] = []
+
+        def flush() -> None:
+            if not pair_rows:
+                return
+            pairs = [(block, chain) for block, chain, _row in pair_rows]
+            deltas = optimizer._block_deltas(pairs, accounts, feature_offsets)
+            for block, chain, row in pair_rows:
+                for cell, value in deltas.get((block, chain), {}).items():
+                    column = new_cell_index.get(cell)
+                    if column is None or value == 0.0:
+                        continue
+                    new_rows.append(row)
+                    new_columns.append(base_offset + column)
+                    new_values.append(float(value))
+            pair_rows.clear()
+
+        for block in self.blocks:
+            count = option_count(block)
+            start = self.block_starts.get(block)
+            for index in range(count):
+                chain = option_chain(block, index)
+                row = start + index if start is not None else self.row_id(block, chain)
+                pair_rows.append((block, chain, row))
+                if len(pair_rows) >= chunk_pairs:
+                    flush()
+        for (block, chain), row in self.extra_rows.items():
+            pair_rows.append((block, chain, row))
+            if len(pair_rows) >= chunk_pairs:
+                flush()
+        flush()
+
+        cells = self.cells + additions
+        basis_accounts = tuple(sorted({*self.basis_accounts, *accounts}))
+        if new_rows:
+            old_rows = torch.repeat_interleave(
+                torch.arange(self.rows, dtype=torch.int64, device=self.device),
+                torch.diff(self.indptr),
+            )
+            rows = torch.cat(
+                (
+                    old_rows,
+                    torch.tensor(new_rows, dtype=torch.int64, device=self.device),
+                )
+            )
+            columns = torch.cat(
+                (
+                    self.indices,
+                    torch.tensor(new_columns, dtype=torch.int64, device=self.device),
+                )
+            )
+            values = torch.cat(
+                (
+                    self.values,
+                    torch.tensor(new_values, dtype=torch.float64, device=self.device),
+                )
+            )
+            order = torch.argsort(rows * len(cells) + columns, stable=True)
+            rows = rows[order]
+            columns = columns[order]
+            values = values[order]
+            counts = torch.bincount(rows, minlength=self.rows)
+            indptr = torch.cat(
+                (
+                    torch.zeros(1, dtype=torch.int64, device=self.device),
+                    torch.cumsum(counts, dim=0),
+                )
+            )
+        else:
+            indptr, columns, values = self.indptr, self.indices, self.values
+        base = optimizer._base_values()
+        new_base = tuple(float(base.get(cell, 0.0)) for cell in additions)
+        return (
+            replace(
+                self,
+                cells=cells,
+                indptr=indptr,
+                indices=columns,
+                values=values,
+                basis_accounts=basis_accounts,
+                build_seconds=self.build_seconds,
+            ),
+            new_base,
+        )
 
     def row_id(self, block: int, chain: Chain) -> int:
         """Return the table row for a block and chain, or zero for the empty chain.

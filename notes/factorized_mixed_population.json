@@ -1,0 +1,66 @@
+{
+  "table_account": "product.HarvestedVolume.managed.Total.CC",
+  "feature": "feature.Yield.managed.Total",
+  "product": "product.Yield.managed.Total",
+  "population": 64,
+  "generations": 2,
+  "table_cells": 200,
+  "switched_table_cells": 200,
+  "factorized_cells": [
+    [
+      190,
+      "product.Yield.managed.Total"
+    ],
+    [
+      191,
+      "product.Yield.managed.Total"
+    ],
+    [
+      192,
+      "product.Yield.managed.Total"
+    ],
+    [
+      193,
+      "product.Yield.managed.Total"
+    ],
+    [
+      194,
+      "product.Yield.managed.Total"
+    ],
+    [
+      195,
+      "product.Yield.managed.Total"
+    ],
+    [
+      196,
+      "product.Yield.managed.Total"
+    ],
+    [
+      197,
+      "product.Yield.managed.Total"
+    ],
+    [
+      198,
+      "product.Yield.managed.Total"
+    ],
+    [
+      199,
+      "feature.Yield.managed.Total"
+    ],
+    [
+      199,
+      "product.Yield.managed.Total"
+    ]
+  ],
+  "factorized_build_seconds": 229.56609972800288,
+  "population_seconds": 38.248977397997805,
+  "switch_seconds": 4.5336541880024015,
+  "run_seconds": 14.865676127999905,
+  "evaluations_per_second": 12.915658752874535,
+  "evaluations": 192,
+  "best_objective": 474.3942462931474,
+  "exact_objective": 474.3942462931473,
+  "objective_error": 5.684341886080802e-14,
+  "best_generation": 2,
+  "gpu_peak_bytes": 9272105472
+}

@@ -77,3 +77,5 @@ period width, and `load_seed` rejects a mismatch.
   schedule equivalence.
 - The live TUI path and the `--plain` benchmark share the same state projection, but only
   the plain path is recorded here.
+
+Full dashboard on the P84 branch: **GREEN** (lint, format, types, tests, validator, docs, docstrings).

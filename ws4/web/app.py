@@ -22,7 +22,7 @@ from collections import Counter
 from collections.abc import Awaitable, Callable, Iterator
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import mapbox_vector_tile
 import mercantile
@@ -42,6 +42,7 @@ from shapely.strtree import STRtree
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.responses import Response
 
+from ..forest_condition import build_report_from_accounts
 from ..opt.objective import (
     flow_penalty,
     flow_series,
@@ -691,6 +692,8 @@ def create_app(
     dataset: Path,
     runs: Path,
     targets: Path | None = None,
+    scenario_profiles: Path | None = None,
+    sdmd_dir: Path | None = None,
     geometry: Path | None = None,
     geometry_overview: Path | None = None,
     land_base: Path | None = None,
@@ -721,6 +724,14 @@ def create_app(
     targets : Path or None, optional
         The targets YAML the optimizer reads. When given, it is readable and replaceable through the
         API; a replacement is validated with the optimizer's own loader before it is written.
+    scenario_profiles : Path or None, optional
+        A P98 scenario-profile library. When given, the API lists and applies named profiles;
+        applying one validates its target file before replacing ``targets``.
+    sdmd_dir : Path or None, optional
+        A directory of SDMD tables (``plots.csv``, ``trees.csv``, ``stands.csv``,
+        ``sdmd_points.csv``, ``regimes.csv``, ``au_constraints.csv``), an optional
+        ``diagram.json``, and optional ``trajectories/``. When given, the
+        ``/api/sdmd`` router is mounted.
     geometry : Path or None, optional
         A GeoJSON file of block polygons or points, joined on ``block_id``. Without it the map
         endpoint refuses with the missing artefact named.
@@ -776,6 +787,7 @@ def create_app(
     overview_path = Path(geometry_overview).resolve() if geometry_overview is not None else None
     land_base_path = Path(land_base).resolve() if land_base is not None else None
     targets_path = Path(targets).resolve() if targets is not None else None
+    sdmd_path = Path(sdmd_dir).resolve() if sdmd_dir is not None else None
     initial_schedule_path = (
         Path(initial_schedule).resolve() if initial_schedule is not None else None
     )
@@ -793,6 +805,13 @@ def create_app(
     agent_working_directory = Path(agent_cwd).resolve() if agent_cwd is not None else Path.cwd()
     app = FastAPI(title="WS4", version="0.1.0")
     app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
+    if sdmd_path is not None:
+        from ..sdmd.api import SdmdApiError, SdmdStore, create_sdmd_router
+
+        try:
+            app.include_router(create_sdmd_router(SdmdStore.from_directory(sdmd_path)))
+        except SdmdApiError as error:
+            raise ValueError(f"invalid SDMD directory {sdmd_path}: {error}") from error
 
     @app.middleware("http")
     async def no_cache_static(
@@ -2092,6 +2111,28 @@ def create_app(
             rows.append(record)
         return rows
 
+    @app.get("/api/runs/{run}/condition-card")
+    def condition_card(run: str) -> dict[str, Any]:
+        """Return a review-required condition card derived from the run's accounts."""
+        directory = run_dir(run)
+        path = directory / "account_values.csv"
+        if not path.is_file():
+            raise HTTPException(status_code=404, detail="the run has no account_values.csv")
+        values = read_csv(directory, "account_values.csv")
+        try:
+            report = build_report_from_accounts(
+                values,
+                report_id=f"{run}-condition",
+                scenario_id=run,
+                generated_utc=datetime.now().astimezone().isoformat(),
+                period="run",
+                source_version=run,
+                provenance={"run": run},
+            )
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        return report.to_dict()
+
     def search_artifact_dir(name: str) -> Path:
         """Return a directory under the runs root that holds a search artifact."""
         candidate = (runs_root / name).resolve()
@@ -3228,6 +3269,59 @@ def create_app(
             shutil.copy2(targets_path, targets_path.with_name(targets_path.name + ".bak"))
         shutil.move(str(candidate), targets_path)
         return len(targets)
+
+    def _profile_library() -> dict[str, Any]:
+        """Return the configured profile library or fail cleanly."""
+        if scenario_profiles is None:
+            raise HTTPException(
+                status_code=404, detail="the service was started without --scenario-profiles"
+            )
+        from ..opt.scenario_profiles import ProfileError, load_profiles
+
+        try:
+            return load_profiles(scenario_profiles)
+        except ProfileError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+
+    @app.get("/api/scenario-profiles")
+    def list_scenario_profiles() -> list[dict[str, Any]]:
+        """Return the named scenario profiles."""
+        return [cast(dict[str, Any], profile.as_dict()) for profile in _profile_library().values()]
+
+    @app.get("/api/scenario-profiles/{name}")
+    def get_scenario_profile(name: str) -> dict[str, Any]:
+        """Return one named scenario profile."""
+        from ..opt.scenario_profiles import ProfileError, get_profile
+
+        try:
+            return get_profile(_profile_library(), name).as_dict()
+        except ProfileError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+
+    @app.post("/api/scenario-profiles/{name}/apply")
+    def apply_scenario_profile(name: str) -> dict[str, Any]:
+        """Validate and apply a profile's target file to the editable targets path."""
+        if targets_path is None:
+            raise HTTPException(
+                status_code=409, detail="the service has no editable --targets file"
+            )
+        from ..opt.scenario_profiles import ProfileError, get_profile
+
+        try:
+            profile = get_profile(_profile_library(), name)
+        except ProfileError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        try:
+            document = profile.targets.read_text(encoding="utf-8")
+        except OSError as error:
+            raise HTTPException(
+                status_code=422, detail=f"cannot read profile targets: {error}"
+            ) from error
+        return {
+            "targets": _write_targets(document),
+            "profile": name,
+            "source": str(profile.targets),
+        }
 
     @app.get("/api/targets", response_class=PlainTextResponse)
     def get_targets() -> str:
