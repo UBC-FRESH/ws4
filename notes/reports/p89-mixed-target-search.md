@@ -162,6 +162,46 @@ The target window showed period 20 with minimum **370M** and realized **782M**
 This is a soft goal-programming aspiration, not a hard feasibility floor, and the smoke
 run only demonstrates the target plumbing and display; it is not a production search.
 
+## All-period ±5% even-flow experiment
+
+Target file:
+
+```text
+config/ws4/targets/evenflow_tsa24_allperiods5_stock90.yaml
+```
+
+It changes the flow target to periods 1-20, reference period 1, ±5%, and keeps the
+period-20 managed-stock floor at **370,403,185.80**. The level aspirations remain in
+place.
+
+Run:
+
+```bash
+PLAIN=1 \
+  TARGETS=config/ws4/targets/evenflow_tsa24_allperiods5_stock90.yaml \
+  SCHEDULE_OUT=runtime/tsa24-allperiods5-stock90-5000.csv \
+  ./run_ltsy_watch.sh 5000
+```
+
+Result after 5,000 generations:
+
+| Measurement | Result |
+|---|---:|
+| Evaluations | 320,064 |
+| Search loop | 216.0 s |
+| Wall including hot-cache start | 234.17 s |
+| Objective frame | 2,751.96 |
+| Penalty frame | 459,472,816.01 |
+| Final managed stock | **477M** |
+| Stock floor | **370M** |
+| Harvest periods 2-8 | 48.7-49.6M |
+| Harvest periods 9-20 | 53.8-54.2M |
+
+The reference period 1 is 51.5M, so the ±5% band is roughly 48.9-54.1M. The flow is
+nearly flat, with periods 3 and 16 just outside that band. The stock floor is comfortably
+met. The level aspirations in periods 11-20 remain below their 100M pull; this run is an
+even-flow/stock experiment, not a level-target success.
+
 ## Limits
 
 - The structural build is still one-time and model-specific.
