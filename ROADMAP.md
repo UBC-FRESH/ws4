@@ -2715,14 +2715,15 @@ Parent issue: #643
 Branch: `feature/p89-mixed-target-search`
 Status: active
 Plan: `notes/design/factorized-account-basis.md`
+Report: `notes/reports/p89-mixed-target-search.md`
 
 Goal: use the P88 factorized account basis end to end for a mixed feature/product target
 population, watcher account switching, and a bounded live display path.
 
-- [ ] P89.1 Full TSA24 mixed-target population run (#644)
-- [ ] P89.2 Watcher target switching through factorized accounts (#645)
-- [ ] P89.3 Bounded live display account path (#646)
-- [ ] P89.4 Benchmark report, docs, and phase closeout (#647)
+- [x] P89.1 Full TSA24 mixed-target population run (#644)
+- [x] P89.2 Watcher target switching through factorized accounts (#645)
+- [x] P89.3 Bounded live display account path (#646)
+- [x] P89.4 Benchmark report, docs, and phase closeout (#647)
 
 Acceptance:
 

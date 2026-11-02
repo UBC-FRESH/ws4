@@ -3712,3 +3712,10 @@ issue comments.
   `ws4.forest_condition.report.v1` card, 404 without accounts, and 422 for
   invalid account data. Added API tests and docs. Dashboard green on all seven gates.
 - Closeout report: `notes/reports/p92-closeout.md`.
+- P89: Mixed-target factorized search and live switching. Parent #643, branch
+  `feature/p89-mixed-target-search`. The full TSA24 mixed feature/product population kept
+  the 200-cell sparse table unchanged, priced 11 factorized target cells, and matched the
+  exact objective to `5.7e-14`. Corrected the P88 evidence to the real
+  `feature.Yield.managed.Total` account; the corrected pricer error is `2.2e-5`. Added the
+  watcher display path that avoids `ensure_cells` when factorized accounts are available.
+  Report: `notes/reports/p89-mixed-target-search.md`.

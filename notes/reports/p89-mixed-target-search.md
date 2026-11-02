@@ -1,0 +1,94 @@
+# P89 mixed-target factorized search and live switching
+
+Parent issue: #643
+Branch: `feature/p89-mixed-target-search`
+Evidence commit: `1744496`
+Pull request: pending
+
+## Result
+
+P89 runs the P88 factorized account set end to end on the full TSA24 model. The sparse
+effect table keeps its original 200 `product.HarvestedVolume.managed.Total.CC` cells; the
+feature stock and second product account are priced as factorized target cells.
+
+The account correction is material: TSA24 exposes `feature.Yield.managed.Total`, not
+`feature.Volume`. The P89 reruns use the real stock series and replace the earlier
+zero-vs-zero feature evidence.
+
+## Full TSA24 mixed population
+
+Command:
+
+```bash
+python examples/gpu_effects/run_factorized_mixed_population.py \
+  --dataset /srv/shared-data/gep/ws4/femic/external/femic-tsa24-instance/build/compiled \
+  --targets /srv/shared-data/gep/ws4/femic/external/femic-tsa24-instance/config/ws4/targets/evenflow_tsa24_ltsy.yaml \
+  --artifact /srv/shared-data/gep/ws4/femic/external/femic-tsa24-instance/runtime/factorized/tsa24-factorized.npz \
+  --table /srv/shared-data/gep/ws4/femic/external/femic-tsa24-instance/runtime/gpu-effects/effects-lean.pt \
+  --seed-schedule /srv/shared-data/gep/ws4/femic/external/femic-tsa24-instance/runtime/tsa24-ltsy-schedule.csv \
+  --feature feature.Yield.managed.Total \
+  --product product.Yield.managed.Total \
+  --years 200 --period-width 10 --population 64 --generations 2 --check 0
+```
+
+Result:
+
+| Measurement | Result |
+|---|---:|
+| Sparse table cells, before and after switch | **200 -> 200** |
+| Factorized target cells | 11 |
+| Factorized build | 229.6 s |
+| Population construction | 38.2 s |
+| Target switch | 4.53 s |
+| Two-generation run | 14.87 s |
+| Evaluations | 192 |
+| Throughput | **12.9 genomes/s** |
+| Best objective | 474.3942462931474 |
+| Exact replay objective | 474.3942462931473 |
+| Objective error | **5.7e-14** |
+| GPU peak | **9.27 GB** |
+| Host peak RSS | **15.98 GB** |
+
+The target switch leaves `EffectTable.cells` unchanged. The factorized cells are the
+feature stock at offset 199 and the second product account at offsets 190-199.
+
+## Corrected P88 pricer evidence
+
+| Path | Exact error | 64-genome batch | GPU peak |
+|---|---:|---:|---:|
+| `feature.Yield.managed.Total`, 20 periods | **2.2e-5** | **0.706 s** (90.7/s) | **7.2 GB** |
+| `product.Yield.managed.Total` | **8.9e-7** | **0.0255 s** (2,507/s) | **4.6 GB** |
+| mixed feature/product, 4 cells | **1.1e-5** | **0.093 s** (685/s) | **9.3 GB** |
+
+The errors are absolute and small relative to the stock and harvest totals. The corrected
+feature benchmark is no longer a zero-vs-zero comparison.
+
+## Watcher display path
+
+`run_gpu_watch` no longer calls `ensure_cells` for display accounts when a factorized
+account set is available. `_incumbent_values` combines:
+
+- table cells and objective factorized cells already in `GenomePopulation.totals`;
+- requested display cells priced once per incumbent from `FactorizedAccountSet`.
+
+A synthetic test watches `feature.Volume`, confirms the effect-table cell count is
+unchanged, and confirms the display frame is produced.
+
+## Limits
+
+- The structural build is still one-time and model-specific.
+- Factorized target cells assume candidate rows; seed-only rows outside the candidate
+  list are not supported on this path.
+- The display path is bounded to the watched account set and the incumbent row.
+- No full live watcher run was launched in this phase; the watcher behavior is covered by
+  the synthetic path.
+- The 12.9 genomes/s mixed search rate includes the existing sparse-table gather and the
+  factorized cells; it is not the isolated pricer rate.
+
+## Verification
+
+```bash
+pytest tests/test_factorized_effects.py tests/test_gpu_effects.py tests/test_gpu_ga.py -q
+python scripts/check_workflow.py
+python scripts/dashboard.py
+```
