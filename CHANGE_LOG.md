@@ -3832,4 +3832,6 @@ issue comments.
   Feature accounts become indicators with final value, first/last trend,
   explicit source/version, and `review_required` status. Added CLI coverage and
   docs. Dashboard green on all seven gates; 13 focused tests passed.
-- Closeout report: `notes/reports/p91-closeout.md`.
+- Closeout report: `notes/reports/p91-closeout.md`.- P87.8: merged current `main` again at `e2718a1` (P88/P90/P91) and recorded CI run
+  `41403557320` as success on every job. The report evidence head is `e2718a1`.
+  P91 is taken by #655, so the proposed next phase is P92.

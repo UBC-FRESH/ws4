@@ -3006,4 +3006,4 @@ Design: `notes/design/ws4-forest-condition-card.md`.
     than fails (provisional diagram, no supplied initial volume, one extrapolated demo path);
     the 863 m3/ha gate fails against an 800 limit and 1,173 m3/ha is flagged above 1,133.8.
     Trajectory-zone rejection and a cap across blocks in one AU are deferred with the reasons
-    in #635. Next: approve the close-out, then launch the next free phase (P91 today).
+    in #635. Next: approve the close-out, then launch the next free phase (P92 today; P91 was taken by #655).

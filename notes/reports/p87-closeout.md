@@ -3,8 +3,8 @@
 Phase: P87 Stand density management and AU Explorer
 Parent issue: #628
 Pull request: #658, `feature/p87-sdmd-au-explorer` into `main`
-Evidence head: `e2b758c`
-Report commit: `f3fb67f` (notes and changelog only; that change does not trigger a code CI run)
+Evidence head: `e2718a1`
+Report commit: this metadata-only report update; the code head is `e2718a1` and its CI run is 41403557320
 Date: 2026-11-02
 Status: queued for approval. Not merged.
 
@@ -14,7 +14,7 @@ Approve these actions. The agent carries them out in this order, and reads back 
 
 1. Squash-merge pull request #658, and delete the branch `feature/p87-sdmd-au-explorer`.
 2. Close parent issue #628 with a closeout comment that cites the merge commit.
-3. Launch the next phase: the next free phase number at approval time (P91 today). Create
+3. Launch the next phase: the next free phase number at approval time (P92 today; P91 was taken by #655). Create
    its branch, set the phase statuses in `ROADMAP.md`, create its child issues as sub-issues,
    and start its first task.
 
@@ -72,6 +72,7 @@ account change is requested.
 | `726bca4` | P87.8 eight validation gates | dashboard green; 10 validation tests |
 | `1e1a585` | merge `origin/main` | dashboard `OVERALL: GREEN` on all seven gates |
 | `e2b758c` | P87.8 CI mypy fix | CI run 41402135881: success on every job |
+| `e2718a1` | merge current `main` | CI run 41403557320: success on every job; dashboard green |
 
 Validation command output at the evidence head:
 
@@ -87,7 +88,8 @@ Validation command output at the evidence head:
 
 | Run ID | Head commit | Conclusion | Notes |
 | --- | --- | --- | --- |
-| 41402135881 | `e2b758c` | success | Quality gates, clean-checkout contract, notebook outputs, pre-commit parity, and the green dashboard summary all passed. The report commit `f3fb67f` changes only notes and the changelog, so it has no code CI run. |
+| 41402135881 | `e2b758c` | success | Quality gates, clean-checkout contract, notebook outputs, pre-commit parity, and the green dashboard summary all passed. |
+| 41403557320 | `e2718a1` | success | The same jobs passed after merging current `main` (P88/P90/P91). |
 
 ## 5. Deviations
 
@@ -104,8 +106,8 @@ Validation command output at the evidence head:
 
 ## 6. Next phase
 
-Recommended: **the next free phase at approval time (P91 today), "SDMD pilot digitisation and
-trajectory evidence."** The phase should:
+Recommended: **the next free phase at approval time (P92 today; P91 was taken by #655),
+"SDMD pilot digitisation and trajectory evidence."** The phase should:
 
 1. Digitise the public `fdin`/`fdip` Interior Douglas-fir diagrams into the vector contract and
    have the maintainer review the isopleths; replace the synthetic fixture in the pilot report.
