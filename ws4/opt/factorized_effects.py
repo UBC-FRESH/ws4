@@ -1354,6 +1354,7 @@ class FactorizedAccountSet:
         years: int,
         device: str = "cpu",
         arrays: FactorizedEffectArrays | None = None,
+        cache: str | Path | None = None,
     ) -> FactorizedAccountSet:
         """Build the account set from a persisted descriptor archive.
 
@@ -1369,14 +1370,21 @@ class FactorizedAccountSet:
             Torch device string.
         arrays : FactorizedEffectArrays or None, optional
             Already-loaded arrays; None loads ``path``.
+        cache : str or pathlib.Path or None, optional
+            Padded cache to load, or to create when it is absent.
 
         Returns
         -------
         FactorizedAccountSet
             The account set on ``device``.
         """
+        if cache is not None and Path(cache).is_file():
+            return cls.load_cache(cache, simulator, device=device)
         payload = arrays if arrays is not None else FactorizedEffectArrays.load(path)
-        return cls.from_arrays(payload, simulator, years=years, device=device)
+        accounts = cls.from_arrays(payload, simulator, years=years, device=device)
+        if cache is not None:
+            accounts.save_cache(cache)
+        return accounts
 
     def save_cache(self, path: str | Path) -> Path:
         """Persist the padded tensors and lookup metadata to one torch file.

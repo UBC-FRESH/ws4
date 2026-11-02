@@ -94,6 +94,7 @@ exists and the maintainer approves it.
 | P90 Forest condition report cards | #650 | `feature/p90-forest-condition-cards` | pr-open |
 | P91 Condition card from a WS4 run | #655 | `feature/p91-condition-run-card` | pr-open |
 | P92 Condition-card API | #659 | `feature/p92-condition-card-api` | pr-open |
+| P93 LTSY scenario comparison | #664 | `feature/p93-ltsy-scenario-comparison` | active |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2977,3 +2978,35 @@ Acceptance:
 - Tests and dashboard pass.
 
 Design: `notes/design/ws4-forest-condition-card.md`.
+
+## Phase 93: LTSY scenario comparison
+
+Parent issue: #664
+Branch: `feature/p93-ltsy-scenario-comparison`
+Status: active
+Report: `notes/reports/tsa24-ltsy-scenario-comparison.md`
+
+Goal: compare baseline LTSY, all-period ±5% with the stock floor, and all-period ±5%
+without the stock floor on one seed and a 5,000-generation budget.
+
+- [x] P93.1 Freeze comparison targets and harness (#667)
+  - [x] Add the no-stock control target
+  - [x] Add the reusable comparison harness
+  - [x] Record exact replay results
+- [x] P93.2 Run the three 5,000-generation scenarios (#668)
+  - [x] Run baseline
+  - [x] Run all-period ±5% with stock
+  - [x] Run all-period ±5% without stock
+- [x] P93.3 Compare stock, flow, and age-class outcomes (#665)
+  - [x] Replay schedules through the simulator
+  - [x] Compare managed/unmanaged stock and age classes
+  - [x] Record the recommendation
+- [ ] P93.4 Record the base scenario and close out (#666)
+
+Acceptance:
+
+- The three formulations use the same seed, population, and generation budget.
+- The stock/no-stock schedules are compared honestly.
+- A base LTSY formulation is recommended with caveats.
+- Dashboard green.
+
