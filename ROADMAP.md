@@ -103,7 +103,7 @@ exists and the maintainer approves it.
 | P98 LTSY scenario profile library | #699 | `feature/p98-ltsy-profiles` | pr-open |
 | P99 Scenario profile UI | #704 | `feature/p99-profile-ui` | pr-open |
 | P102 Ask overlay | #709 | `feature/p102-ask-overlay` | pr-open |
-| P103 Profile-aware web runs | #713 | `feature/p103-profile-runs` | active |
+| P103 Profile-aware web runs | #713 | `feature/p103-profile-runs` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
@@ -3324,8 +3324,9 @@ Acceptance:
 
 Parent issue: #713
 Branch: `feature/p103-profile-runs`
-Status: active
+Status: pr-open
 Report: `notes/reports/tsa24-profile-runs.md`
+PR: #717
 
 Goal: let the web UI launch a named factorized GPU profile through the existing run
 status/control/stream contract.

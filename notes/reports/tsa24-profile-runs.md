@@ -1,7 +1,7 @@
 # P103 profile-aware web runs
 
 Date: 2026-11-02
-Status: complete
+Status: complete; PR #717
 
 ## Change
 
@@ -38,3 +38,7 @@ The smoke is a plumbing check, not a policy result.
 - A profile must provide table, factorized archive/cache, cache directory, and seed
   schedule paths.
 - The remote demo origin still has to pull `main` and restart its service.
+
+## Pull request
+
+PR #717 contains the worker, API, UI controls, tests, and docs. The instance profile YAML and archive are outside git.
