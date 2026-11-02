@@ -3912,3 +3912,10 @@ issue comments.
 - P99: scenario profile UI. Added `ws4 serve --scenario-profiles`, list/detail/apply API
   endpoints, and a Targets-tab selector that validates and loads a named profile into the
   editable targets file. Report: `notes/reports/tsa24-profile-ui.md`.
+
+## 2026-11-02
+
+- P102: Ask overlay. Replaced the static sidebar chat panel with a header **✦ Ask** pill
+  and a fixed assistant overlay available from every workspace. The overlay opens over the
+  current view, closes with × or Escape, and keeps the existing chat session/API behavior.
+  Report: `notes/reports/tsa24-ask-overlay.md`.

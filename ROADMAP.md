@@ -102,6 +102,7 @@ exists and the maintainer approves it.
 | P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | pr-open |
 | P98 LTSY scenario profile library | #699 | `feature/p98-ltsy-profiles` | pr-open |
 | P99 Scenario profile UI | #704 | `feature/p99-profile-ui` | pr-open |
+| P102 Ask overlay | #709 | `feature/p102-ask-overlay` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
@@ -3293,3 +3294,27 @@ Goal: write a one-page scenario narrative from an existing run.
   - [x] Run dashboard and open the PR
 
 Acceptance: valid run writes Markdown; invalid accounts fail; storyboard names scenario, indicators, provenance, and limits; dashboard passes.
+
+## Phase 102: Ask overlay
+
+Parent issue: #709
+Branch: `feature/p102-ask-overlay`
+Status: active
+Report: `notes/reports/tsa24-ask-overlay.md`
+
+Goal: replace the static sidebar chat panel with a compact header Ask pill and floating
+assistant overlay available from every workspace.
+
+- [x] P102.1 Move the assistant to an Ask overlay (#710)
+  - [x] Add the header pill and fixed overlay
+  - [x] Remove the sidebar panel and splitter
+  - [x] Add open/close/Escape/focus behavior
+- [x] P102.2 Validate, document, and close out (#711)
+
+Acceptance:
+
+- The assistant is available from every workspace.
+- It does not change or resize the active workspace.
+- Existing chat API/session behavior remains intact.
+- Dashboard green.
+

@@ -6454,10 +6454,28 @@ function newChat() {
 }
 
 function setAssistantVisible(visible) {
+  const toggle = $('chat-toggle');
+  if (toggle) toggle.hidden = !visible;
+  if (!visible) {
+    const panel = $('chat-panel');
+    if (panel) panel.hidden = true;
+  }
+}
+
+function openChat() {
   const panel = $('chat-panel');
-  const splitter = $('chat-splitter');
-  if (panel) panel.hidden = !visible;
-  if (splitter) splitter.hidden = !visible;
+  const toggle = $('chat-toggle');
+  if (!panel || !toggle || toggle.hidden) return;
+  panel.hidden = false;
+  toggle.setAttribute('aria-expanded', 'true');
+  $('chat-input').focus();
+}
+
+function closeChat() {
+  const panel = $('chat-panel');
+  const toggle = $('chat-toggle');
+  if (panel) panel.hidden = true;
+  if (toggle) toggle.setAttribute('aria-expanded', 'false');
 }
 
 async function loadAgent() {
@@ -6548,6 +6566,10 @@ function wireControls() {
     if (state.showUsedRoads) loadUsedRoads();
   });
   document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !$('chat-panel').hidden) {
+      closeChat();
+      return;
+    }
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
     const active = document.activeElement;
@@ -6618,6 +6640,8 @@ function wireControls() {
   $('search-select').addEventListener('change', (event) => renderSearchArtifact(event.target.value));
   $('run-portfolio').addEventListener('click', startPortfolio);
   $('run-tune').addEventListener('click', startTune);
+  $('chat-toggle').addEventListener('click', openChat);
+  $('chat-close').addEventListener('click', closeChat);
   $('chat-form').addEventListener('submit', sendChat);
   $('chat-new').addEventListener('click', newChat);
   $('chat-input').addEventListener('keydown', (event) => {
