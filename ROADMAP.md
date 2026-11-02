@@ -99,6 +99,7 @@ exists and the maintainer approves it.
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
 | P95 Factorized target-cell vectors | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
 | P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | pr-open |
+| P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
@@ -3170,6 +3171,32 @@ Acceptance:
 - The note distinguishes base profile from definitive sustainability.
 - Dashboard green.
 
+## Phase 97: Mixed-target vector performance
+
+Parent issue: #691
+Branch: `feature/p97-mixed-target-vectors`
+Status: active
+Report: `notes/reports/tsa24-mixed-vector-performance.md`
+
+Goal: verify the P95 vector cache on the 11-cell mixed feature/product target and remove
+the mixed-target runner's padded rebuild.
+
+- [x] P97.1 Use the padded cache in the mixed-target runner (#692)
+  - [x] Add the cache path
+  - [x] Load the padded cache when present
+  - [x] Keep the build fallback
+- [x] P97.2 Benchmark the 11-cell mixed target (#693)
+  - [x] Measure switch and run speed
+  - [x] Verify exact objective
+  - [x] Check table-cell identity
+- [x] P97.3 Record the result and close out (#694)
+
+Acceptance:
+
+- The mixed target switch is materially faster than 4.53 s.
+- Two-generation throughput is materially above 12.9 genomes/s.
+- Exact objective and table-cell count are unchanged.
+- Dashboard green.
 ## Phase 100: Condition-card provenance and uncertainty
 
 Parent issue: #670

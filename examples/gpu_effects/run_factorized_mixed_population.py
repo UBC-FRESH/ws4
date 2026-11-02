@@ -55,6 +55,7 @@ def main() -> None:
     parser.add_argument("--dataset", type=Path, required=True)
     parser.add_argument("--targets", type=Path, required=True)
     parser.add_argument("--artifact", type=Path, required=True)
+    parser.add_argument("--factorized-cache", type=Path)
     parser.add_argument("--table", type=Path, required=True)
     parser.add_argument("--seed-schedule", type=Path)
     parser.add_argument("--feature", default="feature.Yield.managed.Total")
@@ -80,12 +81,21 @@ def main() -> None:
     optimizer = Optimizer.from_dataset(args.dataset, cfg)
     candidates = optimizer.candidates()
     blocks = np.asarray(sorted(candidates), dtype=np.int64)
-    table = EffectTable.load(args.table)
+    table = EffectTable.load(args.table, device=args.device)
     if not np.array_equal(table.blocks, blocks):
         raise SystemExit("effect table block order does not match candidates")
-    arrays = FactorizedEffectArrays.load(args.artifact)
-    if not np.array_equal(arrays.blocks, blocks):
-        raise SystemExit("factorized artifact block order does not match candidates")
+    arrays = None
+    if args.factorized_cache is not None and args.factorized_cache.is_file():
+        accounts = FactorizedAccountSet.load_cache(
+            args.factorized_cache,
+            optimizer.simulator(),
+            device=args.device,
+        )
+        build_seconds = 0.0
+    else:
+        arrays = FactorizedEffectArrays.load(args.artifact)
+        if not np.array_equal(arrays.blocks, blocks):
+            raise SystemExit("factorized artifact block order does not match candidates")
 
     table_account = table.cells[0][1]
     initial_targets = [Target(table_account, period=1, period_width=args.period_width, minimum=1.0)]
@@ -115,15 +125,18 @@ def main() -> None:
         ),
     ]
 
-    started = time.perf_counter()
-    accounts = FactorizedAccountSet.from_arrays(
-        arrays,
-        optimizer.simulator(),
-        years=args.years,
-        device=args.device,
-    )
-    build_seconds = time.perf_counter() - started
-    del arrays
+    if arrays is not None:
+        started = time.perf_counter()
+        accounts = FactorizedAccountSet.from_arrays(
+            arrays,
+            optimizer.simulator(),
+            years=args.years,
+            device=args.device,
+        )
+        build_seconds = time.perf_counter() - started
+        del arrays
+    if not np.array_equal(np.asarray(accounts.blocks, dtype=np.int64), blocks):
+        raise SystemExit("factorized account blocks do not match the effect table")
 
     seed = _seed(blocks, candidates, args.seed_schedule)
     started = time.perf_counter()
