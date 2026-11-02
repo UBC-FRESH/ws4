@@ -370,6 +370,9 @@ class SdmdStore:
             findings = check_regime(constraint, regime) if constraint is not None else []
             row = regime.to_dict()
             row["constraint"] = asdict(constraint) if constraint is not None else None
+            row["trajectory_available"] = (
+                self.root / "trajectories" / au_id / f"{regime.regime_id}.json"
+            ).is_file()
             row["allowed"] = constraint is not None and constraint.allowed and not findings
             row["findings"] = [
                 {"code": item.code, "where": item.where, "message": item.message}
@@ -637,6 +640,15 @@ class SdmdStore:
                 "licence": self.diagram.source.licence,
                 "kind": self.diagram.source.kind,
             },
+            "isopleths": [
+                {
+                    "kind": isopleth.kind,
+                    "value": isopleth.value,
+                    "unit": isopleth.unit,
+                    "points": [list(point) for point in isopleth.points],
+                }
+                for isopleth in self.diagram.isopleths
+            ],
         }
 
 

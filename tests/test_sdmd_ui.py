@@ -25,6 +25,10 @@ def test_index_has_the_sdmd_workspace() -> None:
         'id="sdmd-yield-chart"',
         'id="sdmd-diagram"',
         'id="sdmd-provenance"',
+        'id="sdmd-interpretation"',
+        'id="sdmd-yield-metric"',
+        'id="sdmd-reset"',
+        'id="sdmd-diagram-legend"',
     ):
         assert marker in html
 
@@ -41,6 +45,9 @@ def test_app_js_wires_the_sdmd_api() -> None:
         "function renderSdmd",
         "function saveSdmdConstraints",
         "function loadSdmdAvailability",
+        "function renderSdmdInterpretation",
+        "sdmd-iso-height",
+        "sdmd-trajectory",
     ):
         assert marker in javascript
 

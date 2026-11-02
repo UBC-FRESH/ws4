@@ -3772,3 +3772,12 @@ issue comments.
   map, the CLI, and the report. A cap across blocks in one AU and trajectory-zone rejection
   need AU state and per-track trajectories, and are recorded as limits. Dashboard result:
   `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
+- P87.6 polish: made the AU Explorer interpretable. The SDMD now draws the top-height and
+  QMD isopleths and the closure/competition/mortality limits, with a legend and hover
+  readout. The yield chart has a metric selector and a hover readout. An interpretation
+  panel states the observed support, envelope range, diagram review state, selected
+  regime verdict and reasons, option reduction, and data gaps. The trajectory menu only
+  enables regimes with a stored path, labels the others "no stored path", and the selected
+  path is drawn with numbered points and a plain-language explanation. The browser smoke
+  now selects a trajectory, checks the orange path, changes the yield metric, and checks
+  the iPad-landscape layout.

@@ -114,6 +114,24 @@ def test_au_explorer_tab_renders(tmp_path: Path) -> None:
                 "document.querySelectorAll('#sdmd-regime-editor .sdmd-regime-row').length === 7",
                 timeout=15000,
             )
+            page.wait_for_function(
+                "document.querySelectorAll('#sdmd-diagram path.sdmd-iso-height').length > 0",
+                timeout=15000,
+            )
+            page.select_option("#sdmd-trajectory", "REG-A-CT60")
+            page.wait_for_function(
+                "document.querySelectorAll('#sdmd-diagram path.sdmd-trajectory').length > 0",
+                timeout=15000,
+            )
+            page.wait_for_function(
+                "document.querySelector('#sdmd-trajectory-status').textContent.trim() === 'inside'",
+                timeout=15000,
+            )
+            page.select_option("#sdmd-yield-metric", "tph")
+            page.wait_for_function(
+                "document.querySelectorAll('#sdmd-yield-chart path').length > 0",
+                timeout=15000,
+            )
             page.set_viewport_size({"width": 1024, "height": 768})
             assert page.locator("#sdmd-canvas").is_visible()
             assert page.locator("#sdmd-regime-editor .sdmd-regime-row").count() == 7

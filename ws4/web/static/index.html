@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=86">
+  <link rel="stylesheet" href="static/style.css?v=87">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
 </head>
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v86</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v87</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <label class="year">Period
@@ -323,7 +323,10 @@
           <h3>Constraints</h3>
           <p class="hint">Every regime needs a row. A denied regime is valid; any other finding blocks the save.</p>
           <div id="sdmd-regime-editor" class="sdmd-regime-editor"></div>
-          <button id="sdmd-save" type="button">Save constraint set</button>
+          <div class="sdmd-editor-actions">
+            <button id="sdmd-save" type="button">Save constraint set</button>
+            <button id="sdmd-reset" type="button">Reset</button>
+          </div>
           <p id="sdmd-preview" class="hint"></p>
           <button id="sdmd-use" type="button">Use in scenario</button>
         </section>
@@ -376,25 +379,49 @@
           <span id="sdmd-preview-badge" class="badge" hidden></span>
         </div>
       </div>
-      <div class="sdmd-grid">
-        <article class="sdmd-card">
-          <h3>Yield</h3>
-          <svg id="sdmd-yield-chart" class="sdmd-chart" viewBox="0 0 480 230" role="img" aria-label="yield curve"></svg>
-          <p id="sdmd-yield-note" class="hint"></p>
-        </article>
-        <article class="sdmd-card">
-          <h3>Stand density</h3>
-          <svg id="sdmd-diagram" class="sdmd-chart" viewBox="0 0 480 260" role="img" aria-label="stand density management diagram"></svg>
-          <p id="sdmd-diagram-note" class="hint"></p>
-        </article>
-        <article class="sdmd-card">
-          <h3>Provenance</h3>
-          <div id="sdmd-provenance" class="sdmd-provenance"></div>
-        </article>
-        <article class="sdmd-card">
-          <h3>Regime behaviour</h3>
-          <div id="sdmd-regime-paths" class="hint"></div>
-        </article>
+      <div class="sdmd-layout">
+        <div class="sdmd-main">
+          <article class="sdmd-card sdmd-card-wide">
+            <div class="sdmd-card-head">
+              <h3>Stand density</h3>
+              <div id="sdmd-diagram-legend" class="sdmd-legend"></div>
+            </div>
+            <svg id="sdmd-diagram" class="sdmd-chart" viewBox="0 0 720 420" role="img" aria-label="stand density management diagram"></svg>
+            <p id="sdmd-diagram-readout" class="sdmd-readout">Hover a point for its density and zone.</p>
+            <p id="sdmd-diagram-note" class="hint"></p>
+          </article>
+          <article class="sdmd-card">
+            <div class="sdmd-card-head">
+              <h3>Yield</h3>
+              <label class="sdmd-metric">Metric
+                <select id="sdmd-yield-metric">
+                  <option value="volume_m3_ha">Volume (m³/ha)</option>
+                  <option value="tph">Density (TPH)</option>
+                  <option value="ba_m2_ha">Basal area (m²/ha)</option>
+                  <option value="qmd_cm">QMD (cm)</option>
+                  <option value="top_height_m">Top height (m)</option>
+                </select>
+              </label>
+            </div>
+            <svg id="sdmd-yield-chart" class="sdmd-chart" viewBox="0 0 720 260" role="img" aria-label="yield curve"></svg>
+            <p id="sdmd-yield-readout" class="sdmd-readout">Hover a point for its value.</p>
+            <p id="sdmd-yield-note" class="hint"></p>
+          </article>
+        </div>
+        <aside class="sdmd-side">
+          <article class="sdmd-card">
+            <h3>Interpretation</h3>
+            <div id="sdmd-interpretation" class="sdmd-interpretation"></div>
+          </article>
+          <article class="sdmd-card">
+            <h3>Selected regime</h3>
+            <div id="sdmd-regime-paths" class="hint"></div>
+          </article>
+          <article class="sdmd-card">
+            <h3>Provenance</h3>
+            <div id="sdmd-provenance" class="sdmd-provenance"></div>
+          </article>
+        </aside>
       </div>
     </section>
     <div id="map-wrap" tabindex="-1" aria-label="Forest estate map. Click a block for details.">
@@ -415,6 +442,6 @@
     </div>
   </main>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=86"></script>
+  <script type="module" src="static/app.js?v=87"></script>
 </body>
 </html>

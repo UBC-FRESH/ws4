@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null } };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' } };
 
 const $ = (id) => document.getElementById(id);
 const TILE_VERSION = 'v9';
@@ -2630,27 +2630,58 @@ function sdmdLogTicks(min, max) {
   return ticks;
 }
 
+const SDMD_YIELD_METRICS = {
+  volume_m3_ha: { label: 'Volume', unit: 'm³/ha' },
+  tph: { label: 'Density', unit: 'TPH' },
+  ba_m2_ha: { label: 'Basal area', unit: 'm²/ha' },
+  qmd_cm: { label: 'QMD', unit: 'cm' },
+  top_height_m: { label: 'Top height', unit: 'm' },
+};
+
+function renderSdmdLegend() {
+  const legend = $('sdmd-diagram-legend');
+  if (!legend) return;
+  legend.replaceChildren();
+  for (const [kind, text] of [
+    ['obs', 'Observed plot'],
+    ['env', 'Observed envelope'],
+    ['traj', 'Selected regime path'],
+    ['height', 'Top-height isopleth'],
+    ['qmd', 'QMD isopleth'],
+    ['limit', 'Competition / mortality limit'],
+  ]) {
+    const item = document.createElement('span');
+    item.className = kind;
+    item.textContent = text;
+    legend.append(item);
+  }
+}
+
 function renderSdmdYield() {
   const svg = sdmdSvg('sdmd-yield-chart');
   const note = $('sdmd-yield-note');
+  const readout = $('sdmd-yield-readout');
   if (!svg) return;
+  const metric = state.sdmd.yieldMetric ?? 'volume_m3_ha';
+  const spec = SDMD_YIELD_METRICS[metric] ?? SDMD_YIELD_METRICS.volume_m3_ha;
   const rows = (state.sdmd.yield ?? []).filter((row) => !state.sdmd.source || row.source === state.sdmd.source);
   if (!rows.length) {
     if (note) note.textContent = 'No stand summaries for this source.';
+    if (readout) readout.textContent = '';
     return;
   }
-  const width = 480, height = 230, left = 46, right = 14, top = 14, bottom = 34;
+  const width = 720, height = 260, left = 58, right = 18, top = 18, bottom = 38;
   const ages = rows.map((row) => sdmdNumber(row.age)).filter((value) => value > 0);
-  const volumes = rows.map((row) => sdmdNumber(row.volume_m3_ha)).filter((value) => value >= 0);
+  const values = rows.map((row) => sdmdNumber(row[metric])).filter((value) => Number.isFinite(value));
   const minAge = Math.min(...ages), maxAge = Math.max(...ages);
-  const maxVolume = Math.max(...volumes, 1);
+  const maxValue = Math.max(...values, 1);
   const x = (age) => sdmdScale(age, minAge, maxAge, left, width - right);
-  const y = (volume) => sdmdScale(volume, 0, maxVolume, height - bottom, top);
+  const y = (value) => sdmdScale(value, 0, maxValue, height - bottom, top);
   for (let index = 0; index <= 4; index += 1) {
-    const value = (maxVolume * index) / 4;
+    const value = (maxValue * index) / 4;
     const yValue = y(value);
     sdmdNode(svg, 'line', { x1: left, x2: width - right, y1: yValue, y2: yValue, class: 'sdmd-grid-line' });
-    sdmdNode(svg, 'text', { x: left - 6, y: yValue + 3, 'text-anchor': 'end', class: 'sdmd-tick' }, Math.round(value));
+    sdmdNode(svg, 'text', { x: left - 6, y: yValue + 3, 'text-anchor': 'end', class: 'sdmd-tick' }, carbonAxisTick(value, maxValue));
   }
   const ageTicks = [...new Set(ages)].sort((a, b) => a - b);
   for (const age of ageTicks) {
@@ -2660,57 +2691,94 @@ function renderSdmdYield() {
   }
   sdmdNode(svg, 'line', { x1: left, x2: left, y1: top, y2: height - bottom, class: 'sdmd-axis' });
   sdmdNode(svg, 'line', { x1: left, x2: width - right, y1: height - bottom, y2: height - bottom, class: 'sdmd-axis' });
-  sdmdNode(svg, 'text', { x: left, y: 10, class: 'sdmd-axis-title' }, 'volume m³/ha');
-  sdmdNode(svg, 'text', { x: width - right, y: height - 6, 'text-anchor': 'end', class: 'sdmd-axis-title' }, 'age (years)');
-  const path = rows
-    .slice()
-    .sort((a, b) => sdmdNumber(a.age) - sdmdNumber(b.age))
-    .map((row, index) => `${index ? 'L' : 'M'}${x(sdmdNumber(row.age)).toFixed(1)},${y(sdmdNumber(row.volume_m3_ha)).toFixed(1)}`)
+  sdmdNode(svg, 'text', { x: left, y: 11, class: 'sdmd-axis-title' }, `${spec.label} (${spec.unit})`);
+  sdmdNode(svg, 'text', { x: width - right, y: height - 6, 'text-anchor': 'end', class: 'sdmd-axis-title' }, 'stand age (years)');
+  const ordered = rows.slice().sort((a, b) => sdmdNumber(a.age) - sdmdNumber(b.age));
+  const path = ordered
+    .map((row, index) => `${index ? 'L' : 'M'}${x(sdmdNumber(row.age)).toFixed(1)},${y(sdmdNumber(row[metric])).toFixed(1)}`)
     .join(' ');
   sdmdNode(svg, 'path', { d: path, class: 'sdmd-yield-line' });
   for (const row of rows) {
+    const value = sdmdNumber(row[metric]);
     const dot = sdmdNode(svg, 'circle', {
       cx: x(sdmdNumber(row.age)),
-      cy: y(sdmdNumber(row.volume_m3_ha)),
-      r: 3.2,
+      cy: y(value),
+      r: 3.6,
       class: 'sdmd-yield-dot',
     });
-    sdmdNode(dot, 'title', {}, `Age ${row.age}: ${row.volume_m3_ha} m³/ha, ${row.tph} TPH`);
+    dot.addEventListener('mouseenter', () => {
+      if (readout) readout.textContent = `Age ${row.age}: ${value.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${spec.unit} · ${row.tph} TPH · ${row.qmd_cm} cm QMD`;
+    });
+    dot.addEventListener('mouseleave', () => {
+      if (readout) readout.textContent = 'Hover a point for its value.';
+    });
+    sdmdNode(dot, 'title', {}, `Age ${row.age}: ${value} ${spec.unit}`);
   }
-  if (note) note.textContent = `${rows.length} stand summaries; volume from the stand table.`;
+  if (note) note.textContent = `${rows.length} stand summaries; ${spec.label.toLowerCase()} from the stand table.`;
 }
 
 function renderSdmdDiagram() {
   const svg = sdmdSvg('sdmd-diagram');
   const note = $('sdmd-diagram-note');
+  const readout = $('sdmd-diagram-readout');
   if (!svg) return;
   const points = state.sdmd.points?.points ?? [];
   const envelope = state.sdmd.points?.envelope ?? [];
+  const isopleths = state.sdmd.points?.diagram?.isopleths ?? [];
   const trajectory = state.sdmd.trajectoryData?.points ?? [];
-  const width = 480, height = 260, left = 48, right = 14, top = 14, bottom = 36;
+  const width = 720, height = 420, left = 62, right = 22, top = 20, bottom = 42;
   const all = [...points, ...trajectory.map((point) => ({ tph: point[0], mean_tree_volume_m3: point[1] }))]
     .map((point) => ({ tph: sdmdNumber(point.tph), volume: sdmdNumber(point.mean_tree_volume_m3) }))
     .filter((point) => point.tph > 0 && point.volume > 0);
   if (!all.length) {
     if (note) note.textContent = 'No SDMD points for this AU.';
+    if (readout) readout.textContent = '';
     return;
   }
   const logs = all.map((point) => [Math.log10(point.tph), Math.log10(point.volume)]);
-  const minX = Math.min(...logs.map((pair) => pair[0])) - 0.05;
-  const maxX = Math.max(...logs.map((pair) => pair[0])) + 0.05;
-  const minY = Math.min(...logs.map((pair) => pair[1])) - 0.05;
-  const maxY = Math.max(...logs.map((pair) => pair[1])) + 0.05;
+  const minX = Math.min(...logs.map((pair) => pair[0])) - 0.08;
+  const maxX = Math.max(...logs.map((pair) => pair[0])) + 0.08;
+  const minY = Math.min(...logs.map((pair) => pair[1])) - 0.08;
+  const maxY = Math.max(...logs.map((pair) => pair[1])) + 0.08;
   const x = (tph) => sdmdScale(Math.log10(tph), minX, maxX, left, width - right);
   const y = (volume) => sdmdScale(Math.log10(volume), minY, maxY, height - bottom, top);
   for (const power of sdmdLogTicks(Math.ceil(minX), Math.floor(maxX))) {
     const xValue = x(10 ** power);
     sdmdNode(svg, 'line', { x1: xValue, x2: xValue, y1: top, y2: height - bottom, class: 'sdmd-grid-line' });
-    sdmdNode(svg, 'text', { x: xValue, y: height - bottom + 17, 'text-anchor': 'middle', class: 'sdmd-tick' }, `1e${power}`);
+    sdmdNode(svg, 'text', { x: xValue, y: height - bottom + 18, 'text-anchor': 'middle', class: 'sdmd-tick' }, `1e${power}`);
   }
   for (const power of sdmdLogTicks(Math.ceil(minY), Math.floor(maxY))) {
     const yValue = y(10 ** power);
     sdmdNode(svg, 'line', { x1: left, x2: width - right, y1: yValue, y2: yValue, class: 'sdmd-grid-line' });
     sdmdNode(svg, 'text', { x: left - 6, y: yValue + 3, 'text-anchor': 'end', class: 'sdmd-tick' }, `1e${power}`);
+  }
+  const classes = {
+    top_height: 'sdmd-iso-height',
+    qmd: 'sdmd-iso-qmd',
+    crown_closure: 'sdmd-iso-boundary',
+    competition: 'sdmd-iso-limit',
+    self_thinning: 'sdmd-iso-limit',
+  };
+  for (const isopleth of isopleths) {
+    const visible = (isopleth.points ?? [])
+      .map((point) => [Number(point[0]), Number(point[1])])
+      .filter((point) => point[0] > 0 && point[1] > 0)
+      .filter((point) => Math.log10(point[0]) >= minX && Math.log10(point[0]) <= maxX && Math.log10(point[1]) >= minY && Math.log10(point[1]) <= maxY);
+    if (visible.length < 2) continue;
+    const d = visible
+      .map((point, index) => `${index ? 'L' : 'M'}${x(point[0]).toFixed(1)},${y(point[1]).toFixed(1)}`)
+      .join(' ');
+    sdmdNode(svg, 'path', { d, class: classes[isopleth.kind] ?? 'sdmd-iso-boundary' });
+    const labelPoint = visible[visible.length - 1];
+    if (isopleth.kind === 'top_height' || isopleth.kind === 'qmd') {
+      sdmdNode(svg, 'text', { x: x(labelPoint[0]) + 3, y: y(labelPoint[1]) - 3, class: 'sdmd-iso-label' }, `${isopleth.value}${isopleth.unit}`);
+    } else if (isopleth.kind === 'crown_closure') {
+      sdmdNode(svg, 'text', { x: x(labelPoint[0]) + 3, y: y(labelPoint[1]) - 3, class: 'sdmd-iso-label' }, 'closure');
+    } else if (isopleth.kind === 'competition') {
+      sdmdNode(svg, 'text', { x: x(labelPoint[0]) + 3, y: y(labelPoint[1]) - 3, class: 'sdmd-iso-label' }, 'competition');
+    } else {
+      sdmdNode(svg, 'text', { x: x(labelPoint[0]) + 3, y: y(labelPoint[1]) - 3, class: 'sdmd-iso-label' }, 'mortality');
+    }
   }
   if (envelope.length >= 3) {
     const polygon = envelope.map((point) => `${x(point[0]).toFixed(1)},${y(point[1]).toFixed(1)}`).join(' ');
@@ -2718,35 +2786,161 @@ function renderSdmdDiagram() {
   }
   sdmdNode(svg, 'line', { x1: left, x2: left, y1: top, y2: height - bottom, class: 'sdmd-axis' });
   sdmdNode(svg, 'line', { x1: left, x2: width - right, y1: height - bottom, y2: height - bottom, class: 'sdmd-axis' });
-  sdmdNode(svg, 'text', { x: left, y: 10, class: 'sdmd-axis-title' }, 'mean tree volume (log)');
-  sdmdNode(svg, 'text', { x: width - right, y: height - 6, 'text-anchor': 'end', class: 'sdmd-axis-title' }, 'TPH (log)');
+  sdmdNode(svg, 'text', { x: left, y: 12, class: 'sdmd-axis-title' }, 'mean tree volume (m³, log scale)');
+  sdmdNode(svg, 'text', { x: width - right, y: height - 7, 'text-anchor': 'end', class: 'sdmd-axis-title' }, 'trees per hectare (log scale)');
   for (const point of points) {
     const dot = sdmdNode(svg, 'circle', {
       cx: x(sdmdNumber(point.tph)),
       cy: y(sdmdNumber(point.mean_tree_volume_m3)),
-      r: 3.8,
+      r: 4.2,
       class: 'sdmd-point',
+    });
+    dot.addEventListener('mouseenter', () => {
+      if (readout) readout.textContent = `${point.tph} TPH · ${point.mean_tree_volume_m3} m³/tree · zone ${point.zone ?? 'unknown'} · age ${point.age ?? '—'}`;
+    });
+    dot.addEventListener('mouseleave', () => {
+      if (readout) readout.textContent = 'Hover a point for its density and zone.';
     });
     sdmdNode(dot, 'title', {}, `${point.tph} TPH, ${point.mean_tree_volume_m3} m³/tree, ${point.zone ?? ''}`);
   }
   if (trajectory.length) {
-    const path = trajectory
+    const d = trajectory
       .map((point, index) => `${index ? 'L' : 'M'}${x(point[0]).toFixed(1)},${y(point[1]).toFixed(1)}`)
       .join(' ');
-    sdmdNode(svg, 'path', { d: path, class: 'sdmd-trajectory' });
-    for (const point of trajectory) {
+    sdmdNode(svg, 'path', { d, class: 'sdmd-trajectory' });
+    trajectory.forEach((point, index) => {
       sdmdNode(svg, 'circle', {
         cx: x(point[0]),
         cy: y(point[1]),
-        r: 3,
+        r: 3.4,
         class: 'sdmd-trajectory-dot',
       });
-    }
+      sdmdNode(svg, 'text', {
+        x: x(point[0]) + 5,
+        y: y(point[1]) - 5,
+        class: 'sdmd-iso-label',
+      }, String(index + 1));
+    });
   }
   if (note) {
     const status = state.sdmd.trajectoryData?.status;
-    note.textContent = `${points.length} observed points; ${envelope.length} envelope vertices${trajectory.length ? `; trajectory ${status ?? 'loaded'}` : ''}.`;
+    note.textContent = `Black dots: ${points.length} observed plots. Blue polygon: observed envelope (${envelope.length} vertices). ${trajectory.length ? `Orange dashed: selected regime path (${trajectory.length} points, ${status ?? 'loaded'}).` : 'Pick a trajectory above to draw an orange path.'}`;
   }
+}
+
+function renderSdmdInterpretation() {
+  const host = $('sdmd-interpretation');
+  if (!host) return;
+  host.replaceChildren();
+  const detail = state.sdmd.detail;
+  if (!detail) return;
+  const points = state.sdmd.points?.points ?? [];
+  const regimes = state.sdmd.regimes ?? [];
+  const selected = regimes.find((item) => item.regime_id === state.sdmd.trajectory) ?? null;
+  const counts = state.sdmd.preview?.counts ?? {};
+  const add = (text) => {
+    const item = document.createElement('li');
+    item.textContent = text;
+    list.append(item);
+  };
+  const paragraph = document.createElement('p');
+  paragraph.textContent = 'The density chart uses logarithmic axes. Black dots are observed plots; the blue polygon is their envelope; the orange dashed line is the selected regime path.';
+  host.append(paragraph);
+  const list = document.createElement('ul');
+  add(`Observed support: ${detail.plot_count} plots, ${detail.visit_count} visits, ages ${detail.age_min ?? '—'}–${detail.age_max ?? '—'}, site index ${detail.site_index_min ?? '—'}–${detail.site_index_max ?? '—'}.`);
+  if (points.length >= 3) {
+    const tph = points.map((point) => sdmdNumber(point.tph));
+    const volume = points.map((point) => sdmdNumber(point.mean_tree_volume_m3));
+    add(`Observed range: ${Math.min(...tph)}–${Math.max(...tph)} TPH and ${Math.min(...volume)}–${Math.max(...volume)} m³/tree.`);
+  } else {
+    add('Not enough observed points for an envelope.');
+  }
+  if (detail.diagram) {
+    add(`Diagram: ${detail.diagram.diagram_id} (${detail.diagram.review_status}); ${detail.diagram.source.kind} source.`);
+    if (detail.diagram.source.kind === 'synthetic') {
+      add('This is an illustrative fixture, not a published digitisation. Use it to test the method, not to make a silvicultural decision.');
+    }
+  } else {
+    add('No diagram is loaded, so placement and zones are unavailable.');
+  }
+  if (selected) {
+    const verdict = selected.allowed ? 'allowed' : 'denied';
+    const reason = (selected.findings ?? []).map((finding) => finding.message).join('; ');
+    add(`Selected regime ${selected.regime_id}: ${verdict}${reason ? ` — ${reason}` : ''}.`);
+    if (!selected.trajectory_available) {
+      add('No stored trajectory exists for this regime, so the chart shows only the observed envelope.');
+    } else if (state.sdmd.trajectoryData) {
+      add(`Stored path: ${state.sdmd.trajectoryData.points?.length ?? 0} points, ${state.sdmd.trajectoryData.status}.`);
+    }
+  } else {
+    add('No regime is selected. The trajectory menu lists only paths that exist; unavailable regimes are disabled.');
+  }
+  add(`Options: ${counts.regimes_before ?? '—'} → ${counts.regimes_after ?? '—'} regimes and ${counts.entries_before ?? '—'} → ${counts.entries_after ?? '—'} entries.`);
+  host.append(list);
+  const gaps = detail.data_gaps ?? [];
+  if (gaps.length) {
+    const heading = document.createElement('p');
+    heading.innerHTML = '<strong>Data gaps</strong>';
+    host.append(heading);
+    const gapList = document.createElement('ul');
+    for (const gap of gaps) {
+      const item = document.createElement('li');
+      item.textContent = gap;
+      gapList.append(item);
+    }
+    host.append(gapList);
+  }
+}
+
+function renderSdmdRegimePaths() {
+  const host = $('sdmd-regime-paths');
+  if (!host) return;
+  host.replaceChildren();
+  const selected = (state.sdmd.regimes ?? []).find((item) => item.regime_id === state.sdmd.trajectory);
+  if (!selected) {
+    host.textContent = 'Choose a regime in the trajectory menu. Only regimes with a stored path are selectable.';
+    return;
+  }
+  const lines = [
+    `Entry type: ${selected.entry_type}`,
+    `Entry ages: ${(selected.entry_ages ?? []).join(', ') || 'none'}`,
+    `Entries: ${selected.entry_count}`,
+    `Removal fraction: ${selected.removal_fraction}`,
+    `Even-aged SDMD valid: ${selected.sdmd_valid ? 'yes' : 'no'}`,
+  ];
+  const list = document.createElement('ul');
+  for (const line of lines) {
+    const item = document.createElement('li');
+    item.textContent = line;
+    list.append(item);
+  }
+  host.append(list);
+  const verdict = document.createElement('p');
+  const badge = document.createElement('span');
+  badge.className = `sdmd-verdict ${selected.allowed ? 'allowed' : 'denied'}`;
+  badge.textContent = selected.allowed ? 'Allowed' : 'Denied';
+  verdict.append(badge);
+  host.append(verdict);
+  const findings = selected.findings ?? [];
+  if (findings.length) {
+    const findingsList = document.createElement('ul');
+    for (const finding of findings) {
+      const item = document.createElement('li');
+      item.textContent = `${finding.code}: ${finding.message}`;
+      findingsList.append(item);
+    }
+    host.append(findingsList);
+  }
+  const path = document.createElement('p');
+  if (selected.trajectory_available && state.sdmd.trajectoryData) {
+    const data = state.sdmd.trajectoryData;
+    path.textContent = `Stored path: ${data.points?.length ?? 0} points, ${data.status}. The orange dashed line on the chart is this path; “extrapolated” means at least one point lies outside the observed envelope.`;
+  } else if (selected.trajectory_available) {
+    path.textContent = 'A trajectory file exists; choose it above to draw and assess it.';
+  } else {
+    path.textContent = 'No stored trajectory for this regime. The chart shows only the observed envelope.';
+  }
+  host.append(path);
 }
 
 function renderSdmdProvenance() {
@@ -2897,12 +3091,18 @@ function renderSdmd() {
   for (const regime of state.sdmd.regimes ?? []) {
     const option = document.createElement('option');
     option.value = regime.regime_id;
-    option.textContent = regime.regime_id;
+    option.textContent = regime.trajectory_available ? regime.regime_id : `${regime.regime_id} (no stored path)`;
+    option.disabled = !regime.trajectory_available;
     trajectorySelect.append(option);
   }
   trajectorySelect.value = currentTrajectory;
+  const metricSelect = $('sdmd-yield-metric');
+  if (metricSelect) metricSelect.value = state.sdmd.yieldMetric ?? 'volume_m3_ha';
+  renderSdmdLegend();
   renderSdmdYield();
   renderSdmdDiagram();
+  renderSdmdInterpretation();
+  renderSdmdRegimePaths();
   renderSdmdProvenance();
   renderSdmdRegimeEditor();
   renderSdmdPreview();
@@ -3003,6 +3203,8 @@ async function loadSdmdTrajectory() {
   if (!regimeId || !state.sdmd.au) {
     $('sdmd-trajectory-status').textContent = '';
     renderSdmdDiagram();
+    renderSdmdInterpretation();
+    renderSdmdRegimePaths();
     return;
   }
   try {
@@ -3013,6 +3215,8 @@ async function loadSdmdTrajectory() {
     $('sdmd-trajectory-status').textContent = error.message;
   }
   renderSdmdDiagram();
+  renderSdmdInterpretation();
+  renderSdmdRegimePaths();
 }
 
 async function saveSdmdConstraints() {
@@ -3080,6 +3284,13 @@ function wireSdmd() {
     renderSdmdYield();
   });
   $('sdmd-save').addEventListener('click', saveSdmdConstraints);
+  $('sdmd-reset').addEventListener('click', () => {
+    if (state.sdmd.au) loadSdmdAu(state.sdmd.au);
+  });
+  $('sdmd-yield-metric').addEventListener('change', () => {
+    state.sdmd.yieldMetric = $('sdmd-yield-metric').value;
+    renderSdmdYield();
+  });
   $('sdmd-trajectory').addEventListener('change', loadSdmdTrajectory);
   $('sdmd-use').addEventListener('click', useSdmdInScenario);
 }

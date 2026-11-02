@@ -322,14 +322,22 @@ with ``--sdmd-dir``. It is a reader over the API above, with no build step.
 
 - The left rail chooses a region and AU, filters the yield rows by source, and
   shows the AU's plot count, age support, species, and diagram state.
-- The main canvas shows the yield curve, the SDMD with observed points and the
-  convex envelope, the selected regime trajectory, provenance, and the data gaps.
+- The main canvas draws the SDMD isopleths, the observed points, the convex
+  envelope, and the selected regime path on logarithmic axes. A legend and a hover
+  readout name the curves and the zone. The yield chart has a metric selector
+  (volume, density, basal area, QMD, top height) and its own hover readout.
+- An interpretation panel states the observed support, envelope range, diagram
+  review state, the selected regime's verdict and reasons, the option reduction,
+  and the data gaps. It says explicitly when the diagram is an illustrative fixture
+  and when a regime has no stored trajectory.
 - The constraint editor has one row per regime: allow/deny, entry-age window,
   maximum entries, minimum interval, and maximum removal fraction. Saving posts
   the complete set to the validated endpoint and refreshes the option-count
   preview. A refused save leaves the stored set unchanged.
 - ``Use in scenario`` records the AU in the URL for the solver handoff.
 - The selected AU and workspace are URL state, so a link opens the same view.
+- The trajectory menu lists only regimes with a stored path; the other regimes are
+  disabled and labelled "no stored path".
 
 Solver integration
 ------------------

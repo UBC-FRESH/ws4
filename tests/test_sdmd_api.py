@@ -138,6 +138,7 @@ def test_sdmd_points_carry_a_placement(tmp_path: Path) -> None:
         "outside",
     }
     assert len(payload["envelope"]) >= 3
+    assert len(payload["diagram"]["isopleths"]) == 13
 
 
 def test_regimes_include_constraint_findings(tmp_path: Path) -> None:
