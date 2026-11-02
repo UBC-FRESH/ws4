@@ -3821,3 +3821,7 @@ issue comments.
   as `pr-open`. The eight gates, the 863/1,173 m3/ha cases, the option reduction, the
   deferred trajectory-zone and cross-block AU cap, and the synthetic-diagram limit are
   named in the report. No merge, tag, release, or settings change has been made.
+- P87.8: recorded CI evidence. Run `41402135881` on `e2b758c` passed every job
+  (quality gates, clean-checkout contract, notebook outputs, pre-commit parity, and the
+  green dashboard summary). An earlier Types failure on `1e1a585`/`5737e49` was a test
+  assertion calling `pd.isna` on a `loc` scalar; `e2b758c` uses the Series `isna` result.

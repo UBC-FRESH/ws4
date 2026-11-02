@@ -3,8 +3,8 @@
 Phase: P87 Stand density management and AU Explorer
 Parent issue: #628
 Pull request: #658, `feature/p87-sdmd-au-explorer` into `main`
-Evidence head: `1e1a585`
-Report commit: this commit
+Evidence head: `e2b758c`
+Report commit: this metadata-only commit; its CI run is posted on the pull request
 Date: 2026-11-02
 Status: queued for approval. Not merged.
 
@@ -71,6 +71,7 @@ account change is requested.
 | `13f37af` | P87.3 physical trajectory refusal | dashboard green; 41 diagram tests |
 | `726bca4` | P87.8 eight validation gates | dashboard green; 10 validation tests |
 | `1e1a585` | merge `origin/main` | dashboard `OVERALL: GREEN` on all seven gates |
+| `e2b758c` | P87.8 CI mypy fix | CI run 41402135881: success on every job |
 
 Validation command output at the evidence head:
 
@@ -86,7 +87,7 @@ Validation command output at the evidence head:
 
 | Run ID | Head commit | Conclusion | Notes |
 | --- | --- | --- | --- |
-| pending | `1e1a585` + report commit | pending | The PR #658 CI run is posted on the pull request; this report is refreshed with the run ID before approval. |
+| 41402135881 | `e2b758c` | success | Quality gates, clean-checkout contract, notebook outputs, pre-commit parity, and the green dashboard summary all passed. |
 
 ## 5. Deviations
 
@@ -99,6 +100,7 @@ Validation command output at the evidence head:
 | P87.4 and P87.6 roadmap checkboxes were left unchecked | Two string replacements did not apply and were not read back | Fixed in `726bca4`; the issue bodies and parent checklist were already correct |
 | The initial-volume gate uses the fixture's observed maximum, not the KC dataset | The KC initial volume is not in the repository | The 863/1,173 values are exercised in tests and the CLI; the pilot limitation is stated |
 | Trajectory-zone rejection and a cross-block AU cap are not enforced | The compiled matrix has no per-track trajectory table and no AU search state | Deferred in #635 and the roadmap with that reason |
+| CI failed on `1e1a585` and `5737e49` at the Types gate | A test called `pd.isna` on a `loc` scalar that CI pandas stubs type more broadly | Fixed in `e2b758c`; CI run 41402135881 is green |
 
 ## 6. Next phase
 
