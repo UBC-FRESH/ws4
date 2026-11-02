@@ -967,6 +967,59 @@ class PaddedFactorizedEvents:
             raise ValueError("factorized product offsets must be inside the horizon")
         return output[:, selected]
 
+    def state_dict(self) -> dict[str, Any]:
+        """Return CPU tensors for a persisted padded cache.
+
+        Returns
+        -------
+        dict of str to torch.Tensor
+            Detached CPU tensors for the padded layout.
+        """
+        return {
+            "offset": self.offset.detach().cpu(),
+            "track": self.track.detach().cpu(),
+            "age": self.age.detach().cpu(),
+            "label": self.label.detach().cpu(),
+            "area": self.area.detach().cpu(),
+            "valid": self.valid.detach().cpu(),
+            "chain_offsets": self.chain_offsets.detach().cpu(),
+            "blocks": self.blocks.detach().cpu(),
+        }
+
+    @classmethod
+    def from_state_dict(
+        cls,
+        payload: dict[str, Any],
+        *,
+        device: str = "cpu",
+    ) -> PaddedFactorizedEvents:
+        """Restore padded event tensors from a cache payload.
+
+        Parameters
+        ----------
+        payload : dict
+            Cache payload from :meth:`state_dict`.
+        device : str
+            Torch device string.
+
+        Returns
+        -------
+        PaddedFactorizedEvents
+            The restored event layout.
+        """
+        import torch
+
+        return cls(
+            offset=torch.as_tensor(payload["offset"], device=device),
+            track=torch.as_tensor(payload["track"], device=device),
+            age=torch.as_tensor(payload["age"], device=device),
+            label=torch.as_tensor(payload["label"], device=device),
+            area=torch.as_tensor(payload["area"], device=device),
+            valid=torch.as_tensor(payload["valid"], device=device),
+            chain_offsets=torch.as_tensor(payload["chain_offsets"], device=device),
+            blocks=torch.as_tensor(payload["blocks"], device=device),
+        )
+
     def to(self, device: str) -> PaddedFactorizedEvents:
         """Move the padded event tensors to another device.
 
@@ -1324,6 +1377,82 @@ class FactorizedAccountSet:
         """
         payload = arrays if arrays is not None else FactorizedEffectArrays.load(path)
         return cls.from_arrays(payload, simulator, years=years, device=device)
+
+    def save_cache(self, path: str | Path) -> Path:
+        """Persist the padded tensors and lookup metadata to one torch file.
+
+        Parameters
+        ----------
+        path : str or pathlib.Path
+            Destination cache file.
+
+        Returns
+        -------
+        pathlib.Path
+            The written path.
+        """
+        import torch
+
+        destination = Path(path)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(
+            {
+                "version": 1,
+                "years": self.years,
+                "feature_max_track": self.feature_max_track,
+                "feature_max_age": self.feature_max_age,
+                "product_max_track": self.product_max_track,
+                "product_max_age": self.product_max_age,
+                "labels": list(self.labels),
+                "segments": self.segments.state_dict(),
+                "events": self.events.state_dict(),
+            },
+            destination,
+        )
+        return destination
+
+    @classmethod
+    def load_cache(
+        cls,
+        path: str | Path,
+        simulator: object,
+        *,
+        device: str = "cpu",
+    ) -> FactorizedAccountSet:
+        """Load a persisted padded cache without rebuilding the layout.
+
+        Parameters
+        ----------
+        path : str or pathlib.Path
+            Cache written by :meth:`save_cache`.
+        simulator : object
+            Simulator providing curve lookup.
+        device : str
+            Torch device string.
+
+        Returns
+        -------
+        FactorizedAccountSet
+            The account set on ``device``.
+        """
+        import torch
+
+        payload = torch.load(Path(path), map_location="cpu", weights_only=True)
+        segments = PaddedFactorizedTensors.from_state_dict(payload["segments"], device=device)
+        events = PaddedFactorizedEvents.from_state_dict(payload["events"], device=device)
+        return cls(
+            segments,
+            events,
+            simulator,
+            segments.blocks.cpu().numpy(),
+            years=int(payload["years"]),
+            device=device,
+            feature_max_track=int(payload["feature_max_track"]),
+            feature_max_age=int(payload["feature_max_age"]),
+            product_max_track=int(payload["product_max_track"]),
+            product_max_age=int(payload["product_max_age"]),
+            labels=tuple(str(label) for label in payload["labels"]),
+        )
 
     def _feature_table(self, account: str) -> Any:  # noqa: ANN401
         import torch
@@ -1790,6 +1919,57 @@ class PaddedFactorizedTensors:
             values = torch.where(choices >= 0, values, torch.zeros_like(values))
             output[:, column] = (values * selected_area).sum(dim=(1, 2))
         return output
+
+    def state_dict(self) -> dict[str, Any]:
+        """Return CPU tensors for a persisted padded cache.
+
+        Returns
+        -------
+        dict of str to torch.Tensor
+            Detached CPU tensors for the padded layout.
+        """
+        return {
+            "start": self.start.detach().cpu(),
+            "track": self.track.detach().cpu(),
+            "age": self.age.detach().cpu(),
+            "area": self.area.detach().cpu(),
+            "valid": self.valid.detach().cpu(),
+            "chain_offsets": self.chain_offsets.detach().cpu(),
+            "blocks": self.blocks.detach().cpu(),
+        }
+
+    @classmethod
+    def from_state_dict(
+        cls,
+        payload: dict[str, Any],
+        *,
+        device: str = "cpu",
+    ) -> PaddedFactorizedTensors:
+        """Restore padded segment tensors from a cache payload.
+
+        Parameters
+        ----------
+        payload : dict
+            Cache payload from :meth:`state_dict`.
+        device : str
+            Torch device string.
+
+        Returns
+        -------
+        PaddedFactorizedTensors
+            The restored segment layout.
+        """
+        import torch
+
+        return cls(
+            start=torch.as_tensor(payload["start"], device=device),
+            track=torch.as_tensor(payload["track"], device=device),
+            age=torch.as_tensor(payload["age"], device=device),
+            area=torch.as_tensor(payload["area"], device=device),
+            valid=torch.as_tensor(payload["valid"], device=device),
+            chain_offsets=torch.as_tensor(payload["chain_offsets"], device=device),
+            blocks=torch.as_tensor(payload["blocks"], device=device),
+        )
 
     def to(self, device: str) -> PaddedFactorizedTensors:
         """Move the padded tensors to another device.

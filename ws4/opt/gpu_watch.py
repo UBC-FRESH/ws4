@@ -27,20 +27,32 @@ if TYPE_CHECKING:
     from .objective import Target
 
 
-def _incumbent_values(population: GenomePopulation) -> pd.DataFrame:
-    """Return the incumbent's table-cell values as offset/account/value rows."""
+def _incumbent_values(
+    population: GenomePopulation,
+    extra_cells: tuple[tuple[int, str], ...] = (),
+) -> pd.DataFrame:
+    """Return the incumbent's known and requested factorized values."""
     assert population.scores is not None
     assert population.totals is not None
     import torch
 
     index = int(torch.argmin(population.scores))
+    known_cells = (*population.table.cells, *population._extra_cells)
     totals = population.totals[index].detach().cpu().tolist()
-    return pd.DataFrame(
-        [
+    rows = [
+        {"offset": int(offset), "account": str(account), "value": float(value)}
+        for (offset, account), value in zip(known_cells, totals, strict=True)
+    ]
+    missing = sorted(set(extra_cells) - set(known_cells))
+    if missing:
+        if population.factorized is None:
+            raise ValueError("display cells need a factorized account set")
+        factorized = population.factorized.totals(population.genomes[index : index + 1], missing)[0]
+        rows.extend(
             {"offset": int(offset), "account": str(account), "value": float(value)}
-            for (offset, account), value in zip(population.table.cells, totals, strict=True)
-        ]
-    )
+            for (offset, account), value in zip(missing, factorized.tolist(), strict=True)
+        )
+    return pd.DataFrame(rows)
 
 
 def run_gpu_watch(
@@ -109,7 +121,10 @@ def run_gpu_watch(
             else range(max(0, period_width - 1), cfg.years, max(1, period_width))
         )
     }
-    population.ensure_cells(display_cells)
+    display_cells_tuple = tuple(sorted(display_cells))
+    if population.factorized is None:
+        population.ensure_cells(display_cells)
+        display_cells_tuple = ()
 
     target_mtime = targets_path.stat().st_mtime_ns if targets_path is not None else None
     last_target_check = 0.0
@@ -130,7 +145,7 @@ def run_gpu_watch(
         if population.best_objective >= state.best_objective - 1e-9:
             return
         state.best_objective = population.best_objective
-        state.best_values = _incumbent_values(population)
+        state.best_values = _incumbent_values(population, display_cells_tuple)
         state.windows = state.current_windows()
 
     def reload_targets() -> None:
@@ -163,7 +178,7 @@ def run_gpu_watch(
             dict.fromkeys([*state.accounts, *(target.account for target in changed)])
         )
         state.best_objective = population.best_objective
-        state.best_values = _incumbent_values(population)
+        state.best_values = _incumbent_values(population, display_cells_tuple)
         state.windows = state.current_windows()
 
     population.advance()

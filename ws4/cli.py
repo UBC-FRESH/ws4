@@ -2759,6 +2759,17 @@ def gpu_watch(
     targets: Path = typer.Option(..., exists=True, help="Targets YAML"),
     seed_schedule: Path = typer.Option(..., exists=True, help="Initial schedule CSV"),
     table: Path = typer.Option(..., exists=True, help="Persisted effect table"),
+    factorized: Path | None = typer.Option(
+        None,
+        "--factorized",
+        exists=True,
+        help="Optional persisted factorized descriptor archive for display cells",
+    ),
+    factorized_cache: Path | None = typer.Option(
+        None,
+        "--factorized-cache",
+        help="Optional persisted padded-tensor cache; created on first use",
+    ),
     cache_dir: Path = typer.Option(
         Path("runtime/gpu-cache"), help="Simulator/candidate cache directory"
     ),
@@ -2789,6 +2800,7 @@ def gpu_watch(
         load_or_build_simulator,
     )
     from .opt.engine import load_schedule_csv
+    from .opt.factorized_effects import FactorizedAccountSet, FactorizedEffectArrays
     from .opt.gpu_effects import EffectTable
     from .opt.gpu_ga import GenomePopulation
     from .opt.gpu_watch import run_gpu_watch
@@ -2839,6 +2851,33 @@ def gpu_watch(
                 optimizer, cache_dir / "candidates.pkl", rebuild=rebuild_caches
             )
         effect_table = EffectTable.load(table, device=device)
+        factorized_accounts = None
+        if factorized_cache is not None and factorized is None:
+            raise ValueError("--factorized-cache requires --factorized")
+        if factorized is not None:
+            import numpy as np
+
+            if factorized_cache is not None and factorized_cache.is_file():
+                factorized_accounts = FactorizedAccountSet.load_cache(
+                    factorized_cache,
+                    optimizer.simulator(),
+                    device=device,
+                )
+            else:
+                arrays = FactorizedEffectArrays.load(factorized)
+                factorized_accounts = FactorizedAccountSet.from_arrays(
+                    arrays,
+                    optimizer.simulator(),
+                    years=years,
+                    device=device,
+                )
+                if factorized_cache is not None:
+                    factorized_accounts.save_cache(factorized_cache)
+            if not np.array_equal(
+                np.asarray(effect_table.blocks, dtype=np.int64),
+                np.asarray(factorized_accounts.blocks, dtype=np.int64),
+            ):
+                raise ValueError("factorized archive blocks do not match the effect table")
         if initial is None:
             initial = load_schedule_csv(seed_schedule)
             with schedule_cache.open("wb") as stream:
@@ -2854,18 +2893,20 @@ def gpu_watch(
                 )
         population_instance = GenomePopulation(
             optimizer,
-            IncrementalObjective(optimizer, target_list),
+            IncrementalObjective(optimizer, []),
             effect_table,
             population=population,
             seed=seed,
             seed_schedule=initial,
             candidates=candidates,
             base_totals=base_totals,
+            factorized=factorized_accounts,
             random_fraction=0.05,
             initial_mutation_rate=0.02,
             mutation_rate=0.002,
             islands=1,
         )
+        population_instance.update_targets(target_list)
         if base_totals is None:
             torch.save(population_instance.base_totals.detach().cpu(), base_cache)
         summary = run_gpu_watch(

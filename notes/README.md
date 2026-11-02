@@ -47,6 +47,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `design/ws4-gpu-population-search.md` — the P83.8 candidate-index GPU population search plan.
 - `design/ws4-metaheuristic-portfolio.md` — the P83.9 SA/tabu/ILS/GA/LNS master/worker portfolio plan.
 - `reports/p88-factorized-gpu.md` — the P88 full TSA24 factorized feature/product pricers, mixed account switch, and memory evidence.
+- `reports/p89-mixed-target-search.md` — the P89 full TSA24 mixed-target population, corrected stock-account evidence, and watcher display path.
+- `reports/tsa24-ltsy-allperiods5.md` — candidate all-period ±5% LTSY scenario with a 90% final managed-stock floor and a 5,000-generation probe.
 - `reports/p83-8-gpu-population.md` — the P83.8 candidate-index population search, c5 2k and TSA23 5k benchmarks.
 - `reports/p83-7-full-tsa23.md` — the full-model TSA23 20 x 10 GPU population run and exact replay.
 - `reports/p83-closeout.md` — phase close-out: c5 policy result, GPU search, population, and portfolio findings.

@@ -63,10 +63,10 @@ existing objective pricer. Disabling the target removes the extra cells again.
 
 ## Evidence
 
-- Feature: 64 genomes, 20 ten-year periods, `feature.Volume`; **0.694 s**, exact error
-  **0.0**, GPU peak **7.1 GB**.
+- Feature: 64 genomes, 20 ten-year periods, `feature.Yield.managed.Total`; **0.706 s**, exact error
+  **2.2e-5**, GPU peak **7.2 GB**.
 - Product: 64 genomes, `product.Yield.managed.Total`; **0.0255 s**, exact error
   **8.9e-7**, GPU peak **4.6 GB**.
-- Mixed switch: four cells across `feature.Volume` and
-  `product.Yield.managed.Total`; **0.093 s**, exact error **3.5e-9**, GPU peak
+- Mixed switch: four cells across `feature.Yield.managed.Total` and
+  `product.Yield.managed.Total`; **0.093 s**, exact error **1.1e-5**, GPU peak
   **9.3 GB**.
