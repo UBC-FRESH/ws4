@@ -155,6 +155,32 @@ def test_accounts_are_filtered_by_year_and_account(tmp_path: Path) -> None:
     assert one == [{"offset": 0, "account": "feature.Volume", "value": 10.0, "year": 1}]
 
 
+def test_condition_card_is_built_from_a_run(tmp_path: Path) -> None:
+    """The condition-card endpoint returns a review-required P90 card."""
+    client, _ = _app(tmp_path)
+    response = client.get("/api/runs/run1/condition-card")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["schema_version"] == "ws4.forest_condition.report.v1"
+    assert body["report_id"] == "run1-condition"
+    assert body["review_status"] == "draft"
+    assert body["indicators"][0]["name"] == "feature.Volume"
+    assert body["indicators"][0]["status"] == "review_required"
+
+
+def test_condition_card_api_rejects_missing_and_bad_runs(tmp_path: Path) -> None:
+    """Missing runs return 404 and invalid account tables return 422."""
+    client, _ = _app(tmp_path)
+    assert client.get("/api/runs/no-such-run/condition-card").status_code == 404
+    bad = tmp_path / "runs" / "bad"
+    bad.mkdir()
+    (bad / "account_values.csv").write_text(
+        "offset,account,value\n0,feature.Bad,nan\n", encoding="utf-8"
+    )
+    response = client.get("/api/runs/bad/condition-card")
+    assert response.status_code == 422
+
+
 def test_reports_are_listed_and_downloaded(tmp_path: Path) -> None:
     """The report tree is the run directory's report files."""
     client, _ = _app(tmp_path)

@@ -42,6 +42,7 @@ from shapely.strtree import STRtree
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.responses import Response
 
+from ..forest_condition import build_report_from_accounts
 from ..opt.objective import (
     flow_penalty,
     flow_series,
@@ -1970,6 +1971,28 @@ def create_app(
                 record["year"] = int(record["offset"]) + 1
             rows.append(record)
         return rows
+
+    @app.get("/api/runs/{run}/condition-card")
+    def condition_card(run: str) -> dict[str, Any]:
+        """Return a review-required condition card derived from the run's accounts."""
+        directory = run_dir(run)
+        path = directory / "account_values.csv"
+        if not path.is_file():
+            raise HTTPException(status_code=404, detail="the run has no account_values.csv")
+        values = read_csv(directory, "account_values.csv")
+        try:
+            report = build_report_from_accounts(
+                values,
+                report_id=f"{run}-condition",
+                scenario_id=run,
+                generated_utc=datetime.now().astimezone().isoformat(),
+                period="run",
+                source_version=run,
+                provenance={"run": run},
+            )
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        return report.to_dict()
 
     def search_artifact_dir(name: str) -> Path:
         """Return a directory under the runs root that holds a search artifact."""

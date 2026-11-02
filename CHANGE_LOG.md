@@ -3832,6 +3832,16 @@ issue comments.
   Feature accounts become indicators with final value, first/last trend,
   explicit source/version, and `review_required` status. Added CLI coverage and
   docs. Dashboard green on all seven gates; 13 focused tests passed.
-- Closeout report: `notes/reports/p91-closeout.md`.- P87.8: merged current `main` again at `e2718a1` (P88/P90/P91) and recorded CI run
+- Closeout report: `notes/reports/p91-closeout.md`.
+- P87.8: merged current `main` again at `e2718a1` (P88/P90/P91) and recorded CI run
   `41403557320` as success on every job. The report evidence head is `e2718a1`.
   P91 is taken by #655, so the proposed next phase is P92.
+- Closeout report: `notes/reports/p91-closeout.md`.
+
+## 2026-11-02
+
+- P92.1: added `GET /api/runs/{run}/condition-card`, a read-only adapter over
+  the P91 account-derived card builder. The endpoint returns a review-required
+  `ws4.forest_condition.report.v1` card, 404 without accounts, and 422 for
+  invalid account data. Added API tests and docs. Dashboard green on all seven gates.
+- Closeout report: `notes/reports/p92-closeout.md`.

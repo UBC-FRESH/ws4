@@ -93,6 +93,7 @@ exists and the maintainer approves it.
 | P88 Factorized GPU account search | #637 | `feature/p88-factorized-gpu` | pr-open |
 | P90 Forest condition report cards | #650 | `feature/p90-forest-condition-cards` | pr-open |
 | P91 Condition card from a WS4 run | #655 | `feature/p91-condition-run-card` | pr-open |
+| P92 Condition-card API | #659 | `feature/p92-condition-card-api` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2829,6 +2830,28 @@ Acceptance:
 
 Design: `notes/design/ws4-forest-condition-card.md`.
 
+## Phase 92: Condition-card API
+
+Parent issue: #659
+Branch: `feature/p92-condition-card-api`
+Status: pr-open
+
+Goal: expose the P91 account-derived forest-condition card through the WS4 HTTP API.
+
+- [x] P92.1 Add the condition-card API and tests (#660)
+  - [x] Add the endpoint
+  - [x] Add API tests for success, 404, and 422
+  - [x] Update docs and changelog
+  - [x] Run dashboard and open the PR
+
+Acceptance:
+
+- A valid run returns a P90 card with `review_required` indicators.
+- Missing or invalid account data uses 404/422.
+- Tests and dashboard pass.
+
+Design: `notes/design/ws4-forest-condition-card.md`.
+
 ## Detailed Next Steps Notes
 
 1. Phase 0 is complete: pull request #8 squash-merged as `97330a8`, the branch deleted, and parent
@@ -3006,4 +3029,4 @@ Design: `notes/design/ws4-forest-condition-card.md`.
     than fails (provisional diagram, no supplied initial volume, one extrapolated demo path);
     the 863 m3/ha gate fails against an 800 limit and 1,173 m3/ha is flagged above 1,133.8.
     Trajectory-zone rejection and a cap across blocks in one AU are deferred with the reasons
-    in #635. Next: approve the close-out, then launch the next free phase (P92 today; P91 was taken by #655).
+    in #635. Next: approve the close-out, then launch the next free phase (P93 today; P91 and P92 are taken).

@@ -120,6 +120,10 @@ Endpoints
      - The run's ``summary.json``.
    * - ``GET /api/runs/{run}/accounts?year=&account=``
      - Rows of the run's ``account_values.csv``, filtered.
+   * - ``GET /api/runs/{run}/condition-card``
+     - A review-required ``ws4.forest_condition.report.v1`` card built from the run's
+       feature accounts. Returns 404 without ``account_values.csv`` and 422 for invalid
+       account data; it does not create operational alerts.
    * - ``GET /api/lidar``
      - The dataset's registered FEMIC LiDAR pin, licence, CRS, products, and canonical
        ``lidar_*`` block fields. Each field carries its dataset-wide valid count and min/max;
