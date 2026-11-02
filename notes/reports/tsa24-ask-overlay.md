@@ -1,7 +1,7 @@
 # P102 Ask overlay
 
 Date: 2026-11-02
-Status: complete
+Status: complete; PR #712
 
 ## Change
 
@@ -37,3 +37,7 @@ chips are unchanged.
 
 The remote `ws4.01101.dev` origin is managed outside this checkout and was not redeployed.
 This change is in the repository and takes effect on the next service deployment.
+
+## Pull request
+
+PR #712 contains the overlay changes, tests, and docs.

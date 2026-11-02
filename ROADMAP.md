@@ -102,7 +102,7 @@ exists and the maintainer approves it.
 | P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | pr-open |
 | P98 LTSY scenario profile library | #699 | `feature/p98-ltsy-profiles` | pr-open |
 | P99 Scenario profile UI | #704 | `feature/p99-profile-ui` | pr-open |
-| P102 Ask overlay | #709 | `feature/p102-ask-overlay` | active |
+| P102 Ask overlay | #709 | `feature/p102-ask-overlay` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
@@ -3299,8 +3299,9 @@ Acceptance: valid run writes Markdown; invalid accounts fail; storyboard names s
 
 Parent issue: #709
 Branch: `feature/p102-ask-overlay`
-Status: active
+Status: pr-open
 Report: `notes/reports/tsa24-ask-overlay.md`
+PR: #712
 
 Goal: replace the static sidebar chat panel with a compact header Ask pill and floating
 assistant overlay available from every workspace.
