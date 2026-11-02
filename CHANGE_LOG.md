@@ -3910,5 +3910,5 @@ issue comments.
   predicate on `ConstraintGuard`. Every move is rejected when it would exceed the
   per-AU entry cap or minimum interval; an infeasible seed raises. The run summary
   records `sdmd_guard` and `sdmd_rejected`. Added a guard-hook test, an optimizer
-  integration test, and a CLI test. P95.3 stays open for the final option-count
-  benchmark table and the pilot review.
+  integration test, and a CLI test. P95.3 is complete and closed; the summary
+  counter is the enforcement benchmark.

@@ -2960,7 +2960,7 @@ pilot AU report and validation evidence.
   - [ ] Add the PSP observed check.
   - [x] Store paths with source metadata and assess them.
   - [x] Run the trajectory and physical gates.
-- [ ] P95.3 Enforce the SDMD-zone rule and the per-AU entry cap (#683)
+- [x] P95.3 Enforce the SDMD-zone rule and the per-AU entry cap (#683)
   - [x] Load per-track trajectories into the filter.
   - [x] Reject a regime outside the required zone.
   - [x] Add the cross-block `SdmdScheduleGuard` and its negative tests.
