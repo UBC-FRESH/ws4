@@ -447,9 +447,17 @@ assignments, and review checklist are in
 ``notes/reference/bc-sdmd-digitisation.md``. Both are **provisional** until the
 maintainer reviews the curves; the planted top-height assignment is the weaker of
 the two. The synthetic ``idf-dk3-fdi-illustrative.json`` remains the test fixture,
-not the published diagram. Four pilot trajectories from `fresh-fvsbc` are in
+not the published diagram. Four method trajectories from `fresh-fvsbc` are in
 ``ws4/sdmd/data/trajectories/``; they are method runs over synthetic tree lists,
 not real AU projections. See ``notes/reference/sdmd-pilot-trajectories.md``.
+
+The first real pilot store is ``ws4/sdmd/data/pilot-tsa23-idfdk3/``. It holds 11
+reviewed public PSP points for TSA 23 / IDFdk3 / FDI and two FVS paths from the
+real tree list of one cluster. Its ``SOURCE.md`` names the BC Data Catalogue
+record, the Open Government Licence, the selection rule, the field derivations,
+the FVS version, and the limits. The diagram is still provisional, no initial
+volume is supplied, and both FVS paths leave the observed envelope; the store is
+evidence for the pipeline, not a yield forecast.
 
 Evidence roles and limits
 -------------------------

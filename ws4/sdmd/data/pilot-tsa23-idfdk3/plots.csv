@@ -1,0 +1,12 @@
+plot_id,region,bec_zone,bec_subzone,bec_variant,tsa,au_id,visit_year,stand_age,site_index,slope,aspect,elevation,plot_area_ha,sources,review_status
+4024538-PSP1,Interior,IDF,dk,3,23,AU-IDFdk3-TSA23-FDI,2001,52,20.6,5.0,348.0,1007.0,0.1,psp,reviewed
+4024539-PSP1,Interior,IDF,dk,3,23,AU-IDFdk3-TSA23-FDI,2001,63,18.0,5.0,52.0,1007.0,0.1,psp,reviewed
+4024449-PSP2,Interior,IDF,dk,3,23,AU-IDFdk3-TSA23-FDI,2006,65,17.9,5.0,214.0,962.0,0.1,psp,reviewed
+4025094-PSP2,Interior,IDF,dk,3,23,AU-IDFdk3-TSA23-FDI,1975,70,16.5,50.0,318.0,1155.0,0.081,psp,reviewed
+4024520-PSP2,Interior,IDF,dk,3,23,AU-IDFdk3-TSA23-FDI,1986,76,16.5,8.0,360.0,915.0,0.1016,psp,reviewed
+4025005-PSP1,Interior,IDF,dk,3,23,AU-IDFdk3-TSA23-FDI,1999,89,13.7,32.0,192.0,1447.0,0.1,psp,reviewed
+4024520-PSP4,Interior,IDF,dk,3,23,AU-IDFdk3-TSA23-FDI,2018,101,18.1,8.0,360.0,915.0,0.1016,psp,reviewed
+4025091-PSP1,Interior,IDF,dk,3,23,AU-IDFdk3-TSA23-FDI,1965,109,12.8,76.0,327.0,1215.0,0.081,psp,reviewed
+4025094-PSP5,Interior,IDF,dk,3,23,AU-IDFdk3-TSA23-FDI,2018,116,15.2,50.0,318.0,1155.0,0.081,psp,reviewed
+4025091-PSP3,Interior,IDF,dk,3,23,AU-IDFdk3-TSA23-FDI,1985,129,12.3,76.0,327.0,1215.0,0.081,psp,reviewed
+4025091-PSP4,Interior,IDF,dk,3,23,AU-IDFdk3-TSA23-FDI,1995,139,12.1,76.0,327.0,1215.0,0.081,psp,reviewed

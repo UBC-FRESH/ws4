@@ -20,6 +20,8 @@ DIAGRAM = (
     / "idf-dk3-fdi-illustrative.json"
 )
 AU = "AU-IDFdk3-FDI"
+REAL_AU = "AU-IDFdk3-TSA23-FDI"
+REAL_PILOT = Path(__file__).resolve().parents[1] / "ws4" / "sdmd" / "data" / "pilot-tsa23-idfdk3"
 
 
 def _store_dir(tmp_path: Path, *, diagram: bool = True) -> Path:
@@ -209,3 +211,27 @@ def test_trajectory_gate_needs_three_psp_points(tmp_path: Path) -> None:
     gate = next(item for item in report.gates if item.gate == "trajectory-plausibility")
     assert gate.status == "fail"
     assert "fewer than three PSP-backed" in gate.detail
+
+
+def test_real_tsa23_pilot_passes_the_observed_gates() -> None:
+    """The public TSA 23 IDFdk3 extract passes plot, density, and regime support."""
+    report = validate_au(SdmdStore.from_directory(REAL_PILOT), REAL_AU)
+    statuses = _statuses(report)
+    assert statuses["plot-support"] == "pass"
+    assert statuses["density-plausibility"] == "pass"
+    assert statuses["regime-completeness"] == "pass"
+    assert statuses["solver-option-reduction"] == "pass"
+    gate = next(item for item in report.gates if item.gate == "plot-support")
+    assert gate.evidence["psp_points"] == 11
+    assert gate.evidence["synthetic_points"] == 0
+    assert statuses["sdmd-fit"] == "warn"
+    assert statuses["trajectory-plausibility"] == "warn"
+
+
+def test_real_tsa23_pilot_has_two_stored_paths() -> None:
+    """The real AU stores the untreated and CT60 FVS paths with source metadata."""
+    store = SdmdStore.from_directory(REAL_PILOT)
+    for regime in ("REG-A-UNTREATED", "REG-A-CT60"):
+        payload = store.trajectory(REAL_AU, regime)
+        assert payload["status"] in {"inside", "extrapolated"}
+        assert payload["points"]

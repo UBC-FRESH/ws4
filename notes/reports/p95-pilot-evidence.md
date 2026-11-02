@@ -16,13 +16,14 @@ claim a real AU projection.
 | --- | --- | --- |
 | Diagram | `fdin` natural and `fdip` planted, provisional | `ws4/sdmd/data/sdmd/idf-dk3-fdi-natural.json`, `idf-dk3-fdi-planted.json` |
 | Trajectories | Four FVS-BC paths from synthetic tree lists | `ws4/sdmd/data/trajectories/AU-*/REG-*.json` |
-| Observed points | Synthetic fixture, labelled `psp` or `synthetic` | `tests/fixtures/sdmd/sdmd_points.csv` |
+| Observed points | Synthetic fixture for the method AUs; 11 real public PSP points for `AU-IDFdk3-TSA23-FDI` | `tests/fixtures/sdmd/sdmd_points.csv`, `ws4/sdmd/data/pilot-tsa23-idfdk3/` |
 | PSP check | Gate 1 requires a reviewed PSP plot at each point age and a tree list | `ws4/sdmd/validation.py` |
 | Solver guard | Per-AU entry cap and interval enforced in the optimizer | `ws4/opt/constraints.py`, `ws4/sdmd/solver.py` |
 
-The diagram review status is `provisional`. The four FVS runs record
+The diagram review status is `provisional`. The four method FVS runs record
 `fresh-fvsbc` (FVS-BC), synthetic tree lists, eight ten-year cycles, and `RANNSEED 1`.
-They are method runs, not AU projections.
+They are method runs, not AU projections. The real pilot AU below adds a public PSP
+extract and two FVS runs from a real tree list.
 
 ## 2. The eight gates
 
@@ -48,6 +49,31 @@ All four stored trajectories are assessed as `extrapolated` against the
 PSP-backed envelope. That is a finding about the synthetic input, not a physical
 refusal: every path passes the monotonicity check.
 
+## 2a. Real TSA 23 IDFdk3 pilot
+
+The first real AU is `AU-IDFdk3-TSA23-FDI`, stored in
+`ws4/sdmd/data/pilot-tsa23-idfdk3/`. It uses 11 reviewed public PSP cluster visits,
+ages 52 to 139, selected from TSA 23 / IDFdk3 / FD-leading sites. The source and
+field derivation are in the store's `SOURCE.md`.
+
+| Gate | Result |
+| --- | --- |
+| plot-support | pass: 11 plots, 11 PSP-backed, 0 synthetic |
+| density-plausibility | pass: within 0.1% |
+| sdmd-fit | warn: provisional diagram |
+| trajectory-plausibility | warn: both paths leave the observed envelope |
+| initial-volume | warn: no initial volume supplied |
+| regime-completeness | pass: 7 regimes |
+| solver-option-reduction | pass: 7 → 6 regimes, 11 → 7 entries |
+| ui-payload-contract | pass |
+| Overall | warn |
+
+The FVS paths use the live trees of cluster `4024538-PSP1` (age 52), `fresh-fvsbc`
+0.20.0, BC variant, `SITECODE FD,60`, eight ten-year cycles, and `RANNSEED 1`. CT60
+is `THINBBA` at age 60 with 60% basal-area removal. Both the untreated and CT60 paths
+are stored as `provisional`; the CT60 path regenerates aspen after thinning, which is
+the model's response rather than a recommendation.
+
 ## 3. Public PSP check of the pilot AU definition
 
 The pilot fixture names TSA-24 and BEC `IDFdk3`. The public FAIB PSP header
@@ -59,9 +85,9 @@ The pilot fixture names TSA-24 and BEC `IDFdk3`. The public FAIB PSP header
 | 23 | 200 | IDF 162, SBS 15, SBPS 10, ESSF 7, ICH 6 |
 
 TSA 24 has **no IDFdk3 PSP sites** in the public header. TSA 23 has **145**
-`IDFdk3` sites. The pilot AU is therefore a synthetic label, not a real
-BEC/TSA/species unit. Replacing the fixture with a real PSP extract requires a
-real AU definition first.
+`IDFdk3` sites. The original `TSA-24` pilot label is therefore synthetic, not a real
+BEC/TSA/species unit. The real pilot AU is defined on TSA 23, and the synthetic
+two-AU fixture remains for the method tests.
 
 Source: Forest Analysis and Inventory Branch, *Forest Inventory Ground Plot Data
 and Interactive Map*, BC Data Catalogue,
@@ -91,20 +117,19 @@ counted locally; no third-party rows are copied into this report.
 
 ## 6. Recommended next steps
 
-1. Define a real pilot AU on a BEC/TSA/species combination that exists in the
-   public PSP population. `TSA 23 / IDFdk3` is the first candidate for FDI.
-2. Build the PSP extract for that AU, with plot and tree provenance, and replace
-   the fixture points.
+1. **Done:** define a real pilot AU on TSA 23 / IDFdk3 / FDI.
+2. **Done:** build the PSP extract with plot and tree provenance and store it in
+   `ws4/sdmd/data/pilot-tsa23-idfdk3/`.
 3. Review the `fdin` and `fdip` curves and set `review.status` to `reviewed`.
-4. Re-run FVS-BC with the real tree lists, then store the paths with their source
-   metadata.
-5. Re-run the gates and update this report. Close P95.1, P95.2, and P95.4 only
-   after that evidence exists.
+4. **Partial:** run FVS-BC from the real tree list. One cluster is done; an
+   AU-level tree list or a documented representative stand is still needed.
+5. Re-run the gates, update this report, and close P95.1, P95.2, and P95.4 only
+   after the review and the representative FVS evidence exist.
 
 ## 7. Verification
 
 - `ws4 sdmd validate` on the pilot store: both AUs `warn`.
 - `python scripts/dashboard.py`: `OVERALL: GREEN` on all seven gates at the
   evidence head.
-- `tests/test_sdmd_validation.py`: 13 passed.
+- `tests/test_sdmd_validation.py`: 15 passed, including the real TSA 23 pilot.
 - `tests/test_sdmd_solver.py`: 14 passed.

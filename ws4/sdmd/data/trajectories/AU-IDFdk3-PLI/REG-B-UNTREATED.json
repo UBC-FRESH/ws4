@@ -3,7 +3,7 @@
   "au_id": "AU-IDFdk3-PLI",
   "regime_id": "REG-B-UNTREATED",
   "source": "fresh-fvsbc (FVS-BC) synthetic tree list",
-  "source_version": "fresh-fvsbc 0.1.0; FVS BC variant",
+  "source_version": "fresh-fvsbc 0.20.0; FVS BC variant",
   "scenario": "no treatment",
   "generated_utc": "2026-11-02T09:05:52+00:00",
   "review_status": "provisional",

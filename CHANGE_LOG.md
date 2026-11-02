@@ -3928,3 +3928,17 @@ issue comments.
   ICH 13, SBPS 5) while TSA 23 has 145. The pilot label is therefore synthetic,
   and the phase remains open until a real AU is defined and its PSP/FVS input
   replaces the fixture.
+- P95.2: added the first real pilot AU, `AU-IDFdk3-TSA23-FDI`, in
+  `ws4/sdmd/data/pilot-tsa23-idfdk3/`. It holds 11 reviewed public FAIB PSP
+  points selected from TSA 23 / IDFdk3 / FD-leading sites (ages 52-139), with
+  plot, stand, and live-tree tables derived from the Open Government Licence
+  compilation. The store passes plot support (11 PSP-backed, 0 synthetic),
+  density plausibility, regime completeness, and solver reduction (7 → 6
+  regimes, 11 → 7 entries). It warns on the provisional diagram, the missing
+  initial volume, and two extrapolated FVS paths. The paths come from the real
+  live-tree list of cluster 4024538-PSP1, `fresh-fvsbc` 0.20.0, BC variant,
+  eight cycles, `RANNSEED 1`, with CT60 as `THINBBA` at age 60 and 60% removal.
+  `SOURCE.md` records the source, licence, selection, conversions, and limits.
+  Also made `stands.crown_cover_pct` nullable because the public compilation
+  does not supply it, and corrected the stored FVS source version from 0.1.0 to
+  the actual 0.20.0. Added real-pilot gate and trajectory tests.

@@ -2960,6 +2960,11 @@ pilot AU report and validation evidence.
   - [x] Add the PSP observed check.
   - [x] Store paths with source metadata and assess them.
   - [x] Run the trajectory and physical gates.
+  - [x] Build the real TSA 23 IDFdk3 PSP extract and store it in
+    `ws4/sdmd/data/pilot-tsa23-idfdk3/`.
+  - [x] Run one real no-cut and CT60 FVS-BC path from that tree list.
+  - [ ] Run the FVS scenarios for a representative AU-level tree list and the
+    remaining pilot species.
 - [x] P95.3 Enforce the SDMD-zone rule and the per-AU entry cap (#683)
   - [x] Load per-track trajectories into the filter.
   - [x] Reject a regime outside the required zone.
@@ -2970,7 +2975,9 @@ pilot AU report and validation evidence.
   - [x] Record the option reduction: 7 → 6 regimes / 11 → 7 entries (FDI) and
     6 → 5 / 7 → 6 (PLI).
   - [x] Write the pilot evidence report in `notes/reports/p95-pilot-evidence.md`.
-  - [ ] Define a real AU and replace the synthetic PSP/FVS input.
+  - [x] Define `AU-IDFdk3-TSA23-FDI` and replace the synthetic FDI PSP/FVS input.
+  - [ ] Replace the remaining synthetic PLI evidence and use a representative
+    AU-level FVS tree list.
   - [ ] Write the close-out report and queue the pull request.
 
 Acceptance:
