@@ -4,7 +4,7 @@
 
 Phase: P92
 Parent issue: #659
-Pull request: TBD
+Pull request: https://github.com/UBC-FRESH/ws4/pull/661
 Evidence head: `P92.1` commit on `feature/p92-condition-card-api`
 Report date: 2026-11-02
 Status: pr-open; awaiting review
@@ -26,7 +26,7 @@ Status: pr-open; awaiting review
 | 422 for invalid accounts | API test | met |
 | Review-required indicators | API test | met |
 | Tests and dashboard | 71 web tests; dashboard green | met |
-| PR queued | TBD | pending |
+| PR queued | #661 | met |
 
 ## Workflow compliance
 
@@ -45,7 +45,7 @@ tests, validator, docs, and docstrings.
 
 ## CI evidence
 
-To be recorded after the phase pull request is opened.
+PR #661 is open; check CI on the final head.
 
 ## Deviations and risks
 
