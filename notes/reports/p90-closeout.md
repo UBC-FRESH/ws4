@@ -4,7 +4,7 @@
 
 Phase: P90
 Parent issue: #650
-Pull request: TBD
+Pull request: https://github.com/UBC-FRESH/ws4/pull/653
 Evidence head: `P90.1` commit on `feature/p90-forest-condition-cards`
 Report date: 2026-11-02
 Status: pr-open; awaiting review
@@ -26,7 +26,7 @@ Status: pr-open; awaiting review
 | Markdown names indicators and limits | `card.md` fixture and test | met |
 | Valid, invalid, and empty cases tested | 10 focused tests | met |
 | Dashboard green | all seven gates green | met |
-| PR queued | TBD | pending |
+| PR queued | #653 | met |
 
 ## Workflow compliance
 
@@ -56,7 +56,7 @@ Focused tests: `python -m pytest tests/test_forest_condition.py -q --no-cov` ->
 
 ## CI evidence
 
-To be recorded after the phase pull request is opened.
+PR #653 is open; check CI on the final head.
 
 ## Deviations and risks
 
