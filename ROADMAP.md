@@ -89,7 +89,7 @@ exists and the maintainer approves it.
 | P84 Precompiled scheduling substrate and fast startup | #613 | `feature/p84-incremental-state` | complete |
 | P85 GPU acceleration and interactive target cache | #618 | `feature/p85-gpu-acceleration` | complete |
 | P86 Weighted goal-programming target semantics | #625 | `feature/p86-target-semantics` | pr-open |
-| P87 Stand density management and AU Explorer | #628 | `feature/p87-sdmd-au-explorer` | active |
+| P87 Stand density management and AU Explorer | #628 | `feature/p87-sdmd-au-explorer` | pr-open |
 | P88 Factorized GPU account search | #637 | `feature/p88-factorized-gpu` | pr-open |
 | P90 Forest condition report cards | #650 | `feature/p90-forest-condition-cards` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
@@ -2677,7 +2677,7 @@ Acceptance:
 
 Parent issue: #628
 Branch: `feature/p87-sdmd-au-explorer`
-Status: active
+Status: pr-open
 Plan: `notes/plans/ws4-sdmd-au-explorer.md`
 Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
 
@@ -2725,11 +2725,11 @@ constraints. The SDMD is a diagnostic and constraint layer, not a growth model.
   - [x] Filter regimes and enforce entry, interval, and removal rules.
   - [ ] Reject trajectories outside the allowed SDMD zones (deferred: no per-track trajectory table).
   - [x] Measure and record the option-space reduction.
-- [ ] P87.8 Provenance, docs, and closeout (#636)
+- [x] P87.8 Provenance, docs, and closeout (#636)
   - [x] Run the eight validation gates.
   - [x] Record the option-count reduction and the rejected values.
   - [x] Update the ADR, design note, docs, notes, and changelog.
-  - [ ] Write the close-out report and queue the pull request.
+  - [x] Write the close-out report and queue the pull request.
 
 Acceptance:
 
@@ -2975,3 +2975,9 @@ Design: `notes/design/ws4-forest-condition-card.md`.
     while Phase 86 is `pr-open`. The plan is `notes/plans/ws4-sdmd-au-explorer.md`; the layer is a
     diagnostic and constraint layer (ADR 0013), not a growth model. P87.1 is the first bounded
     move: the schema, the ADR, a two-AU fixture, and tests, with no ingestion, UI, or solver work.
+25. Phase 87 is `pr-open`: pull request #658 queues the SDMD and AU Explorer phase, with the
+    close-out report in `notes/reports/p87-closeout.md`. The fixture validation warns rather
+    than fails (provisional diagram, no supplied initial volume, one extrapolated demo path);
+    the 863 m3/ha gate fails against an 800 limit and 1,173 m3/ha is flagged above 1,133.8.
+    Trajectory-zone rejection and a cap across blocks in one AU are deferred with the reasons
+    in #635. Next: approve the close-out, then launch the next free phase (P91 today).

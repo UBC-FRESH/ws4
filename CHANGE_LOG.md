@@ -3816,3 +3816,8 @@ issue comments.
 - Added ten focused tests.
 - Dashboard: **GREEN** on lint, format, types, tests, validator, docs, and docstrings.
 - Closeout report: `notes/reports/p90-closeout.md`.
+- P87.8: queued the phase close-out. Pull request #658 carries the phase branch into
+  `main`; the report is `notes/reports/p87-closeout.md`. The roadmap now records Phase 87
+  as `pr-open`. The eight gates, the 863/1,173 m3/ha cases, the option reduction, the
+  deferred trajectory-zone and cross-block AU cap, and the synthetic-diagram limit are
+  named in the report. No merge, tag, release, or settings change has been made.
