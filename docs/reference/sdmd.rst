@@ -182,14 +182,68 @@ rejects a volume above the supplied evidence limit; an upper-tail trajectory tha
 leaves the observed envelope is flagged as extrapolation even when the volume
 appears in a few old plots.
 
-Data status
-~~~~~~~~~~~
+Regimes and constraints
+-----------------------
 
-The committed JSON is an **illustrative synthetic diagram** for the fixture and the
-tests. It is not a digitisation of a published diagram, and it must not be
-presented as one. The real IDFdk3/FDI diagram remains data-blocked pending a
-source copy and the maintainer's review sign-off on the digitised isopleths. The
-schema and the review gate are ready for that copy; the fixture exercises them.
+A regime is a repeated entry, not a one-off schedule. `load_regime_library` reads
+the `regimes` table, validates the sequence, and expands `cycle_length` and
+`repeat_count` into ordered entry ages. `Regime.entry_ages()` returns the sequence,
+`entry_count()` returns the number of entries, and `is_sdmd_valid` is false for a
+selection regime. The untreated baseline has no entries and is exempt from the
+entry window.
+
+`load_constraints` reads the `au_constraints` table. `check_regime` returns
+findings instead of raising, so a caller fails closed. It checks the AU/regime
+pair, the allow flag, the entry-age window, the entry cap, the minimum interval,
+the maximum removal fraction, and whether a required SDMD zone can be met by a
+selection regime. `allowed_regimes` returns only the regimes that pass every
+check, and `option_counts` reports the regime and entry counts before and after.
+
+.. code-block:: python
+
+   from ws4.sdmd import (
+       allowed_regimes,
+       check_regime,
+       load_constraints,
+       load_regime_library,
+       option_counts,
+   )
+
+   regimes = load_regime_library(regime_frame)
+   constraints = load_constraints(constraint_frame)
+   allowed = allowed_regimes(regimes, constraints, "AU-IDFdk3-FDI")
+   counts = option_counts(
+       tuple(item for item in regimes if item.au_id == "AU-IDFdk3-FDI"),
+       allowed,
+   )
+
+A forbidden entry never reaches the model: the caller turns a non-empty finding
+list into a refusal. Solver filtering itself is P87.7.
+
+Public sources
+~~~~~~~~~~~~~~
+
+The BC Ministry of Forests publishes the complete public set as 14 one-page PDFs:
+seven species, each in a natural and a planted version. The species are coastal
+Douglas-fir, interior Douglas-fir, lodgepole pine, Sitka spruce, western hemlock,
+western redcedar, and white spruce. The machine-readable catalog is
+``ws4/sdmd/data/sdmd/source_catalog.json``; the BEC zone/subzone/variant coverage
+is ``ws4/sdmd/data/sdmd/bec_variants.csv`` (229 rows). The full note is
+``notes/reference/bc-sdmd-sources.md``.
+
+The diagrams are species- and origin-based, not BEC-variant-based. The variant CSV
+expands the zone-level species occurrence from the BC Tree Species Compendium, so
+it is an inference that a forester must confirm against the AU's leading species
+and stand origin. For the pilot AU ``IDFdk3`` the diagram is ``fdin`` (natural) or
+``fdip`` (planted) for Interior Douglas-fir, with lodgepole pine and western
+redcedar as main associates.
+
+The Farnden 1996 method report (Pacific Forestry Centre Information Report
+BC-X-360) is public and is recorded in the catalog with its URL and checksum. The
+PDFs are referenced, not copied into the repository. The committed
+``idf-dk3-fdi-illustrative.json`` is still an **illustrative synthetic fixture**
+for the schema and tests; it is not the published diagram and must not be
+presented as one.
 
 Evidence roles and limits
 -------------------------

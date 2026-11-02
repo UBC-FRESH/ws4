@@ -1,0 +1,470 @@
+{
+  "schema_version": "ws4.sdmd.sources.v1",
+  "retrieved_utc": "2026-11-02T00:30:00+00:00",
+  "index_url": "https://www2.gov.bc.ca/gov/content/industry/forestry/managing-our-forest-resources/silviculture/silvicultural-systems/silvicultural-interventions/stand-density-management",
+  "diagram_count": 14,
+  "species_count": 7,
+  "diagrams": [
+    {
+      "diagram_id": "fdcn",
+      "species_code": "Fdc",
+      "common_name": "Coastal Douglas-fir",
+      "scientific_name": "Pseudotsuga menziesii var. menziesii",
+      "origin": "natural",
+      "version": "unversioned",
+      "published": "1996-05-31",
+      "bec_main": [
+        "CDF",
+        "CWH"
+      ],
+      "bec_rare": [],
+      "bec_note": "CDF and the drier/southern CWH variants. The CDF wet subzone was reclassified as CWHxm1.",
+      "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/fdcn.pdf",
+      "file_name": "fdcn.pdf",
+      "size_bytes": 75794,
+      "sha256": "369b10454b808e6b98b7442162785b154d0206bfea924b8a9db25900b2173005",
+      "pages": 1,
+      "bec_basis": "zone-level species occurrence from the BC Tree Species Compendium; verify against the AU's leading species and stand origin",
+      "index_url": "https://www2.gov.bc.ca/gov/content/industry/forestry/managing-our-forest-resources/silviculture/silvicultural-systems/silvicultural-interventions/stand-density-management"
+    },
+    {
+      "diagram_id": "fdcp",
+      "species_code": "Fdc",
+      "common_name": "Coastal Douglas-fir",
+      "scientific_name": "Pseudotsuga menziesii var. menziesii",
+      "origin": "planted",
+      "version": "unversioned",
+      "published": "1996-05-31",
+      "bec_main": [
+        "CDF",
+        "CWH"
+      ],
+      "bec_rare": [],
+      "bec_note": "CDF and the drier/southern CWH variants. The CDF wet subzone was reclassified as CWHxm1.",
+      "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/fdcp.pdf",
+      "file_name": "fdcp.pdf",
+      "size_bytes": 63275,
+      "sha256": "b9b82e8bb92ff2f6dd53d8f2005427f9826889bfdb37694f8b4d30277f89d169",
+      "pages": 1,
+      "bec_basis": "zone-level species occurrence from the BC Tree Species Compendium; verify against the AU's leading species and stand origin",
+      "index_url": "https://www2.gov.bc.ca/gov/content/industry/forestry/managing-our-forest-resources/silviculture/silvicultural-systems/silvicultural-interventions/stand-density-management"
+    },
+    {
+      "diagram_id": "fdin",
+      "species_code": "Fdi",
+      "common_name": "Interior Douglas-fir",
+      "scientific_name": "Pseudotsuga menziesii var. glauca",
+      "origin": "natural",
+      "version": "1.10",
+      "published": "1996-02-26",
+      "bec_main": [
+        "IDF",
+        "ICH",
+        "MS",
+        "SBS"
+      ],
+      "bec_rare": [
+        "SBPS",
+        "PP",
+        "BG",
+        "ESSF",
+        "MH"
+      ],
+      "bec_note": "Southern ICH, southern SBS, lower southern ESSF and MH; rare in SBPS, PP and BG.",
+      "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/fdin.pdf",
+      "file_name": "fdin.pdf",
+      "size_bytes": 48962,
+      "sha256": "e8e81fd3b5b0f0ccf71d2be6d5fb4d681f06c538365c2e1b93223a0bf849a6f6",
+      "pages": 1,
+      "bec_basis": "zone-level species occurrence from the BC Tree Species Compendium; verify against the AU's leading species and stand origin",
+      "index_url": "https://www2.gov.bc.ca/gov/content/industry/forestry/managing-our-forest-resources/silviculture/silvicultural-systems/silvicultural-interventions/stand-density-management"
+    },
+    {
+      "diagram_id": "fdip",
+      "species_code": "Fdi",
+      "common_name": "Interior Douglas-fir",
+      "scientific_name": "Pseudotsuga menziesii var. glauca",
+      "origin": "planted",
+      "version": "1.10",
+      "published": "1996-02-26",
+      "bec_main": [
+        "IDF",
+        "ICH",
+        "MS",
+        "SBS"
+      ],
+      "bec_rare": [
+        "SBPS",
+        "PP",
+        "BG",
+        "ESSF",
+        "MH"
+      ],
+      "bec_note": "Southern ICH, southern SBS, lower southern ESSF and MH; rare in SBPS, PP and BG.",
+      "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/fdip.pdf",
+      "file_name": "fdip.pdf",
+      "size_bytes": 44523,
+      "sha256": "c097cc599e866969a41c721719dd3d7869c3b9208a2b982bd71b588ad1d38e59",
+      "pages": 1,
+      "bec_basis": "zone-level species occurrence from the BC Tree Species Compendium; verify against the AU's leading species and stand origin",
+      "index_url": "https://www2.gov.bc.ca/gov/content/industry/forestry/managing-our-forest-resources/silviculture/silvicultural-systems/silvicultural-interventions/stand-density-management"
+    },
+    {
+      "diagram_id": "pln",
+      "species_code": "Pl",
+      "common_name": "Lodgepole pine",
+      "scientific_name": "Pinus contorta var. latifolia",
+      "origin": "natural",
+      "version": "1.20",
+      "published": "1996-02-26",
+      "bec_main": [
+        "ESSF",
+        "MS",
+        "BWBS",
+        "SBS",
+        "SBPS",
+        "IDF",
+        "ICH"
+      ],
+      "bec_rare": [
+        "MH",
+        "SWB",
+        "PP",
+        "CDF",
+        "CWH"
+      ],
+      "bec_note": "Lower MH and lower SWB; rare in PP. CDF/CWH occurrences are shore pine (var. contorta), not the interior variety this diagram represents.",
+      "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/pln.pdf",
+      "file_name": "pln.pdf",
+      "size_bytes": 38315,
+      "sha256": "abdbab87eda2aff7f78b7209aae0169d778e672b5eccce5003471fb65ec4efa3",
+      "pages": 1,
+      "bec_basis": "zone-level species occurrence from the BC Tree Species Compendium; verify against the AU's leading species and stand origin",
+      "index_url": "https://www2.gov.bc.ca/gov/content/industry/forestry/managing-our-forest-resources/silviculture/silvicultural-systems/silvicultural-interventions/stand-density-management"
+    },
+    {
+      "diagram_id": "plp",
+      "species_code": "Pl",
+      "common_name": "Lodgepole pine",
+      "scientific_name": "Pinus contorta var. latifolia",
+      "origin": "planted",
+      "version": "1.20",
+      "published": "1996-02-26",
+      "bec_main": [
+        "ESSF",
+        "MS",
+        "BWBS",
+        "SBS",
+        "SBPS",
+        "IDF",
+        "ICH"
+      ],
+      "bec_rare": [
+        "MH",
+        "SWB",
+        "PP",
+        "CDF",
+        "CWH"
+      ],
+      "bec_note": "Lower MH and lower SWB; rare in PP. CDF/CWH occurrences are shore pine (var. contorta), not the interior variety this diagram represents.",
+      "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/plp.pdf",
+      "file_name": "plp.pdf",
+      "size_bytes": 29547,
+      "sha256": "1c7a013936bd408a87d422d62fc1bdb75980d30d4cff3f109d39e4af249a850d",
+      "pages": 1,
+      "bec_basis": "zone-level species occurrence from the BC Tree Species Compendium; verify against the AU's leading species and stand origin",
+      "index_url": "https://www2.gov.bc.ca/gov/content/industry/forestry/managing-our-forest-resources/silviculture/silvicultural-systems/silvicultural-interventions/stand-density-management"
+    },
+    {
+      "diagram_id": "ssn",
+      "species_code": "Ss",
+      "common_name": "Sitka spruce",
+      "scientific_name": "Picea sitchensis",
+      "origin": "natural",
+      "version": "unversioned",
+      "published": "1996-05-31",
+      "bec_main": [
+        "CWH",
+        "MH"
+      ],
+      "bec_rare": [
+        "BWBS",
+        "ICH",
+        "CDF"
+      ],
+      "bec_note": "Wetter hypermaritime, maritime and submaritime CWH; lower MH. Rare in northern subcontinental BWBS, ICH and CDF.",
+      "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/ssn.pdf",
+      "file_name": "ssn.pdf",
+      "size_bytes": 299852,
+      "sha256": "518b1f294d63582c11bb5a89b1a95e36d682d8edf075c769398f7f787505a22f",
+      "pages": 1,
+      "bec_basis": "zone-level species occurrence from the BC Tree Species Compendium; verify against the AU's leading species and stand origin",
+      "index_url": "https://www2.gov.bc.ca/gov/content/industry/forestry/managing-our-forest-resources/silviculture/silvicultural-systems/silvicultural-interventions/stand-density-management"
+    },
+    {
+      "diagram_id": "ssp",
+      "species_code": "Ss",
+      "common_name": "Sitka spruce",
+      "scientific_name": "Picea sitchensis",
+      "origin": "planted",
+      "version": "unversioned",
+      "published": "1996-05-31",
+      "bec_main": [
+        "CWH",
+        "MH"
+      ],
+      "bec_rare": [
+        "BWBS",
+        "ICH",
+        "CDF"
+      ],
+      "bec_note": "Wetter hypermaritime, maritime and submaritime CWH; lower MH. Rare in northern subcontinental BWBS, ICH and CDF.",
+      "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/ssp.pdf",
+      "file_name": "ssp.pdf",
+      "size_bytes": 288745,
+      "sha256": "f8321db36638bc284e0c9d07b3f9306f33f36f89cfb8ff8fdbad0f817461a88e",
+      "pages": 1,
+      "bec_basis": "zone-level species occurrence from the BC Tree Species Compendium; verify against the AU's leading species and stand origin",
+      "index_url": "https://www2.gov.bc.ca/gov/content/industry/forestry/managing-our-forest-resources/silviculture/silvicultural-systems/silvicultural-interventions/stand-density-management"
+    },
+    {
+      "diagram_id": "hwn",
+      "species_code": "Hw",
+      "common_name": "Western hemlock",
+      "scientific_name": "Tsuga heterophylla",
+      "origin": "natural",
+      "version": "unversioned",
+      "published": "1996-05-31",
+      "bec_main": [
+        "CWH",
+        "ICH",
+        "MH"
+      ],
+      "bec_rare": [
+        "SBS",
+        "IDF",
+        "CDF"
+      ],
+      "bec_note": "CWH, ICH and lower MH; rare in SBS, IDF and CDF.",
+      "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/hwn.pdf",
+      "file_name": "hwn.pdf",
+      "size_bytes": 320492,
+      "sha256": "3cec74eede02e3dcd28afb7377b57d8f0b49afd9496851f4e00af855555b3bc4",
+      "pages": 1,
+      "bec_basis": "zone-level species occurrence from the BC Tree Species Compendium; verify against the AU's leading species and stand origin",
+      "index_url": "https://www2.gov.bc.ca/gov/content/industry/forestry/managing-our-forest-resources/silviculture/silvicultural-systems/silvicultural-interventions/stand-density-management"
+    },
+    {
+      "diagram_id": "hwp",
+      "species_code": "Hw",
+      "common_name": "Western hemlock",
+      "scientific_name": "Tsuga heterophylla",
+      "origin": "planted",
+      "version": "unversioned",
+      "published": "1996-05-31",
+      "bec_main": [
+        "CWH",
+        "ICH",
+        "MH"
+      ],
+      "bec_rare": [
+        "SBS",
+        "IDF",
+        "CDF"
+      ],
+      "bec_note": "CWH, ICH and lower MH; rare in SBS, IDF and CDF.",
+      "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/hwp.pdf",
+      "file_name": "hwp.pdf",
+      "size_bytes": 291526,
+      "sha256": "8f759c7e7b4e4819341e8d3f60ef571814b0f2db6b216abd87e8f3855b536f6a",
+      "pages": 1,
+      "bec_basis": "zone-level species occurrence from the BC Tree Species Compendium; verify against the AU's leading species and stand origin",
+      "index_url": "https://www2.gov.bc.ca/gov/content/industry/forestry/managing-our-forest-resources/silviculture/silvicultural-systems/silvicultural-interventions/stand-density-management"
+    },
+    {
+      "diagram_id": "cwn",
+      "species_code": "Cw",
+      "common_name": "Western redcedar",
+      "scientific_name": "Thuja plicata",
+      "origin": "natural",
+      "version": "unversioned",
+      "published": "1996-05-31",
+      "bec_main": [
+        "IDF",
+        "ICH",
+        "CDF",
+        "CWH"
+      ],
+      "bec_rare": [
+        "MH",
+        "ESSF",
+        "SBS",
+        "MS",
+        "PP"
+      ],
+      "bec_note": "Main in IDF, ICH, CDF and CWH; rare in lower MH, lower ESSF, SBS, MS and PP.",
+      "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/cwn.pdf",
+      "file_name": "cwn.pdf",
+      "size_bytes": 314342,
+      "sha256": "5fb727d110b4a2c1bf4cd9334f07b9b8b4e9073af77b9561b9b52764bb407bcd",
+      "pages": 1,
+      "bec_basis": "zone-level species occurrence from the BC Tree Species Compendium; verify against the AU's leading species and stand origin",
+      "index_url": "https://www2.gov.bc.ca/gov/content/industry/forestry/managing-our-forest-resources/silviculture/silvicultural-systems/silvicultural-interventions/stand-density-management"
+    },
+    {
+      "diagram_id": "cwp",
+      "species_code": "Cw",
+      "common_name": "Western redcedar",
+      "scientific_name": "Thuja plicata",
+      "origin": "planted",
+      "version": "unversioned",
+      "published": "1996-05-31",
+      "bec_main": [
+        "IDF",
+        "ICH",
+        "CDF",
+        "CWH"
+      ],
+      "bec_rare": [
+        "MH",
+        "ESSF",
+        "SBS",
+        "MS",
+        "PP"
+      ],
+      "bec_note": "Main in IDF, ICH, CDF and CWH; rare in lower MH, lower ESSF, SBS, MS and PP.",
+      "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/cwp.pdf",
+      "file_name": "cwp.pdf",
+      "size_bytes": 293859,
+      "sha256": "c4ae738bfc7daca82322c8bd3de53050d3b96c4311d307f4fb8fef6befdf85c5",
+      "pages": 1,
+      "bec_basis": "zone-level species occurrence from the BC Tree Species Compendium; verify against the AU's leading species and stand origin",
+      "index_url": "https://www2.gov.bc.ca/gov/content/industry/forestry/managing-our-forest-resources/silviculture/silvicultural-systems/silvicultural-interventions/stand-density-management"
+    },
+    {
+      "diagram_id": "swn",
+      "species_code": "Sw",
+      "common_name": "White spruce",
+      "scientific_name": "Picea glauca",
+      "origin": "natural",
+      "version": "1.30",
+      "published": "1996-02-26",
+      "bec_main": [
+        "SWB",
+        "MS",
+        "BWBS",
+        "SBS",
+        "SBPS"
+      ],
+      "bec_rare": [
+        "ESSF",
+        "IDF",
+        "ICH",
+        "CWH"
+      ],
+      "bec_note": "SWB, MS, BWBS, SBS and SBPS; rare in ESSF, IDF, ICH and northern CWH. The BC web page labels this diagram 'White pine', but the PDF is white spruce.",
+      "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/swn.pdf",
+      "file_name": "swn.pdf",
+      "size_bytes": 59953,
+      "sha256": "381a817ac882d870b0af470e9e26579912a84dc27e79db60d12b398f7e729448",
+      "pages": 1,
+      "bec_basis": "zone-level species occurrence from the BC Tree Species Compendium; verify against the AU's leading species and stand origin",
+      "index_url": "https://www2.gov.bc.ca/gov/content/industry/forestry/managing-our-forest-resources/silviculture/silvicultural-systems/silvicultural-interventions/stand-density-management"
+    },
+    {
+      "diagram_id": "swp",
+      "species_code": "Sw",
+      "common_name": "White spruce",
+      "scientific_name": "Picea glauca",
+      "origin": "planted",
+      "version": "1.30",
+      "published": "1996-02-26",
+      "bec_main": [
+        "SWB",
+        "MS",
+        "BWBS",
+        "SBS",
+        "SBPS"
+      ],
+      "bec_rare": [
+        "ESSF",
+        "IDF",
+        "ICH",
+        "CWH"
+      ],
+      "bec_note": "SWB, MS, BWBS, SBS and SBPS; rare in ESSF, IDF, ICH and northern CWH. The BC web page labels this diagram 'White pine', but the PDF is white spruce.",
+      "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/swp.pdf",
+      "file_name": "swp.pdf",
+      "size_bytes": 33869,
+      "sha256": "b1d5344047b1b50e36b1c0a43b847ea03204d2cbb6d950c1731b0623e7076b9d",
+      "pages": 1,
+      "bec_basis": "zone-level species occurrence from the BC Tree Species Compendium; verify against the AU's leading species and stand origin",
+      "index_url": "https://www2.gov.bc.ca/gov/content/industry/forestry/managing-our-forest-resources/silviculture/silvicultural-systems/silvicultural-interventions/stand-density-management"
+    }
+  ],
+  "guides": [
+    {
+      "guide_id": "sdmd_get",
+      "title": "How to Use a Stand Density Management Diagram: Getting the Stand and Site Data",
+      "published_year": 1997,
+      "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/sdmd_get.pdf",
+      "file_name": "sdmd_get.pdf",
+      "size_bytes": 503133,
+      "sha256": "96882b0dee1b3867f45d9c9021ca572e652568bc791eac381ea30464c61cda9b"
+    },
+    {
+      "guide_id": "sdmd_yld",
+      "title": "How to Use a Stand Density Management Diagram: Yield Predictions for a Spacing Prescription",
+      "published_year": 1997,
+      "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/sdmd_yld.pdf",
+      "file_name": "sdmd_yld.pdf",
+      "size_bytes": 327562,
+      "sha256": "3062cd8126111957a32626ca71374876082ed90993fb913be9b4edc6590e6b43"
+    },
+    {
+      "guide_id": "using_sdmds_to_plan_commercial_thinning_regimes",
+      "title": "Using Stand Density Management Diagrams to Develop Commercial Thinning Regimes",
+      "published_year": 2001,
+      "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/using_sdmds_to_plan_commercial_thinning_regimes.pdf",
+      "file_name": "using_sdmds_to_plan_commercial_thinning_regimes.pdf",
+      "size_bytes": 594806,
+      "sha256": "461b13b2720df7a2a29ea9d2cff0eb8c4786d0b49922d4f92b42167ad590af8f"
+    },
+    {
+      "guide_id": "sp_div",
+      "title": "Spacing to Increase Diversity within Stands",
+      "published_year": 2001,
+      "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/sp_div.pdf",
+      "file_name": "sp_div.pdf",
+      "size_bytes": 1278623,
+      "sha256": "525224c1860455830ec3dc50a8872afbe89129162eca72c7eeeb64593af5be3f"
+    },
+    {
+      "guide_id": "developingstanddensitymanagementregimes",
+      "title": "Guidelines for Developing Stand Density Management Regimes",
+      "published_year": 1999,
+      "url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/silviculture/developingstanddensitymanagementregimes.pdf",
+      "file_name": "developingstanddensitymanagementregimes.pdf",
+      "size_bytes": 327658,
+      "sha256": "4923ba352e00b14a43aa4cbad77a15f470b3a78fd4930004ea8363df2b7b18c3"
+    }
+  ],
+  "report": {
+    "report_id": "farnden-1996-bc-x-360",
+    "title": "Stand density management diagrams for lodgepole pine, white spruce and interior Douglas-fir",
+    "author": "Craig Farnden",
+    "series": "Pacific Forestry Centre Information Report BC-X-360",
+    "published": 1996,
+    "url": "https://resources.sipexchangebc.com/dataset/a2f7b0bc-7398-4c5d-ac36-3dd3cf52b0fb/resource/265024e5-dccf-459a-a3a1-47a72b041132/download/stand_density_management_diagrams_pl_sw_fd_bc_1996.pdf",
+    "file_name": "farnden-1996-bc-x-360.pdf",
+    "size_bytes": 427010,
+    "sha256": "208df8b4badcf80350540af67f13762304b8a0666500e3ba17af72c86368d9e5",
+    "pages": 41
+  },
+  "notes": [
+    "The BC set is species- and origin-based, not BEC-variant-based: 7 species x natural/planted = 14 diagrams.",
+    "BEC applicability is a zone-level inference from the BC Tree Species Compendium, not a statement printed on the diagrams.",
+    "The BC web page labels swn/swp as 'White pine'; the PDFs themselves are white spruce.",
+    "All diagrams are one-page PDFs. The full Farnden 1996 report carries the methods, equations and appendices."
+  ]
+}

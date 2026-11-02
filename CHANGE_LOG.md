@@ -3713,3 +3713,22 @@ issue comments.
   can be named later without a schema change. The earlier "licensed digital copy"
   wording overstated the dependency: the real gap is that the supplied PDF is a how-to
   guide, not the diagram, and no source copy has been chosen yet. No code behaviour changed.
+- P87.3: Found and catalogued the complete public BC SDMD set. The BC Ministry of Forests
+  publishes 14 one-page diagrams for 7 species in natural and planted versions: coastal and
+  interior Douglas-fir, lodgepole pine, Sitka spruce, western hemlock, western redcedar, and
+  white spruce. Added `ws4/sdmd/data/sdmd/source_catalog.json` (URL, version, date, size, and
+  SHA-256 for every diagram, five instructional guides, and the Farnden 1996 BC-X-360 report)
+  and `ws4/sdmd/data/sdmd/bec_variants.csv` (all 229 BEC zone/subzone/variant rows with the
+  applicable diagrams). Added `notes/reference/bc-sdmd-sources.md` and six catalog tests. The
+  BEC mapping is a zone-level inference from the BC Tree Species Compendium, not a claim printed
+  on the diagrams; IDFdk3 resolves to `fdin`/`fdip`. The BC index page mislabels `swn`/`swp` as
+  "White pine"; the PDFs are white spruce.
+- P87.4: Added the even-aged regime state machine and AU constraints in
+  `ws4/sdmd/regimes.py` and `ws4/sdmd/constraints.py`. A regime expands its cycle and repeat
+  count into ordered entry ages, validates its fields, and flags selection regimes as outside
+  the even-aged diagram. Constraints validate the entry window, entry cap, minimum interval,
+  removal fraction, review state, and required SDMD zone; `check_regime` fails closed and
+  `allowed_regimes` returns only the regimes that pass. Added 33 tests, a regime/constraint
+  reference section, and an internally consistent fixture. The IDFdk3-FDI allowed set drops from
+  7 regimes and 11 entries to 6 regimes and 7 entries. Dashboard result:
+  `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.

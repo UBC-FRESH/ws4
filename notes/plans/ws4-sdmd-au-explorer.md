@@ -191,10 +191,14 @@ Digitize the species/region diagram into vector data:
 
 Store each isopleth as ordered points and metadata. Do not store only a raster.
 
-The PDF supplied is a **how-to guide**, not the full species atlas. The actual
-IDFdk3/FDI diagram needs the Farnden 1996 source or a licensed digital copy.
-Digitization must be signed off by a named reviewer before use: the maintainer,
-  or an RPF the maintainer designates.
+The PDF supplied is a **how-to guide**, not the species atlas. The public BC set is
+14 one-page diagrams: seven species, each natural and planted. The catalog is
+`ws4/sdmd/data/sdmd/source_catalog.json`, and the 229-row BEC coverage table is
+`ws4/sdmd/data/sdmd/bec_variants.csv`. For IDFdk3/FDI use `fdin` (natural) or
+`fdip` (planted). The Farnden 1996 report is public and catalogued. Store vector
+isopleths only; do not copy a PDF or third-party text into the repository.
+Digitization must be signed off by a named reviewer before use: the maintainer, or
+an RPF the maintainer designates.
 
 ## 8. AU report
 
@@ -404,7 +408,9 @@ Do not start P87.6 before the API payload contract is stable.
 
 ## 17. Risks and controls
 
-- **SDMD source/licence.** Use published equations or a reviewed digital copy.
+- **SDMD source.** Use the public BC diagrams or published equations; record the
+  URL, version, and checksum; do not copy third-party text or figures into tracked
+  files.
 - **SDMD not valid for uneven-aged KC.** Scope to even-aged regimes; flag
   selection regimes as outside the diagram.
 - **PSP coverage.** Do not invent density support. Mark unsupported AUs.
