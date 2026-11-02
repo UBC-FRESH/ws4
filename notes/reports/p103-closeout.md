@@ -3,10 +3,10 @@
 Phase: P103 SDMD pilot digitisation and trajectory evidence (originally labelled P95; renumbered after the phase-id collision with #675)
 Parent issue: #680
 Branch: `feature/p103-sdmd-pilot`
-Evidence head: `b521f39`
+Evidence head: `b521f39` (phase work); merge head `0bb0b4e`
 Report commit: this metadata-only report update
 Date: 2026-11-02
-Status: queued for maintainer approval. Not merged.
+Status: queued as PR #718 for maintainer approval. Not merged.
 
 ## Recommendation
 
@@ -136,6 +136,6 @@ Results:
 
 ## 8. Pull request
 
-The PR body names the phase, the evidence head, the gate result, and the known
+PR #718 names the phase, the evidence head, the gate result, and the known
 limits. It is queued for approval. No merge, tag, release, or settings change is
 performed by this report.

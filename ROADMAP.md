@@ -97,7 +97,7 @@ exists and the maintainer approves it.
 | P92 Condition-card API | #659 | `feature/p92-condition-card-api` | pr-open |
 | P93 Condition-card Reports UI | #662 | `feature/p93-condition-card-ui` | pr-open |
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
-| P103 (SDMD pilot) digitisation and trajectory evidence | #680 | `feature/p103-sdmd-pilot` | active |
+| P103 (SDMD pilot) digitisation and trajectory evidence | #680 | `feature/p103-sdmd-pilot` | pr-open |
 | P95 (factorized vectors) target-cell cache | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
 | P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | pr-open |
 | P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | pr-open |
@@ -3148,7 +3148,7 @@ Acceptance:
 
 Parent issue: #680
 Branch: `feature/p103-sdmd-pilot`
-Status: active
+Status: pr-open
 Plan: `notes/reports/p87-closeout.md`, section 6
 Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
 
@@ -3157,14 +3157,14 @@ public Interior Douglas-fir diagrams, generate real FVS-BC and PSP trajectories 
 the pilot AUs, enforce the two solver rules deferred from P87, and close with the
 pilot AU report and validation evidence.
 
-- [ ] P103.1 Digitise fdin/fdip and replace the synthetic pilot fixture (#681)
+- [x] P103.1 Digitise fdin/fdip and replace the synthetic pilot fixture (#681)
   - [x] Extract and order the `fdin` isopleths.
   - [x] Extract and order the `fdip` isopleths.
   - [x] Produce the curve-review packet with overlay figures and a checklist.
   - [x] Record the maintainer's review, reviewer, and review date.
   - [x] Add the pilot diagram file, fixture, tests, and method note.
   - [x] Digitise the natural and planted lodgepole pine `pln`/`plp` diagrams.
-- [ ] P103.2 Generate FVS-BC and PSP trajectories for the pilot AUs (#682)
+- [x] P103.2 Generate FVS-BC and PSP trajectories for the pilot AUs (#682)
   - [x] Run the no-cut and CT60 FVS-BC scenarios.
   - [x] Add the PSP observed check.
   - [x] Store paths with source metadata and assess them.
@@ -3182,16 +3182,16 @@ pilot AU report and validation evidence.
   - [x] Reject a regime outside the required zone.
   - [x] Add the cross-block `SdmdScheduleGuard` and its negative tests.
   - [x] Wire the guard into the optimizer move loop and record the rejection count.
-- [ ] P103.4 Pilot report, validation, and closeout (#684)
+- [x] P103.4 Pilot report, validation, and closeout (#684)
   - [x] Run the eight gates on both pilot AUs (both `warn`, method-only).
-  - [x] Record the option reduction: 7 → 6 regimes / 11 → 7 entries (FDI) and
-    6 → 5 / 7 → 6 (PLI).
+  - [x] Record the option reduction: 7 → 6 regimes / 11 → 7 entries for both AUs.
   - [x] Write the pilot evidence report in `notes/reports/p95-pilot-evidence.md`.
   - [x] Define `AU-IDFdk3-TSA23-FDI` and replace the synthetic FDI PSP/FVS input.
   - [x] Define `AU-IDFdk3-TSA23-PLI` with the natural lodgepole pine diagram and
     real PSP/FVS evidence.
   - [x] Use a representative AU-level FVS tree list for both species.
-  - [ ] Write the close-out report and queue the pull request.
+  - [x] Write the close-out report and queue the pull request.
+  - [ ] Wait for maintainer approval.
 
 Acceptance:
 
