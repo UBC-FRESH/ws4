@@ -3719,3 +3719,10 @@ issue comments.
   `feature.Yield.managed.Total` account; the corrected pricer error is `2.2e-5`. Added the
   watcher display path that avoids `ensure_cells` when factorized accounts are available.
   Report: `notes/reports/p89-mixed-target-search.md`.
+
+## 2026-11-02
+
+- P93.1: added the Reports-tab condition-card panel and `loadConditionCard`,
+  which fetches the P92 endpoint and renders review state, indicators, alerts,
+  and limits with text nodes. Added HTML assertions and web docs.
+- Dashboard green on all seven gates; 71 web tests passed.

@@ -94,6 +94,7 @@ exists and the maintainer approves it.
 | P90 Forest condition report cards | #650 | `feature/p90-forest-condition-cards` | pr-open |
 | P91 Condition card from a WS4 run | #655 | `feature/p91-condition-run-card` | pr-open |
 | P92 Condition-card API | #659 | `feature/p92-condition-card-api` | pr-open |
+| P93 Condition-card Reports UI | #662 | `feature/p93-condition-card-ui` | active |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2977,3 +2978,24 @@ Acceptance:
 - Tests and dashboard pass.
 
 Design: `notes/design/ws4-forest-condition-card.md`.
+
+## Phase 93: Condition-card Reports UI
+
+Parent issue: #662
+Branch: `feature/p93-condition-card-ui`
+Status: active
+
+Goal: render the P92 condition-card API in the Reports tab.
+
+- [ ] P93.1 Add the condition-card Reports panel (#663)
+  - [ ] Add the Reports panel markup
+  - [ ] Add the JS fetch/render function and button wiring
+  - [ ] Add HTML tests and docs
+  - [ ] Run dashboard and open the PR
+
+Acceptance:
+
+- The panel and button are present in the served HTML.
+- Valid cards render review state and indicators without innerHTML interpolation.
+- Errors and empty cards show clear messages.
+- Dashboard passes.
