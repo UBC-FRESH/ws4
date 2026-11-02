@@ -17,6 +17,56 @@ async function api(path) {
   return response.json();
 }
 
+async function apiPost(path) {
+  const response = await fetch(path, { method: 'POST', headers: { accept: 'application/json' } });
+  if (!response.ok) {
+    let detail = response.statusText;
+    try { detail = (await response.json()).detail ?? detail; } catch { /* not json */ }
+    throw new Error(detail);
+  }
+  return response.json();
+}
+
+async function loadProfiles() {
+  const bar = $('profile-bar');
+  const select = $('profile-select');
+  const status = $('profile-status');
+  try {
+    const profiles = await api('api/scenario-profiles');
+    select.replaceChildren();
+    for (const profile of profiles) {
+      const option = document.createElement('option');
+      option.value = profile.name;
+      option.textContent = profile.description
+        ? `${profile.name} — ${profile.description}`
+        : profile.name;
+      select.appendChild(option);
+    }
+    bar.hidden = profiles.length === 0;
+    status.textContent = profiles.length ? `${profiles.length} profiles` : '';
+  } catch {
+    bar.hidden = true;
+  }
+}
+
+async function applyProfile() {
+  const select = $('profile-select');
+  const button = $('apply-profile');
+  const status = $('profile-status');
+  if (!select.value) return;
+  button.disabled = true;
+  status.textContent = `loading ${select.value}…`;
+  try {
+    const result = await apiPost(`api/scenario-profiles/${encodeURIComponent(select.value)}/apply`);
+    status.textContent = `loaded ${select.value}: ${result.targets} targets`;
+    await loadTargets();
+  } catch (error) {
+    status.textContent = `profile failed: ${error.message}`;
+  } finally {
+    button.disabled = false;
+  }
+}
+
 function coordinates(geometry) {
   if (!geometry) return [];
   if (geometry.type === 'Point') return [geometry.coordinates];
@@ -3778,6 +3828,7 @@ function applySkin(skin) {
   $('show-untreated').closest('label').hidden = !layers.includes('blocks');
   const readOnly = Boolean(skin.read_only) || !(skin.actions ?? []).includes('edit_targets');
   $('save-targets').hidden = readOnly || !document.querySelector('#targets-table:not([hidden])');
+  $('apply-profile').disabled = readOnly;
   $('start-run').hidden = Boolean(skin.read_only);
   for (const input of document.querySelectorAll('#targets-table input')) input.disabled = readOnly;
   renderLayerTree();
@@ -5624,7 +5675,7 @@ async function finishRun(id) {
   try {
     const summary = await api('api/summary');
     if (await fillRuns(summary, id)) {
-      await loadPeriods(); await loadLayers(); await loadLidar(); await loadCarbon(); await loadDataset(); await loadTargets(); await loadReports(); await loadMap();
+      await loadPeriods(); await loadLayers(); await loadLidar(); await loadCarbon(); await loadDataset(); await loadTargets(); await loadProfiles(); await loadReports(); await loadMap();
     }
   } catch { /* the run is done; a refresh failure is not fatal */ }
   window.setTimeout(() => { $('run-panel').hidden = true; }, 6000);
@@ -6031,7 +6082,7 @@ function renderConditionCard(card) {
     const table = document.createElement('table');
     const head = document.createElement('thead');
     const headRow = document.createElement('tr');
-    for (const label of ['Indicator', 'Value', 'Source', 'Status', 'Applicability']) {
+    for (const label of ['Indicator', 'Value', 'Source', 'Status', 'Uncertainty', 'Applicability']) {
       const th = document.createElement('th');
       th.textContent = label;
       headRow.append(th);
@@ -6045,6 +6096,9 @@ function renderConditionCard(card) {
         `${item.value} ${item.unit}`,
         `${item.source} (${item.source_version})`,
         item.status,
+        item.uncertainty == null
+          ? 'not stated'
+          : `${item.uncertainty} ${item.unit}${item.uncertainty_kind ? ` (${item.uncertainty_kind})` : ''}`,
         item.applicability ?? 'not stated',
       ];
       for (const value of values) {
@@ -6067,6 +6121,20 @@ function renderConditionCard(card) {
     for (const alert of alerts) {
       const item = document.createElement('li');
       item.textContent = `${alert.code} · ${alert.severity}: ${alert.message}`;
+      list.append(item);
+    }
+    target.append(list);
+  }
+  const provenance = card.provenance && typeof card.provenance === 'object' ? card.provenance : {};
+  const provenanceEntries = Object.entries(provenance);
+  if (provenanceEntries.length) {
+    const heading = document.createElement('p');
+    heading.textContent = 'Provenance';
+    target.append(heading);
+    const list = document.createElement('ul');
+    for (const [key, value] of provenanceEntries) {
+      const item = document.createElement('li');
+      item.textContent = `${key}: ${value}`;
       list.append(item);
     }
     target.append(list);
@@ -6386,10 +6454,28 @@ function newChat() {
 }
 
 function setAssistantVisible(visible) {
+  const toggle = $('chat-toggle');
+  if (toggle) toggle.hidden = !visible;
+  if (!visible) {
+    const panel = $('chat-panel');
+    if (panel) panel.hidden = true;
+  }
+}
+
+function openChat() {
   const panel = $('chat-panel');
-  const splitter = $('chat-splitter');
-  if (panel) panel.hidden = !visible;
-  if (splitter) splitter.hidden = !visible;
+  const toggle = $('chat-toggle');
+  if (!panel || !toggle || toggle.hidden) return;
+  panel.hidden = false;
+  toggle.setAttribute('aria-expanded', 'true');
+  $('chat-input').focus();
+}
+
+function closeChat() {
+  const panel = $('chat-panel');
+  const toggle = $('chat-toggle');
+  if (panel) panel.hidden = true;
+  if (toggle) toggle.setAttribute('aria-expanded', 'false');
 }
 
 async function loadAgent() {
@@ -6480,6 +6566,10 @@ function wireControls() {
     if (state.showUsedRoads) loadUsedRoads();
   });
   document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !$('chat-panel').hidden) {
+      closeChat();
+      return;
+    }
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
     const active = document.activeElement;
@@ -6503,6 +6593,7 @@ function wireControls() {
     if (skin) { applySkin(skin); await loadTargets(); }
   });
   $('save-targets').addEventListener('click', saveTargets);
+  $('apply-profile').addEventListener('click', applyProfile);
   $('target-chart-save').addEventListener('click', saveTargetCharts);
   $('account-search').addEventListener('input', renderAccountTree);
   $('account-multi').addEventListener('change', (event) => {
@@ -6549,6 +6640,8 @@ function wireControls() {
   $('search-select').addEventListener('change', (event) => renderSearchArtifact(event.target.value));
   $('run-portfolio').addEventListener('click', startPortfolio);
   $('run-tune').addEventListener('click', startTune);
+  $('chat-toggle').addEventListener('click', openChat);
+  $('chat-close').addEventListener('click', closeChat);
   $('chat-form').addEventListener('submit', sendChat);
   $('chat-new').addEventListener('click', newChat);
   $('chat-input').addEventListener('keydown', (event) => {
@@ -6607,6 +6700,7 @@ async function loadRunContext() {
     await loadCarbon();
     await loadDataset();
     await loadTargets();
+    await loadProfiles();
     await loadReports();
     syncCompareRuns();
     $('compare-a').value = state.run;

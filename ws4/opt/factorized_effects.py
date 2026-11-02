@@ -1266,6 +1266,7 @@ class FactorizedAccountSet:
         self.labels = tuple(str(label) for label in labels)
         self._feature_tables: dict[str, Any] = {}
         self._product_tables: dict[str, Any] = {}
+        self._option_values: dict[tuple[int, str], Any] = {}
         self._feature_accounts: set[str] | None = None
         self._product_accounts: set[str] | None = None
 
@@ -1497,10 +1498,71 @@ class FactorizedAccountSet:
             self._product_tables[account] = table
         return table
 
+    def option_values(self, account: str, offset: int) -> Any:  # noqa: ANN401
+        """Return one value per option for an account at a year offset.
+
+        Parameters
+        ----------
+        account : str
+            Feature or product account label.
+        offset : int
+            Year offset.
+
+        Returns
+        -------
+        torch.Tensor
+            ``[options]`` float64 values.
+        """
+        import torch
+
+        key = (int(offset), account)
+        cached = self._option_values.get(key)
+        if cached is not None:
+            return cached
+        if not self.supports(account):
+            raise ValueError(f"factorized account is not available: {account}")
+        if account.startswith("product."):
+            active = self.events.valid & (self.events.offset == offset)
+            selected_track = self.events.track.clamp(0, self.product_max_track).long()
+            selected_label = self.events.label.clamp(0, len(self.labels) - 1).long()
+            selected_age = self.events.age.clamp(0, self.product_max_age - 1).long()
+            values = self._product_table(account)[selected_track, selected_label, selected_age]
+            values = torch.where(active, values, torch.zeros_like(values))
+            result = (values * self.events.area).sum(dim=1).double()
+        else:
+            active = self.segments.valid & (self.segments.start <= offset)
+            segment_slots = torch.arange(self.segments.start.shape[-1], device=self.device)
+            choices = torch.where(active, segment_slots, -1).max(dim=-1).values
+            safe_choices = choices.clamp_min(0)
+            selected_track = torch.gather(
+                self.segments.track, 2, safe_choices.unsqueeze(-1)
+            ).squeeze(-1)
+            selected_age = torch.gather(self.segments.age, 2, safe_choices.unsqueeze(-1)).squeeze(
+                -1
+            )
+            selected_area = torch.gather(self.segments.area, 2, safe_choices.unsqueeze(-1)).squeeze(
+                -1
+            )
+            ages = (
+                selected_age
+                + offset
+                - torch.gather(self.segments.start, 2, safe_choices.unsqueeze(-1)).squeeze(-1)
+            )
+            ages = ages.clamp(0, self.feature_max_age - 1)
+            values = self._feature_table(account)[
+                selected_track.clamp(0, self.feature_max_track).long(), ages.long()
+            ]
+            values = torch.where(choices >= 0, values, torch.zeros_like(values))
+            result = (values * selected_area).sum(dim=1).double()
+        self._option_values[key] = result
+        return result
+
     def totals(
         self,
         genomes: Any,  # noqa: ANN401
         cells: Sequence[tuple[int, str]],
+        *,
+        vectors: bool = False,
     ) -> Any:  # noqa: ANN401
         """Return absolute factorized totals for requested target cells.
 
@@ -1510,6 +1572,9 @@ class FactorizedAccountSet:
             ``[genomes, blocks]`` option indices.
         cells : sequence of (int, str)
             Year/account target cells.
+        vectors : bool, optional
+            Use cached per-option vectors and a gather instead of the full padded
+            evaluation. Defaults to False for low-frequency display cells.
 
         Returns
         -------
@@ -1517,6 +1582,18 @@ class FactorizedAccountSet:
             ``[genomes, cells]`` float64 totals.
         """
         import torch
+
+        genomes = genomes.to(self.device)
+        if vectors:
+            block_positions = torch.arange(len(self.segments.blocks), device=self.device)
+            rows = self.segments.chain_offsets[block_positions].unsqueeze(0) + genomes
+            output = torch.zeros(
+                (genomes.shape[0], len(cells)), dtype=torch.float64, device=self.device
+            )
+            for column, (offset, account) in enumerate(cells):
+                values = self.option_values(str(account), int(offset))
+                output[:, column] = values[rows].sum(dim=1)
+            return output
 
         output = torch.zeros(
             (genomes.shape[0], len(cells)), dtype=torch.float64, device=self.device

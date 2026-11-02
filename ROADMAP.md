@@ -97,7 +97,16 @@ exists and the maintainer approves it.
 | P92 Condition-card API | #659 | `feature/p92-condition-card-api` | pr-open |
 | P93 Condition-card Reports UI | #662 | `feature/p93-condition-card-ui` | pr-open |
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
-| P95 SDMD pilot digitisation and trajectory evidence | #680 | `feature/p95-sdmd-pilot` | active |
+| P103 (SDMD pilot) digitisation and trajectory evidence | #680 | `feature/p103-sdmd-pilot` | active |
+| P95 (factorized vectors) target-cell cache | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
+| P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | pr-open |
+| P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | pr-open |
+| P98 LTSY scenario profile library | #699 | `feature/p98-ltsy-profiles` | pr-open |
+| P99 Scenario profile UI | #704 | `feature/p99-profile-ui` | pr-open |
+| P102 Ask overlay | #709 | `feature/p102-ask-overlay` | pr-open |
+| P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
+| P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
+
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2937,10 +2946,208 @@ Acceptance:
 - A base LTSY formulation is recommended with caveats.
 - Dashboard green.
 
-## Phase 95: SDMD pilot digitisation and trajectory evidence
+## Phase 95: Factorized target-cell vectors
+
+Parent issue: #675
+Branch: `feature/p95-factorized-cell-vectors`
+Status: pr-open
+Report: `notes/reports/p95-factorized-target-cell-vectors.md`
+PR: #685
+
+Goal: cache one `[options]` value vector per requested factorized target cell and gather it
+through the candidate rows, instead of rebuilding the padded layout every generation.
+
+- [x] P95.1 Add factorized option-value vectors (#676)
+  - [x] Add the feature/product option-value builder
+  - [x] Use the vector path in the population
+  - [x] Keep the display path on the padded evaluator
+- [x] P95.2 Benchmark and verify the stock-cell speedup (#677)
+  - [x] Compare stock and no-stock schedules
+  - [x] Verify exact replay and schedule identity
+  - [x] Record memory
+- [x] P95.3 Record the result and close out (#678)
+
+Acceptance:
+
+- Vector values match the padded evaluator.
+- The stock and no-stock schedules remain identical.
+- The stock search is materially faster than 218.9 s.
+- Dashboard green.
+
+## Phase 96: Base LTSY watcher profile
+
+Parent issue: #686
+Branch: `feature/p96-base-ltsy-profile`
+Status: pr-open
+Report: `notes/reports/tsa24-ltsy-base-profile.md`
+PR: #689
+
+Goal: make the accepted all-period ±5% + managed-stock guard formulation the practical
+base LTSY watcher profile.
+
+- [x] P96.1 Default the LTSY watcher to the base profile (#687)
+  - [x] Set the default target
+  - [x] Use a base-profile schedule path
+  - [x] Run a hot-cache smoke generation
+- [x] P96.2 Record the base profile and close out (#688)
+  - [x] Add the note and archive
+  - [x] Update roadmap, changelog, and notes index
+
+Acceptance:
+
+- `run_ltsy_watch.sh` uses the base target by default.
+- The smoke run writes the base-profile schedule.
+- The note distinguishes base profile from definitive sustainability.
+- Dashboard green.
+
+## Phase 97: Mixed-target vector performance
+
+Parent issue: #691
+Branch: `feature/p97-mixed-target-vectors`
+Status: pr-open
+Report: `notes/reports/tsa24-mixed-vector-performance.md`
+PR: #695
+
+Goal: verify the P95 vector cache on the 11-cell mixed feature/product target and remove
+the mixed-target runner's padded rebuild.
+
+- [x] P97.1 Use the padded cache in the mixed-target runner (#692)
+  - [x] Add the cache path
+  - [x] Load the padded cache when present
+  - [x] Keep the build fallback
+- [x] P97.2 Benchmark the 11-cell mixed target (#693)
+  - [x] Measure switch and run speed
+  - [x] Verify exact objective
+  - [x] Check table-cell identity
+- [x] P97.3 Record the result and close out (#694)
+
+Acceptance:
+
+- The mixed target switch is materially faster than 4.53 s.
+- Two-generation throughput is materially above 12.9 genomes/s.
+- Exact objective and table-cell count are unchanged.
+- Dashboard green.
+## Phase 98: LTSY scenario profile library
+
+Parent issue: #699
+Branch: `feature/p98-ltsy-profiles`
+Status: pr-open
+Report: `notes/reports/tsa24-ltsy-profiles.md`
+PR: #703
+
+Goal: add named LTSY profiles and a watcher selector, with a JSON/CLI surface for a UI
+layer.
+
+- [x] P98.1 Add the profile library and CLI (#700)
+  - [x] Add the profile schema and loader
+  - [x] Add list/show/JSON/shell CLI output
+  - [x] Test validation and CLI behavior
+- [x] P98.2 Wire the watcher profile selector (#701)
+  - [x] Add the TSA24 profile YAML
+  - [x] Add `PROFILE=` selection
+  - [x] Verify baseline and base selectors
+- [x] P98.3 Record and close out (#702)
+
+Acceptance:
+
+- Profiles validate and duplicate/missing target cases fail loudly.
+- `PROFILE=baseline|base|nostock` selects the correct target and schedule.
+- The default remains `base`.
+- Dashboard green.
+
+
+## Phase 99: Scenario profile UI
+
+Parent issue: #704
+Branch: `feature/p99-profile-ui`
+Status: pr-open
+Report: `notes/reports/tsa24-profile-ui.md`
+PR: #708
+
+Goal: expose the named LTSY profile library through the web API and Targets tab.
+
+- [x] P99.1 Add the profile API and serve option (#705)
+  - [x] Add list/detail/apply endpoints
+  - [x] Wire `ws4 serve --scenario-profiles`
+  - [x] Validate apply writes
+- [x] P99.2 Add the Targets-tab profile selector (#706)
+  - [x] Add the selector and apply control
+  - [x] Refresh targets after apply
+  - [x] Disable under read-only skins
+- [x] P99.3 Test, record, and close out (#707)
+
+Acceptance:
+
+- The API lists profiles and returns clean errors.
+- Applying a profile validates and writes the target file.
+- The UI selector is present and refreshes targets.
+- Dashboard green.
+
+
+## Phase 100: Condition-card provenance and uncertainty
+
+Parent issue: #670
+Branch: `feature/p100-condition-provenance`
+Status: pr-open
+
+Goal: show uncertainty and provenance in the condition-card Reports panel.
+
+- [x] P100.1 Show uncertainty and provenance in the condition panel (#671)
+  - [x] Add uncertainty to the card table
+  - [x] Add the provenance block
+  - [x] Add tests and docs
+  - [x] Run dashboard and open the PR
+
+Acceptance:
+
+- Missing uncertainty renders as `not stated`.
+- Provenance keys/values render in the panel.
+- Dashboard passes.
+
+## Phase 101: Scenario storyboard export
+
+Parent issue: #696
+Branch: `feature/p101-storyboard`
+Status: pr-open
+
+Goal: write a one-page scenario narrative from an existing run.
+
+- [x] P101.1 Add the storyboard export and tests (#697)
+  - [x] Add `build_storyboard`
+  - [x] Add CLI `ws4 storyboard`
+  - [x] Add tests/docs
+  - [x] Run dashboard and open the PR
+
+Acceptance: valid run writes Markdown; invalid accounts fail; storyboard names scenario, indicators, provenance, and limits; dashboard passes.
+
+## Phase 102: Ask overlay
+
+Parent issue: #709
+Branch: `feature/p102-ask-overlay`
+Status: pr-open
+Report: `notes/reports/tsa24-ask-overlay.md`
+PR: #712
+
+Goal: replace the static sidebar chat panel with a compact header Ask pill and floating
+assistant overlay available from every workspace.
+
+- [x] P102.1 Move the assistant to an Ask overlay (#710)
+  - [x] Add the header pill and fixed overlay
+  - [x] Remove the sidebar panel and splitter
+  - [x] Add open/close/Escape/focus behavior
+- [x] P102.2 Validate, document, and close out (#711)
+
+Acceptance:
+
+- The assistant is available from every workspace.
+- It does not change or resize the active workspace.
+- Existing chat API/session behavior remains intact.
+- Dashboard green.
+
+## Phase 103: SDMD pilot digitisation and trajectory evidence
 
 Parent issue: #680
-Branch: `feature/p95-sdmd-pilot`
+Branch: `feature/p103-sdmd-pilot`
 Status: active
 Plan: `notes/reports/p87-closeout.md`, section 6
 Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
@@ -2950,14 +3157,14 @@ public Interior Douglas-fir diagrams, generate real FVS-BC and PSP trajectories 
 the pilot AUs, enforce the two solver rules deferred from P87, and close with the
 pilot AU report and validation evidence.
 
-- [ ] P95.1 Digitise fdin/fdip and replace the synthetic pilot fixture (#681)
+- [ ] P103.1 Digitise fdin/fdip and replace the synthetic pilot fixture (#681)
   - [x] Extract and order the `fdin` isopleths.
   - [x] Extract and order the `fdip` isopleths.
   - [x] Produce the curve-review packet with overlay figures and a checklist.
   - [x] Record the maintainer's review, reviewer, and review date.
   - [x] Add the pilot diagram file, fixture, tests, and method note.
   - [x] Digitise the natural and planted lodgepole pine `pln`/`plp` diagrams.
-- [ ] P95.2 Generate FVS-BC and PSP trajectories for the pilot AUs (#682)
+- [ ] P103.2 Generate FVS-BC and PSP trajectories for the pilot AUs (#682)
   - [x] Run the no-cut and CT60 FVS-BC scenarios.
   - [x] Add the PSP observed check.
   - [x] Store paths with source metadata and assess them.
@@ -2970,12 +3177,12 @@ pilot AU report and validation evidence.
     limits.
   - [x] Run the FVS scenarios for a representative AU-level tree list and the
     remaining pilot species.
-- [x] P95.3 Enforce the SDMD-zone rule and the per-AU entry cap (#683)
+- [x] P103.3 Enforce the SDMD-zone rule and the per-AU entry cap (#683)
   - [x] Load per-track trajectories into the filter.
   - [x] Reject a regime outside the required zone.
   - [x] Add the cross-block `SdmdScheduleGuard` and its negative tests.
   - [x] Wire the guard into the optimizer move loop and record the rejection count.
-- [ ] P95.4 Pilot report, validation, and closeout (#684)
+- [ ] P103.4 Pilot report, validation, and closeout (#684)
   - [x] Run the eight gates on both pilot AUs (both `warn`, method-only).
   - [x] Record the option reduction: 7 → 6 regimes / 11 → 7 entries (FDI) and
     6 → 5 / 7 → 6 (PLI).
@@ -3178,5 +3385,10 @@ Acceptance:
     deleted, and parent issue #628 closed. Main CI runs `41411188534` and
     `41411188586` on `d650b11` succeeded. Phase 95 (SDMD pilot digitisation and
     trajectory evidence) is active on `feature/p95-sdmd-pilot`, parent issue #680,
-    with tasks #681 to #684. P95.1 is the first bounded move: digitise `fdin`/`fdip`
+    with tasks #681 to #684. P103.1 is the first bounded move: digitise `fdin`/`fdip`
     into reviewed vector isopleths and replace the synthetic pilot fixture.
+
+> Phase-id note: the SDMD pilot uses P95 (#680) and the factorized
+> target-cell work also uses P95 (#675); the identifiers collided in parallel
+> sessions. The maintainer can rename one at merge.
+

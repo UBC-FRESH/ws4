@@ -17,6 +17,7 @@ from ws4.forest_condition import (
     load_report,
     write_report,
 )
+from ws4.storyboard import build_storyboard
 
 
 def _indicator(**overrides: object) -> ConditionIndicator:
@@ -238,3 +239,39 @@ def test_condition_card_cli(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     assert (out / "forest_condition_card.json").is_file()
     assert "review_required" in (out / "forest_condition_card.md").read_text(encoding="utf-8")
+
+
+def test_storyboard_from_accounts() -> None:
+    """A storyboard carries the card and its limits."""
+    text = build_storyboard(
+        _accounts(),
+        scenario_id="run-1",
+        generated_utc="2026-11-02T00:00:00Z",
+        source_version="dataset-1",
+        provenance={"run": "run-1"},
+    )
+    assert "# Scenario storyboard: run-1" in text
+    assert "review_required" in text
+    assert "Storyboard limits" in text
+
+
+def test_storyboard_cli(tmp_path: Path) -> None:
+    """The CLI writes a Markdown storyboard from a run."""
+    run = tmp_path / "run"
+    run.mkdir()
+    _accounts().to_csv(run / "account_values.csv", index=False)
+    out = tmp_path / "storyboard.md"
+    result = CliRunner().invoke(
+        app,
+        [
+            "storyboard",
+            "--run",
+            str(run),
+            "--out",
+            str(out),
+            "--generated-utc",
+            "2026-11-02T00:00:00Z",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert "Scenario storyboard" in out.read_text(encoding="utf-8")

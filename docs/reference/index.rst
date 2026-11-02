@@ -43,6 +43,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
        validation codes.
    * - :doc:`forest-condition`
      - The report-only forest-condition card schema, advisory alerts, and limits.
+   * - :doc:`storyboard`
+     - The one-page run storyboard that reuses the condition card.
    * - :doc:`performance`
      - The measured figures and how to reproduce them.
    * - :doc:`web`
@@ -72,6 +74,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    species-composition
    recovery
    forest-condition
+   storyboard
    performance
    sdmd
    web

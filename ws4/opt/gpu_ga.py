@@ -648,7 +648,7 @@ class GenomePopulation:
         )
         if self._extra_cells:
             assert self.factorized is not None
-            extra = self.factorized.totals(source, self._extra_cells)
+            extra = self.factorized.totals(source, self._extra_cells, vectors=True)
             totals = torch.cat((totals, extra.to(device=self.device, dtype=torch.float64)), dim=1)
         scores = self.pricer.scores(totals)
         self.scores = scores

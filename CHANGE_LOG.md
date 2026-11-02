@@ -3998,3 +3998,54 @@ issue comments.
   entry; both SOURCE.md files record that. The pilot gates still pass plot,
   density, diagram, regime, and option checks; trajectory and initial-volume
   warnings remain.
+
+
+## 2026-11-02
+
+- P95: factorized target-cell vector cache. Added cached `[options]` feature/product
+  vectors and a population gather path. The all-period ±5% stock-floor search fell from
+  **218.9 s to 44.0 s** without changing the byte-identical schedule; the no-stock run
+  was 43.0 s. The stock floor can therefore stay in the search as a guard at about 2%
+  overhead. Report: `notes/reports/p95-factorized-target-cell-vectors.md`.
+
+## 2026-11-02
+
+- P96: base LTSY watcher profile. Made the accepted all-period ±5% + managed-stock
+  guard target the default TSA24 LTSY watcher profile, with a separate
+  `runtime/tsa24-ltsy-base-schedule.csv` output. A hot-cache one-generation smoke ran in
+  20.89 s. Report: `notes/reports/tsa24-ltsy-base-profile.md`.
+
+## 2026-11-02
+
+- P97: mixed-target vector performance. The P89 11-cell mixed feature/product target
+  fell from 4.53 s to 0.397 s for the target switch and from 14.86 s to 0.315 s for a
+  two-generation run, with exact objective error 9.8e-13 and unchanged table cells.
+  Report: `notes/reports/tsa24-mixed-vector-performance.md`.
+- P100.1: added uncertainty and provenance to the condition-card Reports panel.
+  Missing uncertainty renders as `not stated`; provenance entries render as text
+  nodes. Added static assertions and web docs. Dashboard green on all seven gates.
+- Closeout report: `notes/reports/p100-closeout.md`.
+
+## 2026-11-02
+
+- P98: LTSY scenario profile library. Added a validated YAML profile library, a
+  `scenario-profiles` CLI with list/show/JSON/shell output, and `PROFILE=base|baseline|nostock`
+  selection in the TSA24 watcher. `base` remains the default. Report:
+  `notes/reports/tsa24-ltsy-profiles.md`.
+- P101.1: added `ws4 storyboard`, a one-page Markdown narrative that reuses the
+  account-derived condition card. Derived indicators stay review-required;
+  alerts stay advisory. Added tests and docs. Dashboard green on all seven gates.
+
+## 2026-11-02
+
+- P99: scenario profile UI. Added `ws4 serve --scenario-profiles`, list/detail/apply API
+  endpoints, and a Targets-tab selector that validates and loads a named profile into the
+  editable targets file. Report: `notes/reports/tsa24-profile-ui.md`.
+
+## 2026-11-02
+
+- P102: Ask overlay. Replaced the static sidebar chat panel with a header **✦ Ask** pill
+  and a fixed assistant overlay available from every workspace. The overlay opens over the
+  current view, closes with × or Escape, and keeps the existing chat session/API behavior.
+  Report: `notes/reports/tsa24-ask-overlay.md`.
+

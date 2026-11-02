@@ -71,6 +71,14 @@ or after the factorized feature-cell pricing is made cheaper.
 This remains a base formulation, not a definitive sustainable scenario. The managed
 old-seral decline and the unmanaged 100% ≥200 age are policy caveats.
 
+## P95 update
+
+P95 replaced the repeated padded-layout computation with cached option-value vectors.
+The stock-cell search fell from **218.9 s to 44.0 s**, while the no-stock search was
+43.0 s. The schedules remain byte-identical. The P94 recommendation to omit the stock
+target for speed is therefore superseded: keep it as a guard at roughly 2% overhead.
+See `notes/reports/p95-factorized-target-cell-vectors.md`.
+
 ## Archive
 
 ```text

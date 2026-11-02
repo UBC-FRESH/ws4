@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import json
 import math
+import shlex
 import shutil
+import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -126,6 +128,7 @@ from .species import (
     write_species_composition,
     write_species_fractions,
 )
+from .storyboard import build_storyboard
 from .structure_habitat import (
     StructureHabitatError,
     compare_to_dhi,
@@ -1410,6 +1413,32 @@ def condition_card(
 
 
 @app.command()
+def storyboard(
+    run: Path = typer.Option(..., "--run", exists=True, file_okay=False, help="A run directory"),
+    out: Path | None = typer.Option(None, "--out", help="Markdown output path"),
+    generated_utc: str | None = typer.Option(
+        None, "--generated-utc", help="Fixed ISO-8601 timestamp for reproducible output"
+    ),
+) -> None:
+    """Write a one-page scenario storyboard from a run's account values."""
+    values = pd.read_csv(run / "account_values.csv")
+    try:
+        text = build_storyboard(
+            values,
+            scenario_id=run.name,
+            generated_utc=generated_utc or datetime.now(UTC).isoformat(),
+            source_version=run.name,
+            provenance={"run": run.name},
+        )
+    except ValueError as error:
+        raise typer.BadParameter(str(error)) from error
+    destination = out if out is not None else run / "storyboard.md"
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(text, encoding="utf-8")
+    print(f"[bold green]Storyboard[/] → {destination}")
+
+
+@app.command()
 def disturbance(
     events: Path = typer.Option(
         ..., "--events", exists=True, help="A femic.disturbance.v1 JSON table"
@@ -1483,6 +1512,12 @@ def serve(
     dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
     runs: Path = typer.Option(..., exists=True, help="Directory holding run directories"),
     targets: Path | None = typer.Option(None, "--targets", help="Targets YAML to read and replace"),
+    scenario_profiles: Path | None = typer.Option(
+        None,
+        "--scenario-profiles",
+        exists=True,
+        help="Scenario-profile YAML library for the web selector",
+    ),
     sdmd_dir: Path | None = typer.Option(
         None,
         "--sdmd-dir",
@@ -1582,6 +1617,7 @@ def serve(
             dataset=dataset,
             runs=runs,
             targets=targets,
+            scenario_profiles=scenario_profiles,
             sdmd_dir=sdmd_dir,
             geometry=geometry,
             geometry_overview=geometry_overview,
@@ -2870,6 +2906,73 @@ def state_watch(
     for key in ("objective", "penalty", "evaluations", "iterations", "blocks", "elapsed"):
         table.add_row(key, str(summary[key]))
     table.add_row("verified_objective", str(exact.objective))
+    print(table)
+
+
+@app.command("scenario-profiles")
+def scenario_profiles(
+    profiles: Path = typer.Option(..., exists=True, help="Scenario-profile YAML library"),
+    name: str | None = typer.Option(None, help="Profile to show; omit to list all"),
+    json_output: bool = typer.Option(False, "--json", help="Emit JSON"),
+    shell: bool = typer.Option(False, "--shell", help="Emit shell exports for one profile"),
+) -> None:
+    """List or show named scenario profiles.
+
+    Parameters
+    ----------
+    profiles : pathlib.Path
+        Profile-library YAML.
+    name : str or None
+        Profile to show; None lists all profiles.
+    json_output : bool
+        Emit machine-readable JSON.
+    shell : bool
+        Emit shell exports for one profile.
+    """
+    from .opt.scenario_profiles import ProfileError, get_profile, load_profiles
+
+    try:
+        loaded = load_profiles(profiles)
+        selected = get_profile(loaded, name) if name is not None else None
+    except ProfileError as error:
+        print(f"[red]{error}[/]")
+        raise typer.Exit(code=1) from error
+    if shell:
+        if selected is None:
+            print("[red]--shell requires --name[/]")
+            raise typer.Exit(code=2)
+        sys.stdout.write(f"export TARGETS={shlex.quote(str(selected.targets))}\n")
+        sys.stdout.write("export ACCOUNTS=" + shlex.quote(",".join(selected.accounts)) + "\n")
+        if selected.schedule_out is not None:
+            sys.stdout.write(
+                "export SCHEDULE_OUT=" + shlex.quote(str(selected.schedule_out)) + "\n"
+            )
+        return
+    if selected is not None:
+        if json_output:
+            sys.stdout.write(json.dumps(selected.as_dict(), indent=2) + "\n")
+            return
+        table = Table(title=f"Scenario profile: {selected.name}")
+        for key, value in selected.as_dict().items():
+            table.add_row(key, str(value))
+        print(table)
+        return
+    rows = [profile.as_dict() for profile in loaded.values()]
+    if json_output:
+        sys.stdout.write(json.dumps(rows, indent=2) + "\n")
+        return
+    table = Table(title="Scenario profiles")
+    table.add_column("name")
+    table.add_column("targets")
+    table.add_column("accounts")
+    table.add_column("description")
+    for row in rows:
+        table.add_row(
+            str(row["name"]),
+            str(row["targets"]),
+            ",".join(row["accounts"]),
+            str(row["description"]),
+        )
     print(table)
 
 

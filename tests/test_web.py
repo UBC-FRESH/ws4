@@ -168,6 +168,9 @@ def test_condition_card_is_built_from_a_run(tmp_path: Path) -> None:
     assert body["review_status"] == "draft"
     assert body["indicators"][0]["name"] == "feature.Volume"
     assert body["indicators"][0]["status"] == "review_required"
+    script = client.get("/static/app.js").text
+    assert "Uncertainty" in script
+    assert "Provenance" in script
 
 
 def test_condition_card_api_rejects_missing_and_bad_runs(tmp_path: Path) -> None:
@@ -1617,3 +1620,64 @@ def test_the_target_series_endpoint_assigns_bounds_to_periods(tmp_path: Path) ->
     assert feature["periods"][0]["maximum"] is None
     assert feature["periods"][0]["flow"] == "even"
     assert feature["periods"][0]["active"] is False
+
+
+def test_scenario_profiles_api_lists_and_applies(tmp_path: Path) -> None:
+    """The web API lists profiles and validates an applied target file."""
+    _client, targets = _app(tmp_path)
+    profile_target = tmp_path / "profile.yaml"
+    profile_target.write_text(
+        "targets:\n  - account: feature.Volume\n    period: 1\n    minimum: 999\n",
+        encoding="utf-8",
+    )
+    library = tmp_path / "profiles.yaml"
+    library.write_text(
+        "profiles:\n"
+        "  - name: base\n"
+        "    description: base profile\n"
+        "    targets: profile.yaml\n"
+        "    accounts: [feature.Volume]\n"
+        "    schedule_out: runtime/base.csv\n",
+        encoding="utf-8",
+    )
+    profile_client = TestClient(
+        create_app(
+            dataset=tmp_path / "dataset",
+            runs=tmp_path / "runs",
+            targets=targets,
+            scenario_profiles=library,
+        )
+    )
+    listed = profile_client.get("/api/scenario-profiles")
+    assert listed.status_code == 200
+    assert listed.json()[0]["name"] == "base"
+    detail = profile_client.get("/api/scenario-profiles/base")
+    assert detail.status_code == 200
+    assert detail.json()["accounts"] == ["feature.Volume"]
+    applied = profile_client.post("/api/scenario-profiles/base/apply")
+    assert applied.status_code == 200, applied.text
+    assert applied.json()["targets"] == 1
+    assert "minimum: 999" in targets.read_text(encoding="utf-8")
+    missing = profile_client.post("/api/scenario-profiles/nope/apply")
+    assert missing.status_code == 404
+
+
+def test_targets_tab_has_a_profile_selector(tmp_path: Path) -> None:
+    """The browser shell exposes the profile selector and apply control."""
+    client, _targets = _app(tmp_path)
+    html = client.get("/").text
+    assert 'id="profile-select"' in html
+    assert 'id="apply-profile"' in html
+    assert 'id="profile-status"' in html
+
+
+def test_chat_is_a_floating_ask_overlay(tmp_path: Path) -> None:
+    """The assistant is an overlay opened by the header Ask pill."""
+    client, _targets = _app(tmp_path)
+    html = client.get("/").text
+    assert 'id="chat-toggle"' in html
+    assert 'id="chat-close"' in html
+    assert html.index("</main>") < html.index('id="chat-panel"')
+    css = client.get("/static/style.css").text
+    assert ".chat-toggle" in css
+    assert "position:fixed" in css

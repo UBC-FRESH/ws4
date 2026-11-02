@@ -435,3 +435,29 @@ def test_factorized_account_cache_round_trips(tmp_path: Path) -> None:
     expected = accounts.totals(genomes, cells)
     actual = loaded.totals(genomes, cells)
     assert torch.equal(actual, expected)
+
+
+def test_factorized_vector_totals_match_padded_totals(tmp_path: Path) -> None:
+    """Cached option-value vectors match the padded account evaluator."""
+    import numpy as np
+    import torch
+
+    optimizer, _evaluator = _optimizer(tmp_path)
+    candidates = optimizer.candidates()
+    arrays = FactorizedEffectArrays.build(optimizer, candidates, years=4)
+    accounts = FactorizedAccountSet.from_arrays(arrays, optimizer.simulator(), years=4)
+    product_account = sorted(
+        {
+            str(label)
+            for curves in optimizer.simulator()._products_by_key.values()
+            for _, label in curves
+        }
+    )[0]
+    cells = [(1, "feature.Volume"), (2, product_account)]
+    rng = np.random.default_rng(31)
+    genomes = torch.as_tensor(rng.integers(0, 2, size=(3, len(candidates))), dtype=torch.int64)
+    padded = accounts.totals(genomes, cells)
+    vectors = accounts.totals(genomes, cells, vectors=True)
+    assert torch.allclose(vectors, padded, rtol=1e-10, atol=1e-8)
+    assert accounts.option_values("feature.Volume", 1).shape == (arrays.option_count,)
+    assert accounts.option_values(product_account, 2).shape == (arrays.option_count,)
