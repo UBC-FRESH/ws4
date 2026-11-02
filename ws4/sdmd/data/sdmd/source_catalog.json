@@ -523,7 +523,7 @@
       "source_version": "1.10",
       "review_status": "provisional",
       "reviewer": "",
-      "notes": "Vector extraction from the catalogued PDF; isopleth values assigned from the printed labels and the QMD 5 cm sequence. Awaiting maintainer review."
+      "notes": "Vector extraction from the catalogued PDF; isopleth values assigned from the printed labels and the QMD 5 cm sequence. The crown-closure curve is truncated at 2,951 TPH because the high-TPH digitisation joined a second branch; the high-TPH closure remains unresolved. Awaiting maintainer review."
     },
     {
       "diagram_id": "idf-dk3-fdi-planted",

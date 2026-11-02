@@ -2953,6 +2953,7 @@ pilot AU report and validation evidence.
 - [ ] P95.1 Digitise fdin/fdip and replace the synthetic pilot fixture (#681)
   - [x] Extract and order the `fdin` isopleths.
   - [x] Extract and order the `fdip` isopleths.
+  - [x] Produce the curve-review packet with overlay figures and a checklist.
   - [ ] Record the maintainer's review, reviewer, and review date.
   - [x] Add the pilot diagram file, fixture, tests, and method note.
   - [x] Digitise the natural and planted lodgepole pine `pln`/`plp` diagrams.

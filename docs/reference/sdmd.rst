@@ -450,7 +450,8 @@ planted PDF (`plp`, version 1.20) is digitised into ``idf-dk3-pli-planted.json``
 with top height 6-30 m. The real PLI pilot store is
 ``ws4/sdmd/data/pilot-tsa23-idfdk3-pli/``. The method,
 curve assignments, and review checklist are in
-``notes/reference/bc-sdmd-digitisation.md``. Both are **provisional** until the
+``notes/reference/bc-sdmd-digitisation.md``. The review packet with overlay figures
+for all four diagrams is ``notes/review/p95-curve-review.md``. Both are **provisional** until the
 maintainer reviews the curves; the planted top-height assignment is the weaker of
 the two. The synthetic ``idf-dk3-fdi-illustrative.json`` remains the test fixture,
 not the published diagram. Four method trajectories from `fresh-fvsbc` are in

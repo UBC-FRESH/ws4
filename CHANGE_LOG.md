@@ -3977,3 +3977,10 @@ issue comments.
   diagram, missing initial volume, and extrapolated paths. Added PLI gate and
   trajectory tests. This removes the need to place lodgepole pine points on the
   Interior Douglas-fir diagram.
+- P95.1: added the curve-review packet in `notes/review/p95-curve-review.md`
+  with overlay figures for `fdin`, `fdip`, `pln`, and `plp`, curve inventories,
+  known limits, and a sign-off checklist. The overlays caught a zigzag in the
+  `fdin` crown-closure curve above 2,951 TPH; the stored curve is truncated at
+  that point and the unresolved high-TPH branch is named in the packet and source
+  catalog. Added a monotonicity/domain test for the truncated curve. The diagrams
+  remain provisional pending the maintainer's sign-off.

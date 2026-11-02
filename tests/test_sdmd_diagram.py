@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 import json
 from dataclasses import replace
 from pathlib import Path
@@ -603,3 +604,12 @@ def test_lodgepole_natural_diagram_is_complete_and_valid() -> None:
     assert qmd == [10, 15, 20, 25, 30, 35, 40]
     placement = place_point(diagram, 1370.0, 0.184445)
     assert placement.zone == "competition"
+
+
+def test_fdin_crown_closure_is_monotone_and_truncated() -> None:
+    """The fdin closure ends before the unresolved high-TPH branch."""
+    diagram = load_diagram(PILOT_DIAGRAM)
+    curve = next(item for item in diagram.isopleths if item.kind == "crown_closure")
+    assert curve.points[-1][0] <= 2951.153
+    values = [point[1] for point in curve.points]
+    assert all(later <= earlier + 1e-6 for earlier, later in itertools.pairwise(values))
