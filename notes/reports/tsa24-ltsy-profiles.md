@@ -1,7 +1,7 @@
 # TSA24 LTSY scenario profile library
 
 Date: 2026-11-02
-Status: active profile library
+Status: active profile library; PR #703
 
 The TSA24 LTSY variants now have a small named profile library instead of ad hoc target
 paths.
@@ -65,3 +65,7 @@ These profile smoke runs are interface checks, not policy results.
 ```
 
 Contains the profile library, target files, runner, smoke schedules, README, and checksums.
+
+## Pull request
+
+PR #703 contains the profile library, CLI, tests, and watcher selector. The instance profile YAML and archive live outside this git branch.
