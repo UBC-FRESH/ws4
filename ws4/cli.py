@@ -2893,7 +2893,7 @@ def gpu_watch(
                 )
         population_instance = GenomePopulation(
             optimizer,
-            IncrementalObjective(optimizer, target_list),
+            IncrementalObjective(optimizer, []),
             effect_table,
             population=population,
             seed=seed,
@@ -2906,6 +2906,7 @@ def gpu_watch(
             mutation_rate=0.002,
             islands=1,
         )
+        population_instance.update_targets(target_list)
         if base_totals is None:
             torch.save(population_instance.base_totals.detach().cpu(), base_cache)
         summary = run_gpu_watch(

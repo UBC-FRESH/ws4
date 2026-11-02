@@ -119,6 +119,49 @@ python -m ws4.cli gpu-watch \
 The TSA24 wrapper passes `FACTORIZED_CACHE` through. The hot run reproduced the same
 objective and 128 evaluations as the cold run.
 
+## Final growing-stock floor
+
+Initial managed growing stock (`feature.Yield.managed.Total` at offset 0):
+**411,559,095.33 m3**. The 90% floor is **370,403,185.80 m3** at period 20
+(offset 199).
+
+Target file:
+
+```text
+config/ws4/targets/evenflow_tsa24_ltsy_stock90.yaml
+```
+
+It keeps the LTSY flow and level targets and adds:
+
+```yaml
+- account: feature.Yield.managed.Total
+  period: 20
+  year: 200
+  period_width: 10
+  minimum: 370403185.80
+  min_weight: 10.0
+  normalization: auto
+  shape: linear
+  priority: 1
+```
+
+Smoke run:
+
+```bash
+PLAIN=1 \
+  TARGETS=config/ws4/targets/evenflow_tsa24_ltsy_stock90.yaml \
+  SCHEDULE_OUT=runtime/tsa24-ltsy-stock90-smoke.csv \
+  ./run_ltsy_watch.sh 2
+```
+
+The target window showed period 20 with minimum **370M** and realized **782M**
+(`ok`). The run used the hot padded cache: wall **19.31 s**, 192 evaluations, objective
+**39,063,621.8857**, 208,255 blocks. The output schedule is
+`runtime/tsa24-ltsy-stock90-smoke.csv`.
+
+This is a soft goal-programming aspiration, not a hard feasibility floor, and the smoke
+run only demonstrates the target plumbing and display; it is not a production search.
+
 ## Limits
 
 - The structural build is still one-time and model-specific.
