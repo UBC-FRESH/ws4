@@ -3878,3 +3878,10 @@ issue comments.
   **218.9 s to 44.0 s** without changing the byte-identical schedule; the no-stock run
   was 43.0 s. The stock floor can therefore stay in the search as a guard at about 2%
   overhead. Report: `notes/reports/p95-factorized-target-cell-vectors.md`.
+
+## 2026-11-02
+
+- P96: base LTSY watcher profile. Made the accepted all-period ±5% + managed-stock
+  guard target the default TSA24 LTSY watcher profile, with a separate
+  `runtime/tsa24-ltsy-base-schedule.csv` output. A hot-cache one-generation smoke ran in
+  20.89 s. Report: `notes/reports/tsa24-ltsy-base-profile.md`.
