@@ -326,7 +326,7 @@ def test_read_lidar_evidence_accepts_canopy_structure_without_tph() -> None:
         }
     )
     result = read_lidar_evidence(frame)
-    assert bool(pd.isna(result.loc[0, "tph"]))
+    assert result["tph"].isna().iloc[0]
 
 
 def test_read_lidar_evidence_refuses_canopy_only_tph() -> None:
