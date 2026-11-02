@@ -4,6 +4,7 @@ Parent issue: #637
 Branch: `feature/p88-factorized-gpu`
 Evidence commit: `28f0c64`
 Pull request: #642
+Merge commit: `f582500`
 
 ## Result
 
