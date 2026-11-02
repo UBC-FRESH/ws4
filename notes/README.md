@@ -58,6 +58,7 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `design/ws4-optimizer-core.md` — event chains and per-move objective deltas (proposed).
 - `design/ws4-hydrology-consumer-hardening.md` — P62 preflight, exposure, and optimizer-boundary plan.
 - `plans/ws4-sdmd-au-explorer.md` — P87 plan: schema, ingestion, SDMD digitisation, regimes, API, web tab, and solver constraints.
+- `reports/p87-closeout.md` — Phase 87 SDMD and AU Explorer close-out, queued for approval.
 - `reference/bc-sdmd-sources.md` — the 14 public BC SDMDs, their BEC coverage, and the caveats.
 - `design/ws4-carbon.md` — historical P58 carbon design note; the current contract is
   `docs/reference/carbon.rst`.

@@ -1,6 +1,6 @@
 # WS4 SDMD and AU Explorer expansion plan
 
-Status: active
+Status: closeout queued
 Phase: **P87 — Stand density management and AU Explorer**
 Branch: `feature/p87-sdmd-au-explorer`
 Parent issue: #628
@@ -447,3 +447,12 @@ python scripts/dashboard.py
 6. The SDMD how-to guide supplied by the maintainer, held outside the repository.
    Use it to inform the design; do not copy it into tracked files.
 7. Farnden (1996) SDMD source for the actual species/region diagrams.
+
+## 21. Delivery status
+
+The phase is delivered on `feature/p87-sdmd-au-explorer` and queued as pull request
+#658. The six table contracts, ingestion, diagram and AU report, public source
+catalog, regimes and constraints, API, web tab, option-space filter, and eight
+validation gates are in place. The close-out report is
+`notes/reports/p87-closeout.md`. The synthetic diagram fixture, the deferred
+trajectory-zone rule, and the deferred cross-block AU cap are named there.
