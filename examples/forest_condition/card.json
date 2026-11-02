@@ -1,0 +1,49 @@
+{
+  "alerts": [
+    {
+      "advisory": true,
+      "code": "ba-coverage",
+      "indicator": "basal_area",
+      "message": "BA-only pilot covers 14.9% of TSA 23.",
+      "severity": "watch"
+    }
+  ],
+  "generated_utc": "2026-11-02T00:00:00Z",
+  "indicators": [
+    {
+      "applicability": "TSA23 IDF; BA-only pilot",
+      "name": "basal_area",
+      "note": "14.9% TSA coverage; experimental",
+      "source": "femic.inventory.als",
+      "source_version": "2026.1",
+      "status": "ok",
+      "trend": "not_available",
+      "uncertainty": 8.86,
+      "uncertainty_kind": "RMSE",
+      "unit": "m2/ha",
+      "value": 23.87
+    },
+    {
+      "applicability": "static surrogate; not species habitat",
+      "name": "dhi_cum",
+      "note": null,
+      "source": "silvis-dhi",
+      "source_version": "MODIS 6.1 2003-2022",
+      "status": "ok",
+      "trend": "not_available",
+      "uncertainty": null,
+      "uncertainty_kind": null,
+      "unit": "index",
+      "value": 0.42
+    }
+  ],
+  "period": "2026",
+  "provenance": {
+    "instance": "femic-tsa23-instance@b12b051",
+    "source": "metadata/inv01/tsa23_ba_pilot_manifest.json"
+  },
+  "report_id": "tsa23-pilot-2026",
+  "review_status": "draft",
+  "scenario_id": "c5-seeded",
+  "schema_version": "ws4.forest_condition.report.v1"
+}

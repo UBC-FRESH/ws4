@@ -3706,6 +3706,15 @@ issue comments.
   no third-party diagram content was copied. Added 40 tests and the diagram/report reference section.
   Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
 
+- P88: Factorized GPU account search. Parent #637, branch
+  `feature/p88-factorized-gpu`. Added the persisted account-independent descriptor
+  consumer, padded feature and product pricers, mixed target-cell switching, and the
+  post-P85 effect-table safety guards. Full TSA24 exactness: feature error 0.0 and
+  64 genomes in 0.694 s; product error 8.9e-7 and 64 genomes in 0.0255 s; mixed
+  feature/product four-cell switch error 3.5e-9 in 0.093 s. The rejected all-account
+  matrix is not built; the lean builder caps workers and refuses an over-budget basis.
+  Report: `notes/reports/p88-factorized-gpu.md`.
+
 ## 2026-11-02
 
 - P87.3 clarification: the review gate is a named reviewer sign-off, not an unstaffed
@@ -3795,3 +3804,15 @@ issue comments.
   initial-volume gate rejects 863 m3/ha against an 800 m3/ha limit and flags
   1,173 m3/ha above the observed 1,133.8 m3/ha maximum. Added 10 tests. Also fixed
   the P87.4 and P87.6 roadmap checkboxes that had been left unchecked.
+- Added `ws4.forest_condition` with `ws4.forest_condition.report.v1` typed
+  report and indicator records, validation, JSON round-trip, and Markdown
+  rendering.
+- Added a report-only fixture at `examples/forest_condition` combining the
+  BA-only inventory indicator with a DHI indicator.
+- Added `docs/reference/forest-condition.rst` and the design note
+  `notes/design/ws4-forest-condition-card.md`.
+- The card is report-only: alerts are advisory; no objective, constraint,
+  growth, schedule, solver, or treatment eligibility changed.
+- Added ten focused tests.
+- Dashboard: **GREEN** on lint, format, types, tests, validator, docs, and docstrings.
+- Closeout report: `notes/reports/p90-closeout.md`.

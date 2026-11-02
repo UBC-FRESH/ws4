@@ -90,6 +90,8 @@ exists and the maintainer approves it.
 | P85 GPU acceleration and interactive target cache | #618 | `feature/p85-gpu-acceleration` | complete |
 | P86 Weighted goal-programming target semantics | #625 | `feature/p86-target-semantics` | pr-open |
 | P87 Stand density management and AU Explorer | #628 | `feature/p87-sdmd-au-explorer` | active |
+| P88 Factorized GPU account search | #637 | `feature/p88-factorized-gpu` | pr-open |
+| P90 Forest condition report cards | #650 | `feature/p90-forest-condition-cards` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2740,6 +2742,67 @@ Acceptance:
 - `python scripts/dashboard.py` is green on every commit.
 
 
+## Phase 88: Factorized GPU account search
+
+Parent issue: #637
+Branch: `feature/p88-factorized-gpu`
+Status: pr-open
+Plan: `notes/design/factorized-account-basis.md`
+Report: `notes/reports/p88-factorized-gpu.md`
+
+Goal: replace the rejected all-account effects matrix with an account-independent
+structural basis and padded GPU feature/product pricers, then switch target accounts
+without rebuilding an all-account table.
+
+- [x] P88.1 Post-P85 effect-table safety and bounded lean build (#638)
+  - [x] Preflight the builder and cap worker memory
+  - [x] Keep the lean build without the full row-index dictionary
+  - [x] Record the OOM postmortem
+- [x] P88.2 Persisted factorized basis and padded GPU pricers (#639)
+  - [x] Persist the flat segment/event descriptors
+  - [x] Add padded feature and product tensors
+  - [x] Match the full TSA24 exact evaluator
+- [x] P88.3 Wire target account switching into the resident population (#640)
+  - [x] Price missing target cells through one-account lookups
+  - [x] Leave the sparse table unchanged on an account switch
+  - [x] Cover the switch with a population exactness test
+- [ ] P88.4 Benchmark report, docs, and phase closeout (#641)
+
+Acceptance:
+
+- Full TSA24 feature and product batches of 64 genomes match the exact evaluator.
+- Mixed feature/product target cells are priced without an all-account matrix.
+- Host and GPU memory are bounded and recorded.
+- The phase closes with a report, verification, and a `Part of #637` pull request.
+
+## Phase 90: Forest condition report cards
+
+Parent issue: #650
+Branch: `feature/p90-forest-condition-cards`
+Status: pr-open
+
+Goal: add a report-only forest-condition card contract and static pilot that
+packages existing WS4 indicators with provenance, uncertainty, applicability,
+advisory alerts, and review status. The phase does not compute new condition
+indicators or change solver behavior.
+
+- [x] P90.1 Implement the forest-condition report card (#651)
+  - [x] Add typed report and indicator models
+  - [x] Add validation and JSON round-trip
+  - [x] Add Markdown rendering
+  - [x] Add fixture and tests
+  - [x] Add docs, roadmap, and changelog entries
+  - [x] Run dashboard and open the PR
+
+Acceptance:
+
+- JSON round-trip preserves all fields.
+- Invalid status, missing provenance, and non-finite values fail validation.
+- Markdown names every indicator, its source, applicability, and limitations.
+- Tests cover valid, invalid, and empty-indicator cases.
+- Dashboard green.
+
+Design: `notes/design/ws4-forest-condition-card.md`.
 ## Detailed Next Steps Notes
 
 1. Phase 0 is complete: pull request #8 squash-merged as `97330a8`, the branch deleted, and parent

@@ -55,4 +55,5 @@
 - [Stand density management](reference/sdmd.html): the six-table SDMD contract, the AU Explorer boundary, and the validation codes.
 - [Performance and scale](reference/performance.html): the measured figures, the incremental objective, and how to reproduce the benchmark.
 - [FEMIC hydrology](reference/femic-hydrology.html): pinned response bundles, checksums, flood-risk rows, and applicability metadata.
+- [Forest condition report card](reference/forest-condition.html): the report-only indicator, provenance, advisory-alert, and review-status contract.
 - [API reference](api/index.html): the repository tooling's public functions, with their parameters, types, and return values. The package API is rendered on the reference pages above.

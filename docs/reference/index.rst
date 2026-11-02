@@ -41,6 +41,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    * - :doc:`sdmd`
      - The stand density management contracts, the AU Explorer boundary, and the
        validation codes.
+   * - :doc:`forest-condition`
+     - The report-only forest-condition card schema, advisory alerts, and limits.
    * - :doc:`performance`
      - The measured figures and how to reproduce them.
    * - :doc:`web`
@@ -69,6 +71,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    resilience
    species-composition
    recovery
+   forest-condition
    performance
    sdmd
    web
