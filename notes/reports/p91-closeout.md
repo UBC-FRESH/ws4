@@ -4,7 +4,7 @@
 
 Phase: P91
 Parent issue: #655
-Pull request: TBD
+Pull request: https://github.com/UBC-FRESH/ws4/pull/657
 Evidence head: `P91.1` commit on `feature/p91-condition-run-card`
 Report date: 2026-11-02
 Status: pr-open; awaiting review
@@ -26,7 +26,7 @@ Status: pr-open; awaiting review
 | Bad input rejection | focused tests | met |
 | Derived indicators marked review-required | builder and test | met |
 | Dashboard green | all seven gates | met |
-| PR queued | TBD | pending |
+| PR queued | #657 | met |
 
 ## Workflow compliance
 
@@ -55,7 +55,7 @@ Focused tests: 13 passed.
 
 ## CI evidence
 
-To be recorded after the phase pull request is opened.
+PR #657 is open; CI is green on `833a179`.
 
 ## Deviations and risks
 
