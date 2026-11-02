@@ -4,7 +4,7 @@
 
 Phase: P94
 Parent issue: #670
-Pull request: TBD
+Pull request: https://github.com/UBC-FRESH/ws4/pull/674
 Evidence head: `P94.1` on `feature/p94-condition-provenance`
 Report date: 2026-11-02
 Status: pr-open; awaiting review
@@ -24,7 +24,7 @@ Status: pr-open; awaiting review
 | Provenance block | JS text-node list | met |
 | Tests/docs | 71 web tests; web reference | met |
 | Dashboard | all seven gates green | met |
-| PR queued | TBD | pending |
+| PR queued | #674 | met |
 
 ## Workflow compliance
 
@@ -40,7 +40,7 @@ Status: pr-open; awaiting review
 
 ## CI evidence
 
-To be recorded after the PR opens.
+PR #674 is open; check CI on the final head.
 
 ## Deviations and risks
 
