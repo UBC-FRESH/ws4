@@ -10,7 +10,12 @@ reads. The service computes no value the CLI cannot reproduce.
 
    pip install 'ws4[web]'
    ws4 serve --dataset build/compiled --runs runs --targets targets.yaml \
-             --geometry blocks.geojson
+             --geometry blocks.geojson --sdmd-dir data/sdmd
+
+``--sdmd-dir`` mounts the stand density management read API and its validated
+constraint-write endpoint under ``/api/sdmd``. The directory holds the six SDMD
+tables, an optional ``diagram.json``, and optional trajectories. See
+:doc:`sdmd`.
 
 The bind is ``127.0.0.1`` by default and a non-loopback address is refused unless ``--allow-remote``
 is passed; no authentication is provided in this cut. Starting a search is a separate permission:
@@ -43,12 +48,15 @@ files so it sees the search at the solver's rate rather than behind one writer.
 Browser shell
 -------------
 
-The browser shell is organised around four workspaces:
+The browser shell is organised around four workspaces, plus an optional **SDMD**
+workspace when the service is started with ``--sdmd-dir``:
 
 - **Map** — layers, treatment/cumulative views, and block detail.
 - **Plan** — the account browser, target editor, and solve controls.
 - **Results** — Reports, Compare, and Search as nested sections.
 - **Data** — the dataset summary plus LiDAR and Carbon when the selected run/dataset
+- **SDMD** — the AU Explorer: yield, stand density, regimes, and the constraint
+  editor, when ``--sdmd-dir`` is set. See :doc:`sdmd`.
   actually has them.
 
 The **Map** workspace uses a neutral fill for untreated blocks and a red accent for treated

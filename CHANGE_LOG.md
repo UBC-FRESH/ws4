@@ -3672,6 +3672,40 @@ issue comments.
   the maximum even-flow harvest; and a 1e9 priority-tier gap is near-lexicographic while
   weights are the softer dominance control. Added the normative note
   `notes/design/weighted-goal-programming-aspirations.md`. Sphinx `-W` build passed.
+## 2026-11-01
+
+- P87: Launched Phase 87 (Stand density management and AU Explorer) on
+  `feature/p87-sdmd-au-explorer`, parent issue #628, with child issues #629 to #636. The layer is
+  a diagnostic and constraint layer, not a growth model, and its scope, risks, and parallelisation
+  order are in `notes/plans/ws4-sdmd-au-explorer.md`. The maintainer requested the phase directly
+  alongside other parallel expansion sessions, so it starts from `main` while Phase 86 is
+  `pr-open`.
+- P87.1: Added the SDMD schema contract. `ws4/sdmd/schema.py` defines the six tables (plots, trees,
+  stands, SDMD points, regimes, and AU constraints), nullable coercion, frame and dataset
+  validation with stable `SDMD-*` finding codes, value domains, and cross-table reference checks.
+  Added ADR 0013, `docs/reference/sdmd.rst`, and a two-AU, ten-plot fixture under
+  `tests/fixtures/sdmd/` with 38 contract tests. No ingestion, UI, or solver work is included.
+  Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates
+  (lint, format, types, tests, validator, docs, docstrings).
+- P87.2: Added the SDMD ingest adapters in `ws4/sdmd/ingest.py`: PSP plot and tree-list
+  normalization with aliases and schema refusal, VRI AU assignment, deterministic leading-species
+  derivation, plot-to-AU matching by BEC/TSA/species/age/site with an explicit unmatched report,
+  synthetic gap-fill labelling, and LiDAR structure evidence. A canopy-only LiDAR TPH is refused as
+  total density, a `nemora` row without a `synthetic:` label is refused, and ambiguous AU matches are
+  reported rather than guessed. Added 30 contract tests and the ingestion section of
+  `docs/reference/sdmd.rst`. Dashboard result: `python scripts/dashboard.py` reports
+  `OVERALL: GREEN` on all seven gates.
+- P87.3: Added the vector SDMD diagram contract and AU report. `ws4/sdmd/diagram.py` validates a
+  JSON diagram's source and review, interpolates isopleths in log space, places a point in the
+  understocked, density-management, competition, or outside zone, and builds a convex observed
+  envelope. `ws4/sdmd/compile.py` assesses trajectories against the envelope and rejects an initial
+  volume above the supplied evidence limit; an upper-tail trajectory is reported as extrapolation,
+  not as a result. A report refuses a diagram that is not reviewed unless method work opts in, and
+  then records the gap. The committed diagram is an **illustrative synthetic fixture**: the real
+  IDFdk3/FDI digitisation remains data-blocked pending a licensed copy and a forester's review, and
+  no third-party diagram content was copied. Added 40 tests and the diagram/report reference section.
+  Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
+
 - P88: Factorized GPU account search. Parent #637, branch
   `feature/p88-factorized-gpu`. Added the persisted account-independent descriptor
   consumer, padded feature and product pricers, mixed target-cell switching, and the
@@ -3683,6 +3717,93 @@ issue comments.
 
 ## 2026-11-02
 
+- P87.3 clarification: the review gate is a named reviewer sign-off, not an unstaffed
+  "forester" role. Gregory Paradis is the reviewer of record for this pilot, and an RPF
+  can be named later without a schema change. The earlier "licensed digital copy"
+  wording overstated the dependency: the real gap is that the supplied PDF is a how-to
+  guide, not the diagram, and no source copy has been chosen yet. No code behaviour changed.
+- P87.3: Found and catalogued the complete public BC SDMD set. The BC Ministry of Forests
+  publishes 14 one-page diagrams for 7 species in natural and planted versions: coastal and
+  interior Douglas-fir, lodgepole pine, Sitka spruce, western hemlock, western redcedar, and
+  white spruce. Added `ws4/sdmd/data/sdmd/source_catalog.json` (URL, version, date, size, and
+  SHA-256 for every diagram, five instructional guides, and the Farnden 1996 BC-X-360 report)
+  and `ws4/sdmd/data/sdmd/bec_variants.csv` (all 229 BEC zone/subzone/variant rows with the
+  applicable diagrams). Added `notes/reference/bc-sdmd-sources.md` and six catalog tests. The
+  BEC mapping is a zone-level inference from the BC Tree Species Compendium, not a claim printed
+  on the diagrams; IDFdk3 resolves to `fdin`/`fdip`. The BC index page mislabels `swn`/`swp` as
+  "White pine"; the PDFs are white spruce.
+- P87.4: Added the even-aged regime state machine and AU constraints in
+  `ws4/sdmd/regimes.py` and `ws4/sdmd/constraints.py`. A regime expands its cycle and repeat
+  count into ordered entry ages, validates its fields, and flags selection regimes as outside
+  the even-aged diagram. Constraints validate the entry window, entry cap, minimum interval,
+  removal fraction, review state, and required SDMD zone; `check_regime` fails closed and
+  `allowed_regimes` returns only the regimes that pass. Added 33 tests, a regime/constraint
+  reference section, and an internally consistent fixture. The IDFdk3-FDI allowed set drops from
+  7 regimes and 11 entries to 6 regimes and 7 entries. Dashboard result:
+  `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
+- P87.3: Added `ws4/sdmd/equations.py`, an independent Python implementation of the SDMD
+  calculation logic used by the BC Government SDMD Shiny app and the `standview` R package. It
+  does not call or wrap R. It implements the five complete equation sets (2, 3, 6, 7, and 9) for
+  volume and top height, plus equation 3's crown cover and biomass, the Reineke SDI and relative
+  density, the self-thinning diameter, and a bisection volume isoline. Metric inputs and outputs
+  follow the BC app's English-unit conversion path. 27 regression tests compare the output with
+  reference values generated from the R implementation. The module docstrings, the equation
+  registry, and `docs/reference/sdmd.rst` cite the BC app (Apache-2.0), the `standview` package,
+  and the published equations (Long and Shaw 2005/2012; Jang, Ritchie, and Zhang 2021; Drew and
+  Flewelling 1979; McCarter and Long 1986; Reineke 1933), plus the CJFR review
+  `10.1139/cjfr-2020-0289` for the static/dynamic/structural framing. Dashboard result:
+  `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
+- P87.5: Added the AU Explorer API in `ws4/sdmd/api.py`. A `SdmdStore` loads the six SDMD
+  tables, the optional diagram, saved constraint sets, and optional trajectory files. The FastAPI
+  router exposes regions, AUs, AU detail, plots, yield, SDMD points with placements, regimes with
+  constraint findings, trajectories assessed against the observed envelope, and the option-count
+  preview. `POST /api/sdmd/au/{au_id}/constraints` requires a complete set for the AU, validates
+  every row through the schema and `check_regime`, writes atomically to
+  `constraints/<au_id>.json`, and leaves the stored set unchanged on failure. `ws4 serve
+  --sdmd-dir` mounts the router. Added 14 API tests, including the mounted-app path. Dashboard
+  result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
+- P87.6: Added the AU Explorer tab to the browser shell. The new SDMD workspace is served
+  when `ws4 serve --sdmd-dir` is set. It has a region/AU/source rail, a yield chart, a
+  log-log SDMD with the observed points and convex envelope, a regime trajectory selector,
+  a provenance and data-gap panel, and a per-regime constraint editor with save and
+  option-count preview. The selected AU and workspace are URL state. The editor posts the
+  complete set to the validated endpoint and reports a refused save. Added a Playwright
+  smoke test that renders the tab at desktop and iPad-landscape sizes, plus 3 static
+  contract tests. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`
+  on all seven gates.
+- P87.7: Added the SDMD option-space filter in `ws4/sdmd/solver.py` and the
+  `ws4 sdmd filter-dataset` command. It reads the compiled tracks and treatments, maps a
+  track to its AU from the `AU(...)` name or a YAML sidecar, matches treatment labels to
+  regimes, and drops every treatment row for a track that fails `check_regime`, the entry
+  window, the entry cap, the minimum interval, or the removal fraction. It writes a filtered
+  dataset copy and reports tracks/treatments before and after with one reason record per
+  dropped track. 10 tests cover allowed rows, each forbidden case, strict mode, the sidecar
+  map, the CLI, and the report. A cap across blocks in one AU and trajectory-zone rejection
+  need AU state and per-track trajectories, and are recorded as limits. Dashboard result:
+  `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
+- P87.6 polish: made the AU Explorer interpretable. The SDMD now draws the top-height and
+  QMD isopleths and the closure/competition/mortality limits, with a legend and hover
+  readout. The yield chart has a metric selector and a hover readout. An interpretation
+  panel states the observed support, envelope range, diagram review state, selected
+  regime verdict and reasons, option reduction, and data gaps. The trajectory menu only
+  enables regimes with a stored path, labels the others "no stored path", and the selected
+  path is drawn with numbered points and a plain-language explanation. The browser smoke
+  now selects a trajectory, checks the orange path, changes the yield metric, and checks
+  the iPad-landscape layout.
+- P87.3 fix: added `validate_trajectory`, which refuses a trajectory step where both
+  TPH and mean tree volume increase. That is physically impossible on a self-thinning
+  path, and the earlier demo FUEL50 file did exactly that. The demo now uses a plausible
+  low-density, larger-tree path that is still outside the observed envelope, and the
+  regression suite checks both the refusal and the extrapolation case. The browser demo
+  now has four real paths: clearcut, CT60, shelterwood, and FUEL50 (extrapolated).
+- P87.8: Added the eight validation gates in `ws4/sdmd/validation.py` and the
+  `ws4 sdmd validate` command. The fixture reports `warn`: plot support, density
+  plausibility, regime completeness, option reduction (7 → 6 regimes, 11 → 7
+  entries), and the UI payload contract pass; the diagram is provisional, no initial
+  volume is supplied, and the demo FUEL50 trajectory is an extrapolation. The
+  initial-volume gate rejects 863 m3/ha against an 800 m3/ha limit and flags
+  1,173 m3/ha above the observed 1,133.8 m3/ha maximum. Added 10 tests. Also fixed
+  the P87.4 and P87.6 roadmap checkboxes that had been left unchecked.
 - Added `ws4.forest_condition` with `ws4.forest_condition.report.v1` typed
   report and indicator records, validation, JSON round-trip, and Markdown
   rendering.
@@ -3695,7 +3816,15 @@ issue comments.
 - Added ten focused tests.
 - Dashboard: **GREEN** on lint, format, types, tests, validator, docs, and docstrings.
 - Closeout report: `notes/reports/p90-closeout.md`.
-
+- P87.8: queued the phase close-out. Pull request #658 carries the phase branch into
+  `main`; the report is `notes/reports/p87-closeout.md`. The roadmap now records Phase 87
+  as `pr-open`. The eight gates, the 863/1,173 m3/ha cases, the option reduction, the
+  deferred trajectory-zone and cross-block AU cap, and the synthetic-diagram limit are
+  named in the report. No merge, tag, release, or settings change has been made.
+- P87.8: recorded CI evidence. Run `41402135881` on `e2b758c` passed every job
+  (quality gates, clean-checkout contract, notebook outputs, pre-commit parity, and the
+  green dashboard summary). An earlier Types failure on `1e1a585`/`5737e49` was a test
+  assertion calling `pd.isna` on a `loc` scalar; `e2b758c` uses the Series `isna` result.
 ## 2026-11-02
 
 - P91.1: added `build_report_from_accounts` and `ws4 condition-card` to derive a
@@ -3703,6 +3832,10 @@ issue comments.
   Feature accounts become indicators with final value, first/last trend,
   explicit source/version, and `review_required` status. Added CLI coverage and
   docs. Dashboard green on all seven gates; 13 focused tests passed.
+- Closeout report: `notes/reports/p91-closeout.md`.
+- P87.8: merged current `main` again at `e2718a1` (P88/P90/P91) and recorded CI run
+  `41403557320` as success on every job. The report evidence head is `e2718a1`.
+  P91 is taken by #655, so the proposed next phase is P92.
 - Closeout report: `notes/reports/p91-closeout.md`.
 
 ## 2026-11-02

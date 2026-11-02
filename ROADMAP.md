@@ -89,6 +89,7 @@ exists and the maintainer approves it.
 | P84 Precompiled scheduling substrate and fast startup | #613 | `feature/p84-incremental-state` | complete |
 | P85 GPU acceleration and interactive target cache | #618 | `feature/p85-gpu-acceleration` | complete |
 | P86 Weighted goal-programming target semantics | #625 | `feature/p86-target-semantics` | pr-open |
+| P87 Stand density management and AU Explorer | #628 | `feature/p87-sdmd-au-explorer` | pr-open |
 | P88 Factorized GPU account search | #637 | `feature/p88-factorized-gpu` | complete |
 | P89 Mixed-target factorized search and live switching | #643 | `feature/p89-mixed-target-search` | pr-open |
 | P90 Forest condition report cards | #650 | `feature/p90-forest-condition-cards` | pr-open |
@@ -2677,6 +2678,75 @@ Acceptance:
 - Dashboard green.
 
 
+## Phase 87: Stand density management and AU Explorer
+
+Parent issue: #628
+Branch: `feature/p87-sdmd-au-explorer`
+Status: pr-open
+Plan: `notes/plans/ws4-sdmd-au-explorer.md`
+Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
+
+Goal: add a stand-density-management layer that places AU yield evidence, observed
+PSP plots, and compiled FVS trajectories on a species/region diagram, compares
+silviculture regimes as paths, and turns the reviewed result into solver
+constraints. The SDMD is a diagnostic and constraint layer, not a growth model.
+
+- [x] P87.1 SDMD and regime schemas with an ADR (#629)
+  - [x] Add `ws4.sdmd.schema` with the six table contracts.
+  - [x] Add coercion, frame validation, and dataset validation with stable codes.
+  - [x] Add ADR 0013 and the reference page.
+  - [x] Add the two-AU, ten-plot fixture and tests.
+- [x] P87.2 PSP, VRI, and LiDAR ingestion (#630)
+  - [x] Add the PSP plot and tree-list adapter.
+  - [x] Add the VRI AU assignment adapter and reported matching.
+  - [x] Add the LiDAR structure adapter and refuse canopy-only TPH.
+  - [x] Label provenance, review status, and synthetic rows.
+- [x] P87.3 SDMD digitization and AU placement (#631) — the vector contract, placement, envelope,
+  and report are complete. The public BC source set (14 diagrams, 7 species, natural and planted)
+  and a 229-row BEC variant coverage table are catalogued in `ws4/sdmd/data/sdmd/`.
+  - [x] Add the vector diagram contract and an illustrative reviewed-gated fixture.
+  - [x] Build the AU envelope, placement, and report statuses.
+  - [x] Place observed plots and FVS trajectories, and flag extrapolation.
+  - [x] Refuse an unreviewed digitisation in a report.
+  - [x] Re-implement the BC SDMD equation core in Python with source attribution.
+  - [x] Refuse a trajectory step where TPH and mean tree volume both increase.
+- [x] P87.4 Regime state machine and constraints (#632)
+  - [x] Add the even-aged regime library.
+  - [x] Validate state transitions and AU constraints.
+  - [x] Flag selection regimes as outside the diagram.
+- [x] P87.5 AU Explorer API (#633)
+  - [x] Add the read endpoints.
+  - [x] Add the validated constraint-write endpoint.
+  - [x] Add the option-count preview.
+  - [x] Mount the router in `ws4 serve` and document `--sdmd-dir`.
+- [x] P87.6 AU Explorer web tab (#634)
+  - [x] Add the tab, filters, and URL state.
+  - [x] Add the yield and SDMD charts.
+  - [x] Add the regime path, constraint editor, and provenance panel.
+  - [x] Add the isopleth overlay, interpretation panel, and trajectory explanation.
+- [x] P87.7 Solver constraint integration (#635) — the dataset filter and option-space reduction
+  are complete; rejecting a trajectory outside the allowed SDMD zones and a cap across blocks in
+  one AU need per-track trajectories and AU state, and are deferred with that reason.
+  - [x] Filter regimes and enforce entry, interval, and removal rules.
+  - [ ] Reject trajectories outside the allowed SDMD zones (deferred: no per-track trajectory table).
+  - [x] Measure and record the option-space reduction.
+- [x] P87.8 Provenance, docs, and closeout (#636)
+  - [x] Run the eight validation gates.
+  - [x] Record the option-count reduction and the rejected values.
+  - [x] Update the ADR, design note, docs, notes, and changelog.
+  - [x] Write the close-out report and queue the pull request.
+
+Acceptance:
+
+- The six contracts and their validators can fail, and the two-AU fixture passes.
+- Ingestion labels synthetic rows and refuses canopy-only LiDAR as total TPH.
+- The SDMD is reviewed vector data, and out-of-envelope trajectories are flagged.
+- Only AU-allowed regimes reach the solver, with a measured option reduction.
+- The AU Explorer renders the API contract with provenance and caveats.
+- The gates reject the 863 m3/ha initial volume and flag the 1,173 m3/ha trajectory.
+- `python scripts/dashboard.py` is green on every commit.
+
+
 ## Phase 88: Factorized GPU account search
 
 Parent issue: #637
@@ -2738,6 +2808,131 @@ Acceptance:
 - Throughput, latency, host memory, and GPU memory are recorded.
 - Dashboard green.
 
+## Phase 90: Forest condition report cards
+
+Parent issue: #650
+Branch: `feature/p90-forest-condition-cards`
+Status: pr-open
+
+Goal: add a report-only forest-condition card contract and static pilot that
+packages existing WS4 indicators with provenance, uncertainty, applicability,
+advisory alerts, and review status. The phase does not compute new condition
+indicators or change solver behavior.
+
+- [x] P90.1 Implement the forest-condition report card (#651)
+  - [x] Add typed report and indicator models
+  - [x] Add validation and JSON round-trip
+  - [x] Add Markdown rendering
+  - [x] Add fixture and tests
+  - [x] Add docs, roadmap, and changelog entries
+  - [x] Run dashboard and open the PR
+
+Acceptance:
+
+- JSON round-trip preserves all fields.
+- Invalid status, missing provenance, and non-finite values fail validation.
+- Markdown names every indicator, its source, applicability, and limitations.
+- Tests cover valid, invalid, and empty-indicator cases.
+- Dashboard green.
+
+Design: `notes/design/ws4-forest-condition-card.md`.
+
+## Phase 91: Condition card from a WS4 run
+
+Parent issue: #655
+Branch: `feature/p91-condition-run-card`
+Status: pr-open
+
+Goal: derive a review-required forest-condition card from an existing WS4 run's
+`account_values.csv`.
+
+- [x] P91.1 Add the account-derived card builder and CLI (#656)
+  - [x] Add account-derived report builder
+  - [x] Add the CLI command
+  - [x] Add fixture/CLI tests and docs
+  - [x] Run dashboard and open the PR
+
+Acceptance:
+
+- A valid account table produces JSON and Markdown.
+- Missing columns, empty tables, non-finite values, and empty feature accounts fail clearly.
+- Every derived indicator is `review_required` and source/version is explicit.
+- Tests and dashboard pass.
+
+Design: `notes/design/ws4-forest-condition-card.md`.
+
+## Phase 92: Condition-card API
+
+Parent issue: #659
+Branch: `feature/p92-condition-card-api`
+Status: pr-open
+
+Goal: expose the P91 account-derived forest-condition card through the WS4 HTTP API.
+
+- [x] P92.1 Add the condition-card API and tests (#660)
+  - [x] Add the endpoint
+  - [x] Add API tests for success, 404, and 422
+  - [x] Update docs and changelog
+  - [x] Run dashboard and open the PR
+
+Acceptance:
+
+- A valid run returns a P90 card with `review_required` indicators.
+- Missing or invalid account data uses 404/422.
+- Tests and dashboard pass.
+
+Design: `notes/design/ws4-forest-condition-card.md`.
+## Phase 93: Condition-card Reports UI
+
+Parent issue: #662
+Branch: `feature/p93-condition-card-ui`
+Status: pr-open
+
+Goal: render the P92 condition-card API in the Reports tab.
+
+- [x] P93.1 Add the condition-card Reports panel (#663)
+  - [x] Add the Reports panel markup
+  - [x] Add the JS fetch/render function and button wiring
+  - [x] Add HTML tests and docs
+  - [x] Run dashboard and open the PR
+
+Acceptance:
+
+- The panel and button are present in the served HTML.
+- Valid cards render review state and indicators without innerHTML interpolation.
+- Errors and empty cards show clear messages.
+- Dashboard passes.
+## Phase 94: LTSY scenario comparison
+
+Parent issue: #664
+Branch: `feature/p94-ltsy-scenario-comparison`
+Status: pr-open
+Report: `notes/reports/tsa24-ltsy-scenario-comparison.md`
+PR: #673
+
+Goal: compare baseline LTSY, all-period ±5% with the stock floor, and all-period ±5%
+without the stock floor on one seed and a 5,000-generation budget.
+
+- [x] P94.1 Freeze comparison targets and harness (#667)
+  - [x] Add the no-stock control target
+  - [x] Add the reusable comparison harness
+  - [x] Record exact replay results
+- [x] P94.2 Run the three 5,000-generation scenarios (#668)
+  - [x] Run baseline
+  - [x] Run all-period ±5% with stock
+  - [x] Run all-period ±5% without stock
+- [x] P94.3 Compare stock, flow, and age-class outcomes (#665)
+  - [x] Replay schedules through the simulator
+  - [x] Compare managed/unmanaged stock and age classes
+  - [x] Record the recommendation
+- [x] P94.4 Record the base scenario and close out (#666)
+
+Acceptance:
+
+- The three formulations use the same seed, population, and generation budget.
+- The stock/no-stock schedules are compared honestly.
+- A base LTSY formulation is recommended with caveats.
+- Dashboard green.
 
 ## Detailed Next Steps Notes
 
@@ -2905,130 +3100,15 @@ Acceptance:
     same cost per metre and hauls 22% farther at 0.46× the cost per unit-km, because its solve chooses
     the road set and the assignment jointly. Reports: `p17-opened-roads.md`, `p17-tradeoff.md`,
     `p17-closeout.md`. Next: P18.
-## Phase 90: Forest condition report cards
-
-Parent issue: #650
-Branch: `feature/p90-forest-condition-cards`
-Status: pr-open
-
-Goal: add a report-only forest-condition card contract and static pilot that
-packages existing WS4 indicators with provenance, uncertainty, applicability,
-advisory alerts, and review status. The phase does not compute new condition
-indicators or change solver behavior.
-
-- [x] P90.1 Implement the forest-condition report card (#651)
-  - [x] Add typed report and indicator models
-  - [x] Add validation and JSON round-trip
-  - [x] Add Markdown rendering
-  - [x] Add fixture and tests
-  - [x] Add docs, roadmap, and changelog entries
-  - [x] Run dashboard and open the PR
-
-Acceptance:
-
-- JSON round-trip preserves all fields.
-- Invalid status, missing provenance, and non-finite values fail validation.
-- Markdown names every indicator, its source, applicability, and limitations.
-- Tests cover valid, invalid, and empty-indicator cases.
-- Dashboard green.
-
-Design: `notes/design/ws4-forest-condition-card.md`.
-
-## Phase 91: Condition card from a WS4 run
-
-Parent issue: #655
-Branch: `feature/p91-condition-run-card`
-Status: pr-open
-
-Goal: derive a review-required forest-condition card from an existing WS4 run's
-`account_values.csv`.
-
-- [x] P91.1 Add the account-derived card builder and CLI (#656)
-  - [x] Add account-derived report builder
-  - [x] Add the CLI command
-  - [x] Add fixture/CLI tests and docs
-  - [x] Run dashboard and open the PR
-
-Acceptance:
-
-- A valid account table produces JSON and Markdown.
-- Missing columns, empty tables, non-finite values, and empty feature accounts fail clearly.
-- Every derived indicator is `review_required` and source/version is explicit.
-- Tests and dashboard pass.
-
-Design: `notes/design/ws4-forest-condition-card.md`.
-
-## Phase 92: Condition-card API
-
-Parent issue: #659
-Branch: `feature/p92-condition-card-api`
-Status: pr-open
-
-Goal: expose the P91 account-derived forest-condition card through the WS4 HTTP API.
-
-- [x] P92.1 Add the condition-card API and tests (#660)
-  - [x] Add the endpoint
-  - [x] Add API tests for success, 404, and 422
-  - [x] Update docs and changelog
-  - [x] Run dashboard and open the PR
-
-Acceptance:
-
-- A valid run returns a P90 card with `review_required` indicators.
-- Missing or invalid account data uses 404/422.
-- Tests and dashboard pass.
-
-Design: `notes/design/ws4-forest-condition-card.md`.
-
-## Phase 93: Condition-card Reports UI
-
-Parent issue: #662
-Branch: `feature/p93-condition-card-ui`
-Status: pr-open
-
-Goal: render the P92 condition-card API in the Reports tab.
-
-- [x] P93.1 Add the condition-card Reports panel (#663)
-  - [x] Add the Reports panel markup
-  - [x] Add the JS fetch/render function and button wiring
-  - [x] Add HTML tests and docs
-  - [x] Run dashboard and open the PR
-
-Acceptance:
-
-- The panel and button are present in the served HTML.
-- Valid cards render review state and indicators without innerHTML interpolation.
-- Errors and empty cards show clear messages.
-- Dashboard passes.
-## Phase 94: LTSY scenario comparison
-
-Parent issue: #664
-Branch: `feature/p94-ltsy-scenario-comparison`
-Status: pr-open
-Report: `notes/reports/tsa24-ltsy-scenario-comparison.md`
-PR: #673
-
-Goal: compare baseline LTSY, all-period ±5% with the stock floor, and all-period ±5%
-without the stock floor on one seed and a 5,000-generation budget.
-
-- [x] P94.1 Freeze comparison targets and harness (#667)
-  - [x] Add the no-stock control target
-  - [x] Add the reusable comparison harness
-  - [x] Record exact replay results
-- [x] P94.2 Run the three 5,000-generation scenarios (#668)
-  - [x] Run baseline
-  - [x] Run all-period ±5% with stock
-  - [x] Run all-period ±5% without stock
-- [x] P94.3 Compare stock, flow, and age-class outcomes (#665)
-  - [x] Replay schedules through the simulator
-  - [x] Compare managed/unmanaged stock and age classes
-  - [x] Record the recommendation
-- [x] P94.4 Record the base scenario and close out (#666)
-
-Acceptance:
-
-- The three formulations use the same seed, population, and generation budget.
-- The stock/no-stock schedules are compared honestly.
-- A base LTSY formulation is recommended with caveats.
-- Dashboard green.
-
+24. Phase 87 (Stand density management and AU Explorer) was launched on
+    `feature/p87-sdmd-au-explorer`, parent issue #628, with tasks #629 to #636. The maintainer
+    requested it directly alongside other parallel expansion sessions, so it starts from `main`
+    while Phase 86 is `pr-open`. The plan is `notes/plans/ws4-sdmd-au-explorer.md`; the layer is a
+    diagnostic and constraint layer (ADR 0013), not a growth model. P87.1 was the first bounded
+    move: the schema, the ADR, a two-AU fixture, and tests, with no ingestion, UI, or solver work.
+25. Phase 87 is `pr-open`: pull request #658 queues the SDMD and AU Explorer phase, with the
+    close-out report in `notes/reports/p87-closeout.md`. The fixture validation warns rather
+    than fails (provisional diagram, no supplied initial volume, one extrapolated demo path);
+    the 863 m3/ha gate fails against an 800 limit and 1,173 m3/ha is flagged above 1,133.8.
+    Trajectory-zone rejection and a cap across blocks in one AU are deferred with the reasons
+    in #635. Next: approve the close-out, then launch the next free phase (P95 today; P91-P94 are taken).

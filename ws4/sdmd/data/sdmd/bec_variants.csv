@@ -1,0 +1,230 @@
+zone,subzone,variant,bec_name,description,sdmd_main,sdmd_rare,basis
+BAFA,un,,Boreal Altai Fescue Alpine,Undifferentiated,,,zone-level species occurrence; verify against the AU's leading species and stand origin
+BAFA,unp,,Boreal Altai Fescue Alpine,Undifferentiated and Parkland,,,zone-level species occurrence; verify against the AU's leading species and stand origin
+BG,xh,1,Bunchgrass,Okanagan Very Dry Hot,,fdin;fdip,zone-level species occurrence; verify against the AU's leading species and stand origin
+BG,xh,2,Bunchgrass,Thompson Very Dry Hot,,fdin;fdip,zone-level species occurrence; verify against the AU's leading species and stand origin
+BG,xh,3,Bunchgrass,Fraser Very Dry Hot,,fdin;fdip,zone-level species occurrence; verify against the AU's leading species and stand origin
+BG,xw,1,Bunchgrass,Nicola Very Dry Warm,,fdin;fdip,zone-level species occurrence; verify against the AU's leading species and stand origin
+BG,xw,2,Bunchgrass,Alkali Very Dry Warm,,fdin;fdip,zone-level species occurrence; verify against the AU's leading species and stand origin
+BWBS,dk,1,Boreal White and Black Spruce,Stikine Dry Cool,pln;plp;swn;swp,ssn;ssp,zone-level species occurrence; verify against the AU's leading species and stand origin
+BWBS,dk,2,Boreal White and Black Spruce,Liard Dry Cool,pln;plp;swn;swp,ssn;ssp,zone-level species occurrence; verify against the AU's leading species and stand origin
+BWBS,mw,1,Boreal White and Black Spruce,Peace Moist Warm,pln;plp;swn;swp,ssn;ssp,zone-level species occurrence; verify against the AU's leading species and stand origin
+BWBS,mw,2,Boreal White and Black Spruce,Fort Nelson Moist Warm,pln;plp;swn;swp,ssn;ssp,zone-level species occurrence; verify against the AU's leading species and stand origin
+BWBS,un,,Boreal White and Black Spruce,Undifferentiated,pln;plp;swn;swp,ssn;ssp,zone-level species occurrence; verify against the AU's leading species and stand origin
+BWBS,vk,,Boreal White and Black Spruce,Very Wet Cool,pln;plp;swn;swp,ssn;ssp,zone-level species occurrence; verify against the AU's leading species and stand origin
+BWBS,wk,1,Boreal White and Black Spruce,Murray Wet Cool,pln;plp;swn;swp,ssn;ssp,zone-level species occurrence; verify against the AU's leading species and stand origin
+BWBS,wk,2,Boreal White and Black Spruce,Graham Wet Cool,pln;plp;swn;swp,ssn;ssp,zone-level species occurrence; verify against the AU's leading species and stand origin
+BWBS,wk,3,Boreal White and Black Spruce,Kledo Wet Cool,pln;plp;swn;swp,ssn;ssp,zone-level species occurrence; verify against the AU's leading species and stand origin
+CDF,mm,,Coastal Douglas-fir,Moist Maritime,fdcn;fdcp;cwn;cwp,pln;plp;ssn;ssp;hwn;hwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+CMA,un,,Coastal Mountain-heather Alpine,Undifferentiated,,,zone-level species occurrence; verify against the AU's leading species and stand origin
+CMA,unp,,Coastal Mountain-heather Alpine,Undifferentiated and Parkland,,,zone-level species occurrence; verify against the AU's leading species and stand origin
+CWH,dm,,Coastal Western Hemlock,Dry Maritime,fdcn;fdcp;ssn;ssp;hwn;hwp;cwn;cwp,pln;plp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+CWH,ds,1,Coastal Western Hemlock,Southern Dry Submaritime,fdcn;fdcp;ssn;ssp;hwn;hwp;cwn;cwp,pln;plp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+CWH,ds,2,Coastal Western Hemlock,Central Dry Submaritime,fdcn;fdcp;ssn;ssp;hwn;hwp;cwn;cwp,pln;plp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+CWH,mm,1,Coastal Western Hemlock,Submontane Moist Maritime,fdcn;fdcp;ssn;ssp;hwn;hwp;cwn;cwp,pln;plp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+CWH,mm,2,Coastal Western Hemlock,Montane Moist Maritime,fdcn;fdcp;ssn;ssp;hwn;hwp;cwn;cwp,pln;plp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+CWH,ms,1,Coastal Western Hemlock,Southern Moist Submaritime,fdcn;fdcp;ssn;ssp;hwn;hwp;cwn;cwp,pln;plp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+CWH,ms,2,Coastal Western Hemlock,Central Moist Submaritime,fdcn;fdcp;ssn;ssp;hwn;hwp;cwn;cwp,pln;plp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+CWH,un,,Coastal Western Hemlock,Undifferentiated,fdcn;fdcp;ssn;ssp;hwn;hwp;cwn;cwp,pln;plp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+CWH,vh,1,Coastal Western Hemlock,Southern Very Wet Hypermaritime,fdcn;fdcp;ssn;ssp;hwn;hwp;cwn;cwp,pln;plp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+CWH,vh,2,Coastal Western Hemlock,Central Very Wet Hypermaritime,fdcn;fdcp;ssn;ssp;hwn;hwp;cwn;cwp,pln;plp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+CWH,vm,,Coastal Western Hemlock,Very Wet Maritime,fdcn;fdcp;ssn;ssp;hwn;hwp;cwn;cwp,pln;plp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+CWH,vm,1,Coastal Western Hemlock,Submontane Very Wet Maritime,fdcn;fdcp;ssn;ssp;hwn;hwp;cwn;cwp,pln;plp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+CWH,vm,2,Coastal Western Hemlock,Montane Very Wet Maritime,fdcn;fdcp;ssn;ssp;hwn;hwp;cwn;cwp,pln;plp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+CWH,vm,3,Coastal Western Hemlock,Central Very Wet Maritime,fdcn;fdcp;ssn;ssp;hwn;hwp;cwn;cwp,pln;plp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+CWH,wh,1,Coastal Western Hemlock,Submontane Wet Hypermaritime,fdcn;fdcp;ssn;ssp;hwn;hwp;cwn;cwp,pln;plp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+CWH,wh,2,Coastal Western Hemlock,Montane Wet Hypermaritime,fdcn;fdcp;ssn;ssp;hwn;hwp;cwn;cwp,pln;plp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+CWH,wm,,Coastal Western Hemlock,Wet Maritime,fdcn;fdcp;ssn;ssp;hwn;hwp;cwn;cwp,pln;plp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+CWH,ws,1,Coastal Western Hemlock,Submontane Wet Submaritime,fdcn;fdcp;ssn;ssp;hwn;hwp;cwn;cwp,pln;plp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+CWH,ws,2,Coastal Western Hemlock,Montane Wet Submaritime,fdcn;fdcp;ssn;ssp;hwn;hwp;cwn;cwp,pln;plp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+CWH,xm,1,Coastal Western Hemlock,Eastern Very Dry Maritime,fdcn;fdcp;ssn;ssp;hwn;hwp;cwn;cwp,pln;plp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+CWH,xm,2,Coastal Western Hemlock,Western Very Dry Maritime,fdcn;fdcp;ssn;ssp;hwn;hwp;cwn;cwp,pln;plp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,dc,1,Engelmann Spruce -- Subalpine Fir,Okanagan Dry Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,dc,2,Engelmann Spruce -- Subalpine Fir,Cascade Dry Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,dc,3,Engelmann Spruce -- Subalpine Fir,North Thompson Dry Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,dcp,,Engelmann Spruce -- Subalpine Fir,Dry Cold Parkland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,dcw,,Engelmann Spruce -- Subalpine Fir,Dry Cold Woodland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,dk,1,Engelmann Spruce -- Subalpine Fir,Elk Dry Cool,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,dk,2,Engelmann Spruce -- Subalpine Fir,Columbia Dry Cool,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,dkp,,Engelmann Spruce -- Subalpine Fir,Dry Cool Parkland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,dku,,Engelmann Spruce -- Subalpine Fir,Dry Cool Woodland and Parkland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,dkw,,Engelmann Spruce -- Subalpine Fir,Dry Cool Woodland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,dm,,Engelmann Spruce -- Subalpine Fir,Dry Mild,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,dmp,,Engelmann Spruce -- Subalpine Fir,Dry Mild Parkland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,dmw,,Engelmann Spruce -- Subalpine Fir,Dry Mild Woodland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,dv,1,Engelmann Spruce -- Subalpine Fir,Cayoosh Dry Very Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,dv,2,Engelmann Spruce -- Subalpine Fir,Tyaughton Dry Very Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,dvp,,Engelmann Spruce -- Subalpine Fir,Dry Very Cold Parkland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,dvw,,Engelmann Spruce -- Subalpine Fir,Dry Very Cold Woodland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,mc,,Engelmann Spruce -- Subalpine Fir,Moist Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,mcp,,Engelmann Spruce -- Subalpine Fir,Moist Cold Parkland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,mk,,Engelmann Spruce -- Subalpine Fir,Moist Cool,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,mkp,,Engelmann Spruce -- Subalpine Fir,Moist Cool Parkland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,mm,1,Engelmann Spruce -- Subalpine Fir,Raush Moist Mild,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,mm,2,Engelmann Spruce -- Subalpine Fir,Robson Moist Mild,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,mmp,,Engelmann Spruce -- Subalpine Fir,Moist Mild Parkland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,mmw,,Engelmann Spruce -- Subalpine Fir,Moist Mild Woodland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,mv,1,Engelmann Spruce -- Subalpine Fir,Nechako Moist Very Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,mv,2,Engelmann Spruce -- Subalpine Fir,Bullmoose Moist Very Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,mv,3,Engelmann Spruce -- Subalpine Fir,Omineca Moist Very Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,mv,4,Engelmann Spruce -- Subalpine Fir,Graham Moist Very Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,mvp,,Engelmann Spruce -- Subalpine Fir,Moist Very Cold Parkland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,mw,,Engelmann Spruce -- Subalpine Fir,Moist Warm,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,mw,1,Engelmann Spruce -- Subalpine Fir,Cascade Moist Warm,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,mw,2,Engelmann Spruce -- Subalpine Fir,Stein Moist Warm,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,mwp,,Engelmann Spruce -- Subalpine Fir,Moist Warm Parkland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,mww,,Engelmann Spruce -- Subalpine Fir,Moist Warm Woodland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,vc,,Engelmann Spruce -- Subalpine Fir,Very Wet Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,vcp,,Engelmann Spruce -- Subalpine Fir,Very Wet Cold Parkland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,vcw,,Engelmann Spruce -- Subalpine Fir,Very Wet Cold Woodland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,vv,,Engelmann Spruce -- Subalpine Fir,Very Wet Very Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,vvp,,Engelmann Spruce -- Subalpine Fir,Very Wet Very Cold Parkland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,wc,1,Engelmann Spruce -- Subalpine Fir,Columbia Wet Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,wc,2,Engelmann Spruce -- Subalpine Fir,Monashee Wet Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,wc,2,Engelmann Spruce -- Subalpine Fir,Monashee Wet Cold - Warm phase,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,wc,3,Engelmann Spruce -- Subalpine Fir,Cariboo Wet Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,wc,4,Engelmann Spruce -- Subalpine Fir,Selkirk Wet Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,wc,5,Engelmann Spruce -- Subalpine Fir,Salmo Wet Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,wc,6,Engelmann Spruce -- Subalpine Fir,Ymir Wet Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,wcp,,Engelmann Spruce -- Subalpine Fir,Wet Cold Parkland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,wcw,,Engelmann Spruce -- Subalpine Fir,Wet Cold Woodland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,wk,1,Engelmann Spruce -- Subalpine Fir,Cariboo Wet Cool,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,wk,2,Engelmann Spruce -- Subalpine Fir,Misinchinka Wet Cool,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,wm,,Engelmann Spruce -- Subalpine Fir,Wet Mild,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,wmp,,Engelmann Spruce -- Subalpine Fir,Wet Mild Parkland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,wmw,,Engelmann Spruce -- Subalpine Fir,Wet Mild Woodland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,wv,,Engelmann Spruce -- Subalpine Fir,Wet Very Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,wvp,,Engelmann Spruce -- Subalpine Fir,Wet Very Cold Parkland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,xc,,Engelmann Spruce -- Subalpine Fir,Very Dry Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,xc,1,Engelmann Spruce -- Subalpine Fir,Similkameen Very Dry Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,xc,2,Engelmann Spruce -- Subalpine Fir,Thompson Very Dry Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,xc,3,Engelmann Spruce -- Subalpine Fir,Pavillion Very Dry Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,xcp,,Engelmann Spruce -- Subalpine Fir,Very Dry Cold Parkland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,xcw,,Engelmann Spruce -- Subalpine Fir,Very Dry Cold Woodland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,xv,1,Engelmann Spruce -- Subalpine Fir,West Chilcotin Very Dry Very Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,xv,2,Engelmann Spruce -- Subalpine Fir,Big Creek Very Dry Very Cold,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,xvp,,Engelmann Spruce -- Subalpine Fir,Very Dry Very Cold Parkland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ESSF,xvw,,Engelmann Spruce -- Subalpine Fir,Very Dry Very Cold Woodland,pln;plp,fdin;fdip;cwn;cwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,dk,,Interior Cedar -- Hemlock,Dry Cool,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,dm,,Interior Cedar -- Hemlock,Dry Mild,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,dw,1,Interior Cedar -- Hemlock,West Kootenay Dry Warm,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,dw,2,Interior Cedar -- Hemlock,Boundary Dry Warm,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,dw,3,Interior Cedar -- Hemlock,North Thompson Dry Warm,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,mc,1,Interior Cedar -- Hemlock,Nass Moist Cold,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,mc,1,Interior Cedar -- Hemlock,Nass Moist Cold - Amabilis fir phase,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,mc,2,Interior Cedar -- Hemlock,Hazelton Moist Cold,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,mk,1,Interior Cedar -- Hemlock,Okanagan Moist Cool,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,mk,2,Interior Cedar -- Hemlock,Thompson Moist Cool,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,mk,3,Interior Cedar -- Hemlock,Horsefly Moist Cool,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,mk,4,Interior Cedar -- Hemlock,Kootenay Moist Cool,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,mm,,Interior Cedar -- Hemlock,Moist Mild,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,mw,1,Interior Cedar -- Hemlock,Kinbasket Moist Warm,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,mw,2,Interior Cedar -- Hemlock,Shuswap Moist Warm,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,mw,3,Interior Cedar -- Hemlock,Thompson Moist Warm,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,mw,4,Interior Cedar -- Hemlock,Ymir Moist Warm,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,vc,,Interior Cedar -- Hemlock,Very Wet Cold,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,vk,1,Interior Cedar -- Hemlock,Columbia Very Wet Cool,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,vk,1,Interior Cedar -- Hemlock,Columbia Very Wet Cool - Cold Air phase,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,vk,2,Interior Cedar -- Hemlock,Slim Very Wet Cool,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,wc,,Interior Cedar -- Hemlock,Wet Cold,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,wk,1,Interior Cedar -- Hemlock,Shuswap Wet Cool,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,wk,1,Interior Cedar -- Hemlock,Shuswap Wet Cool - Cold Air phase,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,wk,2,Interior Cedar -- Hemlock,Quesnel Wet Cool,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,wk,3,Interior Cedar -- Hemlock,Goat Wet Cool,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,wk,4,Interior Cedar -- Hemlock,Cariboo Wet Cool,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+ICH,xw,,Interior Cedar -- Hemlock,Very Dry Warm,fdin;fdip;pln;plp;hwn;hwp;cwn;cwp,ssn;ssp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,dc,,Interior Douglas-fir,Dry Cold,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,dk,1,Interior Douglas-fir,Thompson Dry Cool,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,dk,1,Interior Douglas-fir,Thompson Dry Cool - Grassland phase,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,dk,1,Interior Douglas-fir,Thompson Dry Cool - Steep South phase,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,dk,2,Interior Douglas-fir,Cascade Dry Cool,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,dk,2,Interior Douglas-fir,Cascade Dry Cool - Grassland phase,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,dk,2,Interior Douglas-fir,Cascade Dry Cool - Steep South phase,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,dk,3,Interior Douglas-fir,Fraser Dry Cool,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,dk,4,Interior Douglas-fir,Chilcotin Dry Cool,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,dk,5,Interior Douglas-fir,Columbia Dry Cool,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,dm,1,Interior Douglas-fir,Kettle Dry Mild,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,dm,2,Interior Douglas-fir,Kootenay Dry Mild,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,dw,,Interior Douglas-fir,Dry Warm,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,mw,1,Interior Douglas-fir,Shuswap Moist Warm,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,mw,2,Interior Douglas-fir,Thompson Moist Warm,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,mw,2,Interior Douglas-fir,Thompson Moist Warm - Steep South phase,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,un,,Interior Douglas-fir,Undifferentiated,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,ww,,Interior Douglas-fir,Wet Warm,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,ww,1,Interior Douglas-fir,Stein Wet Warm,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,xc,,Interior Douglas-fir,Very Dry Cold,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,xh,1,Interior Douglas-fir,Okanagan Very Dry Hot,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,xh,1,Interior Douglas-fir,Okanagan Very Dry Hot - Grassland phase,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,xh,2,Interior Douglas-fir,Thompson Very Dry Hot,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,xh,2,Interior Douglas-fir,Thompson Very Dry Hot - Grassland phase,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,xh,4,Interior Douglas-fir,Boundary Very Dry Hot,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,xk,,Interior Douglas-fir,Very Dry Cool,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,xm,,Interior Douglas-fir,Very Dry Mild,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IDF,xw,,Interior Douglas-fir,Very Dry Warm,fdin;fdip;pln;plp;cwn;cwp,hwn;hwp;swn;swp,zone-level species occurrence; verify against the AU's leading species and stand origin
+IMA,un,,Interior Mountain-heather Alpine,Undifferentiated,,,zone-level species occurrence; verify against the AU's leading species and stand origin
+IMA,unp,,Interior Mountain-heather Alpine,Undifferentiated and Parkland,,,zone-level species occurrence; verify against the AU's leading species and stand origin
+MH,mm,1,Mountain Hemlock,Windward Moist Maritime,ssn;ssp;hwn;hwp,fdin;fdip;pln;plp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MH,mm,2,Mountain Hemlock,Leeward Moist Maritime,ssn;ssp;hwn;hwp,fdin;fdip;pln;plp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MH,mmp,,Mountain Hemlock,Moist Maritime Parkland,ssn;ssp;hwn;hwp,fdin;fdip;pln;plp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MH,un,,Mountain Hemlock,Undifferentiated,ssn;ssp;hwn;hwp,fdin;fdip;pln;plp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MH,wh,1,Mountain Hemlock,Windward Wet Hypermaritime,ssn;ssp;hwn;hwp,fdin;fdip;pln;plp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MH,wh,2,Mountain Hemlock,Leeward Wet Hypermaritime,ssn;ssp;hwn;hwp,fdin;fdip;pln;plp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MH,whp,,Mountain Hemlock,Wet Hypermaritime Parkland,ssn;ssp;hwn;hwp,fdin;fdip;pln;plp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MS,dc,1,Montane Spruce,Cayoosh Dry Cold,fdin;fdip;pln;plp;swn;swp,cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MS,dc,2,Montane Spruce,Tatlayoko Dry Cold,fdin;fdip;pln;plp;swn;swp,cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MS,dc,3,Montane Spruce,Tyaughton Dry Cold,fdin;fdip;pln;plp;swn;swp,cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MS,dk,,Montane Spruce,Dry Cool,fdin;fdip;pln;plp;swn;swp,cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MS,dk,1,Montane Spruce,Elk Dry Cool,fdin;fdip;pln;plp;swn;swp,cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MS,dk,2,Montane Spruce,Columbia Dry Cool,fdin;fdip;pln;plp;swn;swp,cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MS,dm,1,Montane Spruce,Okanagan Dry Mild,fdin;fdip;pln;plp;swn;swp,cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MS,dm,1,Montane Spruce,Okanagan Dry Mild - Redcedar phase,fdin;fdip;pln;plp;swn;swp,cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MS,dm,2,Montane Spruce,Cascade Dry Mild,fdin;fdip;pln;plp;swn;swp,cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MS,dm,3,Montane Spruce,North Thompson Dry Mild,fdin;fdip;pln;plp;swn;swp,cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MS,dm,3,Montane Spruce,North Thompson Dry Mild - Warm phase,fdin;fdip;pln;plp;swn;swp,cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MS,dv,,Montane Spruce,Dry Very Cold,fdin;fdip;pln;plp;swn;swp,cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MS,mw,1,Montane Spruce,Cascade Moist Warm,fdin;fdip;pln;plp;swn;swp,cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MS,mw,2,Montane Spruce,Stein Moist Warm,fdin;fdip;pln;plp;swn;swp,cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MS,un,,Montane Spruce,Undifferentiated,fdin;fdip;pln;plp;swn;swp,cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MS,xk,,Montane Spruce,Very Dry Cool,fdin;fdip;pln;plp;swn;swp,cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MS,xk,1,Montane Spruce,Similkameen Very Dry Cool,fdin;fdip;pln;plp;swn;swp,cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MS,xk,2,Montane Spruce,South Thompson Very Dry Cool,fdin;fdip;pln;plp;swn;swp,cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MS,xk,3,Montane Spruce,Pavillion Very Dry Cool,fdin;fdip;pln;plp;swn;swp,cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+MS,xv,,Montane Spruce,Very Dry Very Cold,fdin;fdip;pln;plp;swn;swp,cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+PP,dh,1,Ponderosa Pine,Kettle Dry Hot,,fdin;fdip;pln;plp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+PP,dh,2,Ponderosa Pine,Kootenay Dry Hot,,fdin;fdip;pln;plp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+PP,xh,1,Ponderosa Pine,Okanagan Very Dry Hot,,fdin;fdip;pln;plp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+PP,xh,1,Ponderosa Pine,Okanagan Very Dry Hot - Grassland phase,,fdin;fdip;pln;plp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+PP,xh,2,Ponderosa Pine,Thompson Very Dry Hot,,fdin;fdip;pln;plp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+PP,xh,2,Ponderosa Pine,Thompson Very Dry Hot - Grassland phase,,fdin;fdip;pln;plp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+PP,xh,3,Ponderosa Pine,Kettle Very Dry Hot,,fdin;fdip;pln;plp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBPS,dc,,Sub-Boreal Pine -- Spruce,Dry Cold,pln;plp;swn;swp,fdin;fdip,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBPS,mc,,Sub-Boreal Pine -- Spruce,Moist Cold,pln;plp;swn;swp,fdin;fdip,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBPS,mk,,Sub-Boreal Pine -- Spruce,Moist Cool,pln;plp;swn;swp,fdin;fdip,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBPS,xc,,Sub-Boreal Pine -- Spruce,Very Dry Cold,pln;plp;swn;swp,fdin;fdip,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBS,dh,1,Sub-Boreal Spruce,McLennan Dry Hot,fdin;fdip;pln;plp;swn;swp,hwn;hwp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBS,dh,2,Sub-Boreal Spruce,Robson Dry Hot,fdin;fdip;pln;plp;swn;swp,hwn;hwp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBS,dk,,Sub-Boreal Spruce,Dry Cool,fdin;fdip;pln;plp;swn;swp,hwn;hwp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBS,dw,1,Sub-Boreal Spruce,Horsefly Dry Warm,fdin;fdip;pln;plp;swn;swp,hwn;hwp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBS,dw,2,Sub-Boreal Spruce,Blackwater Dry Warm,fdin;fdip;pln;plp;swn;swp,hwn;hwp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBS,dw,3,Sub-Boreal Spruce,Stuart Dry Warm,fdin;fdip;pln;plp;swn;swp,hwn;hwp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBS,mc,1,Sub-Boreal Spruce,Moffat Moist Cold,fdin;fdip;pln;plp;swn;swp,hwn;hwp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBS,mc,2,Sub-Boreal Spruce,Babine Moist Cold,fdin;fdip;pln;plp;swn;swp,hwn;hwp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBS,mc,3,Sub-Boreal Spruce,Kluskus Moist Cold,fdin;fdip;pln;plp;swn;swp,hwn;hwp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBS,mh,,Sub-Boreal Spruce,Moist Hot,fdin;fdip;pln;plp;swn;swp,hwn;hwp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBS,mk,1,Sub-Boreal Spruce,Mossvale Moist Cool,fdin;fdip;pln;plp;swn;swp,hwn;hwp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBS,mk,2,Sub-Boreal Spruce,Williston Moist Cool,fdin;fdip;pln;plp;swn;swp,hwn;hwp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBS,mm,,Sub-Boreal Spruce,Moist Mild,fdin;fdip;pln;plp;swn;swp,hwn;hwp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBS,mw,,Sub-Boreal Spruce,Moist Warm,fdin;fdip;pln;plp;swn;swp,hwn;hwp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBS,un,,Sub-Boreal Spruce,Undifferentiated,fdin;fdip;pln;plp;swn;swp,hwn;hwp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBS,vk,,Sub-Boreal Spruce,Very Wet Cool,fdin;fdip;pln;plp;swn;swp,hwn;hwp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBS,wk,1,Sub-Boreal Spruce,Willow Wet Cool,fdin;fdip;pln;plp;swn;swp,hwn;hwp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBS,wk,2,Sub-Boreal Spruce,Finlay-Peace Wet Cool,fdin;fdip;pln;plp;swn;swp,hwn;hwp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBS,wk,3,Sub-Boreal Spruce,Takla Wet Cool,fdin;fdip;pln;plp;swn;swp,hwn;hwp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SBS,wk,3,Sub-Boreal Spruce,Takla Wet Cool - Douglas-fir phase,fdin;fdip;pln;plp;swn;swp,hwn;hwp;cwn;cwp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SWB,dk,,Spruce -- Willow -- Birch,Dry Cool,swn;swp,pln;plp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SWB,dks,,Spruce -- Willow -- Birch,Dry Cool Scrub,swn;swp,pln;plp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SWB,mk,,Spruce -- Willow -- Birch,Moist Cool,swn;swp,pln;plp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SWB,mks,,Spruce -- Willow -- Birch,Moist Cool Scrub,swn;swp,pln;plp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SWB,un,,Spruce -- Willow -- Birch,Undifferentiated,swn;swp,pln;plp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SWB,vk,,Spruce -- Willow -- Birch,Very Wet Cool,swn;swp,pln;plp,zone-level species occurrence; verify against the AU's leading species and stand origin
+SWB,vks,,Spruce -- Willow -- Birch,Very Wet Cool Scrub,swn;swp,pln;plp,zone-level species occurrence; verify against the AU's leading species and stand origin

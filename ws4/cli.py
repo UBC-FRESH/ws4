@@ -1467,6 +1467,13 @@ def serve(
     dataset: Path = typer.Option(..., exists=True, help="Compiled dataset directory"),
     runs: Path = typer.Option(..., exists=True, help="Directory holding run directories"),
     targets: Path | None = typer.Option(None, "--targets", help="Targets YAML to read and replace"),
+    sdmd_dir: Path | None = typer.Option(
+        None,
+        "--sdmd-dir",
+        exists=True,
+        file_okay=False,
+        help="Directory of SDMD tables, diagram, and trajectories",
+    ),
     geometry: Path | None = typer.Option(
         None, "--geometry", help="GeoJSON of block points or polygons"
     ),
@@ -1559,6 +1566,7 @@ def serve(
             dataset=dataset,
             runs=runs,
             targets=targets,
+            sdmd_dir=sdmd_dir,
             geometry=geometry,
             geometry_overview=geometry_overview,
             land_base=land_base,
@@ -2462,6 +2470,102 @@ def shi_compare(
     print(f"[bold green]DHI comparison[/] {len(result)} rows → {output}")
 
 
+sdmd_app = typer.Typer(
+    add_completion=False,
+    no_args_is_help=True,
+    help="Filter a compiled dataset with stand density management constraints.",
+)
+
+
+@sdmd_app.command("validate")
+def sdmd_validate(
+    sdmd_dir: Path = typer.Option(..., "--sdmd-dir", exists=True, file_okay=False),
+    au: str | None = typer.Option(None, "--au", help="One AU; default all"),
+    initial_volume: float | None = typer.Option(
+        None, "--initial-volume", help="AU initial volume, m3/ha"
+    ),
+    initial_volume_limit: float | None = typer.Option(
+        None, "--initial-volume-limit", help="Highest supported initial volume, m3/ha"
+    ),
+) -> None:
+    """Run the eight SDMD validation gates."""
+    from .sdmd.api import SdmdApiError, SdmdStore
+    from .sdmd.validation import validate_au
+
+    try:
+        store = SdmdStore.from_directory(sdmd_dir)
+        au_ids = [au] if au is not None else [str(item["au_id"]) for item in store.aus()]
+        failed = False
+        for au_id in au_ids:
+            report = validate_au(
+                store,
+                au_id,
+                initial_volume_m3_ha=initial_volume,
+                initial_volume_limit_m3_ha=initial_volume_limit,
+            )
+            table_view = Table(title=f"SDMD validation: {au_id} ({report.status})")
+            table_view.add_column("gate")
+            table_view.add_column("status")
+            table_view.add_column("detail")
+            for gate in report.gates:
+                table_view.add_row(gate.gate, gate.status, gate.detail)
+            print(table_view)
+            failed = failed or report.status == "fail"
+    except SdmdApiError as error:
+        print(f"[red]{error}[/]")
+        raise typer.Exit(code=1) from error
+    if failed:
+        raise typer.Exit(code=1)
+
+
+@sdmd_app.command("filter-dataset")
+def sdmd_filter_dataset(
+    dataset: Path = typer.Option(..., "--dataset", exists=True, file_okay=False),
+    out: Path = typer.Option(..., "--out", file_okay=False, help="Filtered dataset directory"),
+    regimes: Path = typer.Option(..., "--regimes", exists=True, dir_okay=False),
+    constraints: Path = typer.Option(..., "--constraints", exists=True, dir_okay=False),
+    map_path: Path | None = typer.Option(
+        None, "--map", exists=True, dir_okay=False, help="Optional track and treatment map"
+    ),
+    strict: bool = typer.Option(
+        False, "--strict", help="Drop tracks and treatments that cannot be mapped"
+    ),
+) -> None:
+    """Remove treatment rows that an AU constraint forbids."""
+    from .sdmd.constraints import load_constraints
+    from .sdmd.regimes import load_regime_library
+    from .sdmd.solver import SdmdSolverError, filter_dataset, load_solver_map
+
+    try:
+        library = load_regime_library(pd.read_csv(regimes))
+        limits = load_constraints(pd.read_csv(constraints))
+        mapping = load_solver_map(map_path) if map_path is not None else None
+        report = filter_dataset(dataset, out, library, limits, mapping=mapping, strict=strict)
+    except (SdmdSolverError, ValueError) as error:
+        print(f"[red]{error}[/]")
+        raise typer.Exit(code=1) from error
+    table_view = Table(title="SDMD option-space filter")
+    for key in (
+        "tracks_before",
+        "tracks_after",
+        "treatments_before",
+        "treatments_after",
+        "unmapped_tracks",
+        "unmapped_treatments",
+    ):
+        table_view.add_row(key, str(report.to_dict()[key]))
+    print(table_view)
+    for item in report.dropped:
+        reasons = item["reasons"]
+        text = (
+            "; ".join(str(reason) for reason in reasons)
+            if isinstance(reasons, list)
+            else str(reasons)
+        )
+        print(f"[yellow]drop track {item['track_id']}[/]: {text}")
+    print(f"[bold green]Wrote[/] {out}")
+
+
 dhi_app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
@@ -2934,6 +3038,7 @@ app.add_typer(species_app, name="species")
 app.add_typer(resilience_app, name="resilience")
 app.add_typer(shi_app, name="shi")
 app.add_typer(dhi_app, name="dhi")
+app.add_typer(sdmd_app, name="sdmd")
 app.add_typer(hydrology_app, name="hydrology")
 
 if __name__ == "__main__":
