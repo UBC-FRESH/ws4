@@ -1069,6 +1069,62 @@ def create_app(
                 command.extend([flag, str(path)])
         return command
 
+    def _profile_command(
+        run_id: str,
+        out: Path,
+        profile_name: str,
+        generations: int,
+        population: int,
+        years: int,
+        seed: int,
+    ) -> list[str]:
+        """Return the GPU profile worker command, validating its resources."""
+        from ..opt.scenario_profiles import ProfileError, get_profile, load_profiles
+
+        if scenario_profiles is None:
+            raise HTTPException(
+                status_code=422, detail="the service has no --scenario-profiles library"
+            )
+        try:
+            profile = get_profile(load_profiles(scenario_profiles), profile_name)
+        except ProfileError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        required = {
+            "table": profile.table,
+            "factorized": profile.factorized,
+            "factorized_cache": profile.factorized_cache,
+            "cache_dir": profile.cache_dir,
+        }
+        missing = [name for name, value in required.items() if value is None]
+        if missing:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"profile {profile_name!r} is missing execution resources: {', '.join(missing)}"
+                ),
+            )
+        return [
+            sys.executable,
+            "-m",
+            "ws4.opt.gpu_profile_run",
+            "--dataset",
+            str(dataset),
+            "--profile-file",
+            str(scenario_profiles),
+            "--profile",
+            profile_name,
+            "--out",
+            str(out),
+            "--years",
+            str(years),
+            "--population",
+            str(population),
+            "--generations",
+            str(generations),
+            "--seed",
+            str(seed),
+        ]
+
     @app.post("/api/runs")
     def start_run(body: dict[str, Any] | None = None) -> dict[str, Any]:
         """Start a search with the configured dataset and targets, when ``allow_runs`` is set."""
@@ -1078,15 +1134,18 @@ def create_app(
                 detail="this service is read-only; start it with --allow-runs to run a search",
             )
         payload = body or {}
+        profile_name = str(payload.get("profile", "") or "")
         requested = int(payload.get("iterations", 0) or 0)
         continuous = bool(payload.get("continuous", requested <= 0))
         iterations = 1_000_000_000 if continuous else requested
         seed = int(payload.get("seed", 1))
-        years = int(payload.get("years", 50))
+        years = int(payload.get("years", 200 if profile_name else 50))
         requested_islands = payload.get("islands", 1)
         islands = 1 if requested_islands is None else int(requested_islands)
         time_limit = str(payload.get("time_limit", "") or "")
         patience = int(payload.get("patience", 0) or 0)
+        generations = int(payload.get("generations", 5000) or 5000)
+        gpu_population = int(payload.get("population", 64) or 64)
         if not 1 <= iterations <= 1_000_000_000 or not 1 <= years <= 1000:
             raise HTTPException(status_code=422, detail="iterations or years are out of range")
         if not 0 <= patience <= 1_000_000_000:
@@ -1095,22 +1154,36 @@ def create_app(
             )
         if not 1 <= islands <= 64:
             raise HTTPException(status_code=422, detail="islands must be between 1 and 64")
+        if not 0 <= generations <= 1_000_000:
+            raise HTTPException(status_code=422, detail="generations are out of range")
+        if not 1 <= gpu_population <= 1024:
+            raise HTTPException(status_code=422, detail="population is out of range")
         # A continuous run has no default wall-clock cap; the control file stops it.
-        run_id = f"web-{datetime.now():%Y%m%d-%H%M%S}-{seed}"
+        prefix = "web-gpu" if profile_name else "web"
+        run_id = f"{prefix}-{datetime.now():%Y%m%d-%H%M%S}-{seed}"
         out = runs_root / run_id
         if out.exists():
             raise HTTPException(status_code=409, detail=f"run {run_id!r} already exists")
         out.mkdir(parents=True)
         (out / "control.json").write_text('{"action": "run"}\n', encoding="utf-8")
-        command = _run_command(out, iterations, seed, years, time_limit, islands, patience)
+        if profile_name:
+            command = _profile_command(
+                run_id, out, profile_name, generations, gpu_population, years, seed
+            )
+        else:
+            command = _run_command(out, iterations, seed, years, time_limit, islands, patience)
         console = (out / "console.log").open("wb")
         processes[run_id] = subprocess.Popen(command, stdout=console, stderr=subprocess.STDOUT)
         return {
             "id": run_id,
+            "kind": "gpu-profile" if profile_name else "search",
+            "profile": profile_name or None,
             "iterations": iterations,
+            "generations": generations if profile_name else None,
             "continuous": continuous,
             "seed": seed,
             "years": years,
+            "population": gpu_population if profile_name else None,
             "islands": islands,
             "time_limit": time_limit,
             "patience": patience,

@@ -219,6 +219,9 @@ Endpoints
        A positive ``iterations`` is the per-island budget, and ``patience`` (default 0, off) stops
        after that many iterations without an incumbent improvement. The body may also carry
        ``time_limit``, ``seed``, ``years`` and ``islands``; a time limit is applied only when given.
+       A ``profile`` field starts the GPU profile worker instead; ``generations`` and
+       ``population`` default to 5000 and 64, and the profile must name its table, factorized
+       archive/cache, cache directory, and seed schedule.
    * - ``POST /api/runs/{run}/control``
      - ``{"action": "pause" | "run" | "stop"}``. The search polls its ``control.json`` every 64
        iterations: pause holds it, and stop returns its best schedule so the run writes its summary.
