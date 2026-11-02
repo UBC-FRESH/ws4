@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 } };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null } };
 
 const $ = (id) => document.getElementById(id);
 const TILE_VERSION = 'v9';
@@ -2595,6 +2595,495 @@ function carbonMetaRow(label, value) {
   return row;
 }
 
+
+// AU Explorer (SDMD): read the API, draw the yield and density views, edit constraints.
+function sdmdNumber(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function sdmdSvg(id) {
+  const svg = $(id);
+  if (!svg) return null;
+  svg.replaceChildren();
+  return svg;
+}
+
+function sdmdNode(svg, name, attrs = {}, text = '') {
+  const node = document.createElementNS('http://www.w3.org/2000/svg', name);
+  for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value));
+  if (text !== '') node.textContent = text;
+  svg.append(node);
+  return node;
+}
+
+function sdmdScale(value, min, max, start, end) {
+  if (!(max > min)) return (start + end) / 2;
+  return start + ((value - min) / (max - min)) * (end - start);
+}
+
+function sdmdLogTicks(min, max) {
+  const ticks = [];
+  for (let power = Math.floor(min); power <= Math.ceil(max); power += 1) {
+    if (power >= min && power <= max) ticks.push(power);
+  }
+  return ticks;
+}
+
+function renderSdmdYield() {
+  const svg = sdmdSvg('sdmd-yield-chart');
+  const note = $('sdmd-yield-note');
+  if (!svg) return;
+  const rows = (state.sdmd.yield ?? []).filter((row) => !state.sdmd.source || row.source === state.sdmd.source);
+  if (!rows.length) {
+    if (note) note.textContent = 'No stand summaries for this source.';
+    return;
+  }
+  const width = 480, height = 230, left = 46, right = 14, top = 14, bottom = 34;
+  const ages = rows.map((row) => sdmdNumber(row.age)).filter((value) => value > 0);
+  const volumes = rows.map((row) => sdmdNumber(row.volume_m3_ha)).filter((value) => value >= 0);
+  const minAge = Math.min(...ages), maxAge = Math.max(...ages);
+  const maxVolume = Math.max(...volumes, 1);
+  const x = (age) => sdmdScale(age, minAge, maxAge, left, width - right);
+  const y = (volume) => sdmdScale(volume, 0, maxVolume, height - bottom, top);
+  for (let index = 0; index <= 4; index += 1) {
+    const value = (maxVolume * index) / 4;
+    const yValue = y(value);
+    sdmdNode(svg, 'line', { x1: left, x2: width - right, y1: yValue, y2: yValue, class: 'sdmd-grid-line' });
+    sdmdNode(svg, 'text', { x: left - 6, y: yValue + 3, 'text-anchor': 'end', class: 'sdmd-tick' }, Math.round(value));
+  }
+  const ageTicks = [...new Set(ages)].sort((a, b) => a - b);
+  for (const age of ageTicks) {
+    const xValue = x(age);
+    sdmdNode(svg, 'line', { x1: xValue, x2: xValue, y1: height - bottom, y2: height - bottom + 4, class: 'sdmd-axis' });
+    sdmdNode(svg, 'text', { x: xValue, y: height - bottom + 17, 'text-anchor': 'middle', class: 'sdmd-tick' }, age);
+  }
+  sdmdNode(svg, 'line', { x1: left, x2: left, y1: top, y2: height - bottom, class: 'sdmd-axis' });
+  sdmdNode(svg, 'line', { x1: left, x2: width - right, y1: height - bottom, y2: height - bottom, class: 'sdmd-axis' });
+  sdmdNode(svg, 'text', { x: left, y: 10, class: 'sdmd-axis-title' }, 'volume m³/ha');
+  sdmdNode(svg, 'text', { x: width - right, y: height - 6, 'text-anchor': 'end', class: 'sdmd-axis-title' }, 'age (years)');
+  const path = rows
+    .slice()
+    .sort((a, b) => sdmdNumber(a.age) - sdmdNumber(b.age))
+    .map((row, index) => `${index ? 'L' : 'M'}${x(sdmdNumber(row.age)).toFixed(1)},${y(sdmdNumber(row.volume_m3_ha)).toFixed(1)}`)
+    .join(' ');
+  sdmdNode(svg, 'path', { d: path, class: 'sdmd-yield-line' });
+  for (const row of rows) {
+    const dot = sdmdNode(svg, 'circle', {
+      cx: x(sdmdNumber(row.age)),
+      cy: y(sdmdNumber(row.volume_m3_ha)),
+      r: 3.2,
+      class: 'sdmd-yield-dot',
+    });
+    sdmdNode(dot, 'title', {}, `Age ${row.age}: ${row.volume_m3_ha} m³/ha, ${row.tph} TPH`);
+  }
+  if (note) note.textContent = `${rows.length} stand summaries; volume from the stand table.`;
+}
+
+function renderSdmdDiagram() {
+  const svg = sdmdSvg('sdmd-diagram');
+  const note = $('sdmd-diagram-note');
+  if (!svg) return;
+  const points = state.sdmd.points?.points ?? [];
+  const envelope = state.sdmd.points?.envelope ?? [];
+  const trajectory = state.sdmd.trajectoryData?.points ?? [];
+  const width = 480, height = 260, left = 48, right = 14, top = 14, bottom = 36;
+  const all = [...points, ...trajectory.map((point) => ({ tph: point[0], mean_tree_volume_m3: point[1] }))]
+    .map((point) => ({ tph: sdmdNumber(point.tph), volume: sdmdNumber(point.mean_tree_volume_m3) }))
+    .filter((point) => point.tph > 0 && point.volume > 0);
+  if (!all.length) {
+    if (note) note.textContent = 'No SDMD points for this AU.';
+    return;
+  }
+  const logs = all.map((point) => [Math.log10(point.tph), Math.log10(point.volume)]);
+  const minX = Math.min(...logs.map((pair) => pair[0])) - 0.05;
+  const maxX = Math.max(...logs.map((pair) => pair[0])) + 0.05;
+  const minY = Math.min(...logs.map((pair) => pair[1])) - 0.05;
+  const maxY = Math.max(...logs.map((pair) => pair[1])) + 0.05;
+  const x = (tph) => sdmdScale(Math.log10(tph), minX, maxX, left, width - right);
+  const y = (volume) => sdmdScale(Math.log10(volume), minY, maxY, height - bottom, top);
+  for (const power of sdmdLogTicks(Math.ceil(minX), Math.floor(maxX))) {
+    const xValue = x(10 ** power);
+    sdmdNode(svg, 'line', { x1: xValue, x2: xValue, y1: top, y2: height - bottom, class: 'sdmd-grid-line' });
+    sdmdNode(svg, 'text', { x: xValue, y: height - bottom + 17, 'text-anchor': 'middle', class: 'sdmd-tick' }, `1e${power}`);
+  }
+  for (const power of sdmdLogTicks(Math.ceil(minY), Math.floor(maxY))) {
+    const yValue = y(10 ** power);
+    sdmdNode(svg, 'line', { x1: left, x2: width - right, y1: yValue, y2: yValue, class: 'sdmd-grid-line' });
+    sdmdNode(svg, 'text', { x: left - 6, y: yValue + 3, 'text-anchor': 'end', class: 'sdmd-tick' }, `1e${power}`);
+  }
+  if (envelope.length >= 3) {
+    const polygon = envelope.map((point) => `${x(point[0]).toFixed(1)},${y(point[1]).toFixed(1)}`).join(' ');
+    sdmdNode(svg, 'polygon', { points: polygon, class: 'sdmd-envelope' });
+  }
+  sdmdNode(svg, 'line', { x1: left, x2: left, y1: top, y2: height - bottom, class: 'sdmd-axis' });
+  sdmdNode(svg, 'line', { x1: left, x2: width - right, y1: height - bottom, y2: height - bottom, class: 'sdmd-axis' });
+  sdmdNode(svg, 'text', { x: left, y: 10, class: 'sdmd-axis-title' }, 'mean tree volume (log)');
+  sdmdNode(svg, 'text', { x: width - right, y: height - 6, 'text-anchor': 'end', class: 'sdmd-axis-title' }, 'TPH (log)');
+  for (const point of points) {
+    const dot = sdmdNode(svg, 'circle', {
+      cx: x(sdmdNumber(point.tph)),
+      cy: y(sdmdNumber(point.mean_tree_volume_m3)),
+      r: 3.8,
+      class: 'sdmd-point',
+    });
+    sdmdNode(dot, 'title', {}, `${point.tph} TPH, ${point.mean_tree_volume_m3} m³/tree, ${point.zone ?? ''}`);
+  }
+  if (trajectory.length) {
+    const path = trajectory
+      .map((point, index) => `${index ? 'L' : 'M'}${x(point[0]).toFixed(1)},${y(point[1]).toFixed(1)}`)
+      .join(' ');
+    sdmdNode(svg, 'path', { d: path, class: 'sdmd-trajectory' });
+    for (const point of trajectory) {
+      sdmdNode(svg, 'circle', {
+        cx: x(point[0]),
+        cy: y(point[1]),
+        r: 3,
+        class: 'sdmd-trajectory-dot',
+      });
+    }
+  }
+  if (note) {
+    const status = state.sdmd.trajectoryData?.status;
+    note.textContent = `${points.length} observed points; ${envelope.length} envelope vertices${trajectory.length ? `; trajectory ${status ?? 'loaded'}` : ''}.`;
+  }
+}
+
+function renderSdmdProvenance() {
+  const host = $('sdmd-provenance');
+  if (!host) return;
+  host.replaceChildren();
+  const detail = state.sdmd.detail;
+  if (!detail) return;
+  const list = document.createElement('dl');
+  const add = (label, value) => {
+    const term = document.createElement('dt');
+    term.textContent = label;
+    const definition = document.createElement('dd');
+    definition.textContent = value;
+    list.append(term, definition);
+  };
+  add('Plots', `${detail.plot_count ?? 0} plots, ${detail.visit_count ?? 0} visits`);
+  add('Age support', `${detail.age_min ?? '—'}–${detail.age_max ?? '—'} years`);
+  add('Leading species', (detail.leading_species ?? []).join(', ') || '—');
+  add('Sources', (detail.sources ?? []).join(', ') || '—');
+  const diagram = detail.diagram;
+  add('Diagram', diagram ? `${diagram.diagram_id} (${diagram.review_status})` : 'none');
+  if (diagram) add('Diagram source', `${diagram.source.citation} · ${diagram.source.version}`);
+  host.append(list);
+  const gaps = detail.data_gaps ?? [];
+  if (gaps.length) {
+    const heading = document.createElement('h4');
+    heading.textContent = 'Data gaps';
+    const ul = document.createElement('ul');
+    for (const gap of gaps) {
+      const item = document.createElement('li');
+      item.textContent = gap;
+      ul.append(item);
+    }
+    host.append(heading, ul);
+  }
+}
+
+function renderSdmdRegimeEditor() {
+  const host = $('sdmd-regime-editor');
+  if (!host) return;
+  host.replaceChildren();
+  const regimes = state.sdmd.regimes ?? [];
+  if (!regimes.length) {
+    const empty = document.createElement('p');
+    empty.className = 'hint';
+    empty.textContent = 'No regimes for this AU.';
+    host.append(empty);
+    return;
+  }
+  for (const regime of regimes) {
+    const constraint = regime.constraint ?? {};
+    const row = document.createElement('div');
+    row.className = `sdmd-regime-row${constraint.allowed === false ? ' denied' : ''}`;
+    row.dataset.regime = regime.regime_id;
+    const name = document.createElement('label');
+    name.className = 'sdmd-regime-name';
+    const enabled = document.createElement('input');
+    enabled.type = 'checkbox';
+    enabled.dataset.field = 'allowed';
+    enabled.checked = constraint.allowed !== false;
+    const text = document.createElement('span');
+    text.textContent = `${regime.regime_id} · ${regime.entry_type}${regime.sdmd_valid ? '' : ' · outside SDMD'}`;
+    name.append(enabled, text);
+    row.append(name);
+    const fields = [
+      ['min_entry_age', 'Min age', constraint.min_entry_age ?? 0],
+      ['max_entry_age', 'Max age', constraint.max_entry_age ?? 0],
+      ['max_entries', 'Max entries', constraint.max_entries ?? 0],
+      ['min_interval_years', 'Min interval', constraint.min_interval_years ?? 0],
+      ['max_removal_fraction', 'Max removal', constraint.max_removal_fraction ?? 0],
+    ];
+    for (const [field, label, value] of fields) {
+      const wrapper = document.createElement('label');
+      wrapper.textContent = label;
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.step = field === 'max_removal_fraction' ? '0.01' : '1';
+      input.min = '0';
+      input.value = String(value);
+      input.dataset.field = field;
+      wrapper.append(input);
+      row.append(wrapper);
+    }
+    const findings = regime.findings ?? [];
+    if (findings.length) {
+      const message = document.createElement('div');
+      message.className = 'sdmd-regime-findings';
+      message.textContent = findings.map((finding) => finding.message).join('; ');
+      row.append(message);
+    }
+    host.append(row);
+  }
+}
+
+function renderSdmdPreview() {
+  const preview = state.sdmd.preview;
+  const target = $('sdmd-preview');
+  const badge = $('sdmd-preview-badge');
+  if (!preview) {
+    if (target) target.textContent = '';
+    if (badge) badge.hidden = true;
+    return;
+  }
+  const counts = preview.counts ?? {};
+  const text = `Options: ${counts.regimes_before} → ${counts.regimes_after} regimes; ${counts.entries_before} → ${counts.entries_after} entries.`;
+  if (target) target.textContent = text;
+  if (badge) {
+    badge.hidden = false;
+    badge.textContent = `${counts.regimes_after} regimes / ${counts.entries_after} entries`;
+  }
+}
+
+function renderSdmd() {
+  const detail = state.sdmd.detail;
+  if (!detail) return;
+  $('sdmd-title').textContent = detail.au_id;
+  $('sdmd-subtitle').textContent = `${detail.region} · ${detail.plot_count} plots · ages ${detail.age_min ?? '—'}–${detail.age_max ?? '—'} · ${(detail.leading_species ?? []).join(', ') || 'no species'}`;
+  $('sdmd-au-meta').textContent = `${detail.regime_count} regimes · ${detail.constraint_count} saved constraints`;
+  const sources = new Set();
+  for (const row of state.sdmd.plots ?? []) {
+    for (const source of String(row.sources ?? '').split(',')) {
+      if (source.trim()) sources.add(source.trim());
+    }
+  }
+  const sourceSelect = $('sdmd-source');
+  const currentSource = state.sdmd.source;
+  sourceSelect.replaceChildren();
+  const allOption = document.createElement('option');
+  allOption.value = '';
+  allOption.textContent = 'All sources';
+  sourceSelect.append(allOption);
+  for (const source of [...sources].sort()) {
+    const option = document.createElement('option');
+    option.value = source;
+    option.textContent = source;
+    sourceSelect.append(option);
+  }
+  sourceSelect.value = sources.has(currentSource) ? currentSource : '';
+  state.sdmd.source = sourceSelect.value;
+  const trajectorySelect = $('sdmd-trajectory');
+  const currentTrajectory = state.sdmd.trajectory;
+  trajectorySelect.replaceChildren();
+  const none = document.createElement('option');
+  none.value = '';
+  none.textContent = 'No trajectory';
+  trajectorySelect.append(none);
+  for (const regime of state.sdmd.regimes ?? []) {
+    const option = document.createElement('option');
+    option.value = regime.regime_id;
+    option.textContent = regime.regime_id;
+    trajectorySelect.append(option);
+  }
+  trajectorySelect.value = currentTrajectory;
+  renderSdmdYield();
+  renderSdmdDiagram();
+  renderSdmdProvenance();
+  renderSdmdRegimeEditor();
+  renderSdmdPreview();
+}
+
+async function loadSdmdAvailability() {
+  try {
+    const payload = await api('api/sdmd/regions');
+    state.sdmd.available = true;
+    state.sdmd.regions = payload.regions ?? [];
+    const select = $('sdmd-region');
+    select.replaceChildren();
+    const all = document.createElement('option');
+    all.value = '';
+    all.textContent = 'All regions';
+    select.append(all);
+    for (const region of state.sdmd.regions) {
+      const option = document.createElement('option');
+      option.value = region;
+      option.textContent = region;
+      select.append(option);
+    }
+    $('sdmd-empty').hidden = true;
+    $('sdmd-status').textContent = 'choose an AU';
+    await loadSdmdAUs();
+    syncNavigation();
+  } catch (error) {
+    state.sdmd.available = false;
+    $('sdmd-status').textContent = 'SDMD API not served.';
+    $('sdmd-empty').hidden = false;
+  }
+}
+
+async function loadSdmdAUs() {
+  if (!state.sdmd.available) return;
+  const region = $('sdmd-region').value;
+  state.sdmd.region = region;
+  const query = region ? `?region=${encodeURIComponent(region)}` : '';
+  try {
+    const payload = await api(`api/sdmd/aus${query}`);
+    state.sdmd.aus = payload.aus ?? [];
+  } catch (error) {
+    $('sdmd-status').textContent = `AU list unavailable: ${error.message}`;
+    return;
+  }
+  const select = $('sdmd-au');
+  select.replaceChildren();
+  if (!state.sdmd.aus.length) {
+    $('sdmd-status').textContent = 'no AUs in this region';
+    return;
+  }
+  for (const au of state.sdmd.aus) {
+    const option = document.createElement('option');
+    option.value = au.au_id;
+    option.textContent = au.au_id;
+    select.append(option);
+  }
+  const preferred = state.sdmd.aus.some((au) => au.au_id === state.sdmd.au)
+    ? state.sdmd.au
+    : state.sdmd.aus[0].au_id;
+  select.value = preferred;
+  await loadSdmdAu(preferred);
+}
+
+async function loadSdmdAu(auId) {
+  const encoded = encodeURIComponent(auId);
+  try {
+    const [detail, plots, yieldPayload, points, regimes, preview] = await Promise.all([
+      api(`api/sdmd/au/${encoded}`),
+      api(`api/sdmd/au/${encoded}/plots`),
+      api(`api/sdmd/au/${encoded}/yield`),
+      api(`api/sdmd/au/${encoded}/sdmd`),
+      api(`api/sdmd/au/${encoded}/regimes`),
+      api(`api/sdmd/au/${encoded}/constraint-preview`),
+    ]);
+    state.sdmd.au = auId;
+    state.sdmd.detail = detail;
+    state.sdmd.plots = plots.plots ?? [];
+    state.sdmd.yield = yieldPayload.yield ?? [];
+    state.sdmd.points = points;
+    state.sdmd.regimes = regimes.regimes ?? [];
+    state.sdmd.preview = preview;
+    state.sdmd.source = '';
+    state.sdmd.trajectory = '';
+    state.sdmd.trajectoryData = null;
+    $('sdmd-status').textContent = '';
+    $('sdmd-au').value = auId;
+    renderSdmd();
+  } catch (error) {
+    $('sdmd-status').textContent = `AU unavailable: ${error.message}`;
+  }
+}
+
+async function loadSdmdTrajectory() {
+  const regimeId = $('sdmd-trajectory').value;
+  state.sdmd.trajectory = regimeId;
+  state.sdmd.trajectoryData = null;
+  if (!regimeId || !state.sdmd.au) {
+    $('sdmd-trajectory-status').textContent = '';
+    renderSdmdDiagram();
+    return;
+  }
+  try {
+    const payload = await api(`api/sdmd/au/${encodeURIComponent(state.sdmd.au)}/trajectory?regime_id=${encodeURIComponent(regimeId)}`);
+    state.sdmd.trajectoryData = payload;
+    $('sdmd-trajectory-status').textContent = payload.status;
+  } catch (error) {
+    $('sdmd-trajectory-status').textContent = error.message;
+  }
+  renderSdmdDiagram();
+}
+
+async function saveSdmdConstraints() {
+  if (!state.sdmd.au) return;
+  const rows = [...$('sdmd-regime-editor').querySelectorAll('.sdmd-regime-row')];
+  const constraints = rows.map((row) => {
+    const regimeId = row.dataset.regime;
+    const current = (state.sdmd.regimes ?? []).find((item) => item.regime_id === regimeId)?.constraint ?? {};
+    const field = (name) => row.querySelector(`[data-field="${name}"]`);
+    return {
+      au_id: state.sdmd.au,
+      regime_id: regimeId,
+      allowed: Boolean(field('allowed')?.checked),
+      min_entry_age: sdmdNumber(field('min_entry_age')?.value),
+      max_entry_age: sdmdNumber(field('max_entry_age')?.value),
+      max_entries: sdmdNumber(field('max_entries')?.value),
+      min_interval_years: sdmdNumber(field('min_interval_years')?.value),
+      max_removal_fraction: sdmdNumber(field('max_removal_fraction')?.value),
+      required_sdmd_zone: current.required_sdmd_zone ?? null,
+      source: current.source ?? 'AU Explorer',
+      review_status: current.review_status ?? 'provisional',
+    };
+  });
+  try {
+    const response = await fetch(`api/sdmd/au/${encodeURIComponent(state.sdmd.au)}/constraints`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify({ constraints }),
+    });
+    if (!response.ok) {
+      let detail = response.statusText;
+      try { detail = (await response.json()).detail ?? detail; } catch { /* not json */ }
+      throw new Error(detail);
+    }
+    const payload = await response.json();
+    state.sdmd.preview = payload.preview;
+    const auId = state.sdmd.au;
+    await loadSdmdAu(auId);
+    $('sdmd-preview').textContent = 'Constraint set saved.';
+  } catch (error) {
+    $('sdmd-preview').textContent = `Save refused: ${error.message}`;
+  }
+}
+
+function useSdmdInScenario() {
+  if (!state.sdmd.au) return;
+  const params = new URLSearchParams(window.location.search);
+  params.set('scenario_au', state.sdmd.au);
+  window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}${window.location.hash}`);
+  $('sdmd-preview').textContent = `AU ${state.sdmd.au} queued for a scenario; the saved constraints are the handoff.`;
+}
+
+function wireSdmd() {
+  if (!$('sdmd-region')) return;
+  $('sdmd-region').addEventListener('change', async () => {
+    await loadSdmdAUs();
+    if (state.workspace === 'sdmd') updateUrl();
+  });
+  $('sdmd-au').addEventListener('change', async () => {
+    await loadSdmdAu($('sdmd-au').value);
+    if (state.workspace === 'sdmd') updateUrl();
+  });
+  $('sdmd-source').addEventListener('change', () => {
+    state.sdmd.source = $('sdmd-source').value;
+    renderSdmdYield();
+  });
+  $('sdmd-save').addEventListener('click', saveSdmdConstraints);
+  $('sdmd-trajectory').addEventListener('change', loadSdmdTrajectory);
+  $('sdmd-use').addEventListener('click', useSdmdInScenario);
+}
+
 async function loadCarbon() {
   const status = $('carbon-status');
   const meta = $('carbon-meta');
@@ -2848,6 +3337,7 @@ function skinPanels() {
 
 function workspaceAllowed(workspace) {
   if (workspace === 'map') return true;
+  if (workspace === 'sdmd') return Boolean(state.sdmd.available);
   const panels = skinPanels();
   if (workspace === 'plan') return panels.has('targets');
   if (workspace === 'results') {
@@ -2904,9 +3394,11 @@ function syncNavigation() {
   }
   if (state.workspace === 'map') $('tab-legend').hidden = false;
   if (state.workspace === 'plan') $('tab-targets').hidden = false;
-  $('map-wrap').hidden = state.workspace === 'plan';
+  $('map-wrap').hidden = state.workspace === 'plan' || state.workspace === 'sdmd';
   $('target-canvas').hidden = state.workspace !== 'plan';
+  $('sdmd-canvas').hidden = state.workspace !== 'sdmd';
   if (state.workspace === 'plan') renderTargetCharts();
+  if (state.workspace === 'sdmd') renderSdmd();
   for (const workspace of ['results', 'data']) {
     const nav = $(`${workspace}-nav`);
     const buttons = [...(nav?.querySelectorAll('[role="tab"]') ?? [])];
@@ -2960,6 +3452,10 @@ function activateSubView() {
     renderTargetCharts();
     return;
   }
+  if (state.workspace === 'sdmd') {
+    renderSdmd();
+    return;
+  }
   if (state.workspace !== 'results' && state.compareView) clearCompareView();
 }
 
@@ -3003,6 +3499,8 @@ function updateUrl({ push = true } = {}) {
   params.set('period', String(state.periodIndex));
   if (state.selectedBlock !== null) params.set('block', String(state.selectedBlock));
   else params.delete('block');
+  if (state.workspace === 'sdmd' && state.sdmd.au) params.set('au', state.sdmd.au);
+  else params.delete('au');
   const url = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
   window.history[push ? 'pushState' : 'replaceState']({}, '', url);
 }
@@ -5840,6 +6338,7 @@ async function start() {
     return;
   }
   wireControls();
+  wireSdmd();
   loadWatched();
   try {
     const summary = await api('api/summary');
@@ -5852,6 +6351,7 @@ async function start() {
       option.textContent = `${run.id} (${run.kind ?? 'run'})`;
       select.append(option);
     }
+    await loadSdmdAvailability();
     const params = new URLSearchParams(window.location.search);
     const requestedRun = params.get('run');
     const liveRun = requestedRun ? null : await findLiveRun(summary.runs ?? []);
@@ -5905,6 +6405,10 @@ window.addEventListener('popstate', async () => {
       setPeriod(requestedPeriod);
     }
     const requestedView = params.get('view') ?? 'map';
+    const requestedAu = params.get('au');
+    if (requestedAu && state.sdmd.available && requestedAu !== state.sdmd.au) {
+      await loadSdmdAu(requestedAu);
+    }
     setWorkspace(requestedView, { sync: false });
     const requestedSub = params.get('sub');
     if (requestedSub && SUB_PANELS[state.workspace]) {

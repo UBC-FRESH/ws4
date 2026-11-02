@@ -3753,3 +3753,12 @@ issue comments.
   `constraints/<au_id>.json`, and leaves the stored set unchanged on failure. `ws4 serve
   --sdmd-dir` mounts the router. Added 14 API tests, including the mounted-app path. Dashboard
   result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
+- P87.6: Added the AU Explorer tab to the browser shell. The new SDMD workspace is served
+  when `ws4 serve --sdmd-dir` is set. It has a region/AU/source rail, a yield chart, a
+  log-log SDMD with the observed points and convex envelope, a regime trajectory selector,
+  a provenance and data-gap panel, and a per-regime constraint editor with save and
+  option-count preview. The selected AU and workspace are URL state. The editor posts the
+  complete set to the validated endpoint and reports a refused save. Added a Playwright
+  smoke test that renders the tab at desktop and iPad-landscape sizes, plus 3 static
+  contract tests. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`
+  on all seven gates.

@@ -314,6 +314,23 @@ it back.
 against the AU's observed envelope. When the file is absent, the response is
 ``status: "unavailable"`` with a named data gap rather than an invented path.
 
+AU Explorer tab
+---------------
+
+The browser shell gains an optional **SDMD** workspace when the service is started
+with ``--sdmd-dir``. It is a reader over the API above, with no build step.
+
+- The left rail chooses a region and AU, filters the yield rows by source, and
+  shows the AU's plot count, age support, species, and diagram state.
+- The main canvas shows the yield curve, the SDMD with observed points and the
+  convex envelope, the selected regime trajectory, provenance, and the data gaps.
+- The constraint editor has one row per regime: allow/deny, entry-age window,
+  maximum entries, minimum interval, and maximum removal fraction. Saving posts
+  the complete set to the validated endpoint and refreshes the option-count
+  preview. A refused save leaves the stored set unchanged.
+- ``Use in scenario`` records the AU in the URL for the solver handoff.
+- The selected AU and workspace are URL state, so a link opens the same view.
+
 Public sources
 ~~~~~~~~~~~~~~
 

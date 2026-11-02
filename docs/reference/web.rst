@@ -48,12 +48,15 @@ files so it sees the search at the solver's rate rather than behind one writer.
 Browser shell
 -------------
 
-The browser shell is organised around four workspaces:
+The browser shell is organised around four workspaces, plus an optional **SDMD**
+workspace when the service is started with ``--sdmd-dir``:
 
 - **Map** — layers, treatment/cumulative views, and block detail.
 - **Plan** — the account browser, target editor, and solve controls.
 - **Results** — Reports, Compare, and Search as nested sections.
 - **Data** — the dataset summary plus LiDAR and Carbon when the selected run/dataset
+- **SDMD** — the AU Explorer: yield, stand density, regimes, and the constraint
+  editor, when ``--sdmd-dir`` is set. See :doc:`sdmd`.
   actually has them.
 
 The **Map** workspace uses a neutral fill for untreated blocks and a red accent for treated
