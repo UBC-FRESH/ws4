@@ -1669,3 +1669,15 @@ def test_targets_tab_has_a_profile_selector(tmp_path: Path) -> None:
     assert 'id="profile-select"' in html
     assert 'id="apply-profile"' in html
     assert 'id="profile-status"' in html
+
+
+def test_chat_is_a_floating_ask_overlay(tmp_path: Path) -> None:
+    """The assistant is an overlay opened by the header Ask pill."""
+    client, _targets = _app(tmp_path)
+    html = client.get("/").text
+    assert 'id="chat-toggle"' in html
+    assert 'id="chat-close"' in html
+    assert html.index("</main>") < html.index('id="chat-panel"')
+    css = client.get("/static/style.css").text
+    assert ".chat-toggle" in css
+    assert "position:fixed" in css

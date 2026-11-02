@@ -81,14 +81,16 @@ the view. The workspace tabs implement the WAI-ARIA tabs pattern with left/right
 Home, and End navigation. LiDAR and Carbon are nested Data sections rather than top-level
 tabs; a Data option is hidden when the selected data does not exist.
 
-Assistant panel
----------------
+Assistant overlay
+-----------------
 
-The assistant panel and its drag splitter are rendered only when the service was started
-with ``--allow-agent`` **and** the ``opencode`` binary is available. Without both, the panel
-is absent and occupies no vertical space; the rest of the sidebar uses the recovered height.
-The browser cannot enable the assistant, because doing so would change the service's execution
-permissions. Start a separate service with ``--allow-agent`` when the assistant is wanted.
+The assistant is opened from a compact **✦ Ask** pill in the header and rendered as a
+floating overlay. It is available from every workspace, is closed by default, and does not
+move or resize the active workspace. The pill is shown only when the service was started
+with ``--allow-agent`` **and** the ``opencode`` binary is available. Without both, it is
+absent. The browser cannot enable the assistant, because doing so would change the service's
+execution permissions. Start a separate service with ``--allow-agent`` when the assistant is
+wanted.
 
 Behind a proxy
 ---------------
@@ -581,7 +583,7 @@ named rather than silently shown as zero everywhere.
 Chat agent
 ----------
 
-The lower-left chat panel is an embedded `OpenCode <https://opencode.ai>`_ coding agent. It runs
+The floating **✦ Ask** overlay is an embedded `OpenCode <https://opencode.ai>`_ coding agent. It runs
 the installed ``opencode`` CLI with the model named by ``--agent-model`` (default
 ``opencode-go/deepseek-v4.1-flash``). The CLI's own login supplies the provider key; WS4 does not
 read or store it. The agent works in ``--agent-cwd`` (default: the service's directory), so it can
@@ -595,9 +597,9 @@ This is a deliberate, separate permission and is **off by default**. The agent r
 service user's filesystem and shell permissions and auto-approves its own tool calls; anyone who
 can reach the service can therefore ask it to change files or run commands. Keep the service on
 loopback (the default) or behind an authenticating proxy, and do not enable it on a shared service.
-The panel keeps one OpenCode session per conversation and starts a new one with **New**; a session
-id is lost on reload, so a fresh page starts a fresh conversation. A horizontal drag bar above the
-panel resizes its height (8 rem minimum, leaving the layer panel usable); the height is kept in
+The overlay keeps one OpenCode session per conversation and starts a new one with **New**; a session
+id is lost on reload, so a fresh page starts a fresh conversation. It is fixed to the lower-right,
+closes with its × control or Escape, and focuses the input when opened.
 local storage, and double-clicking the bar restores the default.
 
 Targets
