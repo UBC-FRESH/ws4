@@ -1583,6 +1583,7 @@ class FactorizedAccountSet:
         """
         import torch
 
+        genomes = genomes.to(self.device)
         if vectors:
             block_positions = torch.arange(len(self.segments.blocks), device=self.device)
             rows = self.segments.chain_offsets[block_positions].unsqueeze(0) + genomes

@@ -3888,6 +3888,10 @@ issue comments.
 
 ## 2026-11-02
 
+- P97: mixed-target vector performance. The P89 11-cell mixed feature/product target
+  fell from 4.53 s to 0.397 s for the target switch and from 14.86 s to 0.315 s for a
+  two-generation run, with exact objective error 9.8e-13 and unchanged table cells.
+  Report: `notes/reports/tsa24-mixed-vector-performance.md`.
 - P100.1: added uncertainty and provenance to the condition-card Reports panel.
   Missing uncertainty renders as `not stated`; provenance entries render as text
   nodes. Added static assertions and web docs. Dashboard green on all seven gates.
