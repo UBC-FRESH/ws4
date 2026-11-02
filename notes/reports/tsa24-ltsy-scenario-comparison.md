@@ -1,7 +1,7 @@
 # TSA24 LTSY scenario comparison
 
 Date: 2026-11-02
-Status: 5,000-generation comparison complete
+Status: 5,000-generation comparison complete; PR #672
 
 Three LTSY formulations were compared on the same TSA24 model, seed schedule, population
 (64), random seed (7), and 5,000-generation budget:
@@ -79,3 +79,7 @@ old-seral decline and the unmanaged 100% ≥200 age are policy caveats.
 
 It contains the three target files, schedules, exact results, post-run replays, age-class
 tables, checksums, and the comparison harness.
+
+## Pull request
+
+PR #672 contains the harness and notes. The archive is outside git.

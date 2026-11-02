@@ -94,7 +94,7 @@ exists and the maintainer approves it.
 | P90 Forest condition report cards | #650 | `feature/p90-forest-condition-cards` | pr-open |
 | P91 Condition card from a WS4 run | #655 | `feature/p91-condition-run-card` | pr-open |
 | P92 Condition-card API | #659 | `feature/p92-condition-card-api` | pr-open |
-| P93 LTSY scenario comparison | #664 | `feature/p93-ltsy-scenario-comparison` | active |
+| P93 LTSY scenario comparison | #664 | `feature/p93-ltsy-scenario-comparison` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2983,8 +2983,9 @@ Design: `notes/design/ws4-forest-condition-card.md`.
 
 Parent issue: #664
 Branch: `feature/p93-ltsy-scenario-comparison`
-Status: active
+Status: pr-open
 Report: `notes/reports/tsa24-ltsy-scenario-comparison.md`
+PR: #672
 
 Goal: compare baseline LTSY, all-period ±5% with the stock floor, and all-period ±5%
 without the stock floor on one seed and a 5,000-generation budget.
@@ -3001,7 +3002,7 @@ without the stock floor on one seed and a 5,000-generation budget.
   - [x] Replay schedules through the simulator
   - [x] Compare managed/unmanaged stock and age classes
   - [x] Record the recommendation
-- [ ] P93.4 Record the base scenario and close out (#666)
+- [x] P93.4 Record the base scenario and close out (#666)
 
 Acceptance:
 
