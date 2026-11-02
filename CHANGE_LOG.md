@@ -3889,3 +3889,11 @@ issue comments.
   8-46 m assignment the weakest part; both diagrams remain **provisional** pending the
   maintainer's review. Added planted diagram tests; the method note records the
   checklist.
+- P95.2: generated four pilot trajectories with `fresh-fvsbc` (FVS BC variant) for
+  the no-cut and CT60 cases on `AU-IDFdk3-FDI` and `AU-IDFdk3-PLI`. The tree lists are
+  the synthetic fixture, replicated to the stand TPH and split into plots of at most 999
+  trees; CT60 is a `THINBBA` at age 60 removing 60% of basal area. Stored the converted
+  `(TPH, mean tree volume)` paths with source strings and assessed them against the
+  observed envelope: PLI no-cut is inside; the other three are extrapolated. Added 4
+  trajectory tests and `notes/reference/sdmd-pilot-trajectories.md`. These are method
+  runs, not real AU evidence; the PSP observed check remains open.

@@ -1,0 +1,48 @@
+{
+  "schema_version": "ws4.sdmd.trajectory.v1",
+  "au_id": "AU-IDFdk3-FDI",
+  "regime_id": "REG-A-UNTREATED",
+  "source": "fresh-fvsbc (FVS-BC) synthetic tree list",
+  "source_version": "fresh-fvsbc 0.1.0; FVS BC variant",
+  "scenario": "no treatment",
+  "generated_utc": "2026-11-02T09:05:52+00:00",
+  "review_status": "provisional",
+  "points": [
+    [
+      2399.39,
+      0.1974
+    ],
+    [
+      2265.95,
+      0.22048
+    ],
+    [
+      2142.4,
+      0.24492
+    ],
+    [
+      2031.2,
+      0.27032
+    ],
+    [
+      1924.95,
+      0.29745
+    ],
+    [
+      1831.05,
+      0.3252
+    ],
+    [
+      1742.09,
+      0.35438
+    ],
+    [
+      1658.08,
+      0.385
+    ],
+    [
+      1579.0,
+      0.417
+    ]
+  ]
+}

@@ -2956,9 +2956,10 @@ pilot AU report and validation evidence.
   - [ ] Record the maintainer's review, reviewer, and review date.
   - [x] Add the pilot diagram file, fixture, tests, and method note.
 - [ ] P95.2 Generate FVS-BC and PSP trajectories for the pilot AUs (#682)
-  - [ ] Run the no-cut and treated scenarios.
+  - [x] Run the no-cut and CT60 FVS-BC scenarios.
   - [ ] Add the PSP observed check.
-  - [ ] Store paths with source metadata and assess them.
+  - [x] Store paths with source metadata and assess them.
+  - [x] Run the trajectory and physical gates.
 - [ ] P95.3 Enforce the SDMD-zone rule and the per-AU entry cap (#683)
   - [ ] Load per-track trajectories into the filter.
   - [ ] Reject a regime outside the required zone.

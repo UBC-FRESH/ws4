@@ -437,7 +437,9 @@ assignments, and review checklist are in
 ``notes/reference/bc-sdmd-digitisation.md``. Both are **provisional** until the
 maintainer reviews the curves; the planted top-height assignment is the weaker of
 the two. The synthetic ``idf-dk3-fdi-illustrative.json`` remains the test fixture,
-not the published diagram.
+not the published diagram. Four pilot trajectories from `fresh-fvsbc` are in
+``ws4/sdmd/data/trajectories/``; they are method runs over synthetic tree lists,
+not real AU projections. See ``notes/reference/sdmd-pilot-trajectories.md``.
 
 Evidence roles and limits
 -------------------------
