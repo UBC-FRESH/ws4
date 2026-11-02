@@ -98,7 +98,18 @@ def run_gpu_watch(
     cfg.iterations = generations
     cfg.metaheuristic = "gpu-ga"
     accounts_tuple = tuple(accounts)
-    from .objective import load_targets
+    from .objective import accumulates, load_targets
+
+    display_cells = {
+        (offset, account)
+        for account in accounts_tuple
+        for offset in (
+            range(cfg.years)
+            if accumulates(account)
+            else range(max(0, period_width - 1), cfg.years, max(1, period_width))
+        )
+    }
+    population.ensure_cells(display_cells)
 
     target_mtime = targets_path.stat().st_mtime_ns if targets_path is not None else None
     last_target_check = 0.0

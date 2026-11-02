@@ -1,0 +1,28 @@
+{
+  "feature": "feature.Volume",
+  "product": "product.Yield.managed.Total",
+  "cells": [
+    [
+      9,
+      "feature.Volume"
+    ],
+    [
+      9,
+      "product.Yield.managed.Total"
+    ],
+    [
+      19,
+      "feature.Volume"
+    ],
+    [
+      19,
+      "product.Yield.managed.Total"
+    ]
+  ],
+  "genomes": 64,
+  "build_seconds": 226.26117230300224,
+  "batch_seconds": 0.09323197199773858,
+  "evaluations_per_second": 686.459790870372,
+  "exact_max_error": 3.4924596548080444e-09,
+  "peak_gpu_bytes": 9268166656
+}

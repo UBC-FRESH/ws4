@@ -3672,3 +3672,11 @@ issue comments.
   the maximum even-flow harvest; and a 1e9 priority-tier gap is near-lexicographic while
   weights are the softer dominance control. Added the normative note
   `notes/design/weighted-goal-programming-aspirations.md`. Sphinx `-W` build passed.
+- P88: Factorized GPU account search. Parent #637, branch
+  `feature/p88-factorized-gpu`. Added the persisted account-independent descriptor
+  consumer, padded feature and product pricers, mixed target-cell switching, and the
+  post-P85 effect-table safety guards. Full TSA24 exactness: feature error 0.0 and
+  64 genomes in 0.694 s; product error 8.9e-7 and 64 genomes in 0.0255 s; mixed
+  feature/product four-cell switch error 3.5e-9 in 0.093 s. The rejected all-account
+  matrix is not built; the lean builder caps workers and refuses an over-budget basis.
+  Report: `notes/reports/p88-factorized-gpu.md`.
