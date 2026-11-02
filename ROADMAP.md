@@ -2725,7 +2725,7 @@ population, watcher account switching, and a bounded live display path.
 - [x] P89.3 Bounded live display account path (#646)
 - [x] P89.4 Benchmark report, docs, and phase closeout (#647)
 - [x] P89.5 Persist padded factorized cache (#649)
-- [ ] P89.6 TSA24 final growing-stock floor (#652)
+- [x] P89.6 TSA24 final growing-stock floor (#652)
 
 Acceptance:
 
