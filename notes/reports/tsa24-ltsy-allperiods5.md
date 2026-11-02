@@ -91,6 +91,33 @@ Replay artifacts are under `postrun/`: `account_values.csv`, `product_values.csv
 `ending_inventory` rows in `account_values.csv`, `age_class_initial.csv`,
 `age_class_final.csv`, and `postrun_summary.json`.
 
+## Managed/unmanaged age-class split
+
+The aggregate old-area number is misleading. Splitting by IFM status:
+
+| IFM | State | Area | <40 | 40-199 | >=200 |
+|---|---|---:|---:|---:|---:|
+| managed | initial | 3.060M ha | 32.8% | 60.0% | 7.2% |
+| managed | final | 3.060M ha | **24.2%** | **75.2%** | **0.6%** |
+| unmanaged | initial | 2.839M ha | 11.2% | 65.4% | 23.4% |
+| unmanaged | final | 2.839M ha | **0.0%** | **0.0%** | **100.0%** |
+
+The aggregate final >=200 share of 48.4% is almost entirely the unmanaged estate aging
+for 200 years. Managed old forest falls from 7.2% to 0.6% of managed area, while managed
+mature forest rises to 75.2%. The stock floor is therefore met, but this scenario does
+**not** protect managed old-seral structure.
+
+Policy questions for the next review:
+
+- Does LTSY require a managed old-seral or retention area target beyond the total stock
+  floor?
+- Is the unmanaged 100% >=200 result expected, or should some unmanaged area be active?
+- Is the stock target correctly scoped to managed stock, or should it be managed plus
+  unmanaged?
+
+The detailed split is in `postrun/age_class_by_ifm.csv`; initial and final fragment
+snapshots are `postrun/fragments_initial.parquet` and `postrun/fragments_final.parquet`.
+
 ## Interpretation
 
 This is a good LTSY formulation candidate because:
