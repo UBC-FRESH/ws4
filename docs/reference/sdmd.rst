@@ -378,6 +378,35 @@ A cap across blocks in one AU, and a rejection of a trajectory that leaves the
 allowed SDMD zones, need AU state and per-track trajectories that the compiled
 matrix does not carry. They are named as follow-up work, not claimed here.
 
+Validation gates
+----------------
+
+`ws4.sdmd.validation` runs eight gates for one AU:
+
+1. **Plot support** — at least three observed plots.
+2. **Density plausibility** — reported basal area agrees with TPH and QMD.
+3. **SDMD fit** — the diagram exists, is reviewed, and the points are inside it.
+4. **Trajectory plausibility** — every stored path is physical and assessed against
+   the observed envelope.
+5. **Initial volume** — the value is supplied and inside the evidence.
+6. **Regime completeness** — every regime has a constraint with no unexplained
+   finding.
+7. **Solver option reduction** — the constraints reduce the option space without
+   removing every regime.
+8. **UI payload contract** — the detail, yield, SDMD, regime, and preview payloads
+   have the keys the tab reads.
+
+.. code-block:: bash
+
+   ws4 sdmd validate --sdmd-dir data/sdmd --au AU-IDFdk3-FDI
+   ws4 sdmd validate --sdmd-dir data/sdmd --au AU-IDFdk3-FDI \
+     --initial-volume 863 --initial-volume-limit 800
+
+The command exits ``1`` on any failed gate. The fixture warns rather than fails:
+its diagram is provisional, it supplies no initial volume, and one demo trajectory
+is an extrapolation. The initial-volume tests reject the 863 m3/ha value against
+an 800 m3/ha limit and flag 1,173 m3/ha as above the observed maximum.
+
 Public sources
 ~~~~~~~~~~~~~~
 

@@ -2441,6 +2441,47 @@ sdmd_app = typer.Typer(
 )
 
 
+@sdmd_app.command("validate")
+def sdmd_validate(
+    sdmd_dir: Path = typer.Option(..., "--sdmd-dir", exists=True, file_okay=False),
+    au: str | None = typer.Option(None, "--au", help="One AU; default all"),
+    initial_volume: float | None = typer.Option(
+        None, "--initial-volume", help="AU initial volume, m3/ha"
+    ),
+    initial_volume_limit: float | None = typer.Option(
+        None, "--initial-volume-limit", help="Highest supported initial volume, m3/ha"
+    ),
+) -> None:
+    """Run the eight SDMD validation gates."""
+    from .sdmd.api import SdmdApiError, SdmdStore
+    from .sdmd.validation import validate_au
+
+    try:
+        store = SdmdStore.from_directory(sdmd_dir)
+        au_ids = [au] if au is not None else [str(item["au_id"]) for item in store.aus()]
+        failed = False
+        for au_id in au_ids:
+            report = validate_au(
+                store,
+                au_id,
+                initial_volume_m3_ha=initial_volume,
+                initial_volume_limit_m3_ha=initial_volume_limit,
+            )
+            table_view = Table(title=f"SDMD validation: {au_id} ({report.status})")
+            table_view.add_column("gate")
+            table_view.add_column("status")
+            table_view.add_column("detail")
+            for gate in report.gates:
+                table_view.add_row(gate.gate, gate.status, gate.detail)
+            print(table_view)
+            failed = failed or report.status == "fail"
+    except SdmdApiError as error:
+        print(f"[red]{error}[/]")
+        raise typer.Exit(code=1) from error
+    if failed:
+        raise typer.Exit(code=1)
+
+
 @sdmd_app.command("filter-dataset")
 def sdmd_filter_dataset(
     dataset: Path = typer.Option(..., "--dataset", exists=True, file_okay=False),

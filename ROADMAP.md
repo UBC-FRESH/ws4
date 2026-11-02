@@ -2703,19 +2703,20 @@ constraints. The SDMD is a diagnostic and constraint layer, not a growth model.
   - [x] Refuse an unreviewed digitisation in a report.
   - [x] Re-implement the BC SDMD equation core in Python with source attribution.
   - [x] Refuse a trajectory step where TPH and mean tree volume both increase.
-- [ ] P87.4 Regime state machine and constraints (#632)
-  - [ ] Add the even-aged regime library.
-  - [ ] Validate state transitions and AU constraints.
-  - [ ] Flag selection regimes as outside the diagram.
+- [x] P87.4 Regime state machine and constraints (#632)
+  - [x] Add the even-aged regime library.
+  - [x] Validate state transitions and AU constraints.
+  - [x] Flag selection regimes as outside the diagram.
 - [x] P87.5 AU Explorer API (#633)
   - [x] Add the read endpoints.
   - [x] Add the validated constraint-write endpoint.
   - [x] Add the option-count preview.
   - [x] Mount the router in `ws4 serve` and document `--sdmd-dir`.
-- [ ] P87.6 AU Explorer web tab (#634)
-  - [ ] Add the tab, filters, and URL state.
-  - [ ] Add the yield and SDMD charts.
-  - [ ] Add the regime path, constraint editor, and provenance panel.
+- [x] P87.6 AU Explorer web tab (#634)
+  - [x] Add the tab, filters, and URL state.
+  - [x] Add the yield and SDMD charts.
+  - [x] Add the regime path, constraint editor, and provenance panel.
+  - [x] Add the isopleth overlay, interpretation panel, and trajectory explanation.
 - [x] P87.7 Solver constraint integration (#635) — the dataset filter and option-space reduction
   are complete; rejecting a trajectory outside the allowed SDMD zones and a cap across blocks in
   one AU need per-track trajectories and AU state, and are deferred with that reason.
@@ -2723,8 +2724,9 @@ constraints. The SDMD is a diagnostic and constraint layer, not a growth model.
   - [ ] Reject trajectories outside the allowed SDMD zones (deferred: no per-track trajectory table).
   - [x] Measure and record the option-space reduction.
 - [ ] P87.8 Provenance, docs, and closeout (#636)
-  - [ ] Run the eight validation gates.
-  - [ ] Update the ADR, design note, docs, notes, and changelog.
+  - [x] Run the eight validation gates.
+  - [x] Record the option-count reduction and the rejected values.
+  - [x] Update the ADR, design note, docs, notes, and changelog.
   - [ ] Write the close-out report and queue the pull request.
 
 Acceptance:

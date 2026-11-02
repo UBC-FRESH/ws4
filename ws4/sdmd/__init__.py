@@ -87,10 +87,17 @@ from .solver import (
     filter_dataset,
     load_solver_map,
 )
+from .validation import (
+    GATE_NAMES,
+    GateResult,
+    ValidationReport,
+    validate_au,
+)
 
 __all__ = [
     "AU_CONSTRAINTS",
     "EQUATIONS",
+    "GATE_NAMES",
     "PLOTS",
     "REGIMES",
     "REVIEW_STATUSES",
@@ -110,6 +117,7 @@ __all__ = [
     "DiagramReview",
     "DiagramSource",
     "EquationSpec",
+    "GateResult",
     "Isopleth",
     "Problem",
     "SdmdDiagram",
@@ -123,6 +131,7 @@ __all__ = [
     "Table",
     "Trajectory",
     "TrajectoryAssessment",
+    "ValidationReport",
     "assess_trajectory",
     "basal_area_m2_ha",
     "biomass_mg_ha",
@@ -152,6 +161,7 @@ __all__ = [
     "table_schema",
     "top_height_m",
     "trees_per_hectare",
+    "validate_au",
     "validate_dataset",
     "validate_diagram",
     "validate_frame",

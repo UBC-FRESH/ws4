@@ -3787,3 +3787,11 @@ issue comments.
   low-density, larger-tree path that is still outside the observed envelope, and the
   regression suite checks both the refusal and the extrapolation case. The browser demo
   now has four real paths: clearcut, CT60, shelterwood, and FUEL50 (extrapolated).
+- P87.8: Added the eight validation gates in `ws4/sdmd/validation.py` and the
+  `ws4 sdmd validate` command. The fixture reports `warn`: plot support, density
+  plausibility, regime completeness, option reduction (7 → 6 regimes, 11 → 7
+  entries), and the UI payload contract pass; the diagram is provisional, no initial
+  volume is supplied, and the demo FUEL50 trajectory is an extrapolation. The
+  initial-volume gate rejects 863 m3/ha against an 800 m3/ha limit and flags
+  1,173 m3/ha above the observed 1,133.8 m3/ha maximum. Added 10 tests. Also fixed
+  the P87.4 and P87.6 roadmap checkboxes that had been left unchecked.
