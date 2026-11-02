@@ -2759,6 +2759,12 @@ def gpu_watch(
     targets: Path = typer.Option(..., exists=True, help="Targets YAML"),
     seed_schedule: Path = typer.Option(..., exists=True, help="Initial schedule CSV"),
     table: Path = typer.Option(..., exists=True, help="Persisted effect table"),
+    factorized: Path | None = typer.Option(
+        None,
+        "--factorized",
+        exists=True,
+        help="Optional persisted factorized descriptor archive for display cells",
+    ),
     cache_dir: Path = typer.Option(
         Path("runtime/gpu-cache"), help="Simulator/candidate cache directory"
     ),
@@ -2789,6 +2795,7 @@ def gpu_watch(
         load_or_build_simulator,
     )
     from .opt.engine import load_schedule_csv
+    from .opt.factorized_effects import FactorizedAccountSet, FactorizedEffectArrays
     from .opt.gpu_effects import EffectTable
     from .opt.gpu_ga import GenomePopulation
     from .opt.gpu_watch import run_gpu_watch
@@ -2839,6 +2846,19 @@ def gpu_watch(
                 optimizer, cache_dir / "candidates.pkl", rebuild=rebuild_caches
             )
         effect_table = EffectTable.load(table, device=device)
+        factorized_accounts = None
+        if factorized is not None:
+            import numpy as np
+
+            arrays = FactorizedEffectArrays.load(factorized)
+            if not np.array_equal(np.asarray(effect_table.blocks, dtype=np.int64), arrays.blocks):
+                raise ValueError("factorized archive blocks do not match the effect table")
+            factorized_accounts = FactorizedAccountSet.from_arrays(
+                arrays,
+                optimizer.simulator(),
+                years=years,
+                device=device,
+            )
         if initial is None:
             initial = load_schedule_csv(seed_schedule)
             with schedule_cache.open("wb") as stream:
@@ -2861,6 +2881,7 @@ def gpu_watch(
             seed_schedule=initial,
             candidates=candidates,
             base_totals=base_totals,
+            factorized=factorized_accounts,
             random_fraction=0.05,
             initial_mutation_rate=0.02,
             mutation_rate=0.002,

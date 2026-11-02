@@ -74,14 +74,33 @@ account set is available. `_incumbent_values` combines:
 A synthetic test watches `feature.Volume`, confirms the effect-table cell count is
 unchanged, and confirms the display frame is produced.
 
+## Watcher CLI smoke
+
+The existing TSA24 LTSY watcher entrypoint was run in plain mode with the factorized
+archive and both accounts:
+
+```bash
+cd /srv/shared-data/gep/ws4/femic/external/femic-tsa24-instance
+PLAIN=1 SCHEDULE_OUT=runtime/tsa24-ltsy-factorized-smoke.csv ./run_ltsy_watch.sh 2
+```
+
+The frame showed both `product.HarvestedVolume.managed.Total.CC` and
+`feature.Yield.managed.Total`. The feature windows ran from 165M to 782M over the 20
+periods, and the objective frame reported 40.4M with 192 evaluations across 208,255
+blocks. The watcher loop elapsed 1.2 s after the one-time factorized build. The output
+schedule was written to `runtime/tsa24-ltsy-factorized-smoke.csv` (2.9 MB).
+
+This is a two-generation smoke run, not a production search result. The harvest level
+remained below the 100M period aspiration in periods 11-20.
+
 ## Limits
 
 - The structural build is still one-time and model-specific.
 - Factorized target cells assume candidate rows; seed-only rows outside the candidate
   list are not supported on this path.
 - The display path is bounded to the watched account set and the incumbent row.
-- No full live watcher run was launched in this phase; the watcher behavior is covered by
-  the synthetic path.
+- A two-generation plain watcher smoke was run; no long production watcher was launched.
+  The synthetic test still covers the no-table-extension contract.
 - The 12.9 genomes/s mixed search rate includes the existing sparse-table gather and the
   factorized cells; it is not the isolated pricer rate.
 

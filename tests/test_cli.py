@@ -298,3 +298,11 @@ def test_gpu_run_help_documents_the_cache_and_table_inputs() -> None:
     assert "--cache-dir" in combined
     assert "--table" in combined
     assert "--seeds" in combined
+
+
+def test_gpu_watch_help_documents_the_factorized_archive() -> None:
+    """The watcher can read display cells from a persisted factorized archive."""
+    result = run_ws4("gpu-watch", "--help")
+    assert result.returncode == 0, result.stdout + result.stderr
+    combined = re.sub(r"\x1b\[[0-9;]*m", "", result.stdout + result.stderr)
+    assert "--factorized" in combined
