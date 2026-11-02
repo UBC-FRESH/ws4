@@ -1,0 +1,10 @@
+site_series,site_series_name,target_stems_ha,min_stems_ha,preferred_species,acceptable_species,not_preferred_species,source,licence
+01,FdPl - Pinegrass - Feathermoss,1200.0,700.0,Fd;Pl,Sx,At,bcgov/ccissr StockStands_v13_1 and StockingInfo_v13,Apache-2.0 (ccissr repository)
+02,Fd - Juniper - Kinnikinnick,800.0,500.0,Fd;Pl,,,bcgov/ccissr StockStands_v13_1 and StockingInfo_v13,Apache-2.0 (ccissr repository)
+03,Fd - Juniper - Peltigera,800.0,500.0,Fd;Pl,,,bcgov/ccissr StockStands_v13_1 and StockingInfo_v13,Apache-2.0 (ccissr repository)
+04,Fd - Bluebunch wheatgrass - Needlegrass,1000.0,500.0,Fd;Pl,,At,bcgov/ccissr StockStands_v13_1 and StockingInfo_v13,Apache-2.0 (ccissr repository)
+05,Fd - Feathermoss - Step moss,1200.0,700.0,Fd;Pl,,At,bcgov/ccissr StockStands_v13_1 and StockingInfo_v13,Apache-2.0 (ccissr repository)
+06,Fd - Pinegrass - Aster,1200.0,700.0,Fd;Pl,,At,bcgov/ccissr StockStands_v13_1 and StockingInfo_v13,Apache-2.0 (ccissr repository)
+07,SxwFd - Prickly rose - Sedge,1200.0,700.0,Fd;Pl;Sx,,At;Ep,bcgov/ccissr StockStands_v13_1 and StockingInfo_v13,Apache-2.0 (ccissr repository)
+08,SxwFd - Prickly rose - Sarsaparilla,1200.0,700.0,Fd;Pl;Sx,,Act;At;Ep,bcgov/ccissr StockStands_v13_1 and StockingInfo_v13,Apache-2.0 (ccissr repository)
+09,Sxw - Horsetail - Glow moss,1000.0,500.0,Sx,Pl,Act,bcgov/ccissr StockStands_v13_1 and StockingInfo_v13,Apache-2.0 (ccissr repository)

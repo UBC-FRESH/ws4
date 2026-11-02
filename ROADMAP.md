@@ -2963,6 +2963,8 @@ pilot AU report and validation evidence.
   - [x] Build the real TSA 23 IDFdk3 PSP extract and store it in
     `ws4/sdmd/data/pilot-tsa23-idfdk3/`.
   - [x] Run one real no-cut and CT60 FVS-BC path from that tree list.
+  - [x] Mine the public CCISS tables for species traits, IDFdk3 stocking, and a
+    BEC crosswalk; record the derived extracts and limits.
   - [ ] Run the FVS scenarios for a representative AU-level tree list and the
     remaining pilot species.
 - [x] P95.3 Enforce the SDMD-zone rule and the per-AU entry cap (#683)

@@ -3942,3 +3942,12 @@ issue comments.
   Also made `stands.crown_cover_pct` nullable because the public compilation
   does not supply it, and corrected the stored FVS source version from 0.1.0 to
   the actual 0.20.0. Added real-pilot gate and trajectory tests.
+- P95.2: mined the public CCISS repositories for species and BEC evidence.
+  Added derived `tree_species.csv` (37 non-excluded BC species),
+  `species_traits.csv` (six SDMD species), `idfdk3_stocking.csv` (nine site
+  series, target 800-1200 stems/ha, minimum 500-700), and `bec_crosswalk.csv`
+  (183 shared labels, 30 WS4-only, 34 CCISS-only). The key finding is that
+  lodgepole pine is preferred on eight of nine IDFdk3 site series and acceptable
+  on the ninth, which supports a real PLI AU; CCISS has no SDMD isopleths, so the
+  missing `pln` diagram still needs digitisation. The method and limits are in
+  `notes/reference/cciss-data-mining.md`; four contract tests cover the extracts.

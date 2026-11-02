@@ -451,6 +451,14 @@ not the published diagram. Four method trajectories from `fresh-fvsbc` are in
 ``ws4/sdmd/data/trajectories/``; they are method runs over synthetic tree lists,
 not real AU projections. See ``notes/reference/sdmd-pilot-trajectories.md``.
 
+The CCISS project (Apache-2.0) supplies complementary species and BEC evidence: 37
+BC tree species codes, silvics traits for the six SDMD species, IDFdk3 stocking
+targets, and a BEC crosswalk. The derived files are
+``ws4/sdmd/data/sdmd/tree_species.csv``, ``species_traits.csv``,
+``idfdk3_stocking.csv``, and ``bec_crosswalk.csv``; the method and limits are in
+``notes/reference/cciss-data-mining.md``. CCISS does not contain SDMD isopleths,
+so it cannot replace the missing lodgepole pine diagram.
+
 The first real pilot store is ``ws4/sdmd/data/pilot-tsa23-idfdk3/``. It holds 11
 reviewed public PSP points for TSA 23 / IDFdk3 / FDI and two FVS paths from the
 real tree list of one cluster. Its ``SOURCE.md`` names the BC Data Catalogue
