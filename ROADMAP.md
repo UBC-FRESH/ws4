@@ -90,7 +90,7 @@ exists and the maintainer approves it.
 | P85 GPU acceleration and interactive target cache | #618 | `feature/p85-gpu-acceleration` | complete |
 | P86 Weighted goal-programming target semantics | #625 | `feature/p86-target-semantics` | pr-open |
 | P88 Factorized GPU account search | #637 | `feature/p88-factorized-gpu` | complete |
-| P89 Mixed-target factorized search and live switching | #643 | `feature/p89-mixed-target-search` | active |
+| P89 Mixed-target factorized search and live switching | #643 | `feature/p89-mixed-target-search` | pr-open |
 | P90 Forest condition report cards | #650 | `feature/p90-forest-condition-cards` | pr-open |
 | P91 Condition card from a WS4 run | #655 | `feature/p91-condition-run-card` | pr-open |
 | P92 Condition-card API | #659 | `feature/p92-condition-card-api` | pr-open |
@@ -2713,7 +2713,7 @@ Acceptance:
 
 Parent issue: #643
 Branch: `feature/p89-mixed-target-search`
-Status: active
+Status: pr-open
 Plan: `notes/design/factorized-account-basis.md`
 Report: `notes/reports/p89-mixed-target-search.md`
 
