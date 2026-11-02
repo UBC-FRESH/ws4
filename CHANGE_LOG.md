@@ -4049,7 +4049,15 @@ issue comments.
   current view, closes with × or Escape, and keeps the existing chat session/API behavior.
   Report: `notes/reports/tsa24-ask-overlay.md`.
 
-- P103: kept the default constraint summary shape unchanged by adding
+## 2026-11-02
+
+- P103: profile-aware web runs. Added `ws4.opt.gpu_profile_run`, optional table/factorized/
+  cache/seed resources on scenario profiles, a `POST /api/runs` profile branch, and a
+  Generations/Run profile control. Worker exact replay and a hot-cache smoke are recorded.
+  Report: `notes/reports/tsa24-profile-runs.md`.
+
+- P104: kept the default constraint summary shape unchanged by adding
   `sdmd_guard` and `sdmd_rejected` only when an SDMD schedule check is active.
   This removes the notebook-output drift without weakening the SDMD guard. Local
   `python scripts/check_notebooks.py` reports 0 drifted cells.
+

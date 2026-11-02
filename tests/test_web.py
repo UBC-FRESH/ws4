@@ -1669,6 +1669,8 @@ def test_targets_tab_has_a_profile_selector(tmp_path: Path) -> None:
     assert 'id="profile-select"' in html
     assert 'id="apply-profile"' in html
     assert 'id="profile-status"' in html
+    assert 'id="profile-generations"' in html
+    assert 'id="run-profile"' in html
 
 
 def test_chat_is_a_floating_ask_overlay(tmp_path: Path) -> None:
@@ -1681,3 +1683,64 @@ def test_chat_is_a_floating_ask_overlay(tmp_path: Path) -> None:
     css = client.get("/static/style.css").text
     assert ".chat-toggle" in css
     assert "position:fixed" in css
+
+
+def test_profile_run_uses_the_gpu_worker(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A profile run launches the factorized worker with profile resources."""
+    _client, targets = _app(tmp_path)
+    table = tmp_path / "effects.pt"
+    factorized = tmp_path / "factorized.npz"
+    cache = tmp_path / "factorized.padded.pt"
+    cache_dir = tmp_path / "gpu-cache"
+    seed = tmp_path / "seed.csv"
+    for path in (table, factorized, cache, seed):
+        path.write_text("", encoding="utf-8")
+    cache_dir.mkdir()
+    library = tmp_path / "profiles.yaml"
+    library.write_text(
+        "profiles:\n"
+        "  - name: base\n"
+        "    targets: targets.yaml\n"
+        "    table: effects.pt\n"
+        "    factorized: factorized.npz\n"
+        "    factorized_cache: factorized.padded.pt\n"
+        "    cache_dir: gpu-cache\n"
+        "    seed_schedule: seed.csv\n",
+        encoding="utf-8",
+    )
+    client = TestClient(
+        create_app(
+            dataset=tmp_path / "dataset",
+            runs=tmp_path / "runs",
+            targets=targets,
+            scenario_profiles=library,
+            allow_runs=True,
+        )
+    )
+    captured: list[list[str]] = []
+
+    class FakePopen:
+        pid = 123
+
+        def poll(self) -> None:
+            return None
+
+    def fake_popen(
+        command: list[str], stdout: object = None, stderr: object = None, **kwargs: object
+    ) -> FakePopen:
+        captured.append(command)
+        return FakePopen()
+
+    monkeypatch.setattr("ws4.web.app.subprocess.Popen", fake_popen)
+    response = client.post(
+        "/api/runs", json={"profile": "base", "generations": 3, "population": 64, "years": 200}
+    )
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert payload["kind"] == "gpu-profile"
+    assert payload["profile"] == "base"
+    assert captured[-1][1:4] == ["-m", "ws4.opt.gpu_profile_run", "--dataset"]
+    assert "--profile" in captured[-1]
+    assert "base" in captured[-1]
+    assert "--generations" in captured[-1]
+    assert "3" in captured[-1]

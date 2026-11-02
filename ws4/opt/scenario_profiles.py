@@ -34,6 +34,16 @@ class ScenarioProfile:
         Accounts to watch.
     schedule_out : pathlib.Path or None
         Default schedule output.
+    table : pathlib.Path or None
+        Persisted GPU effect table.
+    factorized : pathlib.Path or None
+        Factorized descriptor archive.
+    factorized_cache : pathlib.Path or None
+        Padded factorized cache.
+    cache_dir : pathlib.Path or None
+        Candidate/simulator cache directory.
+    seed_schedule : pathlib.Path or None
+        Seed schedule for a profile run.
     profile_file : pathlib.Path
         Source library path.
     """
@@ -44,6 +54,11 @@ class ScenarioProfile:
     accounts: tuple[str, ...]
     schedule_out: Path | None
     profile_file: Path
+    table: Path | None = None
+    factorized: Path | None = None
+    factorized_cache: Path | None = None
+    cache_dir: Path | None = None
+    seed_schedule: Path | None = None
 
     def as_dict(self) -> dict[str, Any]:
         """Return a JSON-friendly representation with resolved paths.
@@ -59,6 +74,13 @@ class ScenarioProfile:
             "targets": str(self.targets),
             "accounts": list(self.accounts),
             "schedule_out": str(self.schedule_out) if self.schedule_out is not None else None,
+            "table": str(self.table) if self.table is not None else None,
+            "factorized": str(self.factorized) if self.factorized is not None else None,
+            "factorized_cache": (
+                str(self.factorized_cache) if self.factorized_cache is not None else None
+            ),
+            "cache_dir": str(self.cache_dir) if self.cache_dir is not None else None,
+            "seed_schedule": (str(self.seed_schedule) if self.seed_schedule is not None else None),
             "profile_file": str(self.profile_file),
         }
 
@@ -121,6 +143,12 @@ def load_profiles(path: str | Path) -> dict[str, ScenarioProfile]:
         if raw_schedule is not None and not isinstance(raw_schedule, str):
             raise ProfileError(f"profile {name} schedule_out must be a string")
         schedule_out = (base_dir / raw_schedule).resolve() if raw_schedule else None
+        resources: dict[str, Path | None] = {}
+        for key in ("table", "factorized", "factorized_cache", "cache_dir", "seed_schedule"):
+            raw = entry.get(key)
+            if raw is not None and not isinstance(raw, str):
+                raise ProfileError(f"profile {name} {key} must be a string")
+            resources[key] = (base_dir / raw).resolve() if raw else None
         profiles[name] = ScenarioProfile(
             name=name,
             description=str(entry.get("description", "")),
@@ -128,6 +156,7 @@ def load_profiles(path: str | Path) -> dict[str, ScenarioProfile]:
             accounts=tuple(raw_accounts),
             schedule_out=schedule_out,
             profile_file=library.resolve(),
+            **resources,
         )
     return profiles
 
