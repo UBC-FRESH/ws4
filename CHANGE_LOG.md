@@ -3727,3 +3727,13 @@ issue comments.
   and limits with text nodes. Added HTML assertions and web docs.
 - Dashboard green on all seven gates; 71 web tests passed.
 - Closeout report: `notes/reports/p93-closeout.md`.
+- P94: LTSY scenario comparison. Compared baseline LTSY, all-period ±5% with the
+  managed-stock floor, and all-period ±5% without the floor at 5,000 generations and the
+  same seed. The two all-period schedules were byte-identical, so the stock floor was
+  non-binding; pricing the factorized stock cell made the run about 4x slower without
+  changing the schedule. Baseline final managed stock was 356.1M m3, below the 370.4M
+  floor; all-period final managed stock was 477.5M. Recommendation for the base LTSY:
+  all-period ±5% without the stock target in the search, monitor stock post-run, and add
+  the floor only when it becomes binding or after feature pricing is cheaper. Report:
+  `notes/reports/tsa24-ltsy-scenario-comparison.md`. Archive:
+  `/srv/shared-data/gep/ws4/archive/tsa24-ltsy-scenario-comparison/`.
