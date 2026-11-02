@@ -92,6 +92,7 @@ exists and the maintainer approves it.
 | P87 Stand density management and AU Explorer | #628 | `feature/p87-sdmd-au-explorer` | pr-open |
 | P88 Factorized GPU account search | #637 | `feature/p88-factorized-gpu` | pr-open |
 | P90 Forest condition report cards | #650 | `feature/p90-forest-condition-cards` | pr-open |
+| P91 Condition card from a WS4 run | #655 | `feature/p91-condition-run-card` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2803,6 +2804,31 @@ Acceptance:
 - Dashboard green.
 
 Design: `notes/design/ws4-forest-condition-card.md`.
+
+## Phase 91: Condition card from a WS4 run
+
+Parent issue: #655
+Branch: `feature/p91-condition-run-card`
+Status: pr-open
+
+Goal: derive a review-required forest-condition card from an existing WS4 run's
+`account_values.csv`.
+
+- [x] P91.1 Add the account-derived card builder and CLI (#656)
+  - [x] Add account-derived report builder
+  - [x] Add the CLI command
+  - [x] Add fixture/CLI tests and docs
+  - [x] Run dashboard and open the PR
+
+Acceptance:
+
+- A valid account table produces JSON and Markdown.
+- Missing columns, empty tables, non-finite values, and empty feature accounts fail clearly.
+- Every derived indicator is `review_required` and source/version is explicit.
+- Tests and dashboard pass.
+
+Design: `notes/design/ws4-forest-condition-card.md`.
+
 ## Detailed Next Steps Notes
 
 1. Phase 0 is complete: pull request #8 squash-merged as `97330a8`, the branch deleted, and parent
@@ -2969,11 +2995,11 @@ Design: `notes/design/ws4-forest-condition-card.md`.
     same cost per metre and hauls 22% farther at 0.46× the cost per unit-km, because its solve chooses
     the road set and the assignment jointly. Reports: `p17-opened-roads.md`, `p17-tradeoff.md`,
     `p17-closeout.md`. Next: P18.
-24. Phase 87 (Stand density management and AU Explorer) is active on
+24. Phase 87 (Stand density management and AU Explorer) was launched on
     `feature/p87-sdmd-au-explorer`, parent issue #628, with tasks #629 to #636. The maintainer
     requested it directly alongside other parallel expansion sessions, so it starts from `main`
     while Phase 86 is `pr-open`. The plan is `notes/plans/ws4-sdmd-au-explorer.md`; the layer is a
-    diagnostic and constraint layer (ADR 0013), not a growth model. P87.1 is the first bounded
+    diagnostic and constraint layer (ADR 0013), not a growth model. P87.1 was the first bounded
     move: the schema, the ADR, a two-AU fixture, and tests, with no ingestion, UI, or solver work.
 25. Phase 87 is `pr-open`: pull request #658 queues the SDMD and AU Explorer phase, with the
     close-out report in `notes/reports/p87-closeout.md`. The fixture validation warns rather

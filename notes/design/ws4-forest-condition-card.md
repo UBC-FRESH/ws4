@@ -35,3 +35,11 @@ the solver.
 The example fixture combines a BA-only inventory indicator (14.9% TSA coverage,
 8.86 m2/ha strict RMSE) and a DHI indicator.  It is a format and provenance
 demonstration, not a claim that either source is reviewed for management use.
+
+## Run-derived card
+
+`build_report_from_accounts` consumes `account_values.csv` and turns each
+`feature.*` account into a `review_required` indicator.  It records the final
+value and first/last trend, uses `ws4.account_values` as the source, and does
+not attach an RMSE.  The `ws4 condition-card` CLI writes JSON and optional
+Markdown into a run's `condition/` directory.

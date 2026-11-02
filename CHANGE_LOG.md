@@ -3825,3 +3825,11 @@ issue comments.
   (quality gates, clean-checkout contract, notebook outputs, pre-commit parity, and the
   green dashboard summary). An earlier Types failure on `1e1a585`/`5737e49` was a test
   assertion calling `pd.isna` on a `loc` scalar; `e2b758c` uses the Series `isna` result.
+## 2026-11-02
+
+- P91.1: added `build_report_from_accounts` and `ws4 condition-card` to derive a
+  review-required forest-condition card from a run's `account_values.csv`.
+  Feature accounts become indicators with final value, first/last trend,
+  explicit source/version, and `review_required` status. Added CLI coverage and
+  docs. Dashboard green on all seven gates; 13 focused tests passed.
+- Closeout report: `notes/reports/p91-closeout.md`.
