@@ -45,6 +45,14 @@ PILOT_DIAGRAM = (
     / "sdmd"
     / "idf-dk3-fdi-natural.json"
 )
+PLANTED_DIAGRAM = (
+    Path(__file__).resolve().parents[1]
+    / "ws4"
+    / "sdmd"
+    / "data"
+    / "sdmd"
+    / "idf-dk3-fdi-planted.json"
+)
 
 
 def _diagram() -> SdmdDiagram:
@@ -522,3 +530,26 @@ def test_pilot_natural_diagram_is_not_used_by_a_report_until_reviewed() -> None:
     diagram = load_diagram(PILOT_DIAGRAM)
     with pytest.raises(SdmdReportError, match="needs a reviewed diagram"):
         build_au_report(au_id="AU-IDFdk3-FDI", diagram=diagram, observed=_points())
+
+
+def test_pilot_planted_diagram_is_a_valid_provisional_vector() -> None:
+    """The planted Interior Douglas-fir diagram is structurally complete and provisional."""
+    diagram = load_diagram(PLANTED_DIAGRAM)
+    assert validate_diagram(diagram) == []
+    kinds: dict[str, int] = {}
+    for isopleth in diagram.isopleths:
+        kinds[isopleth.kind] = kinds.get(isopleth.kind, 0) + 1
+    assert kinds["top_height"] == 10
+    assert kinds["qmd"] == 9
+    assert kinds["crown_closure"] == 1
+    assert kinds["competition"] == 1
+    assert kinds["self_thinning"] == 1
+    assert diagram.review.status == "provisional"
+    assert "planted" in diagram.source.citation
+
+
+def test_pilot_planted_diagram_places_a_managed_point() -> None:
+    """The planted curves separate a managed point from an understocked one."""
+    diagram = load_diagram(PLANTED_DIAGRAM)
+    assert place_point(diagram, 1000.0, 0.3).zone == "density-management"
+    assert place_point(diagram, 1000.0, 0.02).zone == "understocked"

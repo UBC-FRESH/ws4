@@ -2,7 +2,8 @@
 
 The natural Interior Douglas-fir diagram is digitised from the public PDF
 recorded in `ws4/sdmd/data/sdmd/source_catalog.json` (diagram `fdin`, version
-1.10). The output is `ws4/sdmd/data/sdmd/idf-dk3-fdi-natural.json`.
+1.10). The outputs are `ws4/sdmd/data/sdmd/idf-dk3-fdi-natural.json` and
+`ws4/sdmd/data/sdmd/idf-dk3-fdi-planted.json`.
 
 ## Method
 
@@ -41,10 +42,14 @@ recorded in `ws4/sdmd/data/sdmd/source_catalog.json` (diagram `fdin`, version
 - The diagram is marked `provisional`. The maintainer must review the curves before
   a report may use it. The review checklist is: top-height values, QMD values,
   closure line, the two thick limits, and the pilot-AU compatibility.
-- The planted diagram (`fdip`) is not yet digitised.
+- The planted diagram's printed labels are offset from the curves. Its 10
+  top-height curves were assigned 8, 10, 14, 18, 22, 26, 30, 34, 40, and 46 m
+  from the printed labels and the vertical order at the left edge. That assignment
+  is provisional and must be reviewed before use.
 
 ## Review
 
-Reviewer of record: Gregory Paradis (maintainer). Status: provisional, awaiting
-review. After review, set `review.status` to `reviewed`, add the reviewer and the
+Reviewer of record: Gregory Paradis (maintainer). Status: both diagrams
+provisional, awaiting review. The planted top-height assignment is the weaker of
+the two and is the first item to check. After review, set `review.status` to `reviewed`, add the reviewer and the
 UTC date, and rerun the diagram and validation tests.

@@ -524,6 +524,17 @@
       "review_status": "provisional",
       "reviewer": "",
       "notes": "Vector extraction from the catalogued PDF; isopleth values assigned from the printed labels and the QMD 5 cm sequence. Awaiting maintainer review."
+    },
+    {
+      "diagram_id": "idf-dk3-fdi-planted",
+      "source_diagram_id": "fdip",
+      "file": "idf-dk3-fdi-planted.json",
+      "source_sha256": "c097cc599e866969a41c721719dd3d7869c3b9208a2b982bd71b588ad1d38e59",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/fdip.pdf",
+      "source_version": "1.10",
+      "review_status": "provisional",
+      "reviewer": "",
+      "notes": "Vector extraction from the catalogued PDF. The planted top-height labels are offset from the curves; the 8-46 m assignment is provisional and needs the maintainer's review."
     }
   ]
 }

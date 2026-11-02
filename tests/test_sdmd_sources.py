@@ -172,15 +172,15 @@ def test_page_labels_cover_all_fourteen_diagrams() -> None:
     assert all(item["pdf_title"] == "White spruce" for item in mislabelled)
 
 
-def test_digitised_natural_diagram_is_catalogued() -> None:
-    """The pilot digitisation names its source PDF and remains provisional."""
+def test_digitised_diagrams_are_catalogued() -> None:
+    """Both pilot digitizations name their source PDF and remain provisional."""
     catalog = _catalog()
     entries = catalog["digitizations"]
-    assert len(entries) == 1
-    entry = entries[0]
-    assert entry["diagram_id"] == "idf-dk3-fdi-natural"
-    assert entry["source_diagram_id"] == "fdin"
-    assert entry["review_status"] == "provisional"
-    source = next(item for item in catalog["diagrams"] if item["diagram_id"] == "fdin")
-    assert entry["source_sha256"] == source["sha256"]
-    assert (DATA / str(entry["file"])).is_file()
+    assert len(entries) == 2
+    for entry in entries:
+        assert entry["review_status"] == "provisional"
+        source = next(
+            item for item in catalog["diagrams"] if item["diagram_id"] == entry["source_diagram_id"]
+        )
+        assert entry["source_sha256"] == source["sha256"]
+        assert (DATA / str(entry["file"])).is_file()

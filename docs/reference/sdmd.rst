@@ -431,12 +431,13 @@ catalog keeps "White pine" as an alias so the page label still resolves.
 
 The Farnden 1996 method report (Pacific Forestry Centre Information Report
 BC-X-360) is public and is recorded in the catalog with its URL and checksum. The
-PDFs are referenced, not copied into the repository. The natural Interior Douglas-fir PDF is now digitised into
-``idf-dk3-fdi-natural.json``; the method, curve assignments, and review checklist
-are in ``notes/reference/bc-sdmd-digitisation.md``. It is **provisional** until the
-maintainer reviews the curves. The synthetic ``idf-dk3-fdi-illustrative.json``
-remains the test fixture, not the published diagram. The planted ``fdip`` diagram
-is not yet digitised.
+PDFs are referenced, not copied into the repository. The natural and planted Interior Douglas-fir PDFs are digitised into
+``idf-dk3-fdi-natural.json`` and ``idf-dk3-fdi-planted.json``; the method, curve
+assignments, and review checklist are in
+``notes/reference/bc-sdmd-digitisation.md``. Both are **provisional** until the
+maintainer reviews the curves; the planted top-height assignment is the weaker of
+the two. The synthetic ``idf-dk3-fdi-illustrative.json`` remains the test fixture,
+not the published diagram.
 
 Evidence roles and limits
 -------------------------

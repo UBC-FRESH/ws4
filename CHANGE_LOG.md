@@ -3882,3 +3882,10 @@ issue comments.
   SHA-256 and a digitisation catalog entry. The diagram is **provisional**; the
   maintainer review and the planted `fdip` diagram are still open. Added 4 diagram
   tests, a source-catalog test, and `notes/reference/bc-sdmd-digitisation.md`.
+- P95.1: digitised the planted Interior Douglas-fir diagram (`fdip`, version 1.10)
+  into `ws4/sdmd/data/sdmd/idf-dk3-fdi-planted.json`: 10 top-height isopleths,
+  9 QMD isopleths, crown closure, competition, and self-thinning. Recorded the source
+  checksum and a second digitisation catalog entry. The planted label offset makes the
+  8-46 m assignment the weakest part; both diagrams remain **provisional** pending the
+  maintainer's review. Added planted diagram tests; the method note records the
+  checklist.

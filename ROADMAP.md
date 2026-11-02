@@ -2952,7 +2952,7 @@ pilot AU report and validation evidence.
 
 - [ ] P95.1 Digitise fdin/fdip and replace the synthetic pilot fixture (#681)
   - [x] Extract and order the `fdin` isopleths.
-  - [ ] Extract and order the `fdip` isopleths.
+  - [x] Extract and order the `fdip` isopleths.
   - [ ] Record the maintainer's review, reviewer, and review date.
   - [x] Add the pilot diagram file, fixture, tests, and method note.
 - [ ] P95.2 Generate FVS-BC and PSP trajectories for the pilot AUs (#682)
