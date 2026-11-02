@@ -2724,7 +2724,7 @@ population, watcher account switching, and a bounded live display path.
 - [x] P89.2 Watcher target switching through factorized accounts (#645)
 - [x] P89.3 Bounded live display account path (#646)
 - [x] P89.4 Benchmark report, docs, and phase closeout (#647)
-- [ ] P89.5 Persist padded factorized cache (#649)
+- [x] P89.5 Persist padded factorized cache (#649)
 
 Acceptance:
 
