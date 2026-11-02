@@ -117,6 +117,8 @@ def test_the_landing_page_lists_the_dataset_and_its_runs(tmp_path: Path) -> None
     assert response.status_code == 200
     assert "WS4" in response.text
     assert 'id="run"' in response.text  # the application shell, not a server-rendered list
+    assert 'id="load-condition-card"' in response.text
+    assert 'id="condition-card"' in response.text
     assert client.get("/static/app.js").status_code == 200
     assert client.get("/health").json() == {"status": "ok"}
 
