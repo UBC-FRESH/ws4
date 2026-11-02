@@ -23,27 +23,27 @@ The full TSA24 descriptor archive is
 
 | Path | Batch | Exact error | GPU peak |
 |---|---:|---:|---:|
-| `feature.Volume`, 20 ten-year periods | 64 genomes | **0.0** | **7.1 GB** |
+| `feature.Yield.managed.Total`, 20 ten-year periods | 64 genomes | **2.2e-5** | **7.2 GB** |
 | `product.Yield.managed.Total` | 64 genomes | **8.9e-7** | **4.6 GB** |
-| mixed feature/product, 4 target cells | 64 genomes | **3.5e-9** | **9.3 GB** |
+| mixed feature/product, 4 target cells | 64 genomes | **1.1e-5** | **9.3 GB** |
 
 The feature result was compared with the flat exact array evaluator over all period cells.
 The product result was compared with the flat product evaluator. The mixed result compares
-cells `(9, feature.Volume)`, `(9, product.Yield.managed.Total)`,
-`(19, feature.Volume)`, and `(19, product.Yield.managed.Total)`.
+cells `(9, feature.Yield.managed.Total)`, `(9, product.Yield.managed.Total)`,
+`(19, feature.Yield.managed.Total)`, and `(19, product.Yield.managed.Total)`.
 
 ## Timing and memory
 
 | Measurement | Result |
 |---|---:|
-| Feature padded build | 146.7 s |
+| Feature padded build | 151.1 s |
 | Feature upload | 1.1 s |
-| Feature 64-genome batch | **0.694 s** (92 genomes/s) |
+| Feature 64-genome batch | **0.706 s** (90.7 genomes/s) |
 | Product padded build | 83.6 s |
 | Product upload | 0.47 s |
 | Product 64-genome batch | **0.0255 s** (2,507 genomes/s) |
-| Mixed account build | 226.3 s |
-| Mixed 64-genome, 4-cell batch | **0.093 s** (686 genomes/s) |
+| Mixed account build | 239.5 s |
+| Mixed 64-genome, 4-cell batch | **0.093 s** (685 genomes/s) |
 
 Host peak RSS was 14.6 GB for the segment build and 11.6 GB for the event build. The
 build preflight refuses to start when available memory is below 2.5 times the padded
@@ -57,7 +57,7 @@ python examples/gpu_effects/benchmark_factorized_feature.py \
   --targets /srv/shared-data/gep/ws4/femic/external/femic-tsa24-instance/config/ws4/targets/evenflow_tsa24_ltsy.yaml \
   --artifact /srv/shared-data/gep/ws4/femic/external/femic-tsa24-instance/runtime/factorized/tsa24-factorized.npz \
   --seed-schedule /srv/shared-data/gep/ws4/femic/external/femic-tsa24-instance/runtime/tsa24-ltsy-schedule.csv \
-  --account feature.Volume --years 200 --period-width 10 --genomes 64
+  --account feature.Yield.managed.Total --years 200 --period-width 10 --genomes 64
 
 python examples/gpu_effects/benchmark_factorized_product.py \
   --dataset /srv/shared-data/gep/ws4/femic/external/femic-tsa24-instance/build/compiled \
@@ -71,7 +71,7 @@ python examples/gpu_effects/benchmark_factorized_switch.py \
   --targets /srv/shared-data/gep/ws4/femic/external/femic-tsa24-instance/config/ws4/targets/evenflow_tsa24_ltsy.yaml \
   --artifact /srv/shared-data/gep/ws4/femic/external/femic-tsa24-instance/runtime/factorized/tsa24-factorized.npz \
   --seed-schedule /srv/shared-data/gep/ws4/femic/external/femic-tsa24-instance/runtime/tsa24-ltsy-schedule.csv \
-  --feature feature.Volume --product product.Yield.managed.Total \
+  --feature feature.Yield.managed.Total --product product.Yield.managed.Total \
   --years 200 --genomes 64
 ```
 

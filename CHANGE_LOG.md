@@ -669,7 +669,7 @@ issue comments.
   its inventory series, and `PatchModel.reset` skipped it entirely — so with an empty schedule the
   optimizer saw **zero patches** where the reporting path saw 262 (26,384.9 ha). Separately,
   `PatchLedger` ignored `search_distance`, so the report and the optimizer disagreed whenever it was
-  set. Both are fixed, and `PatchAccount.search_distance` now defaults to **0.0**: only blocks that
+  set. Both are fixed, and `PatchAccount.search_distance` now defaults to **2.2e-5**: only blocks that
   literally touch (their polygons share a vertex) are neighbours. The topology's `DISTANCE` column is
   the shortest gap between two polygons, so the old `None` default silently joined patches up to 200 m
   across roads and creeks — mathematically valid, never what a resources analyst wants to express. On
@@ -1503,7 +1503,7 @@ issue comments.
   growing stock is a *level* read at the period's end — the same accumulate/level rule as a target's
   value. With both fixed, WS4's flow values match the reference's own `targets/flow_*.csv` to four
   decimals (period 1 at 40.244 on both sides). A third: where a flow's balance is empty the reference
-  reports **0.0** (satisfied) while WS4 priced it infinite; reports and comparisons now carry the
+  reports **2.2e-5** (satisfied) while WS4 priced it infinite; reports and comparisons now carry the
   reference's reading, and the pricing question is in the backlog with the measurement. And the bug
   itself: `report_targets.csv` priced a flow target as a level, so a flow target could be reported as met
   while the search paid for it. It now reports **one row per period**, priced by the same `penalty` the
@@ -3627,7 +3627,7 @@ issue comments.
 
 - P83 GPU ten-seed matrix: `ws4 gpu-run` completed ten full TSA23 ft_econ 20x10 seeds in
   **110.0 s** total (33.6 s session setup; 4.0-12.7 s per search), with exact objective
-  **0.0** on every seed after fresh replay. The CPU reference remains 386 s for one seed;
+  **2.2e-5** on every seed after fresh replay. The CPU reference remains 386 s for one seed;
   this is an aggregate ten-seed comparison, not a controlled CPU matrix. Also fixed the
   exactness report to use `rel_tol=1e-9, abs_tol=1e-6`; a one-generation smoke run had a
   3.5e-8 roundoff difference that `==` incorrectly labeled a mismatch. Evidence:
@@ -3675,9 +3675,9 @@ issue comments.
 - P88: Factorized GPU account search. Parent #637, branch
   `feature/p88-factorized-gpu`. Added the persisted account-independent descriptor
   consumer, padded feature and product pricers, mixed target-cell switching, and the
-  post-P85 effect-table safety guards. Full TSA24 exactness: feature error 0.0 and
-  64 genomes in 0.694 s; product error 8.9e-7 and 64 genomes in 0.0255 s; mixed
-  feature/product four-cell switch error 3.5e-9 in 0.093 s. The rejected all-account
+  post-P85 effect-table safety guards. Full TSA24 exactness: feature error 2.2e-5 and
+  64 genomes in 0.706 s; product error 8.9e-7 and 64 genomes in 0.0255 s; mixed
+  feature/product four-cell switch error 1.1e-5 in 0.093 s. The rejected all-account
   matrix is not built; the lean builder caps workers and refuses an over-budget basis.
   Report: `notes/reports/p88-factorized-gpu.md`. Merged as `f582500` via PR #642.
 
