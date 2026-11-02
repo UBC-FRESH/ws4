@@ -5949,6 +5949,9 @@ async function loadReports() {
   $('report-preview').replaceChildren();
   $('report-export').hidden = true;
   $('report-build-status').textContent = '';
+  $('condition-card').replaceChildren();
+  $('condition-card').hidden = true;
+  $('condition-card-status').textContent = '';
   try {
     const body = await api(`api/runs/${encodeURIComponent(state.run)}/reports`);
     const byName = new Map(body.map((report) => [report.name, report]));
@@ -6006,6 +6009,88 @@ async function loadReports() {
     }
   } catch (error) {
     list.textContent = `reports unavailable: ${error.message}`;
+  }
+}
+
+function renderConditionCard(card) {
+  const target = $('condition-card');
+  const status = $('condition-card-status');
+  target.replaceChildren();
+  const summary = document.createElement('p');
+  summary.textContent = `${card.report_id} · ${card.scenario_id} · review: ${card.review_status}`;
+  target.append(summary);
+  const indicators = Array.isArray(card.indicators) ? card.indicators : [];
+  if (!indicators.length) {
+    const empty = document.createElement('p');
+    empty.className = 'hint';
+    empty.textContent = 'No indicators were supplied.';
+    target.append(empty);
+  } else {
+    const wrap = document.createElement('div');
+    wrap.className = 'table-wrap';
+    const table = document.createElement('table');
+    const head = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    for (const label of ['Indicator', 'Value', 'Source', 'Status', 'Applicability']) {
+      const th = document.createElement('th');
+      th.textContent = label;
+      headRow.append(th);
+    }
+    head.append(headRow);
+    const body = document.createElement('tbody');
+    for (const item of indicators) {
+      const row = document.createElement('tr');
+      const values = [
+        item.name,
+        `${item.value} ${item.unit}`,
+        `${item.source} (${item.source_version})`,
+        item.status,
+        item.applicability ?? 'not stated',
+      ];
+      for (const value of values) {
+        const cell = document.createElement('td');
+        cell.textContent = String(value ?? '—');
+        row.append(cell);
+      }
+      body.append(row);
+    }
+    table.append(head, body);
+    wrap.append(table);
+    target.append(wrap);
+  }
+  const alerts = Array.isArray(card.alerts) ? card.alerts : [];
+  if (alerts.length) {
+    const heading = document.createElement('p');
+    heading.textContent = 'Advisory alerts';
+    target.append(heading);
+    const list = document.createElement('ul');
+    for (const alert of alerts) {
+      const item = document.createElement('li');
+      item.textContent = `${alert.code} · ${alert.severity}: ${alert.message}`;
+      list.append(item);
+    }
+    target.append(list);
+  }
+  const limits = document.createElement('p');
+  limits.className = 'hint';
+  limits.textContent = 'Report-only. Alerts are advisory; not operational early warning.';
+  target.append(limits);
+  target.hidden = false;
+  status.textContent = `${indicators.length} indicator(s) loaded`;
+}
+
+async function loadConditionCard() {
+  const status = $('condition-card-status');
+  const target = $('condition-card');
+  target.replaceChildren();
+  target.hidden = true;
+  if (!state.run) { status.textContent = 'select a run first'; return; }
+  status.textContent = 'loading condition card…';
+  try {
+    const card = await api(`api/runs/${encodeURIComponent(state.run)}/condition-card`);
+    renderConditionCard(card);
+  } catch (error) {
+    status.textContent = `condition card unavailable: ${error.message}`;
   }
 }
 
@@ -6457,6 +6542,7 @@ function wireControls() {
   });
   $('add-target').addEventListener('click', addTarget);
   $('build-report').addEventListener('click', buildReport);
+  $('load-condition-card').addEventListener('click', loadConditionCard);
   $('compare-a').addEventListener('change', loadComparison);
   $('compare-b').addEventListener('change', loadComparison);
   $('compare-filter').addEventListener('input', renderCompareAccounts);

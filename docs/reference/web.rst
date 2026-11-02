@@ -716,3 +716,12 @@ The browser application and the four skin manifests (model builder, scenario ana
 browser, reviewer) are specified in ``notes/design/ws4-web-frontend.md``. A skin is a JSON manifest
 over one application, checked against a registry; an unknown panel, layer or action is refused by
 name, and a read-only skin cannot edit a target.
+
+Condition-card panel
+--------------------
+
+The Reports tab includes a **Load condition card** button. It calls
+``GET /api/runs/{run}/condition-card`` and renders the review status, indicators,
+applicability, and advisory alerts. The browser uses text nodes, not HTML
+interpolation. The card is report-only; a missing or invalid account table is
+reported in the panel without changing the run.

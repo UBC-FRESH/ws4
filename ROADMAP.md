@@ -95,6 +95,8 @@ exists and the maintainer approves it.
 | P90 Forest condition report cards | #650 | `feature/p90-forest-condition-cards` | pr-open |
 | P91 Condition card from a WS4 run | #655 | `feature/p91-condition-run-card` | pr-open |
 | P92 Condition-card API | #659 | `feature/p92-condition-card-api` | pr-open |
+| P93 Condition-card Reports UI | #662 | `feature/p93-condition-card-ui` | pr-open |
+| P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2880,6 +2882,58 @@ Acceptance:
 - Tests and dashboard pass.
 
 Design: `notes/design/ws4-forest-condition-card.md`.
+## Phase 93: Condition-card Reports UI
+
+Parent issue: #662
+Branch: `feature/p93-condition-card-ui`
+Status: pr-open
+
+Goal: render the P92 condition-card API in the Reports tab.
+
+- [x] P93.1 Add the condition-card Reports panel (#663)
+  - [x] Add the Reports panel markup
+  - [x] Add the JS fetch/render function and button wiring
+  - [x] Add HTML tests and docs
+  - [x] Run dashboard and open the PR
+
+Acceptance:
+
+- The panel and button are present in the served HTML.
+- Valid cards render review state and indicators without innerHTML interpolation.
+- Errors and empty cards show clear messages.
+- Dashboard passes.
+## Phase 94: LTSY scenario comparison
+
+Parent issue: #664
+Branch: `feature/p94-ltsy-scenario-comparison`
+Status: pr-open
+Report: `notes/reports/tsa24-ltsy-scenario-comparison.md`
+PR: #673
+
+Goal: compare baseline LTSY, all-period ±5% with the stock floor, and all-period ±5%
+without the stock floor on one seed and a 5,000-generation budget.
+
+- [x] P94.1 Freeze comparison targets and harness (#667)
+  - [x] Add the no-stock control target
+  - [x] Add the reusable comparison harness
+  - [x] Record exact replay results
+- [x] P94.2 Run the three 5,000-generation scenarios (#668)
+  - [x] Run baseline
+  - [x] Run all-period ±5% with stock
+  - [x] Run all-period ±5% without stock
+- [x] P94.3 Compare stock, flow, and age-class outcomes (#665)
+  - [x] Replay schedules through the simulator
+  - [x] Compare managed/unmanaged stock and age classes
+  - [x] Record the recommendation
+- [x] P94.4 Record the base scenario and close out (#666)
+
+Acceptance:
+
+- The three formulations use the same seed, population, and generation budget.
+- The stock/no-stock schedules are compared honestly.
+- A base LTSY formulation is recommended with caveats.
+- Dashboard green.
+
 ## Detailed Next Steps Notes
 
 1. Phase 0 is complete: pull request #8 squash-merged as `97330a8`, the branch deleted, and parent
@@ -3057,4 +3111,4 @@ Design: `notes/design/ws4-forest-condition-card.md`.
     than fails (provisional diagram, no supplied initial volume, one extrapolated demo path);
     the 863 m3/ha gate fails against an 800 limit and 1,173 m3/ha is flagged above 1,133.8.
     Trajectory-zone rejection and a cap across blocks in one AU are deferred with the reasons
-    in #635. Next: approve the close-out, then launch the next free phase (P93 today; P91 and P92 are taken).
+    in #635. Next: approve the close-out, then launch the next free phase (P95 today; P91-P94 are taken).
