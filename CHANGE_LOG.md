@@ -3885,3 +3885,10 @@ issue comments.
   guard target the default TSA24 LTSY watcher profile, with a separate
   `runtime/tsa24-ltsy-base-schedule.csv` output. A hot-cache one-generation smoke ran in
   20.89 s. Report: `notes/reports/tsa24-ltsy-base-profile.md`.
+
+## 2026-11-02
+
+- P100.1: added uncertainty and provenance to the condition-card Reports panel.
+  Missing uncertainty renders as `not stated`; provenance entries render as text
+  nodes. Added static assertions and web docs. Dashboard green on all seven gates.
+- Closeout report: `notes/reports/p100-closeout.md`.

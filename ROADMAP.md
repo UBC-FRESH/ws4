@@ -99,6 +99,7 @@ exists and the maintainer approves it.
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
 | P95 Factorized target-cell vectors | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
 | P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | pr-open |
+| P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -3168,3 +3169,23 @@ Acceptance:
 - The smoke run writes the base-profile schedule.
 - The note distinguishes base profile from definitive sustainability.
 - Dashboard green.
+
+## Phase 100: Condition-card provenance and uncertainty
+
+Parent issue: #670
+Branch: `feature/p100-condition-provenance`
+Status: pr-open
+
+Goal: show uncertainty and provenance in the condition-card Reports panel.
+
+- [x] P100.1 Show uncertainty and provenance in the condition panel (#671)
+  - [x] Add uncertainty to the card table
+  - [x] Add the provenance block
+  - [x] Add tests and docs
+  - [x] Run dashboard and open the PR
+
+Acceptance:
+
+- Missing uncertainty renders as `not stated`.
+- Provenance keys/values render in the panel.
+- Dashboard passes.
