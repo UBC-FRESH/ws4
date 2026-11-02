@@ -1,7 +1,7 @@
 # P97 mixed-target vector performance
 
 Date: 2026-11-02
-Status: complete
+Status: complete; PR #695
 
 ## Result
 
@@ -40,3 +40,7 @@ switch is also much cheaper, which is the path the live watcher needs.
 ```
 
 Contains the measured record, runner, target, implementation snapshot, and checksums.
+
+## Pull request
+
+PR #695 contains the runner change, benchmark report, and planning updates. The archive is outside git.

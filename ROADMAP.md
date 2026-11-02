@@ -99,7 +99,7 @@ exists and the maintainer approves it.
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
 | P95 Factorized target-cell vectors | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
 | P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | pr-open |
-| P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | active |
+| P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
@@ -3175,8 +3175,9 @@ Acceptance:
 
 Parent issue: #691
 Branch: `feature/p97-mixed-target-vectors`
-Status: active
+Status: pr-open
 Report: `notes/reports/tsa24-mixed-vector-performance.md`
+PR: #695
 
 Goal: verify the P95 vector cache on the 11-cell mixed feature/product target and remove
 the mixed-target runner's padded rebuild.
