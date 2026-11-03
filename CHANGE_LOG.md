@@ -4346,3 +4346,7 @@ issue comments.
   has no WS4 imports. `portfolio` and `tune` remain in WS4 because they depend on
   `OptimizeConfig`, `Optimizer`, `Target`, and the WS4 run-directory contract; the boundary is
   recorded in `notes/design/shared-kernel-adoption.md`.
+
+- Shared `Runner` protocol (2026-11-03): `ws4.opt.portfolio` and `ws4.opt.tune` now import
+  `Runner` from `fresh_solutions.kernel` instead of defining it twice. Their WS4-specific
+  configuration, target scaling, and run-directory orchestration stay local.

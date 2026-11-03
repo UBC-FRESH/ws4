@@ -19,32 +19,15 @@ import statistics
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any
 
 import pandas as pd
+from fresh_solutions.kernel import Runner
 
 from .archive import Direction, Elite, EliteArchive
 from .calibrate import write_targets
 from .engine import OptimizeConfig, Optimizer, load_schedule_csv
 from .objective import Target, load_targets
-
-
-class Runner(Protocol):
-    """The part of an optimizer the portfolio needs."""
-
-    def run(self, out_dir: Path) -> dict[str, Any]:
-        """Run one member and write its outputs.
-
-        Parameters
-        ----------
-        out_dir : Path
-            The member's run directory.
-
-        Returns
-        -------
-        dict of str to Any
-            The run summary.
-        """
 
 
 @dataclass(frozen=True)

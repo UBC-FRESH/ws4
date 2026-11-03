@@ -43,3 +43,6 @@ The kernel boundary is a generic `Problem[State, Context]`:
   `Optimizer`, `Target`, and WS4's run directory contract; moving them before the kernel has a
   generic runner/config contract would only add indirection. Revisit after the FHOPS adapter
   proves the cross-package orchestration boundary.
+- `ws4.opt.portfolio` and `ws4.opt.tune` now import the shared `Runner` protocol from
+  `fresh_solutions.kernel`. Their configuration, target scaling, and run-directory orchestration
+  stay in WS4.
