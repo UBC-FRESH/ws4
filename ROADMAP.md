@@ -126,6 +126,7 @@ exists and the maintainer approves it.
 | P125 Stabilize period playback and map paging | #784 | `fix/p125-playback-map-race` | pr-open |
 | P126 Stabilize playback controls and cadence | #787 | `fix/p126-playback-controls` | pr-open |
 | P127 Fix target chart edits and Solve semantics | #791 | `fix/p127-target-chart-solve` | pr-open |
+| P128 Sync target chart edits into the table | #794 | `fix/p128-target-chart-table-sync` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3890,4 +3891,21 @@ Acceptance:
 - Chart edits update the non-flow level row.
 - Saved values round-trip through `api/targets.json`.
 - Solve sends the configured time limit without a profile field.
+- Browser smoke and dashboard pass.
+
+## Phase 128: Sync target chart edits into the table
+
+Parent issue: #794
+Branch: `fix/p128-target-chart-table-sync`
+Status: active
+Report: `notes/reports/p128-target-chart-table-sync.md`
+
+Goal: keep chart edits and table inputs consistent before Solve.
+
+- [x] P128.1 Sync target chart edits into table inputs (#795)
+
+Acceptance:
+
+- Chart edits update matching table inputs.
+- Solve posts edited values and time budget.
 - Browser smoke and dashboard pass.

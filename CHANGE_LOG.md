@@ -4310,3 +4310,7 @@ issue comments.
   non-flow level row, and public-demo Solve uses the current target file and time
   budget instead of implicitly switching to a profile run. Report:
   `notes/reports/p127-target-chart-solve.md`.
+
+- P128: sync target chart edits into Plan table inputs so Solve posts the edited
+  values instead of stale table values. Report:
+  `notes/reports/p128-target-chart-table-sync.md`.
