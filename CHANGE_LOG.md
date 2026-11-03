@@ -4084,3 +4084,7 @@ issue comments.
   exposes it on the AU payload, and the validation gate uses it when no CLI override
   is supplied. Both pilot `initial-volume` gates now pass. Added supplied, missing,
   and invalid-value tests.
+- P106.4: ran both pilot gates and wrote `notes/reports/p106-closeout.md`. Both
+  AUs warn only on trajectory plausibility; plot, density, diagram, initial volume,
+  regime, option, and UI gates pass. Queued the phase pull request; merge waits for
+  approval.

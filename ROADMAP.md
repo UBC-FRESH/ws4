@@ -98,7 +98,7 @@ exists and the maintainer approves it.
 | P93 Condition-card Reports UI | #662 | `feature/p93-condition-card-ui` | pr-open |
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
 | P104 (SDMD pilot) digitisation and trajectory evidence | #680 | `feature/p104-sdmd-pilot` | complete |
-| P106 AU evidence depth | #723 | `feature/p106-au-evidence` | active |
+| P106 AU evidence depth | #723 | `feature/p106-au-evidence` | pr-open |
 | P95 (factorized vectors) target-cell cache | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
 | P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | pr-open |
 | P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | pr-open |
@@ -3423,7 +3423,7 @@ Acceptance:
 
 Parent issue: #723
 Branch: `feature/p106-au-evidence`
-Status: active
+Status: pr-open
 Plan: `notes/reports/p104-closeout.md`, section 6
 Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
 
@@ -3443,10 +3443,10 @@ volume for the two real pilot AUs.
   - [x] Derive the value and source for both AUs.
   - [x] Add the gate, API, and report fields.
   - [x] Test supplied, missing, and invalid values.
-- [ ] P106.4 Pilot validation and closeout (#727)
-  - [ ] Run both pilot gates and the eight validation gates.
-  - [ ] Update the evidence and closeout reports.
-  - [ ] Queue the pull request and wait for approval.
+- [x] P106.4 Pilot validation and closeout (#727)
+  - [x] Run both pilot gates and the eight validation gates.
+  - [x] Update the evidence and closeout reports.
+  - [x] Queue the pull request and wait for approval.
 
 Acceptance:
 
