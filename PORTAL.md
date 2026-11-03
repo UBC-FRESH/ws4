@@ -49,6 +49,13 @@ instance. GPU capability is separate and is shown on each landing card and by
 `gpu.unavailable`. The readiness check only looks for artifacts and validates
 the profile library; it does not start a GPU worker.
 
+## TSA 24 geometry
+
+TSA 24 uses `runtime/geometry/tsa24-blocks.geojson`, derived from the exact
+458,708-row public stand shapefile. It is a 5 m simplified, EPSG:3005 layer
+with `block_id` from source row order. The source hashes and regeneration script
+are recorded with the layer; the compiled dataset itself remains geometry-free.
+
 ## Public service
 
 `run_portal.sh` binds `0.0.0.0:8790` by default so a container proxy can reach

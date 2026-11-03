@@ -42,6 +42,7 @@ SPECS: dict[str, dict[str, Any]] = {
         "scenario_profiles": "config/ws4/profiles/ltsy.yaml",
         "initial": "runtime/seed_area_control_tsa24.csv",
         "candidate_cache": "runtime/gpu-cache/candidates.pkl",
+        "geometry": "runtime/geometry/tsa24-blocks.geojson",
         "crs": "EPSG:3005",
     },
     "femic-tsa27-instance": {
