@@ -44,3 +44,6 @@ coverage.xml
 # WS4 public portal
 runs/
 cache/
+
+# Portal runtime pid/log files
+var/

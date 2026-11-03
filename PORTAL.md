@@ -28,9 +28,31 @@ The landing page reports which instances have a compiled WS4 dataset and which
 still need a runtime setup. Very large instances are deliberately excluded from
 the shared one-core demo.
 
+## GPU readiness
+
+The portal's normal **Run** button is CPU resident-state search for every
+instance. GPU capability is separate and is shown on each landing card and by
+`GET /api/instances`:
+
+- **GPU profile** — the instance has a scenario-profile library whose profiles
+  contain the execution resources needed by `ws4.opt.gpu_profile_run`. TSA 24
+  exposes `base`, `baseline`, and `nostock`; TSA 27 exposes `s8`; TSA 29
+  exposes `base`. The TSA 27 and TSA 29 profiles use existing effect tables
+  without factorized archives.
+- **GPU artifacts · CLI** — effect tables exist, but no profile library is wired
+  into the portal. These are usable through `ws4 gpu-watch` only after matching
+  the dataset, seed schedule, and targets.
+- **CPU state-watch** — no effect table or profile resources are installed; the
+  CPU resident-state engine is the only search path.
+
+`GET /health` reports counts for `gpu.profile`, `gpu.cli`, `gpu.cpu`, and
+`gpu.unavailable`. The readiness check only looks for artifacts and validates
+the profile library; it does not start a GPU worker.
+
 ## Public service
 
-The service is loopback-only by default. Put it behind the same nginx front end as
-the other demos if exposing it publicly. The agent has shell/filesystem access
-through the configured instance working directory; do not expose it without the
-usual trusted-proxy decision.
+`run_portal.sh` binds `0.0.0.0:8790` by default so a container proxy can reach
+it; set `HOST=127.0.0.1` for a loopback-only instance. Put it behind the same
+nginx front end as the other demos if exposing it publicly. The agent has
+shell/filesystem access through the configured instance working directory; do
+not expose it without the usual trusted-proxy decision.

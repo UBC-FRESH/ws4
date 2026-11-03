@@ -10,9 +10,10 @@ from __future__ import annotations
 
 import html
 import os
+import shutil
 import time
 from collections import defaultdict, deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -37,7 +38,8 @@ SPECS: dict[str, dict[str, Any]] = {
         "label": "TSA 24",
         "subtitle": "North Island TSA 24 · even-flow",
         "dataset": "build/compiled",
-        "targets": "config/ws4/targets/evenflow_tsa24.yaml",
+        "targets": "config/ws4/targets/evenflow_tsa24_allperiods5_stock90.yaml",
+        "scenario_profiles": "config/ws4/profiles/ltsy.yaml",
         "initial": "runtime/seed_area_control_tsa24.csv",
         "candidate_cache": "runtime/gpu-cache/candidates.pkl",
         "crs": "EPSG:3005",
@@ -45,9 +47,11 @@ SPECS: dict[str, dict[str, Any]] = {
     "femic-tsa27-instance": {
         "label": "TSA 27",
         "subtitle": "North Island TSA 27 · even-flow",
-        "dataset": "build/compiled_uwr_fixed_20261031",
+        "dataset": "build/compiled",
         "targets": "config/ws4/targets/evenflow_no_caribou.yaml",
-        "initial": "runtime/seed_oldest_first_s7.csv",
+        "scenario_profiles": "config/ws4/profiles/gpu.yaml",
+        "initial": "runtime/seed_oldest_first_s8.csv",
+        "candidate_cache": "runtime/gpu-cache/s8/candidates.pkl",
         "geometry": "data/ws4/blocks.geojson",
         "land_base": "data/ws4/land_base.geojson",
         "crs": "EPSG:3005",
@@ -57,6 +61,7 @@ SPECS: dict[str, dict[str, Any]] = {
         "subtitle": "North Island TSA 29 · even-flow",
         "dataset": "build/compiled",
         "targets": "config/ws4/targets/evenflow_tsa29.yaml",
+        "scenario_profiles": "config/ws4/profiles/gpu.yaml",
         "initial": "runtime/seed_oldest_first_tsa29.csv",
         "candidate_cache": "runtime/gpu-cache/candidates.pkl",
         "crs": "EPSG:3005",
@@ -96,8 +101,8 @@ SPECS: dict[str, dict[str, Any]] = {
         "label": "GNN",
         "subtitle": "GNN feasibility / risk model",
         "dataset": "runtime/gnn/matrix",
-        "targets": "runtime/gnn/targets_evenflow_half_aac.yaml",
-        "initial": "runtime/gnn/baseline_schedule.csv",
+        "targets": "config/targets.gnn.yaml",
+        "initial": "runtime/gnn/runs/opening_first_block_gate/schedule.csv",
         "geometry": "runtime/gnn/fragments.geojson",
         "land_base": "runtime/gnn/land_base.geojson",
         "crs": "EPSG:3005",
@@ -162,6 +167,7 @@ class Instance:
     reason: str = ""
     mount: str = ""
     spec: dict[str, Any] | None = None
+    gpu: dict[str, Any] = field(default_factory=dict)
 
 
 def _existing(root: Path, value: str | None) -> Path | None:
@@ -169,6 +175,64 @@ def _existing(root: Path, value: str | None) -> Path | None:
         return None
     candidate = root / value
     return candidate if candidate.is_file() or candidate.is_dir() else None
+
+
+def _gpu_readiness(root: Path, spec: dict[str, Any]) -> dict[str, Any]:
+    """Classify an instance's GPU artifacts without starting a GPU run.
+
+    ``profile`` means the portal can launch a profile-aware GPU worker. ``cli``
+    means effect tables exist, but no profile library is wired into the portal.
+    ``cpu`` means the public state engine is the only available search path.
+    """
+    effects_dir = root / "runtime" / "gpu-effects"
+    effects = sorted(
+        path.name
+        for path in effects_dir.glob("*.pt")
+        if path.is_file() and not path.name.endswith(".base.pt")
+    )
+    factorized_dir = root / "runtime" / "factorized"
+    factorized = sorted(path.name for path in factorized_dir.glob("*") if path.is_file())
+
+    profiles: list[str] = []
+    profile_ready = False
+    profile_path = _existing(root, spec.get("scenario_profiles"))
+    if profile_path is not None and profile_path.is_file():
+        try:
+            from ws4.opt.scenario_profiles import load_profiles
+
+            library = load_profiles(profile_path)
+            profiles = sorted(library)
+            profile_ready = any(
+                all(getattr(profile, name, None) for name in ("table", "cache_dir"))
+                for profile in library.values()
+            )
+        except Exception:
+            profile_ready = False
+
+    if profile_ready:
+        mode = "profile"
+    elif effects:
+        mode = "cli"
+    else:
+        mode = "cpu"
+    return {
+        "mode": mode,
+        "profiles": profiles,
+        "effect_tables": effects,
+        "factorized": factorized,
+    }
+
+
+def _gpu_label(gpu: dict[str, Any]) -> tuple[str, str]:
+    """Return a short human label and detail for a GPU-readiness record."""
+    mode = str(gpu.get("mode", "cpu"))
+    if mode == "profile":
+        names = ", ".join(str(name) for name in gpu.get("profiles", []))
+        return "GPU profile", names or "profile library"
+    if mode == "cli":
+        count = len(gpu.get("effect_tables", []))
+        return "GPU artifacts · CLI", f"{count} effect table{'s' if count != 1 else ''}"
+    return "CPU state-watch", "resident state engine"
 
 
 def _resolve(slug: str, root: Path) -> Instance:
@@ -201,29 +265,61 @@ def _resolve(slug: str, root: Path) -> Instance:
         return Instance(slug, label, subtitle, root, False, "no compiled WS4 dataset")
     if not (dataset / "fragments.parquet").is_file():
         return Instance(slug, label, subtitle, root, False, "dataset is missing fragments.parquet")
-    try:
-        import pyarrow.parquet as pq
+    # Every public instance is launchable by default. The shared demo runs on one
+    # CPU core, so a size cap can still be enforced by setting WS4_MAX_FRAGMENTS
+    # (0 or unset means no limit).
+    max_fragments = int(os.environ.get("WS4_MAX_FRAGMENTS", "0") or 0)
+    if max_fragments:
+        try:
+            import pyarrow.parquet as pq
 
-        partitions = pq.ParquetFile(dataset / "fragments.parquet").metadata.num_row_groups
-        rows = pq.ParquetFile(dataset / "fragments.parquet").metadata.num_rows
-        # The shared demo is one CPU core; keep the giant TSA instances off it.
-        if rows > 200_000:
-            return Instance(
-                slug,
-                label,
-                subtitle,
-                root,
-                False,
-                f"large instance ({rows:,} fragments); not enabled for the shared one-core demo",
-            )
-    except Exception:
-        pass
+            rows = pq.ParquetFile(dataset / "fragments.parquet").metadata.num_rows
+            if rows > max_fragments:
+                return Instance(
+                    slug,
+                    label,
+                    subtitle,
+                    root,
+                    False,
+                    f"large instance ({rows:,} fragments); excluded by WS4_MAX_FRAGMENTS",
+                )
+        except Exception:
+            pass
     if targets is None:
         return Instance(slug, label, subtitle, root, False, "no targets YAML")
     # A state run can build its candidate index and seed-state cache on first use;
     # an existing candidate cache only avoids that one-time cost.
     spec.update({"dataset": str(dataset), "targets": str(targets), "initial": str(initial) if initial else None})
-    return Instance(slug, label, subtitle, root, True, spec=spec)
+    gpu = _gpu_readiness(root, spec)
+    spec["gpu"] = gpu
+    return Instance(slug, label, subtitle, root, True, spec=spec, gpu=gpu)
+
+
+def _writable_copy(source: Path, destination: Path) -> Path:
+    """Return a writable copy of a read-only instance file.
+
+    The shared instance tree is mounted read-only for this service, so the web
+    editor cannot write beside the original YAML or schedule. Keep a per-instance
+    copy under the portal cache and let writes land there.
+
+    Parameters
+    ----------
+    source : pathlib.Path
+        Original file in the instance directory.
+    destination : pathlib.Path
+        Cached copy to create on first use.
+
+    Returns
+    -------
+    pathlib.Path
+        The cached copy, or the original when the copy cannot be made.
+    """
+    if not destination.is_file():
+        try:
+            shutil.copyfile(source, destination)
+        except OSError:
+            return source
+    return destination
 
 
 def _build_mount(instance: Instance, mount_path: str) -> None:
@@ -240,11 +336,17 @@ def _build_mount(instance: Instance, mount_path: str) -> None:
     if candidate_cache is None and candidate_index.is_file():
         candidate_cache = None
     seed_state = cache / "seed-state.npz"
+    targets = _writable_copy(root / str(spec["targets"]), cache / "targets.yaml")
+    initial = (
+        _writable_copy(root / str(spec["initial"]), cache / "initial-schedule.csv")
+        if spec.get("initial")
+        else None
+    )
     state_config: dict[str, Any] = {
         "candidate_index": str(candidate_index),
         "candidate_cache": str(candidate_cache) if candidate_cache else None,
         "seed_state": str(seed_state),
-        "initial_schedule": spec.get("initial"),
+        "initial_schedule": str(initial) if initial else None,
         "period_width": 10,
         "years": 200,
         "default_iterations": 1_000_000_000,
@@ -256,15 +358,16 @@ def _build_mount(instance: Instance, mount_path: str) -> None:
     options: dict[str, Any] = {
         "dataset": root / spec["dataset"],
         "runs": runs,
-        "targets": root / spec["targets"],
+        "targets": targets,
         "allow_runs": True,
         "allow_agent": True,
         "agent_cwd": root,
-        "initial_schedule": root / spec["initial"] if spec.get("initial") else None,
+        "initial_schedule": initial,
         "state_config": state_config,
         "crs": spec.get("crs", "EPSG:3005"),
     }
     for key, value in (
+        ("scenario_profiles", spec.get("scenario_profiles")),
         ("geometry", spec.get("geometry")),
         ("land_base", spec.get("land_base")),
         ("topology", spec.get("topology")),
@@ -300,12 +403,23 @@ def _landing() -> str:
             action = '<div class="door disabled">'
             footer = "Not currently runnable"
             status = "SETUP NEEDED"
+        if instance.ready:
+            gpu_label, gpu_detail = _gpu_label(instance.gpu)
+            gpu_class = f"gpu-{instance.gpu.get('mode', 'cpu')}"
+        else:
+            gpu_label, gpu_detail = "GPU unavailable", "no runnable dataset"
+            gpu_class = "gpu-unavailable"
+        gpu_line = (
+            f'<p class="gpu {gpu_class}"><span class="gpu-dot"></span>'
+            f"<strong>{html.escape(gpu_label)}</strong> · {html.escape(gpu_detail)}</p>"
+        )
         reason = f"<p class=\"reason\">{html.escape(instance.reason)}</p>" if instance.reason else ""
         cards.append(
             f'''{action}
               <div class="card-top"><span class="kicker">{html.escape(instance.slug)}</span><span class="badge">{status}</span></div>
               <h2>{html.escape(instance.label)}</h2>
               <p>{html.escape(instance.subtitle or "Public FEMIC instance")}</p>
+              {gpu_line}
               {reason}
               <div class="arrow">{footer}</div>
             </{'a' if instance.ready else 'div'}>'''
@@ -333,6 +447,12 @@ def _landing() -> str:
   .disabled .badge {{ color: #80631b; background: #fff7df; border-color: #ead9a5; }}
   h2 {{ margin: 12px 0 6px; font-size: 1.25rem; }}
   .door p {{ margin: 0; color: #52645a; line-height: 1.45; }}
+  .gpu {{ margin-top: 10px !important; font-size: .76rem; color: #52645a !important; }}
+  .gpu strong {{ color: #1f6b43; }}
+  .gpu-dot {{ display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: #829087; vertical-align: middle; }}
+  .gpu-profile .gpu-dot {{ background: #1f6b43; }}
+  .gpu-cli .gpu-dot {{ background: #b07b16; }}
+  .gpu-unavailable .gpu-dot {{ background: #a48f6b; }}
   .reason {{ margin-top: 8px !important; font-size: .82rem; color: #80631b !important; }}
   .arrow {{ margin-top: 18px; color: #1f6b43; font-weight: 700; }}
   .disabled .arrow {{ color: #7d8a81; }}
@@ -345,9 +465,9 @@ def _landing() -> str:
 <main>
   <div class="kicker">WS4 · public experimental demo · no login · state engine · agent enabled</div>
   <h1>Open a forest model.</h1>
-  <p class="lead">Launch any public FEMIC instance in the WS4 web UI. Searches use the resident-state accelerated engine on one CPU core. Choose a model below to edit targets, run a schedule, inspect the map, reports, and the embedded assistant.</p>
+  <p class="lead">Launch any public FEMIC instance in the WS4 web UI. Normal searches use the resident-state engine on one CPU core; the card badges show which instances have additional GPU profile runs or CLI-only GPU artifacts. Choose a model below to edit targets, run a schedule, inspect the map, reports, and the embedded assistant.</p>
   <div class="doors">{''.join(cards)}</div>
-  <footer>WS4 public demo · {ready} runnable instance{'s' if ready != 1 else ''} · resident-state search · one CPU core · embedded agent enabled</footer>
+  <footer>WS4 public demo · {ready} runnable instance{'s' if ready != 1 else ''} · resident-state search · GPU readiness shown per instance · embedded agent enabled</footer>
 </main>
 </body>
 </html>'''
@@ -358,13 +478,38 @@ def landing() -> HTMLResponse:
     return HTMLResponse(_landing(), headers={"Cache-Control": "no-store"})
 
 
+@app.get("/api/instances")
+def instance_readiness() -> list[dict[str, Any]]:
+    """Return launch status and GPU readiness for every discovered instance."""
+    return [
+        {
+            "slug": instance.slug,
+            "label": instance.label,
+            "ready": instance.ready,
+            "mount": instance.mount or None,
+            "reason": instance.reason or None,
+            "gpu": instance.gpu or {"mode": "unavailable"},
+        }
+        for instance in INSTANCES
+    ]
+
+
 @app.get("/health")
 def health() -> dict[str, Any]:
+    modes: dict[str, int] = defaultdict(int)
+    for instance in INSTANCES:
+        modes[str(instance.gpu.get("mode", "unavailable"))] += 1
     return {
         "status": "ok",
         "instances": len(INSTANCES),
         "runnable": sum(1 for instance in INSTANCES if instance.ready),
         "engine": "state-watch",
+        "gpu": {
+            "profile": modes["profile"],
+            "cli": modes["cli"],
+            "cpu": modes["cpu"],
+            "unavailable": modes["unavailable"],
+        },
         "islands": 1,
         "agent": True,
     }
