@@ -4061,3 +4061,5 @@ issue comments.
   This removes the notebook-output drift without weakening the SDMD guard. Local
   `python scripts/check_notebooks.py` reports 0 drifted cells.
 
+- P104: phase approved and squash-merged as `e5c4e9c` on 2026-11-03. PR #719
+  passed all five CI checks; the branch was deleted and parent issue #680 closed.

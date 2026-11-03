@@ -97,7 +97,7 @@ exists and the maintainer approves it.
 | P92 Condition-card API | #659 | `feature/p92-condition-card-api` | pr-open |
 | P93 Condition-card Reports UI | #662 | `feature/p93-condition-card-ui` | pr-open |
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
-| P104 (SDMD pilot) digitisation and trajectory evidence | #680 | `feature/p104-sdmd-pilot` | pr-open |
+| P104 (SDMD pilot) digitisation and trajectory evidence | #680 | `feature/p104-sdmd-pilot` | complete |
 | P95 (factorized vectors) target-cell cache | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
 | P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | pr-open |
 | P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | pr-open |
@@ -3177,7 +3177,8 @@ Acceptance:
 
 Parent issue: #680
 Branch: `feature/p104-sdmd-pilot`
-Status: pr-open
+Status: complete
+Merge commit: `e5c4e9c`
 Plan: `notes/reports/p87-closeout.md`, section 6
 Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
 

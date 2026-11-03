@@ -6,7 +6,7 @@ Branch: `feature/p104-sdmd-pilot`
 Evidence head: `b521f39` (phase work); merge head `0bb0b4e`
 Report commit: this metadata-only report update
 Date: 2026-11-02
-Status: queued as PR #719 for maintainer approval. Not merged.
+Status: approved and merged as `e5c4e9c` on 2026-11-03.
 
 ## Recommendation
 
@@ -137,5 +137,5 @@ Results:
 ## 8. Pull request
 
 PR #719 names the phase, the evidence head, the gate result, and the known
-limits. It is queued for approval. No merge, tag, release, or settings change is
-performed by this report.
+limits. It was squash-merged as `e5c4e9c` on 2026-11-03; the branch was deleted.
+No tag, release, or settings change was made.
