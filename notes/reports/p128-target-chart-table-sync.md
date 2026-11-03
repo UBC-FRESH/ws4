@@ -1,7 +1,7 @@
 # P128 target chart table synchronization
 
 Date: 2026-11-03
-Status: complete
+Status: complete; PR #796
 
 ## Root cause
 
