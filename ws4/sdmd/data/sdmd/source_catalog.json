@@ -568,6 +568,17 @@
       "review_status": "provisional",
       "reviewer": "",
       "notes": "Vector extraction for top height, QMD, competition, and self-thinning. The crown-closure curve is a provisional raster trace because the printed dotted curve is not a single vector path. Review the overlay before use."
+    },
+    {
+      "diagram_id": "cdf-cwh-ss-natural",
+      "source_diagram_id": "ssn",
+      "file": "cdf-cwh-ss-natural.json",
+      "source_sha256": "518b1f294d63582c11bb5a89b1a95e36d682d8edf075c769398f7f787505a22f",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/ssn.pdf",
+      "source_version": "unversioned",
+      "review_status": "provisional",
+      "reviewer": "",
+      "notes": "Vector top-height, QMD, competition, and self-thinning paths; the printed crown-closure curve is a provisional raster trace. Review the overlay before use."
     }
   ]
 }

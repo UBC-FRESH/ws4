@@ -105,3 +105,9 @@ The Coastal Douglas-fir natural diagram is stored as `cdf-cwh-fdc-natural.json`,
 provisional. The top-height, QMD, and boundary paths are vector; the crown-closure
 curve is a provisional raster trace recorded in
 `notes/reference/fdcn-digitisation.md`. Review the overlay before use.
+
+## ssn status
+
+Sitka spruce natural is stored as `cdf-cwh-ss-natural.json`, provisional. The
+top-height, QMD, and boundary paths are vector; the crown-closure curve is a
+raster trace. See `notes/reference/ssn-digitisation.md`.

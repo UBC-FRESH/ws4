@@ -4122,3 +4122,7 @@ issue comments.
   image, calibration, and anchors; a synthetic dotted-curve test covers it. `fdcn`
   remains the only natural diagram stored so far; `ssn` was not committed because
   its top/boundary path mapping did not survive the overlay check.
+- P107.2: stored `cdf-cwh-ss-natural.json` from `ssn`. Top height 6-52 m and
+  QMD 5-85 cm are label-matched vector paths; competition/self-thinning are paths
+  692/691; the crown closure is a provisional raster trace. Added the catalog entry,
+  diagram test, and `notes/reference/ssn-digitisation.md`. Provisional.
