@@ -105,6 +105,7 @@ from .opt.repro import dataset_quality
 from .opt.watch import run_watch
 from .patch.accounts import load_patch_accounts
 from .patch.edge import load_edge_elements
+from .prices import PriceTableError, load_price_table, write_price_report
 from .recovery import (
     RecoveryError,
     sample_recovery_raster,
@@ -1488,6 +1489,41 @@ def disturbance(
         f"[bold]years[/]: {summary['year_min']}-{summary['year_max']}  "
         f"[bold]blocks[/]: {block_count}"
     )
+
+
+@app.command("price-paths")
+def price_paths(
+    table: Path = typer.Option(..., "--table", exists=True, help="A prices.v1 JSON table"),
+    out: Path = typer.Option(
+        ..., "--out", help="Output directory for the comparison, report, and provenance"
+    ),
+) -> None:
+    """Compare named scenario price paths with the base path; not a forecast."""
+    try:
+        prices = load_price_table(table)
+        written = write_price_report(prices, out)
+    except PriceTableError as error:
+        raise typer.BadParameter(str(error)) from error
+    view = Table(title="Price-path comparison")
+    view.add_column("path")
+    view.add_column("products", justify="right")
+    view.add_column("periods", justify="right")
+    view.add_column("rows", justify="right")
+    view.add_column("source")
+    view.add_column("source version")
+    for path_id in prices.path_ids:
+        path_rows = [row for row in prices.rows if row.path_id == path_id]
+        view.add_row(
+            path_id,
+            str(len({row.product for row in path_rows})),
+            str(len({row.period for row in path_rows})),
+            str(len(path_rows)),
+            path_rows[0].source,
+            path_rows[0].source_version,
+        )
+    print(view)
+    print(f"[bold]not a forecast[/]: {prices.not_a_forecast}")
+    print(f"[bold green]Price-path report[/] → {written['report'].parent}")
 
 
 @app.command()

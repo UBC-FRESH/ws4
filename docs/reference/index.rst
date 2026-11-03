@@ -21,6 +21,9 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    * - :doc:`report-provenance`
      - The report sidecar: file digests, source metadata, run and dataset identifiers,
        and explicit uncertainty.
+   * - :doc:`prices`
+     - The read-only ``prices.v1`` scenario price-path table, its named paths, the
+       base-relative comparison, and the ``not a forecast`` caveat.
    * - :doc:`optimizer`
      - Targets and the objective, the operator registry, the metaheuristics, and the MIP bound.
    * - :doc:`spatial`
@@ -68,6 +71,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    forestmodelxml
    simulator
    report-provenance
+   prices
    optimizer
    spatial
    roads
