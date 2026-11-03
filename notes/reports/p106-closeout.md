@@ -6,7 +6,7 @@ Branch: `feature/p106-au-evidence`
 Evidence head: `6a07339`
 Report commit: this metadata-only report update
 Date: 2026-11-03
-Status: queued for maintainer approval. Not merged.
+Status: queued as PR #729 for maintainer approval. Not merged.
 
 ## Recommendation
 
@@ -113,6 +113,6 @@ Results:
 
 ## 8. Pull request
 
-The PR body names the phase, the evidence head, the gate result, and the known
-limits. It is queued for approval. No merge, tag, release, or settings change is
+PR #729 names the phase, the evidence head, the gate result, and the known limits.
+It is queued for approval. No merge, tag, release, or settings change is
 performed by this report.
