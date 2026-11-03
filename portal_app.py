@@ -43,6 +43,7 @@ SPECS: dict[str, dict[str, Any]] = {
         "initial": "runtime/seed_area_control_tsa24.csv",
         "candidate_cache": "runtime/gpu-cache/candidates.pkl",
         "geometry": "runtime/geometry/tsa24-blocks.geojson",
+        "geometry_overview": "runtime/geometry/tsa24-blocks-overview.geojson",
         "crs": "EPSG:3005",
     },
     "femic-tsa27-instance": {
@@ -370,6 +371,7 @@ def _build_mount(instance: Instance, mount_path: str) -> None:
     for key, value in (
         ("scenario_profiles", spec.get("scenario_profiles")),
         ("geometry", spec.get("geometry")),
+        ("geometry_overview", spec.get("geometry_overview")),
         ("land_base", spec.get("land_base")),
         ("topology", spec.get("topology")),
     ):

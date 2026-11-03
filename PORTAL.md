@@ -53,8 +53,11 @@ the profile library; it does not start a GPU worker.
 
 TSA 24 uses `runtime/geometry/tsa24-blocks.geojson`, derived from the exact
 458,708-row public stand shapefile. It is a 5 m simplified, EPSG:3005 layer
-with `block_id` from source row order. The source hashes and regeneration script
-are recorded with the layer; the compiled dataset itself remains geometry-free.
+with `block_id` from source row order. Low-zoom tiles use
+`tsa24-blocks-overview.geojson` at 100 m, and a
+`tsa24-blocks.geojson.bounds.json` sidecar lets the map fit without parsing the
+detail layer. The source hashes and regeneration script are recorded with the
+layer; the compiled dataset itself remains geometry-free.
 
 ## Public service
 
