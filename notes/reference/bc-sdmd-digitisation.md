@@ -98,3 +98,10 @@ paths are more precise than raster tracing. The module is exposed as the
 dash patterns, and printed values; the workflow does not invent them.
 
 Install the optional tools with `python -m pip install -e '.[digitise]'`.
+
+## fdcn status
+
+The Coastal Douglas-fir natural diagram is not stored yet. The top-height, QMD,
+and boundary paths are mapped in `notes/reference/fdcn-digitisation.md`; the
+printed crown-closure curve is not a single vector path and needs the figrecover
+image step. Do not store a guessed closure.

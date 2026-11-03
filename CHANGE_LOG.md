@@ -4108,3 +4108,8 @@ issue comments.
   exposes the four FreshForge nodes. Added `workflows/sdmd-digitise.yaml`, the
   optional `digitise` dependency extra, tests, and docs. Verified the pipeline on
   the `fdin` PDF: page render, overlay, and review manifest succeed.
+- P107.2: started `fdcn`. Recorded the axis ticks, top-height, QMD, and
+  boundary path map in `notes/reference/fdcn-digitisation.md`. Did not store the
+  diagram because the printed crown-closure curve is not a single vector path; the
+  `[ 3 2 ]` family is top height plus flat intermediates and `[ 4 1 4 3 ]` is the
+  TASS mortality set. The next step is a figrecover raster trace for that curve.
