@@ -98,6 +98,7 @@ exists and the maintainer approves it.
 | P93 Condition-card Reports UI | #662 | `feature/p93-condition-card-ui` | pr-open |
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
 | P104 (SDMD pilot) digitisation and trajectory evidence | #680 | `feature/p104-sdmd-pilot` | complete |
+| P106 AU evidence depth | #723 | `feature/p106-au-evidence` | active |
 | P95 (factorized vectors) target-cell cache | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
 | P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | pr-open |
 | P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | pr-open |
@@ -3221,7 +3222,7 @@ pilot AU report and validation evidence.
     real PSP/FVS evidence.
   - [x] Use a representative AU-level FVS tree list for both species.
   - [x] Write the close-out report and queue the pull request.
-  - [ ] Wait for maintainer approval.
+  - [x] Wait for maintainer approval.
 
 Acceptance:
 
@@ -3418,4 +3419,39 @@ Acceptance:
     with tasks #681 to #684. P104.1 is the first bounded move: digitise `fdin`/`fdip`
     into reviewed vector isopleths and replace the synthetic pilot fixture.
 
+## Phase 106: AU evidence depth
 
+Parent issue: #723
+Branch: `feature/p106-au-evidence`
+Status: active
+Plan: `notes/reports/p104-closeout.md`, section 6
+Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
+
+Goal: close the evidence limits carried out of P104: the unresolved `fdin`
+high-TPH crown closure, the single-cluster FVS paths, and the missing initial
+volume for the two real pilot AUs.
+
+- [ ] P106.1 Recover the fdin high-TPH crown closure (#724)
+  - [ ] Re-read the PDF vector paths and separate the joined branches.
+  - [ ] Store the recovered curve or record an accepted truncation.
+  - [ ] Update the overlay, review packet, and diagram test.
+- [ ] P106.2 Build AU-level FVS ensembles (#725)
+  - [ ] Build a multi-cluster representative tree list with plot weights.
+  - [ ] Run the untreated and CT60 scenarios across the documented range.
+  - [ ] Store and assess the ensemble.
+- [ ] P106.3 Add measured initial volume (#726)
+  - [ ] Derive the value and source for both AUs.
+  - [ ] Add the gate and report fields.
+  - [ ] Test supplied and missing values.
+- [ ] P106.4 Pilot validation and closeout (#727)
+  - [ ] Run both pilot gates and the eight validation gates.
+  - [ ] Update the evidence and closeout reports.
+  - [ ] Queue the pull request and wait for approval.
+
+Acceptance:
+
+- `fdin` has a complete closure or a reviewed truncation.
+- FVS evidence is an ensemble or a documented multi-cluster set.
+- Both AUs supply a measured initial volume with provenance.
+- Every remaining warning is named and accepted.
+- `python scripts/dashboard.py` is green.

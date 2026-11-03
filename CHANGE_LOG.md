@@ -4063,3 +4063,6 @@ issue comments.
 
 - P104: phase approved and squash-merged as `e5c4e9c` on 2026-11-03. PR #719
   passed all five CI checks; the branch was deleted and parent issue #680 closed.
+- P106: launched AU evidence depth on `feature/p106-au-evidence`, parent issue
+  #723, tasks #724-#727. Scope: recover the `fdin` high-TPH closure, build
+  AU-level FVS ensembles, add measured initial volume, and close out.
