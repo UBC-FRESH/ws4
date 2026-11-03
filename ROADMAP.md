@@ -3747,10 +3747,10 @@ that refuses impossible BEC/TSA/species combinations before evidence enters an A
   - [x] Classify exact, split, aggregation, and unresolved labels.
   - [x] Write the review table and notes.
   - [x] Test the counts and examples.
-- [ ] P121.2 Add the AU integrity validator (#771)
-  - [ ] Parse the AU label and store metadata.
-  - [ ] Check BEC coverage and impossible combinations.
-  - [ ] Test pass, fail, and unknown cases.
+- [x] P121.2 Add the AU integrity validator (#771)
+  - [x] Parse the AU label and store metadata.
+  - [x] Check BEC coverage and impossible combinations.
+  - [x] Test pass, fail, and unknown cases.
 - [ ] P121.3 Wire and test the validator (#772)
   - [ ] Run it on store load or report.
   - [ ] Surface findings in data gaps and the CLI/API.

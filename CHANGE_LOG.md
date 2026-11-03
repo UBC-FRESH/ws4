@@ -4249,3 +4249,8 @@ issue comments.
   splits, 12 CCISS splits, and 45 unresolved. The unresolved rows are explicit;
   no prefix guess is treated as an equivalence. Added three contract tests and
   `notes/reports/p121-bec-crosswalk.md`.
+- P121.2: added `ws4.sdmd.au_integrity` and the 340-row
+  `tsa_bec_counts.csv` derived from the public FAIB PSP header (OGL-BC). The
+  validator parses `AU-<bec>[-TSA<n>]-<species>` and refuses malformed labels,
+  unknown BEC labels, and TSA/BEC pairs with no PSP support. Added four tests and
+  `notes/reports/p121-au-integrity.md`.
