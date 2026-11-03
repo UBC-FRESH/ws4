@@ -4135,3 +4135,17 @@ issue comments.
   effect table and plain candidate mapping. Report: `notes/reports/tsa27-gpu-profile.md`.
 - P111: preserve explicit `generations: 0` in profile requests; the web API no longer
   coerces zero to the 5000-generation default.
+- P112: scenario price paths. Added the typed `prices.v1` reader in `ws4/prices.py`,
+  the `ws4 price-paths` command, and the synthetic four-path fixture. The table carries
+  `path_id`, `product`, `period`, `value`, `unit`, `currency`, `region`, `source`, and
+  `source_version` per row for the named `base`, `high`, `low`, and `policy_shock` paths.
+  The loader requires the base path, the same product/period grid on every path, one unit
+  per product, one currency and region, finite non-negative values, and a
+  `not a forecast` caveat that actually says so. The writer produces
+  `price_path_comparison.csv`, `price_path_report.md`, and
+  `price_path_provenance.json`, with base-relative deltas, the source table's SHA-256,
+  and each output file's digest. No dataset, objective, constraint, growth, schedule, or
+  solver code changed. Documented in `docs/reference/prices.rst`; report in
+  `notes/reports/p112-prices.md`. Dashboard result: `python scripts/dashboard.py`
+  reports `OVERALL: GREEN` on all seven gates (lint, format, types, tests, validator,
+  docs, docstrings). Queued for review; merge waits for maintainer approval.
