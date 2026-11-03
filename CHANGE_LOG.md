@@ -4135,3 +4135,7 @@ issue comments.
   effect table and plain candidate mapping. Report: `notes/reports/tsa27-gpu-profile.md`.
 - P111: preserve explicit `generations: 0` in profile requests; the web API no longer
   coerces zero to the 5000-generation default.
+
+- P112: TSA 29 GPU profile. The existing lean effect table and cache replay
+  exactly; the portal now exposes a `base` profile without a factorized archive.
+  Report: `notes/reports/tsa29-gpu-profile.md`.
