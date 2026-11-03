@@ -101,7 +101,7 @@ Install the optional tools with `python -m pip install -e '.[digitise]'`.
 
 ## fdcn status
 
-The Coastal Douglas-fir natural diagram is not stored yet. The top-height, QMD,
-and boundary paths are mapped in `notes/reference/fdcn-digitisation.md`; the
-printed crown-closure curve is not a single vector path and needs the figrecover
-image step. Do not store a guessed closure.
+The Coastal Douglas-fir natural diagram is stored as `cdf-cwh-fdc-natural.json`,
+provisional. The top-height, QMD, and boundary paths are vector; the crown-closure
+curve is a provisional raster trace recorded in
+`notes/reference/fdcn-digitisation.md`. Review the overlay before use.

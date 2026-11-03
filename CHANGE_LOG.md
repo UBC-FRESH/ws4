@@ -4113,3 +4113,7 @@ issue comments.
   diagram because the printed crown-closure curve is not a single vector path; the
   `[ 3 2 ]` family is top height plus flat intermediates and `[ 4 1 4 3 ]` is the
   TASS mortality set. The next step is a figrecover raster trace for that curve.
+- P107.2: stored `cdf-cwh-fdc-natural.json` from `fdcn`. Top height 6-60 m, QMD
+  5-70 cm, and the two boundaries are vector paths; the printed crown-closure curve
+  is a provisional raster trace because it is not a single vector path. Added the
+  source-catalog entry, diagram test, and overlay note. The diagram is provisional.

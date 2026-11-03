@@ -3497,7 +3497,8 @@ PDFs, and record the species/BEC coverage.
   - [x] Emit diagram JSON, figrecover overlay, and review manifest.
   - [x] Test calibration and curve ordering.
 - [ ] P107.2 Digitise the remaining natural diagrams (#736)
-  - [ ] `fdcn`, `ssn`, `hwn`, `cwn`, `swn`; `fdcn` curve map and crown-closure blocker recorded.
+  - [x] `fdcn` stored provisional; vector curves plus a raster crown-closure trace.
+  - [ ] `ssn`, `hwn`, `cwn`, `swn`.
   - [ ] Add source entries, overlays, and tests.
 - [ ] P107.3 Digitise the remaining planted diagrams (#737)
   - [ ] `fdcp`, `ssp`, `hwp`, `cwp`, `swp`.

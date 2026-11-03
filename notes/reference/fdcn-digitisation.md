@@ -3,8 +3,9 @@
 Source: `fdcn` Coastal Douglas-fir natural stands, version unversioned, published
 1996-05-31, catalogued in `ws4/sdmd/data/sdmd/source_catalog.json`.
 
-Status: **not stored**. The top-height, QMD, and boundary curves are mapped; the
-crown-closure curve is unresolved.
+Status: stored as `cdf-cwh-fdc-natural.json`, provisional. The top-height, QMD, and
+boundary curves are vector paths. The crown-closure curve is a provisional raster
+trace because the printed dotted curve is not a single vector path.
 
 ## Axis calibration
 
@@ -42,15 +43,20 @@ crown-closure curve is unresolved.
 
 The path indices are zero-based positions in `page.get_drawings()`.
 
-## Blocking curve
+## Crown-closure curve
 
 The printed **Crown Closure** curve is visible in the rendered page but is not one
 of the `[ 3 2 ]`, `[ 6 4 ]`, or `[ 4 1 4 3 ]` path families. The `[ 3 2 ]` family
 contains the top-height curves plus flat intermediate curves; the
-`[ 4 1 4 3 ]` family is the TASS predicted-mortality set. The crown-closure dots
-do not appear as a single vector path in the page drawings.
+`[ 4 1 4 3 ]` family is the TASS predicted-mortality set. The closure dots do not
+appear as a single vector path in the page drawings.
 
-Do not store `fdcn` until that curve is recovered. The next method is a
-figrecover image step: render the page, remove the mapped vector curves, and trace
-the remaining dotted crown-closure curve. The result must be reviewed against the
-printed label and the overlay before it enters the diagram contract.
+The stored curve is a provisional raster trace through the printed curve:
+
+`(200, 0.2)`, `(300, 0.12)`, `(400, 0.085)`, `(600, 0.05)`, `(800, 0.035)`,
+`(1000, 0.025)`, `(1500, 0.012)`, `(2000, 0.007)`, `(2500, 0.004)`,
+`(3000, 0.0025)`, `(4000, 0.0012)`.
+
+These are approximate. The figrecover overlay in the review run is the check.
+Do not treat the `fdcn` diagram as reviewed until that curve is compared with the
+printed page.

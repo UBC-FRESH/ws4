@@ -557,6 +557,17 @@
       "review_status": "reviewed",
       "reviewer": "Gregory Paradis (maintainer of record)",
       "notes": "Vector extraction from the catalogued PDF. Top-height curves are the printed 6, 10, 14, 18, 22, 26, 30, and 34 m labels; QMD curves are the printed 10-40 cm labels; the thick dash-dot pair is competition and self-thinning; the low dotted curve at the Crown Closure label is the 60% boundary. Provisional pending maintainer review."
+    },
+    {
+      "diagram_id": "cdf-cwh-fdc-natural",
+      "source_diagram_id": "fdcn",
+      "file": "cdf-cwh-fdc-natural.json",
+      "source_sha256": "369b10454b808e6b98b7442162785b154d0206bfea924b8a9db25900b2173005",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/fdcn.pdf",
+      "source_version": "unversioned",
+      "review_status": "provisional",
+      "reviewer": "",
+      "notes": "Vector extraction for top height, QMD, competition, and self-thinning. The crown-closure curve is a provisional raster trace because the printed dotted curve is not a single vector path. Review the overlay before use."
     }
   ]
 }
