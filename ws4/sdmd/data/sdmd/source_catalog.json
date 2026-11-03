@@ -557,6 +557,116 @@
       "review_status": "reviewed",
       "reviewer": "Gregory Paradis (maintainer of record)",
       "notes": "Vector extraction from the catalogued PDF. Top-height curves are the printed 6, 10, 14, 18, 22, 26, 30, and 34 m labels; QMD curves are the printed 10-40 cm labels; the thick dash-dot pair is competition and self-thinning; the low dotted curve at the Crown Closure label is the 60% boundary. Provisional pending maintainer review."
+    },
+    {
+      "diagram_id": "cdf-cwh-fdc-natural",
+      "source_diagram_id": "fdcn",
+      "file": "cdf-cwh-fdc-natural.json",
+      "source_sha256": "369b10454b808e6b98b7442162785b154d0206bfea924b8a9db25900b2173005",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/fdcn.pdf",
+      "source_version": "unversioned",
+      "review_status": "provisional",
+      "reviewer": "",
+      "notes": "Vector extraction for top height, QMD, competition, and self-thinning. The crown-closure curve is a provisional raster trace because the printed dotted curve is not a single vector path. Review the overlay before use."
+    },
+    {
+      "diagram_id": "cdf-cwh-ss-natural",
+      "source_diagram_id": "ssn",
+      "file": "cdf-cwh-ss-natural.json",
+      "source_sha256": "518b1f294d63582c11bb5a89b1a95e36d682d8edf075c769398f7f787505a22f",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/ssn.pdf",
+      "source_version": "unversioned",
+      "review_status": "provisional",
+      "reviewer": "",
+      "notes": "Vector top-height, QMD, competition, and self-thinning paths; the printed crown-closure curve is a provisional raster trace. Review the overlay before use."
+    },
+    {
+      "diagram_id": "cwh-hw-natural",
+      "source_diagram_id": "hwn",
+      "file": "cwh-hw-natural.json",
+      "source_sha256": "3cec74eede02e3dcd28afb7377b57d8f0b49afd9496851f4e00af855555b3bc4",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/hwn.pdf",
+      "source_version": "unversioned",
+      "review_status": "provisional",
+      "reviewer": "",
+      "notes": "Vector top-height, QMD, competition, and self-thinning paths; provisional raster crown closure. The dense top-height group needs overlay review."
+    },
+    {
+      "diagram_id": "sbs-sw-natural",
+      "source_diagram_id": "swn",
+      "file": "sbs-sw-natural.json",
+      "source_sha256": "381a817ac882d870b0af470e9e26579912a84dc27e79db60d12b398f7e729448",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/swn.pdf",
+      "source_version": "1.30",
+      "review_status": "provisional",
+      "reviewer": "",
+      "notes": "Vector top-height, QMD, competition, and self-thinning paths; provisional raster crown closure. The white-spruce page label is catalogued separately."
+    },
+    {
+      "diagram_id": "cwh-cw-natural",
+      "source_diagram_id": "cwn",
+      "file": "cwh-cw-natural.json",
+      "source_sha256": "5fb727d110b4a2c1bf4cd9334f07b9b8b4e9073af77b9561b9b52764bb407bcd",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/cwn.pdf",
+      "source_version": "unversioned",
+      "review_status": "provisional",
+      "reviewer": "",
+      "notes": "Vector top-height, QMD, competition, and self-thinning paths; provisional raster crown closure."
+    },
+    {
+      "diagram_id": "cdf-cwh-fdc-planted",
+      "source_diagram_id": "fdcp",
+      "file": "cdf-cwh-fdc-planted.json",
+      "source_sha256": "b9b82e8bb92ff2f6dd53d8f2005427f9826889bfdb37694f8b4d30277f89d169",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/fdcp.pdf",
+      "source_version": "unversioned",
+      "review_status": "provisional",
+      "reviewer": "",
+      "notes": "Vector top-height, QMD, competition, and self-thinning paths; provisional raster crown closure. Planted top-height labels are offset in the source."
+    },
+    {
+      "diagram_id": "cdf-cwh-ss-planted",
+      "source_diagram_id": "ssp",
+      "file": "cdf-cwh-ss-planted.json",
+      "source_sha256": "f8321db36638bc284e0c9d07b3f9306f33f36f89cfb8ff8fdbad0f817461a88e",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/ssp.pdf",
+      "source_version": "unversioned",
+      "review_status": "provisional",
+      "reviewer": "",
+      "notes": "Vector top-height, QMD, competition, and self-thinning paths; provisional raster crown closure."
+    },
+    {
+      "diagram_id": "cwh-hw-planted",
+      "source_diagram_id": "hwp",
+      "file": "cwh-hw-planted.json",
+      "source_sha256": "8f759c7e7b4e4819341e8d3f60ef571814b0f2db6b216abd87e8f3855b536f6a",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/hwp.pdf",
+      "source_version": "unversioned",
+      "review_status": "provisional",
+      "reviewer": "",
+      "notes": "Vector top-height, QMD, competition, and self-thinning paths; provisional raster crown closure. Planted top-height group needs overlay review."
+    },
+    {
+      "diagram_id": "cwh-cw-planted",
+      "source_diagram_id": "cwp",
+      "file": "cwh-cw-planted.json",
+      "source_sha256": "c4ae738bfc7daca82322c8bd3de53050d3b96c4311d307f4fb8fef6befdf85c5",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/cwp.pdf",
+      "source_version": "unversioned",
+      "review_status": "provisional",
+      "reviewer": "",
+      "notes": "Vector top-height, QMD, competition, and self-thinning paths; provisional raster crown closure. Planted top-height group needs overlay review."
+    },
+    {
+      "diagram_id": "sbs-sw-planted",
+      "source_diagram_id": "swp",
+      "file": "sbs-sw-planted.json",
+      "source_sha256": "b1d5344047b1b50e36b1c0a43b847ea03204d2cbb6d950c1731b0623e7076b9d",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/swp.pdf",
+      "source_version": "1.30",
+      "review_status": "provisional",
+      "reviewer": "",
+      "notes": "Vector top-height, QMD, competition, and self-thinning paths; provisional raster crown closure."
     }
   ]
 }
