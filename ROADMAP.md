@@ -3969,3 +3969,9 @@ Acceptance:
 - Time budget sends the 1,000,000 generation cap.
 - Short time runs stop by elapsed time.
 - Browser smoke and dashboard pass.
+
+24. Shared-kernel adoption is active (2026-11-04): WS4's generic operator registry, solvers, cooling,
+    and control surface now come from `fresh-solutions` 0.9; the domain objective, incremental
+    evaluator, constraints, patch/spatial/route models, MIP layer, and `Optimizer` remain in WS4. The
+    full suite passes and strict mypy is clean. The design note is
+    `notes/design/shared-kernel-adoption.md`; FHOPS is the second adapter.
