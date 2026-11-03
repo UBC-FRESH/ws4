@@ -45,6 +45,18 @@ def _seed(
     return seed
 
 
+def _schedule_changes(
+    previous: dict[int, tuple[tuple[str, int], ...]] | None,
+    current: dict[int, tuple[tuple[str, int], ...]],
+) -> tuple[bool, list[list[object]]]:
+    """Return the reset flag and changed-block payload for one schedule event."""
+    if previous is None:
+        return True, [[int(block), chain] for block, chain in current.items()]
+    return False, [
+        [int(block), chain] for block, chain in current.items() if previous.get(block) != chain
+    ]
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run one profile and write the web-run output set.
 
@@ -68,6 +80,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--generations", type=int, default=5000)
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--device", default="cuda")
+    parser.add_argument("--schedule-every", type=int, default=100)
+    parser.add_argument("--replay", action="store_true")
     args = parser.parse_args(argv)
     if args.generations < 0:
         parser.error("--generations must not be negative")
@@ -148,6 +162,7 @@ def main(argv: list[str] | None = None) -> int:
     evaluations = 0
     completed = 0
     stopped = False
+    previous_schedule: dict[int, tuple[tuple[str, int], ...]] | None = None
     for generation in range(args.generations + 1):
         action = "run"
         if control.is_file():
@@ -179,6 +194,14 @@ def main(argv: list[str] | None = None) -> int:
             )
             + "\n"
         )
+        cadence = max(1, int(args.schedule_every))
+        if generation % cadence == 0 or generation == args.generations:
+            current = population.schedule(population.best_genome)
+            reset, changed = _schedule_changes(previous_schedule, current)
+            telemetry.write(
+                json.dumps({"type": "schedule", "reset": reset, "changed": changed}) + "\n"
+            )
+            previous_schedule = current
         telemetry.flush()
     telemetry.close()
 
@@ -186,6 +209,14 @@ def main(argv: list[str] | None = None) -> int:
     write_schedule(schedule_path, population.schedule(population.best_genome))
     verifier = IncrementalObjective(optimizer, target_list)
     verifier.reset(population.schedule(population.best_genome))
+    if args.replay:
+        simulator = optimizer.simulator()
+        simulator.reset()
+        simulator.run(
+            schedule_path,
+            years=args.years,
+            out_dir=args.out,
+        )
     elapsed = time.perf_counter() - started
     summary = {
         "status": "stopped" if stopped else "ok",

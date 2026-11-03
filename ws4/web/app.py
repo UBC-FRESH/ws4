@@ -1123,6 +1123,7 @@ def create_app(
             str(generations),
             "--seed",
             str(seed),
+            "--replay",
         ]
 
     @app.post("/api/runs")
