@@ -4317,3 +4317,7 @@ issue comments.
   named coverage gap. AU integrity refuses retired, uncovered, unknown, and
   unsupported TSA/BEC combinations. Branch deleted; parent #769 and closeout
   #773 closed. Dashboard: `OVERALL: GREEN`.
+
+- P128: sync target chart edits into Plan table inputs so Solve posts the edited
+  values instead of stale table values. Report:
+  `notes/reports/p128-target-chart-table-sync.md`.
