@@ -1215,10 +1215,13 @@ def create_app(
             if continuous:
                 iterations = int(state_settings.get("default_iterations", 1_000_000_000))
                 continuous = False
-        generations = int(payload.get("generations", 5000) or 5000)
+        raw_generations = payload.get("generations", 5000)
+        generations = int(raw_generations) if raw_generations is not None else 5000
         gpu_population = int(payload.get("population", 64) or 64)
         if not 1 <= iterations <= 1_000_000_000 or not 1 <= years <= 1000:
             raise HTTPException(status_code=422, detail="iterations or years are out of range")
+        if not 0 <= generations <= 1_000_000_000:
+            raise HTTPException(status_code=422, detail="generations are out of range")
         if not 0 <= patience <= 1_000_000_000:
             raise HTTPException(
                 status_code=422, detail="patience must be a non-negative iteration count"

@@ -1857,6 +1857,8 @@ def test_profile_run_allows_table_only_resources(
     )
     assert response.status_code == 200, response.text
     assert response.json()["profile"] == "table-only"
+    assert response.json()["generations"] == 0
     assert captured[-1][1:4] == ["-m", "ws4.opt.gpu_profile_run", "--dataset"]
+    assert captured[-1][captured[-1].index("--generations") + 1] == "0"
     assert "--factorized" not in captured[-1]
     assert "--factorized-cache" not in captured[-1]
