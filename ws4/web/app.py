@@ -1813,7 +1813,14 @@ def create_app(
                 kind = "simulate"
                 summary = {"status": "ok", "kind": kind}
             found.append({"id": directory.name, "kind": kind, "summary": summary})
-        return {"dataset": dataset.name, "manifest": manifest, "runs": found}
+        return {
+            "dataset": dataset.name,
+            "manifest": manifest,
+            "capabilities": {
+                "geometry": geometry_path is not None and geometry_path.is_file(),
+            },
+            "runs": found,
+        }
 
     @app.get("/api/lidar")
     def lidar_info() -> dict[str, Any]:

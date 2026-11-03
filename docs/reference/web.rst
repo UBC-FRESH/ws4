@@ -61,7 +61,10 @@ workspace when the service is started with ``--sdmd-dir``:
   actually has them.
 
 The **Map** workspace uses a neutral fill for untreated blocks and a red accent for treated
-blocks, so treatment reads as the subject and the estate remains visible as context. An
+blocks, so treatment reads as the subject and the estate remains visible as context. When the
+service was started without ``--geometry``, ``/api/summary`` reports
+``capabilities.geometry: false`` and the browser shows an explicit map-unavailable panel
+instead of issuing map requests; direct map API calls still return the naming 404. An
 on-map legend names the current layer and repeats the treated/untreated counts from the
 sidebar; its **Treated only** button hides untreated blocks without losing the legend. The
 legend follows the active view (A/B/both comparison, base attribute, cumulative earlier
@@ -118,7 +121,7 @@ Endpoints
    * - Endpoint
      - Returns
    * - ``GET /api/summary``
-     - The dataset manifest and the runs found under the configured root.
+     - The dataset manifest, ``capabilities.geometry``, and the runs found under the configured root.
    * - ``GET /api/runs/{run}/summary``
      - The run's ``summary.json``.
    * - ``GET /api/runs/{run}/accounts?year=&account=``

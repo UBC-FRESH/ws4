@@ -99,7 +99,7 @@ exists and the maintainer approves it.
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
 | P104 (SDMD pilot) digitisation and trajectory evidence | #680 | `feature/p104-sdmd-pilot` | complete |
 | P106 AU evidence depth | #723 | `feature/p106-au-evidence` | complete |
-| P113 SDMD atlas completion | #731 | `feature/p113-sdmd-atlas` | pr-open |
+| P114 SDMD atlas completion | #731 | `feature/p114-sdmd-atlas` | pr-open |
 | P109 Report provenance sidecars | #734 | `feature/p108-report-provenance` | pr-open |
 
 | P95 (factorized vectors) target-cell cache | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
@@ -115,6 +115,7 @@ exists and the maintainer approves it.
 | P110 Optional-factorized GPU profiles | #745 | `feature/p110-tsa27-gpu-profile` | pr-open |
 | P111 Preserve zero-generation profile runs | #751 | `fix/p111-zero-generations` | pr-open |
 | P112 TSA 29 GPU profile | #755 | `feature/p112-tsa29-gpu-profile` | pr-open |
+| P113 Map capability fallback | #758 | `feature/p113-map-fallback` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3613,10 +3614,30 @@ Acceptance:
 - The portal exposes `base` for TSA 29.
 - GPU readiness and portal docs reflect three profile instances.
 
-## Phase 113: SDMD atlas completion
+## Phase 113: Map capability fallback
+
+Parent issue: #758
+Branch: `feature/p113-map-fallback`
+Status: pr-open
+Report: `notes/reports/tsa24-map-fallback.md`
+PR: #761
+
+Goal: expose geometry capability and replace doomed map requests with an
+explicit unavailable state when a dataset has no geometry layer.
+
+- [x] P113.1 Add geometry capability and map fallback (#759)
+
+Acceptance:
+
+- `/api/summary` reports geometry capability.
+- The browser shows a map-unavailable panel without geometry.
+- Direct map APIs keep the naming 404.
+- Dashboard green.
+
+## Phase 114: SDMD atlas completion
 
 Parent issue: #731
-Branch: `feature/p113-sdmd-atlas`
+Branch: `feature/p114-sdmd-atlas`
 Status: pr-open
 Plan: `notes/reports/p106-closeout.md`
 Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
@@ -3625,11 +3646,11 @@ Goal: turn the four-diagram pilot into the usable public BC SDMD set. Build a
 reusable digitisation and QA path, digitise the remaining natural and planted
 PDFs, and record the species/BEC coverage.
 
-- [x] P113.1 Build the digitisation and QA pipeline (#735)
+- [x] P114.1 Build the digitisation and QA pipeline (#735)
   - [x] Capture PDF path extraction, axis calibration, and label matching.
   - [x] Emit diagram JSON, figrecover overlay, and review manifest.
   - [x] Test calibration and curve ordering.
-- [x] P113.2 Digitise the remaining natural diagrams (#736)
+- [x] P114.2 Digitise the remaining natural diagrams (#736)
   - [x] `fdcn` stored provisional; vector curves plus a raster crown-closure trace.
   - [x] Added `ws4.sdmd.trace` for reusable dotted-curve tracing.
   - [x] `ssn` stored provisional; vector curves plus a raster crown-closure trace.
@@ -3637,14 +3658,14 @@ PDFs, and record the species/BEC coverage.
   - [x] `swn` stored provisional; vector curves plus a raster crown-closure trace.
   - [x] `cwn` stored provisional; vector curves plus a raster crown-closure trace.
   - [ ] Add source entries, overlays, and tests.
-- [x] P113.3 Digitise the remaining planted diagrams (#737)
+- [x] P114.3 Digitise the remaining planted diagrams (#737)
   - [x] `fdcp` stored provisional.
   - [x] `ssp` stored provisional.
   - [x] `hwp` stored provisional.
   - [x] `cwp` stored provisional.
   - [x] `swp` stored provisional.
   - [ ] Record the planted top-height assignments.
-- [x] P113.4 Species/BEC coverage and closeout (#739)
+- [x] P114.4 Species/BEC coverage and closeout (#739)
   - [x] Update the source catalog and coverage table.
   - [x] Write the closeout report and queue the PR.
 

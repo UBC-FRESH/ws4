@@ -4207,6 +4207,12 @@ issue comments.
   exactly; the portal now exposes a `base` profile without a factorized archive.
   Report: `notes/reports/tsa29-gpu-profile.md`.
 
-- P113: SDMD atlas phase renumbered from P107/P110 after parallel sessions used
+- P114: SDMD atlas phase renumbered from P107/P110 after parallel sessions used
   those identifiers. The atlas work and files are unchanged; the branch is
   `feature/p113-sdmd-atlas`.
+
+- P113: map capability fallback. `/api/summary` reports whether geometry is
+  configured; the browser shows an explicit unavailable panel instead of making
+  doomed map requests. Direct map APIs keep their naming 404. Report:
+  `notes/reports/tsa24-map-fallback.md`.
+
