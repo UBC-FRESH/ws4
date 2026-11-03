@@ -113,6 +113,7 @@ exists and the maintainer approves it.
 | P110 Optional-factorized GPU profiles | #745 | `feature/p110-tsa27-gpu-profile` | pr-open |
 | P111 Preserve zero-generation profile runs | #751 | `fix/p111-zero-generations` | pr-open |
 | P112 TSA 29 GPU profile | #755 | `feature/p112-tsa29-gpu-profile` | pr-open |
+| P113 Map capability fallback | #758 | `feature/p113-map-fallback` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3610,3 +3611,22 @@ Acceptance:
 - Zero-generation replay is exact.
 - The portal exposes `base` for TSA 29.
 - GPU readiness and portal docs reflect three profile instances.
+
+## Phase 113: Map capability fallback
+
+Parent issue: #758
+Branch: `feature/p113-map-fallback`
+Status: active
+Report: `notes/reports/tsa24-map-fallback.md`
+
+Goal: expose geometry capability and replace doomed map requests with an
+explicit unavailable state when a dataset has no geometry layer.
+
+- [x] P113.1 Add geometry capability and map fallback (#759)
+
+Acceptance:
+
+- `/api/summary` reports geometry capability.
+- The browser shows a map-unavailable panel without geometry.
+- Direct map APIs keep the naming 404.
+- Dashboard green.
