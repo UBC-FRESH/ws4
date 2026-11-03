@@ -100,7 +100,7 @@ exists and the maintainer approves it.
 | P104 (SDMD pilot) digitisation and trajectory evidence | #680 | `feature/p104-sdmd-pilot` | complete |
 | P106 AU evidence depth | #723 | `feature/p106-au-evidence` | complete |
 | P120 SDMD atlas completion | #731 | `feature/p120-sdmd-atlas` | complete |
-| P121 BEC crosswalk and AU integrity | #769 | `feature/p121-bec-integrity` | active |
+| P121 BEC crosswalk and AU integrity | #769 | `feature/p121-bec-integrity` | pr-open |
 | P109 Report provenance sidecars | #734 | `feature/p108-report-provenance` | pr-open |
 
 | P95 (factorized vectors) target-cell cache | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
@@ -3736,7 +3736,7 @@ Acceptance:
 
 Parent issue: #769
 Branch: `feature/p121-bec-integrity`
-Status: active
+Status: pr-open
 Plan: `notes/reports/p120-atlas-coverage.md`
 Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
 
@@ -3754,9 +3754,9 @@ that refuses impossible BEC/TSA/species combinations before evidence enters an A
 - [x] P121.3 Wire and test the validator (#772)
   - [x] Run it on store load or report.
   - [x] Surface findings through the store error and API/CLI.
-- [ ] P121.4 Coverage and closeout (#773)
-  - [ ] Update docs, roadmap, and changelog.
-  - [ ] Write the closeout report and queue the PR.
+- [x] P121.4 Coverage and closeout (#773)
+  - [x] Update docs, roadmap, and changelog.
+  - [x] Write the closeout report and queue the PR.
 
 Acceptance:
 

@@ -4259,3 +4259,7 @@ issue comments.
   support table before the other tables are read. A bad label raises
   `SdmdApiError` with the specific finding. Added a store-level negative test and
   documented the rule.
+- P121.4: wrote `notes/reports/p121-closeout.md`, updated the roadmap and docs,
+  and queued the phase PR. Crosswalk: 183 exact, 7 WS4 splits, 12 CCISS splits,
+  45 unresolved. AU store integrity check is wired and tested. Merge waits for
+  approval.
