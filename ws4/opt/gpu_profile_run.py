@@ -12,8 +12,9 @@ import json
 import math
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
+from ..report import ending_inventory, write_report
 from .archive import write_schedule
 from .candidate_cache import CompactCandidates, load_or_build_candidates
 from .engine import OptimizeConfig, Optimizer, load_schedule_csv
@@ -251,14 +252,25 @@ def main(argv: list[str] | None = None) -> int:
     write_schedule(schedule_path, population.schedule(population.best_genome))
     verifier = IncrementalObjective(optimizer, target_list)
     verifier.reset(population.schedule(population.best_genome))
+    ending: dict[str, object] = {}
     if args.replay:
         simulator = optimizer.simulator()
         simulator.reset()
-        simulator.run(
+        values = simulator.run(
             schedule_path,
             years=args.years,
             out_dir=args.out,
         )
+        write_report(values, target_list, args.out)
+        ending_frame = ending_inventory(values)
+        if not ending_frame.empty:
+            ending = {
+                "offset": int(ending_frame["offset"].iloc[0]),
+                "accounts": {
+                    str(row.account): float(cast(float, row.value))
+                    for row in ending_frame.itertuples(index=False)
+                },
+            }
     elapsed = time.perf_counter() - started
     summary = {
         "status": "stopped" if stopped else "ok",
@@ -278,6 +290,7 @@ def main(argv: list[str] | None = None) -> int:
         "factorized_cells": [
             [int(offset), str(account)] for offset, account in population._extra_cells
         ],
+        "ending_inventory": ending,
     }
     (args.out / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     return 0

@@ -4105,3 +4105,10 @@ issue comments.
   best genome's yearly cell series; the web stream passes profile payloads through, and Run
   profile applies the selected target file first. Smoke recorded 12 target values and 201
   series cells with exact replay. Report: `notes/reports/tsa24-profile-target-telemetry.md`.
+
+## 2026-11-03
+
+- P108: profile-run report package. After final replay, profile runs now write
+  `report_accounts.csv`, `report_targets.csv`, `ending_inventory.csv`, and any available
+  DHI/structure/resilience reports; summary carries ending inventory. Report:
+  `notes/reports/tsa24-profile-run-reports.md`.
