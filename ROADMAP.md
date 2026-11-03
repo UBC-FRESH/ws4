@@ -112,7 +112,7 @@ exists and the maintainer approves it.
 | P108 Profile-run report package | #742 | `feature/p108-profile-run-reports` | pr-open |
 | P110 Optional-factorized GPU profiles | #745 | `feature/p110-tsa27-gpu-profile` | pr-open |
 | P111 Preserve zero-generation profile runs | #751 | `fix/p111-zero-generations` | pr-open |
-| P112 Scenario price paths | #749 | `feature/p112-prices-v1` | active |
+| P112 Scenario price paths | #749 | `feature/p112-prices-v1` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3597,21 +3597,22 @@ Acceptance:
 
 Parent issue: #749
 Branch: `feature/p112-prices-v1`
-Status: active
+Status: pr-open
 Report: `notes/reports/p112-prices.md`
+PR: #754
 
 Goal: add a typed, read-only `prices.v1` scenario price-path table and a CLI/report
 surface that compares named paths with the base path, carries provenance, and repeats a
 `not a forecast` caveat.
 
-- [ ] P112.1 Add the `prices.v1` reader and comparison report (#750)
-  - [ ] Define the schema and validate the named paths, grid, units, and caveat
-  - [ ] Build the base-relative comparison and the per-path/product summary
-  - [ ] Write the CSV, Markdown report, and provenance sidecar with digests
-  - [ ] Add the CLI command and the synthetic fixture
-  - [ ] Add unit, contract, and CLI tests
-  - [ ] Add the reference documentation, roadmap, and changelog
-  - [ ] Run `python scripts/dashboard.py`
+- [x] P112.1 Add the `prices.v1` reader and comparison report (#750)
+  - [x] Define the schema and validate the named paths, grid, units, and caveat
+  - [x] Build the base-relative comparison and the per-path/product summary
+  - [x] Write the CSV, Markdown report, and provenance sidecar with digests
+  - [x] Add the CLI command and the synthetic fixture
+  - [x] Add unit, contract, and CLI tests
+  - [x] Add the reference documentation, roadmap, and changelog
+  - [x] Run `python scripts/dashboard.py`
 
 Acceptance:
 

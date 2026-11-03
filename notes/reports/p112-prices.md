@@ -73,5 +73,5 @@ repository only consumes it.
 
 ## Pull request
 
-To be opened against `main` with `Part of #749`; merge waits for maintainer
-approval.
+Pull request #754 against `main` with `Part of #749`, opened from commit
+`2ab2fa3`; merge waits for maintainer approval.
