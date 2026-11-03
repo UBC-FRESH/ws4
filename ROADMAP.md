@@ -112,7 +112,7 @@ exists and the maintainer approves it.
 | P108 Profile-run report package | #742 | `feature/p108-profile-run-reports` | pr-open |
 | P110 Optional-factorized GPU profiles | #745 | `feature/p110-tsa27-gpu-profile` | pr-open |
 | P111 Preserve zero-generation profile runs | #751 | `fix/p111-zero-generations` | pr-open |
-| P112 TSA 29 GPU profile | #755 | `feature/p112-tsa29-gpu-profile` | active |
+| P112 TSA 29 GPU profile | #755 | `feature/p112-tsa29-gpu-profile` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3597,8 +3597,9 @@ Acceptance:
 
 Parent issue: #755
 Branch: `feature/p112-tsa29-gpu-profile`
-Status: active
+Status: pr-open
 Report: `notes/reports/tsa29-gpu-profile.md`
+PR: #757
 
 Goal: validate the existing TSA 29 table and expose a `base` GPU profile.
 

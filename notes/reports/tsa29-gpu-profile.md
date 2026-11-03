@@ -1,7 +1,7 @@
 # P112 TSA 29 GPU profile
 
 Date: 2026-11-03
-Status: complete
+Status: complete; PR #757
 
 ## Change
 
