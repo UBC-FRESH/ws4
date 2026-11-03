@@ -100,7 +100,7 @@ exists and the maintainer approves it.
 | P104 (SDMD pilot) digitisation and trajectory evidence | #680 | `feature/p104-sdmd-pilot` | complete |
 | P106 AU evidence depth | #723 | `feature/p106-au-evidence` | complete |
 | P120 SDMD atlas completion | #731 | `feature/p120-sdmd-atlas` | complete |
-| P121 BEC crosswalk and AU integrity | #769 | `feature/p121-bec-integrity` | pr-open |
+| P121 BEC crosswalk and AU integrity | #769 | `feature/p121-bec-integrity` | complete |
 | P109 Report provenance sidecars | #734 | `feature/p108-report-provenance` | pr-open |
 
 | P95 (factorized vectors) target-cell cache | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
@@ -3763,7 +3763,8 @@ Acceptance:
 
 Parent issue: #769
 Branch: `feature/p121-bec-integrity`
-Status: pr-open
+Status: complete
+Merge commit: `c5ef547`
 Plan: `notes/reports/p120-atlas-coverage.md`
 Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
 

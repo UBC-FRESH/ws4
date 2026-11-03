@@ -3,23 +3,20 @@
 Phase: P121 BEC crosswalk and AU integrity
 Parent issue: #769
 Branch: `feature/p121-bec-integrity`
-Evidence head: `9acafc5`
-Report commit: this metadata-only report update
+Evidence head: `c6ebaa1`
+Merge commit: `c5ef547`
 Date: 2026-11-03
-Status: queued as PR #782 for maintainer approval. Not merged.
+Status: merged via PR #782 as squash commit `c5ef547` on 2026-11-03. Branch deleted.
 
 ## Recommendation
 
-Queue the pull request for `feature/p121-bec-integrity` into `main` and wait for
-the maintainer's approval. Do not merge, tag, release, or change settings until
-that approval is explicit.
+Approved and completed:
 
-After approval:
-
-1. Squash-merge the pull request.
-2. Delete `feature/p121-bec-integrity`.
-3. Close parent issue #769 with a closeout comment that cites the merge commit.
-4. The next phase is not launched until the maintainer names it.
+1. Squash-merged PR #782 as `c5ef547`.
+2. Deleted `feature/p121-bec-integrity`.
+3. Closed parent issue #769 and closeout issue #773 with comments that cite the
+   merge commit.
+4. No next phase was launched.
 
 Settings changes: none.
 
@@ -118,6 +115,6 @@ At the evidence head: focused tests pass, validator 0 errors, dashboard
 
 ## 6. Pull request
 
-PR #782 names the phase, the evidence head, the BECdb and CCISS counts, the
-validator rules, and the known limits. It is queued for approval. No merge, tag,
-release, or settings change is performed by this report.
+PR #782 named the phase, the evidence head, the BECdb and CCISS counts, the
+validator rules, and the known limits. It was squash-merged as `c5ef547`. No tag,
+release, or settings change was performed.
