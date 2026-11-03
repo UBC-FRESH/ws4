@@ -122,6 +122,7 @@ exists and the maintainer approves it.
 | P122 Run timeline and interaction uplift | #775 | `feature/p122-ui-timeline` | pr-open |
 | P123 Assistant context and action chips | #780 | `not-created` | planned |
 | P124 3D estate replay | #781 | `not-created` | planned |
+| P125 Stabilize period playback and map paging | #784 | `fix/p125-playback-map-race` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3794,3 +3795,23 @@ Status: planned
 Plan: `notes/design/ws4-ui-port-plan.md`
 
 Goal: add an experimental coarse 3D block replay without machine/terrain editing.
+
+## Phase 125: Stabilize period playback and map paging
+
+Parent issue: #784
+Branch: `fix/p125-playback-map-race`
+Status: pr-open
+Report: `notes/reports/p125-playback-map-race.md`
+PR: #786
+
+Goal: prevent playback from racing map loads and prevent stale period
+responses from painting over newer periods.
+
+- [x] P125.1 Serialize playback and guard stale map loads (#785)
+
+Acceptance:
+
+- Older map requests cannot overwrite newer periods.
+- Playback waits for a load and a settle interval.
+- The full-screen map loading overlay is suppressed during playback.
+- Browser smoke and dashboard pass.
