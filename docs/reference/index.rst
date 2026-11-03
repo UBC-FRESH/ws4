@@ -18,6 +18,9 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - The recipe format WS4 reads, the matrix it compiles, and the known gaps.
    * - :doc:`simulator`
      - The annual step, the schedule, and every file a run writes.
+   * - :doc:`report-provenance`
+     - The report sidecar: file digests, source metadata, run and dataset identifiers,
+       and explicit uncertainty.
    * - :doc:`optimizer`
      - Targets and the objective, the operator registry, the metaheuristics, and the MIP bound.
    * - :doc:`spatial`
@@ -64,6 +67,7 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    compiled-dataset
    forestmodelxml
    simulator
+   report-provenance
    optimizer
    spatial
    roads

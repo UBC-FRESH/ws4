@@ -128,7 +128,7 @@ def write_exact_result(
         topology_csv=topology_path,
         max_opening_ha=max_opening_ha,
     )
-    write_report(values, targets, out_dir)
+    write_report(values, targets, out_dir, dataset=dataset, run_id=out_dir.name)
     actual = objective(values, targets)
     violations = out_dir / "spatial_violations.csv"
     violation_count = 0

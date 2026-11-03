@@ -2017,7 +2017,7 @@ class Optimizer:
                 )
         self._last_values = values
         values.to_csv(out_dir / "account_values.csv", index=False)
-        write_report(values, targets, out_dir)
+        write_report(values, targets, out_dir, dataset=self.dataset_dir, run_id=out_dir.name)
         ending = ending_inventory(values)
         ending_offset = int(ending["offset"].iloc[0]) if not ending.empty else -1
         ending_values = {

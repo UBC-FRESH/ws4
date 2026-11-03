@@ -99,6 +99,7 @@ exists and the maintainer approves it.
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
 | P104 (SDMD pilot) digitisation and trajectory evidence | #680 | `feature/p104-sdmd-pilot` | complete |
 | P106 AU evidence depth | #723 | `feature/p106-au-evidence` | complete |
+| P109 Report provenance sidecars | #734 | `feature/p108-report-provenance` | pr-open |
 | P95 (factorized vectors) target-cell cache | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
 | P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | pr-open |
 | P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | pr-open |
@@ -109,7 +110,7 @@ exists and the maintainer approves it.
 | P105 Profile-run feedback | #720 | `feature/p105-profile-run-feedback` | pr-open |
 | P107 Profile target telemetry | #730 | `feature/p107-profile-target-telemetry` | pr-open |
 | P108 Profile-run report package | #742 | `feature/p108-profile-run-reports` | pr-open |
-| P109 Optional-factorized GPU profiles | #745 | `feature/p109-tsa27-gpu-profile` | pr-open |
+| P110 Optional-factorized GPU profiles | #745 | `feature/p110-tsa27-gpu-profile` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3523,10 +3524,39 @@ Acceptance:
 - Summary includes ending inventory.
 - Base profile remains exact; dashboard green.
 
-## Phase 109: Optional-factorized GPU profiles
+## Phase 109: Report provenance sidecars
+
+Parent issue: #734
+Branch: `feature/p108-report-provenance`
+Status: pr-open
+Report: `notes/reports/p108-report-provenance.md`
+
+Goal: make a report directory auditable by writing a provenance sidecar that names and
+hashes the report tables, records the source metadata that shaped them, identifies the run
+and dataset where available, and states uncertainty explicitly.
+
+- [x] P109.1 Report provenance sidecar, API exposure, and Reports-tab badge (#738)
+  - [x] Add the sidecar writer to `ws4/report.py`
+  - [x] Record report and source metadata hashes, identifiers, and uncertainty status
+  - [x] Expose the sidecar through the reports API and Reports tab
+  - [x] Add focused tests and the reference documentation
+  - [x] Update the roadmap and changelog and run the dashboard
+
+Acceptance:
+
+- `write_report` writes `report_provenance.json` beside the report tables.
+- Report and source metadata digests recompute from the files.
+- Uncertainty is explicitly `not_stated` unless real uncertainty metadata exists.
+- Missing or invalid metadata and files are recorded without raising.
+- Existing report CSV contents and model behaviour do not change.
+- `/api/runs/{run}/reports` exposes the recorded provenance.
+- The Reports tab shows a provenance badge and links.
+- `python scripts/dashboard.py` is green.
+
+## Phase 110: Optional-factorized GPU profiles
 
 Parent issue: #745
-Branch: `feature/p109-tsa27-gpu-profile`
+Branch: `feature/p110-tsa27-gpu-profile`
 Status: pr-open
 Report: `notes/reports/tsa27-gpu-profile.md`
 PR: #747
@@ -3534,7 +3564,7 @@ PR: #747
 Goal: let GPU profile runs use an existing effect table and cache without a
 factorized archive, then expose a TSA 27 s8 profile.
 
-- [x] P109.1 Allow factorized-optional GPU profile runs (#746)
+- [x] P110.1 Allow factorized-optional GPU profile runs (#746)
 
 Acceptance:
 

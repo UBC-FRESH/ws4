@@ -7,6 +7,7 @@ the missing artefact rather than return an empty map.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 from pathlib import Path
@@ -194,6 +195,35 @@ def test_reports_are_listed_and_downloaded(tmp_path: Path) -> None:
     response = client.get("/api/runs/run1/reports/report.csv")
     assert response.status_code == 200
     assert response.text == "a,b\n1,2\n"
+
+
+def test_reports_expose_provenance_and_recorded_hashes(tmp_path: Path) -> None:
+    """The reports list carries the sidecar and the digests it recorded."""
+    client, _ = _app(tmp_path)
+    run = tmp_path / "runs" / "run1"
+    digest = hashlib.sha256((run / "report.csv").read_bytes()).hexdigest()
+    (run / "report_provenance.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "ws4.report.provenance.v1",
+                "generated_utc": "2026-11-03T00:00:00+00:00",
+                "reports": [{"name": "report.csv", "sha256": digest, "status": "hashed"}],
+                "sources": [],
+                "uncertainty": {"status": "not_stated", "source": None, "statement": None},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    body = client.get("/api/runs/run1/reports").json()
+    by_name = {item["name"]: item for item in body}
+    assert by_name["report.csv"]["sha256"] == digest
+    assert by_name["report_provenance.json"]["provenance"]["uncertainty"]["status"] == "not_stated"
+    shell = client.get("/").text
+    assert 'id="report-provenance"' in shell
+    script = client.get("/static/app.js").text
+    assert "report_provenance.json" in script
+    assert "uncertainty" in script
 
 
 def test_the_map_returns_the_treated_blocks_for_the_year(tmp_path: Path) -> None:
