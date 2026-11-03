@@ -4144,3 +4144,18 @@ issue comments.
   configured; the browser shows an explicit unavailable panel instead of making
   doomed map requests. Direct map APIs keep their naming 404. Report:
   `notes/reports/tsa24-map-fallback.md`.
+- P114: scenario price paths. Added the typed `prices.v1` reader in `ws4/prices.py`,
+  the `ws4 price-paths` command, and the synthetic four-path fixture. The table carries
+  `path_id`, `product`, `period`, `value`, `unit`, `currency`, `region`, `source`, and
+  `source_version` per row for the named `base`, `high`, `low`, and `policy_shock` paths.
+  The loader requires the base path, the same product/period grid on every path, one unit
+  per product, one currency and region, finite non-negative values, and a
+  `not a forecast` caveat that actually says so. The writer produces
+  `price_path_comparison.csv`, `price_path_report.md`, and
+  `price_path_provenance.json`, with base-relative deltas, the source table's SHA-256,
+  every distinct path/source/source-version combination with its products and periods,
+  and each output file's digest. No dataset, objective, constraint, growth, schedule, or
+  solver code changed. Documented in `docs/reference/prices.rst`; report in
+  `notes/reports/p114-prices.md`. Dashboard result: `python scripts/dashboard.py`
+  reports `OVERALL: GREEN` on all seven gates (lint, format, types, tests, validator,
+  docs, docstrings). Pull request: #760. Merge waits for maintainer approval.

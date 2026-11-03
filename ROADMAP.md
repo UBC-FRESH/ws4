@@ -114,6 +114,7 @@ exists and the maintainer approves it.
 | P111 Preserve zero-generation profile runs | #751 | `fix/p111-zero-generations` | pr-open |
 | P112 TSA 29 GPU profile | #755 | `feature/p112-tsa29-gpu-profile` | pr-open |
 | P113 Map capability fallback | #758 | `feature/p113-map-fallback` | pr-open |
+| P114 Scenario price paths | #749 | `feature/p114-prices-v1` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3631,3 +3632,36 @@ Acceptance:
 - The browser shows a map-unavailable panel without geometry.
 - Direct map APIs keep the naming 404.
 - Dashboard green.
+
+## Phase 114: Scenario price paths
+
+Parent issue: #749
+Branch: `feature/p114-prices-v1`
+Status: pr-open
+Report: `notes/reports/p114-prices.md`
+PR: #760
+
+Goal: add a typed, read-only `prices.v1` scenario price-path table and a CLI/report
+surface that compares named paths with the base path, carries provenance, and repeats a
+`not a forecast` caveat.
+
+- [x] P114.1 Add the `prices.v1` reader and comparison report (#750)
+  - [x] Define the schema and validate the named paths, grid, units, and caveat
+  - [x] Build the base-relative comparison and the per-path/product summary
+  - [x] Write the CSV, Markdown report, and provenance sidecar with digests
+  - [x] Add the CLI command and the synthetic fixture
+  - [x] Add unit, contract, and CLI tests
+  - [x] Add the reference documentation, roadmap, and changelog
+  - [x] Run `python scripts/dashboard.py`
+
+Acceptance:
+
+- The loader rejects a missing base path, an unknown path, a duplicate row, an
+  incomplete product/period grid, inconsistent units or currency/region, a non-finite
+  or negative value, and a missing or misleading caveat.
+- `ws4 price-paths` writes `price_path_comparison.csv`, `price_path_report.md`, and
+  `price_path_provenance.json`.
+- The comparison reports the base value, absolute delta, and percent delta for every
+  path/product/period, and the report and sidecar repeat the `not a forecast` caveat.
+- No objective, constraint, growth, schedule, or solver behaviour changes.
+- `python scripts/dashboard.py` is green.
