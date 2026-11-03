@@ -1254,6 +1254,7 @@ def create_app(
         population: int,
         years: int,
         seed: int,
+        time_limit: str = "",
     ) -> list[str]:
         """Return the GPU profile worker command, validating its resources."""
         from ..opt.scenario_profiles import ProfileError, get_profile, load_profiles
@@ -1283,7 +1284,7 @@ def create_app(
                 status_code=422,
                 detail=(f"profile {profile_name!r} sets factorized_cache without factorized"),
             )
-        return [
+        command = [
             sys.executable,
             "-m",
             "ws4.opt.gpu_profile_run",
@@ -1305,6 +1306,18 @@ def create_app(
             str(seed),
             "--replay",
         ]
+        if targets_path is not None:
+            command.extend(["--targets", str(targets_path)])
+        maximum_seconds = 0.0
+        if time_limit:
+            try:
+                hours, minutes, seconds = (int(part) for part in time_limit.split(":"))
+                maximum_seconds = float(hours * 3600 + minutes * 60 + seconds)
+            except (TypeError, ValueError):
+                maximum_seconds = 0.0
+        if maximum_seconds > 0:
+            command.extend(["--max-seconds", str(maximum_seconds)])
+        return command
 
     @app.post("/api/runs")
     def start_run(body: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -1352,7 +1365,14 @@ def create_app(
         (out / "control.json").write_text('{"action": "run"}\n', encoding="utf-8")
         if profile_name:
             command = _profile_command(
-                run_id, out, profile_name, generations, gpu_population, years, seed
+                run_id,
+                out,
+                profile_name,
+                generations,
+                gpu_population,
+                years,
+                seed,
+                time_limit,
             )
         else:
             command = _run_command(out, iterations, seed, years, time_limit, islands, patience)

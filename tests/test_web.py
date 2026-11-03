@@ -1959,7 +1959,14 @@ def test_profile_run_uses_the_gpu_worker(tmp_path: Path, monkeypatch: pytest.Mon
 
     monkeypatch.setattr("ws4.web.app.subprocess.Popen", fake_popen)
     response = client.post(
-        "/api/runs", json={"profile": "base", "generations": 3, "population": 64, "years": 200}
+        "/api/runs",
+        json={
+            "profile": "base",
+            "generations": 3,
+            "population": 64,
+            "years": 200,
+            "time_limit": "00:00:30",
+        },
     )
     assert response.status_code == 200, response.text
     payload = response.json()
@@ -1971,6 +1978,8 @@ def test_profile_run_uses_the_gpu_worker(tmp_path: Path, monkeypatch: pytest.Mon
     assert "--generations" in captured[-1]
     assert "3" in captured[-1]
     assert "--replay" in captured[-1]
+    assert "--targets" in captured[-1]
+    assert captured[-1][captured[-1].index("--max-seconds") + 1] == "30.0"
 
 
 def test_profile_run_allows_table_only_resources(

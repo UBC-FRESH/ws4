@@ -4329,3 +4329,8 @@ issue comments.
   block, or fill the next prompt. Unsafe or malformed chips are dropped. Added
   `tests/test_web.py` coverage and `notes/reports/p123-assistant-context.md`.
   Focused web tests: 86 passed. Dashboard: `OVERALL: GREEN`.
+
+- P129: GPU profile runs now use the current edited target file and accept a
+  wall-clock budget. Run profile saves current edits instead of reapplying the
+  profile target library. Run profile also uses the 200-year profile horizon.
+  Report: `notes/reports/p129-gpu-current-targets.md`.
