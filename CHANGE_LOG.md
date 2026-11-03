@@ -4112,3 +4112,24 @@ issue comments.
   `report_accounts.csv`, `report_targets.csv`, `ending_inventory.csv`, and any available
   DHI/structure/resilience reports; summary carries ending inventory. Report:
   `notes/reports/tsa24-profile-run-reports.md`.
+- P108.1: added the `ws4.report.provenance.v1` sidecar. `write_report` now writes
+  `report_provenance.json` beside `report_accounts.csv`, `report_targets.csv`, and
+  `ending_inventory.csv` (plus any DHI, structure-habitat, or resilience report),
+  recording each report's name, byte count, and SHA-256, the source metadata files
+  and their hashes when present, the run identifier, and the dataset identifier and
+  manifest hash when the caller supplies the dataset. Uncertainty is `not_stated`
+  unless a source metadata file carries an explicit `uncertainty` or
+  `uncertainty_status` field. Missing report files and malformed metadata are
+  recorded as statuses and warnings; report writing does not fail. The report CSV
+  contents and model behaviour are unchanged. Added focused tests for hashes,
+  missing metadata, absent uncertainty, malformed metadata, and missing report or
+  dataset files. The reports API adds the recorded `sha256` values and exposes the
+  decoded sidecar on its entry, and the Reports tab shows a provenance badge with
+  links to the sidecar and source metadata files. Documented in
+  `docs/reference/report-provenance.rst` and the simulator and web reference pages.
+  Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all
+  seven gates (lint, format, types, tests, validator, docs, docstrings).
+
+- P110: optional-factorized GPU profiles. Profile runs now require a table and cache
+  directory, while factorized display data is optional. TSA 27 s8 runs from its existing
+  effect table and plain candidate mapping. Report: `notes/reports/tsa27-gpu-profile.md`.

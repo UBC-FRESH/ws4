@@ -1152,8 +1152,6 @@ def create_app(
             raise HTTPException(status_code=404, detail=str(error)) from error
         required = {
             "table": profile.table,
-            "factorized": profile.factorized,
-            "factorized_cache": profile.factorized_cache,
             "cache_dir": profile.cache_dir,
         }
         missing = [name for name, value in required.items() if value is None]
@@ -1163,6 +1161,11 @@ def create_app(
                 detail=(
                     f"profile {profile_name!r} is missing execution resources: {', '.join(missing)}"
                 ),
+            )
+        if profile.factorized is None and profile.factorized_cache is not None:
+            raise HTTPException(
+                status_code=422,
+                detail=(f"profile {profile_name!r} sets factorized_cache without factorized"),
             )
         return [
             sys.executable,
@@ -2496,13 +2499,40 @@ def create_app(
 
     @app.get("/api/runs/{run}/reports")
     def reports(run: str) -> list[dict[str, Any]]:
-        """Return the report files a run wrote."""
+        """Return the report files a run wrote and their recorded provenance.
+
+        The sidecar is exposed on its own entry so existing clients can keep reading the
+        list, while a reader can check the digests the writer recorded for each table.
+        """
         directory = run_dir(run)
-        return [
-            {"name": path.name, "bytes": path.stat().st_size}
-            for path in sorted(directory.iterdir())
-            if path.is_file() and path.suffix.lower() in _REPORT_SUFFIXES
-        ]
+        provenance: dict[str, Any] = {}
+        sidecar = directory / "report_provenance.json"
+        if sidecar.is_file():
+            try:
+                loaded = json.loads(sidecar.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                loaded = None
+            provenance = loaded if isinstance(loaded, dict) else {}
+        recorded: dict[str, dict[str, Any]] = {}
+        for key in ("reports", "sources"):
+            entries = provenance.get(key)
+            if not isinstance(entries, list):
+                continue
+            for entry in entries:
+                if isinstance(entry, dict) and isinstance(entry.get("name"), str):
+                    recorded[str(entry["name"])] = entry
+        result: list[dict[str, Any]] = []
+        for path in sorted(directory.iterdir()):
+            if not path.is_file() or path.suffix.lower() not in _REPORT_SUFFIXES:
+                continue
+            item: dict[str, Any] = {"name": path.name, "bytes": path.stat().st_size}
+            record = recorded.get(path.name)
+            if record is not None and isinstance(record.get("sha256"), str):
+                item["sha256"] = record["sha256"]
+            if path.name == "report_provenance.json":
+                item["provenance"] = provenance
+            result.append(item)
+        return result
 
     @app.get("/api/runs/{run}/reports/{name}")
     def report(run: str, name: str) -> FileResponse:

@@ -7,6 +7,7 @@ the missing artefact rather than return an empty map.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import time
@@ -195,6 +196,35 @@ def test_reports_are_listed_and_downloaded(tmp_path: Path) -> None:
     response = client.get("/api/runs/run1/reports/report.csv")
     assert response.status_code == 200
     assert response.text == "a,b\n1,2\n"
+
+
+def test_reports_expose_provenance_and_recorded_hashes(tmp_path: Path) -> None:
+    """The reports list carries the sidecar and the digests it recorded."""
+    client, _ = _app(tmp_path)
+    run = tmp_path / "runs" / "run1"
+    digest = hashlib.sha256((run / "report.csv").read_bytes()).hexdigest()
+    (run / "report_provenance.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "ws4.report.provenance.v1",
+                "generated_utc": "2026-11-03T00:00:00+00:00",
+                "reports": [{"name": "report.csv", "sha256": digest, "status": "hashed"}],
+                "sources": [],
+                "uncertainty": {"status": "not_stated", "source": None, "statement": None},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    body = client.get("/api/runs/run1/reports").json()
+    by_name = {item["name"]: item for item in body}
+    assert by_name["report.csv"]["sha256"] == digest
+    assert by_name["report_provenance.json"]["provenance"]["uncertainty"]["status"] == "not_stated"
+    shell = client.get("/").text
+    assert 'id="report-provenance"' in shell
+    script = client.get("/static/app.js").text
+    assert "report_provenance.json" in script
+    assert "uncertainty" in script
 
 
 def test_the_map_returns_the_treated_blocks_for_the_year(tmp_path: Path) -> None:
@@ -1774,3 +1804,59 @@ def test_profile_run_uses_the_gpu_worker(tmp_path: Path, monkeypatch: pytest.Mon
     assert "--generations" in captured[-1]
     assert "3" in captured[-1]
     assert "--replay" in captured[-1]
+
+
+def test_profile_run_allows_table_only_resources(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A GPU profile can run from an effect table without factorized data."""
+    _client, targets = _app(tmp_path)
+    table = tmp_path / "effects.pt"
+    cache_dir = tmp_path / "gpu-cache"
+    seed = tmp_path / "seed.csv"
+    for path in (table, seed):
+        path.write_text("", encoding="utf-8")
+    cache_dir.mkdir()
+    library = tmp_path / "profiles.yaml"
+    library.write_text(
+        "profiles:\n"
+        "  - name: table-only\n"
+        "    targets: targets.yaml\n"
+        "    table: effects.pt\n"
+        "    cache_dir: gpu-cache\n"
+        "    seed_schedule: seed.csv\n",
+        encoding="utf-8",
+    )
+    client = TestClient(
+        create_app(
+            dataset=tmp_path / "dataset",
+            runs=tmp_path / "runs",
+            targets=targets,
+            scenario_profiles=library,
+            allow_runs=True,
+        )
+    )
+    captured: list[list[str]] = []
+
+    class FakePopen:
+        pid = 124
+
+        def poll(self) -> None:
+            return None
+
+    def fake_popen(
+        command: list[str], stdout: object = None, stderr: object = None, **kwargs: object
+    ) -> FakePopen:
+        captured.append(command)
+        return FakePopen()
+
+    monkeypatch.setattr("ws4.web.app.subprocess.Popen", fake_popen)
+    response = client.post(
+        "/api/runs",
+        json={"profile": "table-only", "generations": 0, "population": 8, "years": 200},
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["profile"] == "table-only"
+    assert captured[-1][1:4] == ["-m", "ws4.opt.gpu_profile_run", "--dataset"]
+    assert "--factorized" not in captured[-1]
+    assert "--factorized-cache" not in captured[-1]
