@@ -21,7 +21,7 @@ from .factorized_effects import FactorizedAccountSet, FactorizedEffectArrays
 from .gpu_effects import EffectTable
 from .gpu_ga import GenomePopulation
 from .incremental import IncrementalObjective
-from .objective import load_targets
+from .objective import load_targets, period_value
 from .scenario_profiles import get_profile, load_profiles
 
 
@@ -55,6 +55,35 @@ def _schedule_changes(
     return False, [
         [int(block), chain] for block, chain in current.items() if previous.get(block) != chain
     ]
+
+
+def _target_event_payload(
+    targets: Any,  # noqa: ANN401
+    index: dict[tuple[int, str], float],
+    iteration: int,
+) -> dict[str, object]:
+    """Return the profile target event for one generation."""
+    return {
+        "type": "targets",
+        "profile": True,
+        "iteration": iteration,
+        "values": [
+            {
+                "index": target_index,
+                "account": target.account,
+                "period": target.period,
+                "year": target.year,
+                "flow": target.flow,
+                "value": period_value(index, target),
+            }
+            for target_index, target in enumerate(targets)
+            if target.active
+        ],
+        "series": [
+            {"year": offset + 1, "account": account, "value": value}
+            for (offset, account), value in index.items()
+        ],
+    }
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -196,6 +225,19 @@ def main(argv: list[str] | None = None) -> int:
         )
         cadence = max(1, int(args.schedule_every))
         if generation % cadence == 0 or generation == args.generations:
+            if population.totals is not None and population.scores is not None:
+                import torch
+
+                best_index = int(torch.argmin(population.scores))
+                cells = [*population.table.cells, *population._extra_cells]
+                row = population.totals[best_index]
+                index = {
+                    (int(cell[0]), str(cell[1])): float(value)
+                    for cell, value in zip(cells, row.tolist(), strict=True)
+                }
+                telemetry.write(
+                    json.dumps(_target_event_payload(target_list, index, generation)) + "\n"
+                )
             current = population.schedule(population.best_genome)
             reset, changed = _schedule_changes(previous_schedule, current)
             telemetry.write(

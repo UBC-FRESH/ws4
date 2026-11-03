@@ -4098,3 +4098,10 @@ issue comments.
 
 - P106: phase approved and squash-merged as `7cec6b6` on 2026-11-03. PR #729
   passed all five CI checks; the branch was deleted and parent issue #723 closed.
+
+## 2026-11-03
+
+- P107: profile target telemetry. GPU profile runs now emit active target values and the
+  best genome's yearly cell series; the web stream passes profile payloads through, and Run
+  profile applies the selected target file first. Smoke recorded 12 target values and 201
+  series cells with exact replay. Report: `notes/reports/tsa24-profile-target-telemetry.md`.
