@@ -127,7 +127,7 @@ exists and the maintainer approves it.
 | P126 Stabilize playback controls and cadence | #787 | `fix/p126-playback-controls` | pr-open |
 | P127 Fix target chart edits and Solve semantics | #791 | `fix/p127-target-chart-solve` | pr-open |
 | P128 Sync target chart edits into the table | #794 | `fix/p128-target-chart-table-sync` | pr-open |
-| P129 GPU profile current targets and budget | #798 | `feature/p129-gpu-profile-current-targets` | active |
+| P129 GPU profile current targets and budget | #798 | `feature/p129-gpu-profile-current-targets` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3917,8 +3917,9 @@ Acceptance:
 
 Parent issue: #798
 Branch: `feature/p129-gpu-profile-current-targets`
-Status: active
+Status: pr-open
 Report: `notes/reports/p129-gpu-current-targets.md`
+PR: #801
 
 Goal: run the GPU profile worker with current target edits and a wall-clock budget.
 

@@ -1,7 +1,7 @@
 # P129 GPU profile current targets and budget
 
 Date: 2026-11-03
-Status: complete
+Status: complete; PR #801
 
 ## Change
 
