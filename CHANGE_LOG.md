@@ -4130,3 +4130,6 @@ issue comments.
   5-65 cm, competition/self-thinning paths 561/560; crown closure is a provisional
   raster trace. Added catalog entry, diagram test, and hwn note. The dense top-height
   group remains a review item. Provisional.
+- P107.2: stored `sbs-sw-natural.json` from `swn`. Top height 6-38 m, QMD
+  5-45 cm, competition/self-thinning paths 47/48; crown closure is a provisional
+  raster trace. Added catalog entry, diagram test, and swn note. Provisional.

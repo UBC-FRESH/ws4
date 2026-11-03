@@ -117,3 +117,9 @@ raster trace. See `notes/reference/ssn-digitisation.md`.
 Western hemlock natural is stored as `cwh-hw-natural.json`, provisional. The
 top-height, QMD, and boundary paths are vector; the crown-closure curve is a
 raster trace. See `notes/reference/hwn-digitisation.md`.
+
+## swn status
+
+White spruce natural is stored as `sbs-sw-natural.json`, provisional. Top height,
+QMD, and boundaries are vector; crown closure is a raster trace. See
+`notes/reference/swn-digitisation.md`.

@@ -590,6 +590,17 @@
       "review_status": "provisional",
       "reviewer": "",
       "notes": "Vector top-height, QMD, competition, and self-thinning paths; provisional raster crown closure. The dense top-height group needs overlay review."
+    },
+    {
+      "diagram_id": "sbs-sw-natural",
+      "source_diagram_id": "swn",
+      "file": "sbs-sw-natural.json",
+      "source_sha256": "381a817ac882d870b0af470e9e26579912a84dc27e79db60d12b398f7e729448",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/swn.pdf",
+      "source_version": "1.30",
+      "review_status": "provisional",
+      "reviewer": "",
+      "notes": "Vector top-height, QMD, competition, and self-thinning paths; provisional raster crown closure. The white-spruce page label is catalogued separately."
     }
   ]
 }
