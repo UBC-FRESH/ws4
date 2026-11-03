@@ -1,6 +1,6 @@
-# Phase close-out report: P107 SDMD atlas completion
+# Phase close-out report: P113 SDMD atlas completion
 
-Phase: P107 SDMD atlas completion
+Phase: P113 SDMD atlas completion
 Parent issue: #731
 Branch: `feature/p107-sdmd-atlas`
 Evidence head: `ea78296`
@@ -33,14 +33,14 @@ Settings changes: none.
 | Every catalogued PDF stored | 14 digitizations for 14 diagrams; SHA matches | met |
 | Every diagram validates | `validate_diagram` returns no findings for all 14 | met |
 | Source catalog current | 14 entries, review status and notes | met |
-| Coverage report | `notes/reports/p107-atlas-coverage.md` | met |
+| Coverage report | `notes/reports/p113-atlas-coverage.md` | met |
 | Dashboard green | `OVERALL: GREEN` at the evidence head | met |
 
 ## 2. Workflow compliance
 
 - Parent issue #731 and children #735, #736, #737, #739.
 - Branch `feature/p107-sdmd-atlas`.
-- Commits start with P107.
+- Commits start with P113.
 - #735, #736, and #737 are closed; #739 closes with this report.
 - PR queued, not merged; merge waits for approval.
 
@@ -63,7 +63,7 @@ The optional extra is `pip install -e '.[digitise]'`.
 - 10 provisional: `fdcn`, `fdcp`, `ssn`, `ssp`, `hwn`, `hwp`, `cwn`, `cwp`, `swn`, `swp`.
 - All 14 pass the diagram contract.
 
-The coverage table and BEC counts are in `notes/reports/p107-atlas-coverage.md`.
+The coverage table and BEC counts are in `notes/reports/p113-atlas-coverage.md`.
 
 ## 5. Known limits
 

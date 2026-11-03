@@ -4098,70 +4098,115 @@ issue comments.
 
 - P106: phase approved and squash-merged as `7cec6b6` on 2026-11-03. PR #729
   passed all five CI checks; the branch was deleted and parent issue #723 closed.
-- P107: launched SDMD atlas completion on `feature/p107-sdmd-atlas`, parent
+- P110: launched SDMD atlas completion on `feature/p110-sdmd-atlas`, parent
   issue #731, tasks #735-#739. Scope: reusable digitisation/QA, remaining natural
   and planted diagrams, coverage, and closeout.
-- P107.1: added the figrecover/freshforge digitisation pipeline. `ws4.sdmd.digitise`
+- P110.1: added the figrecover/freshforge digitisation pipeline. `ws4.sdmd.digitise`
   provides spec loading, log-axis calibration, vector path extraction, and ordered
   curves; `ws4.sdmd.review` renders pages, overlays the stored isopleths with
   figrecover QA, and writes figrecover review manifests; `ws4.sdmd.workflow`
   exposes the four FreshForge nodes. Added `workflows/sdmd-digitise.yaml`, the
   optional `digitise` dependency extra, tests, and docs. Verified the pipeline on
   the `fdin` PDF: page render, overlay, and review manifest succeed.
-- P107.2: started `fdcn`. Recorded the axis ticks, top-height, QMD, and
+- P110.2: started `fdcn`. Recorded the axis ticks, top-height, QMD, and
   boundary path map in `notes/reference/fdcn-digitisation.md`. Did not store the
   diagram because the printed crown-closure curve is not a single vector path; the
   `[ 3 2 ]` family is top height plus flat intermediates and `[ 4 1 4 3 ]` is the
   TASS mortality set. The next step is a figrecover raster trace for that curve.
-- P107.2: stored `cdf-cwh-fdc-natural.json` from `fdcn`. Top height 6-60 m, QMD
+- P110.2: stored `cdf-cwh-fdc-natural.json` from `fdcn`. Top height 6-60 m, QMD
   5-70 cm, and the two boundaries are vector paths; the printed crown-closure curve
   is a provisional raster trace because it is not a single vector path. Added the
   source-catalog entry, diagram test, and overlay note. The diagram is provisional.
-- P107.2: added `ws4.sdmd.trace.trace_raster_curve`, a reusable raster trace for
+- P110.2: added `ws4.sdmd.trace.trace_raster_curve`, a reusable raster trace for
   dotted crown-closure curves that are not single vector paths. It takes rendered
   image, calibration, and anchors; a synthetic dotted-curve test covers it. `fdcn`
   remains the only natural diagram stored so far; `ssn` was not committed because
   its top/boundary path mapping did not survive the overlay check.
-- P107.2: stored `cdf-cwh-ss-natural.json` from `ssn`. Top height 6-52 m and
+- P110.2: stored `cdf-cwh-ss-natural.json` from `ssn`. Top height 6-52 m and
   QMD 5-85 cm are label-matched vector paths; competition/self-thinning are paths
   692/691; the crown closure is a provisional raster trace. Added the catalog entry,
   diagram test, and `notes/reference/ssn-digitisation.md`. Provisional.
-- P107.2: stored `cwh-hw-natural.json` from `hwn`. Top height 6-60 m, QMD
+- P110.2: stored `cwh-hw-natural.json` from `hwn`. Top height 6-60 m, QMD
   5-65 cm, competition/self-thinning paths 561/560; crown closure is a provisional
   raster trace. Added catalog entry, diagram test, and hwn note. The dense top-height
   group remains a review item. Provisional.
-- P107.2: stored `sbs-sw-natural.json` from `swn`. Top height 6-38 m, QMD
+- P110.2: stored `sbs-sw-natural.json` from `swn`. Top height 6-38 m, QMD
   5-45 cm, competition/self-thinning paths 47/48; crown closure is a provisional
   raster trace. Added catalog entry, diagram test, and swn note. Provisional.
-- P107.2: stored `cwh-cw-natural.json` from `cwn`. Top height 6-50 m,
+- P110.2: stored `cwh-cw-natural.json` from `cwn`. Top height 6-50 m,
   QMD 5-80 cm, competition/self-thinning paths 652/651; crown closure is a
   provisional raster trace. Added catalog entry, diagram test, and cwn note.
   Provisional.
-- P107.2: all five remaining natural diagrams are stored provisional:
+- P110.2: all five remaining natural diagrams are stored provisional:
   `fdcn`, `ssn`, `hwn`, `swn`, `cwn`. Each has vector top-height, QMD, and boundary
   curves plus a provisional raster crown-closure trace and a source-catalog entry.
-- P107.3: stored `cdf-cwh-fdc-planted.json` from `fdcp`. Top height 6-52 m,
+- P110.3: stored `cdf-cwh-fdc-planted.json` from `fdcp`. Top height 6-52 m,
   QMD 5-70 cm, competition/self-thinning paths 532/531; crown closure is a
   provisional raster trace. Added catalog entry, diagram test, and fdcp note.
   Provisional.
-- P107.3: stored `cdf-cwh-ss-planted.json` from `ssp`. Top height 6-36 m,
+- P110.3: stored `cdf-cwh-ss-planted.json` from `ssp`. Top height 6-36 m,
   QMD 5-70 cm, competition/self-thinning paths 589/588; crown closure is a
   provisional raster trace. Added catalog entry, diagram test, and ssp note.
   Provisional.
-- P107.3: stored `cwh-hw-planted.json` from `hwp`. Top height 6-52 m,
+- P110.3: stored `cwh-hw-planted.json` from `hwp`. Top height 6-52 m,
   QMD 5-60 cm, competition/self-thinning paths 558/557; crown closure is a
   provisional raster trace. Added catalog entry, diagram test, and hwp note.
   Provisional.
-- P107.3: stored `cwh-cw-planted.json` from `cwp`. Top height 6-48 m,
+- P110.3: stored `cwh-cw-planted.json` from `cwp`. Top height 6-48 m,
   QMD 5-70 cm, competition/self-thinning paths 581/580; crown closure is a
   provisional raster trace. Added catalog entry, diagram test, and cwp note.
   Provisional.
-- P107.3: stored `sbs-sw-planted.json` from `swp`. Top height 6-38 m,
+- P110.3: stored `sbs-sw-planted.json` from `swp`. Top height 6-38 m,
   QMD 5-40 cm, competition/self-thinning paths 34/35; crown closure is a
   provisional raster trace. Added catalog entry, diagram test, and swp note.
   All five planted diagrams are now stored provisional.
-- P107.4: wrote `notes/reports/p107-atlas-coverage.md` and
-  `notes/reports/p107-closeout.md`. All 14 public diagrams are stored and validate;
+- P110.4: wrote `notes/reports/p110-atlas-coverage.md` and
+  `notes/reports/p110-closeout.md`. All 14 public diagrams are stored and validate;
   four are reviewed and ten provisional. The coverage report records the 229-row
   BEC inference and the unresolved CCISS crosswalk. Queued the phase PR; merge
   waits for approval.
+
+## 2026-11-03
+
+- P107: profile target telemetry. GPU profile runs now emit active target values and the
+  best genome's yearly cell series; the web stream passes profile payloads through, and Run
+  profile applies the selected target file first. Smoke recorded 12 target values and 201
+  series cells with exact replay. Report: `notes/reports/tsa24-profile-target-telemetry.md`.
+
+## 2026-11-03
+
+- P108: profile-run report package. After final replay, profile runs now write
+  `report_accounts.csv`, `report_targets.csv`, `ending_inventory.csv`, and any available
+  DHI/structure/resilience reports; summary carries ending inventory. Report:
+  `notes/reports/tsa24-profile-run-reports.md`.
+- P108.1: added the `ws4.report.provenance.v1` sidecar. `write_report` now writes
+  `report_provenance.json` beside `report_accounts.csv`, `report_targets.csv`, and
+  `ending_inventory.csv` (plus any DHI, structure-habitat, or resilience report),
+  recording each report's name, byte count, and SHA-256, the source metadata files
+  and their hashes when present, the run identifier, and the dataset identifier and
+  manifest hash when the caller supplies the dataset. Uncertainty is `not_stated`
+  unless a source metadata file carries an explicit `uncertainty` or
+  `uncertainty_status` field. Missing report files and malformed metadata are
+  recorded as statuses and warnings; report writing does not fail. The report CSV
+  contents and model behaviour are unchanged. Added focused tests for hashes,
+  missing metadata, absent uncertainty, malformed metadata, and missing report or
+  dataset files. The reports API adds the recorded `sha256` values and exposes the
+  decoded sidecar on its entry, and the Reports tab shows a provenance badge with
+  links to the sidecar and source metadata files. Documented in
+  `docs/reference/report-provenance.rst` and the simulator and web reference pages.
+  Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all
+  seven gates (lint, format, types, tests, validator, docs, docstrings).
+
+- P110: optional-factorized GPU profiles. Profile runs now require a table and cache
+  directory, while factorized display data is optional. TSA 27 s8 runs from its existing
+  effect table and plain candidate mapping. Report: `notes/reports/tsa27-gpu-profile.md`.
+- P111: preserve explicit `generations: 0` in profile requests; the web API no longer
+  coerces zero to the 5000-generation default.
+
+- P112: TSA 29 GPU profile. The existing lean effect table and cache replay
+  exactly; the portal now exposes a `base` profile without a factorized archive.
+  Report: `notes/reports/tsa29-gpu-profile.md`.
+
+- P113: SDMD atlas phase renumbered from P107/P110 after parallel sessions used
+  those identifiers. The atlas work and files are unchanged; the branch is
+  `feature/p113-sdmd-atlas`.

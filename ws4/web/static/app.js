@@ -77,6 +77,15 @@ async function startProfileRun() {
   const seed = Number($('run-seed')?.value || 7);
   stopRunWatch();
   button.disabled = true;
+  status.textContent = `loading targets for ${select.value}…`;
+  try {
+    await apiPost(`api/scenario-profiles/${encodeURIComponent(select.value)}/apply`);
+    await loadTargets();
+  } catch (error) {
+    status.textContent = `profile targets failed: ${error.message}`;
+    button.disabled = false;
+    return;
+  }
   status.textContent = `starting ${select.value}…`;
   runWatch = { id: null, timer: null, source: null, started: Date.now(), done: false, islands: 1 };
   state.live = { active: true, schedule: new Map(), total: 0, display: 'live' };
@@ -6037,6 +6046,41 @@ function csvCell(value) {
   return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 
+function renderReportProvenance(provenance) {
+  const host = $('report-provenance');
+  const badge = $('report-provenance-badge');
+  const detail = $('report-provenance-detail');
+  const links = $('report-provenance-links');
+  host.hidden = true;
+  badge.textContent = '';
+  badge.title = '';
+  detail.textContent = '';
+  links.replaceChildren();
+  if (!provenance || typeof provenance !== 'object') return;
+  const uncertainty = provenance.uncertainty && typeof provenance.uncertainty === 'object'
+    ? provenance.uncertainty : {};
+  const status = String(uncertainty.status || 'not_stated');
+  const reports = Array.isArray(provenance.reports) ? provenance.reports : [];
+  const sources = Array.isArray(provenance.sources) ? provenance.sources : [];
+  badge.textContent = `provenance · uncertainty: ${status}`;
+  badge.title = status === 'not_stated'
+    ? 'no uncertainty metadata was supplied'
+    : 'uncertainty status recorded by a source metadata file';
+  detail.textContent = `${reports.length} report(s) hashed · ${sources.length} source metadata file(s)`;
+  const addLink = (name, label) => {
+    const link = document.createElement('a');
+    link.href = `api/runs/${encodeURIComponent(state.run)}/reports/${encodeURIComponent(name)}`;
+    link.textContent = label;
+    link.addEventListener('click', (event) => { event.preventDefault(); showReport(name); });
+    links.append(link);
+  };
+  addLink('report_provenance.json', 'provenance sidecar');
+  for (const source of sources) {
+    if (source && typeof source.name === 'string') addLink(source.name, source.name);
+  }
+  host.hidden = false;
+}
+
 async function loadReports() {
   if (!state.run) return;
   const list = $('reports');
@@ -6050,9 +6094,18 @@ async function loadReports() {
   $('condition-card').replaceChildren();
   $('condition-card').hidden = true;
   $('condition-card-status').textContent = '';
+  $('report-provenance').hidden = true;
+  $('report-provenance-badge').textContent = '';
+  $('report-provenance-detail').textContent = '';
+  $('report-provenance-links').replaceChildren();
   try {
     const body = await api(`api/runs/${encodeURIComponent(state.run)}/reports`);
     const byName = new Map(body.map((report) => [report.name, report]));
+    const sidecar = byName.get('report_provenance.json');
+    renderReportProvenance(
+      sidecar && sidecar.provenance && typeof sidecar.provenance === 'object'
+        ? sidecar.provenance : null,
+    );
     const definitions = [...STANDARD_REPORTS];
     for (const report of body) {
       if (report.name.startsWith('route_cost_report.destination.')) {

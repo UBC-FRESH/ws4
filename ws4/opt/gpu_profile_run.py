@@ -12,8 +12,9 @@ import json
 import math
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
+from ..report import ending_inventory, write_report
 from .archive import write_schedule
 from .candidate_cache import CompactCandidates, load_or_build_candidates
 from .engine import OptimizeConfig, Optimizer, load_schedule_csv
@@ -21,8 +22,39 @@ from .factorized_effects import FactorizedAccountSet, FactorizedEffectArrays
 from .gpu_effects import EffectTable
 from .gpu_ga import GenomePopulation
 from .incremental import IncrementalObjective
-from .objective import load_targets
+from .objective import load_targets, period_value
 from .scenario_profiles import get_profile, load_profiles
+
+
+def _option_count(candidates: Any, block: int) -> int:  # noqa: ANN401
+    """Return one block's option count for compact or mapping candidates."""
+    method = getattr(candidates, "option_count", None)
+    if callable(method):
+        return int(method(block))
+    return len(candidates.get(block, ()))
+
+
+def _chain_at(candidates: Any, block: int, index: int) -> tuple[tuple[str, int], ...]:  # noqa: ANN401
+    """Return one candidate chain for compact or mapping candidates."""
+    method = getattr(candidates, "chain_at", None)
+    if callable(method):
+        return cast(tuple[tuple[str, int], ...], method(block, index))
+    return cast(tuple[tuple[str, int], ...], candidates[block][index])
+
+
+def _chain_index(
+    candidates: Any,  # noqa: ANN401
+    block: int,
+    chain: tuple[tuple[str, int], ...],
+) -> int | None:
+    """Return one chain's option index for compact or mapping candidates."""
+    method = getattr(candidates, "index_of", None)
+    if callable(method):
+        return cast(int | None, method(block, chain))
+    try:
+        return list(candidates.get(block, ())).index(chain)
+    except ValueError:
+        return None
 
 
 def _seed(
@@ -35,12 +67,12 @@ def _seed(
     seed: dict[int, tuple[tuple[str, int], ...]] = {}
     for block in blocks:
         index = int(block)
-        count = candidates.option_count(index)
+        count = _option_count(candidates, index)
         if count <= 0:
             continue
-        chain = requested.get(index, candidates.chain_at(index, 0))
-        if candidates.index_of(index, chain) is None:
-            chain = candidates.chain_at(index, 0)
+        chain = requested.get(index, _chain_at(candidates, index, 0))
+        if _chain_index(candidates, index, chain) is None:
+            chain = _chain_at(candidates, index, 0)
         seed[index] = chain
     return seed
 
@@ -55,6 +87,35 @@ def _schedule_changes(
     return False, [
         [int(block), chain] for block, chain in current.items() if previous.get(block) != chain
     ]
+
+
+def _target_event_payload(
+    targets: Any,  # noqa: ANN401
+    index: dict[tuple[int, str], float],
+    iteration: int,
+) -> dict[str, object]:
+    """Return the profile target event for one generation."""
+    return {
+        "type": "targets",
+        "profile": True,
+        "iteration": iteration,
+        "values": [
+            {
+                "index": target_index,
+                "account": target.account,
+                "period": target.period,
+                "year": target.year,
+                "flow": target.flow,
+                "value": period_value(index, target),
+            }
+            for target_index, target in enumerate(targets)
+            if target.active
+        ],
+        "series": [
+            {"year": offset + 1, "account": account, "value": value}
+            for (offset, account), value in index.items()
+        ],
+    }
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -88,18 +149,16 @@ def main(argv: list[str] | None = None) -> int:
 
     profiles = load_profiles(args.profile_file)
     profile = get_profile(profiles, args.profile)
-    resources = {
+    required = {
         "table": profile.table,
-        "factorized": profile.factorized,
-        "factorized_cache": profile.factorized_cache,
         "cache_dir": profile.cache_dir,
     }
-    missing = [name for name, value in resources.items() if value is None]
+    missing = [name for name, value in required.items() if value is None]
     if missing:
         parser.error(f"profile {args.profile!r} is missing: {', '.join(missing)}")
+    if profile.factorized is None and profile.factorized_cache is not None:
+        parser.error(f"profile {args.profile!r} sets factorized_cache without factorized")
     assert profile.table is not None
-    assert profile.factorized is not None
-    assert profile.factorized_cache is not None
     assert profile.cache_dir is not None
 
     target_list = load_targets(profile.targets)
@@ -118,18 +177,20 @@ def main(argv: list[str] | None = None) -> int:
         candidates = CompactCandidates.load(candidates_path)
     else:
         candidates = load_or_build_candidates(optimizer, cache_dir / "candidates.pkl")
-    arrays = FactorizedEffectArrays.load(profile.factorized)
     blocks = [int(value) for value in table.blocks]
-    accounts = FactorizedAccountSet.from_artifact(
-        profile.factorized,
-        optimizer.simulator(),
-        years=args.years,
-        device=args.device,
-        cache=profile.factorized_cache,
-        arrays=arrays,
-    )
-    if [int(value) for value in accounts.blocks] != blocks:
-        raise SystemExit("factorized blocks do not match the effect table")
+    accounts = None
+    if profile.factorized is not None:
+        arrays = FactorizedEffectArrays.load(profile.factorized)
+        accounts = FactorizedAccountSet.from_artifact(
+            profile.factorized,
+            optimizer.simulator(),
+            years=args.years,
+            device=args.device,
+            cache=profile.factorized_cache,
+            arrays=arrays,
+        )
+        if [int(value) for value in accounts.blocks] != blocks:
+            raise SystemExit("factorized blocks do not match the effect table")
     seed = _seed(blocks, candidates, profile.seed_schedule)
     base_cache = profile.table.with_name(profile.table.name + ".base.pt")
     base_totals = None
@@ -196,6 +257,19 @@ def main(argv: list[str] | None = None) -> int:
         )
         cadence = max(1, int(args.schedule_every))
         if generation % cadence == 0 or generation == args.generations:
+            if population.totals is not None and population.scores is not None:
+                import torch
+
+                best_index = int(torch.argmin(population.scores))
+                cells = [*population.table.cells, *population._extra_cells]
+                row = population.totals[best_index]
+                index = {
+                    (int(cell[0]), str(cell[1])): float(value)
+                    for cell, value in zip(cells, row.tolist(), strict=True)
+                }
+                telemetry.write(
+                    json.dumps(_target_event_payload(target_list, index, generation)) + "\n"
+                )
             current = population.schedule(population.best_genome)
             reset, changed = _schedule_changes(previous_schedule, current)
             telemetry.write(
@@ -209,18 +283,30 @@ def main(argv: list[str] | None = None) -> int:
     write_schedule(schedule_path, population.schedule(population.best_genome))
     verifier = IncrementalObjective(optimizer, target_list)
     verifier.reset(population.schedule(population.best_genome))
+    ending: dict[str, object] = {}
     if args.replay:
         simulator = optimizer.simulator()
         simulator.reset()
-        simulator.run(
+        values = simulator.run(
             schedule_path,
             years=args.years,
             out_dir=args.out,
         )
+        write_report(values, target_list, args.out)
+        ending_frame = ending_inventory(values)
+        if not ending_frame.empty:
+            ending = {
+                "offset": int(ending_frame["offset"].iloc[0]),
+                "accounts": {
+                    str(row.account): float(cast(float, row.value))
+                    for row in ending_frame.itertuples(index=False)
+                },
+            }
     elapsed = time.perf_counter() - started
     summary = {
         "status": "stopped" if stopped else "ok",
         "profile": args.profile,
+        "factorized": accounts is not None,
         "targets": str(profile.targets),
         "schedule": str(schedule_path),
         "incumbent_objective": population.best_objective,
@@ -236,6 +322,7 @@ def main(argv: list[str] | None = None) -> int:
         "factorized_cells": [
             [int(offset), str(account)] for offset, account in population._extra_cells
         ],
+        "ending_inventory": ending,
     }
     (args.out / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     return 0

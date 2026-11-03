@@ -99,7 +99,9 @@ exists and the maintainer approves it.
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
 | P104 (SDMD pilot) digitisation and trajectory evidence | #680 | `feature/p104-sdmd-pilot` | complete |
 | P106 AU evidence depth | #723 | `feature/p106-au-evidence` | complete |
-| P107 SDMD atlas completion | #731 | `feature/p107-sdmd-atlas` | pr-open |
+| P113 SDMD atlas completion | #731 | `feature/p113-sdmd-atlas` | pr-open |
+| P109 Report provenance sidecars | #734 | `feature/p108-report-provenance` | pr-open |
+
 | P95 (factorized vectors) target-cell cache | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
 | P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | pr-open |
 | P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | pr-open |
@@ -108,6 +110,11 @@ exists and the maintainer approves it.
 | P102 Ask overlay | #709 | `feature/p102-ask-overlay` | pr-open |
 | P103 Profile-aware web runs | #713 | `feature/p103-profile-runs` | pr-open |
 | P105 Profile-run feedback | #720 | `feature/p105-profile-run-feedback` | pr-open |
+| P107 Profile target telemetry | #730 | `feature/p107-profile-target-telemetry` | pr-open |
+| P108 Profile-run report package | #742 | `feature/p108-profile-run-reports` | pr-open |
+| P110 Optional-factorized GPU profiles | #745 | `feature/p110-tsa27-gpu-profile` | pr-open |
+| P111 Preserve zero-generation profile runs | #751 | `fix/p111-zero-generations` | pr-open |
+| P112 TSA 29 GPU profile | #755 | `feature/p112-tsa29-gpu-profile` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3480,10 +3487,136 @@ Acceptance:
 - Every remaining warning is named and accepted.
 - `python scripts/dashboard.py` is green.
 
-## Phase 107: SDMD atlas completion
+## Phase 107: Profile target telemetry
+
+Parent issue: #730
+Branch: `feature/p107-profile-target-telemetry`
+Status: pr-open
+Report: `notes/reports/tsa24-profile-target-telemetry.md`
+PR: #740
+
+Goal: emit active target values and yearly series from the GPU profile worker and pass
+them through the web stream.
+
+- [x] P107.1 Emit target telemetry from the profile worker (#732)
+  - [x] Build values from the best genome
+  - [x] Include the yearly series
+  - [x] Use the bounded cadence
+- [x] P107.2 Wire profile target events and close out (#733)
+
+Acceptance:
+
+- Profile target events reach the live target table/chart.
+- Run profile applies the selected profile targets first.
+- Exact summary and dashboard are green.
+
+## Phase 108: Profile-run report package
+
+Parent issue: #742
+Branch: `feature/p108-profile-run-reports`
+Status: pr-open
+Report: `notes/reports/tsa24-profile-run-reports.md`
+PR: #744
+
+Goal: make profile runs write the standard report artifacts and ending inventory.
+
+- [x] P108.1 Write profile-run report artifacts (#743)
+
+Acceptance:
+
+- Report accounts, targets, and ending inventory exist.
+- Summary includes ending inventory.
+- Base profile remains exact; dashboard green.
+
+## Phase 109: Report provenance sidecars
+
+Parent issue: #734
+Branch: `feature/p108-report-provenance`
+Status: pr-open
+Report: `notes/reports/p108-report-provenance.md`
+
+Goal: make a report directory auditable by writing a provenance sidecar that names and
+hashes the report tables, records the source metadata that shaped them, identifies the run
+and dataset where available, and states uncertainty explicitly.
+
+- [x] P109.1 Report provenance sidecar, API exposure, and Reports-tab badge (#738)
+  - [x] Add the sidecar writer to `ws4/report.py`
+  - [x] Record report and source metadata hashes, identifiers, and uncertainty status
+  - [x] Expose the sidecar through the reports API and Reports tab
+  - [x] Add focused tests and the reference documentation
+  - [x] Update the roadmap and changelog and run the dashboard
+
+Acceptance:
+
+- `write_report` writes `report_provenance.json` beside the report tables.
+- Report and source metadata digests recompute from the files.
+- Uncertainty is explicitly `not_stated` unless real uncertainty metadata exists.
+- Missing or invalid metadata and files are recorded without raising.
+- Existing report CSV contents and model behaviour do not change.
+- `/api/runs/{run}/reports` exposes the recorded provenance.
+- The Reports tab shows a provenance badge and links.
+- `python scripts/dashboard.py` is green.
+
+## Phase 110: Optional-factorized GPU profiles
+
+Parent issue: #745
+Branch: `feature/p110-tsa27-gpu-profile`
+Status: pr-open
+Report: `notes/reports/tsa27-gpu-profile.md`
+PR: #748
+
+Goal: let GPU profile runs use an existing effect table and cache without a
+factorized archive, then expose a TSA 27 s8 profile.
+
+- [x] P110.1 Allow factorized-optional GPU profile runs (#746)
+
+Acceptance:
+
+- A profile can run with table, cache directory, and seed only.
+- Mapping-style candidate caches work without a rebuild.
+- TSA 27 s8 produces an exact replay.
+- Dashboard green.
+
+## Phase 111: Preserve zero-generation profile runs
+
+Parent issue: #751
+Branch: `fix/p111-zero-generations`
+Status: pr-open
+PR: #752
+
+Goal: keep an explicit zero-generation profile request instead of coercing it to
+the default 5000 generations.
+
+- [x] P111.1 Preserve zero generations and add a regression test
+
+Acceptance:
+
+- `generations: 0` reaches the worker as `--generations 0`.
+- The run response reports zero.
+- A focused regression test covers the zero case.
+
+## Phase 112: TSA 29 GPU profile
+
+Parent issue: #755
+Branch: `feature/p112-tsa29-gpu-profile`
+Status: pr-open
+Report: `notes/reports/tsa29-gpu-profile.md`
+PR: #757
+
+Goal: validate the existing TSA 29 table and expose a `base` GPU profile.
+
+- [x] P112.1 Validate and expose TSA 29 GPU profile (#756)
+
+Acceptance:
+
+- Zero-generation replay is exact.
+- The portal exposes `base` for TSA 29.
+- GPU readiness and portal docs reflect three profile instances.
+
+## Phase 113: SDMD atlas completion
 
 Parent issue: #731
-Branch: `feature/p107-sdmd-atlas`
+Branch: `feature/p113-sdmd-atlas`
 Status: pr-open
 Plan: `notes/reports/p106-closeout.md`
 Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
@@ -3492,11 +3625,11 @@ Goal: turn the four-diagram pilot into the usable public BC SDMD set. Build a
 reusable digitisation and QA path, digitise the remaining natural and planted
 PDFs, and record the species/BEC coverage.
 
-- [x] P107.1 Build the digitisation and QA pipeline (#735)
+- [x] P113.1 Build the digitisation and QA pipeline (#735)
   - [x] Capture PDF path extraction, axis calibration, and label matching.
   - [x] Emit diagram JSON, figrecover overlay, and review manifest.
   - [x] Test calibration and curve ordering.
-- [x] P107.2 Digitise the remaining natural diagrams (#736)
+- [x] P113.2 Digitise the remaining natural diagrams (#736)
   - [x] `fdcn` stored provisional; vector curves plus a raster crown-closure trace.
   - [x] Added `ws4.sdmd.trace` for reusable dotted-curve tracing.
   - [x] `ssn` stored provisional; vector curves plus a raster crown-closure trace.
@@ -3504,14 +3637,14 @@ PDFs, and record the species/BEC coverage.
   - [x] `swn` stored provisional; vector curves plus a raster crown-closure trace.
   - [x] `cwn` stored provisional; vector curves plus a raster crown-closure trace.
   - [ ] Add source entries, overlays, and tests.
-- [x] P107.3 Digitise the remaining planted diagrams (#737)
+- [x] P113.3 Digitise the remaining planted diagrams (#737)
   - [x] `fdcp` stored provisional.
   - [x] `ssp` stored provisional.
   - [x] `hwp` stored provisional.
   - [x] `cwp` stored provisional.
   - [x] `swp` stored provisional.
   - [ ] Record the planted top-height assignments.
-- [x] P107.4 Species/BEC coverage and closeout (#739)
+- [x] P113.4 Species/BEC coverage and closeout (#739)
   - [x] Update the source catalog and coverage table.
   - [x] Write the closeout report and queue the PR.
 

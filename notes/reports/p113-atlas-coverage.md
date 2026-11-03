@@ -1,4 +1,4 @@
-# P107 SDMD atlas coverage
+# P113 SDMD atlas coverage
 
 Date: 2026-11-03
 Source catalog: `ws4/sdmd/data/sdmd/source_catalog.json`
