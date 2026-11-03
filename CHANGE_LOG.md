@@ -4244,3 +4244,8 @@ issue comments.
   `feature/p121-bec-integrity`, parent issue #769, tasks #770-#773. Scope:
   classify the WS4/CCISS label differences, add an AU validator, wire it, and
   close out.
+- P121.1: added `ws4.sdmd.bec.classify_crosswalk` and
+  `bec_crosswalk_review.csv`. The 247-row union classifies as 183 exact, 7 WS4
+  splits, 12 CCISS splits, and 45 unresolved. The unresolved rows are explicit;
+  no prefix guess is treated as an equivalence. Added three contract tests and
+  `notes/reports/p121-bec-crosswalk.md`.

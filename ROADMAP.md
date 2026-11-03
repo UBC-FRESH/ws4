@@ -3743,10 +3743,10 @@ Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
 Goal: resolve the WS4/CCISS BEC label differences and add an AU integrity check
 that refuses impossible BEC/TSA/species combinations before evidence enters an AU.
 
-- [ ] P121.1 Classify the BEC crosswalk (#770)
-  - [ ] Classify exact, split, aggregation, and unresolved labels.
-  - [ ] Write the review table and notes.
-  - [ ] Test the counts and examples.
+- [x] P121.1 Classify the BEC crosswalk (#770)
+  - [x] Classify exact, split, aggregation, and unresolved labels.
+  - [x] Write the review table and notes.
+  - [x] Test the counts and examples.
 - [ ] P121.2 Add the AU integrity validator (#771)
   - [ ] Parse the AU label and store metadata.
   - [ ] Check BEC coverage and impossible combinations.

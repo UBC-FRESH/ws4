@@ -159,3 +159,8 @@ height, QMD, and boundaries are vector; crown closure is a raster trace. See
 White spruce planted is stored as `sbs-sw-planted.json`, provisional. Top
 height, QMD, and boundaries are vector; crown closure is a raster trace. See
 `notes/reference/swp-digitisation.md`.
+
+## BEC crosswalk
+
+The WS4/CCISS label review is in `notes/reports/p121-bec-crosswalk.md` and
+`bec_crosswalk_review.csv`. The 45 unresolved rows are not silently mapped.
