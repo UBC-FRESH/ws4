@@ -1,0 +1,108 @@
+bec,bgc_no_space,bgc_label,zone,subzone,variant,zone_name,subzone_name,variant_name,phase_name,status,retired_version,catalogue_id,source,licence,version
+ATun,ATun,ATun,AT,un,,Alpine Tundra,Undifferentiated,,,Retired,6,1,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ATunp,ATunp,ATunp,AT,unp,,Alpine Tundra,Undifferentiated and Parkland,,,Retired,6,2,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+BAFAunp,BAFAunp,BAFAunp,BAFA,unp,,Boreal Altai Fescue Alpine,Undifferentiated and Parkland,,,Retired,13,234,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+BGun,BGun,BGun,BG,un,,Bunchgrass,Undifferentiated,,,Retired,3,3,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+BWBSdk1,BWBSdk1,BWBSdk 1,BWBS,dk,1,Boreal White and Black Spruce,Dry Cool,Stikine,,Retired,8,9,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+BWBSdk2,BWBSdk2,BWBSdk 2,BWBS,dk,2,Boreal White and Black Spruce,Dry Cool,Liard,,Retired,8,10,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+BWBSmw1,BWBSmw1,BWBSmw 1,BWBS,mw,1,Boreal White and Black Spruce,Moist Warm,Peace,,Retired,8,11,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+BWBSmw2,BWBSmw2,BWBSmw 2,BWBS,mw,2,Boreal White and Black Spruce,Moist Warm,Fort Nelson,,Retired,8,12,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+BWBSun,BWBSun,BWBSun,BWBS,un,,Boreal White and Black Spruce,Undifferentiated,,,Retired,8,13,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+CDFun,CDFun,CDFun,CDF,un,,Coastal Douglas-fir,Undifferentiated,,,Retired,3,19,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+CMAunp,CMAunp,CMA unp,CMA,unp,,Coastal Mountain-heather Alpine,Undifferentiated and Parkland,,,Retired,13,236,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+CWHdm,CWHdm,CWH dm,CWH,dm,,Coastal Western Hemlock,Dry Maritime,,,Retired,13,20,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+CWHms1,CWHms1,CWH ms 1,CWH,ms,1,Coastal Western Hemlock,Moist Submaritime,Southern,,Retired,13,25,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+CWHms2,CWHms2,CWH ms 2,CWH,ms,2,Coastal Western Hemlock,Moist Submaritime,Central,,Retired,13,26,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+CWHun,CWHun,CWH un,CWH,un,,Coastal Western Hemlock,Undifferentiated,,,Retired,11,27,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+CWHvm,CWHvm,CWH vm,CWH,vm,,Coastal Western Hemlock,Very Wet Maritime,,,Retired,8,198,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+CWHxm,CWHxm,CWHxm,CWH,xm,,Coastal Western Hemlock,Very Dry Maritime,,,Retired,3,199,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+CWHxm1,CWHxm1,CWH xm 1,CWH,xm,1,Coastal Western Hemlock,Very Dry Maritime,Eastern,,Retired,13,38,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+CWHxm2,CWHxm2,CWH xm 2,CWH,xm,2,Coastal Western Hemlock,Very Dry Maritime,Western,,Retired,13,39,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFdcp1,ESSFdcp1,ESSFdcp1,ESSF,dcp,1,Engelmann Spruce - Subalpine Fir,Dry Cold Parkland,Okanagan,,Retired,5,42,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFdcp2,ESSFdcp2,ESSFdcp2,ESSF,dcp,2,Engelmann Spruce - Subalpine Fir,Dry Cold Parkland,Thompson,,Retired,5,43,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFdk,ESSFdk,ESSFdk,ESSF,dk,,Engelmann Spruce - Subalpine Fir,Dry Cool,,,Retired,6,44,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFdku,ESSFdku,,ESSF,dku,,Engelmann Spruce -- Subalpine Fir,Dry Cool Woodland and Parkland,,,Retired,10,46,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFdm,ESSFdm,,ESSF,dm,,Engelmann Spruce -- Subalpine Fir,Dry Mild,,,Retired,10,238,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFdm1,ESSFdm1,ESSFdm1,ESSF,dm,1,Engelmann Spruce - Subalpine Fir,Dry Mild,Southeast Kootenay,,Retired,6,206,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFdmp,ESSFdmp,ESSFdmp,ESSF,dmp,,Engelmann Spruce - Subalpine Fir,Dry Mild Parkland,,,Retired,10,207,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFdmw,ESSFdmw,ESSFdmw,ESSF,dmw,,Engelmann Spruce - Subalpine Fir,Dry Mild Woodland,,,Retired,10,208,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFdv,ESSFdv,ESSFdv,ESSF,dv,,Engelmann Spruce - Subalpine Fir,Dry Very Cold,,,Retired,7,47,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFdvd,ESSFdvd,ESSFdvd,ESSF,dvd,,Engelmann Spruce - Subalpine Fir,Dry Very Cold,,Dry,Retired,7,239,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFmmp1,ESSFmmp1,ESSFmmp1,ESSF,mmp,1,Engelmann Spruce - Subalpine Fir,Moist Mild Parkland,Raush,,Retired,5,55,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFmmp2,ESSFmmp2,,ESSF,mmp,2,Engelmann Spruce -- Subalpine Fir,Moist Mild Parkland,Robson,,Retired,5,56,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFmvp1,ESSFmvp1,,ESSF,mvp,1,Engelmann Spruce -- Subalpine Fir,Moist Very Cold Parkland,Nechako,,Retired,5,61,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFmvp2,ESSFmvp2,,ESSF,mvp,2,Engelmann Spruce -- Subalpine Fir,Moist Very Cold Parkland,Bullmoose,,Retired,5,62,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFmvp3,ESSFmvp3,,ESSF,mvp,3,Engelmann Spruce -- Subalpine Fir,Moist Very Cold Parkland,Omineca,,Retired,5,63,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFmvp4,ESSFmvp4,,ESSF,mvp,4,Engelmann Spruce -- Subalpine Fir,Moist Very Cold Parkland,Graham,,Retired,5,64,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFmw,ESSFmw,ESSFmw,ESSF,mw,,Engelmann Spruce - Subalpine Fir,Moist Warm,,,Retired,13,65,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFmwh,ESSFmwh,ESSFmwh,ESSF,mwh,,Engelmann Spruce - Subalpine Fir,Moist Warm,,Hemlock,Retired,4,66,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFun,ESSFun,ESSFun,ESSF,un,,Engelmann Spruce - Subalpine Fir,Undifferentiated,,,Retired,13,68,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFvv,ESSFvv,ESSFvv,ESSF,vv,,Engelmann Spruce - Subalpine Fir,Very Wet Very Cold,,,Retired,6,71,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFvvp,ESSFvvp,ESSFvvp,ESSF,vvp,,Engelmann Spruce - Subalpine Fir,Very Wet Very Cold Parkland,,,Retired,6,72,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFwc1,ESSFwc1,ESSFwc 1,ESSF,wc,1,Engelmann Spruce - Subalpine Fir,Wet Cold,,,Retired,10,73,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFwc2w,ESSFwc2w,ESSFwc 2w,ESSF,wc,2w,Engelmann Spruce - Subalpine Fir,Wet Cold,Monashee,Warm,Retired,11,246,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFwc5,ESSFwc5,ESSFwc 5,ESSF,wc,5,Engelmann Spruce - Subalpine Fir,Wet Cold,Salmo,,Retired,10,211,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFwc6,ESSFwc6,ESSFwc 6,ESSF,wc,6,Engelmann Spruce - Subalpine Fir,Wet Cold,Ymir,,Retired,10,212,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFwcp2,ESSFwcp2,ESSFwcp2,ESSF,wcp,2,Engelmann Spruce - Subalpine Fir,Wet Cold Parkland,Northern,,Retired,5,77,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFwcp3,ESSFwcp3,ESSFwcp3,ESSF,wcp,3,Engelmann Spruce - Subalpine Fir,Wet Cold Parkland,Cariboo,,Retired,5,78,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFwcp4,ESSFwcp4,ESSFwcp4,ESSF,wcp,4,Engelmann Spruce - Subalpine Fir,Wet Cold Parkland,Selkirk,,Retired,5,79,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFwkp,ESSFwkp,ESSFwkp,ESSF,wkp,,Engelmann Spruce - Subalpine Fir,Wet Cool Parkland,,,Retired,6,215,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFwm,ESSFwm,ESSFwm,ESSF,wm,,Engelmann Spruce - Subalpine Fir,Wet Mild,,,Retired,11,82,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFwmu,ESSFwmu,ESSFwmu,ESSF,wmu,,Engelmann Spruce - Subalpine Fir,Wet Mild Woodland and Parkland,,,Retired,7,216,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFxc,ESSFxc,ESSFxc,ESSF,xc,,Engelmann Spruce - Subalpine Fir,Very Dry Cold,,,Retired,7,86,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFxvp1,ESSFxvp1,,ESSF,xvp,1,Engelmann Spruce -- Subalpine Fir,Very Dry Very Cold Parkland,,,Retired,5,90,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ESSFxvp2,ESSFxvp2,,ESSF,xvp,2,Engelmann Spruce -- Subalpine Fir,Very Dry Very Cold Parkland,,,Retired,5,91,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ICHdw,ICHdw,ICH dw,ICH,dw,,Interior Cedar - Hemlock,Dry Warm,,,Retired,5,93,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ICHdw2,ICHdw2,ICH dw 2,ICH,dw,2,Interior Cedar - Hemlock,Dry Warm,Boundary,,Retired,10,221,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ICHun,ICHun,,ICH,un,,Interior Cedar -- Hemlock,Undifferentiated,,,Retired,5,104,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ICHvk1c,ICHvk1c,,ICH,vk,1c,Interior Cedar -- Hemlock,Very Wet Cool,Columbia,Cold Air,Retired,10,107,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+ICHwk1c,ICHwk1c,,ICH,wk,1c,Interior Cedar -- Hemlock,Wet Cool,Shuswap,Cold Air,Retired,10,111,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+IDFdk1a,IDFdk1a,,IDF,dk,1a,Interior Douglas-fir,Dry Cool,Thompson,Grassland,Retired,10,117,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+IDFdk1b,IDFdk1b,,IDF,dk,1b,Interior Douglas-fir,Dry Cool,Thompson,Steep South,Retired,8,118,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+IDFdk2a,IDFdk2a,,IDF,dk,2a,Interior Douglas-fir,Dry Cool,Cascade,Grassland,Retired,10,254,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+IDFdk2b,IDFdk2b,,IDF,dk,2b,Interior Douglas-fir,Dry Cool,Cascade,Steep South,Retired,10,120,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+IDFdm2a,IDFdm2a,IDF dm 2a,IDF,dm,2a,Interior Douglas-fir,Dry Mild,Kootenay,Moist,Retired,7,223,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+IDFdm2n,IDFdm2n,IDF dm 2n,IDF,dm,2n,Interior Douglas-fir,Dry Mild,Kootenay,Northern,Retired,7,224,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+IDFmw1,IDFmw1,IDF mw 1,IDF,mw,1,Interior Douglas-fir,Moist Warm,Shuswap,,Retired,12,126,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+IDFmw2a,IDFmw2a,IDF mw 2a,IDF,mw,2a,Interior Douglas-fir,Moist Warm,Thompson,Grassland,Retired,6,128,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+IDFmw2b,IDFmw2b,,IDF,mw,2b,Interior Douglas-fir,Moist Warm,Thompson,Steep South,Retired,10,255,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+IDFun,IDFun,IDFun,IDF,un,,Interior Douglas-fir,,,,Retired,11,129,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+IDFww1,IDFww1,IDF ww 1,IDF,ww,1,Interior Douglas-fir,Wet Warm,Stein,,Retired,13,256,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+IDFxh1a,IDFxh1a,,IDF,xh,1a,Interior Douglas-fir,Very Dry Hot,Okanagan,Grassland,Retired,10,132,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+IDFxh1b,IDFxh1b,IDF xh 1b,IDF,xh,1b,Interior Douglas-fir,Very Dry Hot,Okanagan,Steep South,Retired,6,133,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+IDFxh2a,IDFxh2a,,IDF,xh,2a,Interior Douglas-fir,Very Dry Hot,Thompson,Grassland,Retired,10,135,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+IDFxh2b,IDFxh2b,ID Fxh 2b,IDF,xh,2b,Interior Douglas-fir,Very Dry Hot,Thompson,Steep South,Retired,6,136,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+IDFxh4,IDFxh4,IDF xh 4,IDF,xh,4,Interior Douglas-fir,Very Dry Hot,Boundary,,Retired,12,225,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+IDFxwa,IDFxwa,IDF xw a,IDF,xwa,,Interior Douglas-fir,Very Dry Warm,,Grassland,Retired,6,227,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+IDFxwb,IDFxwb,IDF xw b,IDF,xwb,,Interior Douglas-fir,Very Dry Warm,,Steep South,Retired,6,228,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+IMAunp,IMAunp,IMA unp,IMA,unp,,Interior Mountain-heather Alpine,Undifferentiated and Parkland,,,Retired,13,259,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+MHmm2e,MHmm2e,MH mm 2e,MH,mm,2e,Mountain Hemlock,Moist Maritime,Leeward,Engelmann,Retired,4,141,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+MHmmp1,MHmmp1,,MH,mmp,1,Mountain Hemlock,Moist Maritime Parkland,Windward,,Retired,5,142,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+MHmmp2,MHmmp2,,MH,mmp,2,Mountain Hemlock,Moist Maritime Parkland,Leeward,,Retired,5,143,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+MHmmp2e,MHmmp2e,MH mmp2e,MH,mmp,2e,Mountain Hemlock,Moist Maritime,Leeward,Engelmann,Retired,4,144,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+MHun,MHun,MH un,MH,un,,Mountain Hemlock,Undifferentiated,,,Retired,13,145,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+MHwh1,MHwh1,MH wh 1,MH,wh,1,Mountain Hemlock,Windward Wet Hypermaritime,Wet Hypermaritime,,Retired,13,146,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+MHwh2,MHwh2,MH wh 2,MH,wh,2,Mountain Hemlock,Wet Hypermaritime,Leeward,,Retired,3,147,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+MHwhp1,MHwhp1,,MH,whp,1,Mountain Hemlock,Wet Hypermaritime Parkland,Windward,,Retired,5,148,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+MHwhp2,MHwhp2,,MH,whp,2,Mountain Hemlock,Wet Hypermaritime Parkland,Leeward,,Retired,5,149,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+MSdc1d,MSdc1d,MS dc 1d,MS,dc,1d,Montane Spruce,Dry Cold,Bridge,Dry,Retired,7,260,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+MSdk1,MSdk1,MS dk 1,MS,dk,1,Montane Spruce,Dry Cool,Elk,,Retired,11,273,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+MSdk2,MSdk2,MS dk 2,MS,dk,2,Montane Spruce,Dry Cool,Columbia,,Retired,11,274,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+MSdm1a,MSdm1a,,MS,dm,1a,Montane Spruce,Dry Mild,Okanagan,Redcedar,Retired,10,231,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+MSdm3w,MSdm3w,MS dm 3w,MS,dm,3w,Montane Spruce,Dry Mild,North Thompson,Warm,Retired,10,262,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+MSmw1,MSmw1,MS mw 1,MS,mw,1,Montane Spruce,Moist Warm,Cascade,,Retired,12,263,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+MSmw2,MSmw2,MS mw 2,MS,mw,2,Montane Spruce,Moist Warm,Stein,,Retired,12,264,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+MSun,MSun,MS un,MS,un,,Montane Spruce,Undifferentiated,,,Retired,11,156,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+MSxk,MSxk,MS xk,MS,xk,,Montane Spruce,Very Dry Cool,,,Retired,7,157,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+PPdh1,PPdh1,PP dh 1,PP,dh,1,Ponderosa Pine,Dry Hot,Kettle,,Retired,7,159,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+PPdh2,PPdh2,PP dh 2,PP,dh,2,Ponderosa Pine,Dry Hot,Kootenay,,Retired,11,160,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+PPun,PPun,PP un,PP,un,,Ponderosa Pine,Undifferentiated,,,Retired,3,161,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+PPxh1a,PPxh1a,,PP,xh,1a,Ponderosa Pine,Very Dry Hot,Okanagan,Grassland,Retired,10,163,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+PPxh2a,PPxh2a,,PP,xh,2a,Ponderosa Pine,Very Dry Hot,Thompson,Grassland,Retired,10,165,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+PPxh3,PPxh3,PP xh 3,PP,xh,3,Ponderosa Pine,Very Dry Hot,Kettle,,Retired,12,275,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+SBPSun,SBPSun,SBPSun,SBPS,un,,Sub-Boreal Pine - Spruce,Undifferentiated,,,Retired,3,169,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+SBSdh,SBSdh,SBS dh,SBS,dh,,Sub-Boreal Spruce,Dry Hot,,,Retired,4,171,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+SBSun,SBSun,SBS un,SBS,un,,Sub-Boreal Spruce,Undifferentiated,,,Retired,13,186,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+SWBdk,SWBdk,SWB dk,SWB,dk,,Spruce - Willow - Birch,Dry Cool,,,Retired,8,192,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+SWBdks,SWBdks,,SWB,dks,,Spruce -- Willow -- Birch,Dry Cool Scrub,,,Retired,10,193,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13
+SWBun,SWBun,SWB un,SWB,un,,Spruce - Willow - Birch,Undifferentiated,,,Retired,13,196,"BC BECdb v13 (2026), retired BGC units",Open Government Licence - British Columbia,13

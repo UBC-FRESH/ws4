@@ -3768,14 +3768,14 @@ Goal: resolve the WS4/CCISS BEC label differences and add an AU integrity check
 that refuses impossible BEC/TSA/species combinations before evidence enters an AU.
 
 - [x] P121.1 Classify the BEC crosswalk (#770)
-  - [x] Classify exact, split, aggregation, and unresolved labels.
+  - [x] Classify exact, split, retirement, and absent labels.
   - [x] Write the review table and notes.
   - [x] Test the counts and examples.
-  - [x] Check against the official BEC 13.1 attribute catalogue.
+  - [x] Check against the official BECdb v13 current and retired tables.
 - [x] P121.2 Add the AU integrity validator (#771)
   - [x] Parse the AU label and store metadata.
-  - [x] Check BEC coverage and impossible combinations.
-  - [x] Test pass, fail, and unknown cases.
+  - [x] Check BEC coverage, retirement, and impossible combinations.
+  - [x] Test pass, fail, retired, no-coverage, and unknown cases.
 - [x] P121.3 Wire and test the validator (#772)
   - [x] Run it on store load or report.
   - [x] Surface findings through the store error and API/CLI.
@@ -3785,8 +3785,8 @@ that refuses impossible BEC/TSA/species combinations before evidence enters an A
 
 Acceptance:
 
-- Every BEC difference is named or explicitly unresolved.
-- Invalid or impossible AU combinations fail closed.
+- Every WS4 BEC label is current, retired with a version, or absent with evidence.
+- Invalid, retired, or uncovered AU combinations fail closed.
 - The crosswalk and coverage are versioned.
 - `python scripts/dashboard.py` is green.
 

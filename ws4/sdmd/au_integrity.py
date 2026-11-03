@@ -20,6 +20,8 @@ from .schema import Problem
 __all__ = [
     "AuParts",
     "default_bec_labels",
+    "default_official_bec_labels",
+    "default_retired_bec_versions",
     "default_tsa_bec_counts",
     "load_tsa_bec_counts",
     "parse_au_label",
@@ -104,6 +106,8 @@ def validate_au_integrity(
     *,
     known_bec: Collection[str],
     tsa_bec_counts: Mapping[tuple[str, str], int],
+    official_bec: Collection[str] | None = None,
+    retired_bec: Mapping[str, str] | None = None,
 ) -> tuple[Problem, ...]:
     """Validate an AU label against BEC coverage and public PSP support.
 
@@ -115,6 +119,13 @@ def validate_au_integrity(
         BEC labels in the coverage table.
     tsa_bec_counts : mapping of (str, str) to int
         Public PSP site counts by TSA and BEC.
+    official_bec : collection of str, optional
+        Current BEC 13 labels. When supplied, a current label that is absent from
+        the WS4 coverage table is reported as a coverage gap instead of an
+        unknown label.
+    retired_bec : mapping of str to str, optional
+        Retired BEC labels mapped to their retirement version. When supplied, a
+        known WS4 label that has been retired is refused.
 
     Returns
     -------
@@ -126,8 +137,26 @@ def validate_au_integrity(
     except ValueError as error:
         return (Problem("SDMD-AU-LABEL", label, str(error)),)
     findings: list[Problem] = []
-    if parts.bec not in set(known_bec):
-        findings.append(Problem("SDMD-AU-BEC", label, f"unknown BEC label {parts.bec!r}"))
+    known = set(known_bec)
+    if parts.bec not in known:
+        if official_bec is not None and parts.bec in set(official_bec):
+            findings.append(
+                Problem(
+                    "SDMD-AU-BEC-NO-COVERAGE",
+                    label,
+                    f"current BEC label {parts.bec!r} has no SDMD coverage",
+                )
+            )
+        else:
+            findings.append(Problem("SDMD-AU-BEC", label, f"unknown BEC label {parts.bec!r}"))
+    elif retired_bec is not None and parts.bec in retired_bec:
+        findings.append(
+            Problem(
+                "SDMD-AU-BEC-RETIRED",
+                label,
+                f"BEC label {parts.bec!r} was retired in BEC version {retired_bec[parts.bec]}",
+            )
+        )
     if parts.tsa is not None and (parts.tsa, parts.bec) not in tsa_bec_counts:
         findings.append(
             Problem(
@@ -150,6 +179,36 @@ def default_bec_labels() -> frozenset[str]:
     """
     frame = pd.read_csv(_DEFAULT_DATA / "bec_variants.csv", dtype=str).fillna("")
     return frozenset((frame["zone"] + frame["subzone"] + frame["variant"]).astype(str))
+
+
+@lru_cache(maxsize=1)
+def default_official_bec_labels() -> frozenset[str]:
+    """Return the current BEC 13 labels in the packaged BECdb table.
+
+    Returns
+    -------
+    frozenset of str
+        The current official BEC labels.
+    """
+    frame = pd.read_csv(_DEFAULT_DATA / "bec_official.csv", dtype=str).fillna("")
+    return frozenset(frame["bec"].astype(str))
+
+
+@lru_cache(maxsize=1)
+def default_retired_bec_versions() -> Mapping[str, str]:
+    """Return retired BEC labels mapped to their retirement version.
+
+    Returns
+    -------
+    mapping of str to str
+        The retirement version keyed by BEC label.
+    """
+    frame = pd.read_csv(_DEFAULT_DATA / "bec_retired.csv", dtype=str).fillna("")
+    return {
+        str(row.bec): str(row.retired_version)
+        for row in frame.itertuples(index=False)
+        if str(row.retired_version)
+    }
 
 
 @lru_cache(maxsize=1)

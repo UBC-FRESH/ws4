@@ -4284,3 +4284,15 @@ issue comments.
 - P122: run timeline and interaction uplift. Added snapshot cards, period
   playback, a Results timeline from `schedule.csv`, toast feedback, and keyboard
   shortcuts/help. Plan: `notes/design/ws4-ui-port-plan.md`. Dashboard: `OVERALL: GREEN`; focused web tests 79 passed; browser smoke verified snapshot, timeline, playback, and help.
+
+- P121.1 correction: replaced the prefix-only check with the official BC BECdb v13
+  current and retired tables. Every one of the 229 WS4 labels is now classified:
+  165 current exact, 48 retired (with retirement version), and 0 absent from
+  BECdb. The 54 current BEC labels absent from WS4 are recorded as a coverage
+  gap, not as unknown classifications. Removed “unresolved” from the CCISS table
+  in favour of `not_in_cciss` and `not_in_ws4`. Added `bec_retired.csv`,
+  refreshed `bec_official.csv`, and regenerated `bec_official_crosswalk.csv`.
+- P121.2 correction: the AU validator now refuses retired BEC labels with
+  `SDMD-AU-BEC-RETIRED` and current BEC labels outside WS4 coverage with
+  `SDMD-AU-BEC-NO-COVERAGE`. The store passes both packaged tables. Added unit
+  and store tests; updated the AU integrity and closeout reports.

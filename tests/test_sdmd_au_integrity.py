@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pandas as pd
 from ws4.sdmd.au_integrity import (
+    default_official_bec_labels,
+    default_retired_bec_versions,
     load_tsa_bec_counts,
     parse_au_label,
     validate_au_integrity,
@@ -55,3 +57,28 @@ def test_unknown_bec_and_malformed_label_fail() -> None:
     assert {item.code for item in unknown} == {"SDMD-AU-BEC", "SDMD-AU-TSA-BEC"}
     malformed = validate_au_integrity("bad-label", known_bec=_known(), tsa_bec_counts=counts)
     assert [item.code for item in malformed] == ["SDMD-AU-LABEL"]
+
+
+def test_current_bec_without_sdmd_coverage_is_named() -> None:
+    """A current BEC label absent from WS4 is a coverage gap, not unknown."""
+    findings = validate_au_integrity(
+        "AU-CWHvh3-FDI",
+        known_bec=_known(),
+        tsa_bec_counts=load_tsa_bec_counts(DATA / "tsa_bec_counts.csv"),
+        official_bec=default_official_bec_labels(),
+        retired_bec=default_retired_bec_versions(),
+    )
+    assert [item.code for item in findings] == ["SDMD-AU-BEC-NO-COVERAGE"]
+
+
+def test_retired_bec_label_is_refused() -> None:
+    """A WS4 label retired by BECdb is refused with its retirement version."""
+    findings = validate_au_integrity(
+        "AU-CWHxm1-FDI",
+        known_bec=_known(),
+        tsa_bec_counts=load_tsa_bec_counts(DATA / "tsa_bec_counts.csv"),
+        official_bec=default_official_bec_labels(),
+        retired_bec=default_retired_bec_versions(),
+    )
+    assert [item.code for item in findings] == ["SDMD-AU-BEC-RETIRED"]
+    assert "version 13" in findings[0].message

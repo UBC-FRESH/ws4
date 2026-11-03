@@ -23,7 +23,13 @@ from pathlib import Path
 import pandas as pd
 from fastapi import APIRouter, Body, HTTPException, Query
 
-from .au_integrity import default_bec_labels, default_tsa_bec_counts, validate_au_integrity
+from .au_integrity import (
+    default_bec_labels,
+    default_official_bec_labels,
+    default_retired_bec_versions,
+    default_tsa_bec_counts,
+    validate_au_integrity,
+)
 from .compile import Trajectory, assess_trajectory
 from .constraints import (
     AuConstraint,
@@ -142,6 +148,8 @@ class SdmdStore:
                 au_id,
                 known_bec=default_bec_labels(),
                 tsa_bec_counts=default_tsa_bec_counts(),
+                official_bec=default_official_bec_labels(),
+                retired_bec=default_retired_bec_versions(),
             )
         ]
         if label_findings:

@@ -163,4 +163,6 @@ height, QMD, and boundaries are vector; crown closure is a raster trace. See
 ## BEC crosswalk
 
 The WS4/CCISS label review is in `notes/reports/p121-bec-crosswalk.md` and
-`bec_crosswalk_review.csv`. The 45 unresolved rows are not silently mapped.
+`bec_crosswalk_review.csv`. The BECdb crosswalk in `bec_official_crosswalk.csv`
+names every WS4 label as current, retired with a retirement version, or absent
+from both BECdb tables. There are no unresolved WS4 labels.
