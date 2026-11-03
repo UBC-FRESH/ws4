@@ -23,10 +23,11 @@ Base profile, population 8, zero generations, replay enabled:
 - ending inventory accounts: 78
 - wall: 108.5 s
 
-## Limit
+## Map geometry
 
-The run still has no map geometry because the TSA24 compiled dataset has no
-`--geometry` layer; this is a data/configuration gap, not a report bug.
+The compiled dataset does not carry polygons; TSA 24 now supplies the source
+`tsa24-blocks.geojson` layer documented in P115. Report generation is
+independent of the map layer.
 
 ## Pull request
 
