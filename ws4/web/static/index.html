@@ -440,6 +440,10 @@
         <g id="roads-layer"></g>
       </svg>
       <div id="map-loading" class="map-loading" hidden><span class="spinner" aria-hidden="true"></span><span id="map-loading-text">Loading map…</span></div>
+      <div id="map-unavailable" class="map-unavailable" role="status" hidden>
+        <strong>Map unavailable</strong>
+        <span>This dataset has no geometry layer. Configure <code>--geometry</code> to enable the block map.</span>
+      </div>
       <div id="map-legend" class="map-legend" role="region" aria-label="Map legend" hidden></div>
       <div class="scale" id="scale"></div>
     </div>
