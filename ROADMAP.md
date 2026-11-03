@@ -99,7 +99,7 @@ exists and the maintainer approves it.
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
 | P104 (SDMD pilot) digitisation and trajectory evidence | #680 | `feature/p104-sdmd-pilot` | complete |
 | P106 AU evidence depth | #723 | `feature/p106-au-evidence` | complete |
-| P107 SDMD atlas completion | #731 | `feature/p107-sdmd-atlas` | active |
+| P107 SDMD atlas completion | #731 | `feature/p107-sdmd-atlas` | pr-open |
 | P95 (factorized vectors) target-cell cache | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
 | P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | pr-open |
 | P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | pr-open |
@@ -3484,7 +3484,7 @@ Acceptance:
 
 Parent issue: #731
 Branch: `feature/p107-sdmd-atlas`
-Status: active
+Status: pr-open
 Plan: `notes/reports/p106-closeout.md`
 Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
 
@@ -3511,9 +3511,9 @@ PDFs, and record the species/BEC coverage.
   - [x] `cwp` stored provisional.
   - [x] `swp` stored provisional.
   - [ ] Record the planted top-height assignments.
-- [ ] P107.4 Species/BEC coverage and closeout (#739)
-  - [ ] Update the source catalog and coverage table.
-  - [ ] Write the closeout report and queue the PR.
+- [x] P107.4 Species/BEC coverage and closeout (#739)
+  - [x] Update the source catalog and coverage table.
+  - [x] Write the closeout report and queue the PR.
 
 Acceptance:
 

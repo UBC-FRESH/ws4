@@ -4160,3 +4160,8 @@ issue comments.
   QMD 5-40 cm, competition/self-thinning paths 34/35; crown closure is a
   provisional raster trace. Added catalog entry, diagram test, and swp note.
   All five planted diagrams are now stored provisional.
+- P107.4: wrote `notes/reports/p107-atlas-coverage.md` and
+  `notes/reports/p107-closeout.md`. All 14 public diagrams are stored and validate;
+  four are reviewed and ten provisional. The coverage report records the 229-row
+  BEC inference and the unresolved CCISS crosswalk. Queued the phase PR; merge
+  waits for approval.
