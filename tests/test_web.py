@@ -144,6 +144,7 @@ def test_shell_has_run_snapshot_timeline_playback_and_help(tmp_path: Path) -> No
     assert "function loadScheduleTimeline" in script
     assert "function togglePeriodPlay" in script
     assert "function renderRunSnapshot" in script
+    assert "row.account === account && !row.flow" in script
 
 
 def test_summary_lists_the_dataset_and_its_runs(tmp_path: Path) -> None:

@@ -479,9 +479,11 @@ The CCISS project (Apache-2.0) supplies complementary species and BEC evidence: 
 BC tree species codes, silvics traits for the six SDMD species, IDFdk3 stocking
 targets, and a BEC crosswalk. The derived files are
 ``ws4/sdmd/data/sdmd/tree_species.csv``, ``species_traits.csv``,
-``idfdk3_stocking.csv``, ``idfdk3_suitability.csv``, ``idfdk3_sibec.csv``, and
-``bec_crosswalk.csv``; the method and limits are in
-``notes/reference/cciss-data-mining.md``. CCISS does not contain SDMD isopleths,
+``idfdk3_stocking.csv``, ``idfdk3_suitability.csv``, ``idfdk3_sibec.csv``,
+``bec_crosswalk.csv``, ``bec_official.csv``, ``bec_retired.csv``, and
+``bec_official_crosswalk.csv``; the method and limits are in
+``notes/reference/cciss-data-mining.md`` and
+``notes/reports/p121-bec-crosswalk.md``. CCISS does not contain SDMD isopleths,
 so it cannot replace the missing lodgepole pine diagram.
 
 All 14 public diagrams are now stored: seven species in natural and planted
