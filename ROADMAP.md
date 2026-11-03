@@ -105,7 +105,7 @@ exists and the maintainer approves it.
 | P99 Scenario profile UI | #704 | `feature/p99-profile-ui` | pr-open |
 | P102 Ask overlay | #709 | `feature/p102-ask-overlay` | pr-open |
 | P103 Profile-aware web runs | #713 | `feature/p103-profile-runs` | pr-open |
-| P105 Profile-run feedback | #720 | `feature/p105-profile-run-feedback` | active |
+| P105 Profile-run feedback | #720 | `feature/p105-profile-run-feedback` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3238,8 +3238,9 @@ Acceptance:
 
 Parent issue: #720
 Branch: `feature/p105-profile-run-feedback`
-Status: active
+Status: pr-open
 Report: `notes/reports/tsa24-profile-run-feedback.md`
+PR: #728
 
 Goal: make profile-aware GPU runs visible in the normal web run view and produce account values.
 

@@ -1,7 +1,7 @@
 # P105 profile-run feedback
 
 Date: 2026-11-03
-Status: complete
+Status: complete; PR #728
 
 ## Change
 
@@ -32,3 +32,7 @@ artefacts.
 - Target telemetry events are not emitted by the profile worker yet.
 - The first schedule event carries the full 208,255-block schedule; later events are diffs.
 - The remote origin still needs `main` pulled and the service restarted.
+
+## Pull request
+
+PR #728 contains the schedule feedback, final replay, tests, and docs.
