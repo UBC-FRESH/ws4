@@ -4133,3 +4133,10 @@ issue comments.
 - P107.2: stored `sbs-sw-natural.json` from `swn`. Top height 6-38 m, QMD
   5-45 cm, competition/self-thinning paths 47/48; crown closure is a provisional
   raster trace. Added catalog entry, diagram test, and swn note. Provisional.
+- P107.2: stored `cwh-cw-natural.json` from `cwn`. Top height 6-50 m,
+  QMD 5-80 cm, competition/self-thinning paths 652/651; crown closure is a
+  provisional raster trace. Added catalog entry, diagram test, and cwn note.
+  Provisional.
+- P107.2: all five remaining natural diagrams are stored provisional:
+  `fdcn`, `ssn`, `hwn`, `swn`, `cwn`. Each has vector top-height, QMD, and boundary
+  curves plus a provisional raster crown-closure trace and a source-catalog entry.

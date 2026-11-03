@@ -601,6 +601,17 @@
       "review_status": "provisional",
       "reviewer": "",
       "notes": "Vector top-height, QMD, competition, and self-thinning paths; provisional raster crown closure. The white-spruce page label is catalogued separately."
+    },
+    {
+      "diagram_id": "cwh-cw-natural",
+      "source_diagram_id": "cwn",
+      "file": "cwh-cw-natural.json",
+      "source_sha256": "5fb727d110b4a2c1bf4cd9334f07b9b8b4e9073af77b9561b9b52764bb407bcd",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/cwn.pdf",
+      "source_version": "unversioned",
+      "review_status": "provisional",
+      "reviewer": "",
+      "notes": "Vector top-height, QMD, competition, and self-thinning paths; provisional raster crown closure."
     }
   ]
 }

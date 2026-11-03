@@ -123,3 +123,9 @@ raster trace. See `notes/reference/hwn-digitisation.md`.
 White spruce natural is stored as `sbs-sw-natural.json`, provisional. Top height,
 QMD, and boundaries are vector; crown closure is a raster trace. See
 `notes/reference/swn-digitisation.md`.
+
+## cwn status
+
+Western redcedar natural is stored as `cwh-cw-natural.json`, provisional. Top
+height, QMD, and boundaries are vector; crown closure is a raster trace. See
+`notes/reference/cwn-digitisation.md`.

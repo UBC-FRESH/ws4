@@ -3496,13 +3496,13 @@ PDFs, and record the species/BEC coverage.
   - [x] Capture PDF path extraction, axis calibration, and label matching.
   - [x] Emit diagram JSON, figrecover overlay, and review manifest.
   - [x] Test calibration and curve ordering.
-- [ ] P107.2 Digitise the remaining natural diagrams (#736)
+- [x] P107.2 Digitise the remaining natural diagrams (#736)
   - [x] `fdcn` stored provisional; vector curves plus a raster crown-closure trace.
   - [x] Added `ws4.sdmd.trace` for reusable dotted-curve tracing.
   - [x] `ssn` stored provisional; vector curves plus a raster crown-closure trace.
   - [x] `hwn` stored provisional; vector curves plus a raster crown-closure trace.
   - [x] `swn` stored provisional; vector curves plus a raster crown-closure trace.
-  - [ ] `cwn`.
+  - [x] `cwn` stored provisional; vector curves plus a raster crown-closure trace.
   - [ ] Add source entries, overlays, and tests.
 - [ ] P107.3 Digitise the remaining planted diagrams (#737)
   - [ ] `fdcp`, `ssp`, `hwp`, `cwp`, `swp`.
