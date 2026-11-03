@@ -4254,3 +4254,7 @@ issue comments.
   suppress the loading overlay between periods, and guard async map responses
   with a request generation so stale periods cannot paint over newer ones.
   Report: `notes/reports/p125-playback-map-race.md`.
+
+- P126: stabilize playback controls and cadence. The period control now has a
+  fixed header slot, and the settle delay is shorter while map loads remain
+  serialized. Report: `notes/reports/p126-playback-controls.md`.
