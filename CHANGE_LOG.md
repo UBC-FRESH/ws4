@@ -4112,3 +4112,6 @@ issue comments.
   `report_accounts.csv`, `report_targets.csv`, `ending_inventory.csv`, and any available
   DHI/structure/resilience reports; summary carries ending inventory. Report:
   `notes/reports/tsa24-profile-run-reports.md`.
+- P109: optional-factorized GPU profiles. Profile runs now require a table and cache
+  directory, while factorized display data is optional. TSA 27 s8 runs from its existing
+  effect table and plain candidate mapping. Report: `notes/reports/tsa27-gpu-profile.md`.

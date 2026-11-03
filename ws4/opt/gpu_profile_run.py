@@ -26,6 +26,37 @@ from .objective import load_targets, period_value
 from .scenario_profiles import get_profile, load_profiles
 
 
+def _option_count(candidates: Any, block: int) -> int:  # noqa: ANN401
+    """Return one block's option count for compact or mapping candidates."""
+    method = getattr(candidates, "option_count", None)
+    if callable(method):
+        return int(method(block))
+    return len(candidates.get(block, ()))
+
+
+def _chain_at(candidates: Any, block: int, index: int) -> tuple[tuple[str, int], ...]:  # noqa: ANN401
+    """Return one candidate chain for compact or mapping candidates."""
+    method = getattr(candidates, "chain_at", None)
+    if callable(method):
+        return cast(tuple[tuple[str, int], ...], method(block, index))
+    return cast(tuple[tuple[str, int], ...], candidates[block][index])
+
+
+def _chain_index(
+    candidates: Any,  # noqa: ANN401
+    block: int,
+    chain: tuple[tuple[str, int], ...],
+) -> int | None:
+    """Return one chain's option index for compact or mapping candidates."""
+    method = getattr(candidates, "index_of", None)
+    if callable(method):
+        return cast(int | None, method(block, chain))
+    try:
+        return list(candidates.get(block, ())).index(chain)
+    except ValueError:
+        return None
+
+
 def _seed(
     blocks: Any,  # noqa: ANN401
     candidates: Any,  # noqa: ANN401
@@ -36,12 +67,12 @@ def _seed(
     seed: dict[int, tuple[tuple[str, int], ...]] = {}
     for block in blocks:
         index = int(block)
-        count = candidates.option_count(index)
+        count = _option_count(candidates, index)
         if count <= 0:
             continue
-        chain = requested.get(index, candidates.chain_at(index, 0))
-        if candidates.index_of(index, chain) is None:
-            chain = candidates.chain_at(index, 0)
+        chain = requested.get(index, _chain_at(candidates, index, 0))
+        if _chain_index(candidates, index, chain) is None:
+            chain = _chain_at(candidates, index, 0)
         seed[index] = chain
     return seed
 
@@ -118,18 +149,16 @@ def main(argv: list[str] | None = None) -> int:
 
     profiles = load_profiles(args.profile_file)
     profile = get_profile(profiles, args.profile)
-    resources = {
+    required = {
         "table": profile.table,
-        "factorized": profile.factorized,
-        "factorized_cache": profile.factorized_cache,
         "cache_dir": profile.cache_dir,
     }
-    missing = [name for name, value in resources.items() if value is None]
+    missing = [name for name, value in required.items() if value is None]
     if missing:
         parser.error(f"profile {args.profile!r} is missing: {', '.join(missing)}")
+    if profile.factorized is None and profile.factorized_cache is not None:
+        parser.error(f"profile {args.profile!r} sets factorized_cache without factorized")
     assert profile.table is not None
-    assert profile.factorized is not None
-    assert profile.factorized_cache is not None
     assert profile.cache_dir is not None
 
     target_list = load_targets(profile.targets)
@@ -148,18 +177,20 @@ def main(argv: list[str] | None = None) -> int:
         candidates = CompactCandidates.load(candidates_path)
     else:
         candidates = load_or_build_candidates(optimizer, cache_dir / "candidates.pkl")
-    arrays = FactorizedEffectArrays.load(profile.factorized)
     blocks = [int(value) for value in table.blocks]
-    accounts = FactorizedAccountSet.from_artifact(
-        profile.factorized,
-        optimizer.simulator(),
-        years=args.years,
-        device=args.device,
-        cache=profile.factorized_cache,
-        arrays=arrays,
-    )
-    if [int(value) for value in accounts.blocks] != blocks:
-        raise SystemExit("factorized blocks do not match the effect table")
+    accounts = None
+    if profile.factorized is not None:
+        arrays = FactorizedEffectArrays.load(profile.factorized)
+        accounts = FactorizedAccountSet.from_artifact(
+            profile.factorized,
+            optimizer.simulator(),
+            years=args.years,
+            device=args.device,
+            cache=profile.factorized_cache,
+            arrays=arrays,
+        )
+        if [int(value) for value in accounts.blocks] != blocks:
+            raise SystemExit("factorized blocks do not match the effect table")
     seed = _seed(blocks, candidates, profile.seed_schedule)
     base_cache = profile.table.with_name(profile.table.name + ".base.pt")
     base_totals = None
@@ -275,6 +306,7 @@ def main(argv: list[str] | None = None) -> int:
     summary = {
         "status": "stopped" if stopped else "ok",
         "profile": args.profile,
+        "factorized": accounts is not None,
         "targets": str(profile.targets),
         "schedule": str(schedule_path),
         "incumbent_objective": population.best_objective,

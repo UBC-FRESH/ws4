@@ -1091,8 +1091,6 @@ def create_app(
             raise HTTPException(status_code=404, detail=str(error)) from error
         required = {
             "table": profile.table,
-            "factorized": profile.factorized,
-            "factorized_cache": profile.factorized_cache,
             "cache_dir": profile.cache_dir,
         }
         missing = [name for name, value in required.items() if value is None]
@@ -1102,6 +1100,11 @@ def create_app(
                 detail=(
                     f"profile {profile_name!r} is missing execution resources: {', '.join(missing)}"
                 ),
+            )
+        if profile.factorized is None and profile.factorized_cache is not None:
+            raise HTTPException(
+                status_code=422,
+                detail=(f"profile {profile_name!r} sets factorized_cache without factorized"),
             )
         return [
             sys.executable,
