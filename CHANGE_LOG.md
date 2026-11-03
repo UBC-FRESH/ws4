@@ -4249,3 +4249,8 @@ issue comments.
 - P122: run timeline and interaction uplift. Added snapshot cards, period
   playback, a Results timeline from `schedule.csv`, toast feedback, and keyboard
   shortcuts/help. Plan: `notes/design/ws4-ui-port-plan.md`. Dashboard: `OVERALL: GREEN`; focused web tests 79 passed; browser smoke verified snapshot, timeline, playback, and help.
+
+- P125: stabilize period playback and map paging. Serialize playback ticks,
+  suppress the loading overlay between periods, and guard async map responses
+  with a request generation so stale periods cannot paint over newer ones.
+  Report: `notes/reports/p125-playback-map-race.md`.

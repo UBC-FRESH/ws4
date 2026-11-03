@@ -1242,6 +1242,7 @@ function hideVectorLayers() {
 
 async function loadMap(preserveView = false) {
   if (!state.run) return;
+  const requestId = ++mapLoadSequence;
   if (!state.geometryAvailable) {
     setMapLoading(false);
     return;
@@ -1256,7 +1257,8 @@ async function loadMap(preserveView = false) {
   state.mapRetries = 0;
   state.mapLoading = true;
   statusLine('loading map…');
-  setMapLoading(true, 'Loading map…');
+  if (periodPlayTimer) setMapLoading(false);
+  else setMapLoading(true, 'Loading map…');
   const lidarField = state.lidarField ? lidarFieldInfo(state.lidarField) : null;
   const layer = state.lidarField || liveView() ? 'blocks' : mapLayerName();
   try {
@@ -1271,10 +1273,12 @@ async function loadMap(preserveView = false) {
       state.features = [];
       ensureVectorSource(tileUrl);
       await fitVectorBounds();
+      if (requestId !== mapLoadSequence) return;
       let stats = `api/runs/${encodeURIComponent(state.run)}/map-stats?year=${end}&layer=${layer}`;
       if (period) stats += `&period_start=${period.start}`;
       try {
         const body = await api(stats);
+        if (requestId !== mapLoadSequence) return;
         if (liveView()) {
           const total = Number(body.total_treated ?? 0) + Number(body.total_untreated ?? 0);
           state.mapTotals = { treated: 0, untreated: total };
@@ -1319,6 +1323,7 @@ async function loadMap(preserveView = false) {
       }
     }
     const body = await api(query);
+    if (requestId !== mapLoadSequence) return;
     state.features = body.features ?? [];
     state.mapTotals = state.live.active
       ? null
@@ -1333,11 +1338,14 @@ async function loadMap(preserveView = false) {
     statusLine(`${state.features.length.toLocaleString()} ${noun} ${place} · ${sourceLabel}${state.live.active ? ' · live' : ''} · period ${state.periodIndex + 1}${span}`);
     if (state.showUsedRoads) loadUsedRoads();
   } catch (error) {
+    if (requestId !== mapLoadSequence) return;
     if (/no geometry layer/i.test(error.message)) setGeometryAvailability(false);
     statusLine(`map unavailable: ${error.message}`);
   } finally {
-    state.mapLoading = false;
-    setMapLoading(false);
+    if (requestId === mapLoadSequence) {
+      state.mapLoading = false;
+      setMapLoading(false);
+    }
   }
 }
 
@@ -3670,6 +3678,7 @@ function stopPeriodPlay() {
     window.clearInterval(periodPlayTimer);
     periodPlayTimer = null;
   }
+  periodPlayBusy = false;
   const button = $('play-periods');
   if (button) {
     button.textContent = '▶ Play';
@@ -3687,17 +3696,25 @@ function togglePeriodPlay() {
   if (state.periodIndex >= state.periods.length - 1) setPeriod(0);
   button.textContent = '❚❚ Pause';
   button.setAttribute('aria-pressed', 'true');
-  periodPlayTimer = window.setInterval(() => {
-    if (state.mapLoading) return;
+  periodPlayTimer = window.setInterval(async () => {
+    if (periodPlayBusy || state.mapLoading) return;
     if (state.periodIndex >= state.periods.length - 1) {
       stopPeriodPlay();
       return;
     }
-    setPeriod(state.periodIndex + 1);
-    if (state.workspace === 'map') {
-      if (state.compareView) loadComparison();
-      else if (state.live.active) render(false);
-      else loadMap(true);
+    periodPlayBusy = true;
+    try {
+      setPeriod(state.periodIndex + 1);
+      if (state.workspace === 'map') {
+        if (state.compareView) await loadComparison();
+        else if (state.live.active) render(false);
+        else {
+          await loadMap(true);
+          await new Promise((resolve) => window.setTimeout(resolve, 900));
+        }
+      }
+    } finally {
+      periodPlayBusy = false;
     }
   }, 900);
 }
@@ -5800,6 +5817,8 @@ async function fillRuns(summary, preferred) {
 
 let runWatch = { id: null, timer: null, source: null, started: 0, done: false };
 let periodPlayTimer = null;
+let periodPlayBusy = false;
+let mapLoadSequence = 0;
 let toastTimer = null;
 
 function drawSpark() {
