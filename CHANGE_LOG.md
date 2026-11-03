@@ -4152,3 +4152,7 @@ issue comments.
   QMD 5-60 cm, competition/self-thinning paths 558/557; crown closure is a
   provisional raster trace. Added catalog entry, diagram test, and hwp note.
   Provisional.
+- P107.3: stored `cwh-cw-planted.json` from `cwp`. Top height 6-48 m,
+  QMD 5-70 cm, competition/self-thinning paths 581/580; crown closure is a
+  provisional raster trace. Added catalog entry, diagram test, and cwp note.
+  Provisional.

@@ -3508,7 +3508,8 @@ PDFs, and record the species/BEC coverage.
   - [x] `fdcp` stored provisional.
   - [x] `ssp` stored provisional.
   - [x] `hwp` stored provisional.
-  - [ ] `cwp`, `swp`.
+  - [x] `cwp` stored provisional.
+  - [ ] `swp`.
   - [ ] Record the planted top-height assignments.
 - [ ] P107.4 Species/BEC coverage and closeout (#739)
   - [ ] Update the source catalog and coverage table.

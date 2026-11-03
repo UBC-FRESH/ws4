@@ -147,3 +147,9 @@ height, QMD, and boundaries are vector; crown closure is a raster trace. See
 Western hemlock planted is stored as `cwh-hw-planted.json`, provisional. Top
 height, QMD, and boundaries are vector; crown closure is a raster trace. See
 `notes/reference/hwp-digitisation.md`.
+
+## cwp status
+
+Western redcedar planted is stored as `cwh-cw-planted.json`, provisional. Top
+height, QMD, and boundaries are vector; crown closure is a raster trace. See
+`notes/reference/cwp-digitisation.md`.
