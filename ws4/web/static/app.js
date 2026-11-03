@@ -85,7 +85,8 @@ async function startProfileRun() {
   const status = $('profile-status');
   if (!select.value) return;
   const generations = Number($('profile-generations')?.value || 5000);
-  const years = Number($('run-years')?.value || 200);
+  // Profile effect tables and candidate caches are built for the 200-year horizon.
+  const years = 200;
   const seed = Number($('run-seed')?.value || 7);
   const timeLimit = ($('run-time-limit')?.value || '').trim();
   stopRunWatch();

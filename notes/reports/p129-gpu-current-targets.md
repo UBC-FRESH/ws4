@@ -18,3 +18,16 @@ Status: complete; PR #801
 - Focused web test asserts the profile worker command includes `--targets` and
   `--max-seconds 30.0`.
 - Dashboard and live browser smoke are recorded at closeout.
+
+## Horizon
+
+Profile candidate/effect caches are built for the 200-year horizon, so Run
+profile now uses 200 years independently of the Solve `Years` field. The
+Solve field remains for state-engine runs.
+
+A direct TSA27 `s8` worker smoke with `--targets` and `--max-seconds 2`:
+
+- status: `stopped`
+- generations: 858
+- exact replay: `true`
+- search stopped by the wall-clock budget
