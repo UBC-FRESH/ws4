@@ -111,6 +111,7 @@ exists and the maintainer approves it.
 | P107 Profile target telemetry | #730 | `feature/p107-profile-target-telemetry` | pr-open |
 | P108 Profile-run report package | #742 | `feature/p108-profile-run-reports` | pr-open |
 | P110 Optional-factorized GPU profiles | #745 | `feature/p110-tsa27-gpu-profile` | pr-open |
+| P111 Preserve zero-generation profile runs | #751 | `fix/p111-zero-generations` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3572,3 +3573,20 @@ Acceptance:
 - Mapping-style candidate caches work without a rebuild.
 - TSA 27 s8 produces an exact replay.
 - Dashboard green.
+
+## Phase 111: Preserve zero-generation profile runs
+
+Parent issue: #751
+Branch: `fix/p111-zero-generations`
+Status: active
+
+Goal: keep an explicit zero-generation profile request instead of coercing it to
+the default 5000 generations.
+
+- [x] P111.1 Preserve zero generations and add a regression test
+
+Acceptance:
+
+- `generations: 0` reaches the worker as `--generations 0`.
+- The run response reports zero.
+- A focused regression test covers the zero case.

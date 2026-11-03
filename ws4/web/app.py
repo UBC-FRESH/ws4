@@ -1148,10 +1148,13 @@ def create_app(
         islands = 1 if requested_islands is None else int(requested_islands)
         time_limit = str(payload.get("time_limit", "") or "")
         patience = int(payload.get("patience", 0) or 0)
-        generations = int(payload.get("generations", 5000) or 5000)
+        raw_generations = payload.get("generations", 5000)
+        generations = int(raw_generations) if raw_generations is not None else 5000
         gpu_population = int(payload.get("population", 64) or 64)
         if not 1 <= iterations <= 1_000_000_000 or not 1 <= years <= 1000:
             raise HTTPException(status_code=422, detail="iterations or years are out of range")
+        if not 0 <= generations <= 1_000_000_000:
+            raise HTTPException(status_code=422, detail="generations are out of range")
         if not 0 <= patience <= 1_000_000_000:
             raise HTTPException(
                 status_code=422, detail="patience must be a non-negative iteration count"

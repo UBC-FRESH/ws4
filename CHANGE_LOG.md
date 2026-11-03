@@ -4133,3 +4133,5 @@ issue comments.
 - P110: optional-factorized GPU profiles. Profile runs now require a table and cache
   directory, while factorized display data is optional. TSA 27 s8 runs from its existing
   effect table and plain candidate mapping. Report: `notes/reports/tsa27-gpu-profile.md`.
+- P111: preserve explicit `generations: 0` in profile requests; the web API no longer
+  coerces zero to the 5000-generation default.
