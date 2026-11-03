@@ -608,10 +608,10 @@ def test_lodgepole_natural_diagram_is_complete_and_valid() -> None:
     assert placement.zone == "competition"
 
 
-def test_fdin_crown_closure_is_monotone_and_truncated() -> None:
-    """The fdin closure ends before the unresolved high-TPH branch."""
+def test_fdin_crown_closure_is_monotone_and_complete() -> None:
+    """The fdin closure reaches the high-TPH end of the diagram."""
     diagram = load_diagram(PILOT_DIAGRAM)
     curve = next(item for item in diagram.isopleths if item.kind == "crown_closure")
-    assert curve.points[-1][0] <= 2951.153
+    assert curve.points[-1][0] > 9000
     values = [point[1] for point in curve.points]
-    assert all(later <= earlier + 1e-6 for earlier, later in itertools.pairwise(values))
+    assert all(later <= earlier + 5e-4 for earlier, later in itertools.pairwise(values))

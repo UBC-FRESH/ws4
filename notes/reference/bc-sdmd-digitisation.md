@@ -51,9 +51,9 @@ recorded in `ws4/sdmd/data/sdmd/source_catalog.json` (diagram `fdin`, version
 
 Reviewer of record: Gregory Paradis (maintainer of record). Status: all four
 diagrams are `reviewed` as of 2026-11-02T18:20:44+00:00. The review packet is
-`notes/review/p95-curve-review.md`. The `fdin` crown closure is truncated at
-2,951 TPH because the high-TPH branch was not resolved; that limit is recorded in
-the review packet and the source catalog.
+`notes/review/p95-curve-review.md`. The `fdin` crown closure is the continuous dotted path from 210 to 9,996 TPH.
+The earlier join to a second branch was removed in P106.1; the review packet and
+source catalog record the correction.
 
 
 ## Lodgepole pine planted diagram

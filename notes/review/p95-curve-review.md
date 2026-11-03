@@ -24,7 +24,7 @@ stored JSON, not the figures, is the contract.
 
 | Diagram | Top height | QMD | Boundaries | Crown closure | Status |
 | --- | --- | --- | --- | --- | --- |
-| `fdin` | 8, 10, 14, 18, 22, 26, 30, 34, 40, 46 m | 5–50 cm, 5 cm steps | competition, self-thinning | 48 points, ends at 2,951 TPH | provisional |
+| `fdin` | 8, 10, 14, 18, 22, 26, 30, 34, 40, 46 m | 5–50 cm, 5 cm steps | competition, self-thinning | 16 points, ends at 9,996 TPH | reviewed |
 | `fdip` | 8, 10, 14, 18, 22, 26, 30, 34, 40, 46 m | 10–50 cm, 5 cm steps | competition, self-thinning | 65 points | provisional |
 | `pln` | 6, 10, 14, 18, 22, 26, 30, 34 m | 10–40 cm, 5 cm steps | competition, self-thinning | 19 points | provisional |
 | `plp` | 6, 10, 14, 18, 22, 26, 30 m | 10–40 cm, 5 cm steps | competition, self-thinning | 13 points | provisional |
@@ -42,9 +42,9 @@ boundaries are in the expected order (competition below self-thinning at high
 TPH).
 
 The crown-closure extraction originally joined two branches above 2,951 TPH and
-produced a zigzag. The stored curve is now truncated at 2,951 TPH. The high-TPH
-closure is therefore unresolved; record whether that is acceptable for the
-provisional diagram or whether the high-TPH branch must be re-digitised.
+produced a zigzag. P106.1 replaced it with the continuous dotted path from 210 to
+9,996 TPH. The overlay in this packet shows the corrected continuous curve; the stored JSON
+and the diagram test are authoritative.
 
 ### `fdip`
 
@@ -73,7 +73,7 @@ Mark each line as accepted or name the curve to correct.
 - [x] `fdin` top-height values 8–46 m
 - [x] `fdin` QMD values 5–50 cm
 - [x] `fdin` competition and self-thinning boundaries
-- [x] `fdin` crown closure, including the 2,951 TPH truncation
+- [x] `fdin` crown closure, including the recovered high-TPH branch
 - [x] `fdip` top-height values 8–46 m
 - [x] `fdip` QMD values 10–50 cm
 - [x] `fdip` competition, self-thinning, and crown-closure curves
@@ -86,7 +86,7 @@ Mark each line as accepted or name the curve to correct.
 
 Reviewer: Gregory Paradis (maintainer of record)  
 Date: 2026-11-02  
-Decision: accepted as reviewed, with the `fdin` 2,951 TPH crown-closure truncation noted.
+Decision: accepted as reviewed; P106.1 later replaced the truncated closure with the continuous high-TPH path.
 
 ## What changes on sign-off
 

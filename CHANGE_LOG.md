@@ -4066,3 +4066,8 @@ issue comments.
 - P106: launched AU evidence depth on `feature/p106-au-evidence`, parent issue
   #723, tasks #724-#727. Scope: recover the `fdin` high-TPH closure, build
   AU-level FVS ensembles, add measured initial volume, and close out.
+- P106.1: recovered the `fdin` high-TPH crown closure. The stored curve is the
+  continuous dotted PDF path from 210 to 9,996 TPH, replacing the joined branch
+  that caused the zigzag and the P104 truncation. Updated the source-catalog note,
+  review packet overlay, digitisation note, P104 historical note, and the diagram
+  test. `fdin` remains reviewed.

@@ -3431,10 +3431,10 @@ Goal: close the evidence limits carried out of P104: the unresolved `fdin`
 high-TPH crown closure, the single-cluster FVS paths, and the missing initial
 volume for the two real pilot AUs.
 
-- [ ] P106.1 Recover the fdin high-TPH crown closure (#724)
-  - [ ] Re-read the PDF vector paths and separate the joined branches.
-  - [ ] Store the recovered curve or record an accepted truncation.
-  - [ ] Update the overlay, review packet, and diagram test.
+- [x] P106.1 Recover the fdin high-TPH crown closure (#724)
+  - [x] Re-read the PDF vector paths and separate the joined branches.
+  - [x] Store the recovered continuous curve.
+  - [x] Update the overlay, review packet, and diagram test.
 - [ ] P106.2 Build AU-level FVS ensembles (#725)
   - [ ] Build a multi-cluster representative tree list with plot weights.
   - [ ] Run the untreated and CT60 scenarios across the documented range.

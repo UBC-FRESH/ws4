@@ -102,8 +102,8 @@ minimum interval and records the count in `constraint_stats.sdmd_rejected`.
 
 ## 6. Known limits
 
-- The `fdin` crown-closure curve is truncated at 2,951 TPH; the high-TPH branch was
-  not resolved. This is recorded in the review packet and source catalog.
+- The `fdin` crown-closure curve was truncated at 2,951 TPH in P104; P106.1
+  later recovered the continuous high-TPH branch. The P104 record is historical.
 - The FVS paths use one representative cluster per AU, not a full AU-level tree
   list. The clusters are the median-age observations, scaled to AU median TPH.
 - CT60 is applied at the first projection cycle for the older stands; the scenario
