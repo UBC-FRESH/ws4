@@ -3,7 +3,7 @@
 Phase: P121 BEC crosswalk and AU integrity
 Parent issue: #769
 Branch: `feature/p121-bec-integrity`
-Evidence head: `6514122`
+Evidence head: `9acafc5`
 Report commit: this metadata-only report update
 Date: 2026-11-03
 Status: queued as PR #782 for maintainer approval. Not merged.
