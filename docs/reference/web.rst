@@ -552,6 +552,15 @@ The 5 m tolerance keeps the stand boundaries while cutting the vertex count by r
 the coordinates stay in the source projection. Pass the resulting file to ``--geometry``. A point
 layer remains valid.
 
+For a large layer, write a sidecar named ``<geometry>.bounds.json`` with a
+``bounds`` array of ``[west, south, east, north]`` in the source CRS. The service
+uses it for the initial map fit instead of parsing every polygon. A missing or
+malformed sidecar falls back to the geometry itself.
+
+``--geometry-overview`` can point to a coarser copy of the same block layer. The
+vector-tile path uses it below zoom 8 and switches to the detail geometry at
+zoom 8 and above.
+
 Skins
 -----
 

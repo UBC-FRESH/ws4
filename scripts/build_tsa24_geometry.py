@@ -12,6 +12,7 @@ Run it from the instance root after materialising the source shapefile:
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
 import geopandas as gpd
@@ -36,7 +37,23 @@ def main() -> None:
     frame["geometry"] = frame.geometry.simplify(args.simplify, preserve_topology=True)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     frame.to_file(args.output, driver="GeoJSON")
+    bounds_path = args.output.with_name(args.output.name + ".bounds.json")
+    bounds_path.write_text(
+        json.dumps(
+            {
+                "bounds": [float(value) for value in frame.total_bounds],
+                "crs": args.crs,
+                "features": len(frame),
+                "simplify_m": args.simplify,
+                "source": str(args.source),
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     print(f"wrote {args.output} features={len(frame)} bytes={args.output.stat().st_size}")
+    print(f"wrote {bounds_path}")
 
 
 if __name__ == "__main__":
