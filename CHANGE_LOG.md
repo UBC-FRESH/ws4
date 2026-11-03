@@ -4240,3 +4240,7 @@ issue comments.
 
 - P120: phase approved and squash-merged as `a7e83e3` on 2026-11-03. PR #764
   passed all five CI checks; the branch was deleted and parent issue #731 closed.
+- P121: launched BEC crosswalk and AU integrity on
+  `feature/p121-bec-integrity`, parent issue #769, tasks #770-#773. Scope:
+  classify the WS4/CCISS label differences, add an AU validator, wire it, and
+  close out.

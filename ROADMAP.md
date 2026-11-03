@@ -100,6 +100,7 @@ exists and the maintainer approves it.
 | P104 (SDMD pilot) digitisation and trajectory evidence | #680 | `feature/p104-sdmd-pilot` | complete |
 | P106 AU evidence depth | #723 | `feature/p106-au-evidence` | complete |
 | P120 SDMD atlas completion | #731 | `feature/p120-sdmd-atlas` | complete |
+| P121 BEC crosswalk and AU integrity | #769 | `feature/p121-bec-integrity` | active |
 | P109 Report provenance sidecars | #734 | `feature/p108-report-provenance` | pr-open |
 
 | P95 (factorized vectors) target-cell cache | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
@@ -3712,14 +3713,14 @@ PDFs, and record the species/BEC coverage.
   - [x] `hwn` stored provisional; vector curves plus a raster crown-closure trace.
   - [x] `swn` stored provisional; vector curves plus a raster crown-closure trace.
   - [x] `cwn` stored provisional; vector curves plus a raster crown-closure trace.
-  - [ ] Add source entries, overlays, and tests.
+  - [x] Add source entries, overlays, and tests.
 - [x] P120.3 Digitise the remaining planted diagrams (#737)
   - [x] `fdcp` stored provisional.
   - [x] `ssp` stored provisional.
   - [x] `hwp` stored provisional.
   - [x] `cwp` stored provisional.
   - [x] `swp` stored provisional.
-  - [ ] Record the planted top-height assignments.
+  - [x] Record the planted top-height assignments.
 - [x] P120.4 Species/BEC coverage and closeout (#739)
   - [x] Update the source catalog and coverage table.
   - [x] Write the closeout report and queue the PR.
@@ -3730,3 +3731,36 @@ Acceptance:
 - Every diagram has a source hash and a review status.
 - `validate_diagram` passes for every stored diagram.
 - Coverage is stated without overclaiming BEC specificity.
+
+## Phase 121: BEC crosswalk and AU integrity
+
+Parent issue: #769
+Branch: `feature/p121-bec-integrity`
+Status: active
+Plan: `notes/reports/p120-atlas-coverage.md`
+Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
+
+Goal: resolve the WS4/CCISS BEC label differences and add an AU integrity check
+that refuses impossible BEC/TSA/species combinations before evidence enters an AU.
+
+- [ ] P121.1 Classify the BEC crosswalk (#770)
+  - [ ] Classify exact, split, aggregation, and unresolved labels.
+  - [ ] Write the review table and notes.
+  - [ ] Test the counts and examples.
+- [ ] P121.2 Add the AU integrity validator (#771)
+  - [ ] Parse the AU label and store metadata.
+  - [ ] Check BEC coverage and impossible combinations.
+  - [ ] Test pass, fail, and unknown cases.
+- [ ] P121.3 Wire and test the validator (#772)
+  - [ ] Run it on store load or report.
+  - [ ] Surface findings in data gaps and the CLI/API.
+- [ ] P121.4 Coverage and closeout (#773)
+  - [ ] Update docs, roadmap, and changelog.
+  - [ ] Write the closeout report and queue the PR.
+
+Acceptance:
+
+- Every BEC difference is named or explicitly unresolved.
+- Invalid or impossible AU combinations fail closed.
+- The crosswalk and coverage are versioned.
+- `python scripts/dashboard.py` is green.
