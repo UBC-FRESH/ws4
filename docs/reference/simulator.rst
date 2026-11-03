@@ -48,6 +48,9 @@ Outputs
    * - ``product_values.csv``
      - ``offset,account,value`` — the product yields recorded at each treatment (per event, before the
        per-account aggregation).
+   * - ``report_provenance.json``
+     - The report sidecar: report digests, source metadata digests, run and dataset identifiers, and
+       an explicit uncertainty status. See :doc:`report-provenance`.
    * - ``dataset.json``
      - The dataset manifest, so a run records what it read.
 

@@ -1375,7 +1375,7 @@ def report(
     """Write an account summary and a target status for a run."""
     values = pd.read_csv(run / "account_values.csv")
     target_list = load_targets(targets) if targets is not None else []
-    write_report(values, target_list, out if out is not None else run)
+    write_report(values, target_list, out if out is not None else run, run_id=run.name)
     print(f"[bold green]Report written[/] → {out if out is not None else run}")
 
 

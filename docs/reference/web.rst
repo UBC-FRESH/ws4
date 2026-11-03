@@ -141,7 +141,8 @@ Endpoints
        joins the values to ``--geometry``; without geometry it is a 404. ``available``
        is false when the run has no DHI artifacts.
    * - ``GET /api/runs/{run}/reports``
-     - The run's report files and their sizes.
+     - The run's report files, their sizes, the ``sha256`` recorded by
+       ``report_provenance.json``, and the decoded sidecar on its own entry.
    * - ``GET /api/runs/{run}/reports/{name}``
      - One report file; a name the run does not hold is a 404.
    * - ``GET /api/runs/{run}/map?year=&period_start=&layer=&account=&format=&bbox=&zoom=&lidar=``
@@ -692,13 +693,15 @@ oldest finished entries. A read-only service shows only the artifacts.
 Reports
 -------
 
-``GET /api/runs/{run}/reports`` lists the report files a run wrote. The application renders a CSV in a
+``GET /api/runs/{run}/reports`` lists the report files a run wrote and the digests recorded by
+``report_provenance.json`` (see :doc:`report-provenance`). The application renders a CSV in a
 table (first 200 rows) and opens HTML/PNG reports directly. The Reports tab groups the named
 **standard reports** when present — account summary, target status, route cost (overall and per
 destination), patch accounts and metrics, spread metrics, edge contrast, the road network, the
-schedule and the ending inventory — and keeps the full file list below them. The ending-inventory
-card shows the final feature values and year from ``summary.json``, plus any flow-target status.
-Nothing is recomputed in the browser.
+schedule and the ending inventory — and keeps the full file list below them. A provenance badge
+names the sidecar's uncertainty status and links to the sidecar and its source metadata files.
+The ending-inventory card shows the final feature values and year from ``summary.json``, plus any
+flow-target status. Nothing is recomputed in the browser.
 
 Runs written before the current clock schema carry ``year`` in ``account_values.csv`` and ``period``
 in ``schedule.csv``. The shared run-table reader adds an ``offset`` alias for either column and keeps

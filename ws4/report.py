@@ -7,8 +7,10 @@ whether each target was met.
 
 from __future__ import annotations
 
+import hashlib
 import json
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -23,6 +25,19 @@ from .opt.objective import (
 )
 from .resilience import resilience_report
 from .structure_habitat import structure_habitat_report
+
+#: Schema name for the report provenance sidecar.
+REPORT_PROVENANCE_SCHEMA = "ws4.report.provenance.v1"
+
+#: Name of the sidecar written beside the report tables.
+REPORT_PROVENANCE_NAME = "report_provenance.json"
+
+#: Run-local metadata files that shape the report tables and are hashed when present.
+SOURCE_METADATA_NAMES = (
+    "dhi_metadata.json",
+    "structure_habitat_metadata.json",
+    "resilience_metadata.json",
+)
 
 
 def _by_offset(values: pd.DataFrame) -> dict[tuple[int, str], float]:
@@ -332,8 +347,317 @@ def dhi_report(
     return pd.DataFrame(rows, columns=columns)
 
 
-def write_report(values: pd.DataFrame, targets: list[Target], out_dir: Path) -> None:
-    """Write the account summary and the target status to a directory.
+def _sha256(path: Path) -> str | None:
+    """Return a file's SHA-256 digest, or None when it cannot be read.
+
+    Parameters
+    ----------
+    path : Path
+        The file to hash.
+
+    Returns
+    -------
+    str or None
+        The lowercase hexadecimal digest, or None when the file is missing or unreadable.
+    """
+    if not path.is_file():
+        return None
+    digest = hashlib.sha256()
+    try:
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+    except OSError:
+        return None
+    return digest.hexdigest()
+
+
+def _json_mapping(path: Path) -> tuple[dict[str, object] | None, str | None]:
+    """Read a JSON object, returning a reason instead of raising on bad input.
+
+    Parameters
+    ----------
+    path : Path
+        The JSON file to read.
+
+    Returns
+    -------
+    tuple of (dict or None, str or None)
+        The decoded mapping and an error reason, or ``(None, reason)`` when the file is
+        missing, unreadable, not valid JSON, or not a JSON object.
+    """
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except OSError:
+        return None, "cannot read file"
+    except ValueError:
+        return None, "not valid JSON"
+    if not isinstance(raw, dict):
+        return None, "not a JSON object"
+    return raw, None
+
+
+def _file_record(directory: Path, name: str, *, status: str = "hashed") -> dict[str, object]:
+    """Return a report or metadata file record with its size and digest.
+
+    Parameters
+    ----------
+    directory : Path
+        The directory that holds the file.
+    name : str
+        The file name to record.
+    status : str, optional
+        The status to record when the file is readable.
+
+    Returns
+    -------
+    dict of str to object
+        ``name``, ``bytes``, ``sha256``, and ``status``. A missing or unreadable file
+        keeps its name and reports a null size and digest.
+    """
+    path = directory / name
+    try:
+        size = path.stat().st_size
+    except OSError:
+        return {"name": name, "bytes": None, "sha256": None, "status": "missing"}
+    digest = _sha256(path)
+    if digest is None:
+        return {"name": name, "bytes": size, "sha256": None, "status": "unreadable"}
+    return {"name": name, "bytes": size, "sha256": digest, "status": status}
+
+
+def _dataset_from_run_records(report_dir: Path) -> dict[str, object] | None:
+    """Return a dataset identity from an existing run record, when one is present.
+
+    Parameters
+    ----------
+    report_dir : Path
+        The report or run directory.
+
+    Returns
+    -------
+    dict of str to object or None
+        A compact dataset identity, or None when no usable record exists.
+    """
+    for name in ("run_manifest.json", "data_quality.json"):
+        path = report_dir / name
+        if not path.is_file():
+            continue
+        payload, _error = _json_mapping(path)
+        if payload is None:
+            continue
+        identity: dict[str, object] = {}
+        raw_dataset = payload.get("dataset")
+        if name == "run_manifest.json" and isinstance(raw_dataset, Mapping):
+            raw_path = raw_dataset.get("path")
+            if isinstance(raw_path, str) and raw_path.strip():
+                identity["id"] = Path(raw_path).name
+            reference = raw_dataset.get("reference")
+            if isinstance(reference, Mapping):
+                for key in ("schema_version", "manifest_sha256"):
+                    if reference.get(key) is not None:
+                        identity[key] = reference[key]
+        elif name == "data_quality.json":
+            if isinstance(raw_dataset, str) and raw_dataset.strip():
+                identity["id"] = Path(raw_dataset).name
+            if payload.get("manifest_sha256") is not None:
+                identity["manifest_sha256"] = payload["manifest_sha256"]
+        if identity:
+            return identity
+    return None
+
+
+def _dataset_identity(report_dir: Path, dataset: Path | None) -> dict[str, object] | None:
+    """Return the dataset identifier and manifest digest when they are available.
+
+    Parameters
+    ----------
+    report_dir : Path
+        The report or run directory, used to recover a previously written run record.
+    dataset : Path or None
+        The compiled dataset directory, when the caller knows it.
+
+    Returns
+    -------
+    dict of str to object or None
+        ``id``, ``manifest_sha256``, ``schema_version``, and a status where available.
+    """
+    if dataset is None:
+        return _dataset_from_run_records(report_dir)
+    dataset_dir = Path(dataset)
+    identity: dict[str, object] = {"id": dataset_dir.name}
+    manifest_path = dataset_dir / "manifest.json"
+    if not manifest_path.is_file():
+        identity["status"] = "missing"
+        return identity
+    payload, error = _json_mapping(manifest_path)
+    if payload is None:
+        identity["status"] = "invalid"
+        if error is not None:
+            identity["error"] = error
+        return identity
+    identity["status"] = "ok"
+    identity["schema_version"] = payload.get("schema_version")
+    identity["manifest_sha256"] = _sha256(manifest_path)
+    sources = payload.get("sources")
+    if isinstance(sources, list):
+        identity["sources"] = sources
+    return identity
+
+
+def _uncertainty(
+    metadata: Sequence[tuple[str, Mapping[str, object]]],
+) -> dict[str, object]:
+    """Return the uncertainty statement carried by the source metadata.
+
+    Parameters
+    ----------
+    metadata : sequence of (str, mapping)
+        The decoded source metadata files, in report order.
+
+    Returns
+    -------
+    dict of str to object
+        ``status``, ``source``, and ``statement``. The status is ``not_stated`` unless a
+        source metadata file explicitly carries uncertainty.
+    """
+    for name, payload in metadata:
+        raw = payload.get("uncertainty")
+        if isinstance(raw, Mapping):
+            status = raw.get("status", raw.get("level", "stated"))
+            statement = raw.get("statement", raw.get("notes"))
+            return {
+                "status": str(status) if str(status).strip() else "stated",
+                "source": name,
+                "statement": str(statement) if statement is not None else None,
+            }
+        if isinstance(raw, str) and raw.strip():
+            return {"status": "stated", "source": name, "statement": raw.strip()}
+        raw_status = payload.get("uncertainty_status")
+        if isinstance(raw_status, str) and raw_status.strip():
+            return {"status": raw_status.strip(), "source": name, "statement": None}
+    return {"status": "not_stated", "source": None, "statement": None}
+
+
+def build_report_provenance(
+    report_dir: Path,
+    report_names: Sequence[str],
+    *,
+    dataset: Path | None = None,
+    run_id: str | None = None,
+    generated_utc: str | None = None,
+) -> dict[str, object]:
+    """Build the provenance record for one report directory.
+
+    Parameters
+    ----------
+    report_dir : Path
+        The directory that holds the report files.
+    report_names : sequence of str
+        The report file names to hash.
+    dataset : Path or None, optional
+        The compiled dataset directory, when the caller knows it.
+    run_id : str or None, optional
+        The run identifier; the report directory's name is used when omitted.
+    generated_utc : str or None, optional
+        A fixed ISO-8601 timestamp, for reproducible tests; the current UTC time is used
+        when omitted.
+
+    Returns
+    -------
+    dict of str to object
+        The ``ws4.report.provenance.v1`` record. Missing or invalid inputs are recorded
+        as statuses and warnings rather than raised.
+    """
+    report_dir = Path(report_dir)
+    names = list(dict.fromkeys(name for name in report_names if name != REPORT_PROVENANCE_NAME))
+    reports: list[dict[str, object]] = []
+    warnings: list[str] = []
+    for name in names:
+        record = _file_record(report_dir, name)
+        if record["status"] != "hashed":
+            warnings.append(f"report file {name!r} is {record['status']}")
+        reports.append(record)
+    sources: list[dict[str, object]] = []
+    metadata: list[tuple[str, Mapping[str, object]]] = []
+    for name in SOURCE_METADATA_NAMES:
+        path = report_dir / name
+        if not path.is_file():
+            continue
+        record = _file_record(report_dir, name, status="ok")
+        payload, error = _json_mapping(path)
+        if payload is None:
+            record["status"] = "invalid"
+            if error is not None:
+                record["error"] = error
+            warnings.append(f"source metadata {name!r} is invalid: {error or 'unknown reason'}")
+        else:
+            metadata.append((name, payload))
+        sources.append(record)
+    resolved_run = run_id.strip() if run_id is not None and run_id.strip() else report_dir.name
+    return {
+        "schema_version": REPORT_PROVENANCE_SCHEMA,
+        "generated_utc": generated_utc or datetime.now(UTC).isoformat(),
+        "run": {"id": resolved_run},
+        "dataset": _dataset_identity(report_dir, dataset),
+        "reports": reports,
+        "sources": sources,
+        "uncertainty": _uncertainty(metadata),
+        "warnings": warnings,
+    }
+
+
+def write_report_provenance(
+    report_dir: Path,
+    report_names: Sequence[str],
+    *,
+    dataset: Path | None = None,
+    run_id: str | None = None,
+    generated_utc: str | None = None,
+) -> Path:
+    """Write ``report_provenance.json`` beside a report directory's tables.
+
+    Parameters
+    ----------
+    report_dir : Path
+        The directory that holds the report files.
+    report_names : sequence of str
+        The report file names to hash.
+    dataset : Path or None, optional
+        The compiled dataset directory, when the caller knows it.
+    run_id : str or None, optional
+        The run identifier; the report directory's name is used when omitted.
+    generated_utc : str or None, optional
+        A fixed ISO-8601 timestamp, for reproducible tests.
+
+    Returns
+    -------
+    Path
+        The path to the written sidecar.
+    """
+    report_dir = Path(report_dir)
+    report_dir.mkdir(parents=True, exist_ok=True)
+    provenance = build_report_provenance(
+        report_dir,
+        report_names,
+        dataset=dataset,
+        run_id=run_id,
+        generated_utc=generated_utc,
+    )
+    path = report_dir / REPORT_PROVENANCE_NAME
+    path.write_text(json.dumps(provenance, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return path
+
+
+def write_report(
+    values: pd.DataFrame,
+    targets: list[Target],
+    out_dir: Path,
+    *,
+    dataset: Path | None = None,
+    run_id: str | None = None,
+) -> None:
+    """Write the report tables and their provenance sidecar to a directory.
 
     Parameters
     ----------
@@ -342,14 +666,22 @@ def write_report(values: pd.DataFrame, targets: list[Target], out_dir: Path) -> 
     targets : list of Target
         The targets.
     out_dir : Path
-        Directory to write ``report_accounts.csv``, ``report_targets.csv``, and
-        ``ending_inventory.csv`` into.
+        Directory to write ``report_accounts.csv``, ``report_targets.csv``,
+        ``ending_inventory.csv``, and ``report_provenance.json`` into.
+    dataset : Path or None, optional
+        The compiled dataset directory, recorded in the provenance sidecar when known.
+    run_id : str or None, optional
+        The run identifier, recorded in the provenance sidecar when known.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    report_names: list[str] = []
     account_summary(values).to_csv(out_dir / "report_accounts.csv", index=False)
+    report_names.append("report_accounts.csv")
     target_status(values, targets).to_csv(out_dir / "report_targets.csv", index=False)
+    report_names.append("report_targets.csv")
     ending_inventory(values).to_csv(out_dir / "ending_inventory.csv", index=False)
+    report_names.append("ending_inventory.csv")
     metadata_path = out_dir / "dhi_metadata.json"
     metadata: dict[str, object] | None = None
     if metadata_path.is_file():
@@ -361,6 +693,7 @@ def write_report(values: pd.DataFrame, targets: list[Target], out_dir: Path) -> 
     dhi = dhi_report(values, metadata)
     if not dhi.empty:
         dhi.to_csv(out_dir / "report_dhi.csv", index=False)
+        report_names.append("report_dhi.csv")
     structure_metadata_path = out_dir / "structure_habitat_metadata.json"
     structure_metadata: dict[str, object] | None = None
     if structure_metadata_path.is_file():
@@ -372,6 +705,7 @@ def write_report(values: pd.DataFrame, targets: list[Target], out_dir: Path) -> 
     structure = structure_habitat_report(values, structure_metadata)
     if not structure.empty:
         structure.to_csv(out_dir / "report_structure_habitat.csv", index=False)
+        report_names.append("report_structure_habitat.csv")
     resilience_metadata_path = out_dir / "resilience_metadata.json"
     resilience_metadata: dict[str, object] | None = None
     if resilience_metadata_path.is_file():
@@ -383,3 +717,5 @@ def write_report(values: pd.DataFrame, targets: list[Target], out_dir: Path) -> 
     resilience = resilience_report(values, resilience_metadata)
     if not resilience.empty:
         resilience.to_csv(out_dir / "report_resilience.csv", index=False)
+        report_names.append("report_resilience.csv")
+    write_report_provenance(out_dir, report_names, dataset=dataset, run_id=run_id)
