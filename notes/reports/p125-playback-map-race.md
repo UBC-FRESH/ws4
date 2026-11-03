@@ -1,7 +1,7 @@
 # P125 period playback and map race fix
 
 Date: 2026-11-03
-Status: complete
+Status: complete; PR #786
 
 ## Root cause
 
