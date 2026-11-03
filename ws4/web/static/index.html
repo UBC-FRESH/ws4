@@ -13,11 +13,13 @@
     <div class="brand"><strong>WS4</strong><span class="build">v88</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
-    <label class="year">Period
-      <input id="year" type="range" min="0" max="0" step="1" value="0">
-      <output id="year-label">Years</output>
-    </label>
-    <button id="play-periods" type="button" aria-pressed="false" title="Play through periods">▶ Play</button>
+    <div class="period-control">
+      <label class="year">Period
+        <input id="year" type="range" min="0" max="0" step="1" value="0">
+        <output id="year-label">Years</output>
+      </label>
+      <button id="play-periods" type="button" aria-pressed="false" title="Play through periods">▶ Play</button>
+    </div>
     <span id="status">loading…</span>
     <button id="help-toggle" type="button" aria-label="Keyboard shortcuts" title="Keyboard shortcuts">?</button>
     <button id="chat-toggle" class="chat-toggle" type="button" aria-expanded="false" title="Ask the WS4 assistant" hidden>✦ Ask</button>

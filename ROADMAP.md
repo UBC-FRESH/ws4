@@ -123,6 +123,7 @@ exists and the maintainer approves it.
 | P123 Assistant context and action chips | #780 | `not-created` | planned |
 | P124 3D estate replay | #781 | `not-created` | planned |
 | P125 Stabilize period playback and map paging | #784 | `fix/p125-playback-map-race` | pr-open |
+| P126 Stabilize playback controls and cadence | #787 | `fix/p126-playback-controls` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3814,4 +3815,22 @@ Acceptance:
 - Older map requests cannot overwrite newer periods.
 - Playback waits for a load and a settle interval.
 - The full-screen map loading overlay is suppressed during playback.
+- Browser smoke and dashboard pass.
+
+## Phase 126: Stabilize playback controls and cadence
+
+Parent issue: #787
+Branch: `fix/p126-playback-controls`
+Status: pr-open
+Report: `notes/reports/p126-playback-controls.md`
+PR: #788
+
+Goal: keep the playback control stationary and make playback cadence practical.
+
+- [x] P126.1 Stabilize the control slot and reduce settle delay
+
+Acceptance:
+
+- Play/Pause does not move while playback runs.
+- Playback advances at a practical cadence without overlap.
 - Browser smoke and dashboard pass.

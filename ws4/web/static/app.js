@@ -3710,13 +3710,13 @@ function togglePeriodPlay() {
         else if (state.live.active) render(false);
         else {
           await loadMap(true);
-          await new Promise((resolve) => window.setTimeout(resolve, 900));
+          await new Promise((resolve) => window.setTimeout(resolve, 500));
         }
       }
     } finally {
       periodPlayBusy = false;
     }
-  }, 900);
+  }, 700);
 }
 
 function selectPeriodForYear(year) {

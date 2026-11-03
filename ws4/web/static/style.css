@@ -10,7 +10,10 @@ header strong { font-size:1.05rem; letter-spacing:.04em; }
 .build { color:var(--muted); font-size:.72rem; }
 header label { display:flex; gap:.4rem; align-items:center; color:var(--muted); }
 header select { max-width:16rem; }
-header .year { flex:1; }
+.period-control { display:flex; align-items:center; gap:.45rem; flex:none; width:clamp(20rem, 36vw, 34rem); }
+.period-control .year { flex:1; min-width:0; }
+header #status { flex:1 1 12rem; min-width:0; max-width:none; }
+#play-periods { flex:none; width:6rem; }
 header input[type=range] { flex:1; min-width:8rem; }
 #status { color:var(--muted); font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:22rem; }
 main { flex:1; display:grid; grid-template-columns:var(--panel-width) 6px 1fr; min-height:0; min-width:0; }
@@ -292,7 +295,8 @@ path.block.compare-both { fill:#6b4c9a; }
 @keyframes spin { to { transform:rotate(360deg); } }
 @media (max-width: 1200px) {
   header { flex-wrap:wrap; gap:.45rem .8rem; }
-  header .year { flex-basis:100%; order:5; }
+  .period-control { flex-basis:100%; order:5; width:auto; }
+  .period-control .year { flex-basis:auto; }
   #status { flex-basis:100%; order:6; max-width:none; }
   .dataset-name { max-width:11rem; }
   aside { padding:.45rem; }
