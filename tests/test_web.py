@@ -124,6 +124,27 @@ def test_the_landing_page_lists_the_dataset_and_its_runs(tmp_path: Path) -> None
     assert client.get("/health").json() == {"status": "ok"}
 
 
+def test_shell_has_run_snapshot_timeline_playback_and_help(tmp_path: Path) -> None:
+    """The shell exposes the run-insight and interaction affordances."""
+    client, _ = _app(tmp_path)
+    html = client.get("/").text
+    for element in (
+        'id="run-snapshot"',
+        'id="snapshot-cards"',
+        'id="sub-timeline"',
+        'id="tab-timeline"',
+        'id="play-periods"',
+        'id="toast"',
+        'id="help-dialog"',
+        'id="help-toggle"',
+    ):
+        assert element in html
+    script = client.get("/static/app.js").text
+    assert "function loadScheduleTimeline" in script
+    assert "function togglePeriodPlay" in script
+    assert "function renderRunSnapshot" in script
+
+
 def test_summary_lists_the_dataset_and_its_runs(tmp_path: Path) -> None:
     """The summary reports the dataset name, the manifest and the runs found."""
     client, _ = _app(tmp_path)

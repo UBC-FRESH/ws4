@@ -4279,3 +4279,8 @@ issue comments.
   official labels absent from the WS4 table. The 26 absent WS4 labels are named;
   they are old/aggregated/renamed, not silent “unresolved” rows. Updated the
   report and tests.
+
+
+- P122: run timeline and interaction uplift. Added snapshot cards, period
+  playback, a Results timeline from `schedule.csv`, toast feedback, and keyboard
+  shortcuts/help. Plan: `notes/design/ws4-ui-port-plan.md`. Dashboard: `OVERALL: GREEN`; focused web tests 79 passed; browser smoke verified snapshot, timeline, playback, and help.
