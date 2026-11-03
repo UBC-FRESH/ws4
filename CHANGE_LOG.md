@@ -4096,3 +4096,5 @@ issue comments.
   profile smoke remained exact and wrote the standard run artefacts. Report:
   `notes/reports/tsa24-profile-run-feedback.md`.
 
+- P106: phase approved and squash-merged as `7cec6b6` on 2026-11-03. PR #729
+  passed all five CI checks; the branch was deleted and parent issue #723 closed.

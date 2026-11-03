@@ -6,7 +6,7 @@ Branch: `feature/p106-au-evidence`
 Evidence head: `6a07339`
 Report commit: this metadata-only report update
 Date: 2026-11-03
-Status: queued as PR #729 for maintainer approval. Not merged.
+Status: approved and merged as `7cec6b6` on 2026-11-03.
 
 ## Recommendation
 
@@ -14,12 +14,12 @@ Queue the pull request for `feature/p106-au-evidence` into `main` and wait for t
 maintainer's approval. Do not merge, tag, release, or change settings until that
 approval is explicit.
 
-After approval:
+Executed:
 
-1. Squash-merge the pull request.
-2. Delete the branch `feature/p106-au-evidence`.
-3. Close parent issue #723 with a closeout comment that cites the merge commit.
-4. The next phase is not launched until the maintainer names it.
+1. Squash-merged the pull request as `7cec6b6`.
+2. Deleted the branch `feature/p106-au-evidence`.
+3. Closed parent issue #723 with a closeout comment that cites the merge commit.
+4. The next phase is P107.
 
 Settings changes: none.
 
