@@ -82,3 +82,16 @@ def test_retired_bec_label_is_refused() -> None:
     )
     assert [item.code for item in findings] == ["SDMD-AU-BEC-RETIRED"]
     assert "version 13" in findings[0].message
+
+
+def test_retired_label_outside_ws4_is_still_retired() -> None:
+    """A retired BEC label is named as retired even when WS4 never carried it."""
+    findings = validate_au_integrity(
+        "AU-PPxh1a-FDI",
+        known_bec=_known(),
+        tsa_bec_counts=load_tsa_bec_counts(DATA / "tsa_bec_counts.csv"),
+        official_bec=default_official_bec_labels(),
+        retired_bec=default_retired_bec_versions(),
+    )
+    assert [item.code for item in findings] == ["SDMD-AU-BEC-RETIRED"]
+    assert "version 10" in findings[0].message

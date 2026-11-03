@@ -138,7 +138,15 @@ def validate_au_integrity(
         return (Problem("SDMD-AU-LABEL", label, str(error)),)
     findings: list[Problem] = []
     known = set(known_bec)
-    if parts.bec not in known:
+    if retired_bec is not None and parts.bec in retired_bec:
+        findings.append(
+            Problem(
+                "SDMD-AU-BEC-RETIRED",
+                label,
+                f"BEC label {parts.bec!r} was retired in BEC version {retired_bec[parts.bec]}",
+            )
+        )
+    elif parts.bec not in known:
         if official_bec is not None and parts.bec in set(official_bec):
             findings.append(
                 Problem(
@@ -149,14 +157,6 @@ def validate_au_integrity(
             )
         else:
             findings.append(Problem("SDMD-AU-BEC", label, f"unknown BEC label {parts.bec!r}"))
-    elif retired_bec is not None and parts.bec in retired_bec:
-        findings.append(
-            Problem(
-                "SDMD-AU-BEC-RETIRED",
-                label,
-                f"BEC label {parts.bec!r} was retired in BEC version {retired_bec[parts.bec]}",
-            )
-        )
     if parts.tsa is not None and (parts.tsa, parts.bec) not in tsa_bec_counts:
         findings.append(
             Problem(

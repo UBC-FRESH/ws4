@@ -15,8 +15,8 @@ The validator returns:
 - `SDMD-AU-LABEL` when the label is malformed.
 - `SDMD-AU-BEC` when the BEC label is in neither the current BECdb nor the WS4
   coverage table.
-- `SDMD-AU-BEC-RETIRED` when the label is in the WS4 table but BECdb retired it.
-  The message names the retirement version.
+- `SDMD-AU-BEC-RETIRED` when BECdb retired the label. The message names the
+  retirement version. This applies whether or not WS4 still carries the label.
 - `SDMD-AU-BEC-NO-COVERAGE` when the label is current in BECdb but absent from
   the WS4 coverage table. This is a coverage gap, not an unknown BEC.
 - `SDMD-AU-TSA-BEC` when the TSA/BEC pair has no public PSP sites.
