@@ -4335,4 +4335,8 @@ issue comments.
   profile target library. Run profile also uses the 200-year profile horizon.
   Report: `notes/reports/p129-gpu-current-targets.md`.
 - P123.1 queued in PR #804; branch `feature/p123-assistant-context`, head
-  `f2077ac`. Dashboard: `OVERALL: GREEN`.
+  `4480c9a`. Dashboard: `OVERALL: GREEN`.
+
+- P130: Solve now routes through the selected GPU profile when one is available,
+  using current targets and the time budget. Report:
+  `notes/reports/p130-solve-gpu-profile.md`.

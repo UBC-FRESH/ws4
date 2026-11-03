@@ -146,6 +146,7 @@ def test_shell_has_run_snapshot_timeline_playback_and_help(tmp_path: Path) -> No
     assert "row.account === account && !row.flow" in script
     assert "function syncTargetTableInputs" in script
     assert "syncTargetTableInputs();" in script
+    assert "await startProfileRun();" in script
 
 
 def test_summary_lists_the_dataset_and_its_runs(tmp_path: Path) -> None:
