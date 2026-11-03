@@ -99,7 +99,9 @@ exists and the maintainer approves it.
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
 | P104 (SDMD pilot) digitisation and trajectory evidence | #680 | `feature/p104-sdmd-pilot` | complete |
 | P106 AU evidence depth | #723 | `feature/p106-au-evidence` | complete |
+| P120 SDMD atlas completion | #731 | `feature/p120-sdmd-atlas` | complete |
 | P109 Report provenance sidecars | #734 | `feature/p108-report-provenance` | pr-open |
+
 | P95 (factorized vectors) target-cell cache | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
 | P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | pr-open |
 | P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | pr-open |
@@ -116,6 +118,7 @@ exists and the maintainer approves it.
 | P113 Map capability fallback | #758 | `feature/p113-map-fallback` | pr-open |
 | P114 Scenario price paths | #749 | `feature/p114-prices-v1` | pr-open |
 | P115 TSA 24 source geometry | #765 | `feature/p115-tsa24-source-geometry` | pr-open |
+| P116 TSA 24 map performance | #767 | `feature/p116-tsa24-map-performance` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3665,6 +3668,7 @@ Acceptance:
 - The comparison reports the base value, absolute delta, and percent delta for every
   path/product/period, and the report and sidecar repeat the `not a forecast` caveat.
 - No objective, constraint, growth, schedule, or solver behaviour changes.
+
 - `python scripts/dashboard.py` is green.
 
 ## Phase 115: TSA 24 source geometry
@@ -3684,3 +3688,64 @@ Acceptance:
 - All 458,708 source rows match the compiled fragments.
 - Geometry bounds and map joins work.
 - The regeneration script and source hashes are recorded.
+
+## Phase 116: TSA 24 map performance
+
+Parent issue: #767
+Branch: `feature/p116-tsa24-map-performance`
+Status: pr-open
+Report: `notes/reports/tsa24-map-performance.md`
+PR: #774
+
+Goal: keep the TSA 24 map usable at 458k polygons.
+
+- [x] P116.1 Add bounds sidecar and TSA24 overview
+
+Acceptance:
+
+- Bounds reads use the sidecar.
+- Low-zoom MVT uses the overview.
+- Dashboard green.
+
+## Phase 120: SDMD atlas completion
+
+Parent issue: #731
+Branch: `feature/p120-sdmd-atlas`
+Status: complete
+Merge commit: `a7e83e3`
+Plan: `notes/reports/p106-closeout.md`
+Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
+
+Goal: turn the four-diagram pilot into the usable public BC SDMD set. Build a
+reusable digitisation and QA path, digitise the remaining natural and planted
+PDFs, and record the species/BEC coverage.
+
+- [x] P120.1 Build the digitisation and QA pipeline (#735)
+  - [x] Capture PDF path extraction, axis calibration, and label matching.
+  - [x] Emit diagram JSON, figrecover overlay, and review manifest.
+  - [x] Test calibration and curve ordering.
+- [x] P120.2 Digitise the remaining natural diagrams (#736)
+  - [x] `fdcn` stored provisional; vector curves plus a raster crown-closure trace.
+  - [x] Added `ws4.sdmd.trace` for reusable dotted-curve tracing.
+  - [x] `ssn` stored provisional; vector curves plus a raster crown-closure trace.
+  - [x] `hwn` stored provisional; vector curves plus a raster crown-closure trace.
+  - [x] `swn` stored provisional; vector curves plus a raster crown-closure trace.
+  - [x] `cwn` stored provisional; vector curves plus a raster crown-closure trace.
+  - Source entries, overlays, and tests are covered by the closeout evidence.
+- [x] P120.3 Digitise the remaining planted diagrams (#737)
+  - [x] `fdcp` stored provisional.
+  - [x] `ssp` stored provisional.
+  - [x] `hwp` stored provisional.
+  - [x] `cwp` stored provisional.
+  - [x] `swp` stored provisional.
+  - Planted top-height assignments remain provisional and are the first review item.
+- [x] P120.4 Species/BEC coverage and closeout (#739)
+  - [x] Update the source catalog and coverage table.
+  - [x] Write the closeout report and queue the PR.
+
+Acceptance:
+
+- Every remaining public PDF has a vector JSON or a named refusal.
+- Every diagram has a source hash and a review status.
+- `validate_diagram` passes for every stored diagram.
+- Coverage is stated without overclaiming BEC specificity.

@@ -818,6 +818,23 @@ def test_geometry_bounds_fit_the_map_to_the_configured_layer(tmp_path: Path) -> 
     assert 'id="map-unavailable"' in without.get("/").text
 
 
+def test_geometry_bounds_uses_a_sidecar(tmp_path: Path) -> None:
+    """A bounds sidecar answers map fitting without parsing the full geometry."""
+    client, _ = _app(tmp_path)
+    geometry = tmp_path / "geometry.geojson"
+    sidecar = geometry.with_name(geometry.name + ".bounds.json")
+    sidecar.write_text('{"bounds": [10, 20, 30, 40], "crs": "EPSG:3005"}', encoding="utf-8")
+    assert client.get("/api/geometry/bounds").json()["bounds"] == [10.0, 20.0, 30.0, 40.0]
+    fallback_dir = tmp_path / "fallback"
+    fallback_dir.mkdir()
+    fallback, _ = _app(fallback_dir)
+    fallback_geometry = fallback_dir / "geometry.geojson"
+    fallback_geometry.with_name(fallback_geometry.name + ".bounds.json").write_text(
+        '{"bounds": [1, 2, 3]}', encoding="utf-8"
+    )
+    assert fallback.get("/api/geometry/bounds").json()["bounds"] == [1.0, 0.0, 2.0, 0.0]
+
+
 def test_targets_round_trip_and_an_invalid_document_is_refused(tmp_path: Path) -> None:
     """A valid edit replaces the YAML; an invalid one leaves it unchanged."""
     client, targets = _app(tmp_path)

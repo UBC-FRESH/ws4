@@ -615,3 +615,205 @@ def test_fdin_crown_closure_is_monotone_and_complete() -> None:
     assert curve.points[-1][0] > 9000
     values = [point[1] for point in curve.points]
     assert all(later <= earlier + 5e-4 for earlier, later in itertools.pairwise(values))
+
+
+def test_coastal_douglas_fir_natural_diagram_is_valid() -> None:
+    """The fdcn vector curves and raster crown closure form a valid diagram."""
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "ws4"
+        / "sdmd"
+        / "data"
+        / "sdmd"
+        / "cdf-cwh-fdc-natural.json"
+    )
+    diagram = load_diagram(path)
+    assert diagram.species_group == "FDC"
+    assert validate_diagram(diagram) == []
+    top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
+    qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
+    assert top == [6, 8, 12, 16, 20, 24, 28, 36, 44, 52, 60]
+    assert qmd == [5, 10, 15, 20, 25, 30, 40, 50, 60, 70]
+    closure = next(item for item in diagram.isopleths if item.kind == "crown_closure")
+    assert closure.points[-1][0] >= 4000
+    assert diagram.review.status == "provisional"
+
+
+def test_sitka_spruce_natural_diagram_is_valid() -> None:
+    """The ssn vector curves and raster crown closure form a valid diagram."""
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "ws4"
+        / "sdmd"
+        / "data"
+        / "sdmd"
+        / "cdf-cwh-ss-natural.json"
+    )
+    diagram = load_diagram(path)
+    assert diagram.species_group == "SS"
+    assert validate_diagram(diagram) == []
+    top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
+    qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
+    assert top == [6, 8, 12, 16, 20, 24, 28, 36, 44, 52]
+    assert qmd == [5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 85]
+    assert diagram.review.status == "provisional"
+
+
+def test_western_hemlock_natural_diagram_is_valid() -> None:
+    """The hwn vector curves and raster crown closure form a valid diagram."""
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "ws4"
+        / "sdmd"
+        / "data"
+        / "sdmd"
+        / "cwh-hw-natural.json"
+    )
+    diagram = load_diagram(path)
+    assert diagram.species_group == "HW"
+    assert validate_diagram(diagram) == []
+    top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
+    qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
+    assert top == [6, 8, 12, 16, 20, 24, 28, 32, 36, 44, 52, 60]
+    assert qmd == [5, 10, 15, 20, 25, 30, 40, 50, 60, 65]
+    assert diagram.review.status == "provisional"
+
+
+def test_white_spruce_natural_diagram_is_valid() -> None:
+    """The swn vector curves and raster crown closure form a valid diagram."""
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "ws4"
+        / "sdmd"
+        / "data"
+        / "sdmd"
+        / "sbs-sw-natural.json"
+    )
+    diagram = load_diagram(path)
+    assert diagram.species_group == "SW"
+    assert validate_diagram(diagram) == []
+    top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
+    qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
+    assert top == [6, 10, 14, 18, 22, 26, 30, 34, 38]
+    assert qmd == [5, 10, 15, 20, 25, 30, 35, 40, 45]
+    assert diagram.review.status == "provisional"
+
+
+def test_western_redcedar_natural_diagram_is_valid() -> None:
+    """The cwn vector curves and raster crown closure form a valid diagram."""
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "ws4"
+        / "sdmd"
+        / "data"
+        / "sdmd"
+        / "cwh-cw-natural.json"
+    )
+    diagram = load_diagram(path)
+    assert diagram.species_group == "CW"
+    assert validate_diagram(diagram) == []
+    top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
+    qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
+    assert top == [6, 8, 12, 16, 20, 24, 26, 30, 38, 46, 50]
+    assert qmd == [5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80]
+    assert diagram.review.status == "provisional"
+
+
+def test_coastal_douglas_fir_planted_diagram_is_valid() -> None:
+    """The fdcp vector curves and raster crown closure form a valid diagram."""
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "ws4"
+        / "sdmd"
+        / "data"
+        / "sdmd"
+        / "cdf-cwh-fdc-planted.json"
+    )
+    diagram = load_diagram(path)
+    assert diagram.species_group == "FDC"
+    assert validate_diagram(diagram) == []
+    top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
+    qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
+    assert top == [6, 8, 12, 16, 20, 24, 28, 36, 44, 52]
+    assert qmd == [5, 10, 15, 20, 25, 30, 40, 50, 60, 70]
+    assert diagram.review.status == "provisional"
+
+
+def test_sitka_spruce_planted_diagram_is_valid() -> None:
+    """The ssp vector curves and raster crown closure form a valid diagram."""
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "ws4"
+        / "sdmd"
+        / "data"
+        / "sdmd"
+        / "cdf-cwh-ss-planted.json"
+    )
+    diagram = load_diagram(path)
+    assert diagram.species_group == "SS"
+    assert validate_diagram(diagram) == []
+    top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
+    qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
+    assert top == [6, 8, 12, 16, 20, 24, 36]
+    assert qmd == [5, 10, 15, 20, 25, 30, 40, 50, 60, 70]
+    assert diagram.review.status == "provisional"
+
+
+def test_western_hemlock_planted_diagram_is_valid() -> None:
+    """The hwp vector curves and raster crown closure form a valid diagram."""
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "ws4"
+        / "sdmd"
+        / "data"
+        / "sdmd"
+        / "cwh-hw-planted.json"
+    )
+    diagram = load_diagram(path)
+    assert diagram.species_group == "HW"
+    assert validate_diagram(diagram) == []
+    top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
+    qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
+    assert top == [6, 8, 12, 16, 20, 24, 32, 36, 44, 52]
+    assert qmd == [5, 10, 15, 20, 25, 30, 40, 50, 60]
+    assert diagram.review.status == "provisional"
+
+
+def test_western_redcedar_planted_diagram_is_valid() -> None:
+    """The cwp vector curves and raster crown closure form a valid diagram."""
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "ws4"
+        / "sdmd"
+        / "data"
+        / "sdmd"
+        / "cwh-cw-planted.json"
+    )
+    diagram = load_diagram(path)
+    assert diagram.species_group == "CW"
+    assert validate_diagram(diagram) == []
+    top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
+    qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
+    assert top == [6, 8, 12, 16, 20, 24, 28, 32, 36, 44, 48]
+    assert qmd == [5, 10, 15, 20, 25, 30, 40, 50, 60, 70]
+    assert diagram.review.status == "provisional"
+
+
+def test_white_spruce_planted_diagram_is_valid() -> None:
+    """The swp vector curves and raster crown closure form a valid diagram."""
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "ws4"
+        / "sdmd"
+        / "data"
+        / "sdmd"
+        / "sbs-sw-planted.json"
+    )
+    diagram = load_diagram(path)
+    assert diagram.species_group == "SW"
+    assert validate_diagram(diagram) == []
+    top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
+    qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
+    assert top == [6, 10, 14, 18, 22, 26, 30, 34, 38]
+    assert qmd == [5, 10, 15, 20, 25, 30, 35, 40]
+    assert diagram.review.status == "provisional"

@@ -80,3 +80,82 @@ real TSA 23 / IDFdk3 / PLI PSP store uses it in
 `ws4/sdmd/data/pilot-tsa23-idfdk3-pli/`. Both lodgepole pine diagrams are
 `provisional`; the QMD/top-height label assignments and the crown-closure curves
 are the review items.
+
+
+## Tooling integration
+
+The atlas pipeline uses two public UBC-FRESH tools:
+
+- `figrecover` (MIT) renders the PDF page, draws the stored isopleths over the
+  rendered page, computes QA records, and writes the review manifest.
+- `freshforge` (MIT) carries the `render -> extract -> overlay -> review` workflow
+  in `workflows/sdmd-digitise.yaml`.
+
+The isopleth extraction itself remains the vector-path reader in
+`ws4.sdmd.digitise`, because the public PDFs are vector Illustrators and direct
+paths are more precise than raster tracing. The module is exposed as the
+`ws4.sdmd.extract` node. A diagram spec supplies the axis ticks, path indices,
+dash patterns, and printed values; the workflow does not invent them.
+
+Install the optional tools with `python -m pip install -e '.[digitise]'`.
+
+## fdcn status
+
+The Coastal Douglas-fir natural diagram is stored as `cdf-cwh-fdc-natural.json`,
+provisional. The top-height, QMD, and boundary paths are vector; the crown-closure
+curve is a provisional raster trace recorded in
+`notes/reference/fdcn-digitisation.md`. Review the overlay before use.
+
+## ssn status
+
+Sitka spruce natural is stored as `cdf-cwh-ss-natural.json`, provisional. The
+top-height, QMD, and boundary paths are vector; the crown-closure curve is a
+raster trace. See `notes/reference/ssn-digitisation.md`.
+
+## hwn status
+
+Western hemlock natural is stored as `cwh-hw-natural.json`, provisional. The
+top-height, QMD, and boundary paths are vector; the crown-closure curve is a
+raster trace. See `notes/reference/hwn-digitisation.md`.
+
+## swn status
+
+White spruce natural is stored as `sbs-sw-natural.json`, provisional. Top height,
+QMD, and boundaries are vector; crown closure is a raster trace. See
+`notes/reference/swn-digitisation.md`.
+
+## cwn status
+
+Western redcedar natural is stored as `cwh-cw-natural.json`, provisional. Top
+height, QMD, and boundaries are vector; crown closure is a raster trace. See
+`notes/reference/cwn-digitisation.md`.
+
+## fdcp status
+
+Coastal Douglas-fir planted is stored as `cdf-cwh-fdc-planted.json`,
+provisional. Top height, QMD, and boundaries are vector; crown closure is a raster
+trace. See `notes/reference/fdcp-digitisation.md`.
+
+## ssp status
+
+Sitka spruce planted is stored as `cdf-cwh-ss-planted.json`, provisional. Top
+height, QMD, and boundaries are vector; crown closure is a raster trace. See
+`notes/reference/ssp-digitisation.md`.
+
+## hwp status
+
+Western hemlock planted is stored as `cwh-hw-planted.json`, provisional. Top
+height, QMD, and boundaries are vector; crown closure is a raster trace. See
+`notes/reference/hwp-digitisation.md`.
+
+## cwp status
+
+Western redcedar planted is stored as `cwh-cw-planted.json`, provisional. Top
+height, QMD, and boundaries are vector; crown closure is a raster trace. See
+`notes/reference/cwp-digitisation.md`.
+
+## swp status
+
+White spruce planted is stored as `sbs-sw-planted.json`, provisional. Top
+height, QMD, and boundaries are vector; crown closure is a raster trace. See
+`notes/reference/swp-digitisation.md`.

@@ -613,6 +613,32 @@ def _geometry_bounds(
     return (min_x, min_y, max_x, max_y)
 
 
+def _geometry_bounds_sidecar(
+    geometry_path: Path | None,
+) -> tuple[float, float, float, float] | None:
+    """Return cached geometry bounds from ``<geometry>.bounds.json`` when valid.
+
+    The sidecar lets a large layer answer the map-fit request without parsing every
+    polygon. A malformed or incomplete sidecar falls back to the geometry itself.
+    """
+    if geometry_path is None:
+        return None
+    path = geometry_path.with_name(geometry_path.name + ".bounds.json")
+    if not path.is_file():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        bounds = payload.get("bounds")
+        if not isinstance(bounds, list) or len(bounds) != 4:
+            return None
+        values = tuple(float(value) for value in bounds)
+        if not all(math.isfinite(value) for value in values):
+            return None
+        return cast(tuple[float, float, float, float], values)
+    except (OSError, TypeError, ValueError):
+        return None
+
+
 def _run_period_width(targets_path: Path | None) -> int:
     """Return the run's display period width, from the configured targets.
 
@@ -1831,7 +1857,9 @@ def create_app(
         if format not in {"projected", "wgs84"}:
             raise HTTPException(status_code=422, detail=f"unknown bounds format {format!r}")
         if format not in geometry_bounds_cache:
-            native = _geometry_bounds(base_features())
+            native = _geometry_bounds_sidecar(geometry_path)
+            if native is None:
+                native = _geometry_bounds(base_features())
             if native is None:
                 raise HTTPException(status_code=404, detail="the geometry has no finite bounds")
             west, south, east, north = native
