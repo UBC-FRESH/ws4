@@ -113,7 +113,7 @@ exists and the maintainer approves it.
 | P110 Optional-factorized GPU profiles | #745 | `feature/p110-tsa27-gpu-profile` | pr-open |
 | P111 Preserve zero-generation profile runs | #751 | `fix/p111-zero-generations` | pr-open |
 | P112 TSA 29 GPU profile | #755 | `feature/p112-tsa29-gpu-profile` | pr-open |
-| P113 Map capability fallback | #758 | `feature/p113-map-fallback` | active |
+| P113 Map capability fallback | #758 | `feature/p113-map-fallback` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3616,8 +3616,9 @@ Acceptance:
 
 Parent issue: #758
 Branch: `feature/p113-map-fallback`
-Status: active
+Status: pr-open
 Report: `notes/reports/tsa24-map-fallback.md`
+PR: #761
 
 Goal: expose geometry capability and replace doomed map requests with an
 explicit unavailable state when a dataset has no geometry layer.
