@@ -160,6 +160,15 @@ def validate_au(
         The eight outcomes.
     """
     store.require_au(au_id)
+    volume = initial_volume_m3_ha
+    limit = initial_volume_limit_m3_ha
+    source = ""
+    if store.initial_volume is not None and str(store.initial_volume.get("au_id")) == au_id:
+        if volume is None:
+            volume = float(str(store.initial_volume["initial_volume_m3_ha"]))
+        if limit is None:
+            limit = float(str(store.initial_volume["limit_m3_ha"]))
+        source = str(store.initial_volume.get("source", ""))
     detail = store.au(au_id)
     yields = store.yield_curve(au_id)
     points = store.sdmd(au_id)
@@ -170,7 +179,7 @@ def validate_au(
         _density_plausibility(yields),
         _sdmd_fit(store, detail, points),
         _trajectory_plausibility(store, au_id, points),
-        _initial_volume(initial_volume_m3_ha, initial_volume_limit_m3_ha, yields),
+        _initial_volume(volume, limit, yields, source),
         _regime_completeness(store, au_id, regimes),
         _solver_reduction(preview),
         _ui_payload(detail, yields, points, regimes, preview),
@@ -461,6 +470,7 @@ def _initial_volume(
     volume: float | None,
     limit: float | None,
     yields: list[dict[str, object]],
+    source: str = "",
 ) -> GateResult:
     """Gate 5: the initial volume is supplied and plausible."""
     if volume is None:
@@ -483,13 +493,13 @@ def _initial_volume(
             "initial-volume",
             "warn",
             f"{volume:g} m³/ha is above the observed maximum {observed_max:g}",
-            {"volume_m3_ha": volume, "observed_max_m3_ha": observed_max},
+            {"volume_m3_ha": volume, "observed_max_m3_ha": observed_max, "source": source},
         )
     return GateResult(
         "initial-volume",
         "pass",
         f"{volume:g} m³/ha is within the observed evidence",
-        {"volume_m3_ha": volume, "observed_max_m3_ha": observed_max},
+        {"volume_m3_ha": volume, "observed_max_m3_ha": observed_max, "source": source},
     )
 
 

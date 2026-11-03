@@ -12,7 +12,7 @@ import pytest
 pytest.importorskip("fastapi")
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from ws4.sdmd.api import SdmdStore, create_sdmd_router
+from ws4.sdmd.api import SdmdApiError, SdmdStore, create_sdmd_router
 
 FIXTURE = Path(__file__).resolve().parent / "fixtures" / "sdmd"
 DIAGRAM = (
@@ -258,3 +258,36 @@ def test_create_app_mounts_the_router(tmp_path: Path) -> None:
     app = create_app(dataset=dataset, runs=runs, sdmd_dir=_store_dir(tmp_path))
     client = TestClient(app)
     assert client.get("/api/sdmd/regions").status_code == 200
+
+
+def test_store_reads_a_measured_initial_volume(tmp_path: Path) -> None:
+    """The optional initial_volume.json is exposed on the AU payload."""
+    root = _store_dir(tmp_path)
+    (root / "initial_volume.json").write_text(
+        '{"schema_version": "ws4.sdmd.initial-volume.v1", "au_id": "AU-IDFdk3-FDI", '
+        '"initial_volume_m3_ha": 500.0, "limit_m3_ha": 800.0, '
+        '"source": "test", "review_status": "reviewed"}\n',
+        encoding="utf-8",
+    )
+    store = SdmdStore.from_directory(root)
+    payload = store.au("AU-IDFdk3-FDI")
+    assert payload["initial_volume"] == {
+        "schema_version": "ws4.sdmd.initial-volume.v1",
+        "au_id": "AU-IDFdk3-FDI",
+        "initial_volume_m3_ha": 500.0,
+        "limit_m3_ha": 800.0,
+        "source": "test",
+        "review_status": "reviewed",
+    }
+
+
+def test_store_refuses_an_initial_volume_above_its_limit(tmp_path: Path) -> None:
+    """A volume above its own evidence limit is refused at load time."""
+    root = _store_dir(tmp_path)
+    (root / "initial_volume.json").write_text(
+        '{"au_id": "AU-IDFdk3-FDI", "initial_volume_m3_ha": 900.0, '
+        '"limit_m3_ha": 800.0, "source": "test", "review_status": "reviewed"}\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(SdmdApiError, match="at most the limit"):
+        SdmdStore.from_directory(root)

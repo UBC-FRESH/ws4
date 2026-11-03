@@ -3439,10 +3439,10 @@ volume for the two real pilot AUs.
   - [x] Build a multi-cluster representative tree list with plot weights.
   - [x] Run the untreated and CT60 scenarios across the documented range.
   - [x] Store and assess the multi-cluster paths.
-- [ ] P106.3 Add measured initial volume (#726)
-  - [ ] Derive the value and source for both AUs.
-  - [ ] Add the gate and report fields.
-  - [ ] Test supplied and missing values.
+- [x] P106.3 Add measured initial volume (#726)
+  - [x] Derive the value and source for both AUs.
+  - [x] Add the gate, API, and report fields.
+  - [x] Test supplied, missing, and invalid values.
 - [ ] P106.4 Pilot validation and closeout (#727)
   - [ ] Run both pilot gates and the eight validation gates.
   - [ ] Update the evidence and closeout reports.

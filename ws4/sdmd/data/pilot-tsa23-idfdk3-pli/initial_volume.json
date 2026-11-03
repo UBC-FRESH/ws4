@@ -1,0 +1,8 @@
+{
+  "schema_version": "ws4.sdmd.initial-volume.v1",
+  "au_id": "AU-IDFdk3-TSA23-PLI",
+  "initial_volume_m3_ha": 186.12,
+  "limit_m3_ha": 252.69,
+  "source": "median volume of the five representative PSP clusters: 4025305-PSP2, 4025305-PSP3, 4025096-PSP1, 4024449-PSP1, 4025245-PSP5",
+  "review_status": "reviewed"
+}

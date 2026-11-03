@@ -50,6 +50,7 @@ from .regimes import (
 from .schema import (
     AU_CONSTRAINTS,
     REGIMES,
+    REVIEW_STATUSES,
     SDMD_POINTS,
     STANDS,
     Problem,
@@ -94,6 +95,8 @@ class SdmdStore:
         The base constraint table.
     diagram : SdmdDiagram or None
         The diagram, when ``diagram.json`` is present.
+    initial_volume : dict or None
+        The measured initial volume, when ``initial_volume.json`` is present.
     """
 
     root: Path
@@ -104,6 +107,7 @@ class SdmdStore:
     regimes: tuple[Regime, ...]
     constraints: tuple[AuConstraint, ...]
     diagram: SdmdDiagram | None = None
+    initial_volume: dict[str, object] | None = None
     _overrides: dict[str, tuple[AuConstraint, ...]] = field(default_factory=dict, repr=False)
     _lock: LockType = field(default_factory=threading.Lock, repr=False, compare=False)
 
@@ -116,7 +120,7 @@ class SdmdStore:
         path : str or Path
             Directory holding ``plots.csv``, ``trees.csv``, ``stands.csv``,
             ``sdmd_points.csv``, ``regimes.csv``, ``au_constraints.csv``, and optional
-            ``diagram.json`` and ``trajectories/``.
+            ``diagram.json``, ``initial_volume.json``, and ``trajectories/``.
 
         Returns
         -------
@@ -160,6 +164,7 @@ class SdmdStore:
                 diagram = load_diagram(root / "diagram.json")
             except SdmdDiagramError as error:
                 raise SdmdApiError(str(error)) from error
+        initial_volume = _load_initial_volume(root, plots)
         return cls(
             root=root,
             plots=plots,
@@ -169,6 +174,7 @@ class SdmdStore:
             regimes=regimes,
             constraints=constraints,
             diagram=diagram,
+            initial_volume=initial_volume,
             _overrides=_load_overrides(root),
         )
 
@@ -236,6 +242,7 @@ class SdmdStore:
         summary["constraint_count"] = len(self.constraints_for(au_id))
         summary["regime_count"] = len(available_regimes(self.regimes, au_id))
         summary["diagram"] = self._diagram_payload()
+        summary["initial_volume"] = self.initial_volume
         gaps: list[str] = []
         if self.trees.empty:
             gaps.append("no tree list")
@@ -839,6 +846,62 @@ def _http(status: int, error: Exception) -> HTTPException:
         The HTTP exception.
     """
     return HTTPException(status_code=status, detail=str(error))
+
+
+def _load_initial_volume(root: Path, plots: pd.DataFrame) -> dict[str, object] | None:
+    """Load and validate the optional measured initial volume.
+
+    Parameters
+    ----------
+    root : Path
+        The store directory.
+    plots : pandas.DataFrame
+        The plot table, used to check the AU.
+
+    Returns
+    -------
+    dict or None
+        The normalized volume record, or None when the file is absent.
+
+    Raises
+    ------
+    SdmdApiError
+        If the file is malformed, names an unknown AU, or has non-positive values.
+    """
+    path = root / "initial_volume.json"
+    if not path.is_file():
+        return None
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise SdmdApiError(f"initial_volume.json is not valid JSON: {error}") from error
+    if not isinstance(raw, Mapping):
+        raise SdmdApiError("initial_volume.json must hold an object")
+    au_id = str(raw.get("au_id", "")).strip()
+    known = {str(value) for value in plots["au_id"].dropna()}
+    if au_id not in known:
+        raise SdmdApiError(f"initial_volume.json names unknown AU {au_id!r}")
+    try:
+        volume = float(str(raw.get("initial_volume_m3_ha", "")))
+        limit = float(str(raw.get("limit_m3_ha", "")))
+    except (TypeError, ValueError) as error:
+        raise SdmdApiError("initial volume and limit must be numbers") from error
+    if volume <= 0 or limit <= 0 or volume > limit:
+        raise SdmdApiError("initial volume must be positive and at most the limit")
+    source = str(raw.get("source", "")).strip()
+    if not source:
+        raise SdmdApiError("initial_volume.json needs a source")
+    review = str(raw.get("review_status", "")).strip()
+    if review not in REVIEW_STATUSES:
+        raise SdmdApiError(f"initial_volume review status {review!r} is not recognized")
+    return {
+        "schema_version": str(raw.get("schema_version", "")),
+        "au_id": au_id,
+        "initial_volume_m3_ha": volume,
+        "limit_m3_ha": limit,
+        "source": source,
+        "review_status": review,
+    }
 
 
 def _read_csv(root: Path, name: str) -> pd.DataFrame:

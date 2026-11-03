@@ -39,7 +39,7 @@ ws4 sdmd validate --sdmd-dir <pilot-store>
 | density-plausibility | pass: within 0.1% | pass: within 0.1% |
 | sdmd-fit | warn: diagram is provisional | warn: diagram is provisional |
 | trajectory-plausibility | warn: at least one path leaves the envelope | warn: at least one path leaves the envelope |
-| initial-volume | warn: no initial volume supplied | warn: no initial volume supplied |
+| initial-volume | pass: measured store value | warn: no initial volume supplied |
 | regime-completeness | pass: 7 regimes | pass: 6 regimes |
 | solver-option-reduction | pass: 7 → 6 regimes, 11 → 7 entries | pass: 6 → 5 regimes, 7 → 6 entries |
 | ui-payload-contract | pass | pass |
@@ -62,7 +62,7 @@ field derivation are in the store's `SOURCE.md`.
 | density-plausibility | pass: within 0.1% |
 | sdmd-fit | pass: reviewed diagram |
 | trajectory-plausibility | warn: both paths leave the observed envelope |
-| initial-volume | warn: no initial volume supplied |
+| initial-volume | pass: measured store value |
 | regime-completeness | pass: 7 regimes |
 | solver-option-reduction | pass: 7 → 6 regimes, 11 → 7 entries |
 | ui-payload-contract | pass |
@@ -88,7 +88,7 @@ visits, ages 20 to 120, selected from TSA 23 / IDFdk3 / PL-leading sites.
 | density-plausibility | pass: within 0.2% |
 | sdmd-fit | warn: natural lodgepole pine diagram is provisional |
 | trajectory-plausibility | warn: both paths leave the observed envelope |
-| initial-volume | warn: no initial volume supplied |
+| initial-volume | pass: measured store value |
 | regime-completeness | pass: 7 regimes |
 | solver-option-reduction | pass: 7 → 6 regimes, 11 → 7 entries |
 | ui-payload-contract | pass |

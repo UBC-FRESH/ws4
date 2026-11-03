@@ -4077,3 +4077,10 @@ issue comments.
   clusters, weights, and CT60 first-cycle timing. The trajectory API now returns
   `source`, `scenario`, and `review_status` beside the points. Both paths remain
   extrapolated; tests assert the multi-cluster source string.
+- P106.3: added a measured initial volume to both pilot stores. The values are
+  the median volume of the representative clusters: FDI 213.41 m3/ha (limit
+  221.25), PLI 186.12 m3/ha (limit 252.69). `SdmdStore` reads the optional
+  `initial_volume.json`, validates the AU, volume, limit, source, and review status,
+  exposes it on the AU payload, and the validation gate uses it when no CLI override
+  is supplied. Both pilot `initial-volume` gates now pass. Added supplied, missing,
+  and invalid-value tests.

@@ -284,8 +284,10 @@ AU Explorer API
 ---------------
 
 ``ws4.sdmd.api`` provides a FastAPI router over a directory of the six tables,
-an optional ``diagram.json``, and optional ``trajectories/<au_id>/<regime_id>.json``
-files. The main web app mounts it when ``ws4 serve`` receives ``--sdmd-dir``:
+an optional ``diagram.json``, an optional ``initial_volume.json``, and optional
+``trajectories/<au_id>/<regime_id>.json`` files. The initial-volume file records the
+measured value, its evidence limit, the source, and the review status; the gate uses
+it when the command line does not supply an override. The main web app mounts it when ``ws4 serve`` receives ``--sdmd-dir``:
 
 .. code-block:: bash
 
