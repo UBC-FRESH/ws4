@@ -1744,3 +1744,4 @@ def test_profile_run_uses_the_gpu_worker(tmp_path: Path, monkeypatch: pytest.Mon
     assert "base" in captured[-1]
     assert "--generations" in captured[-1]
     assert "3" in captured[-1]
+    assert "--replay" in captured[-1]

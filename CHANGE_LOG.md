@@ -4088,3 +4088,11 @@ issue comments.
   AUs warn only on trajectory plausibility; plot, density, diagram, initial volume,
   regime, option, and UI gates pass. Queued the phase pull request; merge waits for
   approval.
+
+## 2026-11-03
+
+- P105: profile-run feedback. Profile GPU runs now emit bounded schedule diffs for the
+  live map and replay the final schedule to `account_values.csv`/product values. The base
+  profile smoke remained exact and wrote the standard run artefacts. Report:
+  `notes/reports/tsa24-profile-run-feedback.md`.
+
