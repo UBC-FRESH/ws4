@@ -28,11 +28,15 @@ The kernel boundary is a generic `Problem[State, Context]`:
 - `ws4.opt.operators` imports `Operator`, `OperatorRegistry`, and `restore` from the kernel; the WS4
   operators remain local.
 
-## Next
+## Current state
 
 - FHOPS supplies the second adapter with its machine-by-slot schedule and its existing repair and
-  incremental evaluators.
-- Telemetry and portfolio/tuning unification follows after the FHOPS adapter proves the boundary.
+  incremental evaluators. Kernel SA, Tabu, ILS, and a dirty-repair fast path are in place.
+- The generic telemetry logger and the `Runner` protocol are in the kernel. WS4's portfolio and
+  tuning orchestration remain local because they depend on `OptimizeConfig`, `Optimizer`,
+  `Target`, and the run-directory contract.
+- Behaviour parity with FHOPS's existing SA/Tabu/ILS loops is not yet claimed; the next gate is
+  like-for-like scenario and performance evidence.
 
 ## Telemetry, portfolio, and tuning boundary
 
