@@ -56,6 +56,11 @@ aside { background:var(--panel); border-right:1px solid var(--line); padding:.6r
 .chat-action { font-size:.66rem; color:var(--muted); border:1px solid var(--line);
                border-radius:.3rem; padding:0 .28rem; max-width:100%; overflow:hidden;
                text-overflow:ellipsis; white-space:nowrap; }
+.chat-chip { font:inherit; font-size:.68rem; color:#23543f; background:#f2faf6;
+             border:1px solid #b8d4c8; border-radius:999px; padding:.12rem .5rem;
+             cursor:pointer; max-width:100%; overflow:hidden; text-overflow:ellipsis;
+             white-space:nowrap; }
+.chat-chip:hover { background:#e1f3ea; }
 .chat-form { display:flex; gap:.3rem; align-items:stretch; }
 .chat-form textarea { flex:1; resize:vertical; min-height:2.2rem; max-height:6rem; font:inherit;
                       font-size:.8rem; padding:.3rem; border:1px solid var(--line); border-radius:.35rem; }

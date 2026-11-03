@@ -4321,3 +4321,11 @@ issue comments.
 - P128: sync target chart edits into Plan table inputs so Solve posts the edited
   values instead of stale table values. Report:
   `notes/reports/p128-target-chart-table-sync.md`.
+
+- P123.1: Ask now sends the run, workspace, subview, period, selected block,
+  profile, target filter, and visible account as a bounded context packet. The
+  server parses assistant `WS4_ACTIONS:` chips, strips the marker, and validates
+  only safe UI actions: open workspace/subview, set period, select an existing
+  block, or fill the next prompt. Unsafe or malformed chips are dropped. Added
+  `tests/test_web.py` coverage and `notes/reports/p123-assistant-context.md`.
+  Focused web tests: 86 passed. Dashboard: `OVERALL: GREEN`.

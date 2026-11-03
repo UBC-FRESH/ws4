@@ -95,6 +95,13 @@ absent. The browser cannot enable the assistant, because doing so would change t
 execution permissions. Start a separate service with ``--allow-agent`` when the assistant is
 wanted.
 
+Each turn carries a bounded context packet: run, workspace, subview, period, selected
+block, scenario profile, target filter, and visible account. The assistant may end a
+reply with a ``WS4_ACTIONS:`` JSON line. The server validates those chips against a
+safe whitelist before the browser renders buttons: open a workspace or subview, set a
+period, select an existing block, or fill the next prompt. A chip cannot edit data,
+start a run, or change permissions.
+
 Behind a proxy
 ---------------
 
