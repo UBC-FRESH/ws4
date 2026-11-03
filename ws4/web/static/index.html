@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=87">
+  <link rel="stylesheet" href="static/style.css?v=89">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
 </head>
 <body>
@@ -17,7 +17,9 @@
       <input id="year" type="range" min="0" max="0" step="1" value="0">
       <output id="year-label">Years</output>
     </label>
+    <button id="play-periods" type="button" aria-pressed="false" title="Play through periods">▶ Play</button>
     <span id="status">loading…</span>
+    <button id="help-toggle" type="button" aria-label="Keyboard shortcuts" title="Keyboard shortcuts">?</button>
     <button id="chat-toggle" class="chat-toggle" type="button" aria-expanded="false" title="Ask the WS4 assistant" hidden>✦ Ask</button>
   </header>
   <main>
@@ -151,10 +153,16 @@
         </div>
         <nav id="results-nav" class="subnav" role="tablist" aria-label="Results sections">
           <button id="sub-reports" role="tab" aria-selected="true" aria-controls="tab-reports" data-sub="reports">Reports</button>
+          <button id="sub-timeline" role="tab" aria-selected="false" aria-controls="tab-timeline" data-sub="timeline">Timeline</button>
           <button id="sub-comparison" role="tab" aria-selected="false" aria-controls="tab-comparison" data-sub="comparison">Compare</button>
           <button id="sub-search" role="tab" aria-selected="false" aria-controls="tab-search" data-sub="search">Search</button>
         </nav>
 <section id="tab-reports" role="tabpanel" aria-labelledby="sub-reports" hidden>
+        <section id="run-snapshot" class="run-snapshot" hidden>
+          <h2>Run snapshot</h2>
+          <div id="snapshot-cards" class="snapshot-cards"></div>
+          <p id="snapshot-empty" class="hint">Choose another run or finish a simulation to populate the snapshot.</p>
+        </section>
         <h2>Standard reports</h2>
         <div id="report-provenance" class="report-provenance" hidden>
           <span id="report-provenance-badge" class="badge"></span>
@@ -190,6 +198,12 @@
         <h2>All files</h2>
         <ul id="reports"></ul>
         <div id="report-preview"></div>
+      </section>
+<section id="tab-timeline" role="tabpanel" aria-labelledby="sub-timeline" hidden>
+        <h2>Schedule timeline</h2>
+        <p id="timeline-status" class="hint">loading schedule…</p>
+        <p id="timeline-empty" class="hint" hidden>The selected run has no schedule.csv. Run a simulation or choose another run.</p>
+        <div id="schedule-timeline" class="schedule-timeline" aria-label="Schedule activity by treatment and period"></div>
       </section>
 <section id="tab-comparison" role="tabpanel" aria-labelledby="sub-comparison" hidden>
         <h2>Compare runs</h2>
@@ -466,7 +480,23 @@
         </form>
         <p id="chat-status" class="hint"></p>
       </section>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <dialog id="help-dialog" class="help-dialog" aria-labelledby="help-title">
+    <div class="help-head">
+      <h2 id="help-title">WS4 keyboard shortcuts</h2>
+      <button id="help-close" type="button" aria-label="Close help">×</button>
+    </div>
+    <dl class="shortcut-list">
+      <div><dt><kbd>?</kbd></dt><dd>Open this help</dd></div>
+      <div><dt><kbd>/</kbd></dt><dd>Focus account or target search</dd></div>
+      <div><dt><kbd>m</kbd></dt><dd>Open the Map workspace</dd></div>
+      <div><dt><kbd>j</kbd> / <kbd>k</kbd></dt><dd>Move through target rows</dd></div>
+      <div><dt><kbd>←</kbd> / <kbd>→</kbd></dt><dd>Previous / next period</dd></div>
+      <div><dt><kbd>Esc</kbd></dt><dd>Close help, chat, or drawers</dd></div>
+    </dl>
+    <p class="hint">Shortcuts pause while typing in an input, select, or editor.</p>
+  </dialog>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=87"></script>
+  <script type="module" src="static/app.js?v=89"></script>
 </body>
 </html>

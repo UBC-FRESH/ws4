@@ -4244,3 +4244,8 @@ issue comments.
 - P116: TSA 24 map performance. Add a `<geometry>.bounds.json` sidecar and a
   100 m overview layer for low-zoom tiles; the geometry script writes the sidecar.
   Report: `notes/reports/tsa24-map-performance.md`.
+
+
+- P122: run timeline and interaction uplift. Added snapshot cards, period
+  playback, a Results timeline from `schedule.csv`, toast feedback, and keyboard
+  shortcuts/help. Plan: `notes/design/ws4-ui-port-plan.md`. Dashboard: `OVERALL: GREEN`; focused web tests 79 passed; browser smoke verified snapshot, timeline, playback, and help.
