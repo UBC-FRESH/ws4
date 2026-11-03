@@ -107,7 +107,7 @@ exists and the maintainer approves it.
 | P102 Ask overlay | #709 | `feature/p102-ask-overlay` | pr-open |
 | P103 Profile-aware web runs | #713 | `feature/p103-profile-runs` | pr-open |
 | P105 Profile-run feedback | #720 | `feature/p105-profile-run-feedback` | pr-open |
-| P107 Profile target telemetry | #730 | `feature/p107-profile-target-telemetry` | active |
+| P107 Profile target telemetry | #730 | `feature/p107-profile-target-telemetry` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3484,8 +3484,9 @@ Acceptance:
 
 Parent issue: #730
 Branch: `feature/p107-profile-target-telemetry`
-Status: active
+Status: pr-open
 Report: `notes/reports/tsa24-profile-target-telemetry.md`
+PR: #740
 
 Goal: emit active target values and yearly series from the GPU profile worker and pass
 them through the web stream.

@@ -1,7 +1,7 @@
 # P107 profile target telemetry
 
 Date: 2026-11-03
-Status: complete
+Status: complete; PR #740
 
 ## Change
 
@@ -34,3 +34,7 @@ The event set is `step`, `targets`, `schedule`; the profile payload carries `pro
 - Target telemetry shares the bounded schedule cadence; it is not emitted every generation.
 - Profile runs still do not populate the full report package; account values and product
   values are present.
+
+## Pull request
+
+PR #740 contains the target telemetry, web pass-through, UI target alignment, tests, and docs.
