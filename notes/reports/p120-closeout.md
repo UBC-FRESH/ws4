@@ -6,7 +6,7 @@ Branch: `feature/p107-sdmd-atlas`
 Evidence head: `ea78296`
 Report commit: this metadata-only report update
 Date: 2026-11-03
-Status: queued as PR #764 for maintainer approval. Not merged.
+Status: approved and merged as `a7e83e3` on 2026-11-03.
 
 ## Recommendation
 
@@ -93,5 +93,5 @@ Results at the evidence head:
 ## 7. Pull request
 
 PR #764 names the phase, the evidence head, the atlas status, and the known limits.
-It is queued for approval. No merge, tag, release, or settings change is
+It was squash-merged as `a7e83e3`; the branch was deleted. No merge, tag, release, or settings change is
 performed by this report.

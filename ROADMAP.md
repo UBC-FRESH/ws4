@@ -99,7 +99,7 @@ exists and the maintainer approves it.
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
 | P104 (SDMD pilot) digitisation and trajectory evidence | #680 | `feature/p104-sdmd-pilot` | complete |
 | P106 AU evidence depth | #723 | `feature/p106-au-evidence` | complete |
-| P120 SDMD atlas completion | #731 | `feature/p120-sdmd-atlas` | pr-open |
+| P120 SDMD atlas completion | #731 | `feature/p120-sdmd-atlas` | complete |
 | P109 Report provenance sidecars | #734 | `feature/p108-report-provenance` | pr-open |
 
 | P95 (factorized vectors) target-cell cache | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
@@ -3692,7 +3692,8 @@ Acceptance:
 
 Parent issue: #731
 Branch: `feature/p120-sdmd-atlas`
-Status: pr-open
+Status: complete
+Merge commit: `a7e83e3`
 Plan: `notes/reports/p106-closeout.md`
 Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
 

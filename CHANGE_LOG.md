@@ -4238,3 +4238,5 @@ issue comments.
   compiled fragments; a 5 m simplified GeoJSON now feeds the map, with a regeneration
   script and source hashes. Report: `notes/reports/tsa24-source-geometry.md`.
 
+- P120: phase approved and squash-merged as `a7e83e3` on 2026-11-03. PR #764
+  passed all five CI checks; the branch was deleted and parent issue #731 closed.
