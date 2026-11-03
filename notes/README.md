@@ -70,6 +70,7 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p125-playback-map-race.md` — playback serialization and stale map response guard.
 - `reports/p127-target-chart-solve.md` — target chart row selection and Solve semantics.
 - `reports/p128-target-chart-table-sync.md` — chart edits and table input synchronization.
+- `reports/p129-gpu-current-targets.md` — GPU profile target override and time budget.
 - `reports/tsa24-map-performance.md` — bounds sidecar and overview layer.
 - `reports/p83-8-gpu-population.md` — the P83.8 candidate-index population search, c5 2k and TSA23 5k benchmarks.
 - `reports/p83-7-full-tsa23.md` — the full-model TSA23 20 x 10 GPU population run and exact replay.

@@ -85,16 +85,18 @@ async function startProfileRun() {
   const status = $('profile-status');
   if (!select.value) return;
   const generations = Number($('profile-generations')?.value || 5000);
-  const years = Number($('run-years')?.value || 200);
+  // Profile effect tables and candidate caches are built for the 200-year horizon.
+  const years = 200;
   const seed = Number($('run-seed')?.value || 7);
+  const timeLimit = ($('run-time-limit')?.value || '').trim();
   stopRunWatch();
   button.disabled = true;
-  status.textContent = `loading targets for ${select.value}…`;
+  status.textContent = 'saving current targets…';
   try {
-    await apiPost(`api/scenario-profiles/${encodeURIComponent(select.value)}/apply`);
-    await loadTargets();
+    if (state.chartDirty) await saveTargetCharts();
+    else await saveTargets();
   } catch (error) {
-    status.textContent = `profile targets failed: ${error.message}`;
+    status.textContent = `targets not saved: ${error.message}`;
     button.disabled = false;
     return;
   }
@@ -113,7 +115,14 @@ async function startProfileRun() {
     const response = await fetch('api/runs', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ profile: select.value, generations, years, seed, population: 64 }),
+      body: JSON.stringify({
+        profile: select.value,
+        generations,
+        years,
+        seed,
+        population: 64,
+        time_limit: timeLimit,
+      }),
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload.detail || `profile run failed (${response.status})`);
