@@ -4063,6 +4063,31 @@ issue comments.
 
 - P104: phase approved and squash-merged as `e5c4e9c` on 2026-11-03. PR #719
   passed all five CI checks; the branch was deleted and parent issue #680 closed.
+- P106: launched AU evidence depth on `feature/p106-au-evidence`, parent issue
+  #723, tasks #724-#727. Scope: recover the `fdin` high-TPH closure, build
+  AU-level FVS ensembles, add measured initial volume, and close out.
+- P106.1: recovered the `fdin` high-TPH crown closure. The stored curve is the
+  continuous dotted PDF path from 210 to 9,996 TPH, replacing the joined branch
+  that caused the zigzag and the P104 truncation. Updated the source-catalog note,
+  review packet overlay, digitisation note, P104 historical note, and the diagram
+  test. `fdin` remains reviewed.
+- P106.2: replaced the single-cluster FVS paths with multi-cluster composites.
+  FDI uses three plots (ages 76, 89, 101), scaled by 0.3583 to 1,063 TPH; PLI
+  uses five plots (ages 50-75), scaled by 0.3067 to 1,979 TPH. The stores name the
+  clusters, weights, and CT60 first-cycle timing. The trajectory API now returns
+  `source`, `scenario`, and `review_status` beside the points. Both paths remain
+  extrapolated; tests assert the multi-cluster source string.
+- P106.3: added a measured initial volume to both pilot stores. The values are
+  the median volume of the representative clusters: FDI 213.41 m3/ha (limit
+  221.25), PLI 186.12 m3/ha (limit 252.69). `SdmdStore` reads the optional
+  `initial_volume.json`, validates the AU, volume, limit, source, and review status,
+  exposes it on the AU payload, and the validation gate uses it when no CLI override
+  is supplied. Both pilot `initial-volume` gates now pass. Added supplied, missing,
+  and invalid-value tests.
+- P106.4: ran both pilot gates and wrote `notes/reports/p106-closeout.md`. Both
+  AUs warn only on trajectory plausibility; plot, density, diagram, initial volume,
+  regime, option, and UI gates pass. Queued the phase pull request; merge waits for
+  approval.
 
 ## 2026-11-03
 
@@ -4070,3 +4095,4 @@ issue comments.
   live map and replay the final schedule to `account_values.csv`/product values. The base
   profile smoke remained exact and wrote the standard run artefacts. Report:
   `notes/reports/tsa24-profile-run-feedback.md`.
+

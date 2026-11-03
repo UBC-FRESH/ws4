@@ -2,47 +2,47 @@
   "schema_version": "ws4.sdmd.trajectory.v1",
   "au_id": "AU-IDFdk3-TSA23-FDI",
   "regime_id": "REG-A-UNTREATED",
-  "source": "fresh-fvsbc (FVS-BC) TSA23 IDFdk3 FD representative tree list 4025005-PSP1",
+  "source": "fresh-fvsbc (FVS-BC) TSA23 IDFdk3 multi-cluster tree list: 4024520-PSP2, 4025005-PSP1, 4024520-PSP4",
   "source_version": "fresh-fvsbc 0.20.0; FVS BC variant",
   "scenario": "no treatment",
-  "generated_utc": "2026-11-02T18:26:54+00:00",
+  "generated_utc": "2026-11-03T03:09:04+00:00",
   "review_status": "provisional",
   "points": [
     [
-      1107.03,
-      0.174132
+      1173.75,
+      0.175024
     ],
     [
-      1027.96,
-      0.211419
+      1099.62,
+      0.208585
     ],
     [
-      956.3,
-      0.251407
+      1030.43,
+      0.244388
     ],
     [
-      889.58,
-      0.29441
+      963.71,
+      0.282944
     ],
     [
-      822.86,
-      0.3409
+      901.93,
+      0.323891
     ],
     [
-      763.56,
-      0.389829
+      842.63,
+      0.367446
     ],
     [
-      711.66,
-      0.441064
+      788.27,
+      0.413825
     ],
     [
-      664.71,
-      0.496007
+      738.85,
+      0.462529
     ],
     [
-      620.23,
-      0.555155
+      691.9,
+      0.514546
     ]
   ]
 }
