@@ -4324,4 +4324,5 @@ issue comments.
 
 - P129: GPU profile runs now use the current edited target file and accept a
   wall-clock budget. Run profile saves current edits instead of reapplying the
-  profile target library. Report: `notes/reports/p129-gpu-current-targets.md`.
+  profile target library. Run profile also uses the 200-year profile horizon.
+  Report: `notes/reports/p129-gpu-current-targets.md`.
