@@ -33,3 +33,13 @@ The kernel boundary is a generic `Problem[State, Context]`:
 - FHOPS supplies the second adapter with its machine-by-slot schedule and its existing repair and
   incremental evaluators.
 - Telemetry and portfolio/tuning unification follows after the FHOPS adapter proves the boundary.
+
+## Telemetry, portfolio, and tuning boundary
+
+- `ws4.opt.telemetry` is now a re-export of `fresh_solutions.kernel.telemetry`. The logger is
+  generic (run header, step, trace, target values, changed-schedule snapshots) and has no WS4
+  imports.
+- `ws4.opt.portfolio` and `ws4.opt.tune` stay in WS4. They orchestrate `OptimizeConfig`,
+  `Optimizer`, `Target`, and WS4's run directory contract; moving them before the kernel has a
+  generic runner/config contract would only add indirection. Revisit after the FHOPS adapter
+  proves the cross-package orchestration boundary.

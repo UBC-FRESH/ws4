@@ -4340,3 +4340,9 @@ issue comments.
   `ws4.opt.control` are compatibility facades over `fresh_solutions.kernel`; the WS4 operators,
   objective, incremental evaluator, constraints, patch/spatial/route models, MIP layer, and
   `Optimizer` stay in WS4. The full suite passes and strict mypy is clean.
+
+- Shared-kernel telemetry (2026-11-03): `ws4.opt.telemetry` now re-exports
+  `fresh_solutions.kernel.telemetry` (`RunLogger`, `read_records`). The logger is generic and
+  has no WS4 imports. `portfolio` and `tune` remain in WS4 because they depend on
+  `OptimizeConfig`, `Optimizer`, `Target`, and the WS4 run-directory contract; the boundary is
+  recorded in `notes/design/shared-kernel-adoption.md`.
