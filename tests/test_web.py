@@ -130,6 +130,7 @@ def test_summary_lists_the_dataset_and_its_runs(tmp_path: Path) -> None:
     body = client.get("/api/summary").json()
     assert body["dataset"] == "dataset"
     assert body["manifest"]["schema_version"] == "0.1"
+    assert body["capabilities"]["geometry"] is True
     assert [entry["id"] for entry in body["runs"]] == ["run1", "run2"]
     assert body["runs"][1]["kind"] == "simulate"
     assert body["runs"][0]["summary"]["status"] == "ok"
@@ -811,6 +812,9 @@ def test_geometry_bounds_fit_the_map_to_the_configured_layer(tmp_path: Path) -> 
     response = without.get("/api/geometry/bounds")
     assert response.status_code == 404
     assert "--geometry" in response.json()["detail"]
+    summary = without.get("/api/summary").json()
+    assert summary["capabilities"]["geometry"] is False
+    assert 'id="map-unavailable"' in without.get("/").text
 
 
 def test_targets_round_trip_and_an_invalid_document_is_refused(tmp_path: Path) -> None:

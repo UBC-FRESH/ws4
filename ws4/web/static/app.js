@@ -1,7 +1,7 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' } };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' } };
 
 const $ = (id) => document.getElementById(id);
 const TILE_VERSION = 'v9';
@@ -1228,6 +1228,10 @@ function hideVectorLayers() {
 
 async function loadMap(preserveView = false) {
   if (!state.run) return;
+  if (!state.geometryAvailable) {
+    setMapLoading(false);
+    return;
+  }
   if (state.mapEngine === 'maplibre' && !state.mapLibre) ensureMapLibre();
   if (state.mapEngine === 'maplibre' && !state.mapLibreReady) {
     state.mapRetries = (state.mapRetries || 0) + 1;
@@ -1315,6 +1319,7 @@ async function loadMap(preserveView = false) {
     statusLine(`${state.features.length.toLocaleString()} ${noun} ${place} · ${sourceLabel}${state.live.active ? ' · live' : ''} · period ${state.periodIndex + 1}${span}`);
     if (state.showUsedRoads) loadUsedRoads();
   } catch (error) {
+    if (/no geometry layer/i.test(error.message)) setGeometryAvailability(false);
     statusLine(`map unavailable: ${error.message}`);
   } finally {
     state.mapLoading = false;
@@ -3692,6 +3697,16 @@ function setMapLoading(visible, text = 'Loading map…') {
   if (visible) $('map-loading-text').textContent = text;
 }
 
+function setGeometryAvailability(available) {
+  state.geometryAvailable = available !== false;
+  const notice = $('map-unavailable');
+  if (notice) notice.hidden = state.geometryAvailable;
+  if (state.geometryAvailable) return;
+  setMapLoading(false);
+  if ($('map-legend')) $('map-legend').hidden = true;
+  statusLine('map unavailable: no geometry layer is configured');
+}
+
 function syncNavigation() {
   const panels = skinPanels();
   const workspaces = [...document.querySelectorAll('.workspaces [role="tab"]')];
@@ -3849,6 +3864,7 @@ async function loadDataset() {
   try {
     const summary = state.datasetSummary ?? await api('api/summary');
     state.datasetSummary = summary;
+    setGeometryAvailability(summary.capabilities?.geometry !== false);
     const manifest = summary.manifest ?? {};
     const metadata = manifest.metadata ?? {};
     const rows = [

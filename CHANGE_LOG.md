@@ -4139,3 +4139,8 @@ issue comments.
 - P112: TSA 29 GPU profile. The existing lean effect table and cache replay
   exactly; the portal now exposes a `base` profile without a factorized archive.
   Report: `notes/reports/tsa29-gpu-profile.md`.
+
+- P113: map capability fallback. `/api/summary` reports whether geometry is
+  configured; the browser shows an explicit unavailable panel instead of making
+  doomed map requests. Direct map APIs keep their naming 404. Report:
+  `notes/reports/tsa24-map-fallback.md`.
