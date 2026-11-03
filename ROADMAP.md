@@ -3492,10 +3492,10 @@ Goal: turn the four-diagram pilot into the usable public BC SDMD set. Build a
 reusable digitisation and QA path, digitise the remaining natural and planted
 PDFs, and record the species/BEC coverage.
 
-- [ ] P107.1 Build the digitisation and QA pipeline (#735)
-  - [ ] Capture PDF path extraction, axis calibration, and label matching.
-  - [ ] Emit diagram JSON, overlay, and source record.
-  - [ ] Test calibration and curve ordering.
+- [x] P107.1 Build the digitisation and QA pipeline (#735)
+  - [x] Capture PDF path extraction, axis calibration, and label matching.
+  - [x] Emit diagram JSON, figrecover overlay, and review manifest.
+  - [x] Test calibration and curve ordering.
 - [ ] P107.2 Digitise the remaining natural diagrams (#736)
   - [ ] `fdcn`, `ssn`, `hwn`, `cwn`, `swn`.
   - [ ] Add source entries, overlays, and tests.

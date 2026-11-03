@@ -4101,3 +4101,10 @@ issue comments.
 - P107: launched SDMD atlas completion on `feature/p107-sdmd-atlas`, parent
   issue #731, tasks #735-#739. Scope: reusable digitisation/QA, remaining natural
   and planted diagrams, coverage, and closeout.
+- P107.1: added the figrecover/freshforge digitisation pipeline. `ws4.sdmd.digitise`
+  provides spec loading, log-axis calibration, vector path extraction, and ordered
+  curves; `ws4.sdmd.review` renders pages, overlays the stored isopleths with
+  figrecover QA, and writes figrecover review manifests; `ws4.sdmd.workflow`
+  exposes the four FreshForge nodes. Added `workflows/sdmd-digitise.yaml`, the
+  optional `digitise` dependency extra, tests, and docs. Verified the pipeline on
+  the `fdin` PDF: page render, overlay, and review manifest succeed.

@@ -80,3 +80,21 @@ real TSA 23 / IDFdk3 / PLI PSP store uses it in
 `ws4/sdmd/data/pilot-tsa23-idfdk3-pli/`. Both lodgepole pine diagrams are
 `provisional`; the QMD/top-height label assignments and the crown-closure curves
 are the review items.
+
+
+## Tooling integration
+
+The atlas pipeline uses two public UBC-FRESH tools:
+
+- `figrecover` (MIT) renders the PDF page, draws the stored isopleths over the
+  rendered page, computes QA records, and writes the review manifest.
+- `freshforge` (MIT) carries the `render -> extract -> overlay -> review` workflow
+  in `workflows/sdmd-digitise.yaml`.
+
+The isopleth extraction itself remains the vector-path reader in
+`ws4.sdmd.digitise`, because the public PDFs are vector Illustrators and direct
+paths are more precise than raster tracing. The module is exposed as the
+`ws4.sdmd.extract` node. A diagram spec supplies the axis ticks, path indices,
+dash patterns, and printed values; the workflow does not invent them.
+
+Install the optional tools with `python -m pip install -e '.[digitise]'`.

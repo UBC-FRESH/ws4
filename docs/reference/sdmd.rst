@@ -452,10 +452,23 @@ lodgepole pine PDF (`pln`, version 1.20) is digitised into
 competition/self-thinning boundaries, and the 60% crown-closure curve. The
 planted PDF (`plp`, version 1.20) is digitised into ``idf-dk3-pli-planted.json``
 with top height 6-30 m. The real PLI pilot store is
-``ws4/sdmd/data/pilot-tsa23-idfdk3-pli/``. The method,
-curve assignments, and review checklist are in
+``ws4/sdmd/data/pilot-tsa23-idfdk3-pli/``. The method, curve assignments, and review checklist are in
 ``notes/reference/bc-sdmd-digitisation.md``. The review packet with overlay figures
-for all four diagrams is ``notes/review/p95-curve-review.md``. Both are **provisional** until the
+for all four diagrams is ``notes/review/p95-curve-review.md``.
+
+The digitisation pipeline uses the public ``figrecover`` package for PDF rendering,
+overlay QA, and review manifests, and ``freshforge`` for the workflow graph. The
+optional extra installs both:
+
+.. code-block:: bash
+
+   python -m pip install -e '.[digitise]'
+   freshforge plan workflows/sdmd-digitise.yaml
+
+The vector-path extractor in ``ws4.sdmd.digitise`` stays responsible for isopleth
+precision; figrecover owns the rendered page, overlay, quality metrics, and review
+record. A diagram spec names the PDF axis ticks, the drawing path indices, and the
+printed isopleth values, so the workflow does not guess curve identities. Both are **provisional** until the
 maintainer reviews the curves; the planted top-height assignment is the weaker of
 the two. The synthetic ``idf-dk3-fdi-illustrative.json`` remains the test fixture,
 not the published diagram. Four method trajectories from `fresh-fvsbc` are in

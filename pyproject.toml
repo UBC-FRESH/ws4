@@ -40,6 +40,7 @@ dhi = ["geopandas>=0.14", "pyogrio>=0.9", "rasterio>=1.3", "shapely>=2.0"]
 gpu = ["torch>=2"]
 opt = ["numba>=0.59", "networkx>=3.2", "ray>=2.9", "scipy>=1.11", "threadpoolctl>=3.1"]
 web = ["fastapi>=0.110", "uvicorn>=0.29", "mapbox-vector-tile>=2.1", "mercantile>=1.2", "shapely>=2.0", "pyproj>=3.6"]
+digitise = ["figrecover>=0.1.0a1", "freshforge>=0.1.0a5", "pymupdf>=1.24"]
 
 [project.urls]
 Homepage = "https://github.com/UBC-FRESH/ws4"
@@ -49,6 +50,9 @@ Issues = "https://github.com/UBC-FRESH/ws4/issues"
 
 [project.scripts]
 ws4 = "ws4.cli:app"
+
+[project.entry-points."freshforge.providers"]
+ws4-sdmd = "ws4.sdmd.workflow:sdmd_provider"
 
 [tool.setuptools.packages.find]
 include = ["ws4*"]
@@ -89,8 +93,9 @@ mypy_path = "scripts"
 files = ["ws4", "scripts", "tests", "docs/conf.py"]
 
 [[tool.mypy.overrides]]
-module = ["numpydoc", "numpydoc.*"]
+module = ["numpydoc", "numpydoc.*", "figrecover", "figrecover.*", "freshforge", "freshforge.*"]
 ignore_missing_imports = true
+disable_error_code = ["import-untyped"]
 
 [[tool.mypy.overrides]]
 module = ["scipy", "scipy.*"]
