@@ -3507,7 +3507,8 @@ PDFs, and record the species/BEC coverage.
 - [ ] P107.3 Digitise the remaining planted diagrams (#737)
   - [x] `fdcp` stored provisional.
   - [x] `ssp` stored provisional.
-  - [ ] `hwp`, `cwp`, `swp`.
+  - [x] `hwp` stored provisional.
+  - [ ] `cwp`, `swp`.
   - [ ] Record the planted top-height assignments.
 - [ ] P107.4 Species/BEC coverage and closeout (#739)
   - [ ] Update the source catalog and coverage table.
