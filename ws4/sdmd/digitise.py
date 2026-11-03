@@ -378,7 +378,7 @@ def read_curve(
     """
     import pymupdf
 
-    with pymupdf.open(pdf_path) as document:  # type: ignore[no-untyped-call]  # PyMuPDF has no stubs
+    with pymupdf.open(pdf_path) as document:  # type: ignore[no-untyped-call, unused-ignore]  # PyMuPDF has no stubs
         page = document[page_number]
         drawings = page.get_drawings()
         if path_index < 0 or path_index >= len(drawings):

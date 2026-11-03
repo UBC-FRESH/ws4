@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import pytest
+
+pytest.importorskip("PIL")
 from PIL import Image, ImageDraw
 from ws4.sdmd.digitise import calibrate_axes
 from ws4.sdmd.trace import trace_raster_curve
