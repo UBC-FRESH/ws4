@@ -3560,7 +3560,7 @@ Parent issue: #749
 Branch: `feature/p111-prices-v1`
 Status: pr-open
 Report: `notes/reports/p111-prices.md`
-PR: to be opened
+PR: #753
 
 Goal: add a typed, read-only `prices.v1` scenario price-path table and a CLI/report
 surface that compares named paths with the base path, carries provenance, and repeats a

@@ -4142,4 +4142,4 @@ issue comments.
   solver code changed. Documented in `docs/reference/prices.rst`; report in
   `notes/reports/p111-prices.md`. Dashboard result: `python scripts/dashboard.py`
   reports `OVERALL: GREEN` on all seven gates (lint, format, types, tests, validator,
-  docs, docstrings). Queued for review; merge waits for maintainer approval.
+  docs, docstrings). Pull request: #753. Merge waits for maintainer approval.
