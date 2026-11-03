@@ -119,6 +119,7 @@ exists and the maintainer approves it.
 | P113 Map capability fallback | #758 | `feature/p113-map-fallback` | pr-open |
 | P114 Scenario price paths | #749 | `feature/p114-prices-v1` | pr-open |
 | P115 TSA 24 source geometry | #765 | `feature/p115-tsa24-source-geometry` | pr-open |
+| P116 TSA 24 map performance | #767 | `feature/p116-tsa24-map-performance` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3689,6 +3690,24 @@ Acceptance:
 - Geometry bounds and map joins work.
 - The regeneration script and source hashes are recorded.
 
+## Phase 116: TSA 24 map performance
+
+Parent issue: #767
+Branch: `feature/p116-tsa24-map-performance`
+Status: pr-open
+Report: `notes/reports/tsa24-map-performance.md`
+PR: #774
+
+Goal: keep the TSA 24 map usable at 458k polygons.
+
+- [x] P116.1 Add bounds sidecar and TSA24 overview
+
+Acceptance:
+
+- Bounds reads use the sidecar.
+- Low-zoom MVT uses the overview.
+- Dashboard green.
+
 ## Phase 120: SDMD atlas completion
 
 Parent issue: #731
@@ -3714,6 +3733,7 @@ PDFs, and record the species/BEC coverage.
   - [x] `swn` stored provisional; vector curves plus a raster crown-closure trace.
   - [x] `cwn` stored provisional; vector curves plus a raster crown-closure trace.
   - [x] Add source entries, overlays, and tests.
+
 - [x] P120.3 Digitise the remaining planted diagrams (#737)
   - [x] `fdcp` stored provisional.
   - [x] `ssp` stored provisional.
@@ -3721,6 +3741,7 @@ PDFs, and record the species/BEC coverage.
   - [x] `cwp` stored provisional.
   - [x] `swp` stored provisional.
   - [x] Record the planted top-height assignments.
+
 - [x] P120.4 Species/BEC coverage and closeout (#739)
   - [x] Update the source catalog and coverage table.
   - [x] Write the closeout report and queue the PR.

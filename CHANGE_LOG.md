@@ -4263,3 +4263,8 @@ issue comments.
   and queued the phase PR. Crosswalk: 183 exact, 7 WS4 splits, 12 CCISS splits,
   45 unresolved. AU store integrity check is wired and tested. Merge waits for
   approval.
+
+- P116: TSA 24 map performance. Add a `<geometry>.bounds.json` sidecar and a
+  100 m overview layer for low-zoom tiles; the geometry script writes the sidecar.
+  Report: `notes/reports/tsa24-map-performance.md`.
+
