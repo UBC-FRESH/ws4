@@ -4326,3 +4326,7 @@ issue comments.
   wall-clock budget. Run profile saves current edits instead of reapplying the
   profile target library. Run profile also uses the 200-year profile horizon.
   Report: `notes/reports/p129-gpu-current-targets.md`.
+
+- P130: Solve now routes through the selected GPU profile when one is available,
+  using current targets and the time budget. Report:
+  `notes/reports/p130-solve-gpu-profile.md`.
