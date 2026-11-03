@@ -4296,3 +4296,8 @@ issue comments.
   `SDMD-AU-BEC-RETIRED` and current BEC labels outside WS4 coverage with
   `SDMD-AU-BEC-NO-COVERAGE`. The store passes both packaged tables. Added unit
   and store tests; updated the AU integrity and closeout reports.
+
+- P125: stabilize period playback and map paging. Serialize playback ticks,
+  suppress the loading overlay between periods, and guard async map responses
+  with a request generation so stale periods cannot paint over newer ones.
+  Report: `notes/reports/p125-playback-map-race.md`.
