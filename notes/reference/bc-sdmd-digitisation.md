@@ -129,3 +129,9 @@ QMD, and boundaries are vector; crown closure is a raster trace. See
 Western redcedar natural is stored as `cwh-cw-natural.json`, provisional. Top
 height, QMD, and boundaries are vector; crown closure is a raster trace. See
 `notes/reference/cwn-digitisation.md`.
+
+## fdcp status
+
+Coastal Douglas-fir planted is stored as `cdf-cwh-fdc-planted.json`,
+provisional. Top height, QMD, and boundaries are vector; crown closure is a raster
+trace. See `notes/reference/fdcp-digitisation.md`.

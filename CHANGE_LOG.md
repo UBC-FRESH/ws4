@@ -4140,3 +4140,7 @@ issue comments.
 - P107.2: all five remaining natural diagrams are stored provisional:
   `fdcn`, `ssn`, `hwn`, `swn`, `cwn`. Each has vector top-height, QMD, and boundary
   curves plus a provisional raster crown-closure trace and a source-catalog entry.
+- P107.3: stored `cdf-cwh-fdc-planted.json` from `fdcp`. Top height 6-52 m,
+  QMD 5-70 cm, competition/self-thinning paths 532/531; crown closure is a
+  provisional raster trace. Added catalog entry, diagram test, and fdcp note.
+  Provisional.

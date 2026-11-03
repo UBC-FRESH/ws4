@@ -612,6 +612,17 @@
       "review_status": "provisional",
       "reviewer": "",
       "notes": "Vector top-height, QMD, competition, and self-thinning paths; provisional raster crown closure."
+    },
+    {
+      "diagram_id": "cdf-cwh-fdc-planted",
+      "source_diagram_id": "fdcp",
+      "file": "cdf-cwh-fdc-planted.json",
+      "source_sha256": "b9b82e8bb92ff2f6dd53d8f2005427f9826889bfdb37694f8b4d30277f89d169",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/fdcp.pdf",
+      "source_version": "unversioned",
+      "review_status": "provisional",
+      "reviewer": "",
+      "notes": "Vector top-height, QMD, competition, and self-thinning paths; provisional raster crown closure. Planted top-height labels are offset in the source."
     }
   ]
 }

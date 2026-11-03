@@ -176,7 +176,7 @@ def test_digitised_diagrams_are_catalogued() -> None:
     """The pilot digitizations name their source PDF and the reviewer of record."""
     catalog = _catalog()
     entries = catalog["digitizations"]
-    assert len(entries) == 9
+    assert len(entries) == 10
     assert sum(entry["review_status"] == "reviewed" for entry in entries) == 4
     for entry in entries:
         assert entry["review_status"] in {"reviewed", "provisional"}
