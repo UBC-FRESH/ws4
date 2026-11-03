@@ -487,7 +487,7 @@ so it cannot replace the missing lodgepole pine diagram.
 All 14 public diagrams are now stored: seven species in natural and planted
 versions. Four Interior Douglas-fir/lodgepole pine diagrams are reviewed; the other
 ten are provisional and use raster-traced crown closure. The atlas status and BEC
-counts are in ``notes/reports/p114-atlas-coverage.md``.
+counts are in ``notes/reports/p120-atlas-coverage.md``.
 
 The first real pilot store is ``ws4/sdmd/data/pilot-tsa23-idfdk3/``. It holds 11
 reviewed public PSP points for TSA 23 / IDFdk3 / FDI and two FVS paths from the

@@ -99,7 +99,7 @@ exists and the maintainer approves it.
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
 | P104 (SDMD pilot) digitisation and trajectory evidence | #680 | `feature/p104-sdmd-pilot` | complete |
 | P106 AU evidence depth | #723 | `feature/p106-au-evidence` | complete |
-| P114 SDMD atlas completion | #731 | `feature/p114-sdmd-atlas` | pr-open |
+| P120 SDMD atlas completion | #731 | `feature/p120-sdmd-atlas` | pr-open |
 | P109 Report provenance sidecars | #734 | `feature/p108-report-provenance` | pr-open |
 
 | P95 (factorized vectors) target-cell cache | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
@@ -116,6 +116,7 @@ exists and the maintainer approves it.
 | P111 Preserve zero-generation profile runs | #751 | `fix/p111-zero-generations` | pr-open |
 | P112 TSA 29 GPU profile | #755 | `feature/p112-tsa29-gpu-profile` | pr-open |
 | P113 Map capability fallback | #758 | `feature/p113-map-fallback` | pr-open |
+| P114 Scenario price paths | #749 | `feature/p114-prices-v1` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3634,10 +3635,44 @@ Acceptance:
 - Direct map APIs keep the naming 404.
 - Dashboard green.
 
-## Phase 114: SDMD atlas completion
+## Phase 114: Scenario price paths
+
+Parent issue: #749
+Branch: `feature/p114-prices-v1`
+Status: pr-open
+Report: `notes/reports/p114-prices.md`
+PR: #760
+
+Goal: add a typed, read-only `prices.v1` scenario price-path table and a CLI/report
+surface that compares named paths with the base path, carries provenance, and repeats a
+`not a forecast` caveat.
+
+- [x] P114.1 Add the `prices.v1` reader and comparison report (#750)
+  - [x] Define the schema and validate the named paths, grid, units, and caveat
+  - [x] Build the base-relative comparison and the per-path/product summary
+  - [x] Write the CSV, Markdown report, and provenance sidecar with digests
+  - [x] Add the CLI command and the synthetic fixture
+  - [x] Add unit, contract, and CLI tests
+  - [x] Add the reference documentation, roadmap, and changelog
+  - [x] Run `python scripts/dashboard.py`
+
+Acceptance:
+
+- The loader rejects a missing base path, an unknown path, a duplicate row, an
+  incomplete product/period grid, inconsistent units or currency/region, a non-finite
+  or negative value, and a missing or misleading caveat.
+- `ws4 price-paths` writes `price_path_comparison.csv`, `price_path_report.md`, and
+  `price_path_provenance.json`.
+- The comparison reports the base value, absolute delta, and percent delta for every
+  path/product/period, and the report and sidecar repeat the `not a forecast` caveat.
+- No objective, constraint, growth, schedule, or solver behaviour changes.
+
+- `python scripts/dashboard.py` is green.
+
+## Phase 120: SDMD atlas completion
 
 Parent issue: #731
-Branch: `feature/p114-sdmd-atlas`
+Branch: `feature/p120-sdmd-atlas`
 Status: pr-open
 Plan: `notes/reports/p106-closeout.md`
 Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
@@ -3646,11 +3681,11 @@ Goal: turn the four-diagram pilot into the usable public BC SDMD set. Build a
 reusable digitisation and QA path, digitise the remaining natural and planted
 PDFs, and record the species/BEC coverage.
 
-- [x] P114.1 Build the digitisation and QA pipeline (#735)
+- [x] P120.1 Build the digitisation and QA pipeline (#735)
   - [x] Capture PDF path extraction, axis calibration, and label matching.
   - [x] Emit diagram JSON, figrecover overlay, and review manifest.
   - [x] Test calibration and curve ordering.
-- [x] P114.2 Digitise the remaining natural diagrams (#736)
+- [x] P120.2 Digitise the remaining natural diagrams (#736)
   - [x] `fdcn` stored provisional; vector curves plus a raster crown-closure trace.
   - [x] Added `ws4.sdmd.trace` for reusable dotted-curve tracing.
   - [x] `ssn` stored provisional; vector curves plus a raster crown-closure trace.
@@ -3658,14 +3693,14 @@ PDFs, and record the species/BEC coverage.
   - [x] `swn` stored provisional; vector curves plus a raster crown-closure trace.
   - [x] `cwn` stored provisional; vector curves plus a raster crown-closure trace.
   - [ ] Add source entries, overlays, and tests.
-- [x] P114.3 Digitise the remaining planted diagrams (#737)
+- [x] P120.3 Digitise the remaining planted diagrams (#737)
   - [x] `fdcp` stored provisional.
   - [x] `ssp` stored provisional.
   - [x] `hwp` stored provisional.
   - [x] `cwp` stored provisional.
   - [x] `swp` stored provisional.
   - [ ] Record the planted top-height assignments.
-- [x] P114.4 Species/BEC coverage and closeout (#739)
+- [x] P120.4 Species/BEC coverage and closeout (#739)
   - [x] Update the source catalog and coverage table.
   - [x] Write the closeout report and queue the PR.
 
@@ -3675,4 +3710,3 @@ Acceptance:
 - Every diagram has a source hash and a review status.
 - `validate_diagram` passes for every stored diagram.
 - Coverage is stated without overclaiming BEC specificity.
-- `python scripts/dashboard.py` is green.
