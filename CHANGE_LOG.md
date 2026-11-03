@@ -4126,3 +4126,7 @@ issue comments.
   QMD 5-85 cm are label-matched vector paths; competition/self-thinning are paths
   692/691; the crown closure is a provisional raster trace. Added the catalog entry,
   diagram test, and `notes/reference/ssn-digitisation.md`. Provisional.
+- P107.2: stored `cwh-hw-natural.json` from `hwn`. Top height 6-60 m, QMD
+  5-65 cm, competition/self-thinning paths 561/560; crown closure is a provisional
+  raster trace. Added catalog entry, diagram test, and hwn note. The dense top-height
+  group remains a review item. Provisional.

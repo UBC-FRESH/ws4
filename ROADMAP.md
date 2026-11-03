@@ -3500,7 +3500,8 @@ PDFs, and record the species/BEC coverage.
   - [x] `fdcn` stored provisional; vector curves plus a raster crown-closure trace.
   - [x] Added `ws4.sdmd.trace` for reusable dotted-curve tracing.
   - [x] `ssn` stored provisional; vector curves plus a raster crown-closure trace.
-  - [ ] `hwn`, `cwn`, `swn`.
+  - [x] `hwn` stored provisional; vector curves plus a raster crown-closure trace.
+  - [ ] `cwn`, `swn`.
   - [ ] Add source entries, overlays, and tests.
 - [ ] P107.3 Digitise the remaining planted diagrams (#737)
   - [ ] `fdcp`, `ssp`, `hwp`, `cwp`, `swp`.

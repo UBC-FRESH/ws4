@@ -579,6 +579,17 @@
       "review_status": "provisional",
       "reviewer": "",
       "notes": "Vector top-height, QMD, competition, and self-thinning paths; the printed crown-closure curve is a provisional raster trace. Review the overlay before use."
+    },
+    {
+      "diagram_id": "cwh-hw-natural",
+      "source_diagram_id": "hwn",
+      "file": "cwh-hw-natural.json",
+      "source_sha256": "3cec74eede02e3dcd28afb7377b57d8f0b49afd9496851f4e00af855555b3bc4",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/hwn.pdf",
+      "source_version": "unversioned",
+      "review_status": "provisional",
+      "reviewer": "",
+      "notes": "Vector top-height, QMD, competition, and self-thinning paths; provisional raster crown closure. The dense top-height group needs overlay review."
     }
   ]
 }

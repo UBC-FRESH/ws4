@@ -111,3 +111,9 @@ curve is a provisional raster trace recorded in
 Sitka spruce natural is stored as `cdf-cwh-ss-natural.json`, provisional. The
 top-height, QMD, and boundary paths are vector; the crown-closure curve is a
 raster trace. See `notes/reference/ssn-digitisation.md`.
+
+## hwn status
+
+Western hemlock natural is stored as `cwh-hw-natural.json`, provisional. The
+top-height, QMD, and boundary paths are vector; the crown-closure curve is a
+raster trace. See `notes/reference/hwn-digitisation.md`.
