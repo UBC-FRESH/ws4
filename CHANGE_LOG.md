@@ -4098,3 +4098,6 @@ issue comments.
 
 - P106: phase approved and squash-merged as `7cec6b6` on 2026-11-03. PR #729
   passed all five CI checks; the branch was deleted and parent issue #723 closed.
+- P107: launched SDMD atlas completion on `feature/p107-sdmd-atlas`, parent
+  issue #731, tasks #735-#739. Scope: reusable digitisation/QA, remaining natural
+  and planted diagrams, coverage, and closeout.

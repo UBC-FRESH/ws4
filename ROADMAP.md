@@ -99,6 +99,7 @@ exists and the maintainer approves it.
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
 | P104 (SDMD pilot) digitisation and trajectory evidence | #680 | `feature/p104-sdmd-pilot` | complete |
 | P106 AU evidence depth | #723 | `feature/p106-au-evidence` | complete |
+| P107 SDMD atlas completion | #731 | `feature/p107-sdmd-atlas` | active |
 | P95 (factorized vectors) target-cell cache | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
 | P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | pr-open |
 | P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | pr-open |
@@ -3479,3 +3480,36 @@ Acceptance:
 - Every remaining warning is named and accepted.
 - `python scripts/dashboard.py` is green.
 
+## Phase 107: SDMD atlas completion
+
+Parent issue: #731
+Branch: `feature/p107-sdmd-atlas`
+Status: active
+Plan: `notes/reports/p106-closeout.md`
+Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
+
+Goal: turn the four-diagram pilot into the usable public BC SDMD set. Build a
+reusable digitisation and QA path, digitise the remaining natural and planted
+PDFs, and record the species/BEC coverage.
+
+- [ ] P107.1 Build the digitisation and QA pipeline (#735)
+  - [ ] Capture PDF path extraction, axis calibration, and label matching.
+  - [ ] Emit diagram JSON, overlay, and source record.
+  - [ ] Test calibration and curve ordering.
+- [ ] P107.2 Digitise the remaining natural diagrams (#736)
+  - [ ] `fdcn`, `ssn`, `hwn`, `cwn`, `swn`.
+  - [ ] Add source entries, overlays, and tests.
+- [ ] P107.3 Digitise the remaining planted diagrams (#737)
+  - [ ] `fdcp`, `ssp`, `hwp`, `cwp`, `swp`.
+  - [ ] Record the planted top-height assignments.
+- [ ] P107.4 Species/BEC coverage and closeout (#739)
+  - [ ] Update the source catalog and coverage table.
+  - [ ] Write the closeout report and queue the PR.
+
+Acceptance:
+
+- Every remaining public PDF has a vector JSON or a named refusal.
+- Every diagram has a source hash and a review status.
+- `validate_diagram` passes for every stored diagram.
+- Coverage is stated without overclaiming BEC specificity.
+- `python scripts/dashboard.py` is green.
