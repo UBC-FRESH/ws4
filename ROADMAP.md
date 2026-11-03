@@ -111,7 +111,7 @@ exists and the maintainer approves it.
 | P107 Profile target telemetry | #730 | `feature/p107-profile-target-telemetry` | pr-open |
 | P108 Profile-run report package | #742 | `feature/p108-profile-run-reports` | pr-open |
 | P110 Optional-factorized GPU profiles | #745 | `feature/p110-tsa27-gpu-profile` | pr-open |
-| P111 Preserve zero-generation profile runs | #751 | `fix/p111-zero-generations` | active |
+| P111 Preserve zero-generation profile runs | #751 | `fix/p111-zero-generations` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3578,7 +3578,8 @@ Acceptance:
 
 Parent issue: #751
 Branch: `fix/p111-zero-generations`
-Status: active
+Status: pr-open
+PR: #752
 
 Goal: keep an explicit zero-generation profile request instead of coercing it to
 the default 5000 generations.
