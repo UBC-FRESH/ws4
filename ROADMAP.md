@@ -112,6 +112,7 @@ exists and the maintainer approves it.
 | P108 Profile-run report package | #742 | `feature/p108-profile-run-reports` | pr-open |
 | P110 Optional-factorized GPU profiles | #745 | `feature/p110-tsa27-gpu-profile` | pr-open |
 | P111 Preserve zero-generation profile runs | #751 | `fix/p111-zero-generations` | pr-open |
+| P112 TSA 29 GPU profile | #755 | `feature/p112-tsa29-gpu-profile` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3591,3 +3592,21 @@ Acceptance:
 - `generations: 0` reaches the worker as `--generations 0`.
 - The run response reports zero.
 - A focused regression test covers the zero case.
+
+## Phase 112: TSA 29 GPU profile
+
+Parent issue: #755
+Branch: `feature/p112-tsa29-gpu-profile`
+Status: pr-open
+Report: `notes/reports/tsa29-gpu-profile.md`
+PR: #757
+
+Goal: validate the existing TSA 29 table and expose a `base` GPU profile.
+
+- [x] P112.1 Validate and expose TSA 29 GPU profile (#756)
+
+Acceptance:
+
+- Zero-generation replay is exact.
+- The portal exposes `base` for TSA 29.
+- GPU readiness and portal docs reflect three profile instances.
