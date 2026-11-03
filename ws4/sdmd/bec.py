@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 
-__all__ = ["BecRelationship", "classify_crosswalk"]
+__all__ = ["BecRelationship", "classify_crosswalk", "classify_official"]
 
 
 @dataclass(frozen=True)
@@ -24,8 +24,11 @@ class BecRelationship:
         The WS4 label, when present.
     cciss_bec : str or None
         The CCISS label, when present.
-    relationship : {"same", "ws4_split", "cciss_split", "unresolved"}
-        The relationship.
+    relationship : str
+        The relationship: ``same``, ``ws4_split``, ``cciss_split``,
+        ``unresolved`` for the CCISS crosswalk; ``official_exact``,
+        ``ws4_finer``, ``official_finer``, ``not_in_official``, or
+        ``not_in_ws4`` for the BEC 13.1 crosswalk.
     note : str
         A short explanation.
     """
@@ -109,3 +112,53 @@ def _longest_prefix(label: str, candidates: Sequence[str] | set[str]) -> str | N
         candidate for candidate in candidates if label.startswith(candidate) and candidate != label
     ]
     return max(matches, key=len) if matches else None
+
+
+def classify_official(
+    ws4_labels: Iterable[str],
+    official_labels: Iterable[str],
+) -> tuple[BecRelationship, ...]:
+    """Classify WS4 labels against the current official BEC 13.1 list.
+
+    Parameters
+    ----------
+    ws4_labels : iterable of str
+        WS4 BEC labels.
+    official_labels : iterable of str
+        Official BEC 13.1 labels, without spaces.
+
+    Returns
+    -------
+    tuple of BecRelationship
+        One row per exact label, one per finer label, and one per label absent
+        from the other list. Parent labels with finer official children are
+        represented by the child rows, not as duplicates.
+    """
+    ours = {str(label) for label in ws4_labels if str(label)}
+    official = {str(label) for label in official_labels if str(label)}
+    rows: list[BecRelationship] = []
+    for label in sorted(ours & official):
+        rows.append(BecRelationship(label, label, "official_exact", "exact BEC 13.1 label"))
+    for label in sorted(ours - official):
+        parent = _longest_prefix(label, official)
+        if parent is not None:
+            rows.append(
+                BecRelationship(label, parent, "ws4_finer", f"{label} is finer than {parent}")
+            )
+            continue
+        children = [item for item in official if item.startswith(label) and item != label]
+        if children:
+            continue
+        rows.append(BecRelationship(label, None, "not_in_official", "absent from BEC 13.1"))
+    for label in sorted(official - ours):
+        parent = _longest_prefix(label, ours)
+        if parent is not None:
+            rows.append(
+                BecRelationship(parent, label, "official_finer", f"{label} is finer than {parent}")
+            )
+        else:
+            rows.append(
+                BecRelationship(None, label, "not_in_ws4", "absent from the WS4 coverage table")
+            )
+    rows.sort(key=lambda row: (row.ws4_bec or "", row.cciss_bec or ""))
+    return tuple(rows)

@@ -4272,3 +4272,10 @@ issue comments.
   when CCISS carries finer children, instead of leaving the parent unresolved.
   Counts are 183 exact, 7 WS4 splits, 16 CCISS splits, and 41 unresolved. The
   four parent labels are represented by their child rows.
+- P121.1 correction: fetched the official BC BEC Map Attribute Catalogue
+  (`BEC_BIOGEOCLIMATIC_POLY` v13.1, 2026-07-08, OGL-BC) and added
+  `bec_official.csv` (219 unique labels). The official crosswalk is 165 exact,
+  12 WS4-finer, 17 official-finer, 26 WS4 labels absent from BEC 13.1, and 37
+  official labels absent from the WS4 table. The 26 absent WS4 labels are named;
+  they are old/aggregated/renamed, not silent “unresolved” rows. Updated the
+  report and tests.

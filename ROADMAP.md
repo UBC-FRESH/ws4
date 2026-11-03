@@ -3768,6 +3768,7 @@ that refuses impossible BEC/TSA/species combinations before evidence enters an A
   - [x] Classify exact, split, aggregation, and unresolved labels.
   - [x] Write the review table and notes.
   - [x] Test the counts and examples.
+  - [x] Check against the official BEC 13.1 attribute catalogue.
 - [x] P121.2 Add the AU integrity validator (#771)
   - [x] Parse the AU label and store metadata.
   - [x] Check BEC coverage and impossible combinations.
