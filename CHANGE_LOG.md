@@ -4240,15 +4240,62 @@ issue comments.
 
 - P120: phase approved and squash-merged as `a7e83e3` on 2026-11-03. PR #764
   passed all five CI checks; the branch was deleted and parent issue #731 closed.
+- P121: launched BEC crosswalk and AU integrity on
+  `feature/p121-bec-integrity`, parent issue #769, tasks #770-#773. Scope:
+  classify the WS4/CCISS label differences, add an AU validator, wire it, and
+  close out.
+- P121.1: added `ws4.sdmd.bec.classify_crosswalk` and
+  `bec_crosswalk_review.csv`. The 247-row union classifies as 183 exact, 7 WS4
+  splits, 12 CCISS splits, and 45 unresolved. The unresolved rows are explicit;
+  no prefix guess is treated as an equivalence. Added three contract tests and
+  `notes/reports/p121-bec-crosswalk.md`.
+- P121.2: added `ws4.sdmd.au_integrity` and the 340-row
+  `tsa_bec_counts.csv` derived from the public FAIB PSP header (OGL-BC). The
+  validator parses `AU-<bec>[-TSA<n>]-<species>` and refuses malformed labels,
+  unknown BEC labels, and TSA/BEC pairs with no PSP support. Added four tests and
+  `notes/reports/p121-au-integrity.md`.
+- P121.3: wired the AU integrity validator into `SdmdStore.from_directory`.
+  Each plot AU label is checked against the packaged BEC coverage and TSA/BEC
+  support table before the other tables are read. A bad label raises
+  `SdmdApiError` with the specific finding. Added a store-level negative test and
+  documented the rule.
+- P121.4: wrote `notes/reports/p121-closeout.md`, updated the roadmap and docs,
+  and queued the phase PR. Crosswalk: 183 exact, 7 WS4 splits, 12 CCISS splits,
+  45 unresolved. AU store integrity check is wired and tested. Merge waits for
+  approval.
 
 - P116: TSA 24 map performance. Add a `<geometry>.bounds.json` sidecar and a
   100 m overview layer for low-zoom tiles; the geometry script writes the sidecar.
   Report: `notes/reports/tsa24-map-performance.md`.
 
+- P121.1 correction: the crosswalk now marks a WS4 parent as `cciss_split`
+  when CCISS carries finer children, instead of leaving the parent unresolved.
+  Counts are 183 exact, 7 WS4 splits, 16 CCISS splits, and 41 unresolved. The
+  four parent labels are represented by their child rows.
+- P121.1 correction: fetched the official BC BEC Map Attribute Catalogue
+  (`BEC_BIOGEOCLIMATIC_POLY` v13.1, 2026-07-08, OGL-BC) and added
+  `bec_official.csv` (219 unique labels). The official crosswalk is 165 exact,
+  12 WS4-finer, 17 official-finer, 26 WS4 labels absent from BEC 13.1, and 37
+  official labels absent from the WS4 table. The 26 absent WS4 labels are named;
+  they are old/aggregated/renamed, not silent “unresolved” rows. Updated the
+  report and tests.
+
 
 - P122: run timeline and interaction uplift. Added snapshot cards, period
   playback, a Results timeline from `schedule.csv`, toast feedback, and keyboard
   shortcuts/help. Plan: `notes/design/ws4-ui-port-plan.md`. Dashboard: `OVERALL: GREEN`; focused web tests 79 passed; browser smoke verified snapshot, timeline, playback, and help.
+
+- P121.1 correction: replaced the prefix-only check with the official BC BECdb v13
+  current and retired tables. Every one of the 229 WS4 labels is now classified:
+  165 current exact, 48 retired (with retirement version), and 0 absent from
+  BECdb. The 54 current BEC labels absent from WS4 are recorded as a coverage
+  gap, not as unknown classifications. Removed “unresolved” from the CCISS table
+  in favour of `not_in_cciss` and `not_in_ws4`. Added `bec_retired.csv`,
+  refreshed `bec_official.csv`, and regenerated `bec_official_crosswalk.csv`.
+- P121.2 correction: the AU validator now refuses retired BEC labels with
+  `SDMD-AU-BEC-RETIRED` and current BEC labels outside WS4 coverage with
+  `SDMD-AU-BEC-NO-COVERAGE`. The store passes both packaged tables. Added unit
+  and store tests; updated the AU integrity and closeout reports.
 
 - P125: stabilize period playback and map paging. Serialize playback ticks,
   suppress the loading overlay between periods, and guard async map responses

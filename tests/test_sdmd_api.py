@@ -7,6 +7,7 @@ import shutil
 from dataclasses import asdict
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 pytest.importorskip("fastapi")
@@ -290,4 +291,24 @@ def test_store_refuses_an_initial_volume_above_its_limit(tmp_path: Path) -> None
         encoding="utf-8",
     )
     with pytest.raises(SdmdApiError, match="at most the limit"):
+        SdmdStore.from_directory(root)
+
+
+def test_store_refuses_an_au_without_tsa_bec_support(tmp_path: Path) -> None:
+    """An AU label with an impossible TSA/BEC pair fails at store load."""
+    root = _store_dir(tmp_path)
+    frame = pd.read_csv(root / "plots.csv")
+    frame["au_id"] = "AU-IDFdk3-TSA24-FDI"
+    frame.to_csv(root / "plots.csv", index=False)
+    with pytest.raises(SdmdApiError, match="TSA 24"):
+        SdmdStore.from_directory(root)
+
+
+def test_store_refuses_a_retired_bec_label(tmp_path: Path) -> None:
+    """A store cannot load an AU that uses a retired BEC label."""
+    root = _store_dir(tmp_path)
+    frame = pd.read_csv(root / "plots.csv")
+    frame["au_id"] = "AU-CWHxm1-FDI"
+    frame.to_csv(root / "plots.csv", index=False)
+    with pytest.raises(SdmdApiError, match="retired in BEC version 13"):
         SdmdStore.from_directory(root)
