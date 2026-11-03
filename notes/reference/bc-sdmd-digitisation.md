@@ -153,3 +153,9 @@ height, QMD, and boundaries are vector; crown closure is a raster trace. See
 Western redcedar planted is stored as `cwh-cw-planted.json`, provisional. Top
 height, QMD, and boundaries are vector; crown closure is a raster trace. See
 `notes/reference/cwp-digitisation.md`.
+
+## swp status
+
+White spruce planted is stored as `sbs-sw-planted.json`, provisional. Top
+height, QMD, and boundaries are vector; crown closure is a raster trace. See
+`notes/reference/swp-digitisation.md`.

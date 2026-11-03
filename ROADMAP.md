@@ -3504,12 +3504,12 @@ PDFs, and record the species/BEC coverage.
   - [x] `swn` stored provisional; vector curves plus a raster crown-closure trace.
   - [x] `cwn` stored provisional; vector curves plus a raster crown-closure trace.
   - [ ] Add source entries, overlays, and tests.
-- [ ] P107.3 Digitise the remaining planted diagrams (#737)
+- [x] P107.3 Digitise the remaining planted diagrams (#737)
   - [x] `fdcp` stored provisional.
   - [x] `ssp` stored provisional.
   - [x] `hwp` stored provisional.
   - [x] `cwp` stored provisional.
-  - [ ] `swp`.
+  - [x] `swp` stored provisional.
   - [ ] Record the planted top-height assignments.
 - [ ] P107.4 Species/BEC coverage and closeout (#739)
   - [ ] Update the source catalog and coverage table.

@@ -656,6 +656,17 @@
       "review_status": "provisional",
       "reviewer": "",
       "notes": "Vector top-height, QMD, competition, and self-thinning paths; provisional raster crown closure. Planted top-height group needs overlay review."
+    },
+    {
+      "diagram_id": "sbs-sw-planted",
+      "source_diagram_id": "swp",
+      "file": "sbs-sw-planted.json",
+      "source_sha256": "b1d5344047b1b50e36b1c0a43b847ea03204d2cbb6d950c1731b0623e7076b9d",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/swp.pdf",
+      "source_version": "1.30",
+      "review_status": "provisional",
+      "reviewer": "",
+      "notes": "Vector top-height, QMD, competition, and self-thinning paths; provisional raster crown closure."
     }
   ]
 }
