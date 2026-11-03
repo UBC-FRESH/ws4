@@ -1,7 +1,7 @@
 # P115 TSA 24 source geometry
 
 Date: 2026-11-03
-Status: complete
+Status: complete; PR #766
 
 ## Source
 

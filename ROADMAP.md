@@ -115,7 +115,7 @@ exists and the maintainer approves it.
 | P112 TSA 29 GPU profile | #755 | `feature/p112-tsa29-gpu-profile` | pr-open |
 | P113 Map capability fallback | #758 | `feature/p113-map-fallback` | pr-open |
 | P114 Scenario price paths | #749 | `feature/p114-prices-v1` | pr-open |
-| P115 TSA 24 source geometry | #765 | `feature/p115-tsa24-source-geometry` | active |
+| P115 TSA 24 source geometry | #765 | `feature/p115-tsa24-source-geometry` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3671,8 +3671,9 @@ Acceptance:
 
 Parent issue: #765
 Branch: `feature/p115-tsa24-source-geometry`
-Status: active
+Status: pr-open
 Report: `notes/reports/tsa24-source-geometry.md`
+PR: #766
 
 Goal: restore a real TSA 24 map layer from the public source stand geometry.
 
