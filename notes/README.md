@@ -68,6 +68,7 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/tsa24-map-fallback.md` — geometry capability and map-unavailable state.
 - `reports/tsa24-source-geometry.md` — real source polygons and regeneration notes.
 - `reports/p125-playback-map-race.md` — playback serialization and stale map response guard.
+- `reports/p127-target-chart-solve.md` — target chart row selection and Solve semantics.
 - `reports/tsa24-map-performance.md` — bounds sidecar and overview layer.
 - `reports/p83-8-gpu-population.md` — the P83.8 candidate-index population search, c5 2k and TSA23 5k benchmarks.
 - `reports/p83-7-full-tsa23.md` — the full-model TSA23 20 x 10 GPU population run and exact replay.
