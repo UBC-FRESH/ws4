@@ -6,7 +6,7 @@ Branch: `feature/p107-sdmd-atlas`
 Evidence head: `ea78296`
 Report commit: this metadata-only report update
 Date: 2026-11-03
-Status: queued as PR #763 for maintainer approval. Not merged.
+Status: queued as PR #764 for maintainer approval. Not merged.
 
 ## Recommendation
 
@@ -92,6 +92,6 @@ Results at the evidence head:
 
 ## 7. Pull request
 
-PR #763 names the phase, the evidence head, the atlas status, and the known limits.
+PR #764 names the phase, the evidence head, the atlas status, and the known limits.
 It is queued for approval. No merge, tag, release, or settings change is
 performed by this report.
