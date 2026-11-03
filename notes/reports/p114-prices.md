@@ -80,5 +80,5 @@ repository only consumes it.
 
 ## Pull request
 
-To be opened against `main` with `Part of #749`; merge waits for maintainer
-approval.
+Pull request #760 against `main` with `Part of #749`, opened from commit
+`29018e8`; merge waits for maintainer approval.

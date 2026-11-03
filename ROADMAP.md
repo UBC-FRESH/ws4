@@ -114,7 +114,7 @@ exists and the maintainer approves it.
 | P111 Preserve zero-generation profile runs | #751 | `fix/p111-zero-generations` | pr-open |
 | P112 TSA 29 GPU profile | #755 | `feature/p112-tsa29-gpu-profile` | pr-open |
 | P113 Map capability fallback | #758 | `feature/p113-map-fallback` | pr-open |
-| P114 Scenario price paths | #749 | `feature/p114-prices-v1` | active |
+| P114 Scenario price paths | #749 | `feature/p114-prices-v1` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
