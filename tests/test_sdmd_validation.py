@@ -237,6 +237,7 @@ def test_real_tsa23_pilot_has_two_stored_paths() -> None:
         payload = store.trajectory(REAL_AU, regime)
         assert payload["status"] in {"inside", "extrapolated"}
         assert payload["points"]
+        assert "multi-cluster" in str(payload.get("source", ""))
 
 
 def test_real_tsa23_pli_pilot_passes_the_observed_gates() -> None:
@@ -262,3 +263,4 @@ def test_real_tsa23_pli_pilot_has_two_stored_paths() -> None:
         payload = store.trajectory(PLI_AU, regime)
         assert payload["status"] in {"inside", "extrapolated"}
         assert payload["points"]
+        assert "multi-cluster" in str(payload.get("source", ""))

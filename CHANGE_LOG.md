@@ -4071,3 +4071,9 @@ issue comments.
   that caused the zigzag and the P104 truncation. Updated the source-catalog note,
   review packet overlay, digitisation note, P104 historical note, and the diagram
   test. `fdin` remains reviewed.
+- P106.2: replaced the single-cluster FVS paths with multi-cluster composites.
+  FDI uses three plots (ages 76, 89, 101), scaled by 0.3583 to 1,063 TPH; PLI
+  uses five plots (ages 50-75), scaled by 0.3067 to 1,979 TPH. The stores name the
+  clusters, weights, and CT60 first-cycle timing. The trajectory API now returns
+  `source`, `scenario`, and `review_status` beside the points. Both paths remain
+  extrapolated; tests assert the multi-cluster source string.

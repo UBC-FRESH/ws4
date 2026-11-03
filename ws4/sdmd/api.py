@@ -404,6 +404,9 @@ class SdmdStore:
         path = self.root / "trajectories" / au_id / f"{regime_id}.json"
         gaps: list[str] = []
         points: list[list[float]] = []
+        source = ""
+        scenario = ""
+        review_status = ""
         status = "unavailable"
         if path.is_file():
             raw = json.loads(path.read_text(encoding="utf-8"))
@@ -414,6 +417,9 @@ class SdmdStore:
                 for point in raw["points"]
                 if isinstance(point, list) and len(point) == 2
             ]
+            source = str(raw.get("source", ""))
+            scenario = str(raw.get("scenario", ""))
+            review_status = str(raw.get("review_status", ""))
             curve = self._points_for(au_id) if not self.points.empty else pd.DataFrame()
             envelope: tuple[tuple[float, float], ...] = ()
             if len(curve) >= 3:
@@ -444,6 +450,9 @@ class SdmdStore:
             "au_id": au_id,
             "regime": regime.to_dict(),
             "points": points,
+            "source": source,
+            "scenario": scenario,
+            "review_status": review_status,
             "status": status,
             "data_gaps": gaps,
         }

@@ -3435,10 +3435,10 @@ volume for the two real pilot AUs.
   - [x] Re-read the PDF vector paths and separate the joined branches.
   - [x] Store the recovered continuous curve.
   - [x] Update the overlay, review packet, and diagram test.
-- [ ] P106.2 Build AU-level FVS ensembles (#725)
-  - [ ] Build a multi-cluster representative tree list with plot weights.
-  - [ ] Run the untreated and CT60 scenarios across the documented range.
-  - [ ] Store and assess the ensemble.
+- [x] P106.2 Build AU-level FVS ensembles (#725)
+  - [x] Build a multi-cluster representative tree list with plot weights.
+  - [x] Run the untreated and CT60 scenarios across the documented range.
+  - [x] Store and assess the multi-cluster paths.
 - [ ] P106.3 Add measured initial volume (#726)
   - [ ] Derive the value and source for both AUs.
   - [ ] Add the gate and report fields.

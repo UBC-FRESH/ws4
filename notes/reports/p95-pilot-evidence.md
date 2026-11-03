@@ -68,10 +68,11 @@ field derivation are in the store's `SOURCE.md`.
 | ui-payload-contract | pass |
 | Overall | warn |
 
-The FVS paths use the live trees of cluster `4025005-PSP1` (age 89), the
-median-age cluster, scaled to the AU median TPH. They use `fresh-fvsbc` 0.20.0,
-BC variant, `SITECODE FD,60`, eight ten-year cycles, and `RANNSEED 1`. CT60 is
-`THINBBA` at the first 10-year cycle with 60% basal-area removal. Both the untreated and CT60 paths
+The FVS paths use the live trees of three clusters — `4024520-PSP2` (age 76),
+`4025005-PSP1` (age 89), and `4024520-PSP4` (age 101) — each as a plot, scaled to
+the AU median TPH. They use `fresh-fvsbc` 0.20.0, BC variant, `SITECODE FD,60`,
+eight ten-year cycles, and `RANNSEED 1`. CT60 is `THINBBA` at the first 10-year
+cycle with 60% basal-area removal. Both the untreated and CT60 paths
 are stored as `provisional`; the CT60 path regenerates aspen after thinning, which is
 the model's response rather than a recommendation.
 
@@ -94,10 +95,11 @@ visits, ages 20 to 120, selected from TSA 23 / IDFdk3 / PL-leading sites.
 | Overall | warn |
 
 The diagram is the digitised natural lodgepole pine `pln` (version 1.20), not the
-Interior Douglas-fir diagram. The FVS paths use cluster `4025096-PSP1` (age 62), the median-age cluster,
-`SITECODE PL,55`, eight cycles, and CT60 at the first 10-year cycle. Tree counts
-are scaled to the AU median TPH; the FVS start volume remains above the observed
-value, which is named in the store's `SOURCE.md`.
+Interior Douglas-fir diagram. The FVS paths use five clusters — `4025305-PSP2` (age 50), `4025305-PSP3`
+(age 61), `4025096-PSP1` (age 62), `4024449-PSP1` (age 73), and `4025245-PSP5`
+(age 75) — each as a plot, `SITECODE PL,55`, eight cycles, and CT60 at the first
+10-year cycle. Tree counts are scaled to the AU median TPH; the FVS start volume
+remains above the observed value, which is named in the store's `SOURCE.md`.
 
 ## 3. Public PSP check of the pilot AU definition
 

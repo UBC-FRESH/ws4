@@ -313,8 +313,10 @@ atomic and is stored at ``constraints/<au_id>.json``; the next store load reads
 it back.
 
 ``GET /api/sdmd/au/{au_id}/trajectory`` reads a stored trajectory and assesses it
-against the AU's observed envelope. When the file is absent, the response is
-``status: "unavailable"`` with a named data gap rather than an invented path.
+against the AU's observed envelope. The response carries the stored ``source``,
+``scenario``, and ``review_status`` beside the points. When the file is absent, the
+response is ``status: "unavailable"`` with a named data gap rather than an invented
+path.
 
 AU Explorer tab
 ---------------
