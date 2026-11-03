@@ -6063,6 +6063,12 @@ async function findLiveRun(runs) {
 }
 
 async function startRun() {
+  const profile = $('profile-select')?.value || '';
+  const profileBar = $('profile-bar');
+  if (profile && profileBar && !profileBar.hidden) {
+    await startProfileRun();
+    return;
+  }
   stopRunWatch();
   const status = $('run-status');
   $('start-run').disabled = true;
