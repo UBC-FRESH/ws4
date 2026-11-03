@@ -4235,7 +4235,7 @@ function targetChartCells(account) {
 function ensureChartRow(account, cell) {
   const rows = (cell.target_indices ?? [])
     .map((index) => state.targets[index])
-    .filter((row) => row && row.account === account);
+    .filter((row) => row && row.account === account && !row.flow);
   if (rows.length) return rows[0];
   const template = state.targets.find((row) => row.account === account) ?? {};
   const width = Number(template.period_width ?? state.periodWidth ?? 1) || 1;
@@ -6094,7 +6094,7 @@ async function startRun() {
     $('start-run').disabled = false;
     $('start-run').textContent = 'Pause';
     $('stop-run').hidden = false;
-    showToast('run started');
+    showToast(profile ? `GPU profile ${profile} started` : 'run started');
     pollRun(run.id);
     runWatch.timer = setInterval(() => pollRun(run.id), 2000);
     openRunStream(run.id, runWatch.islands);
