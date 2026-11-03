@@ -1,7 +1,7 @@
 # P108 profile-run report package
 
 Date: 2026-11-03
-Status: complete
+Status: complete; PR #744
 
 ## Change
 
@@ -27,3 +27,7 @@ Base profile, population 8, zero generations, replay enabled:
 
 The run still has no map geometry because the TSA24 compiled dataset has no
 `--geometry` layer; this is a data/configuration gap, not a report bug.
+
+## Pull request
+
+PR #744 contains the report writer integration, summary ending inventory, and docs.
