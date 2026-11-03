@@ -2,12 +2,22 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
 import pytest
 from ws4.opt.objective import Target, objective
-from ws4.report import account_summary, ratio_account, target_status, write_report
+from ws4.report import (
+    REPORT_PROVENANCE_NAME,
+    account_summary,
+    build_report_provenance,
+    ratio_account,
+    target_status,
+    write_report,
+)
 
 
 def _values() -> pd.DataFrame:
@@ -63,6 +73,135 @@ def test_write_report(tmp_path: Path) -> None:
     write_report(_values(), [Target("a", period=1, minimum=5.0)], tmp_path)
     assert (tmp_path / "report_accounts.csv").is_file()
     assert (tmp_path / "report_targets.csv").is_file()
+
+
+def test_write_report_writes_provenance_hashes(tmp_path: Path) -> None:
+    """The sidecar hashes every report and every source metadata file that exists."""
+    dataset = tmp_path / "dataset"
+    dataset.mkdir()
+    manifest = dataset / "manifest.json"
+    manifest.write_text(
+        '{"schema_version": "ws4.dataset.v1", "sources": [{"path": "recipe.xml"}]}',
+        encoding="utf-8",
+    )
+    metadata = tmp_path / "dhi_metadata.json"
+    metadata.write_text(
+        '{"schema_version": "ws4.dhi.source.v1", "source_id": "dhi", "source_version": "v1"}',
+        encoding="utf-8",
+    )
+
+    write_report(
+        _values(),
+        [Target("a", period=1, minimum=5.0)],
+        tmp_path,
+        dataset=dataset,
+        run_id="run-7",
+    )
+
+    payload = json.loads((tmp_path / REPORT_PROVENANCE_NAME).read_text(encoding="utf-8"))
+    assert payload["schema_version"] == "ws4.report.provenance.v1"
+    assert datetime.fromisoformat(payload["generated_utc"]).tzinfo is not None
+    assert payload["run"]["id"] == "run-7"
+    assert payload["dataset"]["id"] == "dataset"
+    assert (
+        payload["dataset"]["manifest_sha256"] == hashlib.sha256(manifest.read_bytes()).hexdigest()
+    )
+
+    reports = {entry["name"]: entry for entry in payload["reports"]}
+    for name in ("report_accounts.csv", "report_targets.csv", "ending_inventory.csv"):
+        assert reports[name]["sha256"] == hashlib.sha256((tmp_path / name).read_bytes()).hexdigest()
+    sources = {entry["name"]: entry for entry in payload["sources"]}
+    assert (
+        sources["dhi_metadata.json"]["sha256"] == hashlib.sha256(metadata.read_bytes()).hexdigest()
+    )
+    assert payload["uncertainty"] == {
+        "status": "not_stated",
+        "source": None,
+        "statement": None,
+    }
+
+
+def test_write_report_records_real_uncertainty_metadata(tmp_path: Path) -> None:
+    """An explicit uncertainty block is carried through with its source file."""
+    (tmp_path / "dhi_metadata.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "ws4.dhi.source.v1",
+                "uncertainty": {
+                    "status": "review_required",
+                    "statement": "The pilot uses a coarse surrogate.",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    write_report(_values(), [], tmp_path)
+
+    payload = json.loads((tmp_path / REPORT_PROVENANCE_NAME).read_text(encoding="utf-8"))
+    assert payload["uncertainty"] == {
+        "status": "review_required",
+        "source": "dhi_metadata.json",
+        "statement": "The pilot uses a coarse surrogate.",
+    }
+
+
+def test_write_report_without_metadata_states_uncertainty_is_not_stated(tmp_path: Path) -> None:
+    """Missing metadata is reported as absent, not inferred or silently passed."""
+    write_report(_values(), [], tmp_path)
+
+    payload = json.loads((tmp_path / REPORT_PROVENANCE_NAME).read_text(encoding="utf-8"))
+    assert payload["sources"] == []
+    assert payload["dataset"] is None
+    assert payload["uncertainty"] == {
+        "status": "not_stated",
+        "source": None,
+        "statement": None,
+    }
+    assert payload["warnings"] == []
+
+
+def test_invalid_metadata_is_hashed_and_reported_without_raising(tmp_path: Path) -> None:
+    """A malformed source metadata file is recorded, not allowed to break the reports."""
+    (tmp_path / "dhi_metadata.json").write_text("{not json", encoding="utf-8")
+
+    write_report(_values(), [], tmp_path)
+
+    payload = json.loads((tmp_path / REPORT_PROVENANCE_NAME).read_text(encoding="utf-8"))
+    source = payload["sources"][0]
+    assert source["name"] == "dhi_metadata.json"
+    assert source["status"] == "invalid"
+    assert source["error"] == "not valid JSON"
+    assert source["sha256"] == hashlib.sha256(b"{not json").hexdigest()
+    assert payload["uncertainty"]["status"] == "not_stated"
+    assert any("dhi_metadata.json" in warning for warning in payload["warnings"])
+
+
+def test_build_report_provenance_records_missing_files(tmp_path: Path) -> None:
+    """Missing report and dataset files are statuses in the record, not exceptions."""
+    payload = build_report_provenance(
+        tmp_path,
+        ["report_accounts.csv", "absent.csv"],
+        dataset=tmp_path / "absent-dataset",
+        run_id="run-9",
+        generated_utc="2026-11-03T00:00:00+00:00",
+    )
+
+    raw_reports = payload["reports"]
+    assert isinstance(raw_reports, list)
+    reports = {entry["name"]: entry for entry in raw_reports}
+    assert reports["report_accounts.csv"]["status"] == "missing"
+    assert reports["absent.csv"] == {
+        "name": "absent.csv",
+        "bytes": None,
+        "sha256": None,
+        "status": "missing",
+    }
+    assert payload["dataset"] == {"id": "absent-dataset", "status": "missing"}
+    assert payload["generated_utc"] == "2026-11-03T00:00:00+00:00"
+    raw_warnings = payload["warnings"]
+    assert isinstance(raw_warnings, list)
+    assert any("absent.csv" in warning for warning in raw_warnings)
 
 
 def test_a_product_target_is_priced_over_its_period() -> None:

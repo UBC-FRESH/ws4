@@ -99,6 +99,7 @@ exists and the maintainer approves it.
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
 | P104 (SDMD pilot) digitisation and trajectory evidence | #680 | `feature/p104-sdmd-pilot` | complete |
 | P106 AU evidence depth | #723 | `feature/p106-au-evidence` | complete |
+| P109 Report provenance sidecars | #734 | `feature/p108-report-provenance` | pr-open |
 | P95 (factorized vectors) target-cell cache | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
 | P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | pr-open |
 | P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | pr-open |
@@ -3521,3 +3522,33 @@ Acceptance:
 - Report accounts, targets, and ending inventory exist.
 - Summary includes ending inventory.
 - Base profile remains exact; dashboard green.
+
+## Phase 109: Report provenance sidecars
+
+Parent issue: #734
+Branch: `feature/p108-report-provenance`
+Status: pr-open
+Report: `notes/reports/p108-report-provenance.md`
+
+Goal: make a report directory auditable by writing a provenance sidecar that names and
+hashes the report tables, records the source metadata that shaped them, identifies the run
+and dataset where available, and states uncertainty explicitly.
+
+- [x] P109.1 Report provenance sidecar, API exposure, and Reports-tab badge (#738)
+  - [x] Add the sidecar writer to `ws4/report.py`
+  - [x] Record report and source metadata hashes, identifiers, and uncertainty status
+  - [x] Expose the sidecar through the reports API and Reports tab
+  - [x] Add focused tests and the reference documentation
+  - [x] Update the roadmap and changelog and run the dashboard
+
+Acceptance:
+
+- `write_report` writes `report_provenance.json` beside the report tables.
+- Report and source metadata digests recompute from the files.
+- Uncertainty is explicitly `not_stated` unless real uncertainty metadata exists.
+- Missing or invalid metadata and files are recorded without raising.
+- Existing report CSV contents and model behaviour do not change.
+- `/api/runs/{run}/reports` exposes the recorded provenance.
+- The Reports tab shows a provenance badge and links.
+- `python scripts/dashboard.py` is green.
+
