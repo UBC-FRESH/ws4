@@ -4235,7 +4235,7 @@ function targetChartCells(account) {
 function ensureChartRow(account, cell) {
   const rows = (cell.target_indices ?? [])
     .map((index) => state.targets[index])
-    .filter((row) => row && row.account === account);
+    .filter((row) => row && row.account === account && !row.flow);
   if (rows.length) return rows[0];
   const template = state.targets.find((row) => row.account === account) ?? {};
   const width = Number(template.period_width ?? state.periodWidth ?? 1) || 1;

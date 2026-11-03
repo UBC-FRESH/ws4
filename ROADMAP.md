@@ -124,6 +124,7 @@ exists and the maintainer approves it.
 | P124 3D estate replay | #781 | `not-created` | planned |
 | P125 Stabilize period playback and map paging | #784 | `fix/p125-playback-map-race` | pr-open |
 | P126 Stabilize playback controls and cadence | #787 | `fix/p126-playback-controls` | pr-open |
+| P127 Fix target chart edits and Solve semantics | #791 | `fix/p127-target-chart-solve` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3833,4 +3834,22 @@ Acceptance:
 
 - Play/Pause does not move while playback runs.
 - Playback advances at a practical cadence without overlap.
+- Browser smoke and dashboard pass.
+
+## Phase 127: Fix target chart edits and Solve semantics
+
+Parent issue: #791
+Branch: `fix/p127-target-chart-solve`
+Status: active
+Report: `notes/reports/p127-target-chart-solve.md`
+
+Goal: make chart edits affect the level row and keep Solve on current targets.
+
+- [x] P127.1 Edit target chart level rows (#792)
+
+Acceptance:
+
+- Chart edits update the non-flow level row.
+- Saved values round-trip through `api/targets.json`.
+- Solve sends the configured time limit without a profile field.
 - Browser smoke and dashboard pass.

@@ -4258,3 +4258,8 @@ issue comments.
 - P126: stabilize playback controls and cadence. The period control now has a
   fixed header slot, and the settle delay is shorter while map loads remain
   serialized. Report: `notes/reports/p126-playback-controls.md`.
+
+- P127: fix target chart edits and Solve semantics. Chart edits now update the
+  non-flow level row, and public-demo Solve uses the current target file and time
+  budget instead of implicitly switching to a profile run. Report:
+  `notes/reports/p127-target-chart-solve.md`.
