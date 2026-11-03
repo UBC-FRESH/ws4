@@ -61,9 +61,11 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/tsa24-profile-run-feedback.md` — live schedule diffs and final account replay for profile runs.
 - `reports/tsa24-profile-target-telemetry.md` — profile-run target values and yearly series.
 - `reports/tsa24-profile-run-reports.md` — profile-run account/target/ending reports.
+- `reports/p114-prices.md` — the `prices.v1` scenario price-path reader, comparison, and provenance report.
 - `reports/tsa27-gpu-profile.md` — factorized-optional TSA 27 s8 GPU profile.
 - `reports/tsa29-gpu-profile.md` — table-backed TSA 29 base GPU profile.
 - `reports/tsa24-map-fallback.md` — geometry capability and map-unavailable state.
+- `reports/tsa24-source-geometry.md` — real source polygons and regeneration notes.
 - `reports/p83-8-gpu-population.md` — the P83.8 candidate-index population search, c5 2k and TSA23 5k benchmarks.
 - `reports/p83-7-full-tsa23.md` — the full-model TSA23 20 x 10 GPU population run and exact replay.
 - `reports/p83-closeout.md` — phase close-out: c5 policy result, GPU search, population, and portfolio findings.

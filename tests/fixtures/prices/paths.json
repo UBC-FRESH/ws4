@@ -1,0 +1,276 @@
+{
+  "schema_version": "prices.v1",
+  "table_id": "fixture-scenario-prices",
+  "generated_utc": "2026-11-03T00:00:00+00:00",
+  "not_a_forecast": "Synthetic scenario inputs for tests; not a forecast of market prices.",
+  "caveats": [
+    "Values are synthetic and exist only to exercise the reader.",
+    "No inflation adjustment or currency conversion is applied."
+  ],
+  "rows": [
+    {
+      "path_id": "base",
+      "product": "pulp",
+      "period": 1,
+      "value": 38.0,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "base",
+      "product": "pulp",
+      "period": 2,
+      "value": 39.0,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "base",
+      "product": "pulp",
+      "period": 3,
+      "value": 40.0,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "base",
+      "product": "sawlog",
+      "period": 1,
+      "value": 72.5,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "base",
+      "product": "sawlog",
+      "period": 2,
+      "value": 74.0,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "base",
+      "product": "sawlog",
+      "period": 3,
+      "value": 75.5,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "high",
+      "product": "pulp",
+      "period": 1,
+      "value": 43.0,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture-high",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "high",
+      "product": "pulp",
+      "period": 2,
+      "value": 45.0,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture-high",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "high",
+      "product": "pulp",
+      "period": 3,
+      "value": 47.0,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture-high",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "high",
+      "product": "sawlog",
+      "period": 1,
+      "value": 82.5,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture-high",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "high",
+      "product": "sawlog",
+      "period": 2,
+      "value": 85.0,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture-high",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "high",
+      "product": "sawlog",
+      "period": 3,
+      "value": 88.0,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture-high",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "low",
+      "product": "pulp",
+      "period": 1,
+      "value": 33.0,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture-low",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "low",
+      "product": "pulp",
+      "period": 2,
+      "value": 33.5,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture-low",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "low",
+      "product": "pulp",
+      "period": 3,
+      "value": 34.0,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture-low",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "low",
+      "product": "sawlog",
+      "period": 1,
+      "value": 62.5,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture-low",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "low",
+      "product": "sawlog",
+      "period": 2,
+      "value": 63.0,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture-low",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "low",
+      "product": "sawlog",
+      "period": 3,
+      "value": 64.0,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture-low",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "policy_shock",
+      "product": "pulp",
+      "period": 1,
+      "value": 38.0,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture-policy-shock",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "policy_shock",
+      "product": "pulp",
+      "period": 2,
+      "value": 36.0,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture-policy-shock",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "policy_shock",
+      "product": "pulp",
+      "period": 3,
+      "value": 34.0,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture-policy-shock",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "policy_shock",
+      "product": "sawlog",
+      "period": 1,
+      "value": 72.5,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture-policy-shock",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "policy_shock",
+      "product": "sawlog",
+      "period": 2,
+      "value": 66.6,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture-policy-shock",
+      "source_version": "2026-11-03"
+    },
+    {
+      "path_id": "policy_shock",
+      "product": "sawlog",
+      "period": 3,
+      "value": 64.0,
+      "unit": "CAD/m3",
+      "currency": "CAD",
+      "region": "British Columbia, Canada",
+      "source": "synthetic-fixture-policy-shock",
+      "source_version": "2026-11-03"
+    }
+  ]
+}

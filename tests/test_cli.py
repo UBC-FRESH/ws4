@@ -290,6 +290,46 @@ def test_disturbance_rejects_a_malformed_event(tmp_path: Path) -> None:
     assert "missing disturbance fields" in combined
 
 
+def test_price_paths_writes_the_comparison_and_provenance(tmp_path: Path) -> None:
+    """The price-paths command compares the fixture and writes its three artifacts."""
+    out = tmp_path / "prices"
+    result = run_ws4(
+        "price-paths",
+        "--table",
+        "tests/fixtures/prices/paths.json",
+        "--out",
+        str(out),
+    )
+    combined = re.sub(r"\x1b\[[0-9;]*m", "", result.stdout + result.stderr)
+
+    assert result.returncode == 0, combined
+    assert "policy_shock" in combined
+    assert "not a forecast" in combined.casefold()
+    for name in (
+        "price_path_comparison.csv",
+        "price_path_report.md",
+        "price_path_provenance.json",
+    ):
+        assert (out / name).is_file()
+    provenance = json.loads((out / "price_path_provenance.json").read_text(encoding="utf-8"))
+    assert provenance["baseline_path"] == "base"
+    assert provenance["row_count"] == 24
+
+
+def test_price_paths_rejects_a_table_without_the_caveat(tmp_path: Path) -> None:
+    """A table that does not say it is not a forecast fails cleanly."""
+    payload = json.loads((ROOT / "tests/fixtures/prices/paths.json").read_text(encoding="utf-8"))
+    payload.pop("not_a_forecast")
+    table = tmp_path / "paths.json"
+    table.write_text(json.dumps(payload), encoding="utf-8")
+
+    result = run_ws4("price-paths", "--table", str(table), "--out", str(tmp_path / "out"))
+    combined = re.sub(r"\x1b\[[0-9;]*m", "", result.stdout + result.stderr)
+
+    assert result.returncode != 0
+    assert "not_a_forecast" in combined
+
+
 def test_gpu_run_help_documents_the_cache_and_table_inputs() -> None:
     """The GPU command exposes its persistent cache and effect-table inputs."""
     result = run_ws4("gpu-run", "--help")
