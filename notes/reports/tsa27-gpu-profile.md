@@ -1,7 +1,7 @@
 # P109 TSA 27 GPU profile
 
 Date: 2026-11-03
-Status: complete; PR pending
+Status: complete; PR #747
 
 ## Change
 
@@ -35,3 +35,7 @@ Zero-generation s8 run with replay:
 - exact replay: **true**
 - wall: **11.5 s**
 - reports written: `report_accounts.csv`, `report_targets.csv`
+
+## Pull request
+
+PR #747 contains the optional-factorized worker path, mapping-candidate support, tests, and this evidence.
