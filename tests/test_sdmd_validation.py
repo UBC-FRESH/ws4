@@ -20,6 +20,10 @@ DIAGRAM = (
     / "idf-dk3-fdi-illustrative.json"
 )
 AU = "AU-IDFdk3-FDI"
+REAL_AU = "AU-IDFdk3-TSA23-FDI"
+REAL_PILOT = Path(__file__).resolve().parents[1] / "ws4" / "sdmd" / "data" / "pilot-tsa23-idfdk3"
+PLI_AU = "AU-IDFdk3-TSA23-PLI"
+PLI_PILOT = Path(__file__).resolve().parents[1] / "ws4" / "sdmd" / "data" / "pilot-tsa23-idfdk3-pli"
 
 
 def _store_dir(tmp_path: Path, *, diagram: bool = True) -> Path:
@@ -48,7 +52,7 @@ def test_fixture_runs_all_eight_gates(tmp_path: Path) -> None:
     assert [gate.gate for gate in report.gates] == list(GATE_NAMES)
     assert report.status == "warn"
     statuses = _statuses(report)
-    assert statuses["plot-support"] == "pass"
+    assert statuses["plot-support"] == "warn"
     assert statuses["density-plausibility"] == "pass"
     assert statuses["sdmd-fit"] == "warn"
     assert statuses["trajectory-plausibility"] == "pass"
@@ -176,3 +180,85 @@ def test_cli_validate_exit_codes(tmp_path: Path) -> None:
     )
     assert failed.exit_code == 1
     assert "863" in failed.output
+
+
+def test_plot_support_flags_a_synthetic_point(tmp_path: Path) -> None:
+    """A synthetic point is a named warning, not a silent pass."""
+    report = validate_au(SdmdStore.from_directory(_store_dir(tmp_path)), AU)
+    gate = next(item for item in report.gates if item.gate == "plot-support")
+    assert gate.status == "warn"
+    assert gate.evidence["synthetic_points"] == 1
+    assert "synthetic" in gate.detail
+
+
+def test_plot_support_fails_without_a_reviewed_psp_plot(tmp_path: Path) -> None:
+    """A point that claims PSP but has no reviewed PSP plot fails the gate."""
+    root = _store_dir(tmp_path)
+    frame = pd.read_csv(root / "plots.csv")
+    frame.loc[frame["plot_id"] == "PLOT-A02", "sources"] = "synthetic"
+    frame.to_csv(root / "plots.csv", index=False)
+    report = validate_au(SdmdStore.from_directory(root), AU)
+    gate = next(item for item in report.gates if item.gate == "plot-support")
+    assert gate.status == "fail"
+    assert "no reviewed PSP plot at age 60" in gate.detail
+
+
+def test_trajectory_gate_needs_three_psp_points(tmp_path: Path) -> None:
+    """Synthetic points do not make an observed envelope."""
+    root = _store_dir(tmp_path)
+    frame = pd.read_csv(root / "sdmd_points.csv")
+    frame.loc[frame["sdmd_id"].isin(["SDMD-A02", "SDMD-A03", "SDMD-A04"]), "source"] = "synthetic"
+    frame.to_csv(root / "sdmd_points.csv", index=False)
+    report = validate_au(SdmdStore.from_directory(root), AU)
+    gate = next(item for item in report.gates if item.gate == "trajectory-plausibility")
+    assert gate.status == "fail"
+    assert "fewer than three PSP-backed" in gate.detail
+
+
+def test_real_tsa23_pilot_passes_the_observed_gates() -> None:
+    """The public TSA 23 IDFdk3 extract passes plot, density, and regime support."""
+    report = validate_au(SdmdStore.from_directory(REAL_PILOT), REAL_AU)
+    statuses = _statuses(report)
+    assert statuses["plot-support"] == "pass"
+    assert statuses["density-plausibility"] == "pass"
+    assert statuses["regime-completeness"] == "pass"
+    assert statuses["solver-option-reduction"] == "pass"
+    gate = next(item for item in report.gates if item.gate == "plot-support")
+    assert gate.evidence["psp_points"] == 11
+    assert gate.evidence["synthetic_points"] == 0
+    assert statuses["sdmd-fit"] == "pass"
+    assert statuses["trajectory-plausibility"] == "warn"
+
+
+def test_real_tsa23_pilot_has_two_stored_paths() -> None:
+    """The real AU stores the untreated and CT60 FVS paths with source metadata."""
+    store = SdmdStore.from_directory(REAL_PILOT)
+    for regime in ("REG-A-UNTREATED", "REG-A-CT60"):
+        payload = store.trajectory(REAL_AU, regime)
+        assert payload["status"] in {"inside", "extrapolated"}
+        assert payload["points"]
+
+
+def test_real_tsa23_pli_pilot_passes_the_observed_gates() -> None:
+    """The public TSA 23 IDFdk3 lodgepole pine extract passes plot and density support."""
+    store = SdmdStore.from_directory(PLI_PILOT)
+    report = validate_au(store, PLI_AU)
+    statuses = _statuses(report)
+    assert statuses["plot-support"] == "pass"
+    assert statuses["density-plausibility"] == "pass"
+    assert statuses["regime-completeness"] == "pass"
+    gate = next(item for item in report.gates if item.gate == "plot-support")
+    assert gate.evidence["psp_points"] == 11
+    assert gate.evidence["synthetic_points"] == 0
+    assert store.diagram is not None
+    assert store.diagram.diagram_id == "idf-dk3-pli-natural"
+    assert store.diagram.species_group == "PLI"
+
+
+def test_real_tsa23_pli_pilot_has_two_stored_paths() -> None:
+    """The PLI AU stores the untreated and CT60 FVS paths."""
+    store = SdmdStore.from_directory(PLI_PILOT)
+    for regime in ("REG-A-UNTREATED", "REG-A-CT60"):
+        payload = store.trajectory(PLI_AU, regime)
+        assert payload["status"] in {"inside", "extrapolated"}
+        assert payload["points"]

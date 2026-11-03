@@ -1,0 +1,12 @@
+sdmd_id,au_id,region,species_group,site_index,age,top_height_m,qmd_cm,tph,ba_m2_ha,mean_tree_volume_m3,rd,sdi,sdi_max,zone,source,review_status
+PSP-4025815-PSP1,AU-IDFdk3-TSA23-PLI,Interior,PLI,17.7,20,7.56,5.54,3125.0,7.52,0.006535,0.1567,271.0,1729.0,understocked,psp,reviewed
+PSP-4025815-PSP2,AU-IDFdk3-TSA23-PLI,Interior,PLI,18.6,30,11.28,7.9,3207.0,15.7,0.018609,0.2844,491.7,1729.0,density-management,psp,reviewed
+PSP-4025305-PSP1,AU-IDFdk3-TSA23-PLI,Interior,PLI,19.5,39,13.51,9.06,2688.0,17.34,0.033478,0.2974,514.2,1729.0,density-management,psp,reviewed
+PSP-4025305-PSP2,AU-IDFdk3-TSA23-PLI,Interior,PLI,16.6,50,14.35,10.75,1979.0,17.96,0.051681,0.2879,497.9,1729.0,density-management,psp,reviewed
+PSP-4025305-PSP3,AU-IDFdk3-TSA23-PLI,Interior,PLI,15.0,61,15.53,11.65,1998.0,21.3,0.064161,0.3308,571.9,1729.0,density-management,psp,reviewed
+PSP-4025096-PSP1,AU-IDFdk3-TSA23-PLI,Interior,PLI,18.8,62,19.33,13.81,1753.0,26.24,0.12376,0.3811,658.9,1729.0,competition,psp,reviewed
+PSP-4024449-PSP1,AU-IDFdk3-TSA23-PLI,Interior,PLI,18.0,73,21.9,16.38,1370.0,28.88,0.184445,0.392,677.7,1729.0,competition,psp,reviewed
+PSP-4025096-PSP3,AU-IDFdk3-TSA23-PLI,Interior,PLI,16.7,83,21.34,16.01,1596.0,32.13,0.179201,0.44,760.8,1729.0,competition,psp,reviewed
+PSP-4024546-PSP1,AU-IDFdk3-TSA23-PLI,Interior,PLI,16.6,90,22.2,12.8,2420.0,31.14,0.112461,0.4659,805.5,1729.0,competition,psp,reviewed
+PSP-4025245-PSP5,AU-IDFdk3-TSA23-PLI,Interior,PLI,13.8,100,20.0,19.04,798.0,22.72,0.233234,0.2906,502.5,1729.0,density-management,psp,reviewed
+PSP-4025092-PSP3,AU-IDFdk3-TSA23-PLI,Interior,PLI,12.9,120,20.59,16.1,1720.0,35.01,0.169078,0.4785,827.4,1729.0,competition,psp,reviewed

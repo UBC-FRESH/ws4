@@ -512,5 +512,51 @@
     "BEC applicability is a zone-level inference from the BC Tree Species Compendium, not a statement printed on the diagrams.",
     "The BC web page labels swn/swp as 'White pine'; the PDFs themselves say 'WHITE SPRUCE', version 1.30. page_label records the web label and pdf_title records the PDF title.",
     "All diagrams are one-page PDFs. The full Farnden 1996 report carries the methods, equations and appendices."
+  ],
+  "digitizations": [
+    {
+      "diagram_id": "idf-dk3-fdi-natural",
+      "source_diagram_id": "fdin",
+      "file": "idf-dk3-fdi-natural.json",
+      "source_sha256": "e8e81fd3b5b0f0ccf71d2be6d5fb4d681f06c538365c2e1b93223a0bf849a6f6",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/fdin.pdf",
+      "source_version": "1.10",
+      "review_status": "reviewed",
+      "reviewer": "Gregory Paradis (maintainer of record)",
+      "notes": "Vector extraction from the catalogued PDF; isopleth values assigned from the printed labels and the QMD 5 cm sequence. The crown-closure curve is truncated at 2,951 TPH because the high-TPH digitisation joined a second branch; the high-TPH closure remains unresolved. Awaiting maintainer review."
+    },
+    {
+      "diagram_id": "idf-dk3-fdi-planted",
+      "source_diagram_id": "fdip",
+      "file": "idf-dk3-fdi-planted.json",
+      "source_sha256": "c097cc599e866969a41c721719dd3d7869c3b9208a2b982bd71b588ad1d38e59",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/fdip.pdf",
+      "source_version": "1.10",
+      "review_status": "reviewed",
+      "reviewer": "Gregory Paradis (maintainer of record)",
+      "notes": "Vector extraction from the catalogued PDF. The planted top-height labels are offset from the curves; the 8-46 m assignment is provisional and needs the maintainer's review."
+    },
+    {
+      "diagram_id": "idf-dk3-pli-planted",
+      "source_diagram_id": "plp",
+      "file": "idf-dk3-pli-planted.json",
+      "source_sha256": "1c7a013936bd408a87d422d62fc1bdb75980d30d4cff3f109d39e4af249a850d",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/plp.pdf",
+      "source_version": "1.20",
+      "review_status": "reviewed",
+      "reviewer": "Gregory Paradis (maintainer of record)",
+      "notes": "Vector extraction from the catalogued PDF. Top-height curves are the printed 6, 10, 14, 18, 22, 26, and 30 m labels; QMD curves are the printed 10-40 cm labels; the thick dash-dot pair is competition and self-thinning. The crown-closure curve follows the printed 60% line. Provisional pending maintainer review."
+    },
+    {
+      "diagram_id": "idf-dk3-pli-natural",
+      "source_diagram_id": "pln",
+      "file": "idf-dk3-pli-natural.json",
+      "source_sha256": "abdbab87eda2aff7f78b7209aae0169d778e672b5eccce5003471fb65ec4efa3",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/pln.pdf",
+      "source_version": "1.20",
+      "review_status": "reviewed",
+      "reviewer": "Gregory Paradis (maintainer of record)",
+      "notes": "Vector extraction from the catalogued PDF. Top-height curves are the printed 6, 10, 14, 18, 22, 26, 30, and 34 m labels; QMD curves are the printed 10-40 cm labels; the thick dash-dot pair is competition and self-thinning; the low dotted curve at the Crown Closure label is the 60% boundary. Provisional pending maintainer review."
+    }
   ]
 }

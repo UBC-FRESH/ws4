@@ -781,6 +781,13 @@ def optimize(
     episodes: int = typer.Option(1, help="island episodes (elite migrations)"),
     out: Path = typer.Option(...),
     topology: Path = typer.Option(None, exists=True, help="Block topology for spatial constraints"),
+    sdmd_dir: Path = typer.Option(
+        None,
+        "--sdmd-dir",
+        exists=True,
+        file_okay=False,
+        help="SDMD store: enforce the per-AU entry cap and interval",
+    ),
     route_config: Path = typer.Option(
         None, "--route-config", exists=True, help="Optional route model and route accounts (YAML)"
     ),
@@ -956,6 +963,7 @@ def optimize(
         initial_schedule_path=(str(initial_schedule) if initial_schedule is not None else ""),
         weights_path=str(weights) if weights is not None else "",
         topology_path=str(topology) if topology is not None else "",
+        sdmd_dir=str(sdmd_dir) if sdmd_dir is not None else "",
         route_config_path=str(route_config) if route_config is not None else "",
         flood_screen_config_path=(
             str(flood_screen_config) if flood_screen_config is not None else ""
@@ -1197,6 +1205,13 @@ def watch(
         help="Optional flood-screen config (hydrology response accounts)",
     ),
     topology: Path = typer.Option(None, exists=True, help="Block topology for spatial constraints"),
+    sdmd_dir: Path = typer.Option(
+        None,
+        "--sdmd-dir",
+        exists=True,
+        file_okay=False,
+        help="SDMD store: enforce the per-AU entry cap and interval",
+    ),
     max_opening_ha: float = typer.Option(None, help="Maximum opening size, in hectares"),
     min_green_up_years: int = typer.Option(None, help="Green-up interval, in years"),
     core_buffer_m: float = typer.Option(
@@ -1235,6 +1250,7 @@ def watch(
         spread_accounts_path=str(spread_accounts) if spread_accounts is not None else "",
         block_coordinates_path=str(block_coordinates) if block_coordinates is not None else "",
         topology_path=str(topology) if topology is not None else "",
+        sdmd_dir=str(sdmd_dir) if sdmd_dir is not None else "",
         route_config_path=str(route_config) if route_config is not None else "",
         flood_screen_config_path=(
             str(flood_screen_config) if flood_screen_config is not None else ""

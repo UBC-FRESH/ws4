@@ -1,0 +1,48 @@
+{
+  "schema_version": "ws4.sdmd.trajectory.v1",
+  "au_id": "AU-IDFdk3-TSA23-PLI",
+  "regime_id": "REG-A-UNTREATED",
+  "source": "fresh-fvsbc (FVS-BC) TSA23 IDFdk3 PL representative tree list 4025096-PSP1",
+  "source_version": "fresh-fvsbc 0.20.0; FVS BC variant",
+  "scenario": "no treatment",
+  "generated_utc": "2026-11-02T18:26:54+00:00",
+  "review_status": "provisional",
+  "points": [
+    [
+      2016.38,
+      0.170765
+    ],
+    [
+      1885.41,
+      0.191942
+    ],
+    [
+      1766.8,
+      0.214134
+    ],
+    [
+      1658.08,
+      0.237375
+    ],
+    [
+      1556.76,
+      0.262082
+    ],
+    [
+      1462.86,
+      0.288376
+    ],
+    [
+      1378.85,
+      0.315589
+    ],
+    [
+      1299.77,
+      0.344316
+    ],
+    [
+      1223.17,
+      0.375147
+    ]
+  ]
+}

@@ -307,3 +307,51 @@ def test_gpu_watch_help_documents_the_factorized_archive() -> None:
     combined = re.sub(r"\x1b\[[0-9;]*m", "", result.stdout + result.stderr)
     assert "--factorized" in combined
     assert "--factorized-cache" in combined
+
+
+def test_optimize_accepts_an_sdmd_store(tmp_path: Path) -> None:
+    """``--sdmd-dir`` enables the per-AU guard and reports it in the summary."""
+    dataset = build_example(tmp_path)
+    targets = tmp_path / "targets.yaml"
+    targets.write_text(
+        "targets:\n- account: feature.Volume\n  period: 1\n  minimum: 700\n  period_width: 1\n"
+    )
+    sdmd = tmp_path / "sdmd"
+    sdmd.mkdir()
+    (sdmd / "regimes.csv").write_text(
+        "regime_id,au_id,name,entry_age,entry_type,residual_ba_m2_ha,"
+        "removal_fraction,cycle_length,repeat_count,post_treatment_track,"
+        "eligibility_expr,operability_expr,constraint_ids,review_status\n"
+        "REG-1-CC,1,clearcut,40,clearcut,0,1,0,0,,,,,reviewed\n",
+        encoding="utf-8",
+    )
+    (sdmd / "au_constraints.csv").write_text(
+        "au_id,regime_id,allowed,min_entry_age,max_entry_age,max_entries,"
+        "min_interval_years,max_removal_fraction,required_sdmd_zone,source,"
+        "review_status\n"
+        "1,REG-1-CC,True,0,120,1,0,1.0,,test,reviewed\n",
+        encoding="utf-8",
+    )
+    out = tmp_path / "run"
+    result = run_ws4(
+        "optimize",
+        "--dataset",
+        str(dataset),
+        "--targets",
+        str(targets),
+        "--sdmd-dir",
+        str(sdmd),
+        "--years",
+        "5",
+        "--iterations",
+        "2",
+        "--threads",
+        "1",
+        "--out",
+        str(out),
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    summary = json.loads((out / "summary.json").read_text())
+    stats = summary["constraint_stats"]
+    assert isinstance(stats, dict)
+    assert stats["sdmd_guard"] is True

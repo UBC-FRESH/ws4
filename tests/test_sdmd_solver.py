@@ -8,12 +8,16 @@ from pathlib import Path
 import pandas as pd
 import pytest
 from ws4.sdmd.constraints import AuConstraint, load_constraints
+from ws4.sdmd.diagram import load_diagram
 from ws4.sdmd.regimes import Regime, load_regime_library
 from ws4.sdmd.solver import (
+    SdmdScheduleGuard,
     SdmdSolverError,
     SdmdSolverMap,
     filter_dataset,
     load_solver_map,
+    trajectory_reaches_zone,
+    trajectory_zones,
 )
 
 FIXTURE = Path(__file__).resolve().parent / "fixtures" / "sdmd"
@@ -199,3 +203,112 @@ def test_cli_filter_dataset(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     assert "tracks_before" in result.output
     assert (tmp_path / "cli-out" / "treatments.parquet").is_file()
+
+
+def test_trajectory_zone_check() -> None:
+    """A stored path names the SDMD zones it passes through."""
+    diagram = load_diagram(
+        Path(__file__).resolve().parents[1]
+        / "ws4"
+        / "sdmd"
+        / "data"
+        / "sdmd"
+        / "idf-dk3-fdi-natural.json"
+    )
+    points = ((500.0, 0.05), (1000.0, 0.2))
+    zones = trajectory_zones(diagram, points)
+    assert "density-management" in zones
+    assert trajectory_reaches_zone(diagram, points, "density-management")
+    assert not trajectory_reaches_zone(diagram, points, "outside")
+
+
+def test_filter_enforces_the_required_zone(tmp_path: Path) -> None:
+    """A track is kept only when its trajectory reaches the required zone."""
+    root = _dataset(tmp_path)
+    trajectory = tmp_path / "trajectories" / "AU-IDFdk3-FDI" / "REG-A-CT60.json"
+    trajectory.parent.mkdir(parents=True)
+    trajectory.write_text(json.dumps({"points": [[500.0, 0.05]]}) + "\n", encoding="utf-8")
+    diagram = load_diagram(
+        Path(__file__).resolve().parents[1]
+        / "ws4"
+        / "sdmd"
+        / "data"
+        / "sdmd"
+        / "idf-dk3-fdi-natural.json"
+    )
+    filter_dataset(
+        root,
+        tmp_path / "out",
+        _regimes(),
+        _constraints(),
+        diagram=diagram,
+        trajectory_dir=tmp_path / "trajectories",
+    )
+    filtered = pd.read_parquet(tmp_path / "out" / "treatments.parquet")
+    assert 1 in set(filtered["track_id"])
+    trajectory.write_text(json.dumps({"points": [[1000.0, 0.5]]}) + "\n", encoding="utf-8")
+    second = filter_dataset(
+        root,
+        tmp_path / "out2",
+        _regimes(),
+        _constraints(),
+        diagram=diagram,
+        trajectory_dir=tmp_path / "trajectories",
+    )
+    filtered = pd.read_parquet(tmp_path / "out2" / "treatments.parquet")
+    assert 1 not in set(filtered["track_id"])
+    reasons: list[str] = []
+    for item in second.dropped:
+        item_reasons = item["reasons"]
+        if isinstance(item_reasons, list):
+            reasons.extend(str(reason) for reason in item_reasons)
+    assert any("never reaches" in reason for reason in reasons)
+
+
+def test_schedule_guard_rejects_an_au_over_its_cap() -> None:
+    """Two CT60 entries in one AU exceed the cap of one."""
+    guard = SdmdScheduleGuard(
+        pd.DataFrame({"block_id": [1, 2], "track_id": [1, 2], "area_ha": [1.0, 1.0]}),
+        pd.DataFrame({"track_id": [1, 2], "name": ["AU(AU-IDFdk3-FDI)", "AU(AU-IDFdk3-FDI)"]}),
+        pd.DataFrame(
+            {
+                "track_id": [1, 2],
+                "treatment": ["CT60", "CT60"],
+                "begin": [60, 60],
+                "end": [100, 100],
+                "new_track": [0, 0],
+                "offset": [0, 0],
+                "retain": [40, 40],
+            }
+        ),
+        _regimes(),
+        _constraints(),
+    )
+    schedule = {1: [("CT60", 60)], 2: [("CT60", 70)]}
+    problems = guard.check(schedule)
+    assert "SDMD-SCHEDULE-ENTRIES" in {item.code for item in problems}
+    assert not guard.feasible(schedule)
+    assert guard.feasible({1: [("CT60", 60)]})
+
+
+def test_schedule_guard_rejects_an_interval() -> None:
+    """Two shelterwood entries ten years apart break the 20-year interval."""
+    guard = SdmdScheduleGuard(
+        pd.DataFrame({"block_id": [1, 2], "track_id": [1, 2], "area_ha": [1.0, 1.0]}),
+        pd.DataFrame({"track_id": [1, 2], "name": ["AU(AU-IDFdk3-FDI)", "AU(AU-IDFdk3-FDI)"]}),
+        pd.DataFrame(
+            {
+                "track_id": [1, 2],
+                "treatment": ["SW40", "SW40"],
+                "begin": [90, 90],
+                "end": [1000, 1000],
+                "new_track": [0, 0],
+                "offset": [0, 0],
+                "retain": [60, 60],
+            }
+        ),
+        _regimes(),
+        _constraints(),
+    )
+    problems = guard.check({1: [("SW40", 90)], 2: [("SW40", 100)]})
+    assert "SDMD-SCHEDULE-INTERVAL" in {item.code for item in problems}

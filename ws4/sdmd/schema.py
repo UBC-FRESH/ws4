@@ -150,7 +150,7 @@ STANDS = Table(
         Column("top_height_m", "number"),
         Column("mean_height_m", "number"),
         Column("volume_m3_ha", "number"),
-        Column("crown_cover_pct", "number"),
+        Column("crown_cover_pct", "number", nullable=True),
         Column("source", "string"),
         Column("review_status", "string"),
     ),

@@ -374,16 +374,26 @@ track AU and treatment aliases:
    treatments:
      CC: REG-A-CLEARCUT
 
-A cap across blocks in one AU, and a rejection of a trajectory that leaves the
-allowed SDMD zones, need AU state and per-track trajectories that the compiled
-matrix does not carry. They are named as follow-up work, not claimed here.
+The filter can also enforce the required SDMD zone: pass a diagram and a
+trajectory directory, and a track is kept only when its stored trajectory reaches
+the constraint's `required_sdmd_zone`. A missing trajectory fails closed.
+
+`SdmdScheduleGuard` checks a whole schedule for the per-AU entry cap and minimum
+interval. It maps each block to its AU, counts the selected entries, and returns
+`SDMD-SCHEDULE-ENTRIES` or `SDMD-SCHEDULE-INTERVAL` findings. The optimizer wires
+it into every move when `--sdmd-dir` names a store with `regimes.csv` and
+`au_constraints.csv`; an infeasible seed raises rather than being repaired. The run
+summary records `constraint_stats.sdmd_guard` and the number of rejected moves as
+`constraint_stats.sdmd_rejected`, which is the enforcement benchmark.
 
 Validation gates
 ----------------
 
 `ws4.sdmd.validation` runs eight gates for one AU:
 
-1. **Plot support** — at least three observed plots.
+1. **Plot support** — at least three observed plots and at least three PSP-backed
+   points. Each point must have a reviewed PSP plot at its age and a tree list;
+   synthetic points are labelled and excluded from the observed envelope.
 2. **Density plausibility** — reported basal area agrees with TPH and QMD.
 3. **SDMD fit** — the diagram exists, is reviewed, and the points are inside it.
 4. **Trajectory plausibility** — every stored path is physical and assessed against
@@ -431,10 +441,39 @@ catalog keeps "White pine" as an alias so the page label still resolves.
 
 The Farnden 1996 method report (Pacific Forestry Centre Information Report
 BC-X-360) is public and is recorded in the catalog with its URL and checksum. The
-PDFs are referenced, not copied into the repository. The committed
-``idf-dk3-fdi-illustrative.json`` is still an **illustrative synthetic fixture**
-for the schema and tests; it is not the published diagram and must not be
-presented as one.
+PDFs are referenced, not copied into the repository. The natural and planted Interior Douglas-fir PDFs are digitised into
+``idf-dk3-fdi-natural.json`` and ``idf-dk3-fdi-planted.json``. The natural
+lodgepole pine PDF (`pln`, version 1.20) is digitised into
+``idf-dk3-pli-natural.json`` with QMD 10-40 cm, top height 6-34 m, the
+competition/self-thinning boundaries, and the 60% crown-closure curve. The
+planted PDF (`plp`, version 1.20) is digitised into ``idf-dk3-pli-planted.json``
+with top height 6-30 m. The real PLI pilot store is
+``ws4/sdmd/data/pilot-tsa23-idfdk3-pli/``. The method,
+curve assignments, and review checklist are in
+``notes/reference/bc-sdmd-digitisation.md``. The review packet with overlay figures
+for all four diagrams is ``notes/review/p95-curve-review.md``. Both are **provisional** until the
+maintainer reviews the curves; the planted top-height assignment is the weaker of
+the two. The synthetic ``idf-dk3-fdi-illustrative.json`` remains the test fixture,
+not the published diagram. Four method trajectories from `fresh-fvsbc` are in
+``ws4/sdmd/data/trajectories/``; they are method runs over synthetic tree lists,
+not real AU projections. See ``notes/reference/sdmd-pilot-trajectories.md``.
+
+The CCISS project (Apache-2.0) supplies complementary species and BEC evidence: 37
+BC tree species codes, silvics traits for the six SDMD species, IDFdk3 stocking
+targets, and a BEC crosswalk. The derived files are
+``ws4/sdmd/data/sdmd/tree_species.csv``, ``species_traits.csv``,
+``idfdk3_stocking.csv``, ``idfdk3_suitability.csv``, ``idfdk3_sibec.csv``, and
+``bec_crosswalk.csv``; the method and limits are in
+``notes/reference/cciss-data-mining.md``. CCISS does not contain SDMD isopleths,
+so it cannot replace the missing lodgepole pine diagram.
+
+The first real pilot store is ``ws4/sdmd/data/pilot-tsa23-idfdk3/``. It holds 11
+reviewed public PSP points for TSA 23 / IDFdk3 / FDI and two FVS paths from the
+real tree list of one cluster. Its ``SOURCE.md`` names the BC Data Catalogue
+record, the Open Government Licence, the selection rule, the field derivations,
+the FVS version, and the limits. The diagram is still provisional, no initial
+volume is supplied, and both FVS paths leave the observed envelope; the store is
+evidence for the pipeline, not a yield forecast.
 
 Evidence roles and limits
 -------------------------

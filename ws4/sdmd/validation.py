@@ -57,6 +57,31 @@ class GateResult:
 
 
 @dataclass(frozen=True)
+class _PspCheck:
+    """The PSP provenance and support behind an AU's observed points.
+
+    Attributes
+    ----------
+    coordinates : tuple of tuple of float
+        The PSP-backed ``(tph, mean_tree_volume_m3)`` points.
+    psp_points : int
+        Number of points whose source is PSP.
+    synthetic_points : int
+        Number of points whose source is not PSP.
+    psp_plots : int
+        Number of distinct reviewed PSP plots.
+    findings : tuple of str
+        Missing plots, missing tree lists, or unreviewed points.
+    """
+
+    coordinates: tuple[tuple[float, float], ...]
+    psp_points: int
+    synthetic_points: int
+    psp_plots: int
+    findings: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class ValidationReport:
     """The eight gate outcomes for one AU.
 
@@ -141,7 +166,7 @@ def validate_au(
     regimes = store.regimes_for(au_id)
     preview = store.preview(au_id)
     gates = (
-        _plot_support(detail),
+        _plot_support(store, au_id, detail),
         _density_plausibility(yields),
         _sdmd_fit(store, detail, points),
         _trajectory_plausibility(store, au_id, points),
@@ -153,22 +178,119 @@ def validate_au(
     return ValidationReport(au_id=au_id, gates=gates)
 
 
-def _plot_support(detail: dict[str, object]) -> GateResult:
-    """Gate 1: enough observed plots and age support."""
+def _psp_observed(store: SdmdStore, au_id: str) -> _PspCheck:
+    """Check that each PSP point has a reviewed PSP plot and a tree list.
+
+    Parameters
+    ----------
+    store : SdmdStore
+        The loaded store.
+    au_id : str
+        The analysis unit.
+
+    Returns
+    -------
+    _PspCheck
+        The supported coordinates and the provenance findings.
+    """
+    points = store.sdmd(au_id).get("points", [])
+    plots = store.plots_for(au_id)
+    tree_plots = set(store.trees["plot_id"].astype(str)) if not store.trees.empty else set()
+    psp_plots: dict[int, list[str]] = {}
+    for plot in plots:
+        sources = str(plot.get("sources", "")).lower()
+        review = str(plot.get("review_status", ""))
+        if "psp" not in sources or review != "reviewed":
+            continue
+        age = int(float(str(plot.get("stand_age", 0))))
+        psp_plots.setdefault(age, []).append(str(plot.get("plot_id", "")))
+    supported: list[tuple[float, float]] = []
+    findings: list[str] = []
+    psp_points = 0
+    synthetic = 0
+    if not isinstance(points, list):
+        return _PspCheck((), 0, 0, 0, ("the SDMD point payload is not a list",))
+    for row in points:
+        if not isinstance(row, dict):
+            continue
+        label = str(row.get("sdmd_id", "point"))
+        if str(row.get("source", "")).lower() != "psp":
+            synthetic += 1
+            continue
+        psp_points += 1
+        if str(row.get("review_status", "")) != "reviewed":
+            findings.append(f"{label} is not reviewed")
+            continue
+        age = int(float(str(row.get("age", 0))))
+        candidates = psp_plots.get(age, [])
+        if not candidates:
+            findings.append(f"{label} has no reviewed PSP plot at age {age}")
+            continue
+        if not any(plot_id in tree_plots for plot_id in candidates):
+            findings.append(f"{label} has no PSP tree list at age {age}")
+            continue
+        supported.append(
+            (
+                float(str(row.get("tph", 0.0))),
+                float(str(row.get("mean_tree_volume_m3", 0.0))),
+            )
+        )
+    return _PspCheck(
+        coordinates=tuple(supported),
+        psp_points=psp_points,
+        synthetic_points=synthetic,
+        psp_plots=len({plot_id for ids in psp_plots.values() for plot_id in ids}),
+        findings=tuple(findings),
+    )
+
+
+def _plot_support(store: SdmdStore, au_id: str, detail: dict[str, object]) -> GateResult:
+    """Gate 1: enough observed plots, PSP provenance, and age support."""
     count = int(str(detail.get("plot_count", 0)))
     ages = f"{detail.get('age_min', 'n/a')}-{detail.get('age_max', 'n/a')}"
+    check = _psp_observed(store, au_id)
+    evidence: dict[str, object] = {
+        "plot_count": count,
+        "age_range": ages,
+        "psp_points": check.psp_points,
+        "synthetic_points": check.synthetic_points,
+        "psp_plots": check.psp_plots,
+        "findings": list(check.findings),
+    }
     if count < 3:
         return GateResult(
             "plot-support",
             "fail",
             f"{count} plots is below the three-plot minimum",
-            {"plot_count": count, "age_range": ages},
+            evidence,
+        )
+    if check.findings:
+        return GateResult(
+            "plot-support",
+            "fail",
+            "; ".join(check.findings[:3]),
+            evidence,
+        )
+    if check.psp_points < 3:
+        return GateResult(
+            "plot-support",
+            "fail",
+            f"{check.psp_points} PSP-backed points is below the three-point minimum",
+            evidence,
+        )
+    if check.synthetic_points:
+        return GateResult(
+            "plot-support",
+            "warn",
+            f"{count} plots; {check.psp_points} PSP-backed and "
+            f"{check.synthetic_points} synthetic point(s)",
+            evidence,
         )
     return GateResult(
         "plot-support",
         "pass",
-        f"{count} plots support the AU; ages {ages}",
-        {"plot_count": count, "age_range": ages},
+        f"{count} plots and {check.psp_points} PSP-backed points; ages {ages}",
+        evidence,
     )
 
 
@@ -266,18 +388,15 @@ def _trajectory_plausibility(
     points: dict[str, object],
 ) -> GateResult:
     """Gate 4: every stored trajectory is physical and assessed."""
-    rows = points.get("points", [])
-    coordinates: list[tuple[float, float]] = []
-    if isinstance(rows, list):
-        for row in rows:
-            if isinstance(row, dict):
-                coordinates.append(
-                    (
-                        float(str(row.get("tph", 0.0))),
-                        float(str(row.get("mean_tree_volume_m3", 0.0))),
-                    )
-                )
-    envelope = observed_envelope(coordinates) if len(coordinates) >= 3 else ()
+    check = _psp_observed(store, au_id)
+    if check.findings:
+        return GateResult(
+            "trajectory-plausibility",
+            "fail",
+            "; ".join(check.findings[:3]),
+            {"findings": list(check.findings)},
+        )
+    envelope = observed_envelope(check.coordinates) if len(check.coordinates) >= 3 else ()
     directory = store.root / "trajectories" / au_id
     files = sorted(directory.glob("*.json")) if directory.is_dir() else []
     if not files:
@@ -311,8 +430,8 @@ def _trajectory_plausibility(
                 return GateResult(
                     "trajectory-plausibility",
                     "fail",
-                    "no envelope to assess the trajectories",
-                    {"files": len(files)},
+                    "fewer than three PSP-backed observed points for an envelope",
+                    {"files": len(files), "psp_points": check.psp_points},
                 )
             assessment = assess_trajectory(trajectory, envelope)
         except ValueError as error:

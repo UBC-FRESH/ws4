@@ -1,0 +1,248 @@
+bec,in_sdmd,in_cciss,cciss_label,cciss_zone_name,cciss_subzone_name,note
+BAFAun,True,True,BAFAun,Boreal Altai Fescue Alpine,Undifferentiated BAFA,both
+BAFAunp,True,True,BAFAunp,Boreal Altai Fescue Alpine,Undifferentiated and Parkland BAFA,both
+BGxh1,True,True,BG xh 1,Bunchgrass,Very Dry Hot Okanagan BG,both
+BGxh2,True,True,BG xh 2,Bunchgrass,Very Dry Hot Thompson BG,both
+BGxh3,True,True,BG xh 3,Bunchgrass,Very Dry Hot Fraser BG,both
+BGxw1,True,True,BG xw 1,Bunchgrass,Very Dry Warm Nicola BG,both
+BGxw2,True,True,BG xw 2,Bunchgrass,Very Dry Warm Alkali BG,both
+BWBSdk,False,True,BWBSdk,Boreal White and Black Spruce,Dry Cool BWBS,cciss-only
+BWBSdk1,True,False,,,,sdmd-only
+BWBSdk2,True,False,,,,sdmd-only
+BWBSmk,False,True,BWBSmk,Boreal White and Black Spruce,Moist Cool BWBS,cciss-only
+BWBSmw,False,True,BWBSmw,Boreal White and Black Spruce,Moist Warm BWBS,cciss-only
+BWBSmw1,True,False,,,,sdmd-only
+BWBSmw2,True,False,,,,sdmd-only
+BWBSun,True,False,,,,sdmd-only
+BWBSvk,True,True,BWBSvk,Boreal White and Black Spruce,Very Wet Cool BWBS,both
+BWBSwk1,True,True,BWBSwk 1,Boreal White and Black Spruce,Wet Cool Murray BWBS,both
+BWBSwk2,True,True,BWBSwk 2,Boreal White and Black Spruce,Wet Cool Graham BWBS,both
+BWBSwk3,True,True,BWBSwk 3,Boreal White and Black Spruce,Wet Cool Kledo BWBS,both
+CDFmm,True,True,CDF mm,Coastal Douglas-fir,Moist Maritime CDF,both
+CMAun,True,True,CMA un,Coastal Mountain-heather Alpine,Undifferentiated CMA,both
+CMAunp,True,True,CMA unp,Coastal Mountain-heather Alpine,Undifferentiated and Parkland CMA,both
+CMAwh,False,True,CMA wh,Coastal Mountain-heather Alpine,Wet Hypermaritime CMA,cciss-only
+CWHdm,True,True,CWH dm,Coastal Western Hemlock,Dry Maritime CWH,both
+CWHds1,True,True,CWH ds 1,Coastal Western Hemlock,Dry Submaritime Southern CWH,both
+CWHds2,True,True,CWH ds 2,Coastal Western Hemlock,Dry Submaritime Central CWH,both
+CWHmm1,True,True,CWH mm 1,Coastal Western Hemlock,Moist Maritime Submontane CWH,both
+CWHmm2,True,True,CWH mm 2,Coastal Western Hemlock,Moist Maritime Montane CWH,both
+CWHms1,True,True,CWH ms 1,Coastal Western Hemlock,Moist Submaritime Southern CWH,both
+CWHms2,True,True,CWH ms 2,Coastal Western Hemlock,Moist Submaritime Central CWH,both
+CWHun,True,False,,,,sdmd-only
+CWHvh1,True,True,CWH vh 1,Coastal Western Hemlock,Very Wet Hypermaritime Southern CWH,both
+CWHvh2,True,True,CWH vh 2,Coastal Western Hemlock,Very Wet Hypermaritime Central CWH,both
+CWHvh3,False,True,CWH vh 3,Coastal Western Hemlock,Very Wet Hypermaritime Haida Gwaii CWH,cciss-only
+CWHvm,True,False,,,,sdmd-only
+CWHvm1,True,True,CWH vm 1,Coastal Western Hemlock,Very Wet Maritime Submontane CWH,both
+CWHvm2,True,True,CWH vm 2,Coastal Western Hemlock,Very Wet Maritime Montane CWH,both
+CWHvm3,True,False,,,,sdmd-only
+CWHwh1,True,True,CWH wh 1,Coastal Western Hemlock,Wet Hypermaritime Submontane CWH,both
+CWHwh2,True,True,CWH wh 2,Coastal Western Hemlock,Wet Hypermaritime Montane CWH,both
+CWHwm,True,True,CWH wm,Coastal Western Hemlock,Wet Maritime CWH,both
+CWHws1,True,True,CWH ws 1,Coastal Western Hemlock,Wet Submaritime Submontane CWH,both
+CWHws2,True,True,CWH ws 2,Coastal Western Hemlock,Wet Submaritime Montane CWH,both
+CWHxm1,True,True,CWH xm 1,Coastal Western Hemlock,Very Dry Maritime Eastern CWH,both
+CWHxm2,True,True,CWH xm 2,Coastal Western Hemlock,Very Dry Maritime Western CWH,both
+ESSFdc1,True,True,ESSFdc 1,Engelmann Spruce -- Subalpine Fir,Dry Cold Monashee ESSF,both
+ESSFdc2,True,True,ESSFdc 2,Engelmann Spruce -- Subalpine Fir,Dry Cold Cascade ESSF,both
+ESSFdc3,True,True,ESSFdc 3,Engelmann Spruce -- Subalpine Fir,Dry Cold North Thompson ESSF,both
+ESSFdcp,True,True,ESSFdcp,Engelmann Spruce -- Subalpine Fir,Dry Cold Parkland ESSF,both
+ESSFdcw,True,True,ESSFdcw,Engelmann Spruce -- Subalpine Fir,Dry Cold Woodland ESSF,both
+ESSFdh1,False,True,ESSFdh1,Engelmann Spruce - Subalpine Fir,Dry Hot ESSF,cciss-only
+ESSFdh2,False,True,ESSFdh2,Engelmann Spruce - Subalpine Fir,Dry Hot ESSF,cciss-only
+ESSFdk1,True,True,ESSFdk 1,Engelmann Spruce -- Subalpine Fir,Dry Cool Elk ESSF,both
+ESSFdk2,True,True,ESSFdk 2,Engelmann Spruce -- Subalpine Fir,Dry Cool Columbia ESSF,both
+ESSFdkp,True,True,ESSFdkp,Engelmann Spruce -- Subalpine Fir,Dry Cool Parkland ESSF,both
+ESSFdku,True,False,,,,sdmd-only
+ESSFdkw,True,True,ESSFdkw,Engelmann Spruce -- Subalpine Fir,Dry Cool Woodland ESSF,both
+ESSFdm,True,False,,,,sdmd-only
+ESSFdmp,True,False,,,,sdmd-only
+ESSFdmw,True,False,,,,sdmd-only
+ESSFdv1,True,True,ESSFdv 1,Engelmann Spruce -- Subalpine Fir,Dry Very Cold Cayoosh ESSF,both
+ESSFdv2,True,True,ESSFdv 2,Engelmann Spruce -- Subalpine Fir,Dry Very Cold Tyaughton ESSF,both
+ESSFdvp,True,True,ESSFdvp,Engelmann Spruce -- Subalpine Fir,Dry Very Cold Parkland ESSF,both
+ESSFdvw,True,True,ESSFdvw,Engelmann Spruce -- Subalpine Fir,Dry Very Cold Woodland ESSF,both
+ESSFmc,True,True,ESSFmc,Engelmann Spruce -- Subalpine Fir,Moist Cold ESSF,both
+ESSFmcp,True,True,ESSFmcp,Engelmann Spruce -- Subalpine Fir,Moist Cold Parkland ESSF,both
+ESSFmcw,False,True,ESSFmcw,Engelmann Spruce - Subalpine Fir,Moist Cold Woodland ESSF,cciss-only
+ESSFmh,False,True,ESSFmh,Engelmann Spruce -- Subalpine Fir,Moist Hot ESSF,cciss-only
+ESSFmk,True,True,ESSFmk,Engelmann Spruce -- Subalpine Fir,Moist Cool ESSF,both
+ESSFmkp,True,True,ESSFmkp,Engelmann Spruce -- Subalpine Fir,Moist Cool Parkland ESSF,both
+ESSFmkw,False,True,ESSFmkw,Engelmann Spruce - Subalpine Fir,Moist Cool Woodland ESSF,cciss-only
+ESSFmm1,True,True,ESSFmm 1,Engelmann Spruce -- Subalpine Fir,Moist Mild Raush ESSF,both
+ESSFmm2,True,True,ESSFmm 2,Engelmann Spruce -- Subalpine Fir,Moist Mild Robson ESSF,both
+ESSFmm3,False,True,ESSFmm 3,Engelmann Spruce -- Subalpine Fir,Moist Mild Spillimacheen ESSF,cciss-only
+ESSFmmp,True,True,ESSFmmp,Engelmann Spruce -- Subalpine Fir,Moist Mild Parkland ESSF,both
+ESSFmmw,True,True,ESSFmmw,Engelmann Spruce -- Subalpine Fir,Moist Mild Woodland ESSF,both
+ESSFmv1,True,True,ESSFmv 1,Engelmann Spruce -- Subalpine Fir,Moist Very Cold Nechako ESSF,both
+ESSFmv2,True,True,ESSFmv 2,Engelmann Spruce -- Subalpine Fir,Moist Very Cold Bullmoose ESSF,both
+ESSFmv3,True,True,ESSFmv 3,Engelmann Spruce -- Subalpine Fir,Moist Very Cold Omineca ESSF,both
+ESSFmv4,True,True,ESSFmv 4,Engelmann Spruce -- Subalpine Fir,Moist Very Cold Graham ESSF,both
+ESSFmvp,True,True,ESSFmvp,Engelmann Spruce -- Subalpine Fir,Moist Very Cold Parkland ESSF,both
+ESSFmw,True,True,ESSFmw,Engelmann Spruce -- Subalpine Fir,Moist Warm ESSF,both
+ESSFmw1,True,True,ESSFmw 1,Engelmann Spruce -- Subalpine Fir,Moist Warm Cascade ESSF,both
+ESSFmw2,True,True,ESSFmw 2,Engelmann Spruce -- Subalpine Fir,Moist Warm Stein ESSF,both
+ESSFmwp,True,True,ESSFmwp,Engelmann Spruce -- Subalpine Fir,Moist Warm Parkland ESSF,both
+ESSFmww,True,True,ESSFmww,Engelmann Spruce -- Subalpine Fir,Moist Warm Woodland ESSF,both
+ESSFun,False,True,ESSFun,Engelmann Spruce -- Subalpine Fir,Undifferentiated ESSF,cciss-only
+ESSFunp,False,True,ESSFunp,Engelmann Spruce -- Subalpine Fir,Undifferentiated parkland ESSF,cciss-only
+ESSFvc,True,True,ESSFvc,Engelmann Spruce -- Subalpine Fir,Very Wet Cold ESSF,both
+ESSFvcp,True,True,ESSFvcp,Engelmann Spruce -- Subalpine Fir,Very Wet Cold Parkland ESSF,both
+ESSFvcw,True,True,ESSFvcw,Engelmann Spruce -- Subalpine Fir,Very Wet Cold Woodland ESSF,both
+ESSFvv,True,False,,,,sdmd-only
+ESSFvvp,True,False,,,,sdmd-only
+ESSFwc1,True,False,,,,sdmd-only
+ESSFwc2,True,True,ESSFwc 2,Engelmann Spruce -- Subalpine Fir,Wet Cold Monashee ESSF,both
+ESSFwc3,True,True,ESSFwc 3,Engelmann Spruce -- Subalpine Fir,Wet Cold Cariboo ESSF,both
+ESSFwc4,True,True,ESSFwc 4,Engelmann Spruce -- Subalpine Fir,Wet Cold Selkirk ESSF,both
+ESSFwc5,True,False,,,,sdmd-only
+ESSFwc6,True,False,,,,sdmd-only
+ESSFwcp,True,True,ESSFwcp,Engelmann Spruce -- Subalpine Fir,Wet Cold Parkland ESSF,both
+ESSFwcw,True,True,ESSFwcw,Engelmann Spruce -- Subalpine Fir,Wet Cold Woodland ESSF,both
+ESSFwh1,False,True,ESSFwh 1,Engelmann Spruce -- Subalpine Fir,Wet Hot Columbia ESSF,cciss-only
+ESSFwh2,False,True,ESSFwh 2,Engelmann Spruce -- Subalpine Fir,Wet Hot St Mary ESSF,cciss-only
+ESSFwh3,False,True,ESSFwh 3,Engelmann Spruce -- Subalpine Fir,Wet Hot Salmo ESSF,cciss-only
+ESSFwk1,True,True,ESSFwk 1,Engelmann Spruce -- Subalpine Fir,Wet Cool Cariboo ESSF,both
+ESSFwk2,True,True,ESSFwk 2,Engelmann Spruce -- Subalpine Fir,Wet Cool Misinchinka ESSF,both
+ESSFwm,True,False,,,,sdmd-only
+ESSFwm1,False,True,ESSFwm 1,Engelmann Spruce -- Subalpine Fir,Wet Mild Fernie ESSF,cciss-only
+ESSFwm2,False,True,ESSFwm 2,Engelmann Spruce -- Subalpine Fir,Wet Mild Purcell ESSF,cciss-only
+ESSFwm3,False,True,ESSFwm 3,Engelmann Spruce -- Subalpine Fir,Wet Mild Ymir ESSF,cciss-only
+ESSFwm4,False,True,ESSFwm 4,Engelmann Spruce -- Subalpine Fir,Wet Mild Moyie ESSF,cciss-only
+ESSFwmp,True,True,ESSFwmp,Engelmann Spruce -- Subalpine Fir,Wet Mild Parkland ESSF,both
+ESSFwmw,True,True,ESSFwmw,Engelmann Spruce -- Subalpine Fir,Wet Mild Woodland ESSF,both
+ESSFwv,True,True,ESSFwv,Engelmann Spruce -- Subalpine Fir,Wet Very Cold ESSF,both
+ESSFwvp,True,True,ESSFwvp,Engelmann Spruce -- Subalpine Fir,Wet Very Cold Parkland ESSF,both
+ESSFwvw,False,True,ESSFwvw,Engelmann Spruce - Subalpine Fir,Wet Very Cold Woodland ESSF,cciss-only
+ESSFxc,True,False,,,,sdmd-only
+ESSFxc1,True,True,ESSFxc 1,Engelmann Spruce -- Subalpine Fir,Very Dry Cold Similkameen ESSF,both
+ESSFxc2,True,True,ESSFxc 2,Engelmann Spruce -- Subalpine Fir,Very Dry Cold Thompson ESSF,both
+ESSFxc3,True,True,ESSFxc 3,Engelmann Spruce -- Subalpine Fir,Very Dry Cold Pavillion ESSF,both
+ESSFxcp,True,True,ESSFxcp,Engelmann Spruce -- Subalpine Fir,Very Dry Cold Parkland ESSF,both
+ESSFxcw,True,True,ESSFxcw,Engelmann Spruce -- Subalpine Fir,Very Dry Cold Woodland ESSF,both
+ESSFxv1,True,True,ESSFxv 1,Engelmann Spruce -- Subalpine Fir,Very Dry Very Cold West Chilcotin ESSF,both
+ESSFxv2,True,True,ESSFxv 2,Engelmann Spruce -- Subalpine Fir,Very Dry Very Cold Big Creek ESSF,both
+ESSFxvp,True,True,ESSFxvp,Engelmann Spruce -- Subalpine Fir,Very Dry Very Cold Parkland ESSF,both
+ESSFxvw,True,True,ESSFxvw,Engelmann Spruce -- Subalpine Fir,Very Dry Very Cold Woodland ESSF,both
+ICHdk,True,True,ICH dk,Interior Cedar -- Hemlock,Dry Cool ICH,both
+ICHdm,True,True,ICH dm,Interior Cedar -- Hemlock,Dry Mild ICH,both
+ICHdw1,True,True,ICH dw 1,Interior Cedar -- Hemlock,Dry Warm West Kootenay ICH,both
+ICHdw2,True,False,,,,sdmd-only
+ICHdw3,True,True,ICH dw 3,Interior Cedar -- Hemlock,Dry Warm North Thompson ICH,both
+ICHdw4,False,True,ICH dw 4,Interior Cedar -- Hemlock,Dry Warm Shuswap ICH,cciss-only
+ICHmc1,True,True,ICH mc 1,Interior Cedar -- Hemlock,Moist Cold Nass ICH,both
+ICHmc1a,False,True,ICH mc 1a,Interior Cedar -- Hemlock,Moist Cold Nass ICH,cciss-only
+ICHmc2,True,True,ICH mc 2,Interior Cedar -- Hemlock,Moist Cold Hazelton ICH,both
+ICHmk1,True,True,ICH mk 1,Interior Cedar -- Hemlock,Moist Cool Okanagan ICH,both
+ICHmk2,True,True,ICH mk 2,Interior Cedar -- Hemlock,Moist Cool Thompson ICH,both
+ICHmk3,True,True,ICH mk 3,Interior Cedar -- Hemlock,Moist Cool Horsefly ICH,both
+ICHmk4,True,True,ICH mk 4,Interior Cedar -- Hemlock,Moist Cool Kootenay ICH,both
+ICHmk5,False,True,ICH mk 5,Interior Cedar -- Hemlock,Moist Cool Kootenay ICH,cciss-only
+ICHmm,True,True,ICH mm,Interior Cedar -- Hemlock,Moist Mild ICH,both
+ICHmw1,True,True,ICH mw 1,Interior Cedar -- Hemlock,Moist Warm Kinbasket ICH,both
+ICHmw2,True,True,ICH mw 2,Interior Cedar -- Hemlock,Moist Warm Slocan ICH,both
+ICHmw3,True,True,ICH mw 3,Interior Cedar -- Hemlock,Moist Warm Thompson ICH,both
+ICHmw4,True,True,ICH mw 4,Interior Cedar -- Hemlock,Moist Warm Ymir ICH,both
+ICHmw5,False,True,ICH mw 5,Interior Cedar -- Hemlock,Moist Warm Granby ICH,cciss-only
+ICHvc,True,True,ICH vc,Interior Cedar -- Hemlock,Very Wet Cold ICH,both
+ICHvk1,True,True,ICH vk 1,Interior Cedar -- Hemlock,Very Wet Cool Columbia ICH,both
+ICHvk2,True,True,ICH vk 2,Interior Cedar -- Hemlock,Very Wet Cool Slim ICH,both
+ICHwc,True,True,ICH wc,Interior Cedar -- Hemlock,Wet Cold ICH,both
+ICHwk1,True,True,ICH wk 1,Interior Cedar -- Hemlock,Wet Cool Shuswap ICH,both
+ICHwk2,True,True,ICH wk 2,Interior Cedar -- Hemlock,Wet Cool Quesnel ICH,both
+ICHwk3,True,True,ICH wk 3,Interior Cedar -- Hemlock,Wet Cool Goat ICH,both
+ICHwk4,True,True,ICH wk 4,Interior Cedar -- Hemlock,Wet Cool Cariboo ICH,both
+ICHxm1,False,True,ICH xm1,Interior Cedar -- Hemlock,Very Dry Mild ICH,cciss-only
+ICHxw,True,True,ICH xw,Interior Cedar -- Hemlock,Very Dry Warm ICH,both
+ICHxwa,False,True,ICH xw a,Interior Cedar -- Hemlock,Very Dry Warm ICH,cciss-only
+IDFdc,True,True,IDF dc,Interior Douglas-fir,Dry Cold IDF,both
+IDFdh,False,True,IDF dh,Interior Douglas-fir,Dry Hot IDF,cciss-only
+IDFdk1,True,True,IDF dk 1,Interior Douglas-fir,Dry Cool Thompson IDF,both
+IDFdk2,True,True,IDF dk 2,Interior Douglas-fir,Dry Cool Cascade IDF,both
+IDFdk3,True,True,IDF dk 3,Interior Douglas-fir,Dry Cool Fraser IDF,both
+IDFdk4,True,True,IDF dk 4,Interior Douglas-fir,Dry Cool Chilcotin IDF,both
+IDFdk5,True,True,IDF dk 5,Interior Douglas-fir,Dry Cool Columbia IDF,both
+IDFdm1,True,True,IDF dm 1,Interior Douglas-fir,Dry Mild Kettle IDF,both
+IDFdm2,True,True,IDF dm 2,Interior Douglas-fir,Dry Mild Kootenay IDF,both
+IDFdw,True,True,IDF dw,Interior Douglas-fir,Dry Warm IDF,both
+IDFmw1,True,True,IDF mw 1,Interior Douglas-fir,Moist Warm Shuswap IDF,both
+IDFmw2,True,True,IDF mw 2,Interior Douglas-fir,Moist Warm Thompson IDF,both
+IDFun,True,False,,,,sdmd-only
+IDFww,True,True,IDF ww,Interior Douglas-fir,Wet Warm IDF,both
+IDFww1,True,True,IDF ww 1,Interior Douglas-fir,Wet Warm Stein IDF,both
+IDFxc,True,True,IDF xc,Interior Douglas-fir,Very Dry Cold IDF,both
+IDFxh1,True,True,IDF xh 1,Interior Douglas-fir,Very Dry Hot Okanagan IDF,both
+IDFxh2,True,True,IDF xh 2,Interior Douglas-fir,Very Dry Hot Thompson IDF,both
+IDFxh4,True,True,IDF xh 4,Interior Douglas-fir,Very Dry Hot Boundary IDF,both
+IDFxk,True,True,IDF xk,Interior Douglas-fir,Very Dry Cool IDF,both
+IDFxm,True,True,IDF xm,Interior Douglas-fir,Very Dry Mild IDF,both
+IDFxw,True,True,IDF xw,Interior Douglas-fir,Very Dry Warm IDF,both
+IDFxx2,False,True,IDF xx 2,Interior Douglas-fir,Very Dry Very Hot Kootenay IDF,cciss-only
+IMAun,True,True,IMA un,Interior Mountain-heather Alpine,Undifferentiated IMA,both
+IMAunp,True,True,IMA unp,Interior Mountain-heather Alpine,Undifferentiated and Parkland IMA,both
+MHmm1,True,True,MH mm 1,Mountain Hemlock,Moist Maritime Windward MH,both
+MHmm2,True,True,MH mm 2,Mountain Hemlock,Moist Maritime Leeward MH,both
+MHmmp,True,True,MH mmp,Mountain Hemlock,Moist Maritime Parkland MH,both
+MHun,True,True,MH un,Mountain Hemlock,Undifferentiated MH,both
+MHunp,False,True,MH unp,Mountain Hemlock,Undifferentiated parkland MH,cciss-only
+MHwh,False,True,MH wh,Mountain Hemlock,Wet Hypermaritime MH,cciss-only
+MHwh1,True,True,MH wh 1,Mountain Hemlock,Wet Hypermaritime Windward MH,both
+MHwh2,True,False,,,,sdmd-only
+MHwhp,True,True,MH whp,Mountain Hemlock,Wet Hypermaritime Parkland MH,both
+MSdc1,True,True,MS dc 1,Montane Spruce,Dry Cold Cayoosh MS,both
+MSdc2,True,True,MS dc 2,Montane Spruce,Dry Cold Tatlayoko MS,both
+MSdc3,True,True,MS dc 3,Montane Spruce,Dry Cold Tyaughton MS,both
+MSdk,True,True,MS dk,Montane Spruce,Dry Cool MS,both
+MSdk1,True,False,,,,sdmd-only
+MSdk2,True,False,,,,sdmd-only
+MSdm1,True,True,MS dm 1,Montane Spruce,Dry Mild Okanagan MS,both
+MSdm2,True,True,MS dm 2,Montane Spruce,Dry Mild Cascade MS,both
+MSdm3,True,True,MS dm 3,Montane Spruce,Dry Mild North Thompson MS,both
+MSdv,True,True,MS dv,Montane Spruce,Dry Very Cold MS,both
+MSdw,False,True,MS dw,Montane Spruce,Dry Warm MS,cciss-only
+MSmw1,True,True,MS mw 1,Montane Spruce,Moist Warm Cascade MS,both
+MSmw2,True,True,MS mw 2,Montane Spruce,Moist Warm Stein MS,both
+MSun,True,False,,,,sdmd-only
+MSxk,True,False,,,,sdmd-only
+MSxk1,True,True,MS xk 1,Montane Spruce,Very Dry Cool Similkameen MS,both
+MSxk2,True,True,MS xk 2,Montane Spruce,Very Dry Cool South Thompson MS,both
+MSxk3,True,True,MS xk 3,Montane Spruce,Very Dry Cool Pavillion MS,both
+MSxv,True,True,MS xv,Montane Spruce,Very Dry Very Cold MS,both
+PPdh1,True,False,,,,sdmd-only
+PPdh2,True,False,,,,sdmd-only
+PPxh1,True,True,PP xh 1,Ponderosa Pine,Very Dry Hot Okanagan PP,both
+PPxh2,True,True,PP xh 2,Ponderosa Pine,Very Dry Hot Thompson PP,both
+PPxh3,True,True,PP xh 3,Ponderosa Pine,Very Dry Hot Kettle PP,both
+SBPSdc,True,True,SBPSdc,Sub-boreal Pine -- Spruce,Dry Cold SBPS,both
+SBPSmc,True,True,SBPSmc,Sub-boreal Pine -- Spruce,Moist Cold SBPS,both
+SBPSmk,True,True,SBPSmk,Sub-boreal Pine -- Spruce,Moist Cool SBPS,both
+SBPSxc,True,True,SBPSxc,Sub-boreal Pine -- Spruce,Very Dry Cold SBPS,both
+SBSdh1,True,True,SBS dh 1,Sub-boreal Spruce,Dry Hot McLennan SBS,both
+SBSdh2,True,True,SBS dh 2,Sub-boreal Spruce,Dry Hot Robson SBS,both
+SBSdk,True,True,SBS dk,Sub-boreal Spruce,Dry Cool SBS,both
+SBSdw1,True,True,SBS dw 1,Sub-boreal Spruce,Dry Warm Horsefly SBS,both
+SBSdw2,True,True,SBS dw 2,Sub-boreal Spruce,Dry Warm Blackwater SBS,both
+SBSdw3,True,True,SBS dw 3,Sub-boreal Spruce,Dry Warm Stuart SBS,both
+SBSmc1,True,True,SBS mc 1,Sub-boreal Spruce,Moist Cold Moffat SBS,both
+SBSmc2,True,True,SBS mc 2,Sub-boreal Spruce,Moist Cold Babine SBS,both
+SBSmc3,True,True,SBS mc 3,Sub-boreal Spruce,Moist Cold Kluskus SBS,both
+SBSmh,True,True,SBS mh,Sub-boreal Spruce,Moist Hot SBS,both
+SBSmk1,True,True,SBS mk 1,Sub-boreal Spruce,Moist Cool Mossvale SBS,both
+SBSmk2,True,True,SBS mk 2,Sub-boreal Spruce,Moist Cool Williston SBS,both
+SBSmm,True,True,SBS mm,Sub-boreal Spruce,Moist Mild SBS,both
+SBSmw,True,True,SBS mw,Sub-boreal Spruce,Moist Warm SBS,both
+SBSun,True,True,SBS un,Sub-boreal Spruce,Undifferentiated SBS,both
+SBSvk,True,True,SBS vk,Sub-boreal Spruce,Very Wet Cool SBS,both
+SBSwk1,True,True,SBS wk 1,Sub-boreal Spruce,Wet Cool Willow SBS,both
+SBSwk2,True,True,SBS wk 2,Sub-boreal Spruce,Wet Cool Finlay-Peace SBS,both
+SBSwk3,True,True,SBS wk 3,Sub-boreal Spruce,Wet Cool Takla SBS,both
+SBSwk3a,False,True,SBS wk 3a,Sub-boreal Spruce,Wet Cool Takla SBS,cciss-only
+SWBdk,True,False,,,,sdmd-only
+SWBdks,True,False,,,,sdmd-only
+SWBmk,True,True,SWB mk,Spruce - Willow - Birch,Moist Cool SWB,both
+SWBmks,True,True,SWB mks,Spruce - Willow - Birch,Moist Cool Scrub SWB,both
+SWBun,True,True,SWB un,Spruce - Willow - Birch,Undifferentiated SWB,both
+SWBuns,False,True,SWB uns,Spruce - Willow - Birch,Undifferentiated scrub SWB,cciss-only
+SWBvk,True,True,SWB vk,Spruce - Willow - Birch,Very Wet Cool SWB,both
+SWBvks,True,True,SWB vks,Spruce - Willow - Birch,Very Wet Cool Scrub SWB,both

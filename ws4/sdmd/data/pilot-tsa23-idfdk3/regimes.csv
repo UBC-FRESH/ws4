@@ -1,0 +1,8 @@
+regime_id,au_id,name,entry_age,entry_type,residual_ba_m2_ha,removal_fraction,cycle_length,repeat_count,post_treatment_track,eligibility_expr,operability_expr,constraint_ids,review_status
+REG-A-UNTREATED,AU-IDFdk3-TSA23-FDI,untreated,0,untreated,0.0,0.0,0,0,,,,,reviewed
+REG-A-CLEARCUT,AU-IDFdk3-TSA23-FDI,clearcut,80,clearcut,0.0,1.0,0,0,,,,,reviewed
+REG-A-CT60,AU-IDFdk3-TSA23-FDI,ct60,70,ct60,12.0,0.6,0,0,,,,,provisional
+REG-A-FUEL50,AU-IDFdk3-TSA23-FDI,fuel50,60,fuel50,20.0,0.5,0,0,,,,,provisional
+REG-A-SHELTERWOOD40,AU-IDFdk3-TSA23-FDI,shelterwood40,90,shelterwood40,24.0,0.4,20,1,,,,,reviewed
+REG-A-VR20,AU-IDFdk3-TSA23-FDI,vr20,75,vr20,30.0,0.2,15,1,,,,,reviewed
+REG-A-SELECTION80,AU-IDFdk3-TSA23-FDI,selection80,100,selection80,18.0,0.2,20,3,,uneven-aged,,,provisional

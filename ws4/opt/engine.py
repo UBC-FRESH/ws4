@@ -250,6 +250,10 @@ class OptimizeConfig:
         Whether to solve the LP relaxation and record its bound, gap, and status.
     topology_path : str
         The block topology edge list, for the spatial and patch models.
+    sdmd_dir : str
+        An SDMD store with ``regimes.csv`` and ``au_constraints.csv``. When set, every
+        move must satisfy the per-AU entry cap and interval, and the guard rejects an
+        infeasible seed.
     route_config_path : str
         The route configuration, for the road model.
     edge_elements_path : str
@@ -369,6 +373,7 @@ class OptimizeConfig:
     mip_bound: bool = False
     lp_bound: bool = False
     topology_path: str = ""
+    sdmd_dir: str = ""
     route_config_path: str = ""
     edge_elements_path: str = ""
     max_opening_ha: float | None = None
@@ -525,6 +530,8 @@ class Optimizer:
         self._carbon_ledger_cache: CarbonLedger | None = None
         self._route_event_cache: dict[tuple[int, Chain, int], tuple[RouteEvent, ...]] = {}
         self.constraint_guard = ConstraintGuard(self)
+        if cfg.sdmd_dir:
+            self.constraint_guard.set_schedule_check(self._sdmd_schedule_check(cfg.sdmd_dir))
         self.registry = self.constraint_guard.wrap(self.registry)
 
     @classmethod
@@ -706,6 +713,36 @@ class Optimizer:
             for treatment, offset in chain
         ]
         return pd.DataFrame(rows, columns=["block_id", "treatment", "offset"])
+
+    def _sdmd_schedule_check(self, sdmd_dir: str) -> Callable[[Mapping[int, Any]], bool]:
+        """Build the SDMD per-AU schedule predicate from a store.
+
+        Parameters
+        ----------
+        sdmd_dir : str
+            The SDMD store directory with ``regimes.csv`` and ``au_constraints.csv``.
+
+        Returns
+        -------
+        callable
+            A predicate over a schedule mapping.
+        """
+        from ..sdmd.constraints import load_constraints
+        from ..sdmd.regimes import load_regime_library
+        from ..sdmd.solver import SdmdScheduleGuard
+
+        root = Path(sdmd_dir)
+        regimes = load_regime_library(pd.read_csv(root / "regimes.csv"))
+        constraints = load_constraints(pd.read_csv(root / "au_constraints.csv"))
+        simulator = self.simulator()
+        guard = SdmdScheduleGuard(
+            simulator.fragments,
+            simulator.tracks,
+            simulator.treatments,
+            regimes,
+            constraints,
+        )
+        return guard.feasible
 
     def simulator(self) -> Simulator:
         """Return a reusable simulator, built once and reset before each use.
