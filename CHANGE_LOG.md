@@ -4144,6 +4144,7 @@ issue comments.
   `not a forecast` caveat that actually says so. The writer produces
   `price_path_comparison.csv`, `price_path_report.md`, and
   `price_path_provenance.json`, with base-relative deltas, the source table's SHA-256,
+  every distinct path/source/source-version combination with its products and periods,
   and each output file's digest. No dataset, objective, constraint, growth, schedule, or
   solver code changed. Documented in `docs/reference/prices.rst`; report in
   `notes/reports/p112-prices.md`. Dashboard result: `python scripts/dashboard.py`

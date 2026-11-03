@@ -19,7 +19,9 @@ It writes `price_path_comparison.csv`, `price_path_report.md`, and
 `delta_pct` for each path/product/period. The percent delta is null when the base
 value is zero. The sidecar records the input file's name, byte size, and SHA-256,
 the path and product/period grid, each path's source and source version, the
-comparison definition, and each output file's size and digest.
+comparison definition, and each output file's size and digest. The sidecar records
+every distinct path/source/source-version combination with the products and periods
+it covers, so a path that draws on more than one source keeps all of its attribution.
 
 ## Validation
 
@@ -37,12 +39,17 @@ label. It has two products, three periods, and all four named paths.
 
 ## Verification
 
-- `python -m pytest tests/test_prices.py tests/test_cli.py -q` — 49 passed.
+- `python -m pytest tests/test_prices.py tests/test_cli.py -q` — 50 passed.
 - `python scripts/dashboard.py` — `OVERALL: GREEN` on all seven gates (lint,
   format, types, tests, validator, docs, docstrings).
 - `python scripts/check_workflow.py` — `0 error(s), 0 warning(s)`.
 - Manual run of the fixture command produced the three artifacts; the report
   repeated the caveat and the sidecar's recorded digests matched the files.
+
+An automated review found that the provenance sidecar recorded only the
+first row's source for each path. The loader already accepted per-row sources, so the
+sidecar now records every distinct path/source/source-version combination with the
+products and periods it covers, and a focused test holds that behaviour.
 
 ## Scope boundary
 

@@ -1518,8 +1518,8 @@ def price_paths(
             str(len({row.product for row in path_rows})),
             str(len({row.period for row in path_rows})),
             str(len(path_rows)),
-            path_rows[0].source,
-            path_rows[0].source_version,
+            ", ".join(sorted({row.source for row in path_rows})),
+            ", ".join(sorted({row.source_version for row in path_rows})),
         )
     print(view)
     print(f"[bold]not a forecast[/]: {prices.not_a_forecast}")

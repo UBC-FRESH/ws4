@@ -136,7 +136,8 @@ The command writes three files:
        per-product summary, the full comparison, and the limits.
    * - ``price_path_provenance.json``
      - A ``ws4.prices.report.v1`` record with the input file's name, byte size, and
-       SHA-256, the path and product/period grid, each path's source and source version,
+       SHA-256, the path and product/period grid, each distinct
+       path/source/source-version combination with the products and periods it covers,
        the caveat, the comparison definition, and each output file's size and digest.
 
 The delta is ``value - base_value`` at the same product and period. The percent delta is

@@ -511,6 +511,34 @@ def _file_record(path: Path, name: str) -> dict[str, object]:
     }
 
 
+def _source_records(table: PriceTable) -> list[dict[str, object]]:
+    """Group rows by path, source, and source version."""
+    grouped: dict[tuple[str, str, str], tuple[set[str], set[int]]] = {}
+    for row in table.rows:
+        key = (row.path_id, row.source, row.source_version)
+        products, periods = grouped.setdefault(key, (set(), set()))
+        products.add(row.product)
+        periods.add(row.period)
+    ordered = sorted(
+        grouped.items(),
+        key=lambda item: (
+            PRICE_PATH_IDS.index(item[0][0]),
+            item[0][1],
+            item[0][2],
+        ),
+    )
+    return [
+        {
+            "path_id": path_id,
+            "source": source,
+            "source_version": source_version,
+            "products": sorted(products),
+            "periods": sorted(periods),
+        }
+        for (path_id, source, source_version), (products, periods) in ordered
+    ]
+
+
 def build_price_provenance(
     table: PriceTable,
     out_dir: Path,
@@ -552,16 +580,7 @@ def build_price_provenance(
         "currency": table.currency,
         "region": table.region,
         "row_count": len(table.rows),
-        "sources": [
-            {
-                "path_id": path_id,
-                "source": next(r.source for r in table.rows if r.path_id == path_id),
-                "source_version": next(
-                    r.source_version for r in table.rows if r.path_id == path_id
-                ),
-            }
-            for path_id in table.path_ids
-        ],
+        "sources": _source_records(table),
         "not_a_forecast": table.not_a_forecast,
         "caveats": list(table.caveats),
         "comparison": {

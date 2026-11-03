@@ -165,6 +165,30 @@ def test_provenance_records_source_and_output_digests(tmp_path: Path) -> None:
         assert records[name]["status"] == "hashed"
 
 
+def test_provenance_records_each_row_level_source(tmp_path: Path) -> None:
+    """Distinct sources within a path are all recorded, not just the first row's."""
+    payload = _payload()
+    for row in _rows(payload):
+        if row["path_id"] == "base" and row["product"] == "sawlog":
+            row["source"] = "sawlog-source"
+            row["source_version"] = "2026-11-04"
+    table = load_price_table(_write(tmp_path, payload))
+    written = write_price_report(table, tmp_path / "report")
+    saved: object = json.loads(written["provenance"].read_text(encoding="utf-8"))
+    assert isinstance(saved, dict)
+    sources = saved["sources"]
+    assert isinstance(sources, list)
+    base_sources = [
+        record for record in sources if isinstance(record, dict) and record["path_id"] == "base"
+    ]
+
+    assert len(base_sources) == 2
+    sawlog = next(record for record in base_sources if record["source"] == "sawlog-source")
+    assert sawlog["source_version"] == "2026-11-04"
+    assert sawlog["products"] == ["sawlog"]
+    assert sawlog["periods"] == [1, 2, 3]
+
+
 def test_table_round_trips_through_its_flat_shape(tmp_path: Path) -> None:
     """The table's own mapping reloads to the same rows and grid."""
     table = load_price_table(FIXTURE)
