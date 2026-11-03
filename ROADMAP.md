@@ -105,6 +105,7 @@ exists and the maintainer approves it.
 | P99 Scenario profile UI | #704 | `feature/p99-profile-ui` | pr-open |
 | P102 Ask overlay | #709 | `feature/p102-ask-overlay` | pr-open |
 | P103 Profile-aware web runs | #713 | `feature/p103-profile-runs` | pr-open |
+| P105 Profile-run feedback | #720 | `feature/p105-profile-run-feedback` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3221,7 +3222,7 @@ pilot AU report and validation evidence.
     real PSP/FVS evidence.
   - [x] Use a representative AU-level FVS tree list for both species.
   - [x] Write the close-out report and queue the pull request.
-  - [ ] Wait for maintainer approval.
+  - [x] Wait for maintainer approval.
 
 Acceptance:
 
@@ -3232,6 +3233,28 @@ Acceptance:
 - `python scripts/dashboard.py` is green.
 - The phase closes with a report and maintainer approval.
 
+
+## Phase 105: Profile-run feedback
+
+Parent issue: #720
+Branch: `feature/p105-profile-run-feedback`
+Status: pr-open
+Report: `notes/reports/tsa24-profile-run-feedback.md`
+PR: #728
+
+Goal: make profile-aware GPU runs visible in the normal web run view and produce account values.
+
+- [x] P105.1 Emit bounded schedule diffs (#721)
+  - [x] Reset with the first schedule event
+  - [x] Send only changed blocks afterward
+  - [x] Keep the cadence bounded
+- [x] P105.2 Replay final account values and close out (#722)
+
+Acceptance:
+
+- Profile runs emit live schedule telemetry.
+- Final replay writes account values and reports.
+- Exact summary and dashboard are green.
 
 ## Detailed Next Steps Notes
 
@@ -3417,5 +3440,3 @@ Acceptance:
     trajectory evidence) is active on `feature/p95-sdmd-pilot`, parent issue #680,
     with tasks #681 to #684. P104.1 is the first bounded move: digitise `fdin`/`fdip`
     into reviewed vector isopleths and replace the synthetic pilot fixture.
-
-

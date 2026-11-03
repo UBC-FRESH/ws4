@@ -4063,3 +4063,10 @@ issue comments.
 
 - P104: phase approved and squash-merged as `e5c4e9c` on 2026-11-03. PR #719
   passed all five CI checks; the branch was deleted and parent issue #680 closed.
+
+## 2026-11-03
+
+- P105: profile-run feedback. Profile GPU runs now emit bounded schedule diffs for the
+  live map and replay the final schedule to `account_values.csv`/product values. The base
+  profile smoke remained exact and wrote the standard run artefacts. Report:
+  `notes/reports/tsa24-profile-run-feedback.md`.
