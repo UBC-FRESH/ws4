@@ -1,7 +1,7 @@
 # P110 TSA 27 GPU profile
 
 Date: 2026-11-03
-Status: complete; PR #747
+Status: complete; PR #748
 
 ## Change
 
@@ -38,4 +38,4 @@ Zero-generation s8 run with replay:
 
 ## Pull request
 
-PR #747 contains the optional-factorized worker path, mapping-candidate support, tests, and this evidence.
+PR #748 contains the optional-factorized worker path, mapping-candidate support, tests, and this evidence.

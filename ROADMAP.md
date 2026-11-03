@@ -3559,7 +3559,7 @@ Parent issue: #745
 Branch: `feature/p110-tsa27-gpu-profile`
 Status: pr-open
 Report: `notes/reports/tsa27-gpu-profile.md`
-PR: #747
+PR: #748
 
 Goal: let GPU profile runs use an existing effect table and cache without a
 factorized archive, then expose a TSA 27 s8 profile.
