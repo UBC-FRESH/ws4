@@ -128,7 +128,7 @@ exists and the maintainer approves it.
 | P127 Fix target chart edits and Solve semantics | #791 | `fix/p127-target-chart-solve` | pr-open |
 | P128 Sync target chart edits into the table | #794 | `fix/p128-target-chart-table-sync` | pr-open |
 | P129 GPU profile current targets and budget | #798 | `feature/p129-gpu-profile-current-targets` | pr-open |
-| P130 Route Solve through the GPU profile path | #802 | `feature/p130-solve-gpu-profile` | active |
+| P130 Route Solve through the GPU profile path | #802 | `feature/p130-solve-gpu-profile` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3937,8 +3937,9 @@ Acceptance:
 
 Parent issue: #802
 Branch: `feature/p130-solve-gpu-profile`
-Status: active
+Status: pr-open
 Report: `notes/reports/p130-solve-gpu-profile.md`
+PR: #803
 
 Goal: make Solve use the selected GPU profile when available.
 

@@ -1,7 +1,7 @@
 # P130 Solve through the GPU profile path
 
 Date: 2026-11-03
-Status: complete
+Status: complete; PR #803
 
 ## Change
 
