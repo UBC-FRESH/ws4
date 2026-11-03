@@ -4310,3 +4310,14 @@ issue comments.
   non-flow level row, and public-demo Solve uses the current target file and time
   budget instead of implicitly switching to a profile run. Report:
   `notes/reports/p127-target-chart-solve.md`.
+
+- P121: merged via PR #782 as `c5ef547`. The BEC crosswalk uses BC BECdb v13
+  current and retired tables: 165 exact current, 48 retired with versions, and 0
+  WS4 labels absent from BECdb. The 54 current labels missing from WS4 are a
+  named coverage gap. AU integrity refuses retired, uncovered, unknown, and
+  unsupported TSA/BEC combinations. Branch deleted; parent #769 and closeout
+  #773 closed. Dashboard: `OVERALL: GREEN`.
+
+- P128: sync target chart edits into Plan table inputs so Solve posts the edited
+  values instead of stale table values. Report:
+  `notes/reports/p128-target-chart-table-sync.md`.

@@ -100,7 +100,7 @@ exists and the maintainer approves it.
 | P104 (SDMD pilot) digitisation and trajectory evidence | #680 | `feature/p104-sdmd-pilot` | complete |
 | P106 AU evidence depth | #723 | `feature/p106-au-evidence` | complete |
 | P120 SDMD atlas completion | #731 | `feature/p120-sdmd-atlas` | complete |
-| P121 BEC crosswalk and AU integrity | #769 | `feature/p121-bec-integrity` | pr-open |
+| P121 BEC crosswalk and AU integrity | #769 | `feature/p121-bec-integrity` | complete |
 | P109 Report provenance sidecars | #734 | `feature/p108-report-provenance` | pr-open |
 
 | P95 (factorized vectors) target-cell cache | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
@@ -126,6 +126,7 @@ exists and the maintainer approves it.
 | P125 Stabilize period playback and map paging | #784 | `fix/p125-playback-map-race` | pr-open |
 | P126 Stabilize playback controls and cadence | #787 | `fix/p126-playback-controls` | pr-open |
 | P127 Fix target chart edits and Solve semantics | #791 | `fix/p127-target-chart-solve` | pr-open |
+| P128 Sync target chart edits into the table | #794 | `fix/p128-target-chart-table-sync` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3763,7 +3764,8 @@ Acceptance:
 
 Parent issue: #769
 Branch: `feature/p121-bec-integrity`
-Status: pr-open
+Status: complete
+Merge commit: `c5ef547`
 Plan: `notes/reports/p120-atlas-coverage.md`
 Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
 
@@ -3890,4 +3892,22 @@ Acceptance:
 - Chart edits update the non-flow level row.
 - Saved values round-trip through `api/targets.json`.
 - Solve sends the configured time limit without a profile field.
+- Browser smoke and dashboard pass.
+
+## Phase 128: Sync target chart edits into the table
+
+Parent issue: #794
+Branch: `fix/p128-target-chart-table-sync`
+Status: pr-open
+Report: `notes/reports/p128-target-chart-table-sync.md`
+PR: #796
+
+Goal: keep chart edits and table inputs consistent before Solve.
+
+- [x] P128.1 Sync target chart edits into table inputs (#795)
+
+Acceptance:
+
+- Chart edits update matching table inputs.
+- Solve posts edited values and time budget.
 - Browser smoke and dashboard pass.
