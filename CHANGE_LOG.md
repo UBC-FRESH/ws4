@@ -4321,3 +4321,7 @@ issue comments.
 - P128: sync target chart edits into Plan table inputs so Solve posts the edited
   values instead of stale table values. Report:
   `notes/reports/p128-target-chart-table-sync.md`.
+
+- P129: GPU profile runs now use the current edited target file and accept a
+  wall-clock budget. Run profile saves current edits instead of reapplying the
+  profile target library. Report: `notes/reports/p129-gpu-current-targets.md`.

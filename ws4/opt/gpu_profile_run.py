@@ -135,7 +135,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--dataset", type=Path, required=True)
     parser.add_argument("--profile-file", type=Path, required=True)
     parser.add_argument("--profile", required=True)
+    parser.add_argument("--targets", type=Path, help="Override the profile target file")
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--max-seconds", type=float, default=0.0)
     parser.add_argument("--years", type=int, default=200)
     parser.add_argument("--population", type=int, default=64)
     parser.add_argument("--generations", type=int, default=5000)
@@ -161,7 +163,8 @@ def main(argv: list[str] | None = None) -> int:
     assert profile.table is not None
     assert profile.cache_dir is not None
 
-    target_list = load_targets(profile.targets)
+    targets_path = args.targets if args.targets is not None else profile.targets
+    target_list = load_targets(targets_path)
     cfg = OptimizeConfig(
         years=args.years,
         targets_path=str(profile.targets),
@@ -225,6 +228,9 @@ def main(argv: list[str] | None = None) -> int:
     stopped = False
     previous_schedule: dict[int, tuple[tuple[str, int], ...]] | None = None
     for generation in range(args.generations + 1):
+        if args.max_seconds > 0 and time.perf_counter() - started >= args.max_seconds:
+            stopped = True
+            break
         action = "run"
         if control.is_file():
             try:
@@ -307,7 +313,7 @@ def main(argv: list[str] | None = None) -> int:
         "status": "stopped" if stopped else "ok",
         "profile": args.profile,
         "factorized": accounts is not None,
-        "targets": str(profile.targets),
+        "targets": str(targets_path),
         "schedule": str(schedule_path),
         "incumbent_objective": population.best_objective,
         "verified_objective": verifier.objective,
