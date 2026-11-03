@@ -4159,3 +4159,6 @@ issue comments.
   `notes/reports/p114-prices.md`. Dashboard result: `python scripts/dashboard.py`
   reports `OVERALL: GREEN` on all seven gates (lint, format, types, tests, validator,
   docs, docstrings). Pull request: #760. Merge waits for maintainer approval.
+- P115: TSA 24 source geometry. The exact 458,708-row public stand shapefile matches the
+  compiled fragments; a 5 m simplified GeoJSON now feeds the map, with a regeneration
+  script and source hashes. Report: `notes/reports/tsa24-source-geometry.md`.

@@ -115,6 +115,7 @@ exists and the maintainer approves it.
 | P112 TSA 29 GPU profile | #755 | `feature/p112-tsa29-gpu-profile` | pr-open |
 | P113 Map capability fallback | #758 | `feature/p113-map-fallback` | pr-open |
 | P114 Scenario price paths | #749 | `feature/p114-prices-v1` | pr-open |
+| P115 TSA 24 source geometry | #765 | `feature/p115-tsa24-source-geometry` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3665,3 +3666,21 @@ Acceptance:
   path/product/period, and the report and sidecar repeat the `not a forecast` caveat.
 - No objective, constraint, growth, schedule, or solver behaviour changes.
 - `python scripts/dashboard.py` is green.
+
+## Phase 115: TSA 24 source geometry
+
+Parent issue: #765
+Branch: `feature/p115-tsa24-source-geometry`
+Status: pr-open
+Report: `notes/reports/tsa24-source-geometry.md`
+PR: #766
+
+Goal: restore a real TSA 24 map layer from the public source stand geometry.
+
+- [x] P115.1 Source geometry, provenance, and portal wiring
+
+Acceptance:
+
+- All 458,708 source rows match the compiled fragments.
+- Geometry bounds and map joins work.
+- The regeneration script and source hashes are recorded.

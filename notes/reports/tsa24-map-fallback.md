@@ -14,7 +14,9 @@ contract is unchanged for API callers.
 
 ## TSA 24
 
-The TSA 24 compiled dataset has no geometry layer. The portal now shows:
+The compiled dataset does not carry geometry. TSA 24 now has a real
+source-derived layer from P115, so its map is available. This fallback remains
+for datasets that genuinely have no configured `--geometry`:
 
 > Map unavailable — This dataset has no geometry layer. Configure `--geometry`
 > to enable the block map.
