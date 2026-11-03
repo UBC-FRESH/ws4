@@ -3751,9 +3751,9 @@ that refuses impossible BEC/TSA/species combinations before evidence enters an A
   - [x] Parse the AU label and store metadata.
   - [x] Check BEC coverage and impossible combinations.
   - [x] Test pass, fail, and unknown cases.
-- [ ] P121.3 Wire and test the validator (#772)
-  - [ ] Run it on store load or report.
-  - [ ] Surface findings in data gaps and the CLI/API.
+- [x] P121.3 Wire and test the validator (#772)
+  - [x] Run it on store load or report.
+  - [x] Surface findings through the store error and API/CLI.
 - [ ] P121.4 Coverage and closeout (#773)
   - [ ] Update docs, roadmap, and changelog.
   - [ ] Write the closeout report and queue the PR.

@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 from collections.abc import Collection, Mapping
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
 import pandas as pd
@@ -18,10 +19,14 @@ from .schema import Problem
 
 __all__ = [
     "AuParts",
+    "default_bec_labels",
+    "default_tsa_bec_counts",
     "load_tsa_bec_counts",
     "parse_au_label",
     "validate_au_integrity",
 ]
+
+_DEFAULT_DATA = Path(__file__).resolve().parent / "data" / "sdmd"
 
 _AU_LABEL = re.compile(r"^AU-(?P<bec>[A-Za-z]+\w*?)(?:-TSA(?P<tsa>\d+))?-(?P<species>[A-Za-z]+)$")
 
@@ -132,3 +137,28 @@ def validate_au_integrity(
             )
         )
     return tuple(findings)
+
+
+@lru_cache(maxsize=1)
+def default_bec_labels() -> frozenset[str]:
+    """Return the BEC labels in the packaged coverage table.
+
+    Returns
+    -------
+    frozenset of str
+        The WS4 BEC labels.
+    """
+    frame = pd.read_csv(_DEFAULT_DATA / "bec_variants.csv", dtype=str).fillna("")
+    return frozenset((frame["zone"] + frame["subzone"] + frame["variant"]).astype(str))
+
+
+@lru_cache(maxsize=1)
+def default_tsa_bec_counts() -> Mapping[tuple[str, str], int]:
+    """Return the packaged public TSA/BEC PSP counts.
+
+    Returns
+    -------
+    mapping of (str, str) to int
+        The TSA/BEC support counts.
+    """
+    return load_tsa_bec_counts(_DEFAULT_DATA / "tsa_bec_counts.csv")

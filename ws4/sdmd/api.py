@@ -23,6 +23,7 @@ from pathlib import Path
 import pandas as pd
 from fastapi import APIRouter, Body, HTTPException, Query
 
+from .au_integrity import default_bec_labels, default_tsa_bec_counts, validate_au_integrity
 from .compile import Trajectory, assess_trajectory
 from .constraints import (
     AuConstraint,
@@ -134,6 +135,20 @@ class SdmdStore:
         """
         root = Path(path)
         plots = read_psp_plots(_read_csv(root, "plots"))
+        label_findings = [
+            finding
+            for au_id in sorted(set(plots["au_id"].dropna().astype(str)))
+            for finding in validate_au_integrity(
+                au_id,
+                known_bec=default_bec_labels(),
+                tsa_bec_counts=default_tsa_bec_counts(),
+            )
+        ]
+        if label_findings:
+            detail = "; ".join(
+                f"{item.code} {item.where}: {item.message}" for item in label_findings
+            )
+            raise SdmdApiError(detail)
         trees = (
             read_psp_trees(_read_csv(root, "trees"), plots=plots)
             if (root / "trees.csv").is_file()

@@ -4254,3 +4254,8 @@ issue comments.
   validator parses `AU-<bec>[-TSA<n>]-<species>` and refuses malformed labels,
   unknown BEC labels, and TSA/BEC pairs with no PSP support. Added four tests and
   `notes/reports/p121-au-integrity.md`.
+- P121.3: wired the AU integrity validator into `SdmdStore.from_directory`.
+  Each plot AU label is checked against the packaged BEC coverage and TSA/BEC
+  support table before the other tables are read. A bad label raises
+  `SdmdApiError` with the specific finding. Added a store-level negative test and
+  documented the rule.
