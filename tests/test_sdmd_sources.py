@@ -51,6 +51,7 @@ class _Catalog(TypedDict):
     diagrams: list[_Diagram]
     guides: list[dict[str, object]]
     report: _Report
+    digitizations: list[dict[str, object]]
 
 
 def _catalog() -> _Catalog:
@@ -169,3 +170,18 @@ def test_page_labels_cover_all_fourteen_diagrams() -> None:
     mislabelled = [item for item in diagrams if "White pine" in item["aliases"]]
     assert {item["diagram_id"] for item in mislabelled} == {"swn", "swp"}
     assert all(item["pdf_title"] == "White spruce" for item in mislabelled)
+
+
+def test_digitised_diagrams_are_catalogued() -> None:
+    """The pilot digitizations name their source PDF and the reviewer of record."""
+    catalog = _catalog()
+    entries = catalog["digitizations"]
+    assert len(entries) == 4
+    for entry in entries:
+        assert entry["review_status"] == "reviewed"
+        assert entry["reviewer"]
+        source = next(
+            item for item in catalog["diagrams"] if item["diagram_id"] == entry["source_diagram_id"]
+        )
+        assert entry["source_sha256"] == source["sha256"]
+        assert (DATA / str(entry["file"])).is_file()

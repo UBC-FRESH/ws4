@@ -3,20 +3,21 @@
 Phase: P87 Stand density management and AU Explorer
 Parent issue: #628
 Pull request: #658, `feature/p87-sdmd-au-explorer` into `main`
-Evidence head: `e2718a1`
+Evidence head: `4b2a1e5` (approved head); squash commit `d650b11`
 Report commit: this metadata-only report update; the code head is `e2718a1` and its CI run is 41403557320
 Date: 2026-11-02
-Status: queued for approval. Not merged.
+Status: approved and executed. Squash-merged as `d650b11`.
 
 ## Recommendation
 
-Approve these actions. The agent carries them out in this order, and reads back each result.
+Approved and executed: pull request #658 was squash-merged as `d650b11`, the branch was
+deleted, and parent issue #628 was closed. Main CI runs `41411188534` and `41411188586`
+succeeded. The next phase is P95 (P91-P94 were taken by parallel sessions).
 
 1. Squash-merge pull request #658, and delete the branch `feature/p87-sdmd-au-explorer`.
 2. Close parent issue #628 with a closeout comment that cites the merge commit.
-3. Launch the next phase: the next free phase number at approval time (P92 today; P91 was taken by #655). Create
-   its branch, set the phase statuses in `ROADMAP.md`, create its child issues as sub-issues,
-   and start its first task.
+3. Launch P95 (SDMD pilot digitisation and trajectory evidence), parent issue #680, branch
+   `feature/p95-sdmd-pilot`, with tasks #681 to #684. P91-P94 were taken by parallel sessions.
 
 Settings changes: none. No tag, release, visibility, Pages, branch-protection, or external
 account change is requested.
@@ -90,6 +91,8 @@ Validation command output at the evidence head:
 | --- | --- | --- | --- |
 | 41402135881 | `e2b758c` | success | Quality gates, clean-checkout contract, notebook outputs, pre-commit parity, and the green dashboard summary all passed. |
 | 41403557320 | `e2718a1` | success | The same jobs passed after merging current `main` (P88/P90/P91). |
+| 41411188534 | `d650b11` | success | Main CI and Pages deploy after the squash merge. |
+| 41411188586 | `d650b11` | success | Main CI including quality gates and pre-commit parity. |
 
 ## 5. Deviations
 
@@ -106,8 +109,8 @@ Validation command output at the evidence head:
 
 ## 6. Next phase
 
-Recommended: **the next free phase at approval time (P92 today; P91 was taken by #655),
-"SDMD pilot digitisation and trajectory evidence."** The phase should:
+Recommended and launched: **P95, "SDMD pilot digitisation and trajectory evidence"**,
+parent issue #680. The phase should:
 
 1. Digitise the public `fdin`/`fdip` Interior Douglas-fir diagrams into the vector contract and
    have the maintainer review the isopleths; replace the synthetic fixture in the pilot report.

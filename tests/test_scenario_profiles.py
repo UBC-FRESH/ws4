@@ -89,3 +89,24 @@ def test_scenario_profiles_cli_lists_json_and_shell(tmp_path: Path) -> None:
     assert shell.exit_code == 0, shell.output
     assert "export TARGETS=" in shell.stdout
     assert "export ACCOUNTS=feature.total" in shell.stdout
+
+
+def test_profile_execution_resources_are_resolved(tmp_path: Path) -> None:
+    """Optional GPU execution resources resolve like the target path."""
+    library = _library(tmp_path)
+    text = library.read_text(encoding="utf-8").replace(
+        "    schedule_out: runtime/base.csv\n",
+        "    schedule_out: runtime/base.csv\n"
+        "    table: targets.yaml\n"
+        "    factorized: targets.yaml\n"
+        "    factorized_cache: targets.yaml\n"
+        "    cache_dir: .\n"
+        "    seed_schedule: targets.yaml\n",
+    )
+    library.write_text(text, encoding="utf-8")
+    profile = load_profiles(library)["base"]
+    assert profile.table == (tmp_path / "targets.yaml").resolve()
+    assert profile.factorized == (tmp_path / "targets.yaml").resolve()
+    assert profile.factorized_cache == (tmp_path / "targets.yaml").resolve()
+    assert profile.cache_dir == tmp_path.resolve()
+    assert profile.seed_schedule == (tmp_path / "targets.yaml").resolve()

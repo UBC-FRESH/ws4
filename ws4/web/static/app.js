@@ -67,6 +67,53 @@ async function applyProfile() {
   }
 }
 
+async function startProfileRun() {
+  const select = $('profile-select');
+  const button = $('run-profile');
+  const status = $('profile-status');
+  if (!select.value) return;
+  const generations = Number($('profile-generations')?.value || 5000);
+  const years = Number($('run-years')?.value || 200);
+  const seed = Number($('run-seed')?.value || 7);
+  stopRunWatch();
+  button.disabled = true;
+  status.textContent = `starting ${select.value}…`;
+  runWatch = { id: null, timer: null, source: null, started: Date.now(), done: false, islands: 1 };
+  state.live = { active: true, schedule: new Map(), total: 0, display: 'live' };
+  state.layerMode = 'current';
+  state.mapTotals = null;
+  state.runPaused = false;
+  state.history = [];
+  renderLayerTree();
+  resetLiveMap();
+  drawSpark();
+  showRun(`starting profile ${select.value}…`, true);
+  try {
+    const response = await fetch('api/runs', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ profile: select.value, generations, years, seed, population: 64 }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.detail || `profile run failed (${response.status})`);
+    status.textContent = `running ${select.value}`;
+    runWatch.id = payload.id;
+    runWatch.islands = 1;
+    $('start-run').textContent = 'Pause';
+    $('stop-run').hidden = false;
+    pollRun(payload.id);
+    runWatch.timer = setInterval(() => pollRun(payload.id), 2000);
+    openRunStream(payload.id, 1);
+  } catch (error) {
+    state.live.active = false;
+    $('stop-run').hidden = true;
+    status.textContent = `profile run failed: ${error.message}`;
+    showRun(`profile run failed: ${error.message}`, false);
+  } finally {
+    button.disabled = false;
+  }
+}
+
 function coordinates(geometry) {
   if (!geometry) return [];
   if (geometry.type === 'Point') return [geometry.coordinates];
@@ -6606,6 +6653,7 @@ function wireControls() {
   });
   $('save-targets').addEventListener('click', saveTargets);
   $('apply-profile').addEventListener('click', applyProfile);
+  $('run-profile').addEventListener('click', startProfileRun);
   $('target-chart-save').addEventListener('click', saveTargetCharts);
   $('account-search').addEventListener('input', renderAccountTree);
   $('account-multi').addEventListener('change', (event) => {

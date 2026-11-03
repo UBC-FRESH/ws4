@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 import json
 from dataclasses import replace
 from pathlib import Path
@@ -37,6 +38,38 @@ DIAGRAM_PATH = (
     / "idf-dk3-fdi-illustrative.json"
 )
 FIXTURE = Path(__file__).resolve().parent / "fixtures" / "sdmd"
+PILOT_DIAGRAM = (
+    Path(__file__).resolve().parents[1]
+    / "ws4"
+    / "sdmd"
+    / "data"
+    / "sdmd"
+    / "idf-dk3-fdi-natural.json"
+)
+PLI_PLANTED_DIAGRAM = (
+    Path(__file__).resolve().parents[1]
+    / "ws4"
+    / "sdmd"
+    / "data"
+    / "sdmd"
+    / "idf-dk3-pli-planted.json"
+)
+PLI_NATURAL_DIAGRAM = (
+    Path(__file__).resolve().parents[1]
+    / "ws4"
+    / "sdmd"
+    / "data"
+    / "sdmd"
+    / "idf-dk3-pli-natural.json"
+)
+PLANTED_DIAGRAM = (
+    Path(__file__).resolve().parents[1]
+    / "ws4"
+    / "sdmd"
+    / "data"
+    / "sdmd"
+    / "idf-dk3-fdi-planted.json"
+)
 
 
 def _diagram() -> SdmdDiagram:
@@ -478,3 +511,107 @@ def test_build_au_report_requires_coordinate_columns() -> None:
             diagram=_reviewed(_diagram()),
             observed=pd.DataFrame({"age": [10]}),
         )
+
+
+def test_pilot_natural_diagram_is_a_valid_provisional_vector() -> None:
+    """The digitised natural Interior Douglas-fir diagram is complete and reviewed."""
+    diagram = load_diagram(PILOT_DIAGRAM)
+    assert validate_diagram(diagram) == []
+    kinds: dict[str, int] = {}
+    for isopleth in diagram.isopleths:
+        kinds[isopleth.kind] = kinds.get(isopleth.kind, 0) + 1
+    assert kinds == {
+        "top_height": 10,
+        "qmd": 10,
+        "crown_closure": 1,
+        "competition": 1,
+        "self_thinning": 1,
+    }
+    assert diagram.review.status == "reviewed"
+    assert diagram.review.reviewer
+    assert diagram.source.kind == "published"
+    assert "BC-X-360" in diagram.source.citation
+    assert len(diagram.source.citation) > 40
+
+
+def test_pilot_natural_diagram_places_the_density_zones() -> None:
+    """The digitised curves separate understocked, managed, competition, and outside."""
+    diagram = load_diagram(PILOT_DIAGRAM)
+    assert place_point(diagram, 1000.0, 0.01).zone == "understocked"
+    assert place_point(diagram, 500.0, 0.05).zone == "density-management"
+    assert place_point(diagram, 1000.0, 0.2).zone == "competition"
+    assert place_point(diagram, 1000.0, 0.5).zone == "outside"
+
+
+def test_pilot_natural_diagram_is_used_by_a_report() -> None:
+    """The reviewed natural Interior Douglas-fir diagram is accepted by the report path."""
+    diagram = load_diagram(PILOT_DIAGRAM)
+    report = build_au_report(au_id="AU-IDFdk3-FDI", diagram=diagram, observed=_points())
+    assert report.review_status == "reviewed"
+
+
+def test_pilot_planted_diagram_is_a_valid_provisional_vector() -> None:
+    """The planted Interior Douglas-fir diagram is structurally complete and reviewed."""
+    diagram = load_diagram(PLANTED_DIAGRAM)
+    assert validate_diagram(diagram) == []
+    kinds: dict[str, int] = {}
+    for isopleth in diagram.isopleths:
+        kinds[isopleth.kind] = kinds.get(isopleth.kind, 0) + 1
+    assert kinds["top_height"] == 10
+    assert kinds["qmd"] == 9
+    assert kinds["crown_closure"] == 1
+    assert kinds["competition"] == 1
+    assert kinds["self_thinning"] == 1
+    assert diagram.review.status == "reviewed"
+    assert diagram.review.reviewer
+    assert "planted" in diagram.source.citation
+
+
+def test_pilot_planted_diagram_places_a_managed_point() -> None:
+    """The planted curves separate a managed point from an understocked one."""
+    diagram = load_diagram(PLANTED_DIAGRAM)
+    assert place_point(diagram, 1000.0, 0.3).zone == "density-management"
+    assert place_point(diagram, 1000.0, 0.02).zone == "understocked"
+
+
+def test_lodgepole_planted_diagram_is_complete_and_valid() -> None:
+    """The public planted lodgepole pine PDF yields the required curve families."""
+    diagram = load_diagram(PLI_PLANTED_DIAGRAM)
+    assert diagram.species_group == "PLI"
+    assert diagram.source.version == "1.20"
+    assert validate_diagram(diagram) == []
+    top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
+    qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
+    assert top == [6, 10, 14, 18, 22, 26, 30]
+    assert qmd == [10, 15, 20, 25, 30, 35, 40]
+    boundaries = [
+        item.kind
+        for item in diagram.isopleths
+        if item.kind in {"crown_closure", "competition", "self_thinning"}
+    ]
+    assert sorted(boundaries) == ["competition", "crown_closure", "self_thinning"]
+    placement = place_point(diagram, 1370.0, 0.184445)
+    assert placement.zone == "density-management"
+
+
+def test_lodgepole_natural_diagram_is_complete_and_valid() -> None:
+    """The public natural lodgepole pine PDF yields the required curve families."""
+    diagram = load_diagram(PLI_NATURAL_DIAGRAM)
+    assert diagram.species_group == "PLI"
+    assert diagram.source.version == "1.20"
+    assert validate_diagram(diagram) == []
+    top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
+    qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
+    assert top == [6, 10, 14, 18, 22, 26, 30, 34]
+    assert qmd == [10, 15, 20, 25, 30, 35, 40]
+    placement = place_point(diagram, 1370.0, 0.184445)
+    assert placement.zone == "competition"
+
+
+def test_fdin_crown_closure_is_monotone_and_truncated() -> None:
+    """The fdin closure ends before the unresolved high-TPH branch."""
+    diagram = load_diagram(PILOT_DIAGRAM)
+    curve = next(item for item in diagram.isopleths if item.kind == "crown_closure")
+    assert curve.points[-1][0] <= 2951.153
+    values = [point[1] for point in curve.points]
+    assert all(later <= earlier + 1e-6 for earlier, later in itertools.pairwise(values))

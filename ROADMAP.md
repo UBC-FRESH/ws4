@@ -89,7 +89,7 @@ exists and the maintainer approves it.
 | P84 Precompiled scheduling substrate and fast startup | #613 | `feature/p84-incremental-state` | complete |
 | P85 GPU acceleration and interactive target cache | #618 | `feature/p85-gpu-acceleration` | complete |
 | P86 Weighted goal-programming target semantics | #625 | `feature/p86-target-semantics` | pr-open |
-| P87 Stand density management and AU Explorer | #628 | `feature/p87-sdmd-au-explorer` | pr-open |
+| P87 Stand density management and AU Explorer | #628 | `feature/p87-sdmd-au-explorer` | complete |
 | P88 Factorized GPU account search | #637 | `feature/p88-factorized-gpu` | complete |
 | P89 Mixed-target factorized search and live switching | #643 | `feature/p89-mixed-target-search` | pr-open |
 | P90 Forest condition report cards | #650 | `feature/p90-forest-condition-cards` | pr-open |
@@ -97,14 +97,18 @@ exists and the maintainer approves it.
 | P92 Condition-card API | #659 | `feature/p92-condition-card-api` | pr-open |
 | P93 Condition-card Reports UI | #662 | `feature/p93-condition-card-ui` | pr-open |
 | P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
-| P95 Factorized target-cell vectors | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
+| P104 (SDMD pilot) digitisation and trajectory evidence | #680 | `feature/p104-sdmd-pilot` | complete |
+| P95 (factorized vectors) target-cell cache | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
 | P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | pr-open |
 | P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | pr-open |
 | P98 LTSY scenario profile library | #699 | `feature/p98-ltsy-profiles` | pr-open |
 | P99 Scenario profile UI | #704 | `feature/p99-profile-ui` | pr-open |
 | P102 Ask overlay | #709 | `feature/p102-ask-overlay` | pr-open |
+| P103 Profile-aware web runs | #713 | `feature/p103-profile-runs` | pr-open |
+| P105 Profile-run feedback | #720 | `feature/p105-profile-run-feedback` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
+
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2690,7 +2694,9 @@ Acceptance:
 
 Parent issue: #628
 Branch: `feature/p87-sdmd-au-explorer`
-Status: pr-open
+Status: complete
+Closeout: pull request #658 squash-merged as `d650b11`; the report is
+`notes/reports/p87-closeout.md`.
 Plan: `notes/plans/ws4-sdmd-au-explorer.md`
 Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
 
@@ -2736,7 +2742,7 @@ constraints. The SDMD is a diagnostic and constraint layer, not a growth model.
   are complete; rejecting a trajectory outside the allowed SDMD zones and a cap across blocks in
   one AU need per-track trajectories and AU state, and are deferred with that reason.
   - [x] Filter regimes and enforce entry, interval, and removal rules.
-  - [ ] Reject trajectories outside the allowed SDMD zones (deferred: no per-track trajectory table).
+  - [x] Reject trajectories outside the allowed SDMD zones (deferred to P95.3: no per-track trajectory table in P87).
   - [x] Measure and record the option-space reduction.
 - [x] P87.8 Provenance, docs, and closeout (#636)
   - [x] Run the eight validation gates.
@@ -2942,185 +2948,6 @@ Acceptance:
 - A base LTSY formulation is recommended with caveats.
 - Dashboard green.
 
-## Detailed Next Steps Notes
-
-1. Phase 0 is complete: pull request #8 squash-merged as `97330a8`, the branch deleted, and parent
-   issue #1 closed. The close-out report is `notes/reports/p0-closeout.md`.
-2. Phase 1 is complete: pull request #14 squash-merged as `a3d182a`, the branch deleted, and parent
-   issue #10 closed. The close-out report is `notes/reports/p1-closeout.md`.
-3. Phase 2 is complete: pull request #25 squash-merged as `27b6915`, the branch deleted, and parent
-   issue #15 closed. The close-out report is `notes/reports/p2-closeout.md`. Five items are deferred and
-   listed in the Phase 2 section and tracked in `notes/backlog.md`.
-4. P2 builds the model and the optimization stack. The stack generalizes the lab's FHOPS toolkit into a
-   shared solver core; the execution substrate targets the 72-core host and the GPU. See
-   `notes/design/ws4-optimization-stack.md` and `notes/design/ws4-matrix-builder-and-interop.md`.
-5. Phase 3 is complete: pull request #35 squash-merged as `a8dc018`, the branch deleted, and parent
-   issue #26 closed. The close-out report is `notes/reports/p3-closeout.md`, and the verification report
-   is `notes/reports/p3-verify.md`.
-6. Phase 4 is complete: pull request #43 squash-merged as `d8ecd72`, the branch deleted, and parent
-   issue #36 closed. The annotated tag `v0.1.0` was created and pushed, and the GitHub release
-   `v0.1.0` published the sdist and the wheel. The docs site and the published artifact were verified
-   (P4.4, P4.6). The close-out report is `notes/reports/p4-closeout.md`.
-7. Performance is the next major effort, **after** the phase 4 initial release. The release is
-   functionally complete but slow on space-and-roads workloads (routing, patch accounts, edge contrast,
-   and core area run inside the optimizer objective). The plan — profiling, bottleneck map, targets, and
-   the ordered work packages — is `notes/design/ws4-performance.md`. The implementation is deliberately
-   deferred: no optimization work lands before the release merges.
-8. Phase 5 is complete: pull request #51 squash-merged as `a8cb148`, the branch deleted, and parent
-   issue #44 closed. The close-out report is `notes/reports/p5-closeout.md`.
-9. Phase 6 (Performance and scalability) is active on `feature/p6-performance`, parent issue #60, with
-   eight work packages (#61 to #68) from the plan in `notes/design/ws4-performance.md`: the benchmark
-   harness and baseline, route and simulation quick wins, a vectorized simulator core, spatial
-   precompute and incremental metrics, incremental objective evaluation, solvers at scale, native
-   kernels, and the guardrails.
-
-10. Phase 6 is complete: pull request #81 squash-merged as `f5d6f27`, the branch deleted, and parent
-    issue #60 closed. The close-out report is `notes/reports/p6-closeout.md`, and its acceptance
-    evidence is the C5 benchmark, the incremental move cost, and the island scaling recorded there.
-    Phase 7 (Parity and the analyst workflow) is active on `feature/p7-parity`, parent issue #82, with
-    five tasks (#83 to #87): the command-line gaps, the `threads` setting and a scaling re-measurement,
-    a sample estate, the missing notebooks and a concepts section, and patch performance under a dense
-    harvest.
-
-11. Phase 7 is complete: pull request #89 squash-merged as `1dc2c97`, the branch deleted, and parent
-    issue #82 closed. The close-out report is `notes/reports/p7-closeout.md`. Its most valuable result
-    was not a feature: shipping the sample estate exposed that `Optimizer.run` replayed its incumbent
-    without passing the patch accounts, so a patch target was reported as a zero share carrying its
-    whole penalty while the summary's own objective was zero — the search had been right. Phase 8
-    (Verify the replacement claim) is active on `feature/p8-verify`, parent issue #90, with four tasks
-    (#91 to #94): a parity harness against the reference outputs, the C5 results reproduced from
-    documented inputs, the criterion-series and patch-state performance lever P7.5 named, and island
-    scaling on a host whose load is recorded.
-
-12. Phase 8 is complete: pull request #96 squash-merged as `e8b5248`, the branch deleted, and parent
-    issue #90 closed. The close-out report is `notes/reports/p8-closeout.md`, and its acceptance
-    evidence is the routing parity comparison (no differences in 37,701 comparisons against the
-    reference's own per-node haul costs), the C5 figures reproduced from documented commands, the
-    criterion series made 29% cheaper, and island scaling re-measured at a recorded load with its cause
-    measured as the memory hierarchy. **#95 was deferred to Phase 9** rather than holding the phase open
-    on an export from a licensed Windows run, and is renumbered P9.5 as a sub-issue of the new parent.
-    Phase 9 (Spatial performance and memory) is active on `feature/p9-memory`, parent issue #97, with
-    five tasks (#98 to #101 and #95).
-
-13. Phase 9 is active on `feature/p9-memory`, parent issue #97: #98 to #101 are complete, #102 (the
-    type gate) landed while #95 waits on the Windows export, and **#103 (growth parity against the
-    reference's own yields) is next** — the reference ships its yield table, so growth can be checked
-    without a licensed machine, and it narrows what the accounts comparison can mean.
-
-    Requested while waiting, in order, after #103: **an API-first notebook** (all seven examples are
-    CLI-first, so the programmatic audience is not yet first-class in the examples gallery), and then
-    **capability work from the backlog's `partial` items** (succession and `produce` semantics,
-    legacy-ingestion coverage, account reports). Both are outside this phase's subject — spatial
-    performance and memory — so they are recorded here as planned and are launched as their own phase
-    rather than folded into P9.
-
-14. Phase 9 is **held open only for P9.5**: every other task in it is complete and closed (#98-#103),
-    and #95 waits on an export from a licensed Windows run of the reference. Rather than leave the
-    waiting time unused, and rather than widen P9's subject, the requested documentation work is its own
-    phase: **P10 (Documentation and the API-first workflow)**, parent issue #104, branch
-    `feature/p10-docs-api`, tasks #105-#107. The remaining backlog capability work — succession and
-    `produce` semantics, legacy-ingestion coverage, account reports — is the phase recorded after it.
-
-15. Phase 10 is complete: pull request #109 squash-merged as `b512cd9`, the branch deleted, and parent
-    issue #104 closed. It delivered the library-path notebook the gallery was missing, a check that
-    re-runs every example and reports output that has drifted from what is committed (its first three CI
-    runs each found a real defect), path labels on every example, and the fix for a report that priced a
-    periodic target from a single year — found by writing the notebook. Its pull request was stacked on
-    `feature/p9-memory` and merged there, because Phase 9 branched it and Phase 9's own close-out has not
-    run yet; the two phases now reach `main` together. Phase 9's remaining work is closed except its
-    close-out, and the next phase is the derived targets the accounts comparison leaves out — the
-    reference's ratios, flow constraints and patch-size distributions.
-
-16. Phase 9 is complete: pull request #111 squash-merged as `e48c308`, the branch deleted, and parent
-    issue #97 closed. It landed with Phase 10, which had been stacked on its branch and merged into it
-    (`b512cd9`) — the two phases reached `main` together, as approved. Its close-out report is
-    `notes/reports/p9-closeout.md`; its acceptance evidence is the shared-dataset attempt measured and
-    reverted, island scaling reproducing P8.4 at a recorded load, the patch-state construction 89%
-    cheaper and the curve gather 24% cheaper, the type gate widened to the package, and **the accounts
-    comparison passing on both 2026 scenarios — 1,323 account-period values each** — which is also what
-    found the matrix-builder defect that had been mis-attributing every managed and unmanaged account
-    since the 2019 sample. Phase 11 (The derived targets and the sample's own files) is active on
-    `feature/p11-derived-targets`, parent issue #112, with six tasks (#113 to #118).
-
-17. Phase 11 is complete: pull request #119 squash-merged as `0d34412`, the branch deleted, and parent
-    issue #112 closed. Its close-out report is `notes/reports/p11-closeout.md`; its acceptance evidence is
-    the period convention matched to the reference's (products were 24% low and features ten times high
-    before it), the flow constraints negotiated and their reporting bug closed, **routing parity on all
-    25,134 node-and-mill pairs** of the 2026 sample, a patch family compared over 630 cells across six
-    quantities, 959 yield-curve points reproduced from either vintage's shape, and two WS4 defects fixed
-    along the way — the matrix builder's track attribution and road maintenance charged per routed flow
-    rather than once per used road. Three capabilities it could not reach are named with measurements and
-    are the substance of Phase 12 (**Spatial decision match**), active on
-    `feature/p12-spatial-decisions`, parent issue #120, with six tasks (#121 to #126).
-
-18. Phase 12 is complete: pull request #127 squash-merged as `35e96a9`, the branch deleted, and parent
-    issue #120 closed. Its close-out report is `notes/reports/p12-closeout.md`; its acceptance evidence is
-    the destination decisions compared block-period by block-period for the first time (the reference's
-    splits read from its own model, deciduous matching to **4 units in 2.78 million** and conifer to
-    **91.7%** of block-periods), the route report folded into the model's periods and written per
-    destination, `period_width` wired through at last, and a parity mode that names its one deliberate
-    divergence and measures it (**+4.2%**, **+42.4%** and **×5.24** of parity). Four things were refused
-    or limited with the measurement that says why — a product patch criterion whose values land ten years
-    late, the attractor, the patch components, and the single route-report column `LENGTH` — and two more
-    WS4 defects were found on the way: **27 products were being routed to the mills as wood**, and road
-    maintenance was charged 7.0× in the route accounts of what the report charged. The deferred items are
-    triaged in `notes/backlog.md` and are the subject of Phase 13.
-19. Phase 15 is complete: pull request #139 squash-merged as `f22a026`, the branch deleted, and parent
-    issue #138 closed. Its close-out report is `notes/reports/p15-closeout.md`. The acceptance evidence
-    is the synthetic oracle (a full-span band cuts the 490 ha lattice to 210 ha, a partial band leaves
-    450 ha, and the patch account cannot rank the two full bands) and the TSA23 bridge instance, where
-    the **compartment** reading reproduced the fire ranking — largest 82,800 / 104,600 / 187,173 ha and
-    area-weighted mean 25,675 / 31,604 / 46,419 ha against 19,640 / 19,870 / 20,298 ha burned — after
-    the phase's first, **directed** definition was measured to read a boundary corridor (3,390.6 ha
-    identical for all three patterns) and to reverse the mean. The account is wired into a run and the
-    optimizer and documented in `docs/reference/spatial.rst`. Four limits are recorded rather than
-    claimed: the bridge treats 177,088 ha of whole blocks against WS4's ~46,600 ha of managed fragments;
-    the fire spread is 3% on one seed; the ordering holds from a 60° to a 90° cone and flips at 45°; and
-    the FT product's curve still reads 4.0. Those are the subject of the proposed P16 (the bridge at the
-    same footprint, the load-time 4× check, and the account's final shape).
-20. Phase 14 is complete: pull requests #135 (`809cc1d`) and #137 (`cc37fde`) merged, and parent issue
-    #133 closed. Its close-out report is `notes/reports/p14-closeout.md`. The criteria that the phase
-    had deferred are now measured on the TSA23 instance: with `--seed-greedy` the run reaches **penalty
-    0.00** at **$199,999,193** against the $200,000,000 ceiling (9,999.96 ha treated), where unseeded it
-    stops at **15,758.97**; the corrected five-year targets, both bounds on the cost account, reach
-    **0.00** as well. Both seeded runs report `time_limit_reached: false`, so the budget did not cut
-    them. The v1 floor is read through a dataset curve that reports 4× the treated hectares; that is a
-    compile defect, recorded in the report and left to P16.2's load-time guard.
-21. Phase 16 is complete: pull request #142 (`P16.2`) merged as `8f0f6d4`, the documentation pull request
-    that carries this note and the reports merged, and parent issue #141 closed. The matched-footprint
-    rerun (P16.1) is a **negative** result: at the ~54,000 ha WS4 can treat, the fire model's ranking is
-    not stable across five seeds (mean order clumped < random < barrier, the reverse of the published
-    order, with a 0.38% gap against a 15% seed range), so the P15 bridge validation is withdrawn and
-    the account stands as a fragmentation metric, not a fire-response proxy. P16.2 fixed the real 4×
-    cause — 1,515,465 exact duplicate product rows, not a 4.0 curve — in the builder and in the loader
-    warning. Reports: `notes/reports/p16-bridge-matched.md` and `notes/reports/p16-closeout.md`.
-22. Phase 13 is complete: parent issue #128 closed. P13.1 and P13.2 were merged earlier (#130, #132);
-    the two items that remained — what the route report's `LENGTH` counts and its distance unit — were
-    resolved by P17: `LENGTH` is the **distinct road used in the period, counted once**, and
-    `AVERAGEHAULDIST` is reported in kilometres, the reference's unit. Patch membership and the
-    reference's per-segment road construction remain named as unverifiable/not required. Report:
-    `notes/reports/p13-closeout.md`.
-23. Phase 17 is complete: parent issue #145 closed. Pull requests #147 (opened roads), #148 (period
-    `LENGTH`), #149 (period maintenance) and the report pull request merged. The accounting definitions
-    now match the reference — `LENGTH` 0.77×, maintenance 0.93×, volume 1.00× — after two period-quantity
-    defects were found and fixed (annual distinct lengths summed; maintenance charged per year). The
-    remaining difference is a **model-objective** one, named: the reference builds 1.9× more road at the
-    same cost per metre and hauls 22% farther at 0.46× the cost per unit-km, because its solve chooses
-    the road set and the assignment jointly. Reports: `p17-opened-roads.md`, `p17-tradeoff.md`,
-    `p17-closeout.md`. Next: P18.
-24. Phase 87 (Stand density management and AU Explorer) was launched on
-    `feature/p87-sdmd-au-explorer`, parent issue #628, with tasks #629 to #636. The maintainer
-    requested it directly alongside other parallel expansion sessions, so it starts from `main`
-    while Phase 86 is `pr-open`. The plan is `notes/plans/ws4-sdmd-au-explorer.md`; the layer is a
-    diagnostic and constraint layer (ADR 0013), not a growth model. P87.1 was the first bounded
-    move: the schema, the ADR, a two-AU fixture, and tests, with no ingestion, UI, or solver work.
-25. Phase 87 is `pr-open`: pull request #658 queues the SDMD and AU Explorer phase, with the
-    close-out report in `notes/reports/p87-closeout.md`. The fixture validation warns rather
-    than fails (provisional diagram, no supplied initial volume, one extrapolated demo path);
-    the 863 m3/ha gate fails against an 800 limit and 1,173 m3/ha is flagged above 1,133.8.
-    Trajectory-zone rejection and a cap across blocks in one AU are deferred with the reasons
-    in #635. Next: approve the close-out, then launch the next free phase (P95 today; P91-P94 are taken).
-
 ## Phase 95: Factorized target-cell vectors
 
 Parent issue: #675
@@ -3319,3 +3146,297 @@ Acceptance:
 - Existing chat API/session behavior remains intact.
 - Dashboard green.
 
+## Phase 103: Profile-aware web runs
+
+Parent issue: #713
+Branch: `feature/p103-profile-runs`
+Status: pr-open
+Report: `notes/reports/tsa24-profile-runs.md`
+PR: #717
+
+Goal: let the web UI launch a named factorized GPU profile through the existing run
+status/control/stream contract.
+
+- [x] P103.1 Add profile execution resources and the GPU worker (#714)
+  - [x] Resolve table/factorized/cache/seed resources
+  - [x] Run GenomePopulation with exact replay
+  - [x] Write telemetry, control, schedule, and summary
+- [x] P103.2 Launch profile runs from the web UI (#715)
+  - [x] Add the API profile branch
+  - [x] Add Generations and Run profile controls
+  - [x] Reuse the existing status/stream contract
+- [x] P103.3 Test, record, and close out (#716)
+
+Acceptance:
+
+- A profile run launches the GPU worker.
+- Exact replay is recorded in the summary.
+- The web UI can start and follow the run.
+- Dashboard green.
+
+## Phase 104: SDMD pilot digitisation and trajectory evidence
+
+Parent issue: #680
+Branch: `feature/p104-sdmd-pilot`
+Status: complete
+Merge commit: `e5c4e9c`
+Plan: `notes/reports/p87-closeout.md`, section 6
+Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
+
+Goal: replace the synthetic SDMD fixture with reviewed vector digitisation of the
+public Interior Douglas-fir diagrams, generate real FVS-BC and PSP trajectories for
+the pilot AUs, enforce the two solver rules deferred from P87, and close with the
+pilot AU report and validation evidence.
+
+- [x] P104.1 Digitise fdin/fdip and replace the synthetic pilot fixture (#681)
+  - [x] Extract and order the `fdin` isopleths.
+  - [x] Extract and order the `fdip` isopleths.
+  - [x] Produce the curve-review packet with overlay figures and a checklist.
+  - [x] Record the maintainer's review, reviewer, and review date.
+  - [x] Add the pilot diagram file, fixture, tests, and method note.
+  - [x] Digitise the natural and planted lodgepole pine `pln`/`plp` diagrams.
+- [x] P104.2 Generate FVS-BC and PSP trajectories for the pilot AUs (#682)
+  - [x] Run the no-cut and CT60 FVS-BC scenarios.
+  - [x] Add the PSP observed check.
+  - [x] Store paths with source metadata and assess them.
+  - [x] Run the trajectory and physical gates.
+  - [x] Build the real TSA 23 IDFdk3 PSP extract and store it in
+    `ws4/sdmd/data/pilot-tsa23-idfdk3/`.
+  - [x] Run one real no-cut and CT60 FVS-BC path from that tree list.
+  - [x] Mine the public CCISS tables for species traits, IDFdk3 stocking,
+    feasibility, site index, and a BEC crosswalk; record the derived extracts and
+    limits.
+  - [x] Run the FVS scenarios for a representative AU-level tree list and the
+    remaining pilot species.
+- [x] P104.3 Enforce the SDMD-zone rule and the per-AU entry cap (#683)
+  - [x] Load per-track trajectories into the filter.
+  - [x] Reject a regime outside the required zone.
+  - [x] Add the cross-block `SdmdScheduleGuard` and its negative tests.
+  - [x] Wire the guard into the optimizer move loop and record the rejection count.
+- [x] P104.4 Pilot report, validation, and closeout (#684)
+  - [x] Run the eight gates on both pilot AUs (both `warn`, method-only).
+  - [x] Record the option reduction: 7 → 6 regimes / 11 → 7 entries for both AUs.
+  - [x] Write the pilot evidence report in `notes/reports/p95-pilot-evidence.md`.
+  - [x] Define `AU-IDFdk3-TSA23-FDI` and replace the synthetic FDI PSP/FVS input.
+  - [x] Define `AU-IDFdk3-TSA23-PLI` with the natural lodgepole pine diagram and
+    real PSP/FVS evidence.
+  - [x] Use a representative AU-level FVS tree list for both species.
+  - [x] Write the close-out report and queue the pull request.
+  - [x] Wait for maintainer approval.
+
+Acceptance:
+
+- The pilot uses reviewed vector isopleths from a catalogued public source.
+- Every stored trajectory is monotone, labelled, and assessed.
+- A regime outside the required zone, or an AU over its entry cap, is infeasible.
+- The eight gates pass or warn with named, acceptable reasons on the pilot data.
+- `python scripts/dashboard.py` is green.
+- The phase closes with a report and maintainer approval.
+
+
+## Phase 105: Profile-run feedback
+
+Parent issue: #720
+Branch: `feature/p105-profile-run-feedback`
+Status: pr-open
+Report: `notes/reports/tsa24-profile-run-feedback.md`
+PR: #728
+
+Goal: make profile-aware GPU runs visible in the normal web run view and produce account values.
+
+- [x] P105.1 Emit bounded schedule diffs (#721)
+  - [x] Reset with the first schedule event
+  - [x] Send only changed blocks afterward
+  - [x] Keep the cadence bounded
+- [x] P105.2 Replay final account values and close out (#722)
+
+Acceptance:
+
+- Profile runs emit live schedule telemetry.
+- Final replay writes account values and reports.
+- Exact summary and dashboard are green.
+
+## Detailed Next Steps Notes
+
+1. Phase 0 is complete: pull request #8 squash-merged as `97330a8`, the branch deleted, and parent
+   issue #1 closed. The close-out report is `notes/reports/p0-closeout.md`.
+2. Phase 1 is complete: pull request #14 squash-merged as `a3d182a`, the branch deleted, and parent
+   issue #10 closed. The close-out report is `notes/reports/p1-closeout.md`.
+3. Phase 2 is complete: pull request #25 squash-merged as `27b6915`, the branch deleted, and parent
+   issue #15 closed. The close-out report is `notes/reports/p2-closeout.md`. Five items are deferred and
+   listed in the Phase 2 section and tracked in `notes/backlog.md`.
+4. P2 builds the model and the optimization stack. The stack generalizes the lab's FHOPS toolkit into a
+   shared solver core; the execution substrate targets the 72-core host and the GPU. See
+   `notes/design/ws4-optimization-stack.md` and `notes/design/ws4-matrix-builder-and-interop.md`.
+5. Phase 3 is complete: pull request #35 squash-merged as `a8dc018`, the branch deleted, and parent
+   issue #26 closed. The close-out report is `notes/reports/p3-closeout.md`, and the verification report
+   is `notes/reports/p3-verify.md`.
+6. Phase 4 is complete: pull request #43 squash-merged as `d8ecd72`, the branch deleted, and parent
+   issue #36 closed. The annotated tag `v0.1.0` was created and pushed, and the GitHub release
+   `v0.1.0` published the sdist and the wheel. The docs site and the published artifact were verified
+   (P4.4, P4.6). The close-out report is `notes/reports/p4-closeout.md`.
+7. Performance is the next major effort, **after** the phase 4 initial release. The release is
+   functionally complete but slow on space-and-roads workloads (routing, patch accounts, edge contrast,
+   and core area run inside the optimizer objective). The plan — profiling, bottleneck map, targets, and
+   the ordered work packages — is `notes/design/ws4-performance.md`. The implementation is deliberately
+   deferred: no optimization work lands before the release merges.
+8. Phase 5 is complete: pull request #51 squash-merged as `a8cb148`, the branch deleted, and parent
+   issue #44 closed. The close-out report is `notes/reports/p5-closeout.md`.
+9. Phase 6 (Performance and scalability) is active on `feature/p6-performance`, parent issue #60, with
+   eight work packages (#61 to #68) from the plan in `notes/design/ws4-performance.md`: the benchmark
+   harness and baseline, route and simulation quick wins, a vectorized simulator core, spatial
+   precompute and incremental metrics, incremental objective evaluation, solvers at scale, native
+   kernels, and the guardrails.
+
+10. Phase 6 is complete: pull request #81 squash-merged as `f5d6f27`, the branch deleted, and parent
+    issue #60 closed. The close-out report is `notes/reports/p6-closeout.md`, and its acceptance
+    evidence is the C5 benchmark, the incremental move cost, and the island scaling recorded there.
+    Phase 7 (Parity and the analyst workflow) is active on `feature/p7-parity`, parent issue #82, with
+    five tasks (#83 to #87): the command-line gaps, the `threads` setting and a scaling re-measurement,
+    a sample estate, the missing notebooks and a concepts section, and patch performance under a dense
+    harvest.
+
+11. Phase 7 is complete: pull request #89 squash-merged as `1dc2c97`, the branch deleted, and parent
+    issue #82 closed. The close-out report is `notes/reports/p7-closeout.md`. Its most valuable result
+    was not a feature: shipping the sample estate exposed that `Optimizer.run` replayed its incumbent
+    without passing the patch accounts, so a patch target was reported as a zero share carrying its
+    whole penalty while the summary's own objective was zero — the search had been right. Phase 8
+    (Verify the replacement claim) is active on `feature/p8-verify`, parent issue #90, with four tasks
+    (#91 to #94): a parity harness against the reference outputs, the C5 results reproduced from
+    documented inputs, the criterion-series and patch-state performance lever P7.5 named, and island
+    scaling on a host whose load is recorded.
+
+12. Phase 8 is complete: pull request #96 squash-merged as `e8b5248`, the branch deleted, and parent
+    issue #90 closed. The close-out report is `notes/reports/p8-closeout.md`, and its acceptance
+    evidence is the routing parity comparison (no differences in 37,701 comparisons against the
+    reference's own per-node haul costs), the C5 figures reproduced from documented commands, the
+    criterion series made 29% cheaper, and island scaling re-measured at a recorded load with its cause
+    measured as the memory hierarchy. **#95 was deferred to Phase 9** rather than holding the phase open
+    on an export from a licensed Windows run, and is renumbered P9.5 as a sub-issue of the new parent.
+    Phase 9 (Spatial performance and memory) is active on `feature/p9-memory`, parent issue #97, with
+    five tasks (#98 to #101 and #95).
+
+13. Phase 9 is active on `feature/p9-memory`, parent issue #97: #98 to #101 are complete, #102 (the
+    type gate) landed while #95 waits on the Windows export, and **#103 (growth parity against the
+    reference's own yields) is next** — the reference ships its yield table, so growth can be checked
+    without a licensed machine, and it narrows what the accounts comparison can mean.
+
+    Requested while waiting, in order, after #103: **an API-first notebook** (all seven examples are
+    CLI-first, so the programmatic audience is not yet first-class in the examples gallery), and then
+    **capability work from the backlog's `partial` items** (succession and `produce` semantics,
+    legacy-ingestion coverage, account reports). Both are outside this phase's subject — spatial
+    performance and memory — so they are recorded here as planned and are launched as their own phase
+    rather than folded into P9.
+
+14. Phase 9 is **held open only for P9.5**: every other task in it is complete and closed (#98-#103),
+    and #95 waits on an export from a licensed Windows run of the reference. Rather than leave the
+    waiting time unused, and rather than widen P9's subject, the requested documentation work is its own
+    phase: **P10 (Documentation and the API-first workflow)**, parent issue #104, branch
+    `feature/p10-docs-api`, tasks #105-#107. The remaining backlog capability work — succession and
+    `produce` semantics, legacy-ingestion coverage, account reports — is the phase recorded after it.
+
+15. Phase 10 is complete: pull request #109 squash-merged as `b512cd9`, the branch deleted, and parent
+    issue #104 closed. It delivered the library-path notebook the gallery was missing, a check that
+    re-runs every example and reports output that has drifted from what is committed (its first three CI
+    runs each found a real defect), path labels on every example, and the fix for a report that priced a
+    periodic target from a single year — found by writing the notebook. Its pull request was stacked on
+    `feature/p9-memory` and merged there, because Phase 9 branched it and Phase 9's own close-out has not
+    run yet; the two phases now reach `main` together. Phase 9's remaining work is closed except its
+    close-out, and the next phase is the derived targets the accounts comparison leaves out — the
+    reference's ratios, flow constraints and patch-size distributions.
+
+16. Phase 9 is complete: pull request #111 squash-merged as `e48c308`, the branch deleted, and parent
+    issue #97 closed. It landed with Phase 10, which had been stacked on its branch and merged into it
+    (`b512cd9`) — the two phases reached `main` together, as approved. Its close-out report is
+    `notes/reports/p9-closeout.md`; its acceptance evidence is the shared-dataset attempt measured and
+    reverted, island scaling reproducing P8.4 at a recorded load, the patch-state construction 89%
+    cheaper and the curve gather 24% cheaper, the type gate widened to the package, and **the accounts
+    comparison passing on both 2026 scenarios — 1,323 account-period values each** — which is also what
+    found the matrix-builder defect that had been mis-attributing every managed and unmanaged account
+    since the 2019 sample. Phase 11 (The derived targets and the sample's own files) is active on
+    `feature/p11-derived-targets`, parent issue #112, with six tasks (#113 to #118).
+
+17. Phase 11 is complete: pull request #119 squash-merged as `0d34412`, the branch deleted, and parent
+    issue #112 closed. Its close-out report is `notes/reports/p11-closeout.md`; its acceptance evidence is
+    the period convention matched to the reference's (products were 24% low and features ten times high
+    before it), the flow constraints negotiated and their reporting bug closed, **routing parity on all
+    25,134 node-and-mill pairs** of the 2026 sample, a patch family compared over 630 cells across six
+    quantities, 959 yield-curve points reproduced from either vintage's shape, and two WS4 defects fixed
+    along the way — the matrix builder's track attribution and road maintenance charged per routed flow
+    rather than once per used road. Three capabilities it could not reach are named with measurements and
+    are the substance of Phase 12 (**Spatial decision match**), active on
+    `feature/p12-spatial-decisions`, parent issue #120, with six tasks (#121 to #126).
+
+18. Phase 12 is complete: pull request #127 squash-merged as `35e96a9`, the branch deleted, and parent
+    issue #120 closed. Its close-out report is `notes/reports/p12-closeout.md`; its acceptance evidence is
+    the destination decisions compared block-period by block-period for the first time (the reference's
+    splits read from its own model, deciduous matching to **4 units in 2.78 million** and conifer to
+    **91.7%** of block-periods), the route report folded into the model's periods and written per
+    destination, `period_width` wired through at last, and a parity mode that names its one deliberate
+    divergence and measures it (**+4.2%**, **+42.4%** and **×5.24** of parity). Four things were refused
+    or limited with the measurement that says why — a product patch criterion whose values land ten years
+    late, the attractor, the patch components, and the single route-report column `LENGTH` — and two more
+    WS4 defects were found on the way: **27 products were being routed to the mills as wood**, and road
+    maintenance was charged 7.0× in the route accounts of what the report charged. The deferred items are
+    triaged in `notes/backlog.md` and are the subject of Phase 13.
+19. Phase 15 is complete: pull request #139 squash-merged as `f22a026`, the branch deleted, and parent
+    issue #138 closed. Its close-out report is `notes/reports/p15-closeout.md`. The acceptance evidence
+    is the synthetic oracle (a full-span band cuts the 490 ha lattice to 210 ha, a partial band leaves
+    450 ha, and the patch account cannot rank the two full bands) and the TSA23 bridge instance, where
+    the **compartment** reading reproduced the fire ranking — largest 82,800 / 104,600 / 187,173 ha and
+    area-weighted mean 25,675 / 31,604 / 46,419 ha against 19,640 / 19,870 / 20,298 ha burned — after
+    the phase's first, **directed** definition was measured to read a boundary corridor (3,390.6 ha
+    identical for all three patterns) and to reverse the mean. The account is wired into a run and the
+    optimizer and documented in `docs/reference/spatial.rst`. Four limits are recorded rather than
+    claimed: the bridge treats 177,088 ha of whole blocks against WS4's ~46,600 ha of managed fragments;
+    the fire spread is 3% on one seed; the ordering holds from a 60° to a 90° cone and flips at 45°; and
+    the FT product's curve still reads 4.0. Those are the subject of the proposed P16 (the bridge at the
+    same footprint, the load-time 4× check, and the account's final shape).
+20. Phase 14 is complete: pull requests #135 (`809cc1d`) and #137 (`cc37fde`) merged, and parent issue
+    #133 closed. Its close-out report is `notes/reports/p14-closeout.md`. The criteria that the phase
+    had deferred are now measured on the TSA23 instance: with `--seed-greedy` the run reaches **penalty
+    0.00** at **$199,999,193** against the $200,000,000 ceiling (9,999.96 ha treated), where unseeded it
+    stops at **15,758.97**; the corrected five-year targets, both bounds on the cost account, reach
+    **0.00** as well. Both seeded runs report `time_limit_reached: false`, so the budget did not cut
+    them. The v1 floor is read through a dataset curve that reports 4× the treated hectares; that is a
+    compile defect, recorded in the report and left to P16.2's load-time guard.
+21. Phase 16 is complete: pull request #142 (`P16.2`) merged as `8f0f6d4`, the documentation pull request
+    that carries this note and the reports merged, and parent issue #141 closed. The matched-footprint
+    rerun (P16.1) is a **negative** result: at the ~54,000 ha WS4 can treat, the fire model's ranking is
+    not stable across five seeds (mean order clumped < random < barrier, the reverse of the published
+    order, with a 0.38% gap against a 15% seed range), so the P15 bridge validation is withdrawn and
+    the account stands as a fragmentation metric, not a fire-response proxy. P16.2 fixed the real 4×
+    cause — 1,515,465 exact duplicate product rows, not a 4.0 curve — in the builder and in the loader
+    warning. Reports: `notes/reports/p16-bridge-matched.md` and `notes/reports/p16-closeout.md`.
+22. Phase 13 is complete: parent issue #128 closed. P13.1 and P13.2 were merged earlier (#130, #132);
+    the two items that remained — what the route report's `LENGTH` counts and its distance unit — were
+    resolved by P17: `LENGTH` is the **distinct road used in the period, counted once**, and
+    `AVERAGEHAULDIST` is reported in kilometres, the reference's unit. Patch membership and the
+    reference's per-segment road construction remain named as unverifiable/not required. Report:
+    `notes/reports/p13-closeout.md`.
+23. Phase 17 is complete: parent issue #145 closed. Pull requests #147 (opened roads), #148 (period
+    `LENGTH`), #149 (period maintenance) and the report pull request merged. The accounting definitions
+    now match the reference — `LENGTH` 0.77×, maintenance 0.93×, volume 1.00× — after two period-quantity
+    defects were found and fixed (annual distinct lengths summed; maintenance charged per year). The
+    remaining difference is a **model-objective** one, named: the reference builds 1.9× more road at the
+    same cost per metre and hauls 22% farther at 0.46× the cost per unit-km, because its solve chooses
+    the road set and the assignment jointly. Reports: `p17-opened-roads.md`, `p17-tradeoff.md`,
+    `p17-closeout.md`. Next: P18.
+24. Phase 87 (Stand density management and AU Explorer) was launched on
+    `feature/p87-sdmd-au-explorer`, parent issue #628, with tasks #629 to #636. The maintainer
+    requested it directly alongside other parallel expansion sessions, so it starts from `main`
+    while Phase 86 is `pr-open`. The plan is `notes/plans/ws4-sdmd-au-explorer.md`; the layer is a
+    diagnostic and constraint layer (ADR 0013), not a growth model. P87.1 was the first bounded
+    move: the schema, the ADR, a two-AU fixture, and tests, with no ingestion, UI, or solver work.
+25. Phase 87 is `pr-open`: pull request #658 queues the SDMD and AU Explorer phase, with the
+    close-out report in `notes/reports/p87-closeout.md`. The fixture validation warns rather
+    than fails (provisional diagram, no supplied initial volume, one extrapolated demo path);
+    the 863 m3/ha gate fails against an 800 limit and 1,173 m3/ha is flagged above 1,133.8.
+    Trajectory-zone rejection and a cap across blocks in one AU are deferred with the reasons
+    in #635. Next: approve the close-out, then launch the next free phase (P95 today; P91-P94 are taken).
+26. Phase 87 is complete: pull request #658 squash-merged as `d650b11`, the branch
+    deleted, and parent issue #628 closed. Main CI runs `41411188534` and
+    `41411188586` on `d650b11` succeeded. Phase 95 (SDMD pilot digitisation and
+    trajectory evidence) is active on `feature/p95-sdmd-pilot`, parent issue #680,
+    with tasks #681 to #684. P104.1 is the first bounded move: digitise `fdin`/`fdip`
+    into reviewed vector isopleths and replace the synthetic pilot fixture.

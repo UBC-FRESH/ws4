@@ -18,6 +18,7 @@ not enforced by this option-space filter; the report states that limit.
 from __future__ import annotations
 
 import itertools
+import json
 import re
 import shutil
 from collections.abc import Mapping, Sequence
@@ -28,7 +29,9 @@ import pandas as pd
 import yaml
 
 from .constraints import AuConstraint, check_regime
+from .diagram import SdmdDiagram, SdmdDiagramError, place_point
 from .regimes import Regime
+from .schema import Problem
 
 TRACK_AU_RE = re.compile(r"AU\(([^)]+)\)")
 TREATMENT_ALIASES: dict[str, str] = {
@@ -162,6 +165,8 @@ def filter_dataset(
     *,
     mapping: SdmdSolverMap | None = None,
     strict: bool = False,
+    diagram: SdmdDiagram | None = None,
+    trajectory_dir: str | Path | None = None,
 ) -> SdmdFilterReport:
     """Write a dataset copy whose treatments obey the AU constraints.
 
@@ -180,6 +185,11 @@ def filter_dataset(
     strict : bool
         Drop a track or treatment that cannot be mapped. Defaults to ``False``, which
         keeps unmapped rows so a dataset without SDMD metadata still runs.
+    diagram : SdmdDiagram, optional
+        The diagram for the required-zone check. The check runs only when a diagram
+        and a trajectory directory are supplied.
+    trajectory_dir : str or Path, optional
+        The directory holding ``<au_id>/<regime_id>.json`` trajectories.
 
     Returns
     -------
@@ -242,6 +252,27 @@ def filter_dataset(
             if findings:
                 reasons.extend(f"{item.code}: {item.message}" for item in findings)
                 continue
+            if constraint.required_sdmd_zone is not None and (
+                diagram is not None or trajectory_dir is not None
+            ):
+                if diagram is None or trajectory_dir is None:
+                    reasons.append("zone rule needs a diagram and a trajectory directory")
+                    continue
+                path = Path(trajectory_dir) / au_id / f"{regime.regime_id}.json"
+                if not path.is_file():
+                    reasons.append(f"no trajectory for {regime.regime_id}")
+                    continue
+                try:
+                    zones = trajectory_zones(diagram, load_trajectory_points(path))
+                except (SdmdDiagramError, ValueError) as error:
+                    reasons.append(f"trajectory {regime.regime_id}: {error}")
+                    continue
+                if constraint.required_sdmd_zone not in zones:
+                    reasons.append(
+                        f"trajectory {regime.regime_id} never reaches "
+                        f"{constraint.required_sdmd_zone}"
+                    )
+                    continue
             begin = int(str(row.begin))
             if not constraint.min_entry_age <= begin <= constraint.max_entry_age:
                 reasons.append(
@@ -301,6 +332,198 @@ def filter_dataset(
         unmapped_treatments=unmapped_treatments,
         dropped=tuple(dropped),
     )
+
+
+class SdmdScheduleGuard:
+    """Check a schedule's per-AU entry cap and interval.
+
+    The guard reads the compiled fragments, tracks, and treatments, maps each block to
+    its AU, and counts the selected entries per AU. It is a schedule guard: call
+    :meth:`check` before accepting a move, or use :meth:`feasible` as a predicate.
+
+    Parameters
+    ----------
+    fragments : pandas.DataFrame
+        The compiled ``fragments`` table.
+    tracks : pandas.DataFrame
+        The compiled ``tracks`` table.
+    treatments : pandas.DataFrame
+        The compiled ``treatments`` table.
+    regimes : sequence of Regime
+        The regime library.
+    constraints : sequence of AuConstraint
+        The AU constraints.
+    mapping : SdmdSolverMap, optional
+        Track and treatment overrides.
+    """
+
+    def __init__(
+        self,
+        fragments: pd.DataFrame,
+        tracks: pd.DataFrame,
+        treatments: pd.DataFrame,
+        regimes: Sequence[Regime],
+        constraints: Sequence[AuConstraint],
+        *,
+        mapping: SdmdSolverMap | None = None,
+    ) -> None:
+        """Build the block-to-track and regime indexes."""
+        if "area_ha" in fragments.columns:
+            chosen = fragments.loc[fragments.groupby("block_id")["area_ha"].idxmax()]
+        else:
+            chosen = fragments.drop_duplicates("block_id")
+        self._block_track = {
+            int(str(row.block_id)): int(str(row.track_id)) for row in chosen.itertuples(index=False)
+        }
+        self._names = {
+            int(str(row.track_id)): str(row.name) for row in tracks.itertuples(index=False)
+        }
+        self._regimes = tuple(regimes)
+        self._constraints = {(item.au_id, item.regime_id): item for item in constraints}
+        self._mapping = mapping or SdmdSolverMap()
+
+    def check(self, schedule: Mapping[int, Sequence[tuple[str, int]]]) -> list[Problem]:
+        """Check a schedule for AU entry caps and intervals.
+
+        Parameters
+        ----------
+        schedule : mapping of int to sequence of (str, int)
+            Block id to its ordered ``(treatment, year)`` entries.
+
+        Returns
+        -------
+        list of Problem
+            One finding per violated AU, or an empty list.
+        """
+        entries: dict[str, list[tuple[int, AuConstraint]]] = {}
+        for block, chain in schedule.items():
+            track = self._block_track.get(int(block))
+            if track is None:
+                continue
+            au_id = _track_au(track, self._names.get(track, ""), self._mapping)
+            if not au_id:
+                continue
+            for label, year in chain:
+                regime = _match_regime(label, self._regimes, self._mapping, au_id)
+                if regime is None:
+                    continue
+                constraint = self._constraints.get((au_id, regime.regime_id))
+                if constraint is None:
+                    continue
+                entries.setdefault(au_id, []).append((int(year), constraint))
+        problems: list[Problem] = []
+        for au_id, selected in entries.items():
+            cap = min(constraint.max_entries for _, constraint in selected)
+            interval = max(constraint.min_interval_years for _, constraint in selected)
+            years = sorted(year for year, _ in selected)
+            if len(years) > cap:
+                problems.append(
+                    Problem(
+                        "SDMD-SCHEDULE-ENTRIES",
+                        au_id,
+                        f"{len(years)} entries exceed the AU cap of {cap}",
+                    )
+                )
+            if any(later - earlier < interval for earlier, later in itertools.pairwise(years)):
+                problems.append(
+                    Problem(
+                        "SDMD-SCHEDULE-INTERVAL",
+                        au_id,
+                        f"entries are closer than {interval} years",
+                    )
+                )
+        return problems
+
+    def feasible(self, schedule: Mapping[int, Sequence[tuple[str, int]]]) -> bool:
+        """Return whether a schedule satisfies the AU guard.
+
+        Parameters
+        ----------
+        schedule : mapping of int to sequence of (str, int)
+            Block id to its ordered entries.
+
+        Returns
+        -------
+        bool
+            ``True`` when :meth:`check` finds nothing.
+        """
+        return not self.check(schedule)
+
+
+def load_trajectory_points(path: str | Path) -> tuple[tuple[float, float], ...]:
+    """Load a trajectory's points from JSON.
+
+    Parameters
+    ----------
+    path : str or Path
+        A trajectory file with a ``points`` list.
+
+    Returns
+    -------
+    tuple of tuple of float
+        The ``(tph, mean_tree_volume_m3)`` points.
+
+    Raises
+    ------
+    ValueError
+        If the file has no usable points list.
+    """
+    raw = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(raw, dict) or not isinstance(raw.get("points"), list):
+        raise ValueError(f"{path} needs a points list")
+    points = tuple(
+        (float(str(point[0])), float(str(point[1])))
+        for point in raw["points"]
+        if isinstance(point, list) and len(point) == 2
+    )
+    if not points:
+        raise ValueError(f"{path} has no points")
+    return points
+
+
+def trajectory_zones(
+    diagram: SdmdDiagram,
+    points: Sequence[tuple[float, float]],
+) -> set[str]:
+    """Return the SDMD zones a trajectory passes through.
+
+    Parameters
+    ----------
+    diagram : SdmdDiagram
+        The diagram.
+    points : sequence of tuple of float
+        The trajectory points.
+
+    Returns
+    -------
+    set of str
+        The distinct zones.
+    """
+    return {place_point(diagram, tph, volume).zone for tph, volume in points}
+
+
+def trajectory_reaches_zone(
+    diagram: SdmdDiagram,
+    points: Sequence[tuple[float, float]],
+    zone: str,
+) -> bool:
+    """Return whether a trajectory reaches an SDMD zone.
+
+    Parameters
+    ----------
+    diagram : SdmdDiagram
+        The diagram.
+    points : sequence of tuple of float
+        The trajectory points.
+    zone : str
+        The required zone.
+
+    Returns
+    -------
+    bool
+        ``True`` when at least one point is in the zone.
+    """
+    return zone in trajectory_zones(diagram, points)
 
 
 def _track_au(track: int, name: str, mapping: SdmdSolverMap) -> str | None:

@@ -3870,6 +3870,135 @@ issue comments.
   the floor only when it becomes binding or after feature pricing is cheaper. Report:
   `notes/reports/tsa24-ltsy-scenario-comparison.md`. Archive:
   `/srv/shared-data/gep/ws4/archive/tsa24-ltsy-scenario-comparison/`.
+- P87 complete: pull request #658 squash-merged as `d650b11`, the branch deleted, and
+  parent issue #628 closed. Main CI runs `41411188534` and `41411188586` succeeded.
+- P95: Launched the SDMD pilot phase on `feature/p95-sdmd-pilot`, parent issue #680,
+  with tasks #681 to #684. P95.1 is the first bounded move: digitise `fdin`/`fdip`
+  into reviewed vector isopleths and replace the synthetic pilot fixture.
+- P95.1: digitised the natural Interior Douglas-fir diagram (`fdin`, version 1.10) into
+  `ws4/sdmd/data/sdmd/idf-dk3-fdi-natural.json`: 10 top-height isopleths, 10 QMD
+  isopleths, crown closure, competition, and self-thinning boundaries, read from the
+  PDF vector paths and calibrated against the printed log axes. Recorded the source
+  SHA-256 and a digitisation catalog entry. The diagram is **provisional**; the
+  maintainer review and the planted `fdip` diagram are still open. Added 4 diagram
+  tests, a source-catalog test, and `notes/reference/bc-sdmd-digitisation.md`.
+- P95.1: digitised the planted Interior Douglas-fir diagram (`fdip`, version 1.10)
+  into `ws4/sdmd/data/sdmd/idf-dk3-fdi-planted.json`: 10 top-height isopleths,
+  9 QMD isopleths, crown closure, competition, and self-thinning. Recorded the source
+  checksum and a second digitisation catalog entry. The planted label offset makes the
+  8-46 m assignment the weakest part; both diagrams remain **provisional** pending the
+  maintainer's review. Added planted diagram tests; the method note records the
+  checklist.
+- P95.2: generated four pilot trajectories with `fresh-fvsbc` (FVS BC variant) for
+  the no-cut and CT60 cases on `AU-IDFdk3-FDI` and `AU-IDFdk3-PLI`. The tree lists are
+  the synthetic fixture, replicated to the stand TPH and split into plots of at most 999
+  trees; CT60 is a `THINBBA` at age 60 removing 60% of basal area. Stored the converted
+  `(TPH, mean tree volume)` paths with source strings and assessed them against the
+  observed envelope: PLI no-cut is inside; the other three are extrapolated. Added 4
+  trajectory tests and `notes/reference/sdmd-pilot-trajectories.md`. These are method
+  runs, not real AU evidence; the PSP observed check remains open.
+- P95.3: added the trajectory-zone rule to the option-space filter and a
+  `SdmdScheduleGuard` for the per-AU entry cap and interval. The filter accepts a
+  diagram and trajectory directory and rejects a regime whose stored path never reaches
+  the required zone; a missing trajectory fails closed. The guard maps blocks to AUs,
+  counts selected entries, and returns entry-cap and interval findings. Added three
+  guard/zone tests and passed the existing solver suite. The optimizer move-loop hook
+  and the before/after benchmark remain open.
+- P95.3: wired the SDMD schedule guard into the optimizer. `OptimizeConfig.sdmd_dir`
+  and `ws4 optimize --sdmd-dir` load the regime and AU constraint tables, build an
+  `SdmdScheduleGuard` over the simulator tables, and set it as the whole-schedule
+  predicate on `ConstraintGuard`. Every move is rejected when it would exceed the
+  per-AU entry cap or minimum interval; an infeasible seed raises. The run summary
+  records `sdmd_guard` and `sdmd_rejected`. Added a guard-hook test, an optimizer
+  integration test, and a CLI test. P95.3 is complete and closed; the summary
+  counter is the enforcement benchmark.
+- P95.2: added the PSP observed check to gate 1. A point must name PSP, be
+  reviewed, match a reviewed PSP plot at its age, and have a tree list; a missing
+  plot or tree list fails the gate, and a synthetic point warns and is excluded
+  from the observed envelope. Gate 4 now builds its envelope from PSP-backed
+  points only. Tests cover the synthetic warning, a missing PSP plot, and an
+  under-supported envelope. The demo store reports 4 PSP-backed plus 1 synthetic
+  point for FDI and 5 PSP-backed points for PLI.
+- P95.4: recorded the pilot evidence. Both AUs run all eight gates and warn:
+  the diagrams are provisional, at least one trajectory leaves the PSP-backed
+  envelope, and no initial volume is supplied. The option reduction is 7 → 6
+  regimes and 11 → 7 entries for FDI, and 6 → 5 regimes and 7 → 6 entries for
+  PLI. The report is `notes/reports/p95-pilot-evidence.md`. Public FAIB PSP
+  header counts show TSA 24 has no IDFdk3 sites (558 sites; SBS 517, ESSF 23,
+  ICH 13, SBPS 5) while TSA 23 has 145. The pilot label is therefore synthetic,
+  and the phase remains open until a real AU is defined and its PSP/FVS input
+  replaces the fixture.
+- P95.2: added the first real pilot AU, `AU-IDFdk3-TSA23-FDI`, in
+  `ws4/sdmd/data/pilot-tsa23-idfdk3/`. It holds 11 reviewed public FAIB PSP
+  points selected from TSA 23 / IDFdk3 / FD-leading sites (ages 52-139), with
+  plot, stand, and live-tree tables derived from the Open Government Licence
+  compilation. The store passes plot support (11 PSP-backed, 0 synthetic),
+  density plausibility, regime completeness, and solver reduction (7 → 6
+  regimes, 11 → 7 entries). It warns on the provisional diagram, the missing
+  initial volume, and two extrapolated FVS paths. The paths come from the real
+  live-tree list of cluster 4024538-PSP1, `fresh-fvsbc` 0.20.0, BC variant,
+  eight cycles, `RANNSEED 1`, with CT60 as `THINBBA` at age 60 and 60% removal.
+  `SOURCE.md` records the source, licence, selection, conversions, and limits.
+  Also made `stands.crown_cover_pct` nullable because the public compilation
+  does not supply it, and corrected the stored FVS source version from 0.1.0 to
+  the actual 0.20.0. Added real-pilot gate and trajectory tests.
+- P95.2: mined the public CCISS repositories for species and BEC evidence.
+  Added derived `tree_species.csv` (37 non-excluded BC species),
+  `species_traits.csv` (six SDMD species), `idfdk3_stocking.csv` (nine site
+  series, target 800-1200 stems/ha, minimum 500-700), and `bec_crosswalk.csv`
+  (183 shared labels, 30 WS4-only, 34 CCISS-only). The key finding is that
+  lodgepole pine is preferred on eight of nine IDFdk3 site series and acceptable
+  on the ninth, which supports a real PLI AU; CCISS has no SDMD isopleths, so the
+  missing `pln` diagram still needs digitisation. The method and limits are in
+  `notes/reference/cciss-data-mining.md`; four contract tests cover the extracts.
+- P95.2: extended the CCISS mining into the packaged `ccissr` tables. Added
+  `idfdk3_suitability.csv` (38 species/site-series feasibility rows) and
+  `idfdk3_sibec.csv` (32 mean site-index rows), and enriched
+  `idfdk3_stocking.csv` with edatopic codes, special codes, stocking delay, and
+  assessment windows. `Pl` is feasible at rating 1-4 across the nine IDFdk3
+  site series; SIBEC gives `Pl` 15.7-19.9 m and `Fd` 13.3-20.7 m. Two more
+  contract tests cover the tables. The note records the full object inventory,
+  including `S1`, `SIBEC`, `E1`, `SS`, `N1`, `stocking_standards`,
+  `stocking_info`, `stocking_height`, `cfrg_rules`, and `models_info`.
+- P95.2: digitised the public planted lodgepole pine diagram (`plp`, version
+  1.20) into `idf-dk3-pli-planted.json`. The vector extraction stores QMD
+  10-40 cm, top height 6-30 m, the competition and self-thinning boundaries,
+  and the 60% crown-closure curve. The source SHA-256 matches the catalogued
+  PDF; the diagram is provisional. Added a source-catalog entry and a diagram
+  contract test. This gives the PLI AU a real SDMD instead of placing lodgepole
+  pine points on the Interior Douglas-fir diagram. The natural `pln` diagram is
+  still not digitised.
+- P95.2: digitised the natural lodgepole pine diagram (`pln`, version 1.20)
+  into `idf-dk3-pli-natural.json` and added it to the source catalog. Built the
+  real `AU-IDFdk3-TSA23-PLI` store from 11 public PSP Pl-leading clusters, ages
+  20-120, with the natural lodgepole pine diagram and two FVS paths from cluster
+  4025305-PSP2 (`SITECODE PL,55`, CT60 at age 60). The store passes plot support,
+  density, regime completeness, and option reduction; it warns on the provisional
+  diagram, missing initial volume, and extrapolated paths. Added PLI gate and
+  trajectory tests. This removes the need to place lodgepole pine points on the
+  Interior Douglas-fir diagram.
+- P95.1: added the curve-review packet in `notes/review/p95-curve-review.md`
+  with overlay figures for `fdin`, `fdip`, `pln`, and `plp`, curve inventories,
+  known limits, and a sign-off checklist. The overlays caught a zigzag in the
+  `fdin` crown-closure curve above 2,951 TPH; the stored curve is truncated at
+  that point and the unresolved high-TPH branch is named in the packet and source
+  catalog. Added a monotonicity/domain test for the truncated curve. The diagrams
+  remain provisional pending the maintainer's sign-off.
+- P95.1: recorded the maintainer review for all four diagrams. `fdin`, `fdip`,
+  `pln`, and `plp` are now `reviewed` with reviewer Gregory Paradis (maintainer
+  of record) and reviewed_utc 2026-11-02T18:20:44+00:00. The pilot store copies
+  of `diagram.json` were updated, so the FDI and PLI `sdmd-fit` gates now pass.
+  The review packet records the acceptance and the `fdin` crown-closure
+  truncation. Updated the source-catalog review fields and the tests.
+- P95.2: replaced the single-young-cluster FVS paths with representative
+  median-age clusters scaled to the AU median TPH. FDI uses cluster
+  4025005-PSP1 (age 89, scale 0.864); PLI uses cluster 4025096-PSP1 (age 62,
+  scale 1.670). CT60 is applied at the first 10-year cycle, which is a
+  first-entry treatment for these older stands rather than a literal age-60
+  entry; both SOURCE.md files record that. The pilot gates still pass plot,
+  density, diagram, regime, and option checks; trajectory and initial-volume
+  warnings remain.
+
 
 ## 2026-11-02
 
@@ -3919,3 +4048,25 @@ issue comments.
   and a fixed assistant overlay available from every workspace. The overlay opens over the
   current view, closes with × or Escape, and keeps the existing chat session/API behavior.
   Report: `notes/reports/tsa24-ask-overlay.md`.
+
+## 2026-11-02
+
+- P103: profile-aware web runs. Added `ws4.opt.gpu_profile_run`, optional table/factorized/
+  cache/seed resources on scenario profiles, a `POST /api/runs` profile branch, and a
+  Generations/Run profile control. Worker exact replay and a hot-cache smoke are recorded.
+  Report: `notes/reports/tsa24-profile-runs.md`.
+
+- P104: kept the default constraint summary shape unchanged by adding
+  `sdmd_guard` and `sdmd_rejected` only when an SDMD schedule check is active.
+  This removes the notebook-output drift without weakening the SDMD guard. Local
+  `python scripts/check_notebooks.py` reports 0 drifted cells.
+
+- P104: phase approved and squash-merged as `e5c4e9c` on 2026-11-03. PR #719
+  passed all five CI checks; the branch was deleted and parent issue #680 closed.
+
+## 2026-11-03
+
+- P105: profile-run feedback. Profile GPU runs now emit bounded schedule diffs for the
+  live map and replay the final schedule to `account_values.csv`/product values. The base
+  profile smoke remained exact and wrote the standard run artefacts. Report:
+  `notes/reports/tsa24-profile-run-feedback.md`.
