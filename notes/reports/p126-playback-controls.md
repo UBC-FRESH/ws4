@@ -1,7 +1,7 @@
 # P126 playback control and cadence
 
 Date: 2026-11-03
-Status: complete
+Status: complete; PR #788
 
 ## Change
 

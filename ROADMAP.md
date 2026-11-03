@@ -123,7 +123,7 @@ exists and the maintainer approves it.
 | P123 Assistant context and action chips | #780 | `not-created` | planned |
 | P124 3D estate replay | #781 | `not-created` | planned |
 | P125 Stabilize period playback and map paging | #784 | `fix/p125-playback-map-race` | pr-open |
-| P126 Stabilize playback controls and cadence | #787 | `fix/p126-playback-controls` | active |
+| P126 Stabilize playback controls and cadence | #787 | `fix/p126-playback-controls` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3821,8 +3821,9 @@ Acceptance:
 
 Parent issue: #787
 Branch: `fix/p126-playback-controls`
-Status: active
+Status: pr-open
 Report: `notes/reports/p126-playback-controls.md`
+PR: #788
 
 Goal: keep the playback control stationary and make playback cadence practical.
 
