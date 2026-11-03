@@ -14,7 +14,7 @@ def test_crosswalk_counts_are_stable() -> None:
     """The 247-row union has the expected relationship mix."""
     frame = pd.read_csv(DATA / "bec_crosswalk_review.csv", dtype=str)
     counts = frame["relationship"].value_counts().to_dict()
-    assert counts == {"same": 183, "unresolved": 45, "cciss_split": 12, "ws4_split": 7}
+    assert counts == {"same": 183, "unresolved": 41, "cciss_split": 16, "ws4_split": 7}
     assert len(frame) == 247
 
 

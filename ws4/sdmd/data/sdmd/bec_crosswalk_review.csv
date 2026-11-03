@@ -50,7 +50,7 @@ CWHms2,CWHms2,same,exact label
 CWHun,,unresolved,no CCISS parent
 CWHvh1,CWHvh1,same,exact label
 CWHvh2,CWHvh2,same,exact label
-CWHvm,,unresolved,no CCISS parent
+CWHvm,,cciss_split,2 finer CCISS labels start with CWHvm
 CWHvm1,CWHvm1,same,exact label
 CWHvm2,CWHvm2,same,exact label
 CWHvm3,,unresolved,no CCISS parent
@@ -113,7 +113,7 @@ ESSFwcp,ESSFwcp,same,exact label
 ESSFwcw,ESSFwcw,same,exact label
 ESSFwk1,ESSFwk1,same,exact label
 ESSFwk2,ESSFwk2,same,exact label
-ESSFwm,,unresolved,no CCISS parent
+ESSFwm,,cciss_split,6 finer CCISS labels start with ESSFwm
 ESSFwm,ESSFwm1,cciss_split,ESSFwm1 is a finer CCISS label than ESSFwm
 ESSFwm,ESSFwm2,cciss_split,ESSFwm2 is a finer CCISS label than ESSFwm
 ESSFwm,ESSFwm3,cciss_split,ESSFwm3 is a finer CCISS label than ESSFwm
@@ -123,7 +123,7 @@ ESSFwmw,ESSFwmw,same,exact label
 ESSFwv,ESSFwv,same,exact label
 ESSFwv,ESSFwvw,cciss_split,ESSFwvw is a finer CCISS label than ESSFwv
 ESSFwvp,ESSFwvp,same,exact label
-ESSFxc,,unresolved,no CCISS parent
+ESSFxc,,cciss_split,5 finer CCISS labels start with ESSFxc
 ESSFxc1,ESSFxc1,same,exact label
 ESSFxc2,ESSFxc2,same,exact label
 ESSFxc3,ESSFxc3,same,exact label
@@ -204,7 +204,7 @@ MSdv,MSdv,same,exact label
 MSmw1,MSmw1,same,exact label
 MSmw2,MSmw2,same,exact label
 MSun,,unresolved,no CCISS parent
-MSxk,,unresolved,no CCISS parent
+MSxk,,cciss_split,3 finer CCISS labels start with MSxk
 MSxk1,MSxk1,same,exact label
 MSxk2,MSxk2,same,exact label
 MSxk3,MSxk3,same,exact label

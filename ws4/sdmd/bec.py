@@ -64,9 +64,7 @@ def classify_crosswalk(
         rows.append(BecRelationship(label, label, "same", "exact label"))
     for label in sorted(ours - theirs):
         parent = _longest_prefix(label, theirs)
-        if parent is None:
-            rows.append(BecRelationship(label, None, "unresolved", "no CCISS parent"))
-        else:
+        if parent is not None:
             rows.append(
                 BecRelationship(
                     label,
@@ -75,6 +73,19 @@ def classify_crosswalk(
                     f"{label} is a finer WS4 label than {parent}",
                 )
             )
+            continue
+        children = [item for item in theirs if item.startswith(label) and item != label]
+        if children:
+            rows.append(
+                BecRelationship(
+                    label,
+                    None,
+                    "cciss_split",
+                    f"{len(children)} finer CCISS labels start with {label}",
+                )
+            )
+        else:
+            rows.append(BecRelationship(label, None, "unresolved", "no CCISS parent"))
     for label in sorted(theirs - ours):
         parent = _longest_prefix(label, ours)
         if parent is None:

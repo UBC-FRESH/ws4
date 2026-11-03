@@ -4268,3 +4268,7 @@ issue comments.
   100 m overview layer for low-zoom tiles; the geometry script writes the sidecar.
   Report: `notes/reports/tsa24-map-performance.md`.
 
+- P121.1 correction: the crosswalk now marks a WS4 parent as `cciss_split`
+  when CCISS carries finer children, instead of leaving the parent unresolved.
+  Counts are 183 exact, 7 WS4 splits, 16 CCISS splits, and 41 unresolved. The
+  four parent labels are represented by their child rows.

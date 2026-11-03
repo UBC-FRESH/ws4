@@ -11,8 +11,8 @@ Classifier: `ws4.sdmd.bec.classify_crosswalk`.
 | --- | --- |
 | exact match | 183 |
 | WS4 split of a CCISS parent | 7 |
-| CCISS split of a WS4 parent | 12 |
-| unresolved | 45 |
+| CCISS split of a WS4 parent | 16 |
+| unresolved | 41 |
 | total | 247 |
 
 ## WS4 splits
@@ -24,11 +24,12 @@ finer WS4 labels under a broader CCISS label.
 
 `ESSFmcw`, `ESSFmkw`, `ESSFwm1`–`ESSFwm4`, `ESSFwvw`, `ICHmc1a`, `ICHxwa`,
 `MHunp`, `SBSwk3a`, and `SWBuns` are finer CCISS labels under a broader WS4
-label.
+label. Four parent labels (`CWHvm`, `ESSFwm`, `ESSFxc`, `MSxk`) are represented
+by their child split rows instead of being counted as unresolved.
 
 ## Unresolved
 
-The 45 unresolved rows are explicit. Examples:
+The 41 unresolved rows are explicit. Examples:
 
 - WS4-only: `BWBSun`, `CWHun`, `CWHvm3`, `ESSFdku`, `ESSFvv`, `IDFun`, `PPdh1`.
 - CCISS-only: `CMAwh`, `CWHvh3`, `ESSFdh1`, `ICHdw4`, `IDFdh`, `IDFxx2`.
