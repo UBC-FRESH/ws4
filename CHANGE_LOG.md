@@ -4240,3 +4240,7 @@ issue comments.
 
 - P120: phase approved and squash-merged as `a7e83e3` on 2026-11-03. PR #764
   passed all five CI checks; the branch was deleted and parent issue #731 closed.
+
+- P116: TSA 24 map performance. Add a `<geometry>.bounds.json` sidecar and a
+  100 m overview layer for low-zoom tiles; the geometry script writes the sidecar.
+  Report: `notes/reports/tsa24-map-performance.md`.
