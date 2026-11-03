@@ -1,7 +1,7 @@
 # WS4 UI port plan
 
 Date: 2026-11-03
-Status: P122 implemented; P123/P124 planned
+Status: P122 implemented; P123/P124 planned; PR #783
 
 Sources reviewed:
 
