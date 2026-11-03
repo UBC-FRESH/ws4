@@ -6,7 +6,7 @@ Branch: `feature/p121-bec-integrity`
 Evidence head: `401745a`
 Report commit: this metadata-only report update
 Date: 2026-11-03
-Status: queued for maintainer approval. Not merged.
+Status: queued as PR #782 for maintainer approval. Not merged.
 
 ## Recommendation
 
@@ -82,6 +82,6 @@ At the evidence head: 45 focused tests pass, validator 0 errors, dashboard
 
 ## 6. Pull request
 
-The PR body names the phase, the evidence head, the crosswalk counts, the
-validator rules, and the known limits. It is queued for approval. No merge, tag,
+PR #782 names the phase, the evidence head, the crosswalk counts, the validator
+rules, and the known limits. It is queued for approval. No merge, tag,
 release, or settings change is performed by this report.
