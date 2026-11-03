@@ -1775,3 +1775,59 @@ def test_profile_run_uses_the_gpu_worker(tmp_path: Path, monkeypatch: pytest.Mon
     assert "--generations" in captured[-1]
     assert "3" in captured[-1]
     assert "--replay" in captured[-1]
+
+
+def test_profile_run_allows_table_only_resources(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A GPU profile can run from an effect table without factorized data."""
+    _client, targets = _app(tmp_path)
+    table = tmp_path / "effects.pt"
+    cache_dir = tmp_path / "gpu-cache"
+    seed = tmp_path / "seed.csv"
+    for path in (table, seed):
+        path.write_text("", encoding="utf-8")
+    cache_dir.mkdir()
+    library = tmp_path / "profiles.yaml"
+    library.write_text(
+        "profiles:\n"
+        "  - name: table-only\n"
+        "    targets: targets.yaml\n"
+        "    table: effects.pt\n"
+        "    cache_dir: gpu-cache\n"
+        "    seed_schedule: seed.csv\n",
+        encoding="utf-8",
+    )
+    client = TestClient(
+        create_app(
+            dataset=tmp_path / "dataset",
+            runs=tmp_path / "runs",
+            targets=targets,
+            scenario_profiles=library,
+            allow_runs=True,
+        )
+    )
+    captured: list[list[str]] = []
+
+    class FakePopen:
+        pid = 124
+
+        def poll(self) -> None:
+            return None
+
+    def fake_popen(
+        command: list[str], stdout: object = None, stderr: object = None, **kwargs: object
+    ) -> FakePopen:
+        captured.append(command)
+        return FakePopen()
+
+    monkeypatch.setattr("ws4.web.app.subprocess.Popen", fake_popen)
+    response = client.post(
+        "/api/runs",
+        json={"profile": "table-only", "generations": 0, "population": 8, "years": 200},
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["profile"] == "table-only"
+    assert captured[-1][1:4] == ["-m", "ws4.opt.gpu_profile_run", "--dataset"]
+    assert "--factorized" not in captured[-1]
+    assert "--factorized-cache" not in captured[-1]

@@ -110,6 +110,7 @@ exists and the maintainer approves it.
 | P105 Profile-run feedback | #720 | `feature/p105-profile-run-feedback` | pr-open |
 | P107 Profile target telemetry | #730 | `feature/p107-profile-target-telemetry` | pr-open |
 | P108 Profile-run report package | #742 | `feature/p108-profile-run-reports` | pr-open |
+| P110 Optional-factorized GPU profiles | #745 | `feature/p110-tsa27-gpu-profile` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3552,3 +3553,22 @@ Acceptance:
 - The Reports tab shows a provenance badge and links.
 - `python scripts/dashboard.py` is green.
 
+## Phase 110: Optional-factorized GPU profiles
+
+Parent issue: #745
+Branch: `feature/p110-tsa27-gpu-profile`
+Status: pr-open
+Report: `notes/reports/tsa27-gpu-profile.md`
+PR: #748
+
+Goal: let GPU profile runs use an existing effect table and cache without a
+factorized archive, then expose a TSA 27 s8 profile.
+
+- [x] P110.1 Allow factorized-optional GPU profile runs (#746)
+
+Acceptance:
+
+- A profile can run with table, cache directory, and seed only.
+- Mapping-style candidate caches work without a rebuild.
+- TSA 27 s8 produces an exact replay.
+- Dashboard green.

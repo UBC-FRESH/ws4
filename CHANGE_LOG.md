@@ -4129,3 +4129,7 @@ issue comments.
   `docs/reference/report-provenance.rst` and the simulator and web reference pages.
   Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all
   seven gates (lint, format, types, tests, validator, docs, docstrings).
+
+- P110: optional-factorized GPU profiles. Profile runs now require a table and cache
+  directory, while factorized display data is optional. TSA 27 s8 runs from its existing
+  effect table and plain candidate mapping. Report: `notes/reports/tsa27-gpu-profile.md`.

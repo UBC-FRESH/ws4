@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ws4.opt.gpu_profile_run import _schedule_changes, _target_event_payload
+from ws4.opt.gpu_profile_run import _schedule_changes, _seed, _target_event_payload
 
 
 def test_schedule_changes_reset_then_diff() -> None:
@@ -42,3 +42,9 @@ def test_target_event_payload_uses_sparse_cells() -> None:
         }
     ]
     assert payload["series"] == [{"year": 1, "account": "feature.Volume", "value": 5.0}]
+
+
+def test_seed_accepts_mapping_candidates() -> None:
+    """The profile seed helper accepts the plain candidate mapping used by TSA 27."""
+    candidates = {1: ((("CC", 10),), (("CT", 3),))}
+    assert _seed([1], candidates, None) == {1: (("CC", 10),)}
