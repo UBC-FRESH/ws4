@@ -366,6 +366,7 @@ def _build_mount(instance: Instance, mount_path: str) -> None:
         "agent_cwd": root,
         "initial_schedule": initial,
         "state_config": state_config,
+        "tile_cache_dir": cache / "tiles",
         "crs": spec.get("crs", "EPSG:3005"),
     }
     for key, value in (
