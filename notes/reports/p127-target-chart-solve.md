@@ -1,7 +1,7 @@
 # P127 target chart edits and Solve semantics
 
 Date: 2026-11-03
-Status: complete
+Status: complete; PR #793
 
 ## Bugs found in the browser
 
