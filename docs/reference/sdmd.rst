@@ -284,8 +284,10 @@ AU Explorer API
 ---------------
 
 ``ws4.sdmd.api`` provides a FastAPI router over a directory of the six tables,
-an optional ``diagram.json``, and optional ``trajectories/<au_id>/<regime_id>.json``
-files. The main web app mounts it when ``ws4 serve`` receives ``--sdmd-dir``:
+an optional ``diagram.json``, an optional ``initial_volume.json``, and optional
+``trajectories/<au_id>/<regime_id>.json`` files. The initial-volume file records the
+measured value, its evidence limit, the source, and the review status; the gate uses
+it when the command line does not supply an override. The main web app mounts it when ``ws4 serve`` receives ``--sdmd-dir``:
 
 .. code-block:: bash
 
@@ -313,8 +315,10 @@ atomic and is stored at ``constraints/<au_id>.json``; the next store load reads
 it back.
 
 ``GET /api/sdmd/au/{au_id}/trajectory`` reads a stored trajectory and assesses it
-against the AU's observed envelope. When the file is absent, the response is
-``status: "unavailable"`` with a named data gap rather than an invented path.
+against the AU's observed envelope. The response carries the stored ``source``,
+``scenario``, and ``review_status`` beside the points. When the file is absent, the
+response is ``status: "unavailable"`` with a named data gap rather than an invented
+path.
 
 AU Explorer tab
 ---------------

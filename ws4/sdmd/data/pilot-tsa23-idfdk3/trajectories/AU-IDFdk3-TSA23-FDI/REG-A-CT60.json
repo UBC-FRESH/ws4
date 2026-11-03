@@ -2,47 +2,47 @@
   "schema_version": "ws4.sdmd.trajectory.v1",
   "au_id": "AU-IDFdk3-TSA23-FDI",
   "regime_id": "REG-A-CT60",
-  "source": "fresh-fvsbc (FVS-BC) TSA23 IDFdk3 FD representative tree list 4025005-PSP1",
+  "source": "fresh-fvsbc (FVS-BC) TSA23 IDFdk3 multi-cluster tree list: 4024520-PSP2, 4025005-PSP1, 4024520-PSP4",
   "source_version": "fresh-fvsbc 0.20.0; FVS BC variant",
   "scenario": "THINBBA at the first 10-year cycle, 60% basal area removal",
-  "generated_utc": "2026-11-02T18:26:54+00:00",
+  "generated_utc": "2026-11-03T03:09:04+00:00",
   "review_status": "provisional",
   "points": [
     [
-      1107.03,
-      0.174132
+      1173.75,
+      0.175024
     ],
     [
-      1027.96,
-      0.211419
+      1099.62,
+      0.208585
     ],
     [
-      400.31,
-      0.271801
+      434.91,
+      0.258224
     ],
     [
-      385.48,
-      0.340157
+      417.61,
+      0.320693
     ],
     [
-      363.24,
-      0.415497
+      402.78,
+      0.387046
+    ],
+    [
+      380.54,
+      0.459495
+    ],
+    [
+      360.77,
+      0.535292
     ],
     [
       343.48,
-      0.495839
+      0.613178
     ],
     [
       323.71,
-      0.584913
-    ],
-    [
-      306.41,
-      0.675022
-    ],
-    [
-      289.11,
-      0.775912
+      0.702717
     ]
   ]
 }

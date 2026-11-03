@@ -77,6 +77,15 @@ async function startProfileRun() {
   const seed = Number($('run-seed')?.value || 7);
   stopRunWatch();
   button.disabled = true;
+  status.textContent = `loading targets for ${select.value}…`;
+  try {
+    await apiPost(`api/scenario-profiles/${encodeURIComponent(select.value)}/apply`);
+    await loadTargets();
+  } catch (error) {
+    status.textContent = `profile targets failed: ${error.message}`;
+    button.disabled = false;
+    return;
+  }
   status.textContent = `starting ${select.value}…`;
   runWatch = { id: null, timer: null, source: null, started: Date.now(), done: false, islands: 1 };
   state.live = { active: true, schedule: new Map(), total: 0, display: 'live' };

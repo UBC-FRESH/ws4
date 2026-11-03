@@ -1350,6 +1350,14 @@ def create_app(
 
     def _target_event(record: dict[str, Any]) -> dict[str, Any]:
         """Fold a telemetry targets record over each target's period, keeping its year series."""
+        if record.get("profile"):
+            return {
+                "type": "targets",
+                "profile": True,
+                "iteration": record.get("iteration"),
+                "values": record.get("values", []),
+                "series": record.get("series", []),
+            }
         if targets_path is None or not targets_path.is_file():
             return record
 

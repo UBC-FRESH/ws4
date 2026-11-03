@@ -41,14 +41,15 @@ dominant species site-age row. The SDI maximum is 1729, the McCarter and Long
 ## FVS trajectory
 
 - Model: `fresh-fvsbc` 0.20.0, BC variant.
-- Tree list: live trees of cluster `4025096-PSP1` (age 62), the median-age
-  cluster of the 11 observations. Tree counts are scaled by `1979 / 1184.8 =
-  1.670` so the FVS initial TPH matches the AU median TPH.
+- Tree list: live trees of five clusters — `4025305-PSP2` (age 50),
+  `4025305-PSP3` (age 61), `4025096-PSP1` (age 62), `4024449-PSP1` (age 73), and
+  `4025245-PSP5` (age 75) — each as a plot. Tree counts are scaled by
+  `1979 / 6453.4 = 0.3067` so the composite initial TPH matches the AU median TPH.
 - Site: `SITECODE PL,55`.
 - Horizon: 8 cycles of 10 years; `RANNSEED 1`.
 - CT60: `THINBBA` at the first 10-year cycle with 60% basal-area removal. The
-  projection starts at age 62, so this is a first-entry treatment, not a literal
-  age-60 entry.
+  projection starts at the plot ages above, so this is a first-entry treatment,
+  not a literal age-60 entry.
 - Tree counts are scaled by `1979 / 1102.78 = 1.7946` so the FVS initial TPH
   matches the species-summary TPH. The volume is not rescaled.
 
