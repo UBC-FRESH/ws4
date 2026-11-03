@@ -135,3 +135,9 @@ height, QMD, and boundaries are vector; crown closure is a raster trace. See
 Coastal Douglas-fir planted is stored as `cdf-cwh-fdc-planted.json`,
 provisional. Top height, QMD, and boundaries are vector; crown closure is a raster
 trace. See `notes/reference/fdcp-digitisation.md`.
+
+## ssp status
+
+Sitka spruce planted is stored as `cdf-cwh-ss-planted.json`, provisional. Top
+height, QMD, and boundaries are vector; crown closure is a raster trace. See
+`notes/reference/ssp-digitisation.md`.

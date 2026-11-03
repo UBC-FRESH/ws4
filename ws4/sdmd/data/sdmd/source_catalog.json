@@ -623,6 +623,17 @@
       "review_status": "provisional",
       "reviewer": "",
       "notes": "Vector top-height, QMD, competition, and self-thinning paths; provisional raster crown closure. Planted top-height labels are offset in the source."
+    },
+    {
+      "diagram_id": "cdf-cwh-ss-planted",
+      "source_diagram_id": "ssp",
+      "file": "cdf-cwh-ss-planted.json",
+      "source_sha256": "f8321db36638bc284e0c9d07b3f9306f33f36f89cfb8ff8fdbad0f817461a88e",
+      "source_url": "https://www2.gov.bc.ca/assets/gov/farming-natural-resources-and-industry/forestry/stand-tending/ssp.pdf",
+      "source_version": "unversioned",
+      "review_status": "provisional",
+      "reviewer": "",
+      "notes": "Vector top-height, QMD, competition, and self-thinning paths; provisional raster crown closure."
     }
   ]
 }
