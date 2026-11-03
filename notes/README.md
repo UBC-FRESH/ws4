@@ -34,6 +34,7 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `design/ws4-matrix-builder-and-interop.md` — the ForestModelXML recipe, the matrix builder, and legacy ingestion.
 - `design/ws4-fast-startup.md` — P84 resident Model II startup and state-watch plan.
 - `design/ws4-performance.md` — the post-release performance and scalability plan (profiling, bottlenecks, targets).
+- `design/ws4-ui-port-plan.md` — phased UI ports from FHOPS, Urban Forest Lab, and HectaresBC.
 - `design/ws4-curve-grid.md` — the shared age-grid curve-table spike (data-layout change for the numeric core).
 - `design/ws4-join-rebuild.md` — the fast fragment-to-feature join rebuild spike (cold-path cost).
 - `design/ws4-incremental-route-accounts.md` — incremental route accounts in the objective (spike).

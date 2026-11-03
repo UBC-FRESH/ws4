@@ -119,6 +119,9 @@ exists and the maintainer approves it.
 | P114 Scenario price paths | #749 | `feature/p114-prices-v1` | pr-open |
 | P115 TSA 24 source geometry | #765 | `feature/p115-tsa24-source-geometry` | pr-open |
 | P116 TSA 24 map performance | #767 | `feature/p116-tsa24-map-performance` | pr-open |
+| P122 Run timeline and interaction uplift | #775 | `feature/p122-ui-timeline` | pr-open |
+| P123 Assistant context and action chips | #780 | `not-created` | planned |
+| P124 3D estate replay | #781 | `not-created` | planned |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3749,3 +3752,45 @@ Acceptance:
 - Every diagram has a source hash and a review status.
 - `validate_diagram` passes for every stored diagram.
 - Coverage is stated without overclaiming BEC specificity.
+
+## Phase 122: Run timeline and interaction uplift
+
+Parent issue: #775
+Branch: `feature/p122-ui-timeline`
+Status: pr-open
+Plan: `notes/design/ws4-ui-port-plan.md`
+PR: #783
+
+Goal: port the highest-value, low-friction interaction patterns from the FRESH
+lab web projects into the WS4 shell.
+
+- [x] P122.1 Run snapshot cards (#776)
+- [x] P122.2 Period playback (#777)
+- [x] P122.3 Schedule timeline (#778)
+- [x] P122.4 Feedback and shortcuts (#779)
+
+Acceptance:
+
+- Run snapshot cards use the existing run summary.
+- Play advances periods and stops safely.
+- Timeline is built from schedule.csv and selects periods.
+- Toast/help/shortcuts and empty states are wired.
+- Dashboard green.
+
+## Phase 123: Assistant context and action chips
+
+Parent issue: #780
+Branch: `not-created`
+Status: planned
+Plan: `notes/design/ws4-ui-port-plan.md`
+
+Goal: make Ask aware of the current screen and offer safe follow-up actions.
+
+## Phase 124: 3D estate replay
+
+Parent issue: #781
+Branch: `not-created`
+Status: planned
+Plan: `notes/design/ws4-ui-port-plan.md`
+
+Goal: add an experimental coarse 3D block replay without machine/terrain editing.

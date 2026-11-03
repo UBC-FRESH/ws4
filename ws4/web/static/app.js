@@ -7,6 +7,16 @@ const $ = (id) => document.getElementById(id);
 const TILE_VERSION = 'v9';
 const statusLine = (text) => { $('status').textContent = text; };
 
+function showToast(message, error = false) {
+  const toast = $('toast');
+  if (!toast) return;
+  if (toastTimer) clearTimeout(toastTimer);
+  toast.textContent = message;
+  toast.classList.toggle('error', error);
+  toast.hidden = false;
+  toastTimer = window.setTimeout(() => { toast.hidden = true; }, 2200);
+}
+
 async function api(path) {
   const response = await fetch(path, { headers: { accept: 'application/json' } });
   if (!response.ok) {
@@ -59,9 +69,11 @@ async function applyProfile() {
   try {
     const result = await apiPost(`api/scenario-profiles/${encodeURIComponent(select.value)}/apply`);
     status.textContent = `loaded ${select.value}: ${result.targets} targets`;
+    showToast(`loaded profile ${select.value}`);
     await loadTargets();
   } catch (error) {
     status.textContent = `profile failed: ${error.message}`;
+    showToast('profile load failed', true);
   } finally {
     button.disabled = false;
   }
@@ -106,6 +118,7 @@ async function startProfileRun() {
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload.detail || `profile run failed (${response.status})`);
     status.textContent = `running ${select.value}`;
+    showToast(`profile ${select.value} started`);
     runWatch.id = payload.id;
     runWatch.islands = 1;
     $('start-run').textContent = 'Pause';
@@ -117,6 +130,7 @@ async function startProfileRun() {
     state.live.active = false;
     $('stop-run').hidden = true;
     status.textContent = `profile run failed: ${error.message}`;
+    showToast('profile run failed', true);
     showRun(`profile run failed: ${error.message}`, false);
   } finally {
     button.disabled = false;
@@ -1838,6 +1852,57 @@ async function startTune() {
     await waitSearch(body.id);
   } catch (error) {
     status.textContent = `tuner not started: ${error.message}`;
+  }
+}
+
+function snapshotValue(value) {
+  if (value === null || value === undefined || value === '') return '—';
+  if (typeof value === 'boolean') return value ? 'yes' : 'no';
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.abs(value) >= 1000
+      ? value.toLocaleString(undefined, { maximumFractionDigits: 2 })
+      : value.toFixed(3).replace(/\.?0+$/, '');
+  }
+  return String(value);
+}
+
+function renderRunSnapshot(summary) {
+  const section = $('run-snapshot');
+  const host = $('snapshot-cards');
+  const empty = $('snapshot-empty');
+  if (!section || !host || !empty) return;
+  host.replaceChildren();
+  if (!summary || typeof summary !== 'object') {
+    section.hidden = false;
+    empty.hidden = false;
+    return;
+  }
+  const endingAccounts = summary.ending_inventory?.accounts;
+  const cards = [
+    ['Status', summary.status],
+    ['Objective', summary.incumbent_objective ?? summary.objective],
+    ['Verified', summary.verified_objective],
+    ['Exact replay', summary.exact_match],
+    ['Generations', summary.generations],
+    ['Evaluations', summary.evaluations],
+    ['Wall time', typeof summary.seconds === 'number' ? `${summary.seconds.toFixed(1)} s` : null],
+    ['Blocks scheduled', summary.blocks_scheduled],
+    ['Seed', summary.seed],
+    ['Profile', summary.profile],
+    ['Ending accounts', endingAccounts && typeof endingAccounts === 'object' ? Object.keys(endingAccounts).length : null],
+  ].filter(([, value]) => value !== null && value !== undefined && value !== '');
+  section.hidden = cards.length === 0;
+  empty.hidden = cards.length > 0;
+  for (const [label, value] of cards) {
+    const card = document.createElement('article');
+    card.className = 'snapshot-card';
+    const name = document.createElement('span');
+    name.className = 'snapshot-label';
+    name.textContent = label;
+    const number = document.createElement('strong');
+    number.textContent = snapshotValue(value);
+    card.append(name, number);
+    host.append(card);
   }
 }
 
@@ -3600,6 +3665,43 @@ function setPeriod(index) {
   return period;
 }
 
+function stopPeriodPlay() {
+  if (periodPlayTimer) {
+    window.clearInterval(periodPlayTimer);
+    periodPlayTimer = null;
+  }
+  const button = $('play-periods');
+  if (button) {
+    button.textContent = '▶ Play';
+    button.setAttribute('aria-pressed', 'false');
+  }
+}
+
+function togglePeriodPlay() {
+  const button = $('play-periods');
+  if (!button || !state.periods.length) return;
+  if (periodPlayTimer) {
+    stopPeriodPlay();
+    return;
+  }
+  if (state.periodIndex >= state.periods.length - 1) setPeriod(0);
+  button.textContent = '❚❚ Pause';
+  button.setAttribute('aria-pressed', 'true');
+  periodPlayTimer = window.setInterval(() => {
+    if (state.mapLoading) return;
+    if (state.periodIndex >= state.periods.length - 1) {
+      stopPeriodPlay();
+      return;
+    }
+    setPeriod(state.periodIndex + 1);
+    if (state.workspace === 'map') {
+      if (state.compareView) loadComparison();
+      else if (state.live.active) render(false);
+      else loadMap(true);
+    }
+  }, 900);
+}
+
 function selectPeriodForYear(year) {
   const index = state.periods.findIndex(
     (period) => Number(year) >= Number(period.start) && Number(year) <= Number(period.end),
@@ -3639,11 +3741,12 @@ async function loadPeriods() {
 
 const WORKSPACE_NAMES = ['map', 'plan', 'results', 'data'];
 const SUB_PANELS = {
-  results: ['reports', 'comparison', 'search'],
+  results: ['reports', 'timeline', 'comparison', 'search'],
   data: ['dataset', 'lidar', 'carbon'],
 };
 const SUB_SECTION = {
   reports: 'tab-reports',
+  timeline: 'tab-timeline',
   comparison: 'tab-comparison',
   search: 'tab-search',
   dataset: 'tab-dataset',
@@ -3674,7 +3777,9 @@ function workspaceAllowed(workspace) {
 
 function subAllowed(workspace, sub) {
   const panels = skinPanels();
-  if (workspace === 'results') return panels.has(sub);
+  if (workspace === 'results') {
+    return panels.has(sub) || (sub === 'timeline' && panels.has('reports'));
+  }
   if (workspace !== 'data') return true;
   if (sub === 'dataset') return panels.has('dataset');
   if (sub === 'lidar') return panels.has('lidar');
@@ -3768,6 +3873,9 @@ function activateSubView() {
       loadComparison();
     } else if (state.subview.results === 'search') {
       loadSearch();
+    } else if (state.subview.results === 'timeline') {
+      loadScheduleTimeline();
+      if (state.compareView) clearCompareView();
     } else {
       loadReports();
       if (state.compareView) clearCompareView();
@@ -5349,11 +5457,13 @@ async function postTargets(rows, message) {
       throw new Error(detail);
     }
     $('targets-status').textContent = message ?? `saved ${rows.length} targets`;
+    showToast(message ?? `saved ${rows.length} targets`);
     await loadPeriods();
     await loadTargets();
     return true;
   } catch (error) {
     $('targets-status').textContent = `not saved: ${error.message}`;
+    showToast('targets not saved', true);
     return false;
   }
 }
@@ -5689,6 +5799,8 @@ async function fillRuns(summary, preferred) {
 }
 
 let runWatch = { id: null, timer: null, source: null, started: 0, done: false };
+let periodPlayTimer = null;
+let toastTimer = null;
 
 function drawSpark() {
   const svg = $('spark');
@@ -5963,6 +6075,7 @@ async function startRun() {
     $('start-run').disabled = false;
     $('start-run').textContent = 'Pause';
     $('stop-run').hidden = false;
+    showToast('run started');
     pollRun(run.id);
     runWatch.timer = setInterval(() => pollRun(run.id), 2000);
     openRunStream(run.id, runWatch.islands);
@@ -5975,6 +6088,7 @@ async function startRun() {
     $('stop-run').hidden = true;
     if (state.mapEngine === 'maplibre' && !state.lidarField) loadMap();
     const reason = error.name === 'AbortError' ? 'the request timed out after 20 s' : error.message;
+    showToast('run not started', true);
     showRun(`not started: ${reason}`, false);
   }
 }
@@ -5997,6 +6111,136 @@ function parseCsv(text) {
   }
   if (field.length || row.length) { row.push(field); rows.push(row); }
   return rows;
+}
+
+function timelinePeriodIndex(offset, periods = state.periods) {
+  if (!periods.length) return -1;
+  for (let index = 0; index < periods.length; index += 1) {
+    if (offset >= Number(periods[index].start) && offset <= Number(periods[index].end)) return index;
+  }
+  return offset < Number(periods[0].start) ? 0 : periods.length - 1;
+}
+
+function timelineColor(label) {
+  let hash = 0;
+  for (let index = 0; index < label.length; index += 1) {
+    hash = (hash * 31 + label.charCodeAt(index)) % 360;
+  }
+  return `hsl(${hash} 58% 43%)`;
+}
+
+function renderScheduleTimeline(rows) {
+  const host = $('schedule-timeline');
+  const status = $('timeline-status');
+  const empty = $('timeline-empty');
+  if (!host || !status || !empty) return;
+  host.replaceChildren();
+  if (!rows.length) {
+    status.textContent = '';
+    empty.hidden = false;
+    return;
+  }
+  const header = rows[0].map((name) => String(name).trim().toLowerCase());
+  const blockIndex = header.indexOf('block_id');
+  const treatmentIndex = header.indexOf('treatment');
+  const offsetIndex = header.indexOf('offset');
+  if (blockIndex < 0 || treatmentIndex < 0 || offsetIndex < 0) {
+    status.textContent = 'schedule.csv needs block_id, treatment, and offset columns';
+    empty.hidden = true;
+    return;
+  }
+  const periods = state.periods.length
+    ? state.periods
+    : [...new Set(rows.slice(1).map((row) => Number(row[offsetIndex])))].sort((a, b) => a - b)
+        .map((offset, index) => ({ start: offset, end: offset, label: `P${index + 1}` }));
+  const byTreatment = new Map();
+  let events = 0;
+  for (const row of rows.slice(1)) {
+    const offset = Number(row[offsetIndex]);
+    const treatment = String(row[treatmentIndex] ?? '').trim() || 'unspecified';
+    const periodIndex = timelinePeriodIndex(offset, periods);
+    if (periodIndex < 0) continue;
+    const counts = byTreatment.get(treatment) ?? new Map();
+    counts.set(periodIndex, (counts.get(periodIndex) ?? 0) + 1);
+    byTreatment.set(treatment, counts);
+    events += 1;
+  }
+  if (!byTreatment.size) {
+    status.textContent = '';
+    empty.hidden = false;
+    return;
+  }
+  empty.hidden = true;
+  const axis = document.createElement('div');
+  axis.className = 'timeline-axis';
+  const corner = document.createElement('span');
+  corner.className = 'timeline-axis-corner';
+  corner.textContent = 'treatment';
+  axis.append(corner);
+  const axisTrack = document.createElement('div');
+  axisTrack.className = 'timeline-axis-track';
+  for (let index = 0; index < periods.length; index += 1) {
+    const tick = document.createElement('span');
+    tick.textContent = periods[index].label ?? `P${index + 1}`;
+    tick.title = periods[index].label ?? `Period ${index + 1}`;
+    axisTrack.append(tick);
+  }
+  axis.append(axisTrack);
+  host.append(axis);
+  for (const [treatment, counts] of [...byTreatment].sort(([left], [right]) => left.localeCompare(right))) {
+    const row = document.createElement('div');
+    row.className = 'timeline-row';
+    const label = document.createElement('span');
+    label.className = 'timeline-label';
+    label.textContent = treatment;
+    label.title = treatment;
+    const track = document.createElement('div');
+    track.className = 'timeline-track';
+    for (const [periodIndex, count] of counts) {
+      const bar = document.createElement('button');
+      bar.type = 'button';
+      bar.className = 'timeline-bar';
+      bar.style.left = `${(periodIndex / periods.length) * 100}%`;
+      bar.style.width = `${100 / periods.length}%`;
+      bar.style.background = timelineColor(treatment);
+      bar.title = `${treatment} · ${periods[periodIndex]?.label ?? `Period ${periodIndex + 1}`} · ${count} block${count === 1 ? '' : 's'}`;
+      bar.addEventListener('click', () => {
+        stopPeriodPlay();
+        state.yearChosen = true;
+        setPeriod(periodIndex);
+        status.textContent = `${treatment} · ${periods[periodIndex]?.label ?? `period ${periodIndex + 1}`} · ${count} block${count === 1 ? '' : 's'}`;
+        if (state.workspace === 'map') loadMap(true);
+      });
+      track.append(bar);
+    }
+    row.append(label, track);
+    host.append(row);
+  }
+  status.textContent = `${byTreatment.size} treatment${byTreatment.size === 1 ? '' : 's'} · ${events.toLocaleString()} scheduled block event${events === 1 ? '' : 's'} · click a bar to select its period`;
+}
+
+async function loadScheduleTimeline() {
+  const status = $('timeline-status');
+  const empty = $('timeline-empty');
+  const host = $('schedule-timeline');
+  if (!status || !empty || !host) return;
+  if (!state.run) {
+    status.textContent = 'select a run first';
+    empty.hidden = true;
+    host.replaceChildren();
+    return;
+  }
+  status.textContent = 'loading schedule…';
+  empty.hidden = true;
+  host.replaceChildren();
+  try {
+    const response = await fetch(`api/runs/${encodeURIComponent(state.run)}/reports/schedule.csv`);
+    if (!response.ok) throw new Error(response.statusText);
+    renderScheduleTimeline(parseCsv(await response.text()));
+  } catch (error) {
+    status.textContent = `schedule unavailable: ${error.message}`;
+    empty.hidden = false;
+  }
 }
 
 function renderReport(rows) {
@@ -6165,6 +6409,7 @@ async function loadReports() {
         api(`api/runs/${encodeURIComponent(state.run)}/targets`),
       ]);
     } catch { /* an older run may not have either artifact */ }
+    renderRunSnapshot(endingSummary);
     renderEndingSummary(endingSummary, targetRows);
     const names = [...new Set(accounts.map((row) => String(row.account)))].sort();
     const datalist = $('account-names');
@@ -6569,6 +6814,13 @@ async function sendChat(event) {
   }
 }
 
+function openHelp() {
+  const dialog = $('help-dialog');
+  if (!dialog) return;
+  if (typeof dialog.showModal === 'function') dialog.showModal();
+  else dialog.hidden = false;
+}
+
 function newChat() {
   state.chatSession = null;
   const log = $('chat-log');
@@ -6633,6 +6885,9 @@ function wireControls() {
     if (state.live.active) togglePause(); else startRun();
   });
   $('stop-run').addEventListener('click', stopRun);
+  $('play-periods').addEventListener('click', togglePeriodPlay);
+  $('help-toggle').addEventListener('click', openHelp);
+  $('help-close').addEventListener('click', () => $('help-dialog').close());
   for (const button of document.querySelectorAll('#targets-table thead .sort-button')) {
     button.addEventListener('click', () => sortTargetTable(button.dataset.sort));
   }
@@ -6670,6 +6925,7 @@ function wireControls() {
   });
   $('run').addEventListener('change', async (event) => {
     stopRunWatch();
+    stopPeriodPlay();
     state.live.active = false;
     state.live.display = 'live';
     state.live.schedule = new Map();
@@ -6685,6 +6941,7 @@ function wireControls() {
     updateUrl();
   });
   $('year').addEventListener('input', (event) => {
+    stopPeriodPlay();
     state.yearChosen = true;
     setPeriod(Number(event.target.value));
   });
@@ -6694,16 +6951,53 @@ function wireControls() {
     if (state.showUsedRoads) loadUsedRoads();
   });
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && !$('chat-panel').hidden) {
-      closeChat();
+    const active = document.activeElement;
+    const tag = active?.tagName;
+    const typing = tag === 'TEXTAREA' || tag === 'SELECT' || active?.isContentEditable
+      || (tag === 'INPUT' && active.type !== 'range');
+    if (event.key === 'Escape') {
+      if ($('help-dialog').open) {
+        $('help-dialog').close();
+        return;
+      }
+      if (!$('chat-panel').hidden) {
+        closeChat();
+        return;
+      }
+    }
+    if (typing || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.key === '?') {
+      event.preventDefault();
+      openHelp();
+      return;
+    }
+    if (event.key === '/') {
+      event.preventDefault();
+      const accountSearch = $('account-search');
+      if (accountSearch && !accountSearch.closest('[hidden]')) accountSearch.focus();
+      else $('target-filter-search').focus();
+      return;
+    }
+    if (event.key.toLowerCase() === 'm') {
+      event.preventDefault();
+      setWorkspace('map');
+      return;
+    }
+    if (event.key.toLowerCase() === 'j' || event.key.toLowerCase() === 'k') {
+      const rows = [...document.querySelectorAll('#targets-table tbody tr')];
+      if (!rows.length) return;
+      event.preventDefault();
+      const current = rows.indexOf(document.activeElement);
+      const next = event.key.toLowerCase() === 'j'
+        ? Math.min(rows.length - 1, current < 0 ? 0 : current + 1)
+        : Math.max(0, current < 0 ? 0 : current - 1);
+      rows[next].tabIndex = -1;
+      rows[next].focus({ preventScroll: true });
+      rows[next].scrollIntoView({ block: 'nearest' });
       return;
     }
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
-    const active = document.activeElement;
-    const tag = active?.tagName;
-    if (tag === 'TEXTAREA' || tag === 'SELECT' || active?.isContentEditable) return;
-    if (tag === 'INPUT' && active.type !== 'range') return;
+    if (event.shiftKey) return;
     if (!state.periods.length) return;
     const next = state.periodIndex + (event.key === 'ArrowRight' ? 1 : -1);
     if (next < 0 || next >= state.periods.length) return;
