@@ -4334,3 +4334,5 @@ issue comments.
   wall-clock budget. Run profile saves current edits instead of reapplying the
   profile target library. Run profile also uses the 200-year profile horizon.
   Report: `notes/reports/p129-gpu-current-targets.md`.
+- P123.1 queued in PR #804; branch `feature/p123-assistant-context`, head
+  `f2077ac`. Dashboard: `OVERALL: GREEN`.

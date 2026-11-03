@@ -4,6 +4,7 @@ Date: 2026-11-03
 Parent: #780
 Child: #800
 Branch: `feature/p123-assistant-context`
+PR: #804
 
 ## What changed
 

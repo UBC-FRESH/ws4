@@ -3824,8 +3824,9 @@ Acceptance:
 
 Parent issue: #780
 Branch: `feature/p123-assistant-context`
-Status: active
+Status: pr-open
 Plan: `notes/design/ws4-ui-port-plan.md`
+PR: #804
 
 Goal: make Ask aware of the current screen and offer safe follow-up actions.
 
