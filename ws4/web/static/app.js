@@ -4274,11 +4274,23 @@ function setChartBound(account, cell, bound, value) {
   }
 }
 
+function syncTargetTableInputs() {
+  for (const input of document.querySelectorAll('#targets-table [data-field]')) {
+    const row = state.targets[Number(input.dataset.index)];
+    const field = input.dataset.field;
+    if (!row || !field) continue;
+    const value = row[field];
+    if (field === 'notes' || field === 'normalization') input.value = value ?? '';
+    else input.value = value === null || value === undefined ? '' : String(value);
+  }
+}
+
 function applyChartBound(account, cell, bound, value, scope) {
   const target = value === '' || value === null || value === undefined ? null : Number(value);
   if (target !== null && !Number.isFinite(target)) return;
   const cells = scope === 'all' ? targetChartCells(account) : [cell];
   for (const item of cells) setChartBound(account, item, bound, target);
+  syncTargetTableInputs();
   markChartDirty();
   renderTargetCharts();
 }
@@ -6094,7 +6106,7 @@ async function startRun() {
     $('start-run').disabled = false;
     $('start-run').textContent = 'Pause';
     $('stop-run').hidden = false;
-    showToast(profile ? `GPU profile ${profile} started` : 'run started');
+    showToast('run started');
     pollRun(run.id);
     runWatch.timer = setInterval(() => pollRun(run.id), 2000);
     openRunStream(run.id, runWatch.islands);
