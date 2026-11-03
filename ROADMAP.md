@@ -3498,6 +3498,7 @@ PDFs, and record the species/BEC coverage.
   - [x] Test calibration and curve ordering.
 - [ ] P107.2 Digitise the remaining natural diagrams (#736)
   - [x] `fdcn` stored provisional; vector curves plus a raster crown-closure trace.
+  - [x] Added `ws4.sdmd.trace` for reusable dotted-curve tracing.
   - [ ] `ssn`, `hwn`, `cwn`, `swn`.
   - [ ] Add source entries, overlays, and tests.
 - [ ] P107.3 Digitise the remaining planted diagrams (#737)

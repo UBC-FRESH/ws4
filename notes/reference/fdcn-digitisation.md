@@ -60,3 +60,8 @@ The stored curve is a provisional raster trace through the printed curve:
 These are approximate. The figrecover overlay in the review run is the check.
 Do not treat the `fdcn` diagram as reviewed until that curve is compared with the
 printed page.
+
+The reusable tracer is `ws4.sdmd.trace.trace_raster_curve`: it takes the
+rendered page, the axis calibration, and approximate anchors, then follows the
+remaining dark curve within a vertical window. It is covered by a synthetic dotted
+curve test.

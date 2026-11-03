@@ -4117,3 +4117,8 @@ issue comments.
   5-70 cm, and the two boundaries are vector paths; the printed crown-closure curve
   is a provisional raster trace because it is not a single vector path. Added the
   source-catalog entry, diagram test, and overlay note. The diagram is provisional.
+- P107.2: added `ws4.sdmd.trace.trace_raster_curve`, a reusable raster trace for
+  dotted crown-closure curves that are not single vector paths. It takes rendered
+  image, calibration, and anchors; a synthetic dotted-curve test covers it. `fdcn`
+  remains the only natural diagram stored so far; `ssn` was not committed because
+  its top/boundary path mapping did not survive the overlay check.
