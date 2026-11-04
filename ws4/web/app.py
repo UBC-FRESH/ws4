@@ -713,6 +713,157 @@ def _run_periods(years: list[int], width: int) -> list[dict[str, object]]:
     return periods
 
 
+_CHAT_WORKSPACES = frozenset({"map", "plan", "results", "data", "sdmd"})
+_CHAT_CHIP_ACTIONS = frozenset(
+    {"open_workspace", "open_subview", "set_period", "select_block", "ask"}
+)
+_CHAT_ACTION_MARKER = "WS4_ACTIONS:"
+
+
+def _chat_mapping(value: object) -> dict[str, object]:
+    """Return a string-keyed copy of a mapping, or an empty mapping."""
+    if not isinstance(value, dict):
+        return {}
+    return {str(key): item for key, item in value.items()}
+
+
+def _chat_text(value: object, *, limit: int) -> str:
+    """Return compact single-line text from a JSON value."""
+    if not isinstance(value, str):
+        return ""
+    return " ".join(value.split())[:limit]
+
+
+def _chat_index(value: object) -> int | None:
+    """Return a non-negative integer from a JSON value, or None."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if value >= 0 else None
+    if isinstance(value, str) and value.strip().isdigit():
+        return int(value.strip())
+    return None
+
+
+def _chat_context_lines(context: object) -> list[str]:
+    """Describe the current UI screen for the chat prompt.
+
+    Parameters
+    ----------
+    context : object
+        The caller's ``context`` packet. Only known scalar keys are used.
+
+    Returns
+    -------
+    list of str
+        Prompt lines, one per supplied context field.
+    """
+    data = _chat_mapping(context)
+    lines: list[str] = []
+    workspace = _chat_text(data.get("workspace"), limit=32)
+    subview = _chat_text(data.get("subview"), limit=32)
+    if workspace:
+        suffix = f", subview {subview}" if subview else ""
+        lines.append(f"The UI workspace is {workspace}{suffix}.")
+    period = _chat_mapping(data.get("period"))
+    index = _chat_index(period.get("index"))
+    year = _chat_index(period.get("year"))
+    label = _chat_text(period.get("label"), limit=64)
+    if index is not None:
+        detail = [f"index {index}"]
+        if label:
+            detail.append(f"label {label}")
+        if year is not None:
+            detail.append(f"ending year {year}")
+        lines.append(f"The open period is {', '.join(detail)}.")
+    block = _chat_text(data.get("selected_block"), limit=200)
+    if block:
+        lines.append(f"The selected block is {block}.")
+    profile = _chat_text(data.get("profile"), limit=200)
+    if profile:
+        lines.append(f"The selected scenario profile is {profile}.")
+    account = _chat_text(data.get("account"), limit=200)
+    if account:
+        lines.append(f"The visible account is {account}.")
+    target_filter = _chat_mapping(data.get("target_filter"))
+    search = _chat_text(target_filter.get("search"), limit=200)
+    status = _chat_text(target_filter.get("status"), limit=32)
+    if search or status:
+        lines.append(
+            f"The Plan target filter is search={search or '(none)'}, status={status or '(none)'}."
+        )
+    return lines
+
+
+def _chat_chip(item: object) -> dict[str, str] | None:
+    """Validate one assistant action chip against the safe UI whitelist."""
+    data = _chat_mapping(item)
+    label = _chat_text(data.get("label"), limit=80)
+    action = _chat_text(data.get("action"), limit=32)
+    target = data.get("target")
+    if not label or action not in _CHAT_CHIP_ACTIONS:
+        return None
+    if action == "open_workspace":
+        value = _chat_text(target, limit=32)
+        if value not in _CHAT_WORKSPACES:
+            return None
+    elif action == "open_subview":
+        value = _chat_text(target, limit=64)
+        workspace, separator, subview = value.partition(":")
+        if not separator or workspace not in _CHAT_WORKSPACES or not subview:
+            return None
+        value = f"{workspace}:{subview}"
+    elif action == "set_period":
+        index = _chat_index(target)
+        if index is None:
+            return None
+        value = str(index)
+    elif action == "select_block":
+        value = _chat_text(target, limit=200)
+        if not value:
+            return None
+    else:
+        value = _chat_text(target, limit=500)
+        if not value:
+            return None
+    return {"label": label, "action": action, "target": value}
+
+
+def _split_chat_actions(reply: str) -> tuple[str, list[dict[str, str]]]:
+    """Remove the assistant action marker and return validated chips.
+
+    Parameters
+    ----------
+    reply : str
+        The assistant text.
+
+    Returns
+    -------
+    tuple of (str, list of dict)
+        The text without the marker line, and at most four safe chips.
+    """
+    lines = reply.splitlines()
+    for index in range(len(lines) - 1, -1, -1):
+        line = lines[index].strip()
+        if not line.startswith(_CHAT_ACTION_MARKER):
+            continue
+        raw = line[len(_CHAT_ACTION_MARKER) :].strip().rstrip("`").strip()
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError:
+            parsed = None
+        chips: list[dict[str, str]] = []
+        if isinstance(parsed, list):
+            for item in parsed:
+                chip = _chat_chip(item)
+                if chip is not None:
+                    chips.append(chip)
+                if len(chips) == 4:
+                    break
+        return "\n".join(lines[:index] + lines[index + 1 :]).strip(), chips
+    return reply, []
+
+
 def create_app(
     *,
     dataset: Path,
@@ -1634,10 +1785,19 @@ def create_app(
             context.append(f"The run open in the UI is {run}.")
         if isinstance(year, int):
             context.append(f"The year open in the UI is {year}.")
+        context.extend(_chat_context_lines(payload.get("context")))
         context.append(
             "You may read the repository, run ws4 commands, and edit files when the user asks. "
             "The user sees the reply in a narrow chat panel: keep it compact and concrete, use "
             "short code blocks, and say what you ran. Do not print credentials."
+        )
+        context.append(
+            "To offer safe UI follow-up actions, end the reply with exactly one line starting "
+            "WS4_ACTIONS: followed by a JSON array. Use only these actions: "
+            "open_workspace (target map, plan, results, data, or sdmd), "
+            "open_subview (target workspace:subview), set_period (target integer index), "
+            "select_block (target block id), and ask (target prompt text). "
+            "Never use a chip to edit data, start a run, or run a command."
         )
         prompt = "\n".join(context) + "\n\nUser: " + message
         command = [executable, "run", "--model", agent_model, "--format", "json", "--auto"]
@@ -1716,7 +1876,8 @@ def create_app(
                 errors[-1] if errors else (completed.stderr.strip() or "the agent returned no text")
             )
             raise HTTPException(status_code=502, detail=detail[:500])
-        return {"reply": reply, "session": session_id, "actions": actions[-12:]}
+        reply, chips = _split_chat_actions(reply)
+        return {"reply": reply, "session": session_id, "actions": actions[-12:], "chips": chips}
 
     @app.get("/api/land-base")
     def land_base_geojson(format: str = Query(default="projected")) -> dict[str, Any]:

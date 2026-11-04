@@ -4322,14 +4322,27 @@ issue comments.
   values instead of stale table values. Report:
   `notes/reports/p128-target-chart-table-sync.md`.
 
+- P123.1: Ask now sends the run, workspace, subview, period, selected block,
+  profile, target filter, and visible account as a bounded context packet. The
+  server parses assistant `WS4_ACTIONS:` chips, strips the marker, and validates
+  only safe UI actions: open workspace/subview, set period, select an existing
+  block, or fill the next prompt. Unsafe or malformed chips are dropped. Added
+  `tests/test_web.py` coverage and `notes/reports/p123-assistant-context.md`.
+  Focused web tests: 86 passed. Dashboard: `OVERALL: GREEN`.
+
 - P129: GPU profile runs now use the current edited target file and accept a
   wall-clock budget. Run profile saves current edits instead of reapplying the
   profile target library. Run profile also uses the 200-year profile horizon.
   Report: `notes/reports/p129-gpu-current-targets.md`.
+- P123.1 queued in PR #804; branch `feature/p123-assistant-context`, head
+  `4480c9a`. Dashboard: `OVERALL: GREEN`.
 
 - P130: Solve now routes through the selected GPU profile when one is available,
   using current targets and the time budget. Report:
   `notes/reports/p130-solve-gpu-profile.md`.
+- P123.1 closeout: wrote `notes/reports/p123-closeout.md`, linked #800 as
+  a sub-issue of #780, and queued PR #804. All five CI checks pass. Dashboard:
+  `OVERALL: GREEN`. Merge waits for approval.
 
 - P131: a declared GPU profile time budget now overrides the generation cap, so
   a one-minute request runs for one minute instead of stopping at 5,000

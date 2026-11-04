@@ -6792,6 +6792,68 @@ function appendChat(role, text) {
   return bubble;
 }
 
+function chatContext() {
+  const period = currentPeriod();
+  const search = $('target-filter-search');
+  const status = $('target-filter-status');
+  const profile = $('profile-select');
+  return {
+    run: state.run || null,
+    workspace: state.workspace,
+    subview: currentSub(),
+    period: period
+      ? { index: state.periodIndex, label: period.label ?? null, year: Number(state.year) }
+      : { index: state.periodIndex, year: Number(state.year) },
+    selected_block: state.selectedBlock === null || state.selectedBlock === undefined
+      ? null : String(state.selectedBlock),
+    profile: profile?.value || null,
+    target_filter: {
+      search: search?.value?.trim() || null,
+      status: status?.value || null,
+    },
+    account: state.pickedAccount || [...state.selectedAccounts][0] || null,
+  };
+}
+
+function applyChatChip(chip) {
+  const action = chip?.action;
+  const target = chip?.target;
+  if (action === 'open_workspace' && typeof target === 'string') {
+    setWorkspace(target);
+    return;
+  }
+  if (action === 'open_subview' && typeof target === 'string') {
+    const [workspace, subview] = target.split(':');
+    if (!workspace || !subview) return;
+    setWorkspace(workspace);
+    setSubView(workspace, subview);
+    return;
+  }
+  if (action === 'set_period') {
+    const index = Number(target);
+    if (Number.isInteger(index) && index >= 0) setPeriod(index);
+    return;
+  }
+  if (action === 'select_block' && typeof target === 'string') {
+    const feature = state.features.find(
+      (candidate) => String(candidate.properties?.block_id) === target,
+    );
+    if (!feature) {
+      showToast(`block ${target} is not in this run`, true);
+      return;
+    }
+    setWorkspace('map');
+    showDetail(target);
+    return;
+  }
+  if (action === 'ask' && typeof target === 'string') {
+    const input = $('chat-input');
+    if (!input) return;
+    input.value = target;
+    input.focus();
+  }
+}
+
 async function sendChat(event) {
   if (event?.preventDefault) event.preventDefault();
   if (state.chatBusy) return;
@@ -6814,6 +6876,7 @@ async function sendChat(event) {
         session: state.chatSession || null,
         run: state.run || null,
         year: state.year,
+        context: chatContext(),
       }),
     });
     let response = await request();
@@ -6836,6 +6899,22 @@ async function sendChat(event) {
         chip.textContent = `${action.tool}${action.summary ? `: ${action.summary}` : ''}`;
         chip.title = chip.textContent;
         row.append(chip);
+      }
+      thinking.append(row);
+    }
+    if (Array.isArray(payload.chips) && payload.chips.length) {
+      const row = document.createElement('div');
+      row.className = 'chat-actions';
+      for (const chip of payload.chips) {
+        if (!chip || typeof chip.label !== 'string') continue;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'chat-chip';
+        button.textContent = chip.label;
+        button.title = chip.label;
+        button.dataset.chatAction = chip.action || '';
+        button.addEventListener('click', () => applyChatChip(chip));
+        row.append(button);
       }
       thinking.append(row);
     }

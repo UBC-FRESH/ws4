@@ -121,7 +121,7 @@ exists and the maintainer approves it.
 | P115 TSA 24 source geometry | #765 | `feature/p115-tsa24-source-geometry` | pr-open |
 | P116 TSA 24 map performance | #767 | `feature/p116-tsa24-map-performance` | pr-open |
 | P122 Run timeline and interaction uplift | #775 | `feature/p122-ui-timeline` | pr-open |
-| P123 Assistant context and action chips | #780 | `not-created` | planned |
+| P123 Assistant context and action chips | #780 | `feature/p123-assistant-context` | pr-open |
 | P124 3D estate replay | #781 | `not-created` | planned |
 | P125 Stabilize period playback and map paging | #784 | `fix/p125-playback-map-race` | pr-open |
 | P126 Stabilize playback controls and cadence | #787 | `fix/p126-playback-controls` | pr-open |
@@ -3825,11 +3825,26 @@ Acceptance:
 ## Phase 123: Assistant context and action chips
 
 Parent issue: #780
-Branch: `not-created`
-Status: planned
+Branch: `feature/p123-assistant-context`
+Status: pr-open
 Plan: `notes/design/ws4-ui-port-plan.md`
+Report: `notes/reports/p123-closeout.md`
+PR: #804
 
 Goal: make Ask aware of the current screen and offer safe follow-up actions.
+
+- [x] P123.1 Assistant context and action chips (#800)
+  - [x] Send the current run, workspace, period, block, profile, filter, and account.
+  - [x] Parse and validate assistant action chips against a safe whitelist.
+  - [x] Render chips that navigate or fill a prompt without changing data.
+  - [x] Test context, validation, rendering, and the dashboard.
+
+Acceptance:
+
+- The context packet names each supplied screen field.
+- Chips are bounded to safe view changes and cannot edit data or start runs.
+- Existing tool summaries and `/api/chat` permissions are unchanged.
+- `python scripts/dashboard.py` is green.
 
 ## Phase 124: 3D estate replay
 

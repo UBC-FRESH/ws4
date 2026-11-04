@@ -19,7 +19,7 @@ import yaml
 
 pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient
-from ws4.web.app import create_app
+from ws4.web.app import _chat_chip, _chat_context_lines, _split_chat_actions, create_app
 
 
 def _app(
@@ -1258,6 +1258,145 @@ def test_the_chat_agent_returns_text_tools_and_the_session(
     assert "ses_test" in command
 
 
+def test_chat_context_lines_ignore_empty_fields() -> None:
+    """Only supplied context fields become prompt lines."""
+    assert _chat_context_lines(None) == []
+    assert _chat_context_lines({"workspace": "map"}) == ["The UI workspace is map."]
+    assert _chat_context_lines({"workspace": "results", "subview": ""}) == [
+        "The UI workspace is results."
+    ]
+    assert _chat_context_lines({"period": {"index": 0}}) == ["The open period is index 0."]
+    assert _chat_context_lines({"target_filter": {"search": "fire"}}) == [
+        "The Plan target filter is search=fire, status=(none)."
+    ]
+    assert _chat_context_lines({"target_filter": {"status": "failing"}}) == [
+        "The Plan target filter is search=(none), status=failing."
+    ]
+
+
+def test_split_chat_actions_handles_missing_and_empty_markers() -> None:
+    """A reply without a marker is unchanged, and an empty list yields no chips."""
+    assert _split_chat_actions("plain reply") == ("plain reply", [])
+    assert _split_chat_actions("Answer\nWS4_ACTIONS: []") == ("Answer", [])
+
+
+def test_chat_chip_rejects_unsafe_targets() -> None:
+    """Every chip action has a bounded, non-executable target."""
+    assert _chat_chip({"label": "x", "action": "open_workspace", "target": "shell"}) is None
+    assert _chat_chip({"label": "x", "action": "open_subview", "target": "results"}) is None
+    assert _chat_chip({"label": "x", "action": "set_period", "target": "-1"}) is None
+    assert _chat_chip({"label": "x", "action": "select_block", "target": "  "}) is None
+    assert _chat_chip({"label": "x", "action": "ask", "target": ""}) is None
+    assert _chat_chip({"label": "x", "action": "shell", "target": "rm"}) is None
+    assert _chat_chip({"label": "Later", "action": "set_period", "target": 4}) == {
+        "label": "Later",
+        "action": "set_period",
+        "target": "4",
+    }
+    assert _chat_chip({"label": "Block", "action": "select_block", "target": "B-1"}) == {
+        "label": "Block",
+        "action": "select_block",
+        "target": "B-1",
+    }
+
+
+def test_the_chat_agent_receives_the_ui_context(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The chat prompt names the screen, period, block, profile, filter, and account."""
+    client = _chat_client(tmp_path)
+    captured: dict[str, object] = {}
+
+    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        captured["command"] = command
+        return subprocess.CompletedProcess(
+            command, 0, json.dumps({"type": "text", "part": {"text": "ok"}}), ""
+        )
+
+    monkeypatch.setattr("ws4.web.app.shutil.which", lambda name: "/usr/bin/opencode")
+    monkeypatch.setattr("ws4.web.app.subprocess.run", fake_run)
+    response = client.post(
+        "/api/chat",
+        json={
+            "message": "what is this?",
+            "run": "run1",
+            "year": 2030,
+            "context": {
+                "workspace": "results",
+                "subview": "timeline",
+                "period": {"index": 2, "label": "2025-2030", "year": 2030},
+                "selected_block": "B-42",
+                "profile": "base",
+                "target_filter": {"search": "fire", "status": "failing"},
+                "account": "product.total",
+            },
+        },
+    )
+    assert response.status_code == 200
+    command = captured["command"]
+    assert isinstance(command, list)
+    prompt = command[-1]
+    assert isinstance(prompt, str)
+    assert "The UI workspace is results, subview timeline." in prompt
+    assert "The open period is index 2, label 2025-2030, ending year 2030." in prompt
+    assert "The selected block is B-42." in prompt
+    assert "The selected scenario profile is base." in prompt
+    assert "The Plan target filter is search=fire, status=failing." in prompt
+    assert "The visible account is product.total." in prompt
+
+
+def test_the_chat_agent_returns_only_safe_action_chips(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The endpoint strips the marker and drops chips outside the safe whitelist."""
+    client = _chat_client(tmp_path)
+    reply = "Open the timeline or reports."
+    chips = [
+        {"label": "Open reports", "action": "open_workspace", "target": "results"},
+        {"label": "Carbon", "action": "open_subview", "target": "data:carbon"},
+        {"label": "Bad", "action": "shell", "target": "rm -rf /"},
+        {"label": "Explain", "action": "ask", "target": "Explain the penalty."},
+    ]
+    stdout = json.dumps(
+        {
+            "type": "text",
+            "part": {"text": f"{reply}\nWS4_ACTIONS: {json.dumps(chips)}"},
+        }
+    )
+
+    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(command, 0, stdout, "")
+
+    monkeypatch.setattr("ws4.web.app.shutil.which", lambda name: "/usr/bin/opencode")
+    monkeypatch.setattr("ws4.web.app.subprocess.run", fake_run)
+    response = client.post("/api/chat", json={"message": "hi"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["reply"] == reply
+    assert body["chips"] == [
+        {"label": "Open reports", "action": "open_workspace", "target": "results"},
+        {"label": "Carbon", "action": "open_subview", "target": "data:carbon"},
+        {"label": "Explain", "action": "ask", "target": "Explain the penalty."},
+    ]
+
+
+def test_a_malformed_action_marker_is_removed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A malformed marker cannot leak into the reply or produce a chip."""
+    client = _chat_client(tmp_path)
+    stdout = json.dumps({"type": "text", "part": {"text": "Answer\nWS4_ACTIONS: not-json"}})
+
+    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(command, 0, stdout, "")
+
+    monkeypatch.setattr("ws4.web.app.shutil.which", lambda name: "/usr/bin/opencode")
+    monkeypatch.setattr("ws4.web.app.subprocess.run", fake_run)
+    body = client.post("/api/chat", json={"message": "hi"}).json()
+    assert body["reply"] == "Answer"
+    assert body["chips"] == []
+
+
 def test_the_chat_agent_reports_a_missing_cli(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1759,6 +1898,18 @@ def test_chat_is_a_floating_ask_overlay(tmp_path: Path) -> None:
     css = client.get("/static/style.css").text
     assert ".chat-toggle" in css
     assert "position:fixed" in css
+
+
+def test_chat_context_and_action_chips_are_wired(tmp_path: Path) -> None:
+    """The shell sends context and renders only validated chip buttons."""
+    client, _targets = _app(tmp_path)
+    js = client.get("/static/app.js").text
+    css = client.get("/static/style.css").text
+    assert "function chatContext()" in js
+    assert "context: chatContext()" in js
+    assert "function applyChatChip(chip)" in js
+    assert "button.className = 'chat-chip'" in js
+    assert ".chat-chip" in css
 
 
 def test_profile_run_uses_the_gpu_worker(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
