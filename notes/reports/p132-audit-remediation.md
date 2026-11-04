@@ -62,6 +62,8 @@ baseline rather than weakening or renaming the existing gate.
 - `select_block` still selects only a block present in the current run.
 - The 7 CCISS WS4 splits are retired WS4 labels; they are not current coverage.
 
-## PR
+## Merge
 
-Queued in PR #814 at head `18d7894`; CI run `41783495241` passed all five checks.
+PR #814 squash-merged as `fa6197f` on 2026-11-04. The branch was deleted and
+#809/#810-#813 were closed. CI run `41784420242` passed all five checks before
+the merge; the post-merge main run is recorded by the repository.

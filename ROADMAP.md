@@ -130,7 +130,7 @@ exists and the maintainer approves it.
 | P129 GPU profile current targets and budget | #798 | `feature/p129-gpu-profile-current-targets` | pr-open |
 | P130 Route Solve through the GPU profile path | #802 | `feature/p130-solve-gpu-profile` | pr-open |
 | P131 Profile time budget overrides generations | #805 | `fix/p131-profile-time-budget` | pr-open |
-| P132 Adversarial audit remediation | #809 | `feature/p132-audit-remediation` | pr-open |
+| P132 Adversarial audit remediation | #809 | `feature/p132-audit-remediation` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3997,7 +3997,8 @@ Acceptance:
 
 Parent issue: #809
 Branch: `feature/p132-audit-remediation`
-Status: pr-open
+Status: complete
+Merge commit: `fa6197f`
 Plan: `notes/reports/p132-audit-remediation-plan.md`
 Report: `notes/reports/p132-audit-remediation.md`
 PR: #814

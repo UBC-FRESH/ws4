@@ -4388,3 +4388,9 @@ issue comments.
   check: pass.
 - P132 queued in PR #814; branch `feature/p132-audit-remediation`, head
   `28a0376`. Dashboard: `OVERALL: GREEN`.
+
+- P132: merged via PR #814 as `fa6197f`. The audit remediation is complete:
+  AU metadata validation, unique relationship crosswalks, phase/PSP aliases,
+  assistant input hardening, source manifest/check, corrected closeout evidence,
+  and P121 sub-issue links. Branch deleted; #809 and #810-#813 closed. Dashboard:
+  `OVERALL: GREEN`.
