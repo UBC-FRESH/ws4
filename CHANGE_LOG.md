@@ -4340,3 +4340,6 @@ issue comments.
 - P130: Solve now routes through the selected GPU profile when one is available,
   using current targets and the time budget. Report:
   `notes/reports/p130-solve-gpu-profile.md`.
+- P123.1 closeout: wrote `notes/reports/p123-closeout.md`, linked #800 as
+  a sub-issue of #780, and queued PR #804. All five CI checks pass. Dashboard:
+  `OVERALL: GREEN`. Merge waits for approval.
