@@ -45,7 +45,7 @@ python scripts/check_bec_authority.py
 python scripts/dashboard.py
 ```
 
-Focused tests: 136 passed. BEC authority check: pass. Dashboard:
+Focused tests: 138 passed. CI run `41783495241` passed all five checks. BEC authority check: pass. Dashboard:
 `OVERALL: GREEN`.
 
 Measured `pytest --cov=ws4`: 80.95% total. The repository's 90% gate still
@@ -64,4 +64,4 @@ baseline rather than weakening or renaming the existing gate.
 
 ## PR
 
-Queued in PR #814 after `28a0376`.
+Queued in PR #814 at head `18d7894`; CI run `41783495241` passed all five checks.
