@@ -517,7 +517,11 @@ review counts, and separate AU evidence. The counts are:
 ``GET /api/sdmd/coverage`` returns the registry and filters by zone or status;
 ``GET /api/sdmd/coverage/{bec}`` returns one label. The SDMD workspace exposes a
 **BC coverage** selector. A provisional row is a lead, not an equivalence claim;
-a no-diagram row is a named gap. The registry never substitutes an unrelated AU.
+a no-diagram row is a named gap with a reason and next action:
+``variant_not_digitized`` (the zone has an Atlas diagram, but this variant does
+not) or ``no_atlas_zone`` (no diagram in the 14-public Atlas covers the zone).
+``bec_review_queue.csv`` names the 10 provisional diagrams and the 57 BEC labels
+they affect. The registry never substitutes an unrelated AU.
 
 Evidence roles and limits
 -------------------------

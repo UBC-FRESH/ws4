@@ -41,6 +41,8 @@ def test_provisional_and_no_diagram_rows_are_explicit() -> None:
     assert missing["coverage_status"] == "no-diagram"
     assert missing["diagram_ids"] == ""
     assert missing["au_ids"] == ""
+    assert missing["gap_reason"] in {"variant_not_digitized", "no_atlas_zone"}
+    assert missing["gap_action"]
 
 
 def test_coverage_filters_and_unknown_label() -> None:
@@ -72,8 +74,24 @@ def test_coverage_csv_is_reproducible() -> None:
         "provisional_count",
         "au_ids",
         "evidence_status",
+        "gap_reason",
+        "gap_action",
         "note",
     ]
     assert not frame.duplicated(["bec"]).any()
     assert set(frame["coverage_status"]) <= {"reviewed", "provisional", "no-diagram"}
     assert set(frame["evidence_status"]) <= {"pilot", "none"}
+
+
+def test_gap_triage_distinguishes_atlas_and_non_atlas_zones() -> None:
+    """Every no-diagram row says whether its zone has an Atlas diagram."""
+    frame = coverage_frame()
+    gap = frame[frame["coverage_status"] == "no-diagram"]
+    assert gap["gap_reason"].value_counts().to_dict() == {
+        "variant_not_digitized": 150,
+        "no_atlas_zone": 11,
+    }
+    assert set(gap["gap_action"]) == {
+        "Digitize and review a variant-specific diagram, or keep a zone-level refusal.",
+        "No diagram in the 14-public Atlas for this zone; add source evidence before coverage.",
+    }

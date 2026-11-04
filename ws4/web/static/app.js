@@ -3409,6 +3409,8 @@ function renderSdmdCoverageDetail() {
   add('Diagrams', row.diagram_ids ? row.diagram_ids.split(';').join(', ') : 'None');
   add('Species / origin', [row.species, row.origins].filter(Boolean).join(' · ') || 'None');
   add('AU evidence', row.au_ids ? row.au_ids.split(';').join(', ') : 'No AU store for this BEC');
+  if (row.gap_reason) add('Gap reason', row.gap_reason);
+  if (row.gap_action) add('Next action', row.gap_action);
   add('Note', row.note || '');
 }
 
