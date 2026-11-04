@@ -77,6 +77,10 @@ not a validated AU store.
 4. Build an AU only where plot/tree/stand evidence supports all six tables.
 5. Keep the selector's gap reason visible; no unrelated AU substitution.
 
+## PR
+
+Queued in PR #822, stacked on #819 after `41dddb7`.
+
 ## Verification
 
 ```bash
