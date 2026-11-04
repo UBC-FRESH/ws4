@@ -5,24 +5,44 @@ Parent: #781
 Child: #815
 Branch: `feature/p124-3d-replay`
 
-## Goal
+## What changed
 
-Add an experimental coarse 3D view of the current block layer without terrain,
-machine, or editing controls. The 2D map remains authoritative.
+- Added a Map-workspace **3D** toggle and a full-screen experimental overlay.
+- The renderer is original Canvas 2D orthographic code. No third-party 3D library is
+  vendored.
+- Block polygons extrude by treatment, current treatment, and an optional `age`
+  property. The existing period slider and playback drive the replay.
+- Drag orbits, wheel zooms, reset restores the camera, Escape closes.
+- Clicking a 3D block calls the same `showDetail` path as the 2D map; the selected
+  block is highlighted in both views.
+- The view refuses more than 2,000 block polygons and names the count.
+- The 2D map remains authoritative. No terrain, machine, edit, run, or permission
+  controls were added.
 
-## Design
+## Evidence
 
-- A Map-workspace button opens a full-screen 3D overlay.
-- The renderer is an original Canvas 2D orthographic projection; no third-party
-  renderer is vendored.
-- Block polygons are extruded by a coarse height. Treated blocks are taller;
-  `age` is used when the geometry carries it. The existing period slider drives
-  the same feature set.
-- Drag orbits, wheel zooms, reset restores the view, Escape closes.
-- Clicking a block selects it through the same `showDetail` path as the 2D map.
-- The view refuses more than 2,000 block features and names the count.
-- No edit, run, terrain, or machine capability is added.
+- `ws4/web/static/index.html`: 3D toggle, overlay, canvas, controls.
+- `ws4/web/static/app.js`: `estate3dHeight`, `estate3dProject`, `estate3dPick`,
+  `renderEstate3d`, `openEstate3d`, `closeEstate3d`, and selection/period hooks.
+- `ws4/web/static/style.css`: `.estate-3d` overlay and `.map-3d-toggle`.
+- `tests/test_web.py`: shell wiring and budget constant.
+- `tests/test_web_3d_js.py`: Node projection/height behavior.
+- `docs/reference/web.rst`: user-facing limits.
 
 ## Verification
 
-Pending implementation.
+```bash
+python -m pytest tests/test_web.py tests/test_web_3d_js.py -q
+python scripts/dashboard.py
+```
+
+Focused web tests: 90 passed. Dashboard: `OVERALL: GREEN`.
+
+## Limits
+
+- The view uses the `age` property only when the configured geometry carries it;
+  the normal map payload does not include age.
+- It is a coarse orthographic view, not a terrain or machine simulation.
+- The 2,000-block gate is a client-side budget, not a server-side geometry contract.
+- The Node test covers projection and height helpers, not a real browser frame.
+- The 2D map remains the source of truth for selection and URL state.

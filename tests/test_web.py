@@ -1939,6 +1939,22 @@ def test_targets_tab_has_a_profile_selector(tmp_path: Path) -> None:
     assert 'id="run-profile"' in html
 
 
+def test_3d_estate_replay_is_gated_and_authoritative(tmp_path: Path) -> None:
+    """The 3D view is an experimental Map overlay with no edit controls."""
+    client, _targets = _app(tmp_path)
+    html = client.get("/").text
+    js = client.get("/static/app.js").text
+    css = client.get("/static/style.css").text
+    assert 'id="map-3d-toggle"' in html
+    assert 'id="estate-3d"' in html
+    assert 'id="estate-3d-canvas"' in html
+    assert "No terrain, machine, or edit controls" in html
+    assert "function renderEstate3d()" in js
+    assert "ESTATE_3D_LIMIT = 2000" in js
+    assert "function estate3dPick(" in js
+    assert ".estate-3d" in css
+
+
 def test_chat_is_a_floating_ask_overlay(tmp_path: Path) -> None:
     """The assistant is an overlay opened by the header Ask pill."""
     client, _targets = _app(tmp_path)

@@ -84,6 +84,21 @@ the view. The workspace tabs implement the WAI-ARIA tabs pattern with left/right
 Home, and End navigation. LiDAR and Carbon are nested Data sections rather than top-level
 tabs; a Data option is hidden when the selected data does not exist.
 
+3D estate replay
+----------------
+
+The Map workspace has an experimental **3D** toggle. It opens a full-screen Canvas 2D
+orthographic replay of the current block layer: treated blocks extrude taller than
+untreated blocks, an optional ``age`` property raises the height, and the existing
+period slider drives the same feature set. Drag orbits, the wheel zooms, **Reset view**
+restores the camera, and Escape closes the overlay. Clicking a block uses the same
+selection path as the 2D map.
+
+The 2D map remains authoritative. The 3D view has no terrain, machine, edit, run, or
+permission controls. It refuses more than 2,000 block features and names the count rather
+than attempting a degraded render. The renderer is original Canvas 2D code; no
+third-party 3D library is vendored.
+
 Assistant overlay
 -----------------
 

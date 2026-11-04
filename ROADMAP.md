@@ -3858,12 +3858,12 @@ Report: `notes/reports/p124-3d-replay.md`
 
 Goal: add an experimental coarse 3D block replay without machine/terrain editing.
 
-- [ ] P124.1 3D estate replay (#815)
-  - [ ] Add the Map-workspace 3D toggle and overlay.
-  - [ ] Extrude coarse block polygons by treatment/age and period.
-  - [ ] Sync selection and period with the 2D map.
-  - [ ] Gate the view on a block budget and name the refusal.
-  - [ ] Test projection, height, shell wiring, and dashboard.
+- [x] P124.1 3D estate replay (#815)
+  - [x] Add the Map-workspace 3D toggle and overlay.
+  - [x] Extrude coarse block polygons by treatment/age and period.
+  - [x] Sync selection and period with the 2D map.
+  - [x] Gate the view on a block budget and name the refusal.
+  - [x] Test projection, height, shell wiring, and dashboard.
 
 ## Phase 125: Stabilize period playback and map paging
 
