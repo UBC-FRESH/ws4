@@ -44,6 +44,15 @@ DIAGRAM_META: dict[str, tuple[str, str, str]] = {
 AU_EVIDENCE: dict[str, tuple[str, ...]] = {"IDFdk3": ("AU-IDFdk3-TSA23-FDI", "AU-IDFdk3-TSA23-PLI")}
 
 
+def _atlas_zones() -> set[str]:
+    """Return the BEC zones named by the public Atlas catalogue."""
+    catalog = json.loads((DATA / "source_catalog.json").read_text(encoding="utf-8"))
+    zones: set[str] = set()
+    for diagram in catalog.get("diagrams", []):
+        zones.update(str(zone) for zone in diagram.get("bec_main", []))
+    return zones
+
+
 def _diagram_reviews() -> dict[str, str]:
     """Read the review status for each Atlas diagram."""
     reviews: dict[str, str] = {}
@@ -76,6 +85,7 @@ def build_coverage() -> pd.DataFrame:
     """
     official = pd.read_csv(DATA / "bec_official.csv", dtype=str).fillna("")
     reviews = _diagram_reviews()
+    atlas_zones = _atlas_zones()
     rows: list[dict[str, object]] = []
     for row in official.sort_values("bec").itertuples(index=False):
         bec = str(row.bec)
@@ -117,7 +127,65 @@ def build_coverage() -> pd.DataFrame:
                 "provisional_count": provisional,
                 "au_ids": ";".join(au_ids),
                 "evidence_status": "pilot" if au_ids else "none",
+                "gap_reason": (
+                    ""
+                    if status != "no-diagram"
+                    else (
+                        "variant_not_digitized" if str(row.zone) in atlas_zones else "no_atlas_zone"
+                    )
+                ),
+                "gap_action": (
+                    ""
+                    if status != "no-diagram"
+                    else (
+                        "Digitize and review a variant-specific diagram, "
+                        "or keep a zone-level refusal."
+                        if str(row.zone) in atlas_zones
+                        else "No diagram in the 14-public Atlas for this zone; "
+                        "add source evidence before coverage."
+                    )
+                ),
                 "note": note,
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def build_review_queue() -> pd.DataFrame:
+    """Return the provisional-diagram review queue.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row per provisional Atlas diagram and the BEC labels it affects.
+    """
+    coverage = build_coverage()
+    catalog = json.loads((DATA / "source_catalog.json").read_text(encoding="utf-8"))
+    by_id = {str(item["diagram_id"]): item for item in catalog.get("diagrams", [])}
+    reviews = _diagram_reviews()
+    rows: list[dict[str, object]] = []
+    for diagram_id, (species, origin, _) in sorted(DIAGRAM_META.items()):
+        if reviews.get(diagram_id) != "provisional":
+            continue
+        labels = sorted(
+            coverage.loc[
+                coverage["diagram_ids"]
+                .str.split(";")
+                .apply(lambda items, expected=diagram_id: expected in items),
+                "bec",
+            ].tolist()
+        )
+        meta = by_id.get(diagram_id, {})
+        rows.append(
+            {
+                "diagram_id": diagram_id,
+                "species": species,
+                "origin": origin,
+                "status": "provisional",
+                "pdf_url": str(meta.get("url", "")),
+                "bec_labels": ";".join(labels),
+                "label_count": len(labels),
+                "note": "Review curves, crown closure, and BEC applicability; maintainer decides.",
             }
         )
     return pd.DataFrame(rows)
@@ -134,9 +202,13 @@ def main() -> int:
     frame = build_coverage()
     output = DATA / "bec_coverage.csv"
     frame.to_csv(output, index=False)
+    queue = build_review_queue()
+    queue_output = DATA / "bec_review_queue.csv"
+    queue.to_csv(queue_output, index=False)
     counts = frame["coverage_status"].value_counts().to_dict()
     print(f"wrote {len(frame)} rows to {output}")
     print(f"status counts: {counts}")
+    print(f"wrote {len(queue)} provisional diagrams to {queue_output}")
     return 0
 
 
