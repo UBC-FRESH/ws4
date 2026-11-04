@@ -122,7 +122,7 @@ exists and the maintainer approves it.
 | P116 TSA 24 map performance | #767 | `feature/p116-tsa24-map-performance` | pr-open |
 | P122 Run timeline and interaction uplift | #775 | `feature/p122-ui-timeline` | pr-open |
 | P123 Assistant context and action chips | #780 | `feature/p123-assistant-context` | complete |
-| P124 3D estate replay | #781 | `feature/p124-3d-replay` | active |
+| P124 3D estate replay | #781 | `feature/p124-3d-replay` | pr-open |
 | P125 Stabilize period playback and map paging | #784 | `fix/p125-playback-map-race` | pr-open |
 | P126 Stabilize playback controls and cadence | #787 | `fix/p126-playback-controls` | pr-open |
 | P127 Fix target chart edits and Solve semantics | #791 | `fix/p127-target-chart-solve` | pr-open |
