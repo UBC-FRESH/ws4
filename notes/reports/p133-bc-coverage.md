@@ -54,7 +54,7 @@ Focused tests: 126 passed. BEC authority check: pass. Dashboard:
 
 ## PR
 
-Queued in PR #819 after `306ee03`.
+Squash-merged via PR #819 as `ae9aeb0`; branch deleted and #817/#818 closed.
 
 ## Limits
 

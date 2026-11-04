@@ -79,7 +79,7 @@ not a validated AU store.
 
 ## PR
 
-Queued in PR #822, stacked on #819 after `41dddb7`.
+Squash-merged via PR #823 as `65e295e`; branch deleted and #820/#821 closed.
 
 ## Verification
 

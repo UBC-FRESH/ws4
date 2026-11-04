@@ -4426,3 +4426,10 @@ issue comments.
 tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P134.1 queued in PR #822 (stacked on #819); branch
   `feature/p134-coverage-closure`, head `41dddb7`. Dashboard: `OVERALL: GREEN`.
+
+- P133: merged via PR #819 as `ae9aeb0`. The BC-wide coverage registry is live:
+  219 BEC labels, 1 reviewed, 57 provisional, 161 named gaps.
+- P134: merged via PR #823 as `65e295e`. The 161 gaps are split into 150
+  `variant_not_digitized` and 11 `no_atlas_zone`; `bec_review_queue.csv` names
+  10 provisional diagrams and 57 labels; TSA 24/27/29 evidence blockers are
+  recorded. No diagram was self-approved. Dashboard: `OVERALL: GREEN`.
