@@ -132,6 +132,7 @@ exists and the maintainer approves it.
 | P131 Profile time budget overrides generations | #805 | `fix/p131-profile-time-budget` | pr-open |
 | P132 Adversarial audit remediation | #809 | `feature/p132-audit-remediation` | complete |
 | P133 BC-wide SDMD coverage registry | #817 | `feature/p133-bc-coverage` | pr-open |
+| P134 SDMD coverage closure | #820 | `feature/p134-coverage-closure` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4053,3 +4054,28 @@ Acceptance:
 - Reviewed, provisional, and no-diagram rows are distinct.
 - The selector names the gap instead of substituting an unrelated AU.
 - `python scripts/dashboard.py` is green.
+
+## Phase 134: SDMD coverage closure
+
+Parent issue: #820
+Branch: `feature/p134-coverage-closure`
+Status: pr-open
+Report: `notes/reports/p134-coverage-closure.md`
+PR: #822
+
+Goal: turn the BC coverage registry into a named work queue and audit the
+remaining AU evidence.
+
+- [x] P134.1 Gap triage and provisional review queue (#821)
+  - [x] Add `gap_reason` and `gap_action` to all coverage rows.
+  - [x] Split 161 gaps into 150 variant gaps and 11 no-Atlas-zone labels.
+  - [x] Build the 10-diagram / 57-label review queue.
+  - [x] Show gap reason/action in the selector.
+  - [x] Audit TSA 24/27/29 evidence blockers.
+
+Acceptance:
+
+- Every gap has a reason and next action.
+- Every provisional diagram has a review row.
+- No diagram is self-approved.
+- Dashboard green.

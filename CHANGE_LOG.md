@@ -4417,3 +4417,12 @@ issue comments.
   passed. Dashboard: `OVERALL: GREEN`.
 - P133.1 queued in PR #819; branch `feature/p133-bc-coverage`, head
   `306ee03`. Dashboard: `OVERALL: GREEN`.
+
+- P134.1: added `gap_reason`/`gap_action` to the BC coverage registry. The 161
+  no-diagram labels split into 150 `variant_not_digitized` and 11
+  `no_atlas_zone`. Added `bec_review_queue.csv` for 10 provisional diagrams and
+  57 BEC labels, and audited TSA 24/27/29 AU evidence blockers. The selector
+  shows the gap reason and next action. No diagram was self-approved. Focused
+tests: 129 passed. Dashboard: `OVERALL: GREEN`.
+- P134.1 queued in PR #822 (stacked on #819); branch
+  `feature/p134-coverage-closure`, head `41dddb7`. Dashboard: `OVERALL: GREEN`.

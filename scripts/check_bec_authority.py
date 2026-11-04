@@ -41,6 +41,7 @@ def check_bec_authority(data: Path = DATA, manifest: Path = MANIFEST) -> list[st
     official_crosswalk = pd.read_csv(data / "bec_official_crosswalk.csv", dtype=str).fillna("")
     cciss = pd.read_csv(data / "bec_crosswalk_review.csv", dtype=str).fillna("")
     coverage = pd.read_csv(data / "bec_coverage.csv", dtype=str).fillna("")
+    review_queue = pd.read_csv(data / "bec_review_queue.csv", dtype=str).fillna("")
 
     if len(official) != 219 or official["bec"].nunique() != 219:
         failures.append("bec_official.csv must have 219 unique current labels")
@@ -79,6 +80,16 @@ def check_bec_authority(data: Path = DATA, manifest: Path = MANIFEST) -> list[st
         "reviewed": 1,
     }:
         failures.append(f"unexpected BEC coverage counts: {coverage_counts}")
+    gap_counts = (
+        coverage[coverage["coverage_status"] == "no-diagram"]["gap_reason"].value_counts().to_dict()
+    )
+    if gap_counts != {"variant_not_digitized": 150, "no_atlas_zone": 11}:
+        failures.append(f"unexpected coverage gap counts: {gap_counts}")
+    queued_labels: set[str] = set()
+    for value in review_queue["bec_labels"]:
+        queued_labels.update(item for item in str(value).split(";") if item)
+    if len(review_queue) != 10 or len(queued_labels) != 57:
+        failures.append("provisional review queue must name 10 diagrams and 57 BEC labels")
 
     if not manifest.is_file():
         failures.append(f"missing source manifest: {manifest}")
@@ -102,6 +113,7 @@ def check_bec_authority(data: Path = DATA, manifest: Path = MANIFEST) -> list[st
         "bec_official_crosswalk.csv",
         "bec_crosswalk_review.csv",
         "bec_coverage.csv",
+        "bec_review_queue.csv",
     ):
         if name not in files:
             failures.append(f"manifest does not cover {name}")
