@@ -31,7 +31,7 @@ Branch: `feature/p124-3d-replay`
 
 ## PR
 
-Queued in PR #816 after `056b519`.
+Squash-merged via PR #816 as `9680323` on 2026-11-04; branch deleted and #781/#815 closed.
 
 ## Verification
 

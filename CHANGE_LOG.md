@@ -4402,3 +4402,8 @@ issue comments.
   Dashboard: `OVERALL: GREEN`.
 - P124.1 queued in PR #816; branch `feature/p124-3d-replay`, head
   `056b519`. Dashboard: `OVERALL: GREEN`.
+
+- P124: merged via PR #816 as `9680323`. The experimental 3D estate replay is
+  live: Canvas 2D extrusion, period/selection sync, orbit/zoom/reset, and a
+  2,000-block budget. Branch deleted; #781 and #815 closed. Dashboard:
+  `OVERALL: GREEN`.
