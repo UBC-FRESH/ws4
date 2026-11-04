@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import shutil
 import sys
 from pathlib import Path
 from types import ModuleType
 from typing import Any
 
+import pandas as pd
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -91,3 +93,53 @@ def test_bec_authority_main_reports_failure(
     monkeypatch.setattr(module, "check_bec_authority", lambda: ["bad table"])
     assert authority.main() == 1
     assert "FAIL bad table" in capsys.readouterr().out
+
+
+def test_bec_authority_detects_table_contract_changes(tmp_path: Path) -> None:
+    """Every authority table has a count and relationship contract."""
+    data = _copy_data(tmp_path)
+    official = data / "bec_official.csv"
+    official.write_text(
+        "\n".join(official.read_text(encoding="utf-8").splitlines()[:-1]) + "\n", encoding="utf-8"
+    )
+    retired = data / "bec_retired.csv"
+    retired.write_text(
+        "\n".join(retired.read_text(encoding="utf-8").splitlines()[:-1]) + "\n", encoding="utf-8"
+    )
+    counts = data / "tsa_bec_counts.csv"
+    counts_frame = pd.read_csv(counts)
+    counts_frame = counts_frame.drop(columns=["bec_level"]).iloc[:-1]
+    counts_frame.to_csv(counts, index=False)
+    official_crosswalk = data / "bec_official_crosswalk.csv"
+    frame = pd.read_csv(official_crosswalk)
+    frame.loc[0, "relationship"] = "bad"
+    frame.to_csv(official_crosswalk, index=False)
+    cciss = data / "bec_crosswalk_review.csv"
+    frame = pd.read_csv(cciss)
+    frame.loc[0, "relationship"] = "bad"
+    frame = pd.concat([frame, frame.iloc[[0]]], ignore_index=True)
+    frame.to_csv(cciss, index=False)
+    failures = authority.check_bec_authority(data, data / "bec_sources.json")
+    for needle in (
+        "219 unique current labels",
+        "107 unique retired labels",
+        "304 normalized variant rows",
+        "variant-level support",
+        "unexpected official crosswalk counts",
+        "unexpected CCISS crosswalk counts",
+        "duplicate label pairs",
+    ):
+        assert any(needle in item for item in failures), needle
+
+
+def test_bec_authority_detects_manifest_coverage_gaps(tmp_path: Path) -> None:
+    """A manifest that names a missing file or omits a table fails."""
+    data = _copy_data(tmp_path)
+    manifest = data / "bec_sources.json"
+    payload = json.loads(manifest.read_text(encoding="utf-8"))
+    payload["files"]["missing.csv"] = {"sha256": "0"}
+    payload["files"].pop("bec_variants.csv")
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+    failures = authority.check_bec_authority(data, manifest)
+    assert any("missing file" in item for item in failures)
+    assert any("does not cover bec_variants.csv" in item for item in failures)
