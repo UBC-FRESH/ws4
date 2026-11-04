@@ -52,6 +52,10 @@ python scripts/dashboard.py
 Focused tests: 126 passed. BEC authority check: pass. Dashboard:
 `OVERALL: GREEN`.
 
+## PR
+
+Queued in PR #819 after `306ee03`.
+
 ## Limits
 
 - A provisional diagram is a zone-level lead, not a reviewed BEC-specific claim.

@@ -4415,3 +4415,5 @@ issue comments.
   does not substitute an unrelated AU. Added `scripts/build_bec_coverage.py`,
   `bec_coverage.csv`, tests, and the source-manifest check. Focused tests: 126
   passed. Dashboard: `OVERALL: GREEN`.
+- P133.1 queued in PR #819; branch `feature/p133-bc-coverage`, head
+  `306ee03`. Dashboard: `OVERALL: GREEN`.
