@@ -4366,3 +4366,7 @@ issue comments.
 - P123: merged via PR #804 as `7a66ee3`. Ask now sends the current screen
   context and renders server-validated safe action chips. Branch deleted; parent
   #780 and child #800 closed. Dashboard: `OVERALL: GREEN`.
+
+- Script coverage (2026-11-04): added a unit test for the schedule CSV loaders shared by
+  `scripts/benchmark_route_events.py` and `scripts/profile_route.py`. The full suite is now
+  1,589 tests and the `scripts` coverage gate passes at 90.14% (was 89.69% on `22471cb`).
