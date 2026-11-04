@@ -4407,3 +4407,11 @@ issue comments.
   live: Canvas 2D extrusion, period/selection sync, orbit/zoom/reset, and a
   2,000-block budget. Branch deleted; #781 and #815 closed. Dashboard:
   `OVERALL: GREEN`.
+
+- P133.1: added the BC-wide SDMD coverage registry: 219 current BEC labels,
+  1 reviewed, 57 provisional, 161 no-diagram. Added
+  `/api/sdmd/coverage` and `/api/sdmd/coverage/{bec}`, plus a BD coverage
+  selector in the SDMD workspace. The registry names gaps and AU evidence; it
+  does not substitute an unrelated AU. Added `scripts/build_bec_coverage.py`,
+  `bec_coverage.csv`, tests, and the source-manifest check. Focused tests: 126
+  passed. Dashboard: `OVERALL: GREEN`.

@@ -131,6 +131,7 @@ exists and the maintainer approves it.
 | P130 Route Solve through the GPU profile path | #802 | `feature/p130-solve-gpu-profile` | pr-open |
 | P131 Profile time budget overrides generations | #805 | `fix/p131-profile-time-budget` | pr-open |
 | P132 Adversarial audit remediation | #809 | `feature/p132-audit-remediation` | complete |
+| P133 BC-wide SDMD coverage registry | #817 | `feature/p133-bc-coverage` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4027,4 +4028,27 @@ Acceptance:
 - Crosswalk counts are unique-relationship counts and phase-aware.
 - Assistant malformed input cannot produce a 500 or marker leakage.
 - Reports, issues, and data sources agree with the evidence.
+- `python scripts/dashboard.py` is green.
+
+## Phase 133: BC-wide SDMD coverage registry
+
+Parent issue: #817
+Branch: `feature/p133-bc-coverage`
+Status: active
+Report: `notes/reports/p133-bc-coverage.md`
+
+Goal: make every current BEC label inspectable, with its applicable diagrams,
+review state, and explicit AU evidence gap.
+
+- [x] P133.1 BC-wide coverage registry and selector (#818)
+  - [x] Build a 219-row BEC coverage table.
+  - [x] Add `/api/sdmd/coverage` and `/api/sdmd/coverage/{bec}`.
+  - [x] Add the SDMD coverage selector and gap messages.
+  - [x] Test counts, endpoints, and shell wiring.
+
+Acceptance:
+
+- Every current BEC label has a row.
+- Reviewed, provisional, and no-diagram rows are distinct.
+- The selector names the gap instead of substituting an unrelated AU.
 - `python scripts/dashboard.py` is green.

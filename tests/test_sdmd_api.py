@@ -324,3 +324,17 @@ def test_store_refuses_contradictory_plot_metadata(tmp_path: Path) -> None:
     frame.to_csv(root / "plots.csv", index=False)
     with pytest.raises(SdmdApiError, match="BEC-MISMATCH"):
         SdmdStore.from_directory(root)
+
+
+def test_coverage_endpoint_lists_every_bec_and_names_gaps(tmp_path: Path) -> None:
+    """The coverage endpoint is a BC-wide registry, not an AU substitute."""
+    client = _client(_store(tmp_path))
+    response = client.get("/api/sdmd/coverage")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 219
+    assert payload["counts"] == {"no-diagram": 161, "provisional": 57, "reviewed": 1}
+    reviewed = next(row for row in payload["rows"] if row["bec"] == "IDFdk3")
+    assert reviewed["au_ids"] == "AU-IDFdk3-TSA23-FDI;AU-IDFdk3-TSA23-PLI"
+    missing = client.get("/api/sdmd/coverage/XYZ99")
+    assert missing.status_code == 404

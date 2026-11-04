@@ -55,6 +55,10 @@
     "bec_crosswalk.csv": {
       "sha256": "0118c8233b6f0513f116271cd5ad71b0f8455049f1fd75fdc3483167fea63dc7",
       "bytes": 18398
+    },
+    "bec_coverage.csv": {
+      "sha256": "31f1ecbff8fb162a66cd7fb8c77d74062876bbfbe9b44fff9faac6f70beef4fb",
+      "bytes": 34081
     }
   }
 }

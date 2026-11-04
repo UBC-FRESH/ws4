@@ -40,6 +40,7 @@ def check_bec_authority(data: Path = DATA, manifest: Path = MANIFEST) -> list[st
     counts = pd.read_csv(data / "tsa_bec_counts.csv", dtype=str).fillna("")
     official_crosswalk = pd.read_csv(data / "bec_official_crosswalk.csv", dtype=str).fillna("")
     cciss = pd.read_csv(data / "bec_crosswalk_review.csv", dtype=str).fillna("")
+    coverage = pd.read_csv(data / "bec_coverage.csv", dtype=str).fillna("")
 
     if len(official) != 219 or official["bec"].nunique() != 219:
         failures.append("bec_official.csv must have 219 unique current labels")
@@ -71,6 +72,13 @@ def check_bec_authority(data: Path = DATA, manifest: Path = MANIFEST) -> list[st
         failures.append(f"unexpected CCISS crosswalk counts: {cciss_counts}")
     if cciss.duplicated(["ws4_bec", "cciss_bec"]).any():
         failures.append("CCISS crosswalk has duplicate label pairs")
+    coverage_counts = coverage["coverage_status"].value_counts().to_dict()
+    if len(coverage) != 219 or coverage_counts != {
+        "no-diagram": 161,
+        "provisional": 57,
+        "reviewed": 1,
+    }:
+        failures.append(f"unexpected BEC coverage counts: {coverage_counts}")
 
     if not manifest.is_file():
         failures.append(f"missing source manifest: {manifest}")
@@ -93,6 +101,7 @@ def check_bec_authority(data: Path = DATA, manifest: Path = MANIFEST) -> list[st
         "tsa_bec_counts.csv",
         "bec_official_crosswalk.csv",
         "bec_crosswalk_review.csv",
+        "bec_coverage.csv",
     ):
         if name not in files:
             failures.append(f"manifest does not cover {name}")
