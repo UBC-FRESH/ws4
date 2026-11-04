@@ -4370,3 +4370,21 @@ issue comments.
 - Script coverage (2026-11-04): added a unit test for the schedule CSV loaders shared by
   `scripts/benchmark_route_events.py` and `scripts/profile_route.py`. The full suite is now
   1,589 tests and the `scripts` coverage gate passes at 90.14% (was 89.69% on `22471cb`).
+
+- P132.1: AU integrity now compares the label BEC/TSA with plot columns, resolves
+  phase aliases, normalizes `ICHmw5` to `ICHwm5`, removes 36 subzone support rows,
+  and defaults validator mappings to the packaged BECdb tables.
+- P132.2: CCISS crosswalk now has 183 exact, 7 WS4 splits, 9 CCISS splits, and
+  19/19 absent labels; parent summaries and phase codes are no longer counted as
+  splits. Official crosswalk adds `covered_by_finer` for 3 parents. Corrected the
+  source statement to 229 rows / 213 unique labels / 16 phase rows.
+- P132.3: chip parsing is case-insensitive, multiline/fenced, and repeated-marker
+  safe; context is escaped JSON with an untrusted-data guard; malformed indices
+  return no chip instead of a 500. Added a Node chip handler test.
+- P132.4: corrected closeout reports, linked #770-#773 under #769, added
+  `bec_sources.json` and `scripts/check_bec_authority.py`, fixed BECdb/CCISS
+  provenance, and added report-consistency tests.
+- P132 dashboard: `OVERALL: GREEN`. Focused tests: 136 passed. BEC authority
+  check: pass.
+- P132 queued in PR #814; branch `feature/p132-audit-remediation`, head
+  `28a0376`. Dashboard: `OVERALL: GREEN`.

@@ -24,9 +24,9 @@ Settings changes: none.
 
 | Criterion | Evidence | Status |
 | --- | --- | --- |
-| Classify every WS4 BEC label | 165 current exact, 48 retired, 0 absent from BECdb | met |
+| Classify every WS4 BEC label | 213 unique labels: 165 current, 48 retired, 0 absent from BECdb | met |
 | No silent “unresolved” labels | BECdb retirement version and successor candidates in `bec_official_crosswalk.csv` | met |
-| CCISS difference table | 183 exact, 7 WS4 splits, 16 CCISS splits, 19/22 absent | met |
+| CCISS difference table | 183 exact, 7 WS4 splits, 9 CCISS splits, 19/19 absent | met |
 | AU label parser | `ws4.sdmd.au_integrity.parse_au_label` | met |
 | BEC/TSA/species integrity check | retired, no-coverage, unknown, and impossible TSA/BEC findings | met |
 | Store wiring | `SdmdStore.from_directory` fails before reading the other tables | met |
@@ -39,7 +39,7 @@ Settings changes: none.
 - Branch `feature/p121-bec-integrity`.
 - Commits start with P121.
 - #770, #771, and #772 are closed; #773 closes with this report.
-- PR queued, not merged; merge waits for approval.
+- PR #782 squash-merged as `c5ef547`; branch deleted; #769 and #773 closed.
 
 ## 3. Evidence
 
@@ -56,8 +56,9 @@ Counts:
 - 48 WS4 labels are retired. Every one carries its retirement version: 14 in
   v13, 5 in v12, 7 in v11, 9 in v10, 7 in v8, 3 in v7, 2 in v6, 1 in v3.
 - 0 WS4 labels are absent from both BECdb tables.
-- 54 current BEC 13 labels are absent from the WS4 coverage table; this is a
-  coverage gap, not an unknown classification.
+- Of 54 current BEC 13 labels without an exact WS4 label, 3 are covered by finer
+  WS4 labels and 51 have no WS4 label. This is a coverage gap, not an unknown
+  classification.
 
 Recorded renames include `CWHxm1` → `CWHdm1`, `CWHxm2` → `CWHdm2`,
 `ESSFmw` → `ESSFun1`, `MHwh2` → `MHvh`, and `SWBun` → `SWBun1`/`SWBuns`.
@@ -70,9 +71,9 @@ The separate CCISS table is `bec_crosswalk_review.csv`:
 
 - 183 exact
 - 7 WS4 splits
-- 16 CCISS splits
+- 9 CCISS splits
 - 19 WS4 labels absent from CCISS
-- 22 CCISS labels absent from WS4
+- 19 CCISS labels absent from WS4
 
 The absent labels are named. They are source-list differences, not unresolved
 classifications. BECdb is the stronger nomenclature authority.
@@ -95,8 +96,9 @@ PSP header, Open Government Licence - British Columbia.
 
 - The validator checks public PSP support, not legal AU definition or boundary.
 - 48 WS4 labels are retired; existing stores that use them now fail at load.
-- 54 current BEC labels have no WS4 coverage and fail with
-  `SDMD-AU-BEC-NO-COVERAGE` until coverage is deliberately extended.
+- 51 current BEC labels have no exact WS4 coverage and fail with
+  `SDMD-AU-BEC-NO-COVERAGE`; 3 are covered by finer WS4 labels. Coverage must be
+  deliberately extended for the rest.
 - A successor candidate is a lead from a BECdb note or shared prefix, not an
   equivalence claim.
 - The species component is parsed but not checked against a species catalog.

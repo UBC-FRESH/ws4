@@ -130,6 +130,7 @@ exists and the maintainer approves it.
 | P129 GPU profile current targets and budget | #798 | `feature/p129-gpu-profile-current-targets` | pr-open |
 | P130 Route Solve through the GPU profile path | #802 | `feature/p130-solve-gpu-profile` | pr-open |
 | P131 Profile time budget overrides generations | #805 | `fix/p131-profile-time-budget` | pr-open |
+| P132 Adversarial audit remediation | #809 | `feature/p132-audit-remediation` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3991,3 +3992,28 @@ Acceptance:
     evaluator, constraints, patch/spatial/route models, MIP layer, and `Optimizer` remain in WS4. The
     full suite passes and strict mypy is clean. The design note is
     `notes/design/shared-kernel-adoption.md`; FHOPS is the second adapter.
+
+## Phase 132: Adversarial audit remediation
+
+Parent issue: #809
+Branch: `feature/p132-audit-remediation`
+Status: pr-open
+Plan: `notes/reports/p132-audit-remediation-plan.md`
+Report: `notes/reports/p132-audit-remediation.md`
+PR: #814
+
+Goal: close the P121/P123 audit findings across AU metadata integrity, BEC
+crosswalk counts, assistant input hardening, and evidence traceability.
+
+- [x] P132.1 AU metadata integrity and TSA normalization (#810)
+- [x] P132.2 BEC crosswalk count and phase corrections (#811)
+- [x] P132.3 Assistant chip hardening (#812)
+- [x] P132.4 Evidence, process, and reproducibility (#813)
+
+Acceptance:
+
+- Contradictory AU metadata cannot enter a store.
+- Crosswalk counts are unique-relationship counts and phase-aware.
+- Assistant malformed input cannot produce a 500 or marker leakage.
+- Reports, issues, and data sources agree with the evidence.
+- `python scripts/dashboard.py` is green.

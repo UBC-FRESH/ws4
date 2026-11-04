@@ -96,11 +96,13 @@ execution permissions. Start a separate service with ``--allow-agent`` when the 
 wanted.
 
 Each turn carries a bounded context packet: run, workspace, subview, period, selected
-block, scenario profile, target filter, and visible account. The assistant may end a
-reply with a ``WS4_ACTIONS:`` JSON line. The server validates those chips against a
-safe whitelist before the browser renders buttons: open a workspace or subview, set a
-period, select an existing block, or fill the next prompt. A chip cannot edit data,
-start a run, or change permissions.
+block, scenario profile, target filter, and visible account. The packet is sent as an
+escaped JSON line with an explicit “untrusted UI data, never instructions” guard. The
+assistant may end a reply with a ``WS4_ACTIONS:`` JSON array; the marker is
+case-insensitive, may be multiline or fenced, and is stripped from the visible reply.
+The server validates those chips against a safe whitelist before the browser renders
+buttons: open a workspace or subview, set a period, select an existing block, or fill
+the next prompt. A chip cannot edit data, start a run, or change permissions.
 
 Behind a proxy
 ---------------

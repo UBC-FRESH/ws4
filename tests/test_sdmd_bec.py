@@ -16,12 +16,12 @@ def test_crosswalk_counts_are_stable() -> None:
     counts = frame["relationship"].value_counts().to_dict()
     assert counts == {
         "same": 183,
-        "not_in_ws4": 22,
+        "not_in_ws4": 19,
         "not_in_cciss": 19,
-        "cciss_split": 16,
+        "cciss_split": 9,
         "ws4_split": 7,
     }
-    assert len(frame) == 247
+    assert len(frame) == 237
 
 
 def test_crosswalk_classifies_prefix_splits() -> None:
@@ -54,7 +54,8 @@ def test_official_crosswalk_counts_are_stable() -> None:
     counts = pd.Series([row.relationship for row in rows]).value_counts().to_dict()
     assert counts == {
         "official_exact": 165,
-        "not_in_ws4": 54,
+        "not_in_ws4": 51,
+        "covered_by_finer": 3,
         "retired": 48,
     }
     assert len(rows) == 267
@@ -87,3 +88,40 @@ def test_every_ws4_label_absent_from_current_bec_is_retired() -> None:
     current = set(official["bec"].astype(str))
     retired_labels = set(retired["bec"].astype(str))
     assert not (ws4 - current - retired_labels)
+
+
+def test_crosswalk_normalizes_phase_aliases_and_counts_labels() -> None:
+    """Phases are the same unit, and the source is 229 rows / 213 unique labels."""
+    variants = pd.read_csv(DATA / "bec_variants.csv", dtype=str).fillna("")
+    labels = (variants["zone"] + variants["subzone"] + variants["variant"]).astype(str)
+    assert len(variants) == 229
+    assert labels.nunique() == 213
+    review = pd.read_csv(DATA / "bec_crosswalk_review.csv", dtype=str).fillna("")
+    split = review[review["relationship"] == "cciss_split"]
+    assert not {"ICHmc1a", "ICHxwa", "SBSwk3a"} & set(split["cciss_bec"])
+    exact = review[review["relationship"] == "same"]
+    assert {"ICHmc1", "ICHxw", "SBSwk3"} <= set(exact["ws4_bec"])
+    assert not review.duplicated(["ws4_bec", "cciss_bec"]).any()
+    ws4_parents = set(review.loc[review["relationship"] == "ws4_split", "cciss_bec"])
+    absent_cciss = set(review.loc[review["relationship"] == "not_in_ws4", "cciss_bec"])
+    assert not ws4_parents & absent_cciss
+    cciss_parents = set(review.loc[review["relationship"] == "cciss_split", "ws4_bec"])
+    absent_ws4 = set(review.loc[review["relationship"] == "not_in_cciss", "ws4_bec"])
+    assert not cciss_parents & absent_ws4
+
+
+def test_official_crosswalk_marks_parents_covered_by_finer_labels() -> None:
+    """A current parent with finer WS4 labels is covered, not absent."""
+    frame = pd.read_csv(DATA / "bec_official_crosswalk.csv", dtype=str).fillna("")
+    covered = frame[frame["relationship"] == "covered_by_finer"].set_index("cciss_bec")
+    assert set(covered.index) == {"BWBSdk", "BWBSmw", "MHwh"}
+    assert "MHwhp" in str(covered.loc["MHwh", "replaced_by"])
+
+
+def test_mhun_note_matching_is_case_insensitive() -> None:
+    """The BECdb note uses Mhun while the retired label is MHun."""
+    frame = pd.read_csv(DATA / "bec_official_crosswalk.csv", dtype=str).fillna("")
+    row = frame[frame["ws4_bec"] == "MHun"].iloc[0]
+    assert row["relationship"] == "retired"
+    assert row["retired_version"] == "13"
+    assert "MHun1" in str(row["replaced_by"])

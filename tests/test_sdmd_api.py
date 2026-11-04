@@ -312,3 +312,15 @@ def test_store_refuses_a_retired_bec_label(tmp_path: Path) -> None:
     frame.to_csv(root / "plots.csv", index=False)
     with pytest.raises(SdmdApiError, match="retired in BEC version 13"):
         SdmdStore.from_directory(root)
+
+
+def test_store_refuses_contradictory_plot_metadata(tmp_path: Path) -> None:
+    """The AU label and the plot BEC/TSA columns must agree."""
+    root = _store_dir(tmp_path)
+    frame = pd.read_csv(root / "plots.csv")
+    frame["au_id"] = "AU-IDFdk3-TSA23-FDI"
+    frame["bec_variant"] = "2"
+    frame["tsa"] = "TSA-24"
+    frame.to_csv(root / "plots.csv", index=False)
+    with pytest.raises(SdmdApiError, match="BEC-MISMATCH"):
+        SdmdStore.from_directory(root)

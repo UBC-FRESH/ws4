@@ -32,14 +32,14 @@ Settings changes: none.
 | Render safe chips | `applyChatChip` switches view, sets period, selects an existing block, or fills the prompt | met |
 | Preserve permissions | No file, shell, run, or edit capability is added | met |
 | Tests | context, validation, unsafe targets, malformed marker, shell wiring | met |
-| Dashboard green | `OVERALL: GREEN` at `884e466` | met |
+| Dashboard green | `OVERALL: GREEN` at `fe9d67e` | met |
 
 ## 2. Workflow compliance
 
 - Parent issue #780 and child #800, linked as a sub-issue.
 - Branch `feature/p123-assistant-context`.
 - Commit messages start with P123.
-- PR #804 is open and queued; it is not merged.
+- PR #804 squash-merged as `7a66ee3`; branch deleted; #780 and #800 closed.
 - No tag, release, visibility, or settings change was made.
 
 ## 3. Evidence
@@ -52,8 +52,16 @@ Settings changes: none.
 - `docs/reference/web.rst`: assistant context and chip boundary.
 - `notes/reports/p123-assistant-context.md`: task evidence.
 
-CI run `41743605008` passed all five checks. The dashboard gate reported
+CI run `41746031253` passed all five checks. The dashboard gate reported
 `OVERALL: GREEN`.
+
+## 3a. Concurrent work
+
+PR #797 (`P123: consume the shared search kernel`, branch
+`feature/p123-shared-kernel`, merge `e2b240a`) also used the P123 prefix. It is a
+separate shared-kernel adoption task, not assistant context work. P132 records
+the duplicate prefix as a traceability exception; future work must not reuse
+P123.
 
 ## 4. Known limits
 

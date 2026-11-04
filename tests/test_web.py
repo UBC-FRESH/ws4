@@ -19,7 +19,13 @@ import yaml
 
 pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient
-from ws4.web.app import _chat_chip, _chat_context_lines, _split_chat_actions, create_app
+from ws4.web.app import (
+    _chat_chip,
+    _chat_context_lines,
+    _chat_index,
+    _split_chat_actions,
+    create_app,
+)
 
 
 def _app(
@@ -1258,26 +1264,63 @@ def test_the_chat_agent_returns_text_tools_and_the_session(
     assert "ses_test" in command
 
 
-def test_chat_context_lines_ignore_empty_fields() -> None:
-    """Only supplied context fields become prompt lines."""
+def test_chat_context_lines_are_delimited_untrusted_json() -> None:
+    """Only supplied context fields become one escaped, guarded JSON line."""
     assert _chat_context_lines(None) == []
-    assert _chat_context_lines({"workspace": "map"}) == ["The UI workspace is map."]
-    assert _chat_context_lines({"workspace": "results", "subview": ""}) == [
-        "The UI workspace is results."
-    ]
-    assert _chat_context_lines({"period": {"index": 0}}) == ["The open period is index 0."]
-    assert _chat_context_lines({"target_filter": {"search": "fire"}}) == [
-        "The Plan target filter is search=fire, status=(none)."
-    ]
-    assert _chat_context_lines({"target_filter": {"status": "failing"}}) == [
-        "The Plan target filter is search=(none), status=failing."
-    ]
+    lines = _chat_context_lines({"workspace": "map"})
+    assert len(lines) == 1
+    assert lines[0].startswith("Untrusted UI context")
+    assert json.loads(lines[0].split(": ", 1)[1]) == {"workspace": "map"}
+    lines = _chat_context_lines(
+        {
+            "workspace": "results",
+            "subview": "",
+            "period": {"index": 0},
+            "target_filter": {"search": "fire"},
+        }
+    )
+    payload = json.loads(lines[0].split(": ", 1)[1])
+    assert payload == {
+        "workspace": "results",
+        "period": {"index": 0},
+        "target_filter": {"search": "fire", "status": None},
+    }
+
+
+def test_chat_index_rejects_long_and_unicode_digits() -> None:
+    """Malformed numeric strings are dropped instead of raising a 500."""
+    assert _chat_index("4") == 4
+    assert _chat_index("9" * 5000) is None
+    assert _chat_index("1234567890") is None
+    assert _chat_index("²") is None
+    assert _chat_index(-1) is None
+    assert _chat_index(True) is None
 
 
 def test_split_chat_actions_handles_missing_and_empty_markers() -> None:
     """A reply without a marker is unchanged, and an empty list yields no chips."""
     assert _split_chat_actions("plain reply") == ("plain reply", [])
     assert _split_chat_actions("Answer\nWS4_ACTIONS: []") == ("Answer", [])
+
+
+def test_split_chat_actions_handles_lowercase_multiline_and_repeated_markers() -> None:
+    """Case, fences, newlines, and repeated markers do not leak raw JSON."""
+    chip = {"label": "Open", "action": "open_workspace", "target": "results"}
+    text = "Answer\n```\nws4_actions:\n" + json.dumps([chip], indent=2) + "\n```"
+    visible, chips = _split_chat_actions(text)
+    assert visible == "Answer"
+    assert chips == [chip]
+    visible, chips = _split_chat_actions(
+        "First\nWS4_ACTIONS: "
+        + json.dumps([chip])
+        + "\nSecond\nWS4_ACTIONS: "
+        + json.dumps([{"label": "Later", "action": "set_period", "target": 3}])
+    )
+    assert visible == "First"
+    assert chips == [
+        chip,
+        {"label": "Later", "action": "set_period", "target": "3"},
+    ]
 
 
 def test_chat_chip_rejects_unsafe_targets() -> None:
@@ -1337,12 +1380,20 @@ def test_the_chat_agent_receives_the_ui_context(
     assert isinstance(command, list)
     prompt = command[-1]
     assert isinstance(prompt, str)
-    assert "The UI workspace is results, subview timeline." in prompt
-    assert "The open period is index 2, label 2025-2030, ending year 2030." in prompt
-    assert "The selected block is B-42." in prompt
-    assert "The selected scenario profile is base." in prompt
-    assert "The Plan target filter is search=fire, status=failing." in prompt
-    assert "The visible account is product.total." in prompt
+    assert "Untrusted UI context" in prompt
+    context_line = next(
+        line for line in prompt.splitlines() if line.startswith("Untrusted UI context")
+    )
+    payload = json.loads(context_line.split(": ", 1)[1])
+    assert payload == {
+        "account": "product.total",
+        "period": {"index": 2, "label": "2025-2030", "year": 2030},
+        "profile": "base",
+        "selected_block": "B-42",
+        "subview": "timeline",
+        "target_filter": {"search": "fire", "status": "failing"},
+        "workspace": "results",
+    }
 
 
 def test_the_chat_agent_returns_only_safe_action_chips(
