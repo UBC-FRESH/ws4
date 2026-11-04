@@ -84,11 +84,14 @@ async function startProfileRun() {
   const button = $('run-profile');
   const status = $('profile-status');
   if (!select.value) return;
-  const generations = Number($('profile-generations')?.value || 5000);
+  const requestedGenerations = Number($('profile-generations')?.value || 5000);
   // Profile effect tables and candidate caches are built for the 200-year horizon.
   const years = 200;
   const seed = Number($('run-seed')?.value || 7);
   const timeLimit = ($('run-time-limit')?.value || '').trim();
+  // A wall-clock budget is authoritative; otherwise use the generation cap.
+  const timeBudget = /^\d{1,2}:\d{2}:\d{2}$/.test(timeLimit);
+  const generations = timeBudget ? 1_000_000 : requestedGenerations;
   stopRunWatch();
   button.disabled = true;
   status.textContent = 'saving current targets…';

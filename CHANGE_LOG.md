@@ -4343,3 +4343,7 @@ issue comments.
 - P123.1 closeout: wrote `notes/reports/p123-closeout.md`, linked #800 as
   a sub-issue of #780, and queued PR #804. All five CI checks pass. Dashboard:
   `OVERALL: GREEN`. Merge waits for approval.
+
+- P131: a declared GPU profile time budget now overrides the generation cap, so
+  a one-minute request runs for one minute instead of stopping at 5,000
+  generations. Report: `notes/reports/p131-profile-time-budget.md`.
