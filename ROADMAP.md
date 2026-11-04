@@ -129,6 +129,7 @@ exists and the maintainer approves it.
 | P128 Sync target chart edits into the table | #794 | `fix/p128-target-chart-table-sync` | pr-open |
 | P129 GPU profile current targets and budget | #798 | `feature/p129-gpu-profile-current-targets` | pr-open |
 | P130 Route Solve through the GPU profile path | #802 | `feature/p130-solve-gpu-profile` | pr-open |
+| P131 Profile time budget overrides generations | #805 | `fix/p131-profile-time-budget` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3949,4 +3950,21 @@ Acceptance:
 
 - Solve on TSA27 starts a GPU profile run.
 - It uses the edited target cache and time budget.
+- Browser smoke and dashboard pass.
+
+## Phase 131: Profile time budget overrides generations
+
+Parent issue: #805
+Branch: `fix/p131-profile-time-budget`
+Status: active
+Report: `notes/reports/p131-profile-time-budget.md`
+
+Goal: make a declared time budget authoritative for profile runs.
+
+- [x] P131.1 Override generations with a profile time budget (#806)
+
+Acceptance:
+
+- Time budget sends the 1,000,000 generation cap.
+- Short time runs stop by elapsed time.
 - Browser smoke and dashboard pass.

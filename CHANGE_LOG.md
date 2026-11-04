@@ -4330,3 +4330,7 @@ issue comments.
 - P130: Solve now routes through the selected GPU profile when one is available,
   using current targets and the time budget. Report:
   `notes/reports/p130-solve-gpu-profile.md`.
+
+- P131: a declared GPU profile time budget now overrides the generation cap, so
+  a one-minute request runs for one minute instead of stopping at 5,000
+  generations. Report: `notes/reports/p131-profile-time-budget.md`.
