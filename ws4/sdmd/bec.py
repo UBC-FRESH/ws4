@@ -13,6 +13,8 @@ import re
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 
+from .au_integrity import default_bec_aliases
+
 __all__ = ["BecRelationship", "classify_crosswalk", "classify_official"]
 
 
@@ -51,11 +53,13 @@ def classify_crosswalk(
     ws4_labels: Iterable[str],
     cciss_labels: Iterable[str],
 ) -> tuple[BecRelationship, ...]:
-    """Classify the union of two BEC label sets.
+    """Classify unique label relationships between WS4 and CCISS.
 
-    A label is a split when the other side contains a strict prefix of it and no
-    exact match. The longest prefix is used. A label with no prefix is reported
-    as absent from the other list; no equivalence is asserted.
+    Phase aliases are normalized before comparison. A label is a split only when
+    the other side contains a strict prefix of it and no exact match. Parent
+    labels with finer children are represented by the child rows, not by a
+    separate summary row. A label with no exact or prefix relationship is
+    reported as absent from the other list; no equivalence is asserted.
 
     Parameters
     ----------
@@ -67,17 +71,31 @@ def classify_crosswalk(
     Returns
     -------
     tuple of BecRelationship
-        One row per label or label pair, sorted by the WS4 label and then CCISS.
+        One row per unique label relationship, sorted by WS4 and then CCISS.
     """
-    ours = {str(label) for label in ws4_labels if str(label)}
-    theirs = {str(label) for label in cciss_labels if str(label)}
+    aliases = default_bec_aliases()
+
+    def canonical(label: object) -> str:
+        compact = "".join(str(label).split())
+        return aliases.get(compact, compact)
+
+    ours = {canonical(label) for label in ws4_labels if str(label).strip()}
+    theirs = {canonical(label) for label in cciss_labels if str(label).strip()}
     rows: list[BecRelationship] = []
+    seen: set[tuple[str | None, str | None]] = set()
+
+    def add(row: BecRelationship) -> None:
+        key = (row.ws4_bec, row.cciss_bec)
+        if key not in seen:
+            seen.add(key)
+            rows.append(row)
+
     for label in sorted(ours & theirs):
-        rows.append(BecRelationship(label, label, "same", "exact label"))
+        add(BecRelationship(label, label, "same", "exact label"))
     for label in sorted(ours - theirs):
         parent = _longest_prefix(label, theirs)
         if parent is not None:
-            rows.append(
+            add(
                 BecRelationship(
                     label,
                     parent,
@@ -86,24 +104,13 @@ def classify_crosswalk(
                 )
             )
             continue
-        children = [item for item in theirs if item.startswith(label) and item != label]
-        if children:
-            rows.append(
-                BecRelationship(
-                    label,
-                    None,
-                    "cciss_split",
-                    f"{len(children)} finer CCISS labels start with {label}",
-                )
-            )
-        else:
-            rows.append(BecRelationship(label, None, "not_in_cciss", "no CCISS label"))
+        if any(item.startswith(label) and item != label for item in theirs):
+            continue
+        add(BecRelationship(label, None, "not_in_cciss", "no CCISS label"))
     for label in sorted(theirs - ours):
         parent = _longest_prefix(label, ours)
-        if parent is None:
-            rows.append(BecRelationship(None, label, "not_in_ws4", "no WS4 label"))
-        else:
-            rows.append(
+        if parent is not None:
+            add(
                 BecRelationship(
                     parent,
                     label,
@@ -111,6 +118,10 @@ def classify_crosswalk(
                     f"{label} is a finer CCISS label than {parent}",
                 )
             )
+            continue
+        if any(item.startswith(label) and item != label for item in ours):
+            continue
+        add(BecRelationship(None, label, "not_in_ws4", "no WS4 label"))
     rows.sort(key=lambda row: (row.ws4_bec or "", row.cciss_bec or ""))
     return tuple(rows)
 
@@ -192,14 +203,26 @@ def classify_official(
                 )
             )
     for label in sorted(official - ours):
-        rows.append(
-            BecRelationship(
-                None,
-                label,
-                "not_in_ws4",
-                "current BEC 13.1 label absent from the WS4 coverage table",
+        children = sorted(item for item in ours if item.startswith(label) and item != label)
+        if children:
+            rows.append(
+                BecRelationship(
+                    None,
+                    label,
+                    "covered_by_finer",
+                    f"{len(children)} finer WS4 labels represent the current BEC label",
+                    replaced_by=";".join(children),
+                )
             )
-        )
+        else:
+            rows.append(
+                BecRelationship(
+                    None,
+                    label,
+                    "not_in_ws4",
+                    "current BEC 13.1 label absent from the WS4 coverage table",
+                )
+            )
     rows.sort(key=lambda row: (row.ws4_bec or "", row.cciss_bec or ""))
     return tuple(rows)
 
@@ -210,7 +233,7 @@ def _successors(
     notes: Mapping[str, str],
 ) -> list[str]:
     """Return current labels named by BECdb notes or by a shared prefix."""
-    pattern = re.compile(rf"(?<![A-Za-z0-9]){re.escape(label)}(?![A-Za-z0-9])")
+    pattern = re.compile(rf"(?<![A-Za-z0-9]){re.escape(label)}(?![A-Za-z0-9])", re.IGNORECASE)
     named = {item for item, note in notes.items() if pattern.search(note)}
     prefixed = {item for item in current if item.startswith(label) and item != label}
     return sorted(named | prefixed)

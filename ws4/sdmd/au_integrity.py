@@ -19,13 +19,17 @@ from .schema import Problem
 
 __all__ = [
     "AuParts",
+    "default_bec_aliases",
     "default_bec_labels",
     "default_official_bec_labels",
     "default_retired_bec_versions",
     "default_tsa_bec_counts",
     "load_tsa_bec_counts",
+    "normalize_bec_label",
+    "normalize_tsa",
     "parse_au_label",
     "validate_au_integrity",
+    "validate_au_metadata",
 ]
 
 _DEFAULT_DATA = Path(__file__).resolve().parent / "data" / "sdmd"
@@ -80,6 +84,122 @@ def parse_au_label(label: str) -> AuParts:
     )
 
 
+@lru_cache(maxsize=1)
+def default_bec_aliases() -> Mapping[str, str]:
+    """Return phase and spelling aliases mapped to canonical BEC labels.
+
+    Returns
+    -------
+    mapping of str to str
+        Alias labels from the BECdb ``bgc_no_space`` field mapped to ``bec``.
+    """
+    aliases: dict[str, str] = {}
+    for name in ("bec_official.csv", "bec_retired.csv"):
+        frame = pd.read_csv(_DEFAULT_DATA / name, dtype=str).fillna("")
+        for row in frame.itertuples(index=False):
+            canonical = str(row.bec).strip()
+            for alias in str(row.bgc_no_space).split(";"):
+                alias = alias.strip()
+                if alias and alias != canonical:
+                    aliases[alias] = canonical
+    return aliases
+
+
+def normalize_bec_label(label: str) -> str:
+    """Return a canonical BEC label without spaces or a phase alias.
+
+    Parameters
+    ----------
+    label : str
+        A BEC label, possibly a phase or an alias such as ``ICHmc1a``.
+
+    Returns
+    -------
+    str
+        The canonical BEC label, or the compact input when no alias exists.
+    """
+    compact = "".join(str(label).split())
+    return default_bec_aliases().get(compact, compact)
+
+
+def normalize_tsa(value: object) -> str | None:
+    """Return the numeric TSA part of a value, or None.
+
+    Parameters
+    ----------
+    value : object
+        A TSA value such as ``TSA-24``, ``TSA 24``, ``24``, or an integer.
+
+    Returns
+    -------
+    str or None
+        The first digit run, or None when the value has no digits.
+    """
+    if value is None:
+        return None
+    match = re.search(r"\d+", str(value))
+    return match.group(0) if match else None
+
+
+def validate_au_metadata(
+    label: str,
+    *,
+    bec_labels: Collection[str],
+    tsa_labels: Collection[str],
+) -> tuple[Problem, ...]:
+    """Compare an AU label with its plot BEC and TSA columns.
+
+    Parameters
+    ----------
+    label : str
+        The AU identifier.
+    bec_labels : collection of str
+        BEC labels from the plot rows for this AU.
+    tsa_labels : collection of str
+        TSA values from the plot rows for this AU.
+
+    Returns
+    -------
+    tuple of Problem
+        Mismatch findings; empty when the columns agree with the label.
+    """
+    try:
+        parts = parse_au_label(label)
+    except ValueError as error:
+        return (Problem("SDMD-AU-LABEL", label, str(error)),)
+    findings: list[Problem] = []
+    expected_bec = normalize_bec_label(parts.bec)
+    normal_becs = {normalize_bec_label(value) for value in bec_labels if str(value).strip()}
+    if not normal_becs:
+        findings.append(Problem("SDMD-AU-BEC-MISSING", label, "plot rows have no BEC label"))
+    for value in sorted(normal_becs):
+        if value != expected_bec:
+            findings.append(
+                Problem(
+                    "SDMD-AU-BEC-MISMATCH",
+                    label,
+                    f"AU label BEC {parts.bec!r} does not match plot BEC {value!r}",
+                )
+            )
+    if parts.tsa is not None:
+        expected_tsa = normalize_tsa(parts.tsa)
+        normal_tsas = {
+            value for value in (normalize_tsa(item) for item in tsa_labels) if value is not None
+        }
+        if not normal_tsas:
+            findings.append(Problem("SDMD-AU-TSA-MISSING", label, "plot rows have no TSA"))
+        for value in sorted(normal_tsas):
+            if value != expected_tsa:
+                findings.append(
+                    Problem(
+                        "SDMD-AU-TSA-MISMATCH",
+                        label,
+                        f"AU label TSA {expected_tsa!r} does not match plot TSA {value!r}",
+                    )
+                )
+    return tuple(findings)
+
+
 def load_tsa_bec_counts(path: str | Path) -> dict[tuple[str, str], int]:
     """Load the public TSA/BEC PSP counts.
 
@@ -93,11 +213,13 @@ def load_tsa_bec_counts(path: str | Path) -> dict[tuple[str, str], int]:
     dict of (str, str) to int
         Non-zero site counts keyed by TSA and BEC.
     """
-    frame = pd.read_csv(path, dtype={"tsa": str, "bec": str})
+    frame = pd.read_csv(path, dtype={"tsa": str, "bec": str}).fillna("")
+    aliases = default_bec_aliases()
     return {
-        (str(row.tsa), str(row.bec)): int(str(row.psp_site_count))
+        (str(row.tsa), aliases.get(str(row.bec), str(row.bec))): int(str(row.psp_site_count))
         for row in frame.itertuples(index=False)
         if int(str(row.psp_site_count)) > 0
+        and str(getattr(row, "bec_level", "variant")) != "subzone"
     }
 
 
@@ -120,12 +242,11 @@ def validate_au_integrity(
     tsa_bec_counts : mapping of (str, str) to int
         Public PSP site counts by TSA and BEC.
     official_bec : collection of str, optional
-        Current BEC 13 labels. When supplied, a current label that is absent from
-        the WS4 coverage table is reported as a coverage gap instead of an
-        unknown label.
+        Current BEC 13 labels. None uses the packaged BECdb table. A current
+        label absent from the WS4 coverage table is a coverage gap, not unknown.
     retired_bec : mapping of str to str, optional
-        Retired BEC labels mapped to their retirement version. When supplied, a
-        known WS4 label that has been retired is refused.
+        Retired BEC labels mapped to their retirement version. None uses the
+        packaged BECdb table. A retired label is refused.
 
     Returns
     -------
@@ -137,17 +258,24 @@ def validate_au_integrity(
     except ValueError as error:
         return (Problem("SDMD-AU-LABEL", label, str(error)),)
     findings: list[Problem] = []
-    known = set(known_bec)
-    if retired_bec is not None and parts.bec in retired_bec:
+    known = {normalize_bec_label(value) for value in known_bec}
+    official = (
+        default_official_bec_labels()
+        if official_bec is None
+        else {normalize_bec_label(value) for value in official_bec}
+    )
+    retired = default_retired_bec_versions() if retired_bec is None else retired_bec
+    bec = normalize_bec_label(parts.bec)
+    if bec in retired:
         findings.append(
             Problem(
                 "SDMD-AU-BEC-RETIRED",
                 label,
-                f"BEC label {parts.bec!r} was retired in BEC version {retired_bec[parts.bec]}",
+                f"BEC label {parts.bec!r} was retired in BEC version {retired[bec]}",
             )
         )
-    elif parts.bec not in known:
-        if official_bec is not None and parts.bec in set(official_bec):
+    elif bec not in known:
+        if bec in official:
             findings.append(
                 Problem(
                     "SDMD-AU-BEC-NO-COVERAGE",
@@ -157,14 +285,16 @@ def validate_au_integrity(
             )
         else:
             findings.append(Problem("SDMD-AU-BEC", label, f"unknown BEC label {parts.bec!r}"))
-    if parts.tsa is not None and (parts.tsa, parts.bec) not in tsa_bec_counts:
-        findings.append(
-            Problem(
-                "SDMD-AU-TSA-BEC",
-                label,
-                f"no public PSP support for TSA {parts.tsa} / {parts.bec}",
+    if parts.tsa is not None:
+        tsa = normalize_tsa(parts.tsa)
+        if tsa is None or (tsa, bec) not in tsa_bec_counts:
+            findings.append(
+                Problem(
+                    "SDMD-AU-TSA-BEC",
+                    label,
+                    f"no public PSP support for TSA {parts.tsa} / {parts.bec}",
+                )
             )
-        )
     return tuple(findings)
 
 

@@ -29,6 +29,7 @@ from .au_integrity import (
     default_retired_bec_versions,
     default_tsa_bec_counts,
     validate_au_integrity,
+    validate_au_metadata,
 )
 from .compile import Trajectory, assess_trajectory
 from .constraints import (
@@ -141,17 +142,27 @@ class SdmdStore:
         """
         root = Path(path)
         plots = read_psp_plots(_read_csv(root, "plots"))
-        label_findings = [
-            finding
-            for au_id in sorted(set(plots["au_id"].dropna().astype(str)))
-            for finding in validate_au_integrity(
-                au_id,
-                known_bec=default_bec_labels(),
-                tsa_bec_counts=default_tsa_bec_counts(),
-                official_bec=default_official_bec_labels(),
-                retired_bec=default_retired_bec_versions(),
+        label_findings: list[Problem] = []
+        for au_id in sorted(set(plots["au_id"].dropna().astype(str))):
+            rows = plots[plots["au_id"].astype(str) == au_id]
+            becs = (
+                rows["bec_zone"].astype(str)
+                + rows["bec_subzone"].astype(str)
+                + rows["bec_variant"].astype(str)
+            ).tolist()
+            tsa_values = rows["tsa"].astype(str).tolist()
+            label_findings.extend(
+                validate_au_metadata(au_id, bec_labels=becs, tsa_labels=tsa_values)
             )
-        ]
+            label_findings.extend(
+                validate_au_integrity(
+                    au_id,
+                    known_bec=default_bec_labels(),
+                    tsa_bec_counts=default_tsa_bec_counts(),
+                    official_bec=default_official_bec_labels(),
+                    retired_bec=default_retired_bec_versions(),
+                )
+            )
         if label_findings:
             detail = "; ".join(
                 f"{item.code} {item.where}: {item.message}" for item in label_findings

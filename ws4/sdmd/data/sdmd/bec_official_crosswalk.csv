@@ -1,7 +1,7 @@
 ws4_bec,cciss_bec,relationship,note,retired_version,replaced_by
-,BWBSdk,not_in_ws4,current BEC 13.1 label absent from the WS4 coverage table,,
+,BWBSdk,covered_by_finer,2 finer WS4 labels represent the current BEC label,,BWBSdk1;BWBSdk2
 ,BWBSmk,not_in_ws4,current BEC 13.1 label absent from the WS4 coverage table,,
-,BWBSmw,not_in_ws4,current BEC 13.1 label absent from the WS4 coverage table,,
+,BWBSmw,covered_by_finer,2 finer WS4 labels represent the current BEC label,,BWBSmw1;BWBSmw2
 ,CMAwh,not_in_ws4,current BEC 13.1 label absent from the WS4 coverage table,,
 ,CWHdm1,not_in_ws4,current BEC 13.1 label absent from the WS4 coverage table,,
 ,CWHdm2,not_in_ws4,current BEC 13.1 label absent from the WS4 coverage table,,
@@ -45,7 +45,7 @@ ws4_bec,cciss_bec,relationship,note,retired_version,replaced_by
 ,MHunp,not_in_ws4,current BEC 13.1 label absent from the WS4 coverage table,,
 ,MHvh,not_in_ws4,current BEC 13.1 label absent from the WS4 coverage table,,
 ,MHvhp,not_in_ws4,current BEC 13.1 label absent from the WS4 coverage table,,
-,MHwh,not_in_ws4,current BEC 13.1 label absent from the WS4 coverage table,,
+,MHwh,covered_by_finer,3 finer WS4 labels represent the current BEC label,,MHwh1;MHwh2;MHwhp
 ,MSdw,not_in_ws4,current BEC 13.1 label absent from the WS4 coverage table,,
 ,MSun1,not_in_ws4,current BEC 13.1 label absent from the WS4 coverage table,,
 ,SBSmz,not_in_ws4,current BEC 13.1 label absent from the WS4 coverage table,,

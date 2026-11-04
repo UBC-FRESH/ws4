@@ -5,9 +5,9 @@ Primary source: BC BECdb v13 (2026), current and retired BGC unit tables,
 Open Government Licence - British Columbia.
 Secondary source: BC BEC Map Attribute Catalogue,
 `BEC_BIOGEOCLIMATIC_POLY` version 13.1 (2026-07-08).
-Inputs: `bec_variants.csv` (WS4, 229 rows), `bec_official.csv` (219 current
-BEC 13 labels), `bec_retired.csv` (107 retired BEC labels), and
-`bec_crosswalk.csv` (CCISS union).
+Inputs: `bec_variants.csv` (WS4, 229 rows / 213 unique labels / 16 phase rows),
+`bec_official.csv` (219 current BEC 13 labels), `bec_retired.csv` (107 retired
+BEC labels), and `bec_crosswalk.csv` (CCISS union).
 Outputs: `bec_official_crosswalk.csv`, `bec_crosswalk_review.csv`.
 
 ## Result
@@ -18,13 +18,15 @@ Every WS4 label is accounted for against the official BECdb:
 | --- | --- |
 | exact current BEC 13 label | 165 |
 | retired BEC label, with retirement version | 48 |
-| current BEC 13 label absent from the WS4 coverage table | 54 |
+| current BEC label covered by finer WS4 labels | 3 |
+| current BEC label absent from the WS4 coverage table | 51 |
 | WS4 label absent from both BECdb tables | 0 |
 | total relationship rows | 267 |
 
-There are no “unresolved” WS4 labels. The 48 WS4 labels that are not current
-are retired in a named BEC version. The 54 current labels missing from WS4 are a
-coverage gap, not an unknown classification.
+The 229 input rows collapse to 213 unique variant labels; 16 phase rows share a
+base label. The 48 WS4 labels that are not current are retired in a named BEC
+version. Of the 54 current labels without an exact WS4 label, 3 (`BWBSdk`,
+`BWBSmw`, `MHwh`) are represented by finer WS4 labels and 51 have no WS4 label.
 
 ## Retirements
 
@@ -45,7 +47,7 @@ Recorded successors or candidate current labels:
 | `CWHdm` | `CWHdm1`, `CWHdm2`, `CWHdm3` | BECdb note on `CWHdm3`: “was CWHdm”; shared prefix |
 | `CWHms2` | `CWHws3` | BECdb note: “was part of old CWHms2” |
 | `ESSFmw` | `ESSFun1`, `ESSFmw1`, `ESSFmw2`, `ESSFmwp`, `ESSFmww` | BECdb note on `ESSFun1`: “was ESSFmw”; shared prefix |
-| `MHun` | `MHun1`, `MHunp` | BECdb note on `MHun1`: “replaces Mhun from version 12” |
+| `MHun` | `MHun1`, `MHunp` | BECdb note on `MHun1`: “replaces Mhun from version 12”; the retired table records v13. The retired table is used for the version. |
 | `SBSun` | `SBSmz`, `SBSun1`, `SBSvc` | BECdb notes: “replacing SBSun in part”; shared prefix |
 | `SWBun` | `SWBun1`, `SWBuns` | BECdb note on `SWBun1`: “replacing SWBun”; shared prefix |
 
@@ -73,7 +75,8 @@ unresolved.
 
 ## Current labels missing from WS4
 
-These 54 current BEC 13 labels are absent from `bec_variants.csv`:
+These 54 current BEC 13 labels do not have an exact row in `bec_variants.csv`.
+Three are covered by finer WS4 labels, as noted above:
 
 `BWBSdk`, `BWBSmk`, `BWBSmw`, `CMAwh`, `CWHdm1`, `CWHdm2`, `CWHdm3`,
 `CWHms3`, `CWHms4`, `CWHms5`, `CWHvh3`, `CWHvm4`, `CWHws3`, `CWHxs`,
@@ -95,13 +98,16 @@ They are recorded as a coverage gap.
 | --- | --- |
 | exact label | 183 |
 | WS4 label finer than a CCISS parent | 7 |
-| CCISS label finer than a WS4 parent | 16 |
+| CCISS label finer than a WS4 parent | 9 |
 | WS4 label absent from CCISS | 19 |
-| CCISS label absent from WS4 | 22 |
+| CCISS label absent from WS4 | 19 |
+| total relationship rows | 237 |
 
-The absent labels are named in the CSV. They are source-list differences, not
-unresolved classifications. The BECdb crosswalk is the stronger evidence and
-should be used first.
+Phase aliases are normalized before comparison, so they do not appear as splits.
+Parent labels with finer children are represented by the child rows, not by a
+separate summary row and not as “absent.” The 7 WS4 splits are retired WS4
+labels, so they are not current coverage. The BECdb crosswalk is the stronger
+evidence and should be used first.
 
 ## Sources
 
@@ -117,8 +123,8 @@ should be used first.
 
 - The BECdb is a nomenclature and classification register, not a legal AU
   boundary or a site-series assignment for every polygon.
-- Phase codes are ignored in the label comparison; WS4 labels are
-  zone+subzone+variant.
+- Phase codes are normalized to their base variant before comparison; phase
+  aliases are not treated as finer BEC units.
 - A successor candidate is a lead from a BECdb note or a shared prefix. It is not
   an equivalence claim and does not transfer species evidence.
 - A current BEC label absent from WS4 has no SDMD coverage assignment until the
@@ -126,7 +132,8 @@ should be used first.
 
 ## Verification
 
-`tests/test_sdmd_bec.py` checks the CCISS counts, the BECdb counts, the
-retirement version and successor for `CWHxm1`, the absent-current label
-`CWHvh3`, and the invariant that every WS4 label absent from current BECdb is in
-the retired table.
+`tests/test_sdmd_bec.py` checks the CCISS and BECdb counts, phase normalization,
+unique relationship pairs, the retirement version and successor for `CWHxm1` and
+`MHun`, the absent-current label `CWHvh3`, and the invariant that every WS4 label
+absent from current BECdb is in the retired table. `scripts/check_bec_authority.py`
+checks counts, aliases, and the `bec_sources.json` SHA-256 manifest.

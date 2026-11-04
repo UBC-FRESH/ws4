@@ -3999,14 +3999,15 @@ Parent issue: #809
 Branch: `feature/p132-audit-remediation`
 Status: active
 Plan: `notes/reports/p132-audit-remediation-plan.md`
+Report: `notes/reports/p132-audit-remediation.md`
 
 Goal: close the P121/P123 audit findings across AU metadata integrity, BEC
 crosswalk counts, assistant input hardening, and evidence traceability.
 
-- [ ] P132.1 AU metadata integrity and TSA normalization (#810)
-- [ ] P132.2 BEC crosswalk count and phase corrections (#811)
-- [ ] P132.3 Assistant chip hardening (#812)
-- [ ] P132.4 Evidence, process, and reproducibility (#813)
+- [x] P132.1 AU metadata integrity and TSA normalization (#810)
+- [x] P132.2 BEC crosswalk count and phase corrections (#811)
+- [x] P132.3 Assistant chip hardening (#812)
+- [x] P132.4 Evidence, process, and reproducibility (#813)
 
 Acceptance:
 
