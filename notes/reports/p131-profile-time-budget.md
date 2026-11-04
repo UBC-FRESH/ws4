@@ -1,7 +1,7 @@
 # P131 profile time budget overrides generations
 
 Date: 2026-11-03
-Status: complete
+Status: complete; PR #807
 
 ## Root cause
 
