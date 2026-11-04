@@ -4386,3 +4386,5 @@ issue comments.
   provenance, and added report-consistency tests.
 - P132 dashboard: `OVERALL: GREEN`. Focused tests: 136 passed. BEC authority
   check: pass.
+- P132 queued in PR #814; branch `feature/p132-audit-remediation`, head
+  `28a0376`. Dashboard: `OVERALL: GREEN`.

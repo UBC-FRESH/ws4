@@ -64,4 +64,4 @@ baseline rather than weakening or renaming the existing gate.
 
 ## PR
 
-Queued separately after the branch is pushed.
+Queued in PR #814 after `28a0376`.

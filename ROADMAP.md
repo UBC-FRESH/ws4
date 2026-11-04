@@ -3997,9 +3997,10 @@ Acceptance:
 
 Parent issue: #809
 Branch: `feature/p132-audit-remediation`
-Status: active
+Status: pr-open
 Plan: `notes/reports/p132-audit-remediation-plan.md`
 Report: `notes/reports/p132-audit-remediation.md`
+PR: #814
 
 Goal: close the P121/P123 audit findings across AU metadata integrity, BEC
 crosswalk counts, assistant input hardening, and evidence traceability.
