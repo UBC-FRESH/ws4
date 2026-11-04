@@ -1939,6 +1939,20 @@ def test_targets_tab_has_a_profile_selector(tmp_path: Path) -> None:
     assert 'id="run-profile"' in html
 
 
+def test_sdmd_coverage_selector_is_wired(tmp_path: Path) -> None:
+    """The SDMD workspace exposes the BC-wide coverage selector."""
+    client, _targets = _app(tmp_path)
+    html = client.get("/").text
+    js = client.get("/static/app.js").text
+    css = client.get("/static/style.css").text
+    assert 'id="sdmd-coverage-panel"' in html
+    assert 'id="sdmd-coverage-zone"' in html
+    assert 'id="sdmd-coverage-bec"' in html
+    assert "async function loadSdmdCoverage()" in js
+    assert "api/sdmd/coverage" in js
+    assert ".sdmd-coverage" in css
+
+
 def test_3d_estate_replay_is_gated_and_authoritative(tmp_path: Path) -> None:
     """The 3D view is an experimental Map overlay with no edit controls."""
     client, _targets = _app(tmp_path)

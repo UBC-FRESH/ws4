@@ -1,0 +1,79 @@
+"""Tests for the BC-wide SDMD coverage registry."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import pandas as pd
+from ws4.sdmd.coverage import coverage_frame, coverage_payload, coverage_row
+
+DATA = Path(__file__).resolve().parents[1] / "ws4" / "sdmd" / "data" / "sdmd"
+
+
+def test_coverage_has_every_current_bec_and_named_statuses() -> None:
+    """The registry covers 219 labels and distinguishes reviewed, provisional, and gaps."""
+    frame = coverage_frame()
+    assert len(frame) == 219
+    assert frame["bec"].nunique() == 219
+    counts = frame["coverage_status"].value_counts().to_dict()
+    assert counts == {"no-diagram": 161, "provisional": 57, "reviewed": 1}
+
+
+def test_reviewed_variant_has_au_evidence_and_diagrams() -> None:
+    """IDFdk3 is the reviewed variant and names its two pilot AUs."""
+    row = coverage_row("IDFdk3")
+    assert row is not None
+    assert row["coverage_status"] == "reviewed"
+    assert row["match_level"] == "variant"
+    assert row["diagram_ids"] == "fdin;fdip;pln;plp"
+    assert row["au_ids"] == "AU-IDFdk3-TSA23-FDI;AU-IDFdk3-TSA23-PLI"
+
+
+def test_provisional_and_no_diagram_rows_are_explicit() -> None:
+    """Zone-level and missing coverage are not silently treated as reviewed."""
+    provisional = coverage_row("CWHvm1")
+    assert provisional is not None
+    assert provisional["coverage_status"] == "provisional"
+    assert provisional["match_level"] == "zone"
+    assert "fdcn" in str(provisional["diagram_ids"])
+    missing = coverage_row("BWBSdk")
+    assert missing is not None
+    assert missing["coverage_status"] == "no-diagram"
+    assert missing["diagram_ids"] == ""
+    assert missing["au_ids"] == ""
+
+
+def test_coverage_filters_and_unknown_label() -> None:
+    """Zone/status filters and unknown labels are explicit."""
+    payload = coverage_payload(zone="CWH", status="provisional")
+    assert payload["count"] > 0
+    assert all(row["zone"] == "CWH" for row in payload["rows"])
+    assert all(row["coverage_status"] == "provisional" for row in payload["rows"])
+    assert coverage_row("XYZ99") is None
+
+
+def test_coverage_csv_is_reproducible() -> None:
+    """The committed CSV matches the builder's row/column contract."""
+    frame = pd.read_csv(DATA / "bec_coverage.csv", dtype=str).fillna("")
+    assert list(frame.columns) == [
+        "bec",
+        "zone",
+        "subzone",
+        "variant",
+        "zone_name",
+        "subzone_name",
+        "variant_name",
+        "coverage_status",
+        "match_level",
+        "diagram_ids",
+        "species",
+        "origins",
+        "reviewed_count",
+        "provisional_count",
+        "au_ids",
+        "evidence_status",
+        "note",
+    ]
+    assert not frame.duplicated(["bec"]).any()
+    assert set(frame["coverage_status"]) <= {"reviewed", "provisional", "no-diagram"}
+    assert set(frame["evidence_status"]) <= {"pilot", "none"}

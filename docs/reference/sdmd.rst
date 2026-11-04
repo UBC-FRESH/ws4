@@ -503,6 +503,22 @@ the FVS version, and the limits. The diagram is still provisional, no initial
 volume is supplied, and both FVS paths leave the observed envelope; the store is
 evidence for the pipeline, not a yield forecast.
 
+BC-wide coverage
+----------------
+
+``bec_coverage.csv`` is the 219-row coverage registry. Each current BEC label
+names its zone, subzone, variant, applicable Atlas diagrams, species/origin,
+review counts, and separate AU evidence. The counts are:
+
+- 1 reviewed BEC label: ``IDFdk3``
+- 57 provisional zone-level labels
+- 161 labels with no digitized diagram
+
+``GET /api/sdmd/coverage`` returns the registry and filters by zone or status;
+``GET /api/sdmd/coverage/{bec}`` returns one label. The SDMD workspace exposes a
+**BC coverage** selector. A provisional row is a lead, not an equivalence claim;
+a no-diagram row is a named gap. The registry never substitutes an unrelated AU.
+
 Evidence roles and limits
 -------------------------
 

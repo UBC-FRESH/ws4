@@ -6,6 +6,9 @@ const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, ba
 state.estate3d = { open: false, features: [], yaw: -0.55, zoom: 1, exaggeration: 1, hits: [] };
 const ESTATE_3D_LIMIT = 2000;
 
+state.sdmd.coverage = [];
+state.sdmd.coverageBec = '';
+
 const $ = (id) => document.getElementById(id);
 const TILE_VERSION = 'v9';
 const statusLine = (text) => { $('status').textContent = text; };
@@ -3327,12 +3330,86 @@ async function loadSdmdAvailability() {
     $('sdmd-empty').hidden = true;
     $('sdmd-status').textContent = 'choose an AU';
     await loadSdmdAUs();
+    await loadSdmdCoverage();
     syncNavigation();
   } catch (error) {
     state.sdmd.available = false;
     $('sdmd-status').textContent = 'SDMD API not served.';
     $('sdmd-empty').hidden = false;
   }
+}
+
+async function loadSdmdCoverage() {
+  try {
+    const payload = await api('api/sdmd/coverage');
+    state.sdmd.coverage = payload.rows ?? [];
+    const counts = payload.counts ?? {};
+    $('sdmd-coverage-count').textContent = `${payload.count ?? 0} BEC labels · ${counts.reviewed ?? 0} reviewed · ${counts.provisional ?? 0} provisional · ${counts['no-diagram'] ?? 0} gaps`;
+    const zones = [...new Set(state.sdmd.coverage.map((row) => row.zone))].sort();
+    const zoneSelect = $('sdmd-coverage-zone');
+    zoneSelect.replaceChildren();
+    for (const zone of zones) {
+      const option = document.createElement('option');
+      option.value = zone;
+      option.textContent = zone;
+      zoneSelect.append(option);
+    }
+    const preferred = state.sdmd.coverage.find((row) => row.bec === 'IDFdk3')?.zone ?? zones[0] ?? '';
+    zoneSelect.value = preferred;
+    fillSdmdCoverageBecs();
+  } catch {
+    $('sdmd-coverage-panel').hidden = true;
+  }
+}
+
+function fillSdmdCoverageBecs() {
+  const zone = $('sdmd-coverage-zone').value;
+  const rows = state.sdmd.coverage.filter((row) => row.zone === zone);
+  const select = $('sdmd-coverage-bec');
+  select.replaceChildren();
+  for (const row of rows) {
+    const option = document.createElement('option');
+    option.value = row.bec;
+    option.textContent = row.bec;
+    select.append(option);
+  }
+  const preferred = rows.some((row) => row.bec === state.sdmd.coverageBec)
+    ? state.sdmd.coverageBec
+    : rows.find((row) => row.bec === 'IDFdk3')?.bec ?? rows[0]?.bec ?? '';
+  select.value = preferred;
+  renderSdmdCoverageDetail();
+}
+
+function renderSdmdCoverageDetail() {
+  const host = $('sdmd-coverage-detail');
+  host.replaceChildren();
+  const row = state.sdmd.coverage.find((item) => item.bec === $('sdmd-coverage-bec').value);
+  if (!row) {
+    host.textContent = 'No current BEC label selected.';
+    return;
+  }
+  state.sdmd.coverageBec = row.bec;
+  const title = document.createElement('p');
+  const name = document.createElement('strong');
+  name.textContent = row.bec;
+  const status = document.createElement('span');
+  status.className = `sdmd-coverage-status ${row.coverage_status}`;
+  status.textContent = row.coverage_status;
+  title.append(name, status);
+  host.append(title);
+  const add = (label, value) => {
+    const line = document.createElement('p');
+    const prefix = document.createElement('strong');
+    prefix.textContent = `${label}: `;
+    line.append(prefix, document.createTextNode(value));
+    host.append(line);
+  };
+  add('Zone', `${row.zone} · ${row.zone_name || 'unnamed'}`);
+  add('Subzone / variant', `${row.subzone || '—'} / ${row.variant || '—'}`);
+  add('Diagrams', row.diagram_ids ? row.diagram_ids.split(';').join(', ') : 'None');
+  add('Species / origin', [row.species, row.origins].filter(Boolean).join(' · ') || 'None');
+  add('AU evidence', row.au_ids ? row.au_ids.split(';').join(', ') : 'No AU store for this BEC');
+  add('Note', row.note || '');
 }
 
 async function loadSdmdAUs() {
@@ -3474,6 +3551,8 @@ function wireSdmd() {
     await loadSdmdAUs();
     if (state.workspace === 'sdmd') updateUrl();
   });
+  $('sdmd-coverage-zone').addEventListener('change', fillSdmdCoverageBecs);
+  $('sdmd-coverage-bec').addEventListener('change', renderSdmdCoverageDetail);
   $('sdmd-au').addEventListener('change', async () => {
     await loadSdmdAu($('sdmd-au').value);
     if (state.workspace === 'sdmd') updateUrl();

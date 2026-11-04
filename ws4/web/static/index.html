@@ -347,6 +347,14 @@
       <div id="workspace-sdmd" class="workspace" role="tabpanel" aria-labelledby="ws-sdmd" hidden>
         <section id="tab-sdmd" role="tabpanel" aria-labelledby="ws-sdmd">
           <h2>AU Explorer</h2>
+          <details id="sdmd-coverage-panel" class="sdmd-coverage" open>
+            <summary>BC coverage <span id="sdmd-coverage-count" class="hint"></span></summary>
+            <div class="sdmd-coverage-controls">
+              <label>Zone <select id="sdmd-coverage-zone"></select></label>
+              <label>BEC <select id="sdmd-coverage-bec"></select></label>
+            </div>
+            <div id="sdmd-coverage-detail" class="sdmd-coverage-detail"></div>
+          </details>
           <p id="sdmd-status" class="hint">loading SDMD…</p>
           <p id="sdmd-empty" class="empty-state" hidden>No SDMD tables are served. Start <code>ws4 serve</code> with <code>--sdmd-dir</code>.</p>
           <div id="sdmd-filters">

@@ -1,0 +1,220 @@
+bec,zone,subzone,variant,zone_name,subzone_name,variant_name,coverage_status,match_level,diagram_ids,species,origins,reviewed_count,provisional_count,au_ids,evidence_status,note
+BAFAun,BAFA,un,,Boreal Altai Fescue Alpine,Undifferentiated,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+BGxh1,BG,xh,1,Bunchgrass,Very Dry Hot,Okanagan,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+BGxh2,BG,xh,2,Bunchgrass,Very Dry Hot,Thompson,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+BGxh3,BG,xh,3,Bunchgrass,Very Dry Hot,Fraser,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+BGxw1,BG,xw,1,Bunchgrass,Very Dry Warm,Nicola,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+BGxw2,BG,xw,2,Bunchgrass,Very Dry Warm,Alkali,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+BWBSdk,BWBS,dk,,Boreal White and Black Spruce,Dry Cool,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+BWBSmk,BWBS,mk,,Boreal White and Black Spruce,Moist Cool,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+BWBSmw,BWBS,mw,,Boreal White and Black Spruce,Moist Warm,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+BWBSvk,BWBS,vk,,Boreal White and Black Spruce,Very Wet Cool,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+BWBSwk1,BWBS,wk,1,Boreal White and Black Spruce,Wet Cool,Murray,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+BWBSwk2,BWBS,wk,2,Boreal White and Black Spruce,Wet Cool,Graham,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+BWBSwk3,BWBS,wk,3,Boreal White and Black Spruce,Wet Cool,Kledo,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+CDFmm,CDF,mm,,Coastal Douglas-fir,Moist Maritime,,provisional,zone,fdcn;fdcp;ssn;ssp,FDC;SS,natural;planted,0,4,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CMAun,CMA,un,,Coastal Mountain-heather Alpine,Undifferentiated,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+CMAwh,CMA,wh,,Coastal Mountain-heather Alpine,Wet Hypermaritime,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+CWHdm1,CWH,dm,1,Coastal Western Hemlock,Dry Maritime,Central,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHdm2,CWH,dm,2,Coastal Western Hemlock,Dry Maritime,Western,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHdm3,CWH,dm,3,Coastal Western Hemlock,Dry Maritime,Eastern,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHds1,CWH,ds,1,Coastal Western Hemlock,Dry Submaritime,Southern,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHds2,CWH,ds,2,Coastal Western Hemlock,Dry Submaritime,Central,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHmm1,CWH,mm,1,Coastal Western Hemlock,Moist Maritime,Submontane,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHmm2,CWH,mm,2,Coastal Western Hemlock,Moist Maritime,Montane,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHms3,CWH,ms,3,Coastal Western Hemlock,Moist Submaritime,Submontane,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHms4,CWH,ms,4,Coastal Western Hemlock,Moist Submaritime,Montane,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHms5,CWH,ms,5,Coastal Western Hemlock,Moist Submaritime,Subcontinental,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHvh1,CWH,vh,1,Coastal Western Hemlock,Very Wet Hypermaritime,Southern,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHvh2,CWH,vh,2,Coastal Western Hemlock,Very Wet Hypermaritime,Central,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHvh3,CWH,vh,3,Coastal Western Hemlock,Very Wet Hypermaritime,Haida Gwaii,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHvm1,CWH,vm,1,Coastal Western Hemlock,Very Wet Maritime,Southern Submontane,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHvm2,CWH,vm,2,Coastal Western Hemlock,Very Wet Maritime,Southern Montane,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHvm3,CWH,vm,3,Coastal Western Hemlock,Very Wet Maritime,Northern Submontane,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHvm4,CWH,vm,4,Coastal Western Hemlock,Very Wet Maritime,Northern Montane,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHwh1,CWH,wh,1,Coastal Western Hemlock,Wet Hypermaritime,Submontane,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHwh2,CWH,wh,2,Coastal Western Hemlock,Wet Hypermaritime,Montane,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHwm,CWH,wm,,Coastal Western Hemlock,Wet Maritime,,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHws1,CWH,ws,1,Coastal Western Hemlock,Wet Submaritime,Northern Submontane,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHws2,CWH,ws,2,Coastal Western Hemlock,Wet Submaritime,Montane,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHws3,CWH,ws,3,Coastal Western Hemlock,Wet Submaritime,Central Submontane,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+CWHxs,CWH,xs,,Coastal Western Hemlock,Very Dry SubMaritime,,provisional,zone,fdcn;fdcp;ssn;ssp;cwn;cwp;hwn;hwp,CW;FDC;HW;SS,natural;planted,0,8,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+ESSFdc1,ESSF,dc,1,Engelmann Spruce - Subalpine Fir,Dry Cold,Okanagan,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFdc2,ESSF,dc,2,Engelmann Spruce - Subalpine Fir,Dry Cold,Cascade,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFdc3,ESSF,dc,3,Engelmann Spruce - Subalpine Fir,Dry Cold,North Thompson,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFdcp,ESSF,dcp,,Engelmann Spruce - Subalpine Fir,Dry Cold Parkland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFdcw,ESSF,dcw,,Engelmann Spruce - Subalpine Fir,Dry Cold Woodland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFdh1,ESSF,dh,1,Engelmann Spruce - Subalpine Fir,Dry Hot,Cascade,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFdh2,ESSF,dh,2,Engelmann Spruce - Subalpine Fir,Dry Hot,Stein,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFdk1,ESSF,dk,1,Engelmann Spruce - Subalpine Fir,Dry Cool,Elk,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFdk2,ESSF,dk,2,Engelmann Spruce - Subalpine Fir,Dry Cool,Columbia,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFdkp,ESSF,dkp,,Engelmann Spruce - Subalpine Fir,Dry Cool Parkland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFdkw,ESSF,dkw,,Engelmann Spruce - Subalpine Fir,Dry Cool Woodland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFdv1,ESSF,dv,1,Engelmann Spruce - Subalpine Fir,Dry Very Cold,Cayoosh,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFdv2,ESSF,dv,2,Engelmann Spruce - Subalpine Fir,Dry Very Cold,Tyaughton,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFdvp,ESSF,dvp,,Engelmann Spruce - Subalpine Fir,Dry Very Cold Parkland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFdvw,ESSF,dvw,,Engelmann Spruce - Subalpine Fir,Dry Very Cold Woodland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFmc,ESSF,mc,,Engelmann Spruce - Subalpine Fir,Moist Cold,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFmcp,ESSF,mcp,,Engelmann Spruce - Subalpine Fir,Moist Cold Parkland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFmcw,ESSF,mcw,,Engelmann Spruce - Subalpine Fir,Moist Cold Woodland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFmh,ESSF,mh,,Engelmann Spruce - Subalpine Fir,Moist Hot,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFmk,ESSF,mk,,Engelmann Spruce - Subalpine Fir,Moist Cool,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFmkp,ESSF,mkp,,Engelmann Spruce - Subalpine Fir,Moist Cool Parkland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFmkw,ESSF,mkw,,Engelmann Spruce - Subalpine Fir,Moist Cool Woodland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFmm1,ESSF,mm,1,Engelmann Spruce - Subalpine Fir,Moist Mild,Raush,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFmm2,ESSF,mm,2,Engelmann Spruce - Subalpine Fir,Moist Mild,Robson,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFmm3,ESSF,mm,3,Engelmann Spruce - Subalpine Fir,Moist Mild,Spillimacheen,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFmmp,ESSF,mmp,,Engelmann Spruce - Subalpine Fir,Moist Mild Parkland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFmmw,ESSF,mmw,,Engelmann Spruce - Subalpine Fir,Moist Mild Woodland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFmv1,ESSF,mv,1,Engelmann Spruce - Subalpine Fir,Moist Very Cold,Nechako,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFmv2,ESSF,mv,2,Engelmann Spruce - Subalpine Fir,Moist Very Cold,Bullmoose,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFmv3,ESSF,mv,3,Engelmann Spruce - Subalpine Fir,Moist Very Cold,Omineca,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFmv4,ESSF,mv,4,Engelmann Spruce - Subalpine Fir,Moist Very Cold,Graham,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFmvp,ESSF,mvp,,Engelmann Spruce - Subalpine Fir,Moist Very Cold Parkland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFmw1,ESSF,mw,1,Engelmann Spruce - Subalpine Fir,Moist Warm,Cascade,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFmw2,ESSF,mw,2,Engelmann Spruce - Subalpine Fir,Moist Warm,Stein,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFmwp,ESSF,mwp,,Engelmann Spruce - Subalpine Fir,Moist Warm Parkland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFmww,ESSF,mww,,Engelmann Spruce - Subalpine Fir,Moist Warm Woodland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFun1,ESSF,un,1,Engelmann Spruce - Subalpine Fir,Undifferentiated,Central Coast,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFun2,ESSF,un,2,Engelmann Spruce - Subalpine Fir,Undifferentiated,Stikine,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFunp,ESSF,unp,,Engelmann Spruce - Subalpine Fir,Undifferentiated Parkland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFvc,ESSF,vc,,Engelmann Spruce - Subalpine Fir,Very Wet Cold,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFvcp,ESSF,vcp,,Engelmann Spruce - Subalpine Fir,Very Wet Cold Parkland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFvcw,ESSF,vcw,,Engelmann Spruce - Subalpine Fir,Very Wet Cold Woodland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFwc2,ESSF,wc,2,Engelmann Spruce - Subalpine Fir,Wet Cold,Monashee,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFwc3,ESSF,wc,3,Engelmann Spruce - Subalpine Fir,Wet Cold,Hart,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFwc4,ESSF,wc,4,Engelmann Spruce - Subalpine Fir,Wet Cold,Selkirk,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFwc7,ESSF,wc,7,Engelmann Spruce - Subalpine Fir,Wet Cold,Bowron,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFwcp,ESSF,wcp,,Engelmann Spruce - Subalpine Fir,Wet Cold Parkland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFwcw,ESSF,wcw,,Engelmann Spruce - Subalpine Fir,Wet Cold Woodland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFwh1,ESSF,wh,1,Engelmann Spruce - Subalpine Fir,Wet Hot,Columbia,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFwh2,ESSF,wh,2,Engelmann Spruce - Subalpine Fir,Wet Hot,St Mary,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFwh3,ESSF,wh,3,Engelmann Spruce - Subalpine Fir,Wet Hot,Salmo,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFwk1,ESSF,wk,1,Engelmann Spruce - Subalpine Fir,Wet Cool,Cariboo,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFwk2,ESSF,wk,2,Engelmann Spruce - Subalpine Fir,Wet Cool,Misinchinka,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFwm1,ESSF,wm,1,Engelmann Spruce - Subalpine Fir,Wet Mild,Fernie,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFwm2,ESSF,wm,2,Engelmann Spruce - Subalpine Fir,Wet Mild,Purcell,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFwm3,ESSF,wm,3,Engelmann Spruce - Subalpine Fir,Wet Mild,Ymir,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFwm4,ESSF,wm,4,Engelmann Spruce - Subalpine Fir,Wet Mild,Moyie,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFwmp,ESSF,wmp,,Engelmann Spruce - Subalpine Fir,Wet Mild Parkland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFwmw,ESSF,wmw,,Engelmann Spruce - Subalpine Fir,Wet Mild Woodland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFwv,ESSF,wv,,Engelmann Spruce - Subalpine Fir,Wet Very Cold,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFwvp,ESSF,wvp,,Engelmann Spruce - Subalpine Fir,Wet Very Cold Parkland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFwvw,ESSF,wvw,,Engelmann Spruce - Subalpine Fir,Wet Very Cold Woodland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFxc1,ESSF,xc,1,Engelmann Spruce - Subalpine Fir,Very Dry Cold,Similkameen,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFxc2,ESSF,xc,2,Engelmann Spruce - Subalpine Fir,Very Dry Cold,Thompson,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFxc3,ESSF,xc,3,Engelmann Spruce - Subalpine Fir,Very Dry Cold,Pavillion,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFxcp,ESSF,xcp,,Engelmann Spruce - Subalpine Fir,Very Dry Cold Parkland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFxcw,ESSF,xcw,,Engelmann Spruce - Subalpine Fir,Very Dry Cold Woodland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFxv1,ESSF,xv,1,Engelmann Spruce - Subalpine Fir,Very Dry Very Cold,West Chilcotin,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFxv2,ESSF,xv,2,Engelmann Spruce - Subalpine Fir,Very Dry Very Cold,Big Creek,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFxvp,ESSF,xvp,,Engelmann Spruce - Subalpine Fir,Very Dry Very Cold Parkland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ESSFxvw,ESSF,xvw,,Engelmann Spruce - Subalpine Fir,Very Dry Very Cold Woodland,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHdk,ICH,dk,,Interior Cedar - Hemlock,Dry Cool,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHdm,ICH,dm,,Interior Cedar - Hemlock,Dry Mild,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHdw1,ICH,dw,1,Interior Cedar - Hemlock,Dry Warm,West Kootenay,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHdw3,ICH,dw,3,Interior Cedar - Hemlock,Dry Warm,North Thompson,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHdw4,ICH,dw,4,Interior Cedar - Hemlock,Dry Warm,Shuswap,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHmc1,ICH,mc,1,Interior Cedar - Hemlock,Moist Cold,Nass,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHmc2,ICH,mc,2,Interior Cedar - Hemlock,Moist Cold,Hazelton,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHmk1,ICH,mk,1,Interior Cedar - Hemlock,Moist Cool,Okanagan,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHmk2,ICH,mk,2,Interior Cedar - Hemlock,Moist Cool,Thompson,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHmk3,ICH,mk,3,Interior Cedar - Hemlock,Moist Cool,Horsefly,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHmk4,ICH,mk,4,Interior Cedar - Hemlock,Moist Cool,Kootenay,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHmk5,ICH,mk,5,Interior Cedar - Hemlock,Moist Cool,Kootenay,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHmm,ICH,mm,,Interior Cedar - Hemlock,Moist Mild,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHmw1,ICH,mw,1,Interior Cedar - Hemlock,Moist Warm,Kinbasket,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHmw2,ICH,mw,2,Interior Cedar - Hemlock,Moist Warm,Shuswap,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHmw3,ICH,mw,3,Interior Cedar - Hemlock,Moist Warm,Thompson,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHmw4,ICH,mw,4,Interior Cedar - Hemlock,Moist Warm,Ymir,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHun1,ICH,un,1,Interior Cedar - Hemlock,Undifferentiated,Central Coast,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHvc,ICH,vc,,Interior Cedar - Hemlock,Very Wet Cold,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHvk1,ICH,vk,1,Interior Cedar - Hemlock,Very Wet Cool,Columbia,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHvk2,ICH,vk,2,Interior Cedar - Hemlock,Very Wet Cool,Slim,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHwc,ICH,wc,,Interior Cedar - Hemlock,Wet Cold,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHwk1,ICH,wk,1,Interior Cedar - Hemlock,Wet Cool,Shuswap,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHwk2,ICH,wk,2,Interior Cedar - Hemlock,Wet Cool,Quesnel,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHwk3,ICH,wk,3,Interior Cedar - Hemlock,Wet Cool,Goat,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHwk4,ICH,wk,4,Interior Cedar - Hemlock,Wet Cool,Cariboo,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHwm5,ICH,wm,5,Interior Cedar - Hemlock,Moist Warm,Granby,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHxm1,ICH,xm,1,Interior Cedar - Hemlock,Very Dry Mild,Shuswap,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+ICHxw,ICH,xw,,Interior Cedar - Hemlock,Very Dry Warm,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+IDFdc,IDF,dc,,Interior Douglas-fir,Dry Cold,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+IDFdh,IDF,dh,,Interior Douglas-fir,Dry Hot,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+IDFdk1,IDF,dk,1,Interior Douglas-fir,Dry Cool,Thompson,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+IDFdk2,IDF,dk,2,Interior Douglas-fir,Dry Cool,Cascade,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+IDFdk3,IDF,dk,3,Interior Douglas-fir,Dry Cool,Fraser,reviewed,variant,fdin;fdip;pln;plp,FDI;PLI,natural;planted,4,0,AU-IDFdk3-TSA23-FDI;AU-IDFdk3-TSA23-PLI,pilot,Reviewed variant-specific diagrams.
+IDFdk4,IDF,dk,4,Interior Douglas-fir,Dry Cool,Chilcotin,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+IDFdk5,IDF,dk,5,Interior Douglas-fir,Dry Cool,Columbia,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+IDFdm1,IDF,dm,1,Interior Douglas-fir,Dry Mild,Kettle,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+IDFdm2,IDF,dm,2,Interior Douglas-fir,Dry Mild,Kootenay,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+IDFdw,IDF,dw,,Interior Douglas-fir,Dry Warm,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+IDFmw2,IDF,mw,2,Interior Douglas-fir,Moist Warm,Thompson,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+IDFww,IDF,ww,,Interior Douglas-fir,Wet Warm,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+IDFxc,IDF,xc,,Interior Douglas-fir,Very Dry Cold,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+IDFxh1,IDF,xh,1,Interior Douglas-fir,Very Dry Hot,Okanagan,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+IDFxh2,IDF,xh,2,Interior Douglas-fir,Very Dry Hot,Thompson,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+IDFxk,IDF,xk,,Interior Douglas-fir,Very Dry Cool,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+IDFxm,IDF,xm,,Interior Douglas-fir,Very Dry Mild,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+IDFxw,IDF,xw,,Interior Douglas-fir,Very Dry Warm,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+IDFxx1,IDF,xx,1,Interior Douglas-fir,Very Hot Very Dry,Kettle,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+IDFxx2,IDF,xx,2,Interior Douglas-fir,Very Dry Very Hot,Kootenay,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+IMAun,IMA,un,,Interior Mountain-heather Alpine,Undifferentiated,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+MHmm1,MH,mm,1,Mountain Hemlock,Moist Maritime,Windward,provisional,zone,ssn;ssp;hwn;hwp,HW;SS,natural;planted,0,4,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+MHmm2,MH,mm,2,Mountain Hemlock,Moist Maritime,Leeward,provisional,zone,ssn;ssp;hwn;hwp,HW;SS,natural;planted,0,4,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+MHmmp,MH,mmp,,Mountain Hemlock,Moist Maritime Parkland,,provisional,zone,ssn;ssp;hwn;hwp,HW;SS,natural;planted,0,4,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+MHms,MH,ms,,Mountain Hemlock,Moist Submaritime,,provisional,zone,ssn;ssp;hwn;hwp,HW;SS,natural;planted,0,4,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+MHmsp,MH,msp,,Mountain Hemlock,Moist Submaritime Parkland,,provisional,zone,ssn;ssp;hwn;hwp,HW;SS,natural;planted,0,4,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+MHun1,MH,un,1,Mountain Hemlock,Undifferentiated,Stikine,provisional,zone,ssn;ssp;hwn;hwp,HW;SS,natural;planted,0,4,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+MHunp,MH,unp,,Mountain Hemlock,Undifferentiated Parkland,,provisional,zone,ssn;ssp;hwn;hwp,HW;SS,natural;planted,0,4,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+MHvh,MH,vh,,Mountain Hemlock,Very Wet Hypermaritime,,provisional,zone,ssn;ssp;hwn;hwp,HW;SS,natural;planted,0,4,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+MHvhp,MH,vhp,,Mountain Hemlock,Very Wet Hypermaritime Parkland,,provisional,zone,ssn;ssp;hwn;hwp,HW;SS,natural;planted,0,4,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+MHwh,MH,wh,,Mountain Hemlock,Wet Hypermaritime,,provisional,zone,ssn;ssp;hwn;hwp,HW;SS,natural;planted,0,4,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+MHwhp,MH,whp,,Mountain Hemlock,Wet Hypermaritime Parkland,,provisional,zone,ssn;ssp;hwn;hwp,HW;SS,natural;planted,0,4,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+MSdc1,MS,dc,1,Montane Spruce,Dry Cold,Cayoosh,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+MSdc2,MS,dc,2,Montane Spruce,Dry Cold,Tatlayoko,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+MSdc3,MS,dc,3,Montane Spruce,Dry Cold,Tyaughton,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+MSdk,MS,dk,,Montane Spruce,Dry Cool,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+MSdm1,MS,dm,1,Montane Spruce,Dry Mild,Okanagan,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+MSdm2,MS,dm,2,Montane Spruce,Dry Mild,Cascade,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+MSdm3,MS,dm,3,Montane Spruce,Dry Mild,North Thompson,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+MSdv,MS,dv,,Montane Spruce,Dry Very Cold,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+MSdw,MS,dw,,Montane Spruce,Dry Warm,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+MSun1,MS,un,1,Montane Spruce,Undifferentiated,Central Coast,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+MSxk1,MS,xk,1,Montane Spruce,Very Dry Cool,Similkameen,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+MSxk2,MS,xk,2,Montane Spruce,Very Dry Cool,South Thompson,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+MSxk3,MS,xk,3,Montane Spruce,Very Dry Cool,Pavillion,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+MSxv,MS,xv,,Montane Spruce,Very Dry Very Cold,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+PPxh1,PP,xh,1,Ponderosa Pine,Very Dry Hot,Okanagan,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+PPxh2,PP,xh,2,Ponderosa Pine,Very Dry Hot,Thompson,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+SBPSdc,SBPS,dc,,Sub-Boreal Pine - Spruce,Dry Cold,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+SBPSmc,SBPS,mc,,Sub-Boreal Pine - Spruce,Moist Cold,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+SBPSmk,SBPS,mk,,Sub-Boreal Pine - Spruce,Moist Cool,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+SBPSxc,SBPS,xc,,Sub-Boreal Pine - Spruce,Very Dry Cold,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+SBSdh1,SBS,dh,1,Sub-Boreal Spruce,Dry Hot,McLennan,provisional,zone,swn;swp,SW,natural;planted,0,2,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+SBSdh2,SBS,dh,2,Sub-Boreal Spruce,Dry Hot,Robson,provisional,zone,swn;swp,SW,natural;planted,0,2,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+SBSdk,SBS,dk,,Sub-Boreal Spruce,Dry Cool,,provisional,zone,swn;swp,SW,natural;planted,0,2,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+SBSdw1,SBS,dw,1,Sub-Boreal Spruce,Dry Warm,Horsefly,provisional,zone,swn;swp,SW,natural;planted,0,2,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+SBSdw2,SBS,dw,2,Sub-Boreal Spruce,Dry Warm,Blackwater,provisional,zone,swn;swp,SW,natural;planted,0,2,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+SBSdw3,SBS,dw,3,Sub-Boreal Spruce,Dry Warm,Stuart,provisional,zone,swn;swp,SW,natural;planted,0,2,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+SBSmc1,SBS,mc,1,Sub-Boreal Spruce,Moist Cold,Moffat,provisional,zone,swn;swp,SW,natural;planted,0,2,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+SBSmc2,SBS,mc,2,Sub-Boreal Spruce,Moist Cold,Babine,provisional,zone,swn;swp,SW,natural;planted,0,2,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+SBSmc3,SBS,mc,3,Sub-Boreal Spruce,Moist Cold,Kluskus,provisional,zone,swn;swp,SW,natural;planted,0,2,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+SBSmh,SBS,mh,,Sub-Boreal Spruce,Moist Hot,,provisional,zone,swn;swp,SW,natural;planted,0,2,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+SBSmk1,SBS,mk,1,Sub-Boreal Spruce,Moist Cool,Mossvale,provisional,zone,swn;swp,SW,natural;planted,0,2,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+SBSmk2,SBS,mk,2,Sub-Boreal Spruce,Moist Cool,Williston,provisional,zone,swn;swp,SW,natural;planted,0,2,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+SBSmm,SBS,mm,,Sub-Boreal Spruce,Moist Mild,,provisional,zone,swn;swp,SW,natural;planted,0,2,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+SBSmw,SBS,mw,,Sub-Boreal Spruce,Moist Warm,,provisional,zone,swn;swp,SW,natural;planted,0,2,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+SBSmz,SBS,mz,,Sub-Boreal Spruce,Moist Extremely Cold,,provisional,zone,swn;swp,SW,natural;planted,0,2,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+SBSun1,SBS,un,1,Sub-Boreal Spruce,Undifferentiated,Stikine,provisional,zone,swn;swp,SW,natural;planted,0,2,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+SBSvc,SBS,vc,,Sub-Boreal Spruce,Very Wet Cold,,provisional,zone,swn;swp,SW,natural;planted,0,2,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+SBSvk,SBS,vk,,Sub-Boreal Spruce,Very Wet Cool,,provisional,zone,swn;swp,SW,natural;planted,0,2,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+SBSwk1,SBS,wk,1,Sub-Boreal Spruce,Wet Cool,Willow,provisional,zone,swn;swp,SW,natural;planted,0,2,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+SBSwk2,SBS,wk,2,Sub-Boreal Spruce,Wet Cool,Finlay-Peace,provisional,zone,swn;swp,SW,natural;planted,0,2,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+SBSwk3,SBS,wk,3,Sub-Boreal Spruce,Wet Cool,Takla,provisional,zone,swn;swp,SW,natural;planted,0,2,,none,"Zone-level provisional diagrams; verify BEC variant, species, and origin."
+SWBmk,SWB,mk,,Spruce - Willow - Birch,Moist Cool,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+SWBmks,SWB,mks,,Spruce - Willow - Birch,Moist Cool Scrub,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+SWBun1,SWB,un,1,Spruce - Willow - Birch,Undifferentiated,Teslin-Taku,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+SWBuns,SWB,uns,,Spruce - Willow - Birch,Undifferentiated Scrub,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+SWBvk,SWB,vk,,Spruce - Willow - Birch,Very Wet Cool,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
+SWBvks,SWB,vks,,Spruce - Willow - Birch,Very Wet Cool Scrub,,no-diagram,,,,,0,0,,none,No digitized SDMD diagram covers this BEC label.
