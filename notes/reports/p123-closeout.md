@@ -5,21 +5,19 @@ Parent issue: #780
 Child issue: #800
 Branch: `feature/p123-assistant-context`
 PR: #804
-Head: `884e466`
+Head: `fe9d67e`
+Merge commit: `7a66ee3`
 Date: 2026-11-04
-Status: queued for maintainer approval. Not merged.
+Status: merged via PR #804 as squash commit `7a66ee3` on 2026-11-04. Branch deleted.
 
 ## Recommendation
 
-Queue PR #804 for `feature/p123-assistant-context` into `main` and wait for the
-maintainer's approval.
+Approved and completed:
 
-After approval:
-
-1. Squash-merge PR #804.
-2. Delete `feature/p123-assistant-context`.
-3. Close #780 and #800 with a comment that cites the merge commit.
-4. Do not launch the next phase until the maintainer names it.
+1. Squash-merged PR #804 as `7a66ee3`.
+2. Deleted `feature/p123-assistant-context`.
+3. Closed #780 and #800 with comments that cite the merge commit.
+4. No next phase was launched.
 
 Settings changes: none.
 
@@ -77,6 +75,6 @@ Focused web tests: 86 passed. Dashboard: `OVERALL: GREEN`.
 
 ## 6. Pull request
 
-PR #804 names the phase, branch, head, context packet, chip whitelist, tests, and
-limits. It is queued for approval. No merge, tag, release, or settings change is
-performed by this report.
+PR #804 named the phase, branch, head, context packet, chip whitelist, tests,
+and limits. It was squash-merged as `7a66ee3`. No tag, release, or settings
+change was performed.

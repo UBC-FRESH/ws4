@@ -4363,3 +4363,6 @@ issue comments.
 - Shared `Runner` protocol (2026-11-03): `ws4.opt.portfolio` and `ws4.opt.tune` now import
   `Runner` from `fresh_solutions.kernel` instead of defining it twice. Their WS4-specific
   configuration, target scaling, and run-directory orchestration stay local.
+- P123: merged via PR #804 as `7a66ee3`. Ask now sends the current screen
+  context and renders server-validated safe action chips. Branch deleted; parent
+  #780 and child #800 closed. Dashboard: `OVERALL: GREEN`.
