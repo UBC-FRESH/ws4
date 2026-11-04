@@ -4347,3 +4347,19 @@ issue comments.
 - P131: a declared GPU profile time budget now overrides the generation cap, so
   a one-minute request runs for one minute instead of stopping at 5,000
   generations. Report: `notes/reports/p131-profile-time-budget.md`.
+
+- Shared-kernel adoption (2026-11-03): WS4 now depends on `fresh-solutions>=0.9.3,<0.10` for the
+  problem-agnostic search kernel. `ws4.opt.core.Problem`, `ws4.opt.solvers`, `ws4.opt.cooling`, and
+  `ws4.opt.control` are compatibility facades over `fresh_solutions.kernel`; the WS4 operators,
+  objective, incremental evaluator, constraints, patch/spatial/route models, MIP layer, and
+  `Optimizer` stay in WS4. The full suite passes and strict mypy is clean.
+
+- Shared-kernel telemetry (2026-11-03): `ws4.opt.telemetry` now re-exports
+  `fresh_solutions.kernel.telemetry` (`RunLogger`, `read_records`). The logger is generic and
+  has no WS4 imports. `portfolio` and `tune` remain in WS4 because they depend on
+  `OptimizeConfig`, `Optimizer`, `Target`, and the WS4 run-directory contract; the boundary is
+  recorded in `notes/design/shared-kernel-adoption.md`.
+
+- Shared `Runner` protocol (2026-11-03): `ws4.opt.portfolio` and `ws4.opt.tune` now import
+  `Runner` from `fresh_solutions.kernel` instead of defining it twice. Their WS4-specific
+  configuration, target scaling, and run-directory orchestration stay local.
