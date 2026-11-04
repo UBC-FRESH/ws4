@@ -3852,9 +3852,10 @@ Acceptance:
 
 Parent issue: #781
 Branch: `feature/p124-3d-replay`
-Status: active
+Status: pr-open
 Plan: `notes/design/ws4-ui-port-plan.md`
 Report: `notes/reports/p124-3d-replay.md`
+PR: #816
 
 Goal: add an experimental coarse 3D block replay without machine/terrain editing.
 

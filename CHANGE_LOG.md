@@ -4400,3 +4400,5 @@ issue comments.
   sync; orbit, zoom, reset, Escape close; 2,000-block refusal. No terrain,
   machine, edit, run, or permission controls. Focused web tests: 90 passed.
   Dashboard: `OVERALL: GREEN`.
+- P124.1 queued in PR #816; branch `feature/p124-3d-replay`, head
+  `056b519`. Dashboard: `OVERALL: GREEN`.

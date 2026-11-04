@@ -29,6 +29,10 @@ Branch: `feature/p124-3d-replay`
 - `tests/test_web_3d_js.py`: Node projection/height behavior.
 - `docs/reference/web.rst`: user-facing limits.
 
+## PR
+
+Queued in PR #816 after `056b519`.
+
 ## Verification
 
 ```bash
