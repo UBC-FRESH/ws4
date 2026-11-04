@@ -3,6 +3,9 @@
 
 const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' } };
 
+state.estate3d = { open: false, features: [], yaw: -0.55, zoom: 1, exaggeration: 1, hits: [] };
+const ESTATE_3D_LIMIT = 2000;
+
 const $ = (id) => document.getElementById(id);
 const TILE_VERSION = 'v9';
 const statusLine = (text) => { $('status').textContent = text; };
@@ -3682,6 +3685,7 @@ function setPeriod(index) {
   $('year-label').textContent = period.label ?? `Period ${next + 1}`;
   renderRunHealth();
   updateUrl({ push: false });
+  if (state.estate3d.open) refreshEstate3d();
   return period;
 }
 
@@ -6615,12 +6619,228 @@ async function buildReport() {
   }
 }
 
+function estate3dHeight(properties) {
+  const treated = Boolean(properties?.treated);
+  let height = treated ? 20 : 7;
+  const age = properties?.age;
+  if (age !== null && age !== undefined && Number.isFinite(Number(age))) {
+    height += Math.min(Math.max(Number(age), 0), 200) * 0.10;
+  }
+  if (properties?.current) height += 5;
+  return Math.max(4, Math.min(48, height));
+}
+
+function estate3dProject(x, y, transform) {
+  const dx = x - transform.cx;
+  const dy = y - transform.cy;
+  const rx = dx * Math.cos(transform.yaw) - dy * Math.sin(transform.yaw);
+  const ry = dx * Math.sin(transform.yaw) + dy * Math.cos(transform.yaw);
+  return [
+    transform.width / 2 + rx * transform.scale,
+    transform.height / 2 + ry * transform.scale * transform.flatten,
+  ];
+}
+
+function estate3dRings(feature) {
+  const geometry = feature?.geometry;
+  if (geometry?.type === 'Polygon') return geometry.coordinates;
+  if (geometry?.type === 'MultiPolygon') return geometry.coordinates.flat();
+  return [];
+}
+
+function estate3dColor(properties, selected) {
+  if (selected) return '#d9822b';
+  if (properties?.treated) return properties.current ? '#2f7d4f' : '#7aa36b';
+  return '#b7b7a8';
+}
+
+function estate3dExtract(features) {
+  const blocks = [];
+  for (const feature of features) {
+    const rings = estate3dRings(feature).filter((ring) => Array.isArray(ring) && ring.length >= 3);
+    if (!rings.length) continue;
+    const properties = feature.properties ?? {};
+    blocks.push({
+      block: properties.block_id,
+      properties,
+      rings,
+      height: estate3dHeight(properties),
+    });
+  }
+  return blocks;
+}
+
+function estate3dBounds(blocks) {
+  const box = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
+  for (const block of blocks) {
+    for (const ring of block.rings) {
+      for (const point of ring) {
+        const x = Number(point[0]);
+        const y = Number(point[1]);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+        box.minX = Math.min(box.minX, x);
+        box.minY = Math.min(box.minY, y);
+        box.maxX = Math.max(box.maxX, x);
+        box.maxY = Math.max(box.maxY, y);
+      }
+    }
+  }
+  return box;
+}
+
+function estate3dPointInRing(x, y, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+    const xi = ring[i][0];
+    const yi = ring[i][1];
+    const xj = ring[j][0];
+    const yj = ring[j][1];
+    if (((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / (yj - yi) + xi)) inside = !inside;
+  }
+  return inside;
+}
+
+function estate3dPick(x, y) {
+  for (let index = estate3dPick.hits.length - 1; index >= 0; index -= 1) {
+    const hit = estate3dPick.hits[index];
+    if (estate3dPointInRing(x, y, hit.ring)) return hit;
+  }
+  return null;
+}
+estate3dPick.hits = [];
+
+function renderEstate3d() {
+  if (!state.estate3d.open) return;
+  const canvas = $('estate-3d-canvas');
+  if (!canvas) return;
+  const rect = canvas.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+  canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+  const context = canvas.getContext('2d');
+  if (!context) return;
+  context.setTransform(dpr, 0, 0, dpr, 0, 0);
+  context.clearRect(0, 0, rect.width, rect.height);
+  const blocks = estate3dExtract(state.estate3d.features);
+  if (blocks.length > ESTATE_3D_LIMIT) {
+    $('estate-3d-status').textContent = `3D refused: ${blocks.length.toLocaleString()} blocks exceeds the ${ESTATE_3D_LIMIT.toLocaleString()} block budget`;
+    return;
+  }
+  if (!blocks.length) {
+    $('estate-3d-status').textContent = 'No polygon blocks available for the 3D replay';
+    return;
+  }
+  const box = estate3dBounds(blocks);
+  const dx = Math.max(box.maxX - box.minX, 1e-9);
+  const dy = Math.max(box.maxY - box.minY, 1e-9);
+  const scale = Math.min((rect.width - 80) / dx, (rect.height - 80) / dy) * 0.9 * state.estate3d.zoom;
+  const transform = {
+    cx: (box.minX + box.maxX) / 2,
+    cy: (box.minY + box.maxY) / 2,
+    scale: Math.max(scale, 1e-6),
+    yaw: state.estate3d.yaw,
+    width: rect.width,
+    height: rect.height,
+    flatten: 0.58,
+  };
+  const drawable = blocks.map((block) => {
+    const rings = block.rings.map((ring) => ring.map((point) => estate3dProject(Number(point[0]), Number(point[1]), transform)));
+    const depth = rings.reduce((sum, ring) => sum + ring.reduce((total, point) => total + point[1], 0), 0)
+      / Math.max(1, rings.reduce((count, ring) => count + ring.length, 0));
+    return { ...block, rings, depth };
+  }).sort((a, b) => a.depth - b.depth);
+  estate3dPick.hits = [];
+  const selected = String(state.selectedBlock);
+  for (const block of drawable) {
+    const selectedBlock = String(block.block) === selected;
+    const color = estate3dColor(block.properties, selectedBlock);
+    const height = block.height * state.estate3d.exaggeration;
+    for (const ring of block.rings) {
+      for (let index = 0; index < ring.length; index += 1) {
+        const current = ring[index];
+        const next = ring[(index + 1) % ring.length];
+        context.beginPath();
+        context.moveTo(current[0], current[1]);
+        context.lineTo(next[0], next[1]);
+        context.lineTo(next[0], next[1] - height);
+        context.lineTo(current[0], current[1] - height);
+        context.closePath();
+        context.fillStyle = selectedBlock ? 'rgba(217,130,43,.82)' : 'rgba(55,78,66,.55)';
+        context.fill();
+      }
+    }
+    for (const ring of block.rings) {
+      context.beginPath();
+      ring.forEach((point, index) => {
+        if (index === 0) context.moveTo(point[0], point[1] - height);
+        else context.lineTo(point[0], point[1] - height);
+      });
+      context.closePath();
+      context.fillStyle = color;
+      context.fill();
+      context.strokeStyle = selectedBlock ? '#7a3f10' : 'rgba(24,42,34,.45)';
+      context.lineWidth = selectedBlock ? 2 : 0.6;
+      context.stroke();
+      estate3dPick.hits.push({
+        block: block.block,
+        properties: block.properties,
+        ring: ring.map((point) => [point[0], point[1] - height]),
+      });
+    }
+  }
+  const period = currentPeriod();
+  $('estate-3d-status').textContent = `${blocks.length.toLocaleString()} blocks${period ? ` · ${period.label ?? `period ${state.periodIndex + 1}`}` : ''} · drag to orbit`;
+}
+
+async function loadEstate3dFeatures() {
+  const local = state.features.filter((feature) => estate3dRings(feature).length);
+  if (local.length && state.mapEngine !== 'maplibre') return local;
+  const period = currentPeriod();
+  const year = period ? Number(period.end) : Number(state.year);
+  const layer = state.live.active ? 'treatments' : mapLayerName();
+  let query = `api/runs/${encodeURIComponent(state.run)}/map?year=${year}&layer=${layer}`;
+  if (layer === 'treatments' || layer === 'cumulative') query += periodQuery();
+  if (layer === 'compartments' && state.compartmentAccount) {
+    query += `&account=${encodeURIComponent(state.compartmentAccount)}`;
+  }
+  const body = await api(query);
+  return body.features ?? [];
+}
+
+async function refreshEstate3d() {
+  if (!state.estate3d.open) return;
+  $('estate-3d-status').textContent = 'loading 3D geometry…';
+  try {
+    state.estate3d.features = await loadEstate3dFeatures();
+    renderEstate3d();
+  } catch (error) {
+    $('estate-3d-status').textContent = `3D unavailable: ${error.message}`;
+  }
+}
+
+function openEstate3d() {
+  if (!state.run) { showToast('load a run before opening 3D', true); return; }
+  state.estate3d.open = true;
+  $('estate-3d').hidden = false;
+  $('map-3d-toggle').setAttribute('aria-expanded', 'true');
+  $('estate-3d').focus?.();
+  refreshEstate3d();
+}
+
+function closeEstate3d() {
+  state.estate3d.open = false;
+  $('estate-3d').hidden = true;
+  $('map-3d-toggle').setAttribute('aria-expanded', 'false');
+  $('estate-3d-status').textContent = 'Experimental coarse view';
+}
+
 function showDetail(block, supplied = null, geometry = null) {
   const feature = state.features.find((candidate) => String(candidate.properties?.block_id) === String(block));
   const properties = supplied ?? feature?.properties;
   if (!properties) return;
   state.selectedBlock = block;
   $('map-wrap').dataset.selectedBlock = String(block);
+  if (state.estate3d.open) renderEstate3d();
   if (state.mapEngine === 'maplibre') {
     state.selectedGeometry = geometry ?? feature?.geometry ?? null;
   }
@@ -7004,6 +7224,48 @@ function wireControls() {
   $('play-periods').addEventListener('click', togglePeriodPlay);
   $('help-toggle').addEventListener('click', openHelp);
   $('help-close').addEventListener('click', () => $('help-dialog').close());
+  $('map-3d-toggle').addEventListener('click', openEstate3d);
+  $('estate-3d-close').addEventListener('click', closeEstate3d);
+  $('estate-3d-reset').addEventListener('click', () => {
+    state.estate3d.yaw = -0.55;
+    state.estate3d.zoom = 1;
+    renderEstate3d();
+  });
+  $('estate-3d-exaggeration').addEventListener('input', (event) => {
+    state.estate3d.exaggeration = Number(event.target.value) || 1;
+    renderEstate3d();
+  });
+  {
+    const canvas = $('estate-3d-canvas');
+    let drag = null;
+    canvas.addEventListener('pointerdown', (event) => {
+      drag = { x: event.clientX, y: event.clientY, yaw: state.estate3d.yaw, moved: false };
+      canvas.setPointerCapture(event.pointerId);
+    });
+    canvas.addEventListener('pointermove', (event) => {
+      if (!drag) return;
+      if (Math.abs(event.clientX - drag.x) + Math.abs(event.clientY - drag.y) > 3) drag.moved = true;
+      state.estate3d.yaw = drag.yaw + (event.clientX - drag.x) * 0.008;
+      renderEstate3d();
+    });
+    canvas.addEventListener('pointerup', (event) => {
+      if (!drag) return;
+      const moved = drag.moved;
+      drag = null;
+      if (moved) return;
+      const rect = canvas.getBoundingClientRect();
+      const hit = estate3dPick(event.clientX - rect.left, event.clientY - rect.top);
+      if (hit) showDetail(hit.block, hit.properties);
+    });
+    canvas.addEventListener('wheel', (event) => {
+      event.preventDefault();
+      state.estate3d.zoom = Math.min(3, Math.max(0.4, state.estate3d.zoom * Math.exp(-event.deltaY * 0.001)));
+      renderEstate3d();
+    }, { passive: false });
+  }
+  window.addEventListener('resize', () => {
+    if (state.estate3d.open) renderEstate3d();
+  });
   for (const button of document.querySelectorAll('#targets-table thead .sort-button')) {
     button.addEventListener('click', () => sortTargetTable(button.dataset.sort));
   }
@@ -7072,6 +7334,10 @@ function wireControls() {
     const typing = tag === 'TEXTAREA' || tag === 'SELECT' || active?.isContentEditable
       || (tag === 'INPUT' && active.type !== 'range');
     if (event.key === 'Escape') {
+      if (!$('estate-3d').hidden) {
+        closeEstate3d();
+        return;
+      }
       if ($('help-dialog').open) {
         $('help-dialog').close();
         return;

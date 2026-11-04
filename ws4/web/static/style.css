@@ -596,3 +596,24 @@ details.layer-group[open] > summary { margin-bottom:.2rem; }
 .shortcut-list dt { margin: 0; }
 .shortcut-list dd { margin: 0; color: var(--muted); font-size: .84rem; }
 kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: .25rem; padding: 0 .25rem; background: #f4f6f8; font: inherit; font-size: .72rem; }
+
+.map-3d-toggle { position:absolute; right:.6rem; top:.6rem; z-index:4; min-width:2.4rem;
+                 border:1px solid var(--line); border-radius:.35rem; background:rgba(255,255,255,.92);
+                 color:var(--ink); font:inherit; font-size:.72rem; font-weight:700; padding:.22rem .45rem;
+                 cursor:pointer; }
+.map-3d-toggle:hover, .map-3d-toggle[aria-expanded="true"] { background:#e8f1ff; border-color:#c7d8f2; }
+.estate-3d { position:fixed; inset:0; z-index:72; display:flex; flex-direction:column;
+             background:#f5f7f8; color:var(--ink); }
+.estate-3d-head { display:flex; align-items:center; justify-content:space-between; gap:.6rem;
+                  padding:.55rem .8rem; border-bottom:1px solid var(--line); background:var(--panel); }
+.estate-3d-head strong { display:block; font-size:.95rem; }
+.estate-3d-status { display:block; color:var(--muted); font-size:.72rem; margin-top:.1rem; }
+.estate-3d-controls { display:flex; align-items:center; gap:.45rem; flex-wrap:wrap; }
+.estate-3d-controls label { display:flex; align-items:center; gap:.3rem; font-size:.72rem; color:var(--muted); }
+.estate-3d-controls input[type="range"] { width:6rem; }
+.estate-3d-controls button { border:1px solid var(--line); border-radius:.35rem; background:var(--panel);
+                             color:var(--ink); font:inherit; font-size:.72rem; padding:.2rem .45rem; cursor:pointer; }
+#estate-3d-close { font-size:1.1rem; line-height:1; min-width:2rem; }
+#estate-3d-canvas { flex:1; width:100%; min-height:0; display:block; cursor:grab; touch-action:none; }
+#estate-3d-canvas:active { cursor:grabbing; }
+.estate-3d-note { margin:0; padding:.35rem .8rem .5rem; color:var(--muted); font-size:.7rem; border-top:1px solid var(--line); background:var(--panel); }

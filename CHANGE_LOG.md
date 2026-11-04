@@ -4394,3 +4394,11 @@ issue comments.
   assistant input hardening, source manifest/check, corrected closeout evidence,
   and P121 sub-issue links. Branch deleted; #809 and #810-#813 closed. Dashboard:
   `OVERALL: GREEN`.
+
+- P124.1: added the experimental Map-workspace 3D estate replay. Original Canvas
+  2D orthographic renderer; treatment/current/age height; period and selection
+  sync; orbit, zoom, reset, Escape close; 2,000-block refusal. No terrain,
+  machine, edit, run, or permission controls. Focused web tests: 90 passed.
+  Dashboard: `OVERALL: GREEN`.
+- P124.1 queued in PR #816; branch `feature/p124-3d-replay`, head
+  `056b519`. Dashboard: `OVERALL: GREEN`.
