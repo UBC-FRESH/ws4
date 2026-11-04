@@ -4424,3 +4424,5 @@ issue comments.
   57 BEC labels, and audited TSA 24/27/29 AU evidence blockers. The selector
   shows the gap reason and next action. No diagram was self-approved. Focused
 tests: 129 passed. Dashboard: `OVERALL: GREEN`.
+- P134.1 queued in PR #822 (stacked on #819); branch
+  `feature/p134-coverage-closure`, head `41dddb7`. Dashboard: `OVERALL: GREEN`.
