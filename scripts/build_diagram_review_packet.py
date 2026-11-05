@@ -142,27 +142,51 @@ def review_rows() -> list[dict[str, object]]:
 
 
 def _plot_curves(diagram_id: str, diagram: SdmdDiagram, output: Path) -> None:
-    """Write a log-axis plot of a stored diagram's isopleths."""
-    import matplotlib
+    """Write a dependency-free SVG plot of a diagram's isopleths."""
+    import math
 
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+    colors = {
+        "top_height": "#1f77b4",
+        "qmd": "#d62728",
+        "crown_closure": "#2ca02c",
+        "competition": "#9467bd",
+        "self_thinning": "#ff7f0e",
+    }
+    points = [point for curve in diagram.isopleths for point in curve.points]
+    xs = [math.log10(point[0]) for point in points if point[0] > 0]
+    ys = [math.log10(point[1]) for point in points if point[1] > 0]
+    width, height, pad = 800, 600, 60
+    min_x, max_x = min(xs), max(xs)
+    min_y, max_y = min(ys), max(ys)
+    span_x = max(max_x - min_x, 1e-9)
+    span_y = max(max_y - min_y, 1e-9)
 
-    figure, axis = plt.subplots(figsize=(8, 6))
+    def screen(point: tuple[float, float]) -> tuple[float, float]:
+        x = pad + (math.log10(point[0]) - min_x) / span_x * (width - 2 * pad)
+        y = height - pad - (math.log10(point[1]) - min_y) / span_y * (height - 2 * pad)
+        return x, y
+
+    elements = [
+        '<rect width="100%" height="100%" fill="#ffffff"/>',
+        f'<text x="{width / 2:.0f}" y="24" text-anchor="middle" font-family="sans-serif" '
+        f'font-size="16">{diagram_id}: stored isopleths</text>',
+    ]
     for curve in diagram.isopleths:
-        x = [point[0] for point in curve.points]
-        y = [point[1] for point in curve.points]
-        axis.plot(x, y, linewidth=1.1, label=f"{curve.kind} {curve.value:g}")
-    axis.set_xscale("log")
-    axis.set_yscale("log")
-    axis.set_xlabel("trees per hectare")
-    axis.set_ylabel("mean tree volume (m3)")
-    axis.set_title(f"{diagram_id}: stored isopleths")
-    axis.grid(True, which="both", alpha=0.2)
-    axis.legend(fontsize=6, ncol=2, loc="best")
-    figure.tight_layout()
-    figure.savefig(output, dpi=140)
-    plt.close(figure)
+        color = colors.get(curve.kind, "#555555")
+        coords = " ".join(f"{x:.1f},{y:.1f}" for x, y in (screen(point) for point in curve.points))
+        elements.append(
+            f'<polyline fill="none" stroke="{color}" stroke-width="1.2" points="{coords}"/>'
+        )
+    elements.append(
+        f'<text x="{pad}" y="{height - 20}" font-family="sans-serif" font-size="11">'
+        "x: trees per hectare (log), y: mean tree volume m3 (log)</text>"
+    )
+    output.write_text(
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}">'
+        + "".join(elements)
+        + "</svg>\n",
+        encoding="utf-8",
+    )
 
 
 def build_packet(*, download: bool = True) -> Path:
@@ -204,7 +228,7 @@ def build_packet(*, download: bool = True) -> Path:
         diagram_id = str(row["diagram_id"])
         diagram = load_diagram(DATA / str(row["json"]))
         page = PAGE_DIR / f"{diagram_id}.png"
-        curve_path = CURVE_DIR / f"{diagram_id}.png"
+        curve_path = CURVE_DIR / f"{diagram_id}.svg"
         _plot_curves(diagram_id, diagram, curve_path)
         findings = row["findings"]
         assert isinstance(findings, list)
@@ -228,7 +252,7 @@ def build_packet(*, download: bool = True) -> Path:
         lines.append(
             f"| `{diagram_id}` | {row['species']} | {row['bec']} | {row['labels']} | "
             f"{curve_text} | {status} | [page](p136-pages/{diagram_id}.png) · "
-            f"[curves](p136-curves/{diagram_id}.png) |"
+            f"[curves](p136-curves/{diagram_id}.svg) |"
         )
     lines += [
         "",
