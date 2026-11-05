@@ -133,6 +133,7 @@ exists and the maintainer approves it.
 | P132 Adversarial audit remediation | #809 | `feature/p132-audit-remediation` | complete |
 | P133 BC-wide SDMD coverage registry | #817 | `feature/p133-bc-coverage` | complete |
 | P134 SDMD coverage closure | #820 | `feature/p134-coverage-closure` | complete |
+| P135 BC SDMD applicability correction | #824 | `feature/p135-bec-applicability` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4080,4 +4081,28 @@ Acceptance:
 - Every gap has a reason and next action.
 - Every provisional diagram has a review row.
 - No diagram is self-approved.
+- Dashboard green.
+
+## Phase 135: BC SDMD applicability correction
+
+Parent issue: #824
+Branch: `feature/p135-bec-applicability`
+Status: pr-open
+Report: `notes/reports/p135-bec-applicability.md`
+PR: #826
+
+Goal: apply the public Atlas zone-level BEC applicability instead of treating
+every BEC label as a missing variant-specific diagram.
+
+- [x] P135.1 Apply Atlas BEC applicability to coverage (#825)
+  - [x] Map `bec_main`/`bec_rare` to current BEC labels.
+  - [x] Add `reviewed_variant`, `reviewed_zone`, `mixed_zone`, `no_diagram`.
+  - [x] Rebuild the 10-diagram review queue.
+  - [x] Update API, selector, tests, source manifest, and docs.
+
+Acceptance:
+
+- Zone-level applicability is visible, not hidden.
+- Reviewed and provisional components are counted separately.
+- The 4 no-diagram labels are named.
 - Dashboard green.

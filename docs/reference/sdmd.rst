@@ -508,20 +508,22 @@ BC-wide coverage
 
 ``bec_coverage.csv`` is the 219-row coverage registry. Each current BEC label
 names its zone, subzone, variant, applicable Atlas diagrams, species/origin,
-review counts, and separate AU evidence. The counts are:
+review counts, and separate AU evidence. The Atlas diagrams are species/origin
+curves with zone-level applicability from the public source catalogue, so the
+status is explicit about the match:
 
-- 1 reviewed BEC label: ``IDFdk3``
-- 57 provisional zone-level labels
-- 161 labels with no digitized diagram
+- 1 ``reviewed_variant``: ``IDFdk3``, the pilot variant
+- 5 ``reviewed_zone`` labels with only reviewed diagrams
+- 209 ``mixed_zone`` labels where reviewed and provisional diagrams both apply
+- 4 ``no_diagram`` labels in ``BAFA``, ``CMA``, and ``IMA``
 
-``GET /api/sdmd/coverage`` returns the registry and filters by zone or status;
-``GET /api/sdmd/coverage/{bec}`` returns one label. The SDMD workspace exposes a
-**BC coverage** selector. A provisional row is a lead, not an equivalence claim;
-a no-diagram row is a named gap with a reason and next action:
-``variant_not_digitized`` (the zone has an Atlas diagram, but this variant does
-not) or ``no_atlas_zone`` (no diagram in the 14-public Atlas covers the zone).
-``bec_review_queue.csv`` names the 10 provisional diagrams and the 57 BEC labels
-they affect. The registry never substitutes an unrelated AU.
+``match_level`` records ``variant``, ``zone``, or ``zone_rare``. A zone-level
+match is not a variant-specific claim; verify against the AU's leading species,
+origin, and BEC. ``GET /api/sdmd/coverage`` returns the registry and filters by
+zone or status; ``GET /api/sdmd/coverage/{bec}`` returns one label. The SDMD
+workspace exposes a **BC coverage** selector. ``bec_review_queue.csv`` names the
+10 provisional diagrams and the 210 BEC labels they affect. The registry never
+substitutes an unrelated AU.
 
 Evidence roles and limits
 -------------------------

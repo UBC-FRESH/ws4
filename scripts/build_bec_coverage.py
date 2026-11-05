@@ -10,20 +10,6 @@ import pandas as pd
 
 DATA = Path(__file__).resolve().parents[1] / "ws4" / "sdmd" / "data" / "sdmd"
 
-#: Zone-level diagrams from the public SDMD atlas. These are provisional unless
-#: a reviewed diagram overrides them for a specific variant.
-ZONE_DIAGRAMS: dict[str, tuple[str, ...]] = {
-    "CDF": ("fdcn", "fdcp", "ssn", "ssp"),
-    "CWH": ("fdcn", "fdcp", "ssn", "ssp", "cwn", "cwp", "hwn", "hwp"),
-    "MH": ("ssn", "ssp", "hwn", "hwp"),
-    "SBS": ("swn", "swp"),
-}
-
-#: Variant-specific diagrams that are reviewed and safe to name exactly.
-VARIANT_DIAGRAMS: dict[str, tuple[str, ...]] = {
-    "IDFdk3": ("fdin", "fdip", "pln", "plp"),
-}
-
 DIAGRAM_META: dict[str, tuple[str, str, str]] = {
     "fdcn": ("FDC", "natural", "fdcn"),
     "fdcp": ("FDC", "planted", "fdcp"),
@@ -44,13 +30,23 @@ DIAGRAM_META: dict[str, tuple[str, str, str]] = {
 AU_EVIDENCE: dict[str, tuple[str, ...]] = {"IDFdk3": ("AU-IDFdk3-TSA23-FDI", "AU-IDFdk3-TSA23-PLI")}
 
 
-def _atlas_zones() -> set[str]:
-    """Return the BEC zones named by the public Atlas catalogue."""
+def _atlas_applicability() -> dict[str, list[tuple[str, str]]]:
+    """Return diagram ids and match levels by BEC zone.
+
+    Returns
+    -------
+    dict of str to list of (str, str)
+        Zone -> [(diagram_id, ``zone`` or ``zone_rare``)].
+    """
     catalog = json.loads((DATA / "source_catalog.json").read_text(encoding="utf-8"))
-    zones: set[str] = set()
-    for diagram in catalog.get("diagrams", []):
-        zones.update(str(zone) for zone in diagram.get("bec_main", []))
-    return zones
+    applicability: dict[str, list[tuple[str, str]]] = {}
+    for item in catalog.get("diagrams", []):
+        diagram_id = str(item["diagram_id"])
+        for zone in item.get("bec_main", []):
+            applicability.setdefault(str(zone), []).append((diagram_id, "zone"))
+        for zone in item.get("bec_rare", []):
+            applicability.setdefault(str(zone), []).append((diagram_id, "zone_rare"))
+    return applicability
 
 
 def _diagram_reviews() -> dict[str, str]:
@@ -85,29 +81,41 @@ def build_coverage() -> pd.DataFrame:
     """
     official = pd.read_csv(DATA / "bec_official.csv", dtype=str).fillna("")
     reviews = _diagram_reviews()
-    atlas_zones = _atlas_zones()
+    applicability = _atlas_applicability()
     rows: list[dict[str, object]] = []
     for row in official.sort_values("bec").itertuples(index=False):
         bec = str(row.bec)
-        diagrams = list(VARIANT_DIAGRAMS.get(bec, ()))
-        match_level = "variant" if diagrams else ""
-        if not diagrams:
-            diagrams = list(ZONE_DIAGRAMS.get(str(row.zone), ()))
-            match_level = "zone" if diagrams else ""
+        matches = applicability.get(str(row.zone), [])
+        diagrams = sorted({diagram_id for diagram_id, _ in matches})
+        levels = sorted({level for _, level in matches})
+        match_level = "+".join(levels)
+        if bec == "IDFdk3":
+            match_level = "variant+" + match_level
         species = sorted({DIAGRAM_META[item][0] for item in diagrams})
         origins = sorted({DIAGRAM_META[item][1] for item in diagrams})
         statuses = [reviews.get(item, "unreviewed") for item in diagrams]
         reviewed = sum(1 for status in statuses if status == "reviewed")
         provisional = sum(1 for status in statuses if status == "provisional")
-        if reviewed:
-            status = "reviewed"
-            note = "Reviewed variant-specific diagrams."
+        if bec == "IDFdk3" and reviewed:
+            status = "reviewed_variant"
+            note = (
+                "Reviewed variant-specific pilot diagrams; other zone diagrams remain provisional."
+            )
+        elif reviewed and provisional:
+            status = "mixed_zone"
+            note = (
+                "Reviewed and provisional diagrams both apply; "
+                "verify BEC variant, species, and origin."
+            )
+        elif reviewed:
+            status = "reviewed_zone"
+            note = "Reviewed species/origin diagram applied at zone level; verify against the AU."
         elif provisional:
-            status = "provisional"
-            note = "Zone-level provisional diagrams; verify BEC variant, species, and origin."
+            status = "provisional_zone"
+            note = "Zone-level provisional diagram; verify BEC variant, species, and origin."
         else:
-            status = "no-diagram"
-            note = "No digitized SDMD diagram covers this BEC label."
+            status = "no_diagram"
+            note = "No diagram in the 14-public Atlas covers this zone."
         au_ids = AU_EVIDENCE.get(bec, ())
         rows.append(
             {
@@ -127,23 +135,12 @@ def build_coverage() -> pd.DataFrame:
                 "provisional_count": provisional,
                 "au_ids": ";".join(au_ids),
                 "evidence_status": "pilot" if au_ids else "none",
-                "gap_reason": (
-                    ""
-                    if status != "no-diagram"
-                    else (
-                        "variant_not_digitized" if str(row.zone) in atlas_zones else "no_atlas_zone"
-                    )
-                ),
+                "gap_reason": "" if status != "no_diagram" else "no_atlas_zone",
                 "gap_action": (
                     ""
-                    if status != "no-diagram"
-                    else (
-                        "Digitize and review a variant-specific diagram, "
-                        "or keep a zone-level refusal."
-                        if str(row.zone) in atlas_zones
-                        else "No diagram in the 14-public Atlas for this zone; "
-                        "add source evidence before coverage."
-                    )
+                    if status != "no_diagram"
+                    else "No diagram in the 14-public Atlas for this zone; "
+                    "add source evidence before coverage."
                 ),
                 "note": note,
             }

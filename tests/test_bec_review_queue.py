@@ -9,7 +9,7 @@ import pandas as pd
 DATA = Path(__file__).resolve().parents[1] / "ws4" / "sdmd" / "data" / "sdmd"
 
 
-def test_review_queue_names_ten_provisional_diagrams_and_57_labels() -> None:
+def test_review_queue_names_ten_provisional_diagrams_and_210_labels() -> None:
     """The queue is a work list, not an approval."""
     queue = pd.read_csv(DATA / "bec_review_queue.csv", dtype=str).fillna("")
     assert len(queue) == 10
@@ -29,6 +29,6 @@ def test_review_queue_names_ten_provisional_diagrams_and_57_labels() -> None:
     labels: set[str] = set()
     for value in queue["bec_labels"]:
         labels.update(item for item in str(value).split(";") if item)
-    assert len(labels) == 57
-    assert "IDFdk3" not in labels
+    assert len(labels) == 210
+    assert "IDFdk3" in labels
     assert all(str(url).startswith("https://") for url in queue["pdf_url"])

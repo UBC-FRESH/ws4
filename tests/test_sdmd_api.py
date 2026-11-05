@@ -333,7 +333,12 @@ def test_coverage_endpoint_lists_every_bec_and_names_gaps(tmp_path: Path) -> Non
     assert response.status_code == 200
     payload = response.json()
     assert payload["count"] == 219
-    assert payload["counts"] == {"no-diagram": 161, "provisional": 57, "reviewed": 1}
+    assert payload["counts"] == {
+        "mixed_zone": 209,
+        "no_diagram": 4,
+        "reviewed_variant": 1,
+        "reviewed_zone": 5,
+    }
     reviewed = next(row for row in payload["rows"] if row["bec"] == "IDFdk3")
     assert reviewed["au_ids"] == "AU-IDFdk3-TSA23-FDI;AU-IDFdk3-TSA23-PLI"
     missing = client.get("/api/sdmd/coverage/XYZ99")
