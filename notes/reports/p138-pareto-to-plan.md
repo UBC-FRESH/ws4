@@ -2,6 +2,7 @@
 
 Date: 2026-11-05
 Status: pr-open
+PR: #836
 Branch: `feature/p138-pareto-to-plan`
 Parent issue: #834
 Task issue: #835
