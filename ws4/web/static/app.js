@@ -4121,6 +4121,7 @@ function renderSdmdCoverageDetail() {
   add('Zone', `${row.zone} · ${row.zone_name || 'unnamed'}`);
   add('Subzone / variant', `${row.subzone || '—'} / ${row.variant || '—'}`);
   add('Diagrams', row.diagram_ids ? row.diagram_ids.split(';').join(', ') : 'None');
+  add('Review counts', `${row.reviewed_count || 0} reviewed / ${row.provisional_count || 0} provisional`);
   add('Species / origin', [row.species, row.origins].filter(Boolean).join(' · ') || 'None');
   add('AU evidence', row.au_ids ? row.au_ids.split(';').join(', ') : 'No AU store for this BEC');
   if (row.gap_reason) add('Gap reason', row.gap_reason);

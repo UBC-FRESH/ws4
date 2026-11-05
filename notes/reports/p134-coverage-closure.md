@@ -1,5 +1,9 @@
 # P134.1 SDMD coverage closure and review queue
 
+> Correction: P135 supersedes the 150/11 variant-gap split. The Atlas diagrams
+> are species/origin curves with zone-level applicability; the variant-specific
+> framing was too narrow. See `notes/reports/p135-bec-applicability.md`.
+
 Date: 2026-11-04
 Parent: #820
 Child: #821

@@ -4434,6 +4434,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   10 provisional diagrams and 57 labels; TSA 24/27/29 evidence blockers are
   recorded. No diagram was self-approved. Dashboard: `OVERALL: GREEN`.
 
+
 - P136.1/P136.2: added the exact full-member solution-space payload and a vendored
   Three.js Pareto workspace. The explorer recomputes dominance from every successful
   portfolio member, normalizes metrics to 0=worst/1=best, labels near-front members
@@ -4455,3 +4456,16 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P136.4 fix: search artifacts now replace non-finite numbers with `null` before the
   API sends them, so a portfolio with an infinite objective or metric remains valid
   JSON for the browser.
+- P135.1: corrected the SDMD coverage model to use the Atlas zone-level
+  applicability (`bec_main`/`bec_rare`) instead of treating every BEC label as a
+  missing variant-specific diagram. Counts are now 1 `reviewed_variant`,
+  5 `reviewed_zone`, 209 `mixed_zone`, and 4 `no_diagram`. The review queue names
+  10 provisional diagrams and 210 affected labels. `match_level` remains visible. Focused tests: 129 passed. Dashboard:
+  `OVERALL: GREEN`.
+- P135.1 queued in PR #826; branch `feature/p135-bec-applicability`, head
+  `f26b054`. Dashboard: `OVERALL: GREEN`.
+
+- P135: merged via PR #826 as `56cdc21`. Coverage uses Atlas zone-level
+  applicability: 1 `reviewed_variant`, 5 `reviewed_zone`, 209 `mixed_zone`,
+  4 `no_diagram`; 10 provisional diagrams / 210 labels in the review queue.
+  Dashboard: `OVERALL: GREEN`.
