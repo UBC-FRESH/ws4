@@ -24,7 +24,7 @@ from typing import Any
 import pandas as pd
 from fresh_solutions.kernel import Runner
 
-from .archive import Direction, Elite, EliteArchive
+from .archive import Direction, Elite, EliteArchive, pareto_front
 from .calibrate import write_targets
 from .engine import OptimizeConfig, Optimizer, load_schedule_csv
 from .objective import Target, load_targets
@@ -480,7 +480,22 @@ def run_portfolio(
                         error=str(error),
                     )
                 )
-    front = archive.front()
+    # The schedule archive is bounded, but the reported front is not: every successful
+    # member is a candidate, so a capacity trim cannot hide a trade-off from the browser.
+    front = pareto_front(
+        [
+            Elite(
+                objective=float(record.objective),
+                metrics={key: float(record.metrics[key]) for key in directions},
+                schedule={},
+                source=f"{record.label}:{record.seed:03d}",
+                seed=record.seed,
+            )
+            for record in records
+            if record.objective is not None
+        ],
+        directions,
+    )
     front_labels = {elite.source for elite in front}
     archive_paths = archive.write(out_dir / "archive")
     front_path = out_dir / "front.csv"

@@ -178,6 +178,27 @@ def test_portfolio_writes_members_front_and_archive(tmp_path: Path) -> None:
     assert summarize_members(members)["best"] == 1.0
 
 
+def test_portfolio_front_is_not_limited_by_the_schedule_archive(tmp_path: Path) -> None:
+    """Every successful member is a front candidate even when the archive is small."""
+    targets = _targets(tmp_path / "targets.yaml")
+    report = run_portfolio(
+        dataset=tmp_path / "dataset",
+        targets=targets,
+        out_dir=tmp_path / "portfolio",
+        vary={"product.volume": (0.5, 1.0, 2.0)},
+        metrics=["product.volume", "feature.old"],
+        seeds=(1,),
+        iterations=1,
+        years=1,
+        directions={"product.volume": "max", "feature.old": "max"},
+        archive_size=1,
+        runner_factory=lambda _dataset, config: _FakeRunner(config),
+    )
+    assert report["front_size"] == 3
+    assert len(report["front"]) == 3
+    assert len(report["members"]) == 3
+
+
 def test_portfolio_records_a_failed_member(tmp_path: Path) -> None:
     """A failed run is named in the report instead of aborting the portfolio."""
     targets = _targets(tmp_path / "targets.yaml")

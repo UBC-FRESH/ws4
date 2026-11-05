@@ -4433,3 +4433,10 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   `variant_not_digitized` and 11 `no_atlas_zone`; `bec_review_queue.csv` names
   10 provisional diagrams and 57 labels; TSA 24/27/29 evidence blockers are
   recorded. No diagram was self-approved. Dashboard: `OVERALL: GREEN`.
+
+- P136.1/P136.2: added the exact full-member solution-space payload and a vendored
+  Three.js Pareto workspace. The explorer recomputes dominance from every successful
+  portfolio member, normalizes metrics to 0=worst/1=best, labels near-front members
+  separately, and supports X/Y/Z, colour, size, opacity, filter, orbit, selection,
+  pin/compare, and schedule links. Focused tests and a Chromium smoke pass.
+  Report: `notes/reports/p136-solution-space.md`.

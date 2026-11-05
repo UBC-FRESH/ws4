@@ -770,6 +770,52 @@ def test_search_artifact_files_lp_and_traversal(tmp_path: Path) -> None:
     assert client.get("/api/search/lp-demo/files/../secret").status_code == 404
 
 
+def test_search_solution_space_recomputes_and_sanitizes(tmp_path: Path) -> None:
+    """The explorer payload keeps every member, an exact front, and only safe paths."""
+    client, _ = _app(tmp_path)
+    portfolio = tmp_path / "runs" / "portfolio-space"
+    member = portfolio / "member-000" / "seed-001"
+    member.mkdir(parents=True)
+    (member / "schedule.csv").write_text("block_id,treatment,offset\n1,CC,0\n", encoding="utf-8")
+    outside = tmp_path / "outside.csv"
+    outside.write_text("not part of the artifact", encoding="utf-8")
+    (portfolio / "portfolio.json").write_text(
+        json.dumps(
+            {
+                "metrics": ["volume", "old"],
+                "directions": {"volume": "max", "old": "max", "objective": "min"},
+                "members": [
+                    {
+                        "label": "member-000",
+                        "seed": 1,
+                        "objective": -100.0,
+                        "metrics": {"volume": 100.0, "old": 10.0},
+                        "schedule": str(member / "schedule.csv"),
+                        "targets": str(outside),
+                        "status": "ok",
+                    },
+                    {
+                        "label": "member-001",
+                        "seed": 1,
+                        "objective": -90.0,
+                        "metrics": {"volume": 90.0, "old": 20.0},
+                        "schedule": str(member / "schedule.csv"),
+                        "status": "ok",
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    body = client.get("/api/search/portfolio-space/space", params={"near_front": 0.1}).json()
+    assert body["kind"] == "portfolio-space"
+    assert body["front"] == ["member-000:001", "member-001:001"]
+    assert len(body["points"]) == 2
+    assert body["points"][0]["schedule"] == "member-000/seed-001/schedule.csv"
+    assert "targets" not in body["points"][0]
+    assert body["directions"]["objective"] == "min"
+
+
 def test_search_artifacts_are_listed_and_read(tmp_path: Path) -> None:
     """A portfolio or tuning directory under the runs root is a named search artifact."""
     client, _ = _app(tmp_path)

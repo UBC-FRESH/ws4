@@ -458,7 +458,11 @@ manifest and one schedule CSV per archived elite.
 
 The front is a finite grid under a fixed budget and seed set. It is advisory, not a
 certified optimum, and a weight vector that reaches the same metric point as another keeps
-the lower scalar objective.
+the lower scalar objective. The reported foreground is computed from every successful
+member; the ``archive/`` directory remains capacity-bounded so it can keep one schedule
+per retained elite without growing without limit. Use
+:func:`ws4.opt.solution_space.build_solution_space` or ``GET /api/search/{name}/space`` to
+read the full-member view.
 
 Tuner
 -----
@@ -812,6 +816,8 @@ API
 .. autofunction:: ws4.opt.archive.pareto_front
 
 .. autofunction:: ws4.opt.portfolio.run_portfolio
+
+.. autofunction:: ws4.opt.solution_space.build_solution_space
 
 .. autofunction:: ws4.opt.tune.run_tuning
 

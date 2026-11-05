@@ -130,6 +130,7 @@ exists and the maintainer approves it.
 | P129 GPU profile current targets and budget | #798 | `feature/p129-gpu-profile-current-targets` | pr-open |
 | P130 Route Solve through the GPU profile path | #802 | `feature/p130-solve-gpu-profile` | pr-open |
 | P131 Profile time budget overrides generations | #805 | `fix/p131-profile-time-budget` | pr-open |
+| P136 Pareto solution-space explorer | #827 | `feature/p136-pareto-explorer` | active |
 | P132 Adversarial audit remediation | #809 | `feature/p132-audit-remediation` | complete |
 | P133 BC-wide SDMD coverage registry | #817 | `feature/p133-bc-coverage` | complete |
 | P134 SDMD coverage closure | #820 | `feature/p134-coverage-closure` | complete |
@@ -4081,3 +4082,27 @@ Acceptance:
 - Every provisional diagram has a review row.
 - No diagram is self-approved.
 - Dashboard green.
+
+## Phase 136: Pareto solution-space explorer
+
+Parent issue: #827
+Branch: `feature/p136-pareto-explorer`
+Status: active
+Report: `notes/reports/p136-solution-space.md`
+Design: `notes/design/ws4-pareto-explorer.md`
+
+Goal: port a multi-dimensional Pareto solution-space explorer into the WS4 web UI.
+
+- [x] P136.1 Exact full-member solution-space read model (#828)
+- [x] P136.2 Interactive 3D Pareto explorer
+- [ ] P136.3 Bounded multi-dimensional weight scans and parallel members
+- [ ] P136.4 Cross-links, docs, and browser verification
+
+Acceptance:
+
+- A portfolio with N successful members exposes all N points and an exact front.
+- Dominated points are retained and labelled; all, front, and near-front views work.
+- The 3D workspace loads a saved portfolio artifact.
+- Axis, colour, size, opacity, and filter mappings are interactive.
+- Selected members can be inspected and their schedules opened.
+- Tests and the green dashboard pass.

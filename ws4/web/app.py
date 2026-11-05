@@ -20,7 +20,7 @@ import tempfile
 import threading
 import time
 from collections import Counter
-from collections.abc import Awaitable, Callable, Iterator
+from collections.abc import Awaitable, Callable, Iterator, Mapping
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Any, cast
@@ -53,6 +53,7 @@ from ..opt.objective import (
     period_value,
     raw_penalty,
 )
+from ..opt.solution_space import build_solution_space
 from ..report import target_kind
 from .skins import load_skins
 
@@ -2592,6 +2593,45 @@ def create_app(
                 )
                 return {"id": name, "kind": kind, "data": data}
         raise HTTPException(status_code=404, detail=f"no search artifact in {name!r}")
+
+    @app.get("/api/search/{name}/space")
+    def search_solution_space(
+        name: str,
+        near_front: float = Query(0.1, ge=0.0, le=1.0),
+    ) -> dict[str, Any]:
+        """Return the exact solution-space view of one portfolio artifact.
+
+        The front is recomputed from every successful member rather than the bounded
+        schedule archive, so a point that the archive dropped is still available to the
+        explorer. ``near_front`` is a Chebyshev distance in the normalized outcome box;
+        those points are labelled near-front, never Pareto.
+        """
+        directory = search_artifact_dir(name)
+        path = directory / "portfolio.json"
+        if not path.is_file():
+            raise HTTPException(
+                status_code=404, detail=f"search artifact {name!r} is not a portfolio"
+            )
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(payload, Mapping):
+                raise ValueError("portfolio.json is not an object")
+            space = build_solution_space(payload, near_front_epsilon=near_front)
+        except (OSError, ValueError) as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        for point in space.get("points", []):
+            for key in ("schedule", "targets", "run_dir"):
+                value = point.get(key)
+                if not value:
+                    continue
+                resolved = Path(str(value)).resolve()
+                if resolved.is_relative_to(directory):
+                    point[key] = str(resolved.relative_to(directory))
+                else:
+                    point.pop(key, None)
+        space["id"] = name
+        space["kind"] = "portfolio-space"
+        return space
 
     @app.get("/api/search/{name}/files/{path:path}")
     def search_file(name: str, path: str) -> FileResponse:

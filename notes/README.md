@@ -72,6 +72,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p128-target-chart-table-sync.md` — chart edits and table input synchronization.
 - `reports/p129-gpu-current-targets.md` — GPU profile target override and time budget.
 - `reports/p131-profile-time-budget.md` — time budget overrides profile generations.
+- `design/ws4-pareto-explorer.md` — P136 point-cloud contract and 3D explorer.
+- `reports/p136-solution-space.md` — exact full-member solution-space payload and browser smoke.
 - `reports/p130-solve-gpu-profile.md` — Solve routing through the GPU profile path.
 - `reports/tsa24-map-performance.md` — bounds sidecar and overview layer.
 - `reports/p83-8-gpu-population.md` — the P83.8 candidate-index population search, c5 2k and TSA23 5k benchmarks.
