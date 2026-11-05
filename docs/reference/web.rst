@@ -752,6 +752,13 @@ its own dataset copy, so the launcher defaults to one worker.
 The cloud is a finite grid sample under one search budget. It is advisory, and its
 normalized axes are relative to the members loaded into the current artifact.
 
+A selected member can be **opened on the map**. The service promotes its run into a
+direct read-only run id under the runs root, hard-linking the original files when
+possible and writing a ``portfolio_source.json`` sidecar. The normal run map, reports,
+target status, and comparison endpoints then work unchanged. Two pinned members can be
+promoted into the existing spatial comparison view. Promotion never changes the live
+target file or the portfolio artifact.
+
 Reports
 -------
 

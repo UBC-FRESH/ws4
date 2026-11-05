@@ -135,6 +135,7 @@ exists and the maintainer approves it.
 | P134 SDMD coverage closure | #820 | `feature/p134-coverage-closure` | complete |
 | P135 BC SDMD applicability correction | #824 | `feature/p135-bec-applicability` | complete |
 | P136 Pareto solution-space explorer | #827 | `feature/p136-pareto-explorer` | complete |
+| P138 Pareto member to map/Plan | #834 | `feature/p138-pareto-to-plan` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4134,3 +4135,27 @@ Acceptance:
 - Axis, colour, size, opacity, and filter mappings are interactive.
 - Selected members can be inspected and their schedules opened.
 - Tests and the green dashboard pass.
+
+## Phase 138: Pareto member to map/Plan
+
+Parent issue: #834
+Branch: `feature/p138-pareto-to-plan`
+Status: complete
+Merge commit: `b82dbcf`
+Report: `notes/reports/p138-pareto-to-plan.md`
+PR: #836
+
+Goal: open a portfolio member's schedule as a real run and close the explorer-to-Plan loop.
+
+- [x] P138.1 Outcome-front alignment and member promotion (#835)
+- [x] P138.2 Open-on-map and compare-pinned browser actions
+- [x] P138.3 Docs, browser verification, and close-out
+
+Acceptance:
+
+- Search and the explorer show the same outcome-front count.
+- A selected member promotes to a direct run id and opens on the map.
+- The promoted run has a source sidecar naming the portfolio, member, factors, and metrics.
+- A pins pair can open the existing spatial comparison view.
+- Promoted runs remain inside the runs root.
+- Tests, browser smoke, and dashboard pass.

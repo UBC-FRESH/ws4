@@ -4473,3 +4473,15 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P136: merged via PR #829 as `7442591`. The Pareto workspace exposes every successful
   portfolio member, recomputes the exact front, supports seven display dimensions, and
   adds bounded 5-7 dimension scans with process workers. Dashboard: `OVERALL: GREEN`.
+
+- P138.1/P138.2: added outcome-front alignment and safe promotion of a portfolio
+  member to a direct read-only run. The Pareto workspace can open a selected member
+  on the map or promote two pinned members into the existing comparison view.
+  Report: `notes/reports/p138-pareto-to-plan.md`.
+
+- P138: outcome-front alignment, safe portfolio-member promotion, Open on map, and
+  Compare pinned. Focused tests: 111 passed; dashboard: `OVERALL: GREEN`.
+
+- P138: merged via PR #836 as `b82dbcf`. A Pareto member can be promoted to a direct
+  read-only run, opened on the map, or compared with a second pinned member. Search and
+  the explorer now use outcome-only dominance. Dashboard: `OVERALL: GREEN`.

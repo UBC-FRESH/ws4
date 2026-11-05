@@ -795,6 +795,126 @@ def test_search_artifact_files_lp_and_traversal(tmp_path: Path) -> None:
     assert client.get("/api/search/lp-demo/files/../secret").status_code == 404
 
 
+def test_portfolio_member_promotes_to_a_direct_run(tmp_path: Path) -> None:
+    """A member's run becomes a safe direct run view with a source sidecar."""
+    client, _ = _app(tmp_path)
+    portfolio = tmp_path / "runs" / "portfolio-promote"
+    member = portfolio / "member-000" / "seed-001"
+    member.mkdir(parents=True)
+    (member / "summary.json").write_text('{"status": "ok", "objective": 1.0}', encoding="utf-8")
+    (member / "account_values.csv").write_text(
+        "offset,account,value\n0,feature.Volume,10\n", encoding="utf-8"
+    )
+    (member / "schedule.csv").write_text("block_id,treatment,offset\n1,CC,0\n", encoding="utf-8")
+    (portfolio / "portfolio.json").write_text(
+        json.dumps(
+            {
+                "metrics": ["feature.Volume"],
+                "directions": {"feature.Volume": "max", "objective": "min"},
+                "members": [
+                    {
+                        "label": "member-000",
+                        "seed": 1,
+                        "objective": 1.0,
+                        "metrics": {"feature.Volume": 10.0},
+                        "run_dir": "member-000/seed-001",
+                        "status": "ok",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    response = client.post("/api/search/portfolio-promote/members/member-000%3A001/promote")
+    assert response.status_code == 200
+    body = response.json()
+    run_id = body["run_id"]
+    assert body["promoted"] is True
+    promoted = tmp_path / "runs" / run_id
+    assert (promoted / "summary.json").is_file()
+    assert (promoted / "account_values.csv").is_file()
+    source = json.loads((promoted / "portfolio_source.json").read_text(encoding="utf-8"))
+    assert source["artifact"] == "portfolio-promote"
+    assert source["member"] == "member-000:001"
+    assert source["source_run"] == "member-000/seed-001"
+    assert client.get(f"/api/runs/{run_id}/summary").json()["status"] == "ok"
+    again = client.post("/api/search/portfolio-promote/members/member-000%3A001/promote")
+    assert again.status_code == 200
+    assert again.json()["run_id"] == run_id
+    assert again.json()["promoted"] is False
+    assert (
+        client.post("/api/search/portfolio-promote/members/missing%3A001/promote").status_code
+        == 404
+    )
+
+
+def test_portfolio_promotion_resolves_a_cwd_relative_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A portfolio written with a cwd-relative run_dir still promotes safely."""
+    client, _ = _app(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    portfolio = tmp_path / "runs" / "portfolio-cwd"
+    member = portfolio / "member-000" / "seed-001"
+    member.mkdir(parents=True)
+    (member / "summary.json").write_text('{"status": "ok"}', encoding="utf-8")
+    (member / "account_values.csv").write_text(
+        "offset,account,value\n0,feature.Volume,10\n", encoding="utf-8"
+    )
+    (member / "schedule.csv").write_text("block_id,treatment,offset\n", encoding="utf-8")
+    (portfolio / "portfolio.json").write_text(
+        json.dumps(
+            {
+                "metrics": ["feature.Volume"],
+                "members": [
+                    {
+                        "label": "member-000",
+                        "seed": 1,
+                        "objective": 1.0,
+                        "metrics": {"feature.Volume": 10.0},
+                        "run_dir": "runs/portfolio-cwd/member-000/seed-001",
+                        "status": "ok",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    response = client.post("/api/search/portfolio-cwd/members/member-000%3A001/promote")
+    assert response.status_code == 200
+    assert response.json()["run_id"].startswith("pareto-portfolio-cwd")
+
+
+def test_portfolio_promotion_rejects_an_outside_run(tmp_path: Path) -> None:
+    """A relative run_dir that escapes the artifact cannot be promoted."""
+    client, _ = _app(tmp_path)
+    portfolio = tmp_path / "runs" / "portfolio-escape"
+    portfolio.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (portfolio / "portfolio.json").write_text(
+        json.dumps(
+            {
+                "metrics": ["feature.Volume"],
+                "members": [
+                    {
+                        "label": "member-000",
+                        "seed": 1,
+                        "objective": 1.0,
+                        "metrics": {"feature.Volume": 10.0},
+                        "run_dir": "../../outside",
+                        "status": "ok",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    response = client.post("/api/search/portfolio-escape/members/member-000%3A001/promote")
+    assert response.status_code == 404
+    assert not (tmp_path / "runs" / "pareto-portfolio-escape-member-000-001").exists()
+
+
 def test_search_artifact_replaces_nonfinite_numbers(tmp_path: Path) -> None:
     """A portfolio with an infinite objective remains valid JSON for the browser."""
     client, _ = _app(tmp_path)
@@ -883,7 +1003,7 @@ def test_search_artifacts_are_listed_and_read(tmp_path: Path) -> None:
                 "front": ["member-000:001"],
                 "members": [
                     {
-                        "label": "member-000:001",
+                        "label": "member-000",
                         "seed": 1,
                         "objective": 2.0,
                         "metrics": {"feature.Volume": 10.0},
@@ -904,6 +1024,8 @@ def test_search_artifacts_are_listed_and_read(tmp_path: Path) -> None:
     body = client.get("/api/search/portfolio-demo").json()
     assert body["kind"] == "portfolio"
     assert body["data"]["front"] == ["member-000:001"]
+    assert body["data"]["outcome_front"] == ["member-000:001"]
+    assert body["data"]["outcome_front_size"] == 1
     assert client.get("/api/search/tuning-demo").json()["kind"] == "tuning"
     assert client.get("/api/search/nope").status_code == 404
 

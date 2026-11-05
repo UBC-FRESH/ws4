@@ -103,6 +103,33 @@ _LIDAR_PRODUCTS = (
 )
 
 
+def _portfolio_member_key(member: Mapping[str, Any]) -> str:
+    """Return the same ``label:seed`` key the browser uses for a portfolio member."""
+    label = str(member.get("label", "") or "member")
+    seed = member.get("seed")
+    if seed is None:
+        return label
+    try:
+        return f"{label}:{int(seed):03d}"
+    except (TypeError, ValueError):
+        return f"{label}:{seed}"
+
+
+def _promoted_run_name(artifact: str, key: str) -> str:
+    """Return a safe, bounded direct-run id for a portfolio member."""
+    stem = re.sub(r"[^A-Za-z0-9_.-]+", "-", f"pareto-{artifact}-{key}").strip(".-")
+    return (stem or "pareto-member")[:120]
+
+
+def _link_or_copy(source: str, destination: str) -> str:
+    """Hard-link a run artifact when possible, falling back to a copy."""
+    try:
+        os.link(source, destination)
+    except OSError:
+        shutil.copy2(source, destination)
+    return destination
+
+
 def _json_safe(value: Any) -> Any:  # noqa: ANN401 - parsed JSON is arbitrary
     """Replace non-finite floats recursively so JavaScript can parse the payload."""
     if isinstance(value, float):
@@ -2737,6 +2764,13 @@ def create_app(
             if path.is_file():
                 data = _json_safe(json.loads(path.read_text(encoding="utf-8")))
                 if kind == "portfolio":
+                    if "outcome_front" not in data:
+                        try:
+                            space = build_solution_space(data if isinstance(data, Mapping) else {})
+                            data["outcome_front"] = space["front"]
+                            data["outcome_front_size"] = space["front_size"]
+                        except ValueError:
+                            pass
                     for member in data.get("members", []):
                         for key in ("targets", "run_dir", "schedule"):
                             value = member.get(key)
@@ -2793,6 +2827,91 @@ def create_app(
         space["id"] = name
         space["kind"] = "portfolio-space"
         return space
+
+    def resolve_member_run(directory: Path, value: object) -> Path | None:
+        """Resolve a member's run directory, allowing absolute or cwd-relative records."""
+        raw = Path(str(value))
+        candidates = [raw] if raw.is_absolute() else [directory / raw, Path.cwd() / raw]
+        for candidate in candidates:
+            resolved = candidate.resolve()
+            if resolved.is_dir() and resolved.is_relative_to(directory):
+                return resolved
+        return None
+
+    @app.post("/api/search/{name}/members/{key}/promote")
+    def promote_portfolio_member(name: str, key: str) -> dict[str, Any]:
+        """Promote one portfolio member to a direct, read-only run under the runs root.
+
+        The JSON portfolio keeps the canonical member. The promoted run is a hard-linked
+        or copied view so the existing run, map, report, and compare endpoints can read
+        it without a second portfolio-specific API surface.
+        """
+        directory = search_artifact_dir(name)
+        path = directory / "portfolio.json"
+        if not path.is_file():
+            raise HTTPException(
+                status_code=404, detail=f"search artifact {name!r} is not a portfolio"
+            )
+        try:
+            payload = _json_safe(json.loads(path.read_text(encoding="utf-8")))
+        except (OSError, ValueError) as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        if not isinstance(payload, Mapping):
+            raise HTTPException(status_code=422, detail="portfolio.json is not an object")
+        member: Mapping[str, Any] | None = None
+        for item in payload.get("members", []):
+            if not isinstance(item, Mapping):
+                continue
+            if _portfolio_member_key(item) == key or str(item.get("label", "")) == key:
+                member = item
+                break
+        if member is None:
+            raise HTTPException(status_code=404, detail=f"portfolio member {key!r} not found")
+        source = resolve_member_run(directory, member.get("run_dir"))
+        if source is None:
+            raise HTTPException(status_code=404, detail=f"portfolio member {key!r} has no safe run")
+        base = _promoted_run_name(name, key)
+        run_id = base
+        suffix = 2
+        while (runs_root / run_id).is_dir():
+            existing = runs_root / run_id / "portfolio_source.json"
+            if existing.is_file():
+                try:
+                    prior = json.loads(existing.read_text(encoding="utf-8"))
+                except (OSError, ValueError):
+                    prior = {}
+                if prior.get("artifact") == name and prior.get("member") == key:
+                    return {"run_id": run_id, "source": prior, "promoted": False}
+            run_id = f"{base}-{suffix}"
+            suffix += 1
+        destination = runs_root / run_id
+        try:
+            shutil.copytree(source, destination, copy_function=_link_or_copy)
+            source_record = {
+                "kind": "portfolio-member",
+                "artifact": name,
+                "member": key,
+                "label": member.get("label"),
+                "seed": member.get("seed"),
+                "factors": member.get("factors", {}),
+                "metrics": member.get("metrics", {}),
+                "objective": member.get("objective"),
+                "source_run": str(source.relative_to(directory)),
+                "created_utc": datetime.now().astimezone().isoformat(),
+            }
+            (destination / "portfolio_source.json").write_text(
+                json.dumps(source_record, indent=2), encoding="utf-8"
+            )
+        except OSError as error:
+            shutil.rmtree(destination, ignore_errors=True)
+            raise HTTPException(
+                status_code=500, detail=f"could not promote member: {error}"
+            ) from error
+        return {
+            "run_id": run_id,
+            "source": source_record,
+            "promoted": True,
+        }
 
     @app.get("/api/search/{name}/files/{path:path}")
     def search_file(name: str, path: str) -> FileResponse:
