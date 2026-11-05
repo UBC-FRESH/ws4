@@ -1,0 +1,68 @@
+{
+  "version": "13",
+  "retrieved": "2026-11-03",
+  "sources": [
+    {
+      "name": "BC BECdb",
+      "url": "https://www.for.gov.bc.ca/hre/becweb/Downloads/Downloads_BECdb/BECdb_v13_2026.zip",
+      "version": "13 (2026)",
+      "licence": "Open Government Licence - British Columbia"
+    },
+    {
+      "name": "BC BEC Map Attribute Catalogue",
+      "url": "https://catalogue.data.gov.bc.ca/dataset/bec-map-attribute-catalogue",
+      "version": "13.1 (2026-07-08)",
+      "licence": "Open Government Licence - British Columbia"
+    },
+    {
+      "name": "FAIB PSP header",
+      "url": "https://www2.gov.bc.ca/gov/content/industry/forestry/managing-our-forest-resources/forest-inventory/sample-plots",
+      "version": "bundled 2026-11-03",
+      "licence": "Open Government Licence - British Columbia"
+    }
+  ],
+  "transforms": [
+    "BECdb current and retired BGC tables were reduced to zone+subzone+variant labels.",
+    "Phase aliases and ICHmw5 were normalized to canonical labels.",
+    "TSA support rows without a variant-level BEC were removed; 304 variant rows remain.",
+    "Crosswalks are one row per unique label relationship."
+  ],
+  "files": {
+    "bec_official.csv": {
+      "sha256": "4bf7585af421bae6e9a82d552698e8c29f42f9730de3f50e5d0cb9f7ad4077f5",
+      "bytes": 46882
+    },
+    "bec_retired.csv": {
+      "sha256": "75f3596e1bd04a95346575a87100f650d32514568dec0ad64461cb590b08f0e5",
+      "bytes": 19368
+    },
+    "bec_variants.csv": {
+      "sha256": "5890bd05f9749e6cb52667c59485d396a9d67b1f16d79ae8514ef872660fc6b0",
+      "bytes": 41082
+    },
+    "tsa_bec_counts.csv": {
+      "sha256": "ea7553eec5eab6de4eaf26cea272193c554e01d0086793701cb0ed39781d7841",
+      "bytes": 29281
+    },
+    "bec_official_crosswalk.csv": {
+      "sha256": "a33645291e822a7e8565554fbe25bc1d6397ff0c39a51ea71f1676f77adbacfe",
+      "bytes": 17884
+    },
+    "bec_crosswalk_review.csv": {
+      "sha256": "fc9a1e9e203fc0cc3a108a48e6a4758fab42a978e90c3196f100b91bd2bbf933",
+      "bytes": 8550
+    },
+    "bec_crosswalk.csv": {
+      "sha256": "0118c8233b6f0513f116271cd5ad71b0f8455049f1fd75fdc3483167fea63dc7",
+      "bytes": 18398
+    },
+    "bec_coverage.csv": {
+      "sha256": "b2875c8b404f02dcf36421e82bc519129d2311ed3ea8d318fe7659833b0bde7c",
+      "bytes": 56669
+    },
+    "bec_review_queue.csv": {
+      "sha256": "28ae64094d90a3115219602fde13327363b66a69dcc88460ae834abb1a5a7c5f",
+      "bytes": 10405
+    }
+  }
+}

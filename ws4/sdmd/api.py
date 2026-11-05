@@ -29,6 +29,7 @@ from .au_integrity import (
     default_retired_bec_versions,
     default_tsa_bec_counts,
     validate_au_integrity,
+    validate_au_metadata,
 )
 from .compile import Trajectory, assess_trajectory
 from .constraints import (
@@ -39,6 +40,7 @@ from .constraints import (
     option_counts,
     validate_constraints,
 )
+from .coverage import coverage_payload, coverage_row
 from .diagram import (
     SdmdDiagram,
     SdmdDiagramError,
@@ -141,17 +143,27 @@ class SdmdStore:
         """
         root = Path(path)
         plots = read_psp_plots(_read_csv(root, "plots"))
-        label_findings = [
-            finding
-            for au_id in sorted(set(plots["au_id"].dropna().astype(str)))
-            for finding in validate_au_integrity(
-                au_id,
-                known_bec=default_bec_labels(),
-                tsa_bec_counts=default_tsa_bec_counts(),
-                official_bec=default_official_bec_labels(),
-                retired_bec=default_retired_bec_versions(),
+        label_findings: list[Problem] = []
+        for au_id in sorted(set(plots["au_id"].dropna().astype(str))):
+            rows = plots[plots["au_id"].astype(str) == au_id]
+            becs = (
+                rows["bec_zone"].astype(str)
+                + rows["bec_subzone"].astype(str)
+                + rows["bec_variant"].astype(str)
+            ).tolist()
+            tsa_values = rows["tsa"].astype(str).tolist()
+            label_findings.extend(
+                validate_au_metadata(au_id, bec_labels=becs, tsa_labels=tsa_values)
             )
-        ]
+            label_findings.extend(
+                validate_au_integrity(
+                    au_id,
+                    known_bec=default_bec_labels(),
+                    tsa_bec_counts=default_tsa_bec_counts(),
+                    official_bec=default_official_bec_labels(),
+                    retired_bec=default_retired_bec_versions(),
+                )
+            )
         if label_findings:
             detail = "; ".join(
                 f"{item.code} {item.where}: {item.message}" for item in label_findings
@@ -758,6 +770,24 @@ def create_sdmd_router(store: SdmdStore) -> APIRouter:
     def regions() -> dict[str, object]:
         """Return the distinct regions."""
         return {"schema_version": API_SCHEMA_VERSION, "regions": store.regions()}
+
+    @router.get("/coverage")
+    def coverage(
+        zone: str | None = Query(None),
+        status: str | None = Query(None),
+    ) -> dict[str, object]:
+        """Return the BC-wide BEC coverage registry."""
+        if status is not None and status not in {"reviewed", "provisional", "no-diagram"}:
+            raise HTTPException(status_code=422, detail=f"unknown coverage status {status!r}")
+        return coverage_payload(zone=zone, status=status)
+
+    @router.get("/coverage/{bec}")
+    def coverage_for_bec(bec: str) -> dict[str, object]:
+        """Return one BEC coverage row."""
+        row = coverage_row(bec)
+        if row is None:
+            raise HTTPException(status_code=404, detail=f"unknown current BEC label {bec!r}")
+        return {"schema_version": API_SCHEMA_VERSION, "row": row}
 
     @router.get("/aus")
     def aus(region: str | None = Query(None)) -> dict[str, object]:

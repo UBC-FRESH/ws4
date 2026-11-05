@@ -475,14 +475,18 @@ not the published diagram. Four method trajectories from `fresh-fvsbc` are in
 ``ws4/sdmd/data/trajectories/``; they are method runs over synthetic tree lists,
 not real AU projections. See ``notes/reference/sdmd-pilot-trajectories.md``.
 
-The CCISS project (Apache-2.0) supplies complementary species and BEC evidence: 37
-BC tree species codes, silvics traits for the six SDMD species, IDFdk3 stocking
-targets, and a BEC crosswalk. The derived files are
-``ws4/sdmd/data/sdmd/tree_species.csv``, ``species_traits.csv``,
-``idfdk3_stocking.csv``, ``idfdk3_suitability.csv``, ``idfdk3_sibec.csv``,
-``bec_crosswalk.csv``, ``bec_official.csv``, ``bec_retired.csv``, and
-``bec_official_crosswalk.csv``; the method and limits are in
-``notes/reference/cciss-data-mining.md`` and
+The CCISS project (Apache-2.0) supplies complementary species evidence: 37 BC
+tree species codes, silvics traits for the six SDMD species, IDFdk3 stocking
+targets, and the CCISS label table (``bec_crosswalk.csv``). The derived CCISS
+files are ``ws4/sdmd/data/sdmd/tree_species.csv``, ``species_traits.csv``,
+``idfdk3_stocking.csv``, ``idfdk3_suitability.csv``, and
+``idfdk3_sibec.csv``; the method and limits are in
+``notes/reference/cciss-data-mining.md``.
+
+The BEC authority tables come from BC BECdb v13, not CCISS:
+``bec_official.csv``, ``bec_retired.csv``, and ``bec_sources.json``. P121
+derives ``bec_official_crosswalk.csv`` and ``bec_crosswalk_review.csv`` from
+those tables; the counts and limits are in
 ``notes/reports/p121-bec-crosswalk.md``. CCISS does not contain SDMD isopleths,
 so it cannot replace the missing lodgepole pine diagram.
 
@@ -498,6 +502,28 @@ record, the Open Government Licence, the selection rule, the field derivations,
 the FVS version, and the limits. The diagram is still provisional, no initial
 volume is supplied, and both FVS paths leave the observed envelope; the store is
 evidence for the pipeline, not a yield forecast.
+
+BC-wide coverage
+----------------
+
+``bec_coverage.csv`` is the 219-row coverage registry. Each current BEC label
+names its zone, subzone, variant, applicable Atlas diagrams, species/origin,
+review counts, and separate AU evidence. The Atlas diagrams are species/origin
+curves with zone-level applicability from the public source catalogue, so the
+status is explicit about the match:
+
+- 1 ``reviewed_variant``: ``IDFdk3``, the pilot variant
+- 5 ``reviewed_zone`` labels with only reviewed diagrams
+- 209 ``mixed_zone`` labels where reviewed and provisional diagrams both apply
+- 4 ``no_diagram`` labels in ``BAFA``, ``CMA``, and ``IMA``
+
+``match_level`` records ``variant``, ``zone``, or ``zone_rare``. A zone-level
+match is not a variant-specific claim; verify against the AU's leading species,
+origin, and BEC. ``GET /api/sdmd/coverage`` returns the registry and filters by
+zone or status; ``GET /api/sdmd/coverage/{bec}`` returns one label. The SDMD
+workspace exposes a **BC coverage** selector. ``bec_review_queue.csv`` names the
+10 provisional diagrams and the 210 BEC labels they affect. The registry never
+substitutes an unrelated AU.
 
 Evidence roles and limits
 -------------------------

@@ -1,7 +1,16 @@
 // WS4 browser shell: reads the service's artefacts, no build step, relative URLs so it works
 // under a proxy prefix as well as at the root.
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' } };
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/OrbitControls.js";
+
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' }, portfolioScan: [], pareto: { available: false, artifact: '', data: null, chart: null, cloud: null, selected: null, pinned: [], screen: [], artifacts: [] } };
+
+state.estate3d = { open: false, features: [], yaw: -0.55, zoom: 1, exaggeration: 1, hits: [] };
+const ESTATE_3D_LIMIT = 2000;
+
+state.sdmd.coverage = [];
+state.sdmd.coverageBec = '';
 
 const $ = (id) => document.getElementById(id);
 const TILE_VERSION = 'v9';
@@ -1543,6 +1552,7 @@ async function stopSearch(id) {
 }
 
 async function loadSearch(preferred = '') {
+  populateScanAccounts();
   const empty = $('search-empty');
   const select = $('search-select');
   const table = $('search-table');
@@ -1570,6 +1580,7 @@ async function loadSearch(preferred = '') {
       empty.textContent = 'no completed portfolio or tuner artifacts yet — launch one below or use scripts/portfolio.py / scripts/tune.py';
       summary.textContent = '';
       table.hidden = true;
+      $('search-explore').disabled = true;
       return;
     }
     empty.hidden = true;
@@ -1683,6 +1694,7 @@ async function renderSearchArtifact(id) {
       return tr;
     };
     if (body.kind === 'portfolio') {
+      $('search-explore').disabled = false;
       const data = body.data ?? {};
       const metrics = Array.isArray(data.metrics) ? data.metrics : [];
       const front = new Set(data.front ?? []);
@@ -1707,6 +1719,7 @@ async function renderSearchArtifact(id) {
       return;
     }
     if (body.kind === 'tuning') {
+      $('search-explore').disabled = true;
       const data = body.data ?? {};
       const candidates = Array.isArray(data.candidates) ? data.candidates : [];
       const byLabel = new Map(candidates.map((candidate) => [candidate.label, candidate]));
@@ -1796,6 +1809,108 @@ async function renderSearchArtifact(id) {
   }
 }
 
+function scanProduct() {
+  return state.portfolioScan.reduce(
+    (total, dimension) => total * Math.max(1, dimension.factors.length),
+    1
+  );
+}
+
+function populateScanAccounts() {
+  const select = $('scan-account');
+  if (!select) return;
+  const previous = select.value;
+  const accounts = [...new Set((state.targets || []).map((row) => row.account))].sort();
+  select.replaceChildren();
+  if (!accounts.length) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'No targets loaded';
+    select.append(option);
+    $('scan-add').disabled = true;
+    return;
+  }
+  $('scan-add').disabled = false;
+  for (const account of accounts) {
+    const option = document.createElement('option');
+    option.value = account;
+    option.textContent = account;
+    select.append(option);
+  }
+  if (accounts.includes(previous)) select.value = previous;
+}
+
+function renderPortfolioScan() {
+  const list = $('scan-dimensions');
+  list.replaceChildren();
+  for (const [index, dimension] of state.portfolioScan.entries()) {
+    const item = document.createElement('li');
+    const name = document.createElement('span');
+    name.textContent = `${dimension.account} = ${dimension.factors.join(', ')}`;
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'link-button';
+    remove.textContent = 'remove';
+    remove.addEventListener('click', () => {
+      state.portfolioScan.splice(index, 1);
+      renderPortfolioScan();
+    });
+    item.append(name, remove);
+    list.append(item);
+  }
+  const summary = $('scan-summary');
+  if (!state.portfolioScan.length) {
+    summary.textContent = 'Add 5-7 target accounts to build a scan.';
+    return;
+  }
+  const product = scanProduct();
+  const max = Math.max(1, Number($('portfolio-max-members').value) || 64);
+  const mode = $('portfolio-mode').value;
+  summary.textContent = `${state.portfolioScan.length} dimensions · ${product} grid members · cap ${max}${product > max && mode === 'grid' ? ' — switch to random or raise the cap' : ''}`;
+}
+
+function addPortfolioScanDimension() {
+  const account = $('scan-account').value;
+  const factors = $('scan-factors')
+    .value.split(',')
+    .map((value) => Number(value.trim()))
+    .filter((value) => Number.isFinite(value) && value > 0);
+  if (!account || !factors.length) {
+    $('scan-summary').textContent = 'Pick an account and at least one positive factor.';
+    return;
+  }
+  const existing = state.portfolioScan.find((item) => item.account === account);
+  if (existing) existing.factors = factors;
+  else state.portfolioScan.push({ account, factors });
+  renderPortfolioScan();
+}
+
+function usePortfolioScan() {
+  if (!state.portfolioScan.length) {
+    $('scan-summary').textContent = 'Add at least one dimension first.';
+    return;
+  }
+  $('portfolio-vary').value = state.portfolioScan
+    .map((item) => `${item.account}=${item.factors.join(',')}`)
+    .join(';');
+  const product = scanProduct();
+  const max = Math.max(1, Number($('portfolio-max-members').value) || 64);
+  if (product > max) $('portfolio-mode').value = 'random';
+  renderPortfolioScan();
+}
+
+function wirePortfolioScan() {
+  if (!$('scan-add')) return;
+  $('scan-add').addEventListener('click', addPortfolioScanDimension);
+  $('scan-clear').addEventListener('click', () => {
+    state.portfolioScan = [];
+    renderPortfolioScan();
+  });
+  $('scan-use').addEventListener('click', usePortfolioScan);
+  $('portfolio-max-members').addEventListener('input', renderPortfolioScan);
+  $('portfolio-mode').addEventListener('change', renderPortfolioScan);
+}
+
 async function waitSearch(id) {
   const status = $('search-run-status');
   for (let attempt = 0; attempt < 900; attempt += 1) {
@@ -1817,6 +1932,606 @@ ${String(body.log).slice(-600)}` : ''}`;
   status.textContent = `${id} · still running; check the artifact later`;
 }
 
+async function loadParetoArtifacts(preferred = '') {
+  const select = $('pareto-artifact');
+  const status = $('pareto-status');
+  if (!select) return;
+  try {
+    const artifacts = await api('api/search');
+    const ready = artifacts.filter((item) => !item.status && item.kind === 'portfolio');
+    state.pareto.artifacts = ready;
+    state.pareto.available = ready.length > 0;
+    select.replaceChildren();
+    if (!ready.length) {
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = 'No completed portfolios';
+      select.append(option);
+      status.textContent = 'run a portfolio in Search first';
+      clearParetoCloud();
+      return;
+    }
+    for (const artifact of ready) {
+      const option = document.createElement('option');
+      option.value = artifact.id;
+      option.textContent = artifact.id;
+      select.append(option);
+    }
+    const current = preferred || state.pareto.artifact || select.value;
+    if (current && ready.some((item) => item.id === current)) select.value = current;
+    state.pareto.artifact = select.value;
+    await loadParetoSpace(select.value);
+  } catch (error) {
+    status.textContent = `portfolios unavailable: ${error.message}`;
+    clearParetoCloud();
+  }
+}
+
+async function loadParetoSpace(id) {
+  const status = $('pareto-status');
+  if (!id) return;
+  status.textContent = 'loading solution space…';
+  state.pareto.artifact = id;
+  try {
+    const data = await api(`api/search/${encodeURIComponent(id)}/space?near_front=1`);
+    state.pareto.data = data;
+    state.pareto.selected = null;
+    state.pareto.pinned = [];
+    populateParetoSelects(data);
+    $('pareto-info').replaceChildren();
+    const hint = document.createElement('p');
+    hint.className = 'muted';
+    hint.textContent = 'Click a point to inspect it. Dominance is recomputed from every successful member.';
+    $('pareto-info').append(hint);
+    $('pareto-pin').disabled = true;
+    $('pareto-clear-pins').disabled = true;
+    $('pareto-open').disabled = true;
+    renderParetoCompare();
+    drawParetoCloud();
+    status.textContent = `${data.points.length} members · ${data.front_size} exact front · ${data.failed} failed`;
+  } catch (error) {
+    status.textContent = `solution space unavailable: ${error.message}`;
+    clearParetoCloud();
+  }
+}
+
+function paretoOption(select, value, label) {
+  const option = document.createElement('option');
+  option.value = String(value);
+  option.textContent = label;
+  select.append(option);
+}
+
+function populateParetoSelects(data) {
+  const dimensions = Array.isArray(data.dimensions) ? data.dimensions : [];
+  const metricNames = Array.isArray(data.metrics) ? data.metrics : [];
+  const fill = (id, defaultValue, includeNone = false, noneLabel = 'none') => {
+    const select = $(id);
+    const previous = select.value;
+    select.replaceChildren();
+    if (includeNone) paretoOption(select, -1, noneLabel);
+    dimensions.forEach((dimension, index) => {
+      paretoOption(select, index, dimension);
+    });
+    if (previous !== '' && [...select.options].some((option) => option.value === previous)) {
+      select.value = previous;
+    } else {
+      select.value = String(defaultValue);
+    }
+  };
+  fill('pareto-x', 0);
+  fill('pareto-y', Math.min(1, dimensions.length - 1));
+  fill('pareto-z', Math.min(2, dimensions.length - 1));
+  fill('pareto-colour', Math.min(3, dimensions.length - 1));
+  fill('pareto-size', -1, true, 'uniform');
+  fill('pareto-opacity', -1, true, 'fixed');
+  fill('pareto-filter-dim', -1, true, 'none');
+  const filter = $('pareto-filter');
+  filter.value = '0';
+  $('pareto-filter-value').textContent = 'all';
+  const epsilon = $('pareto-epsilon');
+  const previousEpsilon = Number(epsilon.value);
+  epsilon.value = String(
+    Number.isFinite(previousEpsilon) && previousEpsilon > 0 && previousEpsilon < 1
+      ? previousEpsilon
+      : 0.08
+  );
+  if (metricNames.length) {
+    $('pareto-legend').dataset.metricCount = String(metricNames.length);
+  }
+}
+
+function paretoDimensionValue(point, dimension) {
+  if (!dimension) return 0;
+  const values = point.normalized || {};
+  return Number(values[dimension] ?? 0);
+}
+
+function paretoLabel(data, dimension) {
+  return dimension || '—';
+}
+
+function ensureParetoChart() {
+  if (state.pareto.chart) return state.pareto.chart;
+  const canvas = $('pareto-canvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(Math.max(canvas.clientWidth, 1), Math.max(canvas.clientHeight, 1), false);
+  renderer.setClearColor(0x000000, 0);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(42, Math.max(canvas.clientWidth, 1) / Math.max(canvas.clientHeight, 1), 0.1, 100);
+  camera.position.set(2.8, 2.2, 2.9);
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.target.set(0, 0, 0);
+  controls.minDistance = 1.2;
+  controls.maxDistance = 8;
+  const box = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(3.2, 3.2, 3.2)),
+    new THREE.LineBasicMaterial({ color: 0x8fa68a, transparent: true, opacity: 0.55 })
+  );
+  scene.add(box);
+  const axes = buildParetoAxes();
+  scene.add(axes);
+  const chart = { renderer, scene, camera, controls, canvas, cloud: null, axes, points: [] };
+  canvas.addEventListener('click', (event) => {
+    if (!state.pareto.screen.length) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    let nearest = null;
+    let distance = 18;
+    for (const item of state.pareto.screen) {
+      const candidate = Math.hypot(item.x - x, item.y - y);
+      if (candidate < distance) {
+        nearest = item;
+        distance = candidate;
+      }
+    }
+    if (nearest) selectParetoPoint(nearest.key);
+  });
+  window.addEventListener('resize', resizeParetoChart);
+  state.pareto.chart = chart;
+  updateParetoAxes(chart, { x: 'X', y: 'Y', z: 'Z' });
+  animatePareto();
+  return chart;
+}
+
+function resizeParetoChart() {
+  const chart = state.pareto.chart;
+  if (!chart || !chart.canvas.clientWidth) return;
+  const width = Math.max(chart.canvas.clientWidth, 1);
+  const height = Math.max(chart.canvas.clientHeight, 1);
+  chart.renderer.setSize(width, height, false);
+  chart.camera.aspect = width / height;
+  chart.camera.updateProjectionMatrix();
+}
+
+function buildParetoAxes() {
+  const group = new THREE.Group();
+  const origin = new THREE.Vector3(0, 0, 0);
+  const end = 1.6;
+  const entries = [
+    [new THREE.Vector3(end, 0, 0), 0xc85555],
+    [new THREE.Vector3(0, end, 0), 0x5f9f54],
+    [new THREE.Vector3(0, 0, end), 0x4d7fc4],
+  ];
+  for (const [target, colour] of entries) {
+    const geometry = new THREE.BufferGeometry().setFromPoints([origin, target]);
+    const material = new THREE.LineBasicMaterial({ color: colour, transparent: true, opacity: 0.9 });
+    group.add(new THREE.Line(geometry, material));
+    const cone = new THREE.Mesh(
+      new THREE.ConeGeometry(0.07, 0.2, 10),
+      new THREE.MeshBasicMaterial({ color: colour })
+    );
+    cone.position.copy(target);
+    cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), target.clone().sub(origin).normalize());
+    group.add(cone);
+  }
+  return group;
+}
+
+function updateParetoAxes(chart, labels) {
+  chart.axisLabelText = labels;
+  $('pareto-axis-x').textContent = `X: ${labels.x || 'X'}`;
+  $('pareto-axis-y').textContent = `Y: ${labels.y || 'Y'}`;
+  $('pareto-axis-z').textContent = `Z: ${labels.z || 'Z'}`;
+}
+
+function positionParetoAxisLabels(chart) {
+  if (!chart.axisLabelText || state.workspace !== 'pareto') return;
+  const endpoints = [[2.08, 0, 0], [0, 2.08, 0], [0, 0, 2.08]];
+  const ids = ['pareto-axis-x', 'pareto-axis-y', 'pareto-axis-z'];
+  const point = new THREE.Vector3();
+  endpoints.forEach((endpoint, index) => {
+    point.set(endpoint[0], endpoint[1], endpoint[2]);
+    point.project(chart.camera);
+    const element = $(ids[index]);
+    if (point.z > 1) {
+      element.style.display = 'none';
+      return;
+    }
+    element.style.display = '';
+    const halfWidth = element.offsetWidth / 2 + 8;
+    const halfHeight = element.offsetHeight / 2 + 8;
+    const left = Math.max(
+      halfWidth,
+      Math.min(chart.canvas.clientWidth - halfWidth, (point.x * 0.5 + 0.5) * chart.canvas.clientWidth)
+    );
+    const top = Math.max(
+      halfHeight,
+      Math.min(chart.canvas.clientHeight - halfHeight, (-point.y * 0.5 + 0.5) * chart.canvas.clientHeight)
+    );
+    element.style.left = `${left}px`;
+    element.style.top = `${top}px`;
+  });
+}
+
+function updateParetoScreen(chart) {
+  const cloud = chart.cloud;
+  const positions = cloud?.geometry?.getAttribute('position');
+  const points = cloud?.userData?.points;
+  if (!positions || !Array.isArray(points)) {
+    state.pareto.screen = [];
+    return;
+  }
+  const projected = new THREE.Vector3();
+  const screen = [];
+  for (let index = 0; index < Math.min(points.length, positions.count); index += 1) {
+    projected.fromBufferAttribute(positions, index);
+    projected.project(chart.camera);
+    if (projected.z > 1) continue;
+    screen.push({
+      x: (projected.x * 0.5 + 0.5) * chart.canvas.clientWidth,
+      y: (-projected.y * 0.5 + 0.5) * chart.canvas.clientHeight,
+      key: points[index].key,
+    });
+  }
+  state.pareto.screen = screen;
+}
+
+function animatePareto() {
+  const chart = state.pareto.chart;
+  if (!chart) return;
+  if (state.workspace === 'pareto') {
+    chart.controls.update();
+    positionParetoAxisLabels(chart);
+    updateParetoScreen(chart);
+    chart.renderer.render(chart.scene, chart.camera);
+  }
+  requestAnimationFrame(animatePareto);
+}
+
+function clearParetoCloud() {
+  const chart = state.pareto.chart;
+  if (chart && chart.cloud) {
+    chart.scene.remove(chart.cloud);
+    chart.cloud.geometry.dispose();
+    chart.cloud.material.dispose();
+    chart.cloud = null;
+  }
+  state.pareto.screen = [];
+  $('pareto-stats').replaceChildren();
+  $('pareto-legend').replaceChildren();
+}
+
+function drawParetoCloud() {
+  const data = state.pareto.data;
+  if (!data) return;
+  const chart = ensureParetoChart();
+  const dimensions = Array.isArray(data.dimensions) ? data.dimensions : [];
+  const xDim = dimensions[Number($('pareto-x').value)];
+  const yDim = dimensions[Number($('pareto-y').value)];
+  const zDim = dimensions[Number($('pareto-z').value)];
+  const colourDim = dimensions[Number($('pareto-colour').value)];
+  const sizeIndex = Number($('pareto-size').value);
+  const opacityIndex = Number($('pareto-opacity').value);
+  const filterIndex = Number($('pareto-filter-dim').value);
+  const sizeDim = sizeIndex >= 0 ? dimensions[sizeIndex] : '';
+  const opacityDim = opacityIndex >= 0 ? dimensions[opacityIndex] : '';
+  const filterDim = filterIndex >= 0 ? dimensions[filterIndex] : '';
+  const dominance = $('pareto-dominance').value;
+  const epsilon = Math.max(0, Number($('pareto-epsilon').value) || 0);
+  const threshold = Number($('pareto-filter').value) / 100;
+  const points = (data.points || []).filter((point) => {
+    if (dominance === 'front' && !point.front) return false;
+    if (dominance === 'near' && !point.front && Number(point.distance_to_front) > epsilon) return false;
+    if (filterDim && threshold > 0 && paretoDimensionValue(point, filterDim) < threshold) return false;
+    return true;
+  });
+  clearParetoCloud();
+  if (!points.length) {
+    $('pareto-info').replaceChildren();
+    const hint = document.createElement('p');
+    hint.className = 'hint';
+    hint.textContent = 'No members match this dominance and filter setting.';
+    $('pareto-info').append(hint);
+    return;
+  }
+  const positions = new Float32Array(points.length * 3);
+  const colours = new Float32Array(points.length * 3);
+  const sizes = new Float32Array(points.length);
+  const alphas = new Float32Array(points.length);
+  const colour = new THREE.Color();
+  points.forEach((point, index) => {
+    const x = paretoDimensionValue(point, xDim);
+    const y = paretoDimensionValue(point, yDim);
+    const z = paretoDimensionValue(point, zDim);
+    positions[index * 3] = (x - 0.5) * 3.2;
+    positions[index * 3 + 1] = (y - 0.5) * 3.2;
+    positions[index * 3 + 2] = (z - 0.5) * 3.2;
+    colour.setHSL(0.58 - paretoDimensionValue(point, colourDim) * 0.46, 0.68, 0.5);
+    colours[index * 3] = colour.r;
+    colours[index * 3 + 1] = colour.g;
+    colours[index * 3 + 2] = colour.b;
+    const sizeValue = sizeDim ? paretoDimensionValue(point, sizeDim) : 0.5;
+    const selected = state.pareto.selected === point.key;
+    sizes[index] = (0.7 + sizeValue * 1.3) * (selected ? 1.7 : 1);
+    const opacityValue = opacityDim ? 0.2 + paretoDimensionValue(point, opacityDim) * 0.8 : 0.9;
+    alphas[index] = opacityValue * (point.front ? 1 : 0.55);
+  });
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('pointColor', new THREE.BufferAttribute(colours, 3));
+  geometry.setAttribute('pointSize', new THREE.BufferAttribute(sizes, 1));
+  geometry.setAttribute('pointAlpha', new THREE.BufferAttribute(alphas, 1));
+  const material = new THREE.ShaderMaterial({
+    uniforms: { uScale: { value: Math.max(16, chart.canvas.clientHeight * 0.055) } },
+    vertexShader: `
+      uniform float uScale;
+      attribute vec3 pointColor;
+      attribute float pointSize;
+      attribute float pointAlpha;
+      varying vec3 vColor;
+      varying float vAlpha;
+      void main() {
+        vColor = pointColor;
+        vAlpha = pointAlpha;
+        vec4 view = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = pointSize * uScale / max(0.001, -view.z);
+        gl_Position = projectionMatrix * view;
+      }
+    `,
+    fragmentShader: `
+      varying vec3 vColor;
+      varying float vAlpha;
+      void main() {
+        float distance = length(gl_PointCoord - vec2(0.5));
+        if (distance > 0.5) discard;
+        float edge = smoothstep(0.5, 0.42, distance);
+        gl_FragColor = vec4(vColor, vAlpha * edge);
+      }
+    `,
+    transparent: true,
+    depthWrite: false,
+  });
+  const cloud = new THREE.Points(geometry, material);
+  cloud.userData.points = points;
+  chart.scene.add(cloud);
+  chart.cloud = cloud;
+  state.pareto.cloud = cloud;
+  if (state.pareto.selected && !points.some((point) => point.key === state.pareto.selected)) {
+    state.pareto.selected = null;
+  }
+  const labels = {
+    x: paretoLabel(data, xDim),
+    y: paretoLabel(data, yDim),
+    z: paretoLabel(data, zDim),
+  };
+  updateParetoAxes(chart, labels);
+  renderParetoMemberPicker(points);
+  renderParetoStats(data, points, dominance, epsilon);
+  renderParetoLegend(data, points, colourDim, filterDim);
+  if (state.pareto.selected) {
+    const selectedPoint = points.find((point) => point.key === state.pareto.selected);
+    if (selectedPoint) renderParetoInfo(selectedPoint);
+  }
+  chart.renderer.render(chart.scene, chart.camera);
+}
+
+function renderParetoMemberPicker(points) {
+  const picker = $('pareto-member');
+  if (!picker) return;
+  const previous = picker.value || state.pareto.selected || '';
+  picker.replaceChildren();
+  const none = document.createElement('option');
+  none.value = '';
+  none.textContent = points.length ? '— select a visible member —' : '— no visible members —';
+  picker.append(none);
+  for (const point of points) {
+    const option = document.createElement('option');
+    option.value = point.key;
+    option.textContent = `${point.key}${point.front ? ' · front' : ` · ε ${Number(point.distance_to_front).toFixed(3)}`}`;
+    picker.append(option);
+  }
+  picker.disabled = points.length === 0;
+  if (previous && points.some((point) => point.key === previous)) picker.value = previous;
+}
+
+function renderParetoStats(data, points, dominance, epsilon) {
+  const stats = $('pareto-stats');
+  stats.replaceChildren();
+  const nearCount = (data.points || []).filter(
+    (point) => point.front || Number(point.distance_to_front) <= epsilon
+  ).length;
+  const entries = [
+    ['Visible', points.length],
+    ['Exact front', data.front_size],
+    [`Near-front ≤ ${Number(epsilon).toFixed(2)}`, nearCount],
+    ['Failed', data.failed],
+    ['Mode', dominance],
+  ];
+  for (const [label, value] of entries) {
+    const card = document.createElement('div');
+    card.className = 'change-stat';
+    const name = document.createElement('span');
+    name.textContent = label;
+    const number = document.createElement('strong');
+    number.textContent = String(value);
+    card.append(name, number);
+    stats.append(card);
+  }
+}
+
+function renderParetoLegend(data, points, colourDim, filterDim) {
+  const legend = $('pareto-legend');
+  legend.replaceChildren();
+  const low = document.createElement('span');
+  low.textContent = `← low ${colourDim || 'colour'}`;
+  const high = document.createElement('span');
+  high.textContent = `high ${colourDim || 'colour'} →`;
+  const front = document.createElement('span');
+  front.textContent = 'bright = exact front · faded = dominated';
+  const count = document.createElement('span');
+  count.textContent = `${points.length} plotted${filterDim ? ` · filter ${filterDim}` : ''}`;
+  legend.append(low, high, front, count);
+}
+
+function selectParetoPoint(key) {
+  const data = state.pareto.data;
+  if (!data) return;
+  const point = (data.points || []).find((item) => item.key === key);
+  if (!point) return;
+  state.pareto.selected = key;
+  drawParetoCloud();
+  const picker = $('pareto-member');
+  if (picker) picker.value = key;
+  renderParetoInfo(point);
+}
+
+function renderParetoInfo(point) {
+  const data = state.pareto.data;
+  if (!data) return;
+  const info = $('pareto-info');
+  info.replaceChildren();
+  const title = document.createElement('p');
+  title.className = 'pareto-id';
+  title.textContent = `${point.key} · ${point.front ? 'exact front' : `dominated (ε ${Number(point.distance_to_front).toFixed(3)})`}`;
+  info.append(title);
+  const grid = document.createElement('div');
+  grid.className = 'mini-grid';
+  for (const dimension of data.dimensions || []) {
+    const card = document.createElement('div');
+    card.className = 'mini-card';
+    const label = document.createElement('span');
+    label.textContent = dimension;
+    const value = document.createElement('strong');
+    const raw = dimension === 'objective' ? point.objective : point.metrics?.[dimension];
+    value.textContent = compareNumber(raw);
+    card.append(label, value);
+    grid.append(card);
+  }
+  info.append(grid);
+  const detail = document.createElement('p');
+  detail.className = 'hint';
+  detail.textContent = `objective ${compareNumber(point.objective)} · seed ${point.seed ?? '—'} · ${Object.entries(point.factors || {}).map(([key, value]) => `${key}=${compareNumber(value)}`).join(' · ') || 'baseline weights'}`;
+  info.append(detail);
+  $('pareto-pin').disabled = false;
+  $('pareto-open').disabled = !point.schedule;
+}
+
+function pinParetoPoint() {
+  const selected = state.pareto.selected;
+  if (!selected) return;
+  const point = (state.pareto.data?.points || []).find((item) => item.key === selected);
+  if (!point) return;
+  if (state.pareto.pinned.some((item) => item.key === point.key)) return;
+  if (state.pareto.pinned.length >= 3) state.pareto.pinned.shift();
+  state.pareto.pinned.push(point);
+  renderParetoCompare();
+}
+
+function clearParetoPins() {
+  state.pareto.pinned = [];
+  renderParetoCompare();
+}
+
+function renderParetoCompare() {
+  const compare = $('pareto-compare');
+  compare.replaceChildren();
+  const pinned = state.pareto.pinned || [];
+  $('pareto-clear-pins').disabled = pinned.length === 0;
+  if (!pinned.length) {
+    const hint = document.createElement('p');
+    hint.className = 'hint';
+    hint.textContent = 'Pin up to three members to compare their metric vectors.';
+    compare.append(hint);
+    return;
+  }
+  const data = state.pareto.data;
+  if (!data) return;
+  const table = document.createElement('table');
+  const head = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  const first = document.createElement('th');
+  first.textContent = 'Dimension';
+  headRow.append(first);
+  for (const point of pinned) {
+    const cell = document.createElement('th');
+    cell.textContent = point.key;
+    headRow.append(cell);
+  }
+  head.append(headRow);
+  const body = document.createElement('tbody');
+  for (const dimension of data.dimensions || []) {
+    const row = document.createElement('tr');
+    const label = document.createElement('td');
+    label.textContent = dimension;
+    row.append(label);
+    for (const point of pinned) {
+      const cell = document.createElement('td');
+      cell.textContent = compareNumber(dimension === 'objective' ? point.objective : point.metrics?.[dimension]);
+      row.append(cell);
+    }
+    body.append(row);
+  }
+  table.append(head, body);
+  compare.append(table);
+}
+
+function openParetoSchedule() {
+  const selected = state.pareto.selected;
+  if (!selected || !state.pareto.artifact) return;
+  const point = (state.pareto.data?.points || []).find((item) => item.key === selected);
+  if (!point?.schedule) return;
+  window.open(searchFileUrl(state.pareto.artifact, point.schedule), '_blank', 'noopener');
+}
+
+function resetParetoView() {
+  const chart = state.pareto.chart;
+  if (!chart) return;
+  chart.camera.position.set(2.8, 2.2, 2.9);
+  chart.controls.target.set(0, 0, 0);
+  chart.controls.update();
+}
+
+function wirePareto() {
+  if (!$('pareto-artifact')) return;
+  $('pareto-artifact').addEventListener('change', () => loadParetoSpace($('pareto-artifact').value));
+  $('pareto-refresh').addEventListener('click', () => loadParetoArtifacts($('pareto-artifact').value));
+  $('pareto-reset').addEventListener('click', resetParetoView);
+  $('pareto-search').addEventListener('click', () => {
+    setWorkspace('results');
+    setSubView('results', 'search');
+  });
+  $('pareto-pin').addEventListener('click', pinParetoPoint);
+  $('pareto-clear-pins').addEventListener('click', clearParetoPins);
+  $('pareto-open').addEventListener('click', openParetoSchedule);
+  for (const id of ['pareto-x', 'pareto-y', 'pareto-z', 'pareto-colour', 'pareto-size', 'pareto-opacity', 'pareto-filter-dim', 'pareto-dominance']) {
+    $(id).addEventListener('change', drawParetoCloud);
+  }
+  $('pareto-epsilon').addEventListener('change', drawParetoCloud);
+  $('pareto-member').addEventListener('change', () => {
+    if ($('pareto-member').value) selectParetoPoint($('pareto-member').value);
+  });
+  $('pareto-filter').addEventListener('input', () => {
+    const value = Number($('pareto-filter').value) / 100;
+    $('pareto-filter-value').textContent = value <= 0 ? 'all' : `>= ${value.toFixed(2)}`;
+    drawParetoCloud();
+  });
+}
+
 async function startPortfolio() {
   const status = $('search-run-status');
   const vary = $('portfolio-vary').value.trim();
@@ -1832,6 +2547,11 @@ async function startPortfolio() {
       body: JSON.stringify({
         vary,
         metrics: $('portfolio-metrics').value.trim(),
+        directions: $('portfolio-directions').value.trim(),
+        mode: $('portfolio-mode').value,
+        max_members: Number($('portfolio-max-members').value || 64),
+        workers: Number($('portfolio-workers').value || 1),
+        sample_seed: Number($('portfolio-sample-seed').value || 1),
         seeds: $('portfolio-seeds').value.trim() || '1',
         iterations: Number($('portfolio-iterations').value || 20),
         years: Number($('portfolio-years').value || 50),
@@ -3324,12 +4044,89 @@ async function loadSdmdAvailability() {
     $('sdmd-empty').hidden = true;
     $('sdmd-status').textContent = 'choose an AU';
     await loadSdmdAUs();
+    await loadSdmdCoverage();
     syncNavigation();
   } catch (error) {
     state.sdmd.available = false;
     $('sdmd-status').textContent = 'SDMD API not served.';
     $('sdmd-empty').hidden = false;
   }
+}
+
+async function loadSdmdCoverage() {
+  try {
+    const payload = await api('api/sdmd/coverage');
+    state.sdmd.coverage = payload.rows ?? [];
+    const counts = payload.counts ?? {};
+    $('sdmd-coverage-count').textContent = `${payload.count ?? 0} BEC labels · ${counts.reviewed ?? 0} reviewed · ${counts.provisional ?? 0} provisional · ${counts['no-diagram'] ?? 0} gaps`;
+    const zones = [...new Set(state.sdmd.coverage.map((row) => row.zone))].sort();
+    const zoneSelect = $('sdmd-coverage-zone');
+    zoneSelect.replaceChildren();
+    for (const zone of zones) {
+      const option = document.createElement('option');
+      option.value = zone;
+      option.textContent = zone;
+      zoneSelect.append(option);
+    }
+    const preferred = state.sdmd.coverage.find((row) => row.bec === 'IDFdk3')?.zone ?? zones[0] ?? '';
+    zoneSelect.value = preferred;
+    fillSdmdCoverageBecs();
+  } catch {
+    $('sdmd-coverage-panel').hidden = true;
+  }
+}
+
+function fillSdmdCoverageBecs() {
+  const zone = $('sdmd-coverage-zone').value;
+  const rows = state.sdmd.coverage.filter((row) => row.zone === zone);
+  const select = $('sdmd-coverage-bec');
+  select.replaceChildren();
+  for (const row of rows) {
+    const option = document.createElement('option');
+    option.value = row.bec;
+    option.textContent = row.bec;
+    select.append(option);
+  }
+  const preferred = rows.some((row) => row.bec === state.sdmd.coverageBec)
+    ? state.sdmd.coverageBec
+    : rows.find((row) => row.bec === 'IDFdk3')?.bec ?? rows[0]?.bec ?? '';
+  select.value = preferred;
+  renderSdmdCoverageDetail();
+}
+
+function renderSdmdCoverageDetail() {
+  const host = $('sdmd-coverage-detail');
+  host.replaceChildren();
+  const row = state.sdmd.coverage.find((item) => item.bec === $('sdmd-coverage-bec').value);
+  if (!row) {
+    host.textContent = 'No current BEC label selected.';
+    return;
+  }
+  state.sdmd.coverageBec = row.bec;
+  const title = document.createElement('p');
+  const name = document.createElement('strong');
+  name.textContent = row.bec;
+  const status = document.createElement('span');
+  status.className = `sdmd-coverage-status ${row.coverage_status}`;
+  status.textContent = row.coverage_status;
+  title.append(name, status);
+  host.append(title);
+  const add = (label, value) => {
+    const line = document.createElement('p');
+    const prefix = document.createElement('strong');
+    prefix.textContent = `${label}: `;
+    line.append(prefix, document.createTextNode(value));
+    host.append(line);
+  };
+  add('Zone', `${row.zone} · ${row.zone_name || 'unnamed'}`);
+  add('Subzone / variant', `${row.subzone || '—'} / ${row.variant || '—'}`);
+  add('Diagrams', row.diagram_ids ? row.diagram_ids.split(';').join(', ') : 'None');
+  add('Review counts', `${row.reviewed_count || 0} reviewed / ${row.provisional_count || 0} provisional`);
+  add('Species / origin', [row.species, row.origins].filter(Boolean).join(' · ') || 'None');
+  add('AU evidence', row.au_ids ? row.au_ids.split(';').join(', ') : 'No AU store for this BEC');
+  if (row.gap_reason) add('Gap reason', row.gap_reason);
+  if (row.gap_action) add('Next action', row.gap_action);
+  add('Note', row.note || '');
 }
 
 async function loadSdmdAUs() {
@@ -3471,6 +4268,8 @@ function wireSdmd() {
     await loadSdmdAUs();
     if (state.workspace === 'sdmd') updateUrl();
   });
+  $('sdmd-coverage-zone').addEventListener('change', fillSdmdCoverageBecs);
+  $('sdmd-coverage-bec').addEventListener('change', renderSdmdCoverageDetail);
   $('sdmd-au').addEventListener('change', async () => {
     await loadSdmdAu($('sdmd-au').value);
     if (state.workspace === 'sdmd') updateUrl();
@@ -3682,6 +4481,7 @@ function setPeriod(index) {
   $('year-label').textContent = period.label ?? `Period ${next + 1}`;
   renderRunHealth();
   updateUrl({ push: false });
+  if (state.estate3d.open) refreshEstate3d();
   return period;
 }
 
@@ -3794,6 +4594,7 @@ function workspaceAllowed(workspace) {
   if (workspace === 'sdmd') return Boolean(state.sdmd.available);
   const panels = skinPanels();
   if (workspace === 'plan') return panels.has('targets');
+  if (workspace === 'pareto') return panels.has('search');
   if (workspace === 'results') {
     return SUB_PANELS.results.some((name) => panels.has(name));
   }
@@ -3860,11 +4661,13 @@ function syncNavigation() {
   }
   if (state.workspace === 'map') $('tab-legend').hidden = false;
   if (state.workspace === 'plan') $('tab-targets').hidden = false;
-  $('map-wrap').hidden = state.workspace === 'plan' || state.workspace === 'sdmd';
+  $('map-wrap').hidden = state.workspace === 'plan' || state.workspace === 'sdmd' || state.workspace === 'pareto';
   $('target-canvas').hidden = state.workspace !== 'plan';
   $('sdmd-canvas').hidden = state.workspace !== 'sdmd';
+  $('pareto-wrap').hidden = state.workspace !== 'pareto';
   if (state.workspace === 'plan') renderTargetCharts();
   if (state.workspace === 'sdmd') renderSdmd();
+  if (state.workspace === 'pareto' && state.pareto.chart) resizeParetoChart();
   for (const workspace of ['results', 'data']) {
     const nav = $(`${workspace}-nav`);
     const buttons = [...(nav?.querySelectorAll('[role="tab"]') ?? [])];
@@ -3923,6 +4726,10 @@ function activateSubView() {
   }
   if (state.workspace === 'sdmd') {
     renderSdmd();
+    return;
+  }
+  if (state.workspace === 'pareto') {
+    loadParetoArtifacts();
     return;
   }
   if (state.workspace !== 'results' && state.compareView) clearCompareView();
@@ -6615,12 +7422,228 @@ async function buildReport() {
   }
 }
 
+function estate3dHeight(properties) {
+  const treated = Boolean(properties?.treated);
+  let height = treated ? 20 : 7;
+  const age = properties?.age;
+  if (age !== null && age !== undefined && Number.isFinite(Number(age))) {
+    height += Math.min(Math.max(Number(age), 0), 200) * 0.10;
+  }
+  if (properties?.current) height += 5;
+  return Math.max(4, Math.min(48, height));
+}
+
+function estate3dProject(x, y, transform) {
+  const dx = x - transform.cx;
+  const dy = y - transform.cy;
+  const rx = dx * Math.cos(transform.yaw) - dy * Math.sin(transform.yaw);
+  const ry = dx * Math.sin(transform.yaw) + dy * Math.cos(transform.yaw);
+  return [
+    transform.width / 2 + rx * transform.scale,
+    transform.height / 2 + ry * transform.scale * transform.flatten,
+  ];
+}
+
+function estate3dRings(feature) {
+  const geometry = feature?.geometry;
+  if (geometry?.type === 'Polygon') return geometry.coordinates;
+  if (geometry?.type === 'MultiPolygon') return geometry.coordinates.flat();
+  return [];
+}
+
+function estate3dColor(properties, selected) {
+  if (selected) return '#d9822b';
+  if (properties?.treated) return properties.current ? '#2f7d4f' : '#7aa36b';
+  return '#b7b7a8';
+}
+
+function estate3dExtract(features) {
+  const blocks = [];
+  for (const feature of features) {
+    const rings = estate3dRings(feature).filter((ring) => Array.isArray(ring) && ring.length >= 3);
+    if (!rings.length) continue;
+    const properties = feature.properties ?? {};
+    blocks.push({
+      block: properties.block_id,
+      properties,
+      rings,
+      height: estate3dHeight(properties),
+    });
+  }
+  return blocks;
+}
+
+function estate3dBounds(blocks) {
+  const box = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
+  for (const block of blocks) {
+    for (const ring of block.rings) {
+      for (const point of ring) {
+        const x = Number(point[0]);
+        const y = Number(point[1]);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+        box.minX = Math.min(box.minX, x);
+        box.minY = Math.min(box.minY, y);
+        box.maxX = Math.max(box.maxX, x);
+        box.maxY = Math.max(box.maxY, y);
+      }
+    }
+  }
+  return box;
+}
+
+function estate3dPointInRing(x, y, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+    const xi = ring[i][0];
+    const yi = ring[i][1];
+    const xj = ring[j][0];
+    const yj = ring[j][1];
+    if (((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / (yj - yi) + xi)) inside = !inside;
+  }
+  return inside;
+}
+
+function estate3dPick(x, y) {
+  for (let index = estate3dPick.hits.length - 1; index >= 0; index -= 1) {
+    const hit = estate3dPick.hits[index];
+    if (estate3dPointInRing(x, y, hit.ring)) return hit;
+  }
+  return null;
+}
+estate3dPick.hits = [];
+
+function renderEstate3d() {
+  if (!state.estate3d.open) return;
+  const canvas = $('estate-3d-canvas');
+  if (!canvas) return;
+  const rect = canvas.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+  canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+  const context = canvas.getContext('2d');
+  if (!context) return;
+  context.setTransform(dpr, 0, 0, dpr, 0, 0);
+  context.clearRect(0, 0, rect.width, rect.height);
+  const blocks = estate3dExtract(state.estate3d.features);
+  if (blocks.length > ESTATE_3D_LIMIT) {
+    $('estate-3d-status').textContent = `3D refused: ${blocks.length.toLocaleString()} blocks exceeds the ${ESTATE_3D_LIMIT.toLocaleString()} block budget`;
+    return;
+  }
+  if (!blocks.length) {
+    $('estate-3d-status').textContent = 'No polygon blocks available for the 3D replay';
+    return;
+  }
+  const box = estate3dBounds(blocks);
+  const dx = Math.max(box.maxX - box.minX, 1e-9);
+  const dy = Math.max(box.maxY - box.minY, 1e-9);
+  const scale = Math.min((rect.width - 80) / dx, (rect.height - 80) / dy) * 0.9 * state.estate3d.zoom;
+  const transform = {
+    cx: (box.minX + box.maxX) / 2,
+    cy: (box.minY + box.maxY) / 2,
+    scale: Math.max(scale, 1e-6),
+    yaw: state.estate3d.yaw,
+    width: rect.width,
+    height: rect.height,
+    flatten: 0.58,
+  };
+  const drawable = blocks.map((block) => {
+    const rings = block.rings.map((ring) => ring.map((point) => estate3dProject(Number(point[0]), Number(point[1]), transform)));
+    const depth = rings.reduce((sum, ring) => sum + ring.reduce((total, point) => total + point[1], 0), 0)
+      / Math.max(1, rings.reduce((count, ring) => count + ring.length, 0));
+    return { ...block, rings, depth };
+  }).sort((a, b) => a.depth - b.depth);
+  estate3dPick.hits = [];
+  const selected = String(state.selectedBlock);
+  for (const block of drawable) {
+    const selectedBlock = String(block.block) === selected;
+    const color = estate3dColor(block.properties, selectedBlock);
+    const height = block.height * state.estate3d.exaggeration;
+    for (const ring of block.rings) {
+      for (let index = 0; index < ring.length; index += 1) {
+        const current = ring[index];
+        const next = ring[(index + 1) % ring.length];
+        context.beginPath();
+        context.moveTo(current[0], current[1]);
+        context.lineTo(next[0], next[1]);
+        context.lineTo(next[0], next[1] - height);
+        context.lineTo(current[0], current[1] - height);
+        context.closePath();
+        context.fillStyle = selectedBlock ? 'rgba(217,130,43,.82)' : 'rgba(55,78,66,.55)';
+        context.fill();
+      }
+    }
+    for (const ring of block.rings) {
+      context.beginPath();
+      ring.forEach((point, index) => {
+        if (index === 0) context.moveTo(point[0], point[1] - height);
+        else context.lineTo(point[0], point[1] - height);
+      });
+      context.closePath();
+      context.fillStyle = color;
+      context.fill();
+      context.strokeStyle = selectedBlock ? '#7a3f10' : 'rgba(24,42,34,.45)';
+      context.lineWidth = selectedBlock ? 2 : 0.6;
+      context.stroke();
+      estate3dPick.hits.push({
+        block: block.block,
+        properties: block.properties,
+        ring: ring.map((point) => [point[0], point[1] - height]),
+      });
+    }
+  }
+  const period = currentPeriod();
+  $('estate-3d-status').textContent = `${blocks.length.toLocaleString()} blocks${period ? ` · ${period.label ?? `period ${state.periodIndex + 1}`}` : ''} · drag to orbit`;
+}
+
+async function loadEstate3dFeatures() {
+  const local = state.features.filter((feature) => estate3dRings(feature).length);
+  if (local.length && state.mapEngine !== 'maplibre') return local;
+  const period = currentPeriod();
+  const year = period ? Number(period.end) : Number(state.year);
+  const layer = state.live.active ? 'treatments' : mapLayerName();
+  let query = `api/runs/${encodeURIComponent(state.run)}/map?year=${year}&layer=${layer}`;
+  if (layer === 'treatments' || layer === 'cumulative') query += periodQuery();
+  if (layer === 'compartments' && state.compartmentAccount) {
+    query += `&account=${encodeURIComponent(state.compartmentAccount)}`;
+  }
+  const body = await api(query);
+  return body.features ?? [];
+}
+
+async function refreshEstate3d() {
+  if (!state.estate3d.open) return;
+  $('estate-3d-status').textContent = 'loading 3D geometry…';
+  try {
+    state.estate3d.features = await loadEstate3dFeatures();
+    renderEstate3d();
+  } catch (error) {
+    $('estate-3d-status').textContent = `3D unavailable: ${error.message}`;
+  }
+}
+
+function openEstate3d() {
+  if (!state.run) { showToast('load a run before opening 3D', true); return; }
+  state.estate3d.open = true;
+  $('estate-3d').hidden = false;
+  $('map-3d-toggle').setAttribute('aria-expanded', 'true');
+  $('estate-3d').focus?.();
+  refreshEstate3d();
+}
+
+function closeEstate3d() {
+  state.estate3d.open = false;
+  $('estate-3d').hidden = true;
+  $('map-3d-toggle').setAttribute('aria-expanded', 'false');
+  $('estate-3d-status').textContent = 'Experimental coarse view';
+}
+
 function showDetail(block, supplied = null, geometry = null) {
   const feature = state.features.find((candidate) => String(candidate.properties?.block_id) === String(block));
   const properties = supplied ?? feature?.properties;
   if (!properties) return;
   state.selectedBlock = block;
   $('map-wrap').dataset.selectedBlock = String(block);
+  if (state.estate3d.open) renderEstate3d();
   if (state.mapEngine === 'maplibre') {
     state.selectedGeometry = geometry ?? feature?.geometry ?? null;
   }
@@ -6792,6 +7815,68 @@ function appendChat(role, text) {
   return bubble;
 }
 
+function chatContext() {
+  const period = currentPeriod();
+  const search = $('target-filter-search');
+  const status = $('target-filter-status');
+  const profile = $('profile-select');
+  return {
+    run: state.run || null,
+    workspace: state.workspace,
+    subview: currentSub(),
+    period: period
+      ? { index: state.periodIndex, label: period.label ?? null, year: Number(state.year) }
+      : { index: state.periodIndex, year: Number(state.year) },
+    selected_block: state.selectedBlock === null || state.selectedBlock === undefined
+      ? null : String(state.selectedBlock),
+    profile: profile?.value || null,
+    target_filter: {
+      search: search?.value?.trim() || null,
+      status: status?.value || null,
+    },
+    account: state.pickedAccount || [...state.selectedAccounts][0] || null,
+  };
+}
+
+function applyChatChip(chip) {
+  const action = chip?.action;
+  const target = chip?.target;
+  if (action === 'open_workspace' && typeof target === 'string') {
+    setWorkspace(target);
+    return;
+  }
+  if (action === 'open_subview' && typeof target === 'string') {
+    const [workspace, subview] = target.split(':');
+    if (!workspace || !subview) return;
+    setWorkspace(workspace);
+    setSubView(workspace, subview);
+    return;
+  }
+  if (action === 'set_period') {
+    const index = Number(target);
+    if (Number.isInteger(index) && index >= 0) setPeriod(index);
+    return;
+  }
+  if (action === 'select_block' && typeof target === 'string') {
+    const feature = state.features.find(
+      (candidate) => String(candidate.properties?.block_id) === target,
+    );
+    if (!feature) {
+      showToast(`block ${target} is not in this run`, true);
+      return;
+    }
+    setWorkspace('map');
+    showDetail(target);
+    return;
+  }
+  if (action === 'ask' && typeof target === 'string') {
+    const input = $('chat-input');
+    if (!input) return;
+    input.value = target;
+    input.focus();
+  }
+}
+
 async function sendChat(event) {
   if (event?.preventDefault) event.preventDefault();
   if (state.chatBusy) return;
@@ -6815,6 +7900,7 @@ async function sendChat(event) {
         run: state.run || null,
         year: state.year,
         async: true,
+        context: chatContext(),
       }),
     });
     let response = await request();
@@ -6848,6 +7934,22 @@ async function sendChat(event) {
         chip.textContent = `${action.tool}${action.summary ? `: ${action.summary}` : ''}`;
         chip.title = chip.textContent;
         row.append(chip);
+      }
+      thinking.append(row);
+    }
+    if (Array.isArray(payload.chips) && payload.chips.length) {
+      const row = document.createElement('div');
+      row.className = 'chat-actions';
+      for (const chip of payload.chips) {
+        if (!chip || typeof chip.label !== 'string') continue;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'chat-chip';
+        button.textContent = chip.label;
+        button.title = chip.label;
+        button.dataset.chatAction = chip.action || '';
+        button.addEventListener('click', () => applyChatChip(chip));
+        row.append(button);
       }
       thinking.append(row);
     }
@@ -6937,6 +8039,48 @@ function wireControls() {
   $('play-periods').addEventListener('click', togglePeriodPlay);
   $('help-toggle').addEventListener('click', openHelp);
   $('help-close').addEventListener('click', () => $('help-dialog').close());
+  $('map-3d-toggle').addEventListener('click', openEstate3d);
+  $('estate-3d-close').addEventListener('click', closeEstate3d);
+  $('estate-3d-reset').addEventListener('click', () => {
+    state.estate3d.yaw = -0.55;
+    state.estate3d.zoom = 1;
+    renderEstate3d();
+  });
+  $('estate-3d-exaggeration').addEventListener('input', (event) => {
+    state.estate3d.exaggeration = Number(event.target.value) || 1;
+    renderEstate3d();
+  });
+  {
+    const canvas = $('estate-3d-canvas');
+    let drag = null;
+    canvas.addEventListener('pointerdown', (event) => {
+      drag = { x: event.clientX, y: event.clientY, yaw: state.estate3d.yaw, moved: false };
+      canvas.setPointerCapture(event.pointerId);
+    });
+    canvas.addEventListener('pointermove', (event) => {
+      if (!drag) return;
+      if (Math.abs(event.clientX - drag.x) + Math.abs(event.clientY - drag.y) > 3) drag.moved = true;
+      state.estate3d.yaw = drag.yaw + (event.clientX - drag.x) * 0.008;
+      renderEstate3d();
+    });
+    canvas.addEventListener('pointerup', (event) => {
+      if (!drag) return;
+      const moved = drag.moved;
+      drag = null;
+      if (moved) return;
+      const rect = canvas.getBoundingClientRect();
+      const hit = estate3dPick(event.clientX - rect.left, event.clientY - rect.top);
+      if (hit) showDetail(hit.block, hit.properties);
+    });
+    canvas.addEventListener('wheel', (event) => {
+      event.preventDefault();
+      state.estate3d.zoom = Math.min(3, Math.max(0.4, state.estate3d.zoom * Math.exp(-event.deltaY * 0.001)));
+      renderEstate3d();
+    }, { passive: false });
+  }
+  window.addEventListener('resize', () => {
+    if (state.estate3d.open) renderEstate3d();
+  });
   for (const button of document.querySelectorAll('#targets-table thead .sort-button')) {
     button.addEventListener('click', () => sortTargetTable(button.dataset.sort));
   }
@@ -7005,6 +8149,10 @@ function wireControls() {
     const typing = tag === 'TEXTAREA' || tag === 'SELECT' || active?.isContentEditable
       || (tag === 'INPUT' && active.type !== 'range');
     if (event.key === 'Escape') {
+      if (!$('estate-3d').hidden) {
+        closeEstate3d();
+        return;
+      }
       if ($('help-dialog').open) {
         $('help-dialog').close();
         return;
@@ -7111,6 +8259,12 @@ function wireControls() {
   $('compare-filter').addEventListener('input', renderCompareAccounts);
   $('search-select').addEventListener('change', (event) => renderSearchArtifact(event.target.value));
   $('run-portfolio').addEventListener('click', startPortfolio);
+  $('search-explore').addEventListener('click', () => {
+    const id = $('search-select').value;
+    if (!id) return;
+    state.pareto.artifact = id;
+    setWorkspace('pareto');
+  });
   $('run-tune').addEventListener('click', startTune);
   $('chat-toggle').addEventListener('click', openChat);
   $('chat-close').addEventListener('click', closeChat);
@@ -7202,6 +8356,8 @@ async function start() {
   }
   wireControls();
   wireSdmd();
+  wirePareto();
+  wirePortfolioScan();
   loadWatched();
   try {
     const summary = await api('api/summary');

@@ -4,13 +4,21 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=92">
+  <link rel="stylesheet" href="static/style.css?v=93">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./static/vendor/three/three.module.js",
+        "three/addons/": "./static/vendor/three/"
+      }
+    }
+  </script>
 </head>
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v88</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v93</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <div class="period-control">
@@ -30,6 +38,7 @@
         <button id="ws-map" role="tab" aria-selected="true" aria-controls="workspace-map" data-workspace="map" class="active">Map</button>
         <button id="ws-plan" role="tab" aria-selected="false" aria-controls="workspace-plan" data-workspace="plan">Plan</button>
         <button id="ws-results" role="tab" aria-selected="false" aria-controls="workspace-results" data-workspace="results">Results</button>
+        <button id="ws-pareto" role="tab" aria-selected="false" aria-controls="workspace-pareto" data-workspace="pareto">Pareto</button>
         <button id="ws-data" role="tab" aria-selected="false" aria-controls="workspace-data" data-workspace="data">Data</button>
         <button id="ws-sdmd" role="tab" aria-selected="false" aria-controls="workspace-sdmd" data-workspace="sdmd" hidden>SDMD</button>
       </nav>
@@ -243,19 +252,39 @@
 <section id="tab-search" role="tabpanel" aria-labelledby="sub-search" hidden>
         <h2>Search artifacts</h2>
         <p id="search-empty" class="hint"></p>
-        <label class="search-pick">Artifact <select id="search-select"></select></label>
+        <label class="search-pick">Artifact <select id="search-select"></select>
+          <button id="search-explore" type="button" disabled>Explore in 3D</button>
+        </label>
         <p id="search-summary" class="hint"></p>
         <details class="search-run">
           <summary>Run a portfolio</summary>
           <div class="run-row">
             <label>Vary <input id="portfolio-vary" type="text" placeholder="account=factor,factor"></label>
             <label>Metrics <input id="portfolio-metrics" type="text" placeholder="optional; default varied accounts"></label>
+            <label>Directions <input id="portfolio-directions" type="text" placeholder="id=min|max; optional"></label>
             <label>Seeds <input id="portfolio-seeds" type="text" value="1"></label>
             <label>Iters <input id="portfolio-iterations" type="number" value="20" min="1"></label>
             <label>Years <input id="portfolio-years" type="number" value="50" min="1"></label>
             <label>Engine <select id="portfolio-engine"><option>sa</option><option>tabu</option><option>ils</option><option>threshold</option></select></label>
+            <label>Mode <select id="portfolio-mode"><option>grid</option><option>random</option></select></label>
+            <label>Max members <input id="portfolio-max-members" type="number" value="64" min="1" max="256"></label>
+            <label>Workers <input id="portfolio-workers" type="number" value="1" min="1" max="16"></label>
+            <label>Sample seed <input id="portfolio-sample-seed" type="number" value="1"></label>
             <button id="run-portfolio" type="button">Run portfolio</button>
           </div>
+          <p class="hint">Workers are separate processes; each one loads its own dataset. Raise it only when memory allows.</p>
+        </details>
+        <details class="search-run">
+          <summary>Build a weight scan</summary>
+          <div class="run-row">
+            <label>Account <select id="scan-account"></select></label>
+            <label>Factors <input id="scan-factors" type="text" value="0.5,1,2" placeholder="factor,factor"></label>
+            <button id="scan-add" type="button">Add dimension</button>
+            <button id="scan-clear" type="button">Clear</button>
+          </div>
+          <ul id="scan-dimensions" class="scan-list"></ul>
+          <p id="scan-summary" class="hint"></p>
+          <button id="scan-use" type="button">Use scan in portfolio</button>
         </details>
         <details class="search-run">
           <summary>Run a tuner</summary>
@@ -278,6 +307,55 @@
         </table></div>
         <div id="search-detail" class="search-detail" hidden></div>
       </section>
+      </div>
+      <div id="workspace-pareto" class="workspace" role="tabpanel" aria-labelledby="ws-pareto" hidden>
+        <section id="tab-pareto">
+          <h2>Pareto solution space</h2>
+          <p class="hint">A portfolio is a finite weight-grid sample, not a certified surface. Front points are nondominated on the declared outcome metrics.</p>
+          <label class="search-pick">Portfolio <select id="pareto-artifact"></select></label>
+          <div class="run-row">
+            <button id="pareto-refresh" type="button">Refresh</button>
+            <button id="pareto-reset" type="button">Reset view</button>
+            <button id="pareto-search" type="button">New scan</button>
+            <span id="pareto-status" class="hint"></span>
+          </div>
+          <div class="inline-fields axis-fields">
+            <label class="field"><span>X</span><select id="pareto-x"></select></label>
+            <label class="field"><span>Y</span><select id="pareto-y"></select></label>
+            <label class="field"><span>Z</span><select id="pareto-z"></select></label>
+          </div>
+          <div class="inline-fields">
+            <label class="field"><span>Colour</span><select id="pareto-colour"></select></label>
+            <label class="field"><span>Size</span><select id="pareto-size"></select></label>
+          </div>
+          <div class="inline-fields">
+            <label class="field"><span>Opacity</span><select id="pareto-opacity"></select></label>
+            <label class="field"><span>Filter</span><select id="pareto-filter-dim"></select></label>
+          </div>
+          <label class="field">
+            <span>Filter <output id="pareto-filter-value">all</output></span>
+            <input id="pareto-filter" type="range" min="0" max="100" value="0" step="1">
+          </label>
+          <div class="inline-fields">
+            <label class="field"><span>Dominance</span><select id="pareto-dominance">
+              <option value="all">all members</option>
+              <option value="near" selected>near-front</option>
+              <option value="front">exact front</option>
+            </select></label>
+            <label class="field"><span>ε near</span><input id="pareto-epsilon" type="number" value="0.08" min="0" max="1" step="0.01"></label>
+          </div>
+          <label class="field"><span>Member</span><select id="pareto-member"></select></label>
+          <div id="pareto-stats" class="change-stats"></div>
+          <div id="pareto-info" class="pareto-info">
+            <p class="muted">Choose a saved portfolio, then orbit, slice, and select a member.</p>
+          </div>
+          <div class="button-row">
+            <button id="pareto-pin" class="button ghost" type="button" disabled>Pin member</button>
+            <button id="pareto-clear-pins" class="button ghost" type="button" disabled>Clear pins</button>
+            <button id="pareto-open" class="button ghost" type="button" disabled>Open schedule</button>
+          </div>
+          <div id="pareto-compare" class="pareto-compare"></div>
+        </section>
       </div>
       <div id="workspace-data" class="workspace" role="tabpanel" aria-labelledby="ws-data" hidden>
         <nav id="data-nav" class="subnav" role="tablist" aria-label="Data sections">
@@ -348,6 +426,14 @@
       <div id="workspace-sdmd" class="workspace" role="tabpanel" aria-labelledby="ws-sdmd" hidden>
         <section id="tab-sdmd" role="tabpanel" aria-labelledby="ws-sdmd">
           <h2>AU Explorer</h2>
+          <details id="sdmd-coverage-panel" class="sdmd-coverage" open>
+            <summary>BC coverage <span id="sdmd-coverage-count" class="hint"></span></summary>
+            <div class="sdmd-coverage-controls">
+              <label>Zone <select id="sdmd-coverage-zone"></select></label>
+              <label>BEC <select id="sdmd-coverage-bec"></select></label>
+            </div>
+            <div id="sdmd-coverage-detail" class="sdmd-coverage-detail"></div>
+          </details>
           <p id="sdmd-status" class="hint">loading SDMD…</p>
           <p id="sdmd-empty" class="empty-state" hidden>No SDMD tables are served. Start <code>ws4 serve</code> with <code>--sdmd-dir</code>.</p>
           <div id="sdmd-filters">
@@ -463,8 +549,35 @@
       </div>
       <div id="map-legend" class="map-legend" role="region" aria-label="Map legend" hidden></div>
       <div class="scale" id="scale"></div>
+      <button id="map-3d-toggle" class="map-3d-toggle" type="button" aria-expanded="false" title="Open the experimental 3D estate replay">3D</button>
+    </div>
+    <div id="pareto-wrap" class="pareto-wrap" hidden>
+      <canvas id="pareto-canvas" aria-label="Interactive 3D Pareto solution cloud"></canvas>
+      <div id="pareto-axis-labels" class="pareto-axis-labels">
+        <span id="pareto-axis-x">X: —</span>
+        <span id="pareto-axis-y">Y: —</span>
+        <span id="pareto-axis-z">Z: —</span>
+      </div>
+      <div id="pareto-legend" class="pareto-legend"></div>
+      <p class="pareto-hint">Drag to orbit · wheel to zoom · click a point to inspect it</p>
     </div>
   </main>
+
+  <section id="estate-3d" class="estate-3d" role="dialog" aria-modal="true" aria-labelledby="estate-3d-title" tabindex="-1" hidden>
+    <div class="estate-3d-head">
+      <div>
+        <strong id="estate-3d-title">3D estate replay</strong>
+        <span id="estate-3d-status" class="estate-3d-status">Experimental coarse view</span>
+      </div>
+      <div class="estate-3d-controls">
+        <label>Height <input id="estate-3d-exaggeration" type="range" min="0.5" max="3" step="0.25" value="1"></label>
+        <button id="estate-3d-reset" type="button">Reset view</button>
+        <button id="estate-3d-close" type="button" aria-label="Close 3D view">×</button>
+      </div>
+    </div>
+    <canvas id="estate-3d-canvas" role="img" aria-label="Coarse 3D block replay"></canvas>
+    <p class="estate-3d-note">Drag to orbit and scroll to zoom. The 2D map remains authoritative. No terrain, machine, or edit controls.</p>
+  </section>
 
       <div id="chat-splitter" title="Drag to resize the assistant; double-click to reset" hidden></div>
       <section id="chat-panel" class="chat" hidden>
@@ -500,6 +613,6 @@
     <p class="hint">Shortcuts pause while typing in an input, select, or editor.</p>
   </dialog>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=92"></script>
+  <script type="module" src="static/app.js?v=93"></script>
 </body>
 </html>

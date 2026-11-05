@@ -1,42 +1,51 @@
 """The solver-core boundary: a problem adapter.
 
 A solver is problem-agnostic. It needs only an objective evaluator, the candidate move
-set, and an operator registry. WS4 supplies one :class:`Problem`; a future shared solver
-core would take the same shape for WS3 or FHOPS (see
-`notes/design/ws4-optimization-stack.md`).
+set, and an operator registry. WS4 supplies one :class:`Problem`; the shared kernel in
+``fresh-solutions`` supplies the solvers and the operator registry.
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass
+from typing import Any
+
+from fresh_solutions.kernel import Problem as KernelProblem
 
 from .operators import Candidates, OperatorRegistry, Schedule
 
-Evaluate = Callable[[Schedule], float]
 
-#: Called with a schedule and returns the realized account cells for a live snapshot.
-Snapshot = Callable[[Schedule], Mapping[tuple[int, str], float]]
+class Problem(KernelProblem[Schedule, Candidates]):
+    """The WS4 problem a solver searches.
 
-
-@dataclass
-class Problem:
-    """The problem a solver searches.
-
-    Attributes
+    Parameters
     ----------
     evaluate : callable
-        The objective evaluator (lower is better).
+        The exact objective evaluator (lower is better).
     candidates : Candidates
-        The candidate moves per decision unit.
+        The candidate chains per block.
     registry : OperatorRegistry
         The neighbourhood operators.
     snapshot : callable or None, optional
-        Return the realized account cells for a schedule, for a live map and target view. When
-        omitted, a solver that would otherwise emit a snapshot sends an empty mapping.
+        Return the realized account cells for a schedule, for a live map and target view.
+        When omitted, a solver that would otherwise emit a snapshot sends an empty mapping.
     """
 
-    evaluate: Evaluate
-    candidates: Candidates
-    registry: OperatorRegistry
-    snapshot: Snapshot | None = None
+    def __init__(
+        self,
+        evaluate: Callable[[Schedule], float],
+        candidates: Candidates,
+        registry: OperatorRegistry[Schedule, Candidates],
+        snapshot: Callable[[Schedule], Mapping[Any, float]] | None = None,
+    ) -> None:
+        super().__init__(
+            evaluate=evaluate,
+            candidates=candidates,
+            registry=registry,
+            snapshot=snapshot,
+            empty=dict,
+            clone=dict,
+        )
+
+
+__all__ = ["Problem"]

@@ -8,9 +8,13 @@ import pandas as pd
 from ws4.sdmd.au_integrity import (
     default_official_bec_labels,
     default_retired_bec_versions,
+    default_tsa_bec_counts,
     load_tsa_bec_counts,
+    normalize_bec_label,
+    normalize_tsa,
     parse_au_label,
     validate_au_integrity,
+    validate_au_metadata,
 )
 
 DATA = Path(__file__).resolve().parents[1] / "ws4" / "sdmd" / "data" / "sdmd"
@@ -95,3 +99,61 @@ def test_retired_label_outside_ws4_is_still_retired() -> None:
     )
     assert [item.code for item in findings] == ["SDMD-AU-BEC-RETIRED"]
     assert "version 10" in findings[0].message
+
+
+def test_metadata_mismatch_fails_closed() -> None:
+    """A plot row must agree with the BEC and TSA in its AU label."""
+    findings = validate_au_metadata(
+        "AU-IDFdk3-TSA23-FDI",
+        bec_labels=["IDFdk2"],
+        tsa_labels=["TSA-24"],
+    )
+    assert [item.code for item in findings] == [
+        "SDMD-AU-BEC-MISMATCH",
+        "SDMD-AU-TSA-MISMATCH",
+    ]
+
+
+def test_metadata_matching_label_passes() -> None:
+    """A matching plot BEC/TSA pair has no metadata findings."""
+    assert (
+        validate_au_metadata(
+            "AU-IDFdk3-TSA23-FDI",
+            bec_labels=["IDFdk3"],
+            tsa_labels=["TSA-23"],
+        )
+        == ()
+    )
+
+
+def test_phase_alias_resolves_for_au_lookup() -> None:
+    """BECdb phase aliases resolve to the base BEC instead of unknown."""
+    assert normalize_bec_label("ICHmc1a") == "ICHmc1"
+    assert normalize_bec_label("SBSwk3a") == "SBSwk3"
+    assert normalize_tsa("TSA-24") == "24"
+    assert normalize_tsa("24") == "24"
+    known = _known()
+    for label in ("AU-ICHmc1a-FDI", "AU-ICHxwa-FDI", "AU-SBSwk3a-FDI"):
+        assert (
+            validate_au_integrity(label, known_bec=known, tsa_bec_counts=default_tsa_bec_counts())
+            == ()
+        )
+
+
+def test_ichmw5_alias_reaches_the_support_table() -> None:
+    """The PSP alias ICHmw5 is normalized to the official ICHwm5 label."""
+    counts = default_tsa_bec_counts()
+    assert counts[("1", "ICHwm5")] == 14
+    assert ("1", "ICHmw5") not in counts
+    findings = validate_au_integrity(
+        "AU-ICHwm5-TSA1-FDI", known_bec=_known(), tsa_bec_counts=counts
+    )
+    assert [item.code for item in findings] == ["SDMD-AU-BEC-NO-COVERAGE"]
+
+
+def test_validator_defaults_refuse_a_retired_label() -> None:
+    """Omitting the optional mappings no longer fails open."""
+    findings = validate_au_integrity(
+        "AU-CWHxm1-FDI", known_bec=_known(), tsa_bec_counts=default_tsa_bec_counts()
+    )
+    assert [item.code for item in findings] == ["SDMD-AU-BEC-RETIRED"]

@@ -4322,15 +4322,154 @@ issue comments.
   values instead of stale table values. Report:
   `notes/reports/p128-target-chart-table-sync.md`.
 
+- P123.1: Ask now sends the run, workspace, subview, period, selected block,
+  profile, target filter, and visible account as a bounded context packet. The
+  server parses assistant `WS4_ACTIONS:` chips, strips the marker, and validates
+  only safe UI actions: open workspace/subview, set period, select an existing
+  block, or fill the next prompt. Unsafe or malformed chips are dropped. Added
+  `tests/test_web.py` coverage and `notes/reports/p123-assistant-context.md`.
+  Focused web tests: 86 passed. Dashboard: `OVERALL: GREEN`.
+
 - P129: GPU profile runs now use the current edited target file and accept a
   wall-clock budget. Run profile saves current edits instead of reapplying the
   profile target library. Run profile also uses the 200-year profile horizon.
   Report: `notes/reports/p129-gpu-current-targets.md`.
+- P123.1 queued in PR #804; branch `feature/p123-assistant-context`, head
+  `4480c9a`. Dashboard: `OVERALL: GREEN`.
 
 - P130: Solve now routes through the selected GPU profile when one is available,
   using current targets and the time budget. Report:
   `notes/reports/p130-solve-gpu-profile.md`.
+- P123.1 closeout: wrote `notes/reports/p123-closeout.md`, linked #800 as
+  a sub-issue of #780, and queued PR #804. All five CI checks pass. Dashboard:
+  `OVERALL: GREEN`. Merge waits for approval.
 
 - P131: a declared GPU profile time budget now overrides the generation cap, so
   a one-minute request runs for one minute instead of stopping at 5,000
   generations. Report: `notes/reports/p131-profile-time-budget.md`.
+
+- Shared-kernel adoption (2026-11-03): WS4 now depends on `fresh-solutions>=0.9.3,<0.10` for the
+  problem-agnostic search kernel. `ws4.opt.core.Problem`, `ws4.opt.solvers`, `ws4.opt.cooling`, and
+  `ws4.opt.control` are compatibility facades over `fresh_solutions.kernel`; the WS4 operators,
+  objective, incremental evaluator, constraints, patch/spatial/route models, MIP layer, and
+  `Optimizer` stay in WS4. The full suite passes and strict mypy is clean.
+
+- Shared-kernel telemetry (2026-11-03): `ws4.opt.telemetry` now re-exports
+  `fresh_solutions.kernel.telemetry` (`RunLogger`, `read_records`). The logger is generic and
+  has no WS4 imports. `portfolio` and `tune` remain in WS4 because they depend on
+  `OptimizeConfig`, `Optimizer`, `Target`, and the WS4 run-directory contract; the boundary is
+  recorded in `notes/design/shared-kernel-adoption.md`.
+
+- Shared `Runner` protocol (2026-11-03): `ws4.opt.portfolio` and `ws4.opt.tune` now import
+  `Runner` from `fresh_solutions.kernel` instead of defining it twice. Their WS4-specific
+  configuration, target scaling, and run-directory orchestration stay local.
+- P123: merged via PR #804 as `7a66ee3`. Ask now sends the current screen
+  context and renders server-validated safe action chips. Branch deleted; parent
+  #780 and child #800 closed. Dashboard: `OVERALL: GREEN`.
+
+- Script coverage (2026-11-04): added a unit test for the schedule CSV loaders shared by
+  `scripts/benchmark_route_events.py` and `scripts/profile_route.py`. The full suite is now
+  1,589 tests and the `scripts` coverage gate passes at 90.14% (was 89.69% on `22471cb`).
+
+- P132.1: AU integrity now compares the label BEC/TSA with plot columns, resolves
+  phase aliases, normalizes `ICHmw5` to `ICHwm5`, removes 36 subzone support rows,
+  and defaults validator mappings to the packaged BECdb tables.
+- P132.2: CCISS crosswalk now has 183 exact, 7 WS4 splits, 9 CCISS splits, and
+  19/19 absent labels; parent summaries and phase codes are no longer counted as
+  splits. Official crosswalk adds `covered_by_finer` for 3 parents. Corrected the
+  source statement to 229 rows / 213 unique labels / 16 phase rows.
+- P132.3: chip parsing is case-insensitive, multiline/fenced, and repeated-marker
+  safe; context is escaped JSON with an untrusted-data guard; malformed indices
+  return no chip instead of a 500. Added a Node chip handler test.
+- P132.4: corrected closeout reports, linked #770-#773 under #769, added
+  `bec_sources.json` and `scripts/check_bec_authority.py`, fixed BECdb/CCISS
+  provenance, and added report-consistency tests.
+- P132 dashboard: `OVERALL: GREEN`. Focused tests: 136 passed. BEC authority
+  check: pass.
+- P132 queued in PR #814; branch `feature/p132-audit-remediation`, head
+  `28a0376`. Dashboard: `OVERALL: GREEN`.
+
+- P132: merged via PR #814 as `fa6197f`. The audit remediation is complete:
+  AU metadata validation, unique relationship crosswalks, phase/PSP aliases,
+  assistant input hardening, source manifest/check, corrected closeout evidence,
+  and P121 sub-issue links. Branch deleted; #809 and #810-#813 closed. Dashboard:
+  `OVERALL: GREEN`.
+
+- P124.1: added the experimental Map-workspace 3D estate replay. Original Canvas
+  2D orthographic renderer; treatment/current/age height; period and selection
+  sync; orbit, zoom, reset, Escape close; 2,000-block refusal. No terrain,
+  machine, edit, run, or permission controls. Focused web tests: 90 passed.
+  Dashboard: `OVERALL: GREEN`.
+- P124.1 queued in PR #816; branch `feature/p124-3d-replay`, head
+  `056b519`. Dashboard: `OVERALL: GREEN`.
+
+- P124: merged via PR #816 as `9680323`. The experimental 3D estate replay is
+  live: Canvas 2D extrusion, period/selection sync, orbit/zoom/reset, and a
+  2,000-block budget. Branch deleted; #781 and #815 closed. Dashboard:
+  `OVERALL: GREEN`.
+
+- P133.1: added the BC-wide SDMD coverage registry: 219 current BEC labels,
+  1 reviewed, 57 provisional, 161 no-diagram. Added
+  `/api/sdmd/coverage` and `/api/sdmd/coverage/{bec}`, plus a BD coverage
+  selector in the SDMD workspace. The registry names gaps and AU evidence; it
+  does not substitute an unrelated AU. Added `scripts/build_bec_coverage.py`,
+  `bec_coverage.csv`, tests, and the source-manifest check. Focused tests: 126
+  passed. Dashboard: `OVERALL: GREEN`.
+- P133.1 queued in PR #819; branch `feature/p133-bc-coverage`, head
+  `306ee03`. Dashboard: `OVERALL: GREEN`.
+
+- P134.1: added `gap_reason`/`gap_action` to the BC coverage registry. The 161
+  no-diagram labels split into 150 `variant_not_digitized` and 11
+  `no_atlas_zone`. Added `bec_review_queue.csv` for 10 provisional diagrams and
+  57 BEC labels, and audited TSA 24/27/29 AU evidence blockers. The selector
+  shows the gap reason and next action. No diagram was self-approved. Focused
+tests: 129 passed. Dashboard: `OVERALL: GREEN`.
+- P134.1 queued in PR #822 (stacked on #819); branch
+  `feature/p134-coverage-closure`, head `41dddb7`. Dashboard: `OVERALL: GREEN`.
+
+- P133: merged via PR #819 as `ae9aeb0`. The BC-wide coverage registry is live:
+  219 BEC labels, 1 reviewed, 57 provisional, 161 named gaps.
+- P134: merged via PR #823 as `65e295e`. The 161 gaps are split into 150
+  `variant_not_digitized` and 11 `no_atlas_zone`; `bec_review_queue.csv` names
+  10 provisional diagrams and 57 labels; TSA 24/27/29 evidence blockers are
+  recorded. No diagram was self-approved. Dashboard: `OVERALL: GREEN`.
+
+
+- P136.1/P136.2: added the exact full-member solution-space payload and a vendored
+  Three.js Pareto workspace. The explorer recomputes dominance from every successful
+  portfolio member, normalizes metrics to 0=worst/1=best, labels near-front members
+  separately, and supports X/Y/Z, colour, size, opacity, filter, orbit, selection,
+  pin/compare, and schedule links. Focused tests and a Chromium smoke pass.
+  Report: `notes/reports/p136-solution-space.md`.
+
+- P136.3: added bounded `random` weight sampling for 5-7 dimensional scans and
+  process-parallel portfolio members with `workers`. The default remains one worker
+  because each process loads its own dataset. Added CLI/web controls and a Search-tab
+  scan builder. A real two-worker c5 portfolio completed with zero failures.
+  Report: `notes/reports/p136-solution-space.md`.
+
+- P136.4: added the Pareto member picker, the Search/Pareto cross-links, the New scan
+  return path, and the final web/optimizer documentation. Browser coverage now exercises
+  the saved-artifact and scan-builder entry points plus pin and schedule-open controls.
+  Report: `notes/reports/p136-solution-space.md`.
+
+- P136.4 fix: search artifacts now replace non-finite numbers with `null` before the
+  API sends them, so a portfolio with an infinite objective or metric remains valid
+  JSON for the browser.
+- P135.1: corrected the SDMD coverage model to use the Atlas zone-level
+  applicability (`bec_main`/`bec_rare`) instead of treating every BEC label as a
+  missing variant-specific diagram. Counts are now 1 `reviewed_variant`,
+  5 `reviewed_zone`, 209 `mixed_zone`, and 4 `no_diagram`. The review queue names
+  10 provisional diagrams and 210 affected labels. `match_level` remains visible. Focused tests: 129 passed. Dashboard:
+  `OVERALL: GREEN`.
+- P135.1 queued in PR #826; branch `feature/p135-bec-applicability`, head
+  `f26b054`. Dashboard: `OVERALL: GREEN`.
+
+- P135: merged via PR #826 as `56cdc21`. Coverage uses Atlas zone-level
+  applicability: 1 `reviewed_variant`, 5 `reviewed_zone`, 209 `mixed_zone`,
+  4 `no_diagram`; 10 provisional diagrams / 210 labels in the review queue.
+  Dashboard: `OVERALL: GREEN`.
+
+- P136: merged via PR #829 as `7442591`. The Pareto workspace exposes every successful
+  portfolio member, recomputes the exact front, supports seven display dimensions, and
+  adds bounded 5-7 dimension scans with process workers. Dashboard: `OVERALL: GREEN`.

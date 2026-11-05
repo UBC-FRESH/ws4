@@ -312,3 +312,34 @@ def test_store_refuses_a_retired_bec_label(tmp_path: Path) -> None:
     frame.to_csv(root / "plots.csv", index=False)
     with pytest.raises(SdmdApiError, match="retired in BEC version 13"):
         SdmdStore.from_directory(root)
+
+
+def test_store_refuses_contradictory_plot_metadata(tmp_path: Path) -> None:
+    """The AU label and the plot BEC/TSA columns must agree."""
+    root = _store_dir(tmp_path)
+    frame = pd.read_csv(root / "plots.csv")
+    frame["au_id"] = "AU-IDFdk3-TSA23-FDI"
+    frame["bec_variant"] = "2"
+    frame["tsa"] = "TSA-24"
+    frame.to_csv(root / "plots.csv", index=False)
+    with pytest.raises(SdmdApiError, match="BEC-MISMATCH"):
+        SdmdStore.from_directory(root)
+
+
+def test_coverage_endpoint_lists_every_bec_and_names_gaps(tmp_path: Path) -> None:
+    """The coverage endpoint is a BC-wide registry, not an AU substitute."""
+    client = _client(_store(tmp_path))
+    response = client.get("/api/sdmd/coverage")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 219
+    assert payload["counts"] == {
+        "mixed_zone": 209,
+        "no_diagram": 4,
+        "reviewed_variant": 1,
+        "reviewed_zone": 5,
+    }
+    reviewed = next(row for row in payload["rows"] if row["bec"] == "IDFdk3")
+    assert reviewed["au_ids"] == "AU-IDFdk3-TSA23-FDI;AU-IDFdk3-TSA23-PLI"
+    missing = client.get("/api/sdmd/coverage/XYZ99")
+    assert missing.status_code == 404

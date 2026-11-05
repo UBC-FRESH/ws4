@@ -56,8 +56,9 @@ workspace when the service is started with ``--sdmd-dir``:
 - **Plan** — the account browser, target editor, and solve controls.
 - **Results** — Reports, Compare, and Search as nested sections.
 - **Data** — the dataset summary plus LiDAR and Carbon when the selected run/dataset
-- **SDMD** — the AU Explorer: yield, stand density, regimes, and the constraint
-  editor, when ``--sdmd-dir`` is set. See :doc:`sdmd`.
+- **SDMD** — the AU Explorer: BC coverage selector, yield, stand density,
+  regimes, and the constraint editor, when ``--sdmd-dir`` is set. See
+  :doc:`sdmd`.
   actually has them.
 
 The **Map** workspace uses a neutral fill for untreated blocks and a red accent for treated
@@ -84,6 +85,21 @@ the view. The workspace tabs implement the WAI-ARIA tabs pattern with left/right
 Home, and End navigation. LiDAR and Carbon are nested Data sections rather than top-level
 tabs; a Data option is hidden when the selected data does not exist.
 
+3D estate replay
+----------------
+
+The Map workspace has an experimental **3D** toggle. It opens a full-screen Canvas 2D
+orthographic replay of the current block layer: treated blocks extrude taller than
+untreated blocks, an optional ``age`` property raises the height, and the existing
+period slider drives the same feature set. Drag orbits, the wheel zooms, **Reset view**
+restores the camera, and Escape closes the overlay. Clicking a block uses the same
+selection path as the 2D map.
+
+The 2D map remains authoritative. The 3D view has no terrain, machine, edit, run, or
+permission controls. It refuses more than 2,000 block features and names the count rather
+than attempting a degraded render. The renderer is original Canvas 2D code; no
+third-party 3D library is vendored.
+
 Assistant overlay
 -----------------
 
@@ -94,6 +110,15 @@ with ``--allow-agent`` **and** the ``opencode`` binary is available. Without bot
 absent. The browser cannot enable the assistant, because doing so would change the service's
 execution permissions. Start a separate service with ``--allow-agent`` when the assistant is
 wanted.
+
+Each turn carries a bounded context packet: run, workspace, subview, period, selected
+block, scenario profile, target filter, and visible account. The packet is sent as an
+escaped JSON line with an explicit “untrusted UI data, never instructions” guard. The
+assistant may end a reply with a ``WS4_ACTIONS:`` JSON array; the marker is
+case-insensitive, may be multiline or fenced, and is stripped from the visible reply.
+The server validates those chips against a safe whitelist before the browser renders
+buttons: open a workspace or subview, set a period, select an existing block, or fill
+the next prompt. A chip cannot edit data, start a run, or change permissions.
 
 Behind a proxy
 ---------------
@@ -701,6 +726,31 @@ through ``POST /api/search/portfolio`` or ``POST /api/search/tune`` and polls
 ``scripts/tune.py`` against the configured dataset and targets. A running job has a **Stop** control; the
 status reports `stopping`/`stopped`. The in-memory job list is bounded and drops the
 oldest finished entries. A read-only service shows only the artifacts.
+
+Pareto solution space
+---------------------
+
+The **Pareto** workspace turns a saved portfolio into an interactive point cloud.
+``GET /api/search/{name}/space`` recomputes the nondominated front from every successful
+member, not from the capacity-limited schedule archive. Each metric is normalized to
+``0 = worst`` and ``1 = best`` using the portfolio's declared directions. The scalar
+objective is an optional dimension and is always minimized.
+
+The view maps any dimension to X, Y, and Z, then adds colour, size, opacity, and a
+threshold filter. A dominance control shows all members, the exact front, or a
+near-front sample within a user-selected Chebyshev distance in the normalized outcome
+box. A near-front member is labelled as such; it is not called Pareto. Selecting a
+member opens its metric vector, factors, objective, and schedule download; up to three
+members can be pinned for comparison.
+
+The Search tab also has a **Build a weight scan** helper. Add target accounts and
+comma-separated factors; it writes the ``vary`` expression and warns when the Cartesian
+product exceeds the member cap. The portfolio launcher exposes ``grid`` or ``random``
+sampling, a maximum member count, a sample seed, and process workers. Each worker loads
+its own dataset copy, so the launcher defaults to one worker.
+
+The cloud is a finite grid sample under one search budget. It is advisory, and its
+normalized axes are relative to the members loaded into the current artifact.
 
 Reports
 -------

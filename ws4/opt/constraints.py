@@ -19,7 +19,9 @@ from __future__ import annotations
 import random
 from collections import Counter
 from collections.abc import Callable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol, cast
+
+from fresh_solutions.kernel import Operator, OperatorRegistry, restore_state
 
 from ..patch.constraints import (
     core_area_penalty,
@@ -29,7 +31,7 @@ from ..patch.constraints import (
     spatial_penalty,
 )
 from ..patch.metrics import connected_patches, core_area, patch_perimeter
-from .operators import Candidates, Operator, OperatorRegistry, Schedule, restore
+from .operators import Candidates, Schedule
 
 if TYPE_CHECKING:
     from .engine import Optimizer
@@ -101,7 +103,9 @@ class ConstraintGuard:
         """
         self.schedule_check = check
 
-    def wrap(self, registry: OperatorRegistry) -> OperatorRegistry:
+    def wrap(
+        self, registry: OperatorRegistry[Schedule, Candidates]
+    ) -> OperatorRegistry[Schedule, Candidates]:
         """Return a registry whose operators obey the guard.
 
         Parameters
@@ -117,7 +121,10 @@ class ConstraintGuard:
         if not self.enabled and self.schedule_check is None:
             return registry
         return OperatorRegistry(
-            [GuardedOperator(operator, self) for operator in registry.operators]
+            [
+                GuardedOperator(cast(ProposingOperator, operator), self)
+                for operator in registry.operators
+            ]
         )
 
     def consider(
@@ -439,6 +446,31 @@ class ConstraintGuard:
         return records
 
 
+class ProposingOperator(Operator[Schedule, Candidates], Protocol):
+    """An operator that also offers the copying ``propose`` convenience."""
+
+    def propose(
+        self, schedule: Schedule, rng: random.Random, candidates: Candidates
+    ) -> tuple[Schedule, tuple[int, ...]] | None:
+        """Return a modified copy and the changed blocks, or ``None``.
+
+        Parameters
+        ----------
+        schedule : Schedule
+            The schedule to copy and modify.
+        rng : random.Random
+            The random source.
+        candidates : Candidates
+            The candidate chains per block.
+
+        Returns
+        -------
+        tuple of (Schedule, tuple of int) or None
+            The modified copy and the changed blocks, or ``None``.
+        """
+        ...
+
+
 class GuardedOperator:
     """An operator that applies a :class:`ConstraintGuard` to every proposal.
 
@@ -450,7 +482,7 @@ class GuardedOperator:
         The feasibility policy.
     """
 
-    def __init__(self, operator: Operator, guard: ConstraintGuard) -> None:
+    def __init__(self, operator: ProposingOperator, guard: ConstraintGuard) -> None:
         """Store the wrapped operator and guard."""
         self._operator = operator
         self._guard = guard
@@ -483,7 +515,7 @@ class GuardedOperator:
         changed = list(undo)
         accepted = self._guard.consider(before, schedule, changed)
         if accepted is None:
-            restore(schedule, undo)
+            restore_state(schedule, undo)
             return None
         schedule.clear()
         schedule.update(accepted)

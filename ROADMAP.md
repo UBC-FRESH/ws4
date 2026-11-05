@@ -121,8 +121,8 @@ exists and the maintainer approves it.
 | P115 TSA 24 source geometry | #765 | `feature/p115-tsa24-source-geometry` | pr-open |
 | P116 TSA 24 map performance | #767 | `feature/p116-tsa24-map-performance` | pr-open |
 | P122 Run timeline and interaction uplift | #775 | `feature/p122-ui-timeline` | pr-open |
-| P123 Assistant context and action chips | #780 | `not-created` | planned |
-| P124 3D estate replay | #781 | `not-created` | planned |
+| P123 Assistant context and action chips | #780 | `feature/p123-assistant-context` | complete |
+| P124 3D estate replay | #781 | `feature/p124-3d-replay` | complete |
 | P125 Stabilize period playback and map paging | #784 | `fix/p125-playback-map-race` | pr-open |
 | P126 Stabilize playback controls and cadence | #787 | `fix/p126-playback-controls` | pr-open |
 | P127 Fix target chart edits and Solve semantics | #791 | `fix/p127-target-chart-solve` | pr-open |
@@ -130,6 +130,11 @@ exists and the maintainer approves it.
 | P129 GPU profile current targets and budget | #798 | `feature/p129-gpu-profile-current-targets` | pr-open |
 | P130 Route Solve through the GPU profile path | #802 | `feature/p130-solve-gpu-profile` | pr-open |
 | P131 Profile time budget overrides generations | #805 | `fix/p131-profile-time-budget` | pr-open |
+| P132 Adversarial audit remediation | #809 | `feature/p132-audit-remediation` | complete |
+| P133 BC-wide SDMD coverage registry | #817 | `feature/p133-bc-coverage` | complete |
+| P134 SDMD coverage closure | #820 | `feature/p134-coverage-closure` | complete |
+| P135 BC SDMD applicability correction | #824 | `feature/p135-bec-applicability` | complete |
+| P136 Pareto solution-space explorer | #827 | `feature/p136-pareto-explorer` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -3825,20 +3830,46 @@ Acceptance:
 ## Phase 123: Assistant context and action chips
 
 Parent issue: #780
-Branch: `not-created`
-Status: planned
+Branch: `feature/p123-assistant-context`
+Status: complete
+Merge commit: `7a66ee3`
 Plan: `notes/design/ws4-ui-port-plan.md`
+Report: `notes/reports/p123-closeout.md`
+PR: #804
 
 Goal: make Ask aware of the current screen and offer safe follow-up actions.
+
+- [x] P123.1 Assistant context and action chips (#800)
+  - [x] Send the current run, workspace, period, block, profile, filter, and account.
+  - [x] Parse and validate assistant action chips against a safe whitelist.
+  - [x] Render chips that navigate or fill a prompt without changing data.
+  - [x] Test context, validation, rendering, and the dashboard.
+
+Acceptance:
+
+- The context packet names each supplied screen field.
+- Chips are bounded to safe view changes and cannot edit data or start runs.
+- Existing tool summaries and `/api/chat` permissions are unchanged.
+- `python scripts/dashboard.py` is green.
 
 ## Phase 124: 3D estate replay
 
 Parent issue: #781
-Branch: `not-created`
-Status: planned
+Branch: `feature/p124-3d-replay`
+Status: complete
+Merge commit: `9680323`
 Plan: `notes/design/ws4-ui-port-plan.md`
+Report: `notes/reports/p124-3d-replay.md`
+PR: #816
 
 Goal: add an experimental coarse 3D block replay without machine/terrain editing.
+
+- [x] P124.1 3D estate replay (#815)
+  - [x] Add the Map-workspace 3D toggle and overlay.
+  - [x] Extrude coarse block polygons by treatment/age and period.
+  - [x] Sync selection and period with the 2D map.
+  - [x] Gate the view on a block budget and name the refusal.
+  - [x] Test projection, height, shell wiring, and dashboard.
 
 ## Phase 125: Stabilize period playback and map paging
 
@@ -3969,3 +4000,137 @@ Acceptance:
 - Time budget sends the 1,000,000 generation cap.
 - Short time runs stop by elapsed time.
 - Browser smoke and dashboard pass.
+
+24. Shared-kernel adoption is active (2026-11-04): WS4's generic operator registry, solvers, cooling,
+    and control surface now come from `fresh-solutions` 0.9; the domain objective, incremental
+    evaluator, constraints, patch/spatial/route models, MIP layer, and `Optimizer` remain in WS4. The
+    full suite passes and strict mypy is clean. The design note is
+    `notes/design/shared-kernel-adoption.md`; FHOPS is the second adapter.
+
+## Phase 132: Adversarial audit remediation
+
+Parent issue: #809
+Branch: `feature/p132-audit-remediation`
+Status: complete
+Merge commit: `fa6197f`
+Plan: `notes/reports/p132-audit-remediation-plan.md`
+Report: `notes/reports/p132-audit-remediation.md`
+PR: #814
+
+Goal: close the P121/P123 audit findings across AU metadata integrity, BEC
+crosswalk counts, assistant input hardening, and evidence traceability.
+
+- [x] P132.1 AU metadata integrity and TSA normalization (#810)
+- [x] P132.2 BEC crosswalk count and phase corrections (#811)
+- [x] P132.3 Assistant chip hardening (#812)
+- [x] P132.4 Evidence, process, and reproducibility (#813)
+
+Acceptance:
+
+- Contradictory AU metadata cannot enter a store.
+- Crosswalk counts are unique-relationship counts and phase-aware.
+- Assistant malformed input cannot produce a 500 or marker leakage.
+- Reports, issues, and data sources agree with the evidence.
+- `python scripts/dashboard.py` is green.
+
+## Phase 133: BC-wide SDMD coverage registry
+
+Parent issue: #817
+Branch: `feature/p133-bc-coverage`
+Status: complete
+Merge commit: `ae9aeb0`
+Report: `notes/reports/p133-bc-coverage.md`
+PR: #819
+
+Goal: make every current BEC label inspectable, with its applicable diagrams,
+review state, and explicit AU evidence gap.
+
+- [x] P133.1 BC-wide coverage registry and selector (#818)
+  - [x] Build a 219-row BEC coverage table.
+  - [x] Add `/api/sdmd/coverage` and `/api/sdmd/coverage/{bec}`.
+  - [x] Add the SDMD coverage selector and gap messages.
+  - [x] Test counts, endpoints, and shell wiring.
+
+Acceptance:
+
+- Every current BEC label has a row.
+- Reviewed, provisional, and no-diagram rows are distinct.
+- The selector names the gap instead of substituting an unrelated AU.
+- `python scripts/dashboard.py` is green.
+
+## Phase 134: SDMD coverage closure
+
+Parent issue: #820
+Branch: `feature/p134-coverage-closure`
+Status: complete
+Merge commit: `65e295e`
+Report: `notes/reports/p134-coverage-closure.md`
+PR: #823
+
+Goal: turn the BC coverage registry into a named work queue and audit the
+remaining AU evidence.
+
+- [x] P134.1 Gap triage and provisional review queue (#821)
+  - [x] Add `gap_reason` and `gap_action` to all coverage rows.
+  - [x] Split 161 gaps into 150 variant gaps and 11 no-Atlas-zone labels.
+  - [x] Build the 10-diagram / 57-label review queue.
+  - [x] Show gap reason/action in the selector.
+  - [x] Audit TSA 24/27/29 evidence blockers.
+
+Acceptance:
+
+- Every gap has a reason and next action.
+- Every provisional diagram has a review row.
+- No diagram is self-approved.
+- Dashboard green.
+
+## Phase 135: BC SDMD applicability correction
+
+Parent issue: #824
+Branch: `feature/p135-bec-applicability`
+Status: complete
+Merge commit: `56cdc21`
+Report: `notes/reports/p135-bec-applicability.md`
+PR: #826
+
+Goal: apply the public Atlas zone-level BEC applicability instead of treating
+every BEC label as a missing variant-specific diagram.
+
+- [x] P135.1 Apply Atlas BEC applicability to coverage (#825)
+  - [x] Map `bec_main`/`bec_rare` to current BEC labels.
+  - [x] Add `reviewed_variant`, `reviewed_zone`, `mixed_zone`, `no_diagram`.
+  - [x] Rebuild the 10-diagram review queue.
+  - [x] Update API, selector, tests, source manifest, and docs.
+
+Acceptance:
+
+- Zone-level applicability is visible, not hidden.
+- Reviewed and provisional components are counted separately.
+- The 4 no-diagram labels are named.
+- Dashboard green.
+
+## Phase 136: Pareto solution-space explorer
+
+Parent issue: #827
+Branch: `feature/p136-pareto-explorer`
+Status: complete
+Merge commit: `7442591`
+Report: `notes/reports/p136-solution-space.md`
+Design: `notes/design/ws4-pareto-explorer.md`
+PR: #829
+
+Goal: port a multi-dimensional Pareto solution-space explorer into the WS4 web UI.
+
+- [x] P136.1 Exact full-member solution-space read model (#828)
+- [x] P136.2 Interactive 3D Pareto explorer
+- [x] P136.3 Bounded multi-dimensional weight scans and parallel members
+- [x] P136.4 Cross-links, docs, and browser verification
+
+Acceptance:
+
+- A portfolio with N successful members exposes all N points and an exact front.
+- Dominated points are retained and labelled; all, front, and near-front views work.
+- The 3D workspace loads a saved portfolio artifact.
+- Axis, colour, size, opacity, and filter mappings are interactive.
+- Selected members can be inspected and their schedules opened.
+- Tests and the green dashboard pass.
