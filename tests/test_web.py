@@ -683,11 +683,35 @@ def test_search_launchers_compose_the_scripts(
     monkeypatch.setattr("ws4.web.app.subprocess.Popen", fake_popen)
     portfolio = client.post(
         "/api/search/portfolio",
-        json={"vary": "feature.Volume=0.5,1.0", "iterations": 1, "years": 1, "seeds": "1"},
+        json={
+            "vary": "feature.Volume=0.5,1.0",
+            "iterations": 1,
+            "years": 1,
+            "seeds": "1",
+            "directions": "feature.Volume=min",
+            "mode": "random",
+            "max_members": 128,
+            "workers": 2,
+            "sample_seed": 9,
+        },
     )
     assert portfolio.status_code == 200
     assert captured[-1][1].endswith("scripts/portfolio.py")
     assert "--vary" in captured[-1]
+    assert "--directions" in captured[-1]
+    assert captured[-1][captured[-1].index("--mode") + 1] == "random"
+    assert captured[-1][captured[-1].index("--workers") + 1] == "2"
+    assert captured[-1][captured[-1].index("--max-members") + 1] == "128"
+    bad = client.post(
+        "/api/search/portfolio",
+        json={"vary": "feature.Volume=1", "mode": "spiral"},
+    )
+    assert bad.status_code == 422
+    too_many_workers = client.post(
+        "/api/search/portfolio",
+        json={"vary": "feature.Volume=1", "workers": 17},
+    )
+    assert too_many_workers.status_code == 422
     tuning = client.post(
         "/api/search/tune",
         json={"space": {"temperature": [1, 2]}, "iterations": 1, "years": 1},
@@ -768,6 +792,82 @@ def test_search_artifact_files_lp_and_traversal(tmp_path: Path) -> None:
     assert "front.csv" in body["data"]["files"]
     assert client.get("/api/search/lp-demo/files/front.csv").status_code == 200
     assert client.get("/api/search/lp-demo/files/../secret").status_code == 404
+
+
+def test_search_artifact_replaces_nonfinite_numbers(tmp_path: Path) -> None:
+    """A portfolio with an infinite objective remains valid JSON for the browser."""
+    client, _ = _app(tmp_path)
+    artifact = tmp_path / "runs" / "portfolio-inf"
+    artifact.mkdir()
+    (artifact / "portfolio.json").write_text(
+        json.dumps(
+            {
+                "metrics": ["volume"],
+                "directions": {"volume": "max"},
+                "members": [
+                    {
+                        "label": "member-000",
+                        "seed": 1,
+                        "objective": float("inf"),
+                        "metrics": {"volume": float("inf")},
+                        "status": "ok",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    body = client.get("/api/search/portfolio-inf").json()
+    assert body["data"]["members"][0]["objective"] is None
+    assert body["data"]["members"][0]["metrics"]["volume"] is None
+    space = client.get("/api/search/portfolio-inf/space").json()
+    assert space["points"] == []
+
+
+def test_search_solution_space_recomputes_and_sanitizes(tmp_path: Path) -> None:
+    """The explorer payload keeps every member, an exact front, and only safe paths."""
+    client, _ = _app(tmp_path)
+    portfolio = tmp_path / "runs" / "portfolio-space"
+    member = portfolio / "member-000" / "seed-001"
+    member.mkdir(parents=True)
+    (member / "schedule.csv").write_text("block_id,treatment,offset\n1,CC,0\n", encoding="utf-8")
+    outside = tmp_path / "outside.csv"
+    outside.write_text("not part of the artifact", encoding="utf-8")
+    (portfolio / "portfolio.json").write_text(
+        json.dumps(
+            {
+                "metrics": ["volume", "old"],
+                "directions": {"volume": "max", "old": "max", "objective": "min"},
+                "members": [
+                    {
+                        "label": "member-000",
+                        "seed": 1,
+                        "objective": -100.0,
+                        "metrics": {"volume": 100.0, "old": 10.0},
+                        "schedule": str(member / "schedule.csv"),
+                        "targets": str(outside),
+                        "status": "ok",
+                    },
+                    {
+                        "label": "member-001",
+                        "seed": 1,
+                        "objective": -90.0,
+                        "metrics": {"volume": 90.0, "old": 20.0},
+                        "schedule": str(member / "schedule.csv"),
+                        "status": "ok",
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    body = client.get("/api/search/portfolio-space/space", params={"near_front": 0.1}).json()
+    assert body["kind"] == "portfolio-space"
+    assert body["front"] == ["member-000:001", "member-001:001"]
+    assert len(body["points"]) == 2
+    assert body["points"][0]["schedule"] == "member-000/seed-001/schedule.csv"
+    assert "targets" not in body["points"][0]
+    assert body["directions"]["objective"] == "min"
 
 
 def test_search_artifacts_are_listed_and_read(tmp_path: Path) -> None:

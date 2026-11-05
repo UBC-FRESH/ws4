@@ -134,6 +134,7 @@ exists and the maintainer approves it.
 | P133 BC-wide SDMD coverage registry | #817 | `feature/p133-bc-coverage` | complete |
 | P134 SDMD coverage closure | #820 | `feature/p134-coverage-closure` | complete |
 | P135 BC SDMD applicability correction | #824 | `feature/p135-bec-applicability` | complete |
+| P136 Pareto solution-space explorer | #827 | `feature/p136-pareto-explorer` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4107,3 +4108,28 @@ Acceptance:
 - Reviewed and provisional components are counted separately.
 - The 4 no-diagram labels are named.
 - Dashboard green.
+
+## Phase 136: Pareto solution-space explorer
+
+Parent issue: #827
+Branch: `feature/p136-pareto-explorer`
+Status: pr-open
+Report: `notes/reports/p136-solution-space.md`
+Design: `notes/design/ws4-pareto-explorer.md`
+PR: #829
+
+Goal: port a multi-dimensional Pareto solution-space explorer into the WS4 web UI.
+
+- [x] P136.1 Exact full-member solution-space read model (#828)
+- [x] P136.2 Interactive 3D Pareto explorer
+- [x] P136.3 Bounded multi-dimensional weight scans and parallel members
+- [x] P136.4 Cross-links, docs, and browser verification
+
+Acceptance:
+
+- A portfolio with N successful members exposes all N points and an exact front.
+- Dominated points are retained and labelled; all, front, and near-front views work.
+- The 3D workspace loads a saved portfolio artifact.
+- Axis, colour, size, opacity, and filter mappings are interactive.
+- Selected members can be inspected and their schedules opened.
+- Tests and the green dashboard pass.

@@ -20,7 +20,7 @@ import tempfile
 import threading
 import time
 from collections import Counter
-from collections.abc import Awaitable, Callable, Iterator
+from collections.abc import Awaitable, Callable, Iterator, Mapping
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Any, cast
@@ -53,6 +53,7 @@ from ..opt.objective import (
     period_value,
     raw_penalty,
 )
+from ..opt.solution_space import build_solution_space
 from ..report import target_kind
 from .skins import load_skins
 
@@ -100,6 +101,17 @@ _LIDAR_PRODUCTS = (
     ("slope", "Slope", "%"),
     ("chm", "Canopy height (CHM)", "m"),
 )
+
+
+def _json_safe(value: Any) -> Any:  # noqa: ANN401 - parsed JSON is arbitrary
+    """Replace non-finite floats recursively so JavaScript can parse the payload."""
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if isinstance(value, Mapping):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(item) for item in value]
+    return value
 
 
 def _lidar_field_label(field: str) -> tuple[str, str]:
@@ -2394,10 +2406,18 @@ def create_app(
         years = int(payload.get("years", 50) or 50)
         threads = int(payload.get("threads", 1) or 1)
         archive_size = int(payload.get("archive_size", 20) or 20)
+        max_members = int(payload.get("max_members", 64) or 64)
+        workers = int(payload.get("workers", 1) or 1)
+        sample_seed = int(payload.get("sample_seed", 1) or 1)
+        weight_mode = str(payload.get("mode", "grid") or "grid")
         if not 1 <= iterations <= 1_000_000 or not 1 <= years <= 1000:
             raise HTTPException(status_code=422, detail="iterations or years are out of range")
         if not 1 <= threads <= 64 or not 1 <= archive_size <= 100:
             raise HTTPException(status_code=422, detail="threads or archive size is out of range")
+        if not 1 <= max_members <= 256 or not 1 <= workers <= 16:
+            raise HTTPException(status_code=422, detail="max members or workers are out of range")
+        if weight_mode not in {"grid", "random"}:
+            raise HTTPException(status_code=422, detail="mode is grid or random")
         out = new_search_dir("portfolio")
         command = [
             sys.executable,
@@ -2423,7 +2443,13 @@ def create_app(
             "--archive-size",
             str(archive_size),
             "--max-members",
-            str(min(64, int(payload.get("max_members", 64) or 64))),
+            str(max_members),
+            "--mode",
+            weight_mode,
+            "--sample-seed",
+            str(sample_seed),
+            "--workers",
+            str(workers),
         ]
         if payload.get("metrics"):
             command.extend(["--metrics", str(payload["metrics"])])
@@ -2573,7 +2599,7 @@ def create_app(
         ):
             path = directory / filename
             if path.is_file():
-                data = json.loads(path.read_text(encoding="utf-8"))
+                data = _json_safe(json.loads(path.read_text(encoding="utf-8")))
                 if kind == "portfolio":
                     for member in data.get("members", []):
                         for key in ("targets", "run_dir", "schedule"):
@@ -2592,6 +2618,45 @@ def create_app(
                 )
                 return {"id": name, "kind": kind, "data": data}
         raise HTTPException(status_code=404, detail=f"no search artifact in {name!r}")
+
+    @app.get("/api/search/{name}/space")
+    def search_solution_space(
+        name: str,
+        near_front: float = Query(0.1, ge=0.0, le=1.0),
+    ) -> dict[str, Any]:
+        """Return the exact solution-space view of one portfolio artifact.
+
+        The front is recomputed from every successful member rather than the bounded
+        schedule archive, so a point that the archive dropped is still available to the
+        explorer. ``near_front`` is a Chebyshev distance in the normalized outcome box;
+        those points are labelled near-front, never Pareto.
+        """
+        directory = search_artifact_dir(name)
+        path = directory / "portfolio.json"
+        if not path.is_file():
+            raise HTTPException(
+                status_code=404, detail=f"search artifact {name!r} is not a portfolio"
+            )
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(payload, Mapping):
+                raise ValueError("portfolio.json is not an object")
+            space = build_solution_space(payload, near_front_epsilon=near_front)
+        except (OSError, ValueError) as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        for point in space.get("points", []):
+            for key in ("schedule", "targets", "run_dir"):
+                value = point.get(key)
+                if not value:
+                    continue
+                resolved = Path(str(value)).resolve()
+                if resolved.is_relative_to(directory):
+                    point[key] = str(resolved.relative_to(directory))
+                else:
+                    point.pop(key, None)
+        space["id"] = name
+        space["kind"] = "portfolio-space"
+        return space
 
     @app.get("/api/search/{name}/files/{path:path}")
     def search_file(name: str, path: str) -> FileResponse:

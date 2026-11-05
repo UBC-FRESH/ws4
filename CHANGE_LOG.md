@@ -4434,6 +4434,28 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   10 provisional diagrams and 57 labels; TSA 24/27/29 evidence blockers are
   recorded. No diagram was self-approved. Dashboard: `OVERALL: GREEN`.
 
+
+- P136.1/P136.2: added the exact full-member solution-space payload and a vendored
+  Three.js Pareto workspace. The explorer recomputes dominance from every successful
+  portfolio member, normalizes metrics to 0=worst/1=best, labels near-front members
+  separately, and supports X/Y/Z, colour, size, opacity, filter, orbit, selection,
+  pin/compare, and schedule links. Focused tests and a Chromium smoke pass.
+  Report: `notes/reports/p136-solution-space.md`.
+
+- P136.3: added bounded `random` weight sampling for 5-7 dimensional scans and
+  process-parallel portfolio members with `workers`. The default remains one worker
+  because each process loads its own dataset. Added CLI/web controls and a Search-tab
+  scan builder. A real two-worker c5 portfolio completed with zero failures.
+  Report: `notes/reports/p136-solution-space.md`.
+
+- P136.4: added the Pareto member picker, the Search/Pareto cross-links, the New scan
+  return path, and the final web/optimizer documentation. Browser coverage now exercises
+  the saved-artifact and scan-builder entry points plus pin and schedule-open controls.
+  Report: `notes/reports/p136-solution-space.md`.
+
+- P136.4 fix: search artifacts now replace non-finite numbers with `null` before the
+  API sends them, so a portfolio with an infinite objective or metric remains valid
+  JSON for the browser.
 - P135.1: corrected the SDMD coverage model to use the Atlas zone-level
   applicability (`bec_main`/`bec_rare`) instead of treating every BEC label as a
   missing variant-specific diagram. Counts are now 1 `reviewed_variant`,

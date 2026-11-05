@@ -15,8 +15,10 @@ from __future__ import annotations
 
 import json
 import math
+import random
 import statistics
 from collections.abc import Callable, Mapping, Sequence
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
@@ -24,7 +26,7 @@ from typing import Any
 import pandas as pd
 from fresh_solutions.kernel import Runner
 
-from .archive import Direction, Elite, EliteArchive
+from .archive import Direction, Elite, EliteArchive, pareto_front
 from .calibrate import write_targets
 from .engine import OptimizeConfig, Optimizer, load_schedule_csv
 from .objective import Target, load_targets
@@ -77,14 +79,19 @@ class PortfolioMember:
         dict of str to object
             The member's identity, factors, objective, metrics, paths, and status.
         """
+
+        def finite(value: float) -> float | None:
+            """Return a JSON-safe rounded value, or None for an infinity."""
+            return round(float(value), 6) if math.isfinite(float(value)) else None
+
         return {
             "label": self.label,
             "factors": {key: round(float(value), 6) for key, value in sorted(self.factors.items())},
             "seed": self.seed,
             "targets": str(self.targets_path),
             "run_dir": str(self.run_dir),
-            "objective": None if self.objective is None else round(self.objective, 6),
-            "metrics": {key: round(float(value), 6) for key, value in sorted(self.metrics.items())},
+            "objective": None if self.objective is None else finite(self.objective),
+            "metrics": {key: finite(float(value)) for key, value in sorted(self.metrics.items())},
             "schedule": str(self.schedule_path) if self.schedule_path else None,
             "status": self.status,
             "error": self.error,
@@ -166,6 +173,115 @@ def weight_vectors(
         if len(vectors) > max_members:
             raise ValueError(f"weight grid has {len(vectors)} members, over the {max_members} cap")
     return vectors
+
+
+def weight_grid_size(vary: Mapping[str, Sequence[float]]) -> int:
+    """Return the number of vectors in the Cartesian product.
+
+    Parameters
+    ----------
+    vary : mapping of str to sequence of float
+        The factors per account key.
+
+    Returns
+    -------
+    int
+        The product of the factor counts.
+
+    Raises
+    ------
+    ValueError
+        When a group has no factors.
+    """
+    size = 1
+    for key, factors in vary.items():
+        if not factors:
+            raise ValueError(f"account {key!r} has no factors")
+        size *= len(factors)
+    return size
+
+
+def weight_vector_at(vary: Mapping[str, Sequence[float]], index: int) -> dict[str, float]:
+    """Return one grid vector without materializing the whole Cartesian product.
+
+    The order matches :func:`weight_vectors`: the last group varies fastest.
+
+    Parameters
+    ----------
+    vary : mapping of str to sequence of float
+        The factors per account key.
+    index : int
+        The zero-based grid position.
+
+    Returns
+    -------
+    dict of str to float
+        The factor mapping at that position.
+
+    Raises
+    ------
+    ValueError
+        When the index is outside the grid or a group has no factors.
+    """
+    total = weight_grid_size(vary)
+    if index < 0 or index >= total:
+        raise ValueError(f"weight-grid index {index} is outside 0..{total - 1}")
+    keys = list(vary)
+    factors: dict[str, float] = {}
+    remaining = index
+    for key in reversed(keys):
+        values = vary[key]
+        factors[key] = float(values[remaining % len(values)])
+        remaining //= len(values)
+    return {key: factors[key] for key in keys}
+
+
+def sample_weight_vectors(
+    vary: Mapping[str, Sequence[float]],
+    *,
+    max_members: int = 64,
+    mode: str = "grid",
+    seed: int = 1,
+) -> list[dict[str, float]]:
+    """Return a bounded grid or seeded random sample of weight vectors.
+
+    A 5-7 target scan can exceed a sensible number of optimizer runs. ``grid`` keeps
+    the exact Cartesian product and refuses an oversized one; ``random`` samples
+    distinct grid positions deterministically without materializing the product.
+
+    Parameters
+    ----------
+    vary : mapping of str to sequence of float
+        The factors per account key.
+    max_members : int, optional
+        The most vectors to return. Defaults to 64.
+    mode : str, optional
+        ``"grid"`` or ``"random"``. Defaults to ``"grid"``.
+    seed : int, optional
+        The random sample seed. Defaults to 1.
+
+    Returns
+    -------
+    list of dict of str to float
+        One factor mapping per member.
+
+    Raises
+    ------
+    ValueError
+        When the mode is unknown, the grid is oversized in grid mode, or the cap is
+        not positive.
+    """
+    if mode not in {"grid", "random"}:
+        raise ValueError(f"unknown weight-sampling mode: {mode!r}")
+    if max_members < 1:
+        raise ValueError("max_members must be positive")
+    total = weight_grid_size(vary)
+    if mode == "grid":
+        return weight_vectors(vary, max_members=max_members)
+    if total <= max_members:
+        return weight_vectors(vary, max_members=max_members)
+    indices = sorted(random.Random(seed).sample(range(total), max_members))
+    return [weight_vector_at(vary, index) for index in indices]
 
 
 def _factor_for(target: Target, factors: Mapping[str, float]) -> float | None:
@@ -312,6 +428,57 @@ def parse_directions(text: str | None, metrics: Sequence[str]) -> dict[str, Dire
     return directions
 
 
+@dataclass(frozen=True)
+class _MemberSpec:
+    """One member run before it has a result."""
+
+    index: int
+    label: str
+    factors: Mapping[str, float]
+    seed: int
+    targets_path: Path
+    run_dir: Path
+    config: OptimizeConfig
+
+
+def _run_member(
+    spec: _MemberSpec,
+    dataset: Path,
+    runner_factory: Callable[[Path, OptimizeConfig], Runner] | None,
+) -> tuple[int, dict[str, Any] | None, str]:
+    """Run one member, returning its summary or failure text.
+
+    The function is top-level and picklable so the default optimizer can run in a
+    process pool. A custom runner factory is also passed through; callers that use a
+    closure should keep ``workers`` at one.
+    """
+    try:
+        factory = runner_factory or Optimizer.from_dataset
+        summary = factory(dataset, spec.config).run(spec.run_dir)
+        return spec.index, summary, ""
+    except Exception as error:
+        return spec.index, None, str(error)
+
+
+def _run_parallel(
+    specs: Sequence[_MemberSpec],
+    dataset: Path,
+    workers: int,
+    runner_factory: Callable[[Path, OptimizeConfig], Runner] | None,
+) -> list[tuple[int, dict[str, Any] | None, str]]:
+    """Run member specs in a bounded process pool, preserving input order."""
+    results: list[tuple[int, dict[str, Any] | None, str]] = []
+    with ProcessPoolExecutor(max_workers=min(workers, len(specs))) as pool:
+        futures = {pool.submit(_run_member, spec, dataset, runner_factory): spec for spec in specs}
+        for future in as_completed(futures):
+            spec = futures[future]
+            try:
+                results.append(future.result())
+            except Exception as error:
+                results.append((spec.index, None, str(error)))
+    return sorted(results, key=lambda item: item[0])
+
+
 def _member_record(
     *,
     label: str,
@@ -355,7 +522,10 @@ def run_portfolio(
     directions: Mapping[str, Direction] | None = None,
     archive_size: int = 20,
     max_members: int = 64,
-    runner_factory: Callable[[Path, OptimizeConfig], Runner] = Optimizer.from_dataset,
+    weight_mode: str = "grid",
+    sample_seed: int = 1,
+    workers: int = 1,
+    runner_factory: Callable[[Path, OptimizeConfig], Runner] | None = None,
 ) -> dict[str, Any]:
     """Run the portfolio and write its members, front, and reports.
 
@@ -388,9 +558,19 @@ def run_portfolio(
         The archive capacity. Defaults to 20.
     max_members : int, optional
         The most weight vectors. Defaults to 64.
-    runner_factory : callable, optional
+    weight_mode : str, optional
+        ``"grid"`` keeps the exact Cartesian product; ``"random"`` samples distinct
+        grid positions deterministically when the product is over the cap. Defaults
+        to ``"grid"``.
+    sample_seed : int, optional
+        The deterministic sample seed for ``weight_mode="random"``. Defaults to 1.
+    workers : int, optional
+        Process workers. The default of one keeps memory bounded; each worker loads
+        its own dataset, so raise it only when the host has memory for the model.
+    runner_factory : callable or None, optional
         Builds a runner from the dataset and a configuration. Defaults to
-        :meth:`Optimizer.from_dataset`; tests substitute a fake.
+        :meth:`Optimizer.from_dataset`; tests substitute a fake. With more than one
+        worker the factory must be picklable.
 
     Returns
     -------
@@ -400,7 +580,8 @@ def run_portfolio(
     Raises
     ------
     ValueError
-        When no metrics are named or a seed list is empty.
+        When no metrics are named, a seed list is empty, the worker count is invalid,
+        or the weight sample is invalid.
     """
     if not metrics:
         raise ValueError("at least one metric is required")
@@ -408,7 +589,15 @@ def run_portfolio(
         raise ValueError("'objective' is reserved and cannot be a metric name")
     if not seeds:
         raise ValueError("at least one seed is required")
-    vectors = weight_vectors(vary, max_members=max_members)
+    if workers < 1:
+        raise ValueError("workers must be at least one")
+    dataset = Path(dataset)
+    vectors = sample_weight_vectors(
+        vary,
+        max_members=max_members,
+        mode=weight_mode,
+        seed=sample_seed,
+    )
     supplied = directions or {}
     directions = {metric: supplied.get(metric, "max") for metric in metrics}
     directions["objective"] = "min"
@@ -417,6 +606,7 @@ def run_portfolio(
     out_dir.mkdir(parents=True, exist_ok=True)
     archive = EliteArchive(capacity=archive_size, directions=directions)
     records: list[PortfolioMember] = []
+    specs: list[_MemberSpec] = []
     for index, factors in enumerate(vectors):
         label = f"member-{index:03d}"
         member_dir = out_dir / label
@@ -425,62 +615,96 @@ def run_portfolio(
         write_targets(scaled_path, scale_targets(base_targets, factors))
         for seed in seeds:
             run_dir = member_dir / f"seed-{seed:03d}"
-            config = OptimizeConfig(
-                targets_path=str(scaled_path),
-                years=years,
-                iterations=iterations,
-                threads=threads,
-                metaheuristic=metaheuristic,
-                seed=seed,
+            specs.append(
+                _MemberSpec(
+                    index=len(specs),
+                    label=label,
+                    factors=factors,
+                    seed=seed,
+                    targets_path=scaled_path,
+                    run_dir=run_dir,
+                    config=OptimizeConfig(
+                        targets_path=str(scaled_path),
+                        years=years,
+                        iterations=iterations,
+                        threads=threads,
+                        metaheuristic=metaheuristic,
+                        seed=seed,
+                    ),
+                )
             )
-            try:
-                summary = runner_factory(dataset, config).run(run_dir)
-                if "incumbent_objective" not in summary:
-                    raise ValueError("the run summary has no incumbent_objective")
-                objective = float(summary["incumbent_objective"])
-                account_frame = pd.read_csv(run_dir / "account_values.csv")
-                measured = metrics_from_accounts(account_frame, metrics)
-                measured["objective"] = objective
-                schedule_path = run_dir / "schedule.csv"
-                schedule = load_schedule_csv(schedule_path)
-                archive.add(
-                    Elite(
-                        objective=objective,
-                        metrics=measured,
-                        schedule=schedule,
-                        source=f"{label}:{seed:03d}",
-                        seed=seed,
-                    )
+    results = (
+        _run_parallel(specs, dataset, workers, runner_factory)
+        if workers > 1 and len(specs) > 1
+        else [_run_member(spec, dataset, runner_factory) for spec in specs]
+    )
+    by_index = {spec.index: spec for spec in specs}
+    for index, summary, error in results:
+        spec = by_index[index]
+        try:
+            if summary is None:
+                raise RuntimeError(error or "the member failed")
+            if "incumbent_objective" not in summary:
+                raise ValueError("the run summary has no incumbent_objective")
+            objective = float(summary["incumbent_objective"])
+            account_frame = pd.read_csv(spec.run_dir / "account_values.csv")
+            measured = metrics_from_accounts(account_frame, metrics)
+            measured["objective"] = objective
+            schedule_path = spec.run_dir / "schedule.csv"
+            schedule = load_schedule_csv(schedule_path)
+            archive.add(
+                Elite(
+                    objective=objective,
+                    metrics=measured,
+                    schedule=schedule,
+                    source=f"{spec.label}:{spec.seed:03d}",
+                    seed=spec.seed,
                 )
-                records.append(
-                    _member_record(
-                        label=label,
-                        factors=factors,
-                        seed=seed,
-                        targets_path=scaled_path,
-                        run_dir=run_dir,
-                        objective=objective,
-                        metrics=measured,
-                        schedule_path=schedule_path,
-                        status=str(summary.get("status", "ok")),
-                    )
+            )
+            records.append(
+                _member_record(
+                    label=spec.label,
+                    factors=spec.factors,
+                    seed=spec.seed,
+                    targets_path=spec.targets_path,
+                    run_dir=spec.run_dir,
+                    objective=objective,
+                    metrics=measured,
+                    schedule_path=schedule_path,
+                    status=str(summary.get("status", "ok")),
                 )
-            except Exception as error:
-                records.append(
-                    _member_record(
-                        label=label,
-                        factors=factors,
-                        seed=seed,
-                        targets_path=scaled_path,
-                        run_dir=run_dir,
-                        objective=None,
-                        metrics={},
-                        schedule_path=None,
-                        status="failed",
-                        error=str(error),
-                    )
+            )
+        except Exception as error:
+            records.append(
+                _member_record(
+                    label=spec.label,
+                    factors=spec.factors,
+                    seed=spec.seed,
+                    targets_path=spec.targets_path,
+                    run_dir=spec.run_dir,
+                    objective=None,
+                    metrics={},
+                    schedule_path=None,
+                    status="failed",
+                    error=str(error),
                 )
-    front = archive.front()
+            )
+    # The schedule archive is bounded, but the reported front is not: every successful
+    # member is a candidate, so a capacity trim cannot hide a trade-off from the browser.
+    front = pareto_front(
+        [
+            Elite(
+                objective=float(record.objective),
+                metrics={key: float(record.metrics[key]) for key in directions},
+                schedule={},
+                source=f"{record.label}:{record.seed:03d}",
+                seed=record.seed,
+            )
+            for record in records
+            if record.objective is not None
+        ],
+        directions,
+    )
     front_labels = {elite.source for elite in front}
     archive_paths = archive.write(out_dir / "archive")
     front_path = out_dir / "front.csv"
@@ -502,6 +726,10 @@ def run_portfolio(
         "iterations": iterations,
         "years": years,
         "metaheuristic": metaheuristic,
+        "weight_mode": weight_mode,
+        "sample_seed": sample_seed,
+        "workers": workers,
+        "vector_count": len(vectors),
         "metrics": list(metrics),
         "directions": directions,
         "members": [record.as_dict() for record in records],

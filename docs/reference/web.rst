@@ -727,6 +727,31 @@ through ``POST /api/search/portfolio`` or ``POST /api/search/tune`` and polls
 status reports `stopping`/`stopped`. The in-memory job list is bounded and drops the
 oldest finished entries. A read-only service shows only the artifacts.
 
+Pareto solution space
+---------------------
+
+The **Pareto** workspace turns a saved portfolio into an interactive point cloud.
+``GET /api/search/{name}/space`` recomputes the nondominated front from every successful
+member, not from the capacity-limited schedule archive. Each metric is normalized to
+``0 = worst`` and ``1 = best`` using the portfolio's declared directions. The scalar
+objective is an optional dimension and is always minimized.
+
+The view maps any dimension to X, Y, and Z, then adds colour, size, opacity, and a
+threshold filter. A dominance control shows all members, the exact front, or a
+near-front sample within a user-selected Chebyshev distance in the normalized outcome
+box. A near-front member is labelled as such; it is not called Pareto. Selecting a
+member opens its metric vector, factors, objective, and schedule download; up to three
+members can be pinned for comparison.
+
+The Search tab also has a **Build a weight scan** helper. Add target accounts and
+comma-separated factors; it writes the ``vary`` expression and warns when the Cartesian
+product exceeds the member cap. The portfolio launcher exposes ``grid`` or ``random``
+sampling, a maximum member count, a sample seed, and process workers. Each worker loads
+its own dataset copy, so the launcher defaults to one worker.
+
+The cloud is a finite grid sample under one search budget. It is advisory, and its
+normalized axes are relative to the members loaded into the current artifact.
+
 Reports
 -------
 
