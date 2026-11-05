@@ -159,6 +159,16 @@ def test_pareto_workspace_renders_and_filters(tmp_path: Path) -> None:
             page.select_option("#pareto-x", label="cost")
             page.select_option("#pareto-y", label="volume")
             page.select_option("#pareto-z", label="old")
+            page.select_option("#pareto-member", index=1)
+            page.wait_for_function(
+                "document.querySelector('#pareto-info').textContent.includes('member-')",
+                timeout=15000,
+            )
+            page.click("#pareto-pin")
+            assert "member-" in page.locator("#pareto-compare").inner_text()
+            assert not page.locator("#pareto-open").is_disabled()
+            with page.expect_popup():
+                page.click("#pareto-open")
             page.set_viewport_size({"width": 1024, "height": 768})
             assert page.locator("#pareto-canvas").is_visible()
             assert errors == []

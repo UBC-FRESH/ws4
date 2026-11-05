@@ -2320,6 +2320,7 @@ function drawParetoCloud() {
     z: paretoLabel(data, zDim),
   };
   updateParetoAxes(chart, labels);
+  renderParetoMemberPicker(points);
   renderParetoStats(data, points, dominance, epsilon);
   renderParetoLegend(data, points, colourDim, filterDim);
   if (state.pareto.selected) {
@@ -2327,6 +2328,25 @@ function drawParetoCloud() {
     if (selectedPoint) renderParetoInfo(selectedPoint);
   }
   chart.renderer.render(chart.scene, chart.camera);
+}
+
+function renderParetoMemberPicker(points) {
+  const picker = $('pareto-member');
+  if (!picker) return;
+  const previous = picker.value || state.pareto.selected || '';
+  picker.replaceChildren();
+  const none = document.createElement('option');
+  none.value = '';
+  none.textContent = points.length ? '— select a visible member —' : '— no visible members —';
+  picker.append(none);
+  for (const point of points) {
+    const option = document.createElement('option');
+    option.value = point.key;
+    option.textContent = `${point.key}${point.front ? ' · front' : ` · ε ${Number(point.distance_to_front).toFixed(3)}`}`;
+    picker.append(option);
+  }
+  picker.disabled = points.length === 0;
+  if (previous && points.some((point) => point.key === previous)) picker.value = previous;
 }
 
 function renderParetoStats(data, points, dominance, epsilon) {
@@ -2375,6 +2395,8 @@ function selectParetoPoint(key) {
   if (!point) return;
   state.pareto.selected = key;
   drawParetoCloud();
+  const picker = $('pareto-member');
+  if (picker) picker.value = key;
   renderParetoInfo(point);
 }
 
@@ -2489,6 +2511,10 @@ function wirePareto() {
   $('pareto-artifact').addEventListener('change', () => loadParetoSpace($('pareto-artifact').value));
   $('pareto-refresh').addEventListener('click', () => loadParetoArtifacts($('pareto-artifact').value));
   $('pareto-reset').addEventListener('click', resetParetoView);
+  $('pareto-search').addEventListener('click', () => {
+    setWorkspace('results');
+    setSubView('results', 'search');
+  });
   $('pareto-pin').addEventListener('click', pinParetoPoint);
   $('pareto-clear-pins').addEventListener('click', clearParetoPins);
   $('pareto-open').addEventListener('click', openParetoSchedule);
@@ -2496,6 +2522,9 @@ function wirePareto() {
     $(id).addEventListener('change', drawParetoCloud);
   }
   $('pareto-epsilon').addEventListener('change', drawParetoCloud);
+  $('pareto-member').addEventListener('change', () => {
+    if ($('pareto-member').value) selectParetoPoint($('pareto-member').value);
+  });
   $('pareto-filter').addEventListener('input', () => {
     const value = Number($('pareto-filter').value) / 100;
     $('pareto-filter-value').textContent = value <= 0 ? 'all' : `>= ${value.toFixed(2)}`;

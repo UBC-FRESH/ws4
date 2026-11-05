@@ -110,4 +110,15 @@ Search.
 - A finite weight grid and a stochastic search define the sample; the surface is advisory.
 - Normalization is relative to the sample.
 - Near-front is a display label.
-- P136.4 (remaining cross-links, final docs audit, and close-out) remains queued.
+## P136.4 cross-links and verification
+
+- Search has an **Explore in 3D** action for portfolio artifacts.
+- The Pareto sidebar has a **Member** picker for keyboard-accessible selection.
+- A selected member can be pinned, compared, and its schedule opened.
+- **New scan** returns to the Search scan builder.
+- The web and optimizer docs describe the payload, normalization, near-front
+  semantics, bounded sampling, and worker memory cost.
+
+Browser tests cover both paths: a saved portfolio opens directly in the Pareto
+workspace, and the Search scan builder writes the `vary` expression and opens the same
+workspace. The picker, pin, and schedule-open controls are exercised in Chromium.

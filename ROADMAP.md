@@ -4097,7 +4097,7 @@ Goal: port a multi-dimensional Pareto solution-space explorer into the WS4 web U
 - [x] P136.1 Exact full-member solution-space read model (#828)
 - [x] P136.2 Interactive 3D Pareto explorer
 - [x] P136.3 Bounded multi-dimensional weight scans and parallel members
-- [ ] P136.4 Cross-links, docs, and browser verification
+- [x] P136.4 Cross-links, docs, and browser verification
 
 Acceptance:
 

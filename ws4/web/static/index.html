@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=91">
+  <link rel="stylesheet" href="static/style.css?v=93">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
   <script type="importmap">
     {
@@ -18,7 +18,7 @@
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v91</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v93</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <div class="period-control">
@@ -315,6 +315,7 @@
           <div class="run-row">
             <button id="pareto-refresh" type="button">Refresh</button>
             <button id="pareto-reset" type="button">Reset view</button>
+            <button id="pareto-search" type="button">New scan</button>
             <span id="pareto-status" class="hint"></span>
           </div>
           <div class="inline-fields axis-fields">
@@ -342,6 +343,7 @@
             </select></label>
             <label class="field"><span>ε near</span><input id="pareto-epsilon" type="number" value="0.08" min="0" max="1" step="0.01"></label>
           </div>
+          <label class="field"><span>Member</span><select id="pareto-member"></select></label>
           <div id="pareto-stats" class="change-stats"></div>
           <div id="pareto-info" class="pareto-info">
             <p class="muted">Choose a saved portfolio, then orbit, slice, and select a member.</p>
@@ -610,6 +612,6 @@
     <p class="hint">Shortcuts pause while typing in an input, select, or editor.</p>
   </dialog>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=91"></script>
+  <script type="module" src="static/app.js?v=93"></script>
 </body>
 </html>

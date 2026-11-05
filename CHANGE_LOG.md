@@ -4446,3 +4446,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   because each process loads its own dataset. Added CLI/web controls and a Search-tab
   scan builder. A real two-worker c5 portfolio completed with zero failures.
   Report: `notes/reports/p136-solution-space.md`.
+
+- P136.4: added the Pareto member picker, the Search/Pareto cross-links, the New scan
+  return path, and the final web/optimizer documentation. Browser coverage now exercises
+  the saved-artifact and scan-builder entry points plus pin and schedule-open controls.
+  Report: `notes/reports/p136-solution-space.md`.
