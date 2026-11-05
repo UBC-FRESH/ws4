@@ -134,7 +134,7 @@ exists and the maintainer approves it.
 | P133 BC-wide SDMD coverage registry | #817 | `feature/p133-bc-coverage` | complete |
 | P134 SDMD coverage closure | #820 | `feature/p134-coverage-closure` | complete |
 | P135 BC SDMD applicability correction | #824 | `feature/p135-bec-applicability` | complete |
-| P136 Pareto solution-space explorer | #827 | `feature/p136-pareto-explorer` | pr-open |
+| P136 Pareto solution-space explorer | #827 | `feature/p136-pareto-explorer` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4113,7 +4113,8 @@ Acceptance:
 
 Parent issue: #827
 Branch: `feature/p136-pareto-explorer`
-Status: pr-open
+Status: complete
+Merge commit: `7442591`
 Report: `notes/reports/p136-solution-space.md`
 Design: `notes/design/ws4-pareto-explorer.md`
 PR: #829

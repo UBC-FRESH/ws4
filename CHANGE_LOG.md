@@ -4469,3 +4469,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   applicability: 1 `reviewed_variant`, 5 `reviewed_zone`, 209 `mixed_zone`,
   4 `no_diagram`; 10 provisional diagrams / 210 labels in the review queue.
   Dashboard: `OVERALL: GREEN`.
+
+- P136: merged via PR #829 as `7442591`. The Pareto workspace exposes every successful
+  portfolio member, recomputes the exact front, supports seven display dimensions, and
+  adds bounded 5-7 dimension scans with process workers. Dashboard: `OVERALL: GREEN`.
