@@ -4433,3 +4433,10 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   `variant_not_digitized` and 11 `no_atlas_zone`; `bec_review_queue.csv` names
   10 provisional diagrams and 57 labels; TSA 24/27/29 evidence blockers are
   recorded. No diagram was self-approved. Dashboard: `OVERALL: GREEN`.
+
+- P135.1: corrected the SDMD coverage model to use the Atlas zone-level
+  applicability (`bec_main`/`bec_rare`) instead of treating every BEC label as a
+  missing variant-specific diagram. Counts are now 1 `reviewed_variant`,
+  5 `reviewed_zone`, 209 `mixed_zone`, and 4 `no_diagram`. The review queue names
+  10 provisional diagrams and 210 affected labels. `match_level` remains visible. Focused tests: 129 passed. Dashboard:
+  `OVERALL: GREEN`.

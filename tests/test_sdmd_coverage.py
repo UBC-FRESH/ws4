@@ -16,16 +16,21 @@ def test_coverage_has_every_current_bec_and_named_statuses() -> None:
     assert len(frame) == 219
     assert frame["bec"].nunique() == 219
     counts = frame["coverage_status"].value_counts().to_dict()
-    assert counts == {"no-diagram": 161, "provisional": 57, "reviewed": 1}
+    assert counts == {
+        "mixed_zone": 209,
+        "no_diagram": 4,
+        "reviewed_variant": 1,
+        "reviewed_zone": 5,
+    }
 
 
 def test_reviewed_variant_has_au_evidence_and_diagrams() -> None:
     """IDFdk3 is the reviewed variant and names its two pilot AUs."""
     row = coverage_row("IDFdk3")
     assert row is not None
-    assert row["coverage_status"] == "reviewed"
-    assert row["match_level"] == "variant"
-    assert row["diagram_ids"] == "fdin;fdip;pln;plp"
+    assert row["coverage_status"] == "reviewed_variant"
+    assert "variant" in row["match_level"]
+    assert {"fdin", "fdip", "pln", "plp"} <= set(str(row["diagram_ids"]).split(";"))
     assert row["au_ids"] == "AU-IDFdk3-TSA23-FDI;AU-IDFdk3-TSA23-PLI"
 
 
@@ -33,24 +38,24 @@ def test_provisional_and_no_diagram_rows_are_explicit() -> None:
     """Zone-level and missing coverage are not silently treated as reviewed."""
     provisional = coverage_row("CWHvm1")
     assert provisional is not None
-    assert provisional["coverage_status"] == "provisional"
-    assert provisional["match_level"] == "zone"
+    assert provisional["coverage_status"] == "mixed_zone"
+    assert "zone" in provisional["match_level"]
     assert "fdcn" in str(provisional["diagram_ids"])
-    missing = coverage_row("BWBSdk")
+    missing = coverage_row("BAFAun")
     assert missing is not None
-    assert missing["coverage_status"] == "no-diagram"
+    assert missing["coverage_status"] == "no_diagram"
     assert missing["diagram_ids"] == ""
     assert missing["au_ids"] == ""
-    assert missing["gap_reason"] in {"variant_not_digitized", "no_atlas_zone"}
+    assert missing["gap_reason"] == "no_atlas_zone"
     assert missing["gap_action"]
 
 
 def test_coverage_filters_and_unknown_label() -> None:
     """Zone/status filters and unknown labels are explicit."""
-    payload = coverage_payload(zone="CWH", status="provisional")
+    payload = coverage_payload(zone="CWH", status="mixed_zone")
     assert payload["count"] > 0
     assert all(row["zone"] == "CWH" for row in payload["rows"])
-    assert all(row["coverage_status"] == "provisional" for row in payload["rows"])
+    assert all(row["coverage_status"] == "mixed_zone" for row in payload["rows"])
     assert coverage_row("XYZ99") is None
 
 
@@ -79,19 +84,20 @@ def test_coverage_csv_is_reproducible() -> None:
         "note",
     ]
     assert not frame.duplicated(["bec"]).any()
-    assert set(frame["coverage_status"]) <= {"reviewed", "provisional", "no-diagram"}
+    assert set(frame["coverage_status"]) <= {
+        "reviewed_variant",
+        "reviewed_zone",
+        "mixed_zone",
+        "no_diagram",
+    }
     assert set(frame["evidence_status"]) <= {"pilot", "none"}
 
 
 def test_gap_triage_distinguishes_atlas_and_non_atlas_zones() -> None:
     """Every no-diagram row says whether its zone has an Atlas diagram."""
     frame = coverage_frame()
-    gap = frame[frame["coverage_status"] == "no-diagram"]
-    assert gap["gap_reason"].value_counts().to_dict() == {
-        "variant_not_digitized": 150,
-        "no_atlas_zone": 11,
-    }
+    gap = frame[frame["coverage_status"] == "no_diagram"]
+    assert gap["gap_reason"].value_counts().to_dict() == {"no_atlas_zone": 4}
     assert set(gap["gap_action"]) == {
-        "Digitize and review a variant-specific diagram, or keep a zone-level refusal.",
         "No diagram in the 14-public Atlas for this zone; add source evidence before coverage.",
     }

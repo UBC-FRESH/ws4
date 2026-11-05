@@ -628,3 +628,8 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: .2
 .sdmd-coverage-status.reviewed { background:#e6f3e8; color:#1f6b43; }
 .sdmd-coverage-status.provisional { background:#fff7df; color:#80631b; }
 .sdmd-coverage-status.no-diagram { background:#f1f3f4; color:#5b6660; }
+.sdmd-coverage-status.reviewed_variant { background:#dff2e6; color:#14532d; }
+.sdmd-coverage-status.reviewed_zone { background:#e6f3e8; color:#1f6b43; }
+.sdmd-coverage-status.mixed_zone { background:#fff2d8; color:#805a12; }
+.sdmd-coverage-status.provisional_zone { background:#fff7df; color:#80631b; }
+.sdmd-coverage-status.no_diagram { background:#f1f3f4; color:#5b6660; }
