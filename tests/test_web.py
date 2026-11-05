@@ -794,6 +794,36 @@ def test_search_artifact_files_lp_and_traversal(tmp_path: Path) -> None:
     assert client.get("/api/search/lp-demo/files/../secret").status_code == 404
 
 
+def test_search_artifact_replaces_nonfinite_numbers(tmp_path: Path) -> None:
+    """A portfolio with an infinite objective remains valid JSON for the browser."""
+    client, _ = _app(tmp_path)
+    artifact = tmp_path / "runs" / "portfolio-inf"
+    artifact.mkdir()
+    (artifact / "portfolio.json").write_text(
+        json.dumps(
+            {
+                "metrics": ["volume"],
+                "directions": {"volume": "max"},
+                "members": [
+                    {
+                        "label": "member-000",
+                        "seed": 1,
+                        "objective": float("inf"),
+                        "metrics": {"volume": float("inf")},
+                        "status": "ok",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    body = client.get("/api/search/portfolio-inf").json()
+    assert body["data"]["members"][0]["objective"] is None
+    assert body["data"]["members"][0]["metrics"]["volume"] is None
+    space = client.get("/api/search/portfolio-inf/space").json()
+    assert space["points"] == []
+
+
 def test_search_solution_space_recomputes_and_sanitizes(tmp_path: Path) -> None:
     """The explorer payload keeps every member, an exact front, and only safe paths."""
     client, _ = _app(tmp_path)

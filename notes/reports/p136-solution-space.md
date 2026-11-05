@@ -118,6 +118,8 @@ Search.
 - **New scan** returns to the Search scan builder.
 - The web and optimizer docs describe the payload, normalization, near-front
   semantics, bounded sampling, and worker memory cost.
+- Search artifacts recursively replace non-finite JSON numbers with `null`, so a
+  portfolio with an infinite objective or metric does not break browser parsing.
 
 Browser tests cover both paths: a saved portfolio opens directly in the Pareto
 workspace, and the Search scan builder writes the `vary` expression and opens the same

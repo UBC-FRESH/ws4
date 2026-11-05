@@ -103,6 +103,17 @@ _LIDAR_PRODUCTS = (
 )
 
 
+def _json_safe(value: Any) -> Any:  # noqa: ANN401 - parsed JSON is arbitrary
+    """Replace non-finite floats recursively so JavaScript can parse the payload."""
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if isinstance(value, Mapping):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(item) for item in value]
+    return value
+
+
 def _lidar_field_label(field: str) -> tuple[str, str]:
     """Return a human label and unit for a canonical ``lidar_*`` field."""
     stem = field.removeprefix("lidar_")
@@ -2588,7 +2599,7 @@ def create_app(
         ):
             path = directory / filename
             if path.is_file():
-                data = json.loads(path.read_text(encoding="utf-8"))
+                data = _json_safe(json.loads(path.read_text(encoding="utf-8")))
                 if kind == "portfolio":
                     for member in data.get("members", []):
                         for key in ("targets", "run_dir", "schedule"):

@@ -79,14 +79,19 @@ class PortfolioMember:
         dict of str to object
             The member's identity, factors, objective, metrics, paths, and status.
         """
+
+        def finite(value: float) -> float | None:
+            """Return a JSON-safe rounded value, or None for an infinity."""
+            return round(float(value), 6) if math.isfinite(float(value)) else None
+
         return {
             "label": self.label,
             "factors": {key: round(float(value), 6) for key, value in sorted(self.factors.items())},
             "seed": self.seed,
             "targets": str(self.targets_path),
             "run_dir": str(self.run_dir),
-            "objective": None if self.objective is None else round(self.objective, 6),
-            "metrics": {key: round(float(value), 6) for key, value in sorted(self.metrics.items())},
+            "objective": None if self.objective is None else finite(self.objective),
+            "metrics": {key: finite(float(value)) for key, value in sorted(self.metrics.items())},
             "schedule": str(self.schedule_path) if self.schedule_path else None,
             "status": self.status,
             "error": self.error,

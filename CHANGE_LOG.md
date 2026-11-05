@@ -4451,3 +4451,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   return path, and the final web/optimizer documentation. Browser coverage now exercises
   the saved-artifact and scan-builder entry points plus pin and schedule-open controls.
   Report: `notes/reports/p136-solution-space.md`.
+
+- P136.4 fix: search artifacts now replace non-finite numbers with `null` before the
+  API sends them, so a portfolio with an infinite objective or metric remains valid
+  JSON for the browser.
