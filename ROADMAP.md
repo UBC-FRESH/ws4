@@ -135,7 +135,7 @@ exists and the maintainer approves it.
 | P134 SDMD coverage closure | #820 | `feature/p134-coverage-closure` | complete |
 | P135 BC SDMD applicability correction | #824 | `feature/p135-bec-applicability` | complete |
 | P136 Pareto solution-space explorer | #827 | `feature/p136-pareto-explorer` | complete |
-| P138 Pareto member to map/Plan | #834 | `feature/p138-pareto-to-plan` | pr-open |
+| P138 Pareto member to map/Plan | #834 | `feature/p138-pareto-to-plan` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4140,8 +4140,10 @@ Acceptance:
 
 Parent issue: #834
 Branch: `feature/p138-pareto-to-plan`
-Status: pr-open
+Status: complete
+Merge commit: `b82dbcf`
 Report: `notes/reports/p138-pareto-to-plan.md`
+PR: #836
 
 Goal: open a portfolio member's schedule as a real run and close the explorer-to-Plan loop.
 

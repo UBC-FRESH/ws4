@@ -4481,3 +4481,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 
 - P138: outcome-front alignment, safe portfolio-member promotion, Open on map, and
   Compare pinned. Focused tests: 111 passed; dashboard: `OVERALL: GREEN`.
+
+- P138: merged via PR #836 as `b82dbcf`. A Pareto member can be promoted to a direct
+  read-only run, opened on the map, or compared with a second pinned member. Search and
+  the explorer now use outcome-only dominance. Dashboard: `OVERALL: GREEN`.

@@ -1,7 +1,8 @@
 # P138 Pareto member to map/Plan
 
 Date: 2026-11-05
-Status: pr-open
+Status: complete
+Merge commit: `b82dbcf`
 PR: #836
 Branch: `feature/p138-pareto-to-plan`
 Parent issue: #834
