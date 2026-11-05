@@ -4447,3 +4447,9 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   applicability: 1 `reviewed_variant`, 5 `reviewed_zone`, 209 `mixed_zone`,
   4 `no_diagram`; 10 provisional diagrams / 210 labels in the review queue.
   Dashboard: `OVERALL: GREEN`.
+
+- P136.1: built `notes/review/p136-provisional-review.md` with SHA-256-checked
+  source PDFs, rendered pages, stored-curve plots, and a maintainer checklist for
+  the 10 provisional diagrams. All 10 pass `validate_diagram`; none is marked
+  reviewed. Named the four no-diagram decisions. Packet builder tests: 2 passed. Dashboard:
+  `OVERALL: GREEN`.

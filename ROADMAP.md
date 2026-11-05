@@ -134,6 +134,7 @@ exists and the maintainer approves it.
 | P133 BC-wide SDMD coverage registry | #817 | `feature/p133-bc-coverage` | complete |
 | P134 SDMD coverage closure | #820 | `feature/p134-coverage-closure` | complete |
 | P135 BC SDMD applicability correction | #824 | `feature/p135-bec-applicability` | complete |
+| P136 Provisional SDMD diagram review | #830 | `feature/p136-diagram-review` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4106,4 +4107,29 @@ Acceptance:
 - Zone-level applicability is visible, not hidden.
 - Reviewed and provisional components are counted separately.
 - The 4 no-diagram labels are named.
+- Dashboard green.
+
+## Phase 136: Provisional SDMD diagram review
+
+Parent issue: #830
+Branch: `feature/p136-diagram-review`
+Status: active
+Report: `notes/reports/p136-diagram-review.md`
+Packet: `notes/review/p136-provisional-review.md`
+
+Goal: prepare review evidence for the 10 provisional diagrams without
+self-approving any diagram.
+
+- [x] P136.1 Provisional diagram review packet (#831)
+  - [x] Verify the 10 source PDFs against catalogue hashes.
+  - [x] Render source pages and stored-curve plots.
+  - [x] Validate all 10 diagrams and inventory curve families.
+  - [x] Write the maintainer checklist.
+  - [x] Name the four no-diagram decisions.
+
+Acceptance:
+
+- Every diagram has source and curve evidence.
+- No diagram is marked reviewed by the agent.
+- Four no-diagram labels have an explicit decision path.
 - Dashboard green.
