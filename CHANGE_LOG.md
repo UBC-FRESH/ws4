@@ -4453,3 +4453,5 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   the 10 provisional diagrams. All 10 pass `validate_diagram`; none is marked
   reviewed. Named the four no-diagram decisions. Packet builder tests: 2 passed. Dashboard:
   `OVERALL: GREEN`.
+- P136.1 queued in PR #832; branch `feature/p136-diagram-review`, head
+  `abdb3bf`. Dashboard: `OVERALL: GREEN`.

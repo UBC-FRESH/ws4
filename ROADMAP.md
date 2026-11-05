@@ -134,7 +134,7 @@ exists and the maintainer approves it.
 | P133 BC-wide SDMD coverage registry | #817 | `feature/p133-bc-coverage` | complete |
 | P134 SDMD coverage closure | #820 | `feature/p134-coverage-closure` | complete |
 | P135 BC SDMD applicability correction | #824 | `feature/p135-bec-applicability` | complete |
-| P136 Provisional SDMD diagram review | #830 | `feature/p136-diagram-review` | active |
+| P136 Provisional SDMD diagram review | #830 | `feature/p136-diagram-review` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4113,8 +4113,9 @@ Acceptance:
 
 Parent issue: #830
 Branch: `feature/p136-diagram-review`
-Status: active
+Status: pr-open
 Report: `notes/reports/p136-diagram-review.md`
+PR: #832
 Packet: `notes/review/p136-provisional-review.md`
 
 Goal: prepare review evidence for the 10 provisional diagrams without

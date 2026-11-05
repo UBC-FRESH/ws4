@@ -32,6 +32,10 @@ repository.
 The four no-diagram labels remain `BAFAun`, `CMAun`, `CMAwh`, and `IMAun`. They
 need either new public source material or a permanent refusal.
 
+## PR
+
+Queued in PR #832 after `abdb3bf`.
+
 ## Verification
 
 ```bash
