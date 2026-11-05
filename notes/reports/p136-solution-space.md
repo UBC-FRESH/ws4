@@ -1,7 +1,7 @@
 # P136.1–P136.2 exact solution-space payload and 3D explorer
 
 Date: 2026-11-05
-Status: active
+Status: active; PR #829
 Branch: `feature/p136-pareto-explorer`
 Parent issue: #827
 Task issue: #828

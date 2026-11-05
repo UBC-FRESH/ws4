@@ -130,7 +130,7 @@ exists and the maintainer approves it.
 | P129 GPU profile current targets and budget | #798 | `feature/p129-gpu-profile-current-targets` | pr-open |
 | P130 Route Solve through the GPU profile path | #802 | `feature/p130-solve-gpu-profile` | pr-open |
 | P131 Profile time budget overrides generations | #805 | `fix/p131-profile-time-budget` | pr-open |
-| P136 Pareto solution-space explorer | #827 | `feature/p136-pareto-explorer` | active |
+| P136 Pareto solution-space explorer | #827 | `feature/p136-pareto-explorer` | pr-open |
 | P132 Adversarial audit remediation | #809 | `feature/p132-audit-remediation` | complete |
 | P133 BC-wide SDMD coverage registry | #817 | `feature/p133-bc-coverage` | complete |
 | P134 SDMD coverage closure | #820 | `feature/p134-coverage-closure` | complete |
@@ -4087,9 +4087,10 @@ Acceptance:
 
 Parent issue: #827
 Branch: `feature/p136-pareto-explorer`
-Status: active
+Status: pr-open
 Report: `notes/reports/p136-solution-space.md`
 Design: `notes/design/ws4-pareto-explorer.md`
+PR: #829
 
 Goal: port a multi-dimensional Pareto solution-space explorer into the WS4 web UI.
 
