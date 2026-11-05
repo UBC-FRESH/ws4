@@ -72,10 +72,42 @@ filter volume >= 0.50: 5 visible
 The browser test asserts the workspace, canvas, artifact load, exact-front mode, filter,
 axis/colour/size/opacity controls, and no page errors.
 
+## P136.3 bounded scans and parallel members
+
+The portfolio now supports:
+
+- `weight_mode="grid"` for an exact Cartesian product;
+- `weight_mode="random"` with `max_members` and `sample_seed` for a deterministic sample
+  of distinct grid positions without materializing a 5-7 dimensional product;
+- `workers` process workers, each writing the same member artifacts and exact objective;
+- `--mode`, `--max-members`, `--sample-seed`, and `--workers` in the CLI;
+- `mode`, `max_members`, `workers`, and `sample_seed` in the web launcher;
+- a **Build a weight scan** helper in Search that writes the `vary` expression and warns
+  when the grid exceeds the member cap.
+
+The process path is explicitly memory-bounded: the default remains one worker because
+each worker loads its own dataset copy.
+
+### P136.3 verification
+
+A real two-worker c5 portfolio completed both members with the default
+`Optimizer.from_dataset` path:
+
+```text
+Members: 2 · front: 1
+failures: 0
+workers: 2
+weight_mode: grid
+vector_count: 2
+```
+
+The deterministic random sampler and grid indexing are unit-tested; the browser test
+builds a two-dimension scan, writes the `vary` expression, and opens the explorer from
+Search.
+
 ## Limits
 
 - A finite weight grid and a stochastic search define the sample; the surface is advisory.
 - Normalization is relative to the sample.
 - Near-front is a display label.
-- P136.3 (bounded parallel weight scans and a guided 5-7 dimension scan builder) remains
-  queued.
+- P136.4 (remaining cross-links, final docs audit, and close-out) remains queued.

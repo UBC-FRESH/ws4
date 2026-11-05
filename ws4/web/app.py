@@ -2395,10 +2395,18 @@ def create_app(
         years = int(payload.get("years", 50) or 50)
         threads = int(payload.get("threads", 1) or 1)
         archive_size = int(payload.get("archive_size", 20) or 20)
+        max_members = int(payload.get("max_members", 64) or 64)
+        workers = int(payload.get("workers", 1) or 1)
+        sample_seed = int(payload.get("sample_seed", 1) or 1)
+        weight_mode = str(payload.get("mode", "grid") or "grid")
         if not 1 <= iterations <= 1_000_000 or not 1 <= years <= 1000:
             raise HTTPException(status_code=422, detail="iterations or years are out of range")
         if not 1 <= threads <= 64 or not 1 <= archive_size <= 100:
             raise HTTPException(status_code=422, detail="threads or archive size is out of range")
+        if not 1 <= max_members <= 256 or not 1 <= workers <= 16:
+            raise HTTPException(status_code=422, detail="max members or workers are out of range")
+        if weight_mode not in {"grid", "random"}:
+            raise HTTPException(status_code=422, detail="mode is grid or random")
         out = new_search_dir("portfolio")
         command = [
             sys.executable,
@@ -2424,7 +2432,13 @@ def create_app(
             "--archive-size",
             str(archive_size),
             "--max-members",
-            str(min(64, int(payload.get("max_members", 64) or 64))),
+            str(max_members),
+            "--mode",
+            weight_mode,
+            "--sample-seed",
+            str(sample_seed),
+            "--workers",
+            str(workers),
         ]
         if payload.get("metrics"):
             command.extend(["--metrics", str(payload["metrics"])])

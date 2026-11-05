@@ -683,11 +683,35 @@ def test_search_launchers_compose_the_scripts(
     monkeypatch.setattr("ws4.web.app.subprocess.Popen", fake_popen)
     portfolio = client.post(
         "/api/search/portfolio",
-        json={"vary": "feature.Volume=0.5,1.0", "iterations": 1, "years": 1, "seeds": "1"},
+        json={
+            "vary": "feature.Volume=0.5,1.0",
+            "iterations": 1,
+            "years": 1,
+            "seeds": "1",
+            "directions": "feature.Volume=min",
+            "mode": "random",
+            "max_members": 128,
+            "workers": 2,
+            "sample_seed": 9,
+        },
     )
     assert portfolio.status_code == 200
     assert captured[-1][1].endswith("scripts/portfolio.py")
     assert "--vary" in captured[-1]
+    assert "--directions" in captured[-1]
+    assert captured[-1][captured[-1].index("--mode") + 1] == "random"
+    assert captured[-1][captured[-1].index("--workers") + 1] == "2"
+    assert captured[-1][captured[-1].index("--max-members") + 1] == "128"
+    bad = client.post(
+        "/api/search/portfolio",
+        json={"vary": "feature.Volume=1", "mode": "spiral"},
+    )
+    assert bad.status_code == 422
+    too_many_workers = client.post(
+        "/api/search/portfolio",
+        json={"vary": "feature.Volume=1", "workers": 17},
+    )
+    assert too_many_workers.status_code == 422
     tuning = client.post(
         "/api/search/tune",
         json={"space": {"temperature": [1, 2]}, "iterations": 1, "years": 1},

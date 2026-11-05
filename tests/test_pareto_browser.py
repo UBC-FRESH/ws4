@@ -93,7 +93,9 @@ def _portfolio(tmp_path: Path) -> tuple[Path, Path]:
     )
     targets = tmp_path / "targets.yaml"
     targets.write_text(
-        "targets:\n  - account: feature.Volume\n    period: 1\n    minimum: 1000\n",
+        "targets:\n"
+        "  - account: feature.Volume\n    period: 1\n    minimum: 1000\n"
+        "  - account: feature.Old\n    period: 1\n    minimum: 200\n",
         encoding="utf-8",
     )
     return runs, targets
@@ -159,6 +161,55 @@ def test_pareto_workspace_renders_and_filters(tmp_path: Path) -> None:
             page.select_option("#pareto-z", label="old")
             page.set_viewport_size({"width": 1024, "height": 768})
             assert page.locator("#pareto-canvas").is_visible()
+            assert errors == []
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(timeout=10)
+
+
+def test_search_builds_a_scan_and_opens_the_explorer(tmp_path: Path) -> None:
+    """The guided scan writes the vary expression and the 3D cross-link loads it."""
+    server, thread, url = _server(tmp_path)
+    try:
+        with sync_playwright() as playwright:
+            try:
+                browser = playwright.chromium.launch(
+                    headless=True,
+                    args=["--use-gl=swiftshader", "--enable-webgl"],
+                )
+            except Exception as error:  # pragma: no cover - browser not installed
+                pytest.skip(f"chromium is not available: {error}")
+            page = browser.new_page(viewport={"width": 1500, "height": 1000})
+            errors: list[str] = []
+            page.on("pageerror", lambda error: errors.append(str(error)))
+            page.goto(f"{url}/?run=run1&view=results&sub=search")
+            page.wait_for_function(
+                "document.querySelectorAll('#scan-account option').length >= 2",
+                timeout=15000,
+            )
+            page.locator("details.search-run").filter(has_text="Build a weight scan").evaluate(
+                "element => { element.open = true; }"
+            )
+            page.select_option("#scan-account", label="feature.Volume")
+            page.click("#scan-add")
+            page.select_option("#scan-account", label="feature.Old")
+            page.fill("#scan-factors", "0.5,1")
+            page.click("#scan-add")
+            assert "2 dimensions" in page.locator("#scan-summary").inner_text()
+            page.click("#scan-use")
+            assert "feature.Volume=0.5,1,2" in page.locator("#portfolio-vary").input_value()
+            assert "feature.Old=0.5,1" in page.locator("#portfolio-vary").input_value()
+            page.wait_for_function(
+                "!document.querySelector('#search-explore').disabled",
+                timeout=15000,
+            )
+            page.click("#search-explore")
+            page.wait_for_function(
+                "document.querySelector('#pareto-status').textContent.includes('members')",
+                timeout=15000,
+            )
+            assert page.locator("#pareto-wrap").is_visible()
             assert errors == []
             browser.close()
     finally:

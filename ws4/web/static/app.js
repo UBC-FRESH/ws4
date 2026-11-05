@@ -4,7 +4,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/OrbitControls.js";
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' }, pareto: { available: false, artifact: '', data: null, chart: null, cloud: null, selected: null, pinned: [], screen: [], artifacts: [] } };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' }, portfolioScan: [], pareto: { available: false, artifact: '', data: null, chart: null, cloud: null, selected: null, pinned: [], screen: [], artifacts: [] } };
 
 state.estate3d = { open: false, features: [], yaw: -0.55, zoom: 1, exaggeration: 1, hits: [] };
 const ESTATE_3D_LIMIT = 2000;
@@ -1552,6 +1552,7 @@ async function stopSearch(id) {
 }
 
 async function loadSearch(preferred = '') {
+  populateScanAccounts();
   const empty = $('search-empty');
   const select = $('search-select');
   const table = $('search-table');
@@ -1806,6 +1807,108 @@ async function renderSearchArtifact(id) {
     summary.textContent = `artifact unavailable: ${error.message}`;
     table.hidden = true;
   }
+}
+
+function scanProduct() {
+  return state.portfolioScan.reduce(
+    (total, dimension) => total * Math.max(1, dimension.factors.length),
+    1
+  );
+}
+
+function populateScanAccounts() {
+  const select = $('scan-account');
+  if (!select) return;
+  const previous = select.value;
+  const accounts = [...new Set((state.targets || []).map((row) => row.account))].sort();
+  select.replaceChildren();
+  if (!accounts.length) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'No targets loaded';
+    select.append(option);
+    $('scan-add').disabled = true;
+    return;
+  }
+  $('scan-add').disabled = false;
+  for (const account of accounts) {
+    const option = document.createElement('option');
+    option.value = account;
+    option.textContent = account;
+    select.append(option);
+  }
+  if (accounts.includes(previous)) select.value = previous;
+}
+
+function renderPortfolioScan() {
+  const list = $('scan-dimensions');
+  list.replaceChildren();
+  for (const [index, dimension] of state.portfolioScan.entries()) {
+    const item = document.createElement('li');
+    const name = document.createElement('span');
+    name.textContent = `${dimension.account} = ${dimension.factors.join(', ')}`;
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'link-button';
+    remove.textContent = 'remove';
+    remove.addEventListener('click', () => {
+      state.portfolioScan.splice(index, 1);
+      renderPortfolioScan();
+    });
+    item.append(name, remove);
+    list.append(item);
+  }
+  const summary = $('scan-summary');
+  if (!state.portfolioScan.length) {
+    summary.textContent = 'Add 5-7 target accounts to build a scan.';
+    return;
+  }
+  const product = scanProduct();
+  const max = Math.max(1, Number($('portfolio-max-members').value) || 64);
+  const mode = $('portfolio-mode').value;
+  summary.textContent = `${state.portfolioScan.length} dimensions · ${product} grid members · cap ${max}${product > max && mode === 'grid' ? ' — switch to random or raise the cap' : ''}`;
+}
+
+function addPortfolioScanDimension() {
+  const account = $('scan-account').value;
+  const factors = $('scan-factors')
+    .value.split(',')
+    .map((value) => Number(value.trim()))
+    .filter((value) => Number.isFinite(value) && value > 0);
+  if (!account || !factors.length) {
+    $('scan-summary').textContent = 'Pick an account and at least one positive factor.';
+    return;
+  }
+  const existing = state.portfolioScan.find((item) => item.account === account);
+  if (existing) existing.factors = factors;
+  else state.portfolioScan.push({ account, factors });
+  renderPortfolioScan();
+}
+
+function usePortfolioScan() {
+  if (!state.portfolioScan.length) {
+    $('scan-summary').textContent = 'Add at least one dimension first.';
+    return;
+  }
+  $('portfolio-vary').value = state.portfolioScan
+    .map((item) => `${item.account}=${item.factors.join(',')}`)
+    .join(';');
+  const product = scanProduct();
+  const max = Math.max(1, Number($('portfolio-max-members').value) || 64);
+  if (product > max) $('portfolio-mode').value = 'random';
+  renderPortfolioScan();
+}
+
+function wirePortfolioScan() {
+  if (!$('scan-add')) return;
+  $('scan-add').addEventListener('click', addPortfolioScanDimension);
+  $('scan-clear').addEventListener('click', () => {
+    state.portfolioScan = [];
+    renderPortfolioScan();
+  });
+  $('scan-use').addEventListener('click', usePortfolioScan);
+  $('portfolio-max-members').addEventListener('input', renderPortfolioScan);
+  $('portfolio-mode').addEventListener('change', renderPortfolioScan);
 }
 
 async function waitSearch(id) {
@@ -2416,6 +2519,10 @@ async function startPortfolio() {
         vary,
         metrics: $('portfolio-metrics').value.trim(),
         directions: $('portfolio-directions').value.trim(),
+        mode: $('portfolio-mode').value,
+        max_members: Number($('portfolio-max-members').value || 64),
+        workers: Number($('portfolio-workers').value || 1),
+        sample_seed: Number($('portfolio-sample-seed').value || 1),
         seeds: $('portfolio-seeds').value.trim() || '1',
         iterations: Number($('portfolio-iterations').value || 20),
         years: Number($('portfolio-years').value || 50),
@@ -8208,6 +8315,7 @@ async function start() {
   wireControls();
   wireSdmd();
   wirePareto();
+  wirePortfolioScan();
   loadWatched();
   try {
     const summary = await api('api/summary');

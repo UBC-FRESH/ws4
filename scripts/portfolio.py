@@ -65,6 +65,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--engine", default="sa", choices=("sa", "tabu", "ils", "threshold"))
     parser.add_argument("--archive-size", type=int, default=20)
     parser.add_argument("--max-members", type=int, default=64)
+    parser.add_argument("--mode", choices=("grid", "random"), default="grid")
+    parser.add_argument("--sample-seed", type=int, default=1)
+    parser.add_argument("--workers", type=int, default=1)
     args = parser.parse_args(argv)
     vary = parse_vary(args.vary)
     metrics = _metrics(args.metrics, vary)
@@ -83,6 +86,9 @@ def main(argv: list[str] | None = None) -> int:
         directions=directions,
         archive_size=args.archive_size,
         max_members=args.max_members,
+        weight_mode=args.mode,
+        sample_seed=args.sample_seed,
+        workers=args.workers,
     )
     print(str(report["markdown"]))
     print(json.dumps({"front": report["front"], "failures": report["failures"]}, indent=2))

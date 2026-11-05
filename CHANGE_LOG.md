@@ -4440,3 +4440,9 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   separately, and supports X/Y/Z, colour, size, opacity, filter, orbit, selection,
   pin/compare, and schedule links. Focused tests and a Chromium smoke pass.
   Report: `notes/reports/p136-solution-space.md`.
+
+- P136.3: added bounded `random` weight sampling for 5-7 dimensional scans and
+  process-parallel portfolio members with `workers`. The default remains one worker
+  because each process loads its own dataset. Added CLI/web controls and a Search-tab
+  scan builder. A real two-worker c5 portfolio completed with zero failures.
+  Report: `notes/reports/p136-solution-space.md`.

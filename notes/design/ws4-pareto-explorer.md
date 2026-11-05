@@ -55,5 +55,11 @@ The new **Pareto** workspace reads a saved portfolio artifact:
 - Normalization is relative to the current sample, so changing the included members
   changes the visual box.
 - Near-front is a display aid, not a dominance result.
-- Weight-vector parallelism and the guided 5-7 dimension scan builder are follow-up
-  work in P136.3.
+## Weight scans and workers
+
+`scripts/portfolio.py` supports `--mode grid|random`, `--max-members`, `--sample-seed`,
+and `--workers`. Grid mode keeps the exact Cartesian product and refuses an oversized
+one. Random mode samples distinct grid positions deterministically without materializing
+the product. Workers are separate processes and each loads its own dataset; the default
+is one, because memory is the limiting resource. The Search tab's scan builder writes the
+`vary` expression and warns when the grid exceeds the cap.

@@ -449,6 +449,24 @@ a grid of target-weight factors. Every member keeps its objective and realized m
      --directions "product.Yield.managed.Conif=max;feature.Old=max" \
      --seeds 1,2,3 --iterations 500 --years 50
 
+A five- to seven-target scan can exceed a useful run count. Keep ``--mode grid`` for
+an exact Cartesian product, or use ``--mode random`` with ``--max-members`` and
+``--sample-seed`` to take a deterministic sample of distinct grid positions without
+materializing the full product:
+
+.. code-block:: bash
+
+   python scripts/portfolio.py \
+     --dataset build/compiled --targets targets.yaml --out runtime/portfolio \
+     --vary "product.Yield=0.5,1,2;feature.Old=0.5,1,2;feature.Habitat=1,2" \
+     --mode random --max-members 64 --sample-seed 7 --workers 4 \
+     --metrics feature.Old,feature.Habitat --directions "feature.Old=max;feature.Habitat=max"
+
+``--workers`` runs independent members in separate processes. Each worker loads its
+own copy of the compiled dataset, so the default is one; raise it only when the host
+has memory for the model copies. The output layout, per-member summaries, and seeded
+replay are unchanged.
+
 A factor multiplies the matching targets' ``min_weight`` and ``max_weight``; the bounds and
 the other targets are unchanged. An ``account@period`` key varies one period. The metrics
 read ``account_values.csv``: a bare name is the last offset, ``name@sum`` sums the horizon,
