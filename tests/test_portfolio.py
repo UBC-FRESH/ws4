@@ -181,6 +181,8 @@ def test_portfolio_writes_members_front_and_archive(tmp_path: Path) -> None:
     )
     assert len(report["members"]) == 4
     assert report["front"]
+    assert report["outcome_front"] == report["front"]
+    assert report["outcome_front_size"] == report["front_size"]
     assert report["failures"] == 0
     assert (tmp_path / "portfolio" / "portfolio.json").is_file()
     assert (tmp_path / "portfolio" / "portfolio.md").is_file()

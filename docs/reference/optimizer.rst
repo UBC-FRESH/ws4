@@ -476,11 +476,12 @@ manifest and one schedule CSV per archived elite.
 
 The front is a finite grid under a fixed budget and seed set. It is advisory, not a
 certified optimum, and a weight vector that reaches the same metric point as another keeps
-the lower scalar objective. The reported foreground is computed from every successful
-member; the ``archive/`` directory remains capacity-bounded so it can keep one schedule
-per retained elite without growing without limit. Use
-:func:`ws4.opt.solution_space.build_solution_space` or ``GET /api/search/{name}/space`` to
-read the full-member view.
+the lower scalar objective. The reported ``front``/``outcome_front`` is computed from every
+successful member over the declared outcome metrics; the scalar ``objective`` remains an
+optional dimension but does not define dominance. The ``archive/`` directory remains
+capacity-bounded so it can keep one schedule per retained elite without growing without
+limit. Use :func:`ws4.opt.solution_space.build_solution_space` or
+``GET /api/search/{name}/space`` to read the full-member view.
 
 Tuner
 -----

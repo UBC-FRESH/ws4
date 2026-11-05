@@ -1697,7 +1697,7 @@ async function renderSearchArtifact(id) {
       $('search-explore').disabled = false;
       const data = body.data ?? {};
       const metrics = Array.isArray(data.metrics) ? data.metrics : [];
-      const front = new Set(data.front ?? []);
+      const front = new Set(data.outcome_front ?? data.front ?? []);
       const members = Array.isArray(data.members) ? data.members : [];
       summary.textContent = `portfolio · ${members.length} members · ${front.size} on the front · ${data.failures ?? 0} failures · ${data.iterations ?? '?'} iterations · ${data.years ?? '?'} years`;
       addHead(['Member', 'Seed', 'Objective', ...metrics, 'Status', 'Front']);
@@ -1986,6 +1986,8 @@ async function loadParetoSpace(id) {
     $('pareto-pin').disabled = true;
     $('pareto-clear-pins').disabled = true;
     $('pareto-open').disabled = true;
+    $('pareto-open-run').disabled = true;
+    $('pareto-compare-pinned').disabled = true;
     renderParetoCompare();
     drawParetoCloud();
     status.textContent = `${data.points.length} members · ${data.front_size} exact front · ${data.failed} failed`;
@@ -2429,6 +2431,7 @@ function renderParetoInfo(point) {
   info.append(detail);
   $('pareto-pin').disabled = false;
   $('pareto-open').disabled = !point.schedule;
+  $('pareto-open-run').disabled = !point.run_dir;
 }
 
 function pinParetoPoint() {
@@ -2452,6 +2455,7 @@ function renderParetoCompare() {
   compare.replaceChildren();
   const pinned = state.pareto.pinned || [];
   $('pareto-clear-pins').disabled = pinned.length === 0;
+  $('pareto-compare-pinned').disabled = pinned.length < 2;
   if (!pinned.length) {
     const hint = document.createElement('p');
     hint.className = 'hint';
@@ -2490,6 +2494,98 @@ function renderParetoCompare() {
   compare.append(table);
 }
 
+function addPromotedRunOption(runId) {
+  const select = $('run');
+  if (!select) return;
+  if (![...select.options].some((option) => option.value === runId)) {
+    const option = document.createElement('option');
+    option.value = runId;
+    option.textContent = `${runId} (portfolio member)`;
+    select.append(option);
+  }
+  select.value = runId;
+}
+
+async function promoteParetoMember(point) {
+  const artifact = state.pareto.artifact;
+  if (!artifact || !point?.key) throw new Error('no portfolio member is selected');
+  const response = await fetch(
+    `api/search/${encodeURIComponent(artifact)}/members/${encodeURIComponent(point.key)}/promote`,
+    { method: 'POST', headers: { accept: 'application/json' } }
+  );
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.detail || `promotion failed (${response.status})`);
+  return payload;
+}
+
+async function openParetoRun() {
+  const point = (state.pareto.data?.points || []).find((item) => item.key === state.pareto.selected);
+  if (!point) return;
+  const button = $('pareto-open-run');
+  button.disabled = true;
+  $('pareto-status').textContent = 'promoting member…';
+  try {
+    const body = await promoteParetoMember(point);
+    addPromotedRunOption(body.run_id);
+    stopRunWatch();
+    stopPeriodPlay();
+    state.live.active = false;
+    state.live.display = 'live';
+    state.live.schedule = new Map();
+    state.mapTotals = null;
+    state.run = body.run_id;
+    state.selectedBlock = null;
+    state.selectedGeometry = null;
+    $('detail').replaceChildren();
+    setWorkspace('map', { sync: false, activate: false });
+    await loadRunContext();
+    await attachLiveRun(body.run_id);
+    updateUrl();
+    const data = state.pareto.data;
+    $('pareto-status').textContent = data
+      ? `${data.points.length} members · ${data.front_size} exact front · ${data.failed} failed`
+      : 'opened portfolio member';
+    showToast(`opened ${body.run_id}`);
+  } catch (error) {
+    $('pareto-status').textContent = `promotion failed: ${error.message}`;
+    showToast(`could not open the member: ${error.message}`, true);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function compareParetoPinned() {
+  const pinned = state.pareto.pinned || [];
+  if (pinned.length < 2) return;
+  const button = $('pareto-compare-pinned');
+  button.disabled = true;
+  $('pareto-status').textContent = 'promoting pinned members…';
+  try {
+    const ids = [];
+    for (const point of pinned.slice(0, 2)) {
+      const body = await promoteParetoMember(point);
+      addPromotedRunOption(body.run_id);
+      ids.push(body.run_id);
+    }
+    state.run = ids[0];
+    $('run').value = ids[0];
+    state.workspace = 'results';
+    state.subview.results = 'comparison';
+    syncNavigation();
+    syncCompareRuns();
+    $('compare-a').value = ids[0];
+    $('compare-b').value = ids[1];
+    updateUrl();
+    activateSubView();
+    showToast(`comparing ${ids[0]} and ${ids[1]}`);
+  } catch (error) {
+    $('pareto-status').textContent = `comparison failed: ${error.message}`;
+    showToast(`could not compare the members: ${error.message}`, true);
+  } finally {
+    button.disabled = false;
+  }
+}
+
 function openParetoSchedule() {
   const selected = state.pareto.selected;
   if (!selected || !state.pareto.artifact) return;
@@ -2518,6 +2614,8 @@ function wirePareto() {
   $('pareto-pin').addEventListener('click', pinParetoPoint);
   $('pareto-clear-pins').addEventListener('click', clearParetoPins);
   $('pareto-open').addEventListener('click', openParetoSchedule);
+  $('pareto-open-run').addEventListener('click', openParetoRun);
+  $('pareto-compare-pinned').addEventListener('click', compareParetoPinned);
   for (const id of ['pareto-x', 'pareto-y', 'pareto-z', 'pareto-colour', 'pareto-size', 'pareto-opacity', 'pareto-filter-dim', 'pareto-dominance']) {
     $(id).addEventListener('change', drawParetoCloud);
   }

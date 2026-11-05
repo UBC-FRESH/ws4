@@ -64,6 +64,13 @@ def _portfolio(tmp_path: Path) -> tuple[Path, Path]:
         (member / "schedule.csv").write_text(
             "block_id,treatment,offset\n1,CC,0\n", encoding="utf-8"
         )
+        (member / "summary.json").write_text(
+            json.dumps({"status": "ok", "objective": float(index + 1)}), encoding="utf-8"
+        )
+        (member / "account_values.csv").write_text(
+            f"offset,account,value\n0,feature.Volume,{volume}\n0,feature.Old,{old}\n",
+            encoding="utf-8",
+        )
         members.append(
             {
                 "label": label,
@@ -71,6 +78,7 @@ def _portfolio(tmp_path: Path) -> tuple[Path, Path]:
                 "objective": float(index + 1),
                 "metrics": {"volume": volume, "old": old, "cost": cost},
                 "factors": {"feature.Volume": 1.0 + index / 10},
+                "run_dir": str(member),
                 "schedule": str(member / "schedule.csv"),
                 "status": "ok",
             }
@@ -169,8 +177,18 @@ def test_pareto_workspace_renders_and_filters(tmp_path: Path) -> None:
             assert not page.locator("#pareto-open").is_disabled()
             with page.expect_popup():
                 page.click("#pareto-open")
+            page.click("#pareto-open-run")
+            page.wait_for_function(
+                "document.querySelector('#run').value.startsWith('pareto-')",
+                timeout=20000,
+            )
+            page.wait_for_function(
+                "!document.querySelector('#map-wrap').hidden",
+                timeout=20000,
+            )
+            assert page.locator("#run").input_value().startswith("pareto-")
             page.set_viewport_size({"width": 1024, "height": 768})
-            assert page.locator("#pareto-canvas").is_visible()
+            assert page.locator("#map-wrap").is_visible()
             assert errors == []
             browser.close()
     finally:
@@ -220,6 +238,43 @@ def test_search_builds_a_scan_and_opens_the_explorer(tmp_path: Path) -> None:
                 timeout=15000,
             )
             assert page.locator("#pareto-wrap").is_visible()
+            assert errors == []
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(timeout=10)
+
+
+def test_two_pinned_members_open_the_spatial_comparison(tmp_path: Path) -> None:
+    """Pinned members are promoted and handed to the existing comparison workspace."""
+    server, thread, url = _server(tmp_path)
+    try:
+        with sync_playwright() as playwright:
+            try:
+                browser = playwright.chromium.launch(
+                    headless=True,
+                    args=["--use-gl=swiftshader", "--enable-webgl"],
+                )
+            except Exception as error:  # pragma: no cover - browser not installed
+                pytest.skip(f"chromium is not available: {error}")
+            page = browser.new_page(viewport={"width": 1500, "height": 1000})
+            errors: list[str] = []
+            page.on("pageerror", lambda error: errors.append(str(error)))
+            page.goto(f"{url}/?run=run1&view=pareto")
+            page.wait_for_function(
+                "document.querySelector('#pareto-status').textContent.includes('members')",
+                timeout=15000,
+            )
+            for index in (1, 2):
+                page.select_option("#pareto-member", index=index)
+                page.click("#pareto-pin")
+            page.click("#pareto-compare-pinned")
+            page.wait_for_function(
+                "!document.querySelector('#tab-comparison').hidden",
+                timeout=20000,
+            )
+            assert page.locator("#compare-a").input_value().startswith("pareto-")
+            assert page.locator("#compare-b").input_value().startswith("pareto-")
             assert errors == []
             browser.close()
     finally:
