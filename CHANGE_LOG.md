@@ -4442,3 +4442,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   `OVERALL: GREEN`.
 - P135.1 queued in PR #826; branch `feature/p135-bec-applicability`, head
   `f26b054`. Dashboard: `OVERALL: GREEN`.
+
+- P135: merged via PR #826 as `56cdc21`. Coverage uses Atlas zone-level
+  applicability: 1 `reviewed_variant`, 5 `reviewed_zone`, 209 `mixed_zone`,
+  4 `no_diagram`; 10 provisional diagrams / 210 labels in the review queue.
+  Dashboard: `OVERALL: GREEN`.

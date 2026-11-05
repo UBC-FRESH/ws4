@@ -52,7 +52,7 @@ a work list, not an approval.
 
 ## PR
 
-Queued in PR #826 after `f26b054`.
+Squash-merged via PR #826 as `56cdc21`; branch deleted and #824/#825 closed.
 
 ## Verification
 

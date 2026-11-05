@@ -133,7 +133,7 @@ exists and the maintainer approves it.
 | P132 Adversarial audit remediation | #809 | `feature/p132-audit-remediation` | complete |
 | P133 BC-wide SDMD coverage registry | #817 | `feature/p133-bc-coverage` | complete |
 | P134 SDMD coverage closure | #820 | `feature/p134-coverage-closure` | complete |
-| P135 BC SDMD applicability correction | #824 | `feature/p135-bec-applicability` | pr-open |
+| P135 BC SDMD applicability correction | #824 | `feature/p135-bec-applicability` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4087,7 +4087,8 @@ Acceptance:
 
 Parent issue: #824
 Branch: `feature/p135-bec-applicability`
-Status: pr-open
+Status: complete
+Merge commit: `56cdc21`
 Report: `notes/reports/p135-bec-applicability.md`
 PR: #826
 
