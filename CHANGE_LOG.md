@@ -4440,3 +4440,5 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   5 `reviewed_zone`, 209 `mixed_zone`, and 4 `no_diagram`. The review queue names
   10 provisional diagrams and 210 affected labels. `match_level` remains visible. Focused tests: 129 passed. Dashboard:
   `OVERALL: GREEN`.
+- P135.1 queued in PR #826; branch `feature/p135-bec-applicability`, head
+  `f26b054`. Dashboard: `OVERALL: GREEN`.

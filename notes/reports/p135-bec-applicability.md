@@ -50,6 +50,10 @@ a work list, not an approval.
 - Four no-diagram zones need new public source material or a permanent refusal.
 - The two pilot AU stores remain the only assembled AUs.
 
+## PR
+
+Queued in PR #826 after `f26b054`.
+
 ## Verification
 
 Focused tests: 129 passed. BEC authority check: pass. Dashboard:
