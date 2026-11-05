@@ -691,11 +691,12 @@ def run_portfolio(
             )
     # The schedule archive is bounded, but the reported front is not: every successful
     # member is a candidate, so a capacity trim cannot hide a trade-off from the browser.
+    front_directions = {metric: directions[metric] for metric in metrics}
     front = pareto_front(
         [
             Elite(
                 objective=float(record.objective),
-                metrics={key: float(record.metrics[key]) for key in directions},
+                metrics={key: float(record.metrics[key]) for key in metrics},
                 schedule={},
                 source=f"{record.label}:{record.seed:03d}",
                 seed=record.seed,
@@ -703,7 +704,7 @@ def run_portfolio(
             for record in records
             if record.objective is not None
         ],
-        directions,
+        front_directions,
     )
     front_labels = {elite.source for elite in front}
     archive_paths = archive.write(out_dir / "archive")
@@ -713,7 +714,7 @@ def run_portfolio(
             {
                 "label": elite.source,
                 "objective": elite.objective,
-                **{key: elite.metrics[key] for key in directions},
+                **{key: elite.metrics[key] for key in metrics},
             }
             for elite in front
         ]
@@ -735,6 +736,8 @@ def run_portfolio(
         "members": [record.as_dict() for record in records],
         "front": [elite.source for elite in front],
         "front_size": len(front),
+        "outcome_front": [elite.source for elite in front],
+        "outcome_front_size": len(front),
         "front_path": str(front_path),
         "archive": {key: str(path) for key, path in archive_paths.items()},
         "failures": sum(1 for record in records if record.status == "failed"),

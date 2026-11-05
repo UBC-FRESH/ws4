@@ -127,3 +127,4 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `adr/0012-file-and-programmatic-paths.md` — two model-construction paths, file-based and programmatic.
 - `adr/0013-sdmd-as-constraint-layer.md` — the SDMD layer is diagnostic and a constraint source, not a growth model.
 - `reports/p84-state-watch.md` — resident Model II state watcher on the c5 sample.
+- `reports/p138-pareto-to-plan.md` — P138 member promotion and outcome-front alignment.
