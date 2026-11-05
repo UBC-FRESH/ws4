@@ -6385,6 +6385,8 @@ async function loadTargets() {
     const rows = await api('api/targets.json');
     rows.forEach((row) => { row.active = row.active !== false; });
     state.targets = rows;
+    populateScanAccounts();
+    renderPortfolioScan();
     state.targetSeries = null;
     state.series = new Map();
     try {
