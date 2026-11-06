@@ -752,6 +752,11 @@ class EffectTable:
             indptr, columns, values = self.indptr, self.indices, self.values
         base = optimizer._base_values()
         new_base = tuple(float(base.get(cell, 0.0)) for cell in additions)
+        widths = indptr[1:] - indptr[:-1]
+        max_row_width = max(
+            self._max_row_width,
+            int(widths.max().item()) if widths.numel() else 1,
+        )
         return (
             replace(
                 self,
@@ -761,6 +766,7 @@ class EffectTable:
                 values=values,
                 basis_accounts=basis_accounts,
                 build_seconds=self.build_seconds,
+                _max_row_width=max_row_width,
             ),
             new_base,
         )

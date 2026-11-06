@@ -316,6 +316,17 @@ def test_cuda_table_matches_the_cpu_table(tmp_path: Path) -> None:
     assert torch.equal(actual, expected)
 
 
+def test_extend_cells_updates_the_maximum_row_width(tmp_path: Path) -> None:
+    """A lazy cell extension keeps the widest-row invariant used by segmented sums."""
+    optimizer, evaluator = _optimizer(tmp_path)
+    table = EffectTable.build(optimizer, evaluator)
+    candidates = optimizer.candidates()
+    new_cell = (0, "feature.Volume")
+    extended, _base = table.extend_cells(optimizer, [new_cell], candidates)
+    widths = extended.indptr[1:] - extended.indptr[:-1]
+    assert extended._max_row_width == int(widths.max().item())
+
+
 def test_target_independent_cell_basis_survives_target_changes(tmp_path: Path) -> None:
     """A watchable basis covers target changes that do not alter model or candidates."""
     optimizer, _evaluator = _optimizer(tmp_path)
