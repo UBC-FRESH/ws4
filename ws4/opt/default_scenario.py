@@ -186,7 +186,32 @@ def build_default_stock90_targets(
     ]
     final_period = _target_periods(entries)
     floor = float(initial_stock) * float(stock_fraction)
-    if not _has_stock_guard(entries, stock_account, final_period, floor):
+    existing = [
+        entry
+        for entry in entries
+        if str(entry.get("account", "")).lower() == stock_account.lower()
+        and entry.get("period") is not None
+        and int(float(str(entry.get("period")))) == final_period
+    ]
+    if existing:
+        weak = any(
+            entry.get("minimum") is None or float(entry.get("minimum", 0.0)) < floor
+            for entry in existing
+        )
+        for entry in existing:
+            minimum = entry.get("minimum")
+            if minimum is None or float(minimum) < floor:
+                entry["minimum"] = floor
+                entry["min_weight"] = max(10.0, float(entry.get("min_weight", 1.0)))
+                entry["max_weight"] = max(1.0, float(entry.get("max_weight", 1.0)))
+                entry["normalization"] = "auto"
+                entry["notes"] = (
+                    f"Default scenario: {stock_fraction:.0%} of initial managed "
+                    f"growing stock {initial_stock:.2f} = {floor:.2f}."
+                )
+        if weak:
+            _raise_volume_targets(entries, volume_multiplier)
+    else:
         _raise_volume_targets(entries, volume_multiplier)
         priority = max(
             (int(entry.get("priority", 1)) for entry in entries if entry.get("priority")),

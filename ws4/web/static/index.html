@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=101">
+  <link rel="stylesheet" href="static/style.css?v=102">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
   <script type="importmap">
     {
@@ -18,7 +18,7 @@
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v101</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v102</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <div class="period-control">
@@ -134,7 +134,7 @@
         <div class="run-row">
           <label>Max iters <input id="run-iterations" type="number" value="" min="0" step="1" title="blank or 0 = effectively unlimited iterations; wall-clock limit applies"></label>
           <label>Patience <input id="run-patience" type="number" value="0" min="0" step="1" title="stop after N iterations without an improvement; 0 = off"></label>
-          <label>Time <input id="run-time-limit" type="text" value="00:01:00" placeholder="HH:MM:SS" size="9"></label>
+          <label>Time <input id="run-time-limit" type="text" value="00:03:00" placeholder="HH:MM:SS" size="9"></label>
           <label>Years <input id="run-years" type="number" value="50" min="1" step="1"></label>
           <span class="state-engine-pill" title="Resident-state accelerated search; one CPU core">state · 1 core</span>
           <label>Seed <input id="run-seed" type="number" value="1" step="1"></label>
@@ -623,6 +623,6 @@
     <p class="hint">Shortcuts pause while typing in an input, select, or editor.</p>
   </dialog>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=101"></script>
+  <script type="module" src="static/app.js?v=102"></script>
 </body>
 </html>
