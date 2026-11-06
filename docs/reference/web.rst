@@ -759,6 +759,10 @@ target status, and comparison endpoints then work unchanged. Two pinned members 
 promoted into the existing spatial comparison view. Promotion never changes the live
 target file or the portfolio artifact.
 
+The promoted run carries the member's ``targets.yaml``. Run target status, target
+series, and period width prefer that local file; the Plan editor still edits the live
+target file and shows a read-only notice for portfolio-member runs.
+
 Reports
 -------
 

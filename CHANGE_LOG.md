@@ -4485,3 +4485,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P138: merged via PR #836 as `b82dbcf`. A Pareto member can be promoted to a direct
   read-only run, opened on the map, or compared with a second pinned member. Search and
   the explorer now use outcome-only dominance. Dashboard: `OVERALL: GREEN`.
+
+- P139.1: promoted portfolio runs now copy and use their member target file. Target
+  status, target series, and periods prefer the run-local targets; Plan shows a read-only
+  member-target notice. Report: `notes/reports/p139-target-faithful.md`.
