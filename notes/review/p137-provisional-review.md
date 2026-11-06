@@ -1,7 +1,9 @@
 # P137 provisional SDMD diagram review packet
 
-Status: **all 10 diagrams rejected for re-digitization.** Do not review this
-packet. See `notes/review/p137-overlay-findings.md`.
+Status: **under correction. Do not review this packet yet.**
+The corrected `fdcn` overlay rejects its crown closure; the other nine need
+corrected per-page overlays before a decision. See
+`notes/review/p137-overlay-findings.md`.
 
 The source page and the **numeric curve inventory** are the review evidence.
 The SVG plots are optional visual aids. They are not axis-registered overlays
@@ -26,10 +28,8 @@ try to identify unlabelled lines by eye.
 
 ## Known finding
 
-`fdcn` already fails the numeric comparison: the source top-height labels are
-`60, 52, 44, 39, 34, 28, 24, 20, 16, 12, 8, 6 m`, while the stored values are
-`60, 52, 44, 36, 28, 24, 20, 16, 12, 8, 6 m`. The 39/34 pair is missing and one
-36 m curve is present. Treat `fdcn` as rejected until corrected.
+`fdcn` top heights and QMD match the source. Its stored crown-closure curve does
+not. Treat `fdcn` as rejected for crown-closure correction.
 
 ## Review checklist
 

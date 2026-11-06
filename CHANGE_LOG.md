@@ -4519,7 +4519,6 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P142: merged via PR #848 as `f217cfe`. Added the generated 90% growing-stock default
   scenario generator and raised the default Solve budget to three minutes. Dashboard:
   `OVERALL: GREEN`.
-
 - P143.1: search artifacts now expose timestamp/member/front/failure metadata and sort
   newest first; the Pareto selector prefers the newest usable front. Portal seed-state
   caches now key on the active target file and initial schedule. Report:
@@ -4532,8 +4531,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P143.1/P143.2: merged via PR #851 as `2e51922`. Added newest-first artifact metadata,
   target-aware state-cache keys, promoted-run target definitions, alternative profile
   preservation, and unsupported-GPU-profile fallback. Dashboard: `OVERALL: GREEN`.
-- P137.1: axis-registered overlays show all 10 provisional diagrams fail:
-  crown closure is the wrong shape, top-height/QMD families are offset or
-  misidentified, and `fdcn` has missing 39/34. Added overlay findings and
-  images; all 10 are rejected for re-digitization. No diagram is marked reviewed.
-  Dashboard: `OVERALL: GREEN`.
+- P137.1: corrected the overlay calibration. `fdcn` top heights and QMD match the
+  source; its crown closure does not. The earlier `39/34` claim was wrong. The
+  other nine need corrected per-page overlays before a decision. No diagram is
+  marked reviewed. Dashboard: `OVERALL: GREEN`.

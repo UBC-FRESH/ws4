@@ -17,9 +17,10 @@ Branch: `feature/p137-diagram-review`
 
 ## Result
 
-All 10 diagrams are **rejected for re-digitization**. The axis-registered
-overlays do not follow the source curves; crown closure is grossly wrong in all
-10. The packet is not a review request.
+The review is under correction. A coordinate-system bug made the first overlays
+untrustworthy. With corrected calibration, `fdcn` top heights and QMD match the
+source; its crown-closure curve does not. The other nine need corrected overlays
+before any decision. The packet is not a review request yet.
 
 The diagrams are:
 
@@ -39,10 +40,9 @@ Queued in PR #832 after `abdb3bf`.
 
 ## Overlay finding
 
-The overlay pass found that the stored curves do not match the source. This is
-not a labeling nit: the crown-closure curves are the wrong shape, and several
-top-height/QMD families are offset or misidentified. `fdcn` also has a concrete
-value error: source `39/34` vs stored `36`.
+The first overlay pass had a coordinate-calibration bug. After correction,
+`fdcn` top heights and QMD match; its crown closure does not. The earlier
+`39/34` claim was wrong. The remaining diagrams need corrected overlays.
 
 Evidence: `notes/review/p137-overlay-findings.md` and
 `notes/review/p137-overlays/`.
