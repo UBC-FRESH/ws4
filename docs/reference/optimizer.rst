@@ -464,7 +464,9 @@ materializing the full product:
 
 ``--workers`` runs independent members in separate processes. Each worker loads its
 own copy of the compiled dataset, so the default is one; raise it only when the host
-has memory for the model copies. The output layout, per-member summaries, and seeded
+has memory for the model copies. ``--initial-schedule`` supplies a starting schedule for every member, which is
+needed when flow targets cannot be satisfied from an empty start. The web launcher
+also offers a level-only target copy for scans that should ignore flow rows. The output layout, per-member summaries, and seeded
 replay are unchanged.
 
 A factor multiplies the matching targets' ``min_weight`` and ``max_weight``; the bounds and

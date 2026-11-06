@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=98">
+  <link rel="stylesheet" href="static/style.css?v=100">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
   <script type="importmap">
     {
@@ -18,7 +18,7 @@
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v98</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v100</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <div class="period-control">
@@ -270,9 +270,14 @@
             <label>Max members <input id="portfolio-max-members" type="number" value="64" min="1" max="256"></label>
             <label>Workers <input id="portfolio-workers" type="number" value="1" min="1" max="16"></label>
             <label>Sample seed <input id="portfolio-sample-seed" type="number" value="1"></label>
+            <label>Targets <select id="portfolio-target-mode">
+              <option value="level_only">level-only (flow removed)</option>
+              <option value="current">current targets</option>
+            </select></label>
+            <label><input id="portfolio-initial" type="checkbox"> initial schedule</label>
             <button id="run-portfolio" type="button">Run portfolio</button>
           </div>
-          <p class="hint">Workers are separate processes; each one loads its own dataset. Raise it only when memory allows.</p>
+          <p class="hint">Workers are separate processes; each one loads its own dataset. Raise it only when memory allows. Level-only removes flow targets, which is usually required for a scan that starts from an empty schedule; the initial-schedule option uses the instance seed.</p>
         </details>
         <details class="search-run">
           <summary>Build a weight scan</summary>
@@ -617,6 +622,6 @@
     <p class="hint">Shortcuts pause while typing in an input, select, or editor.</p>
   </dialog>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=98"></script>
+  <script type="module" src="static/app.js?v=100"></script>
 </body>
 </html>

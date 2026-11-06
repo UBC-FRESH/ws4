@@ -13,6 +13,7 @@ from ws4.opt.objective import load_targets
 from ws4.opt.portfolio import (
     PortfolioMember,
     metrics_from_accounts,
+    metrics_from_run,
     parse_directions,
     parse_vary,
     run_portfolio,
@@ -150,6 +151,20 @@ def test_metric_names_select_end_sum_and_offset() -> None:
     assert metrics_from_accounts(frame, ["product.volume@0"]) == {"product.volume@0": 10.0}
     with pytest.raises(ValueError, match="no value"):
         metrics_from_accounts(frame, ["product.volume@5"])
+
+
+def test_metrics_from_run_reads_accounts_and_products(tmp_path: Path) -> None:
+    """A product metric is found in product_values.csv beside level accounts."""
+    pd.DataFrame([{"offset": 0, "account": "feature.Old", "value": 10.0}]).to_csv(
+        tmp_path / "account_values.csv", index=False
+    )
+    pd.DataFrame([{"offset": 0, "account": "product.Volume", "value": 20.0}]).to_csv(
+        tmp_path / "product_values.csv", index=False
+    )
+    assert metrics_from_run(tmp_path, ["feature.Old", "product.Volume"]) == {
+        "feature.Old": 10.0,
+        "product.Volume": 20.0,
+    }
 
 
 def test_parse_directions_defaults_to_max_and_adds_objective() -> None:
@@ -304,12 +319,15 @@ def test_portfolio_main_wires_the_arguments(
             "1,2",
             "--iterations",
             "3",
+            "--initial-schedule",
+            str(tmp_path / "initial.csv"),
         ]
     )
     assert code == 0
     assert captured["vary"] == {"product.volume": (1.0, 2.0)}
     assert captured["metrics"] == ["product.volume"]
     assert captured["seeds"] == [1, 2]
+    assert captured["initial_schedule"] == tmp_path / "initial.csv"
 
 
 def test_portfolio_main_returns_one_on_a_failure(
