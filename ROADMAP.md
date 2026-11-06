@@ -136,7 +136,7 @@ exists and the maintainer approves it.
 | P135 BC SDMD applicability correction | #824 | `feature/p135-bec-applicability` | complete |
 | P136 Pareto solution-space explorer | #827 | `feature/p136-pareto-explorer` | complete |
 | P138 Pareto member to map/Plan | #834 | `feature/p138-pareto-to-plan` | complete |
-| P139 Target-faithful promoted runs | #837 | `feature/p139-target-faithful` | pr-open |
+| P139 Target-faithful promoted runs | #837 | `feature/p139-target-faithful` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4165,8 +4165,10 @@ Acceptance:
 
 Parent issue: #837
 Branch: `feature/p139-target-faithful`
-Status: pr-open
+Status: complete
+Merge commit: `97b9ea3`
 Report: `notes/reports/p139-target-faithful.md`
+PR: #839
 
 Goal: make a promoted Pareto run report against its own scaled target file.
 

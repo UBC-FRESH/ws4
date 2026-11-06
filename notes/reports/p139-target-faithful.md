@@ -1,7 +1,8 @@
 # P139 target-faithful promoted runs
 
 Date: 2026-11-06
-Status: pr-open
+Status: complete
+Merge commit: `97b9ea3`
 PR: #839
 Branch: `feature/p139-target-faithful`
 Parent issue: #837

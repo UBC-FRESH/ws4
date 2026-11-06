@@ -4489,3 +4489,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P139.1: promoted portfolio runs now copy and use their member target file. Target
   status, target series, and periods prefer the run-local targets; Plan shows a read-only
   member-target notice. Report: `notes/reports/p139-target-faithful.md`.
+
+- P139: merged via PR #839 as `97b9ea3`. Promoted Pareto runs copy their member target
+  file and prefer run-local targets for status, series, and period width. Dashboard:
+  `OVERALL: GREEN`.
