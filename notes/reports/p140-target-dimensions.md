@@ -2,6 +2,7 @@
 
 Date: 2026-11-06
 Status: pr-open
+PR: #842
 Branch: `feature/p140-target-dimensions`
 Parent issue: #840
 Task issue: #841
