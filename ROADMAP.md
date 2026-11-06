@@ -139,7 +139,7 @@ exists and the maintainer approves it.
 | P139 Target-faithful promoted runs | #837 | `feature/p139-target-faithful` | complete |
 | P140 Period target dimensions | #840 | `feature/p140-target-dimensions` | complete |
 | P141 Portfolio target preparation | #843 | `feature/p141-portfolio-target-prep` | complete |
-| P142 Default stock90 scenario | #846 | `feature/p142-default-stock90` | pr-open |
+| P142 Default stock90 scenario | #846 | `feature/p142-default-stock90` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4230,8 +4230,10 @@ Acceptance:
 
 Parent issue: #846
 Branch: `feature/p142-default-stock90`
-Status: pr-open
+Status: complete
+Merge commit: `f217cfe`
 Report: `notes/reports/p142-default-stock90.md`
+PR: #848
 
 Goal: give every runnable instance a useful even-flow + 90% growing-stock default.
 

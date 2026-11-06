@@ -4515,3 +4515,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   growing-stock floor and ambitious harvest levels. The default Solve budget is three
   minutes. Focused tests pass; dashboard: `OVERALL: GREEN`. Report:
   `notes/reports/p142-default-stock90.md`.
+
+- P142: merged via PR #848 as `f217cfe`. Added the generated 90% growing-stock default
+  scenario generator and raised the default Solve budget to three minutes. Dashboard:
+  `OVERALL: GREEN`.

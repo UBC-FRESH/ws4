@@ -1,7 +1,8 @@
 # P142 default stock-guarded even-flow scenario
 
 Date: 2026-11-06
-Status: pr-open
+Status: complete
+Merge commit: `f217cfe`
 PR: #848
 Branch: `feature/p142-default-stock90`
 Parent issue: #846
