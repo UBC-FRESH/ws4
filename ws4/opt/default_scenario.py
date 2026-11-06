@@ -155,6 +155,7 @@ def build_default_stock90_targets(
     stock_account: str,
     volume_multiplier: float = VOLUME_MULTIPLIER,
     stock_fraction: float = STOCK_FRACTION,
+    force_volume_multiplier: bool = False,
 ) -> Path:
     """Write a default target file with an even-flow structure and a 90% stock floor.
 
@@ -173,6 +174,9 @@ def build_default_stock90_targets(
         final-period stock guard. Defaults to 2.
     stock_fraction : float, optional
         Final-period stock floor as a fraction of initial stock. Defaults to 0.9.
+    force_volume_multiplier : bool, optional
+        Raise volume targets even when an existing final-period stock guard is
+        present. Defaults to False.
 
     Returns
     -------
@@ -209,7 +213,7 @@ def build_default_stock90_targets(
                     f"Default scenario: {stock_fraction:.0%} of initial managed "
                     f"growing stock {initial_stock:.2f} = {floor:.2f}."
                 )
-        if weak:
+        if weak or force_volume_multiplier:
             _raise_volume_targets(entries, volume_multiplier)
     else:
         _raise_volume_targets(entries, volume_multiplier)

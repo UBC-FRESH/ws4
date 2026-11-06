@@ -90,6 +90,35 @@ def test_default_target_raises_volume_and_adds_the_stock_floor(tmp_path: Path) -
     assert stock["normalization"] == "auto"
 
 
+def test_default_target_can_force_volume_above_an_existing_guard(tmp_path: Path) -> None:
+    """A caller can raise half-AAC bands while preserving the existing stock floor."""
+    source = tmp_path / "targets.yaml"
+    source.write_text(
+        "targets:\n"
+        "  - account: product.Yield.managed.Total\n"
+        "    period: 1\n"
+        "    minimum: 1000\n"
+        "    maximum: 1100\n"
+        "  - account: feature.Yield.managed.Total\n"
+        "    period: 1\n"
+        "    minimum: 950\n",
+        encoding="utf-8",
+    )
+    output = build_default_stock90_targets(
+        source,
+        tmp_path / "default.yaml",
+        initial_stock=1000.0,
+        stock_account="feature.Yield.managed.Total",
+        force_volume_multiplier=True,
+    )
+    entries = yaml.safe_load(output.read_text(encoding="utf-8"))["targets"]
+    volume = next(entry for entry in entries if entry["account"] == "product.Yield.managed.Total")
+    stock = next(entry for entry in entries if entry["account"] == "feature.Yield.managed.Total")
+    assert volume["minimum"] == 2000.0
+    assert volume["maximum"] == 2200.0
+    assert stock["minimum"] == 950
+
+
 def test_default_target_updates_a_weak_existing_stock_guard(tmp_path: Path) -> None:
     """A final stock row below 90% is replaced rather than duplicated."""
     source = tmp_path / "targets.yaml"
