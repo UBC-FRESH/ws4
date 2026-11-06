@@ -51,8 +51,8 @@ The new **Pareto** workspace reads a saved portfolio artifact:
 ## Limits
 
 - The weight grid is a finite, budgeted sample. The surface is not a certified Pareto
-  manifold. The Search scanner can build 5-7 target dimensions, but high-dimensional
-  grids should use the seeded random sample.
+  manifold. The Search scanner can build 5-7 target dimensions, including periodic
+  `account@period` rows; high-dimensional grids should use the seeded random sample.
 - Normalization is relative to the current sample, so changing the included members
   changes the visual box.
 - Near-front is a display aid, not a dominance result.

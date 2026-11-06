@@ -1816,13 +1816,43 @@ function scanProduct() {
   );
 }
 
+function scanDimensionKey(row) {
+  const account = String(row.account || '');
+  const period = row.period === null || row.period === undefined ? null : Number(row.period);
+  return period !== null && Number.isFinite(period) ? `${account}@${period}` : account;
+}
+
+function scanDimensionLabel(row) {
+  const account = String(row.account || '');
+  const period = row.period === null || row.period === undefined ? null : Number(row.period);
+  if (period === null || !Number.isFinite(period)) return account;
+  const year = row.year === null || row.year === undefined ? null : Number(row.year);
+  return `${account} · P${period}${Number.isFinite(year) ? ` (to Y${year})` : ''}`;
+}
+
+function scanDimensionsFromTargets() {
+  const seen = new Set();
+  const dimensions = [];
+  for (const row of state.targets || []) {
+    const key = scanDimensionKey(row);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    dimensions.push({ key, label: scanDimensionLabel(row), account: String(row.account || ''), period: Number(row.period) });
+  }
+  return dimensions.sort((left, right) => {
+    const account = left.account.localeCompare(right.account);
+    if (account !== 0) return account;
+    return (left.period || 0) - (right.period || 0);
+  });
+}
+
 function populateScanAccounts() {
   const select = $('scan-account');
   if (!select) return;
   const previous = select.value;
-  const accounts = [...new Set((state.targets || []).map((row) => row.account))].sort();
+  const dimensions = scanDimensionsFromTargets();
   select.replaceChildren();
-  if (!accounts.length) {
+  if (!dimensions.length) {
     const option = document.createElement('option');
     option.value = '';
     option.textContent = 'No targets loaded';
@@ -1831,13 +1861,13 @@ function populateScanAccounts() {
     return;
   }
   $('scan-add').disabled = false;
-  for (const account of accounts) {
+  for (const dimension of dimensions) {
     const option = document.createElement('option');
-    option.value = account;
-    option.textContent = account;
+    option.value = dimension.key;
+    option.textContent = dimension.label;
     select.append(option);
   }
-  if (accounts.includes(previous)) select.value = previous;
+  if (dimensions.some((dimension) => dimension.key === previous)) select.value = previous;
 }
 
 function renderPortfolioScan() {
@@ -1846,7 +1876,7 @@ function renderPortfolioScan() {
   for (const [index, dimension] of state.portfolioScan.entries()) {
     const item = document.createElement('li');
     const name = document.createElement('span');
-    name.textContent = `${dimension.account} = ${dimension.factors.join(', ')}`;
+    name.textContent = `${dimension.label || dimension.key} = ${dimension.factors.join(', ')}`;
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'link-button';
@@ -1870,18 +1900,46 @@ function renderPortfolioScan() {
 }
 
 function addPortfolioScanDimension() {
-  const account = $('scan-account').value;
+  const key = $('scan-account').value;
+  const selected = scanDimensionsFromTargets().find((item) => item.key === key);
   const factors = $('scan-factors')
     .value.split(',')
     .map((value) => Number(value.trim()))
     .filter((value) => Number.isFinite(value) && value > 0);
-  if (!account || !factors.length) {
-    $('scan-summary').textContent = 'Pick an account and at least one positive factor.';
+  if (!key || !selected || !factors.length) {
+    $('scan-summary').textContent = 'Pick a target dimension and at least one positive factor.';
     return;
   }
-  const existing = state.portfolioScan.find((item) => item.account === account);
+  const existing = state.portfolioScan.find((item) => item.key === key);
   if (existing) existing.factors = factors;
-  else state.portfolioScan.push({ account, factors });
+  else state.portfolioScan.push({ ...selected, factors });
+  renderPortfolioScan();
+}
+
+function scaffoldScanPeriods(count) {
+  const selected = $('scan-account').value;
+  const account = selected.includes('@') ? selected.split('@', 1)[0] : selected;
+  const all = scanDimensionsFromTargets();
+  let rows = all.filter((item) => item.account === account && item.period > 0);
+  if (rows.length < count) rows = all.filter((item) => item.period > 0);
+  rows = rows.sort((left, right) => left.period - right.period).slice(0, count);
+  if (!rows.length) {
+    $('scan-summary').textContent = 'No periodic target rows are available.';
+    return;
+  }
+  const factors = $('scan-factors')
+    .value.split(',')
+    .map((value) => Number(value.trim()))
+    .filter((value) => Number.isFinite(value) && value > 0);
+  if (!factors.length) {
+    $('scan-summary').textContent = 'Enter at least one positive factor first.';
+    return;
+  }
+  state.portfolioScan = rows.map((row) => ({ ...row, factors: [...factors] }));
+  renderPortfolioScan();
+  const product = scanProduct();
+  const max = Math.max(1, Number($('portfolio-max-members').value) || 64);
+  if (product > max) $('portfolio-mode').value = 'random';
   renderPortfolioScan();
 }
 
@@ -1891,7 +1949,7 @@ function usePortfolioScan() {
     return;
   }
   $('portfolio-vary').value = state.portfolioScan
-    .map((item) => `${item.account}=${item.factors.join(',')}`)
+    .map((item) => `${item.key || item.account}=${item.factors.join(',')}`)
     .join(';');
   const product = scanProduct();
   const max = Math.max(1, Number($('portfolio-max-members').value) || 64);
@@ -1902,6 +1960,8 @@ function usePortfolioScan() {
 function wirePortfolioScan() {
   if (!$('scan-add')) return;
   $('scan-add').addEventListener('click', addPortfolioScanDimension);
+  $('scan-periods-5').addEventListener('click', () => scaffoldScanPeriods(5));
+  $('scan-periods-7').addEventListener('click', () => scaffoldScanPeriods(7));
   $('scan-clear').addEventListener('click', () => {
     state.portfolioScan = [];
     renderPortfolioScan();

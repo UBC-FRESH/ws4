@@ -4493,3 +4493,11 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P139: merged via PR #839 as `97b9ea3`. Promoted Pareto runs copy their member target
   file and prefer run-local targets for status, series, and period width. Dashboard:
   `OVERALL: GREEN`.
+
+- P140.1: the guided scan builder now offers periodic target rows (`account@period`)
+  and scaffolds 5 or 7 temporal weight dimensions without changing live targets.
+  Focused tests pass; dashboard: `OVERALL: GREEN`. Report:
+  `notes/reports/p140-target-dimensions.md`.
+
+- P140: merged via PR #842 as `b11e105`. Target-row dimensions now include
+  `account@period`, with +5/+7 period scan scaffolds. Dashboard: `OVERALL: GREEN`.

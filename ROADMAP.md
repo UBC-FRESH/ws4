@@ -137,6 +137,7 @@ exists and the maintainer approves it.
 | P136 Pareto solution-space explorer | #827 | `feature/p136-pareto-explorer` | complete |
 | P138 Pareto member to map/Plan | #834 | `feature/p138-pareto-to-plan` | complete |
 | P139 Target-faithful promoted runs | #837 | `feature/p139-target-faithful` | complete |
+| P140 Period target dimensions | #840 | `feature/p140-target-dimensions` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4180,4 +4181,24 @@ Acceptance:
 - Its target status and target series use the member file, not the live file.
 - The run summary exposes portfolio source metadata.
 - Existing promoted runs are upgraded safely.
+- Tests, browser smoke, and dashboard pass.
+
+## Phase 140: Period target dimensions
+
+Parent issue: #840
+Branch: `feature/p140-target-dimensions`
+Status: complete
+Merge commit: `b11e105`
+Report: `notes/reports/p140-target-dimensions.md`
+PR: #842
+
+Goal: make 5-7D target-weight scans usable from the live periodic target rows.
+
+- [x] P140.1 Period target scan builder (#841)
+
+Acceptance:
+
+- The scan builder lists per-period target dimensions.
+- A 5-period scaffold writes five `account@period=...` groups.
+- The generated scan goes through the existing portfolio path.
 - Tests, browser smoke, and dashboard pass.
