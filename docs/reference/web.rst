@@ -743,11 +743,13 @@ box. A near-front member is labelled as such; it is not called Pareto. Selecting
 member opens its metric vector, factors, objective, and schedule download; up to three
 members can be pinned for comparison.
 
-The Search tab also has a **Build a weight scan** helper. Add target accounts and
+The Search tab also has a **Build a weight scan** helper. Add target dimensions and
 comma-separated factors; it writes the ``vary`` expression and warns when the Cartesian
-product exceeds the member cap. The portfolio launcher exposes ``grid`` or ``random``
-sampling, a maximum member count, a sample seed, and process workers. Each worker loads
-its own dataset copy, so the launcher defaults to one worker.
+product exceeds the member cap. Dimensions may be account-level or periodic
+(``account@period``). **+5 periods** and **+7 periods** scaffold temporal scans from the
+selected target account without changing the target file. The portfolio launcher exposes
+``grid`` or ``random`` sampling, a maximum member count, a sample seed, and process
+workers. Each worker loads its own dataset copy, so the launcher defaults to one worker.
 
 The cloud is a finite grid sample under one search budget. It is advisory, and its
 normalized axes are relative to the members loaded into the current artifact.

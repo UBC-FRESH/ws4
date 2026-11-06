@@ -103,6 +103,10 @@ def _portfolio(tmp_path: Path) -> tuple[Path, Path]:
     targets.write_text(
         "targets:\n"
         "  - account: feature.Volume\n    period: 1\n    minimum: 1000\n"
+        "  - account: feature.Volume\n    period: 2\n    minimum: 1000\n"
+        "  - account: feature.Volume\n    period: 3\n    minimum: 1000\n"
+        "  - account: feature.Volume\n    period: 4\n    minimum: 1000\n"
+        "  - account: feature.Volume\n    period: 5\n    minimum: 1000\n"
         "  - account: feature.Old\n    period: 1\n    minimum: 200\n",
         encoding="utf-8",
     )
@@ -225,15 +229,25 @@ def test_search_builds_a_scan_and_opens_the_explorer(tmp_path: Path) -> None:
             page.locator("details.search-run").filter(has_text="Build a weight scan").evaluate(
                 "element => { element.open = true; }"
             )
-            page.select_option("#scan-account", label="feature.Volume")
+            page.select_option("#scan-account", value="feature.Volume@1")
             page.click("#scan-add")
-            page.select_option("#scan-account", label="feature.Old")
+            page.select_option("#scan-account", value="feature.Old@1")
             page.fill("#scan-factors", "0.5,1")
             page.click("#scan-add")
             assert "2 dimensions" in page.locator("#scan-summary").inner_text()
             page.click("#scan-use")
-            assert "feature.Volume=0.5,1,2" in page.locator("#portfolio-vary").input_value()
-            assert "feature.Old=0.5,1" in page.locator("#portfolio-vary").input_value()
+            assert "feature.Volume@1=0.5,1,2" in page.locator("#portfolio-vary").input_value()
+            assert "feature.Old@1=0.5,1" in page.locator("#portfolio-vary").input_value()
+            page.click("#scan-periods-5")
+            assert "5 dimensions" in page.locator("#scan-summary").inner_text()
+            vary = (
+                page.locator("#portfolio-vary").input_value()
+                if page.locator("#scan-use").is_visible()
+                else ""
+            )
+            page.click("#scan-use")
+            vary = page.locator("#portfolio-vary").input_value()
+            assert len([part for part in vary.split(";") if part]) == 5
             page.wait_for_function(
                 "!document.querySelector('#search-explore').disabled",
                 timeout=15000,
