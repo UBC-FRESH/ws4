@@ -19,7 +19,9 @@ The Search launcher now prepares a safe target set per portfolio run:
   that file to the portfolio script;
 - `use_initial_schedule` forwards the instance's configured seed schedule;
 - the CLI accepts `--initial-schedule`;
-- the UI defaults to level-only targets with a visible explanation.
+- the UI defaults to level-only targets with a visible explanation;
+- metric collection reads both ``account_values.csv`` and ``product_values.csv``, so the
+  launcher's default product metrics work on current runs.
 
 The live target file itself is never mutated.
 
@@ -29,6 +31,7 @@ The live target file itself is never mutated.
 - API tests assert a configured initial schedule is forwarded.
 - A service without an initial schedule rejects the request with 422.
 - CLI test covers `--initial-schedule` wiring.
+- `metrics_from_run` test covers a product metric beside level accounts.
 - `python scripts/dashboard.py`: `OVERALL: GREEN. Every gate passed.`
 
 ## Limits

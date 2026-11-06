@@ -4503,6 +4503,6 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   `account@period`, with +5/+7 period scan scaffolds. Dashboard: `OVERALL: GREEN`.
 
 - P141.1: portfolio scans can prepare a flow-free level-only target file and use the
-  instance initial schedule. The UI defaults to level-only; live targets are untouched.
-  Focused tests pass; dashboard: `OVERALL: GREEN`. Report:
-  `notes/reports/p141-portfolio-target-prep.md`.
+  instance initial schedule. Portfolio metrics now read both account and product tables.
+  The UI defaults to level-only; live targets are untouched. Focused tests pass;
+  dashboard: `OVERALL: GREEN`. Report: `notes/reports/p141-portfolio-target-prep.md`.

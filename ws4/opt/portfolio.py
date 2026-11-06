@@ -390,6 +390,36 @@ def metrics_from_accounts(frame: pd.DataFrame, names: Sequence[str]) -> dict[str
     return values
 
 
+def metrics_from_run(run_dir: Path, names: Sequence[str]) -> dict[str, float]:
+    """Read realized metrics from a run's account and product tables.
+
+    The optimizer writes level accounts to ``account_values.csv`` and product accounts
+    to ``product_values.csv``. A metric selector should not have to know which table
+    produced the account.
+
+    Parameters
+    ----------
+    run_dir : Path
+        The completed run directory.
+    names : sequence of str
+        Metric selectors accepted by :func:`metrics_from_accounts`.
+
+    Returns
+    -------
+    dict of str to float
+        The value per requested metric.
+    """
+    frames: list[pd.DataFrame] = []
+    for filename in ("account_values.csv", "product_values.csv"):
+        path = Path(run_dir) / filename
+        if path.is_file():
+            frames.append(pd.read_csv(path))
+    if not frames:
+        raise ValueError("the run has no account_values.csv or product_values.csv")
+    frame = pd.concat(frames, ignore_index=True) if len(frames) > 1 else frames[0]
+    return metrics_from_accounts(frame, names)
+
+
 def parse_directions(text: str | None, metrics: Sequence[str]) -> dict[str, Direction]:
     """Return the direction per metric, defaulting every unnamed metric to ``max``.
 
@@ -652,8 +682,7 @@ def run_portfolio(
             if "incumbent_objective" not in summary:
                 raise ValueError("the run summary has no incumbent_objective")
             objective = float(summary["incumbent_objective"])
-            account_frame = pd.read_csv(spec.run_dir / "account_values.csv")
-            measured = metrics_from_accounts(account_frame, metrics)
+            measured = metrics_from_run(spec.run_dir, metrics)
             measured["objective"] = objective
             schedule_path = spec.run_dir / "schedule.csv"
             schedule = load_schedule_csv(schedule_path)
