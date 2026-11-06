@@ -2,6 +2,7 @@
 
 Date: 2026-11-06
 Status: pr-open
+PR: #848
 Branch: `feature/p142-default-stock90`
 Parent issue: #846
 Task issue: #847
