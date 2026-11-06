@@ -4532,3 +4532,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P143.1/P143.2: merged via PR #851 as `2e51922`. Added newest-first artifact metadata,
   target-aware state-cache keys, promoted-run target definitions, alternative profile
   preservation, and unsupported-GPU-profile fallback. Dashboard: `OVERALL: GREEN`.
+- P137.1: axis-registered overlays show all 10 provisional diagrams fail:
+  crown closure is the wrong shape, top-height/QMD families are offset or
+  misidentified, and `fdcn` has missing 39/34. Added overlay findings and
+  images; all 10 are rejected for re-digitization. No diagram is marked reviewed.
+  Dashboard: `OVERALL: GREEN`.

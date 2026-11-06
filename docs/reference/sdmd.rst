@@ -470,7 +470,8 @@ precision; figrecover owns the rendered page, overlay, quality metrics, and revi
 record. A diagram spec names the PDF axis ticks, the drawing path indices, and the
 printed isopleth values, so the workflow does not guess curve identities. Both are **provisional** until the
 maintainer reviews the curves; the planted top-height assignment is the weaker of
-the two. The synthetic ``idf-dk3-fdi-illustrative.json`` remains the test fixture,
+the two. The P137 overlay review found the 10 provisional diagrams do not match
+their source; see ``notes/review/p137-overlay-findings.md``. The synthetic ``idf-dk3-fdi-illustrative.json`` remains the test fixture,
 not the published diagram. Four method trajectories from `fresh-fvsbc` are in
 ``ws4/sdmd/data/trajectories/``; they are method runs over synthetic tree lists,
 not real AU projections. See ``notes/reference/sdmd-pilot-trajectories.md``.
