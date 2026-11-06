@@ -139,6 +139,7 @@ exists and the maintainer approves it.
 | P139 Target-faithful promoted runs | #837 | `feature/p139-target-faithful` | complete |
 | P140 Period target dimensions | #840 | `feature/p140-target-dimensions` | complete |
 | P141 Portfolio target preparation | #843 | `feature/p141-portfolio-target-prep` | complete |
+| P142 Default stock90 scenario | #846 | `feature/p142-default-stock90` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4224,3 +4225,24 @@ Acceptance:
 - Initial schedule is forwarded only when configured.
 - The live Search launcher can run a meaningful scan without manual CLI setup.
 - Tests, browser smoke, and dashboard pass.
+
+## Phase 142: Default stock-guarded even-flow scenario
+
+Parent issue: #846
+Branch: `feature/p142-default-stock90`
+Status: complete
+Merge commit: `f217cfe`
+Report: `notes/reports/p142-default-stock90.md`
+PR: #848
+
+Goal: give every runnable instance a useful even-flow + 90% growing-stock default.
+
+- [x] P142.1 Default stock90 scenario generation (#847)
+
+Acceptance:
+
+- Every runnable instance gets a generated default target or a named fallback.
+- The default includes a 90% final-period stock floor.
+- The target table shows the default on first load.
+- Solve uses a three-minute default budget.
+- Tests and dashboard pass.

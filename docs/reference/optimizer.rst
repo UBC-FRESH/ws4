@@ -840,6 +840,10 @@ API
 
 .. autofunction:: ws4.opt.solution_space.build_solution_space
 
+.. autofunction:: ws4.opt.default_scenario.build_default_stock90_targets
+
+.. autofunction:: ws4.opt.default_scenario.initial_managed_stock
+
 .. autofunction:: ws4.opt.tune.run_tuning
 
 .. autoclass:: ws4.opt.telemetry.RunLogger
