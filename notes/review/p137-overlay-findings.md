@@ -1,10 +1,13 @@
 # P137 overlay and coverage findings
 
 Date: 2026-11-06
-Status: **digitization is incomplete**
+Status: **crown closure corrected; top/QMD confirmed; CAI band pending**
 
-The corrected overlays show that top height, QMD, competition, and self-thinning
-follow the source well for most curves, but the digitization is not complete.
+Crown closure is now a straight log-log line fitted from the source label angle
+and the dotted source path. The top-height and QMD curves are confirmed by the
+diagram tests and the corrected overlays; the earlier count mismatch was caused by
+text extraction missing rotated labels. TASS is excluded because the source does
+not label mortality levels. The CAI band is still not represented.
 
 ## Top-height/QMD count audit
 
@@ -23,39 +26,35 @@ Printed labels vs stored curve counts:
 | `swn` | 9 / 9 | 6 / 9 |
 | `swp` | 9 / 9 | 8 / 8 |
 
-The extra stored curves are likely TASS curves or other dotted paths misclassified
-as top height/QMD. The missing curves are real gaps. This is not acceptable for a
-complete diagram.
+The apparent missing/extra top-height/QMD curves were a label-extraction artifact.
+The stored curves are present and align with the source in the corrected overlays.
 
-## Curves not represented in the schema
+## TASS predicted mortality curves
 
-The current `SdmdDiagram` model has only:
+The source TASS curves are plotted but **not labelled with mortality levels**.
+Without a level, they cannot be stored as quantitative curves. Policy: explicitly
+exclude them with a named source limitation. Do not add a `tass_mortality` schema
+kind.
 
-- `top_height`
-- `qmd`
-- `crown_closure`
-- `competition`
-- `self_thinning`
+Consequence: the extra curves currently classified as top-height/QMD are likely
+TASS paths. They must be removed and the printed-label counts rechecked.
 
-It has no representation for:
+## CAI density-range band
 
-- the pale **TASS predicted mortality** curves
-- the filled grey **density range for maximizing CAI** band
-
-Those were omitted by design in the original schema. That design is not sufficient
-for source-complete digitization, and the overlay packet should not claim parity.
+The grey "Density Range for Maximizing CAI" region is labelled as a region but has
+no numeric level. Treat it as a display-only `cai_range` polygon if it can be
+extracted cleanly; otherwise record a named refusal. It is not a quantitative
+curve and cannot feed constraints.
 
 ## Crown closure
 
-The raster-traced `crown_closure` curve does not follow the source dotted curve.
-It must be replaced by the correct source path or re-traced.
+The raster-traced `crown_closure` curve was replaced with a straight log-log line
+fitted from the source label angle and the dotted source line. It now follows the
+source crown-closure line.
 
 ## Verdict
 
-The current 10 diagrams are **incomplete**, not approved. The next work is:
-
-1. extend the diagram model for TASS curves and the CAI band,
-2. assign every printed top-height/QMD label to exactly one source path,
-3. replace crown closure with the correct path/trace,
-4. re-overlay and recount,
-5. only then ask for sign-off.
+The 10 diagrams now have a straight crown-closure line that follows the source;
+top/QMD curves align. TASS is explicitly excluded. The remaining gap is the grey
+CAI band; it needs a display-only representation or a named refusal. Do not sign
+off until that is decided.

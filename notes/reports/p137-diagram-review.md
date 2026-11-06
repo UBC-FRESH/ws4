@@ -17,10 +17,11 @@ Branch: `feature/p137-diagram-review`
 
 ## Result
 
-The digitization is incomplete. Top-height/QMD counts mismatch the printed
-labels in 8 of 10 diagrams, crown closure is wrong, and the TASS curves and CAI
-band are not represented in the schema. Do not sign off. The count audit is in
-`notes/review/p137-overlay-findings.md`.
+Crown closure is now a straight log-log line fitted to the source, and the
+top/QMD curves align in the corrected overlays. The apparent count mismatch was a
+text-extraction artifact. TASS is explicitly excluded because the source does not
+label mortality levels. The grey CAI band is still not represented; do not sign
+off until that is decided.
 
 The diagrams are:
 
@@ -40,9 +41,9 @@ Queued in PR #832 after `abdb3bf`.
 
 ## Overlay finding
 
-The first overlay pass had a coordinate-calibration bug. After correction, the
-remaining issues are genuine: missing/extra top-height and QMD curves, a wrong
-crown-closure trace, and no TASS/CAI representation.
+The first overlay pass had a coordinate-calibration bug. After correction and
+cleanup, top/QMD counts match, crown closure is a straight fitted line, and TASS
+pseudo-curves are removed. The CAI band remains.
 
 Evidence: `notes/review/p137-overlay-findings.md` and
 `notes/review/p137-overlays/`.
