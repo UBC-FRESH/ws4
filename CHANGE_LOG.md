@@ -4506,3 +4506,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   instance initial schedule. Portfolio metrics now read both account and product tables.
   The UI defaults to level-only; live targets are untouched. Focused tests pass;
   dashboard: `OVERALL: GREEN`. Report: `notes/reports/p141-portfolio-target-prep.md`.
+
+- P141: merged via PR #845 as `9b177c2`. Portfolio scans can write a level-only target
+  copy and use the instance initial schedule; metrics read both account and product
+  tables. Dashboard: `OVERALL: GREEN`.

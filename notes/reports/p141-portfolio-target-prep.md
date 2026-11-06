@@ -1,7 +1,8 @@
 # P141 portfolio target preparation
 
 Date: 2026-11-06
-Status: pr-open
+Status: complete
+Merge commit: `9b177c2`
 PR: #845
 Branch: `feature/p141-portfolio-target-prep`
 Parent issue: #843
