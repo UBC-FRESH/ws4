@@ -2,6 +2,7 @@
 
 Date: 2026-11-06
 Status: pr-open
+PR: #845
 Branch: `feature/p141-portfolio-target-prep`
 Parent issue: #843
 Task issue: #844
