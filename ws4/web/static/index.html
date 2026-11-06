@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=96">
+  <link rel="stylesheet" href="static/style.css?v=97">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
   <script type="importmap">
     {
@@ -18,7 +18,7 @@
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v96</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v97</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <div class="period-control">
@@ -280,6 +280,8 @@
             <label>Account <select id="scan-account"></select></label>
             <label>Factors <input id="scan-factors" type="text" value="0.5,1,2" placeholder="factor,factor"></label>
             <button id="scan-add" type="button">Add dimension</button>
+            <button id="scan-periods-5" type="button">+5 periods</button>
+            <button id="scan-periods-7" type="button">+7 periods</button>
             <button id="scan-clear" type="button">Clear</button>
           </div>
           <ul id="scan-dimensions" class="scan-list"></ul>
@@ -615,6 +617,6 @@
     <p class="hint">Shortcuts pause while typing in an input, select, or editor.</p>
   </dialog>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=96"></script>
+  <script type="module" src="static/app.js?v=97"></script>
 </body>
 </html>
