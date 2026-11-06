@@ -145,6 +145,7 @@ def _raise_volume_targets(entries: Sequence[dict[str, Any]], multiplier: float) 
             entry["minimum"] = float(minimum) * multiplier
         if maximum is not None:
             entry["maximum"] = float(maximum) * multiplier
+        entry["notes"] = f"Default scenario: {multiplier:g}x the instance base level target."
 
 
 def build_default_stock90_targets(
