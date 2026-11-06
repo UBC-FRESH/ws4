@@ -2017,7 +2017,7 @@ async function loadParetoArtifacts(preferred = '') {
       option.textContent = artifact.id;
       select.append(option);
     }
-    const current = preferred || state.pareto.artifact || select.value;
+    const current = preferred || state.pareto.artifact || ready[ready.length - 1]?.id || select.value;
     if (current && ready.some((item) => item.id === current)) select.value = current;
     state.pareto.artifact = select.value;
     await loadParetoSpace(select.value);
