@@ -1,7 +1,8 @@
 # P140 target-row dimensions for 5-7D scans
 
 Date: 2026-11-06
-Status: pr-open
+Status: complete
+Merge commit: `b11e105`
 PR: #842
 Branch: `feature/p140-target-dimensions`
 Parent issue: #840
