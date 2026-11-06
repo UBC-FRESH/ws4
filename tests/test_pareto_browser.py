@@ -236,6 +236,7 @@ def test_search_builds_a_scan_and_opens_the_explorer(tmp_path: Path) -> None:
             page.click("#scan-add")
             assert "2 dimensions" in page.locator("#scan-summary").inner_text()
             page.click("#scan-use")
+            assert page.locator("#portfolio-target-mode").input_value() == "level_only"
             assert "feature.Volume@1=0.5,1,2" in page.locator("#portfolio-vary").input_value()
             assert "feature.Old@1=0.5,1" in page.locator("#portfolio-vary").input_value()
             page.click("#scan-periods-5")

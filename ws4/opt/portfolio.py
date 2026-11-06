@@ -525,6 +525,7 @@ def run_portfolio(
     weight_mode: str = "grid",
     sample_seed: int = 1,
     workers: int = 1,
+    initial_schedule: Path | None = None,
     runner_factory: Callable[[Path, OptimizeConfig], Runner] | None = None,
 ) -> dict[str, Any]:
     """Run the portfolio and write its members, front, and reports.
@@ -567,6 +568,9 @@ def run_portfolio(
     workers : int, optional
         Process workers. The default of one keeps memory bounded; each worker loads
         its own dataset, so raise it only when the host has memory for the model.
+    initial_schedule : Path or None, optional
+        A schedule used as the starting point for every member. Without it, a search
+        from an empty schedule can fail flow targets that need a primed account.
     runner_factory : callable or None, optional
         Builds a runner from the dataset and a configuration. Defaults to
         :meth:`Optimizer.from_dataset`; tests substitute a fake. With more than one
@@ -630,6 +634,7 @@ def run_portfolio(
                         threads=threads,
                         metaheuristic=metaheuristic,
                         seed=seed,
+                        initial_schedule_path=str(initial_schedule) if initial_schedule else "",
                     ),
                 )
             )
@@ -730,6 +735,7 @@ def run_portfolio(
         "weight_mode": weight_mode,
         "sample_seed": sample_seed,
         "workers": workers,
+        "initial_schedule": str(initial_schedule) if initial_schedule else None,
         "vector_count": len(vectors),
         "metrics": list(metrics),
         "directions": directions,

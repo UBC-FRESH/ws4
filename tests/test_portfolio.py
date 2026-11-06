@@ -304,12 +304,15 @@ def test_portfolio_main_wires_the_arguments(
             "1,2",
             "--iterations",
             "3",
+            "--initial-schedule",
+            str(tmp_path / "initial.csv"),
         ]
     )
     assert code == 0
     assert captured["vary"] == {"product.volume": (1.0, 2.0)}
     assert captured["metrics"] == ["product.volume"]
     assert captured["seeds"] == [1, 2]
+    assert captured["initial_schedule"] == tmp_path / "initial.csv"
 
 
 def test_portfolio_main_returns_one_on_a_failure(
