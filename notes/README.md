@@ -128,3 +128,4 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `adr/0013-sdmd-as-constraint-layer.md` — the SDMD layer is diagnostic and a constraint source, not a growth model.
 - `reports/p84-state-watch.md` — resident Model II state watcher on the c5 sample.
 - `reports/p138-pareto-to-plan.md` — P138 member promotion and outcome-front alignment.
+- `reports/p139-target-faithful.md` — P139 run-local targets for promoted members.
