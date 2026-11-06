@@ -20,6 +20,11 @@ from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
+from ws4.opt.default_scenario import (
+    build_default_stock90_targets,
+    copy_default_targets,
+    find_initial_stock,
+)
 from ws4.web.app import create_app
 
 ROOT = Path(__file__).resolve().parent
@@ -338,7 +343,20 @@ def _build_mount(instance: Instance, mount_path: str) -> None:
     if candidate_cache is None and candidate_index.is_file():
         candidate_cache = None
     seed_state = cache / "seed-state.npz"
-    targets = _writable_copy(root / str(spec["targets"]), cache / "targets.yaml")
+    base_targets = _writable_copy(root / str(spec["targets"]), cache / "targets-base.yaml")
+    targets = cache / "targets-default-stock90.yaml"
+    if not targets.is_file():
+        stock = find_initial_stock(runs)
+        if stock is None:
+            copy_default_targets(base_targets, targets)
+        else:
+            stock_account, initial_stock = stock
+            build_default_stock90_targets(
+                base_targets,
+                targets,
+                initial_stock=initial_stock,
+                stock_account=stock_account,
+            )
     initial = (
         _writable_copy(root / str(spec["initial"]), cache / "initial-schedule.csv")
         if spec.get("initial")
@@ -352,7 +370,7 @@ def _build_mount(instance: Instance, mount_path: str) -> None:
         "period_width": 10,
         "years": 200,
         "default_iterations": 1_000_000_000,
-        "max_seconds": 60,
+        "max_seconds": 180,
         "lns_weight": 0.2,
         "lns_destroy": 0.1,
         "lns_max_destroy": 64,
