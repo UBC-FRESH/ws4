@@ -4510,3 +4510,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P141: merged via PR #845 as `9b177c2`. Portfolio scans can write a level-only target
   copy and use the instance initial schedule; metrics read both account and product
   tables. Dashboard: `OVERALL: GREEN`.
+
+- P142.1: added a generic default-target generator for a final-period 90% managed
+  growing-stock floor and ambitious harvest levels. The default Solve budget is three
+  minutes. Focused tests pass; dashboard: `OVERALL: GREEN`. Report:
+  `notes/reports/p142-default-stock90.md`.
