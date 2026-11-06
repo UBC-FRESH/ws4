@@ -8,6 +8,7 @@ instances and renders the landing page. Searches use the resident-state engine
 
 from __future__ import annotations
 
+import hashlib
 import html
 import os
 import shutil
@@ -33,6 +34,10 @@ INSTANCES_ROOT = Path(
 )
 RUNS_ROOT = ROOT / "runs"
 CACHE_ROOT = ROOT / "cache"
+SDMD_DEMO_ROOT = Path(
+    os.environ.get("WS4_SDMD_DEMO_ROOT", str(ROOT / "var" / "sdmd-demo"))
+)
+SDMD_PLI_ROOT = ROOT / "ws4" / "sdmd" / "data" / "pilot-tsa23-idfdk3-pli"
 RUNS_ROOT.mkdir(parents=True, exist_ok=True)
 CACHE_ROOT.mkdir(parents=True, exist_ok=True)
 
@@ -302,6 +307,30 @@ def _resolve(slug: str, root: Path) -> Instance:
     return Instance(slug, label, subtitle, root, True, spec=spec, gpu=gpu)
 
 
+def _cache_fingerprint(paths: list[Path | None]) -> str:
+    """Return a short fingerprint for the resident-state cache geometry.
+
+    Parameters
+    ----------
+    paths : list of pathlib.Path or None
+        Dataset manifest and candidate cache/index paths.
+
+    Returns
+    -------
+    str
+        Stable short digest used in seed-state filenames.
+    """
+    digest = hashlib.sha256()
+    for path in sorted((item for item in paths if item is not None), key=lambda item: str(item)):
+        if not path.is_file():
+            continue
+        stat = path.stat()
+        digest.update(str(path.resolve()).encode("utf-8"))
+        digest.update(str(stat.st_size).encode("ascii"))
+        digest.update(str(stat.st_mtime_ns).encode("ascii"))
+    return digest.hexdigest()[:16]
+
+
 def _writable_copy(source: Path, destination: Path) -> Path:
     """Return a writable copy of a read-only instance file.
 
@@ -342,7 +371,11 @@ def _build_mount(instance: Instance, mount_path: str) -> None:
     candidate_index = cache / "candidates.npz"
     if candidate_cache is None and candidate_index.is_file():
         candidate_cache = None
-    seed_state = cache / "seed-state.npz"
+    dataset_manifest = root / str(spec["dataset"]) / "manifest.json"
+    seed_fingerprint = _cache_fingerprint(
+        [dataset_manifest, candidate_cache, candidate_index]
+    )
+    seed_state = cache / f"seed-state-{seed_fingerprint}.npz"
     base_targets = _writable_copy(root / str(spec["targets"]), cache / "targets-base.yaml")
     targets = cache / "targets-default-stock90.yaml"
     if not targets.is_file():
@@ -413,12 +446,92 @@ for directory in sorted(INSTANCES_ROOT.glob("femic-*-instance")):
             instance.reason = f"could not start WS4 UI: {error}"
     INSTANCES.append(instance)
 
+def _mount_sdmd_demo() -> Instance | None:
+    """Mount the standalone SDMD pilot when its store is present.
+
+    Returns
+    -------
+    Instance or None
+        The synthetic portal card, or None when the demo data is absent.
+    """
+    dataset = SDMD_DEMO_ROOT / "dataset"
+    runs = SDMD_DEMO_ROOT / "runs"
+    sdmd = SDMD_DEMO_ROOT / "sdmd"
+    if not (dataset / "manifest.json").is_file() or not sdmd.is_dir():
+        return None
+    mount = "/instance/sdmd-pilot/"
+    app.mount(
+        mount.rstrip("/"),
+        create_app(
+            dataset=dataset,
+            runs=runs,
+            sdmd_dir=sdmd,
+            allow_runs=False,
+            allow_agent=False,
+            crs="EPSG:3005",
+        ),
+    )
+    return Instance(
+        "sdmd-pilot",
+        "SDMD pilot",
+        "TSA 23 · IDFdk3 · stand density management",
+        SDMD_DEMO_ROOT,
+        True,
+        mount=mount,
+        spec={},
+        gpu={"mode": "cpu", "profiles": [], "effect_tables": [], "factorized": []},
+    )
+
+
+def _mount_sdmd_pli() -> Instance | None:
+    """Mount the PLI pilot beside the FDI pilot when its store is present.
+
+    Returns
+    -------
+    Instance or None
+        The synthetic portal card, or None when the PLI store is absent.
+    """
+    dataset = SDMD_DEMO_ROOT / "dataset"
+    runs = SDMD_DEMO_ROOT / "runs"
+    if not (dataset / "manifest.json").is_file() or not SDMD_PLI_ROOT.is_dir():
+        return None
+    mount = "/instance/sdmd-pilot-pli/"
+    app.mount(
+        mount.rstrip("/"),
+        create_app(
+            dataset=dataset,
+            runs=runs,
+            sdmd_dir=SDMD_PLI_ROOT,
+            allow_runs=False,
+            allow_agent=False,
+            crs="EPSG:3005",
+        ),
+    )
+    return Instance(
+        "sdmd-pilot-pli",
+        "SDMD pilot · PLI",
+        "TSA 23 · IDFdk3 · lodgepole pine",
+        SDMD_DEMO_ROOT,
+        True,
+        mount=mount,
+        spec={},
+        gpu={"mode": "cpu", "profiles": [], "effect_tables": [], "factorized": []},
+    )
+
+
+_sdmd_demo = _mount_sdmd_demo()
+if _sdmd_demo is not None:
+    INSTANCES.append(_sdmd_demo)
+_sdmd_pli = _mount_sdmd_pli()
+if _sdmd_pli is not None:
+    INSTANCES.append(_sdmd_pli)
+
 
 def _landing() -> str:
     cards = []
     for instance in INSTANCES:
         if instance.ready:
-            action = f'<a class="door" href="{html.escape(instance.mount)}">'
+            action = f'<a class="door" href="{html.escape(instance.mount)}?view=sdmd">'
             footer = "Launch instance →"
             status = "READY"
         else:
