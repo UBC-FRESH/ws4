@@ -389,6 +389,7 @@ def _build_mount(instance: Instance, mount_path: str) -> None:
                 targets,
                 initial_stock=initial_stock,
                 stock_account=stock_account,
+                force_volume_multiplier=slug == "femic-tsa48-instance",
             )
     initial = (
         _writable_copy(root / str(spec["initial"]), cache / "initial-schedule.csv")
