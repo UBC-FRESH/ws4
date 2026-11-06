@@ -8,6 +8,7 @@ holds no model state and computes no value the CLI cannot reproduce. See
 
 from __future__ import annotations
 
+import contextlib
 import json
 import math
 import os
@@ -2446,6 +2447,12 @@ def create_app(
         path = directory / "summary.json"
         if path.is_file():
             document: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
+            source = directory / "portfolio_source.json"
+            if source.is_file():
+                with contextlib.suppress(OSError, ValueError):
+                    document["portfolio_source"] = _json_safe(
+                        json.loads(source.read_text(encoding="utf-8"))
+                    )
             return document
         if (directory / "account_values.csv").is_file():
             return {"status": "ok", "kind": "simulate"}
@@ -2838,6 +2845,16 @@ def create_app(
                 return resolved
         return None
 
+    def resolve_member_file(directory: Path, value: object) -> Path | None:
+        """Resolve a member's target file, allowing absolute or cwd-relative records."""
+        raw = Path(str(value))
+        candidates = [raw] if raw.is_absolute() else [directory / raw, Path.cwd() / raw]
+        for candidate in candidates:
+            resolved = candidate.resolve()
+            if resolved.is_file() and resolved.is_relative_to(directory):
+                return resolved
+        return None
+
     @app.post("/api/search/{name}/members/{key}/promote")
     def promote_portfolio_member(name: str, key: str) -> dict[str, Any]:
         """Promote one portfolio member to a direct, read-only run under the runs root.
@@ -2870,6 +2887,15 @@ def create_app(
         source = resolve_member_run(directory, member.get("run_dir"))
         if source is None:
             raise HTTPException(status_code=404, detail=f"portfolio member {key!r} has no safe run")
+        target_source = resolve_member_file(directory, member.get("targets"))
+        if target_source is None:
+            candidate_target = source.parent / "targets.yaml"
+            try:
+                resolved_target = candidate_target.resolve()
+            except OSError:
+                resolved_target = candidate_target
+            if resolved_target.is_file() and resolved_target.is_relative_to(directory):
+                target_source = resolved_target
         base = _promoted_run_name(name, key)
         run_id = base
         suffix = 2
@@ -2881,12 +2907,20 @@ def create_app(
                 except (OSError, ValueError):
                     prior = {}
                 if prior.get("artifact") == name and prior.get("member") == key:
+                    promoted_dir = runs_root / run_id
+                    if target_source is not None and not (promoted_dir / "targets.yaml").is_file():
+                        _link_or_copy(str(target_source), str(promoted_dir / "targets.yaml"))
+                        prior["targets"] = "targets.yaml"
+                        prior["targets_source"] = str(target_source.relative_to(directory))
+                        existing.write_text(json.dumps(prior, indent=2), encoding="utf-8")
                     return {"run_id": run_id, "source": prior, "promoted": False}
             run_id = f"{base}-{suffix}"
             suffix += 1
         destination = runs_root / run_id
         try:
             shutil.copytree(source, destination, copy_function=_link_or_copy)
+            if target_source is not None:
+                _link_or_copy(str(target_source), str(destination / "targets.yaml"))
             source_record = {
                 "kind": "portfolio-member",
                 "artifact": name,
@@ -2897,6 +2931,10 @@ def create_app(
                 "metrics": member.get("metrics", {}),
                 "objective": member.get("objective"),
                 "source_run": str(source.relative_to(directory)),
+                "targets": "targets.yaml" if target_source is not None else None,
+                "targets_source": (
+                    str(target_source.relative_to(directory)) if target_source is not None else None
+                ),
                 "created_utc": datetime.now().astimezone().isoformat(),
             }
             (destination / "portfolio_source.json").write_text(
@@ -3015,7 +3053,7 @@ def create_app(
                 )
         values = sorted(offsets)
         if values:
-            width = _run_period_width(targets_path)
+            width = _run_period_width(target_file_for_run(directory))
             return {
                 "min": values[0],
                 "max": values[-1],
@@ -3687,9 +3725,15 @@ def create_app(
             },
         )
 
+    def target_file_for_run(directory: Path) -> Path | None:
+        """Return a run-local target file, falling back to the service target file."""
+        local = directory / "targets.yaml"
+        return local if local.is_file() else targets_path
+
     def _realized_rows(directory: Path) -> list[dict[str, Any]]:
         """Return each target's realized period value, computed by the optimizer's own rule."""
-        if targets_path is None or not targets_path.is_file():
+        target_file = target_file_for_run(directory)
+        if target_file is None or not target_file.is_file():
             return []
         values = read_csv(directory, "account_values.csv")
         index: dict[tuple[int, str], float] = {}
@@ -3700,7 +3744,7 @@ def create_app(
             index[key] = index.get(key, 0.0) + float(value)
         rows: list[dict[str, Any]] = []
         horizon = max((year for year, _ in index), default=-1) + 1
-        for target_index, target in enumerate(load_targets(targets_path)):
+        for target_index, target in enumerate(load_targets(target_file)):
             if target.flow:
                 series = flow_series(index, target, horizon)
                 flow_values = list(series.values())
@@ -3898,7 +3942,8 @@ def create_app(
     def run_target_series(run: str) -> dict[str, Any]:
         """Return every target account's bounds and active state for every run period."""
         directory = run_dir(run)
-        if targets_path is None or not targets_path.is_file():
+        target_file = target_file_for_run(directory)
+        if target_file is None or not target_file.is_file():
             return {"periods": [], "accounts": []}
         values = read_csv(directory, "account_values.csv")
         years = sorted(
@@ -3908,9 +3953,9 @@ def create_app(
                 if int(float(str(value))) >= 0
             }
         )
-        width = _run_period_width(targets_path)
+        width = _run_period_width(target_file)
         periods = _run_periods(years, width)
-        targets = load_targets(targets_path)
+        targets = load_targets(target_file)
         accounts: dict[str, dict[str, Any]] = {}
         for target_index, target in enumerate(targets):
             entry = accounts.setdefault(

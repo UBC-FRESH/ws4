@@ -136,6 +136,7 @@ exists and the maintainer approves it.
 | P135 BC SDMD applicability correction | #824 | `feature/p135-bec-applicability` | complete |
 | P136 Pareto solution-space explorer | #827 | `feature/p136-pareto-explorer` | complete |
 | P138 Pareto member to map/Plan | #834 | `feature/p138-pareto-to-plan` | complete |
+| P139 Target-faithful promoted runs | #837 | `feature/p139-target-faithful` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4158,4 +4159,25 @@ Acceptance:
 - The promoted run has a source sidecar naming the portfolio, member, factors, and metrics.
 - A pins pair can open the existing spatial comparison view.
 - Promoted runs remain inside the runs root.
+- Tests, browser smoke, and dashboard pass.
+
+## Phase 139: Target-faithful promoted runs
+
+Parent issue: #837
+Branch: `feature/p139-target-faithful`
+Status: complete
+Merge commit: `97b9ea3`
+Report: `notes/reports/p139-target-faithful.md`
+PR: #839
+
+Goal: make a promoted Pareto run report against its own scaled target file.
+
+- [x] P139.1 Target-faithful promoted runs (#838)
+
+Acceptance:
+
+- A promoted run copies its member target file.
+- Its target status and target series use the member file, not the live file.
+- The run summary exposes portfolio source metadata.
+- Existing promoted runs are upgraded safely.
 - Tests, browser smoke, and dashboard pass.

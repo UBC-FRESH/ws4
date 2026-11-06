@@ -4,7 +4,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/OrbitControls.js";
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' }, portfolioScan: [], pareto: { available: false, artifact: '', data: null, chart: null, cloud: null, selected: null, pinned: [], screen: [], artifacts: [] } };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' }, runSource: null, portfolioScan: [], pareto: { available: false, artifact: '', data: null, chart: null, cloud: null, selected: null, pinned: [], screen: [], artifacts: [] } };
 
 state.estate3d = { open: false, features: [], yaw: -0.55, zoom: 1, exaggeration: 1, hits: [] };
 const ESTATE_3D_LIMIT = 2000;
@@ -5983,6 +5983,10 @@ function renderRunHealth() {
   badge(`${counts.met} met`);
   badge(`${counts.off} off`);
   badge(`${charts} chart${charts === 1 ? '' : 's'}`);
+  if (state.runSource) {
+    badge(`portfolio member${state.runSource.member ? ` ${state.runSource.member}` : ''}`);
+    badge('member targets');
+  }
   badge(`LiDAR ${state.lidar?.available ? 'available' : '—'}`, state.lidar?.available ? 'available' : 'unavailable');
   badge(`Carbon ${state.carbon?.available ? 'available' : '—'}`, state.carbon?.available ? 'available' : 'unavailable');
   $('run-health-failing').disabled = failing === 0;
@@ -6485,6 +6489,13 @@ async function loadTargets() {
     state.targets = rows;
     populateScanAccounts();
     renderPortfolioScan();
+    const portfolioNote = $('portfolio-target-note');
+    if (portfolioNote) {
+      portfolioNote.hidden = !state.runSource;
+      portfolioNote.textContent = state.runSource
+        ? 'This run is a portfolio member. Its target status uses the member target file; this Plan editor still edits the live target file.'
+        : '';
+    }
     state.targetSeries = null;
     state.series = new Map();
     try {
@@ -8416,6 +8427,12 @@ async function loadRunContext() {
   try {
     await loadSkins();
     await loadAgent();
+    try {
+      const runSummary = await api(`api/runs/${encodeURIComponent(state.run)}/summary`);
+      state.runSource = runSummary.portfolio_source ?? null;
+    } catch {
+      state.runSource = null;
+    }
     await loadPeriods();
     if (state.pendingPeriod !== null) {
       setPeriod(Number(state.pendingPeriod));

@@ -806,6 +806,10 @@ def test_portfolio_member_promotes_to_a_direct_run(tmp_path: Path) -> None:
         "offset,account,value\n0,feature.Volume,10\n", encoding="utf-8"
     )
     (member / "schedule.csv").write_text("block_id,treatment,offset\n1,CC,0\n", encoding="utf-8")
+    (portfolio / "member-000" / "targets.yaml").write_text(
+        "targets:\n  - account: feature.Volume\n    period: 1\n    minimum: 999\n",
+        encoding="utf-8",
+    )
     (portfolio / "portfolio.json").write_text(
         json.dumps(
             {
@@ -818,6 +822,7 @@ def test_portfolio_member_promotes_to_a_direct_run(tmp_path: Path) -> None:
                         "objective": 1.0,
                         "metrics": {"feature.Volume": 10.0},
                         "run_dir": "member-000/seed-001",
+                        "targets": "member-000/targets.yaml",
                         "status": "ok",
                     }
                 ],
@@ -837,7 +842,17 @@ def test_portfolio_member_promotes_to_a_direct_run(tmp_path: Path) -> None:
     assert source["artifact"] == "portfolio-promote"
     assert source["member"] == "member-000:001"
     assert source["source_run"] == "member-000/seed-001"
-    assert client.get(f"/api/runs/{run_id}/summary").json()["status"] == "ok"
+    assert source["targets"] == "targets.yaml"
+    assert (promoted / "targets.yaml").is_file()
+    realized = client.get(f"/api/runs/{run_id}/targets").json()
+    assert realized[0]["status"] == "below"
+    assert realized[0]["value"] == 10.0
+    series = client.get(f"/api/runs/{run_id}/target-series").json()
+    feature = {item["account"]: item for item in series["accounts"]}["feature.Volume"]
+    assert feature["periods"][0]["minimum"] == 999.0
+    summary = client.get(f"/api/runs/{run_id}/summary").json()
+    assert summary["status"] == "ok"
+    assert summary["portfolio_source"]["member"] == "member-000:001"
     again = client.post("/api/search/portfolio-promote/members/member-000%3A001/promote")
     assert again.status_code == 200
     assert again.json()["run_id"] == run_id
