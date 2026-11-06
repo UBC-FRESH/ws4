@@ -4531,7 +4531,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P143.1/P143.2: merged via PR #851 as `2e51922`. Added newest-first artifact metadata,
   target-aware state-cache keys, promoted-run target definitions, alternative profile
   preservation, and unsupported-GPU-profile fallback. Dashboard: `OVERALL: GREEN`.
-- P137.1: corrected the overlay calibration. All 10 provisional diagrams align
-  with their source in the corrected overlays. The earlier `39/34` and all-10
-  failure claims were wrong. This is agent first-pass QA; the diagrams remain
-  provisional until maintainer sign-off. Dashboard: `OVERALL: GREEN`.
+- P137.1: corrected the overlay calibration, then audited printed labels against
+  stored counts. Eight of 10 diagrams have missing or extra top-height/QMD curves.
+  Crown closure is raster-traced from the wrong curve, and TASS curves and the
+  CAI band are absent from the schema. The diagrams are incomplete and must not be
+  signed off. Dashboard: `OVERALL: GREEN`.

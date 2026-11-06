@@ -1,8 +1,8 @@
 # P137 provisional SDMD diagram review packet
 
-Status: **agent first-pass QA passed.** The corrected overlays align for all 10.
-The diagrams remain `provisional` until the maintainer records a review
-decision. See `notes/review/p137-overlay-findings.md`.
+Status: **incomplete digitization.** Crown closure is wrong, top-height/QMD
+counts do not match the printed labels, and TASS curves and the CAI band are not
+modeled. Do not sign off. See `notes/review/p137-overlay-findings.md`.
 
 The source page and the **numeric curve inventory** are the review evidence.
 The SVG plots are optional visual aids. They are not axis-registered overlays
@@ -27,8 +27,9 @@ try to identify unlabelled lines by eye.
 
 ## Known finding
 
-The corrected overlays align for all 10. The earlier `fdcn` and all-10 failure
-claims were caused by a calibration bug and are withdrawn.
+Top/QMD counts are missing or extra in 8 of 10 diagrams, crown closure is wrong,
+and TASS/CAI are not represented in the schema. See the audit table in
+`notes/review/p137-overlay-findings.md`.
 
 ## Review checklist
 

@@ -1,36 +1,61 @@
-# P137 overlay findings
+# P137 overlay and coverage findings
 
 Date: 2026-11-06
-Status: **first-pass overlay QA passed**
+Status: **digitization is incomplete**
 
-The first overlay attempt mixed image pixels and PDF points in the axis
-calibration. That made every diagram look shifted. The calibration was corrected
-to use one coordinate system and exact printed tick values; the overlays now
-align with the source.
+The corrected overlays show that top height, QMD, competition, and self-thinning
+follow the source well for most curves, but the digitization is not complete.
 
-## Corrected finding
+## Top-height/QMD count audit
 
-For all 10 diagrams, the stored top-height, QMD, crown-closure, competition, and
-self-thinning curves follow the source curves in the corrected overlay.
+Printed labels vs stored curve counts:
 
-`fdcn` specifically:
+| Diagram | Top height printed/stored | QMD printed/stored |
+| --- | --- | --- |
+| `fdcn` | 11 / 11 | 10 / 10 |
+| `fdcp` | 10 / 10 | 9 / 10 |
+| `ssn` | 8 / 10 | 10 / 11 |
+| `ssp` | 5 / 7 | 8 / 10 |
+| `hwn` | 11 / 12 | 10 / 10 |
+| `hwp` | 6 / 10 | 9 / 9 |
+| `cwn` | 11 / 11 | 10 / 11 |
+| `cwp` | 7 / 11 | 10 / 10 |
+| `swn` | 9 / 9 | 6 / 9 |
+| `swp` | 9 / 9 | 8 / 8 |
 
-- top heights: `60, 52, 44, 36, 28, 24, 20, 16, 12, 8, 6 m` — matches source
-- QMD values — match source
-- crown closure — follows the source dotted curve
-- competition/self-thinning — follow the source heavy dashed boundaries
+The extra stored curves are likely TASS curves or other dotted paths misclassified
+as top height/QMD. The missing curves are real gaps. This is not acceptable for a
+complete diagram.
 
-The earlier claims that `fdcn` was missing `39/34`, or that all 10 failed, were
-caused by the calibration bug and are withdrawn.
+## Curves not represented in the schema
 
-## Evidence
+The current `SdmdDiagram` model has only:
 
-- `notes/review/p137-overlays/<diagram>.png`: corrected source + stored curves.
-- `notes/review/p137-pages/<diagram>.png`: rendered source page.
-- `notes/review/p137-curves/<diagram>.svg`: stored curves.
+- `top_height`
+- `qmd`
+- `crown_closure`
+- `competition`
+- `self_thinning`
 
-## What remains
+It has no representation for:
 
-This is agent first-pass QA, not maintainer sign-off. The 10 diagrams remain
-`provisional` until the maintainer records a review decision. The default should
-be acceptance unless a specific curve is disputed.
+- the pale **TASS predicted mortality** curves
+- the filled grey **density range for maximizing CAI** band
+
+Those were omitted by design in the original schema. That design is not sufficient
+for source-complete digitization, and the overlay packet should not claim parity.
+
+## Crown closure
+
+The raster-traced `crown_closure` curve does not follow the source dotted curve.
+It must be replaced by the correct source path or re-traced.
+
+## Verdict
+
+The current 10 diagrams are **incomplete**, not approved. The next work is:
+
+1. extend the diagram model for TASS curves and the CAI band,
+2. assign every printed top-height/QMD label to exactly one source path,
+3. replace crown closure with the correct path/trace,
+4. re-overlay and recount,
+5. only then ask for sign-off.

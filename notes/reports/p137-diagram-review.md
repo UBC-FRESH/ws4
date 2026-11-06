@@ -17,10 +17,10 @@ Branch: `feature/p137-diagram-review`
 
 ## Result
 
-Agent first-pass overlay QA passed. A coordinate-system bug made the first
-overlays untrustworthy; after correction, all 10 stored diagrams align with their
-source. The earlier `fdcn`/all-10 failure claims are withdrawn. The diagrams remain
-provisional until the maintainer records a review decision.
+The digitization is incomplete. Top-height/QMD counts mismatch the printed
+labels in 8 of 10 diagrams, crown closure is wrong, and the TASS curves and CAI
+band are not represented in the schema. Do not sign off. The count audit is in
+`notes/review/p137-overlay-findings.md`.
 
 The diagrams are:
 
@@ -40,9 +40,9 @@ Queued in PR #832 after `abdb3bf`.
 
 ## Overlay finding
 
-The first overlay pass had a coordinate-calibration bug. After correction, all
-10 diagrams align with their source. The earlier `39/34` and all-10 failure
-claims were wrong. This is agent first-pass QA, not maintainer sign-off.
+The first overlay pass had a coordinate-calibration bug. After correction, the
+remaining issues are genuine: missing/extra top-height and QMD curves, a wrong
+crown-closure trace, and no TASS/CAI representation.
 
 Evidence: `notes/review/p137-overlay-findings.md` and
 `notes/review/p137-overlays/`.
