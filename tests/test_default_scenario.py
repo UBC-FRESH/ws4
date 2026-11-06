@@ -90,6 +90,33 @@ def test_default_target_raises_volume_and_adds_the_stock_floor(tmp_path: Path) -
     assert stock["normalization"] == "auto"
 
 
+def test_default_target_updates_a_weak_existing_stock_guard(tmp_path: Path) -> None:
+    """A final stock row below 90% is replaced rather than duplicated."""
+    source = tmp_path / "targets.yaml"
+    source.write_text(
+        "targets:\n"
+        "  - account: product.Yield.managed.Total\n"
+        "    period: 1\n"
+        "    minimum: 1000\n"
+        "  - account: feature.Yield.managed.Total\n"
+        "    period: 1\n"
+        "    minimum: 500\n",
+        encoding="utf-8",
+    )
+    output = build_default_stock90_targets(
+        source,
+        tmp_path / "default.yaml",
+        initial_stock=1000.0,
+        stock_account="feature.Yield.managed.Total",
+    )
+    entries = yaml.safe_load(output.read_text(encoding="utf-8"))["targets"]
+    stock = [entry for entry in entries if entry["account"] == "feature.Yield.managed.Total"]
+    assert len(stock) == 1
+    assert stock[0]["minimum"] == 900.0
+    volume = next(entry for entry in entries if entry["account"] == "product.Yield.managed.Total")
+    assert volume["minimum"] == 2000.0
+
+
 def test_default_target_does_not_double_an_existing_stock_guard(tmp_path: Path) -> None:
     source = tmp_path / "targets.yaml"
     source.write_text(
