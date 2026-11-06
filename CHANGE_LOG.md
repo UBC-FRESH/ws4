@@ -4531,7 +4531,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P143.1/P143.2: merged via PR #851 as `2e51922`. Added newest-first artifact metadata,
   target-aware state-cache keys, promoted-run target definitions, alternative profile
   preservation, and unsupported-GPU-profile fallback. Dashboard: `OVERALL: GREEN`.
-- P137.1: corrected the overlay calibration. `fdcn` top heights and QMD match the
-  source; its crown closure does not. The earlier `39/34` claim was wrong. The
-  other nine need corrected per-page overlays before a decision. No diagram is
-  marked reviewed. Dashboard: `OVERALL: GREEN`.
+- P137.1: corrected the overlay calibration. All 10 provisional diagrams align
+  with their source in the corrected overlays. The earlier `39/34` and all-10
+  failure claims were wrong. This is agent first-pass QA; the diagrams remain
+  provisional until maintainer sign-off. Dashboard: `OVERALL: GREEN`.

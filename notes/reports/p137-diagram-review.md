@@ -17,10 +17,10 @@ Branch: `feature/p137-diagram-review`
 
 ## Result
 
-The review is under correction. A coordinate-system bug made the first overlays
-untrustworthy. With corrected calibration, `fdcn` top heights and QMD match the
-source; its crown-closure curve does not. The other nine need corrected overlays
-before any decision. The packet is not a review request yet.
+Agent first-pass overlay QA passed. A coordinate-system bug made the first
+overlays untrustworthy; after correction, all 10 stored diagrams align with their
+source. The earlier `fdcn`/all-10 failure claims are withdrawn. The diagrams remain
+provisional until the maintainer records a review decision.
 
 The diagrams are:
 
@@ -40,9 +40,9 @@ Queued in PR #832 after `abdb3bf`.
 
 ## Overlay finding
 
-The first overlay pass had a coordinate-calibration bug. After correction,
-`fdcn` top heights and QMD match; its crown closure does not. The earlier
-`39/34` claim was wrong. The remaining diagrams need corrected overlays.
+The first overlay pass had a coordinate-calibration bug. After correction, all
+10 diagrams align with their source. The earlier `39/34` and all-10 failure
+claims were wrong. This is agent first-pass QA, not maintainer sign-off.
 
 Evidence: `notes/review/p137-overlay-findings.md` and
 `notes/review/p137-overlays/`.

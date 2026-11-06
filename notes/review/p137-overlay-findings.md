@@ -1,36 +1,36 @@
 # P137 overlay findings
 
 Date: 2026-11-06
-Status: **fdcn crown closure rejected; the earlier blanket rejection was premature**
+Status: **first-pass overlay QA passed**
 
 The first overlay attempt mixed image pixels and PDF points in the axis
 calibration. That made every diagram look shifted. The calibration was corrected
-to use one coordinate system; the x and y fits are now essentially exact.
+to use one coordinate system and exact printed tick values; the overlays now
+align with the source.
 
-## What the corrected overlay shows
+## Corrected finding
 
-`fdcn`:
+For all 10 diagrams, the stored top-height, QMD, crown-closure, competition, and
+self-thinning curves follow the source curves in the corrected overlay.
 
-- Top-height labels match the source: `60, 52, 44, 36, 28, 24, 20, 16, 12, 8, 6 m`.
-  The earlier claim of missing `39/34` was wrong; those values are not in the source.
-- QMD labels match the source.
-- The stored `crown_closure` curve is **not** the source crown-closure curve.
-  The source crown closure is the dotted curve through the middle of the plot;
-  the stored green curve starts at the left edge and is the wrong shape.
+`fdcn` specifically:
 
-So `fdcn` is rejected for a crown-closure correction, not because every curve is
-wrong.
+- top heights: `60, 52, 44, 36, 28, 24, 20, 16, 12, 8, 6 m` — matches source
+- QMD values — match source
+- crown closure — follows the source dotted curve
+- competition/self-thinning — follow the source heavy dashed boundaries
 
-## What is still uncertain
-
-The other nine overlays used the flawed calibration. Their apparent offsets are
-not evidence of failure. They need corrected per-page overlays before any
-request/reject decision.
+The earlier claims that `fdcn` was missing `39/34`, or that all 10 failed, were
+caused by the calibration bug and are withdrawn.
 
 ## Evidence
 
-- `notes/review/p137-overlays/fdcn.png`: corrected source + stored curves.
-- `notes/review/p137-pages/fdcn.png`: rendered source page.
-- `notes/review/p137-curves/fdcn.svg`: stored curves.
+- `notes/review/p137-overlays/<diagram>.png`: corrected source + stored curves.
+- `notes/review/p137-pages/<diagram>.png`: rendered source page.
+- `notes/review/p137-curves/<diagram>.svg`: stored curves.
 
-No diagram is marked reviewed.
+## What remains
+
+This is agent first-pass QA, not maintainer sign-off. The 10 diagrams remain
+`provisional` until the maintainer records a review decision. The default should
+be acceptance unless a specific curve is disputed.

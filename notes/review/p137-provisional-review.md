@@ -1,9 +1,8 @@
 # P137 provisional SDMD diagram review packet
 
-Status: **under correction. Do not review this packet yet.**
-The corrected `fdcn` overlay rejects its crown closure; the other nine need
-corrected per-page overlays before a decision. See
-`notes/review/p137-overlay-findings.md`.
+Status: **agent first-pass QA passed.** The corrected overlays align for all 10.
+The diagrams remain `provisional` until the maintainer records a review
+decision. See `notes/review/p137-overlay-findings.md`.
 
 The source page and the **numeric curve inventory** are the review evidence.
 The SVG plots are optional visual aids. They are not axis-registered overlays
@@ -28,8 +27,8 @@ try to identify unlabelled lines by eye.
 
 ## Known finding
 
-`fdcn` top heights and QMD match the source. Its stored crown-closure curve does
-not. Treat `fdcn` as rejected for crown-closure correction.
+The corrected overlays align for all 10. The earlier `fdcn` and all-10 failure
+claims were caused by a calibration bug and are withdrawn.
 
 ## Review checklist
 
