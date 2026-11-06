@@ -2,6 +2,7 @@
 
 Date: 2026-11-06
 Status: pr-open
+PR: #839
 Branch: `feature/p139-target-faithful`
 Parent issue: #837
 Task issue: #838
