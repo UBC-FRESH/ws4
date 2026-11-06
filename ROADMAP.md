@@ -138,6 +138,7 @@ exists and the maintainer approves it.
 | P138 Pareto member to map/Plan | #834 | `feature/p138-pareto-to-plan` | complete |
 | P139 Target-faithful promoted runs | #837 | `feature/p139-target-faithful` | complete |
 | P140 Period target dimensions | #840 | `feature/p140-target-dimensions` | complete |
+| P141 Portfolio target preparation | #843 | `feature/p141-portfolio-target-prep` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4201,4 +4202,25 @@ Acceptance:
 - The scan builder lists per-period target dimensions.
 - A 5-period scaffold writes five `account@period=...` groups.
 - The generated scan goes through the existing portfolio path.
+- Tests, browser smoke, and dashboard pass.
+
+## Phase 141: Portfolio target preparation
+
+Parent issue: #843
+Branch: `feature/p141-portfolio-target-prep`
+Status: complete
+Merge commit: `9b177c2`
+Report: `notes/reports/p141-portfolio-target-prep.md`
+PR: #845
+
+Goal: make live portfolio scans runnable when flow targets cannot be satisfied from an
+empty starting schedule.
+
+- [x] P141.1 Level-only targets and initial schedules (#844)
+
+Acceptance:
+
+- Level-only creates a flow-free target file in the output directory.
+- Initial schedule is forwarded only when configured.
+- The live Search launcher can run a meaningful scan without manual CLI setup.
 - Tests, browser smoke, and dashboard pass.

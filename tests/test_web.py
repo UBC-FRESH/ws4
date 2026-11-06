@@ -666,6 +666,12 @@ def test_search_launchers_compose_the_scripts(
 ) -> None:
     """Portfolio and tuner launches spawn the scripts under the runs root."""
     client = _runs_client(tmp_path)
+    (tmp_path / "targets.yaml").write_text(
+        "targets:\n"
+        "  - account: feature.Volume\n    period: 1\n    flow: even\n    minimum: -1\n"
+        "  - account: feature.Old\n    period: 1\n    minimum: 1\n",
+        encoding="utf-8",
+    )
     captured: list[list[str]] = []
 
     class FakePopen:
@@ -694,6 +700,7 @@ def test_search_launchers_compose_the_scripts(
             "max_members": 128,
             "workers": 2,
             "sample_seed": 9,
+            "target_mode": "level_only",
         },
     )
     assert portfolio.status_code == 200
@@ -703,6 +710,12 @@ def test_search_launchers_compose_the_scripts(
     assert captured[-1][captured[-1].index("--mode") + 1] == "random"
     assert captured[-1][captured[-1].index("--workers") + 1] == "2"
     assert captured[-1][captured[-1].index("--max-members") + 1] == "128"
+    level_target = Path(captured[-1][captured[-1].index("--targets") + 1])
+    assert level_target.name == "targets-level-only.yaml"
+    assert level_target.is_file()
+    levels = yaml.safe_load(level_target.read_text(encoding="utf-8"))["targets"]
+    assert len(levels) == 1
+    assert not levels[0].get("flow")
     bad = client.post(
         "/api/search/portfolio",
         json={"vary": "feature.Volume=1", "mode": "spiral"},
@@ -713,6 +726,11 @@ def test_search_launchers_compose_the_scripts(
         json={"vary": "feature.Volume=1", "workers": 17},
     )
     assert too_many_workers.status_code == 422
+    no_initial = client.post(
+        "/api/search/portfolio",
+        json={"vary": "feature.Volume=1", "use_initial_schedule": True},
+    )
+    assert no_initial.status_code == 422
     tuning = client.post(
         "/api/search/tune",
         json={"space": {"temperature": [1, 2]}, "iterations": 1, "years": 1},
@@ -724,6 +742,51 @@ def test_search_launchers_compose_the_scripts(
     assert {item["id"] for item in listed} >= {portfolio.json()["id"], tuning.json()["id"]}
     status = client.get(f"/api/search/{portfolio.json()['id']}/status").json()
     assert status["status"] == "running"
+
+
+def test_portfolio_launcher_uses_an_initial_schedule(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A configured initial schedule is forwarded to the portfolio process."""
+    _app(tmp_path)
+    initial = tmp_path / "initial.csv"
+    initial.write_text("block_id,treatment,offset\n1,CC,0\n", encoding="utf-8")
+    client = TestClient(
+        create_app(
+            dataset=tmp_path / "dataset",
+            runs=tmp_path / "runs",
+            targets=tmp_path / "targets.yaml",
+            initial_schedule=initial,
+            allow_runs=True,
+        )
+    )
+    captured: list[list[str]] = []
+
+    class FakePopen:
+        pid = 123
+
+        def poll(self) -> int | None:
+            return None
+
+    def fake_popen(
+        command: list[str], stdout: object = None, stderr: object = None, **kwargs: object
+    ) -> FakePopen:
+        captured.append(command)
+        return FakePopen()
+
+    monkeypatch.setattr("ws4.web.app.subprocess.Popen", fake_popen)
+    response = client.post(
+        "/api/search/portfolio",
+        json={
+            "vary": "feature.Volume=1",
+            "use_initial_schedule": True,
+            "iterations": 1,
+            "years": 1,
+        },
+    )
+    assert response.status_code == 200
+    assert "--initial-schedule" in captured[-1]
+    assert captured[-1][captured[-1].index("--initial-schedule") + 1] == str(initial)
 
 
 def test_search_stop_and_bounded_jobs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

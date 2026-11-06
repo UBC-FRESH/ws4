@@ -2714,6 +2714,8 @@ async function startPortfolio() {
         iterations: Number($('portfolio-iterations').value || 20),
         years: Number($('portfolio-years').value || 50),
         engine: $('portfolio-engine').value,
+        target_mode: $('portfolio-target-mode').value,
+        use_initial_schedule: $('portfolio-initial').checked,
       }),
     });
     status.textContent = `portfolio ${body.id} · running`;

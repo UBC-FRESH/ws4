@@ -390,6 +390,36 @@ def metrics_from_accounts(frame: pd.DataFrame, names: Sequence[str]) -> dict[str
     return values
 
 
+def metrics_from_run(run_dir: Path, names: Sequence[str]) -> dict[str, float]:
+    """Read realized metrics from a run's account and product tables.
+
+    The optimizer writes level accounts to ``account_values.csv`` and product accounts
+    to ``product_values.csv``. A metric selector should not have to know which table
+    produced the account.
+
+    Parameters
+    ----------
+    run_dir : Path
+        The completed run directory.
+    names : sequence of str
+        Metric selectors accepted by :func:`metrics_from_accounts`.
+
+    Returns
+    -------
+    dict of str to float
+        The value per requested metric.
+    """
+    frames: list[pd.DataFrame] = []
+    for filename in ("account_values.csv", "product_values.csv"):
+        path = Path(run_dir) / filename
+        if path.is_file():
+            frames.append(pd.read_csv(path))
+    if not frames:
+        raise ValueError("the run has no account_values.csv or product_values.csv")
+    frame = pd.concat(frames, ignore_index=True) if len(frames) > 1 else frames[0]
+    return metrics_from_accounts(frame, names)
+
+
 def parse_directions(text: str | None, metrics: Sequence[str]) -> dict[str, Direction]:
     """Return the direction per metric, defaulting every unnamed metric to ``max``.
 
@@ -525,6 +555,7 @@ def run_portfolio(
     weight_mode: str = "grid",
     sample_seed: int = 1,
     workers: int = 1,
+    initial_schedule: Path | None = None,
     runner_factory: Callable[[Path, OptimizeConfig], Runner] | None = None,
 ) -> dict[str, Any]:
     """Run the portfolio and write its members, front, and reports.
@@ -567,6 +598,9 @@ def run_portfolio(
     workers : int, optional
         Process workers. The default of one keeps memory bounded; each worker loads
         its own dataset, so raise it only when the host has memory for the model.
+    initial_schedule : Path or None, optional
+        A schedule used as the starting point for every member. Without it, a search
+        from an empty schedule can fail flow targets that need a primed account.
     runner_factory : callable or None, optional
         Builds a runner from the dataset and a configuration. Defaults to
         :meth:`Optimizer.from_dataset`; tests substitute a fake. With more than one
@@ -630,6 +664,7 @@ def run_portfolio(
                         threads=threads,
                         metaheuristic=metaheuristic,
                         seed=seed,
+                        initial_schedule_path=str(initial_schedule) if initial_schedule else "",
                     ),
                 )
             )
@@ -647,8 +682,7 @@ def run_portfolio(
             if "incumbent_objective" not in summary:
                 raise ValueError("the run summary has no incumbent_objective")
             objective = float(summary["incumbent_objective"])
-            account_frame = pd.read_csv(spec.run_dir / "account_values.csv")
-            measured = metrics_from_accounts(account_frame, metrics)
+            measured = metrics_from_run(spec.run_dir, metrics)
             measured["objective"] = objective
             schedule_path = spec.run_dir / "schedule.csv"
             schedule = load_schedule_csv(schedule_path)
@@ -730,6 +764,7 @@ def run_portfolio(
         "weight_mode": weight_mode,
         "sample_seed": sample_seed,
         "workers": workers,
+        "initial_schedule": str(initial_schedule) if initial_schedule else None,
         "vector_count": len(vectors),
         "metrics": list(metrics),
         "directions": directions,

@@ -750,6 +750,9 @@ product exceeds the member cap. Dimensions may be account-level or periodic
 selected target account without changing the target file. The portfolio launcher exposes
 ``grid`` or ``random`` sampling, a maximum member count, a sample seed, and process
 workers. Each worker loads its own dataset copy, so the launcher defaults to one worker.
+Portfolio scans can choose **level-only** targets, which writes a flow-free copy inside
+the run output, and can opt into the instance's configured initial schedule. Neither
+option mutates the live target file.
 
 The cloud is a finite grid sample under one search budget. It is advisory, and its
 normalized axes are relative to the members loaded into the current artifact.

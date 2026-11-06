@@ -130,3 +130,4 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p138-pareto-to-plan.md` — P138 member promotion and outcome-front alignment.
 - `reports/p139-target-faithful.md` — P139 run-local targets for promoted members.
 - `reports/p140-target-dimensions.md` — P140 periodic target dimensions in the scan builder.
+- `reports/p141-portfolio-target-prep.md` — P141 level-only targets and initial schedules.

@@ -45,6 +45,7 @@ from starlette.middleware.gzip import GZipMiddleware
 from starlette.responses import Response
 
 from ..forest_condition import build_report_from_accounts
+from ..opt.calibrate import write_targets
 from ..opt.objective import (
     flow_penalty,
     flow_series,
@@ -2580,6 +2581,8 @@ def create_app(
         workers = int(payload.get("workers", 1) or 1)
         sample_seed = int(payload.get("sample_seed", 1) or 1)
         weight_mode = str(payload.get("mode", "grid") or "grid")
+        target_mode = str(payload.get("target_mode", "current") or "current")
+        use_initial_schedule = bool(payload.get("use_initial_schedule", False))
         if not 1 <= iterations <= 1_000_000 or not 1 <= years <= 1000:
             raise HTTPException(status_code=422, detail="iterations or years are out of range")
         if not 1 <= threads <= 64 or not 1 <= archive_size <= 100:
@@ -2588,14 +2591,32 @@ def create_app(
             raise HTTPException(status_code=422, detail="max members or workers are out of range")
         if weight_mode not in {"grid", "random"}:
             raise HTTPException(status_code=422, detail="mode is grid or random")
+        if target_mode not in {"current", "level_only"}:
+            raise HTTPException(status_code=422, detail="target_mode is current or level_only")
+        if use_initial_schedule and (
+            initial_schedule_path is None or not initial_schedule_path.is_file()
+        ):
+            raise HTTPException(
+                status_code=422,
+                detail="this service has no initial schedule configured",
+            )
         out = new_search_dir("portfolio")
+        target_file = targets_path
+        if target_mode == "level_only":
+            level_targets = [target for target in load_targets(targets_path) if not target.flow]
+            if not level_targets:
+                raise HTTPException(
+                    status_code=422, detail="level_only leaves no targets after removing flows"
+                )
+            target_file = out / "targets-level-only.yaml"
+            write_targets(target_file, level_targets)
         command = [
             sys.executable,
             str(script_path("portfolio.py")),
             "--dataset",
             str(dataset),
             "--targets",
-            str(targets_path),
+            str(target_file),
             "--out",
             str(out),
             "--vary",
@@ -2621,6 +2642,8 @@ def create_app(
             "--workers",
             str(workers),
         ]
+        if use_initial_schedule and initial_schedule_path is not None:
+            command.extend(["--initial-schedule", str(initial_schedule_path)])
         if payload.get("metrics"):
             command.extend(["--metrics", str(payload["metrics"])])
         if payload.get("directions"):
