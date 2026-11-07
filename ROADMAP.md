@@ -142,6 +142,7 @@ exists and the maintainer approves it.
 | P142 Default stock90 scenario | #846 | `feature/p142-default-stock90` | complete |
 | P143 Web UI trust and cleanup | #849 | `feature/p143-web-trust` | complete |
 | P145 Multi-account target scaffold | #859 | `feature/p145-multi-account-targets` | complete |
+| P146 Live multi-account scan | #862 | `feature/p146-live-multi-account-scan` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4293,3 +4294,23 @@ Acceptance:
 - The portfolio launch validates and uses the scaffold file.
 - Live target files remain unchanged.
 - Browser and API tests pass.
+
+## Phase 146: Live multi-account portfolio scan
+
+Parent issue: #862
+Branch: `feature/p146-live-multi-account-scan`
+Status: complete
+Merge commit: `65c5daf`
+Report: `notes/reports/p146-live-multi-account-scan.md`
+PR: #864
+
+Goal: validate the multi-account scaffold through a real TSA27 browser run.
+
+- [x] P146.1 Honor API request options for portfolio launch (#863)
+
+Acceptance:
+
+- The run uses `targets-scaffold.yaml`, not the live target file.
+- Members complete without failures.
+- The Pareto workspace shows the multi-account front.
+- A front member opens on the map.

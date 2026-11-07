@@ -4548,3 +4548,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 
 - P145.1 fix: using the multi-account scaffold now stages weight dimensions for every
   scaffolded account as well as metrics and directions.
+
+- P146: fixed the shared browser API helper so portfolio launch and search stop send POST
+  requests. A live five-account TSA27 portfolio completed with 8 members, 1 exact front,
+  0 failures, and opened a member on the map. Report:
+  `notes/reports/p146-live-multi-account-scan.md`.
