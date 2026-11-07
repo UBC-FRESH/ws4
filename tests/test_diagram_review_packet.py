@@ -63,3 +63,4 @@ def test_packet_writes_ten_curve_plots_and_a_checklist(
     assert "all 10 diagrams remain **provisional**" in text
     assert text.count("- [ ]") == 10
     assert len(list((tmp_path / "curves").glob("*.svg"))) == 10
+    assert 'fill="#c9ced6"' in (tmp_path / "curves" / "fdcn.svg").read_text(encoding="utf-8")

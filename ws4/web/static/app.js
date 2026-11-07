@@ -3779,6 +3779,7 @@ function renderSdmdLegend() {
   for (const [kind, text] of [
     ['obs', 'Observed plot'],
     ['env', 'Observed envelope'],
+    ['cai', 'CAI density range'],
     ['traj', 'Selected regime path'],
     ['height', 'Top-height isopleth'],
     ['qmd', 'QMD isopleth'],
@@ -3859,10 +3860,17 @@ function renderSdmdDiagram() {
   const points = state.sdmd.points?.points ?? [];
   const envelope = state.sdmd.points?.envelope ?? [];
   const isopleths = state.sdmd.points?.diagram?.isopleths ?? [];
+  const caiBand = (state.sdmd.points?.diagram?.cai_band ?? [])
+    .map((point) => ({ tph: sdmdNumber(point[0]), volume: sdmdNumber(point[1]) }))
+    .filter((point) => point.tph > 0 && point.volume > 0);
   const trajectory = state.sdmd.trajectoryData?.points ?? [];
   const width = 720, height = 420, left = 62, right = 22, top = 20, bottom = 42;
-  const all = [...points, ...trajectory.map((point) => ({ tph: point[0], mean_tree_volume_m3: point[1] }))]
-    .map((point) => ({ tph: sdmdNumber(point.tph), volume: sdmdNumber(point.mean_tree_volume_m3) }))
+  const all = [
+    ...points,
+    ...trajectory.map((point) => ({ tph: point[0], mean_tree_volume_m3: point[1] })),
+    ...caiBand,
+  ]
+    .map((point) => ({ tph: sdmdNumber(point.tph), volume: sdmdNumber(point.mean_tree_volume_m3 ?? point.volume) }))
     .filter((point) => point.tph > 0 && point.volume > 0);
   if (!all.length) {
     if (note) note.textContent = 'No SDMD points for this AU.';
@@ -3876,6 +3884,10 @@ function renderSdmdDiagram() {
   const maxY = Math.max(...logs.map((pair) => pair[1])) + 0.08;
   const x = (tph) => sdmdScale(Math.log10(tph), minX, maxX, left, width - right);
   const y = (volume) => sdmdScale(Math.log10(volume), minY, maxY, height - bottom, top);
+  if (caiBand.length >= 3) {
+    const polygon = caiBand.map((point) => `${x(point.tph).toFixed(1)},${y(point.volume).toFixed(1)}`).join(' ');
+    sdmdNode(svg, 'polygon', { points: polygon, class: 'sdmd-cai-band' });
+  }
   for (const power of sdmdLogTicks(Math.ceil(minX), Math.floor(maxX))) {
     const xValue = x(10 ** power);
     sdmdNode(svg, 'line', { x1: xValue, x2: xValue, y1: top, y2: height - bottom, class: 'sdmd-grid-line' });
@@ -3958,7 +3970,8 @@ function renderSdmdDiagram() {
   }
   if (note) {
     const status = state.sdmd.trajectoryData?.status;
-    note.textContent = `Black dots: ${points.length} observed plots. Blue polygon: observed envelope (${envelope.length} vertices). ${trajectory.length ? `Orange dashed: selected regime path (${trajectory.length} points, ${status ?? 'loaded'}).` : 'Pick a trajectory above to draw an orange path.'}`;
+    const caiNote = caiBand.length ? ' Grey band: source CAI density range (display-only, no numeric level).' : '';
+    note.textContent = `Black dots: ${points.length} observed plots. Blue polygon: observed envelope (${envelope.length} vertices).${caiNote} ${trajectory.length ? `Orange dashed: selected regime path (${trajectory.length} points, ${status ?? 'loaded'}).` : 'Pick a trajectory above to draw an orange path.'}`;
   }
 }
 
@@ -4276,7 +4289,8 @@ async function loadSdmdCoverage() {
     const payload = await api('api/sdmd/coverage');
     state.sdmd.coverage = payload.rows ?? [];
     const counts = payload.counts ?? {};
-    $('sdmd-coverage-count').textContent = `${payload.count ?? 0} BEC labels · ${counts.reviewed ?? 0} reviewed · ${counts.provisional ?? 0} provisional · ${counts['no-diagram'] ?? 0} gaps`;
+    const reviewed = (counts.reviewed_variant ?? 0) + (counts.reviewed_zone ?? 0);
+    $('sdmd-coverage-count').textContent = `${payload.count ?? 0} BEC labels · ${reviewed} reviewed · ${counts.mixed_zone ?? 0} mixed · ${counts.no_diagram ?? 0} gaps`;
     const zones = [...new Set(state.sdmd.coverage.map((row) => row.zone))].sort();
     const zoneSelect = $('sdmd-coverage-zone');
     zoneSelect.replaceChildren();

@@ -1,13 +1,15 @@
 # P137 overlay and coverage findings
 
 Date: 2026-11-06
-Status: **crown closure corrected; top/QMD confirmed; CAI band pending**
+Status: **crown closure corrected; top/QMD confirmed; CAI band stored display-only**
 
 Crown closure is now a straight log-log line fitted from the source label angle
 and the dotted source path. The top-height and QMD curves are confirmed by the
 diagram tests and the corrected overlays; the earlier count mismatch was caused by
 text extraction missing rotated labels. TASS is excluded because the source does
-not label mortality levels. The CAI band is still not represented.
+not label mortality levels. The grey CAI band is stored as a `cai_band` polygon
+and rendered behind the curves; it has no numeric level and never feeds placement
+or constraints.
 
 ## Top-height/QMD count audit
 
@@ -42,9 +44,9 @@ TASS paths. They must be removed and the printed-label counts rechecked.
 ## CAI density-range band
 
 The grey "Density Range for Maximizing CAI" region is labelled as a region but has
-no numeric level. Treat it as a display-only `cai_range` polygon if it can be
-extracted cleanly; otherwise record a named refusal. It is not a quantitative
-curve and cannot feed constraints.
+no numeric level. It is now stored as a display-only `cai_band` polygon in each of
+the 10 diagrams, with the same axis calibration as the curves. It is not a
+quantitative curve and cannot feed constraints.
 
 ## Crown closure
 
@@ -54,7 +56,6 @@ source crown-closure line.
 
 ## Verdict
 
-The 10 diagrams now have a straight crown-closure line that follows the source;
-top/QMD curves align. TASS is explicitly excluded. The remaining gap is the grey
-CAI band; it needs a display-only representation or a named refusal. Do not sign
-off until that is decided.
+The 10 diagrams now have a straight crown-closure line that follows the source,
+aligned top/QMD curves, and a display-only CAI band. TASS is explicitly excluded.
+No diagram is marked reviewed; the maintainer's sign-off is still required.

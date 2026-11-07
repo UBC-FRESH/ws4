@@ -4534,5 +4534,10 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P137.1: replaced the crown-closure raster trace with a straight log-log line
   fitted to the source; corrected overlays show top/QMD curves align. The earlier
   count mismatch was a text-extraction artifact. TASS is explicitly excluded
-  because the source does not label mortality levels. The grey CAI band remains
-  unrepresented. No sign-off yet. Dashboard: `OVERALL: GREEN`.
+  because the source does not label mortality levels. Added the optional
+  display-only `cai_band` polygon to the diagram schema, API, web plot, and all 10
+  coastal diagrams plus the four Interior Douglas-fir/lodgepole diagrams used by
+  the pilot; it never feeds placement or constraints. The coverage header now
+  reports the registry's reviewed/mixed/gap counts, and the coverage status filter
+  accepts the registry's status names. No diagram is marked reviewed. Dashboard:
+  `OVERALL: GREEN`.

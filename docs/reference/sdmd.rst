@@ -133,6 +133,9 @@ used.
 
 Each diagram needs at least two ``top_height`` curves, at least two ``qmd`` curves,
 and exactly one each of ``crown_closure``, ``competition``, and ``self_thinning``.
+An optional ``cai_band`` is a closed display-only polygon for the source's grey
+"Density Range for Maximizing CAI" region. It has no numeric level, never feeds
+placement or constraints, and is not a substitute for a reviewed curve.
 A ``reviewed`` diagram must name a reviewer and a review time. The maintainer
 (G. Paradis) is the reviewer of record for this pilot; an RPF can be named later
 without a schema change. An unreviewed or

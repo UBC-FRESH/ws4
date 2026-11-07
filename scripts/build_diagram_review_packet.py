@@ -153,6 +153,8 @@ def _plot_curves(diagram_id: str, diagram: SdmdDiagram, output: Path) -> None:
         "self_thinning": "#ff7f0e",
     }
     points = [point for curve in diagram.isopleths for point in curve.points]
+    if diagram.cai_band is not None:
+        points.extend(diagram.cai_band)
     xs = [math.log10(point[0]) for point in points if point[0] > 0]
     ys = [math.log10(point[1]) for point in points if point[1] > 0]
     width, height, pad = 800, 600, 60
@@ -171,6 +173,14 @@ def _plot_curves(diagram_id: str, diagram: SdmdDiagram, output: Path) -> None:
         f'<text x="{width / 2:.0f}" y="24" text-anchor="middle" font-family="sans-serif" '
         f'font-size="16">{diagram_id}: stored isopleths</text>',
     ]
+    if diagram.cai_band is not None:
+        coords = " ".join(
+            f"{x:.1f},{y:.1f}" for x, y in (screen(point) for point in diagram.cai_band)
+        )
+        elements.append(
+            f'<polygon fill="#c9ced6" fill-opacity="0.55" stroke="#8a97a5" '
+            f'stroke-width="1" points="{coords}"/>'
+        )
     for curve in diagram.isopleths:
         color = colors.get(curve.kind, "#555555")
         coords = " ".join(f"{x:.1f},{y:.1f}" for x, y in (screen(point) for point in curve.points))
@@ -230,6 +240,8 @@ def build_packet(*, download: bool = True) -> Path:
         "The source page and stored-curve plot are side-by-side evidence. They are not",
         "axis-registered overlays because the original digitisation specs are not in the",
         "repository. The review still requires comparing curve identity and placement.",
+        "The stored-curve plot also shows the display-only CAI band; it has no numeric",
+        "level and never feeds placement or constraints.",
         "",
         "## Diagrams",
         "",

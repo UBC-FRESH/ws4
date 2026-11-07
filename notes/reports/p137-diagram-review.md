@@ -20,8 +20,9 @@ Branch: `feature/p137-diagram-review`
 Crown closure is now a straight log-log line fitted to the source, and the
 top/QMD curves align in the corrected overlays. The apparent count mismatch was a
 text-extraction artifact. TASS is explicitly excluded because the source does not
-label mortality levels. The grey CAI band is still not represented; do not sign
-off until that is decided.
+label mortality levels. The grey CAI band is stored as a display-only `cai_band`
+polygon and rendered behind the curves. The diagrams remain provisional; the
+maintainer's sign-off is still required.
 
 The diagrams are:
 
@@ -43,7 +44,7 @@ Queued in PR #832 after `abdb3bf`.
 
 The first overlay pass had a coordinate-calibration bug. After correction and
 cleanup, top/QMD counts match, crown closure is a straight fitted line, and TASS
-pseudo-curves are removed. The CAI band remains.
+pseudo-curves are removed. The grey CAI band is now stored and displayed.
 
 Evidence: `notes/review/p137-overlay-findings.md` and
 `notes/review/p137-overlays/`.
@@ -51,11 +52,19 @@ Evidence: `notes/review/p137-overlay-findings.md` and
 ## Verification
 
 ```bash
-python -m pytest tests/test_diagram_review_packet.py -q
+python -m pytest tests/test_diagram_review_packet.py tests/test_sdmd_diagram.py \
+  tests/test_sdmd_api.py tests/test_sdmd_ui.py -q
 python scripts/dashboard.py
 ```
 
-Packet builder test: 2 passed. Dashboard: `OVERALL: GREEN`.
+Targeted tests passed. Dashboard: `OVERALL: GREEN`.
+
+Live portal check at `http://127.0.0.1:8790/instance/sdmd-pilot/?view=sdmd`:
+
+- the SDMD payload carries a five-point `cai_band`;
+- the rendered SVG has one `polygon.sdmd-cai-band`;
+- the legend names “CAI density range”;
+- the coverage header reads `219 BEC labels · 6 reviewed · 209 mixed · 4 gaps`.
 
 ## Limits
 

@@ -1,9 +1,9 @@
 # P137 provisional SDMD diagram review packet
 
-Status: **crown closure corrected; top/QMD counts match; CAI band pending.**
-TASS is explicitly excluded because the source does not label mortality levels.
-Do not sign off until the CAI band decision is recorded. See
-`notes/review/p137-overlay-findings.md`.
+Status: **crown closure corrected; top/QMD counts match; CAI band stored
+display-only.** TASS is explicitly excluded because the source does not label
+mortality levels. The diagrams remain provisional; the maintainer's sign-off is
+still required. See `notes/review/p137-overlay-findings.md`.
 
 The source page and the **numeric curve inventory** are the review evidence.
 The SVG plots are optional visual aids. They are not axis-registered overlays
@@ -28,8 +28,9 @@ try to identify unlabelled lines by eye.
 
 ## Known finding
 
-Crown closure is now a straight log-log line and top/QMD curves align. TASS is
-excluded. The CAI band is the remaining gap.
+Crown closure is now a straight log-log line, top/QMD curves align, and the grey
+CAI band is stored and displayed as a display-only polygon. TASS is excluded. The
+diagrams remain provisional pending the maintainer's sign-off.
 
 ## Review checklist
 
