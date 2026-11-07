@@ -59,6 +59,9 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - Pinned FEMIC LidarBC bundles, checksums, and polygon support summaries.
    * - :doc:`disturbance`
      - Read-only ``femic.disturbance.v1`` events and the summary report.
+   * - :doc:`event-log`
+     - The unified event record, deterministic ordering, counter-based random tape, and
+       replay contract.
    * - :doc:`femic-hydrology`
      - Pinned FEMIC hydrology response bundles, checksums, flood-risk rows, and
        applicability metadata.
@@ -88,4 +91,5 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    web
    femic-lidar
    disturbance
+   event-log
    femic-hydrology

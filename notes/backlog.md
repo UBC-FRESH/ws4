@@ -379,9 +379,11 @@ items are enhancements and maintenance.
 
 ## Stochastic landscape engine (P144)
 
-- **Event record and random tape.** `open`. P144.2 adds one event record shared by controlled
-  and uncontrolled events, a stable ordering key, a counter-based random tape, and a replay
-  validator. Target: P144.2.
+- **Event record and random tape.** `done` (P144.2, #854). The `ws4.ecosystem` package now
+  has the unified `Event` record, the deterministic `EventLog` and `EventLogBuilder`, the
+  counter-based `RandomTape` with common random numbers, a replay digest and validator, and
+  `ws4 ecosystem validate-log`. Referential integrity against a dataset is still open; it
+  belongs to the process and scenario tasks.
 - **Ecosystem package and cohort state.** `open`. P144.3 adds the optional `ws4.ecosystem.v1`
   sidecar, the state-variable schema, cohort area fractions, and the null yield bridge. The
   compiled management dataset remains authoritative. Target: P144.3.

@@ -4542,3 +4542,13 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   Documentation only; no runtime code. `python scripts/check_workflow.py` reports
   **0 error(s), 0 warning(s)**. Dashboard: **GREEN** (lint, format, types, tests,
   validator, docs, docstrings).
+
+- P144.2: added the `ws4.ecosystem` package: the versioned `Event` record, the deterministic
+  `EventLog` and `EventLogBuilder` with a SHA-256 replay digest, the counter-based
+  `RandomTape` (Philox 2x64) with common random numbers, and `ws4 ecosystem validate-log`.
+  The record is a superset of the `femic.disturbance.v1` row and
+  `Event.from_disturbance_row` adapts the existing consumer rows; execution order is
+  `(time, phase, priority, spatial id, event id)`. Added 101 unit, property, and CLI tests
+  with 98% branch coverage of the new package, plus `docs/reference/event-log.rst`.
+  `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard:
+  **GREEN** (lint, format, types, tests, validator, docs, docstrings).
