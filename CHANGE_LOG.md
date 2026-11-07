@@ -4563,3 +4563,6 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 
 - P148.1: added guarded deletion for portfolio artifacts and promoted runs, plus Search
   Delete/Clean failed and Plan Delete promoted run controls. Live cleanup follows.
+
+- P148: merged via PR #871 as `103614b`. Added guarded portfolio/promoted-run deletion
+  and Search/Plan cleanup controls; removed the failed live probe.

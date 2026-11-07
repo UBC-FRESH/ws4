@@ -1,7 +1,9 @@
 # P148 portfolio and promoted-run cleanup
 
 Date: 2026-11-07
-Status: active
+Status: complete
+Merge commit: `103614b`
+PR: #871
 Branch: `feature/p148-portfolio-cleanup`
 Parent issue: #869
 Task issue: #870
@@ -26,4 +28,4 @@ Ordinary runs and non-portfolio search artifacts are refused.
 - Focused tests: 120 passed.
 - Dashboard: `OVERALL: GREEN. Every gate passed.`
 
-Live cleanup of the known failed probes follows deployment.
+Live cleanup removed `portfolio-20261106-023623`; 8 artifacts remain and the newest usable front is first.
