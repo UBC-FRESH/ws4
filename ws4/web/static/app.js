@@ -4,7 +4,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/OrbitControls.js";
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' }, runSource: null, portfolioScan: [], pareto: { available: false, artifact: '', data: null, chart: null, cloud: null, selected: null, pinned: [], screen: [], artifacts: [] } };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' }, runSource: null, portfolioScan: [], portfolioTargets: [], pareto: { available: false, artifact: '', data: null, chart: null, cloud: null, selected: null, pinned: [], screen: [], artifacts: [] } };
 
 state.estate3d = { open: false, features: [], yaw: -0.55, zoom: 1, exaggeration: 1, hits: [] };
 const ESTATE_3D_LIMIT = 2000;
@@ -1555,6 +1555,7 @@ async function stopSearch(id) {
 
 async function loadSearch(preferred = '') {
   populateScanAccounts();
+  populateScaffoldAccounts();
   const empty = $('search-empty');
   const select = $('search-select');
   const table = $('search-table');
@@ -1922,6 +1923,146 @@ async function renderPortfolioMemberTargets() {
     body.replaceChildren();
     status.textContent = `member targets unavailable: ${error.message}`;
   }
+}
+
+function scaffoldAccounts() {
+  const names = new Set([...state.series.keys()]);
+  for (const row of state.targets || []) names.add(String(row.account));
+  return [...names].filter(Boolean).sort();
+}
+
+function populateScaffoldAccounts() {
+  const select = $('scaffold-account');
+  if (!select) return;
+  const previous = select.value;
+  const accounts = scaffoldAccounts();
+  select.replaceChildren();
+  if (!accounts.length) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'No accounts loaded';
+    select.append(option);
+    $('scaffold-add').disabled = true;
+    return;
+  }
+  $('scaffold-add').disabled = false;
+  for (const account of accounts) {
+    const option = document.createElement('option');
+    option.value = account;
+    option.textContent = account;
+    select.append(option);
+  }
+  if (accounts.includes(previous)) select.value = previous;
+  const periods = (state.targets || [])
+    .map((row) => Number(row.period))
+    .filter((period) => Number.isFinite(period) && period > 0);
+  if (periods.length && Number($('scaffold-period').value) <= 0) {
+    $('scaffold-period').value = String(Math.max(...periods));
+  }
+}
+
+function scaffoldCurrentValue(account) {
+  const series = state.series.get(account);
+  if (!series || !series.size) return 0;
+  const last = [...series.keys()].sort((left, right) => left - right).pop();
+  return Number(series.get(last) || 0);
+}
+
+function scaffoldPeriodWidth() {
+  const row = (state.targets || []).find((target) => Number(target.period_width) > 0);
+  return row ? Number(row.period_width) : 10;
+}
+
+function addScaffoldTarget() {
+  const account = $('scaffold-account').value;
+  const period = Number($('scaffold-period').value);
+  const weight = Math.max(0.0001, Number($('scaffold-weight').value) || 1);
+  if (!account || !Number.isFinite(period) || period < 1) {
+    $('scaffold-status').textContent = 'Choose an account and a valid period.';
+    return;
+  }
+  const existing = state.portfolioTargets.find(
+    (row) => row.account === account && Number(row.period) === period
+  );
+  const row = {
+    account,
+    period,
+    minimum: existing ? existing.minimum : scaffoldCurrentValue(account),
+    maximum: existing ? existing.maximum : null,
+    min_weight: weight,
+    max_weight: weight,
+    period_width: scaffoldPeriodWidth(),
+    active: true,
+  };
+  if (existing) Object.assign(existing, row);
+  else state.portfolioTargets.push(row);
+  renderScaffoldTargets();
+}
+
+function renderScaffoldTargets() {
+  const list = $('scaffold-list');
+  list.replaceChildren();
+  for (const [index, target] of state.portfolioTargets.entries()) {
+    const item = document.createElement('li');
+    const name = document.createElement('span');
+    name.textContent = `${target.account} · P${target.period}`;
+    const min = document.createElement('input');
+    min.type = 'number';
+    min.step = 'any';
+    min.value = String(target.minimum ?? '');
+    min.addEventListener('change', () => {
+      target.minimum = min.value === '' ? null : Number(min.value);
+      renderScaffoldTargets();
+    });
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'link-button';
+    remove.textContent = 'remove';
+    remove.addEventListener('click', () => {
+      state.portfolioTargets.splice(index, 1);
+      renderScaffoldTargets();
+    });
+    item.append(name, min, remove);
+    list.append(item);
+  }
+  const preview = $('scaffold-preview');
+  preview.hidden = !state.portfolioTargets.length;
+  preview.textContent = state.portfolioTargets.length
+    ? JSON.stringify({ targets: state.portfolioTargets }, null, 2)
+    : '';
+  $('scaffold-status').textContent = state.portfolioTargets.length
+    ? `${state.portfolioTargets.length} target rows · live targets unchanged`
+    : 'Add 5-7 accounts for a multi-account front.';
+}
+
+function useScaffoldTargets() {
+  if (!state.portfolioTargets.length) {
+    $('scaffold-status').textContent = 'Add at least one target row first.';
+    return;
+  }
+  const accounts = state.portfolioTargets.map((target) => target.account);
+  $('portfolio-metrics').value = accounts.join(',');
+  $('portfolio-directions').value = accounts.map((account) => `${account}=max`).join(';');
+  const horizon = Math.max(
+    Number($('portfolio-years').value) || 50,
+    ...state.portfolioTargets.map(
+      (target) => Number(target.period || 1) * Number(target.period_width || 10)
+    )
+  );
+  $('portfolio-years').value = String(horizon);
+  $('scaffold-status').textContent = `${accounts.length} target rows will be written to the portfolio run; live targets are unchanged.`;
+  renderScaffoldTargets();
+}
+
+function wireScaffoldTargets() {
+  if (!$('scaffold-add')) return;
+  $('scaffold-add').addEventListener('click', addScaffoldTarget);
+  $('scaffold-use').addEventListener('click', useScaffoldTargets);
+  $('scaffold-clear').addEventListener('click', () => {
+    state.portfolioTargets = [];
+    renderScaffoldTargets();
+  });
+  renderScaffoldTargets();
 }
 
 function renderPortfolioScan() {
@@ -2774,6 +2915,7 @@ async function startPortfolio() {
         engine: $('portfolio-engine').value,
         target_mode: $('portfolio-target-mode').value,
         use_initial_schedule: $('portfolio-initial').checked,
+        ...(state.portfolioTargets.length ? { targets: state.portfolioTargets } : {}),
       }),
     });
     status.textContent = `portfolio ${body.id} · running`;
@@ -6627,6 +6769,7 @@ async function loadTargets() {
         state.series.get(account).set(Number(item.year), Number(item.value));
       }
     } catch { /* the account tree is optional when a run has no values */ }
+    populateScaffoldAccounts();
     try {
       state.targetSeries = await api(`api/runs/${encodeURIComponent(state.run)}/target-series`);
     } catch { /* the chart can still fall back to the target rows */ }
@@ -8584,6 +8727,7 @@ async function start() {
   wireSdmd();
   wirePareto();
   wirePortfolioScan();
+  wireScaffoldTargets();
   loadWatched();
   try {
     const summary = await api('api/summary');

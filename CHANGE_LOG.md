@@ -4536,3 +4536,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P143.3: validated the TSA29 profile fallback to the state engine after the stock
   target could not be priced by the GPU profile. Portfolio list defaults to the newest
   usable front; failed artifacts are marked and skipped.
+
+- P145.1: added a multi-account target scaffold to Search and a validated `targets`
+  payload to the portfolio launcher. Scaffold targets are written inside the run output,
+  never to the live target file. Focused tests pass; dashboard: `OVERALL: GREEN`.
+  Report: `notes/reports/p145-multi-account-targets.md`.
