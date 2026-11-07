@@ -2041,8 +2041,17 @@ function useScaffoldTargets() {
     return;
   }
   const accounts = state.portfolioTargets.map((target) => target.account);
+  const factors = $('scan-factors')
+    .value.split(',')
+    .map((value) => Number(value.trim()))
+    .filter((value) => Number.isFinite(value) && value > 0);
+  const levels = factors.length ? factors : [0.5, 1, 2];
+  $('portfolio-vary').value = accounts.map((account) => `${account}=${levels.join(',')}`).join(';');
   $('portfolio-metrics').value = accounts.join(',');
   $('portfolio-directions').value = accounts.map((account) => `${account}=max`).join(';');
+  if (accounts.length * levels.length > Number($('portfolio-max-members').value || 64)) {
+    $('portfolio-mode').value = 'random';
+  }
   const horizon = Math.max(
     Number($('portfolio-years').value) || 50,
     ...state.portfolioTargets.map(

@@ -4545,3 +4545,6 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P145: merged via PR #861 as `a33443a`. Search can scaffold multi-account target rows
   and pass them to a portfolio run without touching live targets. Dashboard:
   `OVERALL: GREEN`.
+
+- P145.1 fix: using the multi-account scaffold now stages weight dimensions for every
+  scaffolded account as well as metrics and directions.
