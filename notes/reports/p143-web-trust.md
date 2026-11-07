@@ -1,7 +1,8 @@
 # P143 web UI trust and cleanup
 
 Date: 2026-11-07
-Status: active
+Status: pr-open
+PR: #851
 Branch: `feature/p143-web-trust`
 Parent issue: #849
 Task issue: #850
