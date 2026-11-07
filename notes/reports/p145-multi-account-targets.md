@@ -1,7 +1,8 @@
 # P145 multi-account portfolio target scaffold
 
 Date: 2026-11-07
-Status: pr-open
+Status: complete
+Merge commit: `a33443a`
 PR: #861
 Branch: `feature/p145-multi-account-targets`
 Parent issue: #859

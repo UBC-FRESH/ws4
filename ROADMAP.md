@@ -141,7 +141,7 @@ exists and the maintainer approves it.
 | P141 Portfolio target preparation | #843 | `feature/p141-portfolio-target-prep` | complete |
 | P142 Default stock90 scenario | #846 | `feature/p142-default-stock90` | complete |
 | P143 Web UI trust and cleanup | #849 | `feature/p143-web-trust` | complete |
-| P145 Multi-account target scaffold | #859 | `feature/p145-multi-account-targets` | pr-open |
+| P145 Multi-account target scaffold | #859 | `feature/p145-multi-account-targets` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4278,8 +4278,10 @@ Acceptance:
 
 Parent issue: #859
 Branch: `feature/p145-multi-account-targets`
-Status: pr-open
+Status: complete
+Merge commit: `a33443a`
 Report: `notes/reports/p145-multi-account-targets.md`
+PR: #861
 
 Goal: build a 5-7 account portfolio target set without changing live Solve targets.
 
