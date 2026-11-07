@@ -4519,7 +4519,6 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P142: merged via PR #848 as `f217cfe`. Added the generated 90% growing-stock default
   scenario generator and raised the default Solve budget to three minutes. Dashboard:
   `OVERALL: GREEN`.
-
 - P143.1: search artifacts now expose timestamp/member/front/failure metadata and sort
   newest first; the Pareto selector prefers the newest usable front. Portal seed-state
   caches now key on the active target file and initial schedule. Report:
@@ -4536,3 +4535,13 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P143.3: validated the TSA29 profile fallback to the state engine after the stock
   target could not be priced by the GPU profile. Portfolio list defaults to the newest
   usable front; failed artifacts are marked and skipped.
+- P137.1: replaced the crown-closure raster trace with a straight log-log line
+  fitted to the source; corrected overlays show top/QMD curves align. The earlier
+  count mismatch was a text-extraction artifact. TASS is explicitly excluded
+  because the source does not label mortality levels. Added the optional
+  display-only `cai_band` polygon to the diagram schema, API, web plot, and all 10
+  coastal diagrams plus the four Interior Douglas-fir/lodgepole diagrams used by
+  the pilot; it never feeds placement or constraints. The coverage header now
+  reports the registry's reviewed/mixed/gap counts, and the coverage status filter
+  accepts the registry's status names. No diagram is marked reviewed. Dashboard:
+  `OVERALL: GREEN`.

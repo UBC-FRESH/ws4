@@ -503,6 +503,7 @@ details.layer-group[open] > summary { margin-bottom:.2rem; }
 .sdmd-yield-line { fill:none; stroke:#1f6feb; stroke-width:1.8; }
 .sdmd-yield-dot { fill:#1f6feb; }
 .sdmd-envelope { fill:#b7c9f4; fill-opacity:.45; stroke:#4c6ef5; stroke-width:1; }
+.sdmd-cai-band { fill:#c9ced6; fill-opacity:.55; stroke:#8a97a5; stroke-width:1; }
 .sdmd-point { fill:#1f2933; stroke:#fff; stroke-width:1; }
 .sdmd-trajectory { fill:none; stroke:#b45309; stroke-width:1.8; stroke-dasharray:5 3; }
 .sdmd-trajectory-dot { fill:#b45309; }
@@ -510,6 +511,7 @@ details.layer-group[open] > summary { margin-bottom:.2rem; }
 .sdmd-legend span::before { content:""; display:inline-block; width:.6rem; height:.18rem; margin-right:.25rem; vertical-align:.1rem; background:#999; }
 .sdmd-legend .obs::before { height:.5rem; width:.5rem; border-radius:50%; background:#1f2933; }
 .sdmd-legend .env::before { background:#b7c9f4; }
+.sdmd-legend .cai::before { background:#c9ced6; }
 .sdmd-legend .traj::before { background:#b45309; }
 .sdmd-legend .height::before { background:#2f6fb0; }
 .sdmd-legend .qmd::before { background:#2f7d4f; }

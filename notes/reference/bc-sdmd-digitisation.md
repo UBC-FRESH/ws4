@@ -23,6 +23,8 @@ recorded in `ws4/sdmd/data/sdmd/source_catalog.json` (diagram `fdin`, version
    "Crown Closure" label; its descending and rising pieces are joined.
 7. The two thick dash-dot lines are `competition` (the lower limit of the
    imminent competition-mortality zone) and `self_thinning` (the mean limit).
+8. The grey "Density Range for Maximizing CAI" band is read from the large grey
+   filled path as a polygon and stored under `cai_band` for display only.
 
 ## What is stored
 
@@ -35,7 +37,9 @@ recorded in `ws4/sdmd/data/sdmd/source_catalog.json` (diagram `fdin`, version
 
 - The 18 TASS predicted-mortality dotted curves are visible in the PDF but are not
   stored in the five-kind contract.
-- The grey "density range for maximizing CAI" band is not stored.
+- The grey "density range for maximizing CAI" band is stored as an optional
+  `cai_band` polygon for display only. It has no numeric level and never feeds
+  placement or constraints.
 - The top-height and QMD curves only cover their printed domains; a point beyond a
   curve's last digitised point is reported as outside the isopleth range rather than
   extrapolated.

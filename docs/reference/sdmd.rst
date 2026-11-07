@@ -133,6 +133,9 @@ used.
 
 Each diagram needs at least two ``top_height`` curves, at least two ``qmd`` curves,
 and exactly one each of ``crown_closure``, ``competition``, and ``self_thinning``.
+An optional ``cai_band`` is a closed display-only polygon for the source's grey
+"Density Range for Maximizing CAI" region. It has no numeric level, never feeds
+placement or constraints, and is not a substitute for a reviewed curve.
 A ``reviewed`` diagram must name a reviewer and a review time. The maintainer
 (G. Paradis) is the reviewer of record for this pilot; an RPF can be named later
 without a schema change. An unreviewed or
@@ -470,7 +473,8 @@ precision; figrecover owns the rendered page, overlay, quality metrics, and revi
 record. A diagram spec names the PDF axis ticks, the drawing path indices, and the
 printed isopleth values, so the workflow does not guess curve identities. Both are **provisional** until the
 maintainer reviews the curves; the planted top-height assignment is the weaker of
-the two. The synthetic ``idf-dk3-fdi-illustrative.json`` remains the test fixture,
+the two. The P137 overlay review found the 10 provisional diagrams do not match
+their source; see ``notes/review/p137-overlay-findings.md``. The synthetic ``idf-dk3-fdi-illustrative.json`` remains the test fixture,
 not the published diagram. Four method trajectories from `fresh-fvsbc` are in
 ``ws4/sdmd/data/trajectories/``; they are method runs over synthetic tree lists,
 not real AU projections. See ``notes/reference/sdmd-pilot-trajectories.md``.

@@ -24,16 +24,26 @@ DIAGRAM = (
     / "sdmd"
     / "idf-dk3-fdi-illustrative.json"
 )
+COASTAL_DIAGRAM = (
+    Path(__file__).resolve().parents[1]
+    / "ws4"
+    / "sdmd"
+    / "data"
+    / "sdmd"
+    / "cdf-cwh-fdc-natural.json"
+)
 AU = "AU-IDFdk3-FDI"
 
 
-def _store_dir(tmp_path: Path) -> Path:
+def _store_dir(tmp_path: Path, diagram: Path = DIAGRAM) -> Path:
     """Build a store directory from the fixture and the diagram.
 
     Parameters
     ----------
     tmp_path : Path
         The pytest temporary directory.
+    diagram : Path, optional
+        The diagram to copy as ``diagram.json``.
 
     Returns
     -------
@@ -42,7 +52,7 @@ def _store_dir(tmp_path: Path) -> Path:
     """
     root = tmp_path / "sdmd"
     shutil.copytree(FIXTURE, root)
-    shutil.copy(DIAGRAM, root / "diagram.json")
+    shutil.copy(diagram, root / "diagram.json")
     trajectory = root / "trajectories" / AU / "REG-A-CT60.json"
     trajectory.parent.mkdir(parents=True)
     trajectory.write_text(
@@ -52,9 +62,9 @@ def _store_dir(tmp_path: Path) -> Path:
     return root
 
 
-def _store(tmp_path: Path) -> SdmdStore:
+def _store(tmp_path: Path, diagram: Path = DIAGRAM) -> SdmdStore:
     """Load a store from a fresh fixture directory."""
-    return SdmdStore.from_directory(_store_dir(tmp_path))
+    return SdmdStore.from_directory(_store_dir(tmp_path, diagram))
 
 
 def _client(store: SdmdStore) -> TestClient:
@@ -140,6 +150,16 @@ def test_sdmd_points_carry_a_placement(tmp_path: Path) -> None:
     }
     assert len(payload["envelope"]) >= 3
     assert len(payload["diagram"]["isopleths"]) == 13
+    assert payload["diagram"]["cai_band"] == []
+
+
+def test_sdmd_payload_carries_the_display_only_cai_band(tmp_path: Path) -> None:
+    """The API exposes the CAI polygon without changing point placement."""
+    client = _client(_store(tmp_path, COASTAL_DIAGRAM))
+    payload = client.get(f"/api/sdmd/au/{AU}/sdmd").json()
+    band = payload["diagram"]["cai_band"]
+    assert len(band) >= 3
+    assert all(len(point) == 2 and point[0] > 0 and point[1] > 0 for point in band)
 
 
 def test_regimes_include_constraint_findings(tmp_path: Path) -> None:
@@ -341,5 +361,11 @@ def test_coverage_endpoint_lists_every_bec_and_names_gaps(tmp_path: Path) -> Non
     }
     reviewed = next(row for row in payload["rows"] if row["bec"] == "IDFdk3")
     assert reviewed["au_ids"] == "AU-IDFdk3-TSA23-FDI;AU-IDFdk3-TSA23-PLI"
+    filtered = client.get("/api/sdmd/coverage", params={"status": "reviewed_zone"})
+    assert filtered.status_code == 200
+    assert filtered.json()["count"] == 5
+    assert all(row["coverage_status"] == "reviewed_zone" for row in filtered.json()["rows"])
+    invalid = client.get("/api/sdmd/coverage", params={"status": "reviewed"})
+    assert invalid.status_code == 422
     missing = client.get("/api/sdmd/coverage/XYZ99")
     assert missing.status_code == 404
