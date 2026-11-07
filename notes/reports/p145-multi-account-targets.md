@@ -2,6 +2,7 @@
 
 Date: 2026-11-07
 Status: pr-open
+PR: #861
 Branch: `feature/p145-multi-account-targets`
 Parent issue: #859
 Task issue: #860
