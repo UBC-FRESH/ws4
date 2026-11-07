@@ -53,6 +53,10 @@ labels are anchors. All 17 mappings are recorded in
 `notes/reference/fdcp-digitisation.md`. Direct inspection of the rendered overlay
 shows all 17 red top-height curves on their black dotted source paths.
 
+The QMD family similarly keeps all 14 paths, including the unlabelled 35, 45, 55,
+and 65 cm curves. Its mapping is `517`–`530` in value order. The pattern is locked
+in `workflows/sdmd-qmd-import.yaml`.
+
 Evidence: `notes/review/p137-overlay-findings.md` and
 `notes/review/p137-overlays/`.
 

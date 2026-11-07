@@ -22,6 +22,7 @@ pymupdf = pytest.importorskip("pymupdf")
 
 WORKFLOW = Path(__file__).resolve().parents[1] / "workflows" / "sdmd-digitise.yaml"
 LINE_WORKFLOW = Path(__file__).resolve().parents[1] / "workflows" / "sdmd-line-import.yaml"
+QMD_WORKFLOW = Path(__file__).resolve().parents[1] / "workflows" / "sdmd-qmd-import.yaml"
 
 
 def test_sdmd_workflow_plans_with_the_provider() -> None:
@@ -38,6 +39,17 @@ def test_sdmd_workflow_plans_with_the_provider() -> None:
 def test_line_import_workflow_plans_with_the_provider() -> None:
     """The line-import workflow validates against the WS4 provider."""
     spec, diagnostics = load_workflow(LINE_WORKFLOW)
+    assert spec is not None
+    registry = ProviderRegistry()
+    registry.register(sdmd_provider())
+    plan = create_run_plan(spec, diagnostics=diagnostics, registry=registry)
+    assert not plan.has_errors
+    assert [node.id for node in plan.nodes] == ["render", "import"]
+
+
+def test_qmd_workflow_plans_with_the_provider() -> None:
+    """The QMD workflow validates with the same import node."""
+    spec, diagnostics = load_workflow(QMD_WORKFLOW)
     assert spec is not None
     registry = ProviderRegistry()
     registry.register(sdmd_provider())

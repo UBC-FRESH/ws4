@@ -4556,3 +4556,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   `workflows/sdmd-line-import.yaml` via the `ws4.sdmd.import-lines` FreshForge
   node, which renders with figrecover and writes a `ws4.sdmd.line-import.v1`
   artifact. A local FreshForge run completed `render success` and `import success`.
+- P137.1: completed the fdcp QMD line-type pass. The source has 14 QMD paths and
+  ten printed labels. The full series `5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55,
+  60, 65, 70 cm` maps to paths `517`–`530`; the four unlabelled members are kept.
+  The pattern is locked in `workflows/sdmd-qmd-import.yaml`. Direct overlay
+  inspection shows all 14 blue QMD curves on their black dashed source paths.

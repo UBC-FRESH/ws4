@@ -45,6 +45,11 @@ The mappings are `6→500`, `8→501`, `10→502`, `12→503`, `14→504`, `16�
 overlay shows all 17 red top-height curves lying on their black dotted source
 paths.
 
+The QMD family has 14 paths and ten printed labels. The full series is
+`5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70 cm`, mapping to paths
+`517` through `530`; the four unlabelled members (35, 45, 55, 65) are kept.
+Direct inspection shows the blue QMD curves on their black dashed source paths.
+
 ## TASS predicted mortality curves
 
 The source TASS curves are plotted but **not labelled with mortality levels**.

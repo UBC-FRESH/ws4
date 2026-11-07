@@ -45,8 +45,17 @@ vertically unordered matches.
 | 60 | 516 |
 
 The source page prints only ten of these labels; the other seven values are the
-unlabelled members of the same path series. They are kept, not skipped. The
-confirmed pattern is locked in `workflows/sdmd-line-import.yaml`:
+unlabelled members of the same path series. They are kept, not skipped.
+
+## QMD import
+
+The QMD family has 14 paths and ten printed labels. The full value series is
+`5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70 cm`; paths are
+`517` through `530` in order. The four unlabelled members are 35, 45, 55, and
+65 cm.
+
+The confirmed patterns are locked in `workflows/sdmd-line-import.yaml` for top
+height and `workflows/sdmd-qmd-import.yaml` for QMD:
 `render` uses figrecover and `import` uses `ws4.sdmd.import-lines` to write a
 `ws4.sdmd.line-import.v1` artifact. A local FreshForge run completed with
 `render success` and `import success`, producing the same ten value/path pairs.
