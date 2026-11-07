@@ -64,6 +64,9 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
        replay contract.
    * - :doc:`ecosystem-package`
      - The optional state schema, cohort fractions, null bridge, and dataset join.
+   * - :doc:`ecosystem-fire`
+     - The first stochastic process: Poisson ignition, graph spread, mortality, salvage,
+       and disturbance accounts.
    * - :doc:`femic-hydrology`
      - Pinned FEMIC hydrology response bundles, checksums, flood-risk rows, and
        applicability metadata.
@@ -95,4 +98,5 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    disturbance
    event-log
    ecosystem-package
+   ecosystem-fire
    femic-hydrology

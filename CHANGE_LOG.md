@@ -4565,3 +4565,14 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   `docs/reference/ecosystem-package.rst`. The ecosystem suite now has 165 tests.
   `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard:
   **GREEN** (lint, format, types, tests, validator, docs, docstrings).
+
+- P144.4: added the first stochastic landscape process in `ws4/ecosystem/fire.py`:
+  Poisson ignition, fuel/distance/wind graph percolation, severity and cohort mortality,
+  a deterministic salvage source, disturbance-compatible fire events, and fire/salvage/state
+  account rows. Added `FireRun`/`FireResult`, the synthetic grid and the end-to-end
+  `examples/ecosystem_fire_demo.py`, plus `docs/reference/ecosystem-fire.rst`. The analytic
+  oracles cover the Poisson ignition rate, the geometric chain burn length, a zero-fuel
+  barrier, downwind versus upwind spread, area conservation, and exact replay. The ecosystem
+  suite now has 179 tests. `python scripts/check_workflow.py` reports **0 error(s), 0
+  warning(s)**. Dashboard: **GREEN** (lint, format, types, tests, validator, docs,
+  docstrings).

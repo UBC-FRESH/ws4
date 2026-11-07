@@ -277,5 +277,6 @@ Cross-references
 
 - :doc:`compiled-dataset`
 - :doc:`event-log`
+- :doc:`ecosystem-fire`
 - :doc:`simulator`
 - :doc:`carbon`

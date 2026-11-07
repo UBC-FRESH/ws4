@@ -390,9 +390,12 @@ items are enhancements and maintenance.
   missing fragments, and checks area conservation. The compiled management dataset remains
   authoritative, and a dataset without a package is unchanged. A calibrated yield bridge and
   a columnar cohort table remain open.
-- **Fire vertical slice.** `open`. P144.4 adds Poisson ignition, graph percolation spread,
-  severity, cohort mortality, salvage, and disturbance accounts, with analytic oracles and a
-  synthetic landscape. Calibration is out of scope. Target: P144.4.
+- **Fire vertical slice.** `done` (P144.4, #856). The `ws4.ecosystem.fire` process now has
+  Poisson ignition, graph percolation spread with fuel, distance, and wind, severity and
+  cohort mortality, a deterministic salvage source, disturbance-compatible events, and account
+  rows. The synthetic grid demo and the analytic Poisson, geometric-chain, barrier, wind,
+  area-conservation, and replay oracles are in place. Calibration and other processes remain
+  open.
 - **Scenario ensembles and risk targets.** `open`. P144.5 adds scenario definitions, common
   random numbers, risk pseudo-accounts, a `Target.aggregation` field, and a sample-average
   approximation loop with an out-of-sample report. Target: P144.5.

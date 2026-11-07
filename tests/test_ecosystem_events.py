@@ -9,6 +9,7 @@ from typing import Final
 import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
+from ws4.disturbance import DisturbanceEvent
 from ws4.ecosystem import Event, EventError
 
 JsonScalar = str | int | float | bool | None
@@ -314,3 +315,30 @@ def test_attribute_pairs_must_have_two_items() -> None:
 def test_negative_year_is_rejected() -> None:
     with pytest.raises(EventError, match="year must be non-negative"):
         Event.from_dict({**BASE_EVENT, "time": 0.0, "year": -1})
+
+
+def test_to_disturbance_dict_round_trips_through_the_consumer() -> None:
+    event = make_event(
+        "fire-row",
+        event_type="fire",
+        severity_class="high",
+        severity_value=0.8,
+        confidence=0.9,
+        area_ha=12.0,
+        fragment_ids=(1,),
+        block_ids=(2,),
+    )
+
+    row = event.to_disturbance_dict(2020)
+    parsed = DisturbanceEvent.from_dict(row)
+
+    assert parsed.event_id == "fire-row"
+    assert parsed.event_type == "fire"
+    assert parsed.year == 2020
+    assert parsed.severity_class == "high"
+    assert parsed.severity_value == pytest.approx(0.8)
+    assert parsed.confidence == pytest.approx(0.9)
+    assert parsed.source_id == event.source
+    assert parsed.fragment_ids == (1,)
+    assert parsed.block_ids == (2,)
+    assert parsed.area_ha == pytest.approx(12.0)

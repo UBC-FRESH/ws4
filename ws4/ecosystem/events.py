@@ -499,6 +499,39 @@ class Event:
             "attributes": dict(self.attributes),
         }
 
+    def to_disturbance_dict(self, start_year: int = 1900) -> dict[str, object]:
+        """Return the event as a ``femic.disturbance.v1`` consumer row.
+
+        The row uses ``source_id`` rather than ``source`` and fills categorical defaults the
+        disturbance contract requires. The event's own type must be one the disturbance
+        contract accepts; the caller is responsible for exporting only those events.
+
+        Parameters
+        ----------
+        start_year : int, optional
+            The calendar year of simulation offset 0 (default 1900). The consumer row's
+            ``year`` is ``start_year + event.year``.
+
+        Returns
+        -------
+        dict
+            The consumer row fields.
+        """
+        if isinstance(start_year, bool) or not isinstance(start_year, int) or start_year < 0:
+            raise EventError("start_year must be a non-negative integer")
+        return {
+            "event_id": self.event_id,
+            "event_type": self.event_type,
+            "year": start_year + self.year,
+            "severity_class": self.severity_class or "unknown",
+            "severity_value": self.severity_value,
+            "confidence": 1.0 if self.confidence is None else self.confidence,
+            "source_id": self.source,
+            "fragment_ids": list(self.fragment_ids),
+            "block_ids": list(self.block_ids),
+            "area_ha": self.area_ha,
+        }
+
     @classmethod
     def from_dict(cls, payload: Mapping[str, object]) -> Event:
         """Validate and construct an event from a mapping.

@@ -9,6 +9,17 @@ dataset remains the contract; this package is the optional ecological layer over
 from __future__ import annotations
 
 from .events import EVENT_PHASES, EVENT_SCHEMA_VERSION, Event, EventError
+from .fire import (
+    FireConfig,
+    FireEdge,
+    FireError,
+    FireProcess,
+    FireResult,
+    FireRun,
+    SalvageSource,
+    run_fire_demo,
+    synthetic_grid,
+)
 from .log import (
     EVENT_LOG_SCHEMA_VERSION,
     EventLog,
@@ -59,10 +70,17 @@ __all__ = [
     "EventLog",
     "EventLogBuilder",
     "EventLogMetadata",
+    "FireConfig",
+    "FireEdge",
+    "FireError",
+    "FireProcess",
+    "FireResult",
+    "FireRun",
     "NullBridge",
     "RandomTape",
     "ReplayError",
     "ReplayRunner",
+    "SalvageSource",
     "StateError",
     "StateSchema",
     "StateVariable",
@@ -71,5 +89,7 @@ __all__ = [
     "load_dataset_ecosystem",
     "load_ecosystem_package",
     "package_fingerprint",
+    "run_fire_demo",
+    "synthetic_grid",
     "validate_ecosystem_package",
 ]
