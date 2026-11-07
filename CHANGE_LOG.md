@@ -4519,3 +4519,16 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P142: merged via PR #848 as `f217cfe`. Added the generated 90% growing-stock default
   scenario generator and raised the default Solve budget to three minutes. Dashboard:
   `OVERALL: GREEN`.
+
+- P143.1: search artifacts now expose timestamp/member/front/failure metadata and sort
+  newest first; the Pareto selector prefers the newest usable front. Portal seed-state
+  caches now key on the active target file and initial schedule. Report:
+  `notes/reports/p143-web-trust.md`.
+
+- P143.2: added read-only promoted-run target definitions, preserved alternative
+  scenario profiles by rewriting only base-target profiles, and added a state-engine
+  fallback when a GPU profile does not declare every active target account.
+
+- P143.1/P143.2: merged via PR #851 as `2e51922`. Added newest-first artifact metadata,
+  target-aware state-cache keys, promoted-run target definitions, alternative profile
+  preservation, and unsupported-GPU-profile fallback. Dashboard: `OVERALL: GREEN`.
