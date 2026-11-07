@@ -744,6 +744,56 @@ def test_search_launchers_compose_the_scripts(
     assert status["status"] == "running"
 
 
+def test_an_unsupported_profile_falls_back_to_the_state_engine(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A profile that cannot price the target set starts the ordinary state search."""
+    _app(tmp_path)
+    profiles = tmp_path / "profiles.yaml"
+    profiles.write_text(
+        "base_dir: .\n"
+        "profiles:\n"
+        "  - name: gpu\n"
+        "    targets: targets.yaml\n"
+        "    accounts: [feature.Volume]\n",
+        encoding="utf-8",
+    )
+    client = TestClient(
+        create_app(
+            dataset=tmp_path / "dataset",
+            runs=tmp_path / "runs",
+            targets=tmp_path / "targets.yaml",
+            scenario_profiles=profiles,
+            allow_runs=True,
+        )
+    )
+    captured: list[list[str]] = []
+
+    class FakePopen:
+        pid = 123
+
+        def poll(self) -> int | None:
+            return None
+
+    def fake_popen(
+        command: list[str], stdout: object = None, stderr: object = None, **kwargs: object
+    ) -> FakePopen:
+        captured.append(command)
+        return FakePopen()
+
+    monkeypatch.setattr("ws4.web.app.subprocess.Popen", fake_popen)
+    response = client.post(
+        "/api/runs",
+        json={"profile": "gpu", "iterations": 1, "years": 1, "time_limit": "00:00:05"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["kind"] == "search"
+    assert body["requested_profile"] == "gpu"
+    assert "state engine" in body["fallback_reason"]
+    assert "gpu_profile_run" not in captured[-1]
+
+
 def test_portfolio_launcher_uses_an_initial_schedule(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -913,6 +963,9 @@ def test_portfolio_member_promotes_to_a_direct_run(tmp_path: Path) -> None:
     series = client.get(f"/api/runs/{run_id}/target-series").json()
     feature = {item["account"]: item for item in series["accounts"]}["feature.Volume"]
     assert feature["periods"][0]["minimum"] == 999.0
+    definitions = client.get(f"/api/runs/{run_id}/target-definitions").json()
+    assert definitions[0]["account"] == "feature.Volume"
+    assert definitions[0]["minimum"] == 999.0
     summary = client.get(f"/api/runs/{run_id}/summary").json()
     assert summary["status"] == "ok"
     assert summary["portfolio_source"]["member"] == "member-000:001"
@@ -2318,6 +2371,7 @@ def test_profile_run_uses_the_gpu_worker(tmp_path: Path, monkeypatch: pytest.Mon
         "profiles:\n"
         "  - name: base\n"
         "    targets: targets.yaml\n"
+        "    accounts: [feature.Volume, product.Yield]\n"
         "    table: effects.pt\n"
         "    factorized: factorized.npz\n"
         "    factorized_cache: factorized.padded.pt\n"
@@ -2389,6 +2443,7 @@ def test_profile_run_allows_table_only_resources(
         "profiles:\n"
         "  - name: table-only\n"
         "    targets: targets.yaml\n"
+        "    accounts: [feature.Volume, product.Yield]\n"
         "    table: effects.pt\n"
         "    cache_dir: gpu-cache\n"
         "    seed_schedule: seed.csv\n",

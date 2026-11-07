@@ -138,8 +138,10 @@ async function startProfileRun() {
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload.detail || `profile run failed (${response.status})`);
-    status.textContent = `running ${select.value}`;
-    showToast(`profile ${select.value} started`);
+    status.textContent = payload.fallback_reason
+      ? `running state engine · ${payload.fallback_reason}`
+      : `running ${select.value}`;
+    showToast(payload.fallback_reason || `profile ${select.value} started`);
     runWatch.id = payload.id;
     runWatch.islands = 1;
     $('start-run').textContent = 'Pause';
@@ -1871,6 +1873,55 @@ function populateScanAccounts() {
     select.append(option);
   }
   if (dimensions.some((dimension) => dimension.key === previous)) select.value = previous;
+}
+
+async function renderPortfolioMemberTargets() {
+  const details = $('portfolio-member-targets');
+  const body = $('portfolio-member-targets-body');
+  const status = $('portfolio-member-targets-status');
+  if (!details || !body || !status) return;
+  if (!state.runSource) {
+    details.hidden = true;
+    body.replaceChildren();
+    status.textContent = '';
+    return;
+  }
+  details.hidden = false;
+  status.textContent = 'loading…';
+  try {
+    const rows = await api(`api/runs/${encodeURIComponent(state.run)}/target-definitions`);
+    body.replaceChildren();
+    if (!rows.length) {
+      status.textContent = 'the member target file has no rows';
+      return;
+    }
+    const table = document.createElement('table');
+    const head = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    for (const label of ['Account', 'Period', 'Min', 'Max', 'Min W', 'Max W']) {
+      const th = document.createElement('th');
+      th.textContent = label;
+      headRow.append(th);
+    }
+    head.append(headRow);
+    const tbody = document.createElement('tbody');
+    for (const row of rows) {
+      const tr = document.createElement('tr');
+      for (const value of [row.account, row.period ?? row.year ?? '', row.minimum ?? '', row.maximum ?? '', row.min_weight ?? '', row.max_weight ?? '']) {
+        const td = document.createElement('td');
+        td.textContent = value === null || value === undefined ? '' : String(value);
+        tr.append(td);
+      }
+      tbody.append(tr);
+    }
+    table.append(head, tbody);
+    body.append(table);
+    status.textContent = `${rows.length} member target rows · read-only`;
+  } catch (error) {
+    details.hidden = false;
+    body.replaceChildren();
+    status.textContent = `member targets unavailable: ${error.message}`;
+  }
 }
 
 function renderPortfolioScan() {
@@ -6565,6 +6616,7 @@ async function loadTargets() {
         ? 'This run is a portfolio member. Its target status uses the member target file; this Plan editor still edits the live target file.'
         : '';
     }
+    await renderPortfolioMemberTargets();
     state.targetSeries = null;
     state.series = new Map();
     try {

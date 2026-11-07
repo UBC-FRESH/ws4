@@ -4524,3 +4524,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   newest first; the Pareto selector prefers the newest usable front. Portal seed-state
   caches now key on the active target file and initial schedule. Report:
   `notes/reports/p143-web-trust.md`.
+
+- P143.2: added read-only promoted-run target definitions, preserved alternative
+  scenario profiles by rewriting only base-target profiles, and added a state-engine
+  fallback when a GPU profile does not declare every active target account.
