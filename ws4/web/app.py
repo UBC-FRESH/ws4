@@ -2906,6 +2906,48 @@ def create_app(
             "promoted": True,
         }
 
+    @app.delete("/api/search/{name}")
+    def delete_search_artifact(name: str) -> dict[str, Any]:
+        """Delete a portfolio artifact under the runs root.
+
+        Only directories that actually carry ``portfolio.json`` are removable. This is
+        deliberately narrower than a general runs-root delete.
+        """
+        if not allow_runs:
+            raise HTTPException(
+                status_code=403, detail="this service is read-only; use --allow-runs"
+            )
+        directory = search_artifact_dir(name)
+        if not (directory / "portfolio.json").is_file():
+            raise HTTPException(
+                status_code=422, detail=f"search artifact {name!r} is not a portfolio"
+            )
+        try:
+            shutil.rmtree(directory)
+        except OSError as error:
+            raise HTTPException(
+                status_code=500, detail=f"could not delete artifact: {error}"
+            ) from error
+        return {"deleted": name}
+
+    @app.delete("/api/runs/{run}")
+    def delete_promoted_run(run: str) -> dict[str, Any]:
+        """Delete a derived promoted run, never an ordinary run."""
+        if not allow_runs:
+            raise HTTPException(
+                status_code=403, detail="this service is read-only; use --allow-runs"
+            )
+        directory = run_dir(run)
+        if not (directory / "portfolio_source.json").is_file():
+            raise HTTPException(
+                status_code=422, detail="only promoted portfolio runs can be deleted"
+            )
+        try:
+            shutil.rmtree(directory)
+        except OSError as error:
+            raise HTTPException(status_code=500, detail=f"could not delete run: {error}") from error
+        return {"deleted": run}
+
     @app.get("/api/search/{name}/files/{path:path}")
     def search_file(name: str, path: str) -> FileResponse:
         """Serve a file resolved under one search artifact directory."""

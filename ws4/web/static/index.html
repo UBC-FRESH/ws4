@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=109">
+  <link rel="stylesheet" href="static/style.css?v=110">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
   <script type="importmap">
     {
@@ -18,7 +18,7 @@
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v109</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v110</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <div class="period-control">
@@ -148,6 +148,7 @@
         <p id="run-status" class="hint"></p>
         <p id="targets-status" class="hint"></p>
         <p id="portfolio-target-note" class="hint" hidden></p>
+        <button id="delete-promoted-run" type="button" class="button danger" hidden>Delete promoted run</button>
         <details id="portfolio-member-targets" class="portfolio-member-targets" hidden>
           <summary>Portfolio member targets (read-only)</summary>
           <p id="portfolio-member-targets-status" class="hint"></p>
@@ -259,6 +260,8 @@
         <p id="search-empty" class="hint"></p>
         <label class="search-pick">Artifact <select id="search-select"></select>
           <button id="search-explore" type="button" disabled>Explore in 3D</button>
+          <button id="search-delete" type="button" disabled>Delete</button>
+          <button id="search-clean-failed" type="button" disabled>Clean failed</button>
         </label>
         <p id="search-summary" class="hint"></p>
         <details class="search-run">
@@ -644,6 +647,6 @@
     <p class="hint">Shortcuts pause while typing in an input, select, or editor.</p>
   </dialog>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=109"></script>
+  <script type="module" src="static/app.js?v=110"></script>
 </body>
 </html>
