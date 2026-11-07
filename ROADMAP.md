@@ -146,6 +146,7 @@ exists and the maintainer approves it.
 | P146 Live multi-account scan | #862 | `feature/p146-live-multi-account-scan` | complete |
 | P147 Diverse multi-account scaffold | #865 | `feature/p147-diverse-scaffold` | complete |
 | P148 Portfolio and promoted-run cleanup | #869 | `feature/p148-portfolio-cleanup` | complete |
+| P149 State-run exactness | #873 | `feature/p149-state-exactness` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4389,3 +4390,21 @@ Acceptance:
 - A promoted run can be removed from Plan.
 - Ordinary runs and non-portfolio artifacts are protected.
 - Tests, browser smoke, and dashboard pass.
+
+## Phase 149: State-run exactness
+
+Parent issue: #873
+Branch: `feature/p149-state-exactness`
+Status: active
+Report: `notes/reports/p149-state-exactness.md`
+
+Goal: surface and persist exact-objective replay results for web state runs.
+
+- [x] P149.1 Persist state exactness in the web summary (#874)
+
+Acceptance:
+
+- Successful state runs record `exact_match: true`.
+- Mismatches are visible and cannot silently pass.
+- Run health shows the exactness result.
+- Existing state runs remain readable.
