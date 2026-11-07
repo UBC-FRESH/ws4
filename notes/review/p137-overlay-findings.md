@@ -59,7 +59,14 @@ The natural diagram is complete with 18 top-height paths (values 6 through 60,
 including 56), 14 QMD paths (5 through 70, including 35, 45, 55, 65), and crown
 closure from source path 640. The boundary paths 641/642 are unchanged. Direct
 overlay inspection shows the red, blue, green, and boundary curves on their source
-paths.
+paths. fdcn is now marked reviewed.
+
+### ssn pass
+
+Sitka spruce natural is complete with 17 top-height paths (including 10, 14, 18,
+32, 40, 48, 60), 17 QMD paths (including 35, 45, 55, 65, 75, 80), and crown
+closure from source path 693. Direct overlay inspection shows the curves on their
+source paths.
 
 ## TASS predicted mortality curves
 

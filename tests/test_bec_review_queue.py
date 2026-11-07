@@ -9,15 +9,14 @@ import pandas as pd
 DATA = Path(__file__).resolve().parents[1] / "ws4" / "sdmd" / "data" / "sdmd"
 
 
-def test_review_queue_names_nine_provisional_diagrams_and_210_labels() -> None:
+def test_review_queue_names_eight_provisional_diagrams_and_210_labels() -> None:
     """The queue is a work list, not an approval."""
     queue = pd.read_csv(DATA / "bec_review_queue.csv", dtype=str).fillna("")
-    assert len(queue) == 9
+    assert len(queue) == 8
     assert set(queue["status"]) == {"provisional"}
     assert set(queue["diagram_id"]) == {
         "cwn",
         "cwp",
-        "fdcn",
         "hwn",
         "hwp",
         "ssn",

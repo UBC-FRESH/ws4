@@ -40,9 +40,9 @@ def test_builder_emits_all_current_labels() -> None:
 
 
 def test_builder_emits_the_provisional_review_queue() -> None:
-    """The builder names the 10 provisional diagrams and their labels."""
+    """The builder names the eight provisional diagrams and their labels."""
     queue = _builder().build_review_queue()
-    assert len(queue) == 9
+    assert len(queue) == 8
     assert set(queue["status"]) == {"provisional"}
     labels: set[str] = set()
     for value in queue["bec_labels"]:
@@ -55,7 +55,7 @@ def test_builder_reads_all_atlas_reviews() -> None:
     reviews = _builder()._diagram_reviews()
     assert reviews["fdin"] == "reviewed"
     assert reviews["pln"] == "reviewed"
-    assert reviews["fdcn"] == "provisional"
+    assert reviews["fdcn"] == "reviewed"
 
 
 def test_builder_main_writes_the_registry(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

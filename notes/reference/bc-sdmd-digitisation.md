@@ -112,9 +112,10 @@ path map: `notes/reference/fdcn-digitisation.md`.
 
 ## ssn status
 
-Sitka spruce natural is stored as `cdf-cwh-ss-natural.json`, provisional. The
-top-height, QMD, and boundary paths are vector; the crown-closure curve is a
-raster trace. See `notes/reference/ssn-digitisation.md`.
+Sitka spruce natural is stored as `cdf-cwh-ss-natural.json`, provisional. Top
+height, QMD, boundaries, and crown closure are vector paths. Top height and QMD
+use full value series, so their unlabelled interior curves are kept. See
+`notes/reference/ssn-digitisation.md`.
 
 ## hwn status
 
