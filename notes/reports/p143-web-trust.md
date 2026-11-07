@@ -1,7 +1,7 @@
 # P143 web UI trust and cleanup
 
 Date: 2026-11-07
-Status: active
+Status: complete
 Merge commit: `2e51922`
 PR: #851
 Branch: `feature/p143-web-trust`
@@ -37,9 +37,7 @@ Task issue: #850
 - A GPU profile that does not declare every active target account falls back to the
   state engine with a visible reason instead of hanging in lazy effect-table extension.
 
-Remaining:
-
-- TSA29 state fallback validation with the stock guard.
+TSA29 fallback validated: profile `base` switched to the state engine because it did not declare the stock target; the state run completed 384 iterations and wrote a schedule/summary.
 
 ## Verification
 
