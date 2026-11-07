@@ -141,7 +141,7 @@ exists and the maintainer approves it.
 | P141 Portfolio target preparation | #843 | `feature/p141-portfolio-target-prep` | complete |
 | P142 Default stock90 scenario | #846 | `feature/p142-default-stock90` | complete |
 | P143 Web UI trust and cleanup | #849 | `feature/p143-web-trust` | complete |
-| P144 Stochastic landscape engine | #852 | `feature/p144-stochastic-landscape` | pr-open |
+| P144 Stochastic landscape engine | #852 | `feature/p144-stochastic-landscape` | complete |
 | P145 Multi-account target scaffold | #859 | `feature/p145-multi-account-targets` | complete |
 | P146 Live multi-account scan | #862 | `feature/p146-live-multi-account-scan` | complete |
 | P147 Diverse multi-account scaffold | #865 | `feature/p147-diverse-scaffold` | complete |
@@ -4282,7 +4282,8 @@ Acceptance:
 
 Parent issue: #852
 Branch: `feature/p144-stochastic-landscape`
-Status: pr-open
+Status: complete
+Merge commit: `d6522e3`
 Report: `notes/reports/p144-closeout.md`
 PR: #872
 

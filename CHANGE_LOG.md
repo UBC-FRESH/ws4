@@ -4629,3 +4629,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 
 - P148: merged via PR #871 as `103614b`. Added guarded portfolio/promoted-run deletion
   and Search/Plan cleanup controls; removed the failed live probe.
+
+- P144 close-out: pull request #872 squash-merged as `d6522e3`; parent #852 and tasks
+  #853 to #858 closed; the roadmap status is `complete`. The close-out report is
+  `notes/reports/p144-closeout.md`. Dashboard: **GREEN**.

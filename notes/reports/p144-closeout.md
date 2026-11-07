@@ -3,15 +3,15 @@
 Phase: P144, Stochastic landscape engine
 Parent issue: #852
 Pull request: #872
+Merge commit: `d6522e3`
 Branch: `feature/p144-stochastic-landscape`
-Status: queued for maintainer approval on 2026-11-07
+Status: merged and closed on 2026-11-07 as `d6522e3`
 Design note: `notes/design/ws4-stochastic-landscape.md`
 
 ## Recommendation
 
-1. Approve and squash-merge pull request #872, then delete
-   `feature/p144-stochastic-landscape`.
-2. Close task #858 and parent issue #852.
+1. Squash-merged pull request #872 as `d6522e3`; the branch was deleted.
+2. Closed task #858 and parent issue #852.
 3. Keep the 3D fire visualization as the queued idea #868, not part of this phase.
 4. The next engine phase should be succession, regeneration, and a calibrated yield bridge;
    full policy search and the estate-optimizer integration follow after that.
