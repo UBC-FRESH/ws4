@@ -4553,3 +4553,6 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   requests. A live five-account TSA27 portfolio completed with 8 members, 1 exact front,
   0 failures, and opened a member on the map. Report:
   `notes/reports/p146-live-multi-account-scan.md`.
+
+- P147.1: added a Diverse 6 preset and nested/family warnings to the multi-account
+  scaffold, with target minima fallback for product accounts.
