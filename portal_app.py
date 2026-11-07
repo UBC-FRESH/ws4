@@ -16,6 +16,8 @@ import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from pathlib import Path
+
+import yaml
 from typing import Any
 
 from fastapi import FastAPI, Request
@@ -421,8 +423,23 @@ def _build_mount(instance: Instance, mount_path: str) -> None:
         "tile_cache_dir": cache / "tiles",
         "crs": spec.get("crs", "EPSG:3005"),
     }
+    profile_source = root / str(spec["scenario_profiles"]) if spec.get("scenario_profiles") else None
+    if profile_source is not None and profile_source.is_file():
+        try:
+            library = yaml.safe_load(profile_source.read_text(encoding="utf-8")) or {}
+            base_dir = (profile_source.parent / str(library.get("base_dir", "."))).resolve()
+            library["base_dir"] = str(base_dir)
+            for profile in library.get("profiles", []):
+                if isinstance(profile, dict):
+                    profile["targets"] = str(targets)
+            cached_profiles = cache / "profiles-default.yaml"
+            cached_profiles.write_text(
+                yaml.safe_dump(library, sort_keys=False), encoding="utf-8"
+            )
+            options["scenario_profiles"] = cached_profiles
+        except (OSError, yaml.YAMLError):
+            options["scenario_profiles"] = profile_source
     for key, value in (
-        ("scenario_profiles", spec.get("scenario_profiles")),
         ("geometry", spec.get("geometry")),
         ("geometry_overview", spec.get("geometry_overview")),
         ("land_base", spec.get("land_base")),
