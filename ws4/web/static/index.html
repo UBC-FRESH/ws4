@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=108">
+  <link rel="stylesheet" href="static/style.css?v=109">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
   <script type="importmap">
     {
@@ -18,7 +18,7 @@
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v108</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v109</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <div class="period-control">
@@ -305,6 +305,7 @@
             <label>Period <input id="scaffold-period" type="number" value="20" min="0" step="1"></label>
             <label>Weight <input id="scaffold-weight" type="number" value="1" min="0.0001" step="any"></label>
             <button id="scaffold-add" type="button">Add target</button>
+            <button id="scaffold-diverse" type="button">Diverse 6</button>
             <button id="scaffold-clear" type="button">Clear</button>
           </div>
           <ul id="scaffold-list" class="scan-list"></ul>
@@ -643,6 +644,6 @@
     <p class="hint">Shortcuts pause while typing in an input, select, or editor.</p>
   </dialog>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=108"></script>
+  <script type="module" src="static/app.js?v=109"></script>
 </body>
 </html>
