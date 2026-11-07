@@ -36,6 +36,7 @@ __all__ = [
     "ordered_curve",
     "read_curve",
     "read_labelled_curves",
+    "read_ordered_curves",
     "write_diagram",
 ]
 
@@ -231,14 +232,15 @@ class LabelledCurve:
         Index in ``page.get_drawings()``.
     points : tuple of tuple of float
         Ordered ``(tph, mean_tree_volume_m3)`` points.
-    label_distance : float
-        Distance in PDF points between the printed label and the path.
+    label_distance : float or None
+        Distance in PDF points between the printed label and the path, or
+        ``None`` for a curve inferred from its position in a complete series.
     """
 
     value: float
     path_index: int
     points: tuple[tuple[float, float], ...]
-    label_distance: float
+    label_distance: float | None = None
 
 
 @dataclass(frozen=True)
@@ -678,6 +680,140 @@ def read_labelled_curves(
             )
             for match in sorted(matches, key=lambda item: item.value)
         )
+
+
+def read_ordered_curves(
+    pdf_path: str | Path,
+    *,
+    dash: str,
+    width: float,
+    values: Sequence[float],
+    calibration: AxisCalibration,
+    unit: str | None = None,
+    page_number: int = 0,
+    max_distance: float = 15.0,
+    min_margin: float = 0.5,
+    min_path_width: float = 20.0,
+) -> tuple[LabelledCurve, ...]:
+    """Read a complete ordered series and verify its printed anchors.
+
+    Use this when a source family has more curves than printed labels. The full
+    value sequence is supplied explicitly; every candidate path must be used,
+    and any printed labels must agree with the resulting order. This prevents
+    silently skipping unlabelled curves.
+
+    Parameters
+    ----------
+    pdf_path : str or Path
+        The source PDF.
+    dash : str
+        The required PDF dash pattern.
+    width : float
+        The required stroke width.
+    values : sequence of float
+        Every value in the family, including unlabelled interior values.
+    calibration : AxisCalibration
+        The axis calibration.
+    unit : str or None, optional
+        When supplied, verify printed labels with this unit against the ordered
+        assignments.
+    page_number : int, optional
+        Zero-based page number. Defaults to the first page.
+    max_distance : float, optional
+        Maximum label-to-path distance for anchor verification.
+    min_margin : float, optional
+        Minimum distance advantage for anchor verification.
+    min_path_width : float, optional
+        Minimum path bounding-box width in PDF points.
+
+    Returns
+    -------
+    tuple of LabelledCurve
+        One curve per value, ordered by value.
+
+    Raises
+    ------
+    ValueError
+        If the number of paths differs from the number of values, a label does
+        not agree with the ordered assignment, or the paths are not separable.
+    """
+    import pymupdf
+
+    with pymupdf.open(pdf_path) as document:  # type: ignore[no-untyped-call, unused-ignore]  # PyMuPDF has no stubs
+        page = document[page_number]
+        drawings = page.get_drawings()
+        paths = _candidate_paths(
+            drawings,
+            dash=dash,
+            width=width,
+            min_path_width=min_path_width,
+        )
+        expected = sorted(float(value) for value in values)
+        if len(paths) != len(expected):
+            raise ValueError(
+                f"expected {len(expected)} paths for the ordered series, found {len(paths)}"
+            )
+        reference_x = max(min(point[0] for point in path.points) for path in paths) + 1.0
+        ordered_paths = sorted(
+            paths,
+            key=lambda path: _path_y_at_x(path, reference_x),
+            reverse=True,
+        )
+        assigned = dict(zip(expected, ordered_paths, strict=True))
+        if unit is not None:
+            label_matches = match_printed_labels(
+                _printed_labels(page, unit),
+                paths,
+                max_distance=max_distance,
+                min_margin=min_margin,
+            )
+            for match in label_matches:
+                if assigned[match.value].path_index != match.path_index:
+                    raise ValueError(
+                        f"label {match.value:g} does not agree with the ordered path series"
+                    )
+        return tuple(
+            LabelledCurve(
+                value=value,
+                path_index=assigned[value].path_index,
+                points=curve_points(
+                    drawings[assigned[value].path_index]["items"],
+                    calibration,
+                ),
+            )
+            for value in expected
+        )
+
+
+def _candidate_paths(
+    drawings: Sequence[object],
+    *,
+    dash: str,
+    width: float,
+    min_path_width: float,
+) -> list[PathCandidate]:
+    """Return the drawing paths matching a dash/width family."""
+    paths: list[PathCandidate] = []
+    for index, drawing in enumerate(drawings):
+        get = getattr(drawing, "get", None)
+        if not callable(get):
+            continue
+        if get("dashes") != dash:
+            continue
+        if abs(float(get("width") or 0.0) - width) > 1e-3:
+            continue
+        rect = get("rect")
+        if rect is None or getattr(rect, "width", 0.0) < min_path_width:
+            continue
+        if getattr(rect, "height", 0.0) <= 3.0:
+            continue
+        items = get("items")
+        if not isinstance(items, list):
+            continue
+        points = _pdf_path_points(items)
+        if len(points) >= 2:
+            paths.append(PathCandidate(index, tuple(points)))
+    return paths
 
 
 def _printed_labels(page: object, unit: str) -> tuple[PrintedLabel, ...]:

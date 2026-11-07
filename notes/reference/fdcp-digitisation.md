@@ -28,19 +28,25 @@ vertically unordered matches.
 | ---: | ---: |
 | 6 | 500 |
 | 8 | 501 |
+| 10 | 502 |
 | 12 | 503 |
+| 14 | 504 |
 | 16 | 505 |
+| 18 | 506 |
 | 20 | 507 |
 | 24 | 508 |
 | 28 | 509 |
+| 32 | 510 |
 | 36 | 511 |
+| 40 | 512 |
 | 44 | 513 |
+| 48 | 514 |
 | 52 | 515 |
+| 60 | 516 |
 
-The intervening unlabelled top-height paths (502, 504, 506, 510, 512, 514, 516)
-are not stored. The source page labels only the ten listed values.
-
-The confirmed pattern is locked in `workflows/sdmd-line-import.yaml`:
+The source page prints only ten of these labels; the other seven values are the
+unlabelled members of the same path series. They are kept, not skipped. The
+confirmed pattern is locked in `workflows/sdmd-line-import.yaml`:
 `render` uses figrecover and `import` uses `ws4.sdmd.import-lines` to write a
 `ws4.sdmd.line-import.v1` artifact. A local FreshForge run completed with
 `render success` and `import success`, producing the same ten value/path pairs.

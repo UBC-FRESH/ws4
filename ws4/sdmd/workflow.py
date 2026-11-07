@@ -20,7 +20,13 @@ from __future__ import annotations
 import json
 from collections.abc import Sequence
 
-from .digitise import calibrate_axes, load_spec, read_labelled_curves, write_diagram
+from .digitise import (
+    calibrate_axes,
+    load_spec,
+    read_labelled_curves,
+    read_ordered_curves,
+    write_diagram,
+)
 from .review import overlay_diagram, render_pdf_page, write_review_manifest
 
 __all__ = ["SdmdProvider", "sdmd_provider"]
@@ -87,6 +93,7 @@ class SdmdProvider:
                         "x_ticks",
                         "y_ticks",
                         "out",
+                        "values",
                     ),
                 ),
             ),
@@ -224,13 +231,25 @@ class SdmdProvider:
                 _tick_pairs(params["x_ticks"], "x_ticks"),
                 _tick_pairs(params["y_ticks"], "y_ticks"),
             )
-            curves = read_labelled_curves(
-                resolve(str(params["pdf"])),
-                dash=str(params["dash"]),
-                width=float(str(params["width"])),
-                unit=str(params["unit"]),
-                calibration=calibration,
-            )
+            input_pdf = resolve(str(params["pdf"]))
+            input_unit = str(params["unit"])
+            if "values" in params:
+                curves = read_ordered_curves(
+                    input_pdf,
+                    dash=str(params["dash"]),
+                    width=float(str(params["width"])),
+                    values=_numbers(params["values"], "values"),
+                    calibration=calibration,
+                    unit=input_unit,
+                )
+            else:
+                curves = read_labelled_curves(
+                    input_pdf,
+                    dash=str(params["dash"]),
+                    width=float(str(params["width"])),
+                    unit=input_unit,
+                    calibration=calibration,
+                )
             payload = {
                 "schema_version": "ws4.sdmd.line-import.v1",
                 "source_pdf": str(resolve(str(params["pdf"]))),
@@ -266,6 +285,13 @@ def sdmd_provider() -> SdmdProvider:
         A new provider instance.
     """
     return SdmdProvider()
+
+
+def _numbers(value: object, name: str) -> tuple[float, ...]:
+    """Parse a workflow list of numbers."""
+    if not isinstance(value, list):
+        raise ValueError(f"{name} must be a list of numbers")
+    return tuple(float(item) for item in value)
 
 
 def _tick_pairs(value: object, name: str) -> tuple[tuple[float, float], ...]:

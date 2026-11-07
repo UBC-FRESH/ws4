@@ -81,6 +81,7 @@ def test_import_lines_node_writes_matched_curves(tmp_path: Path) -> None:
             "width": 1.5,
             "unit": "m",
             "kind": "top_height",
+            "values": [6, 12],
             "x_ticks": [[100, 50], [1000, 350]],
             "y_ticks": [[0.01, 250], [1, 50]],
             "out": "family.json",

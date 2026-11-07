@@ -33,12 +33,17 @@ The stored curves are present and align with the source in the corrected overlay
 
 ### fdcp top-height pass
 
-`fdcp` is the first line-type-wise re-import. `read_labelled_curves` matched
-each printed top-height label to a distinct source path and refused ambiguous or
-unordered assignments. The ten mappings are `6→500`, `8→501`, `12→503`,
-`16→505`, `20→507`, `24→508`, `28→509`, `36→511`, `44→513`, `52→515`.
-Unlabelled intermediate paths are excluded. A vision-model inspection of the
-rendered overlay returned `TOP_HEIGHT_OVERALL: PASS` for all ten.
+`fdcp` is the first line-type-wise re-import. The source has 17 top-height paths
+but prints only 10 labels. The importer now uses the complete value series
+`6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 52, 60` and requires
+one path per value. The printed labels are used as anchors and must agree with
+the ordered assignment; no path is skipped.
+
+The mappings are `6→500`, `8→501`, `10→502`, `12→503`, `14→504`, `16→505`,
+`18→506`, `20→507`, `24→508`, `28→509`, `32→510`, `36→511`, `40→512`,
+`44→513`, `48→514`, `52→515`, `60→516`. Direct inspection of the rendered
+overlay shows all 17 red top-height curves lying on their black dotted source
+paths.
 
 ## TASS predicted mortality curves
 

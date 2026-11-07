@@ -15,6 +15,7 @@ from ws4.sdmd.digitise import (
     match_printed_labels,
     ordered_curve,
     read_labelled_curves,
+    read_ordered_curves,
 )
 
 
@@ -112,6 +113,34 @@ def test_read_labelled_curves_matches_printed_labels(tmp_path: Path) -> None:
     assert [(curve.value, curve.path_index) for curve in curves] == [(6.0, 0), (12.0, 1)]
     assert curves[0].points[0] == pytest.approx((100.0, 0.01))
     assert curves[1].points[-1] == pytest.approx((1000.0, 1.0))
+
+
+def test_read_ordered_curves_keeps_unlabelled_members(tmp_path: Path) -> None:
+    """A complete value series keeps the unlabelled middle curve."""
+    pymupdf = pytest.importorskip("pymupdf")
+    path = tmp_path / "synthetic-series.pdf"
+    document = pymupdf.open()
+    page = document.new_page(width=400, height=300)
+    for y0, y1 in ((250, 150), (150, 50), (50, 0)):
+        page.draw_line((50, y0), (350, y1), color=(0, 0, 0), width=1.5, dashes="[ 3 2 ] 0")
+    page.insert_text((100, 231), "6 m", fontsize=10)
+    page.insert_text((100, 36), "18 m", fontsize=10)
+    document.save(path)
+    calibration = calibrate_axes(((100.0, 50.0), (1000.0, 350.0)), ((0.01, 250.0), (1.0, 50.0)))
+    curves = read_ordered_curves(
+        path,
+        dash="[ 3 2 ] 0",
+        width=1.5,
+        values=(6.0, 12.0, 18.0),
+        calibration=calibration,
+        unit="m",
+    )
+    assert [(curve.value, curve.path_index) for curve in curves] == [
+        (6.0, 0),
+        (12.0, 1),
+        (18.0, 2),
+    ]
+    assert curves[1].label_distance is None
 
 
 def test_load_spec_reads_the_review_decisions(tmp_path: Path) -> None:
