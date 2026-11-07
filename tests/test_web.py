@@ -1069,6 +1069,42 @@ def test_portfolio_promotion_rejects_an_outside_run(tmp_path: Path) -> None:
     assert not (tmp_path / "runs" / "pareto-portfolio-escape-member-000-001").exists()
 
 
+def test_search_can_delete_a_portfolio_artifact(tmp_path: Path) -> None:
+    """A portfolio directory can be removed, but ordinary artifacts are protected."""
+    client = _runs_client(tmp_path)
+    artifact = tmp_path / "runs" / "portfolio-delete"
+    artifact.mkdir()
+    (artifact / "portfolio.json").write_text("{}", encoding="utf-8")
+    response = client.delete("/api/search/portfolio-delete")
+    assert response.status_code == 200
+    assert response.json() == {"deleted": "portfolio-delete"}
+    assert not artifact.exists()
+    ordinary = tmp_path / "runs" / "ordinary"
+    ordinary.mkdir()
+    assert client.delete("/api/search/ordinary").status_code == 422
+
+
+def test_promoted_run_can_be_deleted_but_not_an_ordinary_run(tmp_path: Path) -> None:
+    """Only a derived run with a portfolio source sidecar is removable."""
+    client = _runs_client(tmp_path)
+    promoted = tmp_path / "runs" / "pareto-demo"
+    promoted.mkdir()
+    (promoted / "portfolio_source.json").write_text("{}", encoding="utf-8")
+    response = client.delete("/api/runs/pareto-demo")
+    assert response.status_code == 200
+    assert not promoted.exists()
+    assert client.delete("/api/runs/run1").status_code == 422
+
+
+def test_search_delete_requires_allow_runs(tmp_path: Path) -> None:
+    """A read-only service refuses deletes."""
+    client, _ = _app(tmp_path)
+    artifact = tmp_path / "runs" / "portfolio-delete"
+    artifact.mkdir()
+    (artifact / "portfolio.json").write_text("{}", encoding="utf-8")
+    assert client.delete("/api/search/portfolio-delete").status_code == 403
+
+
 def test_search_artifact_replaces_nonfinite_numbers(tmp_path: Path) -> None:
     """A portfolio with an infinite objective remains valid JSON for the browser."""
     client, _ = _app(tmp_path)

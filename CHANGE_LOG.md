@@ -4560,3 +4560,6 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P147: merged via PR #867 as `efcddd4`. The Diverse 6 preset produced a live TSA27
   run with 6 target rows, 8 members, 2 exact front points, and 0 failures. The front
   member opened on the map.
+
+- P148.1: added guarded deletion for portfolio artifacts and promoted runs, plus Search
+  Delete/Clean failed and Plan Delete promoted run controls. Live cleanup follows.

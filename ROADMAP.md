@@ -144,6 +144,7 @@ exists and the maintainer approves it.
 | P145 Multi-account target scaffold | #859 | `feature/p145-multi-account-targets` | complete |
 | P146 Live multi-account scan | #862 | `feature/p146-live-multi-account-scan` | complete |
 | P147 Diverse multi-account scaffold | #865 | `feature/p147-diverse-scaffold` | complete |
+| P148 Portfolio and promoted-run cleanup | #869 | `feature/p148-portfolio-cleanup` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4335,3 +4336,21 @@ Acceptance:
 - Nested selections show a warning.
 - The live TSA27 run produces a multi-point front.
 - Browser and API tests pass.
+
+## Phase 148: Portfolio and promoted-run cleanup
+
+Parent issue: #869
+Branch: `feature/p148-portfolio-cleanup`
+Status: active
+Report: `notes/reports/p148-portfolio-cleanup.md`
+
+Goal: let users remove failed artifacts and derived promoted runs safely.
+
+- [x] P148.1 Guarded portfolio cleanup (#870)
+
+Acceptance:
+
+- Failed artifacts can be deleted from Search.
+- A promoted run can be removed from Plan.
+- Ordinary runs and non-portfolio artifacts are protected.
+- Tests, browser smoke, and dashboard pass.

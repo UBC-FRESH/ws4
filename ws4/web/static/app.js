@@ -1587,9 +1587,14 @@ async function loadSearch(preferred = '') {
       summary.textContent = '';
       table.hidden = true;
       $('search-explore').disabled = true;
+      $('search-delete').disabled = true;
+      $('search-clean-failed').disabled = true;
       return;
     }
     empty.hidden = true;
+    $('search-clean-failed').disabled = !ready.some(
+      (artifact) => artifact.kind === 'portfolio' && artifact.usable === false
+    );
     for (const artifact of ready) {
       const option = document.createElement('option');
       option.value = artifact.id;
@@ -1704,6 +1709,7 @@ async function renderSearchArtifact(id) {
     };
     if (body.kind === 'portfolio') {
       $('search-explore').disabled = false;
+      $('search-delete').disabled = false;
       const data = body.data ?? {};
       const metrics = Array.isArray(data.metrics) ? data.metrics : [];
       const front = new Set(data.outcome_front ?? data.front ?? []);
@@ -1729,6 +1735,7 @@ async function renderSearchArtifact(id) {
     }
     if (body.kind === 'tuning') {
       $('search-explore').disabled = true;
+      $('search-delete').disabled = true;
       const data = body.data ?? {};
       const candidates = Array.isArray(data.candidates) ? data.candidates : [];
       const byLabel = new Map(candidates.map((candidate) => [candidate.label, candidate]));
@@ -2970,6 +2977,51 @@ function wirePareto() {
     $('pareto-filter-value').textContent = value <= 0 ? 'all' : `>= ${value.toFixed(2)}`;
     drawParetoCloud();
   });
+}
+
+async function deleteSearchArtifact() {
+  const id = $('search-select').value;
+  if (!id || !window.confirm(`Delete portfolio artifact ${id}?`)) return;
+  $('search-run-status').textContent = `deleting ${id}…`;
+  try {
+    await api(`api/search/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    await loadSearch();
+    $('search-run-status').textContent = `deleted ${id}`;
+  } catch (error) {
+    $('search-run-status').textContent = `delete failed: ${error.message}`;
+  }
+}
+
+async function cleanFailedArtifacts() {
+  try {
+    const artifacts = await api('api/search');
+    const failed = artifacts.filter(
+      (artifact) => artifact.kind === 'portfolio' && artifact.usable === false
+    );
+    if (!failed.length) {
+      $('search-run-status').textContent = 'no failed portfolio artifacts to clean';
+      return;
+    }
+    if (!window.confirm(`Delete ${failed.length} failed portfolio artifact(s)?`)) return;
+    for (const artifact of failed) {
+      await api(`api/search/${encodeURIComponent(artifact.id)}`, { method: 'DELETE' });
+    }
+    await loadSearch();
+    $('search-run-status').textContent = `deleted ${failed.length} failed artifact(s)`;
+  } catch (error) {
+    $('search-run-status').textContent = `cleanup failed: ${error.message}`;
+  }
+}
+
+async function deletePromotedRun() {
+  if (!state.runSource || !state.run) return;
+  if (!window.confirm(`Delete promoted run ${state.run}?`)) return;
+  try {
+    await api(`api/runs/${encodeURIComponent(state.run)}`, { method: 'DELETE' });
+    window.location.reload();
+  } catch (error) {
+    showToast(`could not delete promoted run: ${error.message}`, true);
+  }
 }
 
 async function startPortfolio() {
@@ -6841,6 +6893,8 @@ async function loadTargets() {
         ? 'This run is a portfolio member. Its target status uses the member target file; this Plan editor still edits the live target file.'
         : '';
     }
+    const deleteRun = $('delete-promoted-run');
+    if (deleteRun) deleteRun.hidden = !state.runSource;
     await renderPortfolioMemberTargets();
     state.targetSeries = null;
     state.series = new Map();
@@ -8705,6 +8759,9 @@ function wireControls() {
   $('compare-filter').addEventListener('input', renderCompareAccounts);
   $('search-select').addEventListener('change', (event) => renderSearchArtifact(event.target.value));
   $('run-portfolio').addEventListener('click', startPortfolio);
+  $('search-delete').addEventListener('click', deleteSearchArtifact);
+  $('search-clean-failed').addEventListener('click', cleanFailedArtifacts);
+  $('delete-promoted-run').addEventListener('click', deletePromotedRun);
   $('search-explore').addEventListener('click', () => {
     const id = $('search-select').value;
     if (!id) return;
