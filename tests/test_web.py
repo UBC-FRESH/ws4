@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 from pathlib import Path
 from typing import Any, cast
@@ -1096,8 +1097,16 @@ def test_search_artifacts_are_listed_and_read(tmp_path: Path) -> None:
         json.dumps({"mode": "grid", "ranking": ["candidate-000"], "candidates": []}),
         encoding="utf-8",
     )
+    os.utime(portfolio / "portfolio.json", (1_000_000, 1_000_000))
+    os.utime(tuning / "tuning.json", (2_000_000, 2_000_000))
     artifacts = client.get("/api/search").json()
     assert {item["id"] for item in artifacts} == {"portfolio-demo", "tuning-demo"}
+    assert artifacts[0]["id"] == "tuning-demo"
+    portfolio_record = next(item for item in artifacts if item["id"] == "portfolio-demo")
+    assert portfolio_record["members"] == 1
+    assert portfolio_record["front_size"] == 1
+    assert portfolio_record["usable"] is True
+    assert portfolio_record["saved_utc"]
     body = client.get("/api/search/portfolio-demo").json()
     assert body["kind"] == "portfolio"
     assert body["data"]["front"] == ["member-000:001"]

@@ -4519,3 +4519,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P142: merged via PR #848 as `f217cfe`. Added the generated 90% growing-stock default
   scenario generator and raised the default Solve budget to three minutes. Dashboard:
   `OVERALL: GREEN`.
+
+- P143.1: search artifacts now expose timestamp/member/front/failure metadata and sort
+  newest first; the Pareto selector prefers the newest usable front. Portal seed-state
+  caches now key on the active target file and initial schedule. Report:
+  `notes/reports/p143-web-trust.md`.

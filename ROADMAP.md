@@ -140,6 +140,7 @@ exists and the maintainer approves it.
 | P140 Period target dimensions | #840 | `feature/p140-target-dimensions` | complete |
 | P141 Portfolio target preparation | #843 | `feature/p141-portfolio-target-prep` | complete |
 | P142 Default stock90 scenario | #846 | `feature/p142-default-stock90` | complete |
+| P143 Web UI trust and cleanup | #849 | `feature/p143-web-trust` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4246,3 +4247,26 @@ Acceptance:
 - The target table shows the default on first load.
 - Solve uses a three-minute default budget.
 - Tests and dashboard pass.
+
+## Phase 143: Web UI trust and cleanup
+
+Parent issue: #849
+Branch: `feature/p143-web-trust`
+Status: active
+Report: `notes/reports/p143-web-trust.md`
+
+Goal: close the remaining web trust issues around state caches, artifact ordering,
+promoted-run targets, and default profiles.
+
+- [x] P143.1 Target-aware cache and artifact ordering (#850)
+- [ ] P143.2 Promoted Plan member targets and profile alignment
+- [ ] P143.3 TSA29 GPU validation and close-out
+
+Acceptance:
+
+- A target change cannot reuse a stale seed-state cache.
+- Newest usable portfolio artifacts open by default.
+- Failed artifacts are identified and do not masquerade as usable fronts.
+- Promoted Plan separates member targets from live targets.
+- Profile loading preserves the stock guard.
+- Tests, browser smoke, and dashboard pass.

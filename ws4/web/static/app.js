@@ -1587,7 +1587,10 @@ async function loadSearch(preferred = '') {
     for (const artifact of ready) {
       const option = document.createElement('option');
       option.value = artifact.id;
-      option.textContent = `${artifact.id} (${artifact.kind})`;
+      const details = artifact.kind === 'portfolio'
+        ? ` · ${Number(artifact.front_size || 0)} front · ${Number(artifact.members || 0)} members${artifact.failures ? ` · ${artifact.failures} failed` : ''}`
+        : '';
+      option.textContent = `${artifact.id} (${artifact.kind})${details}`;
       select.append(option);
     }
     if (preferred && ready.some((artifact) => artifact.id === preferred)) {
@@ -2014,10 +2017,14 @@ async function loadParetoArtifacts(preferred = '') {
     for (const artifact of ready) {
       const option = document.createElement('option');
       option.value = artifact.id;
-      option.textContent = artifact.id;
+      const details = artifact.kind === 'portfolio'
+        ? ` · ${Number(artifact.front_size || 0)} front · ${Number(artifact.members || 0)} members${artifact.failures ? ` · ${artifact.failures} failed` : ''}`
+        : '';
+      option.textContent = `${artifact.id}${details}`;
       select.append(option);
     }
-    const current = preferred || state.pareto.artifact || ready[ready.length - 1]?.id || select.value;
+    const usable = ready.filter((item) => item.kind !== 'portfolio' || item.usable !== false);
+    const current = preferred || state.pareto.artifact || usable[0]?.id || ready[0]?.id || select.value;
     if (current && ready.some((item) => item.id === current)) select.value = current;
     state.pareto.artifact = select.value;
     await loadParetoSpace(select.value);

@@ -2629,10 +2629,33 @@ def create_app(
                 ("lp.json", "lp"),
             ):
                 path = directory / filename
-                if path.is_file():
-                    artifacts.append({"id": directory.name, "kind": kind})
-                    known.add(directory.name)
-                    break
+                if not path.is_file():
+                    continue
+                record: dict[str, Any] = {
+                    "id": directory.name,
+                    "kind": kind,
+                    "saved_utc": datetime.fromtimestamp(path.stat().st_mtime)
+                    .astimezone()
+                    .isoformat(),
+                }
+                if kind == "portfolio":
+                    try:
+                        payload = _json_safe(json.loads(path.read_text(encoding="utf-8")))
+                        if isinstance(payload, Mapping):
+                            front = payload.get("outcome_front", payload.get("front", []))
+                            record.update(
+                                {
+                                    "members": len(payload.get("members", [])),
+                                    "front_size": len(front) if isinstance(front, list) else 0,
+                                    "failures": int(payload.get("failures", 0) or 0),
+                                }
+                            )
+                    except (OSError, ValueError):
+                        record["failures"] = -1
+                    record["usable"] = int(record.get("front_size", 0)) > 0
+                artifacts.append(record)
+                known.add(directory.name)
+                break
         for name, job in search_jobs.items():
             if name not in known:
                 artifacts.append(
@@ -2640,8 +2663,11 @@ def create_app(
                         "id": name,
                         "kind": job["kind"],
                         "status": "running" if job["process"].poll() is None else "stopped",
+                        "saved_utc": datetime.now().astimezone().isoformat(),
+                        "usable": False,
                     }
                 )
+        artifacts.sort(key=lambda item: str(item.get("saved_utc", "")), reverse=True)
         return artifacts
 
     @app.get("/api/search/{name}")
