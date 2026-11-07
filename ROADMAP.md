@@ -140,7 +140,8 @@ exists and the maintainer approves it.
 | P140 Period target dimensions | #840 | `feature/p140-target-dimensions` | complete |
 | P141 Portfolio target preparation | #843 | `feature/p141-portfolio-target-prep` | complete |
 | P142 Default stock90 scenario | #846 | `feature/p142-default-stock90` | complete |
-| P143 Web UI trust and cleanup | #849 | `feature/p143-web-trust` | active |
+| P143 Web UI trust and cleanup | #849 | `feature/p143-web-trust` | complete |
+| P145 Multi-account target scaffold | #859 | `feature/p145-multi-account-targets` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4252,7 +4253,7 @@ Acceptance:
 
 Parent issue: #849
 Branch: `feature/p143-web-trust`
-Status: active
+Status: complete
 Merge commit: `2e51922`
 Report: `notes/reports/p143-web-trust.md`
 PR: #851
@@ -4262,7 +4263,7 @@ promoted-run targets, and default profiles.
 
 - [x] P143.1 Target-aware cache and artifact ordering (#850)
 - [x] P143.2 Promoted Plan member targets and profile alignment
-- [ ] P143.3 TSA29 fallback validation and close-out
+- [x] P143.3 TSA29 fallback validation and close-out
 
 Acceptance:
 
@@ -4272,3 +4273,23 @@ Acceptance:
 - Promoted Plan separates member targets from live targets.
 - Profile loading preserves the stock guard.
 - Tests, browser smoke, and dashboard pass.
+
+## Phase 145: Multi-account portfolio target scaffold
+
+Parent issue: #859
+Branch: `feature/p145-multi-account-targets`
+Status: complete
+Merge commit: `a33443a`
+Report: `notes/reports/p145-multi-account-targets.md`
+PR: #861
+
+Goal: build a 5-7 account portfolio target set without changing live Solve targets.
+
+- [x] P145.1 Multi-account scaffold targets (#860)
+
+Acceptance:
+
+- A user can add 5-7 accounts and review target rows.
+- The portfolio launch validates and uses the scaffold file.
+- Live target files remain unchanged.
+- Browser and API tests pass.

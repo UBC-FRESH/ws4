@@ -2652,7 +2652,25 @@ def create_app(
             )
         out = new_search_dir("portfolio")
         target_file = targets_path
-        if target_mode == "level_only":
+        target_rows = payload.get("targets")
+        if target_rows is not None:
+            if not isinstance(target_rows, list) or not target_rows:
+                raise HTTPException(status_code=422, detail="targets must be a non-empty list")
+            rows = [dict(row) for row in target_rows if isinstance(row, Mapping)]
+            if len(rows) != len(target_rows):
+                raise HTTPException(status_code=422, detail="each target must be an object")
+            scaffold = out / "targets-scaffold.yaml"
+            try:
+                scaffold.write_text(
+                    yaml.safe_dump({"targets": rows}, sort_keys=False), encoding="utf-8"
+                )
+                load_targets(scaffold)
+            except Exception as error:
+                raise HTTPException(
+                    status_code=422, detail=f"invalid target rows: {error}"
+                ) from error
+            target_file = scaffold
+        elif target_mode == "level_only":
             level_targets = [target for target in load_targets(targets_path) if not target.flow]
             if not level_targets:
                 raise HTTPException(

@@ -717,6 +717,29 @@ def test_search_launchers_compose_the_scripts(
     levels = yaml.safe_load(level_target.read_text(encoding="utf-8"))["targets"]
     assert len(levels) == 1
     assert not levels[0].get("flow")
+    scaffold_rows = [
+        {"account": "feature.Volume", "period": 1, "minimum": 10},
+        {"account": "feature.Old", "period": 1, "minimum": 2},
+    ]
+    scaffold = client.post(
+        "/api/search/portfolio",
+        json={
+            "vary": "feature.Volume=1;feature.Old=1",
+            "targets": scaffold_rows,
+            "iterations": 1,
+            "years": 1,
+        },
+    )
+    assert scaffold.status_code == 200
+    scaffold_path = Path(captured[-1][captured[-1].index("--targets") + 1])
+    scaffold_data = yaml.safe_load(scaffold_path.read_text(encoding="utf-8"))["targets"]
+    assert [row["account"] for row in scaffold_data] == ["feature.Volume", "feature.Old"]
+    assert scaffold_path.name == "targets-scaffold.yaml"
+    invalid = client.post(
+        "/api/search/portfolio",
+        json={"vary": "feature.Volume=1", "targets": [{"account": "feature.Volume"}]},
+    )
+    assert invalid.status_code == 422
     bad = client.post(
         "/api/search/portfolio",
         json={"vary": "feature.Volume=1", "mode": "spiral"},
