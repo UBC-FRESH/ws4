@@ -246,6 +246,18 @@ def test_search_builds_a_scan_and_opens_the_explorer(tmp_path: Path) -> None:
             assert "feature.Old@1=0.5,1" in page.locator("#portfolio-vary").input_value()
             page.click("#scan-periods-5")
             assert "5 dimensions" in page.locator("#scan-summary").inner_text()
+            page.locator("details.search-run").filter(
+                has_text="Scaffold multi-account targets"
+            ).evaluate("element => { element.open = true; }")
+            page.select_option("#scaffold-account", label="feature.Volume")
+            page.click("#scaffold-add")
+            page.select_option("#scaffold-account", label="feature.Old")
+            page.click("#scaffold-add")
+            page.click("#scaffold-use")
+            assert "feature.Volume" in page.locator("#portfolio-metrics").input_value()
+            assert "feature.Old" in page.locator("#portfolio-metrics").input_value()
+            assert page.locator("#scaffold-preview").is_visible()
+            assert "2 target rows" in page.locator("#scaffold-status").inner_text()
             vary = (
                 page.locator("#portfolio-vary").input_value()
                 if page.locator("#scan-use").is_visible()
