@@ -141,6 +141,7 @@ exists and the maintainer approves it.
 | P141 Portfolio target preparation | #843 | `feature/p141-portfolio-target-prep` | complete |
 | P142 Default stock90 scenario | #846 | `feature/p142-default-stock90` | complete |
 | P143 Web UI trust and cleanup | #849 | `feature/p143-web-trust` | active |
+| P144 Stochastic landscape engine | #852 | `feature/p144-stochastic-landscape` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4272,3 +4273,32 @@ Acceptance:
 - Promoted Plan separates member targets from live targets.
 - Profile loading preserves the stock guard.
 - Tests, browser smoke, and dashboard pass.
+
+## Phase 144: Stochastic landscape engine
+
+Parent issue: #852
+Branch: `feature/p144-stochastic-landscape`
+Status: active
+
+Goal: merge the deterministic estate-optimization core with stochastic, spatially explicit,
+discrete-event landscape processes in one engine. Decisions and ecological processes become two
+event sources over one spatial state; a deterministic run is a stochastic run conditioned on one
+realized random tape.
+
+Design note: `notes/design/ws4-stochastic-landscape.md`
+
+- [x] P144.1 Write the design note and contracts (#853)
+- [ ] P144.2 Add the event record, random tape, and replay validator (#854)
+- [ ] P144.3 Add the ecosystem package and cohort state extension (#855)
+- [ ] P144.4 Add the fire vertical slice (#856)
+- [ ] P144.5 Add scenario ensembles and risk targets (#857)
+- [ ] P144.6 Verify and close out (#858)
+
+Acceptance:
+
+- Same inputs and seed produce an identical event log and account values.
+- Common random numbers hold across candidate schedules.
+- A fire process can be applied to a compiled dataset without changing the management contract.
+- A risk-aggregated target (mean or CVaR) can be optimized and replayed.
+- Area and carbon conservation checks pass.
+- `python scripts/dashboard.py` is green.

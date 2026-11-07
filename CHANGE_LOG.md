@@ -4532,3 +4532,13 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P143.1/P143.2: merged via PR #851 as `2e51922`. Added newest-first artifact metadata,
   target-aware state-cache keys, promoted-run target definitions, alternative profile
   preservation, and unsupported-GPU-profile fallback. Dashboard: `OVERALL: GREEN`.
+
+- P144.1: added `notes/design/ws4-stochastic-landscape.md`, the Phase 144 scaffold
+  (#852 to #858), and the roadmap, notes-index, and backlog entries. The design joins the
+  deterministic estate-optimization core with stochastic spatially explicit landscape
+  processes as two event sources over one annual executor; it specifies the event record, the
+  `ws4.ecosystem.v1` sidecar, the cohort/fraction state extension, the counter-based random
+  tape, common random numbers, the optimizer coupling, and the validation oracles.
+  Documentation only; no runtime code. `python scripts/check_workflow.py` reports
+  **0 error(s), 0 warning(s)**. Dashboard: **GREEN** (lint, format, types, tests,
+  validator, docs, docstrings).

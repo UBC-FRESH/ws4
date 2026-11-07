@@ -376,3 +376,30 @@ items are enhancements and maintenance.
   in FEMIC; Seymour depends on the ungauged domain audit and a reviewed bundle.
   No WS4 screen should be reported as a watershed result until those inputs
   exist.
+
+## Stochastic landscape engine (P144)
+
+- **Event record and random tape.** `open`. P144.2 adds one event record shared by controlled
+  and uncontrolled events, a stable ordering key, a counter-based random tape, and a replay
+  validator. Target: P144.2.
+- **Ecosystem package and cohort state.** `open`. P144.3 adds the optional `ws4.ecosystem.v1`
+  sidecar, the state-variable schema, cohort area fractions, and the null yield bridge. The
+  compiled management dataset remains authoritative. Target: P144.3.
+- **Fire vertical slice.** `open`. P144.4 adds Poisson ignition, graph percolation spread,
+  severity, cohort mortality, salvage, and disturbance accounts, with analytic oracles and a
+  synthetic landscape. Calibration is out of scope. Target: P144.4.
+- **Scenario ensembles and risk targets.** `open`. P144.5 adds scenario definitions, common
+  random numbers, risk pseudo-accounts, a `Target.aggregation` field, and a sample-average
+  approximation loop with an out-of-sample report. Target: P144.5.
+- **Succession and the yield bridge.** `open`. A later phase adds regeneration, species
+  succession, and a calibrated bridge from species biomass to merchantable volume. The bridge
+  is the main ecological-calibration risk. Target: a later landscape phase.
+- **Wind, insects, drought, and process interactions.** `open`. A later phase adds the other
+  disturbance processes and their interactions (fuel, host density, windthrow, drought
+  stress). Target: later landscape phases.
+- **Adaptive policy search and two-stage stochastic programming.** `open`. A later phase adds
+  decision rules, recourse, and the stochastic-optimization ladder beyond sample-average
+  approximation. Target: later optimization phases.
+- **External-engine adapters.** `open`. A later phase tests the process protocol against
+  public LANDIS-II, SpaDES, and SELES benchmarks and, where licensing allows, adapters. The
+  provenance rule applies. Target: later landscape phases.
