@@ -4533,6 +4533,69 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   target-aware state-cache keys, promoted-run target definitions, alternative profile
   preservation, and unsupported-GPU-profile fallback. Dashboard: `OVERALL: GREEN`.
 
+- P144.1: added `notes/design/ws4-stochastic-landscape.md`, the Phase 144 scaffold
+  (#852 to #858), and the roadmap, notes-index, and backlog entries. The design joins the
+  deterministic estate-optimization core with stochastic spatially explicit landscape
+  processes as two event sources over one annual executor; it specifies the event record, the
+  `ws4.ecosystem.v1` sidecar, the cohort/fraction state extension, the counter-based random
+  tape, common random numbers, the optimizer coupling, and the validation oracles.
+  Documentation only; no runtime code. `python scripts/check_workflow.py` reports
+  **0 error(s), 0 warning(s)**. Dashboard: **GREEN** (lint, format, types, tests,
+  validator, docs, docstrings).
+
+- P144.2: added the `ws4.ecosystem` package: the versioned `Event` record, the deterministic
+  `EventLog` and `EventLogBuilder` with a SHA-256 replay digest, the counter-based
+  `RandomTape` (Philox 2x64) with common random numbers, and `ws4 ecosystem validate-log`.
+  The record is a superset of the `femic.disturbance.v1` row and
+  `Event.from_disturbance_row` adapts the existing consumer rows; execution order is
+  `(time, phase, priority, spatial id, event id)`. Added 101 unit, property, and CLI tests
+  with 98% branch coverage of the new package, plus `docs/reference/event-log.rst`.
+  `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard:
+  **GREEN** (lint, format, types, tests, validator, docs, docstrings).
+
+- P144.3: added the optional `ws4.ecosystem.v1` package and cohort state. The package
+  declares typed state variables, cohort area fractions, and an explicit null bridge. The
+  loader validates the closed manifest, table hashes, required columns, state dtype/scope
+  and defaults, cohort fractions and attributes, and bridge declarations. `CohortState`
+  joins the package to a dataset's fragment areas, aggregates area-weighted age, biomass,
+  fuel, and snags, reports species fractions and missing fragments, and checks area
+  conservation. `find_ecosystem_package` and `load_dataset_ecosystem` return None when a
+  dataset has no package, so the deterministic model is unchanged. Added
+  `ws4 ecosystem validate-package --package PATH [--json]` and
+  `docs/reference/ecosystem-package.rst`. The ecosystem suite now has 165 tests.
+  `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard:
+  **GREEN** (lint, format, types, tests, validator, docs, docstrings).
+
+- P144.4: added the first stochastic landscape process in `ws4/ecosystem/fire.py`:
+  Poisson ignition, fuel/distance/wind graph percolation, severity and cohort mortality,
+  a deterministic salvage source, disturbance-compatible fire events, and fire/salvage/state
+  account rows. Added `FireRun`/`FireResult`, the synthetic grid and the end-to-end
+  `examples/ecosystem_fire_demo.py`, plus `docs/reference/ecosystem-fire.rst`. The analytic
+  oracles cover the Poisson ignition rate, the geometric chain burn length, a zero-fuel
+  barrier, downwind versus upwind spread, area conservation, and exact replay. The ecosystem
+  suite now has 179 tests. `python scripts/check_workflow.py` reports **0 error(s), 0
+  warning(s)**. Dashboard: **GREEN** (lint, format, types, tests, validator, docs,
+  docstrings).
+
+- P144.5: added `ws4/ecosystem/scenarios.py`: scenario files with seeds, weights, and
+  overrides; `ScenarioSet` load/write/split; common random numbers; `risk_account_values`
+  with mean, min, max, CVaR lower/upper, quantile, probability, and regret; and
+  `SampleAverageApproximation` with a finite decision-set loop, a held-out evaluation, and an
+  `OutOfSampleReport`. `Target` now carries `aggregation`, `risk_alpha`, `risk_minimum`, and
+  `risk_maximum`, and `load_targets` parses them; the default is `single`, so existing
+  deterministic and flow targets are unchanged. The fire evaluator wraps `FireRun` and copies
+  the initial cohort state for every scenario. Added
+  `docs/reference/ecosystem-scenarios.rst`. The ecosystem and objective suites now have 232
+  tests. `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard:
+  **GREEN** (lint, format, types, tests, validator, docs, docstrings).
+
+- P144.6: verified and queued the phase. Added the `fire.killed_biomass_t`,
+  `fire.snag_created_t`, and `fire.emitted_biomass_t` accounts and a live-biomass
+  mass-balance test. The full dashboard is **GREEN**; the ecosystem and objective suites have
+  233 tests; `ws4.ecosystem` branch coverage is 90%. Exercised the 5x5 fire demo, the event-log
+  validator, the ecosystem-package validator, and an SAA out-of-sample report. Wrote
+  `notes/reports/p144-closeout.md` and queued pull request #872; the phase is `pr-open` and
+  awaits maintainer approval. No merge, tag, release, or settings change was made.
 - P143.3: validated the TSA29 profile fallback to the state engine after the stock
   target could not be priced by the GPU profile. Portfolio list defaults to the newest
   usable front; failed artifacts are marked and skipped.
@@ -4569,3 +4632,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 
 - P149.1: added `state-watch --summary-out` and prepared exactness fields for web
   state summaries and run health.
+
+- P144 close-out: pull request #872 squash-merged as `d6522e3`; parent #852 and tasks
+  #853 to #858 closed; the roadmap status is `complete`. The close-out report is
+  `notes/reports/p144-closeout.md`. Dashboard: **GREEN**.

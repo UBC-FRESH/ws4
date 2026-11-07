@@ -376,3 +376,58 @@ items are enhancements and maintenance.
   in FEMIC; Seymour depends on the ungauged domain audit and a reviewed bundle.
   No WS4 screen should be reported as a watershed result until those inputs
   exist.
+
+## Stochastic landscape engine (P144)
+
+- **Event record and random tape.** `done` (P144.2, #854). The `ws4.ecosystem` package now
+  has the unified `Event` record, the deterministic `EventLog` and `EventLogBuilder`, the
+  counter-based `RandomTape` with common random numbers, a replay digest and validator, and
+  `ws4 ecosystem validate-log`. Referential integrity against a dataset is still open; it
+  belongs to the process and scenario tasks.
+- **Ecosystem package and cohort state.** `done` (P144.3, #855). The optional
+  `ws4.ecosystem.v1` sidecar now declares typed state variables, cohort area fractions, and
+  the explicit null yield bridge; `CohortState` aggregates cohorts to fragments, reports
+  missing fragments, and checks area conservation. The compiled management dataset remains
+  authoritative, and a dataset without a package is unchanged. A calibrated yield bridge and
+  a columnar cohort table remain open.
+- **Fire vertical slice.** `done` (P144.4, #856). The `ws4.ecosystem.fire` process now has
+  Poisson ignition, graph percolation spread with fuel, distance, and wind, severity and
+  cohort mortality, a deterministic salvage source, disturbance-compatible events, and account
+  rows. The synthetic grid demo and the analytic Poisson, geometric-chain, barrier, wind,
+  area-conservation, and replay oracles are in place. Calibration and other processes remain
+  open.
+- **Scenario ensembles and risk targets.** `done` (P144.5, #857). Scenario files now carry
+  seeds, weights, and overrides; `Target` carries `aggregation`, `risk_alpha`,
+  `risk_minimum`, and `risk_maximum`; `risk_account_values` turns per-scenario values into
+  risk pseudo-accounts; and `SampleAverageApproximation` evaluates a decision set with common
+  random numbers and writes an out-of-sample report. Flow targets and estate-optimizer wiring
+  remain open.
+- **Succession and the yield bridge.** `open`. A later phase adds regeneration, species
+  succession, and a calibrated bridge from species biomass to merchantable volume. The bridge
+  is the main ecological-calibration risk. Target: a later landscape phase.
+- **Wind, insects, drought, and process interactions.** `open`. A later phase adds the other
+  disturbance processes and their interactions (fuel, host density, windthrow, drought
+  stress). Target: later landscape phases.
+- **Adaptive policy search and two-stage stochastic programming.** `open`. A later phase adds
+  decision rules, recourse, and the stochastic-optimization ladder beyond sample-average
+  approximation. Target: later optimization phases.
+- **External-engine adapters.** `open`. A later phase tests the process protocol against
+  public LANDIS-II, SpaDES, and SELES benchmarks and, where licensing allows, adapters. The
+  provenance rule applies. Target: later landscape phases.
+
+
+## 3D fire visualization (post-P144, #868)
+
+- **Synthetic individual-tree stands over VRI polygons.** `open`. Use Nemora's stand and stem
+  synthesis (`nemora.synthesis.stands`, `nemora.synthesis.stems`) to populate real WS4 VRI
+  polygons with plausible individual trees: x/y, species, DBH, height, crown shape, live/dead
+  state, and crown/surface/snag fuel. The tree layer is explicitly synthetic; the polygons are
+  real. Target: a later landscape-visualization phase.
+- **3D fire scene and viewer.** `open`. Compile a `ws4.fire.scene.v1` package from a P144 fire
+  run, reuse the FHOPS `tree_scene`/`tree_replay` patterns and the Scenario Studio's terrain and
+  replay work, and render real-time flames, smoke, embers, and post-fire structure in the WS4
+  web UI. The animation must derive from the event log and replay exactly. Target: a later
+  landscape-visualization phase.
+- **Sub-fragment fire refinement.** `open`. Add a local spread model inside a fragment so the
+  visible fire front and per-tree ignition are finer than the fragment event, while the
+  fragment event remains the audit record. Target: a later landscape-visualization phase.

@@ -55,6 +55,13 @@ from .disturbance import (
     load_disturbance_events,
     summarize_disturbance_events,
 )
+from .ecosystem import (
+    EcosystemPackageError,
+    EventError,
+    EventLog,
+    load_ecosystem_package,
+    validate_ecosystem_package,
+)
 from .forest_condition import build_report_from_accounts
 from .forest_condition import write_report as write_condition_report
 from .io.hydrology import (
@@ -1461,7 +1468,7 @@ def disturbance(
         return
     summary = summarize_disturbance_events(rows)
     if json_output:
-        print(json.dumps(summary, indent=2, sort_keys=True))
+        typer.echo(json.dumps(summary, indent=2, sort_keys=True))
         return
     table = Table(title="Disturbance events")
     table.add_column("event")
@@ -2270,6 +2277,91 @@ def hydrology_validate(
 
 
 app.add_typer(lidar_app, name="lidar")
+ecosystem_app = typer.Typer(
+    add_completion=False,
+    no_args_is_help=True,
+    help="Validate and inspect stochastic landscape event logs.",
+)
+
+
+@ecosystem_app.command("validate-log")
+def ecosystem_validate_log(
+    events: Path = typer.Option(..., "--events", exists=True, help="Event-log JSON."),
+    json_output: bool = typer.Option(False, "--json", help="Emit a stable JSON summary."),
+) -> None:
+    """Validate an event log's schema, order, uniqueness, and replay digest."""
+    try:
+        log = EventLog.read(events)
+    except EventError as error:
+        raise typer.BadParameter(str(error)) from error
+    summary = log.summary()
+    if json_output:
+        typer.echo(json.dumps(summary, indent=2, sort_keys=True))
+        return
+    table = Table(title="Event log")
+    for key in (
+        "scenario_id",
+        "scenario_seed",
+        "event_count",
+        "year_min",
+        "year_max",
+        "area_ha",
+        "replay_token",
+    ):
+        table.add_row(key, str(summary[key]))
+    table.add_row("processes", ", ".join(sorted({event.process_id for event in log.events})))
+    table.add_row("event_types", ", ".join(sorted({event.event_type for event in log.events})))
+    print(table)
+
+
+@ecosystem_app.command("validate-package")
+def ecosystem_validate_package(
+    package: Path = typer.Option(
+        ..., "--package", exists=True, help="Ecosystem package directory."
+    ),
+    json_output: bool = typer.Option(False, "--json", help="Emit a stable JSON report."),
+) -> None:
+    """Validate an ecosystem package's schema, state, cohorts, bridges, and hashes."""
+    findings = validate_ecosystem_package(package)
+    if json_output:
+        typer.echo(
+            json.dumps(
+                {
+                    "package": str(package),
+                    "valid": not findings,
+                    "findings": [
+                        {"code": finding.code, "where": finding.where, "message": finding.message}
+                        for finding in findings
+                    ],
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
+        if findings:
+            raise typer.Exit(code=1)
+        return
+    if findings:
+        table = Table(title="Ecosystem package findings")
+        table.add_row("code", "where", "message")
+        for finding in findings:
+            table.add_row(finding.code, finding.where, finding.message)
+        print(table)
+        raise typer.Exit(code=1)
+    try:
+        loaded = load_ecosystem_package(package)
+    except EcosystemPackageError as error:
+        raise typer.BadParameter(str(error)) from error
+    table = Table(title="Ecosystem package")
+    table.add_row("package_id", loaded.manifest.package_id)
+    table.add_row("schema_version", loaded.manifest.schema_version)
+    table.add_row("state_variables", str(len(loaded.schema.variables)))
+    table.add_row("cohorts", str(len(loaded.table("cohorts"))))
+    table.add_row("bridges", ", ".join(bridge.bridge_id for bridge in loaded.schema.bridges))
+    table.add_row("fingerprint", loaded.fingerprint)
+    print(table)
+
+
 recovery_app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
@@ -3209,6 +3301,7 @@ def gpu_watch(
     print(table_view)
 
 
+app.add_typer(ecosystem_app, name="ecosystem")
 app.add_typer(recovery_app, name="recovery")
 app.add_typer(species_app, name="species")
 app.add_typer(resilience_app, name="resilience")

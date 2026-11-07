@@ -141,6 +141,7 @@ exists and the maintainer approves it.
 | P141 Portfolio target preparation | #843 | `feature/p141-portfolio-target-prep` | complete |
 | P142 Default stock90 scenario | #846 | `feature/p142-default-stock90` | complete |
 | P143 Web UI trust and cleanup | #849 | `feature/p143-web-trust` | complete |
+| P144 Stochastic landscape engine | #852 | `feature/p144-stochastic-landscape` | complete |
 | P145 Multi-account target scaffold | #859 | `feature/p145-multi-account-targets` | complete |
 | P146 Live multi-account scan | #862 | `feature/p146-live-multi-account-scan` | complete |
 | P147 Diverse multi-account scaffold | #865 | `feature/p147-diverse-scaffold` | complete |
@@ -4277,6 +4278,38 @@ Acceptance:
 - Promoted Plan separates member targets from live targets.
 - Profile loading preserves the stock guard.
 - Tests, browser smoke, and dashboard pass.
+
+## Phase 144: Stochastic landscape engine
+
+Parent issue: #852
+Branch: `feature/p144-stochastic-landscape`
+Status: complete
+Merge commit: `d6522e3`
+Report: `notes/reports/p144-closeout.md`
+PR: #872
+
+Goal: merge the deterministic estate-optimization core with stochastic, spatially explicit,
+discrete-event landscape processes in one engine. Decisions and ecological processes become two
+event sources over one spatial state; a deterministic run is a stochastic run conditioned on one
+realized random tape.
+
+Design note: `notes/design/ws4-stochastic-landscape.md`
+
+- [x] P144.1 Write the design note and contracts (#853)
+- [x] P144.2 Add the event record, random tape, and replay validator (#854)
+- [x] P144.3 Add the ecosystem package and cohort state extension (#855)
+- [x] P144.4 Add the fire vertical slice (#856)
+- [x] P144.5 Add scenario ensembles and risk targets (#857)
+- [x] P144.6 Verify and close out (#858)
+
+Acceptance:
+
+- Same inputs and seed produce an identical event log and account values.
+- Common random numbers hold across candidate schedules.
+- A fire process can be applied to a compiled dataset without changing the management contract.
+- A risk-aggregated target (mean or CVaR) can be optimized and replayed.
+- Area and carbon conservation checks pass.
+- `python scripts/dashboard.py` is green.
 
 ## Phase 145: Multi-account portfolio target scaffold
 
