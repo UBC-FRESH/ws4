@@ -4570,5 +4570,5 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   line-series pass for `fdcn`: 18 top-height paths including 56, 14 QMD paths
   including 35/45/55/65, and crown closure from source path 640. Locked `fdcn` as
   reviewed; the queue is down to eight. Completed `ssn` with 17 top-height paths,
-  17 QMD paths, and crown closure from source path 693. Dashboard:
-  `OVERALL: GREEN`.
+  17 QMD paths, and crown closure from source path 693. Locked `ssn` as reviewed;
+  the queue is down to seven. Dashboard: `OVERALL: GREEN`.

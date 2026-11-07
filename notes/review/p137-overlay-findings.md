@@ -66,6 +66,13 @@ paths. fdcn is now marked reviewed.
 Sitka spruce natural is complete with 17 top-height paths (including 10, 14, 18,
 32, 40, 48, 60), 17 QMD paths (including 35, 45, 55, 65, 75, 80), and crown
 closure from source path 693. Direct overlay inspection shows the curves on their
+source paths. ssn is now marked reviewed.
+
+### ssp pass
+
+Sitka spruce planted is complete with 16 top-height paths (including 10, 14, 18,
+28, 32, 40, 44, 48, 52), 15 QMD paths (including 35, 45, 55, 65, 75), and crown
+closure from source path 590. Direct overlay inspection shows the curves on their
 source paths.
 
 ## TASS predicted mortality curves

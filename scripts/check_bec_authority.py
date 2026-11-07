@@ -89,8 +89,8 @@ def check_bec_authority(data: Path = DATA, manifest: Path = MANIFEST) -> list[st
     queued_labels: set[str] = set()
     for value in review_queue["bec_labels"]:
         queued_labels.update(item for item in str(value).split(";") if item)
-    if len(review_queue) != 8 or len(queued_labels) != 210:
-        failures.append("provisional review queue must name 8 diagrams and 210 BEC labels")
+    if len(review_queue) != 7 or len(queued_labels) != 210:
+        failures.append("provisional review queue must name 7 diagrams and 210 BEC labels")
 
     if not manifest.is_file():
         failures.append(f"missing source manifest: {manifest}")

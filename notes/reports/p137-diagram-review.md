@@ -66,7 +66,11 @@ the boundary paths are 641 and 642. The fdcn overlay is in
 
 `ssn` has 17 top-height paths and 17 QMD paths, including the unlabelled interior
 members; its crown closure is source path 693. The ssn overlay is
-`notes/review/p137-overlays/ssn.png`.
+`notes/review/p137-overlays/ssn.png`. ssn is marked reviewed.
+
+`ssp` has 16 top-height paths and 15 QMD paths, including the unlabelled interior
+members; its crown closure is source path 590. The ssp overlay is
+`notes/review/p137-overlays/ssp.png`.
 
 Evidence: `notes/review/p137-overlay-findings.md` and
 `notes/review/p137-overlays/`.

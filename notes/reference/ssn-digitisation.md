@@ -3,7 +3,7 @@
 Source: `ssn` Sitka spruce natural stands, version unversioned, catalogued in
 `ws4/sdmd/data/sdmd/source_catalog.json`.
 
-Status: stored as `cdf-cwh-ss-natural.json`, provisional. All five curve families
+Status: stored as `cdf-cwh-ss-natural.json`, reviewed. All five curve families
 and the CAI display polygon are stored. The old crown-closure raster trace was
 replaced by source path 693.
 
