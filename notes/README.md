@@ -137,3 +137,4 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p141-portfolio-target-prep.md` — P141 level-only targets and initial schedules.
 - `reports/p142-default-stock90.md` — P142 generated stock-guarded default scenarios.
 - `reports/p143-web-trust.md` — P143 cache, artifact, promoted-target, and profile cleanup.
+- `reports/p144-closeout.md` — P144 stochastic landscape engine verification and close-out.

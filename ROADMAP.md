@@ -141,7 +141,7 @@ exists and the maintainer approves it.
 | P141 Portfolio target preparation | #843 | `feature/p141-portfolio-target-prep` | complete |
 | P142 Default stock90 scenario | #846 | `feature/p142-default-stock90` | complete |
 | P143 Web UI trust and cleanup | #849 | `feature/p143-web-trust` | active |
-| P144 Stochastic landscape engine | #852 | `feature/p144-stochastic-landscape` | active |
+| P144 Stochastic landscape engine | #852 | `feature/p144-stochastic-landscape` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4278,7 +4278,9 @@ Acceptance:
 
 Parent issue: #852
 Branch: `feature/p144-stochastic-landscape`
-Status: active
+Status: pr-open
+Report: `notes/reports/p144-closeout.md`
+PR: #872
 
 Goal: merge the deterministic estate-optimization core with stochastic, spatially explicit,
 discrete-event landscape processes in one engine. Decisions and ecological processes become two
@@ -4292,7 +4294,7 @@ Design note: `notes/design/ws4-stochastic-landscape.md`
 - [x] P144.3 Add the ecosystem package and cohort state extension (#855)
 - [x] P144.4 Add the fire vertical slice (#856)
 - [x] P144.5 Add scenario ensembles and risk targets (#857)
-- [ ] P144.6 Verify and close out (#858)
+- [x] P144.6 Verify and close out (#858)
 
 Acceptance:
 

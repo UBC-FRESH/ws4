@@ -4588,3 +4588,11 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   `docs/reference/ecosystem-scenarios.rst`. The ecosystem and objective suites now have 232
   tests. `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard:
   **GREEN** (lint, format, types, tests, validator, docs, docstrings).
+
+- P144.6: verified and queued the phase. Added the `fire.killed_biomass_t`,
+  `fire.snag_created_t`, and `fire.emitted_biomass_t` accounts and a live-biomass
+  mass-balance test. The full dashboard is **GREEN**; the ecosystem and objective suites have
+  233 tests; `ws4.ecosystem` branch coverage is 90%. Exercised the 5x5 fire demo, the event-log
+  validator, the ecosystem-package validator, and an SAA out-of-sample report. Wrote
+  `notes/reports/p144-closeout.md` and queued pull request #872; the phase is `pr-open` and
+  awaits maintainer approval. No merge, tag, release, or settings change was made.

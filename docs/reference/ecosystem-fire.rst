@@ -89,12 +89,20 @@ A run writes account rows with ``year``, ``account``, and ``value``:
 - ``fire.burned_area_ha``
 - ``fire.mortality_area_ha``
 - ``fire.severity_area_weighted``
+- ``fire.killed_biomass_t``
+- ``fire.snag_created_t``
+- ``fire.emitted_biomass_t``
 - ``salvage.count``
 - ``salvage.area_ha``
 - ``salvage.volume_m3``
 - ``state.biomass_t``
 - ``state.fuel_t``
 - ``state.snag_t``
+
+The biomass accounts close a live-mass balance: the initial live biomass equals the final live
+biomass plus cumulative killed biomass, and killed biomass equals the snag-created and emitted
+shares. That is a biomass-mass check, not a full CBM pool-and-flux accounting; the carbon
+ledger's fire/salvage event source is a later task.
 
 The result also writes ``events.json`` (the event log), ``disturbances.json`` (the fire
 events as ``femic.disturbance.v1`` consumer rows), ``cohorts.csv``, and ``summary.json``.

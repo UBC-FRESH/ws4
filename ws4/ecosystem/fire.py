@@ -722,6 +722,7 @@ class FireRun:
             year_events: list[Event] = []
             year_fires: list[Event] = []
             year_salvage: list[Event] = []
+            year_killed_biomass = 0.0
             burned_this_year: set[int] = set()
             ignitions = self.fire.ignitions(self.state, year)
             for ignition in ignitions:
@@ -731,7 +732,10 @@ class FireRun:
                     continue
                 events = self.fire.spread(self.state, ignition)
                 for event in events:
+                    before = self._state_totals()["biomass_t"]
                     self.state = self.fire.apply(self.state, event)
+                    after = self._state_totals()["biomass_t"]
+                    year_killed_biomass += max(0.0, before - after)
                     burned_this_year.add(event.fragment_ids[0])
                     year_fires.append(event)
                     year_events.append(event)
@@ -744,7 +748,7 @@ class FireRun:
             self._salvage.extend(year_salvage)
             year_events.sort(key=lambda event: event.sort_key)
             self._builder.extend(year_events)
-            rows.extend(self._account_rows(year, year_fires, year_salvage))
+            rows.extend(self._account_rows(year, year_fires, year_salvage, year_killed_biomass))
         return FireResult(
             state=self.state,
             log=self._builder.build(),
@@ -755,7 +759,11 @@ class FireRun:
         )
 
     def _account_rows(
-        self, year: int, fires: Sequence[Event], salvage: Sequence[Event]
+        self,
+        year: int,
+        fires: Sequence[Event],
+        salvage: Sequence[Event],
+        killed_biomass: float,
     ) -> list[dict[str, object]]:
         """Return the account rows of one year."""
         burned_area = sum(float(event.area_ha) for event in fires if event.area_ha is not None)
@@ -801,6 +809,21 @@ class FireRun:
                 "year": year,
                 "account": "salvage.volume_m3",
                 "value": salvage_volume,
+            },
+            {
+                "year": year,
+                "account": "fire.killed_biomass_t",
+                "value": killed_biomass,
+            },
+            {
+                "year": year,
+                "account": "fire.snag_created_t",
+                "value": killed_biomass * self.config.snag_fraction,
+            },
+            {
+                "year": year,
+                "account": "fire.emitted_biomass_t",
+                "value": killed_biomass * (1.0 - self.config.snag_fraction),
             },
             {"year": year, "account": "state.biomass_t", "value": totals["biomass_t"]},
             {"year": year, "account": "state.fuel_t", "value": totals["fuel_t"]},

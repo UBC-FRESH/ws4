@@ -315,3 +315,26 @@ def test_negative_horizon_is_rejected() -> None:
 
     with pytest.raises(FireError, match="years"):
         FireRun(state, edges, FireConfig()).run(-1)
+
+
+def test_biomass_mass_balance_closes_after_fire_and_salvage() -> None:
+    _, state, edges = synthetic_grid(3, 3)
+    initial = float(
+        (
+            state.cohorts["biomass_t_ha"]
+            * state.cohorts["area_fraction"]
+            * state.cohorts["fragment_id"].map(state.fragment_areas)
+        ).sum()
+    )
+    config = FireConfig(ignition_rate_per_fragment_year=0.05, base_spread_probability=0.6)
+
+    result = FireRun(state, edges, config, seed=4).run(10)
+
+    accounts = result.accounts
+    killed = float(accounts.loc[accounts["account"] == "fire.killed_biomass_t", "value"].sum())
+    snag_created = float(accounts.loc[accounts["account"] == "fire.snag_created_t", "value"].sum())
+    emitted = float(accounts.loc[accounts["account"] == "fire.emitted_biomass_t", "value"].sum())
+    final_biomass = float(accounts.loc[accounts["account"] == "state.biomass_t", "value"].iloc[-1])
+
+    assert killed == pytest.approx(snag_created + emitted)
+    assert initial == pytest.approx(final_biomass + killed)
