@@ -124,6 +124,8 @@ def main() -> int:
         str(out / "telemetry.jsonl"),
         "--schedule-out",
         str(out / "schedule.csv"),
+        "--summary-out",
+        str(out / "state-watch.json"),
         "--lns-weight",
         str(args.lns_weight),
         "--lns-destroy",
@@ -145,7 +147,24 @@ def main() -> int:
         command.extend(["--accounts", args.accounts])
 
     completed = subprocess.run(command, cwd=Path.cwd())
+    exactness: dict[str, Any] = {}
+    exactness_path = out / "state-watch.json"
+    if exactness_path.is_file():
+        try:
+            exactness = json.loads(exactness_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            exactness = {}
     if completed.returncode != 0:
+        if exactness:
+            failed = {
+                **exactness,
+                "status": "failed",
+                "engine": "state",
+                "exact_match": bool(exactness.get("exact_match", False)),
+            }
+            (out / "summary.json").write_text(
+                json.dumps(failed, indent=2) + "\n", encoding="utf-8"
+            )
         return completed.returncode
     if not (out / "schedule.csv").is_file():
         print("state-watch completed without writing schedule.csv", file=sys.stderr)
@@ -181,7 +200,7 @@ def main() -> int:
     # Preserve the search metadata alongside the simulator summary. The web
     # reader uses summary.json as the completed-run signal, so write a small
     # state-run summary even though the browser reads accounts from the CSV.
-    objective = None
+    objective = exactness.get("objective")
     iterations_run = 0
     telemetry = out / "telemetry.jsonl"
     if telemetry.is_file():
@@ -210,6 +229,8 @@ def main() -> int:
         "accounts": args.accounts,
         "status": "complete",
         "objective": objective,
+        "verified_objective": exactness.get("verified_objective"),
+        "exact_match": exactness.get("exact_match"),
     }
     (out / "state_search.json").write_text(
         json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
@@ -225,6 +246,9 @@ def main() -> int:
                 "islands": 1,
                 "engine": "state",
                 "blocks_scheduled": blocks_scheduled,
+                "status": "complete",
+                "verified_objective": exactness.get("verified_objective"),
+                "exact_match": exactness.get("exact_match"),
                 "state_search": metadata,
             },
             indent=2,
