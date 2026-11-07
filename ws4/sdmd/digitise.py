@@ -422,7 +422,7 @@ def match_printed_labels(
 
     ordered = sorted(matches, key=lambda item: item.value)
     by_index = {path.path_index: path for path in paths}
-    reference_x = max(path.points[0][0] for path in paths) + 1.0
+    reference_x = max(min(point[0] for point in path.points) for path in paths) + 1.0
     previous_y: float | None = None
     for match in ordered:
         y = _path_y_at_x(by_index[match.path_index], reference_x)
