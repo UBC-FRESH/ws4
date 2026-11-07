@@ -7,6 +7,13 @@
 3. `overlay` draws the curves over the rendered page with `figrecover.qa`.
 4. `review` writes a `figrecover` review manifest.
 
+`sdmd-line-import.yaml` is the locked line-type workflow for the fdcp
+top-height family. It renders the source with `figrecover`, then
+`ws4.sdmd.import-lines` matches printed labels to the `[ 3 2 ]` paths and writes
+a `ws4.sdmd.line-import.v1` artifact with the value, path index, label distance,
+and ordered points for every curve. Ambiguous, distant, duplicate, or unordered
+matches fail the node instead of being guessed.
+
 Install the optional tools:
 
 ```bash

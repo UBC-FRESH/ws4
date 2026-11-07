@@ -4550,3 +4550,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   refuses ambiguous, distant, duplicate, or unordered matches. The ten top-height
   paths are recorded in `notes/reference/fdcp-digitisation.md`; the stored curves
   were regenerated from those paths. Vision QA returned `TOP_HEIGHT_OVERALL: PASS`.
+  The confirmed pattern is locked in `workflows/sdmd-line-import.yaml` via the
+  `ws4.sdmd.import-lines` FreshForge node, which renders with figrecover and writes
+  a `ws4.sdmd.line-import.v1` artifact. A local FreshForge run completed
+  `render success` and `import success`.

@@ -40,6 +40,11 @@ vertically unordered matches.
 The intervening unlabelled top-height paths (502, 504, 506, 510, 512, 514, 516)
 are not stored. The source page labels only the ten listed values.
 
+The confirmed pattern is locked in `workflows/sdmd-line-import.yaml`:
+`render` uses figrecover and `import` uses `ws4.sdmd.import-lines` to write a
+`ws4.sdmd.line-import.v1` artifact. A local FreshForge run completed with
+`render success` and `import success`, producing the same ten value/path pairs.
+
 ## Limits
 
 - Crown closure is still the old provisional trace; it is not part of this

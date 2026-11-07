@@ -471,10 +471,17 @@ optional extra installs both:
 The vector-path extractor in ``ws4.sdmd.digitise`` stays responsible for isopleth
 precision; figrecover owns the rendered page, overlay, quality metrics, and review
 record. A diagram spec names the PDF axis ticks, the drawing path indices, and the
-printed isopleth values, so the workflow does not guess curve identities. Both are **provisional** until the
-maintainer reviews the curves; the planted top-height assignment is the weaker of
-the two. The P137 overlay review found the 10 provisional diagrams do not match
-their source; see ``notes/review/p137-overlay-findings.md``. The synthetic ``idf-dk3-fdi-illustrative.json`` remains the test fixture,
+printed isopleth values, so the workflow does not guess curve identities.
+
+For a line-type pass, ``ws4.sdmd.import-lines`` reads the printed ``value unit``
+labels, finds the paths with the requested dash pattern and width, requires a
+unique close match with vertical order, and refuses ambiguous, distant, duplicate,
+or unordered assignments. The confirmed fdcp top-height pattern is locked in
+``workflows/sdmd-line-import.yaml``; it renders the source with figrecover and
+writes a ``ws4.sdmd.line-import.v1`` artifact with the path index and label
+distance for every curve. The ten diagrams remain **provisional** until the
+maintainer reviews the curves; see ``notes/review/p137-overlay-findings.md``. The
+synthetic ``idf-dk3-fdi-illustrative.json`` remains the test fixture,
 not the published diagram. Four method trajectories from `fresh-fvsbc` are in
 ``ws4/sdmd/data/trajectories/``; they are method runs over synthetic tree lists,
 not real AU projections. See ``notes/reference/sdmd-pilot-trajectories.md``.
@@ -496,7 +503,8 @@ so it cannot replace the missing lodgepole pine diagram.
 
 All 14 public diagrams are now stored: seven species in natural and planted
 versions. Four Interior Douglas-fir/lodgepole pine diagrams are reviewed; the other
-ten are provisional and use raster-traced crown closure. The atlas status and BEC
+ten are provisional. Their crown closure is a straight log-log line fitted to the
+source, and the grey CAI band is stored as a display-only polygon. The atlas status and BEC
 counts are in ``notes/reports/p120-atlas-coverage.md``.
 
 The first real pilot store is ``ws4/sdmd/data/pilot-tsa23-idfdk3/``. It holds 11
