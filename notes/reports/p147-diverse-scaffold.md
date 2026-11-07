@@ -1,7 +1,9 @@
 # P147 diverse multi-account scaffold
 
 Date: 2026-11-07
-Status: active
+Status: complete
+Merge commit: `efcddd4`
+PR: #867
 Branch: `feature/p147-diverse-scaffold`
 Parent issue: #865
 Task issue: #866
@@ -23,4 +25,6 @@ The scaffold now has a **Diverse 6** preset:
 ## Verification
 
 - Browser scaffold tests pass.
-- Live TSA27 diverse run pending.
+- Live TSA27 run: 6 target rows, 8 members, 2 exact front, 0 failures.
+- Front member opened on the map as `pareto-portfolio-20261107-184344-member-002-001`.
+- `python scripts/dashboard.py`: green before the live run.
