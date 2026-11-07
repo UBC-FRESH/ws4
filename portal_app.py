@@ -372,10 +372,6 @@ def _build_mount(instance: Instance, mount_path: str) -> None:
     if candidate_cache is None and candidate_index.is_file():
         candidate_cache = None
     dataset_manifest = root / str(spec["dataset"]) / "manifest.json"
-    seed_fingerprint = _cache_fingerprint(
-        [dataset_manifest, candidate_cache, candidate_index]
-    )
-    seed_state = cache / f"seed-state-{seed_fingerprint}.npz"
     base_targets = _writable_copy(root / str(spec["targets"]), cache / "targets-base.yaml")
     targets = cache / "targets-default-stock90.yaml"
     if not targets.is_file():
@@ -396,6 +392,10 @@ def _build_mount(instance: Instance, mount_path: str) -> None:
         if spec.get("initial")
         else None
     )
+    seed_fingerprint = _cache_fingerprint(
+        [dataset_manifest, candidate_cache, candidate_index, targets, initial]
+    )
+    seed_state = cache / f"seed-state-{seed_fingerprint}.npz"
     state_config: dict[str, Any] = {
         "candidate_index": str(candidate_index),
         "candidate_cache": str(candidate_cache) if candidate_cache else None,
