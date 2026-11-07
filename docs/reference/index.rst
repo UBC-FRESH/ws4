@@ -67,6 +67,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    * - :doc:`ecosystem-fire`
      - The first stochastic process: Poisson ignition, graph spread, mortality, salvage,
        and disturbance accounts.
+   * - :doc:`ecosystem-scenarios`
+     - Scenario ensembles, common random numbers, risk targets, and the out-of-sample report.
    * - :doc:`femic-hydrology`
      - Pinned FEMIC hydrology response bundles, checksums, flood-risk rows, and
        applicability metadata.
@@ -99,4 +101,5 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    event-log
    ecosystem-package
    ecosystem-fire
+   ecosystem-scenarios
    femic-hydrology

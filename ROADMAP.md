@@ -4291,7 +4291,7 @@ Design note: `notes/design/ws4-stochastic-landscape.md`
 - [x] P144.2 Add the event record, random tape, and replay validator (#854)
 - [x] P144.3 Add the ecosystem package and cohort state extension (#855)
 - [x] P144.4 Add the fire vertical slice (#856)
-- [ ] P144.5 Add scenario ensembles and risk targets (#857)
+- [x] P144.5 Add scenario ensembles and risk targets (#857)
 - [ ] P144.6 Verify and close out (#858)
 
 Acceptance:

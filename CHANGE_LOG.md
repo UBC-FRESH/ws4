@@ -4576,3 +4576,15 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   suite now has 179 tests. `python scripts/check_workflow.py` reports **0 error(s), 0
   warning(s)**. Dashboard: **GREEN** (lint, format, types, tests, validator, docs,
   docstrings).
+
+- P144.5: added `ws4/ecosystem/scenarios.py`: scenario files with seeds, weights, and
+  overrides; `ScenarioSet` load/write/split; common random numbers; `risk_account_values`
+  with mean, min, max, CVaR lower/upper, quantile, probability, and regret; and
+  `SampleAverageApproximation` with a finite decision-set loop, a held-out evaluation, and an
+  `OutOfSampleReport`. `Target` now carries `aggregation`, `risk_alpha`, `risk_minimum`, and
+  `risk_maximum`, and `load_targets` parses them; the default is `single`, so existing
+  deterministic and flow targets are unchanged. The fire evaluator wraps `FireRun` and copies
+  the initial cohort state for every scenario. Added
+  `docs/reference/ecosystem-scenarios.rst`. The ecosystem and objective suites now have 232
+  tests. `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard:
+  **GREEN** (lint, format, types, tests, validator, docs, docstrings).

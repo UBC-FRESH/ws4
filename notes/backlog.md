@@ -396,9 +396,12 @@ items are enhancements and maintenance.
   rows. The synthetic grid demo and the analytic Poisson, geometric-chain, barrier, wind,
   area-conservation, and replay oracles are in place. Calibration and other processes remain
   open.
-- **Scenario ensembles and risk targets.** `open`. P144.5 adds scenario definitions, common
-  random numbers, risk pseudo-accounts, a `Target.aggregation` field, and a sample-average
-  approximation loop with an out-of-sample report. Target: P144.5.
+- **Scenario ensembles and risk targets.** `done` (P144.5, #857). Scenario files now carry
+  seeds, weights, and overrides; `Target` carries `aggregation`, `risk_alpha`,
+  `risk_minimum`, and `risk_maximum`; `risk_account_values` turns per-scenario values into
+  risk pseudo-accounts; and `SampleAverageApproximation` evaluates a decision set with common
+  random numbers and writes an out-of-sample report. Flow targets and estate-optimizer wiring
+  remain open.
 - **Succession and the yield bridge.** `open`. A later phase adds regeneration, species
   succession, and a calibrated bridge from species biomass to merchantable volume. The bridge
   is the main ecological-calibration risk. Target: a later landscape phase.
