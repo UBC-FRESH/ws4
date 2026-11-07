@@ -25,8 +25,9 @@ optimizer's own target loader, writes it inside the new portfolio output directo
 `targets-scaffold.yaml`, and passes that file to the portfolio script. The live target
 file is untouched.
 
-Using the scaffold also sets the portfolio metrics and directions to the scaffolded
-accounts and raises the portfolio horizon to cover the selected target period.
+Using the scaffold also stages one weight dimension per selected account, sets the
+portfolio metrics and directions, and raises the portfolio horizon to cover the selected
+target period.
 
 ## Verification
 

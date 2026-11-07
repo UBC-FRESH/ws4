@@ -256,6 +256,7 @@ def test_search_builds_a_scan_and_opens_the_explorer(tmp_path: Path) -> None:
             page.click("#scaffold-use")
             assert "feature.Volume" in page.locator("#portfolio-metrics").input_value()
             assert "feature.Old" in page.locator("#portfolio-metrics").input_value()
+            assert "feature.Volume=0.5,1" in page.locator("#portfolio-vary").input_value()
             assert page.locator("#scaffold-preview").is_visible()
             assert "2 target rows" in page.locator("#scaffold-status").inner_text()
             vary = (
