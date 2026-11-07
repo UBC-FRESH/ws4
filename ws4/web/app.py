@@ -9,6 +9,7 @@ holds no model state and computes no value the CLI cannot reproduce. See
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import json
 import math
 import os
@@ -1288,6 +1289,29 @@ def create_app(
                 "--years",
                 str(years),
             ]
+            seed_override = None
+            seed_value = state_settings.get("seed_state")
+            initial_value = state_settings.get("initial_schedule")
+            if seed_value:
+                seed_path = Path(str(seed_value))
+                try:
+                    changed = targets_path.stat().st_mtime_ns > seed_path.stat().st_mtime_ns
+                    if initial_value:
+                        changed = changed or (
+                            Path(str(initial_value)).stat().st_mtime_ns > seed_path.stat().st_mtime_ns
+                        )
+                except OSError:
+                    changed = False
+                if changed:
+                    digest = hashlib.sha256()
+                    digest.update(targets_path.read_bytes())
+                    if initial_value:
+                        digest.update(Path(str(initial_value)).read_bytes())
+                    seed_override = str(
+                        seed_path.with_name(
+                            f"seed-state-runtime-{digest.hexdigest()[:16]}.npz"
+                        )
+                    )
             for key, flag in (
                 ("candidate_index", "--candidate-index"),
                 ("candidate_cache", "--candidate-cache"),
@@ -1295,6 +1319,8 @@ def create_app(
                 ("initial_schedule", "--initial-schedule"),
             ):
                 value = state_settings.get(key)
+                if key == "seed_state" and seed_override is not None:
+                    value = seed_override
                 if value:
                     command.extend([flag, str(value)])
             initial = state_settings.get("initial_schedule") or initial_schedule_path
