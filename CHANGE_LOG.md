@@ -4596,3 +4596,36 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   validator, the ecosystem-package validator, and an SAA out-of-sample report. Wrote
   `notes/reports/p144-closeout.md` and queued pull request #872; the phase is `pr-open` and
   awaits maintainer approval. No merge, tag, release, or settings change was made.
+- P143.3: validated the TSA29 profile fallback to the state engine after the stock
+  target could not be priced by the GPU profile. Portfolio list defaults to the newest
+  usable front; failed artifacts are marked and skipped.
+
+- P145.1: added a multi-account target scaffold to Search and a validated `targets`
+  payload to the portfolio launcher. Scaffold targets are written inside the run output,
+  never to the live target file. Focused tests pass; dashboard: `OVERALL: GREEN`.
+  Report: `notes/reports/p145-multi-account-targets.md`.
+
+- P145: merged via PR #861 as `a33443a`. Search can scaffold multi-account target rows
+  and pass them to a portfolio run without touching live targets. Dashboard:
+  `OVERALL: GREEN`.
+
+- P145.1 fix: using the multi-account scaffold now stages weight dimensions for every
+  scaffolded account as well as metrics and directions.
+
+- P146: fixed the shared browser API helper so portfolio launch and search stop send POST
+  requests. A live five-account TSA27 portfolio completed with 8 members, 1 exact front,
+  0 failures, and opened a member on the map. Report:
+  `notes/reports/p146-live-multi-account-scan.md`.
+
+- P147.1: added a Diverse 6 preset and nested/family warnings to the multi-account
+  scaffold, with target minima fallback for product accounts.
+
+- P147: merged via PR #867 as `efcddd4`. The Diverse 6 preset produced a live TSA27
+  run with 6 target rows, 8 members, 2 exact front points, and 0 failures. The front
+  member opened on the map.
+
+- P148.1: added guarded deletion for portfolio artifacts and promoted runs, plus Search
+  Delete/Clean failed and Plan Delete promoted run controls. Live cleanup follows.
+
+- P148: merged via PR #871 as `103614b`. Added guarded portfolio/promoted-run deletion
+  and Search/Plan cleanup controls; removed the failed live probe.

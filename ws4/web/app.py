@@ -2490,7 +2490,25 @@ def create_app(
             )
         out = new_search_dir("portfolio")
         target_file = targets_path
-        if target_mode == "level_only":
+        target_rows = payload.get("targets")
+        if target_rows is not None:
+            if not isinstance(target_rows, list) or not target_rows:
+                raise HTTPException(status_code=422, detail="targets must be a non-empty list")
+            rows = [dict(row) for row in target_rows if isinstance(row, Mapping)]
+            if len(rows) != len(target_rows):
+                raise HTTPException(status_code=422, detail="each target must be an object")
+            scaffold = out / "targets-scaffold.yaml"
+            try:
+                scaffold.write_text(
+                    yaml.safe_dump({"targets": rows}, sort_keys=False), encoding="utf-8"
+                )
+                load_targets(scaffold)
+            except Exception as error:
+                raise HTTPException(
+                    status_code=422, detail=f"invalid target rows: {error}"
+                ) from error
+            target_file = scaffold
+        elif target_mode == "level_only":
             level_targets = [target for target in load_targets(targets_path) if not target.flow]
             if not level_targets:
                 raise HTTPException(
@@ -2887,6 +2905,48 @@ def create_app(
             "source": source_record,
             "promoted": True,
         }
+
+    @app.delete("/api/search/{name}")
+    def delete_search_artifact(name: str) -> dict[str, Any]:
+        """Delete a portfolio artifact under the runs root.
+
+        Only directories that actually carry ``portfolio.json`` are removable. This is
+        deliberately narrower than a general runs-root delete.
+        """
+        if not allow_runs:
+            raise HTTPException(
+                status_code=403, detail="this service is read-only; use --allow-runs"
+            )
+        directory = search_artifact_dir(name)
+        if not (directory / "portfolio.json").is_file():
+            raise HTTPException(
+                status_code=422, detail=f"search artifact {name!r} is not a portfolio"
+            )
+        try:
+            shutil.rmtree(directory)
+        except OSError as error:
+            raise HTTPException(
+                status_code=500, detail=f"could not delete artifact: {error}"
+            ) from error
+        return {"deleted": name}
+
+    @app.delete("/api/runs/{run}")
+    def delete_promoted_run(run: str) -> dict[str, Any]:
+        """Delete a derived promoted run, never an ordinary run."""
+        if not allow_runs:
+            raise HTTPException(
+                status_code=403, detail="this service is read-only; use --allow-runs"
+            )
+        directory = run_dir(run)
+        if not (directory / "portfolio_source.json").is_file():
+            raise HTTPException(
+                status_code=422, detail="only promoted portfolio runs can be deleted"
+            )
+        try:
+            shutil.rmtree(directory)
+        except OSError as error:
+            raise HTTPException(status_code=500, detail=f"could not delete run: {error}") from error
+        return {"deleted": run}
 
     @app.get("/api/search/{name}/files/{path:path}")
     def search_file(name: str, path: str) -> FileResponse:
