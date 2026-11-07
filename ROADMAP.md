@@ -142,6 +142,8 @@ exists and the maintainer approves it.
 | P142 Default stock90 scenario | #846 | `feature/p142-default-stock90` | complete |
 | P143 Web UI trust and cleanup | #849 | `feature/p143-web-trust` | complete |
 | P145 Multi-account target scaffold | #859 | `feature/p145-multi-account-targets` | complete |
+| P146 Live multi-account scan | #862 | `feature/p146-live-multi-account-scan` | complete |
+| P147 Diverse multi-account scaffold | #865 | `feature/p147-diverse-scaffold` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4292,4 +4294,42 @@ Acceptance:
 - A user can add 5-7 accounts and review target rows.
 - The portfolio launch validates and uses the scaffold file.
 - Live target files remain unchanged.
+- Browser and API tests pass.
+
+## Phase 146: Live multi-account portfolio scan
+
+Parent issue: #862
+Branch: `feature/p146-live-multi-account-scan`
+Status: complete
+Merge commit: `65c5daf`
+Report: `notes/reports/p146-live-multi-account-scan.md`
+PR: #864
+
+Goal: validate the multi-account scaffold through a real TSA27 browser run.
+
+- [x] P146.1 Honor API request options for portfolio launch (#863)
+
+Acceptance:
+
+- The run uses `targets-scaffold.yaml`, not the live target file.
+- Members complete without failures.
+- The Pareto workspace shows the multi-account front.
+- A front member opens on the map.
+
+## Phase 147: Diverse multi-account scaffold
+
+Parent issue: #865
+Branch: `feature/p147-diverse-scaffold`
+Status: active
+Report: `notes/reports/p147-diverse-scaffold.md`
+
+Goal: select diverse account families and produce a meaningful multi-account front.
+
+- [x] P147.1 Diverse account preset and warnings (#866)
+
+Acceptance:
+
+- The diverse preset selects non-nested accounts when available.
+- Nested selections show a warning.
+- The live TSA27 run produces a multi-point front.
 - Browser and API tests pass.

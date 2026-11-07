@@ -1971,6 +1971,75 @@ function scaffoldCurrentValue(account) {
   return Number(series.get(last) || 0);
 }
 
+function scaffoldMinimum(account, period) {
+  const seriesValue = scaffoldCurrentValue(account);
+  if (seriesValue) return seriesValue;
+  const candidates = (state.targets || []).filter((row) => String(row.account) === account);
+  const exact = candidates.find((row) => Number(row.period) === Number(period));
+  const row = exact || candidates[0];
+  return row && row.minimum !== null && row.minimum !== undefined ? Number(row.minimum) : 0;
+}
+
+function scaffoldFamily(account) {
+  return String(account).split('.').slice(0, 3).join('.');
+}
+
+function scaffoldWarnings() {
+  const rows = state.portfolioTargets || [];
+  const warnings = [];
+  for (let i = 0; i < rows.length; i += 1) {
+    for (let j = i + 1; j < rows.length; j += 1) {
+      const left = String(rows[i].account);
+      const right = String(rows[j].account);
+      if (left.startsWith(`${right}.`) || right.startsWith(`${left}.`)) {
+        warnings.push(`nested accounts: ${left} / ${right}`);
+      }
+    }
+  }
+  const families = new Map();
+  for (const row of rows) {
+    const family = scaffoldFamily(row.account);
+    families.set(family, (families.get(family) || 0) + 1);
+  }
+  for (const [family, count] of families) {
+    if (count > 2) warnings.push(`${count} accounts share ${family}`);
+  }
+  return [...new Set(warnings)];
+}
+
+function applyDiverseScaffold() {
+  const available = new Set(scaffoldAccounts());
+  const preferred = [
+    'feature.Area.managed',
+    'feature.Area.og1.total',
+    'feature.Area.og2.total',
+    'feature.Yield.managed.Total',
+    'feature.SpeciesProp.managed.CW',
+    'product.HarvestedVolume.managed.Total.CC',
+  ];
+  const selected = preferred.filter((account) => available.has(account));
+  for (const account of [...available].sort()) {
+    if (selected.length >= 6) break;
+    if (selected.includes(account)) continue;
+    if (selected.some((item) => item.startsWith(`${account}.`) || account.startsWith(`${item}.`))) continue;
+    if (selected.filter((item) => scaffoldFamily(item) === scaffoldFamily(account)).length >= 2) continue;
+    selected.push(account);
+  }
+  const period = Number($('scaffold-period').value) || 20;
+  const weight = Math.max(0.0001, Number($('scaffold-weight').value) || 1);
+  state.portfolioTargets = selected.slice(0, 6).map((account) => ({
+    account,
+    period,
+    minimum: scaffoldMinimum(account, period),
+    maximum: null,
+    min_weight: weight,
+    max_weight: weight,
+    period_width: scaffoldPeriodWidth(),
+    active: true,
+  }));
+  renderScaffoldTargets();
+}
+
 function scaffoldPeriodWidth() {
   const row = (state.targets || []).find((target) => Number(target.period_width) > 0);
   return row ? Number(row.period_width) : 10;
@@ -1990,7 +2059,7 @@ function addScaffoldTarget() {
   const row = {
     account,
     period,
-    minimum: existing ? existing.minimum : scaffoldCurrentValue(account),
+    minimum: existing ? existing.minimum : scaffoldMinimum(account, period),
     maximum: existing ? existing.maximum : null,
     min_weight: weight,
     max_weight: weight,
@@ -2033,8 +2102,9 @@ function renderScaffoldTargets() {
   preview.textContent = state.portfolioTargets.length
     ? JSON.stringify({ targets: state.portfolioTargets }, null, 2)
     : '';
+  const warnings = scaffoldWarnings();
   $('scaffold-status').textContent = state.portfolioTargets.length
-    ? `${state.portfolioTargets.length} target rows · live targets unchanged`
+    ? `${state.portfolioTargets.length} target rows · live targets unchanged${warnings.length ? ` · warning: ${warnings.join('; ')}` : ''}`
     : 'Add 5-7 accounts for a multi-account front.';
 }
 
@@ -2069,6 +2139,7 @@ function useScaffoldTargets() {
 function wireScaffoldTargets() {
   if (!$('scaffold-add')) return;
   $('scaffold-add').addEventListener('click', addScaffoldTarget);
+  $('scaffold-diverse').addEventListener('click', applyDiverseScaffold);
   $('scaffold-use').addEventListener('click', useScaffoldTargets);
   $('scaffold-clear').addEventListener('click', () => {
     state.portfolioTargets = [];
