@@ -27,13 +27,21 @@ Task issue: #850
 - Live TSA27 CPU state search completed after the cache-key change instead of raising
   `seed-state cache does not match the resident page shape`.
 
+## P143.2
+
+- Added `/api/runs/{run}/target-definitions`.
+- Plan shows a read-only member-target table for promoted runs.
+- Profile libraries are cached and rewritten only for profiles whose target is the
+  instance base target; alternative TSA24 baseline/nostock profiles remain distinct.
+- A GPU profile that does not declare every active target account falls back to the
+  state engine with a visible reason instead of hanging in lazy effect-table extension.
+
 Remaining:
 
-- Promoted Plan should show member target definitions read-only.
-- Profile loading should not silently replace the generated stock90 default.
-- TSA29 GPU validation with the stock guard.
+- TSA29 state fallback validation with the stock guard.
 
 ## Verification
 
 - Focused API/browser tests pass.
+- `python scripts/dashboard.py`: `OVERALL: GREEN. Every gate passed.`
 - Dashboard: `OVERALL: GREEN. Every gate passed.`
