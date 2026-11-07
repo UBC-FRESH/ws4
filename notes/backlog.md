@@ -384,9 +384,12 @@ items are enhancements and maintenance.
   counter-based `RandomTape` with common random numbers, a replay digest and validator, and
   `ws4 ecosystem validate-log`. Referential integrity against a dataset is still open; it
   belongs to the process and scenario tasks.
-- **Ecosystem package and cohort state.** `open`. P144.3 adds the optional `ws4.ecosystem.v1`
-  sidecar, the state-variable schema, cohort area fractions, and the null yield bridge. The
-  compiled management dataset remains authoritative. Target: P144.3.
+- **Ecosystem package and cohort state.** `done` (P144.3, #855). The optional
+  `ws4.ecosystem.v1` sidecar now declares typed state variables, cohort area fractions, and
+  the explicit null yield bridge; `CohortState` aggregates cohorts to fragments, reports
+  missing fragments, and checks area conservation. The compiled management dataset remains
+  authoritative, and a dataset without a package is unchanged. A calibrated yield bridge and
+  a columnar cohort table remain open.
 - **Fire vertical slice.** `open`. P144.4 adds Poisson ignition, graph percolation spread,
   severity, cohort mortality, salvage, and disturbance accounts, with analytic oracles and a
   synthetic landscape. Calibration is out of scope. Target: P144.4.

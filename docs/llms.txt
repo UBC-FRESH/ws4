@@ -59,4 +59,5 @@
 - [Forest condition report card](reference/forest-condition.html): the report-only indicator, provenance, advisory-alert, and review-status contract.
 - [Scenario storyboard](reference/storyboard.html): a one-page run narrative that reuses the condition card.
 - [Event log and random tape](reference/event-log.html): the unified event record, deterministic ordering, counter-based random tape, and replay contract.
+- [Ecosystem package and cohort state](reference/ecosystem-package.html): the optional state schema, cohort fractions, null bridge, aggregation, and dataset join.
 - [API reference](api/index.html): the repository tooling's public functions, with their parameters, types, and return values. The package API is rendered on the reference pages above.

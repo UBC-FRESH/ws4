@@ -62,6 +62,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    * - :doc:`event-log`
      - The unified event record, deterministic ordering, counter-based random tape, and
        replay contract.
+   * - :doc:`ecosystem-package`
+     - The optional state schema, cohort fractions, null bridge, and dataset join.
    * - :doc:`femic-hydrology`
      - Pinned FEMIC hydrology response bundles, checksums, flood-risk rows, and
        applicability metadata.
@@ -92,4 +94,5 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    femic-lidar
    disturbance
    event-log
+   ecosystem-package
    femic-hydrology

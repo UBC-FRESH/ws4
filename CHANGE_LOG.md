@@ -4552,3 +4552,16 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   with 98% branch coverage of the new package, plus `docs/reference/event-log.rst`.
   `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard:
   **GREEN** (lint, format, types, tests, validator, docs, docstrings).
+
+- P144.3: added the optional `ws4.ecosystem.v1` package and cohort state. The package
+  declares typed state variables, cohort area fractions, and an explicit null bridge. The
+  loader validates the closed manifest, table hashes, required columns, state dtype/scope
+  and defaults, cohort fractions and attributes, and bridge declarations. `CohortState`
+  joins the package to a dataset's fragment areas, aggregates area-weighted age, biomass,
+  fuel, and snags, reports species fractions and missing fragments, and checks area
+  conservation. `find_ecosystem_package` and `load_dataset_ecosystem` return None when a
+  dataset has no package, so the deterministic model is unchanged. Added
+  `ws4 ecosystem validate-package --package PATH [--json]` and
+  `docs/reference/ecosystem-package.rst`. The ecosystem suite now has 165 tests.
+  `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard:
+  **GREEN** (lint, format, types, tests, validator, docs, docstrings).

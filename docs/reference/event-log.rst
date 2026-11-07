@@ -187,4 +187,5 @@ Cross-references
 - :doc:`compiled-dataset`
 - :doc:`simulator`
 - :doc:`disturbance`
+- :doc:`ecosystem-package`
 - :doc:`carbon`
