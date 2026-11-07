@@ -31,6 +31,15 @@ Printed labels vs stored curve counts:
 The apparent missing/extra top-height/QMD curves were a label-extraction artifact.
 The stored curves are present and align with the source in the corrected overlays.
 
+### fdcp top-height pass
+
+`fdcp` is the first line-type-wise re-import. `read_labelled_curves` matched
+each printed top-height label to a distinct source path and refused ambiguous or
+unordered assignments. The ten mappings are `6→500`, `8→501`, `12→503`,
+`16→505`, `20→507`, `24→508`, `28→509`, `36→511`, `44→513`, `52→515`.
+Unlabelled intermediate paths are excluded. A vision-model inspection of the
+rendered overlay returned `TOP_HEIGHT_OVERALL: PASS` for all ten.
+
 ## TASS predicted mortality curves
 
 The source TASS curves are plotted but **not labelled with mortality levels**.

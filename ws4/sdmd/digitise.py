@@ -10,11 +10,14 @@ them in a :class:`DiagramSpec`; the module does not guess which curve is which.
 
 from __future__ import annotations
 
+import itertools
 import json
 import math
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
 
 from .diagram import load_diagram
 
@@ -22,11 +25,17 @@ __all__ = [
     "AxisCalibration",
     "CurveSpec",
     "DiagramSpec",
+    "LabelMatch",
+    "LabelledCurve",
+    "PathCandidate",
+    "PrintedLabel",
     "calibrate_axes",
     "curve_points",
     "load_spec",
+    "match_printed_labels",
     "ordered_curve",
     "read_curve",
+    "read_labelled_curves",
     "write_diagram",
 ]
 
@@ -157,6 +166,82 @@ class AxisCalibration:
 
 
 @dataclass(frozen=True)
+class PrintedLabel:
+    """A printed isopleth value and its page position.
+
+    Attributes
+    ----------
+    value : float
+        The printed numeric value.
+    x : float
+        The label centre's PDF x coordinate.
+    y : float
+        The label centre's PDF y coordinate.
+    """
+
+    value: float
+    x: float
+    y: float
+
+
+@dataclass(frozen=True)
+class PathCandidate:
+    """One PDF path that may belong to a labelled curve family.
+
+    Attributes
+    ----------
+    path_index : int
+        Index in ``page.get_drawings()``.
+    points : tuple of tuple of float
+        The path vertices in PDF coordinates.
+    """
+
+    path_index: int
+    points: tuple[tuple[float, float], ...]
+
+
+@dataclass(frozen=True)
+class LabelMatch:
+    """One printed label assigned to one PDF path.
+
+    Attributes
+    ----------
+    value : float
+        The printed value.
+    path_index : int
+        The matched drawing index.
+    distance : float
+        Distance in PDF points between the label centre and the path.
+    """
+
+    value: float
+    path_index: int
+    distance: float
+
+
+@dataclass(frozen=True)
+class LabelledCurve:
+    """A labelled curve read from a PDF path.
+
+    Attributes
+    ----------
+    value : float
+        The printed isopleth value.
+    path_index : int
+        Index in ``page.get_drawings()``.
+    points : tuple of tuple of float
+        Ordered ``(tph, mean_tree_volume_m3)`` points.
+    label_distance : float
+        Distance in PDF points between the printed label and the path.
+    """
+
+    value: float
+    path_index: int
+    points: tuple[tuple[float, float], ...]
+    label_distance: float
+
+
+@dataclass(frozen=True)
 class CurveSpec:
     """One curve to extract from a PDF.
 
@@ -266,6 +351,126 @@ def calibrate_axes(
     x_slope, x_intercept = _fit_axis(x_ticks, "x")
     y_slope, y_intercept = _fit_axis(y_ticks, "y")
     return AxisCalibration(x_slope, x_intercept, y_slope, y_intercept)
+
+
+def match_printed_labels(
+    labels: Sequence[PrintedLabel],
+    paths: Sequence[PathCandidate],
+    *,
+    max_distance: float = 15.0,
+    min_margin: float = 0.5,
+    higher_value_is_upper: bool = True,
+) -> tuple[LabelMatch, ...]:
+    """Match printed curve labels to the nearest distinct PDF paths.
+
+    The match is deterministic and refuses an ambiguous assignment. Every label
+    must be close to one path, no two labels may claim the same path, and the
+    assigned paths must remain vertically ordered by value.
+
+    Parameters
+    ----------
+    labels : sequence of PrintedLabel
+        The printed labels.
+    paths : sequence of PathCandidate
+        The candidate paths.
+    max_distance : float, optional
+        Maximum label-to-path distance in PDF points. Defaults to 15.
+    min_margin : float, optional
+        Minimum distance advantage of the nearest path over the runner-up.
+        Defaults to 0.5 PDF points.
+    higher_value_is_upper : bool, optional
+        Whether a larger label value belongs to a higher curve (smaller PDF y).
+        Defaults to True, which is correct for top-height and QMD.
+
+    Returns
+    -------
+    tuple of LabelMatch
+        One match per label.
+
+    Raises
+    ------
+    ValueError
+        If a label is too far from every path, two labels compete for the same
+        path, or the assignments violate vertical order.
+    """
+    if not labels:
+        raise ValueError("no printed labels were found")
+    if not paths:
+        raise ValueError("no candidate paths were found")
+    used: dict[int, float] = {}
+    matches: list[LabelMatch] = []
+    for label in labels:
+        ranked = sorted(
+            ((_label_path_distance(label, path), path.path_index) for path in paths),
+            key=lambda item: (item[0], item[1]),
+        )
+        distance, path_index = ranked[0]
+        if distance > max_distance:
+            raise ValueError(
+                f"label {label.value:g} is {distance:.1f} points from the nearest path"
+            )
+        if len(ranked) > 1 and ranked[1][0] - distance < min_margin:
+            raise ValueError(
+                f"label {label.value:g} is ambiguous between paths {path_index} and {ranked[1][1]}"
+            )
+        if path_index in used:
+            raise ValueError(
+                f"labels {used[path_index]:g} and {label.value:g} both claim path {path_index}"
+            )
+        used[path_index] = label.value
+        matches.append(LabelMatch(label.value, path_index, distance))
+
+    ordered = sorted(matches, key=lambda item: item.value)
+    by_index = {path.path_index: path for path in paths}
+    reference_x = max(path.points[0][0] for path in paths) + 1.0
+    previous_y: float | None = None
+    for match in ordered:
+        y = _path_y_at_x(by_index[match.path_index], reference_x)
+        if previous_y is not None:
+            ordered_correctly = y < previous_y if higher_value_is_upper else y > previous_y
+            if not ordered_correctly:
+                raise ValueError(
+                    f"label {match.value:g} is not vertically ordered against the lower value"
+                )
+        previous_y = y
+    return tuple(matches)
+
+
+def _label_path_distance(label: PrintedLabel, path: PathCandidate) -> float:
+    """Return the shortest distance from a label centre to a polyline."""
+    point = (label.x, label.y)
+    return min(
+        _point_segment_distance(point, start, end) for start, end in itertools.pairwise(path.points)
+    )
+
+
+def _point_segment_distance(
+    point: tuple[float, float],
+    start: tuple[float, float],
+    end: tuple[float, float],
+) -> float:
+    """Return the distance from a point to a line segment."""
+    px, py = point
+    ax, ay = start
+    bx, by = end
+    dx, dy = bx - ax, by - ay
+    if dx == 0 and dy == 0:
+        return math.hypot(px - ax, py - ay)
+    fraction = ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)
+    fraction = max(0.0, min(1.0, fraction))
+    return math.hypot(px - (ax + fraction * dx), py - (ay + fraction * dy))
+
+
+def _path_y_at_x(path: PathCandidate, x: float) -> float:
+    """Interpolate a path's PDF y coordinate at a PDF x coordinate."""
+    ordered = sorted(path.points)
+    for start, end in itertools.pairwise(ordered):
+        if start[0] <= x <= end[0]:
+            if end[0] == start[0]:
+                return (start[1] + end[1]) / 2.0
+            fraction = (x - start[0]) / (end[0] - start[0])
+            return start[1] + fraction * (end[1] - start[1])
+    raise ValueError(f"path {path.path_index} does not span x={x:.1f}")
 
 
 def curve_points(
@@ -387,6 +592,178 @@ def read_curve(
         if drawing.get("dashes") != dash or float(drawing.get("width", 0.0)) != width:
             raise ValueError(f"path {path_index} does not match dash {dash!r} width {width}")
         return curve_points(drawing["items"], calibration)
+
+
+def read_labelled_curves(
+    pdf_path: str | Path,
+    *,
+    dash: str,
+    width: float,
+    unit: str,
+    calibration: AxisCalibration,
+    page_number: int = 0,
+    max_distance: float = 15.0,
+    min_margin: float = 0.5,
+    min_path_width: float = 20.0,
+) -> tuple[LabelledCurve, ...]:
+    """Read one labelled curve family by matching printed labels to PDF paths.
+
+    This is the deterministic part of the line-type import. It does not choose
+    labels or path indices by hand: it finds the paths with the requested dash
+    pattern and width, reads the printed labels with the requested unit, and
+    requires a unique, close, vertically ordered match for every label.
+
+    Parameters
+    ----------
+    pdf_path : str or Path
+        The source PDF.
+    dash : str
+        The required PDF dash pattern, for example ``"[ 3 2 ] 0"``.
+    width : float
+        The required stroke width.
+    unit : str
+        The printed unit, ``"m"`` or ``"cm"``.
+    calibration : AxisCalibration
+        The axis calibration.
+    page_number : int, optional
+        Zero-based page number. Defaults to the first page.
+    max_distance : float, optional
+        Maximum label-to-path distance in PDF points. Defaults to 15.
+    min_margin : float, optional
+        Minimum distance advantage over the runner-up path. Defaults to 0.5.
+    min_path_width : float, optional
+        Minimum path bounding-box width in PDF points. Defaults to 20.
+
+    Returns
+    -------
+    tuple of LabelledCurve
+        One curve per printed label, ordered by value.
+
+    Raises
+    ------
+    ValueError
+        If no candidate paths or labels exist, or if the label-to-path match is
+        ambiguous, too distant, duplicated, or vertically unordered.
+    """
+    import pymupdf
+
+    with pymupdf.open(pdf_path) as document:  # type: ignore[no-untyped-call, unused-ignore]  # PyMuPDF has no stubs
+        page = document[page_number]
+        drawings = page.get_drawings()
+        paths: list[PathCandidate] = []
+        for index, drawing in enumerate(drawings):
+            if drawing.get("dashes") != dash:
+                continue
+            if abs(float(drawing.get("width") or 0.0) - width) > 1e-3:
+                continue
+            rect = drawing["rect"]
+            if rect.width < min_path_width or rect.height <= 3.0:
+                continue
+            points = _pdf_path_points(drawing["items"])
+            if len(points) >= 2:
+                paths.append(PathCandidate(index, tuple(points)))
+        labels = _printed_labels(page, unit)
+        matches = match_printed_labels(
+            labels,
+            paths,
+            max_distance=max_distance,
+            min_margin=min_margin,
+        )
+        return tuple(
+            LabelledCurve(
+                value=match.value,
+                path_index=match.path_index,
+                points=curve_points(drawings[match.path_index]["items"], calibration),
+                label_distance=match.distance,
+            )
+            for match in sorted(matches, key=lambda item: item.value)
+        )
+
+
+def _printed_labels(page: object, unit: str) -> tuple[PrintedLabel, ...]:
+    """Read printed ``value unit`` labels from one PDF page.
+
+    Parameters
+    ----------
+    page : object
+        A PyMuPDF page. PyMuPDF has no type stubs, so the page is treated as an
+        opaque object and its text dictionary is validated below.
+    unit : str
+        The required unit.
+
+    Returns
+    -------
+    tuple of PrintedLabel
+        The labels in page order.
+    """
+    pattern = re.compile(rf"^(\d+(?:\.\d+)?)\s*{re.escape(unit)}$")
+    get_text = getattr(page, "get_text", None)
+    if not callable(get_text):
+        return ()
+    payload = cast(dict[str, object], get_text("dict"))  # PyMuPDF has no type stubs.
+    blocks = payload.get("blocks", [])
+    if not isinstance(blocks, list):
+        return ()
+    labels: list[PrintedLabel] = []
+    for block in blocks:
+        if not isinstance(block, dict):
+            continue
+        lines = block.get("lines", [])
+        if not isinstance(lines, list):
+            continue
+        for line in lines:
+            if not isinstance(line, dict):
+                continue
+            spans = line.get("spans", [])
+            if not isinstance(spans, list):
+                continue
+            text = " ".join(str(span.get("text", "")) for span in spans if isinstance(span, dict))
+            text = " ".join(text.split())
+            match = pattern.fullmatch(text)
+            if match is None:
+                continue
+            bbox = line.get("bbox")
+            if not isinstance(bbox, list | tuple) or len(bbox) != 4:
+                continue
+            try:
+                x0, y0, x1, y1 = (float(value) for value in bbox)
+            except (TypeError, ValueError):
+                continue
+            labels.append(PrintedLabel(float(match.group(1)), (x0 + x1) / 2.0, (y0 + y1) / 2.0))
+    return tuple(labels)
+
+
+def _pdf_path_points(items: Sequence[Sequence[object]]) -> list[tuple[float, float]]:
+    """Return a path's PDF vertices in drawing order.
+
+    Parameters
+    ----------
+    items : sequence of sequence of object
+        The ``items`` list from one drawing.
+
+    Returns
+    -------
+    list of tuple of float
+        The vertices, with consecutive duplicates removed.
+
+    Raises
+    ------
+    ValueError
+        If an item's point is not a PDF point.
+    """
+    points: list[tuple[float, float]] = []
+    for item in items:
+        if not item:
+            continue
+        for value in item[1:]:
+            x = getattr(value, "x", None)
+            y = getattr(value, "y", None)
+            if not isinstance(x, int | float) or not isinstance(y, int | float):
+                continue
+            point = (float(x), float(y))
+            if not points or points[-1] != point:
+                points.append(point)
+    return points
 
 
 def write_diagram(spec: DiagramSpec, out_path: str | Path) -> None:

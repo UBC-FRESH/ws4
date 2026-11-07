@@ -46,6 +46,11 @@ The first overlay pass had a coordinate-calibration bug. After correction and
 cleanup, top/QMD counts match, crown closure is a straight fitted line, and TASS
 pseudo-curves are removed. The grey CAI band is now stored and displayed.
 
+`fdcp` is the first line-type-wise re-import. Top-height labels are matched to
+paths by `read_labelled_curves`; the ten mappings are recorded in
+`notes/reference/fdcp-digitisation.md`. A vision-model check of the rendered
+overlay returned `TOP_HEIGHT_OVERALL: PASS`.
+
 Evidence: `notes/review/p137-overlay-findings.md` and
 `notes/review/p137-overlays/`.
 

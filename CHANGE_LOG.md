@@ -4545,3 +4545,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   reports the registry's reviewed/mixed/gap counts, and the coverage status filter
   accepts the registry's status names. No diagram is marked reviewed. Dashboard:
   `OVERALL: GREEN`.
+- P137.1: started the line-type-wise re-import with `fdcp` top height. Added
+  `read_labelled_curves`, which matches printed labels to distinct source paths and
+  refuses ambiguous, distant, duplicate, or unordered matches. The ten top-height
+  paths are recorded in `notes/reference/fdcp-digitisation.md`; the stored curves
+  were regenerated from those paths. Vision QA returned `TOP_HEIGHT_OVERALL: PASS`.
