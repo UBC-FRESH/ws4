@@ -4532,3 +4532,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P143.1/P143.2: merged via PR #851 as `2e51922`. Added newest-first artifact metadata,
   target-aware state-cache keys, promoted-run target definitions, alternative profile
   preservation, and unsupported-GPU-profile fallback. Dashboard: `OVERALL: GREEN`.
+
+- P143.3: validated the TSA29 profile fallback to the state engine after the stock
+  target could not be priced by the GPU profile. Portfolio list defaults to the newest
+  usable front; failed artifacts are marked and skipped.
