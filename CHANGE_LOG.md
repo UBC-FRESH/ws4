@@ -4556,3 +4556,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 
 - P147.1: added a Diverse 6 preset and nested/family warnings to the multi-account
   scaffold, with target minima fallback for product accounts.
+
+- P147: merged via PR #867 as `efcddd4`. The Diverse 6 preset produced a live TSA27
+  run with 6 target rows, 8 members, 2 exact front points, and 0 failures. The front
+  member opened on the map.

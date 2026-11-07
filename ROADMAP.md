@@ -143,7 +143,7 @@ exists and the maintainer approves it.
 | P143 Web UI trust and cleanup | #849 | `feature/p143-web-trust` | complete |
 | P145 Multi-account target scaffold | #859 | `feature/p145-multi-account-targets` | complete |
 | P146 Live multi-account scan | #862 | `feature/p146-live-multi-account-scan` | complete |
-| P147 Diverse multi-account scaffold | #865 | `feature/p147-diverse-scaffold` | active |
+| P147 Diverse multi-account scaffold | #865 | `feature/p147-diverse-scaffold` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4320,8 +4320,10 @@ Acceptance:
 
 Parent issue: #865
 Branch: `feature/p147-diverse-scaffold`
-Status: active
+Status: complete
+Merge commit: `efcddd4`
 Report: `notes/reports/p147-diverse-scaffold.md`
+PR: #867
 
 Goal: select diverse account families and produce a meaningful multi-account front.
 
