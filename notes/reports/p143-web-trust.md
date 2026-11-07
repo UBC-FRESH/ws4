@@ -1,7 +1,8 @@
 # P143 web UI trust and cleanup
 
 Date: 2026-11-07
-Status: pr-open
+Status: active
+Merge commit: `2e51922`
 PR: #851
 Branch: `feature/p143-web-trust`
 Parent issue: #849

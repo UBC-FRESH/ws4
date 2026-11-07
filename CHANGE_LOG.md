@@ -4528,3 +4528,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P143.2: added read-only promoted-run target definitions, preserved alternative
   scenario profiles by rewriting only base-target profiles, and added a state-engine
   fallback when a GPU profile does not declare every active target account.
+
+- P143.1/P143.2: merged via PR #851 as `2e51922`. Added newest-first artifact metadata,
+  target-aware state-cache keys, promoted-run target definitions, alternative profile
+  preservation, and unsupported-GPU-profile fallback. Dashboard: `OVERALL: GREEN`.
