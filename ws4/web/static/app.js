@@ -26,8 +26,11 @@ function showToast(message, error = false) {
   toastTimer = window.setTimeout(() => { toast.hidden = true; }, 2200);
 }
 
-async function api(path) {
-  const response = await fetch(path, { headers: { accept: 'application/json' } });
+async function api(path, options = {}) {
+  const response = await fetch(path, {
+    ...options,
+    headers: { accept: 'application/json', ...(options.headers || {}) },
+  });
   if (!response.ok) {
     let detail = response.statusText;
     try { detail = (await response.json()).detail ?? detail; } catch { /* not json */ }
