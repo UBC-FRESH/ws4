@@ -1383,6 +1383,19 @@ def create_app(
             command.extend(["--max-seconds", str(maximum_seconds)])
         return command
 
+    def _profile_supports_targets(profile_name: str, target_file: Path | None) -> bool:
+        """Return whether a GPU profile declares every active target account."""
+        if scenario_profiles is None or target_file is None:
+            return False
+        from ..opt.scenario_profiles import ProfileError, get_profile, load_profiles
+
+        try:
+            profile = get_profile(load_profiles(scenario_profiles), profile_name)
+        except ProfileError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        accounts = {target.account for target in load_targets(target_file) if target.active}
+        return bool(accounts) and accounts <= set(profile.accounts)
+
     @app.post("/api/runs")
     def start_run(body: dict[str, Any] | None = None) -> dict[str, Any]:
         """Start a search with the configured dataset and targets, when ``allow_runs`` is set."""
@@ -1392,12 +1405,21 @@ def create_app(
                 detail="this service is read-only; start it with --allow-runs to run a search",
             )
         payload = body or {}
-        profile_name = str(payload.get("profile", "") or "")
+        requested_profile = str(payload.get("profile", "") or "")
+        effective_profile = requested_profile
+        fallback_reason = ""
+        if effective_profile and not _profile_supports_targets(effective_profile, targets_path):
+            fallback_reason = (
+                "the selected GPU profile does not price every active target; "
+                "using the state engine"
+            )
+            effective_profile = ""
+        profile_name = effective_profile
         requested = int(payload.get("iterations", 0) or 0)
         continuous = bool(payload.get("continuous", requested <= 0))
         iterations = 1_000_000_000 if continuous else requested
         seed = int(payload.get("seed", 1))
-        years = int(payload.get("years", 200 if profile_name else 50))
+        years = int(payload.get("years", 200 if requested_profile else 50))
         requested_islands = payload.get("islands", 1)
         islands = 1 if requested_islands is None else int(requested_islands)
         time_limit = str(payload.get("time_limit", "") or "")
@@ -1446,6 +1468,8 @@ def create_app(
             "id": run_id,
             "kind": "gpu-profile" if profile_name else "search",
             "profile": profile_name or None,
+            "requested_profile": requested_profile or None,
+            "fallback_reason": fallback_reason or None,
             "iterations": iterations,
             "generations": generations if profile_name else None,
             "continuous": continuous,
@@ -2629,10 +2653,33 @@ def create_app(
                 ("lp.json", "lp"),
             ):
                 path = directory / filename
-                if path.is_file():
-                    artifacts.append({"id": directory.name, "kind": kind})
-                    known.add(directory.name)
-                    break
+                if not path.is_file():
+                    continue
+                record: dict[str, Any] = {
+                    "id": directory.name,
+                    "kind": kind,
+                    "saved_utc": datetime.fromtimestamp(path.stat().st_mtime)
+                    .astimezone()
+                    .isoformat(),
+                }
+                if kind == "portfolio":
+                    try:
+                        payload = _json_safe(json.loads(path.read_text(encoding="utf-8")))
+                        if isinstance(payload, Mapping):
+                            front = payload.get("outcome_front", payload.get("front", []))
+                            record.update(
+                                {
+                                    "members": len(payload.get("members", [])),
+                                    "front_size": len(front) if isinstance(front, list) else 0,
+                                    "failures": int(payload.get("failures", 0) or 0),
+                                }
+                            )
+                    except (OSError, ValueError):
+                        record["failures"] = -1
+                    record["usable"] = int(record.get("front_size", 0)) > 0
+                artifacts.append(record)
+                known.add(directory.name)
+                break
         for name, job in search_jobs.items():
             if name not in known:
                 artifacts.append(
@@ -2640,8 +2687,11 @@ def create_app(
                         "id": name,
                         "kind": job["kind"],
                         "status": "running" if job["process"].poll() is None else "stopped",
+                        "saved_utc": datetime.now().astimezone().isoformat(),
+                        "usable": False,
                     }
                 )
+        artifacts.sort(key=lambda item: str(item.get("saved_utc", "")), reverse=True)
         return artifacts
 
     @app.get("/api/search/{name}")
@@ -3684,14 +3734,14 @@ def create_app(
             )
         return rows
 
-    def _target_rows() -> list[dict[str, Any]]:
-        """Return the targets as rows the browser can edit, keeping any notes."""
-        if targets_path is None or not targets_path.is_file():
+    def _target_rows_for(target_file: Path | None) -> list[dict[str, Any]]:
+        """Return target rows for a specific YAML file, keeping any notes."""
+        if target_file is None or not target_file.is_file():
             return []
-        raw = yaml.safe_load(targets_path.read_text(encoding="utf-8")) or {}
+        raw = yaml.safe_load(target_file.read_text(encoding="utf-8")) or {}
         entries = raw.get("targets", []) if isinstance(raw, dict) else []
         rows: list[dict[str, Any]] = []
-        for target_index, target in enumerate(load_targets(targets_path)):
+        for target_index, target in enumerate(load_targets(target_file)):
             row: dict[str, Any] = {
                 "index": target_index,
                 "account": target.account,
@@ -3714,6 +3764,10 @@ def create_app(
                     row["notes"] = notes
             rows.append(row)
         return rows
+
+    def _target_rows() -> list[dict[str, Any]]:
+        """Return the live targets as rows the browser can edit."""
+        return _target_rows_for(targets_path)
 
     def _write_targets(document: str) -> int:
         """Validate a targets document with the optimizer's loader, then replace the file."""
@@ -3817,6 +3871,12 @@ def create_app(
     def run_targets(run: str) -> list[dict[str, Any]]:
         """Return the run's realized value for each target, over the target's own period."""
         return _realized_rows(run_dir(run))
+
+    @app.get("/api/runs/{run}/target-definitions")
+    def run_target_definitions(run: str) -> list[dict[str, Any]]:
+        """Return the target definitions a run was evaluated against."""
+        directory = run_dir(run)
+        return _target_rows_for(target_file_for_run(directory))
 
     @app.get("/api/runs/{run}/target-series")
     def run_target_series(run: str) -> dict[str, Any]:

@@ -197,6 +197,11 @@ def test_pareto_workspace_renders_and_filters(tmp_path: Path) -> None:
                 timeout=15000,
             )
             assert "portfolio member" in page.locator("#portfolio-target-note").inner_text()
+            page.wait_for_function(
+                "!document.querySelector('#portfolio-member-targets').hidden",
+                timeout=15000,
+            )
+            assert page.locator("#portfolio-member-targets-body tbody tr").count() > 0
             page.set_viewport_size({"width": 1024, "height": 768})
             assert page.locator("#tab-targets").is_visible()
             assert errors == []
