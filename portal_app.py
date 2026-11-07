@@ -429,8 +429,12 @@ def _build_mount(instance: Instance, mount_path: str) -> None:
             library = yaml.safe_load(profile_source.read_text(encoding="utf-8")) or {}
             base_dir = (profile_source.parent / str(library.get("base_dir", "."))).resolve()
             library["base_dir"] = str(base_dir)
+            base_target = (root / str(spec["targets"])).resolve()
             for profile in library.get("profiles", []):
-                if isinstance(profile, dict):
+                if not isinstance(profile, dict):
+                    continue
+                raw_target = profile.get("targets")
+                if isinstance(raw_target, str) and (base_dir / raw_target).resolve() == base_target:
                     profile["targets"] = str(targets)
             cached_profiles = cache / "profiles-default.yaml"
             cached_profiles.write_text(
