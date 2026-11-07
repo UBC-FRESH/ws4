@@ -3,12 +3,12 @@
 Source: `fdcp` coastal Douglas-fir planted stands, version unversioned,
 catalogued in `ws4/sdmd/data/sdmd/source_catalog.json`.
 
-Stored as `cdf-cwh-fdc-planted.json`, **provisional**.
+Stored as `cdf-cwh-fdc-planted.json`, **reviewed**.
 
 ## Curve map
 
-- Top height: 6, 8, 12, 16, 20, 24, 28, 36, 44, 52 m.
-- QMD: 5, 10, 15, 20, 25, 30, 40, 50, 60, 70 cm.
+- Top height: 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 52, 60 m.
+- QMD: 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70 cm.
 - Competition: path 532.
 - Self-thinning: path 531.
 - Crown closure: still the old provisional trace; source path 533 is available for

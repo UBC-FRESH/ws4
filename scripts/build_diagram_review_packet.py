@@ -234,7 +234,7 @@ def build_packet(*, download: bool = True) -> Path:
     lines = [
         "# P137 provisional SDMD diagram review packet",
         "",
-        "Status: all 10 diagrams remain **provisional**. This packet prepares the",
+        f"Status: all {len(rows)} diagrams remain **provisional**. This packet prepares the",
         "maintainer's review; it does not approve any diagram.",
         "",
         "The source page and stored-curve plot are side-by-side evidence. They are not",

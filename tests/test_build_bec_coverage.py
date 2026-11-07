@@ -42,7 +42,7 @@ def test_builder_emits_all_current_labels() -> None:
 def test_builder_emits_the_provisional_review_queue() -> None:
     """The builder names the 10 provisional diagrams and their labels."""
     queue = _builder().build_review_queue()
-    assert len(queue) == 10
+    assert len(queue) == 9
     assert set(queue["status"]) == {"provisional"}
     labels: set[str] = set()
     for value in queue["bec_labels"]:

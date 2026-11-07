@@ -4564,5 +4564,9 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P137.1: removed the false terminal zig-zag on high-QMD curves. Bezier control
   points are no longer emitted as data, and a final backward endpoint with rising
   volume is normalized to a short vertical up-tick. The fdcp QMD family was
-  regenerated; the overlay shows a sharp bend at the end, not a zig-zag. Dashboard:
+  regenerated; the overlay shows a sharp bend at the end, not a zig-zag.
+- P137.1: locked `fdcp` as reviewed by the maintainer and rebuilt the coverage
+  registry; the review queue is down to nine diagrams. Completed the same full
+  line-series pass for `fdcn`: 18 top-height paths including 56, 14 QMD paths
+  including 35/45/55/65, and crown closure from source path 640. Dashboard:
   `OVERALL: GREEN`.

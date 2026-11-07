@@ -53,6 +53,14 @@ longer emitted as data, and a terminal backward endpoint is stored as a short
 vertical up-tick. This removes the false zig-zag. Direct inspection shows the
 blue QMD curves on their black dashed source paths.
 
+### fdcn pass
+
+The natural diagram is complete with 18 top-height paths (values 6 through 60,
+including 56), 14 QMD paths (5 through 70, including 35, 45, 55, 65), and crown
+closure from source path 640. The boundary paths 641/642 are unchanged. Direct
+overlay inspection shows the red, blue, green, and boundary curves on their source
+paths.
+
 ## TASS predicted mortality curves
 
 The source TASS curves are plotted but **not labelled with mortality levels**.

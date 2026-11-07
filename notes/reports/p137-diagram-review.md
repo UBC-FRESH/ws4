@@ -59,6 +59,11 @@ terminal bend is stored as a sharp up-tick: Bezier control points are not emitte
 and a final backward endpoint becomes a short vertical segment instead of a
 zig-zag. The pattern is locked in `workflows/sdmd-qmd-import.yaml`.
 
+`fdcn` has now had the same full-series pass: 18 top-height paths (including 56)
+and 14 QMD paths (including 35, 45, 55, 65). Its crown closure is source path 640;
+the boundary paths are 641 and 642. The fdcn overlay is in
+`notes/review/p137-overlays/fdcn.png`.
+
 Evidence: `notes/review/p137-overlay-findings.md` and
 `notes/review/p137-overlays/`.
 

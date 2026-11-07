@@ -106,9 +106,9 @@ Install the optional tools with `python -m pip install -e '.[digitise]'`.
 ## fdcn status
 
 The Coastal Douglas-fir natural diagram is stored as `cdf-cwh-fdc-natural.json`,
-provisional. The top-height, QMD, and boundary paths are vector; the crown-closure
-curve is a provisional raster trace recorded in
-`notes/reference/fdcn-digitisation.md`. Review the overlay before use.
+provisional. Top height, QMD, boundaries, and crown closure are vector paths; the
+full top-height and QMD series include their unlabelled interior curves. Method and
+path map: `notes/reference/fdcn-digitisation.md`.
 
 ## ssn status
 
@@ -136,10 +136,10 @@ height, QMD, and boundaries are vector; crown closure is a raster trace. See
 
 ## fdcp status
 
-Coastal Douglas-fir planted is stored as `cdf-cwh-fdc-planted.json`,
-provisional. Top height, QMD, boundaries, and crown closure are vector paths.
-Top height is imported by matching printed labels to paths; the mapping is in
-`notes/reference/fdcp-digitisation.md`.
+Coastal Douglas-fir planted is stored as `cdf-cwh-fdc-planted.json`, reviewed by
+the maintainer. Top height, QMD, boundaries, and crown closure are vector paths.
+Top height and QMD use full value series, so their unlabelled interior curves are
+kept. The mapping is in `notes/reference/fdcp-digitisation.md`.
 
 ## ssp status
 

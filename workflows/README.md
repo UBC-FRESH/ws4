@@ -15,6 +15,10 @@ labels to the requested dashed paths and writes a
 and ordered points for every curve. Ambiguous, distant, duplicate, or unordered
 matches fail the node instead of being guessed. The full value series is
 declared, so unlabelled interior curves are kept rather than silently skipped.
+Both recipes were validated on `fdcp` on 2026-11-07: FreshForge completed
+`render success` and `import success` for top height (17 paths) and QMD (14
+paths). `fdcp` is now marked reviewed; the other nine diagrams remain
+provisional.
 
 Install the optional tools:
 

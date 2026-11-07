@@ -535,6 +535,8 @@ def _ordered_curve_from_path(
     usable = [(_positive(x, "tph"), _positive(y, "volume")) for x, y in points]
     if not usable:
         raise ValueError("a curve needs at least two positive points")
+    if usable[-1][0] < usable[0][0]:
+        usable.reverse()
     result: list[tuple[float, float]] = [usable[0]]
     last_forward_x = usable[0][0]
     vertical = False
