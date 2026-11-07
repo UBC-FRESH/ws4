@@ -411,3 +411,20 @@ items are enhancements and maintenance.
 - **External-engine adapters.** `open`. A later phase tests the process protocol against
   public LANDIS-II, SpaDES, and SELES benchmarks and, where licensing allows, adapters. The
   provenance rule applies. Target: later landscape phases.
+
+
+## 3D fire visualization (post-P144, #868)
+
+- **Synthetic individual-tree stands over VRI polygons.** `open`. Use Nemora's stand and stem
+  synthesis (`nemora.synthesis.stands`, `nemora.synthesis.stems`) to populate real WS4 VRI
+  polygons with plausible individual trees: x/y, species, DBH, height, crown shape, live/dead
+  state, and crown/surface/snag fuel. The tree layer is explicitly synthetic; the polygons are
+  real. Target: a later landscape-visualization phase.
+- **3D fire scene and viewer.** `open`. Compile a `ws4.fire.scene.v1` package from a P144 fire
+  run, reuse the FHOPS `tree_scene`/`tree_replay` patterns and the Scenario Studio's terrain and
+  replay work, and render real-time flames, smoke, embers, and post-fire structure in the WS4
+  web UI. The animation must derive from the event log and replay exactly. Target: a later
+  landscape-visualization phase.
+- **Sub-fragment fire refinement.** `open`. Add a local spread model inside a fragment so the
+  visible fire front and per-tree ignition are finer than the fragment event, while the
+  fragment event remains the audit record. Target: a later landscape-visualization phase.
