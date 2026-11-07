@@ -73,6 +73,13 @@ source paths. ssn is now marked reviewed.
 Sitka spruce planted is complete with 16 top-height paths (including 10, 14, 18,
 28, 32, 40, 44, 48, 52), 15 QMD paths (including 35, 45, 55, 65, 75), and crown
 closure from source path 590. Direct overlay inspection shows the curves on their
+source paths. ssp is now marked reviewed.
+
+### hwn pass
+
+Western hemlock natural is complete with 20 top-height paths (including 10, 14,
+18, 22, 26, 40, 48, 56), 14 QMD paths (including 35, 45, 55, 65), and crown
+closure from source path 562. Direct overlay inspection shows the curves on their
 source paths.
 
 ## TASS predicted mortality curves
