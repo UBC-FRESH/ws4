@@ -54,6 +54,11 @@ The QMD family has 14 paths and ten printed labels. The full value series is
 `517` through `530` in order. The four unlabelled members are 35, 45, 55, and
 65 cm.
 
+The high-QMD source curves end with a sharp upward bend. Bezier control points
+are not data, so they are not emitted as points; if the final endpoint steps
+back in TPH while rising, it is stored as a very short vertical up-tick. This
+removes the false terminal zig-zag without flattening the bend.
+
 The confirmed patterns are locked in `workflows/sdmd-line-import.yaml` for top
 height and `workflows/sdmd-qmd-import.yaml` for QMD:
 `render` uses figrecover and `import` uses `ws4.sdmd.import-lines` to write a

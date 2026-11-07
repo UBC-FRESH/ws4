@@ -815,6 +815,25 @@ def test_coastal_douglas_fir_planted_diagram_is_valid() -> None:
     assert diagram.review.status == "provisional"
 
 
+def test_high_qmd_curves_end_in_an_uptick_not_a_zigzag() -> None:
+    """The high-QMD curves finish with one monotone upward bend."""
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "ws4"
+        / "sdmd"
+        / "data"
+        / "sdmd"
+        / "cdf-cwh-fdc-planted.json"
+    )
+    diagram = load_diagram(path)
+    for curve in diagram.isopleths:
+        if curve.kind != "qmd" or curve.value < 25:
+            continue
+        points = curve.points
+        assert all(later[0] > earlier[0] for earlier, later in itertools.pairwise(points))
+        assert points[-1][1] > points[-2][1]
+
+
 def test_sitka_spruce_planted_diagram_is_valid() -> None:
     """The ssp vector curves and raster crown closure form a valid diagram."""
     path = (

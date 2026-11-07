@@ -4561,3 +4561,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   60, 65, 70 cm` maps to paths `517`–`530`; the four unlabelled members are kept.
   The pattern is locked in `workflows/sdmd-qmd-import.yaml`. Direct overlay
   inspection shows all 14 blue QMD curves on their black dashed source paths.
+- P137.1: removed the false terminal zig-zag on high-QMD curves. Bezier control
+  points are no longer emitted as data, and a final backward endpoint with rising
+  volume is normalized to a short vertical up-tick. The fdcp QMD family was
+  regenerated; the overlay shows a sharp bend at the end, not a zig-zag. Dashboard:
+  `OVERALL: GREEN`.

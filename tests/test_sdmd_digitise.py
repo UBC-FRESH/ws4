@@ -11,6 +11,7 @@ from ws4.sdmd.digitise import (
     PathCandidate,
     PrintedLabel,
     calibrate_axes,
+    curve_points,
     load_spec,
     match_printed_labels,
     ordered_curve,
@@ -39,6 +40,21 @@ def test_calibrate_axes_needs_two_distinct_ticks() -> None:
         calibrate_axes(((200.0, 100.0),), ((0.01, 400.0), (0.1, 200.0)))
     with pytest.raises(ValueError, match="distinct"):
         calibrate_axes(((200.0, 100.0), (300.0, 100.0)), ((0.01, 400.0), (0.1, 200.0)))
+
+
+def test_curve_points_ignores_bezier_control_overshoot(tmp_path: Path) -> None:
+    """A control point beyond the curve endpoint does not create a zig-zag."""
+    pymupdf = pytest.importorskip("pymupdf")
+    path = tmp_path / "overshoot.pdf"
+    document = pymupdf.open()
+    page = document.new_page(width=400, height=300)
+    page.draw_bezier((50, 250), (250, 150), (350, 100), (250, 50))
+    document.save(path)
+    drawing = pymupdf.open(path)[0].get_drawings()[0]
+    calibration = calibrate_axes(((100.0, 50.0), (1000.0, 350.0)), ((0.01, 250.0), (1.0, 50.0)))
+    points = curve_points(drawing["items"], calibration)
+    assert len(points) == 2
+    assert points[0][0] < points[1][0]
 
 
 def test_ordered_curve_sorts_and_averages_duplicates() -> None:

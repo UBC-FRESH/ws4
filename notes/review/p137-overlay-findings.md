@@ -48,7 +48,10 @@ paths.
 The QMD family has 14 paths and ten printed labels. The full series is
 `5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70 cm`, mapping to paths
 `517` through `530`; the four unlabelled members (35, 45, 55, 65) are kept.
-Direct inspection shows the blue QMD curves on their black dashed source paths.
+The high-QMD curves end in a sharp upward bend; Bezier control points are no
+longer emitted as data, and a terminal backward endpoint is stored as a short
+vertical up-tick. This removes the false zig-zag. Direct inspection shows the
+blue QMD curves on their black dashed source paths.
 
 ## TASS predicted mortality curves
 

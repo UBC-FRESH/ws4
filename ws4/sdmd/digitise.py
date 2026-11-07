@@ -500,6 +500,7 @@ def curve_points(
         If a path yields fewer than two usable points.
     """
     points: list[tuple[float, float]] = []
+    has_curve = False
     for item in items:
         if not item:
             continue
@@ -508,11 +509,51 @@ def curve_points(
             points.extend(_point(item[1], calibration))
             points.extend(_point(item[2], calibration))
         elif tag == "c":
-            points.extend(_point(item[1], calibration))
-            points.extend(_point(item[2], calibration))
-            points.extend(_point(item[3], calibration))
+            has_curve = True
+            if not points:
+                points.extend(_point(item[1], calibration))
+            # The control points are not data: a control point can overshoot
+            # the curve and create a false terminal zig-zag when sorted by TPH.
             points.extend(_point(item[4], calibration))
+    if has_curve:
+        return _ordered_curve_from_path(points)
     return ordered_curve(points)
+
+
+def _ordered_curve_from_path(
+    points: Sequence[tuple[float, float]],
+) -> tuple[tuple[float, float], ...]:
+    """Keep path order and turn a terminal backward bend into an up-tick.
+
+    High-QMD source curves often finish with a near-vertical upward bend. The
+    Bezier control point can lie to the right of the final endpoint, so sorting
+    all points by TPH would put the endpoint before the control point and create
+    a zig-zag. The endpoint sequence is monotone until that bend; a backward
+    endpoint with a higher volume is represented as a very short vertical
+    segment, and a backward endpoint with a lower volume is discarded.
+    """
+    usable = [(_positive(x, "tph"), _positive(y, "volume")) for x, y in points]
+    if not usable:
+        raise ValueError("a curve needs at least two positive points")
+    result: list[tuple[float, float]] = [usable[0]]
+    last_forward_x = usable[0][0]
+    vertical = False
+    for x, y in usable[1:]:
+        previous_x, previous_y = result[-1]
+        if x > previous_x:
+            result.append((x, y))
+            last_forward_x = x
+            vertical = False
+        elif y > previous_y:
+            if vertical:
+                result[-1] = (result[-1][0], y)
+            else:
+                epsilon = max(1e-9, abs(last_forward_x) * 1e-9)
+                result.append((last_forward_x + epsilon, y))
+                vertical = True
+    if len(result) < 2:
+        raise ValueError("a curve needs at least two positive points")
+    return tuple(result)
 
 
 def ordered_curve(

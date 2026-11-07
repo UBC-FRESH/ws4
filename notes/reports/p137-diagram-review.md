@@ -54,8 +54,10 @@ labels are anchors. All 17 mappings are recorded in
 shows all 17 red top-height curves on their black dotted source paths.
 
 The QMD family similarly keeps all 14 paths, including the unlabelled 35, 45, 55,
-and 65 cm curves. Its mapping is `517`–`530` in value order. The pattern is locked
-in `workflows/sdmd-qmd-import.yaml`.
+and 65 cm curves. Its mapping is `517`–`530` in value order. The high-QMD
+terminal bend is stored as a sharp up-tick: Bezier control points are not emitted,
+and a final backward endpoint becomes a short vertical segment instead of a
+zig-zag. The pattern is locked in `workflows/sdmd-qmd-import.yaml`.
 
 Evidence: `notes/review/p137-overlay-findings.md` and
 `notes/review/p137-overlays/`.
