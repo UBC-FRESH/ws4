@@ -2049,7 +2049,7 @@ function useScaffoldTargets() {
   $('portfolio-vary').value = accounts.map((account) => `${account}=${levels.join(',')}`).join(';');
   $('portfolio-metrics').value = accounts.join(',');
   $('portfolio-directions').value = accounts.map((account) => `${account}=max`).join(';');
-  if (accounts.length * levels.length > Number($('portfolio-max-members').value || 64)) {
+  if (levels.length ** accounts.length > Number($('portfolio-max-members').value || 64)) {
     $('portfolio-mode').value = 'random';
   }
   const horizon = Math.max(
