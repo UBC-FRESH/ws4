@@ -4566,3 +4566,6 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 
 - P148: merged via PR #871 as `103614b`. Added guarded portfolio/promoted-run deletion
   and Search/Plan cleanup controls; removed the failed live probe.
+
+- P149.1: added `state-watch --summary-out` and prepared exactness fields for web
+  state summaries and run health.

@@ -137,3 +137,4 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p146-live-multi-account-scan.md` — P146 five-account TSA27 browser validation.
 - `reports/p147-diverse-scaffold.md` — P147 diverse account preset and warnings.
 - `reports/p148-portfolio-cleanup.md` — P148 guarded cleanup for artifacts and promoted runs.
+- `reports/p149-state-exactness.md` — P149 state-run exactness and UI badge.

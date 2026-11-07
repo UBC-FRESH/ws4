@@ -2873,6 +2873,7 @@ def state_watch(
     refresh: float = typer.Option(2.0, help="Seconds between live repaints"),
     plain: bool = typer.Option(False, "--plain", help="Print one final frame"),
     schedule_out: Path | None = typer.Option(None, help="Write final schedule CSV"),
+    summary_out: Path | None = typer.Option(None, "--summary-out", help="Write exactness JSON"),
     lns_weight: float = typer.Option(0.2, help="Probability of a bounded LNS move"),
     lns_destroy: float = typer.Option(0.1, help="Fraction of assigned blocks destroyed"),
     lns_max_destroy: int = typer.Option(64, help="Maximum blocks destroyed"),
@@ -2936,7 +2937,27 @@ def state_watch(
     )
     exact = IncrementalObjective(optimizer, target_list)
     exact.reset(summary["schedule"])
-    if not math.isclose(exact.objective, summary["objective"], rel_tol=1e-9, abs_tol=1e-6):
+    exact_match = math.isclose(exact.objective, summary["objective"], rel_tol=1e-9, abs_tol=1e-6)
+    if summary_out is not None:
+        summary_out.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            **{
+                key: summary[key]
+                for key in (
+                    "objective",
+                    "penalty",
+                    "evaluations",
+                    "iterations",
+                    "blocks",
+                    "elapsed",
+                )
+            },
+            "verified_objective": exact.objective,
+            "exact_match": exact_match,
+            "schedule": str(summary.get("schedule", "")),
+        }
+        summary_out.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    if not exact_match:
         raise typer.Exit(code=1)
     table = Table(title="State watch")
     for key in ("objective", "penalty", "evaluations", "iterations", "blocks", "elapsed"):
