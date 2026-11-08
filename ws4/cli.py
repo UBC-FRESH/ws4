@@ -3052,7 +3052,7 @@ def state_watch(
             },
             "verified_objective": exact.objective,
             "exact_match": exact_match,
-            "schedule": str(summary.get("schedule", "")),
+            "schedule_out": str(schedule_out) if schedule_out is not None else None,
         }
         summary_out.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     if not exact_match:
