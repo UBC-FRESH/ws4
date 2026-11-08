@@ -59,6 +59,7 @@ ws4-sdmd = "ws4.sdmd.workflow:sdmd_provider"
 include = ["ws4*"]
 
 [tool.setuptools.package-data]
+"ws4.scene" = ["viewer.html"]
 "ws4.web" = ["static/*", "static/vendor/*", "skins/*"]
 "ws4.sdmd" = ["data/sdmd/*.json", "data/sdmd/*.csv", "data/pilot-tsa23-idfdk3/*.json", "data/pilot-tsa23-idfdk3/*.csv", "data/pilot-tsa23-idfdk3/*.md", "data/pilot-tsa23-idfdk3-pli/*.json", "data/pilot-tsa23-idfdk3-pli/*.csv", "data/pilot-tsa23-idfdk3-pli/*.md"]
 

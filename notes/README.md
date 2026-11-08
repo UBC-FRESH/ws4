@@ -156,3 +156,5 @@ Working notes for WS4. Notes are living: update them in the same change set as t
   and the console-secret environment guard.
 - `reports/p154-tsa29-stock.md` — TSA 29 factorized stock basis, build costs, and exact
   GPU replay.
+- `reports/p155-closeout.md` — P155 fire-scene verification, visual checklist, limits, and
+  approval status.

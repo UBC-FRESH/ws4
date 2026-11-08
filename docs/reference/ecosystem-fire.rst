@@ -249,6 +249,7 @@ Cross-references
 
 - :doc:`ecosystem-package`
 - :doc:`ecosystem-scenarios`
+- :doc:`fire-scene`
 - :doc:`event-log`
 - :doc:`compiled-dataset`
 - :doc:`disturbance`

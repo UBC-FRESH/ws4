@@ -153,6 +153,7 @@ exists and the maintainer approves it.
 | P152 Sandboxed Python runner | #901 | `feature/p152-python-sandbox` | complete |
 | P153 Assistant script review | #906 | `feature/p153-assistant-script-review` | complete |
 | P154 TSA 29 GPU stock | #912 | `feature/p154-tsa29-stock` | complete |
+| P155 3D fire scene and synthetic tree stands | #877 | `feature/p155-fire-3d` | pr-open |
 | P156 Credible fire behaviour and growth | #890 | `feature/p156-fire-behaviour` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
@@ -4553,6 +4554,37 @@ Acceptance:
 - Zero-generation and evolved runs report exact replay.
 - The sparse table is unchanged.
 - Tests, portal smoke, and dashboard pass.
+
+## Phase 155: 3D fire scene and synthetic tree stands
+
+Parent issue: #877
+Branch: `feature/p155-fire-3d`
+Status: pr-open
+Approval: PR #919 queued for maintainer approval
+Report: `notes/reports/p155-closeout.md`
+Design note: `notes/design/ws4-fire-3d-visualization.md`
+Idea: #868
+
+Goal: populate a stand map with a deterministic synthetic individual-tree population, compile a
+portable scene package from a P144 fire run, and render the fire as a real-time 3D vector
+animation with flames, smoke, a timeline, and post-fire tree states.
+
+- [x] P155.1 Scene and tree contracts plus a first burnable viewer (#878)
+- [x] P155.2 Nemora synthetic tree producer over VRI polygons (#879)
+- [x] P155.3 Fire and smoke visual quality (#880)
+- [x] P155.4 WS4 web Fire workspace (#881)
+- [x] P155.5 Verify and close out (#882)
+
+Acceptance:
+
+- The same polygons, seed, and generator reproduce the same tree table and scene package.
+- Every tree lies inside its fragment polygon; stand basal area, stems per hectare, and volume
+  are within the configured tolerance of the stand target.
+- Every animated ignition maps to a P144 fire event; the scene records the run's replay digest.
+- The standalone viewer draws the landscape, plays the fire front with flames and smoke, and
+  shows the burnt scar and post-fire tree state.
+- The scene manifest clearly marks the tree layer synthetic and records its provenance.
+- `python scripts/dashboard.py` is green.
 
 ## Phase 156: Credible fire behaviour and growth
 

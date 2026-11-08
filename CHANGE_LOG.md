@@ -4838,3 +4838,42 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P156 close-out: squash-merged pull request #917 into `main` after maintainer approval;
   the phase branch is deleted and parent #890 is closed. The close-out report is
   `notes/reports/p156-closeout.md`. Dashboard: **GREEN**.
+
+- P155.1: added `ws4/scene`: the `ws4.tree.inventory.v1` tree contract, a deterministic
+  synthetic tree generator, the `ws4.fire.scene.v1` package compiler, the per-tree animation
+  mapping, and a standalone Three.js viewer with procedural flames, smoke, a timeline, and a
+  burnt scar. Added `examples/fire_3d_demo.py` and `docs/reference/fire-scene.rst`. The demo
+  builds 22,500 trees and 24 fire events; a headless Chromium check loaded the viewer with no
+  page errors and showed 10,000 trees burning at a live fire time. The scene suite has 23
+  tests. `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard:
+  **GREEN** (lint, format, types, tests, validator, docs, docstrings).
+
+- P155.2: added `ws4/scene/nemora.py`, a thin adapter from a Nemora CSV/Parquet tree table to
+  the `ws4.tree.inventory.v1` contract. It joins trees to real VRI polygons by explicit
+  fragment id or point-in-polygon, raises when a tree is outside or ambiguous, and records the
+  adapter version, Nemora version, seed, polygon source, and CRS. `TreeInventory` now carries
+  real `fragment_polygons`, and the viewer draws polygon geometry instead of stand squares.
+  Added the pinned public TSA 24 cluster fixture in `examples/fire_scene_vri` (12 polygons,
+  12,588 Nemora-placed stems) and `examples/fire_3d_vri_demo.py`. The VRI demo burns 95.42 ha,
+  with 27.07 m/min head ROS, 8.40 m flame length, and a 0–240 minute ignition window. Added
+  the Nemora adapter tests and the per-tree ignition tests. Dashboard: **GREEN**.
+
+- P155.4: added fire-scene discovery and read-only APIs, a Fire workspace with shared
+  timeline, tree/fragment inspection, comparison, and a vendored-Three viewer. The scene
+  package now writes `payload.json`; the viewer accepts embedded mode and postMessage
+  timeline commands.
+
+- P155.3: raised the standalone viewer's fire and smoke quality. Flames now use a procedural
+  noise/temperature shader with additive blending and a depth fade; smoke uses curl-like
+  wander and buoyancy; short-lived embers and a screen-space heat-haze pass were added.
+  Bloom is enabled by default with `?bloom=0` as a fallback. Burnt crowns shrink and darken,
+  stand polygons develop a gradual burnt fraction, and the HUD reports fps and active
+  particles against the manifest budget. Added `notes/reports/p155-visual-checklist.md` and
+  a headless Chromium/SwiftShader capture. The viewer showed no page errors, 622–1,198 active
+  particles against a 5,000 budget, and about 20 fps on the software rasterizer. The
+  frame-rate result is a floor, not a hardware measurement. Distance-based tree LOD and the
+  offline high-fidelity smoke tier remain future work. Dashboard: **GREEN**.
+
+- P155.5: verified deterministic demo replay, 36 scene/workspace tests, standalone viewer
+  controls, bloom fallback, and the Fire workspace comparison smoke. Recorded the close-out
+  and left PR #919 open for maintainer approval; no merge or release was performed.

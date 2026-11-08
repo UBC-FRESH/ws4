@@ -4,7 +4,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/OrbitControls.js";
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' }, runSource: null, runSummary: null, console: { schema: null, token: '', job: null, timer: null, offset: 0, busy: false }, portfolioScan: [], portfolioTargets: [], pareto: { available: false, artifact: '', data: null, chart: null, cloud: null, selected: null, pinned: [], screen: [], artifacts: [] } };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' }, runSource: null, runSummary: null, fire: { scenes: [], selected: '', selectedB: '', payloads: new Map(), activePayload: null, playing: false }, console: { schema: null, token: '', job: null, timer: null, offset: 0, busy: false }, portfolioScan: [], portfolioTargets: [], pareto: { available: false, artifact: '', data: null, chart: null, cloud: null, selected: null, pinned: [], screen: [], artifacts: [] } };
 
 state.estate3d = { open: false, features: [], yaw: -0.55, zoom: 1, exaggeration: 1, hits: [] };
 const ESTATE_3D_LIMIT = 2000;
@@ -5102,6 +5102,7 @@ function workspaceAllowed(workspace) {
   if (workspace === 'map') return true;
   if (workspace === 'sdmd') return Boolean(state.sdmd.available);
   const panels = skinPanels();
+  if (workspace === 'fire') return Boolean(state.datasetSummary?.capabilities?.fire);
   if (workspace === 'console') return Boolean(state.datasetSummary?.capabilities?.console);
   if (workspace === 'plan') return panels.has('targets');
   if (workspace === 'pareto') return panels.has('search');
@@ -5171,10 +5172,11 @@ function syncNavigation() {
   }
   if (state.workspace === 'map') $('tab-legend').hidden = false;
   if (state.workspace === 'plan') $('tab-targets').hidden = false;
-  $('map-wrap').hidden = state.workspace === 'plan' || state.workspace === 'sdmd' || state.workspace === 'pareto' || state.workspace === 'console';
+  $('map-wrap').hidden = ['plan', 'sdmd', 'pareto', 'console', 'fire'].includes(state.workspace);
   $('target-canvas').hidden = state.workspace !== 'plan';
   $('sdmd-canvas').hidden = state.workspace !== 'sdmd';
   $('pareto-wrap').hidden = state.workspace !== 'pareto';
+  $('fire-wrap').hidden = state.workspace !== 'fire';
   if (state.workspace === 'plan') renderTargetCharts();
   if (state.workspace === 'sdmd') renderSdmd();
   if (state.workspace === 'pareto' && state.pareto.chart) resizeParetoChart();
@@ -5246,6 +5248,10 @@ function activateSubView() {
     loadConsole();
     return;
   }
+  if (state.workspace === 'fire') {
+    loadFireWorkspace();
+    return;
+  }
   if (state.workspace !== 'results' && state.compareView) clearCompareView();
 }
 
@@ -5266,6 +5272,7 @@ function setWorkspace(workspace, { sync = true, activate = true } = {}) {
     clearCompareView();
   }
   state.workspace = requested;
+  document.body.dataset.workspace = requested;
   syncNavigation();
   if (SUB_PANELS[requested]) {
     const sub = currentSub(requested) ?? visibleSubs(requested)[0] ?? null;
@@ -6411,6 +6418,8 @@ function renderRunHealth() {
   }
   badge(`LiDAR ${state.lidar?.available ? 'available' : '—'}`, state.lidar?.available ? 'available' : 'unavailable');
   badge(`Carbon ${state.carbon?.available ? 'available' : '—'}`, state.carbon?.available ? 'available' : 'unavailable');
+  const fireScene = state.fire.scenes.find((scene) => scene.run === state.run);
+  $('run-health-fire').hidden = !fireScene;
   $('run-health-failing').disabled = failing === 0;
 }
 
@@ -8896,6 +8905,273 @@ function wireConsole() {
   $('console-cancel').addEventListener('click', cancelConsoleJob);
 }
 
+function fireSceneByRun(run) {
+  return state.fire.scenes.find((scene) => scene.run === run) ?? null;
+}
+
+function fireSceneLabel(scene) {
+  const manifest = scene.manifest ?? {};
+  return `${scene.run} · ${manifest.scene_id ?? scene.scene}`;
+}
+
+async function loadFireScenes({ run = null } = {}) {
+  const status = $('fire-status');
+  status.textContent = 'loading scenes…';
+  try {
+    const scenes = await api('api/fire/scenes');
+    state.fire.scenes = Array.isArray(scenes) ? scenes : [];
+  } catch (error) {
+    state.fire.scenes = [];
+    status.textContent = `fire scenes unavailable: ${error.message}`;
+  }
+  const selectA = $('fire-scene-a');
+  const selectB = $('fire-scene-b');
+  selectA.replaceChildren();
+  selectB.replaceChildren();
+  for (const scene of state.fire.scenes) {
+    for (const select of [selectA, selectB]) {
+      const option = document.createElement('option');
+      option.value = scene.run;
+      option.textContent = fireSceneLabel(scene);
+      select.appendChild(option);
+    }
+  }
+  const preferred = fireSceneByRun(run ?? state.run)
+    ?? fireSceneByRun(state.fire.selected)
+    ?? state.fire.scenes[0]
+    ?? null;
+  selectB.disabled = state.fire.scenes.length < 2;
+  $('fire-compare').disabled = state.fire.scenes.length < 2;
+  if (!preferred) {
+    $('fire-frame-a').removeAttribute('src');
+    $('fire-summary').replaceChildren();
+    status.textContent = 'no fire scenes found in the run directory';
+    return;
+  }
+  selectA.value = preferred.run;
+  await setFireScene('a', preferred.run);
+  status.textContent = `${state.fire.scenes.length} scene${state.fire.scenes.length === 1 ? '' : 's'}`;
+}
+
+async function setFireScene(which, run) {
+  const scene = fireSceneByRun(run);
+  if (!scene) return;
+  if (which === 'a') state.fire.selected = run;
+  else state.fire.selectedB = run;
+  const frame = $(which === 'a' ? 'fire-frame-a' : 'fire-frame-b');
+  const label = $(which === 'a' ? 'fire-label-a' : 'fire-label-b');
+  frame.src = `${scene.viewer}?embedded=1&bloom=0`;
+  label.textContent = `${which.toUpperCase()} · ${fireSceneLabel(scene)}`;
+  if (which === 'a') {
+    state.fire.playing = false;
+    $('fire-play').textContent = 'Play';
+    state.fire.activePayload = await loadFirePayload(scene);
+    renderFireSummary(scene, state.fire.activePayload);
+    renderFireTreeOptions();
+    renderFireFragmentOptions();
+  }
+}
+
+async function loadFirePayload(scene) {
+  if (state.fire.payloads.has(scene.run)) return state.fire.payloads.get(scene.run);
+  const payload = await api(scene.payload);
+  state.fire.payloads.set(scene.run, payload);
+  return payload;
+}
+
+function fireSummaryRow(label, value) {
+  const row = document.createElement('div');
+  const key = document.createElement('span');
+  key.textContent = label;
+  const strong = document.createElement('strong');
+  strong.textContent = String(value ?? '—');
+  row.append(key, strong);
+  return row;
+}
+
+function renderFireSummary(scene, payload) {
+  const container = $('fire-summary');
+  const manifest = payload?.manifest ?? scene.manifest ?? {};
+  const timeline = payload?.timeline ?? {};
+  container.replaceChildren(
+    fireSummaryRow('Run', scene.run),
+    fireSummaryRow('Scene', manifest.scene_id),
+    fireSummaryRow('Trees', manifest.tree_count),
+    fireSummaryRow('Fragments', manifest.fragment_count),
+    fireSummaryRow('Synthetic layer', manifest.synthetic_trees ? 'yes' : 'no'),
+    fireSummaryRow('Timeline end', `${Number(timeline.end ?? 0).toFixed(1)} ${timeline.unit ?? ''}`),
+    fireSummaryRow('Replay token', manifest.run_replay_token)
+  );
+}
+
+function renderFireTreeOptions() {
+  const select = $('fire-tree');
+  const query = $('fire-tree-search').value.trim().toLowerCase();
+  const trees = state.fire.activePayload?.trees ?? [];
+  const matches = trees.filter((tree) => {
+    if (!query) return true;
+    return `${tree.tree_id} ${tree.species} ${tree.fragment_id}`.toLowerCase().includes(query);
+  });
+  select.replaceChildren();
+  for (const tree of matches.slice(0, 1000)) {
+    const option = document.createElement('option');
+    option.value = String(tree.tree_id);
+    option.textContent = `${tree.tree_id} · ${tree.species} · fragment ${tree.fragment_id}`;
+    select.appendChild(option);
+  }
+  $('fire-tree-detail').textContent = matches.length
+    ? `${matches.length} matching tree${matches.length === 1 ? '' : 's'}`
+    : 'no matching trees';
+  if (matches.length) renderFireTreeDetail(matches[0]);
+}
+
+function renderFireTreeDetail(tree) {
+  if (!tree) return;
+  const detail = $('fire-tree-detail');
+  detail.replaceChildren(
+    fireSummaryRow('Species', tree.species),
+    fireSummaryRow('Fragment', tree.fragment_id),
+    fireSummaryRow('DBH cm', Number(tree.dbh_cm).toFixed(1)),
+    fireSummaryRow('Height m', Number(tree.height_m).toFixed(1)),
+    fireSummaryRow('Crown ratio', Number(tree.crown_ratio).toFixed(2)),
+    fireSummaryRow('Crown fuel t', Number(tree.crown_fuel_t).toFixed(2)),
+    fireSummaryRow('Surface fuel t/ha', Number(tree.surface_fuel_t_ha).toFixed(2)),
+    fireSummaryRow('Ignition', tree.burn_time === null ? 'unburned' : `${Number(tree.burn_time).toFixed(1)} ${state.fire.activePayload?.timeline?.unit ?? ''}`),
+    fireSummaryRow('Flame intensity', Number(tree.flame_intensity).toFixed(2)),
+    fireSummaryRow('Post-fire', tree.post_fire_state)
+  );
+}
+
+function renderFireFragmentOptions() {
+  const select = $('fire-fragment');
+  const stands = state.fire.activePayload?.stands ?? [];
+  select.replaceChildren();
+  for (const stand of stands) {
+    const option = document.createElement('option');
+    option.value = String(stand.fragment_id);
+    option.textContent = `fragment ${stand.fragment_id} · ${Number(stand.area_ha).toFixed(1)} ha`;
+    select.appendChild(option);
+  }
+  if (stands.length) renderFireFragmentDetail(stands[0]);
+  else $('fire-fragment-detail').textContent = 'no fragments in this scene';
+}
+
+function renderFireFragmentDetail(stand) {
+  if (!stand) return;
+  const unit = state.fire.activePayload?.timeline?.unit ?? '';
+  $('fire-fragment-detail').replaceChildren(
+    fireSummaryRow('Fragment', stand.fragment_id),
+    fireSummaryRow('Area ha', Number(stand.area_ha).toFixed(1)),
+    fireSummaryRow('Burn time', stand.burn_time === null ? 'unburned' : `${Number(stand.burn_time).toFixed(1)} ${unit}`)
+  );
+}
+
+function firePost(action, extra = {}) {
+  const message = { type: 'ws4-fire', action, ...extra };
+  for (const id of ['fire-frame-a', 'fire-frame-b']) {
+    const frame = $(id);
+    if (frame?.contentWindow) frame.contentWindow.postMessage(message, '*');
+  }
+}
+
+async function openFireForRun(run) {
+  await loadFireScenes({ run });
+  if (fireSceneByRun(run)) setWorkspace('fire');
+}
+
+async function loadFireWorkspace() {
+  if (!state.fire.scenes.length) await loadFireScenes();
+  else if (state.fire.selected) await setFireScene('a', state.fire.selected);
+}
+
+function wireFire() {
+  if (!$('fire-scene-a')) return;
+  $('fire-refresh').addEventListener('click', () => loadFireScenes());
+  $('fire-scene-a').addEventListener('change', () => setFireScene('a', $('fire-scene-a').value));
+  $('fire-scene-b').addEventListener('change', () => setFireScene('b', $('fire-scene-b').value));
+  $('fire-compare').addEventListener('change', async () => {
+    const enabled = $('fire-compare').checked;
+    $('fire-frame-card-b').hidden = !enabled;
+    $('fire-wrap').classList.toggle('compare', enabled);
+    if (enabled) {
+      const fallback = state.fire.scenes.find((scene) => scene.run !== state.fire.selected);
+      const run = $('fire-scene-b').value || fallback?.run;
+      if (run) {
+        $('fire-scene-b').value = run;
+        await setFireScene('b', run);
+      }
+    }
+  });
+  $('fire-play').addEventListener('click', () => {
+    state.fire.playing = !state.fire.playing;
+    $('fire-play').textContent = state.fire.playing ? 'Pause' : 'Play';
+    firePost(state.fire.playing ? 'play' : 'pause');
+  });
+  $('fire-reset').addEventListener('click', () => {
+    state.fire.playing = false;
+    $('fire-play').textContent = 'Play';
+    $('fire-time').value = '0';
+    firePost('reset');
+  });
+  $('fire-ignition').addEventListener('click', () => {
+    state.fire.playing = true;
+    $('fire-play').textContent = 'Pause';
+    $('fire-time').value = '0';
+    firePost('reset');
+    firePost('play');
+  });
+  $('fire-jump').addEventListener('click', () => {
+    const end = Number($('fire-time').max) || 1;
+    const time = end * 0.25;
+    state.fire.playing = true;
+    $('fire-play').textContent = 'Pause';
+    $('fire-time').value = String(time);
+    firePost('setTime', { time });
+    firePost('focus');
+    firePost('play');
+  });
+  $('fire-fullscreen').addEventListener('click', () => {
+    const wrap = $('fire-wrap');
+    if (document.fullscreenElement) document.exitFullscreen();
+    else wrap.requestFullscreen?.();
+  });
+  $('fire-time').addEventListener('input', () => {
+    state.fire.playing = false;
+    $('fire-play').textContent = 'Play';
+    firePost('setTime', { time: Number($('fire-time').value) });
+  });
+  $('fire-speed').addEventListener('change', () => {
+    firePost('speed', { speed: Number($('fire-speed').value) });
+  });
+  $('fire-tree-search').addEventListener('input', renderFireTreeOptions);
+  $('fire-tree').addEventListener('change', () => {
+    const tree = (state.fire.activePayload?.trees ?? []).find(
+      (candidate) => String(candidate.tree_id) === $('fire-tree').value
+    );
+    renderFireTreeDetail(tree);
+    if (tree) firePost('focusTree', { tree_id: tree.tree_id });
+  });
+  $('fire-fragment').addEventListener('change', () => {
+    const stand = (state.fire.activePayload?.stands ?? []).find(
+      (candidate) => String(candidate.fragment_id) === $('fire-fragment').value
+    );
+    renderFireFragmentDetail(stand);
+  });
+  window.addEventListener('message', (event) => {
+    const data = event.data;
+    if (!data || data.type !== 'ws4-fire-state') return;
+    if (event.source !== $('fire-frame-a')?.contentWindow) return;
+    const end = Number(data.end ?? 1);
+    $('fire-time').max = String(end);
+    $('fire-time').value = String(data.time ?? 0);
+    $('fire-clock').textContent = `${Number(data.time ?? 0).toFixed(1)} ${data.unit ?? ''}`;
+    state.fire.playing = Boolean(data.playing);
+    $('fire-play').textContent = state.fire.playing ? 'Pause' : 'Play';
+    $('fire-status').textContent =
+      `${data.burning ?? 0} burning · ${data.burnt ?? 0} burnt trees`;
+  });
+}
+
 function wireControls() {
   wireSplitter();
   wireChatSplitter();
@@ -8961,6 +9237,7 @@ function wireControls() {
   $('target-pin-failing').addEventListener('click', pinVisibleFailing);
   $('target-unpin-visible').addEventListener('click', unpinVisibleTargets);
   $('run-health-plan').addEventListener('click', () => setWorkspace('plan'));
+  $('run-health-fire').addEventListener('click', () => openFireForRun(state.run));
   $('run-health-failing').addEventListener('click', showFailingTargets);
   for (const button of document.querySelectorAll('.workspaces [data-workspace]')) {
     button.addEventListener('click', () => setWorkspace(button.dataset.workspace));
@@ -9236,6 +9513,7 @@ async function start() {
   wireSdmd();
   wirePareto();
   wireConsole();
+  wireFire();
   wirePortfolioScan();
   wireScaffoldTargets();
   loadWatched();
@@ -9263,6 +9541,7 @@ async function start() {
     if (!preferred) { statusLine('no runs found'); return; }
     select.value = preferred.id;
     state.run = preferred.id;
+    await loadFireScenes({ run: preferred.id });
     const requestedPeriod = Number(params.get('period'));
     if (Number.isFinite(requestedPeriod) && requestedPeriod >= 0) {
       state.pendingPeriod = requestedPeriod;

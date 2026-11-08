@@ -1,8 +1,10 @@
 # 3D fire propagation over synthetic individual-tree stands
 
-Status: idea / queued design
+Status: active (P155)
+Phase: P155 (3D fire scene and synthetic tree stands)
 Date: 2026-11-07
 Issue: #868
+Parent issue: #877
 Related: `notes/design/ws4-stochastic-landscape.md`,
 `docs/reference/ecosystem-fire.rst`, `docs/reference/ecosystem-package.rst`,
 Nemora `src/nemora/synthesis/` and `examples/ws4_synthetic/`,
@@ -10,6 +12,11 @@ FHOPS `src/fhops/tree_scene.py` and `src/fhops/tree_replay.py`,
 FHOPS Scenario Studio `sandbox/studio/`, WS4 `ws4/web/`
 
 ## 1. The idea
+
+P155.1 implements the first vertical slice: the tree inventory contract, the scene package,
+the per-tree animation mapping, and a standalone viewer with procedural flames and smoke.
+P155.2 adds the Nemora tree-table adapter, real VRI polygon containment, and polygon-aware
+scene rendering. The remaining sections describe the full target; the web workspace is P155.4.
 
 Take real WS4 VRI polygon stand maps, populate each stand with a plausible synthetic
 individual-tree population, and run the P144 fire process through that population as a
@@ -72,6 +79,12 @@ A new table, `ws4.tree.inventory.v1`:
 
 The tree table is synthetic. The polygons and their VRI attributes are real; the trees are a
 plausible realization, not an inventory measurement. Every scene manifest must say so.
+
+P155.2 status: ``ws4.scene.nemora`` reads a Nemora CSV/Parquet tree table and a GeoJSON VRI
+layer, joins each tree by explicit fragment id or point-in-polygon, and raises if a tree is
+outside its polygon. ``TreeInventory.fragment_polygons`` carries the real exterior rings and
+``bounds_violations`` checks them. The adapter records the Nemora version, seed, polygon
+source, CRS, and adapter version. The built-in generator remains the no-Nemora fallback.
 
 ### 3.2 Scene package
 
@@ -138,6 +151,11 @@ The viewer must be able to replay the same animation from the same scene package
   elevation basis.
 - **Ground fuel**: a surface layer of litter, grass, and downed wood, rendered as a textured
   mesh or instanced clumps.
+
+P155.3 status: the real-time flame, smoke, ember, heat-haze, bloom, and burnt-crown slice is
+implemented in the standalone viewer. Distance-based tree LOD and the optional offline
+high-fidelity smoke tier remain future work. The visual checklist is
+`notes/reports/p155-visual-checklist.md`.
 
 ### 5.2 Flames
 

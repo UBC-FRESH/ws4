@@ -416,21 +416,27 @@ items are enhancements and maintenance.
   provenance rule applies. Target: later landscape phases.
 
 
-## 3D fire visualization (post-P144, #868)
+## 3D fire visualization (P155, #868)
 
-- **Synthetic individual-tree stands over VRI polygons.** `open`. Use Nemora's stand and stem
-  synthesis (`nemora.synthesis.stands`, `nemora.synthesis.stems`) to populate real WS4 VRI
-  polygons with plausible individual trees: x/y, species, DBH, height, crown shape, live/dead
-  state, and crown/surface/snag fuel. The tree layer is explicitly synthetic; the polygons are
-  real. Target: a later landscape-visualization phase.
-- **3D fire scene and viewer.** `open`. Compile a `ws4.fire.scene.v1` package from a P144 fire
-  run, reuse the FHOPS `tree_scene`/`tree_replay` patterns and the Scenario Studio's terrain and
-  replay work, and render real-time flames, smoke, embers, and post-fire structure in the WS4
-  web UI. The animation must derive from the event log and replay exactly. Target: a later
-  landscape-visualization phase.
-- **Sub-fragment fire refinement.** `open`. Add a local spread model inside a fragment so the
-  visible fire front and per-tree ignition are finer than the fragment event, while the
-  fragment event remains the audit record. Target: a later landscape-visualization phase.
+- **Synthetic individual-tree stands over VRI polygons.** `done` (P155.2, #879). The built-in
+  generator produces a deterministic tree table over synthetic square fragments. The Nemora
+  adapter reads a CSV/Parquet tree table, joins trees to real VRI polygons by explicit id or
+  point-in-polygon, and records the adapter version, Nemora version, seed, polygon source, and
+  CRS. A 12-polygon public TSA 24 cluster and 12,588 Nemora-placed stems are pinned in
+  `examples/fire_scene_vri`. The tree layer stays explicitly synthetic.
+- **3D fire scene and viewer.** `partial` (P155.1, #878; P155.3, #880). The
+  `ws4.fire.scene.v1` package, per-tree animation, real VRI polygons, and a standalone
+  Three.js viewer are in place. The viewer uses a noise/temperature flame shader, curl-like
+  smoke, embers, screen-space heat haze, bloom (with a `?bloom=0` fallback), burnt-crown
+  shrink, a gradual stand scar, and fps/particle HUD. The WS4 web Fire workspace is P155.4
+  (#881). Distance-based tree LOD and an offline high-fidelity smoke tier remain future work.
+- **WS4 web Fire workspace.** `done` (P155.4, #881). Run scene discovery, manifest and
+  payload endpoints, a Fire workspace with shared timeline, tree and fragment inspection,
+  scene A/B comparison, and the vendored-Three viewer are implemented. The phase remains
+  active for P155.3 visual polish and P155.5 close-out.
+- **Sub-fragment fire refinement.** `done` for the growth path (P155.2/P155.4). Each tree
+  samples the P156 growth grid at its position; the fragment event remains the audit record.
+  The viewer clock is in minutes and the tree burn duration is 2 minutes.
 
 ## Fire behaviour (P156)
 
