@@ -759,7 +759,7 @@ def _run_periods(years: list[int], width: int) -> list[dict[str, object]]:
 
 _CHAT_WORKSPACES = frozenset({"map", "plan", "results", "data", "sdmd"})
 _CHAT_CHIP_ACTIONS = frozenset(
-    {"open_workspace", "open_subview", "set_period", "select_block", "ask"}
+    {"open_workspace", "open_subview", "set_period", "select_block", "ask", "stage_script"}
 )
 _CHAT_ACTION_MARKER = "WS4_ACTIONS:"
 
@@ -777,6 +777,18 @@ def _chat_text(value: object, *, limit: int) -> str:
         return ""
     cleaned = "".join(character for character in value if character >= " " and character != "`")
     return " ".join(cleaned.split())[:limit]
+
+
+def _chat_script(value: object, *, limit: int) -> str:
+    """Return bounded printable script text, preserving lines and indentation."""
+    if not isinstance(value, str):
+        return ""
+    cleaned = "".join(
+        character for character in value if character in "\n\t" or character >= " "
+    ).strip()
+    if not cleaned or len(cleaned) > limit:
+        return ""
+    return cleaned
 
 
 def _chat_index(value: object) -> int | None:
@@ -881,6 +893,10 @@ def _chat_chip(item: object) -> dict[str, str] | None:
         value = _chat_text(target, limit=200)
         if not value:
             return None
+    elif action == "stage_script":
+        value = _chat_script(target, limit=20_000)
+        if not value:
+            return None
     else:
         value = _chat_text(target, limit=500)
         if not value:
@@ -928,6 +944,30 @@ def _split_chat_actions(reply: str) -> tuple[str, list[dict[str, str]]]:
             if len(chips) == 4:
                 return visible, chips
     return visible, chips
+
+
+def _agent_environment(source: Mapping[str, str] | None = None) -> dict[str, str]:
+    """Return a chat-agent environment without console secrets or session hooks.
+
+    Parameters
+    ----------
+    source : mapping of str to str or None, optional
+        Base environment. None copies ``os.environ``.
+
+    Returns
+    -------
+    dict
+        A new environment with console tokens and OpenCode session hooks removed.
+    """
+    environment = dict(os.environ if source is None else source)
+    for name in (
+        "OPENCODE_SESSION_ID",
+        "OPENCODE_TERMINAL",
+        "WS4_CONSOLE_TOKEN",
+        "WS4_CONSOLE_PYTHON",
+    ):
+        environment.pop(name, None)
+    return environment
 
 
 def create_app(
@@ -2135,17 +2175,16 @@ def create_app(
             "WS4_ACTIONS: followed by a JSON array. Use only these actions: "
             "open_workspace (target map, plan, results, data, or sdmd), "
             "open_subview (target workspace:subview), set_period (target integer index), "
-            "select_block (target block id), and ask (target prompt text). "
-            "Never use a chip to edit data, start a run, or run a command."
+            "select_block (target block id), ask (target prompt text), and stage_script "
+            "(target Python source for the reviewed console). stage_script only stages code: "
+            "it never executes. Never use a chip to edit data, start a run, or run a command."
         )
         prompt = "\n".join(context) + "\n\nUser: " + message
         command = [executable, "run", "--model", agent_model, "--format", "json", "--auto"]
         if session:
             command.extend(["--session", session])
         command.append(prompt)
-        environment = dict(os.environ)
-        for name in ("OPENCODE_SESSION_ID", "OPENCODE_TERMINAL"):
-            environment.pop(name, None)
+        environment = _agent_environment()
 
         if bool(payload.get("async")):
             # Keep the active set bounded; finished jobs are retained for a short poll window.
