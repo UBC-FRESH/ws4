@@ -133,7 +133,8 @@ QMD, and boundaries are vector; crown closure is a raster trace. See
 ## cwn status
 
 Western redcedar natural is stored as `cwh-cw-natural.json`, provisional. Top
-height, QMD, and boundaries are vector; crown closure is a raster trace. See
+height, QMD, boundaries, and crown closure are vector paths. Top height and QMD
+use full value series, so their unlabelled interior curves are kept. See
 `notes/reference/cwn-digitisation.md`.
 
 ## fdcp status

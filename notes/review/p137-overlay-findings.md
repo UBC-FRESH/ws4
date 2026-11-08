@@ -86,6 +86,12 @@ source paths. hwn is now marked reviewed.
 
 Western hemlock planted is complete with 19 top-height paths, 13 QMD paths, and
 crown closure from source path 559. Direct overlay inspection shows the curves on
+their source paths. hwp is now marked reviewed.
+
+### cwn pass
+
+Western redcedar natural is complete with 17 top-height paths, 16 QMD paths, and
+crown closure from source path 653. Direct overlay inspection shows the curves on
 their source paths.
 
 ## TASS predicted mortality curves

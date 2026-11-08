@@ -26,14 +26,13 @@ def _builder() -> Any:  # noqa: ANN401 - test-only dynamic module loader
     return module
 
 
-def test_review_rows_validate_all_five_provisional_diagrams() -> None:
+def test_review_rows_validate_all_four_provisional_diagrams() -> None:
     """Every queue diagram loads, validates, and names its curve families."""
     rows = _builder().review_rows()
-    assert len(rows) == 5
+    assert len(rows) == 4
     assert {row["diagram_id"] for row in rows} == {
         "cwn",
         "cwp",
-        "hwp",
         "swn",
         "swp",
     }
@@ -55,7 +54,7 @@ def test_packet_writes_ten_curve_plots_and_a_checklist(
     monkeypatch.setattr(builder, "CURVE_DIR", tmp_path / "curves")
     packet = builder.build_packet(download=False)
     text = packet.read_text(encoding="utf-8")
-    assert "all 5 diagrams remain **provisional**" in text
-    assert text.count("- [ ]") == 5
-    assert len(list((tmp_path / "curves").glob("*.svg"))) == 5
-    assert 'fill="#c9ced6"' in (tmp_path / "curves" / "hwp.svg").read_text(encoding="utf-8")
+    assert "all 4 diagrams remain **provisional**" in text
+    assert text.count("- [ ]") == 4
+    assert len(list((tmp_path / "curves").glob("*.svg"))) == 4
+    assert 'fill="#c9ced6"' in (tmp_path / "curves" / "cwn.svg").read_text(encoding="utf-8")
