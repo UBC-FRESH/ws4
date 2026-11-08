@@ -10,6 +10,9 @@ Objective
 ---------
 
 A target names one account and one accounting **period**, with a ``minimum``, a ``maximum``, or both.
+The target is an **aspiration with a one-sided penalty**, not a hard feasibility bound: a minimum
+charges shortfall and leaves over-performance free unless a maximum is also supplied. A minimum set
+above the achievable level is therefore a legitimate pull-up device, not an infeasible constraint.
 **The simulation step is one year and is not configurable.** Treatments, growth, transitions and road
 events are all simulated annually, at a simulation *offset* (offset 0 is the first year); the
 **account** time step is a whole number of years — the period length — and is what ``period_width``
@@ -138,9 +141,17 @@ to move inside:
        max_weight: 10000
        shape: non_linear
 
-That pairing is the useful idiom: the band constrains only the *shape*, the minimum target pulls the
-level up, and the pair converges on the **highest even-flow level** the forest can sustain without the
-level ever being specified — so the same two targets work across scenarios.
+That pairing is the useful idiom: the band constrains only the *shape*, while the level target pulls the
+profile up. The level target can be deliberately higher than any achievable level; it then acts as a
+persistent pull-up aspiration rather than a promise. With a dominant flow target, the pair converges on
+the **maximum even-flow harvest** the forest can sustain, without the level ever being specified — so
+the same two targets work across scenarios.
+
+The amount of “dominance” matters. A high flow **weight** leaves the level term active as a pull and
+still lets shape win most trade-offs. A **priority-tier** gap is much more nearly lexicographic: because
+adjacent tiers are separated by ``PRIORITY_SCALE`` (``1e9``), a lower-tier level target has almost no
+influence unless the higher-tier flow penalty is effectively tied. Use a tier gap when that hard
+ordering is intended; use weights when the goal is “dominant but still balanced.”
 
 Because both flow kinds divide by a balance, the term is **infinite while that balance is zero** — for
 ``even`` the reference period, for ``ndy`` every period a comparison starts from. That is definitional,
@@ -438,6 +449,26 @@ a grid of target-weight factors. Every member keeps its objective and realized m
      --directions "product.Yield.managed.Conif=max;feature.Old=max" \
      --seeds 1,2,3 --iterations 500 --years 50
 
+A five- to seven-target scan can exceed a useful run count. Keep ``--mode grid`` for
+an exact Cartesian product, or use ``--mode random`` with ``--max-members`` and
+``--sample-seed`` to take a deterministic sample of distinct grid positions without
+materializing the full product:
+
+.. code-block:: bash
+
+   python scripts/portfolio.py \
+     --dataset build/compiled --targets targets.yaml --out runtime/portfolio \
+     --vary "product.Yield=0.5,1,2;feature.Old=0.5,1,2;feature.Habitat=1,2" \
+     --mode random --max-members 64 --sample-seed 7 --workers 4 \
+     --metrics feature.Old,feature.Habitat --directions "feature.Old=max;feature.Habitat=max"
+
+``--workers`` runs independent members in separate processes. Each worker loads its
+own copy of the compiled dataset, so the default is one; raise it only when the host
+has memory for the model copies. ``--initial-schedule`` supplies a starting schedule for every member, which is
+needed when flow targets cannot be satisfied from an empty start. The web launcher
+also offers a level-only target copy for scans that should ignore flow rows. The output layout, per-member summaries, and seeded
+replay are unchanged.
+
 A factor multiplies the matching targets' ``min_weight`` and ``max_weight``; the bounds and
 the other targets are unchanged. An ``account@period`` key varies one period. The metrics
 read ``account_values.csv``: a bare name is the last offset, ``name@sum`` sums the horizon,
@@ -447,7 +478,12 @@ manifest and one schedule CSV per archived elite.
 
 The front is a finite grid under a fixed budget and seed set. It is advisory, not a
 certified optimum, and a weight vector that reaches the same metric point as another keeps
-the lower scalar objective.
+the lower scalar objective. The reported ``front``/``outcome_front`` is computed from every
+successful member over the declared outcome metrics; the scalar ``objective`` remains an
+optional dimension but does not define dominance. The ``archive/`` directory remains
+capacity-bounded so it can keep one schedule per retained elite without growing without
+limit. Use :func:`ws4.opt.solution_space.build_solution_space` or
+``GET /api/search/{name}/space`` to read the full-member view.
 
 Tuner
 -----
@@ -801,6 +837,12 @@ API
 .. autofunction:: ws4.opt.archive.pareto_front
 
 .. autofunction:: ws4.opt.portfolio.run_portfolio
+
+.. autofunction:: ws4.opt.solution_space.build_solution_space
+
+.. autofunction:: ws4.opt.default_scenario.build_default_stock90_targets
+
+.. autofunction:: ws4.opt.default_scenario.initial_managed_stock
 
 .. autofunction:: ws4.opt.tune.run_tuning
 

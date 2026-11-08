@@ -78,6 +78,16 @@ class Target:
         The priority tier, at least one. Targets at the same tier add; lower-priority tiers
         are multiplied by ``PRIORITY_SCALE`` per step so higher priorities dominate the
         scalar search. Default one leaves the objective unchanged.
+    aggregation : str
+        The scenario aggregation: ``single`` (default, no scenario dimension), ``mean``,
+        ``min``, ``max``, ``cvar`` (lower-tail), ``cvar_lower``, ``cvar_upper``,
+        ``quantile``, ``probability``, or ``regret``.
+    risk_alpha : float
+        The tail or quantile level for ``cvar`` and ``quantile``, in (0, 1). Default 0.9.
+    risk_minimum : float or None
+        An optional bound for the aggregated statistic, overriding the target's minimum.
+    risk_maximum : float or None
+        An optional bound for the aggregated statistic, overriding the target's maximum.
     """
 
     account: str
@@ -99,6 +109,10 @@ class Target:
     active: bool = True
     normalization: str = "none"
     priority: int = 1
+    aggregation: str = "single"
+    risk_alpha: float = 0.9
+    risk_minimum: float | None = None
+    risk_maximum: float | None = None
 
     def __post_init__(self) -> None:
         """Reject an unknown penalty shape, flow type, normalization, or priority."""
@@ -112,6 +126,36 @@ class Target:
             raise ValueError(f"unknown normalization: {self.normalization!r}")
         if self.priority < 1:
             raise ValueError("priority must be a positive integer")
+        allowed_aggregations = {
+            "single",
+            "mean",
+            "min",
+            "max",
+            "cvar",
+            "cvar_lower",
+            "cvar_upper",
+            "quantile",
+            "probability",
+            "regret",
+        }
+        if self.aggregation not in allowed_aggregations:
+            raise ValueError(f"unknown risk aggregation: {self.aggregation!r}")
+        if not 0.0 < self.risk_alpha < 1.0:
+            raise ValueError("risk_alpha must be between 0 and 1")
+        if self.risk_minimum is not None and not math.isfinite(self.risk_minimum):
+            raise ValueError("risk_minimum must be finite")
+        if self.risk_maximum is not None and not math.isfinite(self.risk_maximum):
+            raise ValueError("risk_maximum must be finite")
+        if self.aggregation != "single" and self.flow:
+            raise ValueError("risk aggregation does not support flow targets")
+        if self.aggregation == "probability" and (
+            self.risk_minimum is None and self.risk_maximum is None
+        ):
+            object.__setattr__(self, "risk_minimum", 0.9)
+        if self.aggregation == "regret" and (
+            self.risk_minimum is None and self.risk_maximum is None
+        ):
+            object.__setattr__(self, "risk_maximum", 0.0)
         if self.period is not None:
             if self.period < 0:
                 raise ValueError("period must be zero (initial snapshot) or positive")
@@ -719,7 +763,9 @@ def load_targets(path: Path) -> list[Target]:
 
     ``year`` and the year-based flow keys are still accepted for older files; a period key
     takes precedence when both are present. ``normalization`` is ``none`` or ``auto``;
-    ``priority`` is a positive integer tier.
+    ``priority`` is a positive integer tier. ``aggregation`` selects the scenario risk
+    statistic (default ``single``), with ``risk_alpha``, ``risk_minimum``, and
+    ``risk_maximum`` as its parameters.
 
     Parameters
     ----------
@@ -760,6 +806,14 @@ def load_targets(path: Path) -> list[Target]:
                 active=bool(entry.get("active", True)),
                 normalization=str(entry.get("normalization", "none")),
                 priority=int(entry.get("priority", 1)),
+                aggregation=str(entry.get("aggregation", "single")),
+                risk_alpha=float(entry.get("risk_alpha", entry.get("alpha", 0.9))),
+                risk_minimum=(
+                    None if entry.get("risk_minimum") is None else float(entry["risk_minimum"])
+                ),
+                risk_maximum=(
+                    None if entry.get("risk_maximum") is None else float(entry["risk_maximum"])
+                ),
             )
         )
     return targets

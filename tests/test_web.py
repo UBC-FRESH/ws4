@@ -19,6 +19,8 @@ import yaml
 
 pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient
+from ws4.ecosystem.fire import FireConfig, FireRun, synthetic_grid
+from ws4.scene import compile_fire_scene, synthetic_tree_inventory
 from ws4.web.app import create_app
 
 
@@ -27,6 +29,7 @@ def _app(
     *,
     with_geometry: bool = True,
     tile_cache_dir: Path | None = None,
+    fire_scene: Path | None = None,
 ) -> tuple[TestClient, Path]:
     """Create a dataset, a run and a client over them; return the client and the targets path."""
     dataset = tmp_path / "dataset"
@@ -85,6 +88,7 @@ def _app(
         runs=tmp_path / "runs",
         targets=targets,
         geometry=geometry if with_geometry else None,
+        fire_scene=fire_scene,
         tile_cache_dir=tile_cache_dir,
     )
     return TestClient(app), targets
@@ -1157,9 +1161,7 @@ def test_async_chat_returns_a_job_and_a_result(
 ) -> None:
     """The browser can poll a long agent turn instead of holding one proxy request open."""
     client = _chat_client(tmp_path)
-    stdout = json.dumps(
-        {"type": "text", "sessionID": "ses_async", "part": {"text": "async hello"}}
-    )
+    stdout = json.dumps({"type": "text", "sessionID": "ses_async", "part": {"text": "async hello"}})
 
     def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         return subprocess.CompletedProcess(command, 0, stdout, "")
@@ -1618,3 +1620,75 @@ def test_the_target_series_endpoint_assigns_bounds_to_periods(tmp_path: Path) ->
     assert feature["periods"][0]["maximum"] is None
     assert feature["periods"][0]["flow"] == "even"
     assert feature["periods"][0]["active"] is False
+
+
+def test_fire_scene_route_serves_the_viewer(tmp_path: Path) -> None:
+    """The /fire route serves a configured standalone viewer."""
+    viewer = tmp_path / "viewer.html"
+    viewer.write_text("<h1>Fire scene</h1>", encoding="utf-8")
+    client, _ = _app(tmp_path, fire_scene=viewer)
+
+    response = client.get("/fire")
+
+    assert response.status_code == 200
+    assert "Fire scene" in response.text
+    assert response.headers["content-type"].startswith("text/html")
+
+
+def test_fire_scene_route_is_explicit_when_missing(tmp_path: Path) -> None:
+    """A missing viewer returns 404 rather than an empty page."""
+    client, _ = _app(tmp_path, fire_scene=tmp_path / "missing.html")
+
+    response = client.get("/fire")
+
+    assert response.status_code == 404
+    assert "fire scene is not installed" in response.json()["detail"]
+
+
+def test_fire_scene_discovery_payload_and_vendored_viewer(tmp_path: Path) -> None:
+    """A run scene is discoverable, inspectable, and served with vendored Three.js."""
+    client, _targets = _app(tmp_path)
+    _grid, state, edges = synthetic_grid(2, 2)
+    fire = FireRun(
+        state,
+        edges,
+        FireConfig(ignition_rate_per_fragment_year=0.4, base_spread_probability=0.6),
+        scenario_id="web-fire",
+        seed=11,
+    ).run(3)
+    trees = synthetic_tree_inventory(fire.state.fragment_areas, seed=11, trees_per_ha=20.0)
+    scene = compile_fire_scene(
+        fire,
+        trees,
+        scene_id="web-fire-scene",
+        particle_budget=300,
+    )
+    run = tmp_path / "runs" / "run1"
+    scene.write(run / "fire_scene")
+
+    summary = client.get("/api/summary").json()
+    assert summary["capabilities"]["fire"] is True
+
+    scenes = client.get("/api/fire/scenes").json()
+    assert scenes
+    entry = scenes[0]
+    assert entry["run"] == "run1"
+    assert entry["manifest"]["schema_version"] == "ws4.fire.scene.v1"
+    assert entry["viewer"] == "api/fire/runs/run1/viewer"
+    assert (run / "fire_scene" / "payload.json").is_file()
+
+    payload = client.get("/api/fire/runs/run1/payload").json()
+    assert payload["manifest"]["scene_id"] == "web-fire-scene"
+    assert payload["counts"]["trees"] == len(trees.trees)
+    assert payload["stands"]
+
+    viewer = client.get("/api/fire/runs/run1/viewer")
+    assert viewer.status_code == 200
+    assert "static/vendor/three/three.module.js" in viewer.text
+    assert "static/vendor/three/OrbitControls.js" in viewer.text
+    assert "unpkg.com/three" not in viewer.text
+    assert 'id="scene-data"' in viewer.text
+
+    manifest = client.get("/api/fire/runs/run1").json()
+    assert manifest["scene"] == "fire_scene"
+    assert manifest["manifest"]["tree_count"] == len(trees.trees)

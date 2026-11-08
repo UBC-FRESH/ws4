@@ -16,6 +16,8 @@ import random
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Protocol
 
+from fresh_solutions.kernel import Operator, OperatorRegistry, restore
+
 Event = tuple[str, int]
 Chain = tuple[Event, ...]
 Schedule = dict[int, Chain]
@@ -51,102 +53,6 @@ def _index(candidates: Candidates) -> _OptionIndex:
     result = (blocks, rechoosable)
     _INDEX_CACHE[id(candidates)] = (candidates, result)
     return result
-
-
-def restore(schedule: Schedule, undo: Undo) -> None:
-    """Undo an in-place move, restoring each touched block's previous chain.
-
-    Parameters
-    ----------
-    schedule : dict of int to Chain
-        The mutated schedule.
-    undo : dict of int to Chain or None
-        The previous chain per touched block (None means the block was absent).
-    """
-    for block, previous in undo.items():
-        if previous is None:
-            schedule.pop(block, None)
-        else:
-            schedule[block] = previous
-
-
-class Operator(Protocol):
-    """A neighbourhood move.
-
-    Operators are selected by weight, so a registry turns a mix of operators into a single
-    proposal distribution. A move that cannot be made returns None and is not counted.
-
-    Attributes
-    ----------
-    name : str
-        The operator name, as it appears in the run summary.
-    weight : float
-        The relative probability of selecting the operator.
-    """
-
-    name: str
-    weight: float
-
-    def propose_inplace(
-        self, schedule: Schedule, rng: random.Random, candidates: Candidates
-    ) -> Undo | None:
-        """Mutate the schedule and return the previous chains, or None to move.
-
-        Parameters
-        ----------
-        schedule : dict of int to Chain
-            The schedule to mutate in place.
-        rng : random.Random
-            The random source.
-        candidates : dict of int to list of Chain
-            The candidate chains per block.
-
-        Returns
-        -------
-        dict of int to Chain or None
-            The previous chain per touched block (None means the block was absent), or None
-            when the operator cannot move.
-        """
-
-    def propose(
-        self, schedule: Schedule, rng: random.Random, candidates: Candidates
-    ) -> tuple[Schedule, tuple[int, ...]] | None:
-        """Return a modified copy and the blocks it changed, or None.
-
-        Parameters
-        ----------
-        schedule : dict of int to Chain
-            The schedule to copy and modify.
-        rng : random.Random
-            The random source.
-        candidates : dict of int to list of Chain
-            The candidate chains per block.
-
-        Returns
-        -------
-        tuple or None
-            ``(schedule, changed)``, or None when the operator cannot move.
-        """
-
-    def apply(
-        self, schedule: Schedule, rng: random.Random, candidates: Candidates
-    ) -> Schedule | None:
-        """Return a modified copy, or None if the operator cannot move.
-
-        Parameters
-        ----------
-        schedule : dict of int to Chain
-            The schedule to copy and modify.
-        rng : random.Random
-            The random source.
-        candidates : dict of int to list of Chain
-            The candidate chains per block.
-
-        Returns
-        -------
-        dict of int to Chain or None
-            The modified copy, or None when the operator cannot move.
-        """
 
 
 class _OperatorBase:
@@ -840,77 +746,6 @@ class SplitOperator(_OperatorBase):
                     schedule.pop(block, None)
                     return undo
         return None
-
-
-class OperatorRegistry:
-    """A weighted set of operators.
-
-    Parameters
-    ----------
-    operators : list of Operator, optional
-        The operators to choose between. When None, a default set of toggle, shift, swap and
-        LNS is used.
-    """
-
-    def __init__(self, operators: list[Operator] | None = None) -> None:
-        """Store the operators (a default set when none is given)."""
-        self._operators: list[Operator] = (
-            operators
-            if operators is not None
-            else [ToggleOperator(), ShiftOperator(), SwapOperator(), LnsOperator()]
-        )
-
-    @property
-    def operators(self) -> list[Operator]:
-        """Return the registered operators in selection order.
-
-        Returns
-        -------
-        list of Operator
-            A copy of the operator list.
-        """
-        return list(self._operators)
-
-    def names(self) -> list[str]:
-        """Return the operator names.
-
-        Returns
-        -------
-        list of str
-            The names, in registration order.
-        """
-        return [operator.name for operator in self._operators]
-
-    def weights(self) -> dict[str, float]:
-        """Return the operator weights by name.
-
-        Returns
-        -------
-        dict of str to float
-            The selection weight per operator name.
-        """
-        return {operator.name: operator.weight for operator in self._operators}
-
-    def pick(self, rng: random.Random) -> Operator:
-        """Return a weighted-random operator.
-
-        Parameters
-        ----------
-        rng : random.Random
-            The random source.
-
-        Returns
-        -------
-        Operator
-            The chosen operator.
-        """
-        total = sum(operator.weight for operator in self._operators)
-        threshold = rng.random() * total
-        for operator in self._operators:
-            threshold -= operator.weight
-            if threshold <= 0:
-                return operator
-        return self._operators[-1]
 
 
 __all__ = [

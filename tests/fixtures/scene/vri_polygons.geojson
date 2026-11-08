@@ -1,0 +1,15 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"fragment_id": 1, "block_id": 101, "area_ha": 1.0, "age": 60, "species": "Pl"},
+      "geometry": {"type": "Polygon", "coordinates": [[[0, 0], [100, 0], [100, 100], [0, 100], [0, 0]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {"fragment_id": 2, "block_id": 102, "area_ha": 1.0, "age": 80, "species": "Fd"},
+      "geometry": {"type": "Polygon", "coordinates": [[[100, 0], [200, 0], [200, 100], [100, 100], [100, 0]]]}
+    }
+  ]
+}

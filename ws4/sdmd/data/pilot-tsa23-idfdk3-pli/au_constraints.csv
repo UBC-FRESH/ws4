@@ -1,0 +1,8 @@
+au_id,regime_id,allowed,min_entry_age,max_entry_age,max_entries,min_interval_years,max_removal_fraction,required_sdmd_zone,source,review_status
+AU-IDFdk3-TSA23-PLI,REG-A-UNTREATED,True,0,0,0,0,0.0,density-management,regime library; TSA23 IDFdk3 PLI public PSP pilot,reviewed
+AU-IDFdk3-TSA23-PLI,REG-A-CLEARCUT,True,60,120,1,0,1.0,density-management,regime library; TSA23 IDFdk3 PLI public PSP pilot,reviewed
+AU-IDFdk3-TSA23-PLI,REG-A-CT60,True,60,100,1,0,0.6,density-management,regime library; TSA23 IDFdk3 PLI public PSP pilot,reviewed
+AU-IDFdk3-TSA23-PLI,REG-A-FUEL50,True,50,100,1,0,0.5,density-management,regime library; TSA23 IDFdk3 PLI public PSP pilot,reviewed
+AU-IDFdk3-TSA23-PLI,REG-A-SHELTERWOOD40,True,80,120,2,20,0.4,density-management,regime library; TSA23 IDFdk3 PLI public PSP pilot,reviewed
+AU-IDFdk3-TSA23-PLI,REG-A-VR20,True,70,120,2,15,0.2,density-management,regime library; TSA23 IDFdk3 PLI public PSP pilot,reviewed
+AU-IDFdk3-TSA23-PLI,REG-A-SELECTION80,True,90,140,4,20,0.2,density-management,regime library; TSA23 IDFdk3 PLI public PSP pilot,provisional

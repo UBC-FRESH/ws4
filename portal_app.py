@@ -173,7 +173,9 @@ def _existing(root: Path, value: str | None) -> Path | None:
 
 def _resolve(slug: str, root: Path) -> Instance:
     spec = dict(SPECS.get(slug, {}))
-    label, subtitle = LABEL_OVERRIDES.get(slug, (slug.removeprefix("femic-").removesuffix("-instance"), ""))
+    label, subtitle = LABEL_OVERRIDES.get(
+        slug, (slug.removeprefix("femic-").removesuffix("-instance"), "")
+    )
     label = str(spec.get("label", label))
     subtitle = str(spec.get("subtitle", subtitle))
     if not root.is_dir():
@@ -183,17 +185,27 @@ def _resolve(slug: str, root: Path) -> Instance:
     initial = _existing(root, spec.get("initial"))
     if dataset is None:
         # A common fallback for instances with a compiled build.
-        for candidate in (root / "build" / "compiled", root / "ws4" / "runtime" / "matrix", root / "runtime" / "matrix"):
-            if (candidate / "manifest.json").is_file() and (candidate / "fragments.parquet").is_file():
+        for candidate in (
+            root / "build" / "compiled",
+            root / "ws4" / "runtime" / "matrix",
+            root / "runtime" / "matrix",
+        ):
+            if (candidate / "manifest.json").is_file() and (
+                candidate / "fragments.parquet"
+            ).is_file():
                 dataset = candidate
                 break
     if targets is None:
-        for candidate in sorted(root.glob("config/**/targets*.yaml")) + sorted(root.glob("ws4/targets*.yaml")):
+        for candidate in sorted(root.glob("config/**/targets*.yaml")) + sorted(
+            root.glob("ws4/targets*.yaml")
+        ):
             if candidate.is_file():
                 targets = candidate
                 break
     if initial is None:
-        for candidate in sorted(root.glob("runtime/seed*.csv")) + sorted(root.glob("ws4/runtime/*/schedule.csv")):
+        for candidate in sorted(root.glob("runtime/seed*.csv")) + sorted(
+            root.glob("ws4/runtime/*/schedule.csv")
+        ):
             if candidate.is_file():
                 initial = candidate
                 break
@@ -222,7 +234,13 @@ def _resolve(slug: str, root: Path) -> Instance:
         return Instance(slug, label, subtitle, root, False, "no targets YAML")
     # A state run can build its candidate index and seed-state cache on first use;
     # an existing candidate cache only avoids that one-time cost.
-    spec.update({"dataset": str(dataset), "targets": str(targets), "initial": str(initial) if initial else None})
+    spec.update(
+        {
+            "dataset": str(dataset),
+            "targets": str(targets),
+            "initial": str(initial) if initial else None,
+        }
+    )
     return Instance(slug, label, subtitle, root, True, spec=spec)
 
 
@@ -300,18 +318,18 @@ def _landing() -> str:
             action = '<div class="door disabled">'
             footer = "Not currently runnable"
             status = "SETUP NEEDED"
-        reason = f"<p class=\"reason\">{html.escape(instance.reason)}</p>" if instance.reason else ""
+        reason = f'<p class="reason">{html.escape(instance.reason)}</p>' if instance.reason else ""
         cards.append(
-            f'''{action}
+            f"""{action}
               <div class="card-top"><span class="kicker">{html.escape(instance.slug)}</span><span class="badge">{status}</span></div>
               <h2>{html.escape(instance.label)}</h2>
               <p>{html.escape(instance.subtitle or "Public FEMIC instance")}</p>
               {reason}
               <div class="arrow">{footer}</div>
-            </{'a' if instance.ready else 'div'}>'''
+            </{"a" if instance.ready else "div"}>"""
         )
     ready = sum(1 for instance in INSTANCES if instance.ready)
-    return f'''<!doctype html>
+    return f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -346,11 +364,11 @@ def _landing() -> str:
   <div class="kicker">WS4 · public experimental demo · no login · state engine · agent enabled</div>
   <h1>Open a forest model.</h1>
   <p class="lead">Launch any public FEMIC instance in the WS4 web UI. Searches use the resident-state accelerated engine on one CPU core. Choose a model below to edit targets, run a schedule, inspect the map, reports, and the embedded assistant.</p>
-  <div class="doors">{''.join(cards)}</div>
-  <footer>WS4 public demo · {ready} runnable instance{'s' if ready != 1 else ''} · resident-state search · one CPU core · embedded agent enabled</footer>
+  <div class="doors">{"".join(cards)}</div>
+  <footer>WS4 public demo · {ready} runnable instance{"s" if ready != 1 else ""} · resident-state search · one CPU core · embedded agent enabled</footer>
 </main>
 </body>
-</html>'''
+</html>"""
 
 
 @app.get("/", response_class=HTMLResponse)

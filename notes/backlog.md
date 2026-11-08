@@ -376,3 +376,91 @@ items are enhancements and maintenance.
   in FEMIC; Seymour depends on the ungauged domain audit and a reviewed bundle.
   No WS4 screen should be reported as a watershed result until those inputs
   exist.
+
+## Stochastic landscape engine (P144)
+
+- **Event record and random tape.** `done` (P144.2, #854). The `ws4.ecosystem` package now
+  has the unified `Event` record, the deterministic `EventLog` and `EventLogBuilder`, the
+  counter-based `RandomTape` with common random numbers, a replay digest and validator, and
+  `ws4 ecosystem validate-log`. Referential integrity against a dataset is still open; it
+  belongs to the process and scenario tasks.
+- **Ecosystem package and cohort state.** `done` (P144.3, #855). The optional
+  `ws4.ecosystem.v1` sidecar now declares typed state variables, cohort area fractions, and
+  the explicit null yield bridge; `CohortState` aggregates cohorts to fragments, reports
+  missing fragments, and checks area conservation. The compiled management dataset remains
+  authoritative, and a dataset without a package is unchanged. A calibrated yield bridge and
+  a columnar cohort table remain open.
+- **Fire vertical slice.** `done` (P144.4, #856). The `ws4.ecosystem.fire` process now has
+  Poisson ignition, graph percolation spread with fuel, distance, and wind, severity and
+  cohort mortality, a deterministic salvage source, disturbance-compatible events, and account
+  rows. The synthetic grid demo and the analytic Poisson, geometric-chain, barrier, wind,
+  area-conservation, and replay oracles are in place. Calibration and other processes remain
+  open.
+- **Scenario ensembles and risk targets.** `done` (P144.5, #857). Scenario files now carry
+  seeds, weights, and overrides; `Target` carries `aggregation`, `risk_alpha`,
+  `risk_minimum`, and `risk_maximum`; `risk_account_values` turns per-scenario values into
+  risk pseudo-accounts; and `SampleAverageApproximation` evaluates a decision set with common
+  random numbers and writes an out-of-sample report. Flow targets and estate-optimizer wiring
+  remain open.
+- **Succession and the yield bridge.** `open`. A later phase adds regeneration, species
+  succession, and a calibrated bridge from species biomass to merchantable volume. The bridge
+  is the main ecological-calibration risk. Target: a later landscape phase.
+- **Wind, insects, drought, and process interactions.** `open`. A later phase adds the other
+  disturbance processes and their interactions (fuel, host density, windthrow, drought
+  stress). Target: later landscape phases.
+- **Adaptive policy search and two-stage stochastic programming.** `open`. A later phase adds
+  decision rules, recourse, and the stochastic-optimization ladder beyond sample-average
+  approximation. Target: later optimization phases.
+- **External-engine adapters.** `open`. A later phase tests the process protocol against
+  public LANDIS-II, SpaDES, and SELES benchmarks and, where licensing allows, adapters. The
+  provenance rule applies. Target: later landscape phases.
+
+
+## 3D fire visualization (P155, #868)
+
+- **Synthetic individual-tree stands over VRI polygons.** `done` (P155.2, #879). The built-in
+  generator produces a deterministic tree table over synthetic square fragments. The Nemora
+  adapter reads a CSV/Parquet tree table, joins trees to real VRI polygons by explicit id or
+  point-in-polygon, and records the adapter version, Nemora version, seed, polygon source, and
+  CRS. A 12-polygon public TSA 24 cluster and 12,588 Nemora-placed stems are pinned in
+  `examples/fire_scene_vri`. The tree layer stays explicitly synthetic.
+- **3D fire scene and viewer.** `partial` (P155.1, #878; P155.3, #880). The
+  `ws4.fire.scene.v1` package, per-tree animation, real VRI polygons, and a standalone
+  Three.js viewer are in place. The viewer uses a noise/temperature flame shader, curl-like
+  smoke, embers, screen-space heat haze, bloom (with a `?bloom=0` fallback), burnt-crown
+  shrink, a gradual stand scar, and fps/particle HUD. The WS4 web Fire workspace is P155.4
+  (#881). Distance-based tree LOD and an offline high-fidelity smoke tier remain future work.
+- **WS4 web Fire workspace.** `done` (P155.4, #881). Run scene discovery, manifest and
+  payload endpoints, a Fire workspace with shared timeline, tree and fragment inspection,
+  scene A/B comparison, and the vendored-Three viewer are implemented. The phase remains
+  active for P155.3 visual polish and P155.5 close-out.
+- **Sub-fragment fire refinement.** `done` for the growth path (P155.2/P155.4). Each tree
+  samples the P156 growth grid at its position; the fragment event remains the audit record.
+  The viewer clock is in minutes and the tree burn duration is 2 minutes.
+
+## Fire behaviour (P156)
+
+- **Rothermel surface-fire kernel.** `done` (P156.2, #892). The metric fuel, moisture, and
+  environment contracts and the Rothermel (1972) kernel are implemented and match the R
+  ``Rothermel`` reference on the 13 Anderson models, the custom dynamic example, and a
+  15-point A3 wind/slope grid.
+- **Canadian FBP fuel types and surface fire.** `done` (P156.8, #900). The 17 FBP fuel types,
+  surface fuel consumption, the buildup effect, the surface rate of spread, and the surface
+  head fire intensity match `cffdrs` within 0.02 on the base table and a 320-point grid.
+  Flat-ground and surface-only; slope is P156.4 and crown fire is P156.3.
+- **VRI-to-FBP fuel-type mapping.** `done` (P156.9, #905). The VRI stand contract, the
+  deterministic rule set, explicit non-fuel and unknown paths, and per-assignment provenance
+  are implemented. See `docs/reference/fire-vri.rst`. The rules are transparent defaults, not
+  a regional calibration.
+- **Crown fire.** `done` (P156.3, #893). Van Wagner initiation, the FBP crown fraction, the
+  C6 crown rate of spread, the S/I/C description, and an optional Van Wagner active-crown
+  threshold match `cffdrs` on the base table, a 320-point grid, and three C6 cases. Flat
+  ground; no spotting or growth.
+- **Growth geometry.** `done` (P156.4, #894). The site/fuel grid, slope-adjusted effective
+  wind, Huygens growth, barriers, perimeter snapshots, and fragment ignition bridge are
+  implemented and tested.
+- **Event and account integration.** `done` (P156.5, #895). Behaviour-driven fire events
+  record the FBP inputs and outputs, and accounts summarize ROS, intensity, flame length, and
+  the area-weighted crown fraction. The viewer coupling remains P155.
+- **Observed-fire validation.** `open`. Compare the kernel and growth engine to a public
+  benchmark and an observed perimeter, with tolerances named. Target: P156.6.

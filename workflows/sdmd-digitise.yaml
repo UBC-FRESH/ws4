@@ -1,0 +1,51 @@
+workflow:
+  id: sdmd_digitise
+  name: SDMD PDF digitisation and review
+  description: Render a public SDMD PDF, extract vector isopleths, overlay the result, and queue review.
+nodes:
+  - id: render
+    provider: ws4.sdmd.render
+    parameters:
+      pdf: workflows/data/source.pdf
+      out: workflows/output/rendered
+      dpi: 300
+    outputs:
+      image: page_image
+    provenance:
+      source: public-pdf
+  - id: extract
+    provider: ws4.sdmd.extract
+    needs:
+      - render
+    parameters:
+      spec: workflows/data/diagram-spec.json
+      out: workflows/output/diagram.json
+    outputs:
+      diagram: diagram
+    provenance:
+      method: vector-path-extraction
+  - id: overlay
+    provider: ws4.sdmd.overlay
+    needs:
+      - render
+      - extract
+    parameters:
+      spec: workflows/data/diagram-spec.json
+      diagram: workflows/output/diagram.json
+      image: workflows/output/rendered/source-p0001.png
+      out: workflows/output/overlay.png
+      dpi: 300
+    outputs:
+      overlay: overlay
+  - id: review
+    provider: ws4.sdmd.review
+    needs:
+      - extract
+      - overlay
+    parameters:
+      diagram: workflows/output/diagram.json
+      overlay: workflows/output/overlay.png
+      out: workflows/output/review.jsonl
+      status: needs_review
+    outputs:
+      review: review_manifest

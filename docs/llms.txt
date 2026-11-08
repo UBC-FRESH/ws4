@@ -30,6 +30,7 @@
 - [Run a carbon study](howto/run-carbon.html): a FEMIC package through a baseline, carbon targets, fertilization, HWP lifecycle, carbon yield curves, and the GCBM bridge.
 - [Watch a run](howto/watch-a-run.html): the live target window, several accounts at once, and `--plain`.
 - [Automate a study](howto/automate-a-study.html): sweeps, in-memory targets, hand-driven solvers, and scaling.
+- [Run an allowlisted command](howto/web-console.html): the opt-in web console, token gate, allowed commands, quotas, and audit boundary.
 - [FAQ](howto/faq.html): short answers to the questions that come up first.
 
 ## Examples
@@ -48,10 +49,26 @@
 - [Compiled dataset](reference/compiled-dataset.html): the runtime contract, its tables, and its invariants.
 - [ForestModelXML recipe](reference/forestmodelxml.html): the recipe format, the matrix builder, legacy ingestion, and the known gaps.
 - [Simulator](reference/simulator.html): the annual-step engine, its schedule, and its run outputs.
+- [Scenario price paths](reference/prices.html): the read-only ``prices.v1`` table, its named paths, the base-relative comparison, and the ``not a forecast`` caveat.
 - [Optimizer](reference/optimizer.html): the objective and its targets (including even flow and non-declining yield), the operator registry, the metaheuristics, and the MIP bound.
 - [Spatial structure and constraints](reference/spatial.html): the block topology, patch metrics, and opening and green-up rules.
 - [Roads](reference/roads.html): the network tables, shortest-path routing, and the route outputs.
 - [Carbon accounting and planning](reference/carbon.html): the FEMIC package contract, SIT compilation, libcbm, the optimizer ledger, fertilization, HWP lifecycle and system accounts, carbon yield curves, and the GCBM bridge.
+- [Stand density management](reference/sdmd.html): the six-table SDMD contract, the AU Explorer boundary, and the validation codes.
 - [Performance and scale](reference/performance.html): the measured figures, the incremental objective, and how to reproduce the benchmark.
 - [FEMIC hydrology](reference/femic-hydrology.html): pinned response bundles, checksums, flood-risk rows, and applicability metadata.
+- [Forest condition report card](reference/forest-condition.html): the report-only indicator, provenance, advisory-alert, and review-status contract.
+- [Scenario storyboard](reference/storyboard.html): a one-page run narrative that reuses the condition card.
+- [Event log and random tape](reference/event-log.html): the unified event record, deterministic ordering, counter-based random tape, and replay contract.
+- [Ecosystem package and cohort state](reference/ecosystem-package.html): the optional state schema, cohort fractions, null bridge, aggregation, and dataset join.
+- [Fire process](reference/ecosystem-fire.html): Poisson ignition, graph spread, severity, cohort mortality, salvage, accounts, and the analytic oracles.
+- [Scenario ensembles and risk targets](reference/ecosystem-scenarios.html): scenario files, common random numbers, risk aggregation, sample-average approximation, and the out-of-sample report.
+- [Fire behaviour](reference/fire-behaviour.html): the Rothermel surface-fire kernel, fuel and moisture contracts, standard cases, and derived intensity.
+- [Fire weather and FWI codes](reference/fire-weather.html): the Canadian FWI moisture codes, the daily weather contract, and the reference validation.
+- [FBP surface fire](reference/fire-fbp.html): the FBP fuel types, surface fuel consumption, surface rate of spread, and surface intensity.
+- [Crown fire](reference/fire-crown.html): Van Wagner initiation, the FBP crown fraction, the C6 crown rate of spread, and the active-crown threshold.
+- [Fire growth and perimeter](reference/fire-growth.html): the site grid, slope-adjusted effective wind, Huygens growth, and perimeter snapshots.
+- [VRI to FBP mapping](reference/fire-vri.html): the VRI stand contract, deterministic FBP fuel-type rules, and provenance.
+- [Fire growth benchmark](reference/fire-benchmark.html): the FBP ellipse benchmark, the scenario ensemble, and the reported tolerances.
+- [Fire scene and synthetic trees](reference/fire-scene.html): the synthetic tree inventory, the portable scene package, and the standalone 3D fire viewer.
 - [API reference](api/index.html): the repository tooling's public functions, with their parameters, types, and return values. The package API is rendered on the reference pages above.

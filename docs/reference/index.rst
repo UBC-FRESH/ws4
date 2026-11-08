@@ -18,6 +18,12 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - The recipe format WS4 reads, the matrix it compiles, and the known gaps.
    * - :doc:`simulator`
      - The annual step, the schedule, and every file a run writes.
+   * - :doc:`report-provenance`
+     - The report sidecar: file digests, source metadata, run and dataset identifiers,
+       and explicit uncertainty.
+   * - :doc:`prices`
+     - The read-only ``prices.v1`` scenario price-path table, its named paths, the
+       base-relative comparison, and the ``not a forecast`` caveat.
    * - :doc:`optimizer`
      - Targets and the objective, the operator registry, the metaheuristics, and the MIP bound.
    * - :doc:`spatial`
@@ -38,6 +44,13 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - Dominant-species ingest, block fractions, and VRI comparison.
    * - :doc:`recovery`
      - Post-fire spectral recovery ingest, block status, and caveats.
+   * - :doc:`sdmd`
+     - The stand density management contracts, the AU Explorer boundary, and the
+       validation codes.
+   * - :doc:`forest-condition`
+     - The report-only forest-condition card schema, advisory alerts, and limits.
+   * - :doc:`storyboard`
+     - The one-page run storyboard that reuses the condition card.
    * - :doc:`performance`
      - The measured figures and how to reproduce them.
    * - :doc:`web`
@@ -46,6 +59,37 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - Pinned FEMIC LidarBC bundles, checksums, and polygon support summaries.
    * - :doc:`disturbance`
      - Read-only ``femic.disturbance.v1`` events and the summary report.
+   * - :doc:`event-log`
+     - The unified event record, deterministic ordering, counter-based random tape, and
+       replay contract.
+   * - :doc:`ecosystem-package`
+     - The optional state schema, cohort fractions, null bridge, and dataset join.
+   * - :doc:`ecosystem-fire`
+     - The first stochastic process: Poisson ignition, graph spread, mortality, salvage,
+       and disturbance accounts.
+   * - :doc:`ecosystem-scenarios`
+     - Scenario ensembles, common random numbers, risk targets, and the out-of-sample report.
+   * - :doc:`fire-behaviour`
+     - The Rothermel surface-fire kernel, fuel and moisture contracts, standard cases, and
+       derived intensity.
+   * - :doc:`fire-weather`
+     - The Canadian FWI moisture codes, the daily weather contract, and the reference
+       validation.
+   * - :doc:`fire-fbp`
+     - The FBP fuel types, surface fuel consumption, surface rate of spread, and surface
+       intensity.
+   * - :doc:`fire-crown`
+     - Crown fire initiation, the FBP crown fraction, the C6 crown rate of spread, and the
+       active-crown threshold.
+   * - :doc:`fire-growth`
+     - The site grid, slope-adjusted effective wind, Huygens growth, and perimeter snapshots.
+   * - :doc:`fire-vri`
+     - The VRI stand contract, the deterministic FBP fuel-type rules, and provenance.
+   * - :doc:`fire-benchmark`
+     - The FBP ellipse benchmark, the scenario ensemble, and the reported tolerances.
+   * - :doc:`fire-scene`
+     - Synthetic individual-tree stands, the portable fire-scene package, and the standalone
+       3D fire viewer.
    * - :doc:`femic-hydrology`
      - Pinned FEMIC hydrology response bundles, checksums, flood-risk rows, and
        applicability metadata.
@@ -57,6 +101,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    compiled-dataset
    forestmodelxml
    simulator
+   report-provenance
+   prices
    optimizer
    spatial
    roads
@@ -66,8 +112,23 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    resilience
    species-composition
    recovery
+   forest-condition
+   storyboard
    performance
+   sdmd
    web
    femic-lidar
    disturbance
+   event-log
+   ecosystem-package
+   ecosystem-fire
+   ecosystem-scenarios
+   fire-behaviour
+   fire-weather
+   fire-fbp
+   fire-crown
+   fire-growth
+   fire-vri
+   fire-benchmark
+   fire-scene
    femic-hydrology

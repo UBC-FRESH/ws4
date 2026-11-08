@@ -77,8 +77,8 @@ def test_zero_rounds_returns_the_initial_schedule(tmp_path: Path) -> None:
     assert result.accepted == 0
 
 
-def test_mixed_priorities_are_rejected(tmp_path: Path) -> None:
-    """The prototype refuses a target mix it cannot price exactly."""
+def test_mixed_priorities_are_priced_exactly(tmp_path: Path) -> None:
+    """Priority tiers scale the batched objective at the same rate as the CPU evaluator."""
     optimizer, _evaluator = _optimizer(tmp_path)
     evaluator = IncrementalObjective(
         optimizer,
@@ -88,8 +88,11 @@ def test_mixed_priorities_are_rejected(tmp_path: Path) -> None:
         ],
     )
     table = EffectTable.build(optimizer, evaluator, device="cpu")
-    with pytest.raises(NotImplementedError):
-        BatchedLnsSearch(optimizer, evaluator, table)
+    search = BatchedLnsSearch(optimizer, evaluator, table)
+    result = search.run(_initial(optimizer), rounds=0)
+    verifier = IncrementalObjective(optimizer, evaluator.targets)
+    verifier.reset(result.schedule)
+    assert result.objective == pytest.approx(verifier.objective, abs=1e-6)
 
 
 def test_empty_schedule_is_rejected(tmp_path: Path) -> None:

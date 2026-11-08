@@ -18,8 +18,10 @@ from __future__ import annotations
 
 import random
 from collections import Counter
-from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any
+from collections.abc import Callable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Protocol, cast
+
+from fresh_solutions.kernel import Operator, OperatorRegistry, restore_state
 
 from ..patch.constraints import (
     core_area_penalty,
@@ -29,7 +31,7 @@ from ..patch.constraints import (
     spatial_penalty,
 )
 from ..patch.metrics import connected_patches, core_area, patch_perimeter
-from .operators import Candidates, Operator, OperatorRegistry, Schedule, restore
+from .operators import Candidates, Schedule
 
 if TYPE_CHECKING:
     from .engine import Optimizer
@@ -62,8 +64,15 @@ class ConstraintGuard:
                 or (self.min_core_area_ha is not None and self.core_buffer_m is not None)
             )
         )
+        self.schedule_check: Callable[[Mapping[int, Any]], bool] | None = None
         self.stats: Counter[str] = Counter(
-            {"proposed": 0, "feasible": 0, "rejected": 0, "repaired": 0}
+            {
+                "proposed": 0,
+                "feasible": 0,
+                "rejected": 0,
+                "repaired": 0,
+                "sdmd_rejected": 0,
+            }
         )
         self.initial_removed = 0
         self.initial_repairs = 0
@@ -83,7 +92,20 @@ class ConstraintGuard:
         }
         self._edges_by_block = optimizer._edges_by_block()
 
-    def wrap(self, registry: OperatorRegistry) -> OperatorRegistry:
+    def set_schedule_check(self, check: Callable[[Mapping[int, Any]], bool] | None) -> None:
+        """Set a whole-schedule predicate, such as the SDMD AU guard.
+
+        Parameters
+        ----------
+        check : callable or None
+            A predicate over the proposed schedule. Each move calls it before the
+            spatial rules; None disables it.
+        """
+        self.schedule_check = check
+
+    def wrap(
+        self, registry: OperatorRegistry[Schedule, Candidates]
+    ) -> OperatorRegistry[Schedule, Candidates]:
         """Return a registry whose operators obey the guard.
 
         Parameters
@@ -96,10 +118,13 @@ class ConstraintGuard:
         OperatorRegistry
             The wrapped registry, or the original when the policy is the default.
         """
-        if not self.enabled:
+        if not self.enabled and self.schedule_check is None:
             return registry
         return OperatorRegistry(
-            [GuardedOperator(operator, self) for operator in registry.operators]
+            [
+                GuardedOperator(cast(ProposingOperator, operator), self)
+                for operator in registry.operators
+            ]
         )
 
     def consider(
@@ -121,6 +146,9 @@ class ConstraintGuard:
         dict of int to chain or None
             The feasible proposal or repair, or None when the move is rejected.
         """
+        if self.schedule_check is not None and not self.schedule_check(proposed):
+            self.stats["sdmd_rejected"] += 1
+            return None
         if not self.enabled:
             return dict(proposed)
         self.stats["proposed"] += 1
@@ -200,6 +228,8 @@ class ConstraintGuard:
             A feasible schedule.
         """
         current: Schedule = dict(schedule or {})
+        if self.schedule_check is not None and not self.schedule_check(current):
+            raise ValueError("initial schedule violates the SDMD AU guard")
         if not self.enabled:
             return current
         for _ in range(len(current) + 1):
@@ -355,7 +385,7 @@ class ConstraintGuard:
         dict of str to object
             The strategy, enabled flag, move counts, and initial repairs.
         """
-        return {
+        summary: dict[str, object] = {
             "strategy": self.strategy,
             "enabled": self.enabled,
             "proposed": self.stats["proposed"],
@@ -365,6 +395,10 @@ class ConstraintGuard:
             "initial_removed": self.initial_removed,
             "initial_repairs": self.initial_repairs,
         }
+        if self.schedule_check is not None:
+            summary["sdmd_guard"] = True
+            summary["sdmd_rejected"] = self.stats["sdmd_rejected"]
+        return summary
 
     def _state(
         self, schedule: Mapping[int, Any]
@@ -412,6 +446,31 @@ class ConstraintGuard:
         return records
 
 
+class ProposingOperator(Operator[Schedule, Candidates], Protocol):
+    """An operator that also offers the copying ``propose`` convenience."""
+
+    def propose(
+        self, schedule: Schedule, rng: random.Random, candidates: Candidates
+    ) -> tuple[Schedule, tuple[int, ...]] | None:
+        """Return a modified copy and the changed blocks, or ``None``.
+
+        Parameters
+        ----------
+        schedule : Schedule
+            The schedule to copy and modify.
+        rng : random.Random
+            The random source.
+        candidates : Candidates
+            The candidate chains per block.
+
+        Returns
+        -------
+        tuple of (Schedule, tuple of int) or None
+            The modified copy and the changed blocks, or ``None``.
+        """
+        ...
+
+
 class GuardedOperator:
     """An operator that applies a :class:`ConstraintGuard` to every proposal.
 
@@ -423,7 +482,7 @@ class GuardedOperator:
         The feasibility policy.
     """
 
-    def __init__(self, operator: Operator, guard: ConstraintGuard) -> None:
+    def __init__(self, operator: ProposingOperator, guard: ConstraintGuard) -> None:
         """Store the wrapped operator and guard."""
         self._operator = operator
         self._guard = guard
@@ -456,7 +515,7 @@ class GuardedOperator:
         changed = list(undo)
         accepted = self._guard.consider(before, schedule, changed)
         if accepted is None:
-            restore(schedule, undo)
+            restore_state(schedule, undo)
             return None
         schedule.clear()
         schedule.update(accepted)

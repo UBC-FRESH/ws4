@@ -86,6 +86,78 @@ exists and the maintainer approves it.
 | P81 Seed schedules from the UI | #570 | `feature/p81-ui-seed` | complete |
 | P82 Seeded max-flow | #575 | `feature/p82-seeded-max-flow` | active |
 | P83 Two-stage c5 even-flow | #579 | `feature/p83-two-stage-flow` | active |
+| P84 Precompiled scheduling substrate and fast startup | #613 | `feature/p84-incremental-state` | complete |
+| P85 GPU acceleration and interactive target cache | #618 | `feature/p85-gpu-acceleration` | complete |
+| P86 Weighted goal-programming target semantics | #625 | `feature/p86-target-semantics` | pr-open |
+| P87 Stand density management and AU Explorer | #628 | `feature/p87-sdmd-au-explorer` | complete |
+| P88 Factorized GPU account search | #637 | `feature/p88-factorized-gpu` | complete |
+| P89 Mixed-target factorized search and live switching | #643 | `feature/p89-mixed-target-search` | pr-open |
+| P90 Forest condition report cards | #650 | `feature/p90-forest-condition-cards` | pr-open |
+| P91 Condition card from a WS4 run | #655 | `feature/p91-condition-run-card` | pr-open |
+| P92 Condition-card API | #659 | `feature/p92-condition-card-api` | pr-open |
+| P93 Condition-card Reports UI | #662 | `feature/p93-condition-card-ui` | pr-open |
+| P94 LTSY scenario comparison | #664 | `feature/p94-ltsy-scenario-comparison` | pr-open |
+| P104 (SDMD pilot) digitisation and trajectory evidence | #680 | `feature/p104-sdmd-pilot` | complete |
+| P106 AU evidence depth | #723 | `feature/p106-au-evidence` | complete |
+| P120 SDMD atlas completion | #731 | `feature/p120-sdmd-atlas` | complete |
+| P121 BEC crosswalk and AU integrity | #769 | `feature/p121-bec-integrity` | complete |
+| P109 Report provenance sidecars | #734 | `feature/p108-report-provenance` | pr-open |
+
+| P95 (factorized vectors) target-cell cache | #675 | `feature/p95-factorized-cell-vectors` | pr-open |
+| P96 Base LTSY watcher profile | #686 | `feature/p96-base-ltsy-profile` | pr-open |
+| P97 Mixed-target vector performance | #691 | `feature/p97-mixed-target-vectors` | pr-open |
+| P98 LTSY scenario profile library | #699 | `feature/p98-ltsy-profiles` | pr-open |
+| P99 Scenario profile UI | #704 | `feature/p99-profile-ui` | pr-open |
+| P102 Ask overlay | #709 | `feature/p102-ask-overlay` | pr-open |
+| P103 Profile-aware web runs | #713 | `feature/p103-profile-runs` | pr-open |
+| P105 Profile-run feedback | #720 | `feature/p105-profile-run-feedback` | pr-open |
+| P107 Profile target telemetry | #730 | `feature/p107-profile-target-telemetry` | pr-open |
+| P108 Profile-run report package | #742 | `feature/p108-profile-run-reports` | pr-open |
+| P110 Optional-factorized GPU profiles | #745 | `feature/p110-tsa27-gpu-profile` | pr-open |
+| P111 Preserve zero-generation profile runs | #751 | `fix/p111-zero-generations` | pr-open |
+| P112 TSA 29 GPU profile | #755 | `feature/p112-tsa29-gpu-profile` | pr-open |
+| P113 Map capability fallback | #758 | `feature/p113-map-fallback` | pr-open |
+| P114 Scenario price paths | #749 | `feature/p114-prices-v1` | pr-open |
+| P115 TSA 24 source geometry | #765 | `feature/p115-tsa24-source-geometry` | pr-open |
+| P116 TSA 24 map performance | #767 | `feature/p116-tsa24-map-performance` | pr-open |
+| P122 Run timeline and interaction uplift | #775 | `feature/p122-ui-timeline` | pr-open |
+| P123 Assistant context and action chips | #780 | `feature/p123-assistant-context` | complete |
+| P124 3D estate replay | #781 | `feature/p124-3d-replay` | complete |
+| P125 Stabilize period playback and map paging | #784 | `fix/p125-playback-map-race` | pr-open |
+| P126 Stabilize playback controls and cadence | #787 | `fix/p126-playback-controls` | pr-open |
+| P127 Fix target chart edits and Solve semantics | #791 | `fix/p127-target-chart-solve` | pr-open |
+| P128 Sync target chart edits into the table | #794 | `fix/p128-target-chart-table-sync` | pr-open |
+| P129 GPU profile current targets and budget | #798 | `feature/p129-gpu-profile-current-targets` | pr-open |
+| P130 Route Solve through the GPU profile path | #802 | `feature/p130-solve-gpu-profile` | pr-open |
+| P131 Profile time budget overrides generations | #805 | `fix/p131-profile-time-budget` | pr-open |
+| P132 Adversarial audit remediation | #809 | `feature/p132-audit-remediation` | complete |
+| P133 BC-wide SDMD coverage registry | #817 | `feature/p133-bc-coverage` | complete |
+| P134 SDMD coverage closure | #820 | `feature/p134-coverage-closure` | complete |
+| P135 BC SDMD applicability correction | #824 | `feature/p135-bec-applicability` | complete |
+| P136 Pareto solution-space explorer | #827 | `feature/p136-pareto-explorer` | complete |
+| P137 Provisional SDMD diagram review | #830 | `feature/p137-diagram-review` | complete |
+| P138 Pareto member to map/Plan | #834 | `feature/p138-pareto-to-plan` | complete |
+| P139 Target-faithful promoted runs | #837 | `feature/p139-target-faithful` | complete |
+| P140 Period target dimensions | #840 | `feature/p140-target-dimensions` | complete |
+| P141 Portfolio target preparation | #843 | `feature/p141-portfolio-target-prep` | complete |
+| P142 Default stock90 scenario | #846 | `feature/p142-default-stock90` | complete |
+| P143 Web UI trust and cleanup | #849 | `feature/p143-web-trust` | complete |
+| P144 Stochastic landscape engine | #852 | `feature/p144-stochastic-landscape` | complete |
+| P145 Multi-account target scaffold | #859 | `feature/p145-multi-account-targets` | complete |
+| P146 Live multi-account scan | #862 | `feature/p146-live-multi-account-scan` | complete |
+| P147 Diverse multi-account scaffold | #865 | `feature/p147-diverse-scaffold` | complete |
+| P148 Portfolio and promoted-run cleanup | #869 | `feature/p148-portfolio-cleanup` | complete |
+| P149 State-run exactness | #873 | `feature/p149-state-exactness` | complete |
+| P150 GPU extension guard | #886 | `fix/gpu-extension-guard` | complete |
+| P151 Web UI power-user console | #789 | `feature/p151-web-console` | complete |
+| P152 Sandboxed Python runner | #901 | `feature/p152-python-sandbox` | complete |
+| P153 Assistant script review | #906 | `feature/p153-assistant-script-review` | complete |
+| P154 TSA 29 GPU stock | #912 | `feature/p154-tsa29-stock` | complete |
+| P155 3D fire scene and synthetic tree stands | #877 | `feature/p155-fire-3d` | complete |
+| P156 Credible fire behaviour and growth | #890 | `feature/p156-fire-behaviour` | complete |
+| P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
+| P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
+
 | P39 Account browser polish | #293 | `feature/p39-account-polish` | complete |
 | P42 Target operations | #308 | `feature/p42-target-ops` | complete |
 | P43 Search artifact depth | #330 | `feature/p43-search-depth` | complete |
@@ -2577,6 +2649,662 @@ Acceptance:
 - The even-flow and stock result is reported honestly, including any remaining gap.
 - Dashboard green.
 
+## Phase 84: Precompiled scheduling substrate and fast startup
+
+Parent issue: #613
+Branch: `feature/p84-incremental-state`
+Status: complete
+Plan: `notes/design/ws4-fast-startup.md`
+Report: `notes/reports/p84-state-watch.md`
+
+Goal: remove the startup bottleneck that makes WS4 rebuild its scheduling substrate on every
+process launch, using c5 as the phase acceptance target.
+
+- [x] Compact candidate index and persisted candidate artifact
+- [x] Resident Model II state pages and exact state objective
+- [x] Cached incremental rows and seed-state persistence
+- [x] Live c5 and TSA24 state-watch runners
+- [x] TSA24 GPU-to-state hybrid runner
+- [x] P84.5 Incremental resident-state watcher and seed cache (#624)
+  - [x] Cached per-block/option rows
+  - [x] Fast fragment-aware row construction
+  - [x] Seed-state persistence
+  - [x] Live watcher and hybrid scripts
+  - [x] c5 1k/100k exactness and throughput
+
+Acceptance:
+
+- c5 watcher uses the persisted candidate artifact.
+- State objective is exact against `IncrementalObjective`.
+- Incremental state and seed cache are exact on c5.
+- Dashboard green.
+
+## Phase 85: GPU acceleration and interactive target cache
+
+Parent issue: #618
+Branch: `feature/p85-gpu-acceleration`
+Status: complete
+Plan: `notes/design/gpu-effect-cache-interactivity.md`
+Report: `notes/reports/gpu-acceleration-tsa24.md`
+
+Goal: make the TSA24 GPU population search fast to launch, fast to run, and usable in an
+interactive target-editing loop without rebuilding the effect table for price-only changes.
+
+- [x] P85.1 Fast GPU launch and compact caches (#619)
+  - [x] Add the compact candidate cache and lazy accessor
+  - [x] Vectorize the GPU option map
+  - [x] Persist base totals and the parsed seed schedule
+  - [x] Record launch measurements
+- [x] P85.2 Priority-tier pricing and live target reload (#620)
+  - [x] Price priority tiers in the batched GPU objective
+  - [x] Add live target reload and resident re-pricing
+  - [x] Throttle live rendering and target polling
+- [x] P85.3 Target-independent effect-cell basis and lazy extension (#621)
+  - [x] Add an explicit cell basis and basis metadata
+  - [x] Add lazy column extension
+  - [x] Reject missing target cells instead of silently dropping them
+- [x] P85.4 Cloud bundle and portable runner (#622) — deferred: packaging scripts live in the FEMIC TSA24 instance repository
+  - [x] Add environment-overridable runner paths
+  - [x] Add a bundle packer and manifest
+  - [x] Defer the TSA24-instance packaging scripts to their owning repository
+
+Acceptance:
+
+- Hot TSA24 launch and search throughput are measured and materially below the pre-P85 baseline.
+- Priority-tier pricing matches the exact CPU objective.
+- Target edits re-price the resident population without a full table rebuild.
+- Cell-basis and lazy-extension behavior are covered by tests.
+- The cloud bundle is documented; its scripts remain outside this repository's branch.
+
+
+## Phase 86: Weighted goal-programming target semantics
+
+Parent issue: #625
+Branch: `feature/p86-target-semantics`
+Status: pr-open
+Plan: `notes/design/weighted-goal-programming-aspirations.md`
+
+Goal: document targets as weighted goal-programming aspirations rather than hard feasibility bounds.
+
+- [x] P86.1 Document weighted goal-programming target semantics (#626)
+  - [x] State that minimum/maximum are one-sided penalty hinges
+  - [x] Document the maximum even-flow harvest pattern
+  - [x] Distinguish soft weight dominance from the 1e9 priority tier
+  - [x] Add and index the normative design note
+
+Acceptance:
+
+- The concept, even-flow guide, and optimizer reference tell the same story.
+- Sphinx builds with warnings as errors.
+- Dashboard green.
+
+
+## Phase 87: Stand density management and AU Explorer
+
+Parent issue: #628
+Branch: `feature/p87-sdmd-au-explorer`
+Status: complete
+Closeout: pull request #658 squash-merged as `d650b11`; the report is
+`notes/reports/p87-closeout.md`.
+Plan: `notes/plans/ws4-sdmd-au-explorer.md`
+Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
+
+Goal: add a stand-density-management layer that places AU yield evidence, observed
+PSP plots, and compiled FVS trajectories on a species/region diagram, compares
+silviculture regimes as paths, and turns the reviewed result into solver
+constraints. The SDMD is a diagnostic and constraint layer, not a growth model.
+
+- [x] P87.1 SDMD and regime schemas with an ADR (#629)
+  - [x] Add `ws4.sdmd.schema` with the six table contracts.
+  - [x] Add coercion, frame validation, and dataset validation with stable codes.
+  - [x] Add ADR 0013 and the reference page.
+  - [x] Add the two-AU, ten-plot fixture and tests.
+- [x] P87.2 PSP, VRI, and LiDAR ingestion (#630)
+  - [x] Add the PSP plot and tree-list adapter.
+  - [x] Add the VRI AU assignment adapter and reported matching.
+  - [x] Add the LiDAR structure adapter and refuse canopy-only TPH.
+  - [x] Label provenance, review status, and synthetic rows.
+- [x] P87.3 SDMD digitization and AU placement (#631) — the vector contract, placement, envelope,
+  and report are complete. The public BC source set (14 diagrams, 7 species, natural and planted)
+  and a 229-row BEC variant coverage table are catalogued in `ws4/sdmd/data/sdmd/`.
+  - [x] Add the vector diagram contract and an illustrative reviewed-gated fixture.
+  - [x] Build the AU envelope, placement, and report statuses.
+  - [x] Place observed plots and FVS trajectories, and flag extrapolation.
+  - [x] Refuse an unreviewed digitisation in a report.
+  - [x] Re-implement the BC SDMD equation core in Python with source attribution.
+  - [x] Refuse a trajectory step where TPH and mean tree volume both increase.
+- [x] P87.4 Regime state machine and constraints (#632)
+  - [x] Add the even-aged regime library.
+  - [x] Validate state transitions and AU constraints.
+  - [x] Flag selection regimes as outside the diagram.
+- [x] P87.5 AU Explorer API (#633)
+  - [x] Add the read endpoints.
+  - [x] Add the validated constraint-write endpoint.
+  - [x] Add the option-count preview.
+  - [x] Mount the router in `ws4 serve` and document `--sdmd-dir`.
+- [x] P87.6 AU Explorer web tab (#634)
+  - [x] Add the tab, filters, and URL state.
+  - [x] Add the yield and SDMD charts.
+  - [x] Add the regime path, constraint editor, and provenance panel.
+  - [x] Add the isopleth overlay, interpretation panel, and trajectory explanation.
+- [x] P87.7 Solver constraint integration (#635) — the dataset filter and option-space reduction
+  are complete; rejecting a trajectory outside the allowed SDMD zones and a cap across blocks in
+  one AU need per-track trajectories and AU state, and are deferred with that reason.
+  - [x] Filter regimes and enforce entry, interval, and removal rules.
+  - [x] Reject trajectories outside the allowed SDMD zones (deferred to P95.3: no per-track trajectory table in P87).
+  - [x] Measure and record the option-space reduction.
+- [x] P87.8 Provenance, docs, and closeout (#636)
+  - [x] Run the eight validation gates.
+  - [x] Record the option-count reduction and the rejected values.
+  - [x] Update the ADR, design note, docs, notes, and changelog.
+  - [x] Write the close-out report and queue the pull request.
+
+Acceptance:
+
+- The six contracts and their validators can fail, and the two-AU fixture passes.
+- Ingestion labels synthetic rows and refuses canopy-only LiDAR as total TPH.
+- The SDMD is reviewed vector data, and out-of-envelope trajectories are flagged.
+- Only AU-allowed regimes reach the solver, with a measured option reduction.
+- The AU Explorer renders the API contract with provenance and caveats.
+- The gates reject the 863 m3/ha initial volume and flag the 1,173 m3/ha trajectory.
+- `python scripts/dashboard.py` is green on every commit.
+
+
+## Phase 88: Factorized GPU account search
+
+Parent issue: #637
+Branch: `feature/p88-factorized-gpu`
+Status: complete
+Plan: `notes/design/factorized-account-basis.md`
+Report: `notes/reports/p88-factorized-gpu.md`
+Merge: `f582500` (PR #642)
+
+Goal: replace the rejected all-account effects matrix with an account-independent
+structural basis and padded GPU feature/product pricers, then switch target accounts
+without rebuilding an all-account table.
+
+- [x] P88.1 Post-P85 effect-table safety and bounded lean build (#638)
+  - [x] Preflight the builder and cap worker memory
+  - [x] Keep the lean build without the full row-index dictionary
+  - [x] Record the OOM postmortem
+- [x] P88.2 Persisted factorized basis and padded GPU pricers (#639)
+  - [x] Persist the flat segment/event descriptors
+  - [x] Add padded feature and product tensors
+  - [x] Match the full TSA24 exact evaluator
+- [x] P88.3 Wire target account switching into the resident population (#640)
+  - [x] Price missing target cells through one-account lookups
+  - [x] Leave the sparse table unchanged on an account switch
+  - [x] Cover the switch with a population exactness test
+- [x] P88.4 Benchmark report, docs, and phase closeout (#641)
+
+Acceptance:
+
+- Full TSA24 feature and product batches of 64 genomes match the exact evaluator.
+- Mixed feature/product target cells are priced without an all-account matrix.
+- Host and GPU memory are bounded and recorded.
+- The phase closes with a report, verification, and a `Part of #637` pull request.
+
+## Phase 89: Mixed-target factorized search and live switching
+
+Parent issue: #643
+Branch: `feature/p89-mixed-target-search`
+Status: pr-open
+Plan: `notes/design/factorized-account-basis.md`
+Report: `notes/reports/p89-mixed-target-search.md`
+
+Goal: use the P88 factorized account basis end to end for a mixed feature/product target
+population, watcher account switching, and a bounded live display path.
+
+- [x] P89.1 Full TSA24 mixed-target population run (#644)
+- [x] P89.2 Watcher target switching through factorized accounts (#645)
+- [x] P89.3 Bounded live display account path (#646)
+- [x] P89.4 Benchmark report, docs, and phase closeout (#647)
+- [x] P89.5 Persist padded factorized cache (#649)
+- [x] P89.6 TSA24 final growing-stock floor (#652)
+- [x] P89.7 All-period ±5% even flow with stock floor (#654)
+
+Acceptance:
+
+- The full mixed-target population matches the exact evaluator.
+- Watcher account switches leave `EffectTable.cells` unchanged.
+- Display values stay bounded and separate from the objective table.
+- Throughput, latency, host memory, and GPU memory are recorded.
+- Dashboard green.
+
+## Phase 90: Forest condition report cards
+
+Parent issue: #650
+Branch: `feature/p90-forest-condition-cards`
+Status: pr-open
+
+Goal: add a report-only forest-condition card contract and static pilot that
+packages existing WS4 indicators with provenance, uncertainty, applicability,
+advisory alerts, and review status. The phase does not compute new condition
+indicators or change solver behavior.
+
+- [x] P90.1 Implement the forest-condition report card (#651)
+  - [x] Add typed report and indicator models
+  - [x] Add validation and JSON round-trip
+  - [x] Add Markdown rendering
+  - [x] Add fixture and tests
+  - [x] Add docs, roadmap, and changelog entries
+  - [x] Run dashboard and open the PR
+
+Acceptance:
+
+- JSON round-trip preserves all fields.
+- Invalid status, missing provenance, and non-finite values fail validation.
+- Markdown names every indicator, its source, applicability, and limitations.
+- Tests cover valid, invalid, and empty-indicator cases.
+- Dashboard green.
+
+Design: `notes/design/ws4-forest-condition-card.md`.
+
+## Phase 91: Condition card from a WS4 run
+
+Parent issue: #655
+Branch: `feature/p91-condition-run-card`
+Status: pr-open
+
+Goal: derive a review-required forest-condition card from an existing WS4 run's
+`account_values.csv`.
+
+- [x] P91.1 Add the account-derived card builder and CLI (#656)
+  - [x] Add account-derived report builder
+  - [x] Add the CLI command
+  - [x] Add fixture/CLI tests and docs
+  - [x] Run dashboard and open the PR
+
+Acceptance:
+
+- A valid account table produces JSON and Markdown.
+- Missing columns, empty tables, non-finite values, and empty feature accounts fail clearly.
+- Every derived indicator is `review_required` and source/version is explicit.
+- Tests and dashboard pass.
+
+Design: `notes/design/ws4-forest-condition-card.md`.
+
+## Phase 92: Condition-card API
+
+Parent issue: #659
+Branch: `feature/p92-condition-card-api`
+Status: pr-open
+
+Goal: expose the P91 account-derived forest-condition card through the WS4 HTTP API.
+
+- [x] P92.1 Add the condition-card API and tests (#660)
+  - [x] Add the endpoint
+  - [x] Add API tests for success, 404, and 422
+  - [x] Update docs and changelog
+  - [x] Run dashboard and open the PR
+
+Acceptance:
+
+- A valid run returns a P90 card with `review_required` indicators.
+- Missing or invalid account data uses 404/422.
+- Tests and dashboard pass.
+
+Design: `notes/design/ws4-forest-condition-card.md`.
+## Phase 93: Condition-card Reports UI
+
+Parent issue: #662
+Branch: `feature/p93-condition-card-ui`
+Status: pr-open
+
+Goal: render the P92 condition-card API in the Reports tab.
+
+- [x] P93.1 Add the condition-card Reports panel (#663)
+  - [x] Add the Reports panel markup
+  - [x] Add the JS fetch/render function and button wiring
+  - [x] Add HTML tests and docs
+  - [x] Run dashboard and open the PR
+
+Acceptance:
+
+- The panel and button are present in the served HTML.
+- Valid cards render review state and indicators without innerHTML interpolation.
+- Errors and empty cards show clear messages.
+- Dashboard passes.
+## Phase 94: LTSY scenario comparison
+
+Parent issue: #664
+Branch: `feature/p94-ltsy-scenario-comparison`
+Status: pr-open
+Report: `notes/reports/tsa24-ltsy-scenario-comparison.md`
+PR: #673
+
+Goal: compare baseline LTSY, all-period ±5% with the stock floor, and all-period ±5%
+without the stock floor on one seed and a 5,000-generation budget.
+
+- [x] P94.1 Freeze comparison targets and harness (#667)
+  - [x] Add the no-stock control target
+  - [x] Add the reusable comparison harness
+  - [x] Record exact replay results
+- [x] P94.2 Run the three 5,000-generation scenarios (#668)
+  - [x] Run baseline
+  - [x] Run all-period ±5% with stock
+  - [x] Run all-period ±5% without stock
+- [x] P94.3 Compare stock, flow, and age-class outcomes (#665)
+  - [x] Replay schedules through the simulator
+  - [x] Compare managed/unmanaged stock and age classes
+  - [x] Record the recommendation
+- [x] P94.4 Record the base scenario and close out (#666)
+
+Acceptance:
+
+- The three formulations use the same seed, population, and generation budget.
+- The stock/no-stock schedules are compared honestly.
+- A base LTSY formulation is recommended with caveats.
+- Dashboard green.
+
+## Phase 95: Factorized target-cell vectors
+
+Parent issue: #675
+Branch: `feature/p95-factorized-cell-vectors`
+Status: pr-open
+Report: `notes/reports/p95-factorized-target-cell-vectors.md`
+PR: #685
+
+Goal: cache one `[options]` value vector per requested factorized target cell and gather it
+through the candidate rows, instead of rebuilding the padded layout every generation.
+
+- [x] P95.1 Add factorized option-value vectors (#676)
+  - [x] Add the feature/product option-value builder
+  - [x] Use the vector path in the population
+  - [x] Keep the display path on the padded evaluator
+- [x] P95.2 Benchmark and verify the stock-cell speedup (#677)
+  - [x] Compare stock and no-stock schedules
+  - [x] Verify exact replay and schedule identity
+  - [x] Record memory
+- [x] P95.3 Record the result and close out (#678)
+
+Acceptance:
+
+- Vector values match the padded evaluator.
+- The stock and no-stock schedules remain identical.
+- The stock search is materially faster than 218.9 s.
+- Dashboard green.
+
+## Phase 96: Base LTSY watcher profile
+
+Parent issue: #686
+Branch: `feature/p96-base-ltsy-profile`
+Status: pr-open
+Report: `notes/reports/tsa24-ltsy-base-profile.md`
+PR: #689
+
+Goal: make the accepted all-period ±5% + managed-stock guard formulation the practical
+base LTSY watcher profile.
+
+- [x] P96.1 Default the LTSY watcher to the base profile (#687)
+  - [x] Set the default target
+  - [x] Use a base-profile schedule path
+  - [x] Run a hot-cache smoke generation
+- [x] P96.2 Record the base profile and close out (#688)
+  - [x] Add the note and archive
+  - [x] Update roadmap, changelog, and notes index
+
+Acceptance:
+
+- `run_ltsy_watch.sh` uses the base target by default.
+- The smoke run writes the base-profile schedule.
+- The note distinguishes base profile from definitive sustainability.
+- Dashboard green.
+
+## Phase 97: Mixed-target vector performance
+
+Parent issue: #691
+Branch: `feature/p97-mixed-target-vectors`
+Status: pr-open
+Report: `notes/reports/tsa24-mixed-vector-performance.md`
+PR: #695
+
+Goal: verify the P95 vector cache on the 11-cell mixed feature/product target and remove
+the mixed-target runner's padded rebuild.
+
+- [x] P97.1 Use the padded cache in the mixed-target runner (#692)
+  - [x] Add the cache path
+  - [x] Load the padded cache when present
+  - [x] Keep the build fallback
+- [x] P97.2 Benchmark the 11-cell mixed target (#693)
+  - [x] Measure switch and run speed
+  - [x] Verify exact objective
+  - [x] Check table-cell identity
+- [x] P97.3 Record the result and close out (#694)
+
+Acceptance:
+
+- The mixed target switch is materially faster than 4.53 s.
+- Two-generation throughput is materially above 12.9 genomes/s.
+- Exact objective and table-cell count are unchanged.
+- Dashboard green.
+## Phase 98: LTSY scenario profile library
+
+Parent issue: #699
+Branch: `feature/p98-ltsy-profiles`
+Status: pr-open
+Report: `notes/reports/tsa24-ltsy-profiles.md`
+PR: #703
+
+Goal: add named LTSY profiles and a watcher selector, with a JSON/CLI surface for a UI
+layer.
+
+- [x] P98.1 Add the profile library and CLI (#700)
+  - [x] Add the profile schema and loader
+  - [x] Add list/show/JSON/shell CLI output
+  - [x] Test validation and CLI behavior
+- [x] P98.2 Wire the watcher profile selector (#701)
+  - [x] Add the TSA24 profile YAML
+  - [x] Add `PROFILE=` selection
+  - [x] Verify baseline and base selectors
+- [x] P98.3 Record and close out (#702)
+
+Acceptance:
+
+- Profiles validate and duplicate/missing target cases fail loudly.
+- `PROFILE=baseline|base|nostock` selects the correct target and schedule.
+- The default remains `base`.
+- Dashboard green.
+
+
+## Phase 99: Scenario profile UI
+
+Parent issue: #704
+Branch: `feature/p99-profile-ui`
+Status: pr-open
+Report: `notes/reports/tsa24-profile-ui.md`
+PR: #708
+
+Goal: expose the named LTSY profile library through the web API and Targets tab.
+
+- [x] P99.1 Add the profile API and serve option (#705)
+  - [x] Add list/detail/apply endpoints
+  - [x] Wire `ws4 serve --scenario-profiles`
+  - [x] Validate apply writes
+- [x] P99.2 Add the Targets-tab profile selector (#706)
+  - [x] Add the selector and apply control
+  - [x] Refresh targets after apply
+  - [x] Disable under read-only skins
+- [x] P99.3 Test, record, and close out (#707)
+
+Acceptance:
+
+- The API lists profiles and returns clean errors.
+- Applying a profile validates and writes the target file.
+- The UI selector is present and refreshes targets.
+- Dashboard green.
+
+
+## Phase 100: Condition-card provenance and uncertainty
+
+Parent issue: #670
+Branch: `feature/p100-condition-provenance`
+Status: pr-open
+
+Goal: show uncertainty and provenance in the condition-card Reports panel.
+
+- [x] P100.1 Show uncertainty and provenance in the condition panel (#671)
+  - [x] Add uncertainty to the card table
+  - [x] Add the provenance block
+  - [x] Add tests and docs
+  - [x] Run dashboard and open the PR
+
+Acceptance:
+
+- Missing uncertainty renders as `not stated`.
+- Provenance keys/values render in the panel.
+- Dashboard passes.
+
+## Phase 101: Scenario storyboard export
+
+Parent issue: #696
+Branch: `feature/p101-storyboard`
+Status: pr-open
+
+Goal: write a one-page scenario narrative from an existing run.
+
+- [x] P101.1 Add the storyboard export and tests (#697)
+  - [x] Add `build_storyboard`
+  - [x] Add CLI `ws4 storyboard`
+  - [x] Add tests/docs
+  - [x] Run dashboard and open the PR
+
+Acceptance: valid run writes Markdown; invalid accounts fail; storyboard names scenario, indicators, provenance, and limits; dashboard passes.
+
+## Phase 102: Ask overlay
+
+Parent issue: #709
+Branch: `feature/p102-ask-overlay`
+Status: pr-open
+Report: `notes/reports/tsa24-ask-overlay.md`
+PR: #712
+
+Goal: replace the static sidebar chat panel with a compact header Ask pill and floating
+assistant overlay available from every workspace.
+
+- [x] P102.1 Move the assistant to an Ask overlay (#710)
+  - [x] Add the header pill and fixed overlay
+  - [x] Remove the sidebar panel and splitter
+  - [x] Add open/close/Escape/focus behavior
+- [x] P102.2 Validate, document, and close out (#711)
+
+Acceptance:
+
+- The assistant is available from every workspace.
+- It does not change or resize the active workspace.
+- Existing chat API/session behavior remains intact.
+- Dashboard green.
+
+## Phase 103: Profile-aware web runs
+
+Parent issue: #713
+Branch: `feature/p103-profile-runs`
+Status: pr-open
+Report: `notes/reports/tsa24-profile-runs.md`
+PR: #717
+
+Goal: let the web UI launch a named factorized GPU profile through the existing run
+status/control/stream contract.
+
+- [x] P103.1 Add profile execution resources and the GPU worker (#714)
+  - [x] Resolve table/factorized/cache/seed resources
+  - [x] Run GenomePopulation with exact replay
+  - [x] Write telemetry, control, schedule, and summary
+- [x] P103.2 Launch profile runs from the web UI (#715)
+  - [x] Add the API profile branch
+  - [x] Add Generations and Run profile controls
+  - [x] Reuse the existing status/stream contract
+- [x] P103.3 Test, record, and close out (#716)
+
+Acceptance:
+
+- A profile run launches the GPU worker.
+- Exact replay is recorded in the summary.
+- The web UI can start and follow the run.
+- Dashboard green.
+
+## Phase 104: SDMD pilot digitisation and trajectory evidence
+
+Parent issue: #680
+Branch: `feature/p104-sdmd-pilot`
+Status: complete
+Merge commit: `e5c4e9c`
+Plan: `notes/reports/p87-closeout.md`, section 6
+Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
+
+Goal: replace the synthetic SDMD fixture with reviewed vector digitisation of the
+public Interior Douglas-fir diagrams, generate real FVS-BC and PSP trajectories for
+the pilot AUs, enforce the two solver rules deferred from P87, and close with the
+pilot AU report and validation evidence.
+
+- [x] P104.1 Digitise fdin/fdip and replace the synthetic pilot fixture (#681)
+  - [x] Extract and order the `fdin` isopleths.
+  - [x] Extract and order the `fdip` isopleths.
+  - [x] Produce the curve-review packet with overlay figures and a checklist.
+  - [x] Record the maintainer's review, reviewer, and review date.
+  - [x] Add the pilot diagram file, fixture, tests, and method note.
+  - [x] Digitise the natural and planted lodgepole pine `pln`/`plp` diagrams.
+- [x] P104.2 Generate FVS-BC and PSP trajectories for the pilot AUs (#682)
+  - [x] Run the no-cut and CT60 FVS-BC scenarios.
+  - [x] Add the PSP observed check.
+  - [x] Store paths with source metadata and assess them.
+  - [x] Run the trajectory and physical gates.
+  - [x] Build the real TSA 23 IDFdk3 PSP extract and store it in
+    `ws4/sdmd/data/pilot-tsa23-idfdk3/`.
+  - [x] Run one real no-cut and CT60 FVS-BC path from that tree list.
+  - [x] Mine the public CCISS tables for species traits, IDFdk3 stocking,
+    feasibility, site index, and a BEC crosswalk; record the derived extracts and
+    limits.
+  - [x] Run the FVS scenarios for a representative AU-level tree list and the
+    remaining pilot species.
+- [x] P104.3 Enforce the SDMD-zone rule and the per-AU entry cap (#683)
+  - [x] Load per-track trajectories into the filter.
+  - [x] Reject a regime outside the required zone.
+  - [x] Add the cross-block `SdmdScheduleGuard` and its negative tests.
+  - [x] Wire the guard into the optimizer move loop and record the rejection count.
+- [x] P104.4 Pilot report, validation, and closeout (#684)
+  - [x] Run the eight gates on both pilot AUs (both `warn`, method-only).
+  - [x] Record the option reduction: 7 → 6 regimes / 11 → 7 entries for both AUs.
+  - [x] Write the pilot evidence report in `notes/reports/p95-pilot-evidence.md`.
+  - [x] Define `AU-IDFdk3-TSA23-FDI` and replace the synthetic FDI PSP/FVS input.
+  - [x] Define `AU-IDFdk3-TSA23-PLI` with the natural lodgepole pine diagram and
+    real PSP/FVS evidence.
+  - [x] Use a representative AU-level FVS tree list for both species.
+  - [x] Write the close-out report and queue the pull request.
+  - [x] Wait for maintainer approval.
+
+Acceptance:
+
+- The pilot uses reviewed vector isopleths from a catalogued public source.
+- Every stored trajectory is monotone, labelled, and assessed.
+- A regime outside the required zone, or an AU over its entry cap, is infeasible.
+- The eight gates pass or warn with named, acceptable reasons on the pilot data.
+- `python scripts/dashboard.py` is green.
+- The phase closes with a report and maintainer approval.
+
+
+## Phase 105: Profile-run feedback
+
+Parent issue: #720
+Branch: `feature/p105-profile-run-feedback`
+Status: pr-open
+Report: `notes/reports/tsa24-profile-run-feedback.md`
+PR: #728
+
+Goal: make profile-aware GPU runs visible in the normal web run view and produce account values.
+
+- [x] P105.1 Emit bounded schedule diffs (#721)
+  - [x] Reset with the first schedule event
+  - [x] Send only changed blocks afterward
+  - [x] Keep the cadence bounded
+- [x] P105.2 Replay final account values and close out (#722)
+
+Acceptance:
+
+- Profile runs emit live schedule telemetry.
+- Final replay writes account values and reports.
+- Exact summary and dashboard are green.
+
 ## Detailed Next Steps Notes
 
 1. Phase 0 is complete: pull request #8 squash-merged as `97330a8`, the branch deleted, and parent
@@ -2743,3 +3471,1155 @@ Acceptance:
     same cost per metre and hauls 22% farther at 0.46× the cost per unit-km, because its solve chooses
     the road set and the assignment jointly. Reports: `p17-opened-roads.md`, `p17-tradeoff.md`,
     `p17-closeout.md`. Next: P18.
+24. Phase 87 (Stand density management and AU Explorer) was launched on
+    `feature/p87-sdmd-au-explorer`, parent issue #628, with tasks #629 to #636. The maintainer
+    requested it directly alongside other parallel expansion sessions, so it starts from `main`
+    while Phase 86 is `pr-open`. The plan is `notes/plans/ws4-sdmd-au-explorer.md`; the layer is a
+    diagnostic and constraint layer (ADR 0013), not a growth model. P87.1 was the first bounded
+    move: the schema, the ADR, a two-AU fixture, and tests, with no ingestion, UI, or solver work.
+25. Phase 87 is `pr-open`: pull request #658 queues the SDMD and AU Explorer phase, with the
+    close-out report in `notes/reports/p87-closeout.md`. The fixture validation warns rather
+    than fails (provisional diagram, no supplied initial volume, one extrapolated demo path);
+    the 863 m3/ha gate fails against an 800 limit and 1,173 m3/ha is flagged above 1,133.8.
+    Trajectory-zone rejection and a cap across blocks in one AU are deferred with the reasons
+    in #635. Next: approve the close-out, then launch the next free phase (P95 today; P91-P94 are taken).
+26. Phase 87 is complete: pull request #658 squash-merged as `d650b11`, the branch
+    deleted, and parent issue #628 closed. Main CI runs `41411188534` and
+    `41411188586` on `d650b11` succeeded. Phase 95 (SDMD pilot digitisation and
+    trajectory evidence) is active on `feature/p95-sdmd-pilot`, parent issue #680,
+    with tasks #681 to #684. P104.1 is the first bounded move: digitise `fdin`/`fdip`
+    into reviewed vector isopleths and replace the synthetic pilot fixture.
+## Phase 106: AU evidence depth
+
+Parent issue: #723
+Branch: `feature/p106-au-evidence`
+Status: complete
+Merge commit: `7cec6b6`
+Plan: `notes/reports/p104-closeout.md`, section 6
+Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
+
+Goal: close the evidence limits carried out of P104: the unresolved `fdin`
+high-TPH crown closure, the single-cluster FVS paths, and the missing initial
+volume for the two real pilot AUs.
+
+- [x] P106.1 Recover the fdin high-TPH crown closure (#724)
+  - [x] Re-read the PDF vector paths and separate the joined branches.
+  - [x] Store the recovered continuous curve.
+  - [x] Update the overlay, review packet, and diagram test.
+- [x] P106.2 Build AU-level FVS ensembles (#725)
+  - [x] Build a multi-cluster representative tree list with plot weights.
+  - [x] Run the untreated and CT60 scenarios across the documented range.
+  - [x] Store and assess the multi-cluster paths.
+- [x] P106.3 Add measured initial volume (#726)
+  - [x] Derive the value and source for both AUs.
+  - [x] Add the gate, API, and report fields.
+  - [x] Test supplied, missing, and invalid values.
+- [x] P106.4 Pilot validation and closeout (#727)
+  - [x] Run both pilot gates and the eight validation gates.
+  - [x] Update the evidence and closeout reports.
+  - [x] Queue the pull request and wait for approval.
+
+Acceptance:
+
+- `fdin` has a complete closure or a reviewed truncation.
+- FVS evidence is an ensemble or a documented multi-cluster set.
+- Both AUs supply a measured initial volume with provenance.
+- Every remaining warning is named and accepted.
+- `python scripts/dashboard.py` is green.
+
+## Phase 107: Profile target telemetry
+
+Parent issue: #730
+Branch: `feature/p107-profile-target-telemetry`
+Status: pr-open
+Report: `notes/reports/tsa24-profile-target-telemetry.md`
+PR: #740
+
+Goal: emit active target values and yearly series from the GPU profile worker and pass
+them through the web stream.
+
+- [x] P107.1 Emit target telemetry from the profile worker (#732)
+  - [x] Build values from the best genome
+  - [x] Include the yearly series
+  - [x] Use the bounded cadence
+- [x] P107.2 Wire profile target events and close out (#733)
+
+Acceptance:
+
+- Profile target events reach the live target table/chart.
+- Run profile applies the selected profile targets first.
+- Exact summary and dashboard are green.
+
+## Phase 108: Profile-run report package
+
+Parent issue: #742
+Branch: `feature/p108-profile-run-reports`
+Status: pr-open
+Report: `notes/reports/tsa24-profile-run-reports.md`
+PR: #744
+
+Goal: make profile runs write the standard report artifacts and ending inventory.
+
+- [x] P108.1 Write profile-run report artifacts (#743)
+
+Acceptance:
+
+- Report accounts, targets, and ending inventory exist.
+- Summary includes ending inventory.
+- Base profile remains exact; dashboard green.
+
+## Phase 109: Report provenance sidecars
+
+Parent issue: #734
+Branch: `feature/p108-report-provenance`
+Status: pr-open
+Report: `notes/reports/p108-report-provenance.md`
+
+Goal: make a report directory auditable by writing a provenance sidecar that names and
+hashes the report tables, records the source metadata that shaped them, identifies the run
+and dataset where available, and states uncertainty explicitly.
+
+- [x] P109.1 Report provenance sidecar, API exposure, and Reports-tab badge (#738)
+  - [x] Add the sidecar writer to `ws4/report.py`
+  - [x] Record report and source metadata hashes, identifiers, and uncertainty status
+  - [x] Expose the sidecar through the reports API and Reports tab
+  - [x] Add focused tests and the reference documentation
+  - [x] Update the roadmap and changelog and run the dashboard
+
+Acceptance:
+
+- `write_report` writes `report_provenance.json` beside the report tables.
+- Report and source metadata digests recompute from the files.
+- Uncertainty is explicitly `not_stated` unless real uncertainty metadata exists.
+- Missing or invalid metadata and files are recorded without raising.
+- Existing report CSV contents and model behaviour do not change.
+- `/api/runs/{run}/reports` exposes the recorded provenance.
+- The Reports tab shows a provenance badge and links.
+- `python scripts/dashboard.py` is green.
+
+## Phase 110: Optional-factorized GPU profiles
+
+Parent issue: #745
+Branch: `feature/p110-tsa27-gpu-profile`
+Status: pr-open
+Report: `notes/reports/tsa27-gpu-profile.md`
+PR: #748
+
+Goal: let GPU profile runs use an existing effect table and cache without a
+factorized archive, then expose a TSA 27 s8 profile.
+
+- [x] P110.1 Allow factorized-optional GPU profile runs (#746)
+
+Acceptance:
+
+- A profile can run with table, cache directory, and seed only.
+- Mapping-style candidate caches work without a rebuild.
+- TSA 27 s8 produces an exact replay.
+- Dashboard green.
+
+## Phase 111: Preserve zero-generation profile runs
+
+Parent issue: #751
+Branch: `fix/p111-zero-generations`
+Status: pr-open
+PR: #752
+
+Goal: keep an explicit zero-generation profile request instead of coercing it to
+the default 5000 generations.
+
+- [x] P111.1 Preserve zero generations and add a regression test
+
+Acceptance:
+
+- `generations: 0` reaches the worker as `--generations 0`.
+- The run response reports zero.
+- A focused regression test covers the zero case.
+
+## Phase 112: TSA 29 GPU profile
+
+Parent issue: #755
+Branch: `feature/p112-tsa29-gpu-profile`
+Status: pr-open
+Report: `notes/reports/tsa29-gpu-profile.md`
+PR: #757
+
+Goal: validate the existing TSA 29 table and expose a `base` GPU profile.
+
+- [x] P112.1 Validate and expose TSA 29 GPU profile (#756)
+
+Acceptance:
+
+- Zero-generation replay is exact.
+- The portal exposes `base` for TSA 29.
+- GPU readiness and portal docs reflect three profile instances.
+
+## Phase 113: Map capability fallback
+
+Parent issue: #758
+Branch: `feature/p113-map-fallback`
+Status: pr-open
+Report: `notes/reports/tsa24-map-fallback.md`
+PR: #761
+
+Goal: expose geometry capability and replace doomed map requests with an
+explicit unavailable state when a dataset has no geometry layer.
+
+- [x] P113.1 Add geometry capability and map fallback (#759)
+
+Acceptance:
+
+- `/api/summary` reports geometry capability.
+- The browser shows a map-unavailable panel without geometry.
+- Direct map APIs keep the naming 404.
+- Dashboard green.
+
+## Phase 114: Scenario price paths
+
+Parent issue: #749
+Branch: `feature/p114-prices-v1`
+Status: pr-open
+Report: `notes/reports/p114-prices.md`
+PR: #760
+
+Goal: add a typed, read-only `prices.v1` scenario price-path table and a CLI/report
+surface that compares named paths with the base path, carries provenance, and repeats a
+`not a forecast` caveat.
+
+- [x] P114.1 Add the `prices.v1` reader and comparison report (#750)
+  - [x] Define the schema and validate the named paths, grid, units, and caveat
+  - [x] Build the base-relative comparison and the per-path/product summary
+  - [x] Write the CSV, Markdown report, and provenance sidecar with digests
+  - [x] Add the CLI command and the synthetic fixture
+  - [x] Add unit, contract, and CLI tests
+  - [x] Add the reference documentation, roadmap, and changelog
+  - [x] Run `python scripts/dashboard.py`
+
+Acceptance:
+
+- The loader rejects a missing base path, an unknown path, a duplicate row, an
+  incomplete product/period grid, inconsistent units or currency/region, a non-finite
+  or negative value, and a missing or misleading caveat.
+- `ws4 price-paths` writes `price_path_comparison.csv`, `price_path_report.md`, and
+  `price_path_provenance.json`.
+- The comparison reports the base value, absolute delta, and percent delta for every
+  path/product/period, and the report and sidecar repeat the `not a forecast` caveat.
+- No objective, constraint, growth, schedule, or solver behaviour changes.
+
+- `python scripts/dashboard.py` is green.
+
+## Phase 115: TSA 24 source geometry
+
+Parent issue: #765
+Branch: `feature/p115-tsa24-source-geometry`
+Status: pr-open
+Report: `notes/reports/tsa24-source-geometry.md`
+PR: #766
+
+Goal: restore a real TSA 24 map layer from the public source stand geometry.
+
+- [x] P115.1 Source geometry, provenance, and portal wiring
+
+Acceptance:
+
+- All 458,708 source rows match the compiled fragments.
+- Geometry bounds and map joins work.
+- The regeneration script and source hashes are recorded.
+
+## Phase 116: TSA 24 map performance
+
+Parent issue: #767
+Branch: `feature/p116-tsa24-map-performance`
+Status: pr-open
+Report: `notes/reports/tsa24-map-performance.md`
+PR: #774
+
+Goal: keep the TSA 24 map usable at 458k polygons.
+
+- [x] P116.1 Add bounds sidecar and TSA24 overview
+
+Acceptance:
+
+- Bounds reads use the sidecar.
+- Low-zoom MVT uses the overview.
+- Dashboard green.
+
+## Phase 120: SDMD atlas completion
+
+Parent issue: #731
+Branch: `feature/p120-sdmd-atlas`
+Status: complete
+Merge commit: `a7e83e3`
+Plan: `notes/reports/p106-closeout.md`
+Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
+
+Goal: turn the four-diagram pilot into the usable public BC SDMD set. Build a
+reusable digitisation and QA path, digitise the remaining natural and planted
+PDFs, and record the species/BEC coverage.
+
+- [x] P120.1 Build the digitisation and QA pipeline (#735)
+  - [x] Capture PDF path extraction, axis calibration, and label matching.
+  - [x] Emit diagram JSON, figrecover overlay, and review manifest.
+  - [x] Test calibration and curve ordering.
+- [x] P120.2 Digitise the remaining natural diagrams (#736)
+  - [x] `fdcn` stored provisional; vector curves plus a raster crown-closure trace.
+  - [x] Added `ws4.sdmd.trace` for reusable dotted-curve tracing.
+  - [x] `ssn` stored provisional; vector curves plus a raster crown-closure trace.
+  - [x] `hwn` stored provisional; vector curves plus a raster crown-closure trace.
+  - [x] `swn` stored provisional; vector curves plus a raster crown-closure trace.
+  - [x] `cwn` stored provisional; vector curves plus a raster crown-closure trace.
+  - [x] Add source entries, overlays, and tests.
+
+- [x] P120.3 Digitise the remaining planted diagrams (#737)
+  - [x] `fdcp` stored provisional.
+  - [x] `ssp` stored provisional.
+  - [x] `hwp` stored provisional.
+  - [x] `cwp` stored provisional.
+  - [x] `swp` stored provisional.
+  - [x] Record the planted top-height assignments.
+
+- [x] P120.4 Species/BEC coverage and closeout (#739)
+  - [x] Update the source catalog and coverage table.
+  - [x] Write the closeout report and queue the PR.
+
+Acceptance:
+
+- Every remaining public PDF has a vector JSON or a named refusal.
+- Every diagram has a source hash and a review status.
+- `validate_diagram` passes for every stored diagram.
+- Coverage is stated without overclaiming BEC specificity.
+
+## Phase 121: BEC crosswalk and AU integrity
+
+Parent issue: #769
+Branch: `feature/p121-bec-integrity`
+Status: complete
+Merge commit: `c5ef547`
+Plan: `notes/reports/p120-atlas-coverage.md`
+Decision: `notes/adr/0013-sdmd-as-constraint-layer.md`
+
+Goal: resolve the WS4/CCISS BEC label differences and add an AU integrity check
+that refuses impossible BEC/TSA/species combinations before evidence enters an AU.
+
+- [x] P121.1 Classify the BEC crosswalk (#770)
+  - [x] Classify exact, split, retirement, and absent labels.
+  - [x] Write the review table and notes.
+  - [x] Test the counts and examples.
+  - [x] Check against the official BECdb v13 current and retired tables.
+- [x] P121.2 Add the AU integrity validator (#771)
+  - [x] Parse the AU label and store metadata.
+  - [x] Check BEC coverage, retirement, and impossible combinations.
+  - [x] Test pass, fail, retired, no-coverage, and unknown cases.
+- [x] P121.3 Wire and test the validator (#772)
+  - [x] Run it on store load or report.
+  - [x] Surface findings through the store error and API/CLI.
+- [x] P121.4 Coverage and closeout (#773)
+  - [x] Update docs, roadmap, and changelog.
+  - [x] Write the closeout report and queue the PR.
+
+Acceptance:
+
+- Every WS4 BEC label is current, retired with a version, or absent with evidence.
+- Invalid, retired, or uncovered AU combinations fail closed.
+- The crosswalk and coverage are versioned.
+- `python scripts/dashboard.py` is green.
+
+## Phase 122: Run timeline and interaction uplift
+
+Parent issue: #775
+Branch: `feature/p122-ui-timeline`
+Status: pr-open
+Plan: `notes/design/ws4-ui-port-plan.md`
+PR: #783
+
+Goal: port the highest-value, low-friction interaction patterns from the FRESH
+lab web projects into the WS4 shell.
+
+- [x] P122.1 Run snapshot cards (#776)
+- [x] P122.2 Period playback (#777)
+- [x] P122.3 Schedule timeline (#778)
+- [x] P122.4 Feedback and shortcuts (#779)
+
+Acceptance:
+
+- Run snapshot cards use the existing run summary.
+- Play advances periods and stops safely.
+- Timeline is built from schedule.csv and selects periods.
+- Toast/help/shortcuts and empty states are wired.
+- Dashboard green.
+
+## Phase 123: Assistant context and action chips
+
+Parent issue: #780
+Branch: `feature/p123-assistant-context`
+Status: complete
+Merge commit: `7a66ee3`
+Plan: `notes/design/ws4-ui-port-plan.md`
+Report: `notes/reports/p123-closeout.md`
+PR: #804
+
+Goal: make Ask aware of the current screen and offer safe follow-up actions.
+
+- [x] P123.1 Assistant context and action chips (#800)
+  - [x] Send the current run, workspace, period, block, profile, filter, and account.
+  - [x] Parse and validate assistant action chips against a safe whitelist.
+  - [x] Render chips that navigate or fill a prompt without changing data.
+  - [x] Test context, validation, rendering, and the dashboard.
+
+Acceptance:
+
+- The context packet names each supplied screen field.
+- Chips are bounded to safe view changes and cannot edit data or start runs.
+- Existing tool summaries and `/api/chat` permissions are unchanged.
+- `python scripts/dashboard.py` is green.
+
+## Phase 124: 3D estate replay
+
+Parent issue: #781
+Branch: `feature/p124-3d-replay`
+Status: complete
+Merge commit: `9680323`
+Plan: `notes/design/ws4-ui-port-plan.md`
+Report: `notes/reports/p124-3d-replay.md`
+PR: #816
+
+Goal: add an experimental coarse 3D block replay without machine/terrain editing.
+
+- [x] P124.1 3D estate replay (#815)
+  - [x] Add the Map-workspace 3D toggle and overlay.
+  - [x] Extrude coarse block polygons by treatment/age and period.
+  - [x] Sync selection and period with the 2D map.
+  - [x] Gate the view on a block budget and name the refusal.
+  - [x] Test projection, height, shell wiring, and dashboard.
+
+## Phase 125: Stabilize period playback and map paging
+
+Parent issue: #784
+Branch: `fix/p125-playback-map-race`
+Status: pr-open
+Report: `notes/reports/p125-playback-map-race.md`
+PR: #786
+
+Goal: prevent playback from racing map loads and prevent stale period
+responses from painting over newer periods.
+
+- [x] P125.1 Serialize playback and guard stale map loads (#785)
+
+Acceptance:
+
+- Older map requests cannot overwrite newer periods.
+- Playback waits for a load and a settle interval.
+- The full-screen map loading overlay is suppressed during playback.
+- Browser smoke and dashboard pass.
+
+## Phase 126: Stabilize playback controls and cadence
+
+Parent issue: #787
+Branch: `fix/p126-playback-controls`
+Status: pr-open
+Report: `notes/reports/p126-playback-controls.md`
+PR: #788
+
+Goal: keep the playback control stationary and make playback cadence practical.
+
+- [x] P126.1 Stabilize the control slot and reduce settle delay
+
+Acceptance:
+
+- Play/Pause does not move while playback runs.
+- Playback advances at a practical cadence without overlap.
+- Browser smoke and dashboard pass.
+
+## Phase 127: Fix target chart edits and Solve semantics
+
+Parent issue: #791
+Branch: `fix/p127-target-chart-solve`
+Status: pr-open
+Report: `notes/reports/p127-target-chart-solve.md`
+PR: #793
+
+Goal: make chart edits affect the level row and keep Solve on current targets.
+
+- [x] P127.1 Edit target chart level rows (#792)
+
+Acceptance:
+
+- Chart edits update the non-flow level row.
+- Saved values round-trip through `api/targets.json`.
+- Solve sends the configured time limit without a profile field.
+- Browser smoke and dashboard pass.
+
+## Phase 128: Sync target chart edits into the table
+
+Parent issue: #794
+Branch: `fix/p128-target-chart-table-sync`
+Status: pr-open
+Report: `notes/reports/p128-target-chart-table-sync.md`
+PR: #796
+
+Goal: keep chart edits and table inputs consistent before Solve.
+
+- [x] P128.1 Sync target chart edits into table inputs (#795)
+
+Acceptance:
+
+- Chart edits update matching table inputs.
+- Solve posts edited values and time budget.
+- Browser smoke and dashboard pass.
+
+## Phase 129: GPU profile current targets and budget
+
+Parent issue: #798
+Branch: `feature/p129-gpu-profile-current-targets`
+Status: pr-open
+Report: `notes/reports/p129-gpu-current-targets.md`
+PR: #801
+
+Goal: run the GPU profile worker with current target edits and a wall-clock budget.
+
+- [x] P129.1 Add GPU current-target and time-budget options (#799)
+
+Acceptance:
+
+- Profile worker accepts `--targets` and `--max-seconds`.
+- Web command passes both.
+- Run profile saves current edits and does not apply the profile target.
+- Browser smoke and dashboard pass.
+
+## Phase 130: Route Solve through the GPU profile path
+
+Parent issue: #802
+Branch: `feature/p130-solve-gpu-profile`
+Status: pr-open
+Report: `notes/reports/p130-solve-gpu-profile.md`
+PR: #803
+
+Goal: make Solve use the selected GPU profile when available.
+
+- [x] P130.1 Route Solve through the current-target GPU profile
+
+Acceptance:
+
+- Solve on TSA27 starts a GPU profile run.
+- It uses the edited target cache and time budget.
+- Browser smoke and dashboard pass.
+
+## Phase 131: Profile time budget overrides generations
+
+Parent issue: #805
+Branch: `fix/p131-profile-time-budget`
+Status: pr-open
+Report: `notes/reports/p131-profile-time-budget.md`
+PR: #807
+
+Goal: make a declared time budget authoritative for profile runs.
+
+- [x] P131.1 Override generations with a profile time budget (#806)
+
+Acceptance:
+
+- Time budget sends the 1,000,000 generation cap.
+- Short time runs stop by elapsed time.
+- Browser smoke and dashboard pass.
+
+24. Shared-kernel adoption is active (2026-11-04): WS4's generic operator registry, solvers, cooling,
+    and control surface now come from `fresh-solutions` 0.9; the domain objective, incremental
+    evaluator, constraints, patch/spatial/route models, MIP layer, and `Optimizer` remain in WS4. The
+    full suite passes and strict mypy is clean. The design note is
+    `notes/design/shared-kernel-adoption.md`; FHOPS is the second adapter.
+
+## Phase 132: Adversarial audit remediation
+
+Parent issue: #809
+Branch: `feature/p132-audit-remediation`
+Status: complete
+Merge commit: `fa6197f`
+Plan: `notes/reports/p132-audit-remediation-plan.md`
+Report: `notes/reports/p132-audit-remediation.md`
+PR: #814
+
+Goal: close the P121/P123 audit findings across AU metadata integrity, BEC
+crosswalk counts, assistant input hardening, and evidence traceability.
+
+- [x] P132.1 AU metadata integrity and TSA normalization (#810)
+- [x] P132.2 BEC crosswalk count and phase corrections (#811)
+- [x] P132.3 Assistant chip hardening (#812)
+- [x] P132.4 Evidence, process, and reproducibility (#813)
+
+Acceptance:
+
+- Contradictory AU metadata cannot enter a store.
+- Crosswalk counts are unique-relationship counts and phase-aware.
+- Assistant malformed input cannot produce a 500 or marker leakage.
+- Reports, issues, and data sources agree with the evidence.
+- `python scripts/dashboard.py` is green.
+
+## Phase 133: BC-wide SDMD coverage registry
+
+Parent issue: #817
+Branch: `feature/p133-bc-coverage`
+Status: complete
+Merge commit: `ae9aeb0`
+Report: `notes/reports/p133-bc-coverage.md`
+PR: #819
+
+Goal: make every current BEC label inspectable, with its applicable diagrams,
+review state, and explicit AU evidence gap.
+
+- [x] P133.1 BC-wide coverage registry and selector (#818)
+  - [x] Build a 219-row BEC coverage table.
+  - [x] Add `/api/sdmd/coverage` and `/api/sdmd/coverage/{bec}`.
+  - [x] Add the SDMD coverage selector and gap messages.
+  - [x] Test counts, endpoints, and shell wiring.
+
+Acceptance:
+
+- Every current BEC label has a row.
+- Reviewed, provisional, and no-diagram rows are distinct.
+- The selector names the gap instead of substituting an unrelated AU.
+- `python scripts/dashboard.py` is green.
+
+## Phase 134: SDMD coverage closure
+
+Parent issue: #820
+Branch: `feature/p134-coverage-closure`
+Status: complete
+Merge commit: `65e295e`
+Report: `notes/reports/p134-coverage-closure.md`
+PR: #823
+
+Goal: turn the BC coverage registry into a named work queue and audit the
+remaining AU evidence.
+
+- [x] P134.1 Gap triage and provisional review queue (#821)
+  - [x] Add `gap_reason` and `gap_action` to all coverage rows.
+  - [x] Split 161 gaps into 150 variant gaps and 11 no-Atlas-zone labels.
+  - [x] Build the 10-diagram / 57-label review queue.
+  - [x] Show gap reason/action in the selector.
+  - [x] Audit TSA 24/27/29 evidence blockers.
+
+Acceptance:
+
+- Every gap has a reason and next action.
+- Every provisional diagram has a review row.
+- No diagram is self-approved.
+- Dashboard green.
+
+## Phase 135: BC SDMD applicability correction
+
+Parent issue: #824
+Branch: `feature/p135-bec-applicability`
+Status: complete
+Merge commit: `56cdc21`
+Report: `notes/reports/p135-bec-applicability.md`
+PR: #826
+
+Goal: apply the public Atlas zone-level BEC applicability instead of treating
+every BEC label as a missing variant-specific diagram.
+
+- [x] P135.1 Apply Atlas BEC applicability to coverage (#825)
+  - [x] Map `bec_main`/`bec_rare` to current BEC labels.
+  - [x] Add `reviewed_variant`, `reviewed_zone`, `mixed_zone`, `no_diagram`.
+  - [x] Rebuild the 10-diagram review queue.
+  - [x] Update API, selector, tests, source manifest, and docs.
+
+Acceptance:
+
+- Zone-level applicability is visible, not hidden.
+- Reviewed and provisional components are counted separately.
+- The 4 no-diagram labels are named.
+- Dashboard green.
+
+## Phase 136: Pareto solution-space explorer
+
+Parent issue: #827
+Branch: `feature/p136-pareto-explorer`
+Status: complete
+Merge commit: `7442591`
+Report: `notes/reports/p136-solution-space.md`
+Design: `notes/design/ws4-pareto-explorer.md`
+PR: #829
+
+Goal: port a multi-dimensional Pareto solution-space explorer into the WS4 web UI.
+
+- [x] P136.1 Exact full-member solution-space read model (#828)
+- [x] P136.2 Interactive 3D Pareto explorer
+- [x] P136.3 Bounded multi-dimensional weight scans and parallel members
+- [x] P136.4 Cross-links, docs, and browser verification
+
+Acceptance:
+
+- A portfolio with N successful members exposes all N points and an exact front.
+- Dominated points are retained and labelled; all, front, and near-front views work.
+- The 3D workspace loads a saved portfolio artifact.
+- Axis, colour, size, opacity, and filter mappings are interactive.
+- Selected members can be inspected and their schedules opened.
+- Tests and the green dashboard pass.
+
+## Phase 137: Source-complete SDMD diagram review
+
+Parent issue: #830
+Branch: `feature/p137-diagram-review`
+Status: complete
+Merge commit: `37b559d`
+Report: `notes/reports/p137-diagram-review.md`
+Packet: `notes/review/p137-provisional-review.md`
+PR: #833
+
+Goal: review and re-digitize the coastal diagrams from their source vector paths.
+
+- [x] P137.1 Source-complete diagram review packet (#831)
+  - [x] SHA-256-check source PDFs and render source pages.
+  - [x] Build stored-curve plots and numeric inventories.
+  - [x] Overlay stored curves on source pages and inspect them.
+  - [x] Match every printed curve label to a source path; keep unlabelled interior members.
+  - [x] Replace crown-closure traces with source vector paths.
+  - [x] Add the display-only CAI band.
+  - [x] Name the four no-diagram decisions.
+- [x] P137 close-out: all 14 public Atlas diagrams are reviewed; the provisional
+  queue is empty and coverage is 214 reviewed_zone, 1 reviewed_variant, and 4
+  no_diagram.
+
+Acceptance:
+
+- All 14 public Atlas diagrams are marked reviewed.
+- The provisional review queue is empty.
+- Overlay findings and source path maps are recorded with evidence.
+- The FreshForge line-import recipes are validated and locked.
+- Dashboard green.
+
+## Phase 138: Pareto member to map/Plan
+
+Parent issue: #834
+Branch: `feature/p138-pareto-to-plan`
+Status: complete
+Merge commit: `b82dbcf`
+Report: `notes/reports/p138-pareto-to-plan.md`
+PR: #836
+
+Goal: open a portfolio member's schedule as a real run and close the explorer-to-Plan loop.
+
+- [x] P138.1 Outcome-front alignment and member promotion (#835)
+- [x] P138.2 Open-on-map and compare-pinned browser actions
+- [x] P138.3 Docs, browser verification, and close-out
+
+Acceptance:
+
+- Search and the explorer show the same outcome-front count.
+- A selected member promotes to a direct run id and opens on the map.
+- The promoted run has a source sidecar naming the portfolio, member, factors, and metrics.
+- A pins pair can open the existing spatial comparison view.
+- Promoted runs remain inside the runs root.
+- Tests, browser smoke, and dashboard pass.
+
+## Phase 139: Target-faithful promoted runs
+
+Parent issue: #837
+Branch: `feature/p139-target-faithful`
+Status: complete
+Merge commit: `97b9ea3`
+Report: `notes/reports/p139-target-faithful.md`
+PR: #839
+
+Goal: make a promoted Pareto run report against its own scaled target file.
+
+- [x] P139.1 Target-faithful promoted runs (#838)
+
+Acceptance:
+
+- A promoted run copies its member target file.
+- Its target status and target series use the member file, not the live file.
+- The run summary exposes portfolio source metadata.
+- Existing promoted runs are upgraded safely.
+- Tests, browser smoke, and dashboard pass.
+
+## Phase 140: Period target dimensions
+
+Parent issue: #840
+Branch: `feature/p140-target-dimensions`
+Status: complete
+Merge commit: `b11e105`
+Report: `notes/reports/p140-target-dimensions.md`
+PR: #842
+
+Goal: make 5-7D target-weight scans usable from the live periodic target rows.
+
+- [x] P140.1 Period target scan builder (#841)
+
+Acceptance:
+
+- The scan builder lists per-period target dimensions.
+- A 5-period scaffold writes five `account@period=...` groups.
+- The generated scan goes through the existing portfolio path.
+- Tests, browser smoke, and dashboard pass.
+
+## Phase 141: Portfolio target preparation
+
+Parent issue: #843
+Branch: `feature/p141-portfolio-target-prep`
+Status: complete
+Merge commit: `9b177c2`
+Report: `notes/reports/p141-portfolio-target-prep.md`
+PR: #845
+
+Goal: make live portfolio scans runnable when flow targets cannot be satisfied from an
+empty starting schedule.
+
+- [x] P141.1 Level-only targets and initial schedules (#844)
+
+Acceptance:
+
+- Level-only creates a flow-free target file in the output directory.
+- Initial schedule is forwarded only when configured.
+- The live Search launcher can run a meaningful scan without manual CLI setup.
+- Tests, browser smoke, and dashboard pass.
+
+## Phase 142: Default stock-guarded even-flow scenario
+
+Parent issue: #846
+Branch: `feature/p142-default-stock90`
+Status: complete
+Merge commit: `f217cfe`
+Report: `notes/reports/p142-default-stock90.md`
+PR: #848
+
+Goal: give every runnable instance a useful even-flow + 90% growing-stock default.
+
+- [x] P142.1 Default stock90 scenario generation (#847)
+
+Acceptance:
+
+- Every runnable instance gets a generated default target or a named fallback.
+- The default includes a 90% final-period stock floor.
+- The target table shows the default on first load.
+- Solve uses a three-minute default budget.
+- Tests and dashboard pass.
+
+## Phase 143: Web UI trust and cleanup
+
+Parent issue: #849
+Branch: `feature/p143-web-trust`
+Status: complete
+Merge commit: `2e51922`
+Report: `notes/reports/p143-web-trust.md`
+PR: #851
+
+Goal: close the remaining web trust issues around state caches, artifact ordering,
+promoted-run targets, and default profiles.
+
+- [x] P143.1 Target-aware cache and artifact ordering (#850)
+- [x] P143.2 Promoted Plan member targets and profile alignment
+- [x] P143.3 TSA29 fallback validation and close-out
+
+Acceptance:
+
+- A target change cannot reuse a stale seed-state cache.
+- Newest usable portfolio artifacts open by default.
+- Failed artifacts are identified and do not masquerade as usable fronts.
+- Promoted Plan separates member targets from live targets.
+- Profile loading preserves the stock guard.
+- Tests, browser smoke, and dashboard pass.
+
+## Phase 144: Stochastic landscape engine
+
+Parent issue: #852
+Branch: `feature/p144-stochastic-landscape`
+Status: complete
+Merge commit: `d6522e3`
+Report: `notes/reports/p144-closeout.md`
+PR: #872
+
+Goal: merge the deterministic estate-optimization core with stochastic, spatially explicit,
+discrete-event landscape processes in one engine. Decisions and ecological processes become two
+event sources over one spatial state; a deterministic run is a stochastic run conditioned on one
+realized random tape.
+
+Design note: `notes/design/ws4-stochastic-landscape.md`
+
+- [x] P144.1 Write the design note and contracts (#853)
+- [x] P144.2 Add the event record, random tape, and replay validator (#854)
+- [x] P144.3 Add the ecosystem package and cohort state extension (#855)
+- [x] P144.4 Add the fire vertical slice (#856)
+- [x] P144.5 Add scenario ensembles and risk targets (#857)
+- [x] P144.6 Verify and close out (#858)
+
+Acceptance:
+
+- Same inputs and seed produce an identical event log and account values.
+- Common random numbers hold across candidate schedules.
+- A fire process can be applied to a compiled dataset without changing the management contract.
+- A risk-aggregated target (mean or CVaR) can be optimized and replayed.
+- Area and carbon conservation checks pass.
+- `python scripts/dashboard.py` is green.
+
+## Phase 145: Multi-account portfolio target scaffold
+
+Parent issue: #859
+Branch: `feature/p145-multi-account-targets`
+Status: complete
+Merge commit: `a33443a`
+Report: `notes/reports/p145-multi-account-targets.md`
+PR: #861
+
+Goal: build a 5-7 account portfolio target set without changing live Solve targets.
+
+- [x] P145.1 Multi-account scaffold targets (#860)
+
+Acceptance:
+
+- A user can add 5-7 accounts and review target rows.
+- The portfolio launch validates and uses the scaffold file.
+- Live target files remain unchanged.
+- Browser and API tests pass.
+
+## Phase 146: Live multi-account portfolio scan
+
+Parent issue: #862
+Branch: `feature/p146-live-multi-account-scan`
+Status: complete
+Merge commit: `65c5daf`
+Report: `notes/reports/p146-live-multi-account-scan.md`
+PR: #864
+
+Goal: validate the multi-account scaffold through a real TSA27 browser run.
+
+- [x] P146.1 Honor API request options for portfolio launch (#863)
+
+Acceptance:
+
+- The run uses `targets-scaffold.yaml`, not the live target file.
+- Members complete without failures.
+- The Pareto workspace shows the multi-account front.
+- A front member opens on the map.
+
+## Phase 147: Diverse multi-account scaffold
+
+Parent issue: #865
+Branch: `feature/p147-diverse-scaffold`
+Status: complete
+Merge commit: `efcddd4`
+Report: `notes/reports/p147-diverse-scaffold.md`
+PR: #867
+
+Goal: select diverse account families and produce a meaningful multi-account front.
+
+- [x] P147.1 Diverse account preset and warnings (#866)
+
+Acceptance:
+
+- The diverse preset selects non-nested accounts when available.
+- Nested selections show a warning.
+- The live TSA27 run produces a multi-point front.
+- Browser and API tests pass.
+
+## Phase 148: Portfolio and promoted-run cleanup
+
+Parent issue: #869
+Branch: `feature/p148-portfolio-cleanup`
+Status: complete
+Merge commit: `103614b`
+Report: `notes/reports/p148-portfolio-cleanup.md`
+PR: #871
+
+Goal: let users remove failed artifacts and derived promoted runs safely.
+
+- [x] P148.1 Guarded portfolio cleanup (#870)
+
+Acceptance:
+
+- Failed artifacts can be deleted from Search.
+- A promoted run can be removed from Plan.
+- Ordinary runs and non-portfolio artifacts are protected.
+- Tests, browser smoke, and dashboard pass.
+
+## Phase 149: State-run exactness
+
+Parent issue: #873
+Branch: `feature/p149-state-exactness`
+Status: complete
+Merge commits: `2997ea2`, `c745d8b`
+Report: `notes/reports/p149-state-exactness.md`
+PR: #876, #884
+
+Goal: surface and persist exact-objective replay results for web state runs.
+
+- [x] P149.1 Persist state exactness in the web summary (#874)
+- [x] P149.2 Keep the state exactness payload compact and cover the badge (#883)
+
+Acceptance:
+
+- Successful state runs record `exact_match: true`.
+- Mismatches are visible and cannot silently pass.
+- Run health shows the exactness result.
+- Existing state runs remain readable.
+
+## Phase 150: GPU effect-table extension guard
+
+Parent issue: #886
+Branch: `fix/gpu-extension-guard`
+Status: complete
+Merge commit: `2c18e19`
+Report: `notes/reports/p150-gpu-extension-guard.md`
+PR: #888
+
+Goal: refuse lazy effect-table extensions that cannot finish at full-model scale.
+
+- [x] P150.1 Guard oversized effect-table extensions (#887)
+
+Acceptance:
+
+- An extension above the row limit fails before pricing rows.
+- The error names the row count and the prebuilt-basis/factorized alternatives.
+- A real TSA 29 table check and the focused GPU-effects tests pass.
+
+## Phase 151: Web UI power-user console
+
+Parent issue: #789
+Branch: `feature/p151-web-console`
+Status: complete
+Merge commit: `cc5c4ff`
+Report: `notes/reports/p151-web-console.md`
+PR: #897
+
+Goal: add a token-authenticated, allowlisted command composer without exposing a shell.
+
+- [x] P151.1 Allowlisted WS4 command console for the web UI (#790)
+
+Acceptance:
+
+- The console is absent unless enabled and authenticated.
+- Server-built argv arrays launch only allowlisted WS4 commands.
+- Input paths stay inside read-only roots; outputs stay in a scratch job directory.
+- Output, cancellation, quotas, artifacts, and audit records work.
+- Browser smoke and dashboard pass.
+
+## Phase 152: Sandboxed Python runner
+
+Parent issue: #901
+Branch: `feature/p152-python-sandbox`
+Status: complete
+Merge commit: `345a86d`
+Report: `notes/reports/p152-python-sandbox.md`
+PR: #903
+
+Goal: run explicitly reviewed WS4 Python scripts with a fail-closed sandbox.
+
+- [x] P152.1 Run reviewed scripts in a Landlock sandbox (#902)
+
+Acceptance:
+
+- Unreviewed scripts are rejected.
+- Landlock and unshare are required; there is no unsandboxed fallback.
+- Selected inputs are read-only; only job scratch is writable.
+- Host files, other runs, network, and credentials are unavailable.
+- Browser review, tests, and dashboard pass.
+
+## Phase 153: Assistant script review
+
+Parent issue: #906
+Branch: `feature/p153-assistant-script-review`
+Status: complete
+Merge commit: `772d45b`
+Report: `notes/reports/p153-assistant-script-review.md`
+PR: #909
+
+Goal: let the assistant stage code without granting it execution authority.
+
+- [x] P153.1 Stage assistant scripts for review (#907)
+
+Acceptance:
+
+- A bounded ``stage_script`` chip reaches the browser.
+- Staging fills the console editor and clears review confirmation.
+- The chip never calls the job API.
+- The chat agent cannot inherit console secrets.
+- Tests, browser smoke, and dashboard pass.
+
+## Phase 154: TSA 29 GPU stock
+
+Parent issue: #912
+Branch: `feature/p154-tsa29-stock`
+Status: complete
+Merge commit: `8f5aae0`
+Report: `notes/reports/p154-tsa29-stock.md`
+PR: #914
+
+Goal: price the TSA 29 managed-stock floor on the GPU without a lazy table extension.
+
+- [x] P154.1 Build and wire TSA 29 factorized stock basis (#913)
+
+Acceptance:
+
+- A reusable factorized build command exists.
+- TSA 29 stock target uses the factorized cell, not the state fallback.
+- Zero-generation and evolved runs report exact replay.
+- The sparse table is unchanged.
+- Tests, portal smoke, and dashboard pass.
+
+## Phase 155: 3D fire scene and synthetic tree stands
+
+Parent issue: #877
+Branch: `feature/p155-fire-3d`
+Status: complete
+Merge commit: `a01e847`
+PR: #919
+Report: `notes/reports/p155-closeout.md`
+Design note: `notes/design/ws4-fire-3d-visualization.md`
+Idea: #868
+
+Goal: populate a stand map with a deterministic synthetic individual-tree population, compile a
+portable scene package from a P144 fire run, and render the fire as a real-time 3D vector
+animation with flames, smoke, a timeline, and post-fire tree states.
+
+- [x] P155.1 Scene and tree contracts plus a first burnable viewer (#878)
+- [x] P155.2 Nemora synthetic tree producer over VRI polygons (#879)
+- [x] P155.3 Fire and smoke visual quality (#880)
+- [x] P155.4 WS4 web Fire workspace (#881)
+- [x] P155.5 Verify and close out (#882)
+
+Acceptance:
+
+- The same polygons, seed, and generator reproduce the same tree table and scene package.
+- Every tree lies inside its fragment polygon; stand basal area, stems per hectare, and volume
+  are within the configured tolerance of the stand target.
+- Every animated ignition maps to a P144 fire event; the scene records the run's replay digest.
+- The standalone viewer draws the landscape, plays the fire front with flames and smoke, and
+  shows the burnt scar and post-fire tree state.
+- The scene manifest clearly marks the tree layer synthetic and records its provenance.
+- `python scripts/dashboard.py` is green.
+
+## Phase 156: Credible fire behaviour and growth
+
+Parent issue: #890
+Branch: `feature/p156-fire-behaviour`
+Status: complete
+Design note: `notes/design/ws4-fire-behaviour.md`
+Report: `notes/reports/p156-closeout.md`
+PR: #917
+
+Goal: replace the heuristic fire-spread probability with a defensible surface-fire kernel,
+then add crown fire and spatially explicit growth. The target is a model a fire modeller can
+inspect: published equations, standard fuel models, explicit weather and fuel moisture,
+standard test cases, and an event log that records every input.
+
+- [x] P156.1 Fire environment and fuel contracts (#891)
+- [x] P156.2 Rothermel surface fire kernel and standard cases (#892)
+- [x] P156.3 Crown fire initiation and propagation (#893)
+- [x] P156.4 Growth geometry and perimeter validation (#894)
+- [x] P156.5 Couple the kernel to the event log and accounts (#895)
+- [x] P156.6 Benchmark validation and close-out (#896)
+- [x] P156.7 Canadian FWI moisture codes (#898)
+- [x] P156.8 Canadian FBP fuel types and surface fire (#900)
+- [x] P156.9 VRI-to-FBP fuel-type mapping (#905)
+
+Acceptance:
+
+- The standard fuel models and the published Rothermel/Anderson cases reproduce within a
+  stated tolerance.
+- Rate of spread responds monotonically to wind, slope, and fuel moisture, and goes to zero at
+  the moisture of extinction.
+- A fire event records the fuel, weather, slope, and kernel version that produced it.
+- The growth engine produces an elliptical perimeter on a homogeneous fuel bed and a
+  wind/slope-driven shape.
+- The 3D viewer's flame length and smoke are derived from fireline intensity and fuel
+  consumption, not arbitrary particle settings.
+- `python scripts/dashboard.py` is green.

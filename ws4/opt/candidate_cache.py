@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import hashlib
 import pickle
+from array import array
+from collections.abc import Iterator
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -316,6 +318,274 @@ def load_candidates_cache(path: str | Path, expected_metadata: dict[str, Any]) -
     if not isinstance(candidates, dict):
         raise CandidateCacheError(f"candidate cache does not contain a mapping: {source}")
     return candidates
+
+
+class CompactCandidates:
+    """A flat-array candidate map loaded without unpickling millions of Python tuples.
+
+    The mapping is read-only and keeps the candidate/event arrays out of Python objects.
+    It supports the small candidate protocol the GPU population needs: option counts,
+    one chain by position, all chains for one block, and a chain-position lookup.
+
+    Parameters
+    ----------
+    blocks : numpy.ndarray
+        Sorted block ids.
+    chain_offsets : numpy.ndarray
+        Offset of each block's first chain, plus a sentinel.
+    event_offsets : numpy.ndarray
+        Offset of each chain's first event, plus a sentinel.
+    event_years : numpy.ndarray
+        Treatment year for each event.
+    event_labels : numpy.ndarray
+        Integer treatment-label id for each event.
+    labels : tuple of str
+        Treatment-label dictionary.
+    """
+
+    def __init__(
+        self,
+        blocks: Any,  # noqa: ANN401
+        chain_offsets: Any,  # noqa: ANN401
+        event_offsets: Any,  # noqa: ANN401
+        event_years: Any,  # noqa: ANN401
+        event_labels: Any,  # noqa: ANN401
+        labels: tuple[str, ...],
+    ) -> None:
+        self.blocks = blocks
+        self.chain_offsets = chain_offsets
+        self.event_offsets = event_offsets
+        self.event_years = event_years
+        self.event_labels = event_labels
+        self.labels = labels
+        self._positions: dict[int, int] | None = None
+
+    @classmethod
+    def from_candidates(cls, candidates: Candidates) -> CompactCandidates:
+        """Build the flat representation from a candidate mapping.
+
+        Parameters
+        ----------
+        candidates : mapping of int to sequence of tuple
+            Candidate chains per block.
+
+        Returns
+        -------
+        CompactCandidates
+            The flat representation.
+        """
+        blocks: list[int] = []
+        chain_offsets = array("q", [0])
+        event_offsets = array("q", [0])
+        event_years = array("i")
+        event_labels = array("i")
+        label_ids: dict[str, int] = {}
+        for block in sorted(int(value) for value in candidates):
+            blocks.append(block)
+            for chain in candidates[block]:
+                for treatment, year in chain:
+                    label = str(treatment)
+                    label_id = label_ids.setdefault(label, len(label_ids))
+                    event_years.append(int(year))
+                    event_labels.append(label_id)
+                event_offsets.append(len(event_years))
+            chain_offsets.append(len(event_offsets) - 1)
+        inverse = {value: key for key, value in label_ids.items()}
+        return cls(
+            blocks=__import__("numpy").asarray(blocks, dtype=__import__("numpy").int64),
+            chain_offsets=__import__("numpy").asarray(
+                chain_offsets, dtype=__import__("numpy").int64
+            ),
+            event_offsets=__import__("numpy").asarray(
+                event_offsets, dtype=__import__("numpy").int64
+            ),
+            event_years=__import__("numpy").asarray(event_years, dtype=__import__("numpy").int64),
+            event_labels=__import__("numpy").asarray(event_labels, dtype=__import__("numpy").int64),
+            labels=tuple(inverse[index] for index in range(len(inverse))),
+        )
+
+    def save(self, path: str | Path) -> Path:
+        """Write the compact mapping to one uncompressed NumPy archive.
+
+        Parameters
+        ----------
+        path : str or pathlib.Path
+            Destination archive.
+
+        Returns
+        -------
+        pathlib.Path
+            The written path.
+        """
+        import numpy as np
+
+        destination = Path(path)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        np.savez(
+            destination,
+            blocks=self.blocks,
+            chain_offsets=self.chain_offsets,
+            event_offsets=self.event_offsets,
+            event_years=self.event_years,
+            event_labels=self.event_labels,
+            labels=np.asarray(self.labels),
+        )
+        return destination
+
+    @classmethod
+    def load(cls, path: str | Path) -> CompactCandidates:
+        """Load a compact mapping with memory-mapped candidate/event arrays.
+
+        Parameters
+        ----------
+        path : str or pathlib.Path
+            Archive written by :meth:`save`.
+
+        Returns
+        -------
+        CompactCandidates
+            The loaded mapping.
+        """
+        import numpy as np
+
+        with np.load(Path(path), mmap_mode="r", allow_pickle=False) as payload:
+            return cls(
+                blocks=payload["blocks"],
+                chain_offsets=payload["chain_offsets"],
+                event_offsets=payload["event_offsets"],
+                event_years=payload["event_years"],
+                event_labels=payload["event_labels"],
+                labels=tuple(str(value) for value in payload["labels"].tolist()),
+            )
+
+    def _position(self, block: int) -> int | None:
+        if self._positions is None:
+            self._positions = {
+                int(value): index for index, value in enumerate(self.blocks.tolist())
+            }
+        return self._positions.get(int(block))
+
+    def option_count(self, block: int) -> int:
+        """Return the number of candidate chains for one block.
+
+        Parameters
+        ----------
+        block : int
+            Block id.
+
+        Returns
+        -------
+        int
+            The option count, or zero when the block is absent.
+        """
+        position = self._position(block)
+        if position is None:
+            return 0
+        return int(self.chain_offsets[position + 1] - self.chain_offsets[position])
+
+    def chain_at(self, block: int, option: int) -> tuple[tuple[str, int], ...]:
+        """Return one candidate chain by block and option position.
+
+        Parameters
+        ----------
+        block : int
+            Block id.
+        option : int
+            Candidate option position.
+
+        Returns
+        -------
+        tuple of (str, int)
+            The candidate chain.
+        """
+        position = self._position(block)
+        if position is None:
+            raise KeyError(block)
+        chain_position = int(self.chain_offsets[position]) + int(option)
+        if chain_position >= int(self.chain_offsets[position + 1]):
+            raise IndexError(option)
+        start = int(self.event_offsets[chain_position])
+        stop = int(self.event_offsets[chain_position + 1])
+        return tuple(
+            (self.labels[int(self.event_labels[index])], int(self.event_years[index]))
+            for index in range(start, stop)
+        )
+
+    def chains(self, block: int) -> tuple[tuple[tuple[str, int], ...], ...]:
+        """Return every chain for one block as Python tuples.
+
+        Parameters
+        ----------
+        block : int
+            Block id.
+
+        Returns
+        -------
+        tuple of tuple of (str, int)
+            The block's candidate chains.
+        """
+        return tuple(self.chain_at(block, option) for option in range(self.option_count(block)))
+
+    def index_of(self, block: int, chain: tuple[tuple[str, int], ...]) -> int | None:
+        """Return the option position for a chain, or None.
+
+        Parameters
+        ----------
+        block : int
+            Block id.
+        chain : tuple of (str, int)
+            Candidate chain to find.
+
+        Returns
+        -------
+        int or None
+            The option position, or None when the chain is absent.
+        """
+        for option in range(self.option_count(block)):
+            if self.chain_at(block, option) == chain:
+                return option
+        return None
+
+    def get(self, block: int, default: Any = None) -> Any:  # noqa: ANN401
+        """Return one block's chains, matching the mapping interface.
+
+        Parameters
+        ----------
+        block : int
+            Block id.
+        default : object, optional
+            Value returned when the block is absent.
+
+        Returns
+        -------
+        object
+            The block's chains or ``default``.
+        """
+        if self._position(block) is None:
+            return default
+        return self.chains(block)
+
+    def __getitem__(self, block: int) -> tuple[tuple[tuple[str, int], ...], ...]:
+        """Return one block's candidate chains."""
+        if self._position(block) is None:
+            raise KeyError(block)
+        return self.chains(block)
+
+    def __contains__(self, block: object) -> bool:
+        """Return whether one block is present."""
+        try:
+            value = int(block)  # type: ignore[call-overload]
+        except (TypeError, ValueError):
+            return False
+        return self._position(value) is not None
+
+    def __iter__(self) -> Iterator[int]:
+        """Iterate over block ids."""
+        return iter(self.blocks.tolist())
+
+    def __len__(self) -> int:
+        """Return the number of blocks."""
+        return len(self.blocks)
 
 
 def load_or_build_candidates(

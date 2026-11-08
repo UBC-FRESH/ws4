@@ -4,20 +4,33 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=85">
+  <link rel="stylesheet" href="static/style.css?v=115">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./static/vendor/three/three.module.js",
+        "three/addons/": "./static/vendor/three/"
+      }
+    }
+  </script>
 </head>
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v85</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v113</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
-    <label class="year">Period
-      <input id="year" type="range" min="0" max="0" step="1" value="0">
-      <output id="year-label">Years</output>
-    </label>
+    <div class="period-control">
+      <label class="year">Period
+        <input id="year" type="range" min="0" max="0" step="1" value="0">
+        <output id="year-label">Years</output>
+      </label>
+      <button id="play-periods" type="button" aria-pressed="false" title="Play through periods">▶ Play</button>
+    </div>
     <span id="status">loading…</span>
+    <button id="help-toggle" type="button" aria-label="Keyboard shortcuts" title="Keyboard shortcuts">?</button>
+    <button id="chat-toggle" class="chat-toggle" type="button" aria-expanded="false" title="Ask the WS4 assistant" hidden>✦ Ask</button>
   </header>
   <main>
     <aside id="sidebar">
@@ -25,7 +38,11 @@
         <button id="ws-map" role="tab" aria-selected="true" aria-controls="workspace-map" data-workspace="map" class="active">Map</button>
         <button id="ws-plan" role="tab" aria-selected="false" aria-controls="workspace-plan" data-workspace="plan">Plan</button>
         <button id="ws-results" role="tab" aria-selected="false" aria-controls="workspace-results" data-workspace="results">Results</button>
+        <button id="ws-pareto" role="tab" aria-selected="false" aria-controls="workspace-pareto" data-workspace="pareto">Pareto</button>
+        <button id="ws-fire" role="tab" aria-selected="false" aria-controls="workspace-fire" data-workspace="fire" hidden>Fire</button>
         <button id="ws-data" role="tab" aria-selected="false" aria-controls="workspace-data" data-workspace="data">Data</button>
+        <button id="ws-console" role="tab" aria-selected="false" aria-controls="workspace-console" data-workspace="console" hidden>Console</button>
+        <button id="ws-sdmd" role="tab" aria-selected="false" aria-controls="workspace-sdmd" data-workspace="sdmd" hidden>SDMD</button>
       </nav>
       <div class="sidebar-body">
       <div id="workspace-map" class="workspace" role="tabpanel" aria-labelledby="ws-map">
@@ -43,6 +60,13 @@
       <div id="workspace-plan" class="workspace" role="tabpanel" aria-labelledby="ws-plan" hidden>
 <section id="tab-targets" role="tabpanel" aria-labelledby="ws-plan" hidden>
         <h2>Targets</h2>
+        <div id="profile-bar" class="run-row" hidden>
+          <label>Profile <select id="profile-select" aria-label="Scenario profile"></select></label>
+          <button id="apply-profile" type="button">Load profile</button>
+          <label>Generations <input id="profile-generations" type="number" value="5000" min="0" step="1"></label>
+          <button id="run-profile" type="button">Run profile</button>
+          <span id="profile-status" class="hint"></span>
+        </div>
         <div id="target-summary" class="target-summary" aria-live="polite" hidden></div>
         <p id="targets-empty" class="hint">no targets yet — pick an account below</p>
         <div id="account-browser" class="account-browser">
@@ -125,6 +149,13 @@
         </div>
         <p id="run-status" class="hint">Runs use the resident-state accelerated engine on one CPU core; no island workers. Unlimited iterations, stopped by the 1-minute wall-clock limit.</p>
         <p id="targets-status" class="hint"></p>
+        <p id="portfolio-target-note" class="hint" hidden></p>
+        <button id="delete-promoted-run" type="button" class="button danger" hidden>Delete promoted run</button>
+        <details id="portfolio-member-targets" class="portfolio-member-targets" hidden>
+          <summary>Portfolio member targets (read-only)</summary>
+          <p id="portfolio-member-targets-status" class="hint"></p>
+          <div id="portfolio-member-targets-body"></div>
+        </details>
         </div>
       </section>
       </div>
@@ -137,18 +168,36 @@
           <div id="run-health-badges" class="run-health-badges"></div>
           <div class="run-health-actions">
             <button id="run-health-plan" type="button">Open Plan</button>
+            <button id="run-health-fire" type="button" hidden>Open fire scene</button>
             <button id="run-health-failing" type="button">Show failing targets</button>
           </div>
         </div>
         <nav id="results-nav" class="subnav" role="tablist" aria-label="Results sections">
           <button id="sub-reports" role="tab" aria-selected="true" aria-controls="tab-reports" data-sub="reports">Reports</button>
+          <button id="sub-timeline" role="tab" aria-selected="false" aria-controls="tab-timeline" data-sub="timeline">Timeline</button>
           <button id="sub-comparison" role="tab" aria-selected="false" aria-controls="tab-comparison" data-sub="comparison">Compare</button>
           <button id="sub-search" role="tab" aria-selected="false" aria-controls="tab-search" data-sub="search">Search</button>
         </nav>
 <section id="tab-reports" role="tabpanel" aria-labelledby="sub-reports" hidden>
+        <section id="run-snapshot" class="run-snapshot" hidden>
+          <h2>Run snapshot</h2>
+          <div id="snapshot-cards" class="snapshot-cards"></div>
+          <p id="snapshot-empty" class="hint">Choose another run or finish a simulation to populate the snapshot.</p>
+        </section>
         <h2>Standard reports</h2>
+        <div id="report-provenance" class="report-provenance" hidden>
+          <span id="report-provenance-badge" class="badge"></span>
+          <span id="report-provenance-detail" class="hint"></span>
+          <span id="report-provenance-links" class="report-provenance-links"></span>
+        </div>
         <ul id="standard-reports"></ul>
         <p id="standard-reports-empty" class="hint">no standard reports for this run</p>
+        <h2>Condition card</h2>
+        <div class="report-builder">
+          <button id="load-condition-card" type="button">Load condition card</button>
+          <span id="condition-card-status" class="hint"></span>
+        </div>
+        <div id="condition-card" hidden></div>
         <div id="ending-summary" class="ending-summary" hidden>
           <h2>Ending inventory <span id="ending-year" class="hint"></span></h2>
           <p id="ending-flows" class="hint"></p>
@@ -170,6 +219,12 @@
         <h2>All files</h2>
         <ul id="reports"></ul>
         <div id="report-preview"></div>
+      </section>
+<section id="tab-timeline" role="tabpanel" aria-labelledby="sub-timeline" hidden>
+        <h2>Schedule timeline</h2>
+        <p id="timeline-status" class="hint">loading schedule…</p>
+        <p id="timeline-empty" class="hint" hidden>The selected run has no schedule.csv. Run a simulation or choose another run.</p>
+        <div id="schedule-timeline" class="schedule-timeline" aria-label="Schedule activity by treatment and period"></div>
       </section>
 <section id="tab-comparison" role="tabpanel" aria-labelledby="sub-comparison" hidden>
         <h2>Compare runs</h2>
@@ -206,19 +261,65 @@
 <section id="tab-search" role="tabpanel" aria-labelledby="sub-search" hidden>
         <h2>Search artifacts</h2>
         <p id="search-empty" class="hint"></p>
-        <label class="search-pick">Artifact <select id="search-select"></select></label>
+        <label class="search-pick">Artifact <select id="search-select"></select>
+          <button id="search-explore" type="button" disabled>Explore in 3D</button>
+          <button id="search-delete" type="button" disabled>Delete</button>
+          <button id="search-clean-failed" type="button" disabled>Clean failed</button>
+        </label>
         <p id="search-summary" class="hint"></p>
         <details class="search-run">
           <summary>Run a portfolio</summary>
           <div class="run-row">
             <label>Vary <input id="portfolio-vary" type="text" placeholder="account=factor,factor"></label>
             <label>Metrics <input id="portfolio-metrics" type="text" placeholder="optional; default varied accounts"></label>
+            <label>Directions <input id="portfolio-directions" type="text" placeholder="id=min|max; optional"></label>
             <label>Seeds <input id="portfolio-seeds" type="text" value="1"></label>
             <label>Iters <input id="portfolio-iterations" type="number" value="20" min="1"></label>
             <label>Years <input id="portfolio-years" type="number" value="50" min="1"></label>
             <label>Engine <select id="portfolio-engine"><option>sa</option><option>tabu</option><option>ils</option><option>threshold</option></select></label>
+            <label>Mode <select id="portfolio-mode"><option>grid</option><option>random</option></select></label>
+            <label>Max members <input id="portfolio-max-members" type="number" value="64" min="1" max="256"></label>
+            <label>Workers <input id="portfolio-workers" type="number" value="1" min="1" max="16"></label>
+            <label>Sample seed <input id="portfolio-sample-seed" type="number" value="1"></label>
+            <label>Targets <select id="portfolio-target-mode">
+              <option value="level_only">level-only (flow removed)</option>
+              <option value="current">current targets</option>
+            </select></label>
+            <label><input id="portfolio-initial" type="checkbox"> initial schedule</label>
             <button id="run-portfolio" type="button">Run portfolio</button>
           </div>
+          <p class="hint">Workers are separate processes; each one loads its own dataset. Raise it only when memory allows. Level-only removes flow targets, which is usually required for a scan that starts from an empty schedule; the initial-schedule option uses the instance seed.</p>
+        </details>
+        <details class="search-run">
+          <summary>Build a weight scan</summary>
+          <div class="run-row">
+            <label>Account <select id="scan-account"></select></label>
+            <label>Factors <input id="scan-factors" type="text" value="0.5,1,2" placeholder="factor,factor"></label>
+            <button id="scan-add" type="button">Add dimension</button>
+            <button id="scan-periods-5" type="button">+5 periods</button>
+            <button id="scan-periods-7" type="button">+7 periods</button>
+            <button id="scan-clear" type="button">Clear</button>
+          </div>
+          <ul id="scan-dimensions" class="scan-list"></ul>
+          <p id="scan-summary" class="hint"></p>
+          <button id="scan-use" type="button">Use scan in portfolio</button>
+        </details>
+        <details class="search-run">
+          <summary>Scaffold multi-account targets</summary>
+          <div class="run-row">
+            <label>Account <select id="scaffold-account"></select></label>
+            <label>Period <input id="scaffold-period" type="number" value="20" min="0" step="1"></label>
+            <label>Weight <input id="scaffold-weight" type="number" value="1" min="0.0001" step="any"></label>
+            <button id="scaffold-add" type="button">Add target</button>
+            <button id="scaffold-diverse" type="button">Diverse 6</button>
+            <button id="scaffold-clear" type="button">Clear</button>
+          </div>
+          <ul id="scaffold-list" class="scan-list"></ul>
+          <p id="scaffold-status" class="hint"></p>
+          <div class="button-row">
+            <button id="scaffold-use" type="button">Use scaffold targets</button>
+          </div>
+          <pre id="scaffold-preview" class="scaffold-preview" hidden></pre>
         </details>
         <details class="search-run">
           <summary>Run a tuner</summary>
@@ -241,6 +342,102 @@
         </table></div>
         <div id="search-detail" class="search-detail" hidden></div>
       </section>
+      </div>
+      <div id="workspace-pareto" class="workspace" role="tabpanel" aria-labelledby="ws-pareto" hidden>
+        <section id="tab-pareto">
+          <h2>Pareto solution space</h2>
+          <p class="hint">A portfolio is a finite weight-grid sample, not a certified surface. Front points are nondominated on the declared outcome metrics.</p>
+          <label class="search-pick">Portfolio <select id="pareto-artifact"></select></label>
+          <div class="run-row">
+            <button id="pareto-refresh" type="button">Refresh</button>
+            <button id="pareto-reset" type="button">Reset view</button>
+            <button id="pareto-search" type="button">New scan</button>
+            <span id="pareto-status" class="hint"></span>
+          </div>
+          <div class="inline-fields axis-fields">
+            <label class="field"><span>X</span><select id="pareto-x"></select></label>
+            <label class="field"><span>Y</span><select id="pareto-y"></select></label>
+            <label class="field"><span>Z</span><select id="pareto-z"></select></label>
+          </div>
+          <div class="inline-fields">
+            <label class="field"><span>Colour</span><select id="pareto-colour"></select></label>
+            <label class="field"><span>Size</span><select id="pareto-size"></select></label>
+          </div>
+          <div class="inline-fields">
+            <label class="field"><span>Opacity</span><select id="pareto-opacity"></select></label>
+            <label class="field"><span>Filter</span><select id="pareto-filter-dim"></select></label>
+          </div>
+          <label class="field">
+            <span>Filter <output id="pareto-filter-value">all</output></span>
+            <input id="pareto-filter" type="range" min="0" max="100" value="0" step="1">
+          </label>
+          <div class="inline-fields">
+            <label class="field"><span>Dominance</span><select id="pareto-dominance">
+              <option value="all">all members</option>
+              <option value="near" selected>near-front</option>
+              <option value="front">exact front</option>
+            </select></label>
+            <label class="field"><span>ε near</span><input id="pareto-epsilon" type="number" value="0.08" min="0" max="1" step="0.01"></label>
+          </div>
+          <label class="field"><span>Member</span><select id="pareto-member"></select></label>
+          <div id="pareto-stats" class="change-stats"></div>
+          <div id="pareto-info" class="pareto-info">
+            <p class="muted">Choose a saved portfolio, then orbit, slice, and select a member.</p>
+          </div>
+          <div class="button-row">
+            <button id="pareto-open-run" class="button primary" type="button" disabled>Open on map</button>
+            <button id="pareto-compare-pinned" class="button ghost" type="button" disabled>Compare pinned</button>
+            <button id="pareto-pin" class="button ghost" type="button" disabled>Pin member</button>
+            <button id="pareto-clear-pins" class="button ghost" type="button" disabled>Clear pins</button>
+            <button id="pareto-open" class="button ghost" type="button" disabled>Open schedule</button>
+          </div>
+          <div id="pareto-compare" class="pareto-compare"></div>
+        </section>
+      </div>
+      <div id="workspace-fire" class="workspace" role="tabpanel" aria-labelledby="ws-fire" hidden>
+        <section id="tab-fire" role="tabpanel" aria-labelledby="ws-fire">
+          <h2>Fire studio</h2>
+          <p class="hint">A P156 fire-growth field over synthetic trees on public VRI polygons. Read-only; the timeline drives both scenes in comparison.</p>
+          <div class="fire-toolbar">
+            <label>Scene A <select id="fire-scene-a"></select></label>
+            <label><input id="fire-compare" type="checkbox"> Compare</label>
+            <label>Scene B <select id="fire-scene-b" disabled></select></label>
+            <button id="fire-refresh" type="button">Refresh scenes</button>
+            <button id="fire-fullscreen" type="button" title="Fullscreen canvas">Fullscreen</button>
+            <span id="fire-status" class="hint" aria-live="polite"></span>
+          </div>
+          <div class="fire-controls">
+            <button id="fire-play" type="button">Play</button>
+            <button id="fire-reset" type="button">Reset</button>
+            <button id="fire-ignition" type="button" title="Reset to ignition and play">From ignition</button>
+            <button id="fire-jump" type="button" title="Jump to the active fire front and play">Jump to fire</button>
+            <input id="fire-time" type="range" min="0" max="1" step="0.01" value="0" aria-label="Fire timeline">
+            <span id="fire-clock" class="hint">0</span>
+            <select id="fire-speed" aria-label="Playback speed">
+              <option value="0.5">0.5×</option>
+              <option value="1" selected>1×</option>
+              <option value="5">5×</option>
+              <option value="10">10×</option>
+            </select>
+          </div>
+          <div class="fire-inspect">
+            <details class="fire-panel" open>
+              <summary>Scene</summary>
+              <div id="fire-summary" class="fire-summary"></div>
+            </details>
+            <details class="fire-panel" open>
+              <summary>Tree</summary>
+              <label class="fire-search">Search <input id="fire-tree-search" type="search" placeholder="tree id or species"></label>
+              <select id="fire-tree" aria-label="Tree to inspect"></select>
+              <div id="fire-tree-detail" class="fire-detail"></div>
+            </details>
+            <details class="fire-panel">
+              <summary>Fragment</summary>
+              <select id="fire-fragment" aria-label="Fragment to inspect"></select>
+              <div id="fire-fragment-detail" class="fire-detail"></div>
+            </details>
+          </div>
+        </section>
       </div>
       <div id="workspace-data" class="workspace" role="tabpanel" aria-labelledby="ws-data" hidden>
         <nav id="data-nav" class="subnav" role="tablist" aria-label="Data sections">
@@ -308,23 +505,76 @@
         <p id="carbon-hint" class="hint">Read-only: the service aggregates libcbm pools and fluxes by timestep and never reruns the carbon engine.</p>
       </section>
       </div>
+      <div id="workspace-console" class="workspace" role="tabpanel" aria-labelledby="ws-console" hidden>
+        <section id="tab-console" role="tabpanel" aria-labelledby="ws-console">
+          <h2>Console</h2>
+          <p class="hint">Run allowlisted WS4 commands. Jobs use a server-built argv, a read-only input boundary, and a scratch directory. Nothing is executed through a shell.</p>
+          <div class="console-auth">
+            <label>Access token
+              <input id="console-token" type="password" autocomplete="off" spellcheck="false" placeholder="Bearer token">
+            </label>
+            <button id="console-connect" type="button">Connect</button>
+            <span id="console-status" class="hint" aria-live="polite">enter the collaborator token</span>
+          </div>
+          <label class="console-command">Command
+            <select id="console-command" aria-label="Console command"></select>
+          </label>
+          <div id="console-fields" class="console-fields"></div>
+          <div class="run-row console-actions">
+            <button id="console-run" type="button" disabled>Run job</button>
+            <button id="console-cancel" type="button" disabled>Cancel</button>
+            <span id="console-job-status" class="hint"></span>
+          </div>
+          <div id="console-python" class="console-python" hidden>
+            <h3>Sandboxed Python</h3>
+            <p class="hint">Scripts run only after explicit review, with Landlock file confinement, no network, and per-job resource limits. This is not an unsandboxed terminal.</p>
+            <label class="console-field">Python script
+              <textarea id="console-python-script" rows="8" spellcheck="false" placeholder="from ws4 ..."></textarea>
+            </label>
+            <label class="console-field">Read-only inputs (one absolute path per line)
+              <textarea id="console-python-inputs" rows="3" spellcheck="false" placeholder="optional files or directories"></textarea>
+            </label>
+            <label class="console-review"><input id="console-python-reviewed" type="checkbox"> I reviewed this script and want it to run</label>
+            <div class="run-row console-actions">
+              <button id="console-python-run" type="button" disabled>Run reviewed script</button>
+              <span id="console-python-status" class="hint"></span>
+            </div>
+          </div>
+          <pre id="console-output" class="console-output" aria-live="polite"></pre>
+          <div id="console-artifacts" class="console-artifacts"></div>
+        </section>
       </div>
-      <div id="chat-splitter" title="Drag to resize the assistant; double-click to reset" hidden></div>
-      <section id="chat-panel" class="chat" hidden>
-        <div class="chat-head">
-          <span>Assistant</span>
-          <span id="chat-model" class="chat-model">checking…</span>
-          <button id="chat-new" type="button" title="Start a new conversation">New</button>
-        </div>
-        <div id="chat-log" class="chat-log">
-          <p class="hint">Ask about WS4, a run, or what to do next. The assistant can read the repository and run commands when the service allows it.</p>
-        </div>
-        <form id="chat-form" class="chat-form">
-          <textarea id="chat-input" rows="2" placeholder="Ask WS4…" spellcheck="false"></textarea>
-          <button id="chat-send" type="submit">Send</button>
-        </form>
-        <p id="chat-status" class="hint"></p>
-      </section>
+      <div id="workspace-sdmd" class="workspace" role="tabpanel" aria-labelledby="ws-sdmd" hidden>
+        <section id="tab-sdmd" role="tabpanel" aria-labelledby="ws-sdmd">
+          <h2>AU Explorer</h2>
+          <details id="sdmd-coverage-panel" class="sdmd-coverage" open>
+            <summary>BC coverage <span id="sdmd-coverage-count" class="hint"></span></summary>
+            <div class="sdmd-coverage-controls">
+              <label>Zone <select id="sdmd-coverage-zone"></select></label>
+              <label>BEC <select id="sdmd-coverage-bec"></select></label>
+            </div>
+            <div id="sdmd-coverage-detail" class="sdmd-coverage-detail"></div>
+          </details>
+          <p id="sdmd-status" class="hint">loading SDMD…</p>
+          <p id="sdmd-empty" class="empty-state" hidden>No SDMD tables are served. Start <code>ws4 serve</code> with <code>--sdmd-dir</code>.</p>
+          <div id="sdmd-filters">
+            <label>Region <select id="sdmd-region"><option value="">All regions</option></select></label>
+            <label>AU <select id="sdmd-au"></select></label>
+            <label>Source <select id="sdmd-source"><option value="">All sources</option></select></label>
+          </div>
+          <p id="sdmd-au-meta" class="hint"></p>
+          <h3>Constraints</h3>
+          <p class="hint">Every regime needs a row. A denied regime is valid; any other finding blocks the save.</p>
+          <div id="sdmd-regime-editor" class="sdmd-regime-editor"></div>
+          <div class="sdmd-editor-actions">
+            <button id="sdmd-save" type="button">Save constraint set</button>
+            <button id="sdmd-reset" type="button">Reset</button>
+          </div>
+          <p id="sdmd-preview" class="hint"></p>
+          <button id="sdmd-use" type="button">Use in scenario</button>
+        </section>
+      </div>
+      </div>
     </aside>
     <div id="splitter" title="Drag to resize the panel"></div>
     <section id="target-canvas" class="target-canvas" hidden>
@@ -344,6 +594,63 @@
       <div id="target-chart-grid" class="target-chart-grid"></div>
       <p id="target-chart-empty" class="target-chart-empty">Pin a target in the table to open its chart.</p>
     </section>
+    <section id="sdmd-canvas" class="sdmd-canvas" hidden>
+      <div class="sdmd-canvas-head">
+        <div>
+          <h2 id="sdmd-title">AU Explorer</h2>
+          <p id="sdmd-subtitle" class="hint">Choose an AU.</p>
+        </div>
+        <div class="sdmd-canvas-actions">
+          <label>Trajectory <select id="sdmd-trajectory"><option value="">None</option></select></label>
+          <span id="sdmd-trajectory-status" class="hint"></span>
+          <span id="sdmd-preview-badge" class="badge" hidden></span>
+        </div>
+      </div>
+      <div class="sdmd-layout">
+        <div class="sdmd-main">
+          <article class="sdmd-card sdmd-card-wide">
+            <div class="sdmd-card-head">
+              <h3>Stand density</h3>
+              <div id="sdmd-diagram-legend" class="sdmd-legend"></div>
+            </div>
+            <svg id="sdmd-diagram" class="sdmd-chart" viewBox="0 0 720 420" role="img" aria-label="stand density management diagram"></svg>
+            <p id="sdmd-diagram-readout" class="sdmd-readout">Hover a point for its density and zone.</p>
+            <p id="sdmd-diagram-note" class="hint"></p>
+          </article>
+          <article class="sdmd-card">
+            <div class="sdmd-card-head">
+              <h3>Yield</h3>
+              <label class="sdmd-metric">Metric
+                <select id="sdmd-yield-metric">
+                  <option value="volume_m3_ha">Volume (m³/ha)</option>
+                  <option value="tph">Density (TPH)</option>
+                  <option value="ba_m2_ha">Basal area (m²/ha)</option>
+                  <option value="qmd_cm">QMD (cm)</option>
+                  <option value="top_height_m">Top height (m)</option>
+                </select>
+              </label>
+            </div>
+            <svg id="sdmd-yield-chart" class="sdmd-chart" viewBox="0 0 720 260" role="img" aria-label="yield curve"></svg>
+            <p id="sdmd-yield-readout" class="sdmd-readout">Hover a point for its value.</p>
+            <p id="sdmd-yield-note" class="hint"></p>
+          </article>
+        </div>
+        <aside class="sdmd-side">
+          <article class="sdmd-card">
+            <h3>Interpretation</h3>
+            <div id="sdmd-interpretation" class="sdmd-interpretation"></div>
+          </article>
+          <article class="sdmd-card">
+            <h3>Selected regime</h3>
+            <div id="sdmd-regime-paths" class="hint"></div>
+          </article>
+          <article class="sdmd-card">
+            <h3>Provenance</h3>
+            <div id="sdmd-provenance" class="sdmd-provenance"></div>
+          </article>
+        </aside>
+      </div>
+    </section>
     <div id="map-wrap" tabindex="-1" aria-label="Forest estate map. Click a block for details.">
       <div id="maplibre-map" hidden></div>
       <svg id="map" xmlns="http://www.w3.org/2000/svg">
@@ -357,11 +664,86 @@
         <g id="roads-layer"></g>
       </svg>
       <div id="map-loading" class="map-loading" hidden><span class="spinner" aria-hidden="true"></span><span id="map-loading-text">Loading map…</span></div>
+      <div id="map-unavailable" class="map-unavailable" role="status" hidden>
+        <strong>Map unavailable</strong>
+        <span>This dataset has no geometry layer. Configure <code>--geometry</code> to enable the block map.</span>
+      </div>
       <div id="map-legend" class="map-legend" role="region" aria-label="Map legend" hidden></div>
       <div class="scale" id="scale"></div>
+      <button id="map-3d-toggle" class="map-3d-toggle" type="button" aria-expanded="false" title="Open the experimental 3D estate replay">3D</button>
+    </div>
+    <div id="fire-wrap" class="fire-wrap" hidden>
+      <div class="fire-frame-card">
+        <div id="fire-label-a" class="fire-frame-label"></div>
+        <iframe id="fire-frame-a" title="Fire scene A" loading="eager"></iframe>
+      </div>
+      <div id="fire-frame-card-b" class="fire-frame-card" hidden>
+        <div id="fire-label-b" class="fire-frame-label"></div>
+        <iframe id="fire-frame-b" title="Fire scene B" loading="eager"></iframe>
+      </div>
+    </div>
+    <div id="pareto-wrap" class="pareto-wrap" hidden>
+      <canvas id="pareto-canvas" aria-label="Interactive 3D Pareto solution cloud"></canvas>
+      <div id="pareto-axis-labels" class="pareto-axis-labels">
+        <span id="pareto-axis-x">X: —</span>
+        <span id="pareto-axis-y">Y: —</span>
+        <span id="pareto-axis-z">Z: —</span>
+      </div>
+      <div id="pareto-legend" class="pareto-legend"></div>
+      <p class="pareto-hint">Drag to orbit · wheel to zoom · click a point to inspect it</p>
     </div>
   </main>
+
+  <section id="estate-3d" class="estate-3d" role="dialog" aria-modal="true" aria-labelledby="estate-3d-title" tabindex="-1" hidden>
+    <div class="estate-3d-head">
+      <div>
+        <strong id="estate-3d-title">3D estate replay</strong>
+        <span id="estate-3d-status" class="estate-3d-status">Experimental coarse view</span>
+      </div>
+      <div class="estate-3d-controls">
+        <label>Height <input id="estate-3d-exaggeration" type="range" min="0.5" max="3" step="0.25" value="1"></label>
+        <button id="estate-3d-reset" type="button">Reset view</button>
+        <button id="estate-3d-close" type="button" aria-label="Close 3D view">×</button>
+      </div>
+    </div>
+    <canvas id="estate-3d-canvas" role="img" aria-label="Coarse 3D block replay"></canvas>
+    <p class="estate-3d-note">Drag to orbit and scroll to zoom. The 2D map remains authoritative. No terrain, machine, or edit controls.</p>
+  </section>
+
+      <div id="chat-splitter" title="Drag to resize the assistant; double-click to reset" hidden></div>
+      <section id="chat-panel" class="chat" hidden>
+        <div class="chat-head">
+          <span>Assistant</span>
+          <span id="chat-model" class="chat-model">checking…</span>
+          <button id="chat-new" type="button" title="Start a new conversation">New</button>
+          <button id="chat-close" type="button" aria-label="Close assistant" title="Close assistant">×</button>
+        </div>
+        <div id="chat-log" class="chat-log">
+          <p class="hint">Ask about WS4, a run, or what to do next. The assistant can read the repository and run commands when the service allows it.</p>
+        </div>
+        <form id="chat-form" class="chat-form">
+          <textarea id="chat-input" rows="2" placeholder="Ask WS4…" spellcheck="false"></textarea>
+          <button id="chat-send" type="submit">Send</button>
+        </form>
+        <p id="chat-status" class="hint"></p>
+      </section>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <dialog id="help-dialog" class="help-dialog" aria-labelledby="help-title">
+    <div class="help-head">
+      <h2 id="help-title">WS4 keyboard shortcuts</h2>
+      <button id="help-close" type="button" aria-label="Close help">×</button>
+    </div>
+    <dl class="shortcut-list">
+      <div><dt><kbd>?</kbd></dt><dd>Open this help</dd></div>
+      <div><dt><kbd>/</kbd></dt><dd>Focus account or target search</dd></div>
+      <div><dt><kbd>m</kbd></dt><dd>Open the Map workspace</dd></div>
+      <div><dt><kbd>j</kbd> / <kbd>k</kbd></dt><dd>Move through target rows</dd></div>
+      <div><dt><kbd>←</kbd> / <kbd>→</kbd></dt><dd>Previous / next period</dd></div>
+      <div><dt><kbd>Esc</kbd></dt><dd>Close help, chat, or drawers</dd></div>
+    </dl>
+    <p class="hint">Shortcuts pause while typing in an input, select, or editor.</p>
+  </dialog>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=85"></script>
+  <script type="module" src="static/app.js?v=115"></script>
 </body>
 </html>

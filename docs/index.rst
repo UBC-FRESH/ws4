@@ -58,6 +58,9 @@ Quick Navigation
    * - :doc:`reference/index`
      - Everyone
      - The dataset contract, the simulator, the optimizer, spatial rules, and roads.
+   * - `3D fire demo <fire-demo.html>`_
+     - Everyone
+     - A playable 3D fire scene over a real VRI polygon cluster, with synthetic trees and the P156 FBP growth field.
 
 Documentation Sections
 ----------------------

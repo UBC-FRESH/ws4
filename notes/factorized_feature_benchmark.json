@@ -1,0 +1,17 @@
+{
+  "account": "feature.Yield.managed.Total",
+  "artifact": "/srv/shared-data/gep/ws4/femic/external/femic-tsa24-instance/runtime/factorized/tsa24-factorized.npz",
+  "artifact_gb": 2.936243618,
+  "options": 50096749,
+  "genomes": 64,
+  "years": 200,
+  "period_width": 10,
+  "build_seconds": 151.14634886600106,
+  "table_seconds": 0.055317104001005646,
+  "exact_seconds": 7.959843292999722,
+  "upload_seconds": 1.0029852940024284,
+  "batch_seconds": 0.7056187819980551,
+  "evaluations_per_second": 90.70053353565127,
+  "exact_max_error": 2.205371856689453e-05,
+  "peak_gpu_bytes": 7244523008
+}

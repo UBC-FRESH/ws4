@@ -18,7 +18,9 @@ import statistics
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, fields, replace
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any
+
+from fresh_solutions.kernel import Runner
 
 from .engine import OptimizeConfig, Optimizer
 
@@ -42,24 +44,6 @@ _CHOICES: dict[str, set[str]] = {
     "metaheuristic": {"sa", "tabu", "ils", "threshold"},
     "cooling_mode": {"geometric", "adaptive"},
 }
-
-
-class Runner(Protocol):
-    """The part of an optimizer the tuner needs."""
-
-    def run(self, out_dir: Path) -> dict[str, Any]:
-        """Run one candidate and write its outputs.
-
-        Parameters
-        ----------
-        out_dir : Path
-            The run directory.
-
-        Returns
-        -------
-        dict of str to Any
-            The run summary.
-        """
 
 
 def _field_types() -> dict[str, type[Any] | None]:

@@ -13,11 +13,15 @@ from ws4.opt.objective import load_targets
 from ws4.opt.portfolio import (
     PortfolioMember,
     metrics_from_accounts,
+    metrics_from_run,
     parse_directions,
     parse_vary,
     run_portfolio,
+    sample_weight_vectors,
     scale_targets,
     summarize_members,
+    weight_grid_size,
+    weight_vector_at,
     weight_vectors,
 )
 
@@ -70,6 +74,11 @@ class _FakeRunner:
         return summary
 
 
+def _fake_factory(_dataset: Path, config: OptimizeConfig) -> _FakeRunner:
+    """Build the deterministic fake runner in a picklable callable."""
+    return _FakeRunner(config)
+
+
 def test_parse_vary_accepts_semicolon_groups() -> None:
     """Accounts are separated by semicolons and factors by commas."""
     assert parse_vary("product.volume=0.5,1;feature.old=2") == {
@@ -86,6 +95,23 @@ def test_weight_vectors_cross_the_groups_and_cap_the_product() -> None:
     assert vectors == [{"a": 1.0, "b": 3.0}, {"a": 2.0, "b": 3.0}]
     with pytest.raises(ValueError, match="over"):
         weight_vectors({"a": (1.0, 2.0), "b": (3.0, 4.0)}, max_members=3)
+
+
+def test_weight_grid_can_be_indexed_without_materializing_it() -> None:
+    """A grid position matches the Cartesian order and a random sample is distinct."""
+    vary = {"a": (1.0, 2.0), "b": (3.0, 4.0, 5.0)}
+    assert weight_grid_size(vary) == 6
+    expected = weight_vectors(vary, max_members=6)
+    assert [weight_vector_at(vary, index) for index in range(6)] == expected
+    sample = sample_weight_vectors(vary, max_members=4, mode="random", seed=7)
+    assert len(sample) == 4
+    assert len({tuple(sorted(item.items())) for item in sample}) == 4
+    assert all(item in expected for item in sample)
+    assert sample_weight_vectors(vary, max_members=10, mode="random", seed=7) == expected
+    with pytest.raises(ValueError, match="unknown"):
+        sample_weight_vectors(vary, mode="spiral")
+    with pytest.raises(ValueError, match="outside"):
+        weight_vector_at(vary, 99)
 
 
 def test_scale_targets_multiplies_only_the_matching_weights(tmp_path: Path) -> None:
@@ -127,6 +153,20 @@ def test_metric_names_select_end_sum_and_offset() -> None:
         metrics_from_accounts(frame, ["product.volume@5"])
 
 
+def test_metrics_from_run_reads_accounts_and_products(tmp_path: Path) -> None:
+    """A product metric is found in product_values.csv beside level accounts."""
+    pd.DataFrame([{"offset": 0, "account": "feature.Old", "value": 10.0}]).to_csv(
+        tmp_path / "account_values.csv", index=False
+    )
+    pd.DataFrame([{"offset": 0, "account": "product.Volume", "value": 20.0}]).to_csv(
+        tmp_path / "product_values.csv", index=False
+    )
+    assert metrics_from_run(tmp_path, ["feature.Old", "product.Volume"]) == {
+        "feature.Old": 10.0,
+        "product.Volume": 20.0,
+    }
+
+
 def test_parse_directions_defaults_to_max_and_adds_objective() -> None:
     """Unnamed metrics maximize; objective always minimizes."""
     assert parse_directions(None, ["a", "b"]) == {
@@ -156,6 +196,8 @@ def test_portfolio_writes_members_front_and_archive(tmp_path: Path) -> None:
     )
     assert len(report["members"]) == 4
     assert report["front"]
+    assert report["outcome_front"] == report["front"]
+    assert report["outcome_front_size"] == report["front_size"]
     assert report["failures"] == 0
     assert (tmp_path / "portfolio" / "portfolio.json").is_file()
     assert (tmp_path / "portfolio" / "portfolio.md").is_file()
@@ -176,6 +218,54 @@ def test_portfolio_writes_members_front_and_archive(tmp_path: Path) -> None:
         for index, value in enumerate((3.0, 1.0))
     ]
     assert summarize_members(members)["best"] == 1.0
+
+
+def test_portfolio_front_is_not_limited_by_the_schedule_archive(tmp_path: Path) -> None:
+    """Every successful member is a front candidate even when the archive is small."""
+    targets = _targets(tmp_path / "targets.yaml")
+    report = run_portfolio(
+        dataset=tmp_path / "dataset",
+        targets=targets,
+        out_dir=tmp_path / "portfolio",
+        vary={"product.volume": (0.5, 1.0, 2.0)},
+        metrics=["product.volume", "feature.old"],
+        seeds=(1,),
+        iterations=1,
+        years=1,
+        directions={"product.volume": "max", "feature.old": "max"},
+        archive_size=1,
+        runner_factory=lambda _dataset, config: _FakeRunner(config),
+    )
+    assert report["front_size"] == 3
+    assert len(report["front"]) == 3
+    assert len(report["members"]) == 3
+
+
+def test_portfolio_runs_members_in_bounded_processes(tmp_path: Path) -> None:
+    """Two process workers write the same member artifacts as the sequential path."""
+    targets = _targets(tmp_path / "targets.yaml")
+    report = run_portfolio(
+        dataset=tmp_path / "dataset",
+        targets=targets,
+        out_dir=tmp_path / "portfolio",
+        vary={"product.volume": (0.5, 1.0)},
+        metrics=["product.volume", "feature.old"],
+        seeds=(1, 2),
+        iterations=1,
+        years=1,
+        directions={"product.volume": "max", "feature.old": "max"},
+        workers=2,
+        runner_factory=_fake_factory,
+    )
+    assert report["failures"] == 0
+    assert len(report["members"]) == 4
+    assert report["workers"] == 2
+    assert all(
+        (
+            tmp_path / "portfolio" / member["label"] / f"seed-{member['seed']:03d}" / "schedule.csv"
+        ).is_file()
+        for member in report["members"]
+    )
 
 
 def test_portfolio_records_a_failed_member(tmp_path: Path) -> None:
@@ -229,12 +319,15 @@ def test_portfolio_main_wires_the_arguments(
             "1,2",
             "--iterations",
             "3",
+            "--initial-schedule",
+            str(tmp_path / "initial.csv"),
         ]
     )
     assert code == 0
     assert captured["vary"] == {"product.volume": (1.0, 2.0)}
     assert captured["metrics"] == ["product.volume"]
     assert captured["seeds"] == [1, 2]
+    assert captured["initial_schedule"] == tmp_path / "initial.csv"
 
 
 def test_portfolio_main_returns_one_on_a_failure(

@@ -10,7 +10,13 @@ reads. The service computes no value the CLI cannot reproduce.
 
    pip install 'ws4[web]'
    ws4 serve --dataset build/compiled --runs runs --targets targets.yaml \
-             --geometry blocks.geojson
+       --scenario-profiles config/ws4/profiles/ltsy.yaml \
+             --geometry blocks.geojson --sdmd-dir data/sdmd
+
+``--sdmd-dir`` mounts the stand density management read API and its validated
+constraint-write endpoint under ``/api/sdmd``. The directory holds the six SDMD
+tables, an optional ``diagram.json``, and optional trajectories. See
+:doc:`sdmd`.
 
 The bind is ``127.0.0.1`` by default and a non-loopback address is refused unless ``--allow-remote``
 is passed; no authentication is provided in this cut. Starting a search is a separate permission:
@@ -43,16 +49,35 @@ files so it sees the search at the solver's rate rather than behind one writer.
 Browser shell
 -------------
 
-The browser shell is organised around four workspaces:
+The browser shell is organised around four workspaces, plus optional **Fire**,
+**Console**, and **SDMD** workspaces when their artifacts and feature flags are present:
 
 - **Map** — layers, treatment/cumulative views, and block detail.
 - **Plan** — the account browser, target editor, and solve controls.
 - **Results** — Reports, Compare, and Search as nested sections.
 - **Data** — the dataset summary plus LiDAR and Carbon when the selected run/dataset
   actually has them.
+- **Fire** — a discovered ``ws4.fire.scene.v1`` package with a shared timeline, tree
+  and fragment inspection, and side-by-side scene comparison. See
+  :doc:`fire-scene`.
+- **Console** — the token-authenticated allowlisted command composer, when
+  ``--allow-console`` is set. See :doc:`../howto/web-console`.
+- **SDMD** — the AU Explorer: BC coverage selector, yield, stand density,
+  regimes, and the constraint editor, when ``--sdmd-dir`` is set. See
+  :doc:`sdmd`.
+
+Fire scenes are served read-only under ``/api/fire``: ``GET /api/fire/scenes`` lists
+scene packages discovered in run directories, and each scene has a manifest, compact
+payload, and viewer endpoint. The workspace uses the same vendored Three.js module as the
+rest of the browser shell; the standalone scene viewer keeps its CDN import. A scene is
+found when a run contains ``fire_scene/manifest.json`` (or ``fire-scene``, ``fire``, or
+``scene``) with the ``ws4.fire.scene.v1`` schema.
 
 The **Map** workspace uses a neutral fill for untreated blocks and a red accent for treated
-blocks, so treatment reads as the subject and the estate remains visible as context. An
+blocks, so treatment reads as the subject and the estate remains visible as context. When the
+service was started without ``--geometry``, ``/api/summary`` reports
+``capabilities.geometry: false`` and the browser shows an explicit map-unavailable panel
+instead of issuing map requests; direct map API calls still return the naming 404. An
 on-map legend names the current layer and repeats the treated/untreated counts from the
 sidebar; its **Treated only** button hides untreated blocks without losing the legend. The
 legend follows the active view (A/B/both comparison, base attribute, cumulative earlier
@@ -72,14 +97,54 @@ the view. The workspace tabs implement the WAI-ARIA tabs pattern with left/right
 Home, and End navigation. LiDAR and Carbon are nested Data sections rather than top-level
 tabs; a Data option is hidden when the selected data does not exist.
 
-Assistant panel
+3D estate replay
+----------------
+
+The Map workspace has an experimental **3D** toggle. It opens a full-screen Canvas 2D
+orthographic replay of the current block layer: treated blocks extrude taller than
+untreated blocks, an optional ``age`` property raises the height, and the existing
+period slider drives the same feature set. Drag orbits, the wheel zooms, **Reset view**
+restores the camera, and Escape closes the overlay. Clicking a block uses the same
+selection path as the 2D map.
+
+The 2D map remains authoritative. The 3D view has no terrain, machine, edit, run, or
+permission controls. It refuses more than 2,000 block features and names the count rather
+than attempting a degraded render. The renderer is original Canvas 2D code; no
+third-party 3D library is vendored.
+
+Command console
 ---------------
 
-The assistant panel and its drag splitter are rendered only when the service was started
-with ``--allow-agent`` **and** the ``opencode`` binary is available. Without both, the panel
-is absent and occupies no vertical space; the rest of the sidebar uses the recovered height.
-The browser cannot enable the assistant, because doing so would change the service's execution
-permissions. Start a separate service with ``--allow-agent`` when the assistant is wanted.
+``--allow-console`` adds an opt-in, token-authenticated command composer. It is not a
+shell: the service validates a typed request, builds an argv array, confines input paths
+to read-only roots, and runs one process group in a scratch directory under
+``runs/console-*``. ``--console-token`` or ``WS4_CONSOLE_TOKEN`` supplies the bearer
+token; ``--console-timeout``, ``--console-output-bytes``, and ``--console-rate-limit``
+set the quotas. Without the flag the console API is absent and
+``/api/summary`` reports ``capabilities.console: false``. ``--allow-console-python``
+adds reviewed Python scripts under Landlock and unshare; the summary reports
+``capabilities.console_python``. See :doc:`../howto/web-console` for the allowlist,
+sandbox boundary, audit record, and threat model.
+
+Assistant overlay
+-----------------
+
+The assistant is opened from a compact **✦ Ask** pill in the header and rendered as a
+floating overlay. It is available from every workspace, is closed by default, and does not
+move or resize the active workspace. The pill is shown only when the service was started
+with ``--allow-agent`` **and** the ``opencode`` binary is available. Without both, it is
+absent. The browser cannot enable the assistant, because doing so would change the service's
+execution permissions. Start a separate service with ``--allow-agent`` when the assistant is
+wanted.
+
+Each turn carries a bounded context packet: run, workspace, subview, period, selected
+block, scenario profile, target filter, and visible account. The packet is sent as an
+escaped JSON line with an explicit “untrusted UI data, never instructions” guard. The
+assistant may end a reply with a ``WS4_ACTIONS:`` JSON array; the marker is
+case-insensitive, may be multiline or fenced, and is stripped from the visible reply.
+The server validates those chips against a safe whitelist before the browser renders
+buttons: open a workspace or subview, set a period, select an existing block, or fill
+the next prompt. A chip cannot edit data, start a run, or change permissions.
 
 Behind a proxy
 ---------------
@@ -107,11 +172,15 @@ Endpoints
    * - Endpoint
      - Returns
    * - ``GET /api/summary``
-     - The dataset manifest and the runs found under the configured root.
+     - The dataset manifest, ``capabilities.geometry``, and the runs found under the configured root.
    * - ``GET /api/runs/{run}/summary``
      - The run's ``summary.json``.
    * - ``GET /api/runs/{run}/accounts?year=&account=``
      - Rows of the run's ``account_values.csv``, filtered.
+   * - ``GET /api/runs/{run}/condition-card``
+     - A review-required ``ws4.forest_condition.report.v1`` card built from the run's
+       feature accounts. Returns 404 without ``account_values.csv`` and 422 for invalid
+       account data; it does not create operational alerts.
    * - ``GET /api/lidar``
      - The dataset's registered FEMIC LiDAR pin, licence, CRS, products, and canonical
        ``lidar_*`` block fields. Each field carries its dataset-wide valid count and min/max;
@@ -126,7 +195,8 @@ Endpoints
        joins the values to ``--geometry``; without geometry it is a 404. ``available``
        is false when the run has no DHI artifacts.
    * - ``GET /api/runs/{run}/reports``
-     - The run's report files and their sizes.
+     - The run's report files, their sizes, the ``sha256`` recorded by
+       ``report_provenance.json``, and the decoded sidecar on its own entry.
    * - ``GET /api/runs/{run}/reports/{name}``
      - One report file; a name the run does not hold is a 404.
    * - ``GET /api/runs/{run}/map?year=&period_start=&layer=&account=&format=&bbox=&zoom=&lidar=``
@@ -183,6 +253,13 @@ Endpoints
        the file is left unchanged.
    * - ``GET/PUT /api/targets.json``
      - The parsed targets as JSON, for an editor that does not parse YAML.
+   * - ``GET /api/scenario-profiles``
+     - The named profiles from the optional ``--scenario-profiles`` library.
+   * - ``GET /api/scenario-profiles/{name}``
+     - One resolved profile, including its target path, accounts, and schedule output.
+   * - ``POST /api/scenario-profiles/{name}/apply``
+     - Validate the profile's target file and replace the configured targets YAML. The service
+       must have an editable ``--targets`` file; invalid target data is refused.
    * - ``GET /api/runs/{run}/targets``
      - Each target's realized value over the target's own period — the optimizer's
        ``period_value`` rule: a product sums its offsets, a feature reads the period's end offset.
@@ -197,6 +274,9 @@ Endpoints
        A positive ``iterations`` is the per-island budget, and ``patience`` (default 0, off) stops
        after that many iterations without an incumbent improvement. The body may also carry
        ``time_limit``, ``seed``, ``years`` and ``islands``; a time limit is applied only when given.
+       A ``profile`` field starts the GPU profile worker instead; ``generations`` and
+       ``population`` default to 5000 and 64, and the profile must name its table, factorized
+       archive/cache, cache directory, and seed schedule.
    * - ``POST /api/runs/{run}/control``
      - ``{"action": "pause" | "run" | "stop"}``. The search polls its ``control.json`` every 64
        iterations: pause holds it, and stop returns its best schedule so the run writes its summary.
@@ -523,6 +603,15 @@ The 5 m tolerance keeps the stand boundaries while cutting the vertex count by r
 the coordinates stay in the source projection. Pass the resulting file to ``--geometry``. A point
 layer remains valid.
 
+For a large layer, write a sidecar named ``<geometry>.bounds.json`` with a
+``bounds`` array of ``[west, south, east, north]`` in the source CRS. The service
+uses it for the initial map fit instead of parsing every polygon. A missing or
+malformed sidecar falls back to the geometry itself.
+
+``--geometry-overview`` can point to a coarser copy of the same block layer. The
+vector-tile path uses it below zoom 8 and switches to the detail geometry at
+zoom 8 and above.
+
 Skins
 -----
 
@@ -561,7 +650,7 @@ named rather than silently shown as zero everywhere.
 Chat agent
 ----------
 
-The lower-left chat panel is an embedded `OpenCode <https://opencode.ai>`_ coding agent. It runs
+The floating **✦ Ask** overlay is an embedded `OpenCode <https://opencode.ai>`_ coding agent. It runs
 the installed ``opencode`` CLI with the model named by ``--agent-model`` (default
 ``opencode-go/deepseek-v4.1-flash``). The CLI's own login supplies the provider key; WS4 does not
 read or store it. The agent works in ``--agent-cwd`` (default: the service's directory), so it can
@@ -575,9 +664,9 @@ This is a deliberate, separate permission and is **off by default**. The agent r
 service user's filesystem and shell permissions and auto-approves its own tool calls; anyone who
 can reach the service can therefore ask it to change files or run commands. Keep the service on
 loopback (the default) or behind an authenticating proxy, and do not enable it on a shared service.
-The panel keeps one OpenCode session per conversation and starts a new one with **New**; a session
-id is lost on reload, so a fresh page starts a fresh conversation. A horizontal drag bar above the
-panel resizes its height (8 rem minimum, leaving the layer panel usable); the height is kept in
+The overlay keeps one OpenCode session per conversation and starts a new one with **New**; a session
+id is lost on reload, so a fresh page starts a fresh conversation. It is fixed to the lower-right,
+closes with its × control or Escape, and focuses the input when opened.
 local storage, and double-clicking the bar restores the default.
 
 Targets
@@ -664,16 +753,59 @@ through ``POST /api/search/portfolio`` or ``POST /api/search/tune`` and polls
 status reports `stopping`/`stopped`. The in-memory job list is bounded and drops the
 oldest finished entries. A read-only service shows only the artifacts.
 
+Pareto solution space
+---------------------
+
+The **Pareto** workspace turns a saved portfolio into an interactive point cloud.
+``GET /api/search/{name}/space`` recomputes the nondominated front from every successful
+member, not from the capacity-limited schedule archive. Each metric is normalized to
+``0 = worst`` and ``1 = best`` using the portfolio's declared directions. The scalar
+objective is an optional dimension and is always minimized.
+
+The view maps any dimension to X, Y, and Z, then adds colour, size, opacity, and a
+threshold filter. A dominance control shows all members, the exact front, or a
+near-front sample within a user-selected Chebyshev distance in the normalized outcome
+box. A near-front member is labelled as such; it is not called Pareto. Selecting a
+member opens its metric vector, factors, objective, and schedule download; up to three
+members can be pinned for comparison.
+
+The Search tab also has a **Build a weight scan** helper. Add target dimensions and
+comma-separated factors; it writes the ``vary`` expression and warns when the Cartesian
+product exceeds the member cap. Dimensions may be account-level or periodic
+(``account@period``). **+5 periods** and **+7 periods** scaffold temporal scans from the
+selected target account without changing the target file. The portfolio launcher exposes
+``grid`` or ``random`` sampling, a maximum member count, a sample seed, and process
+workers. Each worker loads its own dataset copy, so the launcher defaults to one worker.
+Portfolio scans can choose **level-only** targets, which writes a flow-free copy inside
+the run output, and can opt into the instance's configured initial schedule. Neither
+option mutates the live target file.
+
+The cloud is a finite grid sample under one search budget. It is advisory, and its
+normalized axes are relative to the members loaded into the current artifact.
+
+A selected member can be **opened on the map**. The service promotes its run into a
+direct read-only run id under the runs root, hard-linking the original files when
+possible and writing a ``portfolio_source.json`` sidecar. The normal run map, reports,
+target status, and comparison endpoints then work unchanged. Two pinned members can be
+promoted into the existing spatial comparison view. Promotion never changes the live
+target file or the portfolio artifact.
+
+The promoted run carries the member's ``targets.yaml``. Run target status, target
+series, and period width prefer that local file; the Plan editor still edits the live
+target file and shows a read-only notice for portfolio-member runs.
+
 Reports
 -------
 
-``GET /api/runs/{run}/reports`` lists the report files a run wrote. The application renders a CSV in a
+``GET /api/runs/{run}/reports`` lists the report files a run wrote and the digests recorded by
+``report_provenance.json`` (see :doc:`report-provenance`). The application renders a CSV in a
 table (first 200 rows) and opens HTML/PNG reports directly. The Reports tab groups the named
 **standard reports** when present — account summary, target status, route cost (overall and per
 destination), patch accounts and metrics, spread metrics, edge contrast, the road network, the
-schedule and the ending inventory — and keeps the full file list below them. The ending-inventory
-card shows the final feature values and year from ``summary.json``, plus any flow-target status.
-Nothing is recomputed in the browser.
+schedule and the ending inventory — and keeps the full file list below them. A provenance badge
+names the sidecar's uncertainty status and links to the sidecar and its source metadata files.
+The ending-inventory card shows the final feature values and year from ``summary.json``, plus any
+flow-target status. Nothing is recomputed in the browser.
 
 Runs written before the current clock schema carry ``year`` in ``account_values.csv`` and ``period``
 in ``schedule.csv``. The shared run-table reader adds an ``offset`` alias for either column and keeps
@@ -704,3 +836,17 @@ The browser application and the four skin manifests (model builder, scenario ana
 browser, reviewer) are specified in ``notes/design/ws4-web-frontend.md``. A skin is a JSON manifest
 over one application, checked against a registry; an unknown panel, layer or action is refused by
 name, and a read-only skin cannot edit a target.
+
+Condition-card panel
+--------------------
+
+The Reports tab includes a **Load condition card** button. It calls
+``GET /api/runs/{run}/condition-card`` and renders the review status, indicators,
+applicability, and advisory alerts. The browser uses text nodes, not HTML
+interpolation. The card is report-only; a missing or invalid account table is
+reported in the panel without changing the run.
+
+The condition-card table also shows the uncertainty field and a provenance
+block. Missing uncertainty is shown as "not stated"; every value is rendered as
+a text node. These fields make the card reviewable without turning it into an
+operational alert.

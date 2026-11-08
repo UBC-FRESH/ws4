@@ -669,7 +669,7 @@ issue comments.
   its inventory series, and `PatchModel.reset` skipped it entirely — so with an empty schedule the
   optimizer saw **zero patches** where the reporting path saw 262 (26,384.9 ha). Separately,
   `PatchLedger` ignored `search_distance`, so the report and the optimizer disagreed whenever it was
-  set. Both are fixed, and `PatchAccount.search_distance` now defaults to **0.0**: only blocks that
+  set. Both are fixed, and `PatchAccount.search_distance` now defaults to **2.2e-5**: only blocks that
   literally touch (their polygons share a vertex) are neighbours. The topology's `DISTANCE` column is
   the shortest gap between two polygons, so the old `None` default silently joined patches up to 200 m
   across roads and creeks — mathematically valid, never what a resources analyst wants to express. On
@@ -1503,7 +1503,7 @@ issue comments.
   growing stock is a *level* read at the period's end — the same accumulate/level rule as a target's
   value. With both fixed, WS4's flow values match the reference's own `targets/flow_*.csv` to four
   decimals (period 1 at 40.244 on both sides). A third: where a flow's balance is empty the reference
-  reports **0.0** (satisfied) while WS4 priced it infinite; reports and comparisons now carry the
+  reports **2.2e-5** (satisfied) while WS4 priced it infinite; reports and comparisons now carry the
   reference's reading, and the pricing question is in the backlog with the measurement. And the bug
   itself: `report_targets.csv` priced a flow target as a level, so a flow target could be reported as met
   while the search paid for it. It now reports **one row per period**, priced by the same `penalty` the
@@ -3627,7 +3627,7 @@ issue comments.
 
 - P83 GPU ten-seed matrix: `ws4 gpu-run` completed ten full TSA23 ft_econ 20x10 seeds in
   **110.0 s** total (33.6 s session setup; 4.0-12.7 s per search), with exact objective
-  **0.0** on every seed after fresh replay. The CPU reference remains 386 s for one seed;
+  **2.2e-5** on every seed after fresh replay. The CPU reference remains 386 s for one seed;
   this is an aggregate ten-seed comparison, not a controlled CPU matrix. Also fixed the
   exactness report to use `rel_tol=1e-9, abs_tol=1e-6`; a one-generation smoke run had a
   3.5e-8 roundoff difference that `==` incorrectly labeled a mismatch. Evidence:
@@ -3647,3 +3647,1239 @@ issue comments.
   the 6.03 s one-iteration baseline. This is an exact architecture prototype, not yet a
   speed win. Evidence: `notes/reports/p84-state-watch.md`. No TSA24/29 run.
 
+
+- P84: Precompiled scheduling substrate and fast startup. Parent #613, branch
+  `feature/p84-incremental-state`, PR #616. The resident Model II state path gained cached
+  per-block/option rows, fragment-aware row construction, persisted seeded pages, compact
+  candidate-index positions, live c5/TSA24 watchers, and a GPU-to-state hybrid runner.
+  c5 1k: 5.04 s wall / 32.31M objective versus baseline 6.95 s / 44.93M; c5 100k:
+  71.46 s / 10.46M versus baseline 120.88 s / 10.29M. Final objectives are exact.
+  P84.5 (#624) records the incremental state work. Full dashboard: **GREEN**.
+- P85: GPU acceleration and interactive target cache. Parent #618, branch
+  `feature/p85-gpu-acceleration`. Compact candidate cache, vectorized option map,
+  base-total and parsed-schedule sidecars, priority-tier GPU pricing, live target reload,
+  target-independent effect-cell basis, and lazy column extension. TSA24 hot launch fell
+  from 92.8 s to 11.9 s; the 20k PLAIN run reached 8,388 eval/s in 152.6 s. The old
+  per-generation live renderer measured 755 eval/s; the throttled live path measured
+  6,247 eval/s on a 2k run. Tests: 37 passed across the GPU population, effect-table, and
+  search suites; ruff and strict mypy clean; workflow validator 0 errors/0 warnings.
+  Cloud packaging for the TSA24 instance is deferred to that repository. Full dashboard:
+  **GREEN** (lint, format, types, tests, validator, docs, docstrings).
+- P86: Weighted goal-programming target semantics. Parent #625, branch
+  `feature/p86-target-semantics`. Documented that target minimum/maximum are one-sided
+  penalty hinges, not hard feasibility bounds; a deliberately unreachable harvest minimum
+  is a pull-up aspiration; a dominant flow target plus period-level aspirations produces
+  the maximum even-flow harvest; and a 1e9 priority-tier gap is near-lexicographic while
+  weights are the softer dominance control. Added the normative note
+  `notes/design/weighted-goal-programming-aspirations.md`. Sphinx `-W` build passed.
+## 2026-11-01
+
+- P87: Launched Phase 87 (Stand density management and AU Explorer) on
+  `feature/p87-sdmd-au-explorer`, parent issue #628, with child issues #629 to #636. The layer is
+  a diagnostic and constraint layer, not a growth model, and its scope, risks, and parallelisation
+  order are in `notes/plans/ws4-sdmd-au-explorer.md`. The maintainer requested the phase directly
+  alongside other parallel expansion sessions, so it starts from `main` while Phase 86 is
+  `pr-open`.
+- P87.1: Added the SDMD schema contract. `ws4/sdmd/schema.py` defines the six tables (plots, trees,
+  stands, SDMD points, regimes, and AU constraints), nullable coercion, frame and dataset
+  validation with stable `SDMD-*` finding codes, value domains, and cross-table reference checks.
+  Added ADR 0013, `docs/reference/sdmd.rst`, and a two-AU, ten-plot fixture under
+  `tests/fixtures/sdmd/` with 38 contract tests. No ingestion, UI, or solver work is included.
+  Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates
+  (lint, format, types, tests, validator, docs, docstrings).
+- P87.2: Added the SDMD ingest adapters in `ws4/sdmd/ingest.py`: PSP plot and tree-list
+  normalization with aliases and schema refusal, VRI AU assignment, deterministic leading-species
+  derivation, plot-to-AU matching by BEC/TSA/species/age/site with an explicit unmatched report,
+  synthetic gap-fill labelling, and LiDAR structure evidence. A canopy-only LiDAR TPH is refused as
+  total density, a `nemora` row without a `synthetic:` label is refused, and ambiguous AU matches are
+  reported rather than guessed. Added 30 contract tests and the ingestion section of
+  `docs/reference/sdmd.rst`. Dashboard result: `python scripts/dashboard.py` reports
+  `OVERALL: GREEN` on all seven gates.
+- P87.3: Added the vector SDMD diagram contract and AU report. `ws4/sdmd/diagram.py` validates a
+  JSON diagram's source and review, interpolates isopleths in log space, places a point in the
+  understocked, density-management, competition, or outside zone, and builds a convex observed
+  envelope. `ws4/sdmd/compile.py` assesses trajectories against the envelope and rejects an initial
+  volume above the supplied evidence limit; an upper-tail trajectory is reported as extrapolation,
+  not as a result. A report refuses a diagram that is not reviewed unless method work opts in, and
+  then records the gap. The committed diagram is an **illustrative synthetic fixture**: the real
+  IDFdk3/FDI digitisation remains data-blocked pending a licensed copy and a forester's review, and
+  no third-party diagram content was copied. Added 40 tests and the diagram/report reference section.
+  Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
+
+- P88: Factorized GPU account search. Parent #637, branch
+  `feature/p88-factorized-gpu`. Added the persisted account-independent descriptor
+  consumer, padded feature and product pricers, mixed target-cell switching, and the
+  post-P85 effect-table safety guards. Full TSA24 exactness: feature error 2.2e-5 and
+  64 genomes in 0.706 s; product error 8.9e-7 and 64 genomes in 0.0255 s; mixed
+  feature/product four-cell switch error 1.1e-5 in 0.093 s. The rejected all-account
+  matrix is not built; the lean builder caps workers and refuses an over-budget basis.
+  Report: `notes/reports/p88-factorized-gpu.md`. Merged as `f582500` via PR #642.
+
+## 2026-11-02
+
+- P87.3 clarification: the review gate is a named reviewer sign-off, not an unstaffed
+  "forester" role. Gregory Paradis is the reviewer of record for this pilot, and an RPF
+  can be named later without a schema change. The earlier "licensed digital copy"
+  wording overstated the dependency: the real gap is that the supplied PDF is a how-to
+  guide, not the diagram, and no source copy has been chosen yet. No code behaviour changed.
+- P87.3: Found and catalogued the complete public BC SDMD set. The BC Ministry of Forests
+  publishes 14 one-page diagrams for 7 species in natural and planted versions: coastal and
+  interior Douglas-fir, lodgepole pine, Sitka spruce, western hemlock, western redcedar, and
+  white spruce. Added `ws4/sdmd/data/sdmd/source_catalog.json` (URL, version, date, size, and
+  SHA-256 for every diagram, five instructional guides, and the Farnden 1996 BC-X-360 report)
+  and `ws4/sdmd/data/sdmd/bec_variants.csv` (all 229 BEC zone/subzone/variant rows with the
+  applicable diagrams). Added `notes/reference/bc-sdmd-sources.md` and six catalog tests. The
+  BEC mapping is a zone-level inference from the BC Tree Species Compendium, not a claim printed
+  on the diagrams; IDFdk3 resolves to `fdin`/`fdip`. The BC index page mislabels `swn`/`swp` as
+  "White pine"; the PDFs are white spruce.
+- P87.4: Added the even-aged regime state machine and AU constraints in
+  `ws4/sdmd/regimes.py` and `ws4/sdmd/constraints.py`. A regime expands its cycle and repeat
+  count into ordered entry ages, validates its fields, and flags selection regimes as outside
+  the even-aged diagram. Constraints validate the entry window, entry cap, minimum interval,
+  removal fraction, review state, and required SDMD zone; `check_regime` fails closed and
+  `allowed_regimes` returns only the regimes that pass. Added 33 tests, a regime/constraint
+  reference section, and an internally consistent fixture. The IDFdk3-FDI allowed set drops from
+  7 regimes and 11 entries to 6 regimes and 7 entries. Dashboard result:
+  `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
+- P87.3: Added `ws4/sdmd/equations.py`, an independent Python implementation of the SDMD
+  calculation logic used by the BC Government SDMD Shiny app and the `standview` R package. It
+  does not call or wrap R. It implements the five complete equation sets (2, 3, 6, 7, and 9) for
+  volume and top height, plus equation 3's crown cover and biomass, the Reineke SDI and relative
+  density, the self-thinning diameter, and a bisection volume isoline. Metric inputs and outputs
+  follow the BC app's English-unit conversion path. 27 regression tests compare the output with
+  reference values generated from the R implementation. The module docstrings, the equation
+  registry, and `docs/reference/sdmd.rst` cite the BC app (Apache-2.0), the `standview` package,
+  and the published equations (Long and Shaw 2005/2012; Jang, Ritchie, and Zhang 2021; Drew and
+  Flewelling 1979; McCarter and Long 1986; Reineke 1933), plus the CJFR review
+  `10.1139/cjfr-2020-0289` for the static/dynamic/structural framing. Dashboard result:
+  `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
+- P87.5: Added the AU Explorer API in `ws4/sdmd/api.py`. A `SdmdStore` loads the six SDMD
+  tables, the optional diagram, saved constraint sets, and optional trajectory files. The FastAPI
+  router exposes regions, AUs, AU detail, plots, yield, SDMD points with placements, regimes with
+  constraint findings, trajectories assessed against the observed envelope, and the option-count
+  preview. `POST /api/sdmd/au/{au_id}/constraints` requires a complete set for the AU, validates
+  every row through the schema and `check_regime`, writes atomically to
+  `constraints/<au_id>.json`, and leaves the stored set unchanged on failure. `ws4 serve
+  --sdmd-dir` mounts the router. Added 14 API tests, including the mounted-app path. Dashboard
+  result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
+- P87.6: Added the AU Explorer tab to the browser shell. The new SDMD workspace is served
+  when `ws4 serve --sdmd-dir` is set. It has a region/AU/source rail, a yield chart, a
+  log-log SDMD with the observed points and convex envelope, a regime trajectory selector,
+  a provenance and data-gap panel, and a per-regime constraint editor with save and
+  option-count preview. The selected AU and workspace are URL state. The editor posts the
+  complete set to the validated endpoint and reports a refused save. Added a Playwright
+  smoke test that renders the tab at desktop and iPad-landscape sizes, plus 3 static
+  contract tests. Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN`
+  on all seven gates.
+- P87.7: Added the SDMD option-space filter in `ws4/sdmd/solver.py` and the
+  `ws4 sdmd filter-dataset` command. It reads the compiled tracks and treatments, maps a
+  track to its AU from the `AU(...)` name or a YAML sidecar, matches treatment labels to
+  regimes, and drops every treatment row for a track that fails `check_regime`, the entry
+  window, the entry cap, the minimum interval, or the removal fraction. It writes a filtered
+  dataset copy and reports tracks/treatments before and after with one reason record per
+  dropped track. 10 tests cover allowed rows, each forbidden case, strict mode, the sidecar
+  map, the CLI, and the report. A cap across blocks in one AU and trajectory-zone rejection
+  need AU state and per-track trajectories, and are recorded as limits. Dashboard result:
+  `python scripts/dashboard.py` reports `OVERALL: GREEN` on all seven gates.
+- P87.6 polish: made the AU Explorer interpretable. The SDMD now draws the top-height and
+  QMD isopleths and the closure/competition/mortality limits, with a legend and hover
+  readout. The yield chart has a metric selector and a hover readout. An interpretation
+  panel states the observed support, envelope range, diagram review state, selected
+  regime verdict and reasons, option reduction, and data gaps. The trajectory menu only
+  enables regimes with a stored path, labels the others "no stored path", and the selected
+  path is drawn with numbered points and a plain-language explanation. The browser smoke
+  now selects a trajectory, checks the orange path, changes the yield metric, and checks
+  the iPad-landscape layout.
+- P87.3 fix: added `validate_trajectory`, which refuses a trajectory step where both
+  TPH and mean tree volume increase. That is physically impossible on a self-thinning
+  path, and the earlier demo FUEL50 file did exactly that. The demo now uses a plausible
+  low-density, larger-tree path that is still outside the observed envelope, and the
+  regression suite checks both the refusal and the extrapolation case. The browser demo
+  now has four real paths: clearcut, CT60, shelterwood, and FUEL50 (extrapolated).
+- P87.8: Added the eight validation gates in `ws4/sdmd/validation.py` and the
+  `ws4 sdmd validate` command. The fixture reports `warn`: plot support, density
+  plausibility, regime completeness, option reduction (7 → 6 regimes, 11 → 7
+  entries), and the UI payload contract pass; the diagram is provisional, no initial
+  volume is supplied, and the demo FUEL50 trajectory is an extrapolation. The
+  initial-volume gate rejects 863 m3/ha against an 800 m3/ha limit and flags
+  1,173 m3/ha above the observed 1,133.8 m3/ha maximum. Added 10 tests. Also fixed
+  the P87.4 and P87.6 roadmap checkboxes that had been left unchecked.
+- Added `ws4.forest_condition` with `ws4.forest_condition.report.v1` typed
+  report and indicator records, validation, JSON round-trip, and Markdown
+  rendering.
+- Added a report-only fixture at `examples/forest_condition` combining the
+  BA-only inventory indicator with a DHI indicator.
+- Added `docs/reference/forest-condition.rst` and the design note
+  `notes/design/ws4-forest-condition-card.md`.
+- The card is report-only: alerts are advisory; no objective, constraint,
+  growth, schedule, solver, or treatment eligibility changed.
+- Added ten focused tests.
+- Dashboard: **GREEN** on lint, format, types, tests, validator, docs, and docstrings.
+- Closeout report: `notes/reports/p90-closeout.md`.
+- P87.8: queued the phase close-out. Pull request #658 carries the phase branch into
+  `main`; the report is `notes/reports/p87-closeout.md`. The roadmap now records Phase 87
+  as `pr-open`. The eight gates, the 863/1,173 m3/ha cases, the option reduction, the
+  deferred trajectory-zone and cross-block AU cap, and the synthetic-diagram limit are
+  named in the report. No merge, tag, release, or settings change has been made.
+- P87.8: recorded CI evidence. Run `41402135881` on `e2b758c` passed every job
+  (quality gates, clean-checkout contract, notebook outputs, pre-commit parity, and the
+  green dashboard summary). An earlier Types failure on `1e1a585`/`5737e49` was a test
+  assertion calling `pd.isna` on a `loc` scalar; `e2b758c` uses the Series `isna` result.
+## 2026-11-02
+
+- P91.1: added `build_report_from_accounts` and `ws4 condition-card` to derive a
+  review-required forest-condition card from a run's `account_values.csv`.
+  Feature accounts become indicators with final value, first/last trend,
+  explicit source/version, and `review_required` status. Added CLI coverage and
+  docs. Dashboard green on all seven gates; 13 focused tests passed.
+- Closeout report: `notes/reports/p91-closeout.md`.
+- P87.8: merged current `main` again at `e2718a1` (P88/P90/P91) and recorded CI run
+  `41403557320` as success on every job. The report evidence head is `e2718a1`.
+  P91 is taken by #655, so the proposed next phase is P92.
+- Closeout report: `notes/reports/p91-closeout.md`.
+
+## 2026-11-02
+
+- P92.1: added `GET /api/runs/{run}/condition-card`, a read-only adapter over
+  the P91 account-derived card builder. The endpoint returns a review-required
+  `ws4.forest_condition.report.v1` card, 404 without accounts, and 422 for
+  invalid account data. Added API tests and docs. Dashboard green on all seven gates.
+- Closeout report: `notes/reports/p92-closeout.md`.
+- P89: Mixed-target factorized search and live switching. Parent #643, branch
+  `feature/p89-mixed-target-search`. The full TSA24 mixed feature/product population kept
+  the 200-cell sparse table unchanged, priced 11 factorized target cells, and matched the
+  exact objective to `5.7e-14`. Corrected the P88 evidence to the real
+  `feature.Yield.managed.Total` account; the corrected pricer error is `2.2e-5`. Added the
+  watcher display path that avoids `ensure_cells` when factorized accounts are available.
+  Report: `notes/reports/p89-mixed-target-search.md`.
+
+## 2026-11-02
+
+- P93.1: added the Reports-tab condition-card panel and `loadConditionCard`,
+  which fetches the P92 endpoint and renders review state, indicators, alerts,
+  and limits with text nodes. Added HTML assertions and web docs.
+- Dashboard green on all seven gates; 71 web tests passed.
+- Closeout report: `notes/reports/p93-closeout.md`.
+- P94: LTSY scenario comparison. Compared baseline LTSY, all-period ±5% with the
+  managed-stock floor, and all-period ±5% without the floor at 5,000 generations and the
+  same seed. The two all-period schedules were byte-identical, so the stock floor was
+  non-binding; pricing the factorized stock cell made the run about 4x slower without
+  changing the schedule. Baseline final managed stock was 356.1M m3, below the 370.4M
+  floor; all-period final managed stock was 477.5M. Recommendation for the base LTSY:
+  all-period ±5% without the stock target in the search, monitor stock post-run, and add
+  the floor only when it becomes binding or after feature pricing is cheaper. Report:
+  `notes/reports/tsa24-ltsy-scenario-comparison.md`. Archive:
+  `/srv/shared-data/gep/ws4/archive/tsa24-ltsy-scenario-comparison/`.
+- P87 complete: pull request #658 squash-merged as `d650b11`, the branch deleted, and
+  parent issue #628 closed. Main CI runs `41411188534` and `41411188586` succeeded.
+- P95: Launched the SDMD pilot phase on `feature/p95-sdmd-pilot`, parent issue #680,
+  with tasks #681 to #684. P95.1 is the first bounded move: digitise `fdin`/`fdip`
+  into reviewed vector isopleths and replace the synthetic pilot fixture.
+- P95.1: digitised the natural Interior Douglas-fir diagram (`fdin`, version 1.10) into
+  `ws4/sdmd/data/sdmd/idf-dk3-fdi-natural.json`: 10 top-height isopleths, 10 QMD
+  isopleths, crown closure, competition, and self-thinning boundaries, read from the
+  PDF vector paths and calibrated against the printed log axes. Recorded the source
+  SHA-256 and a digitisation catalog entry. The diagram is **provisional**; the
+  maintainer review and the planted `fdip` diagram are still open. Added 4 diagram
+  tests, a source-catalog test, and `notes/reference/bc-sdmd-digitisation.md`.
+- P95.1: digitised the planted Interior Douglas-fir diagram (`fdip`, version 1.10)
+  into `ws4/sdmd/data/sdmd/idf-dk3-fdi-planted.json`: 10 top-height isopleths,
+  9 QMD isopleths, crown closure, competition, and self-thinning. Recorded the source
+  checksum and a second digitisation catalog entry. The planted label offset makes the
+  8-46 m assignment the weakest part; both diagrams remain **provisional** pending the
+  maintainer's review. Added planted diagram tests; the method note records the
+  checklist.
+- P95.2: generated four pilot trajectories with `fresh-fvsbc` (FVS BC variant) for
+  the no-cut and CT60 cases on `AU-IDFdk3-FDI` and `AU-IDFdk3-PLI`. The tree lists are
+  the synthetic fixture, replicated to the stand TPH and split into plots of at most 999
+  trees; CT60 is a `THINBBA` at age 60 removing 60% of basal area. Stored the converted
+  `(TPH, mean tree volume)` paths with source strings and assessed them against the
+  observed envelope: PLI no-cut is inside; the other three are extrapolated. Added 4
+  trajectory tests and `notes/reference/sdmd-pilot-trajectories.md`. These are method
+  runs, not real AU evidence; the PSP observed check remains open.
+- P95.3: added the trajectory-zone rule to the option-space filter and a
+  `SdmdScheduleGuard` for the per-AU entry cap and interval. The filter accepts a
+  diagram and trajectory directory and rejects a regime whose stored path never reaches
+  the required zone; a missing trajectory fails closed. The guard maps blocks to AUs,
+  counts selected entries, and returns entry-cap and interval findings. Added three
+  guard/zone tests and passed the existing solver suite. The optimizer move-loop hook
+  and the before/after benchmark remain open.
+- P95.3: wired the SDMD schedule guard into the optimizer. `OptimizeConfig.sdmd_dir`
+  and `ws4 optimize --sdmd-dir` load the regime and AU constraint tables, build an
+  `SdmdScheduleGuard` over the simulator tables, and set it as the whole-schedule
+  predicate on `ConstraintGuard`. Every move is rejected when it would exceed the
+  per-AU entry cap or minimum interval; an infeasible seed raises. The run summary
+  records `sdmd_guard` and `sdmd_rejected`. Added a guard-hook test, an optimizer
+  integration test, and a CLI test. P95.3 is complete and closed; the summary
+  counter is the enforcement benchmark.
+- P95.2: added the PSP observed check to gate 1. A point must name PSP, be
+  reviewed, match a reviewed PSP plot at its age, and have a tree list; a missing
+  plot or tree list fails the gate, and a synthetic point warns and is excluded
+  from the observed envelope. Gate 4 now builds its envelope from PSP-backed
+  points only. Tests cover the synthetic warning, a missing PSP plot, and an
+  under-supported envelope. The demo store reports 4 PSP-backed plus 1 synthetic
+  point for FDI and 5 PSP-backed points for PLI.
+- P95.4: recorded the pilot evidence. Both AUs run all eight gates and warn:
+  the diagrams are provisional, at least one trajectory leaves the PSP-backed
+  envelope, and no initial volume is supplied. The option reduction is 7 → 6
+  regimes and 11 → 7 entries for FDI, and 6 → 5 regimes and 7 → 6 entries for
+  PLI. The report is `notes/reports/p95-pilot-evidence.md`. Public FAIB PSP
+  header counts show TSA 24 has no IDFdk3 sites (558 sites; SBS 517, ESSF 23,
+  ICH 13, SBPS 5) while TSA 23 has 145. The pilot label is therefore synthetic,
+  and the phase remains open until a real AU is defined and its PSP/FVS input
+  replaces the fixture.
+- P95.2: added the first real pilot AU, `AU-IDFdk3-TSA23-FDI`, in
+  `ws4/sdmd/data/pilot-tsa23-idfdk3/`. It holds 11 reviewed public FAIB PSP
+  points selected from TSA 23 / IDFdk3 / FD-leading sites (ages 52-139), with
+  plot, stand, and live-tree tables derived from the Open Government Licence
+  compilation. The store passes plot support (11 PSP-backed, 0 synthetic),
+  density plausibility, regime completeness, and solver reduction (7 → 6
+  regimes, 11 → 7 entries). It warns on the provisional diagram, the missing
+  initial volume, and two extrapolated FVS paths. The paths come from the real
+  live-tree list of cluster 4024538-PSP1, `fresh-fvsbc` 0.20.0, BC variant,
+  eight cycles, `RANNSEED 1`, with CT60 as `THINBBA` at age 60 and 60% removal.
+  `SOURCE.md` records the source, licence, selection, conversions, and limits.
+  Also made `stands.crown_cover_pct` nullable because the public compilation
+  does not supply it, and corrected the stored FVS source version from 0.1.0 to
+  the actual 0.20.0. Added real-pilot gate and trajectory tests.
+- P95.2: mined the public CCISS repositories for species and BEC evidence.
+  Added derived `tree_species.csv` (37 non-excluded BC species),
+  `species_traits.csv` (six SDMD species), `idfdk3_stocking.csv` (nine site
+  series, target 800-1200 stems/ha, minimum 500-700), and `bec_crosswalk.csv`
+  (183 shared labels, 30 WS4-only, 34 CCISS-only). The key finding is that
+  lodgepole pine is preferred on eight of nine IDFdk3 site series and acceptable
+  on the ninth, which supports a real PLI AU; CCISS has no SDMD isopleths, so the
+  missing `pln` diagram still needs digitisation. The method and limits are in
+  `notes/reference/cciss-data-mining.md`; four contract tests cover the extracts.
+- P95.2: extended the CCISS mining into the packaged `ccissr` tables. Added
+  `idfdk3_suitability.csv` (38 species/site-series feasibility rows) and
+  `idfdk3_sibec.csv` (32 mean site-index rows), and enriched
+  `idfdk3_stocking.csv` with edatopic codes, special codes, stocking delay, and
+  assessment windows. `Pl` is feasible at rating 1-4 across the nine IDFdk3
+  site series; SIBEC gives `Pl` 15.7-19.9 m and `Fd` 13.3-20.7 m. Two more
+  contract tests cover the tables. The note records the full object inventory,
+  including `S1`, `SIBEC`, `E1`, `SS`, `N1`, `stocking_standards`,
+  `stocking_info`, `stocking_height`, `cfrg_rules`, and `models_info`.
+- P95.2: digitised the public planted lodgepole pine diagram (`plp`, version
+  1.20) into `idf-dk3-pli-planted.json`. The vector extraction stores QMD
+  10-40 cm, top height 6-30 m, the competition and self-thinning boundaries,
+  and the 60% crown-closure curve. The source SHA-256 matches the catalogued
+  PDF; the diagram is provisional. Added a source-catalog entry and a diagram
+  contract test. This gives the PLI AU a real SDMD instead of placing lodgepole
+  pine points on the Interior Douglas-fir diagram. The natural `pln` diagram is
+  still not digitised.
+- P95.2: digitised the natural lodgepole pine diagram (`pln`, version 1.20)
+  into `idf-dk3-pli-natural.json` and added it to the source catalog. Built the
+  real `AU-IDFdk3-TSA23-PLI` store from 11 public PSP Pl-leading clusters, ages
+  20-120, with the natural lodgepole pine diagram and two FVS paths from cluster
+  4025305-PSP2 (`SITECODE PL,55`, CT60 at age 60). The store passes plot support,
+  density, regime completeness, and option reduction; it warns on the provisional
+  diagram, missing initial volume, and extrapolated paths. Added PLI gate and
+  trajectory tests. This removes the need to place lodgepole pine points on the
+  Interior Douglas-fir diagram.
+- P95.1: added the curve-review packet in `notes/review/p95-curve-review.md`
+  with overlay figures for `fdin`, `fdip`, `pln`, and `plp`, curve inventories,
+  known limits, and a sign-off checklist. The overlays caught a zigzag in the
+  `fdin` crown-closure curve above 2,951 TPH; the stored curve is truncated at
+  that point and the unresolved high-TPH branch is named in the packet and source
+  catalog. Added a monotonicity/domain test for the truncated curve. The diagrams
+  remain provisional pending the maintainer's sign-off.
+- P95.1: recorded the maintainer review for all four diagrams. `fdin`, `fdip`,
+  `pln`, and `plp` are now `reviewed` with reviewer Gregory Paradis (maintainer
+  of record) and reviewed_utc 2026-11-02T18:20:44+00:00. The pilot store copies
+  of `diagram.json` were updated, so the FDI and PLI `sdmd-fit` gates now pass.
+  The review packet records the acceptance and the `fdin` crown-closure
+  truncation. Updated the source-catalog review fields and the tests.
+- P95.2: replaced the single-young-cluster FVS paths with representative
+  median-age clusters scaled to the AU median TPH. FDI uses cluster
+  4025005-PSP1 (age 89, scale 0.864); PLI uses cluster 4025096-PSP1 (age 62,
+  scale 1.670). CT60 is applied at the first 10-year cycle, which is a
+  first-entry treatment for these older stands rather than a literal age-60
+  entry; both SOURCE.md files record that. The pilot gates still pass plot,
+  density, diagram, regime, and option checks; trajectory and initial-volume
+  warnings remain.
+
+
+## 2026-11-02
+
+- P95: factorized target-cell vector cache. Added cached `[options]` feature/product
+  vectors and a population gather path. The all-period ±5% stock-floor search fell from
+  **218.9 s to 44.0 s** without changing the byte-identical schedule; the no-stock run
+  was 43.0 s. The stock floor can therefore stay in the search as a guard at about 2%
+  overhead. Report: `notes/reports/p95-factorized-target-cell-vectors.md`.
+
+## 2026-11-02
+
+- P96: base LTSY watcher profile. Made the accepted all-period ±5% + managed-stock
+  guard target the default TSA24 LTSY watcher profile, with a separate
+  `runtime/tsa24-ltsy-base-schedule.csv` output. A hot-cache one-generation smoke ran in
+  20.89 s. Report: `notes/reports/tsa24-ltsy-base-profile.md`.
+
+## 2026-11-02
+
+- P97: mixed-target vector performance. The P89 11-cell mixed feature/product target
+  fell from 4.53 s to 0.397 s for the target switch and from 14.86 s to 0.315 s for a
+  two-generation run, with exact objective error 9.8e-13 and unchanged table cells.
+  Report: `notes/reports/tsa24-mixed-vector-performance.md`.
+- P100.1: added uncertainty and provenance to the condition-card Reports panel.
+  Missing uncertainty renders as `not stated`; provenance entries render as text
+  nodes. Added static assertions and web docs. Dashboard green on all seven gates.
+- Closeout report: `notes/reports/p100-closeout.md`.
+
+## 2026-11-02
+
+- P98: LTSY scenario profile library. Added a validated YAML profile library, a
+  `scenario-profiles` CLI with list/show/JSON/shell output, and `PROFILE=base|baseline|nostock`
+  selection in the TSA24 watcher. `base` remains the default. Report:
+  `notes/reports/tsa24-ltsy-profiles.md`.
+- P101.1: added `ws4 storyboard`, a one-page Markdown narrative that reuses the
+  account-derived condition card. Derived indicators stay review-required;
+  alerts stay advisory. Added tests and docs. Dashboard green on all seven gates.
+
+## 2026-11-02
+
+- P99: scenario profile UI. Added `ws4 serve --scenario-profiles`, list/detail/apply API
+  endpoints, and a Targets-tab selector that validates and loads a named profile into the
+  editable targets file. Report: `notes/reports/tsa24-profile-ui.md`.
+
+## 2026-11-02
+
+- P102: Ask overlay. Replaced the static sidebar chat panel with a header **✦ Ask** pill
+  and a fixed assistant overlay available from every workspace. The overlay opens over the
+  current view, closes with × or Escape, and keeps the existing chat session/API behavior.
+  Report: `notes/reports/tsa24-ask-overlay.md`.
+
+## 2026-11-02
+
+- P103: profile-aware web runs. Added `ws4.opt.gpu_profile_run`, optional table/factorized/
+  cache/seed resources on scenario profiles, a `POST /api/runs` profile branch, and a
+  Generations/Run profile control. Worker exact replay and a hot-cache smoke are recorded.
+  Report: `notes/reports/tsa24-profile-runs.md`.
+
+- P104: kept the default constraint summary shape unchanged by adding
+  `sdmd_guard` and `sdmd_rejected` only when an SDMD schedule check is active.
+  This removes the notebook-output drift without weakening the SDMD guard. Local
+  `python scripts/check_notebooks.py` reports 0 drifted cells.
+
+- P104: phase approved and squash-merged as `e5c4e9c` on 2026-11-03. PR #719
+  passed all five CI checks; the branch was deleted and parent issue #680 closed.
+- P106: launched AU evidence depth on `feature/p106-au-evidence`, parent issue
+  #723, tasks #724-#727. Scope: recover the `fdin` high-TPH closure, build
+  AU-level FVS ensembles, add measured initial volume, and close out.
+- P106.1: recovered the `fdin` high-TPH crown closure. The stored curve is the
+  continuous dotted PDF path from 210 to 9,996 TPH, replacing the joined branch
+  that caused the zigzag and the P104 truncation. Updated the source-catalog note,
+  review packet overlay, digitisation note, P104 historical note, and the diagram
+  test. `fdin` remains reviewed.
+- P106.2: replaced the single-cluster FVS paths with multi-cluster composites.
+  FDI uses three plots (ages 76, 89, 101), scaled by 0.3583 to 1,063 TPH; PLI
+  uses five plots (ages 50-75), scaled by 0.3067 to 1,979 TPH. The stores name the
+  clusters, weights, and CT60 first-cycle timing. The trajectory API now returns
+  `source`, `scenario`, and `review_status` beside the points. Both paths remain
+  extrapolated; tests assert the multi-cluster source string.
+- P106.3: added a measured initial volume to both pilot stores. The values are
+  the median volume of the representative clusters: FDI 213.41 m3/ha (limit
+  221.25), PLI 186.12 m3/ha (limit 252.69). `SdmdStore` reads the optional
+  `initial_volume.json`, validates the AU, volume, limit, source, and review status,
+  exposes it on the AU payload, and the validation gate uses it when no CLI override
+  is supplied. Both pilot `initial-volume` gates now pass. Added supplied, missing,
+  and invalid-value tests.
+- P106.4: ran both pilot gates and wrote `notes/reports/p106-closeout.md`. Both
+  AUs warn only on trajectory plausibility; plot, density, diagram, initial volume,
+  regime, option, and UI gates pass. Queued the phase pull request; merge waits for
+  approval.
+
+## 2026-11-03
+
+- P105: profile-run feedback. Profile GPU runs now emit bounded schedule diffs for the
+  live map and replay the final schedule to `account_values.csv`/product values. The base
+  profile smoke remained exact and wrote the standard run artefacts. Report:
+  `notes/reports/tsa24-profile-run-feedback.md`.
+
+- P106: phase approved and squash-merged as `7cec6b6` on 2026-11-03. PR #729
+  passed all five CI checks; the branch was deleted and parent issue #723 closed.
+- P110: launched SDMD atlas completion on `feature/p110-sdmd-atlas`, parent
+  issue #731, tasks #735-#739. Scope: reusable digitisation/QA, remaining natural
+  and planted diagrams, coverage, and closeout.
+- P110.1: added the figrecover/freshforge digitisation pipeline. `ws4.sdmd.digitise`
+  provides spec loading, log-axis calibration, vector path extraction, and ordered
+  curves; `ws4.sdmd.review` renders pages, overlays the stored isopleths with
+  figrecover QA, and writes figrecover review manifests; `ws4.sdmd.workflow`
+  exposes the four FreshForge nodes. Added `workflows/sdmd-digitise.yaml`, the
+  optional `digitise` dependency extra, tests, and docs. Verified the pipeline on
+  the `fdin` PDF: page render, overlay, and review manifest succeed.
+- P110.2: started `fdcn`. Recorded the axis ticks, top-height, QMD, and
+  boundary path map in `notes/reference/fdcn-digitisation.md`. Did not store the
+  diagram because the printed crown-closure curve is not a single vector path; the
+  `[ 3 2 ]` family is top height plus flat intermediates and `[ 4 1 4 3 ]` is the
+  TASS mortality set. The next step is a figrecover raster trace for that curve.
+- P110.2: stored `cdf-cwh-fdc-natural.json` from `fdcn`. Top height 6-60 m, QMD
+  5-70 cm, and the two boundaries are vector paths; the printed crown-closure curve
+  is a provisional raster trace because it is not a single vector path. Added the
+  source-catalog entry, diagram test, and overlay note. The diagram is provisional.
+- P110.2: added `ws4.sdmd.trace.trace_raster_curve`, a reusable raster trace for
+  dotted crown-closure curves that are not single vector paths. It takes rendered
+  image, calibration, and anchors; a synthetic dotted-curve test covers it. `fdcn`
+  remains the only natural diagram stored so far; `ssn` was not committed because
+  its top/boundary path mapping did not survive the overlay check.
+- P110.2: stored `cdf-cwh-ss-natural.json` from `ssn`. Top height 6-52 m and
+  QMD 5-85 cm are label-matched vector paths; competition/self-thinning are paths
+  692/691; the crown closure is a provisional raster trace. Added the catalog entry,
+  diagram test, and `notes/reference/ssn-digitisation.md`. Provisional.
+- P110.2: stored `cwh-hw-natural.json` from `hwn`. Top height 6-60 m, QMD
+  5-65 cm, competition/self-thinning paths 561/560; crown closure is a provisional
+  raster trace. Added catalog entry, diagram test, and hwn note. The dense top-height
+  group remains a review item. Provisional.
+- P110.2: stored `sbs-sw-natural.json` from `swn`. Top height 6-38 m, QMD
+  5-45 cm, competition/self-thinning paths 47/48; crown closure is a provisional
+  raster trace. Added catalog entry, diagram test, and swn note. Provisional.
+- P110.2: stored `cwh-cw-natural.json` from `cwn`. Top height 6-50 m,
+  QMD 5-80 cm, competition/self-thinning paths 652/651; crown closure is a
+  provisional raster trace. Added catalog entry, diagram test, and cwn note.
+  Provisional.
+- P110.2: all five remaining natural diagrams are stored provisional:
+  `fdcn`, `ssn`, `hwn`, `swn`, `cwn`. Each has vector top-height, QMD, and boundary
+  curves plus a provisional raster crown-closure trace and a source-catalog entry.
+- P110.3: stored `cdf-cwh-fdc-planted.json` from `fdcp`. Top height 6-52 m,
+  QMD 5-70 cm, competition/self-thinning paths 532/531; crown closure is a
+  provisional raster trace. Added catalog entry, diagram test, and fdcp note.
+  Provisional.
+- P110.3: stored `cdf-cwh-ss-planted.json` from `ssp`. Top height 6-36 m,
+  QMD 5-70 cm, competition/self-thinning paths 589/588; crown closure is a
+  provisional raster trace. Added catalog entry, diagram test, and ssp note.
+  Provisional.
+- P110.3: stored `cwh-hw-planted.json` from `hwp`. Top height 6-52 m,
+  QMD 5-60 cm, competition/self-thinning paths 558/557; crown closure is a
+  provisional raster trace. Added catalog entry, diagram test, and hwp note.
+  Provisional.
+- P110.3: stored `cwh-cw-planted.json` from `cwp`. Top height 6-48 m,
+  QMD 5-70 cm, competition/self-thinning paths 581/580; crown closure is a
+  provisional raster trace. Added catalog entry, diagram test, and cwp note.
+  Provisional.
+- P110.3: stored `sbs-sw-planted.json` from `swp`. Top height 6-38 m,
+  QMD 5-40 cm, competition/self-thinning paths 34/35; crown closure is a
+  provisional raster trace. Added catalog entry, diagram test, and swp note.
+  All five planted diagrams are now stored provisional.
+- P110.4: wrote `notes/reports/p110-atlas-coverage.md` and
+  `notes/reports/p110-closeout.md`. All 14 public diagrams are stored and validate;
+  four are reviewed and ten provisional. The coverage report records the 229-row
+  BEC inference and the unresolved CCISS crosswalk. Queued the phase PR; merge
+  waits for approval.
+
+## 2026-11-03
+
+- P107: profile target telemetry. GPU profile runs now emit active target values and the
+  best genome's yearly cell series; the web stream passes profile payloads through, and Run
+  profile applies the selected target file first. Smoke recorded 12 target values and 201
+  series cells with exact replay. Report: `notes/reports/tsa24-profile-target-telemetry.md`.
+
+## 2026-11-03
+
+- P108: profile-run report package. After final replay, profile runs now write
+  `report_accounts.csv`, `report_targets.csv`, `ending_inventory.csv`, and any available
+  DHI/structure/resilience reports; summary carries ending inventory. Report:
+  `notes/reports/tsa24-profile-run-reports.md`.
+- P108.1: added the `ws4.report.provenance.v1` sidecar. `write_report` now writes
+  `report_provenance.json` beside `report_accounts.csv`, `report_targets.csv`, and
+  `ending_inventory.csv` (plus any DHI, structure-habitat, or resilience report),
+  recording each report's name, byte count, and SHA-256, the source metadata files
+  and their hashes when present, the run identifier, and the dataset identifier and
+  manifest hash when the caller supplies the dataset. Uncertainty is `not_stated`
+  unless a source metadata file carries an explicit `uncertainty` or
+  `uncertainty_status` field. Missing report files and malformed metadata are
+  recorded as statuses and warnings; report writing does not fail. The report CSV
+  contents and model behaviour are unchanged. Added focused tests for hashes,
+  missing metadata, absent uncertainty, malformed metadata, and missing report or
+  dataset files. The reports API adds the recorded `sha256` values and exposes the
+  decoded sidecar on its entry, and the Reports tab shows a provenance badge with
+  links to the sidecar and source metadata files. Documented in
+  `docs/reference/report-provenance.rst` and the simulator and web reference pages.
+  Dashboard result: `python scripts/dashboard.py` reports `OVERALL: GREEN` on all
+  seven gates (lint, format, types, tests, validator, docs, docstrings).
+
+- P110: optional-factorized GPU profiles. Profile runs now require a table and cache
+  directory, while factorized display data is optional. TSA 27 s8 runs from its existing
+  effect table and plain candidate mapping. Report: `notes/reports/tsa27-gpu-profile.md`.
+- P111: preserve explicit `generations: 0` in profile requests; the web API no longer
+  coerces zero to the 5000-generation default.
+
+- P112: TSA 29 GPU profile. The existing lean effect table and cache replay
+  exactly; the portal now exposes a `base` profile without a factorized archive.
+  Report: `notes/reports/tsa29-gpu-profile.md`.
+
+- P114: SDMD atlas phase renumbered from P107/P110 after parallel sessions used
+  those identifiers. The atlas work and files are unchanged; the branch is
+  `feature/p113-sdmd-atlas`.
+
+- P113: map capability fallback. `/api/summary` reports whether geometry is
+  configured; the browser shows an explicit unavailable panel instead of making
+  doomed map requests. Direct map APIs keep their naming 404. Report:
+  `notes/reports/tsa24-map-fallback.md`.
+
+
+- P114: scenario price paths. Added the typed `prices.v1` reader in `ws4/prices.py`,
+  the `ws4 price-paths` command, and the synthetic four-path fixture. The table carries
+  `path_id`, `product`, `period`, `value`, `unit`, `currency`, `region`, `source`, and
+  `source_version` per row for the named `base`, `high`, `low`, and `policy_shock` paths.
+  The loader requires the base path, the same product/period grid on every path, one unit
+  per product, one currency and region, finite non-negative values, and a
+  `not a forecast` caveat that actually says so. The writer produces
+  `price_path_comparison.csv`, `price_path_report.md`, and
+  `price_path_provenance.json`, with base-relative deltas, the source table's SHA-256,
+  every distinct path/source/source-version combination with its products and periods,
+  and each output file's digest. No dataset, objective, constraint, growth, schedule, or
+  solver code changed. Documented in `docs/reference/prices.rst`; report in
+  `notes/reports/p114-prices.md`. Dashboard result: `python scripts/dashboard.py`
+  reports `OVERALL: GREEN` on all seven gates (lint, format, types, tests, validator,
+  docs, docstrings). Pull request: #760. Merge waits for maintainer approval.
+
+
+- P115: TSA 24 source geometry. The exact 458,708-row public stand shapefile matches the
+  compiled fragments; a 5 m simplified GeoJSON now feeds the map, with a regeneration
+  script and source hashes. Report: `notes/reports/tsa24-source-geometry.md`.
+
+- P120: phase approved and squash-merged as `a7e83e3` on 2026-11-03. PR #764
+  passed all five CI checks; the branch was deleted and parent issue #731 closed.
+- P121: launched BEC crosswalk and AU integrity on
+  `feature/p121-bec-integrity`, parent issue #769, tasks #770-#773. Scope:
+  classify the WS4/CCISS label differences, add an AU validator, wire it, and
+  close out.
+- P121.1: added `ws4.sdmd.bec.classify_crosswalk` and
+  `bec_crosswalk_review.csv`. The 247-row union classifies as 183 exact, 7 WS4
+  splits, 12 CCISS splits, and 45 unresolved. The unresolved rows are explicit;
+  no prefix guess is treated as an equivalence. Added three contract tests and
+  `notes/reports/p121-bec-crosswalk.md`.
+- P121.2: added `ws4.sdmd.au_integrity` and the 340-row
+  `tsa_bec_counts.csv` derived from the public FAIB PSP header (OGL-BC). The
+  validator parses `AU-<bec>[-TSA<n>]-<species>` and refuses malformed labels,
+  unknown BEC labels, and TSA/BEC pairs with no PSP support. Added four tests and
+  `notes/reports/p121-au-integrity.md`.
+- P121.3: wired the AU integrity validator into `SdmdStore.from_directory`.
+  Each plot AU label is checked against the packaged BEC coverage and TSA/BEC
+  support table before the other tables are read. A bad label raises
+  `SdmdApiError` with the specific finding. Added a store-level negative test and
+  documented the rule.
+- P121.4: wrote `notes/reports/p121-closeout.md`, updated the roadmap and docs,
+  and queued the phase PR. Crosswalk: 183 exact, 7 WS4 splits, 12 CCISS splits,
+  45 unresolved. AU store integrity check is wired and tested. Merge waits for
+  approval.
+
+- P116: TSA 24 map performance. Add a `<geometry>.bounds.json` sidecar and a
+  100 m overview layer for low-zoom tiles; the geometry script writes the sidecar.
+  Report: `notes/reports/tsa24-map-performance.md`.
+
+- P121.1 correction: the crosswalk now marks a WS4 parent as `cciss_split`
+  when CCISS carries finer children, instead of leaving the parent unresolved.
+  Counts are 183 exact, 7 WS4 splits, 16 CCISS splits, and 41 unresolved. The
+  four parent labels are represented by their child rows.
+- P121.1 correction: fetched the official BC BEC Map Attribute Catalogue
+  (`BEC_BIOGEOCLIMATIC_POLY` v13.1, 2026-07-08, OGL-BC) and added
+  `bec_official.csv` (219 unique labels). The official crosswalk is 165 exact,
+  12 WS4-finer, 17 official-finer, 26 WS4 labels absent from BEC 13.1, and 37
+  official labels absent from the WS4 table. The 26 absent WS4 labels are named;
+  they are old/aggregated/renamed, not silent “unresolved” rows. Updated the
+  report and tests.
+
+
+- P122: run timeline and interaction uplift. Added snapshot cards, period
+  playback, a Results timeline from `schedule.csv`, toast feedback, and keyboard
+  shortcuts/help. Plan: `notes/design/ws4-ui-port-plan.md`. Dashboard: `OVERALL: GREEN`; focused web tests 79 passed; browser smoke verified snapshot, timeline, playback, and help.
+
+- P121.1 correction: replaced the prefix-only check with the official BC BECdb v13
+  current and retired tables. Every one of the 229 WS4 labels is now classified:
+  165 current exact, 48 retired (with retirement version), and 0 absent from
+  BECdb. The 54 current BEC labels absent from WS4 are recorded as a coverage
+  gap, not as unknown classifications. Removed “unresolved” from the CCISS table
+  in favour of `not_in_cciss` and `not_in_ws4`. Added `bec_retired.csv`,
+  refreshed `bec_official.csv`, and regenerated `bec_official_crosswalk.csv`.
+- P121.2 correction: the AU validator now refuses retired BEC labels with
+  `SDMD-AU-BEC-RETIRED` and current BEC labels outside WS4 coverage with
+  `SDMD-AU-BEC-NO-COVERAGE`. The store passes both packaged tables. Added unit
+  and store tests; updated the AU integrity and closeout reports.
+
+- P125: stabilize period playback and map paging. Serialize playback ticks,
+  suppress the loading overlay between periods, and guard async map responses
+  with a request generation so stale periods cannot paint over newer ones.
+  Report: `notes/reports/p125-playback-map-race.md`.
+
+- P126: stabilize playback controls and cadence. The period control now has a
+  fixed header slot, and the settle delay is shorter while map loads remain
+  serialized. Report: `notes/reports/p126-playback-controls.md`.
+
+- P127: fix target chart edits and Solve semantics. Chart edits now update the
+  non-flow level row, and public-demo Solve uses the current target file and time
+  budget instead of implicitly switching to a profile run. Report:
+  `notes/reports/p127-target-chart-solve.md`.
+
+- P121: merged via PR #782 as `c5ef547`. The BEC crosswalk uses BC BECdb v13
+  current and retired tables: 165 exact current, 48 retired with versions, and 0
+  WS4 labels absent from BECdb. The 54 current labels missing from WS4 are a
+  named coverage gap. AU integrity refuses retired, uncovered, unknown, and
+  unsupported TSA/BEC combinations. Branch deleted; parent #769 and closeout
+  #773 closed. Dashboard: `OVERALL: GREEN`.
+
+- P128: sync target chart edits into Plan table inputs so Solve posts the edited
+  values instead of stale table values. Report:
+  `notes/reports/p128-target-chart-table-sync.md`.
+
+- P123.1: Ask now sends the run, workspace, subview, period, selected block,
+  profile, target filter, and visible account as a bounded context packet. The
+  server parses assistant `WS4_ACTIONS:` chips, strips the marker, and validates
+  only safe UI actions: open workspace/subview, set period, select an existing
+  block, or fill the next prompt. Unsafe or malformed chips are dropped. Added
+  `tests/test_web.py` coverage and `notes/reports/p123-assistant-context.md`.
+  Focused web tests: 86 passed. Dashboard: `OVERALL: GREEN`.
+
+- P129: GPU profile runs now use the current edited target file and accept a
+  wall-clock budget. Run profile saves current edits instead of reapplying the
+  profile target library. Run profile also uses the 200-year profile horizon.
+  Report: `notes/reports/p129-gpu-current-targets.md`.
+- P123.1 queued in PR #804; branch `feature/p123-assistant-context`, head
+  `4480c9a`. Dashboard: `OVERALL: GREEN`.
+
+- P130: Solve now routes through the selected GPU profile when one is available,
+  using current targets and the time budget. Report:
+  `notes/reports/p130-solve-gpu-profile.md`.
+- P123.1 closeout: wrote `notes/reports/p123-closeout.md`, linked #800 as
+  a sub-issue of #780, and queued PR #804. All five CI checks pass. Dashboard:
+  `OVERALL: GREEN`. Merge waits for approval.
+
+- P131: a declared GPU profile time budget now overrides the generation cap, so
+  a one-minute request runs for one minute instead of stopping at 5,000
+  generations. Report: `notes/reports/p131-profile-time-budget.md`.
+
+- Shared-kernel adoption (2026-11-03): WS4 now depends on `fresh-solutions>=0.9.3,<0.10` for the
+  problem-agnostic search kernel. `ws4.opt.core.Problem`, `ws4.opt.solvers`, `ws4.opt.cooling`, and
+  `ws4.opt.control` are compatibility facades over `fresh_solutions.kernel`; the WS4 operators,
+  objective, incremental evaluator, constraints, patch/spatial/route models, MIP layer, and
+  `Optimizer` stay in WS4. The full suite passes and strict mypy is clean.
+
+- Shared-kernel telemetry (2026-11-03): `ws4.opt.telemetry` now re-exports
+  `fresh_solutions.kernel.telemetry` (`RunLogger`, `read_records`). The logger is generic and
+  has no WS4 imports. `portfolio` and `tune` remain in WS4 because they depend on
+  `OptimizeConfig`, `Optimizer`, `Target`, and the WS4 run-directory contract; the boundary is
+  recorded in `notes/design/shared-kernel-adoption.md`.
+
+- Shared `Runner` protocol (2026-11-03): `ws4.opt.portfolio` and `ws4.opt.tune` now import
+  `Runner` from `fresh_solutions.kernel` instead of defining it twice. Their WS4-specific
+  configuration, target scaling, and run-directory orchestration stay local.
+- P123: merged via PR #804 as `7a66ee3`. Ask now sends the current screen
+  context and renders server-validated safe action chips. Branch deleted; parent
+  #780 and child #800 closed. Dashboard: `OVERALL: GREEN`.
+
+- Script coverage (2026-11-04): added a unit test for the schedule CSV loaders shared by
+  `scripts/benchmark_route_events.py` and `scripts/profile_route.py`. The full suite is now
+  1,589 tests and the `scripts` coverage gate passes at 90.14% (was 89.69% on `22471cb`).
+
+- P132.1: AU integrity now compares the label BEC/TSA with plot columns, resolves
+  phase aliases, normalizes `ICHmw5` to `ICHwm5`, removes 36 subzone support rows,
+  and defaults validator mappings to the packaged BECdb tables.
+- P132.2: CCISS crosswalk now has 183 exact, 7 WS4 splits, 9 CCISS splits, and
+  19/19 absent labels; parent summaries and phase codes are no longer counted as
+  splits. Official crosswalk adds `covered_by_finer` for 3 parents. Corrected the
+  source statement to 229 rows / 213 unique labels / 16 phase rows.
+- P132.3: chip parsing is case-insensitive, multiline/fenced, and repeated-marker
+  safe; context is escaped JSON with an untrusted-data guard; malformed indices
+  return no chip instead of a 500. Added a Node chip handler test.
+- P132.4: corrected closeout reports, linked #770-#773 under #769, added
+  `bec_sources.json` and `scripts/check_bec_authority.py`, fixed BECdb/CCISS
+  provenance, and added report-consistency tests.
+- P132 dashboard: `OVERALL: GREEN`. Focused tests: 136 passed. BEC authority
+  check: pass.
+- P132 queued in PR #814; branch `feature/p132-audit-remediation`, head
+  `28a0376`. Dashboard: `OVERALL: GREEN`.
+
+- P132: merged via PR #814 as `fa6197f`. The audit remediation is complete:
+  AU metadata validation, unique relationship crosswalks, phase/PSP aliases,
+  assistant input hardening, source manifest/check, corrected closeout evidence,
+  and P121 sub-issue links. Branch deleted; #809 and #810-#813 closed. Dashboard:
+  `OVERALL: GREEN`.
+
+- P124.1: added the experimental Map-workspace 3D estate replay. Original Canvas
+  2D orthographic renderer; treatment/current/age height; period and selection
+  sync; orbit, zoom, reset, Escape close; 2,000-block refusal. No terrain,
+  machine, edit, run, or permission controls. Focused web tests: 90 passed.
+  Dashboard: `OVERALL: GREEN`.
+- P124.1 queued in PR #816; branch `feature/p124-3d-replay`, head
+  `056b519`. Dashboard: `OVERALL: GREEN`.
+
+- P124: merged via PR #816 as `9680323`. The experimental 3D estate replay is
+  live: Canvas 2D extrusion, period/selection sync, orbit/zoom/reset, and a
+  2,000-block budget. Branch deleted; #781 and #815 closed. Dashboard:
+  `OVERALL: GREEN`.
+
+- P133.1: added the BC-wide SDMD coverage registry: 219 current BEC labels,
+  1 reviewed, 57 provisional, 161 no-diagram. Added
+  `/api/sdmd/coverage` and `/api/sdmd/coverage/{bec}`, plus a BD coverage
+  selector in the SDMD workspace. The registry names gaps and AU evidence; it
+  does not substitute an unrelated AU. Added `scripts/build_bec_coverage.py`,
+  `bec_coverage.csv`, tests, and the source-manifest check. Focused tests: 126
+  passed. Dashboard: `OVERALL: GREEN`.
+- P133.1 queued in PR #819; branch `feature/p133-bc-coverage`, head
+  `306ee03`. Dashboard: `OVERALL: GREEN`.
+
+- P134.1: added `gap_reason`/`gap_action` to the BC coverage registry. The 161
+  no-diagram labels split into 150 `variant_not_digitized` and 11
+  `no_atlas_zone`. Added `bec_review_queue.csv` for 10 provisional diagrams and
+  57 BEC labels, and audited TSA 24/27/29 AU evidence blockers. The selector
+  shows the gap reason and next action. No diagram was self-approved. Focused
+tests: 129 passed. Dashboard: `OVERALL: GREEN`.
+- P134.1 queued in PR #822 (stacked on #819); branch
+  `feature/p134-coverage-closure`, head `41dddb7`. Dashboard: `OVERALL: GREEN`.
+
+- P133: merged via PR #819 as `ae9aeb0`. The BC-wide coverage registry is live:
+  219 BEC labels, 1 reviewed, 57 provisional, 161 named gaps.
+- P134: merged via PR #823 as `65e295e`. The 161 gaps are split into 150
+  `variant_not_digitized` and 11 `no_atlas_zone`; `bec_review_queue.csv` names
+  10 provisional diagrams and 57 labels; TSA 24/27/29 evidence blockers are
+  recorded. No diagram was self-approved. Dashboard: `OVERALL: GREEN`.
+
+
+- P136.1/P136.2: added the exact full-member solution-space payload and a vendored
+  Three.js Pareto workspace. The explorer recomputes dominance from every successful
+  portfolio member, normalizes metrics to 0=worst/1=best, labels near-front members
+  separately, and supports X/Y/Z, colour, size, opacity, filter, orbit, selection,
+  pin/compare, and schedule links. Focused tests and a Chromium smoke pass.
+  Report: `notes/reports/p136-solution-space.md`.
+
+- P136.3: added bounded `random` weight sampling for 5-7 dimensional scans and
+  process-parallel portfolio members with `workers`. The default remains one worker
+  because each process loads its own dataset. Added CLI/web controls and a Search-tab
+  scan builder. A real two-worker c5 portfolio completed with zero failures.
+  Report: `notes/reports/p136-solution-space.md`.
+
+- P136.4: added the Pareto member picker, the Search/Pareto cross-links, the New scan
+  return path, and the final web/optimizer documentation. Browser coverage now exercises
+  the saved-artifact and scan-builder entry points plus pin and schedule-open controls.
+  Report: `notes/reports/p136-solution-space.md`.
+
+- P136.4 fix: search artifacts now replace non-finite numbers with `null` before the
+  API sends them, so a portfolio with an infinite objective or metric remains valid
+  JSON for the browser.
+- P135.1: corrected the SDMD coverage model to use the Atlas zone-level
+  applicability (`bec_main`/`bec_rare`) instead of treating every BEC label as a
+  missing variant-specific diagram. Counts are now 1 `reviewed_variant`,
+  5 `reviewed_zone`, 209 `mixed_zone`, and 4 `no_diagram`. The review queue names
+  10 provisional diagrams and 210 affected labels. `match_level` remains visible. Focused tests: 129 passed. Dashboard:
+  `OVERALL: GREEN`.
+- P135.1 queued in PR #826; branch `feature/p135-bec-applicability`, head
+  `f26b054`. Dashboard: `OVERALL: GREEN`.
+
+- P135: merged via PR #826 as `56cdc21`. Coverage uses Atlas zone-level
+  applicability: 1 `reviewed_variant`, 5 `reviewed_zone`, 209 `mixed_zone`,
+  4 `no_diagram`; 10 provisional diagrams / 210 labels in the review queue.
+  Dashboard: `OVERALL: GREEN`.
+
+- P136: merged via PR #829 as `7442591`. The Pareto workspace exposes every successful
+  portfolio member, recomputes the exact front, supports seven display dimensions, and
+  adds bounded 5-7 dimension scans with process workers. Dashboard: `OVERALL: GREEN`.
+
+- P138.1/P138.2: added outcome-front alignment and safe promotion of a portfolio
+  member to a direct read-only run. The Pareto workspace can open a selected member
+  on the map or promote two pinned members into the existing comparison view.
+  Report: `notes/reports/p138-pareto-to-plan.md`.
+
+- P138: outcome-front alignment, safe portfolio-member promotion, Open on map, and
+  Compare pinned. Focused tests: 111 passed; dashboard: `OVERALL: GREEN`.
+
+- P138: merged via PR #836 as `b82dbcf`. A Pareto member can be promoted to a direct
+  read-only run, opened on the map, or compared with a second pinned member. Search and
+  the explorer now use outcome-only dominance. Dashboard: `OVERALL: GREEN`.
+
+- P139.1: promoted portfolio runs now copy and use their member target file. Target
+  status, target series, and periods prefer the run-local targets; Plan shows a read-only
+  member-target notice. Report: `notes/reports/p139-target-faithful.md`.
+
+- P139: merged via PR #839 as `97b9ea3`. Promoted Pareto runs copy their member target
+  file and prefer run-local targets for status, series, and period width. Dashboard:
+  `OVERALL: GREEN`.
+
+- P140.1: the guided scan builder now offers periodic target rows (`account@period`)
+  and scaffolds 5 or 7 temporal weight dimensions without changing live targets.
+  Focused tests pass; dashboard: `OVERALL: GREEN`. Report:
+  `notes/reports/p140-target-dimensions.md`.
+
+- P140: merged via PR #842 as `b11e105`. Target-row dimensions now include
+  `account@period`, with +5/+7 period scan scaffolds. Dashboard: `OVERALL: GREEN`.
+
+- P141.1: portfolio scans can prepare a flow-free level-only target file and use the
+  instance initial schedule. Portfolio metrics now read both account and product tables.
+  The UI defaults to level-only; live targets are untouched. Focused tests pass;
+  dashboard: `OVERALL: GREEN`. Report: `notes/reports/p141-portfolio-target-prep.md`.
+
+- P141: merged via PR #845 as `9b177c2`. Portfolio scans can write a level-only target
+  copy and use the instance initial schedule; metrics read both account and product
+  tables. Dashboard: `OVERALL: GREEN`.
+
+- P142.1: added a generic default-target generator for a final-period 90% managed
+  growing-stock floor and ambitious harvest levels. The default Solve budget is three
+  minutes. Focused tests pass; dashboard: `OVERALL: GREEN`. Report:
+  `notes/reports/p142-default-stock90.md`.
+
+- P142: merged via PR #848 as `f217cfe`. Added the generated 90% growing-stock default
+  scenario generator and raised the default Solve budget to three minutes. Dashboard:
+  `OVERALL: GREEN`.
+- P143.1: search artifacts now expose timestamp/member/front/failure metadata and sort
+  newest first; the Pareto selector prefers the newest usable front. Portal seed-state
+  caches now key on the active target file and initial schedule. Report:
+  `notes/reports/p143-web-trust.md`.
+
+- P143.2: added read-only promoted-run target definitions, preserved alternative
+  scenario profiles by rewriting only base-target profiles, and added a state-engine
+  fallback when a GPU profile does not declare every active target account.
+
+- P143.1/P143.2: merged via PR #851 as `2e51922`. Added newest-first artifact metadata,
+  target-aware state-cache keys, promoted-run target definitions, alternative profile
+  preservation, and unsupported-GPU-profile fallback. Dashboard: `OVERALL: GREEN`.
+
+- P144.1: added `notes/design/ws4-stochastic-landscape.md`, the Phase 144 scaffold
+  (#852 to #858), and the roadmap, notes-index, and backlog entries. The design joins the
+  deterministic estate-optimization core with stochastic spatially explicit landscape
+  processes as two event sources over one annual executor; it specifies the event record, the
+  `ws4.ecosystem.v1` sidecar, the cohort/fraction state extension, the counter-based random
+  tape, common random numbers, the optimizer coupling, and the validation oracles.
+  Documentation only; no runtime code. `python scripts/check_workflow.py` reports
+  **0 error(s), 0 warning(s)**. Dashboard: **GREEN** (lint, format, types, tests,
+  validator, docs, docstrings).
+
+- P144.2: added the `ws4.ecosystem` package: the versioned `Event` record, the deterministic
+  `EventLog` and `EventLogBuilder` with a SHA-256 replay digest, the counter-based
+  `RandomTape` (Philox 2x64) with common random numbers, and `ws4 ecosystem validate-log`.
+  The record is a superset of the `femic.disturbance.v1` row and
+  `Event.from_disturbance_row` adapts the existing consumer rows; execution order is
+  `(time, phase, priority, spatial id, event id)`. Added 101 unit, property, and CLI tests
+  with 98% branch coverage of the new package, plus `docs/reference/event-log.rst`.
+  `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard:
+  **GREEN** (lint, format, types, tests, validator, docs, docstrings).
+
+- P144.3: added the optional `ws4.ecosystem.v1` package and cohort state. The package
+  declares typed state variables, cohort area fractions, and an explicit null bridge. The
+  loader validates the closed manifest, table hashes, required columns, state dtype/scope
+  and defaults, cohort fractions and attributes, and bridge declarations. `CohortState`
+  joins the package to a dataset's fragment areas, aggregates area-weighted age, biomass,
+  fuel, and snags, reports species fractions and missing fragments, and checks area
+  conservation. `find_ecosystem_package` and `load_dataset_ecosystem` return None when a
+  dataset has no package, so the deterministic model is unchanged. Added
+  `ws4 ecosystem validate-package --package PATH [--json]` and
+  `docs/reference/ecosystem-package.rst`. The ecosystem suite now has 165 tests.
+  `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard:
+  **GREEN** (lint, format, types, tests, validator, docs, docstrings).
+
+- P144.4: added the first stochastic landscape process in `ws4/ecosystem/fire.py`:
+  Poisson ignition, fuel/distance/wind graph percolation, severity and cohort mortality,
+  a deterministic salvage source, disturbance-compatible fire events, and fire/salvage/state
+  account rows. Added `FireRun`/`FireResult`, the synthetic grid and the end-to-end
+  `examples/ecosystem_fire_demo.py`, plus `docs/reference/ecosystem-fire.rst`. The analytic
+  oracles cover the Poisson ignition rate, the geometric chain burn length, a zero-fuel
+  barrier, downwind versus upwind spread, area conservation, and exact replay. The ecosystem
+  suite now has 179 tests. `python scripts/check_workflow.py` reports **0 error(s), 0
+  warning(s)**. Dashboard: **GREEN** (lint, format, types, tests, validator, docs,
+  docstrings).
+
+- P144.5: added `ws4/ecosystem/scenarios.py`: scenario files with seeds, weights, and
+  overrides; `ScenarioSet` load/write/split; common random numbers; `risk_account_values`
+  with mean, min, max, CVaR lower/upper, quantile, probability, and regret; and
+  `SampleAverageApproximation` with a finite decision-set loop, a held-out evaluation, and an
+  `OutOfSampleReport`. `Target` now carries `aggregation`, `risk_alpha`, `risk_minimum`, and
+  `risk_maximum`, and `load_targets` parses them; the default is `single`, so existing
+  deterministic and flow targets are unchanged. The fire evaluator wraps `FireRun` and copies
+  the initial cohort state for every scenario. Added
+  `docs/reference/ecosystem-scenarios.rst`. The ecosystem and objective suites now have 232
+  tests. `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard:
+  **GREEN** (lint, format, types, tests, validator, docs, docstrings).
+
+- P144.6: verified and queued the phase. Added the `fire.killed_biomass_t`,
+  `fire.snag_created_t`, and `fire.emitted_biomass_t` accounts and a live-biomass
+  mass-balance test. The full dashboard is **GREEN**; the ecosystem and objective suites have
+  233 tests; `ws4.ecosystem` branch coverage is 90%. Exercised the 5x5 fire demo, the event-log
+  validator, the ecosystem-package validator, and an SAA out-of-sample report. Wrote
+  `notes/reports/p144-closeout.md` and queued pull request #872; the phase is `pr-open` and
+  awaits maintainer approval. No merge, tag, release, or settings change was made.
+- P143.3: validated the TSA29 profile fallback to the state engine after the stock
+  target could not be priced by the GPU profile. Portfolio list defaults to the newest
+  usable front; failed artifacts are marked and skipped.
+- P145.1: added a multi-account target scaffold to Search and a validated `targets`
+  payload to the portfolio launcher. Scaffold targets are written inside the run output,
+  never to the live target file. Focused tests pass; dashboard: `OVERALL: GREEN`.
+  Report: `notes/reports/p145-multi-account-targets.md`.
+
+- P145: merged via PR #861 as `a33443a`. Search can scaffold multi-account target rows
+  and pass them to a portfolio run without touching live targets. Dashboard:
+  `OVERALL: GREEN`.
+
+- P145.1 fix: using the multi-account scaffold now stages weight dimensions for every
+  scaffolded account as well as metrics and directions.
+
+- P146: fixed the shared browser API helper so portfolio launch and search stop send POST
+  requests. A live five-account TSA27 portfolio completed with 8 members, 1 exact front,
+  0 failures, and opened a member on the map. Report:
+  `notes/reports/p146-live-multi-account-scan.md`.
+
+- P147.1: added a Diverse 6 preset and nested/family warnings to the multi-account
+  scaffold, with target minima fallback for product accounts.
+
+- P147: merged via PR #867 as `efcddd4`. The Diverse 6 preset produced a live TSA27
+  run with 6 target rows, 8 members, 2 exact front points, and 0 failures. The front
+  member opened on the map.
+
+- P148.1: added guarded deletion for portfolio artifacts and promoted runs, plus Search
+  Delete/Clean failed and Plan Delete promoted run controls. Live cleanup follows.
+
+- P148: merged via PR #871 as `103614b`. Added guarded portfolio/promoted-run deletion
+  and Search/Plan cleanup controls; removed the failed live probe.
+
+- P149.1: added `state-watch --summary-out` and prepared exactness fields for web
+  state summaries and run health.
+
+- P144 close-out: pull request #872 squash-merged as `d6522e3`; parent #852 and tasks
+  #853 to #858 closed; the roadmap status is `complete`. The close-out report is
+  `notes/reports/p144-closeout.md`. Dashboard: **GREEN**.
+
+- P149.2: replaced the embedded schedule in the state exactness payload with the
+  schedule path, guarded the exact-replay badge to boolean values, and added browser
+  coverage. A live TSA 27 state run recorded `exact_match: true` with matching
+  objective and verified objective.
+
+- P149 close-out: PRs #876 and #884 squash-merged as `2997ea2` and `c745d8b`;
+  parent #873 and tasks #874 and #883 are closed. Live TSA 27 state runs recorded
+  `exact_match: true` with matching objective and verified objective, and run health
+  shows `exact replay yes`. Dashboard: **GREEN**.
+
+- P150.1: added a row-count guard to lazy GPU effect-table extensions after the TSA 29
+  stock-cell attempt priced 42.5 million rows for over nine minutes. The TSA 29 base
+  zero-generation replay remains exact; the managed-stock target stays on the state
+  fallback until a prebuilt basis or factorized archive exists.
+
+- P150 close-out: PR #888 squash-merged as `2c18e19`; parent #886 and task #887 are
+  closed. The TSA 29 base profile replay is exact; the managed-stock target remains on
+  the state fallback pending a prebuilt basis or factorized archive. Dashboard:
+  **GREEN**.
+
+- P151.1: added the opt-in, token-authenticated web console with typed allowlisted
+  commands, server-built argv, read-only input roots, scratch jobs, output streaming,
+  cancellation, quotas, artifact downloads, and audit records.
+
+- P151 close-out: PR #897 squash-merged as `cc5c4ff`; parent #789 and task #790 are
+  closed. The console stays disabled by default; setting `WS4_CONSOLE_TOKEN` enables it
+  on the portal and `--allow-console` enables it on `ws4 serve`. Dashboard: **GREEN**.
+
+- P152.1: added the reviewed Python tier to the console. Landlock confines reads and
+  writes, unshare removes network and PID visibility, and resource limits bound memory,
+  CPU, files, processes, output, and wall clock. Unsupported hosts fail closed.
+
+- P152 close-out: PR #903 squash-merged as `345a86d`; parent #901 and task #902 are
+  closed. The portal exposes the Python tier only with `WS4_CONSOLE_PYTHON=1` and the
+  console token. Dashboard: **GREEN**.
+
+- P153.1: added the bounded `stage_script` assistant chip. It stages code in the console
+  editor with review cleared, never executes, and the agent environment no longer inherits
+  console tokens.
+
+- P137.1: replaced the crown-closure raster trace with a straight log-log line
+  fitted to the source; corrected overlays show top/QMD curves align. The earlier
+  count mismatch was a text-extraction artifact. TASS is explicitly excluded
+  because the source does not label mortality levels. Added the optional
+  display-only `cai_band` polygon to the diagram schema, API, web plot, and all 10
+  coastal diagrams plus the four Interior Douglas-fir/lodgepole diagrams used by
+  the pilot; it never feeds placement or constraints. The coverage header now
+  reports the registry's reviewed/mixed/gap counts, and the coverage status filter
+  accepts the registry's status names. No diagram is marked reviewed. Dashboard:
+  `OVERALL: GREEN`.
+- P137.1: started the line-type-wise re-import with `fdcp` top height. The source
+  has 17 top-height paths but only ten printed labels; `read_ordered_curves` now
+  assigns the complete series `6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40,
+  44, 48, 52, 60` and requires one path per value, using printed labels as
+  anchors. No path is skipped. The 17 mappings are recorded in
+  `notes/reference/fdcp-digitisation.md`; the stored curves were regenerated from
+  those paths. Direct overlay inspection shows all 17 red curves on their black
+  dotted source paths. The confirmed pattern is locked in
+  `workflows/sdmd-line-import.yaml` via the `ws4.sdmd.import-lines` FreshForge
+  node, which renders with figrecover and writes a `ws4.sdmd.line-import.v1`
+  artifact. A local FreshForge run completed `render success` and `import success`.
+- P137.1: completed the fdcp QMD line-type pass. The source has 14 QMD paths and
+  ten printed labels. The full series `5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55,
+  60, 65, 70 cm` maps to paths `517`–`530`; the four unlabelled members are kept.
+  The pattern is locked in `workflows/sdmd-qmd-import.yaml`. Direct overlay
+  inspection shows all 14 blue QMD curves on their black dashed source paths.
+- P137.1: removed the false terminal zig-zag on high-QMD curves. Bezier control
+  points are no longer emitted as data, and a final backward endpoint with rising
+  volume is normalized to a short vertical up-tick. The fdcp QMD family was
+  regenerated; the overlay shows a sharp bend at the end, not a zig-zag.
+- P137.1: locked `fdcp` as reviewed by the maintainer and rebuilt the coverage
+  registry; the review queue is down to nine diagrams. Completed the same full
+  line-series pass for `fdcn`: 18 top-height paths including 56, 14 QMD paths
+  including 35/45/55/65, and crown closure from source path 640. Locked `fdcn` as
+  reviewed; the queue is down to eight. Completed `ssn` with 17 top-height paths,
+  17 QMD paths, and crown closure from source path 693. Locked `ssn` as reviewed;
+  the queue is down to seven. Dashboard: `OVERALL: GREEN`.
+
+- P137 close-out: PR #833 squash-merged as `37b559d`; parent #830 and task #831
+  closed. All 14 public Atlas diagrams are reviewed. The ten coastal diagrams have
+  complete top-height and QMD series, source crown-closure paths, boundary paths,
+  and display-only CAI bands; the four Interior Douglas-fir/lodgepole pine diagrams
+  remain reviewed. Coverage is 214 `reviewed_zone`, 1 `reviewed_variant`, and 4
+  `no_diagram`; the provisional queue is empty. Dashboard: `OVERALL: GREEN`.
+
+- P153 close-out: PR #909 squash-merged as `772d45b`; parent #906 and task #907 are
+  closed. Assistant code can be staged for review but never runs without explicit
+  confirmation. Dashboard: **GREEN**.
+
+- P154.1: built the TSA 29 factorized archive and padded cache, declared the managed
+  stock account and factorized paths in the base profile, and validated exact GPU replay
+  for zero and one generation. The 42.5-million-row sparse table is unchanged.
+
+- P154 close-out: PR #914 squash-merged as `8f5aae0`; parent #912 and task #913 are
+  closed. The TSA 29 stock target now uses a factorized basis with exact GPU replay and
+  no state fallback. Dashboard: **GREEN**.
+
+- P156.1/P156.2: added `ws4/fire` with the metric fuel, moisture, and environment contracts,
+  the 13 Anderson standard fuel models, the 16 Scott-Burgan moisture scenarios, and the
+  Rothermel (1972) surface-fire kernel with the standard corrections. The kernel matches the
+  R `Rothermel` validation oracle on all 13 models at `D2L2`, 8 km/h, level ground, the custom
+  dynamic example, and a 15-point A3 wind/slope grid (within 0.01 in the reported units).
+  Added derived head fire intensity, flame length, and fuel consumption, plus
+  `docs/reference/fire-behaviour.rst`, `notes/design/ws4-fire-behaviour.md`, and
+  `examples/fire_rothermel_demo.py`. The fire suite has 42 tests. `python
+  scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard: **GREEN**.
+
+- P156.7: added `ws4/fire/fwi.py` with the Canadian FWI moisture codes: FFMC, DMC, DC, ISI,
+  BUI, FWI, and DSR, with the daily weather contract, the standard starting state, the
+  latitude day-length adjustment, and the FBP high-wind ISI form. The ten-day sequences at
+  latitude 55 and latitude 20 match the `cffdrs` reference within `1e-4` for all seven codes.
+  Added `docs/reference/fire-weather.rst`, `examples/fire_fwi_demo.py`, and 8 FWI tests. The
+  fire suite now has 50 tests. `python scripts/check_workflow.py` reports **0 error(s), 0
+  warning(s)**. Dashboard: **GREEN**. The FBP fuel types and surface-fire equations are split
+  to P156.8 (#900).
+
+- P156.8: added `ws4/fire/fbp.py` with the 17 Canadian FBP fuel types, surface fuel
+  consumption, the buildup effect, the surface rate of spread, the surface head fire
+  intensity, and a derived flame length. The surface ROS and SFC match the `cffdrs` reference
+  within 0.02 on all 17 fuel types at FFMC 90, BUI 60, 10 km/h, flat ground, and on a
+  320-point grid across C2/C3/C7/M1/S1; the C6 surface component is validated separately. The
+  layer is flat-ground and surface-only; slope is P156.4 and crown fire is P156.3. Added
+  `docs/reference/fire-fbp.rst`, `examples/fire_fbp_demo.py`, and 7 FBP tests. The fire suite
+  now has 57 tests. `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**.
+  Dashboard: **GREEN**.
+
+- P156.3: added `ws4/fire/crown.py` with Van Wagner critical surface intensity, the FBP crown
+  fraction burned, the C6 crown rate of spread and head-fire blend, the S/I/C fire
+  description, an optional Van Wagner active-crown threshold, and derived foliar moisture
+  content. CFB and ROS match `cffdrs` within 0.02, HFI within 1.0 kW/m, and the fire
+  description exactly on the 17-fuel-type base table, a 320-point grid, and three C6 cases.
+  Added `docs/reference/fire-crown.rst`, `examples/fire_crown_demo.py`, and 9 crown tests. The
+  fire suite now has 66 tests. `python scripts/check_workflow.py` reports **0 error(s), 0
+  warning(s)**. Dashboard: **GREEN**.
+
+- P156.4: added `ws4/fire/growth.py` with the homogeneous `SiteGrid`, the FBP slope
+  adjustment as `effective_wind`, the FBP length-to-breadth relation, a minimum-travel-time /
+  Huygens growth engine, burnable-mask barriers, and area/perimeter snapshots. The slope
+  adjustment matches `cffdrs` on 40 wind/slope/fuel cases within 0.02 km/h and 0.1 degree.
+  The growth tests cover a no-wind circle (perimeter within 25 percent of the analytic
+  circle), a flat-ground wind ellipse (length and width within 10 percent of the analytic
+  ellipse), an upslope centroid displacement, a combined wind/slope vector, a barrier, and
+  monotone snapshots. Added the P144 fragment bridge: `fragment_ignition_times` returns the
+  earliest cell time and burned area per fragment, and `fragment_ignition_events` emits
+  `ws4.ecosystem.events.Event` ignitions with the growth inputs and outputs as attributes.
+  C6 slope adjustment raises explicitly; flat-ground C6 growth is supported. Added
+  `docs/reference/fire-growth.rst`, `examples/fire_growth_demo.py`, and 14 growth tests. The
+  fire suite now has 80 tests. `python scripts/dashboard.py` reports **OVERALL: GREEN** on
+  all seven gates.
+
+- Phase renumber: the credible fire phase is now **P156** (was P151) and the 3D scene phase
+  is now **P155** (was P150), because `main` carries P150 (GPU guard), P151 (web console),
+  P152 (sandboxed runner), P153 (assistant script review), and P154 (TSA 29 GPU stock). The
+  parent and child issue titles and bodies were retitled, and the roadmap, design notes,
+  docs, and module references use the new identifiers. The fire branch is
+  `feature/p156-fire-behaviour`; the old P151 and P154 feature branches were retired. The
+  3D branch is `feature/p155-fire-3d`. A concurrent agent's mixed P151.5/scene commit is
+  preserved by the tag `salvage/other-agent-p151.5`; its fire-event/account integration was
+  salvaged here and its scene package remains on the P155 branch. Dashboard: **GREEN**.
+
+- P156.5: coupled the fire kernel to the P144 event log and accounts. Added
+  `FireBehaviourConfig` and a directional FBP spread path. Behaviour-driven fire events
+  record the FBP fuel, FFMC, BUI, wind, effective wind, spread azimuth, slope, aspect, ROS,
+  head-fire intensity, flame length, crown fraction, fuel consumption, smoke strength, fire
+  description, and kernel version. Accounts add mean/max ROS, mean/max intensity, mean/max
+  flame length, and the area-weighted crown fraction. The legacy graph probability remains
+  the default when `behaviour=None`. The scene package is not on this branch; P155 owns it.
+  Added 4 behaviour tests and fixed the integration to use the slope-adjusted effective wind,
+  validate C6 slope at construction, and weight the crown account by event area. Dashboard:
+  **GREEN**.
+
+- P156.9: added `ws4/fire/vri.py` with the VRI-style `VriStand` contract, the deterministic
+  VRI-to-FBP rule set, and per-assignment provenance (`rule_id`, `version`, source fields,
+  confidence, notes, and an `is_burnable` flag). The rules cover explicit FBP and non-fuel
+  types, non-forest land cover, grass/shrub/agriculture, slash, sparse cover, deciduous,
+  mixedwood, pine by age, Douglas-fir, larch, and spruce/fir by crown closure. Unknown species,
+  unknown land cover, and an unlabelled forest stand raise `VriError` rather than inventing a
+  type. Added the representative fixture `tests/fixtures/fire/vri_fbp_stands.csv`,
+  `docs/reference/fire-vri.rst`, and 6 VRI tests. The fire/ecosystem fire suite now has 106
+  tests. `python scripts/dashboard.py` reports **OVERALL: GREEN** on all seven gates.
+
+- P156.6: added `ws4/fire/benchmark.py`, `scripts/benchmark_fire_growth.py`, and
+  `docs/reference/fire-benchmark.rst`. The benchmark compares the Huygens engine with the
+  public FBP ellipse on 20 fuel/wind scenarios at FFMC 90, BUI 60, and 60 minutes: mean
+  absolute relative error is 7.4 percent for area, 1.3 percent for length, 1.9 percent for
+  width, and 25.2 percent for the raster perimeter; the maxima are 16.4, 8.4, 8.4, and 30.9
+  percent. A 54-scenario FFMC/BUI/fuel/wind ensemble reports P10/P50/P90 area and exceedance
+  probabilities. The growth default is now 16 primitive directions, and a barrier is checked
+  along the whole cell-to-cell segment so a coarse direction cannot jump a one-cell no-fuel
+  band. Added 9 benchmark tests; the fire/ecosystem fire suite has 115 tests. The per-scenario
+  data and summary are in `notes/reports/p156-benchmark.csv` and
+  `notes/reports/p156-benchmark-summary.json`. Dashboard: **GREEN**.
+
+- P156 close-out: merged `main` into the phase branch at `81a5103`, reran the full dashboard,
+  and queued pull request #917. The close-out report is `notes/reports/p156-closeout.md`.
+  The phase has 115 fire/ecosystem fire tests. The FBP ellipse benchmark reports 7.4 percent
+  mean absolute area error, 16.4 percent maximum, and a 54-scenario ensemble with P50 10.13 ha
+  and P90 199.85 ha. The viewer flame/smoke criterion is deferred to P155. Status: `pr-open`;
+  no merge, tag, release, or settings change performed. Dashboard: **GREEN**.
+
+- P156 close-out: squash-merged pull request #917 into `main` after maintainer approval;
+  the phase branch is deleted and parent #890 is closed. The close-out report is
+  `notes/reports/p156-closeout.md`. Dashboard: **GREEN**.
+
+- P155.1: added `ws4/scene`: the `ws4.tree.inventory.v1` tree contract, a deterministic
+  synthetic tree generator, the `ws4.fire.scene.v1` package compiler, the per-tree animation
+  mapping, and a standalone Three.js viewer with procedural flames, smoke, a timeline, and a
+  burnt scar. Added `examples/fire_3d_demo.py` and `docs/reference/fire-scene.rst`. The demo
+  builds 22,500 trees and 24 fire events; a headless Chromium check loaded the viewer with no
+  page errors and showed 10,000 trees burning at a live fire time. The scene suite has 23
+  tests. `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard:
+  **GREEN** (lint, format, types, tests, validator, docs, docstrings).
+
+- P155.2: added `ws4/scene/nemora.py`, a thin adapter from a Nemora CSV/Parquet tree table to
+  the `ws4.tree.inventory.v1` contract. It joins trees to real VRI polygons by explicit
+  fragment id or point-in-polygon, raises when a tree is outside or ambiguous, and records the
+  adapter version, Nemora version, seed, polygon source, and CRS. `TreeInventory` now carries
+  real `fragment_polygons`, and the viewer draws polygon geometry instead of stand squares.
+  Added the pinned public TSA 24 cluster fixture in `examples/fire_scene_vri` (12 polygons,
+  12,588 Nemora-placed stems) and `examples/fire_3d_vri_demo.py`. The VRI demo burns 95.42 ha,
+  with 27.07 m/min head ROS, 8.40 m flame length, and a 0–240 minute ignition window. Added
+  the Nemora adapter tests and the per-tree ignition tests. Dashboard: **GREEN**.
+
+- P155.4: added fire-scene discovery and read-only APIs, a Fire workspace with shared
+  timeline, tree/fragment inspection, comparison, and a vendored-Three viewer. The scene
+  package now writes `payload.json`; the viewer accepts embedded mode and postMessage
+  timeline commands.
+
+- P155.3: raised the standalone viewer's fire and smoke quality. Flames now use a procedural
+  noise/temperature shader with additive blending and a depth fade; smoke uses curl-like
+  wander and buoyancy; short-lived embers and a screen-space heat-haze pass were added.
+  Bloom is enabled by default with `?bloom=0` as a fallback. Burnt crowns shrink and darken,
+  stand polygons develop a gradual burnt fraction, and the HUD reports fps and active
+  particles against the manifest budget. Added `notes/reports/p155-visual-checklist.md` and
+  a headless Chromium/SwiftShader capture. The viewer showed no page errors, 622–1,198 active
+  particles against a 5,000 budget, and about 20 fps on the software rasterizer. The
+  frame-rate result is a floor, not a hardware measurement. Distance-based tree LOD and the
+  offline high-fidelity smoke tier remain future work. Dashboard: **GREEN**.
+
+- P155.5: verified deterministic demo replay, 36 scene/workspace tests, standalone viewer
+  controls, bloom fallback, and the Fire workspace comparison smoke. Recorded the close-out
+  and left PR #919 open for maintainer approval; no merge or release was performed.
+
+- P155 close-out: squash-merged PR #919 as `a01e847`; parent #877 is closed. The phase
+  delivered the synthetic tree inventory, the Nemora/VRI adapter, the P156 growth-field
+  ignition, the fire/smoke/ember/heat-haze visual pass, the Fire studio APIs and workspace,
+  and the public Pages demo. Full dashboard: **OVERALL: GREEN**. The live 8790 portal still
+  serves the static viewer; promoting the Fire studio is a separate portal deployment step.
