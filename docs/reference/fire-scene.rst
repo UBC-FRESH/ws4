@@ -156,11 +156,11 @@ Current limits
 
 - The tree layer is synthetic and is not a VRI inventory measurement.
 - The built-in generator uses square fragment footprints. The Nemora/VRI producer and real
-  polygon containment are P150.2.
+  polygon containment are P155.2.
 - Flames and smoke are a first procedural pass. Shader quality, embers, heat haze, and LOD are
-  P150.3.
+  P155.3.
 - The viewer uses a CDN for Three.js. The WS4 web Fire workspace and a vendored module are
-  P150.4.
+  P155.4.
 - The burn duration, intensities, and particle counts are scene parameters, not a fire
   physics calibration.
 

@@ -146,7 +146,7 @@ exists and the maintainer approves it.
 | P146 Live multi-account scan | #862 | `feature/p146-live-multi-account-scan` | complete |
 | P147 Diverse multi-account scaffold | #865 | `feature/p147-diverse-scaffold` | complete |
 | P148 Portfolio and promoted-run cleanup | #869 | `feature/p148-portfolio-cleanup` | complete |
-| P150 3D fire scene and synthetic tree stands | #877 | `feature/p150-fire-3d` | active |
+| P155 3D fire scene and synthetic tree stands | #877 | `feature/p155-fire-3d` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4391,10 +4391,10 @@ Acceptance:
 - Ordinary runs and non-portfolio artifacts are protected.
 - Tests, browser smoke, and dashboard pass.
 
-## Phase 150: 3D fire scene and synthetic tree stands
+## Phase 155: 3D fire scene and synthetic tree stands
 
 Parent issue: #877
-Branch: `feature/p150-fire-3d`
+Branch: `feature/p155-fire-3d`
 Status: active
 Design note: `notes/design/ws4-fire-3d-visualization.md`
 Idea: #868
@@ -4403,11 +4403,11 @@ Goal: populate a stand map with a deterministic synthetic individual-tree popula
 portable scene package from a P144 fire run, and render the fire as a real-time 3D vector
 animation with flames, smoke, a timeline, and post-fire tree states.
 
-- [x] P150.1 Scene and tree contracts plus a first burnable viewer (#878)
-- [ ] P150.2 Nemora synthetic tree producer over VRI polygons (#879)
-- [ ] P150.3 Fire and smoke visual quality (#880)
-- [ ] P150.4 WS4 web Fire workspace (#881)
-- [ ] P150.5 Verify and close out (#882)
+- [x] P155.1 Scene and tree contracts plus a first burnable viewer (#878)
+- [ ] P155.2 Nemora synthetic tree producer over VRI polygons (#879)
+- [ ] P155.3 Fire and smoke visual quality (#880)
+- [ ] P155.4 WS4 web Fire workspace (#881)
+- [ ] P155.5 Verify and close out (#882)
 
 Acceptance:
 

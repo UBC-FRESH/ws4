@@ -1,7 +1,7 @@
 # 3D fire propagation over synthetic individual-tree stands
 
-Status: active (P150)
-Phase: P150 (3D fire scene and synthetic tree stands)
+Status: active (P155)
+Phase: P155 (3D fire scene and synthetic tree stands)
 Date: 2026-11-07
 Issue: #868
 Parent issue: #877
@@ -13,10 +13,10 @@ FHOPS Scenario Studio `sandbox/studio/`, WS4 `ws4/web/`
 
 ## 1. The idea
 
-P150.1 implements the first vertical slice: the tree inventory contract, the scene package,
+P155.1 implements the first vertical slice: the tree inventory contract, the scene package,
 the per-tree animation mapping, and a standalone viewer with procedural flames and smoke.
 The remaining sections describe the full target; the Nemora/VRI producer and the web
-workspace are P150.2 and P150.4.
+workspace are P155.2 and P155.4.
 
 Take real WS4 VRI polygon stand maps, populate each stand with a plausible synthetic
 individual-tree population, and run the P144 fire process through that population as a

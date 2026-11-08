@@ -4634,7 +4634,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   #853 to #858 closed; the roadmap status is `complete`. The close-out report is
   `notes/reports/p144-closeout.md`. Dashboard: **GREEN**.
 
-- P150.1: added `ws4/scene`: the `ws4.tree.inventory.v1` tree contract, a deterministic
+- P155.1: added `ws4/scene`: the `ws4.tree.inventory.v1` tree contract, a deterministic
   synthetic tree generator, the `ws4.fire.scene.v1` package compiler, the per-tree animation
   mapping, and a standalone Three.js viewer with procedural flames, smoke, a timeline, and a
   burnt scar. Added `examples/fire_3d_demo.py` and `docs/reference/fire-scene.rst`. The demo
