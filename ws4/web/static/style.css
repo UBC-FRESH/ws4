@@ -744,3 +744,9 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: .2
 #workspace-fire .fire-search { display:grid; gap:.15rem; font-size:.72rem; color:var(--muted); margin-bottom:.3rem; }
 #workspace-fire #fire-tree, #workspace-fire #fire-fragment { width:100%; margin:.2rem 0; font-size:.72rem; }
 @media (max-width: 900px) { .fire-wrap.compare { grid-template-columns:1fr; } }
+
+
+body[data-workspace="fire"] .period-control,
+body[data-workspace="fire"] #status {
+  display: none;
+}

@@ -5272,6 +5272,7 @@ function setWorkspace(workspace, { sync = true, activate = true } = {}) {
     clearCompareView();
   }
   state.workspace = requested;
+  document.body.dataset.workspace = requested;
   syncNavigation();
   if (SUB_PANELS[requested]) {
     const sub = currentSub(requested) ?? visibleSubs(requested)[0] ?? null;

@@ -84,6 +84,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 const DATA = JSON.parse(document.getElementById("scene-data").textContent || "null");
+const embedded = new URLSearchParams(location.search).has("embedded");
 if (!DATA || !DATA.trees || !DATA.stands) {
   document.getElementById("error").style.display = "grid";
   throw new Error("scene data missing");
@@ -613,7 +614,6 @@ function updateStands(t) {
 }
 
 const state = { time: 0, playing: false, speed: 1, last: performance.now(), burning: 0, burnt: 0 };
-const embedded = new URLSearchParams(location.search).has("embedded");
 if (embedded) {
   for (const hud of document.querySelectorAll(".hud")) hud.style.display = "none";
 }
@@ -681,7 +681,7 @@ document.getElementById("focus").addEventListener("click", () => {
   sx /= target.length;
   sz /= target.length;
   controls.target.set(sx, 0, sz);
-  camera.position.set(sx - 180, 95, sz + 220);
+  camera.position.set(sx - maxDim * 0.35, maxDim * 0.22, sz + maxDim * 0.45);
   controls.update();
 });
 window.__ws4 = { camera, controls, scene, setTime, DATA, tree, state };
@@ -730,7 +730,8 @@ function resize() {
 }
 window.addEventListener("resize", resize);
 resize();
-setTime(0);
+setTime(embedded ? DATA.timeline.end * 0.25 : 0);
+if (embedded) document.getElementById("focus").click();
 if (parentWindow) {
   parentWindow.postMessage(
     { type: "ws4-fire-ready", sceneId: DATA.manifest.scene_id },
