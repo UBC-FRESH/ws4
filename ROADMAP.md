@@ -135,7 +135,7 @@ exists and the maintainer approves it.
 | P134 SDMD coverage closure | #820 | `feature/p134-coverage-closure` | complete |
 | P135 BC SDMD applicability correction | #824 | `feature/p135-bec-applicability` | complete |
 | P136 Pareto solution-space explorer | #827 | `feature/p136-pareto-explorer` | complete |
-| P137 Provisional SDMD diagram review | #830 | `feature/p137-diagram-review` | pr-open |
+| P137 Provisional SDMD diagram review | #830 | `feature/p137-diagram-review` | complete |
 | P138 Pareto member to map/Plan | #834 | `feature/p138-pareto-to-plan` | complete |
 | P139 Target-faithful promoted runs | #837 | `feature/p139-target-faithful` | complete |
 | P140 Period target dimensions | #840 | `feature/p140-target-dimensions` | complete |
@@ -4151,30 +4151,36 @@ Acceptance:
 - Selected members can be inspected and their schedules opened.
 - Tests and the green dashboard pass.
 
-## Phase 137: Provisional SDMD diagram review
+## Phase 137: Source-complete SDMD diagram review
 
 Parent issue: #830
 Branch: `feature/p137-diagram-review`
-Status: pr-open
+Status: complete
+Merge commit: `37b559d`
 Report: `notes/reports/p137-diagram-review.md`
 Packet: `notes/review/p137-provisional-review.md`
 PR: #833
 
-Goal: review the 10 provisional diagrams. Axis-registered overlays found that all
-10 fail; they are rejected for re-digitization.
+Goal: review and re-digitize the coastal diagrams from their source vector paths.
 
-- [x] P137.1 Provisional diagram review packet (#831)
+- [x] P137.1 Source-complete diagram review packet (#831)
   - [x] SHA-256-check source PDFs and render source pages.
   - [x] Build stored-curve plots and numeric inventories.
   - [x] Overlay stored curves on source pages and inspect them.
-  - [x] Reject all 10 diagrams for re-digitization.
+  - [x] Match every printed curve label to a source path; keep unlabelled interior members.
+  - [x] Replace crown-closure traces with source vector paths.
+  - [x] Add the display-only CAI band.
   - [x] Name the four no-diagram decisions.
+- [x] P137 close-out: all 14 public Atlas diagrams are reviewed; the provisional
+  queue is empty and coverage is 214 reviewed_zone, 1 reviewed_variant, and 4
+  no_diagram.
 
 Acceptance:
 
-- No diagram is marked reviewed.
-- Overlay findings are recorded with evidence.
-- The next step is re-digitization, not maintainer sign-off.
+- All 14 public Atlas diagrams are marked reviewed.
+- The provisional review queue is empty.
+- Overlay findings and source path maps are recorded with evidence.
+- The FreshForge line-import recipes are validated and locked.
 - Dashboard green.
 
 ## Phase 138: Pareto member to map/Plan

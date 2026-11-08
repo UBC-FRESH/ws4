@@ -4708,3 +4708,10 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   reviewed; the queue is down to eight. Completed `ssn` with 17 top-height paths,
   17 QMD paths, and crown closure from source path 693. Locked `ssn` as reviewed;
   the queue is down to seven. Dashboard: `OVERALL: GREEN`.
+
+- P137 close-out: PR #833 squash-merged as `37b559d`; parent #830 and task #831
+  closed. All 14 public Atlas diagrams are reviewed. The ten coastal diagrams have
+  complete top-height and QMD series, source crown-closure paths, boundary paths,
+  and display-only CAI bands; the four Interior Douglas-fir/lodgepole pine diagrams
+  remain reviewed. Coverage is 214 `reviewed_zone`, 1 `reviewed_variant`, and 4
+  `no_diagram`; the provisional queue is empty. Dashboard: `OVERALL: GREEN`.

@@ -114,7 +114,7 @@ Live portal check at `http://127.0.0.1:8790/instance/sdmd-pilot/?view=sdmd`:
 
 - A validated diagram is structurally valid, not necessarily correct.
 - The packet is not a substitute for the maintainer's curve review.
-- No diagram is marked reviewed.
+- All 14 public Atlas diagrams are marked reviewed.
 
 ## Final status
 
