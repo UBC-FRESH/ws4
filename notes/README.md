@@ -152,3 +152,5 @@ Working notes for WS4. Notes are living: update them in the same change set as t
   with the host-read, write, network, and credential checks.
 - `reports/p153-assistant-script-review.md` — assistant script staging, review requirements,
   and the console-secret environment guard.
+- `reports/p154-tsa29-stock.md` — TSA 29 factorized stock basis, build costs, and exact
+  GPU replay.
