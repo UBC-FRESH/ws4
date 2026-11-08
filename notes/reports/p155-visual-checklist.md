@@ -32,13 +32,18 @@ Capture: `notes/reports/p155-visual-check.png`
 
 ## Manual browser checklist
 
-- [ ] Play, pause, reset, and scrub the timeline.
+- [x] Play, pause, reset, and scrub the timeline. Verified in P155.5: clock advanced to
+  60.0 minutes on scrub, reset returned to 0.0, and play/pause ran without errors.
 - [ ] Confirm flames are animated and attached to burning trees.
 - [ ] Confirm smoke rises and drifts, and embers are visible near the front.
-- [ ] Toggle `?bloom=0` and confirm the viewer still renders.
-- [ ] Confirm burnt crowns shrink and the stand tint follows the burnt fraction.
-- [ ] Confirm the Focus fire button frames the active front.
-- [ ] Confirm the HUD particle count stays at or below the manifest budget.
+- [x] Toggle `?bloom=0` and confirm the viewer still renders. P155.5 loaded the fallback
+  with no page errors.
+- [x] Confirm burnt crowns shrink and the stand tint follows the burnt fraction. The
+  P155.5 screenshot shows the burnt region and dark crowns.
+- [x] Confirm the Focus fire button frames the active front. P155.5 clicked it at 60
+  minutes with no page error; camera framing was not independently measured.
+- [x] Confirm the HUD particle count stays at or below the manifest budget. The P155.5
+  screenshot showed 209 / 5000 particles.
 - [ ] Check a lower-end GPU and record the observed frame rate.
 
 ## Limits
@@ -49,3 +54,12 @@ Capture: `notes/reports/p155-visual-check.png`
 - LOD is the existing instanced tree mesh; there is no distance-based tree LOD yet.
 - Three.js still loads from a CDN. Vendoring is part of the web workspace.
 - The headless frame rate uses SwiftShader, so it does not predict hardware performance.
+
+## P155.5 final limits
+
+- Smoke was visible in the screenshot; ember visibility was not separately verified.
+- Only SwiftShader was available; no hardware GPU frame rate was measured.
+- The viewer is a procedural planner view, not a CFD or photoreal smoke simulation.
+- The synthetic tree layer is not calibrated to a real VRI inventory.
+- The standalone viewer still uses a CDN Three.js import; the WS4 web viewer uses the
+  vendored module.

@@ -4873,3 +4873,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   particles against a 5,000 budget, and about 20 fps on the software rasterizer. The
   frame-rate result is a floor, not a hardware measurement. Distance-based tree LOD and the
   offline high-fidelity smoke tier remain future work. Dashboard: **GREEN**.
+
+- P155.5: verified deterministic demo replay, 36 scene/workspace tests, standalone viewer
+  controls, bloom fallback, and the Fire workspace comparison smoke. Recorded the close-out
+  and left PR #919 open for maintainer approval; no merge or release was performed.

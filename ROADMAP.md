@@ -4560,6 +4560,8 @@ Acceptance:
 Parent issue: #877
 Branch: `feature/p155-fire-3d`
 Status: active
+Approval: PR #919 queued for maintainer approval
+Report: `notes/reports/p155-closeout.md`
 Design note: `notes/design/ws4-fire-3d-visualization.md`
 Idea: #868
 
@@ -4571,7 +4573,7 @@ animation with flames, smoke, a timeline, and post-fire tree states.
 - [x] P155.2 Nemora synthetic tree producer over VRI polygons (#879)
 - [x] P155.3 Fire and smoke visual quality (#880)
 - [x] P155.4 WS4 web Fire workspace (#881)
-- [ ] P155.5 Verify and close out (#882)
+- [x] P155.5 Verify and close out (#882)
 
 Acceptance:
 
