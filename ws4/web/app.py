@@ -960,6 +960,10 @@ def create_app(
     console_output_bytes: int = 1_000_000,
     console_rate_limit: int = 6,
     console_workspace: str | None = None,
+    allow_console_python: bool = False,
+    console_python_memory_bytes: int = 2_000_000_000,
+    console_python_max_script_bytes: int = 65_536,
+    console_python_max_file_bytes: int = 64_000_000,
 ) -> FastAPI:
     """Create the WS4 read API.
 
@@ -1040,6 +1044,15 @@ def create_app(
         Console job starts allowed per minute. Defaults to six.
     console_workspace : str or None, optional
         Workspace label recorded in console audits. None uses the runs directory name.
+    allow_console_python : bool, optional
+        Enable the sandboxed Python script tier. It requires ``allow_console`` and a host
+        with Landlock and unshare; unsupported hosts refuse jobs rather than falling back.
+    console_python_memory_bytes : int, optional
+        Address-space limit for one script. Defaults to two gigabytes.
+    console_python_max_script_bytes : int, optional
+        Largest accepted script source. Defaults to 64 KiB.
+    console_python_max_file_bytes : int, optional
+        Largest file the script may create. Defaults to 64 MB.
 
     Returns
     -------
@@ -1093,6 +1106,8 @@ def create_app(
     if static_dir.is_dir():
         app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
+    if allow_console_python and not allow_console:
+        raise ValueError("allow_console_python requires allow_console")
     console_manager: ConsoleManager | None = None
     if allow_console:
         token = (console_token or "").strip()
@@ -1100,6 +1115,12 @@ def create_app(
             raise ValueError("allow_console requires a non-empty console_token")
         if console_timeout <= 0 or console_output_bytes <= 0 or console_rate_limit <= 0:
             raise ValueError("console limits must be positive")
+        if allow_console_python and (
+            console_python_memory_bytes <= 0
+            or console_python_max_script_bytes <= 0
+            or console_python_max_file_bytes <= 0
+        ):
+            raise ValueError("console Python limits must be positive")
         root_candidates: list[Path] = [dataset, runs_root, dataset.parent, runs_root.parent]
         for candidate in (
             targets_path,
@@ -1130,6 +1151,10 @@ def create_app(
                 timeout_seconds=float(console_timeout),
                 max_output_bytes=int(console_output_bytes),
                 max_jobs_per_minute=int(console_rate_limit),
+                python_enabled=bool(allow_console_python),
+                python_memory_bytes=int(console_python_memory_bytes),
+                python_max_script_bytes=int(console_python_max_script_bytes),
+                python_max_file_bytes=int(console_python_max_file_bytes),
             )
         )
         app.include_router(create_console_router(console_manager))
@@ -2182,6 +2207,8 @@ def create_app(
             "capabilities": {
                 "geometry": geometry_path is not None and geometry_path.is_file(),
                 "console": console_manager is not None,
+                "console_python": console_manager is not None
+                and console_manager.config.python_enabled,
             },
             "runs": found,
         }

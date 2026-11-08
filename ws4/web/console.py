@@ -17,6 +17,7 @@ import json
 import os
 import re
 import secrets
+import shutil
 import signal
 import subprocess
 import sys
@@ -34,6 +35,8 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict, Field
+
+from .sandbox import SandboxUnavailableError, sandbox_argv, sandbox_available
 
 TIME_LIMIT_RE = re.compile(r"^(\d{2}):([0-5]\d):([0-5]\d)$")
 SEEDS_RE = re.compile(r"^\d+(,\d+)*$")
@@ -142,6 +145,29 @@ class ConsoleJobRequest(BaseModel):
     lns_max_destroy: int | None = None
 
 
+class PythonJobRequest(BaseModel):
+    """A collaborator Python script submitted for sandboxed execution.
+
+    Parameters
+    ----------
+    script : str
+        Python source. It is written to the job scratch directory and is never executed
+        until ``reviewed`` is true.
+    inputs : list of str, optional
+        Existing files or directories the script may read. They must resolve inside the
+        configured read-only roots.
+    reviewed : bool, optional
+        Explicit confirmation that the user reviewed the script and wants it to run.
+        False is rejected.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    script: str = Field(min_length=1, max_length=65_536)
+    inputs: list[str] = Field(default_factory=list, max_length=8)
+    reviewed: bool = False
+
+
 class ConsoleError(Exception):
     """Base error with an HTTP status for a rejected console operation."""
 
@@ -198,6 +224,14 @@ class ConsoleConfig:
         Maximum captured stdout/stderr bytes. Defaults to one megabyte.
     max_jobs_per_minute : int, optional
         Sliding-window job start limit. Defaults to six.
+    python_enabled : bool, optional
+        Whether the sandboxed Python tier is enabled. Defaults to False.
+    python_memory_bytes : int, optional
+        Address-space limit for one Python script. Defaults to two gigabytes.
+    python_max_script_bytes : int, optional
+        Largest accepted script source. Defaults to 64 KiB.
+    python_max_file_bytes : int, optional
+        Largest file the sandboxed script may create. Defaults to 64 MB.
     """
 
     dataset: Path
@@ -210,6 +244,10 @@ class ConsoleConfig:
     timeout_seconds: float = 180.0
     max_output_bytes: int = 1_000_000
     max_jobs_per_minute: int = 6
+    python_enabled: bool = False
+    python_memory_bytes: int = 2_000_000_000
+    python_max_script_bytes: int = 65_536
+    python_max_file_bytes: int = 64_000_000
 
 
 COMMAND_FIELDS: dict[ConsoleCommand, frozenset[str]] = {
@@ -789,6 +827,13 @@ class ConsoleManager:
                 "max_jobs_per_minute": self.config.max_jobs_per_minute,
                 "max_concurrent": 1,
             },
+            "python": {
+                "enabled": self.config.python_enabled,
+                "memory_bytes": self.config.python_memory_bytes,
+                "max_script_bytes": self.config.python_max_script_bytes,
+                "max_file_bytes": self.config.python_max_file_bytes,
+                "max_inputs": 8,
+            },
         }
 
     def _default_for(self, name: str) -> str | int | float | None:
@@ -806,19 +851,8 @@ class ConsoleManager:
             return str(recent) if recent is not None else ""
         return ""
 
-    def start(self, request: ConsoleJobRequest) -> dict[str, Any]:
-        """Validate and launch one job, or raise a typed console error.
-
-        Parameters
-        ----------
-        request : ConsoleJobRequest
-            Typed command request.
-
-        Returns
-        -------
-        dict
-            The initial job snapshot.
-        """
+    def _reserve_slot(self) -> None:
+        """Reserve the single active job slot and enforce the start rate limit."""
         now = time.monotonic()
         with self._lock:
             if self._active is not None:
@@ -832,14 +866,33 @@ class ConsoleManager:
                 raise ConsoleRateLimitError("console job rate limit reached")
             self._recent.append(now)
 
-        job_id = uuid.uuid4().hex[:8]
+    def _job_directory(self, job_id: str) -> Path:
+        """Create and return a new job scratch directory."""
         stamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
         directory = self.config.runs / f"console-{stamp}-{job_id}"
         directory.mkdir(parents=True, exist_ok=False)
+        return directory
+
+    def start(self, request: ConsoleJobRequest) -> dict[str, Any]:
+        """Validate and launch one allowlisted CLI job.
+
+        Parameters
+        ----------
+        request : ConsoleJobRequest
+            Typed command request.
+
+        Returns
+        -------
+        dict
+            The initial job snapshot.
+        """
+        self._reserve_slot()
+        job_id = uuid.uuid4().hex[:8]
+        directory = self._job_directory(job_id)
         try:
             argv = self._builder(request, directory, self.config)
         except Exception:
-            directory.rmdir()
+            shutil.rmtree(directory, ignore_errors=True)
             raise
         job = ConsoleJob(
             id=job_id,
@@ -850,7 +903,80 @@ class ConsoleManager:
             dataset_fingerprint=self._fingerprint,
         )
         request_data = request.model_dump(mode="json", exclude_none=True)
-        (directory / "request.json").write_text(
+        return self._launch(job, request_data)
+
+    def start_python(self, request: PythonJobRequest) -> dict[str, Any]:
+        """Validate and launch one sandboxed Python script.
+
+        Parameters
+        ----------
+        request : PythonJobRequest
+            Script source, read-only inputs, and explicit review confirmation.
+
+        Returns
+        -------
+        dict
+            The initial job snapshot.
+        """
+        if not self.config.python_enabled:
+            raise ConsoleValidationError("the sandboxed Python tier is disabled")
+        if not request.reviewed:
+            raise ConsoleValidationError("reviewed must be true before a script can run")
+        source = request.script
+        if not source.strip():
+            raise ConsoleValidationError("script must not be empty")
+        if len(source.encode("utf-8")) > self.config.python_max_script_bytes:
+            raise ConsoleValidationError(
+                f"script exceeds the {self.config.python_max_script_bytes}-byte limit"
+            )
+        if len(request.inputs) > 8:
+            raise ConsoleValidationError("at most eight input paths are allowed")
+        if not sandbox_available():
+            raise ConsoleValidationError(
+                "the host cannot enforce the Python sandbox (Landlock and unshare are required)"
+            )
+        read_roots = [self.config.dataset]
+        for value in request.inputs:
+            read_roots.append(
+                _resolve_input(value, label="python input", roots=self.config.roots, kind="any")
+            )
+        self._reserve_slot()
+        job_id = uuid.uuid4().hex[:8]
+        directory = self._job_directory(job_id)
+        script_path = directory / "script.py"
+        try:
+            script_path.write_text(source, encoding="utf-8")
+            argv = sandbox_argv(
+                script_path,
+                directory,
+                read_roots,
+                timeout_seconds=self.config.timeout_seconds,
+                memory_bytes=self.config.python_memory_bytes,
+                max_file_bytes=self.config.python_max_file_bytes,
+            )
+        except (OSError, SandboxUnavailableError) as error:
+            shutil.rmtree(directory, ignore_errors=True)
+            raise ConsoleValidationError(str(error)) from error
+        job = ConsoleJob(
+            id=job_id,
+            command="python",
+            argv=argv,
+            directory=directory,
+            workspace=self.config.workspace,
+            dataset_fingerprint=self._fingerprint,
+        )
+        request_data = {
+            "command": "python",
+            "script_bytes": len(source.encode("utf-8")),
+            "script_sha256": hashlib.sha256(source.encode("utf-8")).hexdigest(),
+            "inputs": [str(path) for path in read_roots[1:]],
+            "reviewed": True,
+        }
+        return self._launch(job, request_data)
+
+    def _launch(self, job: ConsoleJob, request_data: dict[str, Any]) -> dict[str, Any]:
+        """Persist metadata, start the process group, and attach the reader and monitor."""
+        (job.directory / "request.json").write_text(
             json.dumps(request_data, indent=2) + "\n", encoding="utf-8"
         )
         self._write_job(job)
@@ -859,13 +985,13 @@ class ConsoleManager:
             self._active = job.id
         try:
             process = subprocess.Popen(
-                argv,
-                cwd=directory,
+                job.argv,
+                cwd=job.directory,
                 stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 start_new_session=True,
-                env=self._environment(),
+                env=self._environment(job.directory),
             )
         except OSError as error:
             with self._lock:
@@ -1020,11 +1146,18 @@ class ConsoleManager:
             raise ConsoleValidationError("artifact was not found")
         return candidate
 
-    def _environment(self) -> dict[str, str]:
-        """Return a bounded environment for the child process."""
+    def _environment(self, job_directory: Path) -> dict[str, str]:
+        """Return a bounded per-job environment for the child process."""
+        home = job_directory / "home"
+        temporary = job_directory / "tmp"
+        home.mkdir(exist_ok=True)
+        temporary.mkdir(exist_ok=True)
         env = {
             "PATH": os.environ.get("PATH", ""),
-            "HOME": str(self.config.runs / ".console-home"),
+            "HOME": str(home),
+            "TMPDIR": str(temporary),
+            "XDG_CACHE_HOME": str(home / ".cache"),
+            "MPLCONFIGDIR": str(home / ".matplotlib"),
             "PYTHONUNBUFFERED": "1",
             "PYTHONIOENCODING": "utf-8",
             "NO_COLOR": "1",
@@ -1202,6 +1335,15 @@ def create_console_router(manager: ConsoleManager) -> APIRouter:
         auth(request)
         try:
             return manager.start(body)
+        except ConsoleError as error:
+            raise http_error(error) from error
+
+    @router.post("/python/jobs")
+    def start_python(request: Request, body: PythonJobRequest) -> dict[str, Any]:
+        """Validate and start one explicitly reviewed sandboxed script."""
+        auth(request)
+        try:
+            return manager.start_python(body)
         except ConsoleError as error:
             raise http_error(error) from error
 
