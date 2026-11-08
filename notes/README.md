@@ -146,3 +146,5 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - P149.2 records the compact exactness payload and the live exact replay.
 - `reports/p150-gpu-extension-guard.md` — P150 lazy effect-table row guard and the TSA 29
   managed-stock limitation.
+- `reports/p151-web-console.md` — P151 allowlisted web console, its security boundary,
+  browser smoke, and the remaining sandbox tiers.

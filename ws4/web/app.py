@@ -22,7 +22,7 @@ import tempfile
 import threading
 import time
 from collections import Counter
-from collections.abc import Awaitable, Callable, Iterator, Mapping
+from collections.abc import Awaitable, Callable, Iterator, Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Any, cast
@@ -58,6 +58,7 @@ from ..opt.objective import (
 )
 from ..opt.solution_space import build_solution_space
 from ..report import target_kind
+from .console import ConsoleConfig, ConsoleManager, create_console_router
 from .skins import load_skins
 
 SEARCH_JOB_LIMIT: int = 20
@@ -954,6 +955,13 @@ def create_app(
     roads: Path | None = None,
     crs: str = "EPSG:4326",
     tile_cache_dir: Path | None = None,
+    allow_console: bool = False,
+    console_token: str | None = None,
+    console_roots: Sequence[Path] | None = None,
+    console_timeout: float = 180.0,
+    console_output_bytes: int = 1_000_000,
+    console_rate_limit: int = 6,
+    console_workspace: str | None = None,
 ) -> FastAPI:
     """Create the WS4 read API.
 
@@ -1017,6 +1025,23 @@ def create_app(
         ``format=wgs84`` transforms them for MapLibre. Default ``EPSG:4326``.
     tile_cache_dir : Path or None, optional
         Directory for durable MVT tiles. ``None`` keeps tiles in memory only.
+    allow_console : bool, optional
+        When true, expose the token-authenticated allowlisted command console. False keeps
+        the console API absent.
+    console_token : str or None, optional
+        Bearer token required by every console endpoint. Required when ``allow_console``
+        is true.
+    console_roots : sequence of Path or None, optional
+        Extra read-only roots that console input paths may use. The dataset, runs, targets,
+        initial schedule, and profile parents are added automatically.
+    console_timeout : float, optional
+        Wall-clock limit for one console job. Defaults to 180 seconds.
+    console_output_bytes : int, optional
+        Captured output cap per console job. Defaults to one megabyte.
+    console_rate_limit : int, optional
+        Console job starts allowed per minute. Defaults to six.
+    console_workspace : str or None, optional
+        Workspace label recorded in console audits. None uses the runs directory name.
 
     Returns
     -------
@@ -1070,6 +1095,47 @@ def create_app(
     static_dir = Path(__file__).with_name("static")
     if static_dir.is_dir():
         app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+    console_manager: ConsoleManager | None = None
+    if allow_console:
+        token = (console_token or "").strip()
+        if not token:
+            raise ValueError("allow_console requires a non-empty console_token")
+        if console_timeout <= 0 or console_output_bytes <= 0 or console_rate_limit <= 0:
+            raise ValueError("console limits must be positive")
+        root_candidates: list[Path] = [dataset, runs_root, dataset.parent, runs_root.parent]
+        for candidate in (
+            targets_path,
+            initial_schedule_path,
+            scenario_profiles,
+        ):
+            if candidate is not None:
+                root_candidates.append(candidate.parent)
+        for candidate in console_roots or ():
+            root_candidates.append(Path(candidate))
+        roots: list[Path] = []
+        for candidate in root_candidates:
+            try:
+                resolved = candidate.resolve()
+            except OSError:
+                continue
+            if resolved.exists() and resolved not in roots:
+                roots.append(resolved)
+        console_manager = ConsoleManager(
+            ConsoleConfig(
+                dataset=dataset,
+                runs=runs_root,
+                roots=tuple(roots),
+                token=token,
+                workspace=console_workspace or runs_root.name,
+                targets=targets_path,
+                initial_schedule=initial_schedule_path,
+                timeout_seconds=float(console_timeout),
+                max_output_bytes=int(console_output_bytes),
+                max_jobs_per_minute=int(console_rate_limit),
+            )
+        )
+        app.include_router(create_console_router(console_manager))
 
     def run_dir(name: str) -> Path:
         return _run_directory(runs_root, name)
@@ -2277,6 +2343,7 @@ def create_app(
             "manifest": manifest,
             "capabilities": {
                 "geometry": geometry_path is not None and geometry_path.is_file(),
+                "console": console_manager is not None,
             },
             "runs": found,
         }

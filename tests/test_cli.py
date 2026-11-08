@@ -73,19 +73,33 @@ def test_dashboard_help_documents_the_outputs() -> None:
     assert "--json" in result.stdout
 
 
+def test_serve_exposes_console_options() -> None:
+    """The serve command carries the opt-in console flags and token option."""
+    import inspect
+
+    from ws4.cli import serve
+
+    parameters = inspect.signature(serve).parameters
+    assert "allow_console" in parameters
+    assert "console_token" in parameters
+    assert "console_root" in parameters
+
+
 def test_dashboard_rejects_an_unknown_option() -> None:
     """The dashboard exits with status 2 on an option it does not know."""
     result = run_script("dashboard.py", "--bogus")
     assert result.returncode == 2
 
 
-def run_ws4(*args: str) -> subprocess.CompletedProcess[str]:
+def run_ws4(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
     """Run the ``ws4`` command line in a subprocess.
 
     Parameters
     ----------
     *args : str
         Arguments passed to the command.
+    env : dict of str to str or None, optional
+        Environment override; None inherits the test environment.
 
     Returns
     -------
@@ -98,6 +112,7 @@ def run_ws4(*args: str) -> subprocess.CompletedProcess[str]:
         capture_output=True,
         text=True,
         check=False,
+        env=env,
     )
 
 

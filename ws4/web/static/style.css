@@ -700,3 +700,21 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: .2
 .portfolio-member-targets th:first-child, .portfolio-member-targets td:first-child { text-align:left; max-width:10rem; overflow:hidden; text-overflow:ellipsis; }
 .scaffold-preview { max-height:14rem; overflow:auto; background:#f7f9fb; border:1px solid var(--line); border-radius:.3rem; padding:.35rem; font-size:.68rem; white-space:pre-wrap; }
 #scaffold-list input[type=number] { width:5.5rem; font-size:.72rem; }
+
+#workspace-console .console-auth { display:flex; flex-wrap:wrap; gap:.4rem; align-items:end; margin:.45rem 0; }
+#workspace-console .console-auth label { flex:1 1 18rem; }
+#workspace-console .console-auth input { width:100%; }
+#workspace-console .console-command { display:block; margin:.45rem 0; }
+#workspace-console .console-command select { width:100%; }
+#workspace-console .console-fields { display:grid; gap:.4rem; margin:.45rem 0; }
+#workspace-console .console-field { display:grid; gap:.15rem; font-size:.76rem; color:var(--muted); }
+#workspace-console .console-field input { width:100%; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:.74rem; }
+#workspace-console .console-actions { align-items:center; }
+#workspace-console .console-output { min-height:16rem; max-height:26rem; overflow:auto; margin:.5rem 0; padding:.55rem .65rem;
+                                     border:1px solid #24352a; border-radius:.35rem; background:#101812; color:#dcebd7;
+                                     font-size:.72rem; line-height:1.35; white-space:pre-wrap; overflow-wrap:anywhere; }
+#workspace-console .console-artifacts { display:grid; gap:.2rem; margin-top:.4rem; }
+#workspace-console .console-artifact { display:flex; align-items:center; gap:.4rem; padding:.18rem 0;
+                                       border-bottom:1px solid var(--line); font-size:.72rem; }
+#workspace-console .console-artifact code { flex:1; overflow-wrap:anywhere; }
+#workspace-console .console-artifact button { font-size:.68rem; padding:.12rem .35rem; }
