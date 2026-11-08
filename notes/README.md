@@ -150,3 +150,5 @@ Working notes for WS4. Notes are living: update them in the same change set as t
   browser smoke, and the remaining sandbox tiers.
 - `reports/p152-python-sandbox.md` — reviewed Python scripts under Landlock and unshare,
   with the host-read, write, network, and credential checks.
+- `reports/p153-assistant-script-review.md` — assistant script staging, review requirements,
+  and the console-secret environment guard.

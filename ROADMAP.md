@@ -150,6 +150,7 @@ exists and the maintainer approves it.
 | P150 GPU extension guard | #886 | `fix/gpu-extension-guard` | complete |
 | P151 Web UI power-user console | #789 | `feature/p151-web-console` | complete |
 | P152 Sandboxed Python runner | #901 | `feature/p152-python-sandbox` | complete |
+| P153 Assistant script review | #906 | `feature/p153-assistant-script-review` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4475,4 +4476,23 @@ Acceptance:
 - Selected inputs are read-only; only job scratch is writable.
 - Host files, other runs, network, and credentials are unavailable.
 - Browser review, tests, and dashboard pass.
+
+## Phase 153: Assistant script review
+
+Parent issue: #906
+Branch: `feature/p153-assistant-script-review`
+Status: active
+Report: `notes/reports/p153-assistant-script-review.md`
+
+Goal: let the assistant stage code without granting it execution authority.
+
+- [x] P153.1 Stage assistant scripts for review (#907)
+
+Acceptance:
+
+- A bounded ``stage_script`` chip reaches the browser.
+- Staging fills the console editor and clears review confirmation.
+- The chip never calls the job API.
+- The chat agent cannot inherit console secrets.
+- Tests, browser smoke, and dashboard pass.
 

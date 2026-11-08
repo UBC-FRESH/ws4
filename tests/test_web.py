@@ -21,6 +21,7 @@ import yaml
 pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient
 from ws4.web.app import (
+    _agent_environment,
     _chat_chip,
     _chat_context_lines,
     _chat_index,
@@ -1742,6 +1743,32 @@ def test_split_chat_actions_handles_lowercase_multiline_and_repeated_markers() -
         chip,
         {"label": "Later", "action": "set_period", "target": "3"},
     ]
+
+
+def test_agent_environment_drops_console_secrets() -> None:
+    """The chat agent cannot inherit the console token or session hooks."""
+    environment = _agent_environment(
+        {
+            "PATH": "/bin",
+            "OPENCODE_SESSION_ID": "session",
+            "OPENCODE_TERMINAL": "1",
+            "WS4_CONSOLE_TOKEN": "secret",
+            "WS4_CONSOLE_PYTHON": "1",
+        }
+    )
+    assert environment == {"PATH": "/bin"}
+
+
+def test_chat_chip_stages_script_text_without_execution() -> None:
+    """The assistant can stage code, but only the reviewed console may execute it."""
+    source = "from pathlib import Path\n\nprint('review me')\n"
+    assert _chat_chip({"label": "Review script", "action": "stage_script", "target": source}) == {
+        "label": "Review script",
+        "action": "stage_script",
+        "target": source.strip(),
+    }
+    assert _chat_chip({"label": "x", "action": "stage_script", "target": "  "}) is None
+    assert _chat_chip({"label": "x", "action": "stage_script", "target": "x" * 20_001}) is None
 
 
 def test_chat_chip_rejects_unsafe_targets() -> None:

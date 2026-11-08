@@ -4672,3 +4672,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P152 close-out: PR #903 squash-merged as `345a86d`; parent #901 and task #902 are
   closed. The portal exposes the Python tier only with `WS4_CONSOLE_PYTHON=1` and the
   console token. Dashboard: **GREEN**.
+
+- P153.1: added the bounded `stage_script` assistant chip. It stages code in the console
+  editor with review cleared, never executes, and the agent environment no longer inherits
+  console tokens.
