@@ -44,7 +44,7 @@ def _portfolio(tmp_path: Path) -> tuple[Path, Path]:
         encoding="utf-8",
     )
     (run / "account_values.csv").write_text(
-        "offset,account,value\n0,feature.Volume,1000\n1,feature.Volume,1100\n",
+        "offset,account,value\n0,feature.Volume,1000\n1,feature.Volume,1100\n0,feature.Old,200\n",
         encoding="utf-8",
     )
     (run / "schedule.csv").write_text("block_id,treatment,offset\n", encoding="utf-8")
@@ -274,6 +274,66 @@ def test_run_health_shows_exact_replay(tmp_path: Path) -> None:
                 timeout=15000,
             )
             assert "exact replay yes" in page.locator("#run-health-badges").inner_text()
+            assert errors == []
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(timeout=10)
+
+
+def test_plan_batch_targets_adds_multiple_accounts_and_periods(tmp_path: Path) -> None:
+    """The batch composer adds one target for each selected account and period."""
+    server, thread, url = _server(tmp_path)
+    try:
+        with sync_playwright() as playwright:
+            try:
+                browser = playwright.chromium.launch(
+                    headless=True,
+                    args=["--use-gl=swiftshader", "--enable-webgl"],
+                )
+            except Exception as error:  # pragma: no cover - browser not installed
+                pytest.skip(f"chromium is not available: {error}")
+            page = browser.new_page(viewport={"width": 1500, "height": 1000})
+            errors: list[str] = []
+            page.on("pageerror", lambda error: errors.append(str(error)))
+            page.goto(f"{url}/?run=run1&view=plan")
+            page.wait_for_function(
+                "!document.querySelector('#workspace-plan').hidden && "
+                "document.querySelectorAll('#targets-table tbody tr:not(.target-detail)')"
+                ".length >= 6",
+                timeout=15000,
+            )
+            initial = page.locator("#targets-table tbody tr:not(.target-detail)").count()
+            page.locator("#batch-targets summary").click()
+            page.check("#account-multi")
+            page.evaluate(
+                "() => { for (const account of ['feature.Volume', 'feature.Old']) { "
+                "const el = document.querySelector(`.account-leaf[data-account='${account}']`); "
+                "let detail = el && el.closest('details'); "
+                "while (detail) { detail.open = true; "
+                "detail = detail.parentElement && detail.parentElement.closest('details'); } } }"
+            )
+            page.locator(".account-leaf[data-account='feature.Volume']").click()
+            page.evaluate(
+                "() => { const el = document.querySelector("
+                "\".account-leaf[data-account='feature.Old']\"); "
+                "let detail = el && el.closest('details'); "
+                "while (detail) { detail.open = true; "
+                "detail = detail.parentElement && detail.parentElement.closest('details'); } }"
+            )
+            page.locator(".account-leaf[data-account='feature.Old']").click()
+            page.fill("#batch-start", "6")
+            page.fill("#batch-end", "6")
+            page.select_option("#batch-mode", "level")
+            page.fill("#batch-min", "1000")
+            page.fill("#batch-max", "2000")
+            page.click("#batch-add")
+            page.wait_for_function(
+                "document.querySelectorAll('#targets-table tbody tr:not(.target-detail)').length"
+                f" > {initial}",
+                timeout=15000,
+            )
+            assert page.locator("#batch-status").inner_text()
             assert errors == []
             browser.close()
     finally:
