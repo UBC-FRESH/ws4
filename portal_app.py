@@ -458,6 +458,7 @@ def _build_mount(instance: Instance, mount_path: str) -> None:
             console_token=CONSOLE_TOKEN,
             console_roots=[root, cache, runs],
             console_workspace=slug,
+            allow_console_python=bool(os.environ.get("WS4_CONSOLE_PYTHON")),
         )
     app.mount(mount_path, create_app(**options))
 
