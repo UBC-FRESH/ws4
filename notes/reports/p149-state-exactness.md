@@ -1,10 +1,12 @@
 # P149 state-run exactness
 
 Date: 2026-11-07
-Status: active
-Branch: `fix/p149-summary-trim`
+Completed: 2026-11-08
+Status: complete
+Branch: `feature/p149-state-exactness`
 Parent issue: #873
 Task issues: #874, #883
+Merge commits: `2997ea2`, `c745d8b`
 
 ## Summary
 
@@ -26,3 +28,6 @@ shows an exact-replay badge only when the flag is a boolean.
 - `tests/test_pareto_browser.py`: 4 passed.
 
 Dashboard: `OVERALL: GREEN`.
+- Live web run `web-20261108-001933-150`: status `done`, `exact_match: true`,
+  objective `8549054.131123843`, verified objective `8549054.13112384`,
+  compact `state-watch.json` 358 bytes, and run health showed `exact replay yes`.

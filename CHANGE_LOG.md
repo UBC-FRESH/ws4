@@ -4641,3 +4641,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   schedule path, guarded the exact-replay badge to boolean values, and added browser
   coverage. A live TSA 27 state run recorded `exact_match: true` with matching
   objective and verified objective.
+
+- P149 close-out: PRs #876 and #884 squash-merged as `2997ea2` and `c745d8b`;
+  parent #873 and tasks #874 and #883 are closed. Live TSA 27 state runs recorded
+  `exact_match: true` with matching objective and verified objective, and run health
+  shows `exact replay yes`. Dashboard: **GREEN**.
