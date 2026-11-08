@@ -4883,3 +4883,12 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   ignition, the fire/smoke/ember/heat-haze visual pass, the Fire studio APIs and workspace,
   and the public Pages demo. Full dashboard: **OVERALL: GREEN**. The live 8790 portal still
   serves the static viewer; promoting the Fire studio is a separate portal deployment step.
+
+- P157.1: added `ws4/fire/observed.py` and the pinned Dogrib (RWF085) validation fixture. The
+  observed-fire contract records the Prometheus source, archive, custom NAD83 Transverse
+  Mercator, 100 m grid, local event window, ignition point, hourly weather, FBP fuel grid,
+  elevation grid, and observed perimeters. The loader validates grid agreement, fuel lookup
+  coverage, hourly weather continuity, event-window coverage, ignition containment, and
+  perimeter overlap. The fixture has a 935 ha start perimeter and a 10,223 ha final perimeter
+  across 25 polygons, including spot fires. Added `docs/reference/fire-observed.rst` and 9
+  observed-fire tests. Dashboard: **GREEN**.

@@ -87,6 +87,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - The VRI stand contract, the deterministic FBP fuel-type rules, and provenance.
    * - :doc:`fire-benchmark`
      - The FBP ellipse benchmark, the scenario ensemble, and the reported tolerances.
+   * - :doc:`fire-observed`
+     - The observed-fire contract and the Dogrib validation fixture.
    * - :doc:`fire-scene`
      - Synthetic individual-tree stands, the portable fire-scene package, and the standalone
        3D fire viewer.
@@ -130,5 +132,6 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    fire-growth
    fire-vri
    fire-benchmark
+   fire-observed
    fire-scene
    femic-hydrology

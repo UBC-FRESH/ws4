@@ -155,6 +155,7 @@ exists and the maintainer approves it.
 | P154 TSA 29 GPU stock | #912 | `feature/p154-tsa29-stock` | complete |
 | P155 3D fire scene and synthetic tree stands | #877 | `feature/p155-fire-3d` | complete |
 | P156 Credible fire behaviour and growth | #890 | `feature/p156-fire-behaviour` | complete |
+| P157 Observed fire and perimeter validation | #923 | `feature/p157-observed-fire` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4623,3 +4624,27 @@ Acceptance:
 - The 3D viewer's flame length and smoke are derived from fireline intensity and fuel
   consumption, not arbitrary particle settings.
 - `python scripts/dashboard.py` is green.
+
+## Phase 157: Observed fire and perimeter validation
+
+Parent issue: #923
+Branch: `feature/p157-observed-fire`
+Status: active
+Design note: `notes/design/ws4-fire-behaviour.md`
+
+Goal: validate the P156 kernel and growth engine against a public observed fire perimeter,
+with explicit provenance, metrics, tolerances, and limitations.
+
+- [x] P157.1 Observed-fire data contract and source fixture (#925)
+- [ ] P157.2 Observed-perimeter comparison harness (#926)
+- [ ] P157.3 Observed-vs-simulated perimeter view (#924)
+- [ ] P157.4 Verify and close out observed-fire validation (#927)
+
+Acceptance:
+
+- The observed-fire source, licence, CRS, time zone, and assumptions are recorded.
+- The loader validates perimeter, ignition, weather, fuel, and terrain inputs.
+- The comparison harness reports area, perimeter, centroid, IoU, Sorensen, and orientation.
+- The report separates standard, model-to-model, and observed-fire evidence.
+- `python scripts/dashboard.py` is green.
+- No merge, tag, release, or settings change without approval.

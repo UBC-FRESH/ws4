@@ -137,7 +137,17 @@ Unknown species, unknown land cover, and an unlabelled forest stand raise `VriEr
 than inventing a type. The mapping is a modelling decision, not a measurement, and the
 fixture is representative rather than a copy of a private VRI inventory.
 
-## 9. What follows
+## 9. Observed fire validation
+
+P157.1 adds `ws4/fire/observed.py` and the Dogrib (RWF085) fixture. The contract records the
+Prometheus source, archive, custom NAD83 Transverse Mercator, 100 m grid, local event window,
+ignition point, hourly weather, FBP fuel grid, elevation grid, and observed perimeters. The
+loader validates grid agreement, fuel lookup coverage, hourly weather continuity, event-window
+coverage, ignition containment, and perimeter overlap. The fixture has a 935 ha start perimeter
+and a 10,223 ha final perimeter across 25 polygons, including spot fires. The comparison
+harness and metrics are P157.2.
+
+## 10. What follows
 
 - **P156.5 Integration.** Done for the event log and accounts. `FireBehaviourConfig` selects
   the FBP kernel; every behaviour-driven fire event carries the fuel, weather, slope,
@@ -145,15 +155,15 @@ fixture is representative rather than a copy of a private VRI inventory.
   consumption, and smoke strength. Accounts summarize ROS, intensity, flame length, and the
   area-weighted crown fraction. The P155 viewer reads the same attributes when its event
   coupling lands; the scene package stays on the P155 branch, not here.
-- **P156.6 Benchmark.** A public growth-model comparison and an observed-fire case, with the
-  tolerances and limits named.
+- **P157.2 Observed comparison.** Compare the P156 growth engine with the Dogrib perimeters
+  using area, perimeter, centroid, IoU, Sorensen, and orientation, with named tolerances.
 - **P156.9 VRI mapping.** Done: the VRI stand contract, deterministic rules, explicit
   non-fuel and unknown paths, and provenance are in `ws4/fire/vri.py`.
 - **P155 3D scene.** Renumbered from the old P150 label and now on
   `feature/p155-fire-3d`. `main` carries P150 (GPU guard), P151 (web console), P152
   (sandboxed runner), P153 (assistant script review), and P154 (TSA 29 GPU stock).
 
-## 10. Limits and risks
+## 11. Limits and risks
 
 - A standard-case pass does not prove a landscape fire. The growth and benchmark tasks are
   separate.
@@ -170,8 +180,13 @@ fixture is representative rather than a copy of a private VRI inventory.
   P155.
 - Unit conversion is the main silent-error risk; the tests pin the reference values in the
   metric contract.
+- The Dogrib source licence is not explicit in the archive. The fixture is used for
+  validation with attribution. Its weather and perimeter times are local time; no
+  daylight-saving conversion is applied.
+- The observed fire includes spot fires; the P156 growth engine does not model spotting. The
+  comparison must report that mismatch.
 
-## 11. References
+## 12. References
 
 - Rothermel, R. C. (1972). A mathematical model for predicting fire spread in wildland fuels.
 - Albini, F. A. (1976). Computer-based models of wildland fire behavior.
