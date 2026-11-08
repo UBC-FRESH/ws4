@@ -4519,7 +4519,6 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P142: merged via PR #848 as `f217cfe`. Added the generated 90% growing-stock default
   scenario generator and raised the default Solve budget to three minutes. Dashboard:
   `OVERALL: GREEN`.
-
 - P143.1: search artifacts now expose timestamp/member/front/failure metadata and sort
   newest first; the Pareto selector prefers the newest usable front. Portal seed-state
   caches now key on the active target file and initial schedule. Report:
@@ -4599,7 +4598,6 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P143.3: validated the TSA29 profile fallback to the state engine after the stock
   target could not be priced by the GPU profile. Portfolio list defaults to the newest
   usable front; failed artifacts are marked and skipped.
-
 - P145.1: added a multi-account target scaffold to Search and a validated `targets`
   payload to the portfolio launcher. Scaffold targets are written inside the run output,
   never to the live target file. Focused tests pass; dashboard: `OVERALL: GREEN`.
@@ -4676,3 +4674,41 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P153.1: added the bounded `stage_script` assistant chip. It stages code in the console
   editor with review cleared, never executes, and the agent environment no longer inherits
   console tokens.
+
+- P137.1: replaced the crown-closure raster trace with a straight log-log line
+  fitted to the source; corrected overlays show top/QMD curves align. The earlier
+  count mismatch was a text-extraction artifact. TASS is explicitly excluded
+  because the source does not label mortality levels. Added the optional
+  display-only `cai_band` polygon to the diagram schema, API, web plot, and all 10
+  coastal diagrams plus the four Interior Douglas-fir/lodgepole diagrams used by
+  the pilot; it never feeds placement or constraints. The coverage header now
+  reports the registry's reviewed/mixed/gap counts, and the coverage status filter
+  accepts the registry's status names. No diagram is marked reviewed. Dashboard:
+  `OVERALL: GREEN`.
+- P137.1: started the line-type-wise re-import with `fdcp` top height. The source
+  has 17 top-height paths but only ten printed labels; `read_ordered_curves` now
+  assigns the complete series `6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40,
+  44, 48, 52, 60` and requires one path per value, using printed labels as
+  anchors. No path is skipped. The 17 mappings are recorded in
+  `notes/reference/fdcp-digitisation.md`; the stored curves were regenerated from
+  those paths. Direct overlay inspection shows all 17 red curves on their black
+  dotted source paths. The confirmed pattern is locked in
+  `workflows/sdmd-line-import.yaml` via the `ws4.sdmd.import-lines` FreshForge
+  node, which renders with figrecover and writes a `ws4.sdmd.line-import.v1`
+  artifact. A local FreshForge run completed `render success` and `import success`.
+- P137.1: completed the fdcp QMD line-type pass. The source has 14 QMD paths and
+  ten printed labels. The full series `5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55,
+  60, 65, 70 cm` maps to paths `517`–`530`; the four unlabelled members are kept.
+  The pattern is locked in `workflows/sdmd-qmd-import.yaml`. Direct overlay
+  inspection shows all 14 blue QMD curves on their black dashed source paths.
+- P137.1: removed the false terminal zig-zag on high-QMD curves. Bezier control
+  points are no longer emitted as data, and a final backward endpoint with rising
+  volume is normalized to a short vertical up-tick. The fdcp QMD family was
+  regenerated; the overlay shows a sharp bend at the end, not a zig-zag.
+- P137.1: locked `fdcp` as reviewed by the maintainer and rebuilt the coverage
+  registry; the review queue is down to nine diagrams. Completed the same full
+  line-series pass for `fdcn`: 18 top-height paths including 56, 14 QMD paths
+  including 35/45/55/65, and crown closure from source path 640. Locked `fdcn` as
+  reviewed; the queue is down to eight. Completed `ssn` with 17 top-height paths,
+  17 QMD paths, and crown closure from source path 693. Locked `ssn` as reviewed;
+  the queue is down to seven. Dashboard: `OVERALL: GREEN`.

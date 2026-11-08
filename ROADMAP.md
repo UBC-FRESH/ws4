@@ -135,6 +135,7 @@ exists and the maintainer approves it.
 | P134 SDMD coverage closure | #820 | `feature/p134-coverage-closure` | complete |
 | P135 BC SDMD applicability correction | #824 | `feature/p135-bec-applicability` | complete |
 | P136 Pareto solution-space explorer | #827 | `feature/p136-pareto-explorer` | complete |
+| P137 Provisional SDMD diagram review | #830 | `feature/p137-diagram-review` | pr-open |
 | P138 Pareto member to map/Plan | #834 | `feature/p138-pareto-to-plan` | complete |
 | P139 Target-faithful promoted runs | #837 | `feature/p139-target-faithful` | complete |
 | P140 Period target dimensions | #840 | `feature/p140-target-dimensions` | complete |
@@ -4150,6 +4151,32 @@ Acceptance:
 - Axis, colour, size, opacity, and filter mappings are interactive.
 - Selected members can be inspected and their schedules opened.
 - Tests and the green dashboard pass.
+
+## Phase 137: Provisional SDMD diagram review
+
+Parent issue: #830
+Branch: `feature/p137-diagram-review`
+Status: pr-open
+Report: `notes/reports/p137-diagram-review.md`
+Packet: `notes/review/p137-provisional-review.md`
+PR: #833
+
+Goal: review the 10 provisional diagrams. Axis-registered overlays found that all
+10 fail; they are rejected for re-digitization.
+
+- [x] P137.1 Provisional diagram review packet (#831)
+  - [x] SHA-256-check source PDFs and render source pages.
+  - [x] Build stored-curve plots and numeric inventories.
+  - [x] Overlay stored curves on source pages and inspect them.
+  - [x] Reject all 10 diagrams for re-digitization.
+  - [x] Name the four no-diagram decisions.
+
+Acceptance:
+
+- No diagram is marked reviewed.
+- Overlay findings are recorded with evidence.
+- The next step is re-digitization, not maintainer sign-off.
+- Dashboard green.
 
 ## Phase 138: Pareto member to map/Plan
 

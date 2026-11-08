@@ -40,7 +40,7 @@ from .constraints import (
     option_counts,
     validate_constraints,
 )
-from .coverage import coverage_payload, coverage_row
+from .coverage import coverage_frame, coverage_payload, coverage_row
 from .diagram import (
     SdmdDiagram,
     SdmdDiagramError,
@@ -691,6 +691,11 @@ class SdmdStore:
                 "licence": self.diagram.source.licence,
                 "kind": self.diagram.source.kind,
             },
+            "cai_band": (
+                [list(point) for point in self.diagram.cai_band]
+                if self.diagram.cai_band is not None
+                else []
+            ),
             "isopleths": [
                 {
                     "kind": isopleth.kind,
@@ -777,7 +782,8 @@ def create_sdmd_router(store: SdmdStore) -> APIRouter:
         status: str | None = Query(None),
     ) -> dict[str, object]:
         """Return the BC-wide BEC coverage registry."""
-        if status is not None and status not in {"reviewed", "provisional", "no-diagram"}:
+        allowed = set(coverage_frame()["coverage_status"].astype(str))
+        if status is not None and status not in allowed:
             raise HTTPException(status_code=422, detail=f"unknown coverage status {status!r}")
         return coverage_payload(zone=zone, status=status)
 
