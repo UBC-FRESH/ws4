@@ -9,6 +9,7 @@ first half drives the framework scripts in ``scripts/``; the second half drives 
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -75,7 +76,7 @@ def test_dashboard_help_documents_the_outputs() -> None:
 
 def test_serve_help_documents_the_console() -> None:
     """The serve help names the opt-in console flag and token option."""
-    result = run_ws4("serve", "--help")
+    result = run_ws4("serve", "--help", env={**os.environ, "COLUMNS": "160"})
     assert result.returncode == 0
     assert "--allow-console" in result.stdout
     assert "--console-token" in result.stdout
@@ -87,13 +88,15 @@ def test_dashboard_rejects_an_unknown_option() -> None:
     assert result.returncode == 2
 
 
-def run_ws4(*args: str) -> subprocess.CompletedProcess[str]:
+def run_ws4(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
     """Run the ``ws4`` command line in a subprocess.
 
     Parameters
     ----------
     *args : str
         Arguments passed to the command.
+    env : dict of str to str or None, optional
+        Environment override; None inherits the test environment.
 
     Returns
     -------
@@ -106,6 +109,7 @@ def run_ws4(*args: str) -> subprocess.CompletedProcess[str]:
         capture_output=True,
         text=True,
         check=False,
+        env=env,
     )
 
 
