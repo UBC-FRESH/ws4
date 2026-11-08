@@ -17,9 +17,16 @@ FreshForge is an optional dependency. Import this module only when the
 
 from __future__ import annotations
 
+import json
 from collections.abc import Sequence
 
-from .digitise import load_spec, write_diagram
+from .digitise import (
+    calibrate_axes,
+    load_spec,
+    read_labelled_curves,
+    read_ordered_curves,
+    write_diagram,
+)
 from .review import overlay_diagram, render_pdf_page, write_review_manifest
 
 __all__ = ["SdmdProvider", "sdmd_provider"]
@@ -72,6 +79,23 @@ class SdmdProvider:
                     outputs=("review",),
                     parameters=("diagram", "overlay", "out", "status"),
                 ),
+                NodeTypeMetadata(
+                    id="import-lines",
+                    name="Import a labelled curve family",
+                    inputs=(),
+                    outputs=("family",),
+                    parameters=(
+                        "pdf",
+                        "dash",
+                        "width",
+                        "unit",
+                        "kind",
+                        "x_ticks",
+                        "y_ticks",
+                        "out",
+                        "values",
+                    ),
+                ),
             ),
         )
 
@@ -105,6 +129,16 @@ class SdmdProvider:
             "extract": ("spec", "out"),
             "overlay": ("spec", "diagram", "image", "out"),
             "review": ("diagram", "overlay", "out"),
+            "import-lines": (
+                "pdf",
+                "dash",
+                "width",
+                "unit",
+                "kind",
+                "x_ticks",
+                "y_ticks",
+                "out",
+            ),
         }
         node_id = str(getattr(node_type, "id", ""))
         parameters = getattr(node, "parameters", {})
@@ -190,6 +224,55 @@ class SdmdProvider:
                 outputs={"review": str(review)},
                 artifacts={"review": str(review)},
             )
+        if node_id == "import-lines":
+            output = resolve(str(params["out"]))
+            output.parent.mkdir(parents=True, exist_ok=True)
+            calibration = calibrate_axes(
+                _tick_pairs(params["x_ticks"], "x_ticks"),
+                _tick_pairs(params["y_ticks"], "y_ticks"),
+            )
+            input_pdf = resolve(str(params["pdf"]))
+            input_unit = str(params["unit"])
+            if "values" in params:
+                curves = read_ordered_curves(
+                    input_pdf,
+                    dash=str(params["dash"]),
+                    width=float(str(params["width"])),
+                    values=_numbers(params["values"], "values"),
+                    calibration=calibration,
+                    unit=input_unit,
+                )
+            else:
+                curves = read_labelled_curves(
+                    input_pdf,
+                    dash=str(params["dash"]),
+                    width=float(str(params["width"])),
+                    unit=input_unit,
+                    calibration=calibration,
+                )
+            payload = {
+                "schema_version": "ws4.sdmd.line-import.v1",
+                "source_pdf": str(resolve(str(params["pdf"]))),
+                "kind": str(params["kind"]),
+                "dash": str(params["dash"]),
+                "width": float(str(params["width"])),
+                "unit": str(params["unit"]),
+                "curves": [
+                    {
+                        "value": curve.value,
+                        "path_index": curve.path_index,
+                        "label_distance": curve.label_distance,
+                        "points": [list(point) for point in curve.points],
+                    }
+                    for curve in curves
+                ],
+            }
+            output.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+            return ProviderRunResult(
+                status=RunStatus.SUCCESS,
+                outputs={"family": str(output)},
+                artifacts={"family": str(output)},
+            )
         raise ValueError(f"unknown WS4 SDMD node type {node_id!r}")
 
 
@@ -202,6 +285,43 @@ def sdmd_provider() -> SdmdProvider:
         A new provider instance.
     """
     return SdmdProvider()
+
+
+def _numbers(value: object, name: str) -> tuple[float, ...]:
+    """Parse a workflow list of numbers."""
+    if not isinstance(value, list):
+        raise ValueError(f"{name} must be a list of numbers")
+    return tuple(float(item) for item in value)
+
+
+def _tick_pairs(value: object, name: str) -> tuple[tuple[float, float], ...]:
+    """Parse a workflow calibration tick list.
+
+    Parameters
+    ----------
+    value : object
+        A list of ``[value, position]`` pairs.
+    name : str
+        The parameter name, used in a diagnostic.
+
+    Returns
+    -------
+    tuple of tuple of float
+        The parsed pairs.
+
+    Raises
+    ------
+    ValueError
+        If the value is not a list of two-number pairs.
+    """
+    if not isinstance(value, list):
+        raise ValueError(f"{name} must be a list of [value, position] pairs")
+    pairs: list[tuple[float, float]] = []
+    for item in value:
+        if not isinstance(item, list | tuple) or len(item) != 2:
+            raise ValueError(f"{name} must be a list of [value, position] pairs")
+        pairs.append((float(item[0]), float(item[1])))
+    return tuple(pairs)
 
 
 def _parameters(node: object) -> dict[str, object]:

@@ -3,21 +3,33 @@
 Source: `cwn` western redcedar natural stands, version unversioned, catalogued in
 `ws4/sdmd/data/sdmd/source_catalog.json`.
 
-Stored as `cwh-cw-natural.json`, **provisional**.
+Status: stored as `cwh-cw-natural.json`, reviewed. All five curve families and
+the CAI display polygon are stored. The old crown-closure raster trace was
+replaced by source path 653.
 
 ## Curve map
 
-- Top height: 6, 8, 12, 16, 20, 24, 26, 30, 38, 46, 50 m.
-- QMD: 5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80 cm.
-- Competition: path 652.
-- Self-thinning: path 651.
-- Crown closure: provisional raster trace.
+Top height: 17 paths, values
+`6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 30, 34, 38, 42, 46, 50 m`,
+paths `617`–`633`, dash `[ 3 2 ] 0`, width 1.5. The printed labels are anchors;
+the six unlabelled interior members (10, 14, 18, 22, 34, 42) are kept.
 
-Top-height paths are `[ 3 2 ]`, QMD paths `[ 6 4 ]`, boundaries
-`[ 2 2 2 2 10 2 ]`. The crown-closure curve is not a single vector path.
+QMD: 16 paths, values
+`5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80 cm`,
+paths `634`–`649`, dash `[ 6 4 ] 0`, width 1.5. The five unlabelled interior
+members (35, 45, 55, 65, 75) are kept.
 
-## Limits
+| Kind | Path | Dash | Width |
+| --- | ---: | --- | ---: |
+| top height | 617–633 | `[ 3 2 ] 0` | 1.5 |
+| QMD | 634–649 | `[ 6 4 ] 0` | 1.5 |
+| self-thinning | 651 | `[ 2 2 2 2 10 2 ] 0` | 2.0 |
+| competition | 652 | `[ 2 2 2 2 10 2 ] 0` | 2.0 |
+| crown closure | 653 | `[ 2 2 2 6 ] 0` | 2.0 |
 
-- The crown closure is a raster trace.
-- The dense top-height and QMD groups should be checked in the figrecover overlay.
-- The diagram is not site-series-specific; it covers coastal western redcedar.
+The path indices are zero-based positions in `page.get_drawings()`.
+
+## Crown closure
+
+The crown closure is source path 653, a single straight line:
+`(199.301, 0.201636)` to `(4789.832, 0.001015)` trees/ha and m³.

@@ -1,0 +1,62 @@
+workflow:
+  id: fdcp_qmd
+  name: fdcp QMD line import
+  description: Render the fdcp source and import its complete labelled QMD family by matching printed labels to vector paths.
+nodes:
+  - id: render
+    provider: ws4.sdmd.render
+    parameters:
+      pdf: workflows/data/fdcp.pdf
+      out: workflows/output/fdcp-render
+      dpi: 300
+    outputs:
+      image: page_image
+    provenance:
+      source: public-pdf
+  - id: import
+    provider: ws4.sdmd.import-lines
+    needs:
+      - render
+    parameters:
+      pdf: workflows/data/fdcp.pdf
+      dash: "[ 6 4 ] 0"
+      width: 1.5
+      unit: cm
+      kind: qmd
+      values: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70]
+      x_ticks:
+        - [300, 166.911]
+        - [400, 201.986]
+        - [600, 252.616]
+        - [800, 289.013]
+        - [1000, 316.918]
+        - [2000, 401.959]
+        - [3000, 452.588]
+        - [4000, 488.655]
+      y_ticks:
+        - [0.003, 667.492]
+        - [0.004, 645.56]
+        - [0.006, 615.268]
+        - [0.008, 593.847]
+        - [0.01, 575.572]
+        - [0.02, 523.331]
+        - [0.03, 491.947]
+        - [0.04, 470.537]
+        - [0.06, 439.876]
+        - [0.08, 417.214]
+        - [0.1, 400.506]
+        - [0.2, 347.253]
+        - [0.3, 317.437]
+        - [0.4, 294.46]
+        - [0.6, 264.147]
+        - [0.8, 242.203]
+        - [1.0, 225.495]
+        - [2.0, 172.722]
+        - [3.0, 141.861]
+        - [4.0, 120.451]
+        - [6.0, 89.638]
+      out: workflows/output/fdcp-qmd.json
+    outputs:
+      family: family
+    provenance:
+      method: label-to-path-import

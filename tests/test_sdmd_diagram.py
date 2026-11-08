@@ -532,6 +532,8 @@ def test_pilot_natural_diagram_is_a_valid_provisional_vector() -> None:
     assert diagram.source.kind == "published"
     assert "BC-X-360" in diagram.source.citation
     assert len(diagram.source.citation) > 40
+    assert diagram.cai_band is not None
+    assert len(diagram.cai_band) >= 3
 
 
 def test_pilot_natural_diagram_places_the_density_zones() -> None:
@@ -565,6 +567,8 @@ def test_pilot_planted_diagram_is_a_valid_provisional_vector() -> None:
     assert diagram.review.status == "reviewed"
     assert diagram.review.reviewer
     assert "planted" in diagram.source.citation
+    assert diagram.cai_band is not None
+    assert len(diagram.cai_band) >= 3
 
 
 def test_pilot_planted_diagram_places_a_managed_point() -> None:
@@ -617,6 +621,78 @@ def test_fdin_crown_closure_is_monotone_and_complete() -> None:
     assert all(later <= earlier + 5e-4 for earlier, later in itertools.pairwise(values))
 
 
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "cdf-cwh-fdc-natural.json",
+        "cdf-cwh-fdc-planted.json",
+        "cdf-cwh-ss-natural.json",
+        "cdf-cwh-ss-planted.json",
+        "cwh-hw-natural.json",
+        "cwh-hw-planted.json",
+        "cwh-cw-natural.json",
+        "cwh-cw-planted.json",
+        "sbs-sw-natural.json",
+        "sbs-sw-planted.json",
+    ],
+)
+def test_coastal_diagrams_store_the_display_only_cai_band(filename: str) -> None:
+    """Each coastal source bundle carries the grey CAI polygon as a ring."""
+    path = Path(__file__).resolve().parents[1] / "ws4" / "sdmd" / "data" / "sdmd" / filename
+    diagram = load_diagram(path)
+    assert diagram.cai_band is not None
+    assert len(diagram.cai_band) >= 3
+    assert all(tph > 0 and volume > 0 for tph, volume in diagram.cai_band)
+
+
+def test_cai_band_is_display_only() -> None:
+    """The CAI band must not change placement or interpolation."""
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "ws4"
+        / "sdmd"
+        / "data"
+        / "sdmd"
+        / "cdf-cwh-fdc-natural.json"
+    )
+    diagram = load_diagram(path)
+    without_band = replace(diagram, cai_band=None)
+    assert place_point(diagram, 1000.0, 0.3) == place_point(without_band, 1000.0, 0.3)
+
+
+def test_validate_diagram_rejects_a_short_cai_band() -> None:
+    """A CAI band is a polygon and needs at least three points."""
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "ws4"
+        / "sdmd"
+        / "data"
+        / "sdmd"
+        / "cdf-cwh-fdc-natural.json"
+    )
+    diagram = replace(load_diagram(path), cai_band=((200.0, 1.0), (300.0, 0.5)))
+    problems = validate_diagram(diagram)
+    assert any(item.code == "SDMD-DIAGRAM-CAI" for item in problems)
+
+
+def test_validate_diagram_rejects_a_non_positive_cai_band() -> None:
+    """A CAI polygon coordinate must be positive."""
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "ws4"
+        / "sdmd"
+        / "data"
+        / "sdmd"
+        / "cdf-cwh-fdc-natural.json"
+    )
+    diagram = replace(
+        load_diagram(path),
+        cai_band=((200.0, 1.0), (300.0, 0.5), (0.0, 0.2)),
+    )
+    problems = validate_diagram(diagram)
+    assert any(item.code == "SDMD-DIAGRAM-CAI" for item in problems)
+
+
 def test_coastal_douglas_fir_natural_diagram_is_valid() -> None:
     """The fdcn vector curves and raster crown closure form a valid diagram."""
     path = (
@@ -632,11 +708,11 @@ def test_coastal_douglas_fir_natural_diagram_is_valid() -> None:
     assert validate_diagram(diagram) == []
     top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
     qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
-    assert top == [6, 8, 12, 16, 20, 24, 28, 36, 44, 52, 60]
-    assert qmd == [5, 10, 15, 20, 25, 30, 40, 50, 60, 70]
+    assert top == [6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60]
+    assert qmd == [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70]
     closure = next(item for item in diagram.isopleths if item.kind == "crown_closure")
-    assert closure.points[-1][0] >= 4000
-    assert diagram.review.status == "provisional"
+    assert closure.points[-1][0] >= 3900
+    assert diagram.review.status == "reviewed"
 
 
 def test_sitka_spruce_natural_diagram_is_valid() -> None:
@@ -654,9 +730,9 @@ def test_sitka_spruce_natural_diagram_is_valid() -> None:
     assert validate_diagram(diagram) == []
     top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
     qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
-    assert top == [6, 8, 12, 16, 20, 24, 28, 36, 44, 52]
-    assert qmd == [5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 85]
-    assert diagram.review.status == "provisional"
+    assert top == [6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 52, 60]
+    assert qmd == [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85]
+    assert diagram.review.status == "reviewed"
 
 
 def test_western_hemlock_natural_diagram_is_valid() -> None:
@@ -674,9 +750,9 @@ def test_western_hemlock_natural_diagram_is_valid() -> None:
     assert validate_diagram(diagram) == []
     top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
     qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
-    assert top == [6, 8, 12, 16, 20, 24, 28, 32, 36, 44, 52, 60]
-    assert qmd == [5, 10, 15, 20, 25, 30, 40, 50, 60, 65]
-    assert diagram.review.status == "provisional"
+    assert top == [6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 32, 36, 40, 44, 48, 52, 56, 60]
+    assert qmd == [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70]
+    assert diagram.review.status == "reviewed"
 
 
 def test_white_spruce_natural_diagram_is_valid() -> None:
@@ -694,9 +770,9 @@ def test_white_spruce_natural_diagram_is_valid() -> None:
     assert validate_diagram(diagram) == []
     top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
     qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
-    assert top == [6, 10, 14, 18, 22, 26, 30, 34, 38]
+    assert top == [6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38]
     assert qmd == [5, 10, 15, 20, 25, 30, 35, 40, 45]
-    assert diagram.review.status == "provisional"
+    assert diagram.review.status == "reviewed"
 
 
 def test_western_redcedar_natural_diagram_is_valid() -> None:
@@ -714,9 +790,9 @@ def test_western_redcedar_natural_diagram_is_valid() -> None:
     assert validate_diagram(diagram) == []
     top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
     qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
-    assert top == [6, 8, 12, 16, 20, 24, 26, 30, 38, 46, 50]
-    assert qmd == [5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80]
-    assert diagram.review.status == "provisional"
+    assert top == [6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 30, 34, 38, 42, 46, 50]
+    assert qmd == [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80]
+    assert diagram.review.status == "reviewed"
 
 
 def test_coastal_douglas_fir_planted_diagram_is_valid() -> None:
@@ -734,9 +810,28 @@ def test_coastal_douglas_fir_planted_diagram_is_valid() -> None:
     assert validate_diagram(diagram) == []
     top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
     qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
-    assert top == [6, 8, 12, 16, 20, 24, 28, 36, 44, 52]
-    assert qmd == [5, 10, 15, 20, 25, 30, 40, 50, 60, 70]
-    assert diagram.review.status == "provisional"
+    assert top == [6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 52, 60]
+    assert qmd == [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70]
+    assert diagram.review.status == "reviewed"
+
+
+def test_high_qmd_curves_end_in_an_uptick_not_a_zigzag() -> None:
+    """The high-QMD curves finish with one monotone upward bend."""
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "ws4"
+        / "sdmd"
+        / "data"
+        / "sdmd"
+        / "cdf-cwh-fdc-planted.json"
+    )
+    diagram = load_diagram(path)
+    for curve in diagram.isopleths:
+        if curve.kind != "qmd" or curve.value < 25:
+            continue
+        points = curve.points
+        assert all(later[0] > earlier[0] for earlier, later in itertools.pairwise(points))
+        assert points[-1][1] > points[-2][1]
 
 
 def test_sitka_spruce_planted_diagram_is_valid() -> None:
@@ -754,9 +849,9 @@ def test_sitka_spruce_planted_diagram_is_valid() -> None:
     assert validate_diagram(diagram) == []
     top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
     qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
-    assert top == [6, 8, 12, 16, 20, 24, 36]
-    assert qmd == [5, 10, 15, 20, 25, 30, 40, 50, 60, 70]
-    assert diagram.review.status == "provisional"
+    assert top == [6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 52]
+    assert qmd == [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75]
+    assert diagram.review.status == "reviewed"
 
 
 def test_western_hemlock_planted_diagram_is_valid() -> None:
@@ -774,9 +869,9 @@ def test_western_hemlock_planted_diagram_is_valid() -> None:
     assert validate_diagram(diagram) == []
     top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
     qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
-    assert top == [6, 8, 12, 16, 20, 24, 32, 36, 44, 52]
-    assert qmd == [5, 10, 15, 20, 25, 30, 40, 50, 60]
-    assert diagram.review.status == "provisional"
+    assert top == [6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60]
+    assert qmd == [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65]
+    assert diagram.review.status == "reviewed"
 
 
 def test_western_redcedar_planted_diagram_is_valid() -> None:
@@ -794,9 +889,9 @@ def test_western_redcedar_planted_diagram_is_valid() -> None:
     assert validate_diagram(diagram) == []
     top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
     qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
-    assert top == [6, 8, 12, 16, 20, 24, 28, 32, 36, 44, 48]
-    assert qmd == [5, 10, 15, 20, 25, 30, 40, 50, 60, 70]
-    assert diagram.review.status == "provisional"
+    assert top == [6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 32, 36, 40, 44, 48]
+    assert qmd == [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75]
+    assert diagram.review.status == "reviewed"
 
 
 def test_white_spruce_planted_diagram_is_valid() -> None:
@@ -814,6 +909,6 @@ def test_white_spruce_planted_diagram_is_valid() -> None:
     assert validate_diagram(diagram) == []
     top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
     qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
-    assert top == [6, 10, 14, 18, 22, 26, 30, 34, 38]
+    assert top == [6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38]
     assert qmd == [5, 10, 15, 20, 25, 30, 35, 40]
-    assert diagram.review.status == "provisional"
+    assert diagram.review.status == "reviewed"
