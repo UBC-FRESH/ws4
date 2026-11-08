@@ -4887,3 +4887,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P158.1: added the Plan Scenario matrix with account-by-period target bands, realized
   values, gaps, status colouring, flow markers, failing-only filtering, and cell
   navigation. Added a browser regression test.
+
+- P158.3: added Plan's batch target composer: multi-account selection, period ranges or
+  all periods, level/min/max/even-flow modes, weights, priority, normalization, duplicate
+  detection, and a preview before writing. Added a browser regression test.

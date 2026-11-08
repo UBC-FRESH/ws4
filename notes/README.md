@@ -160,3 +160,4 @@ Working notes for WS4. Notes are living: update them in the same change set as t
   approval status.
 - `reports/p158-plan-matrix.md` — Plan scenario matrix, observed usability gaps, and the
   next scenario-authoring slices.
+- `reports/p158-batch-composer.md` — P158.3 multi-account and period-range target authoring.

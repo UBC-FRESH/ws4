@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=115">
+  <link rel="stylesheet" href="static/style.css?v=116">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
   <script type="importmap">
     {
@@ -18,7 +18,7 @@
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v115</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v116</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <div class="period-control">
@@ -97,7 +97,40 @@
             <p id="new-target-status" class="hint"></p>
           </div>
         </div>
-        <div id="watch-panel" class="watch" hidden></div>
+        <details id="batch-targets" class="batch-targets">
+          <summary>Batch add targets</summary>
+          <div class="batch-grid">
+            <p class="hint">Select one or more accounts in the browser, then add a level band or even-flow guard over a period range.</p>
+            <div class="batch-periods">
+              <label>From <input id="batch-start" type="number" min="1" step="1" value="1"></label>
+              <label>To <input id="batch-end" type="number" min="1" step="1" value="1"></label>
+              <label><input id="batch-all" type="checkbox"> All periods</label>
+              <label>Width <input id="batch-width" type="number" min="1" step="1" value="10"></label>
+            </div>
+            <label>Mode
+              <select id="batch-mode">
+                <option value="level">Level band (min + max)</option>
+                <option value="min">Minimum only</option>
+                <option value="max">Maximum only</option>
+                <option value="flow">Even-flow guard</option>
+              </select>
+            </label>
+            <div class="batch-values">
+              <label>Min <input id="batch-min" type="number" step="any"></label>
+              <label>Max <input id="batch-max" type="number" step="any"></label>
+              <label>Min w <input id="batch-min-weight" type="number" min="0" step="any" value="1"></label>
+              <label>Max w <input id="batch-max-weight" type="number" min="0" step="any" value="1"></label>
+            </div>
+            <div class="batch-values">
+              <label>Priority <input id="batch-priority" type="number" min="1" step="1" value="1"></label>
+              <label>Normalize <select id="batch-normalization"><option value="none">none</option><option value="auto">auto</option></select></label>
+            </div>
+            <button id="batch-add" type="button">Add batch to targets</button>
+            <span id="batch-status" class="hint"></span>
+            <pre id="batch-preview" class="scaffold-preview" hidden></pre>
+          </div>
+        </details>
+        <div id="watch-panel" class="watch" hidden></div>        <div id="watch-panel" class="watch" hidden></div>
         <div id="target-filter-bar" class="target-filter-bar" hidden>
           <label class="visually-hidden" for="target-filter-search">Filter targets by account</label>
           <input id="target-filter-search" type="search" placeholder="Filter accounts…" autocomplete="off">
@@ -759,6 +792,6 @@
     <p class="hint">Shortcuts pause while typing in an input, select, or editor.</p>
   </dialog>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=115"></script>
+  <script type="module" src="static/app.js?v=116"></script>
 </body>
 </html>

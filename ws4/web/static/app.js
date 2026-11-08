@@ -6999,6 +6999,183 @@ async function postTargets(rows, message) {
   }
 }
 
+function batchMaxPeriod() {
+  const fromSeries = state.targetSeries?.periods?.length ?? 0;
+  return Math.max(1, fromSeries || targetPeriodsFromRows().length || 1);
+}
+
+function syncBatchDefaults() {
+  const end = $('batch-end');
+  const start = $('batch-start');
+  const width = $('batch-width');
+  const max = batchMaxPeriod();
+  if (!end?.dataset.synced || Number(end.value) < 1 || Number(end.value) > max) {
+    start.value = '1';
+    end.value = String(max);
+    end.dataset.synced = '1';
+  }
+  if (width && !width.dataset.synced) {
+    const existing = state.targets.find((row) => Number(row.period_width) > 0)?.period_width ?? 10;
+    width.value = String(existing);
+    width.dataset.synced = '1';
+  }
+}
+
+function buildBatchRows() {
+  const accounts = [...state.selectedAccounts].sort((a, b) => a.localeCompare(b));
+  const mode = $('batch-mode').value;
+  let start = Number($('batch-start').value);
+  let end = Number($('batch-end').value);
+  const width = Number($('batch-width').value);
+  const minText = $('batch-min').value.trim();
+  const maxText = $('batch-max').value.trim();
+  const minimum = minText === '' ? null : Number(minText);
+  const maximum = maxText === '' ? null : Number(maxText);
+  const minWeight = Number($('batch-min-weight').value);
+  const maxWeight = Number($('batch-max-weight').value);
+  const priority = Number($('batch-priority').value);
+  const normalization = $('batch-normalization').value;
+  if (!accounts.length) return { error: 'select one or more accounts in the browser', additions: [], conflicts: 0 };
+  if (!Number.isInteger(start) || start < 1) return { error: 'start period must be a whole number of at least 1', additions: [], conflicts: 0 };
+  if (!Number.isInteger(end) || end < start) return { error: 'end period must be at least the start period', additions: [], conflicts: 0 };
+  if (!Number.isInteger(width) || width < 1) return { error: 'period width must be a whole number of at least 1', additions: [], conflicts: 0 };
+  if (minimum !== null && !Number.isFinite(minimum)) return { error: 'minimum must be a number', additions: [], conflicts: 0 };
+  if (maximum !== null && !Number.isFinite(maximum)) return { error: 'maximum must be a number', additions: [], conflicts: 0 };
+  if (minimum !== null && maximum !== null && minimum > maximum) return { error: 'minimum is above maximum', additions: [], conflicts: 0 };
+  if (!Number.isFinite(minWeight) || minWeight < 0) return { error: 'minimum weight must be zero or more', additions: [], conflicts: 0 };
+  if (!Number.isFinite(maxWeight) || maxWeight < 0) return { error: 'maximum weight must be zero or more', additions: [], conflicts: 0 };
+  if (!Number.isInteger(priority) || priority < 1) return { error: 'priority must be a positive integer', additions: [], conflicts: 0 };
+  if (mode === 'level' && (minimum === null || maximum === null)) {
+    return { error: 'level mode needs both minimum and maximum', additions: [], conflicts: 0 };
+  }
+  if (mode === 'min' && minimum === null) return { error: 'minimum mode needs a minimum', additions: [], conflicts: 0 };
+  if (mode === 'max' && maximum === null) return { error: 'maximum mode needs a maximum', additions: [], conflicts: 0 };
+  if (mode === 'flow' && (minimum === null || maximum === null)) {
+    return { error: 'even-flow mode needs a minimum and maximum percentage', additions: [], conflicts: 0 };
+  }
+  const existing = new Set(state.targets.map(targetKey));
+  const rows = collectTargets();
+  const additions = [];
+  let conflicts = 0;
+  if (mode === 'flow') {
+    for (const account of accounts) {
+      const row = {
+        index: rows.length + additions.length,
+        account,
+        period: start,
+        year: start * width,
+        period_width: width,
+        flow: 'even',
+        flow_start_period: start,
+        flow_end_period: end,
+        shape: 'non_linear',
+        minimum,
+        maximum,
+        min_weight: minWeight,
+        max_weight: maxWeight,
+        priority,
+        normalization,
+        active: true,
+      };
+      if (existing.has(targetKey(row))) conflicts += 1;
+      else additions.push(row);
+    }
+  } else {
+    for (const account of accounts) {
+      for (let period = start; period <= end; period += 1) {
+        const row = {
+          index: rows.length + additions.length,
+          account,
+          period,
+          year: period * width,
+          period_width: width,
+          flow: '',
+          shape: 'linear',
+          minimum: mode === 'max' ? null : minimum,
+          maximum: mode === 'min' ? null : maximum,
+          min_weight: minWeight,
+          max_weight: maxWeight,
+          priority,
+          normalization,
+          active: true,
+        };
+        if (existing.has(targetKey(row))) conflicts += 1;
+        else additions.push(row);
+      }
+    }
+  }
+  return { error: '', additions, conflicts, accounts: accounts.length, start, end, width, mode };
+}
+
+function renderBatchPreview() {
+  const preview = $('batch-preview');
+  const status = $('batch-status');
+  if (!preview || !status) return;
+  const result = buildBatchRows();
+  if (result.error) {
+    preview.hidden = true;
+    status.textContent = result.error;
+    return;
+  }
+  const total = result.additions.length;
+  status.textContent = result.conflicts
+    ? `${total} new · ${result.conflicts} already exist`
+    : `${total} new target${total === 1 ? '' : 's'}`;
+  preview.hidden = total === 0;
+  preview.textContent = result.additions
+    .slice(0, 8)
+    .map((row) => `${row.account} · P${row.period} · ${row.flow ? `flow ${row.flow}` : `min ${row.minimum ?? '—'} max ${row.maximum ?? '—'}`}`)
+    .join('\n') + (total > 8 ? `\n… ${total - 8} more` : '');
+}
+
+async function addBatchTargets() {
+  const status = $('batch-status');
+  const result = buildBatchRows();
+  if (result.error) {
+    status.textContent = result.error;
+    return;
+  }
+  if (!result.additions.length) {
+    status.textContent = 'nothing to add; the selected rows already exist';
+    return;
+  }
+  const rows = collectTargets();
+  const additions = result.additions.map((row, index) => ({ ...row, index: rows.length + index }));
+  const saved = await postTargets([...rows, ...additions], `added ${additions.length} targets`);
+  if (saved) {
+    status.textContent = `added ${additions.length} target${additions.length === 1 ? '' : 's'}`;
+    renderBatchPreview();
+  }
+}
+
+function syncBatchAll() {
+  const all = $('batch-all').checked;
+  $('batch-end').disabled = all;
+  if (all) {
+    $('batch-end').value = String(batchMaxPeriod());
+    $('batch-start').value = '1';
+  }
+  renderBatchPreview();
+}
+
+function wireBatchTargets() {
+  if (!$('batch-add')) return;
+  $('batch-all').addEventListener('change', syncBatchAll);
+  $('batch-mode').addEventListener('change', () => {
+    const mode = $('batch-mode').value;
+    $('batch-min').disabled = mode === 'max';
+    $('batch-max').disabled = mode === 'min';
+    renderBatchPreview();
+  });
+  for (const id of ['batch-start', 'batch-end', 'batch-width', 'batch-min', 'batch-max', 'batch-min-weight', 'batch-max-weight', 'batch-priority', 'batch-normalization']) {
+    $(id).addEventListener('input', renderBatchPreview);
+    $(id).addEventListener('change', renderBatchPreview);
+  }
+  $('batch-add').addEventListener('click', addBatchTargets);
+  syncBatchDefaults();
+  syncBatchAll();
+}
+
 async function addTarget() {
   const accounts = state.selectedAccounts.size
     ? [...state.selectedAccounts]
@@ -7311,6 +7488,8 @@ async function loadTargets() {
     renderWatchPanel();
     renderTargetCharts();
     renderAccountTree();
+    syncBatchDefaults();
+    renderBatchPreview();
     if (state.skin) applySkin(state.skin);
   } catch (error) {
     empty.hidden = false;
@@ -9667,6 +9846,7 @@ async function start() {
   wireFire();
   wirePortfolioScan();
   wireScaffoldTargets();
+  wireBatchTargets();
   loadWatched();
   try {
     const summary = await api('api/summary');
