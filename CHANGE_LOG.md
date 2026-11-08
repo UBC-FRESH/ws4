@@ -4892,3 +4892,13 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   perimeter overlap. The fixture has a 935 ha start perimeter and a 10,223 ha final perimeter
   across 25 polygons, including spot fires. Added `docs/reference/fire-observed.rst` and 9
   observed-fire tests. Dashboard: **GREEN**.
+
+- P157.2: added `ws4/fire/comparison.py` and `scripts/benchmark_observed_fire.py`. The
+  comparison rasterizes observed and simulated perimeters and reports area bias, perimeter
+  bias, centroid distance, IoU, Sorensen, and principal-axis orientation. The Dogrib base case
+  starts from the observed 935 ha perimeter and runs 402 minutes with homogeneous C2, FFMC
+  92.7, BUI 105, wind 21 km/h, and 32% slope. It produces 6,259 ha against 10,219 ha observed
+  (−38.8% area bias), −12.1% perimeter bias, 3.1° orientation error, 14.29 km centroid error,
+  and IoU 0.070. The coarse screen passes; the footprint screen fails. Added 8 comparison
+  tests, `notes/reports/p157-observed-validation.md`, `p157-dogrib-results.csv`, and
+  `p157-dogrib-summary.json`. Dashboard: **GREEN**.

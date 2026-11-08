@@ -462,5 +462,8 @@ items are enhancements and maintenance.
 - **Event and account integration.** `done` (P156.5, #895). Behaviour-driven fire events
   record the FBP inputs and outputs, and accounts summarize ROS, intensity, flame length, and
   the area-weighted crown fraction. The viewer coupling remains P155.
-- **Observed-fire validation.** `open`. Compare the kernel and growth engine to a public
-  benchmark and an observed perimeter, with tolerances named. Target: P156.6.
+- **Observed-fire validation.** `partial` (P157.1/P157.2, #925/#926). The Dogrib fixture,
+  observed-fire contract, and comparison harness are implemented. The homogeneous base case
+  passes the area/perimeter/orientation screen but fails the centroid and overlap screen
+  (14.29 km centroid error, IoU 0.070). Heterogeneous fuel/terrain and spotting are the next
+  modelling steps. Target: P157.3/P157.4.

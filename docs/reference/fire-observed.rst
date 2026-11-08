@@ -76,6 +76,26 @@ Loader and validation
 The fixture tests cover the grid shape, fuel lookup, weather window, perimeter areas, JSON
 summary, malformed grid, missing fuel file, unknown fuel code, and weather gap.
 
+Comparison harness
+------------------
+
+``ws4.fire.comparison`` rasterizes the observed rings and the simulated burned mask onto the
+same grid and reports area bias, perimeter bias, centroid distance, IoU, Sorensen, and
+principal-axis orientation. ``run_dogrib_case`` starts from the observed 13:00 perimeter,
+uses a homogeneous C2 fuel approximation, and runs for 402 minutes.
+
+The base-case result is characterized, not accepted for footprint:
+
+- area 6,259 ha vs 10,219 ha (−38.8%);
+- perimeter 140.8 km vs 160.2 km (−12.1%);
+- orientation error 3.1°;
+- centroid distance 14.29 km;
+- IoU 0.070 and Sorensen 0.131.
+
+The coarse area, perimeter, and orientation screen passes; the centroid and overlap screen
+fails. The full evidence is in ``notes/reports/p157-observed-validation.md`` and
+``notes/reports/p157-dogrib-results.csv``.
+
 Limits
 ------
 

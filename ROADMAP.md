@@ -4636,7 +4636,7 @@ Goal: validate the P156 kernel and growth engine against a public observed fire 
 with explicit provenance, metrics, tolerances, and limitations.
 
 - [x] P157.1 Observed-fire data contract and source fixture (#925)
-- [ ] P157.2 Observed-perimeter comparison harness (#926)
+- [x] P157.2 Observed-perimeter comparison harness (#926)
 - [ ] P157.3 Observed-vs-simulated perimeter view (#924)
 - [ ] P157.4 Verify and close out observed-fire validation (#927)
 
