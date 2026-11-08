@@ -153,7 +153,7 @@ exists and the maintainer approves it.
 | P152 Sandboxed Python runner | #901 | `feature/p152-python-sandbox` | complete |
 | P153 Assistant script review | #906 | `feature/p153-assistant-script-review` | complete |
 | P154 TSA 29 GPU stock | #912 | `feature/p154-tsa29-stock` | complete |
-| P155 3D fire scene and synthetic tree stands | #877 | `feature/p155-fire-3d` | active |
+| P155 3D fire scene and synthetic tree stands | #877 | `feature/p155-fire-3d` | pr-open |
 | P156 Credible fire behaviour and growth | #890 | `feature/p156-fire-behaviour` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
@@ -4559,7 +4559,7 @@ Acceptance:
 
 Parent issue: #877
 Branch: `feature/p155-fire-3d`
-Status: active
+Status: pr-open
 Approval: PR #919 queued for maintainer approval
 Report: `notes/reports/p155-closeout.md`
 Design note: `notes/design/ws4-fire-3d-visualization.md`

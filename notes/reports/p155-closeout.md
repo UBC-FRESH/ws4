@@ -1,7 +1,7 @@
 # P155 close-out: 3D fire scene and synthetic tree stands
 
 Date: 2026-11-08
-Status: active; PR #919 queued for maintainer approval
+Status: pr-open; PR #919 ready for maintainer approval
 Branch: `feature/p155-fire-3d`
 Parent issue: #877
 Task issue: #882
@@ -16,9 +16,14 @@ The vertical slice now includes:
 - deterministic synthetic tree inventory and `ws4.fire.scene.v1` package;
 - Nemora/VRI tree adapter and P156 growth-field ignition;
 - fire, smoke, ember, and heat-haze visual pass;
-- run scene discovery, payload/viewer APIs, and a Fire workspace with a shared timeline,
-  tree/fragment inspection, and Scene A/B comparison;
+- a 12-polygon public TSA 24 VRI cluster with 12,588 Nemora-placed synthetic stems;
+- run scene discovery, payload/viewer APIs, and a Fire studio with a shared timeline,
+  tree/fragment inspection, Scene A/B comparison, fullscreen canvas, collapsible panels,
+  and From-ignition/Jump-to-fire controls;
 - a standalone viewer and a web viewer served with vendored Three.js.
+- Public Pages: https://ubc-fresh.github.io/ws4/fire-demo.html
+- Fire studio preview: http://10.232.253.210:8798/?view=fire
+- Live portal static viewer: http://10.232.253.210:8790/instance/femic-northisland-instance/static/fire-demo/viewer.html
 
 ## Acceptance evidence
 
@@ -36,13 +41,14 @@ The vertical slice now includes:
 - `tests/test_scene_package.py`, `test_scene_trees.py`, `test_scene_nemora.py`,
   `test_scene_ignition.py`, `test_fire_browser.py`, and the web scene API test:
   **36 passed**.
-- Demo replay: 9 fragments, 22,500 trees, 40 fire events, 61.09 ha burned, 47.46 m/min
-  head ROS, 11.32 m flame, 0-120 minute ignition window.
-- Standalone viewer: 22,500 trees loaded, play/pause/scrub/reset controls worked,
-  `?bloom=0` rendered with no page errors, and 60-minute playback reported 247 burning,
-  7,538 burnt, and 209/5,000 particles at about 20 fps under SwiftShader.
-- Fire workspace: opens run1 scene, loads the viewer, populates tree inspection, toggles
-  Scene A/B comparison, and has no page errors.
+- VRI demo: 12 fragments, 12,588 trees, 16 fire events, 95.42 ha burned, 27.07 m/min
+  head ROS, 8.40 m flame, 0-239.9 minute ignition window.
+- Standalone viewer: 12,588 trees loaded; Play/Pause/scrub/reset worked; no page errors.
+- Fire studio: scene selector populated, viewer iframe loaded, tree/fragment inspection
+  populated, Scene A/B toggle works, Play and From-ignition/Jump-to-fire advance the fire,
+  and the desktop layout hides duplicate HUD and header period controls.
+- The live 8790 portal has the static viewer; the Fire studio itself is previewed on 8798.
+  Promoting it to 8790 requires merging the P155 branch into the portal deployment branch.
 - Full dashboard: lint, format, types, tests, validator, docs, and docstrings all green.
 
 ## Visual acceptance and limits
@@ -61,5 +67,5 @@ verified. The synthetic tree layer is not calibrated to a real VRI inventory.
 
 ## Approval
 
-PR #919 is open and contains P155.2 through P155.5. It is queued for maintainer approval;
+PR #919 is ready and contains P155.1 through P155.5. It is queued for maintainer approval;
 no merge, tag, release, or settings change has been performed.
