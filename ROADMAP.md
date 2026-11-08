@@ -147,7 +147,7 @@ exists and the maintainer approves it.
 | P147 Diverse multi-account scaffold | #865 | `feature/p147-diverse-scaffold` | complete |
 | P148 Portfolio and promoted-run cleanup | #869 | `feature/p148-portfolio-cleanup` | complete |
 | P149 State-run exactness | #873 | `feature/p149-state-exactness` | complete |
-| P150 GPU extension guard | #886 | `fix/gpu-extension-guard` | active |
+| P150 GPU extension guard | #886 | `fix/gpu-extension-guard` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4417,8 +4417,10 @@ Acceptance:
 
 Parent issue: #886
 Branch: `fix/gpu-extension-guard`
-Status: active
+Status: complete
+Merge commit: `2c18e19`
 Report: `notes/reports/p150-gpu-extension-guard.md`
+PR: #888
 
 Goal: refuse lazy effect-table extensions that cannot finish at full-model scale.
 

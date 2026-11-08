@@ -4651,3 +4651,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   stock-cell attempt priced 42.5 million rows for over nine minutes. The TSA 29 base
   zero-generation replay remains exact; the managed-stock target stays on the state
   fallback until a prebuilt basis or factorized archive exists.
+
+- P150 close-out: PR #888 squash-merged as `2c18e19`; parent #886 and task #887 are
+  closed. The TSA 29 base profile replay is exact; the managed-stock target remains on
+  the state fallback pending a prebuilt basis or factorized archive. Dashboard:
+  **GREEN**.
