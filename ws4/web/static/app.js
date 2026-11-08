@@ -9113,6 +9113,28 @@ function wireFire() {
     $('fire-time').value = '0';
     firePost('reset');
   });
+  $('fire-ignition').addEventListener('click', () => {
+    state.fire.playing = true;
+    $('fire-play').textContent = 'Pause';
+    $('fire-time').value = '0';
+    firePost('reset');
+    firePost('play');
+  });
+  $('fire-jump').addEventListener('click', () => {
+    const end = Number($('fire-time').max) || 1;
+    const time = end * 0.25;
+    state.fire.playing = true;
+    $('fire-play').textContent = 'Pause';
+    $('fire-time').value = String(time);
+    firePost('setTime', { time });
+    firePost('focus');
+    firePost('play');
+  });
+  $('fire-fullscreen').addEventListener('click', () => {
+    const wrap = $('fire-wrap');
+    if (document.fullscreenElement) document.exitFullscreen();
+    else wrap.requestFullscreen?.();
+  });
   $('fire-time').addEventListener('input', () => {
     state.fire.playing = false;
     $('fire-play').textContent = 'Play';

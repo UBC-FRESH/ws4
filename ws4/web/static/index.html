@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=114">
+  <link rel="stylesheet" href="static/style.css?v=115">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
   <script type="importmap">
     {
@@ -403,11 +403,14 @@
             <label><input id="fire-compare" type="checkbox"> Compare</label>
             <label>Scene B <select id="fire-scene-b" disabled></select></label>
             <button id="fire-refresh" type="button">Refresh scenes</button>
+            <button id="fire-fullscreen" type="button" title="Fullscreen canvas">Fullscreen</button>
             <span id="fire-status" class="hint" aria-live="polite"></span>
           </div>
           <div class="fire-controls">
             <button id="fire-play" type="button">Play</button>
             <button id="fire-reset" type="button">Reset</button>
+            <button id="fire-ignition" type="button" title="Reset to ignition and play">From ignition</button>
+            <button id="fire-jump" type="button" title="Jump to the active fire front and play">Jump to fire</button>
             <input id="fire-time" type="range" min="0" max="1" step="0.01" value="0" aria-label="Fire timeline">
             <span id="fire-clock" class="hint">0</span>
             <select id="fire-speed" aria-label="Playback speed">
@@ -418,21 +421,21 @@
             </select>
           </div>
           <div class="fire-inspect">
-            <div>
-              <h3>Scene</h3>
+            <details class="fire-panel" open>
+              <summary>Scene</summary>
               <div id="fire-summary" class="fire-summary"></div>
-            </div>
-            <div>
-              <h3>Tree</h3>
+            </details>
+            <details class="fire-panel" open>
+              <summary>Tree</summary>
               <label class="fire-search">Search <input id="fire-tree-search" type="search" placeholder="tree id or species"></label>
               <select id="fire-tree" aria-label="Tree to inspect"></select>
               <div id="fire-tree-detail" class="fire-detail"></div>
-            </div>
-            <div>
-              <h3>Fragment</h3>
+            </details>
+            <details class="fire-panel">
+              <summary>Fragment</summary>
               <select id="fire-fragment" aria-label="Fragment to inspect"></select>
               <div id="fire-fragment-detail" class="fire-detail"></div>
-            </div>
+            </details>
           </div>
         </section>
       </div>
@@ -741,6 +744,6 @@
     <p class="hint">Shortcuts pause while typing in an input, select, or editor.</p>
   </dialog>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=114"></script>
+  <script type="module" src="static/app.js?v=115"></script>
 </body>
 </html>

@@ -735,14 +735,21 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: .2
 #workspace-fire .fire-controls input[type=range] { flex:1 1 8rem; min-width:0; }
 #workspace-fire .fire-controls select { font-size:.72rem; }
 #workspace-fire .fire-inspect { display:grid; gap:.55rem; margin:.5rem 0; }
-#workspace-fire .fire-inspect > div { border:1px solid var(--line); border-radius:.4rem; padding:.35rem .45rem; background:#fbfcfd; }
-#workspace-fire .fire-inspect h3 { margin:.05rem 0 .3rem; font-size:.78rem; }
+#workspace-fire .fire-panel { border:1px solid var(--line); border-radius:.4rem; padding:.35rem .45rem; background:#fbfcfd; }
+#workspace-fire .fire-panel summary { cursor:pointer; font-weight:600; font-size:.78rem; list-style:none; }
+#workspace-fire .fire-panel summary::-webkit-details-marker { display:none; }
+#workspace-fire .fire-panel summary::before { content:"▸"; display:inline-block; width:1rem; color:var(--muted); }
+#workspace-fire .fire-panel[open] summary::before { content:"▾"; }
+#workspace-fire .fire-panel > *:not(summary) { margin-top:.35rem; }
 #workspace-fire .fire-summary > div, #workspace-fire .fire-detail > div { display:flex; justify-content:space-between; gap:.5rem;
                                                                            padding:.12rem 0; border-bottom:1px solid #eef1f4; font-size:.68rem; }
 #workspace-fire .fire-summary span, #workspace-fire .fire-detail span { color:var(--muted); }
 #workspace-fire .fire-summary strong, #workspace-fire .fire-detail strong { text-align:right; overflow-wrap:anywhere; }
 #workspace-fire .fire-search { display:grid; gap:.15rem; font-size:.72rem; color:var(--muted); margin-bottom:.3rem; }
 #workspace-fire #fire-tree, #workspace-fire #fire-fragment { width:100%; margin:.2rem 0; font-size:.72rem; }
+.fire-wrap:fullscreen { grid-column:auto; grid-row:auto; background:#060d13; padding:0; }
+.fire-wrap:fullscreen .fire-frame-card { height:100vh; }
+.fire-wrap:fullscreen .fire-frame-label { top:.75rem; left:.75rem; }
 @media (max-width: 900px) { .fire-wrap.compare { grid-template-columns:1fr; } }
 
 

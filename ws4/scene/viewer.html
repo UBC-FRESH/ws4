@@ -706,6 +706,8 @@ window.addEventListener("message", (event) => {
   } else if (data.action === "speed") {
     state.speed = Number(data.speed) || 1;
     speedSelect.value = String(state.speed);
+  } else if (data.action === "focus") {
+    document.getElementById("focus").click();
   } else if (data.action === "focusTree") {
     const target = tree.find((item) => String(item.tree_id) === String(data.tree_id));
     if (!target) return;
