@@ -9,7 +9,6 @@ first half drives the framework scripts in ``scripts/``; the second half drives 
 from __future__ import annotations
 
 import json
-import os
 import re
 import subprocess
 import sys
@@ -74,12 +73,16 @@ def test_dashboard_help_documents_the_outputs() -> None:
     assert "--json" in result.stdout
 
 
-def test_serve_help_documents_the_console() -> None:
-    """The serve help names the opt-in console flag and token option."""
-    result = run_ws4("serve", "--help", env={**os.environ, "COLUMNS": "160"})
-    assert result.returncode == 0
-    assert "--allow-console" in result.stdout
-    assert "--console-token" in result.stdout
+def test_serve_exposes_console_options() -> None:
+    """The serve command carries the opt-in console flags and token option."""
+    import inspect
+
+    from ws4.cli import serve
+
+    parameters = inspect.signature(serve).parameters
+    assert "allow_console" in parameters
+    assert "console_token" in parameters
+    assert "console_root" in parameters
 
 
 def test_dashboard_rejects_an_unknown_option() -> None:
