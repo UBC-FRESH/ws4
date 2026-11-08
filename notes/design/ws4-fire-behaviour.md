@@ -74,21 +74,35 @@ the extinction case where the dead moisture exceeds the moisture of extinction.
 The standard-case pass is necessary, not sufficient. The next validation layers are a public
 fire-growth model and an observed perimeter.
 
-## 5. What follows
+## 5. FBP surface fire
 
-- **P151.2 continuation / FBP adapter.** Canadian FBP fuel types and moisture codes after the
-  Rothermel cases pass. The FBP equations are not claimed yet.
+P151.7 added the Canadian FWI moisture codes. P151.8 added the FBP surface-fire layer:
+
+- the 17 standard FBP fuel types;
+- surface fuel consumption, the buildup effect, and the surface rate of spread;
+- the surface head fire intensity, `300 x SFC x ROS`, and a derived flame length;
+- the M1/M2 and M3/M4 blends and the O1 crown-closure/grass-load parameters.
+
+The FBP surface results match the `cffdrs` reference within 0.02 on all 17 fuel types at
+FFMC 90, BUI 60, 10 km/h, flat ground, and on a 320-point grid across C2, C3, C7, M1, and S1.
+The C6 surface component is validated separately. The layer is flat-ground and surface-only:
+slope adjustment is P151.4, and crown fire is P151.3.
+
+## 6. What follows
+
 - **P151.3 Crown fire.** Van Wagner initiation, Cruz et al. propagation, and the passive to
   active transition.
-- **P151.4 Growth.** A site/fuel grid and an elliptical or cellular growth engine, with
-  homogeneous shape tests and a barrier test.
+- **P151.3 Crown fire.** Van Wagner initiation, Cruz et al. propagation, and the passive to
+  active transition.
+- **P151.4 Growth.** A site/fuel grid, slope adjustment, and an elliptical or cellular growth
+  engine, with homogeneous shape tests and a barrier test.
 - **P151.5 Integration.** The P144 event record carries the fuel, weather, slope, kernel
   version, ROS, intensity, and flame length. The P150 viewer's flames and smoke scale with
   those values.
 - **P151.6 Benchmark.** A public growth-model comparison and an observed-fire case, with the
   tolerances and limits named.
 
-## 6. Limits and risks
+## 7. Limits and risks
 
 - A standard-case pass does not prove a landscape fire. The growth and benchmark tasks are
   separate.
@@ -101,7 +115,7 @@ fire-growth model and an observed perimeter.
 - Unit conversion is the main silent-error risk; the tests pin the reference values in the
   metric contract.
 
-## 7. References
+## 8. References
 
 - Rothermel, R. C. (1972). A mathematical model for predicting fire spread in wildland fuels.
 - Albini, F. A. (1976). Computer-based models of wildland fire behavior.

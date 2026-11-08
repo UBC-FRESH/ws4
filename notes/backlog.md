@@ -438,9 +438,12 @@ items are enhancements and maintenance.
   environment contracts and the Rothermel (1972) kernel are implemented and match the R
   ``Rothermel`` reference on the 13 Anderson models, the custom dynamic example, and a
   15-point A3 wind/slope grid.
-- **Canadian FBP fuel types and moisture codes.** `open`. Add the FBP fuel-type table, the
-  FFMC/DMC/DC/ISI/BUI/FWI moisture-code engine, and the FBP surface-fire equations after the
-  Rothermel standard cases pass. Target: P151.8 (#900).
+- **Canadian FBP fuel types and surface fire.** `done` (P151.8, #900). The 17 FBP fuel types,
+  surface fuel consumption, the buildup effect, the surface rate of spread, and the surface
+  head fire intensity match `cffdrs` within 0.02 on the base table and a 320-point grid.
+  Flat-ground and surface-only; slope is P151.4 and crown fire is P151.3.
+- **VRI-to-FBP fuel-type mapping.** `open`. Map the WS4/VRI fuel description to an FBP fuel
+  type with provenance. Target: a later P151 task.
 - **Crown fire.** `open`. Van Wagner initiation, Cruz et al. propagation, and the passive to
   active transition. Target: P151.3.
 - **Growth geometry.** `open`. A site/fuel grid and an elliptical/Huygens or cellular growth

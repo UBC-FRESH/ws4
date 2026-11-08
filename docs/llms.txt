@@ -64,4 +64,5 @@
 - [Scenario ensembles and risk targets](reference/ecosystem-scenarios.html): scenario files, common random numbers, risk aggregation, sample-average approximation, and the out-of-sample report.
 - [Fire behaviour](reference/fire-behaviour.html): the Rothermel surface-fire kernel, fuel and moisture contracts, standard cases, and derived intensity.
 - [Fire weather and FWI codes](reference/fire-weather.html): the Canadian FWI moisture codes, the daily weather contract, and the reference validation.
+- [FBP surface fire](reference/fire-fbp.html): the FBP fuel types, surface fuel consumption, surface rate of spread, and surface intensity.
 - [API reference](api/index.html): the repository tooling's public functions, with their parameters, types, and return values. The package API is rendered on the reference pages above.

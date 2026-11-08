@@ -4452,7 +4452,7 @@ standard test cases, and an event log that records every input.
 - [ ] P151.5 Couple the kernel to the event log, accounts, and viewer (#895)
 - [ ] P151.6 Benchmark validation and close-out (#896)
 - [x] P151.7 Canadian FWI moisture codes (#898)
-- [ ] P151.8 Canadian FBP fuel types and surface fire (#900)
+- [x] P151.8 Canadian FBP fuel types and surface fire (#900)
 
 Acceptance:
 

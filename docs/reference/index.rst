@@ -75,6 +75,9 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    * - :doc:`fire-weather`
      - The Canadian FWI moisture codes, the daily weather contract, and the reference
        validation.
+   * - :doc:`fire-fbp`
+     - The FBP fuel types, surface fuel consumption, surface rate of spread, and surface
+       intensity.
    * - :doc:`femic-hydrology`
      - Pinned FEMIC hydrology response bundles, checksums, flood-risk rows, and
        applicability metadata.
@@ -110,4 +113,5 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    ecosystem-scenarios
    fire-behaviour
    fire-weather
+   fire-fbp
    femic-hydrology

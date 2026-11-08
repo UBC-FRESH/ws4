@@ -4675,3 +4675,13 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   fire suite now has 50 tests. `python scripts/check_workflow.py` reports **0 error(s), 0
   warning(s)**. Dashboard: **GREEN**. The FBP fuel types and surface-fire equations are split
   to P151.8 (#900).
+
+- P151.8: added `ws4/fire/fbp.py` with the 17 Canadian FBP fuel types, surface fuel
+  consumption, the buildup effect, the surface rate of spread, the surface head fire
+  intensity, and a derived flame length. The surface ROS and SFC match the `cffdrs` reference
+  within 0.02 on all 17 fuel types at FFMC 90, BUI 60, 10 km/h, flat ground, and on a
+  320-point grid across C2/C3/C7/M1/S1; the C6 surface component is validated separately. The
+  layer is flat-ground and surface-only; slope is P151.4 and crown fire is P151.3. Added
+  `docs/reference/fire-fbp.rst`, `examples/fire_fbp_demo.py`, and 7 FBP tests. The fire suite
+  now has 57 tests. `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**.
+  Dashboard: **GREEN**.
