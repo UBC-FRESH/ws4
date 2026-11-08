@@ -4827,3 +4827,10 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   band. Added 9 benchmark tests; the fire/ecosystem fire suite has 115 tests. The per-scenario
   data and summary are in `notes/reports/p156-benchmark.csv` and
   `notes/reports/p156-benchmark-summary.json`. Dashboard: **GREEN**.
+
+- P156 close-out: merged `main` into the phase branch at `81a5103`, reran the full dashboard,
+  and queued pull request #917. The close-out report is `notes/reports/p156-closeout.md`.
+  The phase has 115 fire/ecosystem fire tests. The FBP ellipse benchmark reports 7.4 percent
+  mean absolute area error, 16.4 percent maximum, and a 54-scenario ensemble with P50 10.13 ha
+  and P90 199.85 ha. The viewer flame/smoke criterion is deferred to P155. Status: `pr-open`;
+  no merge, tag, release, or settings change performed. Dashboard: **GREEN**.

@@ -2,9 +2,10 @@
 
 Phase: P156
 Branch: `feature/p156-fire-behaviour`
-Status: ready for maintainer review; no merge performed
+Status: ready for maintainer review; PR #917 queued; no merge performed
 Date: 2026-11-08
 Parent issue: #890
+PR: #917
 
 ## What the phase delivered
 
@@ -18,8 +19,9 @@ Parent issue: #890
 - P156.8 Canadian FBP fuel types and surface fire.
 - P156.9 VRI-to-FBP fuel-type mapping with provenance.
 
-The phase branch is `feature/p156-fire-behaviour`. The benchmark commit is `44961bb`. Earlier
-phase commits include `7367ef6`, `977b320`, `421e1ea`, and `603909f`.
+The phase branch is `feature/p156-fire-behaviour`. The benchmark commit is `44961bb`; the
+phase branch was brought current with `main` in merge `81a5103`. Earlier phase commits include
+`7367ef6`, `977b320`, `421e1ea`, and `603909f`.
 
 ## Standard-case evidence
 
