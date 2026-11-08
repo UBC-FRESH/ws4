@@ -4636,3 +4636,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P144 close-out: pull request #872 squash-merged as `d6522e3`; parent #852 and tasks
   #853 to #858 closed; the roadmap status is `complete`. The close-out report is
   `notes/reports/p144-closeout.md`. Dashboard: **GREEN**.
+
+- P149.2: replaced the embedded schedule in the state exactness payload with the
+  schedule path, guarded the exact-replay badge to boolean values, and added browser
+  coverage. A live TSA 27 state run recorded `exact_match: true` with matching
+  objective and verified objective.
