@@ -4883,3 +4883,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   ignition, the fire/smoke/ember/heat-haze visual pass, the Fire studio APIs and workspace,
   and the public Pages demo. Full dashboard: **OVERALL: GREEN**. The live 8790 portal still
   serves the static viewer; promoting the Fire studio is a separate portal deployment step.
+
+- P158.1: added the Plan Scenario matrix with account-by-period target bands, realized
+  values, gaps, status colouring, flow markers, failing-only filtering, and cell
+  navigation. Added a browser regression test.

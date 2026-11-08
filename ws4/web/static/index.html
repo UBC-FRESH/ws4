@@ -18,7 +18,7 @@
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v113</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v115</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <div class="period-control">
@@ -591,6 +591,21 @@
           <span id="target-chart-status" class="hint"></span>
         </div>
       </div>
+      <section id="scenario-matrix" class="scenario-matrix" hidden>
+        <div class="scenario-matrix-head">
+          <div>
+            <h2>Scenario matrix</h2>
+            <p class="hint">Every target account and period in one view: target band, realized value, gap, and status. Click an account to filter the editor; click a cell to inspect its period.</p>
+          </div>
+          <div class="scenario-matrix-controls">
+            <label><input id="matrix-only-failing" type="checkbox"> Only failing</label>
+            <span id="matrix-status" class="hint"></span>
+          </div>
+        </div>
+        <div id="matrix-scroll" class="matrix-scroll">
+          <table id="scenario-matrix-table"></table>
+        </div>
+      </section>
       <div id="target-chart-grid" class="target-chart-grid"></div>
       <p id="target-chart-empty" class="target-chart-empty">Pin a target in the table to open its chart.</p>
     </section>

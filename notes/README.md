@@ -158,3 +158,5 @@ Working notes for WS4. Notes are living: update them in the same change set as t
   GPU replay.
 - `reports/p155-closeout.md` — P155 fire-scene verification, visual checklist, limits, and
   approval status.
+- `reports/p158-plan-matrix.md` — Plan scenario matrix, observed usability gaps, and the
+  next scenario-authoring slices.
