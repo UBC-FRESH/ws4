@@ -104,7 +104,15 @@ their source paths. cwp is now marked reviewed.
 
 White spruce natural is complete with 17 top-height paths, 9 QMD paths, and crown
 closure from source path 49. Direct overlay inspection shows the curves on their
-source paths.
+source paths. swn is now marked reviewed.
+
+### swp pass
+
+White spruce planted is complete with 17 top-height paths, 8 QMD paths, and crown
+closure from source path 36. Direct overlay inspection shows the curves on their
+source paths. swp is marked reviewed.
+
+All 14 Atlas diagrams are reviewed; the provisional queue is empty.
 
 ## TASS predicted mortality curves
 

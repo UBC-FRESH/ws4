@@ -185,7 +185,17 @@ def build_review_queue() -> pd.DataFrame:
                 "note": "Review curves, crown closure, and BEC applicability; maintainer decides.",
             }
         )
-    return pd.DataFrame(rows)
+    columns = [
+        "diagram_id",
+        "species",
+        "origin",
+        "status",
+        "pdf_url",
+        "bec_labels",
+        "label_count",
+        "note",
+    ]
+    return pd.DataFrame(rows, columns=columns)
 
 
 def main() -> int:

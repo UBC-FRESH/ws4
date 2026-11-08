@@ -31,23 +31,31 @@ def test_builder_emits_all_current_labels() -> None:
     frame = _builder().build_coverage()
     assert len(frame) == 219
     assert frame["coverage_status"].value_counts().to_dict() == {
-        "mixed_zone": 195,
         "no_diagram": 4,
         "reviewed_variant": 1,
-        "reviewed_zone": 19,
+        "reviewed_zone": 214,
     }
     assert set(frame["bec"]) == set(frame["bec"].unique())
 
 
 def test_builder_emits_the_provisional_review_queue() -> None:
-    """The builder names the eight provisional diagrams and their labels."""
+    """The builder emits an empty queue once every diagram is reviewed."""
     queue = _builder().build_review_queue()
-    assert len(queue) == 2
-    assert set(queue["status"]) == {"provisional"}
-    labels: set[str] = set()
-    for value in queue["bec_labels"]:
-        labels.update(item for item in str(value).split(";") if item)
-    assert len(labels) == 196
+    assert len(queue) == 0
+    assert set(queue["status"]) == set()
+
+
+def test_builder_emits_a_provisional_row_for_a_forced_review(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The queue path still builds rows when a diagram is provisional."""
+    builder = _builder()
+    monkeypatch.setattr(builder, "_diagram_reviews", lambda: {"fdcp": "provisional"})
+    queue = builder.build_review_queue()
+    assert len(queue) == 1
+    assert queue.iloc[0]["diagram_id"] == "fdcp"
+    assert queue.iloc[0]["status"] == "provisional"
+    assert int(queue.iloc[0]["label_count"]) > 0
 
 
 def test_builder_reads_all_atlas_reviews() -> None:

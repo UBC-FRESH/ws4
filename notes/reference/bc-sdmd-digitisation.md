@@ -126,7 +126,7 @@ use full value series, so their unlabelled interior curves are kept. See
 
 ## swn status
 
-White spruce natural is stored as `sbs-sw-natural.json`, provisional. Top height,
+White spruce natural is stored as `sbs-sw-natural.json`, reviewed. Top height,
 QMD, boundaries, and crown closure are vector paths. Top height uses the full
 value series, so its unlabelled interior curves are kept. See
 `notes/reference/swn-digitisation.md`.
@@ -161,14 +161,14 @@ use full value series, so their unlabelled interior curves are kept. See
 
 ## cwp status
 
-Western redcedar planted is stored as `cwh-cw-planted.json`, provisional. Top
+Western redcedar planted is stored as `cwh-cw-planted.json`, reviewed. Top
 height, QMD, boundaries, and crown closure are vector paths. Top height and QMD
 use full value series, so their unlabelled interior curves are kept. See
 `notes/reference/cwp-digitisation.md`.
 
 ## swp status
 
-White spruce planted is stored as `sbs-sw-planted.json`, provisional. Top
+White spruce planted is stored as `sbs-sw-planted.json`, reviewed. Top
 height, QMD, and boundaries are vector; crown closure is a raster trace. See
 `notes/reference/swp-digitisation.md`.
 

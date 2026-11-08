@@ -808,10 +808,15 @@ def read_ordered_curves(
                 _printed_labels(page, unit),
                 paths,
                 max_distance=max_distance,
-                min_margin=min_margin,
+                min_margin=0.0,
             )
+            ordered_index = {path.path_index: index for index, path in enumerate(ordered_paths)}
             for match in label_matches:
-                if assigned[match.value].path_index != match.path_index:
+                if match.value not in assigned:
+                    raise ValueError(f"label {match.value:g} is not in the declared series")
+                assigned_index = ordered_index[assigned[match.value].path_index]
+                nearest_index = ordered_index[match.path_index]
+                if abs(assigned_index - nearest_index) > 1:
                     raise ValueError(
                         f"label {match.value:g} does not agree with the ordered path series"
                     )

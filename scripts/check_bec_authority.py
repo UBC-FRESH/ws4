@@ -75,10 +75,9 @@ def check_bec_authority(data: Path = DATA, manifest: Path = MANIFEST) -> list[st
         failures.append("CCISS crosswalk has duplicate label pairs")
     coverage_counts = coverage["coverage_status"].value_counts().to_dict()
     if len(coverage) != 219 or coverage_counts != {
-        "mixed_zone": 195,
         "no_diagram": 4,
         "reviewed_variant": 1,
-        "reviewed_zone": 19,
+        "reviewed_zone": 214,
     }:
         failures.append(f"unexpected BEC coverage counts: {coverage_counts}")
     gap_counts = (
@@ -89,8 +88,8 @@ def check_bec_authority(data: Path = DATA, manifest: Path = MANIFEST) -> list[st
     queued_labels: set[str] = set()
     for value in review_queue["bec_labels"]:
         queued_labels.update(item for item in str(value).split(";") if item)
-    if len(review_queue) != 2 or len(queued_labels) != 196:
-        failures.append("provisional review queue must name 2 diagrams and 196 BEC labels")
+    if len(review_queue) != 0 or len(queued_labels) != 0:
+        failures.append("provisional review queue must name 0 diagrams and 0 BEC labels")
 
     if not manifest.is_file():
         failures.append(f"missing source manifest: {manifest}")

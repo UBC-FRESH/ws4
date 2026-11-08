@@ -85,7 +85,10 @@ members; its crown closure is source path 590. The ssp overlay is
 582. The cwp overlay is `notes/review/p137-overlays/cwp.png`. cwp is marked reviewed.
 
 `swn` has 17 top-height paths, 9 QMD paths, and crown closure from source path 49.
-The swn overlay is `notes/review/p137-overlays/swn.png`.
+The swn overlay is `notes/review/p137-overlays/swn.png`. swn is marked reviewed.
+
+`swp` has 17 top-height paths, 8 QMD paths, and crown closure from source path 36.
+The swp overlay is `notes/review/p137-overlays/swp.png`. swp is marked reviewed.
 
 Evidence: `notes/review/p137-overlay-findings.md` and
 `notes/review/p137-overlays/`.
@@ -112,3 +115,10 @@ Live portal check at `http://127.0.0.1:8790/instance/sdmd-pilot/?view=sdmd`:
 - A validated diagram is structurally valid, not necessarily correct.
 - The packet is not a substitute for the maintainer's curve review.
 - No diagram is marked reviewed.
+
+## Final status
+
+All 14 public Atlas diagrams are now `reviewed`: the four Interior
+Douglas-fir/lodgepole pine diagrams plus the ten coastal diagrams. The BEC
+registry has no `mixed_zone` rows left: 214 `reviewed_zone`, 1
+`reviewed_variant`, and 4 `no_diagram`. The provisional queue is empty.

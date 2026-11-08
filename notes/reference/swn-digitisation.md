@@ -3,7 +3,7 @@
 Source: `swn` white spruce natural stands, version 1.30, catalogued in
 `ws4/sdmd/data/sdmd/source_catalog.json`.
 
-Status: stored as `sbs-sw-natural.json`, provisional. All five curve families and
+Status: stored as `sbs-sw-natural.json`, reviewed. All five curve families and
 the CAI display polygon are stored. The old crown-closure raster trace was
 replaced by source path 49.
 
