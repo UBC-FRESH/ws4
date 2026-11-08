@@ -22,6 +22,24 @@ from ..ecosystem.log import EventLog
 from .trees import TREE_SCHEMA_VERSION, TreeInventory
 
 SCENE_SCHEMA_VERSION: Final[str] = "ws4.fire.scene.v1"
+
+
+def _missing(value: object) -> bool:
+    """Return whether a scalar is missing, including NaN and NaT.
+
+    Parameters
+    ----------
+    value : object
+        Scalar value from a pandas row.
+
+    Returns
+    -------
+    bool
+        True for NaN, NaT, NA, or None.
+    """
+    return bool(pd.isna(value))  # type: ignore[call-overload]
+
+
 VIEWER_TEMPLATE: Final[str] = "viewer.html"
 
 
@@ -280,7 +298,7 @@ class FireScene:
                     "y": float(str(stand.y)),
                     "side": float(str(stand.side_m)),
                     "area_ha": float(str(stand.area_ha)),
-                    "burn_time": None if pd.isna(stand.burn_time) else float(str(stand.burn_time)),
+                    "burn_time": None if _missing(stand.burn_time) else float(str(stand.burn_time)),
                     "polygon": polygon_value,
                 }
             )
@@ -304,7 +322,7 @@ class FireScene:
                     "live": tree.live,
                     "crown_fuel_t": tree.crown_fuel_t,
                     "surface_fuel_t_ha": tree.surface_fuel_t_ha,
-                    "burn_time": None if pd.isna(ignition) else float(str(ignition)),
+                    "burn_time": None if _missing(ignition) else float(str(ignition)),
                     "burn_duration": float(str(animation_row["burn_duration"])),
                     "flame_intensity": float(str(animation_row["flame_intensity"])),
                     "smoke_strength": float(str(animation_row["smoke_strength"])),
@@ -325,7 +343,7 @@ class FireScene:
                 "crown_fraction_burned": float(str(fire_row.crown_fraction_burned)),
                 "smoke_strength": float(str(fire_row.smoke_strength)),
                 "parent_event_id": None
-                if pd.isna(fire_row.parent_event_id)
+                if _missing(fire_row.parent_event_id)
                 else str(fire_row.parent_event_id),
             }
             for fire_row in self.fires.itertuples(index=False)
