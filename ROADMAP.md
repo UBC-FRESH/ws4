@@ -151,7 +151,7 @@ exists and the maintainer approves it.
 | P150 GPU extension guard | #886 | `fix/gpu-extension-guard` | complete |
 | P151 Web UI power-user console | #789 | `feature/p151-web-console` | complete |
 | P152 Sandboxed Python runner | #901 | `feature/p152-python-sandbox` | complete |
-| P153 Assistant script review | #906 | `feature/p153-assistant-script-review` | active |
+| P153 Assistant script review | #906 | `feature/p153-assistant-script-review` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4514,8 +4514,10 @@ Acceptance:
 
 Parent issue: #906
 Branch: `feature/p153-assistant-script-review`
-Status: active
+Status: complete
+Merge commit: `772d45b`
 Report: `notes/reports/p153-assistant-script-review.md`
+PR: #909
 
 Goal: let the assistant stage code without granting it execution authority.
 

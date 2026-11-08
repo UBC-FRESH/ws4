@@ -4719,3 +4719,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   and display-only CAI bands; the four Interior Douglas-fir/lodgepole pine diagrams
   remain reviewed. Coverage is 214 `reviewed_zone`, 1 `reviewed_variant`, and 4
   `no_diagram`; the provisional queue is empty. Dashboard: `OVERALL: GREEN`.
+
+- P153 close-out: PR #909 squash-merged as `772d45b`; parent #906 and task #907 are
+  closed. Assistant code can be staged for review but never runs without explicit
+  confirmation. Dashboard: **GREEN**.
