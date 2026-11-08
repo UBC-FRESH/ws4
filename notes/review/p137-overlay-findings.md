@@ -80,7 +80,13 @@ source paths. ssp is now marked reviewed.
 Western hemlock natural is complete with 20 top-height paths (including 10, 14,
 18, 22, 26, 40, 48, 56), 14 QMD paths (including 35, 45, 55, 65), and crown
 closure from source path 562. Direct overlay inspection shows the curves on their
-source paths.
+source paths. hwn is now marked reviewed.
+
+### hwp pass
+
+Western hemlock planted is complete with 19 top-height paths, 13 QMD paths, and
+crown closure from source path 559. Direct overlay inspection shows the curves on
+their source paths.
 
 ## TASS predicted mortality curves
 

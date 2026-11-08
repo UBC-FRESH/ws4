@@ -752,7 +752,7 @@ def test_western_hemlock_natural_diagram_is_valid() -> None:
     qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
     assert top == [6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 32, 36, 40, 44, 48, 52, 56, 60]
     assert qmd == [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70]
-    assert diagram.review.status == "provisional"
+    assert diagram.review.status == "reviewed"
 
 
 def test_white_spruce_natural_diagram_is_valid() -> None:
@@ -869,8 +869,8 @@ def test_western_hemlock_planted_diagram_is_valid() -> None:
     assert validate_diagram(diagram) == []
     top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
     qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
-    assert top == [6, 8, 12, 16, 20, 24, 32, 36, 44, 52]
-    assert qmd == [5, 10, 15, 20, 25, 30, 40, 50, 60]
+    assert top == [6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60]
+    assert qmd == [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65]
     assert diagram.review.status == "provisional"
 
 

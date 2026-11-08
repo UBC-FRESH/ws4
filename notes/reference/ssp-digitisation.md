@@ -3,7 +3,7 @@
 Source: `ssp` Sitka spruce planted stands, version unversioned, catalogued in
 `ws4/sdmd/data/sdmd/source_catalog.json`.
 
-Status: stored as `cdf-cwh-ss-planted.json`, provisional. All five curve families
+Status: stored as `cdf-cwh-ss-planted.json`, reviewed. All five curve families
 and the CAI display polygon are stored. The old crown-closure raster trace was
 replaced by source path 590.
 

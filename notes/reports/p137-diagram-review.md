@@ -73,7 +73,10 @@ members; its crown closure is source path 590. The ssp overlay is
 `notes/review/p137-overlays/ssp.png`. ssp is marked reviewed.
 
 `hwn` has 20 top-height paths, 14 QMD paths, and crown closure from source path
-562. The hwn overlay is `notes/review/p137-overlays/hwn.png`.
+562. The hwn overlay is `notes/review/p137-overlays/hwn.png`. hwn is marked reviewed.
+
+`hwp` has 19 top-height paths, 13 QMD paths, and crown closure from source path
+559. The hwp overlay is `notes/review/p137-overlays/hwp.png`.
 
 Evidence: `notes/review/p137-overlay-findings.md` and
 `notes/review/p137-overlays/`.

@@ -153,7 +153,8 @@ use full value series, so their unlabelled interior curves are kept. See
 ## hwp status
 
 Western hemlock planted is stored as `cwh-hw-planted.json`, provisional. Top
-height, QMD, and boundaries are vector; crown closure is a raster trace. See
+height, QMD, boundaries, and crown closure are vector paths. Top height and QMD
+use full value series, so their unlabelled interior curves are kept. See
 `notes/reference/hwp-digitisation.md`.
 
 ## cwp status
