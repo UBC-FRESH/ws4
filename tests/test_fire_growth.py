@@ -15,10 +15,13 @@ import numpy as np
 import pytest
 from ws4.fire.fuel import FireFuelError
 from ws4.fire.growth import (
+    GROWTH_MODEL_VERSION,
     EffectiveWind,
     GrowthConfig,
     SiteGrid,
     effective_wind,
+    fragment_ignition_events,
+    fragment_ignition_times,
     grow_fire,
     length_to_breadth,
 )
@@ -212,3 +215,119 @@ def test_effective_wind_dataclass_serializes() -> None:
     wind = EffectiveWind(10.0, 180.0)
     assert wind.speed_kmh == 10.0
     assert wind.azimuth_deg == 180.0
+
+
+def test_flat_wind_shape_matches_the_analytic_ellipse() -> None:
+    grid = make_grid(
+        rows=201,
+        cols=201,
+        wind_kmh=20.0,
+        wind_direction_deg=270.0,
+    )
+    result = grow_fire(
+        grid,
+        GrowthConfig(
+            ignition_cells=((100, 100),),
+            max_time_min=30.0,
+            snapshot_interval_min=30.0,
+        ),
+    )
+    burned = result.ignition_time_min <= 30.0
+    rows, cols = np.where(burned)
+    measured_length = (int(np.max(cols)) - int(np.min(cols)) + 1) * grid.cell_size_m
+    measured_width = (int(np.max(rows)) - int(np.min(rows)) + 1) * grid.cell_size_m
+    eccentricity = (result.length_to_breadth**2 - 1.0) / (result.length_to_breadth**2 + 1.0)
+    head_distance = result.head_ros_m_min * 30.0
+    back_distance = head_distance * (1.0 - eccentricity) / (1.0 + eccentricity)
+    expected_length = head_distance + back_distance
+    expected_width = expected_length * math.sqrt(1.0 - eccentricity**2)
+
+    assert measured_length == pytest.approx(expected_length, rel=0.1)
+    assert measured_width == pytest.approx(expected_width, rel=0.1)
+
+
+def test_wind_and_slope_combine_into_one_vector() -> None:
+    grid = make_grid(
+        rows=201,
+        cols=201,
+        wind_kmh=15.0,
+        wind_direction_deg=270.0,
+        slope_percent=30.0,
+        aspect_deg=180.0,
+    )
+    result = grow_fire(
+        grid,
+        GrowthConfig(
+            ignition_cells=((100, 100),),
+            max_time_min=30.0,
+            snapshot_interval_min=30.0,
+        ),
+    )
+    burned = result.ignition_time_min <= 30.0
+    rows, cols = np.where(burned)
+
+    assert 0.0 < result.effective_wind.azimuth_deg < 90.0
+    assert float(np.mean(rows)) < 100.0
+    assert float(np.mean(cols)) > 100.0
+
+
+def test_fragment_bridge_matches_the_growth_front() -> None:
+    grid = make_grid(rows=41, cols=41, wind_kmh=20.0, wind_direction_deg=270.0)
+    result = grow_fire(
+        grid,
+        GrowthConfig(
+            ignition_cells=((20, 5),),
+            max_time_min=60.0,
+            snapshot_interval_min=60.0,
+        ),
+    )
+    fragments = np.ones((41, 41), dtype=int)
+    fragments[:, 20:] = 2
+    entries = fragment_ignition_times(result, fragments)
+
+    assert [entry.fragment_id for entry in entries] == [1, 2]
+    for entry in entries:
+        cells = (fragments == entry.fragment_id) & np.isfinite(result.ignition_time_min)
+        assert entry.ignition_time_min == pytest.approx(
+            float(np.min(result.ignition_time_min[cells]))
+        )
+        assert entry.burned_cells == int(cells.sum())
+        assert entry.area_ha == pytest.approx(entry.burned_cells * grid.cell_area_ha)
+    assert sum(entry.area_ha for entry in entries) == pytest.approx(result.burned_area_ha)
+
+    events = fragment_ignition_events(result, fragments, scenario_id="test", year=2024)
+    assert len(events) == 2
+    assert events[0].fragment_ids == (1,)
+    assert events[0].year == 2024
+    assert events[0].event_type == "fire_ignition"
+    assert events[0].phase == "ignition"
+    assert events[0].time == pytest.approx(2024.0 + entries[0].ignition_time_min / 525_600.0)
+    attributes = dict(events[0].attributes)
+    assert attributes["growth_model"] == GROWTH_MODEL_VERSION
+    assert attributes["ignition_time_min"] == pytest.approx(entries[0].ignition_time_min)
+    assert attributes["head_ros_m_min"] == pytest.approx(result.head_ros_m_min)
+    assert len({event.event_id for event in events}) == 2
+
+
+def test_fragment_bridge_rejects_bad_grids_and_time_spans() -> None:
+    grid = make_grid(rows=41, cols=41, wind_kmh=20.0, wind_direction_deg=270.0)
+    result = grow_fire(
+        grid,
+        GrowthConfig(
+            ignition_cells=((20, 5),),
+            max_time_min=60.0,
+            snapshot_interval_min=60.0,
+        ),
+    )
+    with pytest.raises(FireFuelError, match="same shape"):
+        fragment_ignition_times(result, np.ones((10, 10), dtype=int))
+    with pytest.raises(FireFuelError, match="integer"):
+        fragment_ignition_times(result, np.ones((41, 41), dtype=float))
+    negative = np.ones((41, 41), dtype=int)
+    negative[0, 0] = -1
+    with pytest.raises(FireFuelError, match="non-negative"):
+        fragment_ignition_times(result, negative)
+    fragments = np.ones((41, 41), dtype=int)
+    fragments[:, 20:] = 2
+    with pytest.raises(FireFuelError, match="more than one"):
+        fragment_ignition_events(result, fragments, minutes_per_year=1.0)

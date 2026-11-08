@@ -113,10 +113,15 @@ P151.4 added `ws4/fire/growth.py`:
   A priority queue keeps the earliest arrival per cell.
 - Snapshots record time, burned cells, area, and exposed perimeter. Non-burnable cells never
   ignite, so a barrier is a mask.
+- `fragment_ignition_times` and `fragment_ignition_events` map the front to P144 fragment
+  ignition events. Each event carries the minimum cell ignition time, the burned fragment
+  area, and the growth inputs and outputs as attributes. Growth minutes become fractional
+  years on the event clock.
 
 The shape tests cover a circle with no wind or slope, a downwind ellipse, an upslope
-displacement, a non-burnable barrier, and monotone snapshots. C6 slope adjustment is
-explicitly unsupported and raises; flat-ground C6 growth is supported.
+displacement, a combined wind/slope vector, a non-burnable barrier, and monotone snapshots.
+The flat-ground wind ellipse matches the analytic length and width within 10 percent. C6 slope
+adjustment is explicitly unsupported and raises; flat-ground C6 growth is supported.
 
 ## 8. What follows
 

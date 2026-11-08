@@ -15,7 +15,7 @@ from __future__ import annotations
 import heapq
 import math
 from dataclasses import dataclass
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 import numpy as np
 
@@ -28,8 +28,14 @@ from .fbp import (
 from .fuel import FireFuelError, _non_negative, _number, _probability
 from .fwi import initial_spread_index
 
+if TYPE_CHECKING:
+    from ws4.ecosystem.events import Event
+
 #: The maximum number of snapshots a growth run will retain.
 _DEFAULT_MAX_SNAPSHOTS: Final[int] = 10_000
+
+#: The provenance identifier for the growth model and its fragment bridge.
+GROWTH_MODEL_VERSION: Final[str] = "ws4.fire.growth.v1"
 
 
 @dataclass(frozen=True)
@@ -218,6 +224,43 @@ class GrowthSnapshot:
             "burned_cells": float(self.burned_cells),
             "area_ha": self.area_ha,
             "perimeter_m": self.perimeter_m,
+        }
+
+
+@dataclass(frozen=True)
+class FragmentIgnition:
+    """The earliest growth-front arrival in one dataset fragment.
+
+    Attributes
+    ----------
+    fragment_id : int
+        The positive dataset fragment id.
+    ignition_time_min : float
+        The earliest cell ignition time in minutes.
+    area_ha : float
+        The burned area inside the fragment in hectares.
+    burned_cells : int
+        The number of burned cells inside the fragment.
+    """
+
+    fragment_id: int
+    ignition_time_min: float
+    area_ha: float
+    burned_cells: int
+
+    def to_dict(self) -> dict[str, float]:
+        """Return the ignition as a JSON-serializable mapping.
+
+        Returns
+        -------
+        dict
+            Fragment id, ignition time, area, and cell count.
+        """
+        return {
+            "fragment_id": float(self.fragment_id),
+            "ignition_time_min": self.ignition_time_min,
+            "area_ha": self.area_ha,
+            "burned_cells": float(self.burned_cells),
         }
 
 
@@ -615,3 +658,176 @@ def _area_and_perimeter(burned: np.ndarray, grid: SiteGrid) -> tuple[float, floa
             if col == cols - 1 or not burned[row, col + 1]:
                 perimeter_cells += 1
     return area, perimeter_cells * grid.cell_size_m
+
+
+def _fragment_grid(value: object, shape: tuple[int, int]) -> np.ndarray:
+    """Return a validated fragment-id grid.
+
+    Parameters
+    ----------
+    value : object
+        A two-dimensional integer array; zero means no fragment.
+    shape : tuple of int
+        The expected array shape.
+
+    Returns
+    -------
+    numpy.ndarray
+        The fragment-id grid.
+
+    Raises
+    ------
+    FireFuelError
+        If the array is not a two-dimensional integer grid of the expected shape or it
+        contains a negative id.
+    """
+    array = np.asarray(value)
+    if array.ndim != 2 or array.shape != shape:
+        raise FireFuelError("fragment_grid must have the same shape as the growth grid")
+    if not np.issubdtype(array.dtype, np.integer):
+        raise FireFuelError("fragment_grid must be an integer array")
+    if bool((array < 0).any()):
+        raise FireFuelError("fragment_grid ids must be non-negative")
+    return array.astype(np.int64, copy=False)
+
+
+def fragment_ignition_times(
+    result: GrowthResult,
+    fragment_grid: np.ndarray,
+) -> tuple[FragmentIgnition, ...]:
+    """Summarize the growth front by dataset fragment.
+
+    Parameters
+    ----------
+    result : GrowthResult
+        A completed growth run.
+    fragment_grid : numpy.ndarray
+        A two-dimensional integer grid of fragment ids, shape ``(rows, cols)``. Zero means
+        no fragment.
+
+    Returns
+    -------
+    tuple of FragmentIgnition
+        One entry per fragment reached by the front, sorted by ignition time then id.
+
+    Raises
+    ------
+    FireFuelError
+        If the fragment grid is invalid.
+    """
+    if not isinstance(result, GrowthResult):
+        raise FireFuelError("result must be a GrowthResult")
+    grid = _fragment_grid(fragment_grid, (result.grid.rows, result.grid.cols))
+    burned = np.isfinite(result.ignition_time_min)
+    entries: list[FragmentIgnition] = []
+    for fragment_id in sorted(int(value) for value in np.unique(grid) if int(value) > 0):
+        cells = grid == fragment_id
+        reached = cells & burned
+        count = int(reached.sum())
+        if count == 0:
+            continue
+        times = result.ignition_time_min[reached]
+        entries.append(
+            FragmentIgnition(
+                fragment_id=fragment_id,
+                ignition_time_min=float(np.min(times)),
+                area_ha=count * result.grid.cell_area_ha,
+                burned_cells=count,
+            )
+        )
+    return tuple(sorted(entries, key=lambda entry: (entry.ignition_time_min, entry.fragment_id)))
+
+
+def fragment_ignition_events(
+    result: GrowthResult,
+    fragment_grid: np.ndarray,
+    *,
+    scenario_id: str = "default",
+    year: int = 0,
+    minutes_per_year: float = 525_600.0,
+    process_id: str = "fire",
+    fire_id: str = "growth",
+) -> tuple[Event, ...]:
+    """Convert a growth front to P144 ignition events.
+
+    The events use the P144 ``ws4.ecosystem.events.Event`` record. Growth time is in minutes
+    and the event clock is in years, so each ignition is placed at
+    ``year + ignition_time_min / minutes_per_year``. The event carries the growth inputs and
+    outputs as attributes so the fragment log can be checked against the growth field.
+
+    Parameters
+    ----------
+    result : GrowthResult
+        A completed growth run.
+    fragment_grid : numpy.ndarray
+        A two-dimensional integer grid of fragment ids. Zero means no fragment.
+    scenario_id : str, optional
+        The scenario id stamped on every event (default ``default``).
+    year : int, optional
+        The annual accounting year (default 0).
+    minutes_per_year : float, optional
+        The minutes per simulation year (default 525600, 365 days).
+    process_id : str, optional
+        The process id stamped on every event (default ``fire``).
+    fire_id : str, optional
+        The fire identifier used in event ids (default ``growth``).
+
+    Returns
+    -------
+    tuple of Event
+        One ignition event per reached fragment, sorted by event time.
+
+    Raises
+    ------
+    FireFuelError
+        If the fragment grid is invalid, the year is not a non-negative integer, the minutes
+        per year is not positive, or a growth ignition spans more than one year.
+    """
+    if isinstance(year, bool) or not isinstance(year, int) or year < 0:
+        raise FireFuelError("year must be a non-negative integer")
+    if not isinstance(minutes_per_year, (int, float)) or isinstance(minutes_per_year, bool):
+        raise FireFuelError("minutes_per_year must be a number")
+    if minutes_per_year <= 0.0 or not math.isfinite(float(minutes_per_year)):
+        raise FireFuelError("minutes_per_year must be finite and positive")
+    if not isinstance(process_id, str) or not process_id.strip():
+        raise FireFuelError("process_id must be a non-empty string")
+    if not isinstance(fire_id, str) or not fire_id.strip():
+        raise FireFuelError("fire_id must be a non-empty string")
+    from ws4.ecosystem.events import Event
+
+    events: list[Event] = []
+    for ignition in fragment_ignition_times(result, fragment_grid):
+        event_time = year + ignition.ignition_time_min / float(minutes_per_year)
+        if math.floor(event_time) != year:
+            raise FireFuelError("a growth ignition spans more than one simulated year")
+        event = Event(
+            event_id=f"{fire_id}-fragment-{year}-{ignition.fragment_id}",
+            process_id=process_id,
+            event_type="fire_ignition",
+            time=event_time,
+            year=year,
+            phase="ignition",
+            source=GROWTH_MODEL_VERSION,
+            scenario_id=scenario_id,
+            fragment_ids=(ignition.fragment_id,),
+            magnitude=result.head_ros_m_min,
+            area_ha=ignition.area_ha,
+            attributes=(
+                ("growth_model", GROWTH_MODEL_VERSION),
+                ("ignition_time_min", ignition.ignition_time_min),
+                ("fuel_type", result.grid.fuel_type),
+                ("ffmc", result.grid.ffmc),
+                ("bui", result.grid.bui),
+                ("wind_kmh", result.grid.wind_kmh),
+                ("effective_wind_kmh", result.effective_wind.speed_kmh),
+                ("spread_azimuth_deg", result.effective_wind.azimuth_deg),
+                ("head_ros_m_min", result.head_ros_m_min),
+                ("length_to_breadth", result.length_to_breadth),
+                ("slope_percent", result.grid.slope_percent),
+                ("aspect_deg", result.grid.aspect_deg),
+                ("burned_cells", float(ignition.burned_cells)),
+                ("cell_size_m", result.grid.cell_size_m),
+            ),
+        )
+        events.append(event)
+    return tuple(events)

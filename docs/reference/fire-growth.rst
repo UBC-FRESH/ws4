@@ -60,6 +60,20 @@ cell edge length. Snapshots record time, cell count, area, and perimeter.
 
 Non-burnable cells never ignite, so a barrier is a mask, not a penalty.
 
+Fragment bridge
+---------------
+
+``fragment_ignition_times`` summarizes the front by dataset fragment. It returns the earliest
+cell ignition time and the burned area inside each fragment, sorted by time and id.
+
+``fragment_ignition_events`` converts those entries to the P144
+``ws4.ecosystem.events.Event`` record. Because growth time is in minutes and the event clock is
+in years, an ignition at minute ``t`` in year ``y`` becomes
+``time = y + t / minutes_per_year``. Every event carries the fuel, weather, slope, effective
+wind, head rate of spread, length-to-breadth ratio, grid cell size, and growth-model version as
+attributes. The fragment log can therefore be checked against the growth field without a second
+source of truth.
+
 Validation
 ----------
 
@@ -67,9 +81,14 @@ Validation
 - No wind and no slope produce a near-circular burned area; the perimeter-to-circle ratio is
   within 25 percent on the test grid.
 - Wind elongates the burned area downwind and moves the centroid downwind.
+- The flat-ground wind ellipse length and width match the analytic ellipse within 10 percent.
+- Wind and slope combine into one effective wind vector; the centroid moves northeast for a
+  west wind and a south-facing slope.
 - Slope moves the centroid upslope with zero wind.
 - A non-burnable barrier stops the front.
 - Snapshot area and perimeter are monotone.
+- The fragment bridge returns the exact minimum cell time and burned area per fragment, and
+  the event clock and attributes match the growth field.
 
 Example
 -------
@@ -100,7 +119,8 @@ Limits
 - C6 slope adjustment is unsupported.
 - No spotting or ember transport.
 - The perimeter is the raster cell-edge length, not a sub-cell contour.
-- The P144 fragment event-log bridge is P151.5.
+- The fragment bridge emits ignition events, but the P151.5 integration still has to carry the
+  growth state through the accounts and the 3D viewer.
 - The growth is not yet calibrated or compared to an observed perimeter; that is P151.6.
 
 Cross-references

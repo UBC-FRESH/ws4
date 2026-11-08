@@ -4700,8 +4700,12 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   Huygens growth engine, burnable-mask barriers, and area/perimeter snapshots. The slope
   adjustment matches `cffdrs` on 40 wind/slope/fuel cases within 0.02 km/h and 0.1 degree.
   The growth tests cover a no-wind circle (perimeter within 25 percent of the analytic
-  circle), a downwind ellipse, an upslope centroid displacement, a barrier, and monotone
-  snapshots. C6 slope adjustment raises explicitly; flat-ground C6 growth is supported.
-  Added `docs/reference/fire-growth.rst`, `examples/fire_growth_demo.py`, and 10 growth
-  tests. The fire suite now has 76 tests. `python scripts/dashboard.py` reports
-  **OVERALL: GREEN** on all seven gates.
+  circle), a flat-ground wind ellipse (length and width within 10 percent of the analytic
+  ellipse), an upslope centroid displacement, a combined wind/slope vector, a barrier, and
+  monotone snapshots. Added the P144 fragment bridge: `fragment_ignition_times` returns the
+  earliest cell time and burned area per fragment, and `fragment_ignition_events` emits
+  `ws4.ecosystem.events.Event` ignitions with the growth inputs and outputs as attributes.
+  C6 slope adjustment raises explicitly; flat-ground C6 growth is supported. Added
+  `docs/reference/fire-growth.rst`, `examples/fire_growth_demo.py`, and 14 growth tests. The
+  fire suite now has 80 tests. `python scripts/dashboard.py` reports **OVERALL: GREEN** on
+  all seven gates.
