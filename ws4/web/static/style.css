@@ -709,3 +709,10 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: .2
                                        border-bottom:1px solid var(--line); font-size:.72rem; }
 #workspace-console .console-artifact code { flex:1; overflow-wrap:anywhere; }
 #workspace-console .console-artifact button { font-size:.68rem; padding:.12rem .35rem; }
+#workspace-console .console-python { margin:.7rem 0; padding:.55rem .65rem; border:1px solid var(--line);
+                                     border-radius:.4rem; background:#f7faf7; }
+#workspace-console .console-python h3 { margin:.1rem 0 .25rem; font-size:.9rem; }
+#workspace-console .console-python textarea { width:100%; font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
+                                              font-size:.72rem; line-height:1.35; resize:vertical; }
+#workspace-console .console-review { display:flex; align-items:center; gap:.35rem; margin:.45rem 0;
+                                     font-size:.76rem; color:var(--ink); }

@@ -83,6 +83,7 @@ def test_serve_exposes_console_options() -> None:
     assert "allow_console" in parameters
     assert "console_token" in parameters
     assert "console_root" in parameters
+    assert "allow_console_python" in parameters
 
 
 def test_dashboard_rejects_an_unknown_option() -> None:

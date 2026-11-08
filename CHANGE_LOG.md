@@ -4663,6 +4663,10 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   closed. The console stays disabled by default; setting `WS4_CONSOLE_TOKEN` enables it
   on the portal and `--allow-console` enables it on `ws4 serve`. Dashboard: **GREEN**.
 
+- P152.1: added the reviewed Python tier to the console. Landlock confines reads and
+  writes, unshare removes network and PID visibility, and resource limits bound memory,
+  CPU, files, processes, output, and wall clock. Unsupported hosts fail closed.
+
 - P137.1: replaced the crown-closure raster trace with a straight log-log line
   fitted to the source; corrected overlays show top/QMD curves align. The earlier
   count mismatch was a text-extraction artifact. TASS is explicitly excluded

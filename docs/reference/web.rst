@@ -112,8 +112,10 @@ to read-only roots, and runs one process group in a scratch directory under
 ``runs/console-*``. ``--console-token`` or ``WS4_CONSOLE_TOKEN`` supplies the bearer
 token; ``--console-timeout``, ``--console-output-bytes``, and ``--console-rate-limit``
 set the quotas. Without the flag the console API is absent and
-``/api/summary`` reports ``capabilities.console: false``. See
-:doc:`../howto/web-console` for the allowlist, audit record, and threat model.
+``/api/summary`` reports ``capabilities.console: false``. ``--allow-console-python``
+adds reviewed Python scripts under Landlock and unshare; the summary reports
+``capabilities.console_python``. See :doc:`../howto/web-console` for the allowlist,
+sandbox boundary, audit record, and threat model.
 
 Assistant overlay
 -----------------
