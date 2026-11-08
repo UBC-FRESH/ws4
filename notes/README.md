@@ -144,3 +144,5 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p148-portfolio-cleanup.md` — P148 guarded cleanup for artifacts and promoted runs.
 - `reports/p149-state-exactness.md` — P149 state-run exactness and UI badge.
 - P149.2 records the compact exactness payload and the live exact replay.
+- `reports/p150-gpu-extension-guard.md` — P150 lazy effect-table row guard and the TSA 29
+  managed-stock limitation.

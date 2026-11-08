@@ -619,6 +619,7 @@ class EffectTable:
         candidates: Candidates,
         *,
         chunk_pairs: int = 4096,
+        max_extension_rows: int = 5_000_000,
         max_extension_bytes: int = 4_000_000_000,
     ) -> tuple[EffectTable, tuple[float, ...]]:
         """Append account/offset columns without rebuilding existing rows.
@@ -637,6 +638,11 @@ class EffectTable:
             The candidate chains used to enumerate rows.
         chunk_pairs : int, optional
             Number of block/option pairs priced per CPU batch.
+        max_extension_rows : int, optional
+            Refuse an extension when the table has more rows than this limit. Lazy
+            extension prices every row, so a target-coupled table with tens of millions
+            of rows needs a prebuilt basis or factorized archive. Defaults to five
+            million rows.
         max_extension_bytes : int, optional
             Refuse an extension whose conservative dense estimate exceeds this many
             bytes. Defaults to four gigabytes.
@@ -651,6 +657,12 @@ class EffectTable:
         additions = tuple(sorted(set(new_cells) - existing))
         if not additions:
             return self, ()
+        if self.rows > max_extension_rows:
+            raise ValueError(
+                "refusing large lazy effect-table extension: table has "
+                f"{self.rows:,} rows (limit {max_extension_rows:,}); "
+                "build a target-independent cell basis or factorized archive instead"
+            )
         estimated_bytes = self.rows * len(additions) * 16 + self.rows * 8
         if estimated_bytes > max_extension_bytes:
             raise ValueError(

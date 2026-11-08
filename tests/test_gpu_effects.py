@@ -327,6 +327,20 @@ def test_extend_cells_updates_the_maximum_row_width(tmp_path: Path) -> None:
     assert extended._max_row_width == int(widths.max().item())
 
 
+def test_extend_cells_refuses_a_table_above_the_row_limit(tmp_path: Path) -> None:
+    """A target-coupled table with too many rows fails before pricing every row."""
+    optimizer, evaluator = _optimizer(tmp_path)
+    table = EffectTable.build(optimizer, evaluator)
+    candidates = optimizer.candidates()
+    with pytest.raises(ValueError, match="large lazy effect-table extension"):
+        table.extend_cells(
+            optimizer,
+            [(0, "feature.Volume")],
+            candidates,
+            max_extension_rows=0,
+        )
+
+
 def test_target_independent_cell_basis_survives_target_changes(tmp_path: Path) -> None:
     """A watchable basis covers target changes that do not alter model or candidates."""
     optimizer, _evaluator = _optimizer(tmp_path)
