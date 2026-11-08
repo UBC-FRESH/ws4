@@ -4453,6 +4453,7 @@ standard test cases, and an event log that records every input.
 - [ ] P151.6 Benchmark validation and close-out (#896)
 - [x] P151.7 Canadian FWI moisture codes (#898)
 - [x] P151.8 Canadian FBP fuel types and surface fire (#900)
+- [ ] P151.9 VRI-to-FBP fuel-type mapping (#905)
 
 Acceptance:
 

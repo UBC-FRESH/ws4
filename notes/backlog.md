@@ -443,7 +443,7 @@ items are enhancements and maintenance.
   head fire intensity match `cffdrs` within 0.02 on the base table and a 320-point grid.
   Flat-ground and surface-only; slope is P151.4 and crown fire is P151.3.
 - **VRI-to-FBP fuel-type mapping.** `open`. Map the WS4/VRI fuel description to an FBP fuel
-  type with provenance. Target: a later P151 task.
+  type with provenance. Target: P151.9 (#905).
 - **Crown fire.** `open`. Van Wagner initiation, Cruz et al. propagation, and the passive to
   active transition. Target: P151.3.
 - **Growth geometry.** `open`. A site/fuel grid and an elliptical/Huygens or cellular growth
