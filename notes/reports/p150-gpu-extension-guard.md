@@ -1,10 +1,11 @@
 # P150 GPU effect-table extension guard
 
 Date: 2026-11-08
-Status: active
+Status: complete
 Branch: `fix/gpu-extension-guard`
 Parent issue: #886
 Task issue: #887
+Merge commit: `2c18e19`
 
 ## Summary
 
@@ -27,3 +28,5 @@ factorized archive. The existing byte guard still handles wide extensions.
   `exact_match: true`, 48.35 seconds, 7.3 GB RSS.
 - The managed-stock default still falls back to the state engine until TSA 29 has a
   prebuilt stock-cell basis or factorized archive.
+
+Dashboard: `OVERALL: GREEN`.
