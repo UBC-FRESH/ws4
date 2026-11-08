@@ -4641,3 +4641,18 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   schedule path, guarded the exact-replay badge to boolean values, and added browser
   coverage. A live TSA 27 state run recorded `exact_match: true` with matching
   objective and verified objective.
+
+- P149 close-out: PRs #876 and #884 squash-merged as `2997ea2` and `c745d8b`;
+  parent #873 and tasks #874 and #883 are closed. Live TSA 27 state runs recorded
+  `exact_match: true` with matching objective and verified objective, and run health
+  shows `exact replay yes`. Dashboard: **GREEN**.
+
+- P150.1: added a row-count guard to lazy GPU effect-table extensions after the TSA 29
+  stock-cell attempt priced 42.5 million rows for over nine minutes. The TSA 29 base
+  zero-generation replay remains exact; the managed-stock target stays on the state
+  fallback until a prebuilt basis or factorized archive exists.
+
+- P150 close-out: PR #888 squash-merged as `2c18e19`; parent #886 and task #887 are
+  closed. The TSA 29 base profile replay is exact; the managed-stock target remains on
+  the state fallback pending a prebuilt basis or factorized archive. Dashboard:
+  **GREEN**.
