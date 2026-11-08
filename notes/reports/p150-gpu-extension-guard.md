@@ -26,7 +26,7 @@ factorized archive. The existing byte guard still handles wide extensions.
 - TSA 29 `base` profile, zero generations, harvest-only target: objective
   `1311809142.7037165`, verified objective `1311809142.7037134`,
   `exact_match: true`, 48.35 seconds, 7.3 GB RSS.
-- The managed-stock default still falls back to the state engine until TSA 29 has a
-  prebuilt stock-cell basis or factorized archive.
+- The managed-stock default was resolved in P154: the TSA 29 base profile now uses a
+  factorized stock basis and reports exact GPU replay. See `p154-tsa29-stock.md`.
 
 Dashboard: `OVERALL: GREEN`.
