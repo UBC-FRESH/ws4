@@ -1,10 +1,11 @@
 # P153 Assistant script review handoff
 
 Date: 2026-11-08
-Status: active
+Status: complete
 Branch: `feature/p153-assistant-script-review`
 Parent issue: #906
 Task issue: #907
+Merge commit: `772d45b`
 
 ## Summary
 
@@ -25,4 +26,5 @@ The chat agent's environment is also scrubbed of `WS4_CONSOLE_TOKEN` and
 
 - `tests/test_web.py`: chip validation and `_agent_environment` secret removal pass.
 - Assistant-staged code still requires the P152 reviewed-script submission.
+- The public portal branch deployed the same chip and environment scrub.
 - Dashboard: `OVERALL: GREEN`.
