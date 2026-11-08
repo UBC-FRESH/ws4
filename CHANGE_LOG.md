@@ -4664,3 +4664,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P151 close-out: PR #897 squash-merged as `cc5c4ff`; parent #789 and task #790 are
   closed. The console stays disabled by default; setting `WS4_CONSOLE_TOKEN` enables it
   on the portal and `--allow-console` enables it on `ws4 serve`. Dashboard: **GREEN**.
+
+- P152.1: added the reviewed Python tier to the console. Landlock confines reads and
+  writes, unshare removes network and PID visibility, and resource limits bound memory,
+  CPU, files, processes, output, and wall clock. Unsupported hosts fail closed.
