@@ -10,7 +10,8 @@ manifest, and a standalone viewer. The scene is a run artifact. It does not chan
 compiled dataset, the ecosystem package, or the event log.
 
 The tree layer is synthetic. The polygons and the fire event log are the authoritative
-pieces. Every scene manifest says so.
+pieces. Every scene manifest says so. Real VRI polygons can replace the built-in square
+footprints through the Nemora adapter.
 
 Tree inventory
 --------------
@@ -73,6 +74,31 @@ fragment is a square whose side is ``sqrt(area_ha * 10000)`` metres; the fragmen
 in a near-square grid unless explicit origins are supplied. The generator is seeded per
 fragment, so the same area map and seed reproduce the same tree table.
 
+``TreeInventory`` also carries optional ``fragment_polygons``. When present, each fragment
+has a real exterior ring and ``bounds_violations`` checks the polygon, not a square.
+
+Nemora adapter
+--------------
+
+``ws4.scene.nemora`` adapts a Nemora tree table without importing Nemora at runtime:
+
+- ``load_vri_polygons`` reads a GeoJSON FeatureCollection and keeps each Polygon or the
+  largest part of a MultiPolygon;
+- ``load_nemora_tree_table`` reads CSV or Parquet and normalizes aliases such as ``dbh`` to
+  ``dbh_cm`` and ``height`` to ``height_m``;
+- ``trees_from_nemora`` places every tree in its VRI polygon, either from an explicit
+  ``fragment_id`` or by point-in-polygon, and raises if the assignment is missing or
+  ambiguous;
+- ``load_nemora_scene`` is the file-level entry point.
+
+The inventory source records the adapter version, Nemora version, seed, polygon source, and
+CRS. Missing fuel columns get documented defaults: crown fuel is ``0.2 × biomass`` when
+biomass exists, otherwise ``0.0015 × DBH²``; surface fuel defaults to 10 t/ha; snag load
+defaults to zero. These are placeholders, not a calibrated fuel model.
+
+The adapter is thin on purpose. Nemora's API is external and may change; WS4 reads the
+exported table and keeps the contract at the file boundary.
+
 Scene package
 -------------
 
@@ -83,7 +109,7 @@ Scene package
    fire_scene/
      manifest.json        # schema, seed, replay digest, counts, synthetic flag
      trees.parquet        # the tree inventory
-     stands.parquet       # fragment squares, area, origin, burn time
+     stands.parquet       # fragment polygons, area, origin, burn time
      fires.csv            # the fire events used by the viewer
      animation.parquet    # per-tree ignition, burn duration, intensity, state
      event_log.json       # the full P144 event log
@@ -91,10 +117,14 @@ Scene package
      viewer.html          # standalone viewer with the scene data embedded
 
 The manifest records the fire run's replay digest, the scenario, the tree generator, the
-seed, the particle budget, and the burn duration. The animation is derived from the fire
-events: a tree's ignition time is the earliest fire event for its fragment; the burn duration
-and visual intensities come from the scene parameters and the tree's fuel. The event log
-remains the authority for the fragment-level outcome.
+seed, the particle budget, the burn duration, and the scene time unit. The animation can use
+the fragment event time or a P156 growth field sampled at each tree position. With the growth
+field, each tree gets its own cell arrival time and the front moves continuously through the
+stand. The event log remains the authority for the fragment-level outcome.
+
+The scene clock defaults to years for the annual P144 event path. A growth-driven scene can
+set ``time_unit="minutes"``; the demo uses minutes since ignition, a two-minute tree burn,
+and a timeline of about 122 minutes.
 
 Viewer
 ------
@@ -113,8 +143,9 @@ The viewer provides:
 - a Focus fire button that frames the active front;
 - tree/fragment counts and a burning/burnt readout.
 
-The first slice is a visual prototype, not a calibrated fire-behaviour model. The flames and
-smoke are procedural and the burn duration is a scene parameter, not a physical prediction.
+The viewer is a visual prototype, not a calibrated fire-behaviour model. The flames and
+smoke are procedural; flame intensity and smoke scale with the local P156 directional ROS
+when a growth field is supplied. The burn duration is a scene parameter.
 
 Example
 -------
@@ -123,27 +154,52 @@ Example
 
    python examples/fire_3d_demo.py
 
-The script builds a 3×3 synthetic landscape, runs a P144 fire, generates 22,500 trees, and
-writes ``tmp/fire-3d-demo/viewer.html``. Open that file in a browser with WebGL2.
+The script builds a synthetic landscape, runs the P156 FBP growth field, samples the field at
+22,500 tree positions, and writes ``tmp/fire-3d-demo/viewer.html``. Open that file in a
+browser with WebGL2.
 
 Programmatically:
 
 .. code-block:: python
 
-   from ws4.ecosystem.fire import FireConfig, FireRun, synthetic_grid
-   from ws4.scene import compile_fire_scene, synthetic_tree_inventory
+   from ws4.scene import load_nemora_scene, sample_tree_ignition
 
-   _, state, edges = synthetic_grid(3, 3)
-   fire = FireRun(state, edges, FireConfig(ignition_rate_per_fragment_year=0.08), seed=7).run(15)
-   trees = synthetic_tree_inventory(fire.state.fragment_areas, seed=7, trees_per_ha=250)
-   scene = compile_fire_scene(fire, trees, burn_duration_years=1.5)
-   scene.write("tmp/fire-scene")
+   trees = load_nemora_scene(
+       "nemora_trees.csv",
+       "vri_polygons.geojson",
+       seed=7,
+       source="public-vri",
+       crs="EPSG:3005",
+       nemora_version="0.3.0",
+   )
+   animation = sample_tree_ignition(trees, growth, cell_size_m=5.0, burn_duration=2.0)
+
+Real VRI cluster
+----------------
+
+.. code-block:: bash
+
+   python examples/fire_3d_vri_demo.py
+
+The VRI demo uses a 12-polygon cluster from the public TSA 24 block geometry in
+``examples/fire_scene_vri``. The polygons are translated to a local origin and populated with
+12,588 Nemora-placed synthetic stems at 120 stems/ha. The growth grid is masked to the
+polygons, so the fire front follows the real stand shapes instead of a square grid.
+
+The current result is 95.42 ha burned, 27.07 m/min head ROS, 8.40 m flame length, and a
+0–240 minute ignition window. The manifest records the VRI source, the Nemora adapter version,
+the seed, and the synthetic-tree flag.
 
 Validation
 ----------
 
 - The same areas and seed reproduce the same tree table and scene.
-- Every generated tree lies inside its fragment square.
+- Every generated tree lies inside its fragment square or VRI polygon.
+- A tree outside its VRI polygon raises an adapter error.
+- The Nemora adapter records the adapter version, Nemora version, seed, polygon source, and
+  CRS.
+- A growth-driven scene samples the cell arrival time at each tree and reports per-tree
+  ignition times.
 - The tree summary reports stems per hectare, basal area, and mean size.
 - Every animated ignition maps to a fire event; the manifest carries the event-log replay
   digest.
@@ -155,8 +211,8 @@ Current limits
 --------------
 
 - The tree layer is synthetic and is not a VRI inventory measurement.
-- The built-in generator uses square fragment footprints. The Nemora/VRI producer and real
-  polygon containment are P155.2.
+- The built-in generator uses square fragment footprints. The Nemora adapter accepts real VRI
+  polygons, but the tree allometry and fuel defaults are placeholders, not a calibration.
 - Flames and smoke are a first procedural pass. Shader quality, embers, heat haze, and LOD are
   P155.3.
 - The viewer uses a CDN for Three.js. The WS4 web Fire workspace and a vendored module are

@@ -418,18 +418,20 @@ items are enhancements and maintenance.
 
 ## 3D fire visualization (P155, #868)
 
-- **Synthetic individual-tree stands over VRI polygons.** `partial` (P155.1, #878). The
-  built-in generator now produces a deterministic tree table over synthetic square fragments
-  with x/y, species, DBH, height, crown shape, live/dead state, and crown/surface/snag fuel.
-  The Nemora producer and real VRI polygon containment are P155.2 (#879). The tree layer stays
-  explicitly synthetic.
+- **Synthetic individual-tree stands over VRI polygons.** `done` (P155.2, #879). The built-in
+  generator produces a deterministic tree table over synthetic square fragments. The Nemora
+  adapter reads a CSV/Parquet tree table, joins trees to real VRI polygons by explicit id or
+  point-in-polygon, and records the adapter version, Nemora version, seed, polygon source, and
+  CRS. A 12-polygon public TSA 24 cluster and 12,588 Nemora-placed stems are pinned in
+  `examples/fire_scene_vri`. The tree layer stays explicitly synthetic.
 - **3D fire scene and viewer.** `partial` (P155.1, #878). The `ws4.fire.scene.v1` package,
   the per-tree animation mapping, and a standalone Three.js viewer with procedural flames,
-  smoke, a timeline, and a burnt scar are in place. Shader quality and embers are P155.3
+  smoke, a timeline, and a burnt scar are in place. Real VRI polygon rendering and the
+  per-tree P156 growth ignition are in P155.2/P155.4. Shader quality and embers are P155.3
   (#880); the WS4 web Fire workspace is P155.4 (#881).
-- **Sub-fragment fire refinement.** `open`. Add a local spread model inside a fragment so the
-  visible fire front and per-tree ignition are finer than the fragment event, while the
-  fragment event remains the audit record. Target: a later landscape-visualization phase.
+- **Sub-fragment fire refinement.** `done` for the growth path (P155.2/P155.4). Each tree
+  samples the P156 growth grid at its position; the fragment event remains the audit record.
+  The viewer clock is in minutes and the tree burn duration is 2 minutes.
 
 ## Fire behaviour (P156)
 

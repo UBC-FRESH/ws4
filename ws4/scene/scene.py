@@ -267,6 +267,9 @@ class FireScene:
         """
         stands: list[dict[str, object]] = []
         for stand in self.stands.itertuples(index=False):
+            polygon_value = getattr(stand, "polygon", None)
+            if not isinstance(polygon_value, (list, tuple)):
+                polygon_value = None
             stands.append(
                 {
                     "fragment_id": int(str(stand.fragment_id)),
@@ -275,6 +278,7 @@ class FireScene:
                     "side": float(str(stand.side_m)),
                     "area_ha": float(str(stand.area_ha)),
                     "burn_time": None if pd.isna(stand.burn_time) else float(str(stand.burn_time)),
+                    "polygon": polygon_value,
                 }
             )
         animation = self.animation.set_index("tree_id")
@@ -326,12 +330,26 @@ class FireScene:
         if self.stands.empty:
             bounds = {"min_x": 0.0, "max_x": 1.0, "min_y": 0.0, "max_y": 1.0}
         else:
-            bounds = {
-                "min_x": float(self.stands["x"].min()),
-                "max_x": float((self.stands["x"] + self.stands["side_m"]).max()),
-                "min_y": float(self.stands["y"].min()),
-                "max_y": float((self.stands["y"] + self.stands["side_m"]).max()),
-            }
+            points = [
+                point
+                for polygon in self.stands["polygon"]
+                if polygon is not None
+                for point in polygon
+            ]
+            if points:
+                bounds = {
+                    "min_x": min(float(point[0]) for point in points),
+                    "max_x": max(float(point[0]) for point in points),
+                    "min_y": min(float(point[1]) for point in points),
+                    "max_y": max(float(point[1]) for point in points),
+                }
+            else:
+                bounds = {
+                    "min_x": float(self.stands["x"].min()),
+                    "max_x": float((self.stands["x"] + self.stands["side_m"]).max()),
+                    "min_y": float(self.stands["y"].min()),
+                    "max_y": float((self.stands["y"] + self.stands["side_m"]).max()),
+                }
         timeline_end = 1.0
         if not self.animation.empty:
             ignition = self.animation["ignition_time"].dropna()
@@ -526,6 +544,7 @@ def compile_fire_scene(
     stands_rows: list[dict[str, object]] = []
     for fragment, area in sorted(trees.fragment_areas.items()):
         origin = trees.fragment_origins[fragment]
+        polygon = trees.fragment_polygons.get(fragment)
         stands_rows.append(
             {
                 "fragment_id": fragment,
@@ -534,6 +553,7 @@ def compile_fire_scene(
                 "y": origin[1],
                 "side_m": math.sqrt(area * 10_000.0),
                 "burn_time": earliest.get(fragment, float("nan")),
+                "polygon": None if polygon is None else [list(point) for point in polygon],
             }
         )
     stands = pd.DataFrame(stands_rows)

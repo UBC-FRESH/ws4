@@ -9,8 +9,8 @@ needs to decide what burns and how brightly.
 from __future__ import annotations
 
 import math
-from collections.abc import Mapping
-from dataclasses import dataclass
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, field
 from typing import Final
 
 import numpy as np
@@ -135,8 +135,8 @@ class Tree:
             raise TreeError("fragment_id must be an integer")
         if self.fragment_id <= 0:
             raise TreeError("fragment_id must be positive")
-        for field in ("x", "y", "z"):
-            _number(getattr(self, field), field)
+        for coordinate in ("x", "y", "z"):
+            _number(getattr(self, coordinate), coordinate)
         species = _text(self.species, "species")
         dbh = _positive(self.dbh_cm, "dbh_cm")
         height = _positive(self.height_m, "height_m")
@@ -249,6 +249,20 @@ class Tree:
         )
 
 
+def _point_in_ring(x: float, y: float, ring: Sequence[Sequence[float]]) -> bool:
+    """Return whether a point is inside a polygon ring using ray casting."""
+    inside = False
+    count = len(ring)
+    for index in range(count):
+        x1, y1 = float(ring[index][0]), float(ring[index][1])
+        x2, y2 = float(ring[(index + 1) % count][0]), float(ring[(index + 1) % count][1])
+        if (y1 > y) != (y2 > y):
+            crossing = (x2 - x1) * (y - y1) / (y2 - y1) + x1
+            if x < crossing:
+                inside = not inside
+    return inside
+
+
 @dataclass(frozen=True)
 class TreeInventory:
     """A deterministic synthetic tree inventory over a fragment layout.
@@ -265,6 +279,8 @@ class TreeInventory:
         Generator seed.
     source : str
         Generator provenance label.
+    fragment_polygons : mapping of int to tuple of (float, float), optional
+        Exterior ring of each real VRI fragment. Empty keeps the synthetic square footprint.
     """
 
     trees: tuple[Tree, ...]
@@ -272,6 +288,7 @@ class TreeInventory:
     fragment_origins: Mapping[int, tuple[float, float]]
     seed: int
     source: str
+    fragment_polygons: Mapping[int, tuple[tuple[float, float], ...]] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         """Validate the inventory's ids, areas, and origins."""
@@ -302,10 +319,21 @@ class TreeInventory:
         if isinstance(self.seed, bool) or not isinstance(self.seed, int) or self.seed < 0:
             raise TreeError("seed must be a non-negative integer")
         source = _text(self.source, "source")
+        polygons: dict[int, tuple[tuple[float, float], ...]] = {}
+        for fragment, ring in self.fragment_polygons.items():
+            if fragment not in areas:
+                raise TreeError(f"polygon names an unknown fragment: {fragment}")
+            points = tuple(
+                (_number(point[0], "polygon x"), _number(point[1], "polygon y")) for point in ring
+            )
+            if len(points) < 3:
+                raise TreeError("fragment polygons need at least three points")
+            polygons[int(fragment)] = points
         object.__setattr__(self, "trees", trees)
         object.__setattr__(self, "fragment_areas", areas)
         object.__setattr__(self, "fragment_origins", origins)
         object.__setattr__(self, "source", source)
+        object.__setattr__(self, "fragment_polygons", polygons)
 
     def to_frame(self) -> pd.DataFrame:
         """Return the inventory as a table.
@@ -326,6 +354,7 @@ class TreeInventory:
         fragment_origins: Mapping[int, tuple[float, float]],
         seed: int,
         source: str,
+        fragment_polygons: Mapping[int, Sequence[Sequence[float]]] | None = None,
     ) -> TreeInventory:
         """Build an inventory from a tree table.
 
@@ -336,11 +365,13 @@ class TreeInventory:
         fragment_areas : mapping of int to float
             Fragment area in hectares.
         fragment_origins : mapping of int to (float, float)
-            Fragment square origins.
+            Fragment square origins, or the lower-left corner of each real polygon.
         seed : int
             Generator seed.
         source : str
             Generator provenance label.
+        fragment_polygons : mapping of int to sequence of (float, float), optional
+            Exterior rings for real VRI fragments.
 
         Returns
         -------
@@ -359,12 +390,21 @@ class TreeInventory:
             Tree.from_dict({str(key): value for key, value in row.items()})
             for row in frame.to_dict(orient="records")
         )
+        polygons = (
+            {
+                int(fragment): tuple((float(point[0]), float(point[1])) for point in ring)
+                for fragment, ring in fragment_polygons.items()
+            }
+            if fragment_polygons is not None
+            else {}
+        )
         return cls(
             trees=trees,
             fragment_areas=fragment_areas,
             fragment_origins=fragment_origins,
             seed=seed,
             source=source,
+            fragment_polygons=polygons,
         )
 
     def summary(self) -> dict[str, object]:
@@ -441,7 +481,7 @@ class TreeInventory:
         return pd.DataFrame(rows)
 
     def bounds_violations(self) -> tuple[str, ...]:
-        """Return trees outside their fragment's synthetic square footprint.
+        """Return trees outside their fragment footprint.
 
         Returns
         -------
@@ -450,6 +490,11 @@ class TreeInventory:
         """
         violations: list[str] = []
         for tree in self.trees:
+            if self.fragment_polygons:
+                ring = self.fragment_polygons.get(tree.fragment_id)
+                if ring is not None and not _point_in_ring(tree.x, tree.y, ring):
+                    violations.append(tree.tree_id)
+                continue
             area = self.fragment_areas[tree.fragment_id]
             side = math.sqrt(area * 10_000.0)
             origin = self.fragment_origins[tree.fragment_id]

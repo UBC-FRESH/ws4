@@ -4847,3 +4847,13 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   page errors and showed 10,000 trees burning at a live fire time. The scene suite has 23
   tests. `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard:
   **GREEN** (lint, format, types, tests, validator, docs, docstrings).
+
+- P155.2: added `ws4/scene/nemora.py`, a thin adapter from a Nemora CSV/Parquet tree table to
+  the `ws4.tree.inventory.v1` contract. It joins trees to real VRI polygons by explicit
+  fragment id or point-in-polygon, raises when a tree is outside or ambiguous, and records the
+  adapter version, Nemora version, seed, polygon source, and CRS. `TreeInventory` now carries
+  real `fragment_polygons`, and the viewer draws polygon geometry instead of stand squares.
+  Added the pinned public TSA 24 cluster fixture in `examples/fire_scene_vri` (12 polygons,
+  12,588 Nemora-placed stems) and `examples/fire_3d_vri_demo.py`. The VRI demo burns 95.42 ha,
+  with 27.07 m/min head ROS, 8.40 m flame length, and a 0–240 minute ignition window. Added
+  the Nemora adapter tests and the per-tree ignition tests. Dashboard: **GREEN**.

@@ -15,8 +15,8 @@ FHOPS Scenario Studio `sandbox/studio/`, WS4 `ws4/web/`
 
 P155.1 implements the first vertical slice: the tree inventory contract, the scene package,
 the per-tree animation mapping, and a standalone viewer with procedural flames and smoke.
-The remaining sections describe the full target; the Nemora/VRI producer and the web
-workspace are P155.2 and P155.4.
+P155.2 adds the Nemora tree-table adapter, real VRI polygon containment, and polygon-aware
+scene rendering. The remaining sections describe the full target; the web workspace is P155.4.
 
 Take real WS4 VRI polygon stand maps, populate each stand with a plausible synthetic
 individual-tree population, and run the P144 fire process through that population as a
@@ -79,6 +79,12 @@ A new table, `ws4.tree.inventory.v1`:
 
 The tree table is synthetic. The polygons and their VRI attributes are real; the trees are a
 plausible realization, not an inventory measurement. Every scene manifest must say so.
+
+P155.2 status: ``ws4.scene.nemora`` reads a Nemora CSV/Parquet tree table and a GeoJSON VRI
+layer, joins each tree by explicit fragment id or point-in-polygon, and raises if a tree is
+outside its polygon. ``TreeInventory.fragment_polygons`` carries the real exterior rings and
+``bounds_violations`` checks them. The adapter records the Nemora version, seed, polygon
+source, CRS, and adapter version. The built-in generator remains the no-Nemora fallback.
 
 ### 3.2 Scene package
 

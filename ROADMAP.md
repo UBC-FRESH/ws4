@@ -4568,7 +4568,7 @@ portable scene package from a P144 fire run, and render the fire as a real-time 
 animation with flames, smoke, a timeline, and post-fire tree states.
 
 - [x] P155.1 Scene and tree contracts plus a first burnable viewer (#878)
-- [ ] P155.2 Nemora synthetic tree producer over VRI polygons (#879)
+- [x] P155.2 Nemora synthetic tree producer over VRI polygons (#879)
 - [ ] P155.3 Fire and smoke visual quality (#880)
 - [ ] P155.4 WS4 web Fire workspace (#881)
 - [ ] P155.5 Verify and close out (#882)

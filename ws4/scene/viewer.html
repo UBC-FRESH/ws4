@@ -141,9 +141,25 @@ scene.add(grid);
 const standMeshes = [];
 for (const stand of DATA.stands) {
   const material = new THREE.MeshLambertMaterial({ color: 0x35603f });
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(stand.side * 0.98, stand.side * 0.98), material);
+  let geometry;
+  const position = new THREE.Vector3();
+  if (Array.isArray(stand.polygon) && stand.polygon.length >= 3) {
+    const shape = new THREE.Shape();
+    stand.polygon.forEach((point, index) => {
+      const px = point[0] - stand.x;
+      const py = -(point[1] - stand.y);
+      if (index === 0) shape.moveTo(px, py); else shape.lineTo(px, py);
+    });
+    shape.closePath();
+    geometry = new THREE.ShapeGeometry(shape);
+    position.set(stand.x, 0.01, stand.y);
+  } else {
+    geometry = new THREE.PlaneGeometry(stand.side * 0.98, stand.side * 0.98);
+    position.set(stand.x + stand.side / 2, 0.01, stand.y + stand.side / 2);
+  }
+  const mesh = new THREE.Mesh(geometry, material);
   mesh.rotation.x = -Math.PI / 2;
-  mesh.position.set(stand.x + stand.side / 2, 0.01, stand.y + stand.side / 2);
+  mesh.position.copy(position);
   mesh.userData.stand = stand;
   mesh.userData.baseColor = new THREE.Color(0x35603f);
   mesh.userData.burntColor = new THREE.Color(0x2d2119);
