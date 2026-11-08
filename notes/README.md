@@ -30,6 +30,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
   optimization with stochastic spatially explicit landscape processes in one event engine.
 - `design/ws4-fire-3d-visualization.md` — queued idea: synthetic individual-tree stands over
   real VRI polygons and a real-time 3D fire/smoke viewer.
+- `design/ws4-fire-behaviour.md` — the P151 Rothermel surface-fire kernel, contracts, and
+  standard-case validation plan.
 - `design/ws4-optimization-stack.md` — the optimization stack and the execution substrate.
 - `design/weighted-goal-programming-aspirations.md` — targets are weighted aspirations, not hard bounds; maximum even-flow harvest and priority-tier caveats.
 - `design/gpu-effect-cache-interactivity.md` — target-independent GPU cache basis, lazy column extension, and live target editing.

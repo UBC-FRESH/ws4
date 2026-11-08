@@ -431,3 +431,19 @@ items are enhancements and maintenance.
 - **Sub-fragment fire refinement.** `open`. Add a local spread model inside a fragment so the
   visible fire front and per-tree ignition are finer than the fragment event, while the
   fragment event remains the audit record. Target: a later landscape-visualization phase.
+
+## Fire behaviour (P151)
+
+- **Rothermel surface-fire kernel.** `done` (P151.2, #892). The metric fuel, moisture, and
+  environment contracts and the Rothermel (1972) kernel are implemented and match the R
+  ``Rothermel`` reference on the 13 Anderson models, the custom dynamic example, and a
+  15-point A3 wind/slope grid.
+- **Canadian FBP fuel types and moisture codes.** `open`. Add the FBP fuel-type table, the
+  FFMC/DMC/DC/ISI/BUI/FWI moisture-code engine, and the FBP surface-fire equations after the
+  Rothermel standard cases pass. Target: P151.2 continuation.
+- **Crown fire.** `open`. Van Wagner initiation, Cruz et al. propagation, and the passive to
+  active transition. Target: P151.3.
+- **Growth geometry.** `open`. A site/fuel grid and an elliptical/Huygens or cellular growth
+  engine, with homogeneous shape and barrier tests. Target: P151.4.
+- **Observed-fire validation.** `open`. Compare the kernel and growth engine to a public
+  benchmark and an observed perimeter, with tolerances named. Target: P151.6.

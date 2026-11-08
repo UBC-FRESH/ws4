@@ -148,6 +148,7 @@ exists and the maintainer approves it.
 | P148 Portfolio and promoted-run cleanup | #869 | `feature/p148-portfolio-cleanup` | complete |
 | P149 State-run exactness | #873 | `feature/p149-state-exactness` | complete |
 | P150 GPU extension guard | #886 | `fix/gpu-extension-guard` | complete |
+| P151 Credible fire behaviour and growth | #890 | `feature/p151-fire-behaviour` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4431,4 +4432,36 @@ Acceptance:
 - An extension above the row limit fails before pricing rows.
 - The error names the row count and the prebuilt-basis/factorized alternatives.
 - A real TSA 29 table check and the focused GPU-effects tests pass.
+
+## Phase 151: Credible fire behaviour and growth
+
+Parent issue: #890
+Branch: `feature/p151-fire-behaviour`
+Status: active
+Design note: `notes/design/ws4-fire-behaviour.md`
+
+Goal: replace the heuristic fire-spread probability with a defensible surface-fire kernel,
+then add crown fire and spatially explicit growth. The target is a model a fire modeller can
+inspect: published equations, standard fuel models, explicit weather and fuel moisture,
+standard test cases, and an event log that records every input.
+
+- [x] P151.1 Fire environment and fuel contracts (#891)
+- [x] P151.2 Rothermel surface fire kernel and standard cases (#892)
+- [ ] P151.3 Crown fire initiation and propagation (#893)
+- [ ] P151.4 Growth geometry and perimeter validation (#894)
+- [ ] P151.5 Couple the kernel to the event log, accounts, and viewer (#895)
+- [ ] P151.6 Benchmark validation and close-out (#896)
+
+Acceptance:
+
+- The standard fuel models and the published Rothermel/Anderson cases reproduce within a
+  stated tolerance.
+- Rate of spread responds monotonically to wind, slope, and fuel moisture, and goes to zero at
+  the moisture of extinction.
+- A fire event records the fuel, weather, slope, and kernel version that produced it.
+- The growth engine produces an elliptical perimeter on a homogeneous fuel bed and a
+  wind/slope-driven shape.
+- The 3D viewer's flame length and smoke are derived from fireline intensity and fuel
+  consumption, not arbitrary particle settings.
+- `python scripts/dashboard.py` is green.
 

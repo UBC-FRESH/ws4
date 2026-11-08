@@ -4656,3 +4656,13 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   closed. The TSA 29 base profile replay is exact; the managed-stock target remains on
   the state fallback pending a prebuilt basis or factorized archive. Dashboard:
   **GREEN**.
+
+- P151.1/P151.2: added `ws4/fire` with the metric fuel, moisture, and environment contracts,
+  the 13 Anderson standard fuel models, the 16 Scott-Burgan moisture scenarios, and the
+  Rothermel (1972) surface-fire kernel with the standard corrections. The kernel matches the
+  R `Rothermel` validation oracle on all 13 models at `D2L2`, 8 km/h, level ground, the custom
+  dynamic example, and a 15-point A3 wind/slope grid (within 0.01 in the reported units).
+  Added derived head fire intensity, flame length, and fuel consumption, plus
+  `docs/reference/fire-behaviour.rst`, `notes/design/ws4-fire-behaviour.md`, and
+  `examples/fire_rothermel_demo.py`. The fire suite has 42 tests. `python
+  scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard: **GREEN**.

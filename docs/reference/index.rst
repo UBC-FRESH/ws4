@@ -69,6 +69,9 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
        and disturbance accounts.
    * - :doc:`ecosystem-scenarios`
      - Scenario ensembles, common random numbers, risk targets, and the out-of-sample report.
+   * - :doc:`fire-behaviour`
+     - The Rothermel surface-fire kernel, fuel and moisture contracts, standard cases, and
+       derived intensity.
    * - :doc:`femic-hydrology`
      - Pinned FEMIC hydrology response bundles, checksums, flood-risk rows, and
        applicability metadata.
@@ -102,4 +105,5 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    ecosystem-package
    ecosystem-fire
    ecosystem-scenarios
+   fire-behaviour
    femic-hydrology

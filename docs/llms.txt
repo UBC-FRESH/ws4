@@ -62,4 +62,5 @@
 - [Ecosystem package and cohort state](reference/ecosystem-package.html): the optional state schema, cohort fractions, null bridge, aggregation, and dataset join.
 - [Fire process](reference/ecosystem-fire.html): Poisson ignition, graph spread, severity, cohort mortality, salvage, accounts, and the analytic oracles.
 - [Scenario ensembles and risk targets](reference/ecosystem-scenarios.html): scenario files, common random numbers, risk aggregation, sample-average approximation, and the out-of-sample report.
+- [Fire behaviour](reference/fire-behaviour.html): the Rothermel surface-fire kernel, fuel and moisture contracts, standard cases, and derived intensity.
 - [API reference](api/index.html): the repository tooling's public functions, with their parameters, types, and return values. The package API is rendered on the reference pages above.
