@@ -152,6 +152,11 @@ The viewer must be able to replay the same animation from the same scene package
 - **Ground fuel**: a surface layer of litter, grass, and downed wood, rendered as a textured
   mesh or instanced clumps.
 
+P155.3 status: the real-time flame, smoke, ember, heat-haze, bloom, and burnt-crown slice is
+implemented in the standalone viewer. Distance-based tree LOD and the optional offline
+high-fidelity smoke tier remain future work. The visual checklist is
+`notes/reports/p155-visual-checklist.md`.
+
 ### 5.2 Flames
 
 Use a GPU particle or billboard system with a procedural shader:

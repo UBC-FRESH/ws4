@@ -166,6 +166,12 @@ def test_viewer_template_contains_the_expected_hooks() -> None:
     assert "timeline" in text
     assert "Play" in text
     assert "three" in text
+    assert "UnrealBloomPass" in text
+    assert "spawnEmber" in text
+    assert "heatHaze" in text
+    assert "__ws4FireStats" in text
+    assert "ShapeGeometry" in text
+    assert "particle_budget" in text
 
 
 def test_scene_time_unit_round_trips_and_reaches_the_viewer() -> None:

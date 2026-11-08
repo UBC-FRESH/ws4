@@ -4862,3 +4862,14 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   timeline, tree/fragment inspection, comparison, and a vendored-Three viewer. The scene
   package now writes `payload.json`; the viewer accepts embedded mode and postMessage
   timeline commands.
+
+- P155.3: raised the standalone viewer's fire and smoke quality. Flames now use a procedural
+  noise/temperature shader with additive blending and a depth fade; smoke uses curl-like
+  wander and buoyancy; short-lived embers and a screen-space heat-haze pass were added.
+  Bloom is enabled by default with `?bloom=0` as a fallback. Burnt crowns shrink and darken,
+  stand polygons develop a gradual burnt fraction, and the HUD reports fps and active
+  particles against the manifest budget. Added `notes/reports/p155-visual-checklist.md` and
+  a headless Chromium/SwiftShader capture. The viewer showed no page errors, 622–1,198 active
+  particles against a 5,000 budget, and about 20 fps on the software rasterizer. The
+  frame-rate result is a floor, not a hardware measurement. Distance-based tree LOD and the
+  offline high-fidelity smoke tier remain future work. Dashboard: **GREEN**.

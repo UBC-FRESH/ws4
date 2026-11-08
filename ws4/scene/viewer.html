@@ -43,7 +43,7 @@
 <canvas id="canvas"></canvas>
 <div id="title" class="hud">
   <h1>WS4 fire scene</h1>
-  <p>Synthetic tree layer over the P156 FBP growth field. Each tree ignites from the local cell arrival time.</p>
+  <p>Synthetic trees over a VRI polygon cluster. P156 FBP growth field; each tree samples the local arrival time.</p>
 </div>
 <div id="stats" class="hud">
   <div><span>fragments</span><strong id="stat-fragments">—</strong></div>
@@ -51,6 +51,8 @@
   <div><span>fire events</span><strong id="stat-fires">—</strong></div>
   <div><span>burning now</span><strong id="stat-burning">0</strong></div>
   <div><span>burnt trees</span><strong id="stat-burnt">0</strong></div>
+  <div><span>particles</span><strong id="stat-particles">—</strong></div>
+  <div><span>fps</span><strong id="stat-fps">—</strong></div>
 </div>
 <div id="timeline" class="hud">
   <div class="row">
@@ -100,7 +102,6 @@ renderer.toneMappingExposure = 1.25;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b1c27);
-scene.fog = new THREE.FogExp2(0x0b1c27, 0.00035);
 
 const bounds = DATA.bounds;
 const width = Math.max(1, bounds.max_x - bounds.min_x);
@@ -108,9 +109,10 @@ const depth = Math.max(1, bounds.max_y - bounds.min_y);
 const maxDim = Math.max(width, depth);
 const cx = (bounds.min_x + bounds.max_x) / 2;
 const cz = (bounds.min_y + bounds.max_y) / 2;
+scene.fog = new THREE.FogExp2(0x0b1c27, 0.16 / maxDim);
 
 const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.5, 20000);
-camera.position.set(cx - maxDim * 0.38, maxDim * 0.30, cz + maxDim * 0.48);
+camera.position.set(cx - maxDim * 0.22, maxDim * 0.12, cz + maxDim * 0.28);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(cx, 0, cz);
 controls.enableDamping = true;
@@ -166,7 +168,7 @@ scene.add(fireLight);
 
 const ground = new THREE.Mesh(
   new THREE.PlaneGeometry(width + maxDim * 1.2, depth + maxDim * 1.2),
-  new THREE.MeshLambertMaterial({ color: 0x1e3327 })
+  new THREE.MeshLambertMaterial({ color: 0x2c4a38 })
 );
 ground.rotation.x = -Math.PI / 2;
 ground.position.set(cx, -0.08, cz);
@@ -505,6 +507,7 @@ function updateParticles(system, dt) {
   system.geometry.attributes.aColor.needsUpdate = true;
   system.geometry.attributes.aSize.needsUpdate = true;
   system.geometry.attributes.aAlpha.needsUpdate = true;
+  return active;
 }
 
 function updateBurnState(t) {
@@ -709,6 +712,7 @@ function resize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight, false);
+  if (composer) composer.setSize(window.innerWidth, window.innerHeight);
 }
 window.addEventListener("resize", resize);
 resize();
@@ -721,6 +725,8 @@ if (parentWindow) {
 }
 
 let last = performance.now();
+let fpsFrames = 0;
+let fpsElapsed = 0;
 function frame(now) {
   const realDt = Math.min(0.05, (now - last) / 1000);
   last = now;
@@ -733,10 +739,34 @@ function frame(now) {
       setTime(state.time + dt);
     }
   }
-  updateParticles(flames, realDt);
-  updateParticles(smoke, realDt);
-  controls.update();
-  renderer.render(scene, camera);
+  const flameActive = updateParticles(flames, realDt);
+  const smokeActive = updateParticles(smoke, realDt);
+  const emberActive = updateParticles(embers, realDt);
+  const activeParticles = flameActive + smokeActive + emberActive;
+  document.getElementById("stat-particles").textContent = `${activeParticles} / ${budget}`;
+  fpsFrames++;
+  fpsElapsed += realDt;
+  if (fpsElapsed >= 0.5) {
+    const fps = fpsFrames / fpsElapsed;
+    document.getElementById("stat-fps").textContent = fps.toFixed(0);
+    window.__ws4FireStats = {
+      fps,
+      particles: activeParticles,
+      budget,
+      burning: state.burning,
+      burnt: state.burnt,
+      time: state.time,
+      unit: DATA.timeline.unit || "y",
+    };
+    fpsFrames = 0;
+    fpsElapsed = 0;
+  }
+  if (composer) {
+    heatHaze.uniforms.uTime.value += realDt;
+    composer.render();
+  } else {
+    renderer.render(scene, camera);
+  }
   postState();
   requestAnimationFrame(frame);
 }

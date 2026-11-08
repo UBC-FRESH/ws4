@@ -424,11 +424,12 @@ items are enhancements and maintenance.
   point-in-polygon, and records the adapter version, Nemora version, seed, polygon source, and
   CRS. A 12-polygon public TSA 24 cluster and 12,588 Nemora-placed stems are pinned in
   `examples/fire_scene_vri`. The tree layer stays explicitly synthetic.
-- **3D fire scene and viewer.** `partial` (P155.1, #878). The `ws4.fire.scene.v1` package,
-  the per-tree animation mapping, and a standalone Three.js viewer with procedural flames,
-  smoke, a timeline, and a burnt scar are in place. Real VRI polygon rendering and the
-  per-tree P156 growth ignition are in P155.2/P155.4. Shader quality and embers are P155.3
-  (#880); the WS4 web Fire workspace is P155.4 (#881).
+- **3D fire scene and viewer.** `partial` (P155.1, #878; P155.3, #880). The
+  `ws4.fire.scene.v1` package, per-tree animation, real VRI polygons, and a standalone
+  Three.js viewer are in place. The viewer uses a noise/temperature flame shader, curl-like
+  smoke, embers, screen-space heat haze, bloom (with a `?bloom=0` fallback), burnt-crown
+  shrink, a gradual stand scar, and fps/particle HUD. The WS4 web Fire workspace is P155.4
+  (#881). Distance-based tree LOD and an offline high-fidelity smoke tier remain future work.
 - **WS4 web Fire workspace.** `done` (P155.4, #881). Run scene discovery, manifest and
   payload endpoints, a Fire workspace with shared timeline, tree and fragment inspection,
   scene A/B comparison, and the vendored-Three viewer are implemented. The phase remains

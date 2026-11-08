@@ -158,10 +158,14 @@ The viewer provides:
 - an orbit camera over the landscape;
 - instanced trees with species colours and a live/burnt state;
 - a Play/Pause timeline with speed control and a scrubber;
-- procedural flame and smoke particles;
-- a fire light and a burnt-scar overlay on the stands;
+- procedural flame particles with a noise/temperature shader and additive blending;
+- smoke particles with curl-like wander and buoyancy;
+- short-lived embers near the active front;
+- a screen-space heat-haze pass and an optional bloom pass (``?bloom=0`` disables bloom);
+- a fire light and a gradual burnt-scar tint on the stands;
+- burnt crowns that shrink and darken;
 - a Focus fire button that frames the active front;
-- tree/fragment counts and a burning/burnt readout.
+- tree/fragment counts, a burning/burnt readout, active particle count, and fps.
 
 The viewer is a visual prototype, not a calibrated fire-behaviour model. The flames and
 smoke are procedural; flame intensity and smoke scale with the local P156 directional ROS
@@ -233,8 +237,11 @@ Current limits
 - The tree layer is synthetic and is not a VRI inventory measurement.
 - The built-in generator uses square fragment footprints. The Nemora adapter accepts real VRI
   polygons, but the tree allometry and fuel defaults are placeholders, not a calibration.
-- Flames and smoke are a first procedural pass. Shader quality, embers, heat haze, and LOD are
-  P155.3.
+- Flames, smoke, embers, heat haze, and bloom are implemented as a procedural real-time slice.
+  They are not a CFD solver or a photoreal VFX shot. Distance-based tree LOD and an offline
+  high-fidelity smoke tier are not implemented.
+- The P155.3 visual checklist is `notes/reports/p155-visual-checklist.md`; the headless
+  frame-rate capture used SwiftShader and is a floor, not a hardware measurement.
 - The viewer uses a CDN for Three.js. The WS4 web Fire workspace and a vendored module are
   P155.4.
 - The burn duration, intensities, and particle counts are scene parameters, not a fire
