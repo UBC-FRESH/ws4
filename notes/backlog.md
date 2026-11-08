@@ -416,18 +416,17 @@ items are enhancements and maintenance.
   provenance rule applies. Target: later landscape phases.
 
 
-## 3D fire visualization (post-P144, #868)
+## 3D fire visualization (P150, #868)
 
-- **Synthetic individual-tree stands over VRI polygons.** `open`. Use Nemora's stand and stem
-  synthesis (`nemora.synthesis.stands`, `nemora.synthesis.stems`) to populate real WS4 VRI
-  polygons with plausible individual trees: x/y, species, DBH, height, crown shape, live/dead
-  state, and crown/surface/snag fuel. The tree layer is explicitly synthetic; the polygons are
-  real. Target: a later landscape-visualization phase.
-- **3D fire scene and viewer.** `open`. Compile a `ws4.fire.scene.v1` package from a P144 fire
-  run, reuse the FHOPS `tree_scene`/`tree_replay` patterns and the Scenario Studio's terrain and
-  replay work, and render real-time flames, smoke, embers, and post-fire structure in the WS4
-  web UI. The animation must derive from the event log and replay exactly. Target: a later
-  landscape-visualization phase.
+- **Synthetic individual-tree stands over VRI polygons.** `partial` (P150.1, #878). The
+  built-in generator now produces a deterministic tree table over synthetic square fragments
+  with x/y, species, DBH, height, crown shape, live/dead state, and crown/surface/snag fuel.
+  The Nemora producer and real VRI polygon containment are P150.2 (#879). The tree layer stays
+  explicitly synthetic.
+- **3D fire scene and viewer.** `partial` (P150.1, #878). The `ws4.fire.scene.v1` package,
+  the per-tree animation mapping, and a standalone Three.js viewer with procedural flames,
+  smoke, a timeline, and a burnt scar are in place. Shader quality and embers are P150.3
+  (#880); the WS4 web Fire workspace is P150.4 (#881).
 - **Sub-fragment fire refinement.** `open`. Add a local spread model inside a fragment so the
   visible fire front and per-tree ignition are finer than the fragment event, while the
   fragment event remains the audit record. Target: a later landscape-visualization phase.

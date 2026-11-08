@@ -146,6 +146,7 @@ exists and the maintainer approves it.
 | P146 Live multi-account scan | #862 | `feature/p146-live-multi-account-scan` | complete |
 | P147 Diverse multi-account scaffold | #865 | `feature/p147-diverse-scaffold` | complete |
 | P148 Portfolio and promoted-run cleanup | #869 | `feature/p148-portfolio-cleanup` | complete |
+| P150 3D fire scene and synthetic tree stands | #877 | `feature/p150-fire-3d` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4389,3 +4390,33 @@ Acceptance:
 - A promoted run can be removed from Plan.
 - Ordinary runs and non-portfolio artifacts are protected.
 - Tests, browser smoke, and dashboard pass.
+
+## Phase 150: 3D fire scene and synthetic tree stands
+
+Parent issue: #877
+Branch: `feature/p150-fire-3d`
+Status: active
+Design note: `notes/design/ws4-fire-3d-visualization.md`
+Idea: #868
+
+Goal: populate a stand map with a deterministic synthetic individual-tree population, compile a
+portable scene package from a P144 fire run, and render the fire as a real-time 3D vector
+animation with flames, smoke, a timeline, and post-fire tree states.
+
+- [x] P150.1 Scene and tree contracts plus a first burnable viewer (#878)
+- [ ] P150.2 Nemora synthetic tree producer over VRI polygons (#879)
+- [ ] P150.3 Fire and smoke visual quality (#880)
+- [ ] P150.4 WS4 web Fire workspace (#881)
+- [ ] P150.5 Verify and close out (#882)
+
+Acceptance:
+
+- The same polygons, seed, and generator reproduce the same tree table and scene package.
+- Every tree lies inside its fragment polygon; stand basal area, stems per hectare, and volume
+  are within the configured tolerance of the stand target.
+- Every animated ignition maps to a P144 fire event; the scene records the run's replay digest.
+- The standalone viewer draws the landscape, plays the fire front with flames and smoke, and
+  shows the burnt scar and post-fire tree state.
+- The scene manifest clearly marks the tree layer synthetic and records its provenance.
+- `python scripts/dashboard.py` is green.
+

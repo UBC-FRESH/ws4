@@ -69,6 +69,9 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
        and disturbance accounts.
    * - :doc:`ecosystem-scenarios`
      - Scenario ensembles, common random numbers, risk targets, and the out-of-sample report.
+   * - :doc:`fire-scene`
+     - Synthetic individual-tree stands, the portable fire-scene package, and the standalone
+       3D viewer.
    * - :doc:`femic-hydrology`
      - Pinned FEMIC hydrology response bundles, checksums, flood-risk rows, and
        applicability metadata.
@@ -102,4 +105,5 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    ecosystem-package
    ecosystem-fire
    ecosystem-scenarios
+   fire-scene
    femic-hydrology

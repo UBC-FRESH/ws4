@@ -4633,3 +4633,12 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P144 close-out: pull request #872 squash-merged as `d6522e3`; parent #852 and tasks
   #853 to #858 closed; the roadmap status is `complete`. The close-out report is
   `notes/reports/p144-closeout.md`. Dashboard: **GREEN**.
+
+- P150.1: added `ws4/scene`: the `ws4.tree.inventory.v1` tree contract, a deterministic
+  synthetic tree generator, the `ws4.fire.scene.v1` package compiler, the per-tree animation
+  mapping, and a standalone Three.js viewer with procedural flames, smoke, a timeline, and a
+  burnt scar. Added `examples/fire_3d_demo.py` and `docs/reference/fire-scene.rst`. The demo
+  builds 22,500 trees and 24 fire events; a headless Chromium check loaded the viewer with no
+  page errors and showed 10,000 trees burning at a live fire time. The scene suite has 23
+  tests. `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard:
+  **GREEN** (lint, format, types, tests, validator, docs, docstrings).
