@@ -307,12 +307,12 @@ for directory in sorted(INSTANCES_ROOT.glob("femic-*-instance")):
     INSTANCES.append(instance)
 
 
-def _landing() -> str:
+def _landing(prefix: str = "") -> str:
     """Render the landing page HTML."""
     cards = []
     for instance in INSTANCES:
         if instance.ready:
-            action = f'<a class="door" href="{html.escape(instance.mount)}">'
+            action = f'<a class="door" href="{prefix}{html.escape(instance.mount)}">'
             footer = "Launch instance →"
             status = "READY"
         else:
@@ -385,10 +385,19 @@ def _landing() -> str:
 </html>"""
 
 
+def _request_prefix(request: Request) -> str:
+    """Return the external proxy prefix for generated links."""
+    value = request.headers.get("x-forwarded-prefix") or request.headers.get("x-script-name")
+    if not value:
+        value = str(request.scope.get("root_path", ""))
+    value = value.strip().strip("/")
+    return f"/{value}" if value else ""
+
+
 @app.get("/", response_class=HTMLResponse)
-def landing() -> HTMLResponse:
+def landing(request: Request) -> HTMLResponse:
     """Render the public instance landing page."""
-    return HTMLResponse(_landing(), headers={"Cache-Control": "no-store"})
+    return HTMLResponse(_landing(_request_prefix(request)), headers={"Cache-Control": "no-store"})
 
 
 @app.get("/health")
