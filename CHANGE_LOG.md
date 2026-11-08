@@ -4668,3 +4668,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P152.1: added the reviewed Python tier to the console. Landlock confines reads and
   writes, unshare removes network and PID visibility, and resource limits bound memory,
   CPU, files, processes, output, and wall clock. Unsupported hosts fail closed.
+
+- P152 close-out: PR #903 squash-merged as `345a86d`; parent #901 and task #902 are
+  closed. The portal exposes the Python tier only with `WS4_CONSOLE_PYTHON=1` and the
+  console token. Dashboard: **GREEN**.
