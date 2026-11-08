@@ -6013,7 +6013,157 @@ function renderTargetChart(account, periods) {
   return card;
 }
 
+function matrixTargetLabel(cell) {
+  const min = cell.minimum;
+  const max = cell.maximum;
+  let label = '—';
+  if (min !== null && min !== undefined && max !== null && max !== undefined) {
+    label = `${compactNumber(min)}–${compactNumber(max)}`;
+  } else if (min !== null && min !== undefined) {
+    label = `≥${compactNumber(min)}`;
+  } else if (max !== null && max !== undefined) {
+    label = `≤${compactNumber(max)}`;
+  }
+  if (cell.flow) label += ` · ${cell.flow}`;
+  return label;
+}
+
+function matrixGap(cell) {
+  if (cell.achieved === null || cell.achieved === undefined) return null;
+  const value = Number(cell.achieved);
+  if (cell.minimum !== null && cell.minimum !== undefined && value < Number(cell.minimum)) {
+    return value - Number(cell.minimum);
+  }
+  if (cell.maximum !== null && cell.maximum !== undefined && value > Number(cell.maximum)) {
+    return value - Number(cell.maximum);
+  }
+  return null;
+}
+
+function renderScenarioMatrix() {
+  const section = $('scenario-matrix');
+  const table = $('scenario-matrix-table');
+  const status = $('matrix-status');
+  if (!section || !table || !status) return;
+  const accounts = [...new Set(state.targets.map((row) => row.account))].sort((a, b) => a.localeCompare(b));
+  const periods = state.targetSeries?.periods?.length
+    ? state.targetSeries.periods
+    : (state.periods.length ? state.periods : targetPeriodsFromRows());
+  if (!accounts.length || !periods.length) {
+    section.hidden = true;
+    return;
+  }
+  const onlyFailing = Boolean($('matrix-only-failing')?.checked);
+  const rows = accounts.map((account) => {
+    const cells = targetChartCells(account);
+    const failing = cells.some((cell) => ['below', 'above'].includes(targetStatus(cell, cell.achieved)));
+    return { account, cells, failing };
+  });
+  const visible = onlyFailing ? rows.filter((row) => row.failing) : rows;
+  section.hidden = false;
+  table.replaceChildren();
+  const head = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  const accountHead = document.createElement('th');
+  accountHead.scope = 'col';
+  accountHead.textContent = 'Account';
+  headRow.append(accountHead);
+  for (const period of periods) {
+    const cell = document.createElement('th');
+    cell.scope = 'col';
+    cell.textContent = `P${Number(period.index) + 1}`;
+    cell.title = period.label ?? `period ${Number(period.index) + 1}`;
+    headRow.append(cell);
+  }
+  head.append(headRow);
+  table.append(head);
+  const body = document.createElement('tbody');
+  const failingCells = rows.reduce(
+    (total, row) => total + row.cells.filter((cell) => ['below', 'above'].includes(targetStatus(cell, cell.achieved))).length,
+    0
+  );
+  for (const { account, cells } of visible) {
+    const tr = document.createElement('tr');
+    const accountCell = document.createElement('th');
+    accountCell.scope = 'row';
+    accountCell.className = 'matrix-account';
+    const label = accountTableLabel(account);
+    const root = document.createElement('span');
+    root.className = 'account-root';
+    root.textContent = label.root;
+    const name = document.createElement('span');
+    name.className = 'matrix-account-name';
+    name.textContent = label.label;
+    name.title = account;
+    accountCell.append(root, name);
+    const unit = accountUnit(account, false);
+    if (unit) {
+      const badge = document.createElement('span');
+      badge.className = 'account-unit';
+      badge.textContent = unit;
+      accountCell.append(badge);
+    }
+    const accountRows = state.targets.filter((row) => row.account === account);
+    if (accountRows.some((row) => row.flow)) {
+      const flow = document.createElement('span');
+      flow.className = 'matrix-flow';
+      flow.textContent = accountRows.find((row) => row.flow)?.flow ?? 'flow';
+      accountCell.append(flow);
+    }
+    accountCell.title = `Filter the target editor to ${account}`;
+    accountCell.addEventListener('click', () => {
+      $('target-filter-search').value = account;
+      $('target-filter-status').value = '';
+      applyTargetFilter();
+      $('target-filter-search').focus();
+    });
+    tr.append(accountCell);
+    for (const period of periods) {
+      const cell = cells[Number(period.index)] ?? chartCell(account, period);
+      const achieved = cell.achieved;
+      const stateName = targetStatus(cell, achieved);
+      const cellNode = document.createElement('td');
+      cellNode.className = `matrix-cell ${stateName}`;
+      if (cell.active === false) cellNode.classList.add('off');
+      if (cell.minimum === null && cell.maximum === null && cell.flow) cellNode.classList.add('flow-only');
+      const target = document.createElement('span');
+      target.className = 'matrix-target';
+      target.textContent = matrixTargetLabel(cell);
+      const realized = document.createElement('span');
+      realized.className = 'matrix-realized';
+      realized.textContent = achieved === null || achieved === undefined
+        ? '—'
+        : compactNumber(achieved);
+      const gap = matrixGap(cell);
+      const gapNode = document.createElement('span');
+      gapNode.className = 'matrix-gap';
+      gapNode.textContent = gap === null ? '' : `Δ${compactNumber(gap)}`;
+      cellNode.append(target, realized, gapNode);
+      const bits = [
+        period.label ?? `P${Number(period.index) + 1}`,
+        `target min ${cell.minimum ?? '—'}`,
+        `max ${cell.maximum ?? '—'}`,
+        `realized ${achieved ?? '—'}`,
+        stateName,
+      ];
+      if (cell.flow) bits.push(`flow ${cell.flow}`);
+      if (cell.active === false) bits.push('inactive');
+      cellNode.title = bits.join(' · ');
+      cellNode.addEventListener('click', () => {
+        setPeriod(Number(period.index));
+        syncNavigation();
+      });
+      tr.append(cellNode);
+    }
+    body.append(tr);
+  }
+  table.append(body);
+  const suffix = onlyFailing ? ` · ${visible.length} of ${rows.length} shown` : '';
+  status.textContent = `${rows.length} account${rows.length === 1 ? '' : 's'} · ${periods.length} periods · ${failingCells} failing cell${failingCells === 1 ? '' : 's'}${suffix}`;
+}
+
 function renderTargetCharts() {
+  renderScenarioMatrix();
   const grid = $('target-chart-grid');
   const empty = $('target-chart-empty');
   const count = $('target-chart-count');
@@ -9231,6 +9381,7 @@ function wireControls() {
     state.targetSort = { key: null, direction: 1 };
     applyTargetSort();
   });
+  $('matrix-only-failing').addEventListener('change', renderScenarioMatrix);
   $('target-filter-search').addEventListener('input', applyTargetFilter);
   $('target-filter-status').addEventListener('change', applyTargetFilter);
   $('target-filter-clear').addEventListener('click', clearTargetFilters);

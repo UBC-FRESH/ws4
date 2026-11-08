@@ -214,6 +214,44 @@ def test_pareto_workspace_renders_and_filters(tmp_path: Path) -> None:
         thread.join(timeout=10)
 
 
+def test_plan_scenario_matrix_shows_targets_and_realized(tmp_path: Path) -> None:
+    """The Plan matrix exposes all target accounts and their realized values."""
+    server, thread, url = _server(tmp_path)
+    try:
+        with sync_playwright() as playwright:
+            try:
+                browser = playwright.chromium.launch(
+                    headless=True,
+                    args=["--use-gl=swiftshader", "--enable-webgl"],
+                )
+            except Exception as error:  # pragma: no cover - browser not installed
+                pytest.skip(f"chromium is not available: {error}")
+            page = browser.new_page(viewport={"width": 1500, "height": 1000})
+            errors: list[str] = []
+            page.on("pageerror", lambda error: errors.append(str(error)))
+            page.goto(f"{url}/?run=run1&view=plan")
+            page.wait_for_function(
+                "document.querySelector('#scenario-matrix') && "
+                "!document.querySelector('#scenario-matrix').hidden",
+                timeout=15000,
+            )
+            page.wait_for_function(
+                "document.querySelectorAll('#scenario-matrix-table tbody tr').length > 0",
+                timeout=15000,
+            )
+            assert "accounts" in page.locator("#matrix-status").inner_text()
+            assert "failing" in page.locator("#matrix-status").inner_text()
+            assert "Volume" in page.locator("#scenario-matrix-table").inner_text()
+            assert page.locator("#scenario-matrix-table thead th").count() > 1
+            page.check("#matrix-only-failing")
+            page.wait_for_timeout(200)
+            assert errors == []
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(timeout=10)
+
+
 def test_run_health_shows_exact_replay(tmp_path: Path) -> None:
     """Run health marks a state run whose exact replay matched."""
     server, thread, url = _server(tmp_path)

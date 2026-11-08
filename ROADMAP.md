@@ -155,6 +155,7 @@ exists and the maintainer approves it.
 | P154 TSA 29 GPU stock | #912 | `feature/p154-tsa29-stock` | complete |
 | P155 3D fire scene and synthetic tree stands | #877 | `feature/p155-fire-3d` | complete |
 | P156 Credible fire behaviour and growth | #890 | `feature/p156-fire-behaviour` | complete |
+| P158 Plan scenario matrix | #928 | `feature/p158-plan-matrix` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4623,3 +4624,28 @@ Acceptance:
 - The 3D viewer's flame length and smoke are derived from fireline intensity and fuel
   consumption, not arbitrary particle settings.
 - `python scripts/dashboard.py` is green.
+
+## Phase 158: Plan scenario matrix
+
+Parent issue: #928
+Branch: `feature/p158-plan-matrix`
+Status: active
+Report: `notes/reports/p158-plan-matrix.md`
+
+Goal: make multi-target scenario authoring and observation legible in Plan.
+
+- [x] P158.1 Add the Plan scenario matrix (#929)
+- [ ] P158.2 Named scenarios, drafts, save-as, and target diffs
+- [ ] P158.3 Batch target composer over accounts and period ranges
+- [ ] P158.4 Penalty ledger, binding ranks, and scenario comparison
+- [ ] P158.5 Plan usability and tablet regression pass
+
+Acceptance:
+
+- Every target account and period is visible at once with target bands, realized values,
+  gaps, and status.
+- Flow and level targets are distinguishable without opening a detail row.
+- Operators can inspect a cell without pinning a chart.
+- The target table and matrix stay consistent after edits and live updates.
+- Browser and dashboard tests pass.
+
