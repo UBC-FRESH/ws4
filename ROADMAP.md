@@ -152,7 +152,7 @@ exists and the maintainer approves it.
 | P151 Web UI power-user console | #789 | `feature/p151-web-console` | complete |
 | P152 Sandboxed Python runner | #901 | `feature/p152-python-sandbox` | complete |
 | P153 Assistant script review | #906 | `feature/p153-assistant-script-review` | complete |
-| P154 TSA 29 GPU stock | #912 | `feature/p154-tsa29-stock` | active |
+| P154 TSA 29 GPU stock | #912 | `feature/p154-tsa29-stock` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4536,8 +4536,10 @@ Acceptance:
 
 Parent issue: #912
 Branch: `feature/p154-tsa29-stock`
-Status: active
+Status: complete
+Merge commit: `8f5aae0`
 Report: `notes/reports/p154-tsa29-stock.md`
+PR: #914
 
 Goal: price the TSA 29 managed-stock floor on the GPU without a lazy table extension.
 

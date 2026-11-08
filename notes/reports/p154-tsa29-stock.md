@@ -1,10 +1,11 @@
 # P154 TSA 29 GPU managed-stock pricing
 
 Date: 2026-11-08
-Status: active
+Status: complete
 Branch: `feature/p154-tsa29-stock`
 Parent issue: #912
 Task issue: #913
+Merge commit: `8f5aae0`
 
 ## Summary
 
@@ -60,3 +61,5 @@ The archive and padded cache are instance-specific and must be rebuilt after a m
 change to the compiled model or candidate map. The factorized feature path remains an
 approximation for scoring (the exact replay is authoritative); both validation runs
 reported a matching exact replay.
+
+Dashboard: `OVERALL: GREEN`.
