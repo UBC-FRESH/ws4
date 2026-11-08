@@ -149,7 +149,7 @@ exists and the maintainer approves it.
 | P149 State-run exactness | #873 | `feature/p149-state-exactness` | complete |
 | P150 GPU extension guard | #886 | `fix/gpu-extension-guard` | complete |
 | P151 Web UI power-user console | #789 | `feature/p151-web-console` | complete |
-| P152 Sandboxed Python runner | #901 | `feature/p152-python-sandbox` | active |
+| P152 Sandboxed Python runner | #901 | `feature/p152-python-sandbox` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4459,8 +4459,10 @@ Acceptance:
 
 Parent issue: #901
 Branch: `feature/p152-python-sandbox`
-Status: active
+Status: complete
+Merge commit: `345a86d`
 Report: `notes/reports/p152-python-sandbox.md`
+PR: #903
 
 Goal: run explicitly reviewed WS4 Python scripts with a fail-closed sandbox.
 
