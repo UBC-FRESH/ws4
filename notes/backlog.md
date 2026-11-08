@@ -440,7 +440,7 @@ items are enhancements and maintenance.
   15-point A3 wind/slope grid.
 - **Canadian FBP fuel types and moisture codes.** `open`. Add the FBP fuel-type table, the
   FFMC/DMC/DC/ISI/BUI/FWI moisture-code engine, and the FBP surface-fire equations after the
-  Rothermel standard cases pass. Target: P151.7 (#898).
+  Rothermel standard cases pass. Target: P151.8 (#900).
 - **Crown fire.** `open`. Van Wagner initiation, Cruz et al. propagation, and the passive to
   active transition. Target: P151.3.
 - **Growth geometry.** `open`. A site/fuel grid and an elliptical/Huygens or cellular growth
