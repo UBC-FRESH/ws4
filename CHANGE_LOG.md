@@ -4709,3 +4709,11 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   `docs/reference/fire-growth.rst`, `examples/fire_growth_demo.py`, and 14 growth tests. The
   fire suite now has 80 tests. `python scripts/dashboard.py` reports **OVERALL: GREEN** on
   all seven gates.
+
+- P151.5: coupled the fire kernel to the P144 event log and the scene viewer. Added
+  `FireBehaviourConfig`; behaviour-driven spread records FBP fuel, FFMC, BUI, wind,
+  slope, ROS, head-fire intensity, flame length, crown fraction, fuel consumption,
+  smoke, and kernel version per event. Added behaviour accounts for mean/max ROS,
+  intensity, flame length, and area-weighted crown fraction. The scene reads the event
+  attributes for flame and smoke scaling. The legacy graph probability remains only
+  when `behaviour=None`. Dashboard: `OVERALL: GREEN`.

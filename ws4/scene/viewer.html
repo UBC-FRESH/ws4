@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WS4 fire scene</title>
+  <style>
+    :root { color-scheme: dark; --ink: #e9f1f5; --muted: #9fb3bf; --panel: rgba(8, 17, 24, 0.82); --line: rgba(150, 190, 210, 0.22); --fire: #ff7a33; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #060d13; color: var(--ink); font: 13px/1.4 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+    #canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+    .hud { position: fixed; z-index: 2; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; backdrop-filter: blur(10px); box-shadow: 0 12px 40px rgba(0,0,0,0.35); }
+    #title { top: 16px; left: 16px; padding: 12px 14px; max-width: 360px; }
+    #title h1 { margin: 0 0 4px; font-size: 15px; letter-spacing: 0.02em; }
+    #title p { margin: 0; color: var(--muted); font-size: 12px; }
+    #stats { top: 16px; right: 16px; padding: 10px 12px; min-width: 190px; }
+    #stats div { display: flex; justify-content: space-between; gap: 16px; padding: 2px 0; color: var(--muted); }
+    #stats strong { color: var(--ink); font-weight: 600; }
+    #timeline { left: 16px; right: 16px; bottom: 16px; padding: 12px 14px 10px; }
+    #timeline .row { display: flex; align-items: center; gap: 12px; }
+    #timeline .grow { flex: 1; }
+    button, select { background: #122430; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 7px 11px; font: inherit; }
+    button:hover, select:hover { border-color: rgba(255, 160, 90, 0.6); }
+    button.primary { background: #d65a22; border-color: #f08a4b; color: white; min-width: 74px; }
+    input[type="range"] { width: 100%; accent-color: var(--fire); }
+    #clock { font-variant-numeric: tabular-nums; color: var(--ink); min-width: 90px; text-align: right; }
+    .legend { display: flex; gap: 14px; color: var(--muted); font-size: 12px; margin-top: 8px; flex-wrap: wrap; }
+    .legend span::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; background: var(--swatch); }
+    #status { color: var(--muted); margin-top: 6px; font-size: 12px; }
+    #error { position: fixed; inset: 0; display: none; place-items: center; z-index: 5; background: #060d13; color: var(--ink); padding: 24px; text-align: center; }
+    @media (max-width: 700px) { #title { max-width: 240px; } #stats { display: none; } }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="title" class="hud">
+  <h1>WS4 fire scene</h1>
+  <p>Synthetic tree layer over a compiled stand map. Fire timed from the P144 event log.</p>
+</div>
+<div id="stats" class="hud">
+  <div><span>fragments</span><strong id="stat-fragments">—</strong></div>
+  <div><span>trees</span><strong id="stat-trees">—</strong></div>
+  <div><span>fire events</span><strong id="stat-fires">—</strong></div>
+  <div><span>burning now</span><strong id="stat-burning">0</strong></div>
+  <div><span>burnt trees</span><strong id="stat-burnt">0</strong></div>
+</div>
+<div id="timeline" class="hud">
+  <div class="row">
+    <button id="play" class="primary">Play</button>
+    <button id="reset">Reset</button>
+    <button id="focus">Focus fire</button>
+    <input id="slider" class="grow" type="range" min="0" max="1" step="0.01" value="0">
+    <span id="clock">0.00 y</span>
+    <select id="speed" title="Playback speed">
+      <option value="0.5">0.5×</option>
+      <option value="1">1×</option>
+      <option value="1" selected>1×</option>
+      <option value="5">5×</option>
+      <option value="10">10×</option>
+    </select>
+  </div>
+  <div class="legend">
+    <span style="--swatch:#3f7a4a">live</span>
+    <span style="--swatch:#ff8a3d">burning</span>
+    <span style="--swatch:#3a2a22">burnt</span>
+    <span style="--swatch:#8b9aa3">smoke</span>
+  </div>
+  <div id="status">Drag to orbit · scroll to zoom · space to play/pause</div>
+</div>
+<div id="error"><div><h2>Scene data unavailable</h2><p>The viewer needs the embedded scene JSON. Re-run the scene writer.</p></div></div>
+<script id="scene-data" type="application/json">__SCENE_DATA__</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+const DATA = JSON.parse(document.getElementById("scene-data").textContent || "null");
+if (!DATA || !DATA.trees || !DATA.stands) {
+  document.getElementById("error").style.display = "grid";
+  throw new Error("scene data missing");
+}
+
+const canvas = document.getElementById("canvas");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.25;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0b1c27);
+scene.fog = new THREE.FogExp2(0x0b1c27, 0.00035);
+
+const bounds = DATA.bounds;
+const width = Math.max(1, bounds.max_x - bounds.min_x);
+const depth = Math.max(1, bounds.max_y - bounds.min_y);
+const maxDim = Math.max(width, depth);
+const cx = (bounds.min_x + bounds.max_x) / 2;
+const cz = (bounds.min_y + bounds.max_y) / 2;
+
+const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.5, 20000);
+camera.position.set(cx - maxDim * 0.38, maxDim * 0.30, cz + maxDim * 0.48);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(cx, 0, cz);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.maxPolarAngle = Math.PI / 2.08;
+controls.minDistance = 20;
+controls.maxDistance = maxDim * 4;
+
+scene.add(new THREE.HemisphereLight(0x9fc8ff, 0x1b140d, 1.2));
+scene.add(new THREE.AmbientLight(0x9fb8c8, 0.25));
+const sun = new THREE.DirectionalLight(0xffe2b8, 1.45);
+sun.position.set(cx - maxDim, maxDim * 1.4, cz - maxDim * 0.8);
+scene.add(sun);
+const fireLight = new THREE.PointLight(0xff7a33, 0, 0, 0);
+fireLight.position.set(cx, maxDim * 0.12, cz);
+scene.add(fireLight);
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(width + maxDim * 1.2, depth + maxDim * 1.2),
+  new THREE.MeshLambertMaterial({ color: 0x1e3327 })
+);
+ground.rotation.x = -Math.PI / 2;
+ground.position.set(cx, -0.08, cz);
+scene.add(ground);
+
+const grid = new THREE.GridHelper(maxDim * 1.4, 24, 0x1e3a35, 0x142622);
+grid.position.set(cx, -0.04, cz);
+grid.material.opacity = 0.28;
+grid.material.transparent = true;
+scene.add(grid);
+
+const standMeshes = [];
+for (const stand of DATA.stands) {
+  const material = new THREE.MeshLambertMaterial({ color: 0x35603f });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(stand.side * 0.98, stand.side * 0.98), material);
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.set(stand.x + stand.side / 2, 0.01, stand.y + stand.side / 2);
+  mesh.userData.stand = stand;
+  mesh.userData.baseColor = new THREE.Color(0x35603f);
+  mesh.userData.burntColor = new THREE.Color(0x2d2119);
+  scene.add(mesh);
+  standMeshes.push(mesh);
+}
+
+const treeCount = DATA.trees.length;
+const trunkGeometry = new THREE.CylinderGeometry(0.08, 0.12, 1, 5);
+trunkGeometry.translate(0, 0.5, 0);
+const crownGeometry = new THREE.ConeGeometry(1, 1, 7);
+crownGeometry.translate(0, 0.5, 0);
+const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+const crownMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+const trunks = new THREE.InstancedMesh(trunkGeometry, trunkMaterial, treeCount);
+const crowns = new THREE.InstancedMesh(crownGeometry, crownMaterial, treeCount);
+trunks.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+crowns.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+trunks.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(treeCount * 3), 3);
+crowns.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(treeCount * 3), 3);
+scene.add(trunks, crowns);
+
+const matrix = new THREE.Matrix4();
+const color = new THREE.Color();
+const liveCrown = new THREE.Color(0x4f8f55);
+const burntCrown = new THREE.Color(0x2f231b);
+const deadCrown = new THREE.Color(0x6d6657);
+const liveTrunk = new THREE.Color(0x5b3e28);
+const burntTrunk = new THREE.Color(0x2a1d16);
+const tree = [];
+for (let i = 0; i < treeCount; i++) {
+  const t = DATA.trees[i];
+  const trunkHeight = Math.max(0.6, t.height_m * 0.55);
+  const crownHeight = Math.max(0.4, t.height_m * 0.45);
+  const radiusScale = Math.max(0.5, t.dbh_cm / 30);
+  matrix.compose(
+    new THREE.Vector3(t.x, t.z, t.y),
+    new THREE.Quaternion(),
+    new THREE.Vector3(radiusScale, trunkHeight, radiusScale)
+  );
+  trunks.setMatrixAt(i, matrix);
+  matrix.compose(
+    new THREE.Vector3(t.x, t.z + trunkHeight, t.y),
+    new THREE.Quaternion(),
+    new THREE.Vector3(Math.max(0.5, t.crown_radius_m), crownHeight, Math.max(0.5, t.crown_radius_m))
+  );
+  crowns.setMatrixAt(i, matrix);
+  color.copy(t.live ? liveCrown : deadCrown);
+  crowns.setColorAt(i, color);
+  color.copy(t.live ? liveTrunk : burntTrunk);
+  trunks.setColorAt(i, color);
+  tree.push({
+    ...t,
+    burnStart: t.burn_time,
+    burnEnd: t.burn_time === null ? null : t.burn_time + t.burn_duration,
+    trunkHeight,
+    crownHeight,
+    state: -1,
+  });
+}
+trunks.instanceMatrix.needsUpdate = true;
+crowns.instanceMatrix.needsUpdate = true;
+crowns.instanceColor.needsUpdate = true;
+trunks.instanceColor.needsUpdate = true;
+
+function makeSpriteTexture() {
+  const c = document.createElement("canvas");
+  c.width = c.height = 128;
+  const g = c.getContext("2d");
+  const grad = g.createRadialGradient(64, 64, 2, 64, 64, 62);
+  grad.addColorStop(0, "rgba(255,255,255,1)");
+  grad.addColorStop(0.35, "rgba(255,255,255,0.85)");
+  grad.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(c);
+}
+const spriteTexture = makeSpriteTexture();
+
+function makeParticleSystem(maxParticles, blending) {
+  const geometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(maxParticles * 3);
+  const colors = new Float32Array(maxParticles * 3);
+  const sizes = new Float32Array(maxParticles);
+  const alphas = new Float32Array(maxParticles);
+  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute("aColor", new THREE.BufferAttribute(colors, 3));
+  geometry.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
+  geometry.setAttribute("aAlpha", new THREE.BufferAttribute(alphas, 1));
+  const material = new THREE.ShaderMaterial({
+    uniforms: { uTexture: { value: spriteTexture } },
+    vertexShader: `
+      attribute float aSize;
+      attribute float aAlpha;
+      attribute vec3 aColor;
+      varying vec3 vColor;
+      varying float vAlpha;
+      void main() {
+        vColor = aColor;
+        vAlpha = aAlpha;
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = aSize * (340.0 / max(1.0, -mv.z));
+        gl_Position = projectionMatrix * mv;
+      }
+    `,
+    fragmentShader: `
+      uniform sampler2D uTexture;
+      varying vec3 vColor;
+      varying float vAlpha;
+      void main() {
+        vec4 tex = texture2D(uTexture, gl_PointCoord);
+        float a = tex.a * vAlpha;
+        if (a < 0.008) discard;
+        gl_FragColor = vec4(vColor, a);
+      }
+    `,
+    transparent: true,
+    depthWrite: false,
+    blending,
+  });
+  const points = new THREE.Points(geometry, material);
+  points.frustumCulled = false;
+  scene.add(points);
+  return {
+    max: maxParticles,
+    next: 0,
+    positions, colors, sizes, alphas,
+    velocities: new Float32Array(maxParticles * 3),
+    life: new Float32Array(maxParticles),
+    maxLife: new Float32Array(maxParticles),
+    active: 0,
+    geometry,
+    points,
+  };
+}
+
+const flameCount = Math.max(200, Math.floor(DATA.counts.particle_budget * 0.55));
+const smokeCount = Math.max(120, DATA.counts.particle_budget - flameCount);
+const flames = makeParticleSystem(flameCount, THREE.AdditiveBlending);
+const smoke = makeParticleSystem(smokeCount, THREE.NormalBlending);
+
+let randomState = 1234567;
+function rand() {
+  randomState = (randomState * 1664525 + 1013904223) >>> 0;
+  return randomState / 4294967296;
+}
+
+function spawnFlame(t) {
+  const i = flames.next;
+  flames.next = (flames.next + 1) % flames.max;
+  const j = i * 3;
+  const r = (rand() - 0.5) * t.crown_radius_m * 1.8;
+  const r2 = (rand() - 0.5) * t.crown_radius_m * 1.8;
+  flames.positions[j] = t.x + r;
+  flames.positions[j + 1] = t.z + t.trunkHeight + rand() * t.crownHeight;
+  flames.positions[j + 2] = t.y + r2;
+  flames.velocities[j] = (rand() - 0.5) * 0.8;
+  flames.velocities[j + 1] = 2.0 + rand() * 4.0;
+  flames.velocities[j + 2] = (rand() - 0.5) * 0.8;
+  const life = 0.35 + rand() * 0.8;
+  flames.life[i] = life;
+  flames.maxLife[i] = life;
+  flames.sizes[i] = 12.0 + rand() * 32.0 * (0.6 + t.flame_intensity);
+  const heat = rand();
+  flames.colors[j] = 1.0;
+  flames.colors[j + 1] = 0.35 + heat * 0.55;
+  flames.colors[j + 2] = 0.04 + heat * 0.22;
+  flames.alphas[i] = 1.0;
+}
+
+function spawnSmoke(t) {
+  const i = smoke.next;
+  smoke.next = (smoke.next + 1) % smoke.max;
+  const j = i * 3;
+  smoke.positions[j] = t.x + (rand() - 0.5) * t.crown_radius_m;
+  smoke.positions[j + 1] = t.z + t.trunkHeight + t.crownHeight * (0.6 + rand() * 0.6);
+  smoke.positions[j + 2] = t.y + (rand() - 0.5) * t.crown_radius_m;
+  smoke.velocities[j] = 0.6 + (rand() - 0.5) * 0.8;
+  smoke.velocities[j + 1] = 1.2 + rand() * 2.2;
+  smoke.velocities[j + 2] = -0.3 + (rand() - 0.5) * 0.6;
+  const life = 2.5 + rand() * 3.5;
+  smoke.life[i] = life;
+  smoke.maxLife[i] = life;
+  smoke.sizes[i] = 12.0 + rand() * 28.0;
+  const shade = 0.52 + rand() * 0.2;
+  smoke.colors[j] = shade;
+  smoke.colors[j + 1] = shade * 0.98;
+  smoke.colors[j + 2] = shade * 0.95;
+  smoke.alphas[i] = 0.16;
+}
+
+function updateParticles(system, dt) {
+  const { positions, velocities, life, maxLife, sizes, alphas, colors } = system;
+  for (let i = 0; i < system.max; i++) {
+    if (life[i] <= 0) {
+      alphas[i] = 0;
+      continue;
+    }
+    life[i] -= dt;
+    if (life[i] <= 0) {
+      alphas[i] = 0;
+      continue;
+    }
+    const j = i * 3;
+    positions[j] += velocities[j] * dt;
+    positions[j + 1] += velocities[j + 1] * dt;
+    positions[j + 2] += velocities[j + 2] * dt;
+    velocities[j] *= 0.985;
+    velocities[j + 2] *= 0.985;
+    velocities[j + 1] *= 0.992;
+    const fraction = life[i] / maxLife[i];
+    alphas[i] = Math.min(1, fraction * 1.35);
+    if (colors[j] > 0.4 && colors[j + 2] < 0.3) {
+      colors[j + 1] *= 0.996;
+      colors[j + 2] *= 0.994;
+    }
+    sizes[i] *= 1.003;
+  }
+  system.geometry.attributes.position.needsUpdate = true;
+  system.geometry.attributes.aColor.needsUpdate = true;
+  system.geometry.attributes.aSize.needsUpdate = true;
+  system.geometry.attributes.aAlpha.needsUpdate = true;
+}
+
+function updateBurnState(t) {
+  let burning = 0;
+  let burnt = 0;
+  let fireX = 0;
+  let fireZ = 0;
+  let fireCount = 0;
+  for (let i = 0; i < tree.length; i++) {
+    const tr = tree[i];
+    let nextState = 0;
+    if (tr.burnStart !== null && t >= tr.burnStart) {
+      nextState = tr.burnEnd !== null && t < tr.burnEnd ? 1 : 2;
+    }
+    if (nextState === 1) {
+      burning++;
+      fireX += tr.x;
+      fireZ += tr.y;
+      fireCount++;
+    } else if (nextState === 2) {
+      burnt++;
+    }
+    if (nextState !== tr.state) {
+      tr.state = nextState;
+      const crown = nextState === 2 ? burntCrown : (tr.live ? liveCrown : deadCrown);
+      const trunk = nextState === 2 ? burntTrunk : (tr.live ? liveTrunk : burntTrunk);
+      crowns.setColorAt(i, crown);
+      trunks.setColorAt(i, trunk);
+    }
+    if (nextState === 1) {
+      if (rand() < 0.35 + tr.flame_intensity * 0.5) spawnFlame(tr);
+      if (rand() < 0.04 + tr.smoke_strength * 0.06) spawnSmoke(tr);
+    }
+  }
+  crowns.instanceColor.needsUpdate = true;
+  trunks.instanceColor.needsUpdate = true;
+  if (fireCount > 0) {
+    fireLight.position.set(fireX / fireCount, 15.0 + maxDim * 0.02, fireZ / fireCount);
+    fireLight.intensity = Math.min(30.0, 4.0 + fireCount * 0.05);
+  } else {
+    fireLight.intensity = 0;
+  }
+  document.getElementById("stat-burning").textContent = burning;
+  document.getElementById("stat-burnt").textContent = burnt;
+}
+
+function updateStands(t) {
+  for (const mesh of standMeshes) {
+    const stand = mesh.userData.stand;
+    if (stand.burn_time !== null && t >= stand.burn_time) {
+      mesh.material.color.copy(mesh.userData.burntColor);
+    } else {
+      mesh.material.color.copy(mesh.userData.baseColor);
+    }
+  }
+}
+
+const state = { time: 0, playing: false, speed: 1, last: performance.now() };
+const slider = document.getElementById("slider");
+const clock = document.getElementById("clock");
+const playButton = document.getElementById("play");
+const speedSelect = document.getElementById("speed");
+slider.max = String(DATA.timeline.end);
+document.getElementById("stat-fragments").textContent = DATA.counts.fragments;
+document.getElementById("stat-trees").textContent = DATA.counts.trees;
+document.getElementById("stat-fires").textContent = DATA.counts.fires;
+
+function setTime(t) {
+  state.time = Math.max(0, Math.min(DATA.timeline.end, t));
+  slider.value = String(state.time);
+  clock.textContent = `${state.time.toFixed(2)} y`;
+  updateBurnState(state.time);
+  updateStands(state.time);
+}
+
+slider.addEventListener("input", () => {
+  state.playing = false;
+  playButton.textContent = "Play";
+  setTime(Number(slider.value));
+});
+playButton.addEventListener("click", () => {
+  state.playing = !state.playing;
+  playButton.textContent = state.playing ? "Pause" : "Play";
+  if (state.playing && state.time >= DATA.timeline.end) setTime(0);
+});
+document.getElementById("reset").addEventListener("click", () => {
+  state.playing = false;
+  playButton.textContent = "Play";
+  setTime(0);
+});
+document.getElementById("focus").addEventListener("click", () => {
+  const active = tree.filter((tr) => tr.state === 1);
+  const target = active.length ? active : tree.filter((tr) => tr.burnStart !== null);
+  if (!target.length) return;
+  let sx = 0, sz = 0;
+  for (const tr of target) { sx += tr.x; sz += tr.y; }
+  sx /= target.length;
+  sz /= target.length;
+  controls.target.set(sx, 0, sz);
+  camera.position.set(sx - 180, 95, sz + 220);
+  controls.update();
+});
+window.__ws4 = { camera, controls, scene, setTime, DATA, tree };
+speedSelect.addEventListener("change", () => { state.speed = Number(speedSelect.value); });
+window.addEventListener("keydown", (event) => {
+  if (event.code === "Space") {
+    event.preventDefault();
+    playButton.click();
+  }
+});
+
+function resize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
+}
+window.addEventListener("resize", resize);
+resize();
+setTime(0);
+
+let last = performance.now();
+function frame(now) {
+  const realDt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  const dt = state.playing ? realDt * state.speed : 0;
+  if (state.playing) {
+    if (state.time >= DATA.timeline.end) {
+      state.playing = false;
+      playButton.textContent = "Play";
+    } else {
+      setTime(state.time + dt);
+    }
+  }
+  updateParticles(flames, realDt);
+  updateParticles(smoke, realDt);
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

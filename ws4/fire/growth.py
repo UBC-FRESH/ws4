@@ -518,6 +518,26 @@ def _direction_ros(head_ros: float, length_breadth: float, angle_rad: float) -> 
     return float(head_ros * (1.0 - eccentricity) / denominator)
 
 
+def directional_ros(head_ros_m_min: float, length_breadth: float, angle_deg: float) -> float:
+    """Return the elliptical rate of spread in a direction relative to the head.
+
+    Parameters
+    ----------
+    head_ros_m_min : float
+        Head-fire rate of spread.
+    length_breadth : float
+        Fire ellipse length-to-breadth ratio.
+    angle_deg : float
+        Direction relative to the head, in degrees.
+
+    Returns
+    -------
+    float
+        Directional rate of spread in metres per minute.
+    """
+    return _direction_ros(head_ros_m_min, length_breadth, math.radians(angle_deg))
+
+
 def grow_fire(grid: SiteGrid, config: GrowthConfig) -> GrowthResult:
     """Grow a fire on a homogeneous site grid.
 

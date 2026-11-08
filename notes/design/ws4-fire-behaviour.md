@@ -125,9 +125,10 @@ adjustment is explicitly unsupported and raises; flat-ground C6 growth is suppor
 
 ## 8. What follows
 
-- **P151.5 Integration.** The P144 event record carries the fuel, weather, slope, kernel
-  version, ROS, intensity, and flame length. The P152 viewer's flames and smoke scale with
-  those values. The growth front maps to fragment ignition times.
+- **P151.5 Integration.** Done: `FireBehaviourConfig` selects the FBP kernel, the event
+  record carries fuel, weather, slope, kernel version, ROS, intensity, flame length, crown
+  fraction, and smoke; the scene reads those attributes for flame and smoke scaling. The
+  growth front maps to fragment ignition times.
 - **P151.6 Benchmark.** A public growth-model comparison and an observed-fire case, with the
   tolerances and limits named.
 - **P151.9 VRI mapping.** Map VRI species, age, and canopy attributes to FBP fuel types, with

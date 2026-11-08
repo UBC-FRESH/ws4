@@ -83,6 +83,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
        active-crown threshold.
    * - :doc:`fire-growth`
      - The site grid, slope-adjusted effective wind, Huygens growth, and perimeter snapshots.
+   * - :doc:`fire-scene`
+     - The synthetic-tree scene, event-driven flame and smoke fields, and standalone viewer.
    * - :doc:`femic-hydrology`
      - Pinned FEMIC hydrology response bundles, checksums, flood-risk rows, and
        applicability metadata.
@@ -121,4 +123,5 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    fire-fbp
    fire-crown
    fire-growth
+   fire-scene
    femic-hydrology

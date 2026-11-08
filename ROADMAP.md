@@ -4449,7 +4449,7 @@ standard test cases, and an event log that records every input.
 - [x] P151.2 Rothermel surface fire kernel and standard cases (#892)
 - [x] P151.3 Crown fire initiation and propagation (#893)
 - [x] P151.4 Growth geometry and perimeter validation (#894)
-- [ ] P151.5 Couple the kernel to the event log, accounts, and viewer (#895)
+- [x] P151.5 Couple the kernel to the event log, accounts, and viewer (#895)
 - [ ] P151.6 Benchmark validation and close-out (#896)
 - [x] P151.7 Canadian FWI moisture codes (#898)
 - [x] P151.8 Canadian FBP fuel types and surface fire (#900)

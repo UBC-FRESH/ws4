@@ -12,6 +12,7 @@ from ws4.disturbance import DisturbanceEvent
 from ws4.ecosystem import (
     CohortState,
     Event,
+    FireBehaviourConfig,
     FireConfig,
     FireEdge,
     FireError,
@@ -338,3 +339,36 @@ def test_biomass_mass_balance_closes_after_fire_and_salvage() -> None:
 
     assert killed == pytest.approx(snag_created + emitted)
     assert initial == pytest.approx(final_biomass + killed)
+
+
+def test_fbp_behaviour_path_records_kernel_attributes() -> None:
+    """The behaviour path records ROS, intensity, flame length, and crown fraction."""
+    _, state, edges = synthetic_grid(1, 3, distance_m=10.0)
+    config = FireConfig(
+        ignition_rate_per_fragment_year=0.0,
+        behaviour=FireBehaviourConfig(fuel_type="C2", ffmc=90.0, bui=60.0, wind_kmh=10.0),
+    )
+    events = FireProcess(config, edges, RandomTape(2), "s").spread(state, ignition())
+
+    assert len(events) == 3
+    attributes = dict(events[1].attributes)
+    assert attributes["behaviour_source"] == "ws4.fire.fbp"
+    assert float(str(attributes["ros_m_min"])) > 0.0
+    assert float(str(attributes["head_fire_intensity_kw_m"])) > 0.0
+    assert float(str(attributes["flame_length_m"])) > 0.0
+    assert 0.0 <= float(str(attributes["crown_fraction_burned"])) <= 1.0
+    assert attributes["kernel_version"] == "fbp-cffdrs-v1"
+    assert events[1].time >= events[0].time
+
+
+def test_behaviour_accounts_are_emitted() -> None:
+    """A behaviour run adds ROS, intensity, and flame accounts."""
+    _, state, edges = synthetic_grid(1, 2, distance_m=10.0)
+    config = FireConfig(
+        ignition_rate_per_fragment_year=1.0,
+        behaviour=FireBehaviourConfig(fuel_type="C2", ffmc=90.0, bui=60.0, wind_kmh=10.0),
+    )
+    result = FireRun(state, edges, config, seed=3).run(1)
+
+    accounts = set(result.accounts["account"])
+    assert {"fire.ros_mean_m_min", "fire.intensity_max_kw_m", "fire.flame_length_max_m"} <= accounts

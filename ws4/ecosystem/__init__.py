@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from .events import EVENT_PHASES, EVENT_SCHEMA_VERSION, Event, EventError
 from .fire import (
+    FireBehaviourConfig,
     FireConfig,
     FireEdge,
     FireError,
@@ -86,6 +87,7 @@ __all__ = [
     "EventLog",
     "EventLogBuilder",
     "EventLogMetadata",
+    "FireBehaviourConfig",
     "FireConfig",
     "FireEdge",
     "FireError",
