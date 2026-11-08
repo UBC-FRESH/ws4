@@ -716,6 +716,29 @@ def test_search_launchers_compose_the_scripts(
     levels = yaml.safe_load(level_target.read_text(encoding="utf-8"))["targets"]
     assert len(levels) == 1
     assert not levels[0].get("flow")
+    scaffold_rows = [
+        {"account": "feature.Volume", "period": 1, "minimum": 10},
+        {"account": "feature.Old", "period": 1, "minimum": 2},
+    ]
+    scaffold = client.post(
+        "/api/search/portfolio",
+        json={
+            "vary": "feature.Volume=1;feature.Old=1",
+            "targets": scaffold_rows,
+            "iterations": 1,
+            "years": 1,
+        },
+    )
+    assert scaffold.status_code == 200
+    scaffold_path = Path(captured[-1][captured[-1].index("--targets") + 1])
+    scaffold_data = yaml.safe_load(scaffold_path.read_text(encoding="utf-8"))["targets"]
+    assert [row["account"] for row in scaffold_data] == ["feature.Volume", "feature.Old"]
+    assert scaffold_path.name == "targets-scaffold.yaml"
+    invalid = client.post(
+        "/api/search/portfolio",
+        json={"vary": "feature.Volume=1", "targets": [{"account": "feature.Volume"}]},
+    )
+    assert invalid.status_code == 422
     bad = client.post(
         "/api/search/portfolio",
         json={"vary": "feature.Volume=1", "mode": "spiral"},
@@ -1044,6 +1067,42 @@ def test_portfolio_promotion_rejects_an_outside_run(tmp_path: Path) -> None:
     response = client.post("/api/search/portfolio-escape/members/member-000%3A001/promote")
     assert response.status_code == 404
     assert not (tmp_path / "runs" / "pareto-portfolio-escape-member-000-001").exists()
+
+
+def test_search_can_delete_a_portfolio_artifact(tmp_path: Path) -> None:
+    """A portfolio directory can be removed, but ordinary artifacts are protected."""
+    client = _runs_client(tmp_path)
+    artifact = tmp_path / "runs" / "portfolio-delete"
+    artifact.mkdir()
+    (artifact / "portfolio.json").write_text("{}", encoding="utf-8")
+    response = client.delete("/api/search/portfolio-delete")
+    assert response.status_code == 200
+    assert response.json() == {"deleted": "portfolio-delete"}
+    assert not artifact.exists()
+    ordinary = tmp_path / "runs" / "ordinary"
+    ordinary.mkdir()
+    assert client.delete("/api/search/ordinary").status_code == 422
+
+
+def test_promoted_run_can_be_deleted_but_not_an_ordinary_run(tmp_path: Path) -> None:
+    """Only a derived run with a portfolio source sidecar is removable."""
+    client = _runs_client(tmp_path)
+    promoted = tmp_path / "runs" / "pareto-demo"
+    promoted.mkdir()
+    (promoted / "portfolio_source.json").write_text("{}", encoding="utf-8")
+    response = client.delete("/api/runs/pareto-demo")
+    assert response.status_code == 200
+    assert not promoted.exists()
+    assert client.delete("/api/runs/run1").status_code == 422
+
+
+def test_search_delete_requires_allow_runs(tmp_path: Path) -> None:
+    """A read-only service refuses deletes."""
+    client, _ = _app(tmp_path)
+    artifact = tmp_path / "runs" / "portfolio-delete"
+    artifact.mkdir()
+    (artifact / "portfolio.json").write_text("{}", encoding="utf-8")
+    assert client.delete("/api/search/portfolio-delete").status_code == 403
 
 
 def test_search_artifact_replaces_nonfinite_numbers(tmp_path: Path) -> None:

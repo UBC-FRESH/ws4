@@ -39,7 +39,10 @@ def _portfolio(tmp_path: Path) -> tuple[Path, Path]:
     runs = tmp_path / "runs"
     run = runs / "run1"
     run.mkdir(parents=True)
-    (run / "summary.json").write_text('{"status": "ok"}', encoding="utf-8")
+    (run / "summary.json").write_text(
+        '{"status": "ok", "exact_match": true, "verified_objective": 42.0}',
+        encoding="utf-8",
+    )
     (run / "account_values.csv").write_text(
         "offset,account,value\n0,feature.Volume,1000\n1,feature.Volume,1100\n",
         encoding="utf-8",
@@ -211,6 +214,35 @@ def test_pareto_workspace_renders_and_filters(tmp_path: Path) -> None:
         thread.join(timeout=10)
 
 
+def test_run_health_shows_exact_replay(tmp_path: Path) -> None:
+    """Run health marks a state run whose exact replay matched."""
+    server, thread, url = _server(tmp_path)
+    try:
+        with sync_playwright() as playwright:
+            try:
+                browser = playwright.chromium.launch(
+                    headless=True,
+                    args=["--use-gl=swiftshader", "--enable-webgl"],
+                )
+            except Exception as error:  # pragma: no cover - browser not installed
+                pytest.skip(f"chromium is not available: {error}")
+            page = browser.new_page(viewport={"width": 1500, "height": 1000})
+            errors: list[str] = []
+            page.on("pageerror", lambda error: errors.append(str(error)))
+            page.goto(f"{url}/?run=run1&view=results")
+            page.wait_for_function(
+                "document.querySelector('#run-health-badges').textContent"
+                ".includes('exact replay yes')",
+                timeout=15000,
+            )
+            assert "exact replay yes" in page.locator("#run-health-badges").inner_text()
+            assert errors == []
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(timeout=10)
+
+
 def test_search_builds_a_scan_and_opens_the_explorer(tmp_path: Path) -> None:
     """The guided scan writes the vary expression and the 3D cross-link loads it."""
     server, thread, url = _server(tmp_path)
@@ -246,6 +278,19 @@ def test_search_builds_a_scan_and_opens_the_explorer(tmp_path: Path) -> None:
             assert "feature.Old@1=0.5,1" in page.locator("#portfolio-vary").input_value()
             page.click("#scan-periods-5")
             assert "5 dimensions" in page.locator("#scan-summary").inner_text()
+            page.locator("details.search-run").filter(
+                has_text="Scaffold multi-account targets"
+            ).evaluate("element => { element.open = true; }")
+            page.select_option("#scaffold-account", label="feature.Volume")
+            page.click("#scaffold-add")
+            page.select_option("#scaffold-account", label="feature.Old")
+            page.click("#scaffold-add")
+            page.click("#scaffold-use")
+            assert "feature.Volume" in page.locator("#portfolio-metrics").input_value()
+            assert "feature.Old" in page.locator("#portfolio-metrics").input_value()
+            assert "feature.Volume=0.5,1" in page.locator("#portfolio-vary").input_value()
+            assert page.locator("#scaffold-preview").is_visible()
+            assert "2 target rows" in page.locator("#scaffold-status").inner_text()
             vary = (
                 page.locator("#portfolio-vary").input_value()
                 if page.locator("#scan-use").is_visible()

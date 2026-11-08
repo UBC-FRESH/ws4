@@ -142,6 +142,14 @@ exists and the maintainer approves it.
 | P141 Portfolio target preparation | #843 | `feature/p141-portfolio-target-prep` | complete |
 | P142 Default stock90 scenario | #846 | `feature/p142-default-stock90` | complete |
 | P143 Web UI trust and cleanup | #849 | `feature/p143-web-trust` | complete |
+| P144 Stochastic landscape engine | #852 | `feature/p144-stochastic-landscape` | complete |
+| P145 Multi-account target scaffold | #859 | `feature/p145-multi-account-targets` | complete |
+| P146 Live multi-account scan | #862 | `feature/p146-live-multi-account-scan` | complete |
+| P147 Diverse multi-account scaffold | #865 | `feature/p147-diverse-scaffold` | complete |
+| P148 Portfolio and promoted-run cleanup | #869 | `feature/p148-portfolio-cleanup` | complete |
+| P149 State-run exactness | #873 | `feature/p149-state-exactness` | complete |
+| P150 GPU extension guard | #886 | `fix/gpu-extension-guard` | complete |
+| P151 Web UI power-user console | #789 | `feature/p151-web-console` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4299,3 +4307,177 @@ Acceptance:
 - Promoted Plan separates member targets from live targets.
 - Profile loading preserves the stock guard.
 - Tests, browser smoke, and dashboard pass.
+
+## Phase 144: Stochastic landscape engine
+
+Parent issue: #852
+Branch: `feature/p144-stochastic-landscape`
+Status: complete
+Merge commit: `d6522e3`
+Report: `notes/reports/p144-closeout.md`
+PR: #872
+
+Goal: merge the deterministic estate-optimization core with stochastic, spatially explicit,
+discrete-event landscape processes in one engine. Decisions and ecological processes become two
+event sources over one spatial state; a deterministic run is a stochastic run conditioned on one
+realized random tape.
+
+Design note: `notes/design/ws4-stochastic-landscape.md`
+
+- [x] P144.1 Write the design note and contracts (#853)
+- [x] P144.2 Add the event record, random tape, and replay validator (#854)
+- [x] P144.3 Add the ecosystem package and cohort state extension (#855)
+- [x] P144.4 Add the fire vertical slice (#856)
+- [x] P144.5 Add scenario ensembles and risk targets (#857)
+- [x] P144.6 Verify and close out (#858)
+
+Acceptance:
+
+- Same inputs and seed produce an identical event log and account values.
+- Common random numbers hold across candidate schedules.
+- A fire process can be applied to a compiled dataset without changing the management contract.
+- A risk-aggregated target (mean or CVaR) can be optimized and replayed.
+- Area and carbon conservation checks pass.
+- `python scripts/dashboard.py` is green.
+
+## Phase 145: Multi-account portfolio target scaffold
+
+Parent issue: #859
+Branch: `feature/p145-multi-account-targets`
+Status: complete
+Merge commit: `a33443a`
+Report: `notes/reports/p145-multi-account-targets.md`
+PR: #861
+
+Goal: build a 5-7 account portfolio target set without changing live Solve targets.
+
+- [x] P145.1 Multi-account scaffold targets (#860)
+
+Acceptance:
+
+- A user can add 5-7 accounts and review target rows.
+- The portfolio launch validates and uses the scaffold file.
+- Live target files remain unchanged.
+- Browser and API tests pass.
+
+## Phase 146: Live multi-account portfolio scan
+
+Parent issue: #862
+Branch: `feature/p146-live-multi-account-scan`
+Status: complete
+Merge commit: `65c5daf`
+Report: `notes/reports/p146-live-multi-account-scan.md`
+PR: #864
+
+Goal: validate the multi-account scaffold through a real TSA27 browser run.
+
+- [x] P146.1 Honor API request options for portfolio launch (#863)
+
+Acceptance:
+
+- The run uses `targets-scaffold.yaml`, not the live target file.
+- Members complete without failures.
+- The Pareto workspace shows the multi-account front.
+- A front member opens on the map.
+
+## Phase 147: Diverse multi-account scaffold
+
+Parent issue: #865
+Branch: `feature/p147-diverse-scaffold`
+Status: complete
+Merge commit: `efcddd4`
+Report: `notes/reports/p147-diverse-scaffold.md`
+PR: #867
+
+Goal: select diverse account families and produce a meaningful multi-account front.
+
+- [x] P147.1 Diverse account preset and warnings (#866)
+
+Acceptance:
+
+- The diverse preset selects non-nested accounts when available.
+- Nested selections show a warning.
+- The live TSA27 run produces a multi-point front.
+- Browser and API tests pass.
+
+## Phase 148: Portfolio and promoted-run cleanup
+
+Parent issue: #869
+Branch: `feature/p148-portfolio-cleanup`
+Status: complete
+Merge commit: `103614b`
+Report: `notes/reports/p148-portfolio-cleanup.md`
+PR: #871
+
+Goal: let users remove failed artifacts and derived promoted runs safely.
+
+- [x] P148.1 Guarded portfolio cleanup (#870)
+
+Acceptance:
+
+- Failed artifacts can be deleted from Search.
+- A promoted run can be removed from Plan.
+- Ordinary runs and non-portfolio artifacts are protected.
+- Tests, browser smoke, and dashboard pass.
+
+## Phase 149: State-run exactness
+
+Parent issue: #873
+Branch: `feature/p149-state-exactness`
+Status: complete
+Merge commits: `2997ea2`, `c745d8b`
+Report: `notes/reports/p149-state-exactness.md`
+PR: #876, #884
+
+Goal: surface and persist exact-objective replay results for web state runs.
+
+- [x] P149.1 Persist state exactness in the web summary (#874)
+- [x] P149.2 Keep the state exactness payload compact and cover the badge (#883)
+
+Acceptance:
+
+- Successful state runs record `exact_match: true`.
+- Mismatches are visible and cannot silently pass.
+- Run health shows the exactness result.
+- Existing state runs remain readable.
+
+## Phase 150: GPU effect-table extension guard
+
+Parent issue: #886
+Branch: `fix/gpu-extension-guard`
+Status: complete
+Merge commit: `2c18e19`
+Report: `notes/reports/p150-gpu-extension-guard.md`
+PR: #888
+
+Goal: refuse lazy effect-table extensions that cannot finish at full-model scale.
+
+- [x] P150.1 Guard oversized effect-table extensions (#887)
+
+Acceptance:
+
+- An extension above the row limit fails before pricing rows.
+- The error names the row count and the prebuilt-basis/factorized alternatives.
+- A real TSA 29 table check and the focused GPU-effects tests pass.
+
+## Phase 151: Web UI power-user console
+
+Parent issue: #789
+Branch: `feature/p151-web-console`
+Status: complete
+Merge commit: `cc5c4ff`
+Report: `notes/reports/p151-web-console.md`
+PR: #897
+
+Goal: add a token-authenticated, allowlisted command composer without exposing a shell.
+
+- [x] P151.1 Allowlisted WS4 command console for the web UI (#790)
+
+Acceptance:
+
+- The console is absent unless enabled and authenticated.
+- Server-built argv arrays launch only allowlisted WS4 commands.
+- Input paths stay inside read-only roots; outputs stay in a scratch job directory.
+- Output, cancellation, quotas, artifacts, and audit records work.
+- Browser smoke and dashboard pass.
+

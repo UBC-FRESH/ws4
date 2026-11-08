@@ -4532,9 +4532,137 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   target-aware state-cache keys, promoted-run target definitions, alternative profile
   preservation, and unsupported-GPU-profile fallback. Dashboard: `OVERALL: GREEN`.
 
+- P144.1: added `notes/design/ws4-stochastic-landscape.md`, the Phase 144 scaffold
+  (#852 to #858), and the roadmap, notes-index, and backlog entries. The design joins the
+  deterministic estate-optimization core with stochastic spatially explicit landscape
+  processes as two event sources over one annual executor; it specifies the event record, the
+  `ws4.ecosystem.v1` sidecar, the cohort/fraction state extension, the counter-based random
+  tape, common random numbers, the optimizer coupling, and the validation oracles.
+  Documentation only; no runtime code. `python scripts/check_workflow.py` reports
+  **0 error(s), 0 warning(s)**. Dashboard: **GREEN** (lint, format, types, tests,
+  validator, docs, docstrings).
+
+- P144.2: added the `ws4.ecosystem` package: the versioned `Event` record, the deterministic
+  `EventLog` and `EventLogBuilder` with a SHA-256 replay digest, the counter-based
+  `RandomTape` (Philox 2x64) with common random numbers, and `ws4 ecosystem validate-log`.
+  The record is a superset of the `femic.disturbance.v1` row and
+  `Event.from_disturbance_row` adapts the existing consumer rows; execution order is
+  `(time, phase, priority, spatial id, event id)`. Added 101 unit, property, and CLI tests
+  with 98% branch coverage of the new package, plus `docs/reference/event-log.rst`.
+  `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard:
+  **GREEN** (lint, format, types, tests, validator, docs, docstrings).
+
+- P144.3: added the optional `ws4.ecosystem.v1` package and cohort state. The package
+  declares typed state variables, cohort area fractions, and an explicit null bridge. The
+  loader validates the closed manifest, table hashes, required columns, state dtype/scope
+  and defaults, cohort fractions and attributes, and bridge declarations. `CohortState`
+  joins the package to a dataset's fragment areas, aggregates area-weighted age, biomass,
+  fuel, and snags, reports species fractions and missing fragments, and checks area
+  conservation. `find_ecosystem_package` and `load_dataset_ecosystem` return None when a
+  dataset has no package, so the deterministic model is unchanged. Added
+  `ws4 ecosystem validate-package --package PATH [--json]` and
+  `docs/reference/ecosystem-package.rst`. The ecosystem suite now has 165 tests.
+  `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard:
+  **GREEN** (lint, format, types, tests, validator, docs, docstrings).
+
+- P144.4: added the first stochastic landscape process in `ws4/ecosystem/fire.py`:
+  Poisson ignition, fuel/distance/wind graph percolation, severity and cohort mortality,
+  a deterministic salvage source, disturbance-compatible fire events, and fire/salvage/state
+  account rows. Added `FireRun`/`FireResult`, the synthetic grid and the end-to-end
+  `examples/ecosystem_fire_demo.py`, plus `docs/reference/ecosystem-fire.rst`. The analytic
+  oracles cover the Poisson ignition rate, the geometric chain burn length, a zero-fuel
+  barrier, downwind versus upwind spread, area conservation, and exact replay. The ecosystem
+  suite now has 179 tests. `python scripts/check_workflow.py` reports **0 error(s), 0
+  warning(s)**. Dashboard: **GREEN** (lint, format, types, tests, validator, docs,
+  docstrings).
+
+- P144.5: added `ws4/ecosystem/scenarios.py`: scenario files with seeds, weights, and
+  overrides; `ScenarioSet` load/write/split; common random numbers; `risk_account_values`
+  with mean, min, max, CVaR lower/upper, quantile, probability, and regret; and
+  `SampleAverageApproximation` with a finite decision-set loop, a held-out evaluation, and an
+  `OutOfSampleReport`. `Target` now carries `aggregation`, `risk_alpha`, `risk_minimum`, and
+  `risk_maximum`, and `load_targets` parses them; the default is `single`, so existing
+  deterministic and flow targets are unchanged. The fire evaluator wraps `FireRun` and copies
+  the initial cohort state for every scenario. Added
+  `docs/reference/ecosystem-scenarios.rst`. The ecosystem and objective suites now have 232
+  tests. `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard:
+  **GREEN** (lint, format, types, tests, validator, docs, docstrings).
+
+- P144.6: verified and queued the phase. Added the `fire.killed_biomass_t`,
+  `fire.snag_created_t`, and `fire.emitted_biomass_t` accounts and a live-biomass
+  mass-balance test. The full dashboard is **GREEN**; the ecosystem and objective suites have
+  233 tests; `ws4.ecosystem` branch coverage is 90%. Exercised the 5x5 fire demo, the event-log
+  validator, the ecosystem-package validator, and an SAA out-of-sample report. Wrote
+  `notes/reports/p144-closeout.md` and queued pull request #872; the phase is `pr-open` and
+  awaits maintainer approval. No merge, tag, release, or settings change was made.
 - P143.3: validated the TSA29 profile fallback to the state engine after the stock
   target could not be priced by the GPU profile. Portfolio list defaults to the newest
   usable front; failed artifacts are marked and skipped.
+- P145.1: added a multi-account target scaffold to Search and a validated `targets`
+  payload to the portfolio launcher. Scaffold targets are written inside the run output,
+  never to the live target file. Focused tests pass; dashboard: `OVERALL: GREEN`.
+  Report: `notes/reports/p145-multi-account-targets.md`.
+
+- P145: merged via PR #861 as `a33443a`. Search can scaffold multi-account target rows
+  and pass them to a portfolio run without touching live targets. Dashboard:
+  `OVERALL: GREEN`.
+
+- P145.1 fix: using the multi-account scaffold now stages weight dimensions for every
+  scaffolded account as well as metrics and directions.
+
+- P146: fixed the shared browser API helper so portfolio launch and search stop send POST
+  requests. A live five-account TSA27 portfolio completed with 8 members, 1 exact front,
+  0 failures, and opened a member on the map. Report:
+  `notes/reports/p146-live-multi-account-scan.md`.
+
+- P147.1: added a Diverse 6 preset and nested/family warnings to the multi-account
+  scaffold, with target minima fallback for product accounts.
+
+- P147: merged via PR #867 as `efcddd4`. The Diverse 6 preset produced a live TSA27
+  run with 6 target rows, 8 members, 2 exact front points, and 0 failures. The front
+  member opened on the map.
+
+- P148.1: added guarded deletion for portfolio artifacts and promoted runs, plus Search
+  Delete/Clean failed and Plan Delete promoted run controls. Live cleanup follows.
+
+- P148: merged via PR #871 as `103614b`. Added guarded portfolio/promoted-run deletion
+  and Search/Plan cleanup controls; removed the failed live probe.
+
+- P149.1: added `state-watch --summary-out` and prepared exactness fields for web
+  state summaries and run health.
+
+- P144 close-out: pull request #872 squash-merged as `d6522e3`; parent #852 and tasks
+  #853 to #858 closed; the roadmap status is `complete`. The close-out report is
+  `notes/reports/p144-closeout.md`. Dashboard: **GREEN**.
+
+- P149.2: replaced the embedded schedule in the state exactness payload with the
+  schedule path, guarded the exact-replay badge to boolean values, and added browser
+  coverage. A live TSA 27 state run recorded `exact_match: true` with matching
+  objective and verified objective.
+
+- P149 close-out: PRs #876 and #884 squash-merged as `2997ea2` and `c745d8b`;
+  parent #873 and tasks #874 and #883 are closed. Live TSA 27 state runs recorded
+  `exact_match: true` with matching objective and verified objective, and run health
+  shows `exact replay yes`. Dashboard: **GREEN**.
+
+- P150.1: added a row-count guard to lazy GPU effect-table extensions after the TSA 29
+  stock-cell attempt priced 42.5 million rows for over nine minutes. The TSA 29 base
+  zero-generation replay remains exact; the managed-stock target stays on the state
+  fallback until a prebuilt basis or factorized archive exists.
+
+- P150 close-out: PR #888 squash-merged as `2c18e19`; parent #886 and task #887 are
+  closed. The TSA 29 base profile replay is exact; the managed-stock target remains on
+  the state fallback pending a prebuilt basis or factorized archive. Dashboard:
+  **GREEN**.
+
+- P151.1: added the opt-in, token-authenticated web console with typed allowlisted
+  commands, server-built argv, read-only input roots, scratch jobs, output streaming,
+  cancellation, quotas, artifact downloads, and audit records.
+
+- P151 close-out: PR #897 squash-merged as `cc5c4ff`; parent #789 and task #790 are
+  closed. The console stays disabled by default; setting `WS4_CONSOLE_TOKEN` enables it
+  on the portal and `--allow-console` enables it on `ws4 serve`. Dashboard: **GREEN**.
+
 - P137.1: replaced the crown-closure raster trace with a straight log-log line
   fitted to the source; corrected overlays show top/QMD curves align. The earlier
   count mismatch was a text-extraction artifact. TASS is explicitly excluded

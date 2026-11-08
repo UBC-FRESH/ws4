@@ -4,7 +4,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/OrbitControls.js";
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' }, runSource: null, portfolioScan: [], pareto: { available: false, artifact: '', data: null, chart: null, cloud: null, selected: null, pinned: [], screen: [], artifacts: [] } };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' }, runSource: null, runSummary: null, console: { schema: null, token: '', job: null, timer: null, offset: 0, busy: false }, portfolioScan: [], portfolioTargets: [], pareto: { available: false, artifact: '', data: null, chart: null, cloud: null, selected: null, pinned: [], screen: [], artifacts: [] } };
 
 state.estate3d = { open: false, features: [], yaw: -0.55, zoom: 1, exaggeration: 1, hits: [] };
 const ESTATE_3D_LIMIT = 2000;
@@ -26,8 +26,11 @@ function showToast(message, error = false) {
   toastTimer = window.setTimeout(() => { toast.hidden = true; }, 2200);
 }
 
-async function api(path) {
-  const response = await fetch(path, { headers: { accept: 'application/json' } });
+async function api(path, options = {}) {
+  const response = await fetch(path, {
+    ...options,
+    headers: { accept: 'application/json', ...(options.headers || {}) },
+  });
   if (!response.ok) {
     let detail = response.statusText;
     try { detail = (await response.json()).detail ?? detail; } catch { /* not json */ }
@@ -1555,6 +1558,7 @@ async function stopSearch(id) {
 
 async function loadSearch(preferred = '') {
   populateScanAccounts();
+  populateScaffoldAccounts();
   const empty = $('search-empty');
   const select = $('search-select');
   const table = $('search-table');
@@ -1583,9 +1587,14 @@ async function loadSearch(preferred = '') {
       summary.textContent = '';
       table.hidden = true;
       $('search-explore').disabled = true;
+      $('search-delete').disabled = true;
+      $('search-clean-failed').disabled = true;
       return;
     }
     empty.hidden = true;
+    $('search-clean-failed').disabled = !ready.some(
+      (artifact) => artifact.kind === 'portfolio' && artifact.usable === false
+    );
     for (const artifact of ready) {
       const option = document.createElement('option');
       option.value = artifact.id;
@@ -1700,6 +1709,7 @@ async function renderSearchArtifact(id) {
     };
     if (body.kind === 'portfolio') {
       $('search-explore').disabled = false;
+      $('search-delete').disabled = false;
       const data = body.data ?? {};
       const metrics = Array.isArray(data.metrics) ? data.metrics : [];
       const front = new Set(data.outcome_front ?? data.front ?? []);
@@ -1725,6 +1735,7 @@ async function renderSearchArtifact(id) {
     }
     if (body.kind === 'tuning') {
       $('search-explore').disabled = true;
+      $('search-delete').disabled = true;
       const data = body.data ?? {};
       const candidates = Array.isArray(data.candidates) ? data.candidates : [];
       const byLabel = new Map(candidates.map((candidate) => [candidate.label, candidate]));
@@ -1922,6 +1933,226 @@ async function renderPortfolioMemberTargets() {
     body.replaceChildren();
     status.textContent = `member targets unavailable: ${error.message}`;
   }
+}
+
+function scaffoldAccounts() {
+  const names = new Set([...state.series.keys()]);
+  for (const row of state.targets || []) names.add(String(row.account));
+  return [...names].filter(Boolean).sort();
+}
+
+function populateScaffoldAccounts() {
+  const select = $('scaffold-account');
+  if (!select) return;
+  const previous = select.value;
+  const accounts = scaffoldAccounts();
+  select.replaceChildren();
+  if (!accounts.length) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'No accounts loaded';
+    select.append(option);
+    $('scaffold-add').disabled = true;
+    return;
+  }
+  $('scaffold-add').disabled = false;
+  for (const account of accounts) {
+    const option = document.createElement('option');
+    option.value = account;
+    option.textContent = account;
+    select.append(option);
+  }
+  if (accounts.includes(previous)) select.value = previous;
+  const periods = (state.targets || [])
+    .map((row) => Number(row.period))
+    .filter((period) => Number.isFinite(period) && period > 0);
+  if (periods.length && Number($('scaffold-period').value) <= 0) {
+    $('scaffold-period').value = String(Math.max(...periods));
+  }
+}
+
+function scaffoldCurrentValue(account) {
+  const series = state.series.get(account);
+  if (!series || !series.size) return 0;
+  const last = [...series.keys()].sort((left, right) => left - right).pop();
+  return Number(series.get(last) || 0);
+}
+
+function scaffoldMinimum(account, period) {
+  const seriesValue = scaffoldCurrentValue(account);
+  if (seriesValue) return seriesValue;
+  const candidates = (state.targets || []).filter((row) => String(row.account) === account);
+  const exact = candidates.find((row) => Number(row.period) === Number(period));
+  const row = exact || candidates[0];
+  return row && row.minimum !== null && row.minimum !== undefined ? Number(row.minimum) : 0;
+}
+
+function scaffoldFamily(account) {
+  return String(account).split('.').slice(0, 3).join('.');
+}
+
+function scaffoldWarnings() {
+  const rows = state.portfolioTargets || [];
+  const warnings = [];
+  for (let i = 0; i < rows.length; i += 1) {
+    for (let j = i + 1; j < rows.length; j += 1) {
+      const left = String(rows[i].account);
+      const right = String(rows[j].account);
+      if (left.startsWith(`${right}.`) || right.startsWith(`${left}.`)) {
+        warnings.push(`nested accounts: ${left} / ${right}`);
+      }
+    }
+  }
+  const families = new Map();
+  for (const row of rows) {
+    const family = scaffoldFamily(row.account);
+    families.set(family, (families.get(family) || 0) + 1);
+  }
+  for (const [family, count] of families) {
+    if (count > 2) warnings.push(`${count} accounts share ${family}`);
+  }
+  return [...new Set(warnings)];
+}
+
+function applyDiverseScaffold() {
+  const available = new Set(scaffoldAccounts());
+  const preferred = [
+    'feature.Area.managed',
+    'feature.Area.og1.total',
+    'feature.Area.og2.total',
+    'feature.Yield.managed.Total',
+    'feature.SpeciesProp.managed.CW',
+    'product.HarvestedVolume.managed.Total.CC',
+  ];
+  const selected = preferred.filter((account) => available.has(account));
+  for (const account of [...available].sort()) {
+    if (selected.length >= 6) break;
+    if (selected.includes(account)) continue;
+    if (selected.some((item) => item.startsWith(`${account}.`) || account.startsWith(`${item}.`))) continue;
+    if (selected.filter((item) => scaffoldFamily(item) === scaffoldFamily(account)).length >= 2) continue;
+    selected.push(account);
+  }
+  const period = Number($('scaffold-period').value) || 20;
+  const weight = Math.max(0.0001, Number($('scaffold-weight').value) || 1);
+  state.portfolioTargets = selected.slice(0, 6).map((account) => ({
+    account,
+    period,
+    minimum: scaffoldMinimum(account, period),
+    maximum: null,
+    min_weight: weight,
+    max_weight: weight,
+    period_width: scaffoldPeriodWidth(),
+    active: true,
+  }));
+  renderScaffoldTargets();
+}
+
+function scaffoldPeriodWidth() {
+  const row = (state.targets || []).find((target) => Number(target.period_width) > 0);
+  return row ? Number(row.period_width) : 10;
+}
+
+function addScaffoldTarget() {
+  const account = $('scaffold-account').value;
+  const period = Number($('scaffold-period').value);
+  const weight = Math.max(0.0001, Number($('scaffold-weight').value) || 1);
+  if (!account || !Number.isFinite(period) || period < 1) {
+    $('scaffold-status').textContent = 'Choose an account and a valid period.';
+    return;
+  }
+  const existing = state.portfolioTargets.find(
+    (row) => row.account === account && Number(row.period) === period
+  );
+  const row = {
+    account,
+    period,
+    minimum: existing ? existing.minimum : scaffoldMinimum(account, period),
+    maximum: existing ? existing.maximum : null,
+    min_weight: weight,
+    max_weight: weight,
+    period_width: scaffoldPeriodWidth(),
+    active: true,
+  };
+  if (existing) Object.assign(existing, row);
+  else state.portfolioTargets.push(row);
+  renderScaffoldTargets();
+}
+
+function renderScaffoldTargets() {
+  const list = $('scaffold-list');
+  list.replaceChildren();
+  for (const [index, target] of state.portfolioTargets.entries()) {
+    const item = document.createElement('li');
+    const name = document.createElement('span');
+    name.textContent = `${target.account} · P${target.period}`;
+    const min = document.createElement('input');
+    min.type = 'number';
+    min.step = 'any';
+    min.value = String(target.minimum ?? '');
+    min.addEventListener('change', () => {
+      target.minimum = min.value === '' ? null : Number(min.value);
+      renderScaffoldTargets();
+    });
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'link-button';
+    remove.textContent = 'remove';
+    remove.addEventListener('click', () => {
+      state.portfolioTargets.splice(index, 1);
+      renderScaffoldTargets();
+    });
+    item.append(name, min, remove);
+    list.append(item);
+  }
+  const preview = $('scaffold-preview');
+  preview.hidden = !state.portfolioTargets.length;
+  preview.textContent = state.portfolioTargets.length
+    ? JSON.stringify({ targets: state.portfolioTargets }, null, 2)
+    : '';
+  const warnings = scaffoldWarnings();
+  $('scaffold-status').textContent = state.portfolioTargets.length
+    ? `${state.portfolioTargets.length} target rows · live targets unchanged${warnings.length ? ` · warning: ${warnings.join('; ')}` : ''}`
+    : 'Add 5-7 accounts for a multi-account front.';
+}
+
+function useScaffoldTargets() {
+  if (!state.portfolioTargets.length) {
+    $('scaffold-status').textContent = 'Add at least one target row first.';
+    return;
+  }
+  const accounts = state.portfolioTargets.map((target) => target.account);
+  const factors = $('scan-factors')
+    .value.split(',')
+    .map((value) => Number(value.trim()))
+    .filter((value) => Number.isFinite(value) && value > 0);
+  const levels = factors.length ? factors : [0.5, 1, 2];
+  $('portfolio-vary').value = accounts.map((account) => `${account}=${levels.join(',')}`).join(';');
+  $('portfolio-metrics').value = accounts.join(',');
+  $('portfolio-directions').value = accounts.map((account) => `${account}=max`).join(';');
+  if (levels.length ** accounts.length > Number($('portfolio-max-members').value || 64)) {
+    $('portfolio-mode').value = 'random';
+  }
+  const horizon = Math.max(
+    Number($('portfolio-years').value) || 50,
+    ...state.portfolioTargets.map(
+      (target) => Number(target.period || 1) * Number(target.period_width || 10)
+    )
+  );
+  $('portfolio-years').value = String(horizon);
+  $('scaffold-status').textContent = `${accounts.length} target rows will be written to the portfolio run; live targets are unchanged.`;
+  renderScaffoldTargets();
+}
+
+function wireScaffoldTargets() {
+  if (!$('scaffold-add')) return;
+  $('scaffold-add').addEventListener('click', addScaffoldTarget);
+  $('scaffold-diverse').addEventListener('click', applyDiverseScaffold);
+  $('scaffold-use').addEventListener('click', useScaffoldTargets);
+  $('scaffold-clear').addEventListener('click', () => {
+    state.portfolioTargets = [];
+    renderScaffoldTargets();
+  });
+  renderScaffoldTargets();
 }
 
 function renderPortfolioScan() {
@@ -2748,6 +2979,51 @@ function wirePareto() {
   });
 }
 
+async function deleteSearchArtifact() {
+  const id = $('search-select').value;
+  if (!id || !window.confirm(`Delete portfolio artifact ${id}?`)) return;
+  $('search-run-status').textContent = `deleting ${id}…`;
+  try {
+    await api(`api/search/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    await loadSearch();
+    $('search-run-status').textContent = `deleted ${id}`;
+  } catch (error) {
+    $('search-run-status').textContent = `delete failed: ${error.message}`;
+  }
+}
+
+async function cleanFailedArtifacts() {
+  try {
+    const artifacts = await api('api/search');
+    const failed = artifacts.filter(
+      (artifact) => artifact.kind === 'portfolio' && artifact.usable === false
+    );
+    if (!failed.length) {
+      $('search-run-status').textContent = 'no failed portfolio artifacts to clean';
+      return;
+    }
+    if (!window.confirm(`Delete ${failed.length} failed portfolio artifact(s)?`)) return;
+    for (const artifact of failed) {
+      await api(`api/search/${encodeURIComponent(artifact.id)}`, { method: 'DELETE' });
+    }
+    await loadSearch();
+    $('search-run-status').textContent = `deleted ${failed.length} failed artifact(s)`;
+  } catch (error) {
+    $('search-run-status').textContent = `cleanup failed: ${error.message}`;
+  }
+}
+
+async function deletePromotedRun() {
+  if (!state.runSource || !state.run) return;
+  if (!window.confirm(`Delete promoted run ${state.run}?`)) return;
+  try {
+    await api(`api/runs/${encodeURIComponent(state.run)}`, { method: 'DELETE' });
+    window.location.reload();
+  } catch (error) {
+    showToast(`could not delete promoted run: ${error.message}`, true);
+  }
+}
+
 async function startPortfolio() {
   const status = $('search-run-status');
   const vary = $('portfolio-vary').value.trim();
@@ -2774,6 +3050,7 @@ async function startPortfolio() {
         engine: $('portfolio-engine').value,
         target_mode: $('portfolio-target-mode').value,
         use_initial_schedule: $('portfolio-initial').checked,
+        ...(state.portfolioTargets.length ? { targets: state.portfolioTargets } : {}),
       }),
     });
     status.textContent = `portfolio ${body.id} · running`;
@@ -4825,6 +5102,7 @@ function workspaceAllowed(workspace) {
   if (workspace === 'map') return true;
   if (workspace === 'sdmd') return Boolean(state.sdmd.available);
   const panels = skinPanels();
+  if (workspace === 'console') return Boolean(state.datasetSummary?.capabilities?.console);
   if (workspace === 'plan') return panels.has('targets');
   if (workspace === 'pareto') return panels.has('search');
   if (workspace === 'results') {
@@ -4893,7 +5171,7 @@ function syncNavigation() {
   }
   if (state.workspace === 'map') $('tab-legend').hidden = false;
   if (state.workspace === 'plan') $('tab-targets').hidden = false;
-  $('map-wrap').hidden = state.workspace === 'plan' || state.workspace === 'sdmd' || state.workspace === 'pareto';
+  $('map-wrap').hidden = state.workspace === 'plan' || state.workspace === 'sdmd' || state.workspace === 'pareto' || state.workspace === 'console';
   $('target-canvas').hidden = state.workspace !== 'plan';
   $('sdmd-canvas').hidden = state.workspace !== 'sdmd';
   $('pareto-wrap').hidden = state.workspace !== 'pareto';
@@ -4962,6 +5240,10 @@ function activateSubView() {
   }
   if (state.workspace === 'pareto') {
     loadParetoArtifacts();
+    return;
+  }
+  if (state.workspace === 'console') {
+    loadConsole();
     return;
   }
   if (state.workspace !== 'results' && state.compareView) clearCompareView();
@@ -6121,6 +6403,12 @@ function renderRunHealth() {
     badge(`portfolio member${state.runSource.member ? ` ${state.runSource.member}` : ''}`);
     badge('member targets');
   }
+  if (typeof state.runSummary?.exact_match === 'boolean') {
+    badge(
+      `exact replay ${state.runSummary.exact_match ? 'yes' : 'NO'}`,
+      state.runSummary.exact_match ? 'available' : 'failing'
+    );
+  }
   badge(`LiDAR ${state.lidar?.available ? 'available' : '—'}`, state.lidar?.available ? 'available' : 'unavailable');
   badge(`Carbon ${state.carbon?.available ? 'available' : '—'}`, state.carbon?.available ? 'available' : 'unavailable');
   $('run-health-failing').disabled = failing === 0;
@@ -6630,6 +6918,8 @@ async function loadTargets() {
         ? 'This run is a portfolio member. Its target status uses the member target file; this Plan editor still edits the live target file.'
         : '';
     }
+    const deleteRun = $('delete-promoted-run');
+    if (deleteRun) deleteRun.hidden = !state.runSource;
     await renderPortfolioMemberTargets();
     state.targetSeries = null;
     state.series = new Map();
@@ -6641,6 +6931,7 @@ async function loadTargets() {
         state.series.get(account).set(Number(item.year), Number(item.value));
       }
     } catch { /* the account tree is optional when a run has no values */ }
+    populateScaffoldAccounts();
     try {
       state.targetSeries = await api(`api/runs/${encodeURIComponent(state.run)}/target-series`);
     } catch { /* the chart can still fall back to the target rows */ }
@@ -8263,6 +8554,284 @@ async function loadAgent() {
   }
 }
 
+const CONSOLE_TOKEN_KEY = 'ws4-console-token';
+
+function consoleAuthHeaders() {
+  return state.console.token ? { Authorization: `Bearer ${state.console.token}` } : {};
+}
+
+async function consoleApi(path, options = {}) {
+  const response = await fetch(path, {
+    ...options,
+    headers: {
+      accept: 'application/json',
+      ...consoleAuthHeaders(),
+      ...(options.headers || {}),
+    },
+  });
+  if (!response.ok) {
+    let detail = response.statusText;
+    try { detail = (await response.json()).detail ?? detail; } catch { /* not json */ }
+    throw new Error(detail);
+  }
+  return response.json();
+}
+
+function readToken() {
+  try { return sessionStorage.getItem(CONSOLE_TOKEN_KEY) || ''; } catch { return ''; }
+}
+
+function rememberConsoleToken(token) {
+  try {
+    if (token) sessionStorage.setItem(CONSOLE_TOKEN_KEY, token);
+    else sessionStorage.removeItem(CONSOLE_TOKEN_KEY);
+  } catch { /* session storage is optional */ }
+}
+
+async function loadConsole() {
+  const tokenInput = $('console-token');
+  const status = $('console-status');
+  if (!state.console.token) state.console.token = readToken();
+  if (tokenInput && state.console.token) tokenInput.value = state.console.token;
+  if (!state.console.token) {
+    status.textContent = 'enter the collaborator token';
+    return;
+  }
+  status.textContent = 'connecting…';
+  try {
+    state.console.schema = await consoleApi('api/console');
+    status.textContent = `connected · ${state.console.schema.workspace}`;
+    renderConsoleCommands();
+    $('console-run').disabled = false;
+  } catch (error) {
+    state.console.schema = null;
+    status.textContent = `console unavailable: ${error.message}`;
+    $('console-run').disabled = true;
+  }
+}
+
+function renderConsoleCommands() {
+  const select = $('console-command');
+  if (!select) return;
+  const previous = select.value;
+  select.replaceChildren();
+  for (const command of state.console.schema?.commands ?? []) {
+    const option = document.createElement('option');
+    option.value = command.name;
+    option.textContent = command.name;
+    option.title = command.description ?? '';
+    select.appendChild(option);
+  }
+  if (previous && [...select.options].some((option) => option.value === previous)) {
+    select.value = previous;
+  }
+  renderConsoleFields();
+}
+
+function renderConsoleFields() {
+  const container = $('console-fields');
+  const select = $('console-command');
+  if (!container || !select) return;
+  container.replaceChildren();
+  const command = (state.console.schema?.commands ?? []).find((item) => item.name === select.value);
+  if (!command) return;
+  const note = document.createElement('p');
+  note.className = 'hint';
+  note.textContent = `${command.description} Outputs are written to the job scratch directory.`;
+  container.appendChild(note);
+  for (const field of command.fields ?? []) {
+    const label = document.createElement('label');
+    label.className = 'console-field';
+    label.textContent = field.required ? `${field.label} *` : field.label;
+    const input = document.createElement('input');
+    input.id = `console-field-${field.name}`;
+    input.type = field.kind === 'number' ? 'number' : 'text';
+    if (field.kind === 'number') input.step = 'any';
+    input.spellcheck = false;
+    input.value = field.default ?? '';
+    input.placeholder = field.kind === 'dir' ? 'absolute directory path' : 'absolute file path';
+    label.appendChild(input);
+    container.appendChild(label);
+  }
+}
+
+function consoleRequestBody() {
+  const select = $('console-command');
+  const command = (state.console.schema?.commands ?? []).find((item) => item.name === select.value);
+  if (!command) throw new Error('select a console command');
+  const body = { command: command.name };
+  for (const field of command.fields ?? []) {
+    const input = $(`console-field-${field.name}`);
+    const value = input?.value?.trim() ?? '';
+    if (!value) continue;
+    body[field.name] = field.kind === 'number' ? Number(value) : value;
+  }
+  return body;
+}
+
+async function startConsoleJob() {
+  const output = $('console-output');
+  const status = $('console-job-status');
+  const runButton = $('console-run');
+  const cancelButton = $('console-cancel');
+  output.textContent = '';
+  state.console.offset = 0;
+  state.console.job = null;
+  runButton.disabled = true;
+  cancelButton.disabled = true;
+  status.textContent = 'starting…';
+  try {
+    const job = await consoleApi('api/console/jobs', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(consoleRequestBody()),
+    });
+    state.console.job = job;
+    status.textContent = `${job.command} · ${job.id} · ${job.status}`;
+    cancelButton.disabled = false;
+    pollConsoleJob(job.id);
+  } catch (error) {
+    status.textContent = `job rejected: ${error.message}`;
+    runButton.disabled = false;
+  }
+}
+
+function pollConsoleJob(id) {
+  if (state.console.timer) window.clearInterval(state.console.timer);
+  state.console.timer = window.setInterval(() => refreshConsoleJob(id), 700);
+  refreshConsoleJob(id);
+}
+
+async function refreshConsoleJob(id) {
+  if (state.console.busy) return;
+  state.console.busy = true;
+  try {
+    const job = await consoleApi(`api/console/jobs/${encodeURIComponent(id)}`);
+    state.console.job = job;
+    const chunk = await consoleApi(
+      `api/console/jobs/${encodeURIComponent(id)}/output?offset=${state.console.offset}`
+    );
+    if (chunk.text) {
+      const output = $('console-output');
+      output.textContent += chunk.text;
+      state.console.offset = chunk.next_offset;
+      output.scrollTop = output.scrollHeight;
+    }
+    $('console-job-status').textContent = `${job.command} · ${job.id} · ${job.status}`;
+    if (['completed', 'failed', 'cancelled'].includes(job.status)) {
+      let guard = 0;
+      while (chunk.text.length >= 65536 && guard < 32) {
+        const extra = await consoleApi(
+          `api/console/jobs/${encodeURIComponent(id)}/output?offset=${state.console.offset}`
+        );
+        if (!extra.text) break;
+        $('console-output').textContent += extra.text;
+        state.console.offset = extra.next_offset;
+        guard += 1;
+      }
+      if (state.console.timer) window.clearInterval(state.console.timer);
+      state.console.timer = null;
+      $('console-run').disabled = false;
+      $('console-cancel').disabled = true;
+      $('console-job-status').textContent = `${job.command} · ${job.id} · ${job.status}${job.error ? ` · ${job.error}` : ''}`;
+      await loadConsoleArtifacts(id);
+    }
+  } catch (error) {
+    $('console-job-status').textContent = `job status failed: ${error.message}`;
+  } finally {
+    state.console.busy = false;
+  }
+}
+
+async function cancelConsoleJob() {
+  if (!state.console.job) return;
+  $('console-cancel').disabled = true;
+  try {
+    state.console.job = await consoleApi(
+      `api/console/jobs/${encodeURIComponent(state.console.job.id)}/cancel`,
+      { method: 'POST' }
+    );
+    $('console-job-status').textContent = `${state.console.job.command} · cancelling…`;
+  } catch (error) {
+    $('console-job-status').textContent = `cancel failed: ${error.message}`;
+  }
+}
+
+async function loadConsoleArtifacts(id) {
+  const container = $('console-artifacts');
+  if (!container) return;
+  container.replaceChildren();
+  try {
+    const artifacts = await consoleApi(`api/console/jobs/${encodeURIComponent(id)}/artifacts`);
+    if (!artifacts.length) return;
+    const title = document.createElement('p');
+    title.className = 'hint';
+    title.textContent = `${artifacts.length} artifact${artifacts.length === 1 ? '' : 's'}`;
+    container.appendChild(title);
+    for (const artifact of artifacts) {
+      const row = document.createElement('div');
+      row.className = 'console-artifact';
+      const name = document.createElement('code');
+      name.textContent = artifact.name;
+      const download = document.createElement('button');
+      download.type = 'button';
+      download.textContent = 'Download';
+      download.addEventListener('click', () => downloadConsoleArtifact(id, artifact.name));
+      row.append(name, document.createTextNode(` ${relativeBytes(artifact.bytes)} `), download);
+      container.appendChild(row);
+    }
+  } catch (error) {
+    const note = document.createElement('p');
+    note.className = 'hint';
+    note.textContent = `artifacts unavailable: ${error.message}`;
+    container.appendChild(note);
+  }
+}
+
+async function downloadConsoleArtifact(id, name) {
+  try {
+    const response = await fetch(
+      `api/console/jobs/${encodeURIComponent(id)}/artifacts/${encodeURIComponent(name)}`,
+      { headers: consoleAuthHeaders() }
+    );
+    if (!response.ok) throw new Error(response.statusText);
+    const blob = await response.blob();
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = name.split('/').pop();
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  } catch (error) {
+    showToast(`download failed: ${error.message}`, true);
+  }
+}
+
+function relativeBytes(bytes) {
+  const value = Number(bytes) || 0;
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function wireConsole() {
+  if (!$('console-connect')) return;
+  $('console-connect').addEventListener('click', () => {
+    state.console.token = $('console-token').value.trim();
+    rememberConsoleToken(state.console.token);
+    loadConsole();
+  });
+  $('console-token').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      state.console.token = $('console-token').value.trim();
+      rememberConsoleToken(state.console.token);
+      loadConsole();
+    }
+  });
+  $('console-command').addEventListener('change', renderConsoleFields);
+  $('console-run').addEventListener('click', startConsoleJob);
+  $('console-cancel').addEventListener('click', cancelConsoleJob);
+}
+
 function wireControls() {
   wireSplitter();
   wireChatSplitter();
@@ -8493,6 +9062,9 @@ function wireControls() {
   $('compare-filter').addEventListener('input', renderCompareAccounts);
   $('search-select').addEventListener('change', (event) => renderSearchArtifact(event.target.value));
   $('run-portfolio').addEventListener('click', startPortfolio);
+  $('search-delete').addEventListener('click', deleteSearchArtifact);
+  $('search-clean-failed').addEventListener('click', cleanFailedArtifacts);
+  $('delete-promoted-run').addEventListener('click', deletePromotedRun);
   $('search-explore').addEventListener('click', () => {
     const id = $('search-select').value;
     if (!id) return;
@@ -8552,8 +9124,10 @@ async function loadRunContext() {
     await loadAgent();
     try {
       const runSummary = await api(`api/runs/${encodeURIComponent(state.run)}/summary`);
+      state.runSummary = runSummary;
       state.runSource = runSummary.portfolio_source ?? null;
     } catch {
+      state.runSummary = null;
       state.runSource = null;
     }
     await loadPeriods();
@@ -8597,11 +9171,14 @@ async function start() {
   wireControls();
   wireSdmd();
   wirePareto();
+  wireConsole();
   wirePortfolioScan();
+  wireScaffoldTargets();
   loadWatched();
   try {
     const summary = await api('api/summary');
     state.datasetSummary = summary;
+    syncNavigation();
     $('dataset-name').textContent = summary.dataset ?? '';
     const select = $('run');
     for (const run of summary.runs ?? []) {
