@@ -4731,3 +4731,110 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P154 close-out: PR #914 squash-merged as `8f5aae0`; parent #912 and task #913 are
   closed. The TSA 29 stock target now uses a factorized basis with exact GPU replay and
   no state fallback. Dashboard: **GREEN**.
+
+- P156.1/P156.2: added `ws4/fire` with the metric fuel, moisture, and environment contracts,
+  the 13 Anderson standard fuel models, the 16 Scott-Burgan moisture scenarios, and the
+  Rothermel (1972) surface-fire kernel with the standard corrections. The kernel matches the
+  R `Rothermel` validation oracle on all 13 models at `D2L2`, 8 km/h, level ground, the custom
+  dynamic example, and a 15-point A3 wind/slope grid (within 0.01 in the reported units).
+  Added derived head fire intensity, flame length, and fuel consumption, plus
+  `docs/reference/fire-behaviour.rst`, `notes/design/ws4-fire-behaviour.md`, and
+  `examples/fire_rothermel_demo.py`. The fire suite has 42 tests. `python
+  scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard: **GREEN**.
+
+- P156.7: added `ws4/fire/fwi.py` with the Canadian FWI moisture codes: FFMC, DMC, DC, ISI,
+  BUI, FWI, and DSR, with the daily weather contract, the standard starting state, the
+  latitude day-length adjustment, and the FBP high-wind ISI form. The ten-day sequences at
+  latitude 55 and latitude 20 match the `cffdrs` reference within `1e-4` for all seven codes.
+  Added `docs/reference/fire-weather.rst`, `examples/fire_fwi_demo.py`, and 8 FWI tests. The
+  fire suite now has 50 tests. `python scripts/check_workflow.py` reports **0 error(s), 0
+  warning(s)**. Dashboard: **GREEN**. The FBP fuel types and surface-fire equations are split
+  to P156.8 (#900).
+
+- P156.8: added `ws4/fire/fbp.py` with the 17 Canadian FBP fuel types, surface fuel
+  consumption, the buildup effect, the surface rate of spread, the surface head fire
+  intensity, and a derived flame length. The surface ROS and SFC match the `cffdrs` reference
+  within 0.02 on all 17 fuel types at FFMC 90, BUI 60, 10 km/h, flat ground, and on a
+  320-point grid across C2/C3/C7/M1/S1; the C6 surface component is validated separately. The
+  layer is flat-ground and surface-only; slope is P156.4 and crown fire is P156.3. Added
+  `docs/reference/fire-fbp.rst`, `examples/fire_fbp_demo.py`, and 7 FBP tests. The fire suite
+  now has 57 tests. `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**.
+  Dashboard: **GREEN**.
+
+- P156.3: added `ws4/fire/crown.py` with Van Wagner critical surface intensity, the FBP crown
+  fraction burned, the C6 crown rate of spread and head-fire blend, the S/I/C fire
+  description, an optional Van Wagner active-crown threshold, and derived foliar moisture
+  content. CFB and ROS match `cffdrs` within 0.02, HFI within 1.0 kW/m, and the fire
+  description exactly on the 17-fuel-type base table, a 320-point grid, and three C6 cases.
+  Added `docs/reference/fire-crown.rst`, `examples/fire_crown_demo.py`, and 9 crown tests. The
+  fire suite now has 66 tests. `python scripts/check_workflow.py` reports **0 error(s), 0
+  warning(s)**. Dashboard: **GREEN**.
+
+- P156.4: added `ws4/fire/growth.py` with the homogeneous `SiteGrid`, the FBP slope
+  adjustment as `effective_wind`, the FBP length-to-breadth relation, a minimum-travel-time /
+  Huygens growth engine, burnable-mask barriers, and area/perimeter snapshots. The slope
+  adjustment matches `cffdrs` on 40 wind/slope/fuel cases within 0.02 km/h and 0.1 degree.
+  The growth tests cover a no-wind circle (perimeter within 25 percent of the analytic
+  circle), a flat-ground wind ellipse (length and width within 10 percent of the analytic
+  ellipse), an upslope centroid displacement, a combined wind/slope vector, a barrier, and
+  monotone snapshots. Added the P144 fragment bridge: `fragment_ignition_times` returns the
+  earliest cell time and burned area per fragment, and `fragment_ignition_events` emits
+  `ws4.ecosystem.events.Event` ignitions with the growth inputs and outputs as attributes.
+  C6 slope adjustment raises explicitly; flat-ground C6 growth is supported. Added
+  `docs/reference/fire-growth.rst`, `examples/fire_growth_demo.py`, and 14 growth tests. The
+  fire suite now has 80 tests. `python scripts/dashboard.py` reports **OVERALL: GREEN** on
+  all seven gates.
+
+- Phase renumber: the credible fire phase is now **P156** (was P151) and the 3D scene phase
+  is now **P155** (was P150), because `main` carries P150 (GPU guard), P151 (web console),
+  P152 (sandboxed runner), P153 (assistant script review), and P154 (TSA 29 GPU stock). The
+  parent and child issue titles and bodies were retitled, and the roadmap, design notes,
+  docs, and module references use the new identifiers. The fire branch is
+  `feature/p156-fire-behaviour`; the old P151 and P154 feature branches were retired. The
+  3D branch is `feature/p155-fire-3d`. A concurrent agent's mixed P151.5/scene commit is
+  preserved by the tag `salvage/other-agent-p151.5`; its fire-event/account integration was
+  salvaged here and its scene package remains on the P155 branch. Dashboard: **GREEN**.
+
+- P156.5: coupled the fire kernel to the P144 event log and accounts. Added
+  `FireBehaviourConfig` and a directional FBP spread path. Behaviour-driven fire events
+  record the FBP fuel, FFMC, BUI, wind, effective wind, spread azimuth, slope, aspect, ROS,
+  head-fire intensity, flame length, crown fraction, fuel consumption, smoke strength, fire
+  description, and kernel version. Accounts add mean/max ROS, mean/max intensity, mean/max
+  flame length, and the area-weighted crown fraction. The legacy graph probability remains
+  the default when `behaviour=None`. The scene package is not on this branch; P155 owns it.
+  Added 4 behaviour tests and fixed the integration to use the slope-adjusted effective wind,
+  validate C6 slope at construction, and weight the crown account by event area. Dashboard:
+  **GREEN**.
+
+- P156.9: added `ws4/fire/vri.py` with the VRI-style `VriStand` contract, the deterministic
+  VRI-to-FBP rule set, and per-assignment provenance (`rule_id`, `version`, source fields,
+  confidence, notes, and an `is_burnable` flag). The rules cover explicit FBP and non-fuel
+  types, non-forest land cover, grass/shrub/agriculture, slash, sparse cover, deciduous,
+  mixedwood, pine by age, Douglas-fir, larch, and spruce/fir by crown closure. Unknown species,
+  unknown land cover, and an unlabelled forest stand raise `VriError` rather than inventing a
+  type. Added the representative fixture `tests/fixtures/fire/vri_fbp_stands.csv`,
+  `docs/reference/fire-vri.rst`, and 6 VRI tests. The fire/ecosystem fire suite now has 106
+  tests. `python scripts/dashboard.py` reports **OVERALL: GREEN** on all seven gates.
+
+- P156.6: added `ws4/fire/benchmark.py`, `scripts/benchmark_fire_growth.py`, and
+  `docs/reference/fire-benchmark.rst`. The benchmark compares the Huygens engine with the
+  public FBP ellipse on 20 fuel/wind scenarios at FFMC 90, BUI 60, and 60 minutes: mean
+  absolute relative error is 7.4 percent for area, 1.3 percent for length, 1.9 percent for
+  width, and 25.2 percent for the raster perimeter; the maxima are 16.4, 8.4, 8.4, and 30.9
+  percent. A 54-scenario FFMC/BUI/fuel/wind ensemble reports P10/P50/P90 area and exceedance
+  probabilities. The growth default is now 16 primitive directions, and a barrier is checked
+  along the whole cell-to-cell segment so a coarse direction cannot jump a one-cell no-fuel
+  band. Added 9 benchmark tests; the fire/ecosystem fire suite has 115 tests. The per-scenario
+  data and summary are in `notes/reports/p156-benchmark.csv` and
+  `notes/reports/p156-benchmark-summary.json`. Dashboard: **GREEN**.
+
+- P156 close-out: merged `main` into the phase branch at `81a5103`, reran the full dashboard,
+  and queued pull request #917. The close-out report is `notes/reports/p156-closeout.md`.
+  The phase has 115 fire/ecosystem fire tests. The FBP ellipse benchmark reports 7.4 percent
+  mean absolute area error, 16.4 percent maximum, and a 54-scenario ensemble with P50 10.13 ha
+  and P90 199.85 ha. The viewer flame/smoke criterion is deferred to P155. Status: `pr-open`;
+  no merge, tag, release, or settings change performed. Dashboard: **GREEN**.
+
+- P156 close-out: squash-merged pull request #917 into `main` after maintainer approval;
+  the phase branch is deleted and parent #890 is closed. The close-out report is
+  `notes/reports/p156-closeout.md`. Dashboard: **GREEN**.

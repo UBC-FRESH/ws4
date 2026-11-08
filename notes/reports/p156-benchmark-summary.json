@@ -1,0 +1,29 @@
+{
+  "benchmark": {
+    "area_relative_error_max_abs": 0.16397143516741847,
+    "area_relative_error_mean_abs": 0.07384702866750828,
+    "length_relative_error_max_abs": 0.08363823178372526,
+    "length_relative_error_mean_abs": 0.01293529450177416,
+    "perimeter_relative_error_max_abs": 0.3093480792934902,
+    "perimeter_relative_error_mean_abs": 0.25169074596241964,
+    "width_relative_error_max_abs": 0.08363823178372526,
+    "width_relative_error_mean_abs": 0.018533346769202375
+  },
+  "benchmark_scenarios": 20,
+  "cell_size_m": 10.0,
+  "ensemble": {
+    "count": 54,
+    "max": 383.74,
+    "mean": 51.72277777777778,
+    "min": 0.02,
+    "p10": 0.1360000000000001,
+    "p50": 10.125,
+    "p90": 199.85200000000012,
+    "p_area_ge_1": 0.7777777777777778,
+    "p_area_ge_10": 0.5,
+    "p_area_ge_100": 0.16666666666666666,
+    "p_area_ge_50": 0.24074074074074073
+  },
+  "ensemble_scenarios": 54,
+  "note": "The analytic ellipse is the public FBP growth model. It shares the head ROS with the growth engine, so this validates geometry, not independent fire behaviour. No observed perimeter is used."
+}

@@ -63,4 +63,11 @@
 - [Ecosystem package and cohort state](reference/ecosystem-package.html): the optional state schema, cohort fractions, null bridge, aggregation, and dataset join.
 - [Fire process](reference/ecosystem-fire.html): Poisson ignition, graph spread, severity, cohort mortality, salvage, accounts, and the analytic oracles.
 - [Scenario ensembles and risk targets](reference/ecosystem-scenarios.html): scenario files, common random numbers, risk aggregation, sample-average approximation, and the out-of-sample report.
+- [Fire behaviour](reference/fire-behaviour.html): the Rothermel surface-fire kernel, fuel and moisture contracts, standard cases, and derived intensity.
+- [Fire weather and FWI codes](reference/fire-weather.html): the Canadian FWI moisture codes, the daily weather contract, and the reference validation.
+- [FBP surface fire](reference/fire-fbp.html): the FBP fuel types, surface fuel consumption, surface rate of spread, and surface intensity.
+- [Crown fire](reference/fire-crown.html): Van Wagner initiation, the FBP crown fraction, the C6 crown rate of spread, and the active-crown threshold.
+- [Fire growth and perimeter](reference/fire-growth.html): the site grid, slope-adjusted effective wind, Huygens growth, and perimeter snapshots.
+- [VRI to FBP mapping](reference/fire-vri.html): the VRI stand contract, deterministic FBP fuel-type rules, and provenance.
+- [Fire growth benchmark](reference/fire-benchmark.html): the FBP ellipse benchmark, the scenario ensemble, and the reported tolerances.
 - [API reference](api/index.html): the repository tooling's public functions, with their parameters, types, and return values. The package API is rendered on the reference pages above.

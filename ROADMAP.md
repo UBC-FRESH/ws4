@@ -153,6 +153,7 @@ exists and the maintainer approves it.
 | P152 Sandboxed Python runner | #901 | `feature/p152-python-sandbox` | complete |
 | P153 Assistant script review | #906 | `feature/p153-assistant-script-review` | complete |
 | P154 TSA 29 GPU stock | #912 | `feature/p154-tsa29-stock` | complete |
+| P156 Credible fire behaviour and growth | #890 | `feature/p156-fire-behaviour` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4553,3 +4554,39 @@ Acceptance:
 - The sparse table is unchanged.
 - Tests, portal smoke, and dashboard pass.
 
+## Phase 156: Credible fire behaviour and growth
+
+Parent issue: #890
+Branch: `feature/p156-fire-behaviour`
+Status: complete
+Design note: `notes/design/ws4-fire-behaviour.md`
+Report: `notes/reports/p156-closeout.md`
+PR: #917
+
+Goal: replace the heuristic fire-spread probability with a defensible surface-fire kernel,
+then add crown fire and spatially explicit growth. The target is a model a fire modeller can
+inspect: published equations, standard fuel models, explicit weather and fuel moisture,
+standard test cases, and an event log that records every input.
+
+- [x] P156.1 Fire environment and fuel contracts (#891)
+- [x] P156.2 Rothermel surface fire kernel and standard cases (#892)
+- [x] P156.3 Crown fire initiation and propagation (#893)
+- [x] P156.4 Growth geometry and perimeter validation (#894)
+- [x] P156.5 Couple the kernel to the event log and accounts (#895)
+- [x] P156.6 Benchmark validation and close-out (#896)
+- [x] P156.7 Canadian FWI moisture codes (#898)
+- [x] P156.8 Canadian FBP fuel types and surface fire (#900)
+- [x] P156.9 VRI-to-FBP fuel-type mapping (#905)
+
+Acceptance:
+
+- The standard fuel models and the published Rothermel/Anderson cases reproduce within a
+  stated tolerance.
+- Rate of spread responds monotonically to wind, slope, and fuel moisture, and goes to zero at
+  the moisture of extinction.
+- A fire event records the fuel, weather, slope, and kernel version that produced it.
+- The growth engine produces an elliptical perimeter on a homogeneous fuel bed and a
+  wind/slope-driven shape.
+- The 3D viewer's flame length and smoke are derived from fireline intensity and fuel
+  consumption, not arbitrary particle settings.
+- `python scripts/dashboard.py` is green.
