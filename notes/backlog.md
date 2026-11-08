@@ -444,8 +444,10 @@ items are enhancements and maintenance.
   Flat-ground and surface-only; slope is P151.4 and crown fire is P151.3.
 - **VRI-to-FBP fuel-type mapping.** `open`. Map the WS4/VRI fuel description to an FBP fuel
   type with provenance. Target: P151.9 (#905).
-- **Crown fire.** `open`. Van Wagner initiation, Cruz et al. propagation, and the passive to
-  active transition. Target: P151.3.
+- **Crown fire.** `done` (P151.3, #893). Van Wagner initiation, the FBP crown fraction, the
+  C6 crown rate of spread, the S/I/C description, and an optional Van Wagner active-crown
+  threshold match `cffdrs` on the base table, a 320-point grid, and three C6 cases. Flat
+  ground; no spotting or growth.
 - **Growth geometry.** `open`. A site/fuel grid and an elliptical/Huygens or cellular growth
   engine, with homogeneous shape and barrier tests. Target: P151.4.
 - **Observed-fire validation.** `open`. Compare the kernel and growth engine to a public

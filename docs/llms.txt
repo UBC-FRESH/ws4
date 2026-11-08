@@ -65,4 +65,5 @@
 - [Fire behaviour](reference/fire-behaviour.html): the Rothermel surface-fire kernel, fuel and moisture contracts, standard cases, and derived intensity.
 - [Fire weather and FWI codes](reference/fire-weather.html): the Canadian FWI moisture codes, the daily weather contract, and the reference validation.
 - [FBP surface fire](reference/fire-fbp.html): the FBP fuel types, surface fuel consumption, surface rate of spread, and surface intensity.
+- [Crown fire](reference/fire-crown.html): Van Wagner initiation, the FBP crown fraction, the C6 crown rate of spread, and the active-crown threshold.
 - [API reference](api/index.html): the repository tooling's public functions, with their parameters, types, and return values. The package API is rendered on the reference pages above.

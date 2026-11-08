@@ -7,6 +7,18 @@ explicit growth follow in later P151 tasks.
 
 from __future__ import annotations
 
+from .crown import (
+    CROWN_BASE_HEIGHT_M,
+    CROWN_FUEL_LOAD_KG_M2,
+    CrownFireResult,
+    critical_surface_intensity,
+    critical_surface_ros,
+    crown_fraction_burned,
+    crown_rate_of_spread_c6,
+    fbp_crown_fire,
+    foliar_moisture_content,
+    van_wagner_active_crown,
+)
 from .environment import FireEnvironment
 from .fbp import (
     FBP_FUEL_TYPE_TABLE,
@@ -53,6 +65,8 @@ from .rothermel import (
 
 __all__ = [
     "ANDERSON_13",
+    "CROWN_BASE_HEIGHT_M",
+    "CROWN_FUEL_LOAD_KG_M2",
     "DEFAULT_CONSUMPTION_FRACTION",
     "DEFAULT_HEAT_YIELD_KJ_KG",
     "DEFAULT_LATITUDE",
@@ -63,6 +77,7 @@ __all__ = [
     "FUEL_CLASSES",
     "KERNEL_VERSION",
     "MOISTURE_SCENARIOS",
+    "CrownFireResult",
     "DailyWeather",
     "FBPFuelType",
     "FBPSurfaceResult",
@@ -77,14 +92,21 @@ __all__ = [
     "buildup_effect",
     "buildup_index",
     "canonical_fuel_type",
+    "critical_surface_intensity",
+    "critical_surface_ros",
+    "crown_fraction_burned",
+    "crown_rate_of_spread_c6",
     "drought_code",
     "duff_moisture_code",
+    "fbp_crown_fire",
     "fbp_surface_fire",
     "fine_fuel_moisture_code",
     "fire_weather_index",
+    "foliar_moisture_content",
     "fwi_sequence",
     "initial_fwi_state",
     "initial_spread_index",
     "surface_fire",
     "surface_fuel_consumption",
+    "van_wagner_active_crown",
 ]

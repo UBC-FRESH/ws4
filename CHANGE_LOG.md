@@ -4685,3 +4685,12 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   `docs/reference/fire-fbp.rst`, `examples/fire_fbp_demo.py`, and 7 FBP tests. The fire suite
   now has 57 tests. `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**.
   Dashboard: **GREEN**.
+
+- P151.3: added `ws4/fire/crown.py` with Van Wagner critical surface intensity, the FBP crown
+  fraction burned, the C6 crown rate of spread and head-fire blend, the S/I/C fire
+  description, an optional Van Wagner active-crown threshold, and derived foliar moisture
+  content. CFB and ROS match `cffdrs` within 0.02, HFI within 1.0 kW/m, and the fire
+  description exactly on the 17-fuel-type base table, a 320-point grid, and three C6 cases.
+  Added `docs/reference/fire-crown.rst`, `examples/fire_crown_demo.py`, and 9 crown tests. The
+  fire suite now has 66 tests. `python scripts/check_workflow.py` reports **0 error(s), 0
+  warning(s)**. Dashboard: **GREEN**.

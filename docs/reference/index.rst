@@ -78,6 +78,9 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    * - :doc:`fire-fbp`
      - The FBP fuel types, surface fuel consumption, surface rate of spread, and surface
        intensity.
+   * - :doc:`fire-crown`
+     - Crown fire initiation, the FBP crown fraction, the C6 crown rate of spread, and the
+       active-crown threshold.
    * - :doc:`femic-hydrology`
      - Pinned FEMIC hydrology response bundles, checksums, flood-risk rows, and
        applicability metadata.
@@ -114,4 +117,5 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    fire-behaviour
    fire-weather
    fire-fbp
+   fire-crown
    femic-hydrology

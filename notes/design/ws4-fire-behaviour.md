@@ -102,7 +102,7 @@ slope adjustment is P151.4, and crown fire is P151.3.
 - **P151.6 Benchmark.** A public growth-model comparison and an observed-fire case, with the
   tolerances and limits named.
 
-## 7. Limits and risks
+## 8. Limits and risks
 
 - A standard-case pass does not prove a landscape fire. The growth and benchmark tasks are
   separate.
@@ -115,7 +115,7 @@ slope adjustment is P151.4, and crown fire is P151.3.
 - Unit conversion is the main silent-error risk; the tests pin the reference values in the
   metric contract.
 
-## 8. References
+## 9. References
 
 - Rothermel, R. C. (1972). A mathematical model for predicting fire spread in wildland fuels.
 - Albini, F. A. (1976). Computer-based models of wildland fire behavior.
