@@ -26,7 +26,7 @@ def main() -> None:
             f"{result.rate_of_spread_m_min:9.2f}  {result.head_fire_intensity_kw_m:8.1f}  "
             f"{result.flame_length_m:7.2f}"
         )
-    print("surface-only: crown fire is a separate P151.3 layer")
+    print("surface-only: crown fire is a separate P154.3 layer")
 
 
 if __name__ == "__main__":

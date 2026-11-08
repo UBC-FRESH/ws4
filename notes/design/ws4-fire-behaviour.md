@@ -1,7 +1,7 @@
 # Credible fire behaviour and growth
 
-Status: active (P151)
-Phase: P151 (Credible fire behaviour and growth)
+Status: active (P154)
+Phase: P154 (Credible fire behaviour and growth)
 Date: 2026-11-08
 Related: `docs/reference/fire-behaviour.rst`, `docs/reference/fire-growth.rst`,
 `docs/reference/ecosystem-fire.rst`, `notes/design/ws4-stochastic-landscape.md`,
@@ -15,7 +15,7 @@ is a surface-fire kernel that a fire modeller can inspect and compare: Rothermel
 standard corrections.
 
 The kernel is deliberately separate from growth. The kernel answers "how fast does the head
-fire spread under this fuel, moisture, wind, and slope?" The P151.4 growth engine answers
+fire spread under this fuel, moisture, wind, and slope?" The P154.4 growth engine answers
 "where is the perimeter over time?" Keeping them separate makes the validation honest.
 
 ## 2. Contracts
@@ -77,7 +77,7 @@ fire-growth model and an observed perimeter.
 
 ## 5. FBP surface fire
 
-P151.7 added the Canadian FWI moisture codes. P151.8 added the FBP surface-fire layer:
+P154.7 added the Canadian FWI moisture codes. P154.8 added the FBP surface-fire layer:
 
 - the 17 standard FBP fuel types;
 - surface fuel consumption, the buildup effect, and the surface rate of spread;
@@ -87,11 +87,11 @@ P151.7 added the Canadian FWI moisture codes. P151.8 added the FBP surface-fire 
 The FBP surface results match the `cffdrs` reference within 0.02 on all 17 fuel types at
 FFMC 90, BUI 60, 10 km/h, flat ground, and on a 320-point grid across C2, C3, C7, M1, and S1.
 The C6 surface component is validated separately. The layer is flat-ground and surface-only:
-slope adjustment is P151.4, and crown fire is P151.3.
+slope adjustment is P154.4, and crown fire is P154.3.
 
 ## 6. Crown fire
 
-P151.3 added the Van Wagner initiation threshold, the FBP crown fraction burned, the C6
+P154.3 added the Van Wagner initiation threshold, the FBP crown fraction burned, the C6
 crown rate of spread and head-fire blend, the S/I/C fire description, and an optional Van
 Wagner active-crown threshold. CFB and ROS match `cffdrs` within 0.02, HFI within 1.0 kW/m,
 and the fire description exactly on the 17-fuel-type base table, a 320-point grid, and three
@@ -99,7 +99,7 @@ C6 cases.
 
 ## 7. Growth and perimeter
 
-P151.4 added `ws4/fire/growth.py`:
+P154.4 added `ws4/fire/growth.py`:
 
 - `SiteGrid` carries the fuel type, the cell geometry, FFMC, BUI, wind, slope and aspect, the
   optional M/O parameters, and a burnable mask.
@@ -125,15 +125,16 @@ adjustment is explicitly unsupported and raises; flat-ground C6 growth is suppor
 
 ## 8. What follows
 
-- **P151.5 Integration.** The P144 event record carries the fuel, weather, slope, kernel
-  version, ROS, intensity, and flame length. The P152 viewer's flames and smoke scale with
+- **P154.5 Integration.** The P144 event record carries the fuel, weather, slope, kernel
+  version, ROS, intensity, and flame length. The P155 viewer's flames and smoke scale with
   those values. The growth front maps to fragment ignition times.
-- **P151.6 Benchmark.** A public growth-model comparison and an observed-fire case, with the
+- **P154.6 Benchmark.** A public growth-model comparison and an observed-fire case, with the
   tolerances and limits named.
-- **P151.9 VRI mapping.** Map VRI species, age, and canopy attributes to FBP fuel types, with
+- **P154.9 VRI mapping.** Map VRI species, age, and canopy attributes to FBP fuel types, with
   an accuracy report and an explicit unknown class.
-- **P152 3D scene.** Renumber the 3D fire scene phase from the old P150 label, because `main`
-  already carries a P150 GPU guard.
+- **P155 3D scene.** Renumber the 3D fire scene phase from the old P150 label. `main` now
+  carries P150 (GPU guard), P151 (web console), P152 (sandboxed runner), and P153 (assistant
+  script review), so the 3D scene is P155.
 
 ## 9. Limits and risks
 
@@ -142,7 +143,7 @@ adjustment is explicitly unsupported and raises; flat-ground C6 growth is suppor
 - The derived intensity and flame length depend on the heat yield and consumption fraction;
   those are scene parameters and must be visible in the event record.
 - The growth grid is homogeneous in fuel and weather; heterogeneous fuel and the fragment
-  event-log bridge are P151.5 and later.
+  event-log bridge are P154.5 and later.
 - The growth perimeter is the raster cell-edge length, not a sub-cell contour. The circle
   perimeter is about 16 percent above the analytic circle on the test grid.
 - C6 slope adjustment is unsupported; the engine raises rather than silently substituting a

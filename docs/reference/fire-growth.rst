@@ -119,9 +119,9 @@ Limits
 - C6 slope adjustment is unsupported.
 - No spotting or ember transport.
 - The perimeter is the raster cell-edge length, not a sub-cell contour.
-- The fragment bridge emits ignition events, but the P151.5 integration still has to carry the
+- The fragment bridge emits ignition events, but the P154.5 integration still has to carry the
   growth state through the accounts and the 3D viewer.
-- The growth is not yet calibrated or compared to an observed perimeter; that is P151.6.
+- The growth is not yet calibrated or compared to an observed perimeter; that is P154.6.
 
 Cross-references
 ----------------

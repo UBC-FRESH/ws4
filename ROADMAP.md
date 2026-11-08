@@ -148,7 +148,7 @@ exists and the maintainer approves it.
 | P148 Portfolio and promoted-run cleanup | #869 | `feature/p148-portfolio-cleanup` | complete |
 | P149 State-run exactness | #873 | `feature/p149-state-exactness` | complete |
 | P150 GPU extension guard | #886 | `fix/gpu-extension-guard` | complete |
-| P151 Credible fire behaviour and growth | #890 | `feature/p151-fire-behaviour` | active |
+| P154 Credible fire behaviour and growth | #890 | `feature/p154-fire-behaviour` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4433,10 +4433,10 @@ Acceptance:
 - The error names the row count and the prebuilt-basis/factorized alternatives.
 - A real TSA 29 table check and the focused GPU-effects tests pass.
 
-## Phase 151: Credible fire behaviour and growth
+## Phase 154: Credible fire behaviour and growth
 
 Parent issue: #890
-Branch: `feature/p151-fire-behaviour`
+Branch: `feature/p154-fire-behaviour`
 Status: active
 Design note: `notes/design/ws4-fire-behaviour.md`
 
@@ -4445,15 +4445,15 @@ then add crown fire and spatially explicit growth. The target is a model a fire 
 inspect: published equations, standard fuel models, explicit weather and fuel moisture,
 standard test cases, and an event log that records every input.
 
-- [x] P151.1 Fire environment and fuel contracts (#891)
-- [x] P151.2 Rothermel surface fire kernel and standard cases (#892)
-- [x] P151.3 Crown fire initiation and propagation (#893)
-- [x] P151.4 Growth geometry and perimeter validation (#894)
-- [ ] P151.5 Couple the kernel to the event log, accounts, and viewer (#895)
-- [ ] P151.6 Benchmark validation and close-out (#896)
-- [x] P151.7 Canadian FWI moisture codes (#898)
-- [x] P151.8 Canadian FBP fuel types and surface fire (#900)
-- [ ] P151.9 VRI-to-FBP fuel-type mapping (#905)
+- [x] P154.1 Fire environment and fuel contracts (#891)
+- [x] P154.2 Rothermel surface fire kernel and standard cases (#892)
+- [x] P154.3 Crown fire initiation and propagation (#893)
+- [x] P154.4 Growth geometry and perimeter validation (#894)
+- [ ] P154.5 Couple the kernel to the event log, accounts, and viewer (#895)
+- [ ] P154.6 Benchmark validation and close-out (#896)
+- [x] P154.7 Canadian FWI moisture codes (#898)
+- [x] P154.8 Canadian FBP fuel types and surface fire (#900)
+- [ ] P154.9 VRI-to-FBP fuel-type mapping (#905)
 
 Acceptance:
 

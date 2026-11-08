@@ -7,7 +7,7 @@ ignition wave to each neighbour with a directional rate of spread from an ellipt
 The head rate of spread comes from the validated FBP surface and crown layer. The effective
 wind speed folds the slope into the wind vector using the FBP slope adjustment. The first slice
 is a homogeneous fuel grid with a burnable mask; heterogeneous fuel and the P144 event-log
-bridge follow in later P151 tasks.
+bridge follow in later P154 tasks.
 """
 
 from __future__ import annotations

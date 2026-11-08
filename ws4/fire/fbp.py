@@ -3,7 +3,7 @@
 The FBP System is the Canadian operational fire-behaviour model. This module implements the
 surface-fire component: surface fuel consumption, the buildup effect, the initial surface rate
 of spread, and the surface head fire intensity for the standard FBP fuel types. Crown fire is a
-separate layer (P151.3); the result says ``surface_only`` so a caller cannot mistake the
+separate layer (P154.3); the result says ``surface_only`` so a caller cannot mistake the
 surface intensity for a crown-fire intensity.
 
 The equations are the published FBP System equations. The implementation is original Python.

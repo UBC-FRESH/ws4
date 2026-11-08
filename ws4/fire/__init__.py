@@ -2,7 +2,7 @@
 
 The package starts with the fuel, moisture, and environment contracts and the validated
 Rothermel (1972) surface-fire kernel. Crown fire, FBP-specific fuel types, and spatially
-explicit growth follow in later P151 tasks.
+explicit growth follow in later P154 tasks.
 """
 
 from __future__ import annotations
