@@ -23,6 +23,8 @@ recorded in `ws4/sdmd/data/sdmd/source_catalog.json` (diagram `fdin`, version
    "Crown Closure" label; its descending and rising pieces are joined.
 7. The two thick dash-dot lines are `competition` (the lower limit of the
    imminent competition-mortality zone) and `self_thinning` (the mean limit).
+8. The grey "Density Range for Maximizing CAI" band is read from the large grey
+   filled path as a polygon and stored under `cai_band` for display only.
 
 ## What is stored
 
@@ -35,7 +37,9 @@ recorded in `ws4/sdmd/data/sdmd/source_catalog.json` (diagram `fdin`, version
 
 - The 18 TASS predicted-mortality dotted curves are visible in the PDF but are not
   stored in the five-kind contract.
-- The grey "density range for maximizing CAI" band is not stored.
+- The grey "density range for maximizing CAI" band is stored as an optional
+  `cai_band` polygon for display only. It has no numeric level and never feeds
+  placement or constraints.
 - The top-height and QMD curves only cover their printed domains; a point beyond a
   curve's last digitised point is reported as outside the isopleth range rather than
   extrapolated.
@@ -102,61 +106,69 @@ Install the optional tools with `python -m pip install -e '.[digitise]'`.
 ## fdcn status
 
 The Coastal Douglas-fir natural diagram is stored as `cdf-cwh-fdc-natural.json`,
-provisional. The top-height, QMD, and boundary paths are vector; the crown-closure
-curve is a provisional raster trace recorded in
-`notes/reference/fdcn-digitisation.md`. Review the overlay before use.
+provisional. Top height, QMD, boundaries, and crown closure are vector paths; the
+full top-height and QMD series include their unlabelled interior curves. Method and
+path map: `notes/reference/fdcn-digitisation.md`.
 
 ## ssn status
 
-Sitka spruce natural is stored as `cdf-cwh-ss-natural.json`, provisional. The
-top-height, QMD, and boundary paths are vector; the crown-closure curve is a
-raster trace. See `notes/reference/ssn-digitisation.md`.
+Sitka spruce natural is stored as `cdf-cwh-ss-natural.json`, reviewed. Top
+height, QMD, boundaries, and crown closure are vector paths. Top height and QMD
+use full value series, so their unlabelled interior curves are kept. See
+`notes/reference/ssn-digitisation.md`.
 
 ## hwn status
 
-Western hemlock natural is stored as `cwh-hw-natural.json`, provisional. The
-top-height, QMD, and boundary paths are vector; the crown-closure curve is a
-raster trace. See `notes/reference/hwn-digitisation.md`.
+Western hemlock natural is stored as `cwh-hw-natural.json`, reviewed. Top
+height, QMD, boundaries, and crown closure are vector paths. Top height and QMD
+use full value series, so their unlabelled interior curves are kept. See
+`notes/reference/hwn-digitisation.md`.
 
 ## swn status
 
-White spruce natural is stored as `sbs-sw-natural.json`, provisional. Top height,
-QMD, and boundaries are vector; crown closure is a raster trace. See
+White spruce natural is stored as `sbs-sw-natural.json`, reviewed. Top height,
+QMD, boundaries, and crown closure are vector paths. Top height uses the full
+value series, so its unlabelled interior curves are kept. See
 `notes/reference/swn-digitisation.md`.
 
 ## cwn status
 
-Western redcedar natural is stored as `cwh-cw-natural.json`, provisional. Top
-height, QMD, and boundaries are vector; crown closure is a raster trace. See
+Western redcedar natural is stored as `cwh-cw-natural.json`, reviewed. Top
+height, QMD, boundaries, and crown closure are vector paths. Top height and QMD
+use full value series, so their unlabelled interior curves are kept. See
 `notes/reference/cwn-digitisation.md`.
 
 ## fdcp status
 
-Coastal Douglas-fir planted is stored as `cdf-cwh-fdc-planted.json`,
-provisional. Top height, QMD, and boundaries are vector; crown closure is a raster
-trace. See `notes/reference/fdcp-digitisation.md`.
+Coastal Douglas-fir planted is stored as `cdf-cwh-fdc-planted.json`, reviewed by
+the maintainer. Top height, QMD, boundaries, and crown closure are vector paths.
+Top height and QMD use full value series, so their unlabelled interior curves are
+kept. The mapping is in `notes/reference/fdcp-digitisation.md`.
 
 ## ssp status
 
-Sitka spruce planted is stored as `cdf-cwh-ss-planted.json`, provisional. Top
-height, QMD, and boundaries are vector; crown closure is a raster trace. See
+Sitka spruce planted is stored as `cdf-cwh-ss-planted.json`, reviewed. Top
+height, QMD, boundaries, and crown closure are vector paths. Top height and QMD
+use full value series, so their unlabelled interior curves are kept. See
 `notes/reference/ssp-digitisation.md`.
 
 ## hwp status
 
-Western hemlock planted is stored as `cwh-hw-planted.json`, provisional. Top
-height, QMD, and boundaries are vector; crown closure is a raster trace. See
+Western hemlock planted is stored as `cwh-hw-planted.json`, reviewed. Top
+height, QMD, boundaries, and crown closure are vector paths. Top height and QMD
+use full value series, so their unlabelled interior curves are kept. See
 `notes/reference/hwp-digitisation.md`.
 
 ## cwp status
 
-Western redcedar planted is stored as `cwh-cw-planted.json`, provisional. Top
-height, QMD, and boundaries are vector; crown closure is a raster trace. See
+Western redcedar planted is stored as `cwh-cw-planted.json`, reviewed. Top
+height, QMD, boundaries, and crown closure are vector paths. Top height and QMD
+use full value series, so their unlabelled interior curves are kept. See
 `notes/reference/cwp-digitisation.md`.
 
 ## swp status
 
-White spruce planted is stored as `sbs-sw-planted.json`, provisional. Top
+White spruce planted is stored as `sbs-sw-planted.json`, reviewed. Top
 height, QMD, and boundaries are vector; crown closure is a raster trace. See
 `notes/reference/swp-digitisation.md`.
 

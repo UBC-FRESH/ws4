@@ -1607,6 +1607,42 @@ def serve(
         "--tile-cache",
         help="Directory for durable MVT tiles (default: memory only)",
     ),
+    allow_console: bool = typer.Option(
+        False,
+        "--allow-console",
+        help="Enable the token-authenticated allowlisted WS4 command console",
+    ),
+    console_token: str | None = typer.Option(
+        None,
+        "--console-token",
+        envvar="WS4_CONSOLE_TOKEN",
+        help="Bearer token for the console (or WS4_CONSOLE_TOKEN)",
+    ),
+    console_root: list[Path] | None = typer.Option(
+        None,
+        "--console-root",
+        help="Extra read-only root for console input paths; repeat as needed",
+    ),
+    console_timeout: float = typer.Option(
+        180.0,
+        "--console-timeout",
+        help="Wall-clock limit for one console job, in seconds",
+    ),
+    console_output_bytes: int = typer.Option(
+        1_000_000,
+        "--console-output-bytes",
+        help="Captured output cap for one console job, in bytes",
+    ),
+    console_rate_limit: int = typer.Option(
+        6,
+        "--console-rate-limit",
+        help="Console job starts allowed per minute",
+    ),
+    allow_console_python: bool = typer.Option(
+        False,
+        "--allow-console-python",
+        help="Enable the sandboxed Python script tier (requires Landlock and unshare)",
+    ),
     crs: str = typer.Option(
         "EPSG:4326",
         "--crs",
@@ -1647,6 +1683,10 @@ def serve(
         raise typer.BadParameter("--patch-accounts needs --topology")
     if spread_accounts is not None and (topology is None or block_coordinates is None):
         raise typer.BadParameter("--spread-accounts needs --topology and --block-coordinates")
+    if allow_console and not (console_token or "").strip():
+        raise typer.BadParameter("--allow-console needs --console-token or WS4_CONSOLE_TOKEN")
+    if allow_console_python and not allow_console:
+        raise typer.BadParameter("--allow-console-python needs --allow-console")
     try:
         from .web.app import create_app
     except ImportError as error:
@@ -1678,6 +1718,13 @@ def serve(
             roads=roads,
             tile_cache_dir=tile_cache,
             crs=crs,
+            allow_console=allow_console,
+            console_token=console_token,
+            console_roots=console_root,
+            console_timeout=console_timeout,
+            console_output_bytes=console_output_bytes,
+            console_rate_limit=console_rate_limit,
+            allow_console_python=allow_console_python,
         ),
         host=host,
         port=port,

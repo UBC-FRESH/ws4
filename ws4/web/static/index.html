@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=111">
+  <link rel="stylesheet" href="static/style.css?v=112">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
   <script type="importmap">
     {
@@ -18,7 +18,7 @@
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v111</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v112</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <div class="period-control">
@@ -40,6 +40,7 @@
         <button id="ws-results" role="tab" aria-selected="false" aria-controls="workspace-results" data-workspace="results">Results</button>
         <button id="ws-pareto" role="tab" aria-selected="false" aria-controls="workspace-pareto" data-workspace="pareto">Pareto</button>
         <button id="ws-data" role="tab" aria-selected="false" aria-controls="workspace-data" data-workspace="data">Data</button>
+        <button id="ws-console" role="tab" aria-selected="false" aria-controls="workspace-console" data-workspace="console" hidden>Console</button>
         <button id="ws-sdmd" role="tab" aria-selected="false" aria-controls="workspace-sdmd" data-workspace="sdmd" hidden>SDMD</button>
       </nav>
       <div class="sidebar-body">
@@ -457,6 +458,45 @@
         <p id="carbon-hint" class="hint">Read-only: the service aggregates libcbm pools and fluxes by timestep and never reruns the carbon engine.</p>
       </section>
       </div>
+      <div id="workspace-console" class="workspace" role="tabpanel" aria-labelledby="ws-console" hidden>
+        <section id="tab-console" role="tabpanel" aria-labelledby="ws-console">
+          <h2>Console</h2>
+          <p class="hint">Run allowlisted WS4 commands. Jobs use a server-built argv, a read-only input boundary, and a scratch directory. Nothing is executed through a shell.</p>
+          <div class="console-auth">
+            <label>Access token
+              <input id="console-token" type="password" autocomplete="off" spellcheck="false" placeholder="Bearer token">
+            </label>
+            <button id="console-connect" type="button">Connect</button>
+            <span id="console-status" class="hint" aria-live="polite">enter the collaborator token</span>
+          </div>
+          <label class="console-command">Command
+            <select id="console-command" aria-label="Console command"></select>
+          </label>
+          <div id="console-fields" class="console-fields"></div>
+          <div class="run-row console-actions">
+            <button id="console-run" type="button" disabled>Run job</button>
+            <button id="console-cancel" type="button" disabled>Cancel</button>
+            <span id="console-job-status" class="hint"></span>
+          </div>
+          <div id="console-python" class="console-python" hidden>
+            <h3>Sandboxed Python</h3>
+            <p class="hint">Scripts run only after explicit review, with Landlock file confinement, no network, and per-job resource limits. This is not an unsandboxed terminal.</p>
+            <label class="console-field">Python script
+              <textarea id="console-python-script" rows="8" spellcheck="false" placeholder="from ws4 ..."></textarea>
+            </label>
+            <label class="console-field">Read-only inputs (one absolute path per line)
+              <textarea id="console-python-inputs" rows="3" spellcheck="false" placeholder="optional files or directories"></textarea>
+            </label>
+            <label class="console-review"><input id="console-python-reviewed" type="checkbox"> I reviewed this script and want it to run</label>
+            <div class="run-row console-actions">
+              <button id="console-python-run" type="button" disabled>Run reviewed script</button>
+              <span id="console-python-status" class="hint"></span>
+            </div>
+          </div>
+          <pre id="console-output" class="console-output" aria-live="polite"></pre>
+          <div id="console-artifacts" class="console-artifacts"></div>
+        </section>
+      </div>
       <div id="workspace-sdmd" class="workspace" role="tabpanel" aria-labelledby="ws-sdmd" hidden>
         <section id="tab-sdmd" role="tabpanel" aria-labelledby="ws-sdmd">
           <h2>AU Explorer</h2>
@@ -647,6 +687,6 @@
     <p class="hint">Shortcuts pause while typing in an input, select, or editor.</p>
   </dialog>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=111"></script>
+  <script type="module" src="static/app.js?v=112"></script>
 </body>
 </html>

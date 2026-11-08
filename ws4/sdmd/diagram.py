@@ -134,6 +134,10 @@ class SdmdDiagram:
         Forester review state.
     isopleths : tuple of Isopleth
         The curves.
+    cai_band : tuple of tuple of float or None
+        The display-only polygon for the source's "Density Range for Maximizing
+        CAI" band, in ``(tph, mean_tree_volume_m3)`` order. It has no numeric
+        level and never feeds placement or constraints.
     """
 
     diagram_id: str
@@ -146,6 +150,7 @@ class SdmdDiagram:
     source: DiagramSource
     review: DiagramReview
     isopleths: tuple[Isopleth, ...]
+    cai_band: tuple[tuple[float, float], ...] | None = None
 
 
 @dataclass(frozen=True)
@@ -249,6 +254,7 @@ def load_diagram(path: str | Path) -> SdmdDiagram:
             reviewed_utc=_text(review_payload.get("reviewed_utc")),
         ),
         isopleths=_isopleths(data.get("isopleths")),
+        cai_band=_optional_band(data.get("cai_band")),
     )
     problems = validate_diagram(diagram)
     if problems:
@@ -295,6 +301,8 @@ def validate_diagram(diagram: SdmdDiagram) -> list[Problem]:
             problems.append(Problem("SDMD-DIAGRAM-ISOPLETH", kind, message))
     for isopleth in diagram.isopleths:
         problems.extend(_validate_isopleth(isopleth))
+    if diagram.cai_band is not None:
+        problems.extend(_validate_cai_band(diagram.cai_band))
     return problems
 
 
@@ -408,6 +416,36 @@ def _validate_isopleth(isopleth: Isopleth) -> list[Problem]:
             )
             break
         previous = tph
+    return problems
+
+
+def _validate_cai_band(points: tuple[tuple[float, float], ...]) -> list[Problem]:
+    """Validate the optional display-only CAI band polygon.
+
+    Parameters
+    ----------
+    points : tuple of tuple of float
+        The ``(tph, mean_tree_volume_m3)`` ring.
+
+    Returns
+    -------
+    list of Problem
+        The findings. The list is empty when the ring is usable.
+    """
+    problems: list[Problem] = []
+    if len(points) < 3:
+        problems.append(
+            Problem(
+                "SDMD-DIAGRAM-CAI",
+                "cai_band",
+                "a CAI band needs at least three polygon points",
+            )
+        )
+        return problems
+    for tph, volume in points:
+        if tph <= 0 or volume <= 0:
+            problems.append(Problem("SDMD-DIAGRAM-CAI", "cai_band", "points must be positive"))
+            break
     return problems
 
 
@@ -723,6 +761,36 @@ def _isopleths(value: object) -> tuple[Isopleth, ...]:
             )
         )
     return tuple(result)
+
+
+def _optional_band(value: object) -> tuple[tuple[float, float], ...] | None:
+    """Parse the optional display-only CAI band polygon from JSON.
+
+    Parameters
+    ----------
+    value : object
+        The decoded ``cai_band`` value.
+
+    Returns
+    -------
+    tuple of tuple of float or None
+        The ordered ring, or ``None`` when the field is absent.
+
+    Raises
+    ------
+    SdmdDiagramError
+        If the value is present but is not a list of ``[tph, volume]`` pairs.
+    """
+    if value is None:
+        return None
+    if not isinstance(value, list):
+        raise SdmdDiagramError("diagram cai_band must be a list")
+    points: list[tuple[float, float]] = []
+    for point in value:
+        if not isinstance(point, list) or len(point) != 2:
+            raise SdmdDiagramError("diagram cai_band points must be [tph, volume]")
+        points.append((_number(point[0], "tph"), _number(point[1], "mean_tree_volume_m3")))
+    return tuple(points)
 
 
 def _mapping(value: object, name: str) -> Mapping[str, object]:

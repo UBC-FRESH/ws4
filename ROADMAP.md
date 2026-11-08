@@ -135,6 +135,7 @@ exists and the maintainer approves it.
 | P134 SDMD coverage closure | #820 | `feature/p134-coverage-closure` | complete |
 | P135 BC SDMD applicability correction | #824 | `feature/p135-bec-applicability` | complete |
 | P136 Pareto solution-space explorer | #827 | `feature/p136-pareto-explorer` | complete |
+| P137 Provisional SDMD diagram review | #830 | `feature/p137-diagram-review` | complete |
 | P138 Pareto member to map/Plan | #834 | `feature/p138-pareto-to-plan` | complete |
 | P139 Target-faithful promoted runs | #837 | `feature/p139-target-faithful` | complete |
 | P140 Period target dimensions | #840 | `feature/p140-target-dimensions` | complete |
@@ -148,6 +149,10 @@ exists and the maintainer approves it.
 | P148 Portfolio and promoted-run cleanup | #869 | `feature/p148-portfolio-cleanup` | complete |
 | P149 State-run exactness | #873 | `feature/p149-state-exactness` | complete |
 | P150 GPU extension guard | #886 | `fix/gpu-extension-guard` | complete |
+| P151 Web UI power-user console | #789 | `feature/p151-web-console` | complete |
+| P152 Sandboxed Python runner | #901 | `feature/p152-python-sandbox` | complete |
+| P153 Assistant script review | #906 | `feature/p153-assistant-script-review` | complete |
+| P154 TSA 29 GPU stock | #912 | `feature/p154-tsa29-stock` | complete |
 | P156 Credible fire behaviour and growth | #890 | `feature/p156-fire-behaviour` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
@@ -4149,6 +4154,38 @@ Acceptance:
 - Selected members can be inspected and their schedules opened.
 - Tests and the green dashboard pass.
 
+## Phase 137: Source-complete SDMD diagram review
+
+Parent issue: #830
+Branch: `feature/p137-diagram-review`
+Status: complete
+Merge commit: `37b559d`
+Report: `notes/reports/p137-diagram-review.md`
+Packet: `notes/review/p137-provisional-review.md`
+PR: #833
+
+Goal: review and re-digitize the coastal diagrams from their source vector paths.
+
+- [x] P137.1 Source-complete diagram review packet (#831)
+  - [x] SHA-256-check source PDFs and render source pages.
+  - [x] Build stored-curve plots and numeric inventories.
+  - [x] Overlay stored curves on source pages and inspect them.
+  - [x] Match every printed curve label to a source path; keep unlabelled interior members.
+  - [x] Replace crown-closure traces with source vector paths.
+  - [x] Add the display-only CAI band.
+  - [x] Name the four no-diagram decisions.
+- [x] P137 close-out: all 14 public Atlas diagrams are reviewed; the provisional
+  queue is empty and coverage is 214 reviewed_zone, 1 reviewed_variant, and 4
+  no_diagram.
+
+Acceptance:
+
+- All 14 public Atlas diagrams are marked reviewed.
+- The provisional review queue is empty.
+- Overlay findings and source path maps are recorded with evidence.
+- The FreshForge line-import recipes are validated and locked.
+- Dashboard green.
+
 ## Phase 138: Pareto member to map/Plan
 
 Parent issue: #834
@@ -4433,6 +4470,90 @@ Acceptance:
 - The error names the row count and the prebuilt-basis/factorized alternatives.
 - A real TSA 29 table check and the focused GPU-effects tests pass.
 
+## Phase 151: Web UI power-user console
+
+Parent issue: #789
+Branch: `feature/p151-web-console`
+Status: complete
+Merge commit: `cc5c4ff`
+Report: `notes/reports/p151-web-console.md`
+PR: #897
+
+Goal: add a token-authenticated, allowlisted command composer without exposing a shell.
+
+- [x] P151.1 Allowlisted WS4 command console for the web UI (#790)
+
+Acceptance:
+
+- The console is absent unless enabled and authenticated.
+- Server-built argv arrays launch only allowlisted WS4 commands.
+- Input paths stay inside read-only roots; outputs stay in a scratch job directory.
+- Output, cancellation, quotas, artifacts, and audit records work.
+- Browser smoke and dashboard pass.
+
+## Phase 152: Sandboxed Python runner
+
+Parent issue: #901
+Branch: `feature/p152-python-sandbox`
+Status: complete
+Merge commit: `345a86d`
+Report: `notes/reports/p152-python-sandbox.md`
+PR: #903
+
+Goal: run explicitly reviewed WS4 Python scripts with a fail-closed sandbox.
+
+- [x] P152.1 Run reviewed scripts in a Landlock sandbox (#902)
+
+Acceptance:
+
+- Unreviewed scripts are rejected.
+- Landlock and unshare are required; there is no unsandboxed fallback.
+- Selected inputs are read-only; only job scratch is writable.
+- Host files, other runs, network, and credentials are unavailable.
+- Browser review, tests, and dashboard pass.
+
+## Phase 153: Assistant script review
+
+Parent issue: #906
+Branch: `feature/p153-assistant-script-review`
+Status: complete
+Merge commit: `772d45b`
+Report: `notes/reports/p153-assistant-script-review.md`
+PR: #909
+
+Goal: let the assistant stage code without granting it execution authority.
+
+- [x] P153.1 Stage assistant scripts for review (#907)
+
+Acceptance:
+
+- A bounded ``stage_script`` chip reaches the browser.
+- Staging fills the console editor and clears review confirmation.
+- The chip never calls the job API.
+- The chat agent cannot inherit console secrets.
+- Tests, browser smoke, and dashboard pass.
+
+## Phase 154: TSA 29 GPU stock
+
+Parent issue: #912
+Branch: `feature/p154-tsa29-stock`
+Status: complete
+Merge commit: `8f5aae0`
+Report: `notes/reports/p154-tsa29-stock.md`
+PR: #914
+
+Goal: price the TSA 29 managed-stock floor on the GPU without a lazy table extension.
+
+- [x] P154.1 Build and wire TSA 29 factorized stock basis (#913)
+
+Acceptance:
+
+- A reusable factorized build command exists.
+- TSA 29 stock target uses the factorized cell, not the state fallback.
+- Zero-generation and evolved runs report exact replay.
+- The sparse table is unchanged.
+- Tests, portal smoke, and dashboard pass.
+
 ## Phase 156: Credible fire behaviour and growth
 
 Parent issue: #890
@@ -4467,4 +4588,3 @@ Acceptance:
 - The 3D viewer's flame length and smoke are derived from fireline intensity and fuel
   consumption, not arbitrary particle settings.
 - `python scripts/dashboard.py` is green.
-

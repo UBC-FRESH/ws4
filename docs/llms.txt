@@ -30,6 +30,7 @@
 - [Run a carbon study](howto/run-carbon.html): a FEMIC package through a baseline, carbon targets, fertilization, HWP lifecycle, carbon yield curves, and the GCBM bridge.
 - [Watch a run](howto/watch-a-run.html): the live target window, several accounts at once, and `--plain`.
 - [Automate a study](howto/automate-a-study.html): sweeps, in-memory targets, hand-driven solvers, and scaling.
+- [Run an allowlisted command](howto/web-console.html): the opt-in web console, token gate, allowed commands, quotas, and audit boundary.
 - [FAQ](howto/faq.html): short answers to the questions that come up first.
 
 ## Examples

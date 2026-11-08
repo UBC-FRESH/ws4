@@ -31,23 +31,31 @@ def test_builder_emits_all_current_labels() -> None:
     frame = _builder().build_coverage()
     assert len(frame) == 219
     assert frame["coverage_status"].value_counts().to_dict() == {
-        "mixed_zone": 209,
         "no_diagram": 4,
         "reviewed_variant": 1,
-        "reviewed_zone": 5,
+        "reviewed_zone": 214,
     }
     assert set(frame["bec"]) == set(frame["bec"].unique())
 
 
 def test_builder_emits_the_provisional_review_queue() -> None:
-    """The builder names the 10 provisional diagrams and their labels."""
+    """The builder emits an empty queue once every diagram is reviewed."""
     queue = _builder().build_review_queue()
-    assert len(queue) == 10
-    assert set(queue["status"]) == {"provisional"}
-    labels: set[str] = set()
-    for value in queue["bec_labels"]:
-        labels.update(item for item in str(value).split(";") if item)
-    assert len(labels) == 210
+    assert len(queue) == 0
+    assert set(queue["status"]) == set()
+
+
+def test_builder_emits_a_provisional_row_for_a_forced_review(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The queue path still builds rows when a diagram is provisional."""
+    builder = _builder()
+    monkeypatch.setattr(builder, "_diagram_reviews", lambda: {"fdcp": "provisional"})
+    queue = builder.build_review_queue()
+    assert len(queue) == 1
+    assert queue.iloc[0]["diagram_id"] == "fdcp"
+    assert queue.iloc[0]["status"] == "provisional"
+    assert int(queue.iloc[0]["label_count"]) > 0
 
 
 def test_builder_reads_all_atlas_reviews() -> None:
@@ -55,7 +63,12 @@ def test_builder_reads_all_atlas_reviews() -> None:
     reviews = _builder()._diagram_reviews()
     assert reviews["fdin"] == "reviewed"
     assert reviews["pln"] == "reviewed"
-    assert reviews["fdcn"] == "provisional"
+    assert reviews["fdcn"] == "reviewed"
+    assert reviews["ssn"] == "reviewed"
+    assert reviews["ssp"] == "reviewed"
+    assert reviews["hwn"] == "reviewed"
+    assert reviews["hwp"] == "reviewed"
+    assert reviews["cwn"] == "reviewed"
 
 
 def test_builder_main_writes_the_registry(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

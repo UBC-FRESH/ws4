@@ -18,6 +18,24 @@
     "reviewer": "Gregory Paradis (maintainer of record)",
     "reviewed_utc": "2026-11-02T18:20:44+00:00"
   },
+  "cai_band": [
+    [
+      353.779918,
+      1.987112
+    ],
+    [
+      412.730329,
+      1.998001
+    ],
+    [
+      4123.050259,
+      0.060018
+    ],
+    [
+      4148.677124,
+      0.020579
+    ]
+  ],
   "isopleths": [
     {
       "kind": "top_height",

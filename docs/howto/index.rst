@@ -43,6 +43,9 @@ guides marked both show each path where they differ.
    * - :doc:`automate-a-study`
      - API
      - Sweeps, seeds, and reading results back — what the Python API is for.
+   * - :doc:`web-console`
+     - both
+     - Run allowlisted WS4 commands from the web UI through typed fields, not a shell.
    * - :doc:`faq`
      - both
      - Short answers to the questions that come up first.
@@ -69,4 +72,5 @@ Prerequisites
    run-carbon-removal
    watch-a-run
    automate-a-study
+   web-console
    faq

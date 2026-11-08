@@ -21,7 +21,7 @@ import tempfile
 import threading
 import time
 from collections import Counter
-from collections.abc import Awaitable, Callable, Iterator, Mapping
+from collections.abc import Awaitable, Callable, Iterator, Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Any, cast
@@ -57,6 +57,7 @@ from ..opt.objective import (
 )
 from ..opt.solution_space import build_solution_space
 from ..report import target_kind
+from .console import ConsoleConfig, ConsoleManager, create_console_router
 from .skins import load_skins
 
 SEARCH_JOB_LIMIT: int = 20
@@ -757,7 +758,7 @@ def _run_periods(years: list[int], width: int) -> list[dict[str, object]]:
 
 _CHAT_WORKSPACES = frozenset({"map", "plan", "results", "data", "sdmd"})
 _CHAT_CHIP_ACTIONS = frozenset(
-    {"open_workspace", "open_subview", "set_period", "select_block", "ask"}
+    {"open_workspace", "open_subview", "set_period", "select_block", "ask", "stage_script"}
 )
 _CHAT_ACTION_MARKER = "WS4_ACTIONS:"
 
@@ -775,6 +776,18 @@ def _chat_text(value: object, *, limit: int) -> str:
         return ""
     cleaned = "".join(character for character in value if character >= " " and character != "`")
     return " ".join(cleaned.split())[:limit]
+
+
+def _chat_script(value: object, *, limit: int) -> str:
+    """Return bounded printable script text, preserving lines and indentation."""
+    if not isinstance(value, str):
+        return ""
+    cleaned = "".join(
+        character for character in value if character in "\n\t" or character >= " "
+    ).strip()
+    if not cleaned or len(cleaned) > limit:
+        return ""
+    return cleaned
 
 
 def _chat_index(value: object) -> int | None:
@@ -879,6 +892,10 @@ def _chat_chip(item: object) -> dict[str, str] | None:
         value = _chat_text(target, limit=200)
         if not value:
             return None
+    elif action == "stage_script":
+        value = _chat_script(target, limit=20_000)
+        if not value:
+            return None
     else:
         value = _chat_text(target, limit=500)
         if not value:
@@ -928,6 +945,30 @@ def _split_chat_actions(reply: str) -> tuple[str, list[dict[str, str]]]:
     return visible, chips
 
 
+def _agent_environment(source: Mapping[str, str] | None = None) -> dict[str, str]:
+    """Return a chat-agent environment without console secrets or session hooks.
+
+    Parameters
+    ----------
+    source : mapping of str to str or None, optional
+        Base environment. None copies ``os.environ``.
+
+    Returns
+    -------
+    dict
+        A new environment with console tokens and OpenCode session hooks removed.
+    """
+    environment = dict(os.environ if source is None else source)
+    for name in (
+        "OPENCODE_SESSION_ID",
+        "OPENCODE_TERMINAL",
+        "WS4_CONSOLE_TOKEN",
+        "WS4_CONSOLE_PYTHON",
+    ):
+        environment.pop(name, None)
+    return environment
+
+
 def create_app(
     *,
     dataset: Path,
@@ -952,6 +993,17 @@ def create_app(
     roads: Path | None = None,
     crs: str = "EPSG:4326",
     tile_cache_dir: Path | None = None,
+    allow_console: bool = False,
+    console_token: str | None = None,
+    console_roots: Sequence[Path] | None = None,
+    console_timeout: float = 180.0,
+    console_output_bytes: int = 1_000_000,
+    console_rate_limit: int = 6,
+    console_workspace: str | None = None,
+    allow_console_python: bool = False,
+    console_python_memory_bytes: int = 2_000_000_000,
+    console_python_max_script_bytes: int = 65_536,
+    console_python_max_file_bytes: int = 64_000_000,
 ) -> FastAPI:
     """Create the WS4 read API.
 
@@ -1015,6 +1067,32 @@ def create_app(
         ``format=wgs84`` transforms them for MapLibre. Default ``EPSG:4326``.
     tile_cache_dir : Path or None, optional
         Directory for durable MVT tiles. ``None`` keeps tiles in memory only.
+    allow_console : bool, optional
+        When true, expose the token-authenticated allowlisted command console. False keeps
+        the console API absent.
+    console_token : str or None, optional
+        Bearer token required by every console endpoint. Required when ``allow_console``
+        is true.
+    console_roots : sequence of Path or None, optional
+        Extra read-only roots that console input paths may use. The dataset, runs, targets,
+        initial schedule, and profile parents are added automatically.
+    console_timeout : float, optional
+        Wall-clock limit for one console job. Defaults to 180 seconds.
+    console_output_bytes : int, optional
+        Captured output cap per console job. Defaults to one megabyte.
+    console_rate_limit : int, optional
+        Console job starts allowed per minute. Defaults to six.
+    console_workspace : str or None, optional
+        Workspace label recorded in console audits. None uses the runs directory name.
+    allow_console_python : bool, optional
+        Enable the sandboxed Python script tier. It requires ``allow_console`` and a host
+        with Landlock and unshare; unsupported hosts refuse jobs rather than falling back.
+    console_python_memory_bytes : int, optional
+        Address-space limit for one script. Defaults to two gigabytes.
+    console_python_max_script_bytes : int, optional
+        Largest accepted script source. Defaults to 64 KiB.
+    console_python_max_file_bytes : int, optional
+        Largest file the script may create. Defaults to 64 MB.
 
     Returns
     -------
@@ -1067,6 +1145,59 @@ def create_app(
     static_dir = Path(__file__).with_name("static")
     if static_dir.is_dir():
         app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+    if allow_console_python and not allow_console:
+        raise ValueError("allow_console_python requires allow_console")
+    console_manager: ConsoleManager | None = None
+    if allow_console:
+        token = (console_token or "").strip()
+        if not token:
+            raise ValueError("allow_console requires a non-empty console_token")
+        if console_timeout <= 0 or console_output_bytes <= 0 or console_rate_limit <= 0:
+            raise ValueError("console limits must be positive")
+        if allow_console_python and (
+            console_python_memory_bytes <= 0
+            or console_python_max_script_bytes <= 0
+            or console_python_max_file_bytes <= 0
+        ):
+            raise ValueError("console Python limits must be positive")
+        root_candidates: list[Path] = [dataset, runs_root, dataset.parent, runs_root.parent]
+        for candidate in (
+            targets_path,
+            initial_schedule_path,
+            scenario_profiles,
+        ):
+            if candidate is not None:
+                root_candidates.append(candidate.parent)
+        for candidate in console_roots or ():
+            root_candidates.append(Path(candidate))
+        roots: list[Path] = []
+        for candidate in root_candidates:
+            try:
+                resolved = candidate.resolve()
+            except OSError:
+                continue
+            if resolved.exists() and resolved not in roots:
+                roots.append(resolved)
+        console_manager = ConsoleManager(
+            ConsoleConfig(
+                dataset=dataset,
+                runs=runs_root,
+                roots=tuple(roots),
+                token=token,
+                workspace=console_workspace or runs_root.name,
+                targets=targets_path,
+                initial_schedule=initial_schedule_path,
+                timeout_seconds=float(console_timeout),
+                max_output_bytes=int(console_output_bytes),
+                max_jobs_per_minute=int(console_rate_limit),
+                python_enabled=bool(allow_console_python),
+                python_memory_bytes=int(console_python_memory_bytes),
+                python_max_script_bytes=int(console_python_max_script_bytes),
+                python_max_file_bytes=int(console_python_max_file_bytes),
+            )
+        )
+        app.include_router(create_console_router(console_manager))
 
     def run_dir(name: str) -> Path:
         return _run_directory(runs_root, name)
@@ -1884,17 +2015,16 @@ def create_app(
             "WS4_ACTIONS: followed by a JSON array. Use only these actions: "
             "open_workspace (target map, plan, results, data, or sdmd), "
             "open_subview (target workspace:subview), set_period (target integer index), "
-            "select_block (target block id), and ask (target prompt text). "
-            "Never use a chip to edit data, start a run, or run a command."
+            "select_block (target block id), ask (target prompt text), and stage_script "
+            "(target Python source for the reviewed console). stage_script only stages code: "
+            "it never executes. Never use a chip to edit data, start a run, or run a command."
         )
         prompt = "\n".join(context) + "\n\nUser: " + message
         command = [executable, "run", "--model", agent_model, "--format", "json", "--auto"]
         if session:
             command.extend(["--session", session])
         command.append(prompt)
-        environment = dict(os.environ)
-        for name in ("OPENCODE_SESSION_ID", "OPENCODE_TERMINAL"):
-            environment.pop(name, None)
+        environment = _agent_environment()
         try:
             completed = subprocess.run(
                 command,
@@ -2115,6 +2245,9 @@ def create_app(
             "manifest": manifest,
             "capabilities": {
                 "geometry": geometry_path is not None and geometry_path.is_file(),
+                "console": console_manager is not None,
+                "console_python": console_manager is not None
+                and console_manager.config.python_enabled,
             },
             "runs": found,
         }
