@@ -4660,3 +4660,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P151.1: added the opt-in, token-authenticated web console with typed allowlisted
   commands, server-built argv, read-only input roots, scratch jobs, output streaming,
   cancellation, quotas, artifact downloads, and audit records.
+
+- P151 close-out: PR #897 squash-merged as `cc5c4ff`; parent #789 and task #790 are
+  closed. The console stays disabled by default; setting `WS4_CONSOLE_TOKEN` enables it
+  on the portal and `--allow-console` enables it on `ws4 serve`. Dashboard: **GREEN**.
