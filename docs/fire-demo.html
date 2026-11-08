@@ -43,7 +43,7 @@
 <canvas id="canvas"></canvas>
 <div id="title" class="hud">
   <h1>WS4 fire scene</h1>
-  <p>Synthetic trees over a public TSA 24 VRI polygon cluster. P156 FBP growth field; clock in minutes since ignition.</p>
+  <p>Synthetic trees over a VRI polygon cluster. P156 FBP growth field; each tree samples the local arrival time.</p>
 </div>
 <div id="stats" class="hud">
   <div><span>fragments</span><strong id="stat-fragments">—</strong></div>
@@ -51,6 +51,8 @@
   <div><span>fire events</span><strong id="stat-fires">—</strong></div>
   <div><span>burning now</span><strong id="stat-burning">0</strong></div>
   <div><span>burnt trees</span><strong id="stat-burnt">0</strong></div>
+  <div><span>particles</span><strong id="stat-particles">—</strong></div>
+  <div><span>fps</span><strong id="stat-fps">—</strong></div>
 </div>
 <div id="timeline" class="hud">
   <div class="row">
@@ -80,6 +82,10 @@
 <script type="module">
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 
 const DATA = JSON.parse(document.getElementById("scene-data").textContent || "null");
 if (!DATA || !DATA.trees || !DATA.stands) {
@@ -96,7 +102,6 @@ renderer.toneMappingExposure = 1.25;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b1c27);
-scene.fog = new THREE.FogExp2(0x0b1c27, 0.00035);
 
 const bounds = DATA.bounds;
 const width = Math.max(1, bounds.max_x - bounds.min_x);
@@ -104,9 +109,10 @@ const depth = Math.max(1, bounds.max_y - bounds.min_y);
 const maxDim = Math.max(width, depth);
 const cx = (bounds.min_x + bounds.max_x) / 2;
 const cz = (bounds.min_y + bounds.max_y) / 2;
+scene.fog = new THREE.FogExp2(0x0b1c27, 0.16 / maxDim);
 
 const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.5, 20000);
-camera.position.set(cx - maxDim * 0.38, maxDim * 0.30, cz + maxDim * 0.48);
+camera.position.set(cx - maxDim * 0.22, maxDim * 0.12, cz + maxDim * 0.28);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(cx, 0, cz);
 controls.enableDamping = true;
@@ -114,6 +120,42 @@ controls.dampingFactor = 0.06;
 controls.maxPolarAngle = Math.PI / 2.08;
 controls.minDistance = 20;
 controls.maxDistance = maxDim * 4;
+
+const useBloom = new URLSearchParams(location.search).get("bloom") !== "0";
+const composer = useBloom ? new EffectComposer(renderer) : null;
+if (composer) {
+  composer.addPass(new RenderPass(scene, camera));
+  composer.addPass(
+    new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.55, 0.45, 0.82)
+  );
+}
+const heatHaze = new ShaderPass({
+  uniforms: {
+    tDiffuse: { value: null },
+    uTime: { value: 0 },
+    uStrength: { value: 0.0007 },
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D tDiffuse;
+    uniform float uTime;
+    uniform float uStrength;
+    varying vec2 vUv;
+    void main() {
+      vec2 uv = vUv;
+      float wave = sin(uv.y * 140.0 + uTime * 4.0) * uStrength;
+      uv.x += wave;
+      gl_FragColor = texture2D(tDiffuse, uv);
+    }
+  `,
+});
+if (composer) composer.addPass(heatHaze);
 
 scene.add(new THREE.HemisphereLight(0x9fc8ff, 0x1b140d, 1.2));
 scene.add(new THREE.AmbientLight(0x9fb8c8, 0.25));
@@ -126,7 +168,7 @@ scene.add(fireLight);
 
 const ground = new THREE.Mesh(
   new THREE.PlaneGeometry(width + maxDim * 1.2, depth + maxDim * 1.2),
-  new THREE.MeshLambertMaterial({ color: 0x1e3327 })
+  new THREE.MeshLambertMaterial({ color: 0x2c4a38 })
 );
 ground.rotation.x = -Math.PI / 2;
 ground.position.set(cx, -0.08, cz);
@@ -239,7 +281,7 @@ function makeSpriteTexture() {
 }
 const spriteTexture = makeSpriteTexture();
 
-function makeParticleSystem(maxParticles, blending) {
+function makeParticleSystem(maxParticles, blending, kind) {
   const geometry = new THREE.BufferGeometry();
   const positions = new Float32Array(maxParticles * 3);
   const colors = new Float32Array(maxParticles * 3);
@@ -250,30 +292,72 @@ function makeParticleSystem(maxParticles, blending) {
   geometry.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
   geometry.setAttribute("aAlpha", new THREE.BufferAttribute(alphas, 1));
   const material = new THREE.ShaderMaterial({
-    uniforms: { uTexture: { value: spriteTexture } },
+    uniforms: {
+      uTexture: { value: spriteTexture },
+      uTime: { value: 0 },
+      uKind: { value: kind },
+    },
     vertexShader: `
       attribute float aSize;
       attribute float aAlpha;
       attribute vec3 aColor;
       varying vec3 vColor;
       varying float vAlpha;
+      varying float vDepth;
       void main() {
         vColor = aColor;
         vAlpha = aAlpha;
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        vDepth = -mv.z;
         gl_PointSize = aSize * (340.0 / max(1.0, -mv.z));
         gl_Position = projectionMatrix * mv;
       }
     `,
     fragmentShader: `
       uniform sampler2D uTexture;
+      uniform float uTime;
+      uniform float uKind;
       varying vec3 vColor;
       varying float vAlpha;
+      varying float vDepth;
+      float hash(vec2 p) {
+        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+      }
+      float noise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        vec2 u = f * f * (3.0 - 2.0 * f);
+        return mix(
+          mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
+          mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),
+          u.y
+        );
+      }
       void main() {
-        vec4 tex = texture2D(uTexture, gl_PointCoord);
-        float a = tex.a * vAlpha;
-        if (a < 0.008) discard;
-        gl_FragColor = vec4(vColor, a);
+        vec2 uv = gl_PointCoord;
+        float tex = texture2D(uTexture, uv).a;
+        float radial = smoothstep(0.5, 0.0, length(uv - 0.5));
+        float n = noise(uv * 7.0 + vec2(0.0, uTime * 2.5));
+        float alpha;
+        vec3 color;
+        if (uKind < 0.5) {
+          float lick = smoothstep(0.0, 0.7, uv.y * 0.9 + n * 0.35);
+          float core = smoothstep(0.65, 0.0, length((uv - vec2(0.5, 0.32)) * vec2(1.5, 1.0)));
+          alpha = tex * radial * lick * core * vAlpha;
+          float heat = clamp(vColor.r * 0.5 + vColor.g * 0.8, 0.0, 1.0);
+          color = mix(vec3(0.95, 0.10, 0.01), vec3(1.0, 0.83, 0.32), heat * (1.0 - uv.y * 0.35));
+          color = mix(color, vec3(1.0, 0.98, 0.82), core * 0.35);
+        } else if (uKind < 1.5) {
+          float billow = smoothstep(0.08, 0.92, texture2D(uTexture, uv + vec2(n * 0.06, -uTime * 0.02)).a);
+          alpha = tex * billow * radial * vAlpha * 0.85;
+          color = vColor * (0.82 + 0.25 * n);
+        } else {
+          alpha = tex * radial * vAlpha;
+          color = mix(vec3(1.0, 0.35, 0.05), vec3(1.0, 0.95, 0.7), vColor.g);
+        }
+        float depthFade = smoothstep(0.0, 60.0, vDepth);
+        if (alpha * depthFade < 0.008) discard;
+        gl_FragColor = vec4(color, alpha * depthFade);
       }
     `,
     transparent: true,
@@ -291,15 +375,20 @@ function makeParticleSystem(maxParticles, blending) {
     life: new Float32Array(maxParticles),
     maxLife: new Float32Array(maxParticles),
     active: 0,
+    kind,
     geometry,
     points,
+    material,
   };
 }
 
-const flameCount = Math.max(200, Math.floor(DATA.counts.particle_budget * 0.55));
-const smokeCount = Math.max(120, DATA.counts.particle_budget - flameCount);
-const flames = makeParticleSystem(flameCount, THREE.AdditiveBlending);
-const smoke = makeParticleSystem(smokeCount, THREE.NormalBlending);
+const budget = Math.max(120, Math.floor(DATA.counts.particle_budget));
+const emberCount = Math.max(60, Math.floor(budget * 0.08));
+const flameCount = Math.max(120, Math.floor((budget - emberCount) * 0.55));
+const smokeCount = Math.max(80, budget - flameCount - emberCount);
+const flames = makeParticleSystem(flameCount, THREE.AdditiveBlending, 0);
+const smoke = makeParticleSystem(smokeCount, THREE.NormalBlending, 1);
+const embers = makeParticleSystem(emberCount, THREE.AdditiveBlending, 2);
 
 let randomState = 1234567;
 function rand() {
@@ -317,16 +406,16 @@ function spawnFlame(t) {
   flames.positions[j + 1] = t.z + t.trunkHeight + rand() * t.crownHeight;
   flames.positions[j + 2] = t.y + r2;
   flames.velocities[j] = (rand() - 0.5) * 0.8;
-  flames.velocities[j + 1] = 2.0 + rand() * 4.0;
+  flames.velocities[j + 1] = 2.4 + rand() * 4.8;
   flames.velocities[j + 2] = (rand() - 0.5) * 0.8;
-  const life = 0.35 + rand() * 0.8;
+  const life = 0.35 + rand() * 0.85;
   flames.life[i] = life;
   flames.maxLife[i] = life;
-  flames.sizes[i] = 12.0 + rand() * 32.0 * (0.6 + t.flame_intensity);
-  const heat = rand();
+  flames.sizes[i] = 12.0 + rand() * 34.0 * (0.6 + t.flame_intensity);
+  const heat = Math.min(1.0, 0.25 + t.flame_intensity * 0.9);
   flames.colors[j] = 1.0;
-  flames.colors[j + 1] = 0.35 + heat * 0.55;
-  flames.colors[j + 2] = 0.04 + heat * 0.22;
+  flames.colors[j + 1] = 0.25 + heat * 0.7;
+  flames.colors[j + 2] = 0.02 + heat * 0.28;
   flames.alphas[i] = 1.0;
 }
 
@@ -340,19 +429,43 @@ function spawnSmoke(t) {
   smoke.velocities[j] = 0.6 + (rand() - 0.5) * 0.8;
   smoke.velocities[j + 1] = 1.2 + rand() * 2.2;
   smoke.velocities[j + 2] = -0.3 + (rand() - 0.5) * 0.6;
-  const life = 2.5 + rand() * 3.5;
+  const life = 2.8 + rand() * 4.0;
   smoke.life[i] = life;
   smoke.maxLife[i] = life;
-  smoke.sizes[i] = 12.0 + rand() * 28.0;
-  const shade = 0.52 + rand() * 0.2;
+  smoke.sizes[i] = 18.0 + rand() * 38.0;
+  const shade = 0.48 + rand() * 0.22;
   smoke.colors[j] = shade;
   smoke.colors[j + 1] = shade * 0.98;
-  smoke.colors[j + 2] = shade * 0.95;
+  smoke.colors[j + 2] = shade * 0.94;
   smoke.alphas[i] = 0.16;
 }
 
+function spawnEmber(t) {
+  const i = embers.next;
+  embers.next = (embers.next + 1) % embers.max;
+  const j = i * 3;
+  embers.positions[j] = t.x + (rand() - 0.5) * t.crown_radius_m;
+  embers.positions[j + 1] = t.z + t.trunkHeight + t.crownHeight * (0.5 + rand() * 0.8);
+  embers.positions[j + 2] = t.y + (rand() - 0.5) * t.crown_radius_m;
+  embers.velocities[j] = (rand() - 0.5) * 3.0;
+  embers.velocities[j + 1] = 2.0 + rand() * 5.0;
+  embers.velocities[j + 2] = (rand() - 0.5) * 3.0;
+  const life = 0.8 + rand() * 1.4;
+  embers.life[i] = life;
+  embers.maxLife[i] = life;
+  embers.sizes[i] = 2.0 + rand() * 4.0;
+  embers.colors[j] = 1.0;
+  embers.colors[j + 1] = 0.35 + rand() * 0.55;
+  embers.colors[j + 2] = 0.05 + rand() * 0.2;
+  embers.alphas[i] = 1.0;
+}
+
+let visualTime = 0;
 function updateParticles(system, dt) {
+  visualTime += dt;
+  system.material.uniforms.uTime.value = visualTime;
   const { positions, velocities, life, maxLife, sizes, alphas, colors } = system;
+  let active = 0;
   for (let i = 0; i < system.max; i++) {
     if (life[i] <= 0) {
       alphas[i] = 0;
@@ -363,25 +476,38 @@ function updateParticles(system, dt) {
       alphas[i] = 0;
       continue;
     }
+    active++;
     const j = i * 3;
     positions[j] += velocities[j] * dt;
     positions[j + 1] += velocities[j + 1] * dt;
     positions[j + 2] += velocities[j + 2] * dt;
-    velocities[j] *= 0.985;
-    velocities[j + 2] *= 0.985;
-    velocities[j + 1] *= 0.992;
+    if (system.kind === 1) {
+      const phase = positions[j] * 0.03 + positions[j + 2] * 0.03 + visualTime;
+      velocities[j] += Math.sin(phase) * 0.55 * dt;
+      velocities[j + 2] += Math.cos(phase * 0.7) * 0.4 * dt;
+      velocities[j + 1] += 0.35 * dt;
+      sizes[i] *= 1.004;
+    } else if (system.kind === 2) {
+      velocities[j + 1] -= 5.5 * dt;
+      velocities[j] *= 0.992;
+      velocities[j + 2] *= 0.992;
+    } else {
+      velocities[j + 1] *= 0.994;
+      sizes[i] *= 1.004;
+    }
     const fraction = life[i] / maxLife[i];
     alphas[i] = Math.min(1, fraction * 1.35);
     if (colors[j] > 0.4 && colors[j + 2] < 0.3) {
       colors[j + 1] *= 0.996;
       colors[j + 2] *= 0.994;
     }
-    sizes[i] *= 1.003;
   }
+  system.active = active;
   system.geometry.attributes.position.needsUpdate = true;
   system.geometry.attributes.aColor.needsUpdate = true;
   system.geometry.attributes.aSize.needsUpdate = true;
   system.geometry.attributes.aAlpha.needsUpdate = true;
+  return active;
 }
 
 function updateBurnState(t) {
@@ -390,11 +516,20 @@ function updateBurnState(t) {
   let fireX = 0;
   let fireZ = 0;
   let fireCount = 0;
+  const standStats = new Map();
+  for (const mesh of standMeshes) {
+    standStats.set(mesh.userData.stand.fragment_id, { total: 0, burnt: 0 });
+  }
   for (let i = 0; i < tree.length; i++) {
     const tr = tree[i];
     let nextState = 0;
     if (tr.burnStart !== null && t >= tr.burnStart) {
       nextState = tr.burnEnd !== null && t < tr.burnEnd ? 1 : 2;
+    }
+    const stats = standStats.get(tr.fragment_id);
+    if (stats) {
+      stats.total++;
+      if (nextState === 2) stats.burnt++;
     }
     if (nextState === 1) {
       burning++;
@@ -410,11 +545,30 @@ function updateBurnState(t) {
       const trunk = nextState === 2 ? burntTrunk : (tr.live ? liveTrunk : burntTrunk);
       crowns.setColorAt(i, crown);
       trunks.setColorAt(i, trunk);
+      if (nextState === 2) {
+        matrix.compose(
+          new THREE.Vector3(tr.x, tr.z + tr.trunkHeight, tr.y),
+          new THREE.Quaternion(),
+          new THREE.Vector3(
+            Math.max(0.25, tr.crown_radius_m * 0.35),
+            tr.crownHeight * 0.42,
+            Math.max(0.25, tr.crown_radius_m * 0.35)
+          )
+        );
+        crowns.setMatrixAt(i, matrix);
+        crowns.instanceMatrix.needsUpdate = true;
+      }
     }
     if (nextState === 1) {
       if (rand() < 0.35 + tr.flame_intensity * 0.5) spawnFlame(tr);
       if (rand() < 0.04 + tr.smoke_strength * 0.06) spawnSmoke(tr);
+      if (rand() < 0.02 + tr.flame_intensity * 0.05) spawnEmber(tr);
     }
+  }
+  for (const mesh of standMeshes) {
+    const stats = standStats.get(mesh.userData.stand.fragment_id);
+    mesh.userData.stand.burntFraction =
+      stats && stats.total > 0 ? stats.burnt / stats.total : 0.0;
   }
   crowns.instanceColor.needsUpdate = true;
   trunks.instanceColor.needsUpdate = true;
@@ -426,12 +580,17 @@ function updateBurnState(t) {
   }
   document.getElementById("stat-burning").textContent = burning;
   document.getElementById("stat-burnt").textContent = burnt;
+  state.burning = burning;
+  state.burnt = burnt;
 }
 
 function updateStands(t) {
   for (const mesh of standMeshes) {
     const stand = mesh.userData.stand;
-    if (stand.burn_time !== null && t >= stand.burn_time) {
+    const fraction = stand.burntFraction ?? 0.0;
+    if (fraction > 0.0) {
+      mesh.material.color.copy(mesh.userData.baseColor).lerp(mesh.userData.burntColor, fraction);
+    } else if (stand.burn_time !== null && t >= stand.burn_time) {
       mesh.material.color.copy(mesh.userData.burntColor);
     } else {
       mesh.material.color.copy(mesh.userData.baseColor);
@@ -439,7 +598,12 @@ function updateStands(t) {
   }
 }
 
-const state = { time: 0, playing: false, speed: 1, last: performance.now() };
+const state = { time: 0, playing: false, speed: 1, last: performance.now(), burning: 0, burnt: 0 };
+const embedded = new URLSearchParams(location.search).has("embedded");
+if (embedded) {
+  for (const hud of document.querySelectorAll(".hud")) hud.style.display = "none";
+}
+const parentWindow = window.parent !== window ? window.parent : null;
 const slider = document.getElementById("slider");
 const clock = document.getElementById("clock");
 const playButton = document.getElementById("play");
@@ -449,12 +613,34 @@ document.getElementById("stat-fragments").textContent = DATA.counts.fragments;
 document.getElementById("stat-trees").textContent = DATA.counts.trees;
 document.getElementById("stat-fires").textContent = DATA.counts.fires;
 
+let lastPost = 0;
+function postState(force = false) {
+  if (!parentWindow) return;
+  const now = performance.now();
+  if (!force && now - lastPost < 100) return;
+  lastPost = now;
+  parentWindow.postMessage(
+    {
+      type: "ws4-fire-state",
+      sceneId: DATA.manifest.scene_id,
+      time: state.time,
+      end: DATA.timeline.end,
+      unit: DATA.timeline.unit || "y",
+      playing: state.playing,
+      burning: state.burning,
+      burnt: state.burnt,
+    },
+    "*"
+  );
+}
+
 function setTime(t) {
   state.time = Math.max(0, Math.min(DATA.timeline.end, t));
   slider.value = String(state.time);
   clock.textContent = `${state.time.toFixed(1)} ${DATA.timeline.unit || "y"}`;
   updateBurnState(state.time);
   updateStands(state.time);
+  postState();
 }
 
 slider.addEventListener("input", () => {
@@ -484,7 +670,36 @@ document.getElementById("focus").addEventListener("click", () => {
   camera.position.set(sx - 180, 95, sz + 220);
   controls.update();
 });
-window.__ws4 = { camera, controls, scene, setTime, DATA, tree };
+window.__ws4 = { camera, controls, scene, setTime, DATA, tree, state };
+window.addEventListener("message", (event) => {
+  const data = event.data;
+  if (!data || data.type !== "ws4-fire") return;
+  if (data.action === "play") {
+    if (state.time >= DATA.timeline.end) setTime(0);
+    state.playing = true;
+    playButton.textContent = "Pause";
+  } else if (data.action === "pause") {
+    state.playing = false;
+    playButton.textContent = "Play";
+  } else if (data.action === "reset") {
+    state.playing = false;
+    playButton.textContent = "Play";
+    setTime(0);
+  } else if (data.action === "setTime") {
+    state.playing = false;
+    playButton.textContent = "Play";
+    setTime(Number(data.time));
+  } else if (data.action === "speed") {
+    state.speed = Number(data.speed) || 1;
+    speedSelect.value = String(state.speed);
+  } else if (data.action === "focusTree") {
+    const target = tree.find((item) => String(item.tree_id) === String(data.tree_id));
+    if (!target) return;
+    controls.target.set(target.x, 0, target.y);
+    camera.position.set(target.x - 80, 55, target.y + 120);
+    controls.update();
+  }
+});
 speedSelect.addEventListener("change", () => { state.speed = Number(speedSelect.value); });
 window.addEventListener("keydown", (event) => {
   if (event.code === "Space") {
@@ -497,12 +712,21 @@ function resize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight, false);
+  if (composer) composer.setSize(window.innerWidth, window.innerHeight);
 }
 window.addEventListener("resize", resize);
 resize();
 setTime(0);
+if (parentWindow) {
+  parentWindow.postMessage(
+    { type: "ws4-fire-ready", sceneId: DATA.manifest.scene_id },
+    "*"
+  );
+}
 
 let last = performance.now();
+let fpsFrames = 0;
+let fpsElapsed = 0;
 function frame(now) {
   const realDt = Math.min(0.05, (now - last) / 1000);
   last = now;
@@ -515,10 +739,35 @@ function frame(now) {
       setTime(state.time + dt);
     }
   }
-  updateParticles(flames, realDt);
-  updateParticles(smoke, realDt);
-  controls.update();
-  renderer.render(scene, camera);
+  const flameActive = updateParticles(flames, realDt);
+  const smokeActive = updateParticles(smoke, realDt);
+  const emberActive = updateParticles(embers, realDt);
+  const activeParticles = flameActive + smokeActive + emberActive;
+  document.getElementById("stat-particles").textContent = `${activeParticles} / ${budget}`;
+  fpsFrames++;
+  fpsElapsed += realDt;
+  if (fpsElapsed >= 0.5) {
+    const fps = fpsFrames / fpsElapsed;
+    document.getElementById("stat-fps").textContent = fps.toFixed(0);
+    window.__ws4FireStats = {
+      fps,
+      particles: activeParticles,
+      budget,
+      burning: state.burning,
+      burnt: state.burnt,
+      time: state.time,
+      unit: DATA.timeline.unit || "y",
+    };
+    fpsFrames = 0;
+    fpsElapsed = 0;
+  }
+  if (composer) {
+    heatHaze.uniforms.uTime.value += realDt;
+    composer.render();
+  } else {
+    renderer.render(scene, camera);
+  }
+  postState();
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
