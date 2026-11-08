@@ -4877,3 +4877,9 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P155.5: verified deterministic demo replay, 36 scene/workspace tests, standalone viewer
   controls, bloom fallback, and the Fire workspace comparison smoke. Recorded the close-out
   and left PR #919 open for maintainer approval; no merge or release was performed.
+
+- P155 close-out: squash-merged PR #919 as `a01e847`; parent #877 is closed. The phase
+  delivered the synthetic tree inventory, the Nemora/VRI adapter, the P156 growth-field
+  ignition, the fire/smoke/ember/heat-haze visual pass, the Fire studio APIs and workspace,
+  and the public Pages demo. Full dashboard: **OVERALL: GREEN**. The live 8790 portal still
+  serves the static viewer; promoting the Fire studio is a separate portal deployment step.
