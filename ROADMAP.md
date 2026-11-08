@@ -147,6 +147,7 @@ exists and the maintainer approves it.
 | P147 Diverse multi-account scaffold | #865 | `feature/p147-diverse-scaffold` | complete |
 | P148 Portfolio and promoted-run cleanup | #869 | `feature/p148-portfolio-cleanup` | complete |
 | P149 State-run exactness | #873 | `feature/p149-state-exactness` | complete |
+| P150 GPU extension guard | #886 | `fix/gpu-extension-guard` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4411,3 +4412,21 @@ Acceptance:
 - Mismatches are visible and cannot silently pass.
 - Run health shows the exactness result.
 - Existing state runs remain readable.
+
+## Phase 150: GPU effect-table extension guard
+
+Parent issue: #886
+Branch: `fix/gpu-extension-guard`
+Status: active
+Report: `notes/reports/p150-gpu-extension-guard.md`
+
+Goal: refuse lazy effect-table extensions that cannot finish at full-model scale.
+
+- [x] P150.1 Guard oversized effect-table extensions (#887)
+
+Acceptance:
+
+- An extension above the row limit fails before pricing rows.
+- The error names the row count and the prebuilt-basis/factorized alternatives.
+- A real TSA 29 table check and the focused GPU-effects tests pass.
+

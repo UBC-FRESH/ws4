@@ -4646,3 +4646,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   parent #873 and tasks #874 and #883 are closed. Live TSA 27 state runs recorded
   `exact_match: true` with matching objective and verified objective, and run health
   shows `exact replay yes`. Dashboard: **GREEN**.
+
+- P150.1: added a row-count guard to lazy GPU effect-table extensions after the TSA 29
+  stock-cell attempt priced 42.5 million rows for over nine minutes. The TSA 29 base
+  zero-generation replay remains exact; the managed-stock target stays on the state
+  fallback until a prebuilt basis or factorized archive exists.
