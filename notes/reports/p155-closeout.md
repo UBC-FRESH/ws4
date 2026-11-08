@@ -1,7 +1,7 @@
 # P155 close-out: 3D fire scene and synthetic tree stands
 
 Date: 2026-11-08
-Status: pr-open; PR #919 ready for maintainer approval
+Status: complete; PR #919 squash-merged as `a01e847`
 Branch: `feature/p155-fire-3d`
 Parent issue: #877
 Task issue: #882
@@ -67,5 +67,6 @@ verified. The synthetic tree layer is not calibrated to a real VRI inventory.
 
 ## Approval
 
-PR #919 is ready and contains P155.1 through P155.5. It is queued for maintainer approval;
-no merge, tag, release, or settings change has been performed.
+PR #919 contained P155.1 through P155.5 and was squash-merged as `a01e847`. The phase
+branch was deleted. The Fire studio is still previewed on 8798; the live 8790 portal has the
+static viewer until the portal deployment branch is updated.
