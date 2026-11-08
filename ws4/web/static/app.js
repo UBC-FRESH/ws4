@@ -8959,7 +8959,7 @@ async function setFireScene(which, run) {
   else state.fire.selectedB = run;
   const frame = $(which === 'a' ? 'fire-frame-a' : 'fire-frame-b');
   const label = $(which === 'a' ? 'fire-label-a' : 'fire-label-b');
-  frame.src = `${scene.viewer}?embedded=1`;
+  frame.src = `${scene.viewer}?embedded=1&bloom=0`;
   label.textContent = `${which.toUpperCase()} · ${fireSceneLabel(scene)}`;
   if (which === 'a') {
     state.fire.playing = false;

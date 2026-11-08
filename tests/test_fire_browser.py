@@ -106,6 +106,9 @@ def test_fire_workspace_opens_scene_and_comparison(tmp_path: Path) -> None:
             )
             frame = page.frame_locator("#fire-frame-a")
             frame.locator("#stat-trees").wait_for(state="attached", timeout=15000)
+            frame.locator("#stat-trees").wait_for_function(
+                "element => element.textContent !== '—'", timeout=15000
+            )
             page.check("#fire-compare")
             page.wait_for_function(
                 "!document.querySelector('#fire-frame-card-b').hidden",
