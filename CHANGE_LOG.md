@@ -4656,3 +4656,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   closed. The TSA 29 base profile replay is exact; the managed-stock target remains on
   the state fallback pending a prebuilt basis or factorized archive. Dashboard:
   **GREEN**.
+
+- P151.1: added the opt-in, token-authenticated web console with typed allowlisted
+  commands, server-built argv, read-only input roots, scratch jobs, output streaming,
+  cancellation, quotas, artifact downloads, and audit records.

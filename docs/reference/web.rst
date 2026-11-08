@@ -49,17 +49,20 @@ files so it sees the search at the solver's rate rather than behind one writer.
 Browser shell
 -------------
 
-The browser shell is organised around four workspaces, plus an optional **SDMD**
-workspace when the service is started with ``--sdmd-dir``:
+The browser shell is organised around four workspaces, plus an optional **Console**
+workspace when the service is started with ``--allow-console`` and a token, and an
+optional **SDMD** workspace when it is started with ``--sdmd-dir``:
 
 - **Map** — layers, treatment/cumulative views, and block detail.
 - **Plan** — the account browser, target editor, and solve controls.
 - **Results** — Reports, Compare, and Search as nested sections.
 - **Data** — the dataset summary plus LiDAR and Carbon when the selected run/dataset
+  actually has them.
+- **Console** — the token-authenticated allowlisted command composer, when
+  ``--allow-console`` is set. See :doc:`../howto/web-console`.
 - **SDMD** — the AU Explorer: BC coverage selector, yield, stand density,
   regimes, and the constraint editor, when ``--sdmd-dir`` is set. See
   :doc:`sdmd`.
-  actually has them.
 
 The **Map** workspace uses a neutral fill for untreated blocks and a red accent for treated
 blocks, so treatment reads as the subject and the estate remains visible as context. When the
@@ -99,6 +102,18 @@ The 2D map remains authoritative. The 3D view has no terrain, machine, edit, run
 permission controls. It refuses more than 2,000 block features and names the count rather
 than attempting a degraded render. The renderer is original Canvas 2D code; no
 third-party 3D library is vendored.
+
+Command console
+---------------
+
+``--allow-console`` adds an opt-in, token-authenticated command composer. It is not a
+shell: the service validates a typed request, builds an argv array, confines input paths
+to read-only roots, and runs one process group in a scratch directory under
+``runs/console-*``. ``--console-token`` or ``WS4_CONSOLE_TOKEN`` supplies the bearer
+token; ``--console-timeout``, ``--console-output-bytes``, and ``--console-rate-limit``
+set the quotas. Without the flag the console API is absent and
+``/api/summary`` reports ``capabilities.console: false``. See
+:doc:`../howto/web-console` for the allowlist, audit record, and threat model.
 
 Assistant overlay
 -----------------
