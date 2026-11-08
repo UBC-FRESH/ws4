@@ -77,6 +77,14 @@ from .rothermel import (
     RothermelResult,
     surface_fire,
 )
+from .vri import (
+    VRI_FBP_VERSION,
+    FbpFuelAssignment,
+    VriError,
+    VriStand,
+    map_vri_stand,
+    map_vri_table,
+)
 
 __all__ = [
     "ANDERSON_13",
@@ -93,6 +101,7 @@ __all__ = [
     "GROWTH_MODEL_VERSION",
     "KERNEL_VERSION",
     "MOISTURE_SCENARIOS",
+    "VRI_FBP_VERSION",
     "CrownFireResult",
     "DailyWeather",
     "EffectiveWind",
@@ -100,6 +109,7 @@ __all__ = [
     "FBPSurfaceResult",
     "FWIEngine",
     "FWIState",
+    "FbpFuelAssignment",
     "FireEnvironment",
     "FireFuelError",
     "FragmentIgnition",
@@ -111,6 +121,8 @@ __all__ = [
     "GrowthSnapshot",
     "RothermelResult",
     "SiteGrid",
+    "VriError",
+    "VriStand",
     "buildup_effect",
     "buildup_index",
     "canonical_fuel_type",
@@ -134,6 +146,8 @@ __all__ = [
     "initial_fwi_state",
     "initial_spread_index",
     "length_to_breadth",
+    "map_vri_stand",
+    "map_vri_table",
     "surface_fire",
     "surface_fuel_consumption",
     "van_wagner_active_crown",

@@ -67,4 +67,5 @@
 - [FBP surface fire](reference/fire-fbp.html): the FBP fuel types, surface fuel consumption, surface rate of spread, and surface intensity.
 - [Crown fire](reference/fire-crown.html): Van Wagner initiation, the FBP crown fraction, the C6 crown rate of spread, and the active-crown threshold.
 - [Fire growth and perimeter](reference/fire-growth.html): the site grid, slope-adjusted effective wind, Huygens growth, and perimeter snapshots.
+- [VRI to FBP mapping](reference/fire-vri.html): the VRI stand contract, deterministic FBP fuel-type rules, and provenance.
 - [API reference](api/index.html): the repository tooling's public functions, with their parameters, types, and return values. The package API is rendered on the reference pages above.

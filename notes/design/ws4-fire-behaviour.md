@@ -123,7 +123,21 @@ displacement, a combined wind/slope vector, a non-burnable barrier, and monotone
 The flat-ground wind ellipse matches the analytic length and width within 10 percent. C6 slope
 adjustment is explicitly unsupported and raises; flat-ground C6 growth is supported.
 
-## 8. What follows
+## 8. VRI mapping
+
+P156.9 added `ws4/fire/vri.py`. A `VriStand` carries the leading species, conifer and
+deciduous fractions, crown closure, age, height, land cover, optional explicit fuel type,
+and treatment. `map_vri_stand` applies a deterministic, ordered rule set and returns an
+`FbpFuelAssignment` with the canonical FBP type, rule id, mapping version, confidence,
+source fields, and notes. `map_vri_table` returns one provenance row per stand.
+
+The rules cover explicit FBP types, non-fuel land cover, grass and slash, sparse cover,
+deciduous, mixedwood, pine by age, Douglas-fir, larch, and spruce/fir by crown closure.
+Unknown species, unknown land cover, and an unlabelled forest stand raise `VriError` rather
+than inventing a type. The mapping is a modelling decision, not a measurement, and the
+fixture is representative rather than a copy of a private VRI inventory.
+
+## 9. What follows
 
 - **P156.5 Integration.** Done for the event log and accounts. `FireBehaviourConfig` selects
   the FBP kernel; every behaviour-driven fire event carries the fuel, weather, slope,
@@ -133,13 +147,13 @@ adjustment is explicitly unsupported and raises; flat-ground C6 growth is suppor
   coupling lands; the scene package stays on the P155 branch, not here.
 - **P156.6 Benchmark.** A public growth-model comparison and an observed-fire case, with the
   tolerances and limits named.
-- **P156.9 VRI mapping.** Map VRI species, age, and canopy attributes to FBP fuel types, with
-  an accuracy report and an explicit unknown class.
-- **P155 3D scene.** Renumber the 3D fire scene phase from the old P150 label. `main` now
-  carries P150 (GPU guard), P151 (web console), P152 (sandboxed runner), and P153 (assistant
-  script review), so the 3D scene is P155.
+- **P156.9 VRI mapping.** Done: the VRI stand contract, deterministic rules, explicit
+  non-fuel and unknown paths, and provenance are in `ws4/fire/vri.py`.
+- **P155 3D scene.** Renumbered from the old P150 label and now on
+  `feature/p155-fire-3d`. `main` carries P150 (GPU guard), P151 (web console), P152
+  (sandboxed runner), P153 (assistant script review), and P154 (TSA 29 GPU stock).
 
-## 9. Limits and risks
+## 10. Limits and risks
 
 - A standard-case pass does not prove a landscape fire. The growth and benchmark tasks are
   separate.
@@ -151,12 +165,13 @@ adjustment is explicitly unsupported and raises; flat-ground C6 growth is suppor
   perimeter is about 16 percent above the analytic circle on the test grid.
 - C6 slope adjustment is unsupported; the engine raises rather than silently substituting a
   surface proxy.
-- The 13 Anderson models are a validation set, not a BC fuel map. The VRI/Nemora fuel layer
-  must be built and documented separately.
+- The 13 Anderson models are a validation set, not a BC fuel map. The VRI-to-FBP rule set is
+  documented and explicit, but it is not a regional calibration; Nemora tree synthesis remains
+  P155.
 - Unit conversion is the main silent-error risk; the tests pin the reference values in the
   metric contract.
 
-## 10. References
+## 11. References
 
 - Rothermel, R. C. (1972). A mathematical model for predicting fire spread in wildland fuels.
 - Albini, F. A. (1976). Computer-based models of wildland fire behavior.

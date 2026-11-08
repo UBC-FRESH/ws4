@@ -442,13 +442,19 @@ items are enhancements and maintenance.
   surface fuel consumption, the buildup effect, the surface rate of spread, and the surface
   head fire intensity match `cffdrs` within 0.02 on the base table and a 320-point grid.
   Flat-ground and surface-only; slope is P156.4 and crown fire is P156.3.
-- **VRI-to-FBP fuel-type mapping.** `open`. Map the WS4/VRI fuel description to an FBP fuel
-  type with provenance. Target: P156.9 (#905).
+- **VRI-to-FBP fuel-type mapping.** `done` (P156.9, #905). The VRI stand contract, the
+  deterministic rule set, explicit non-fuel and unknown paths, and per-assignment provenance
+  are implemented. See `docs/reference/fire-vri.rst`. The rules are transparent defaults, not
+  a regional calibration.
 - **Crown fire.** `done` (P156.3, #893). Van Wagner initiation, the FBP crown fraction, the
   C6 crown rate of spread, the S/I/C description, and an optional Van Wagner active-crown
   threshold match `cffdrs` on the base table, a 320-point grid, and three C6 cases. Flat
   ground; no spotting or growth.
-- **Growth geometry.** `open`. A site/fuel grid and an elliptical/Huygens or cellular growth
-  engine, with homogeneous shape and barrier tests. Target: P156.4.
+- **Growth geometry.** `done` (P156.4, #894). The site/fuel grid, slope-adjusted effective
+  wind, Huygens growth, barriers, perimeter snapshots, and fragment ignition bridge are
+  implemented and tested.
+- **Event and account integration.** `done` (P156.5, #895). Behaviour-driven fire events
+  record the FBP inputs and outputs, and accounts summarize ROS, intensity, flame length, and
+  the area-weighted crown fraction. The viewer coupling remains P155.
 - **Observed-fire validation.** `open`. Compare the kernel and growth engine to a public
   benchmark and an observed perimeter, with tolerances named. Target: P156.6.

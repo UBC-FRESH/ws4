@@ -99,7 +99,7 @@ Limits
 - Flat ground only. Slope adjustment and effective wind speed are P156.4.
 - Surface fire only. Crown fire is P156.3.
 - The C6 crown-fire ROS/HFI is not claimed; only the C6 surface component is validated.
-- The VRI-to-FBP fuel-type mapping is not implemented yet.
+- The VRI-to-FBP fuel-type mapping is a separate rule set; see :doc:`fire-vri`.
 - The FBP surface equations are validated against standard tables and the reference
   implementation, not an observed fire perimeter.
 
@@ -108,4 +108,5 @@ Cross-references
 
 - :doc:`fire-behaviour`
 - :doc:`fire-weather`
+- :doc:`fire-vri`
 - :doc:`ecosystem-fire`

@@ -4730,3 +4730,13 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   Added 4 behaviour tests and fixed the integration to use the slope-adjusted effective wind,
   validate C6 slope at construction, and weight the crown account by event area. Dashboard:
   **GREEN**.
+
+- P156.9: added `ws4/fire/vri.py` with the VRI-style `VriStand` contract, the deterministic
+  VRI-to-FBP rule set, and per-assignment provenance (`rule_id`, `version`, source fields,
+  confidence, notes, and an `is_burnable` flag). The rules cover explicit FBP and non-fuel
+  types, non-forest land cover, grass/shrub/agriculture, slash, sparse cover, deciduous,
+  mixedwood, pine by age, Douglas-fir, larch, and spruce/fir by crown closure. Unknown species,
+  unknown land cover, and an unlabelled forest stand raise `VriError` rather than inventing a
+  type. Added the representative fixture `tests/fixtures/fire/vri_fbp_stands.csv`,
+  `docs/reference/fire-vri.rst`, and 6 VRI tests. The fire/ecosystem fire suite now has 106
+  tests. `python scripts/dashboard.py` reports **OVERALL: GREEN** on all seven gates.
