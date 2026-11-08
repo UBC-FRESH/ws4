@@ -1,10 +1,11 @@
 # P152 Sandboxed Python runner
 
 Date: 2026-11-08
-Status: active
+Status: complete
 Branch: `feature/p152-python-sandbox`
 Parent issue: #901
 Task issue: #902
+Merge commit: `345a86d`
 
 ## Summary
 
@@ -50,4 +51,8 @@ unavailable, the job is refused; there is no unsandboxed fallback.
 - `tests/test_web_console.py`: 14 passed, including sandbox host-read, input-write,
   other-run read, network, and inherited-token checks, plus selected run-directory input.
 - Browser smoke: reviewed script wrote `hello.txt` and printed `sandbox-ok`.
+- Portal smoke with `WS4_CONSOLE_TOKEN` and `WS4_CONSOLE_PYTHON=1`: summary reported
+  `console: true` and `console_python: true`; a reviewed script printed
+  `portal-sandbox-ok`. The live portal without those variables reports both capabilities
+  false and has no console API.
 - Dashboard: `OVERALL: GREEN`.

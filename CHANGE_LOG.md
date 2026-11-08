@@ -4667,6 +4667,10 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   writes, unshare removes network and PID visibility, and resource limits bound memory,
   CPU, files, processes, output, and wall clock. Unsupported hosts fail closed.
 
+- P152 close-out: PR #903 squash-merged as `345a86d`; parent #901 and task #902 are
+  closed. The portal exposes the Python tier only with `WS4_CONSOLE_PYTHON=1` and the
+  console token. Dashboard: **GREEN**.
+
 - P137.1: replaced the crown-closure raster trace with a straight log-log line
   fitted to the source; corrected overlays show top/QMD curves align. The earlier
   count mismatch was a text-extraction artifact. TASS is explicitly excluded
