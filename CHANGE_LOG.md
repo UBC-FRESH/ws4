@@ -4666,3 +4666,12 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   `docs/reference/fire-behaviour.rst`, `notes/design/ws4-fire-behaviour.md`, and
   `examples/fire_rothermel_demo.py`. The fire suite has 42 tests. `python
   scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard: **GREEN**.
+
+- P151.7: added `ws4/fire/fwi.py` with the Canadian FWI moisture codes: FFMC, DMC, DC, ISI,
+  BUI, FWI, and DSR, with the daily weather contract, the standard starting state, the
+  latitude day-length adjustment, and the FBP high-wind ISI form. The ten-day sequences at
+  latitude 55 and latitude 20 match the `cffdrs` reference within `1e-4` for all seven codes.
+  Added `docs/reference/fire-weather.rst`, `examples/fire_fwi_demo.py`, and 8 FWI tests. The
+  fire suite now has 50 tests. `python scripts/check_workflow.py` reports **0 error(s), 0
+  warning(s)**. Dashboard: **GREEN**. The FBP fuel types and surface-fire equations are split
+  to P151.8 (#900).

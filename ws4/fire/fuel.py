@@ -172,6 +172,13 @@ def _number(value: object, field: str) -> float:
     return 0.0 if number == 0.0 else number
 
 
+def _integer(value: object, field: str) -> int:
+    """Return an integer, rejecting booleans and non-integers."""
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise FireFuelError(f"{field} must be an integer")
+    return value
+
+
 def _positive(value: object, field: str) -> float:
     """Return a finite, strictly positive float."""
     number = _number(value, field)

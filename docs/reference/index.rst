@@ -72,6 +72,9 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    * - :doc:`fire-behaviour`
      - The Rothermel surface-fire kernel, fuel and moisture contracts, standard cases, and
        derived intensity.
+   * - :doc:`fire-weather`
+     - The Canadian FWI moisture codes, the daily weather contract, and the reference
+       validation.
    * - :doc:`femic-hydrology`
      - Pinned FEMIC hydrology response bundles, checksums, flood-risk rows, and
        applicability metadata.
@@ -106,4 +109,5 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    ecosystem-fire
    ecosystem-scenarios
    fire-behaviour
+   fire-weather
    femic-hydrology
