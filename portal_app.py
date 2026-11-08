@@ -34,6 +34,7 @@ ROOT = Path(__file__).resolve().parent
 INSTANCES_ROOT = Path(
     os.environ.get("WS4_INSTANCES_ROOT", "/srv/shared-data/gep/ws4/femic/external")
 )
+CONSOLE_TOKEN = os.environ.get("WS4_CONSOLE_TOKEN", "").strip()
 RUNS_ROOT = ROOT / "runs"
 CACHE_ROOT = ROOT / "cache"
 SDMD_DEMO_ROOT = Path(
@@ -451,6 +452,13 @@ def _build_mount(instance: Instance, mount_path: str) -> None:
     ):
         if value and (root / value).is_file():
             options[key] = root / value
+    if CONSOLE_TOKEN:
+        options.update(
+            allow_console=True,
+            console_token=CONSOLE_TOKEN,
+            console_roots=[root, cache, runs],
+            console_workspace=slug,
+        )
     app.mount(mount_path, create_app(**options))
 
 
