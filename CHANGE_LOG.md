@@ -4671,6 +4671,10 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   closed. The portal exposes the Python tier only with `WS4_CONSOLE_PYTHON=1` and the
   console token. Dashboard: **GREEN**.
 
+- P153.1: added the bounded `stage_script` assistant chip. It stages code in the console
+  editor with review cleared, never executes, and the agent environment no longer inherits
+  console tokens.
+
 - P137.1: replaced the crown-closure raster trace with a straight log-log line
   fitted to the source; corrected overlays show top/QMD curves align. The earlier
   count mismatch was a text-extraction artifact. TASS is explicitly excluded

@@ -8406,6 +8406,19 @@ function applyChatChip(chip) {
     showDetail(target);
     return;
   }
+  if (action === 'stage_script' && typeof target === 'string') {
+    if (!state.console.schema?.python?.enabled) {
+      showToast('sandboxed Python is not enabled on this service', true);
+      return;
+    }
+    setWorkspace('console');
+    $('console-python-script').value = target;
+    $('console-python-reviewed').checked = false;
+    $('console-python-status').textContent =
+      'assistant script staged — review the code and tick confirmation before running';
+    $('console-python-script').focus();
+    return;
+  }
   if (action === 'ask' && typeof target === 'string') {
     const input = $('chat-input');
     if (!input) return;

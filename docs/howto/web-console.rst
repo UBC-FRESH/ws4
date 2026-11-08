@@ -72,6 +72,19 @@ no unsandboxed Python fallback. This tier does not install packages, allow netwo
 or run an interactive terminal; assistant-authored scripts still require the review flow
 before submission.
 
+Assistant-staged scripts
+------------------------
+
+The embedded assistant may end a reply with a ``stage_script`` chip. That chip carries
+bounded Python source to the browser, opens the Console workspace, and fills the script
+editor. It deliberately clears the review checkbox and does not call the job API. The
+user must read the code, tick **I reviewed this script**, and select **Run reviewed
+script** before the Landlock sandbox starts it.
+
+The chat agent cannot inherit ``WS4_CONSOLE_TOKEN`` or ``WS4_CONSOLE_PYTHON`` from the
+service environment, so it cannot call the console API on its own. Staging is a
+convenience only; it is not approval.
+
 The console can launch these command families:
 
 .. list-table::
