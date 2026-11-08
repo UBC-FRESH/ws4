@@ -15,7 +15,7 @@ is a surface-fire kernel that a fire modeller can inspect and compare: Rothermel
 standard corrections.
 
 The kernel is deliberately separate from growth. The kernel answers "how fast does the head
-fire spread under this fuel, moisture, wind, and slope?" The growth engine, later, answers
+fire spread under this fuel, moisture, wind, and slope?" The P151.4 growth engine answers
 "where is the perimeter over time?" Keeping them separate makes the validation honest.
 
 ## 2. Contracts
