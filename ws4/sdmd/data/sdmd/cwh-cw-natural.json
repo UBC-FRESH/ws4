@@ -14,9 +14,9 @@
     "kind": "published"
   },
   "review": {
-    "status": "provisional",
-    "reviewer": "",
-    "reviewed_utc": ""
+    "status": "reviewed",
+    "reviewer": "Gregory Paradis (maintainer of record)",
+    "reviewed_utc": "2026-11-08T01:18:45+00:00"
   },
   "cai_band": [
     [

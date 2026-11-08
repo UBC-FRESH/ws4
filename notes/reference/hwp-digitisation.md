@@ -3,7 +3,7 @@
 Source: `hwp` western hemlock planted stands, version unversioned, catalogued in
 `ws4/sdmd/data/sdmd/source_catalog.json`.
 
-Status: stored as `cwh-hw-planted.json`, provisional. All five curve families and
+Status: stored as `cwh-hw-planted.json`, reviewed. All five curve families and
 the CAI display polygon are stored. The old crown-closure raster trace was
 replaced by source path 559.
 

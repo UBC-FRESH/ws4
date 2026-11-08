@@ -92,6 +92,12 @@ their source paths. hwp is now marked reviewed.
 
 Western redcedar natural is complete with 17 top-height paths, 16 QMD paths, and
 crown closure from source path 653. Direct overlay inspection shows the curves on
+their source paths. cwn is now marked reviewed.
+
+### cwp pass
+
+Western redcedar planted is complete with 17 top-height paths, 15 QMD paths, and
+crown closure from source path 582. Direct overlay inspection shows the curves on
 their source paths.
 
 ## TASS predicted mortality curves

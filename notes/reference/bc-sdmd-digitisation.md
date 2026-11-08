@@ -119,7 +119,7 @@ use full value series, so their unlabelled interior curves are kept. See
 
 ## hwn status
 
-Western hemlock natural is stored as `cwh-hw-natural.json`, provisional. Top
+Western hemlock natural is stored as `cwh-hw-natural.json`, reviewed. Top
 height, QMD, boundaries, and crown closure are vector paths. Top height and QMD
 use full value series, so their unlabelled interior curves are kept. See
 `notes/reference/hwn-digitisation.md`.
@@ -132,7 +132,7 @@ QMD, and boundaries are vector; crown closure is a raster trace. See
 
 ## cwn status
 
-Western redcedar natural is stored as `cwh-cw-natural.json`, provisional. Top
+Western redcedar natural is stored as `cwh-cw-natural.json`, reviewed. Top
 height, QMD, boundaries, and crown closure are vector paths. Top height and QMD
 use full value series, so their unlabelled interior curves are kept. See
 `notes/reference/cwn-digitisation.md`.
@@ -146,14 +146,14 @@ kept. The mapping is in `notes/reference/fdcp-digitisation.md`.
 
 ## ssp status
 
-Sitka spruce planted is stored as `cdf-cwh-ss-planted.json`, provisional. Top
+Sitka spruce planted is stored as `cdf-cwh-ss-planted.json`, reviewed. Top
 height, QMD, boundaries, and crown closure are vector paths. Top height and QMD
 use full value series, so their unlabelled interior curves are kept. See
 `notes/reference/ssp-digitisation.md`.
 
 ## hwp status
 
-Western hemlock planted is stored as `cwh-hw-planted.json`, provisional. Top
+Western hemlock planted is stored as `cwh-hw-planted.json`, reviewed. Top
 height, QMD, boundaries, and crown closure are vector paths. Top height and QMD
 use full value series, so their unlabelled interior curves are kept. See
 `notes/reference/hwp-digitisation.md`.
@@ -161,7 +161,8 @@ use full value series, so their unlabelled interior curves are kept. See
 ## cwp status
 
 Western redcedar planted is stored as `cwh-cw-planted.json`, provisional. Top
-height, QMD, and boundaries are vector; crown closure is a raster trace. See
+height, QMD, boundaries, and crown closure are vector paths. Top height and QMD
+use full value series, so their unlabelled interior curves are kept. See
 `notes/reference/cwp-digitisation.md`.
 
 ## swp status
