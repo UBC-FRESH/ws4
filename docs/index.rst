@@ -58,6 +58,9 @@ Quick Navigation
    * - :doc:`reference/index`
      - Everyone
      - The dataset contract, the simulator, the optimizer, spatial rules, and roads.
+   * - `3D fire demo <fire-demo.html>`_
+     - Everyone
+     - A playable 3D fire scene over a synthetic stand, driven by the P156 FBP growth field.
 
 Documentation Sections
 ----------------------
