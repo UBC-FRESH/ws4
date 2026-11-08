@@ -702,7 +702,7 @@ def read_labelled_curves(
             if abs(float(drawing.get("width") or 0.0) - width) > 1e-3:
                 continue
             rect = drawing["rect"]
-            if rect.width < min_path_width or rect.height <= 3.0:
+            if rect.width < min_path_width or rect.height <= 0.5:
                 continue
             points = _pdf_path_points(drawing["items"])
             if len(points) >= 2:
@@ -848,7 +848,7 @@ def _candidate_paths(
         rect = get("rect")
         if rect is None or getattr(rect, "width", 0.0) < min_path_width:
             continue
-        if getattr(rect, "height", 0.0) <= 3.0:
+        if getattr(rect, "height", 0.0) <= 0.5:
             continue
         items = get("items")
         if not isinstance(items, list):

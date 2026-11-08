@@ -17,10 +17,10 @@ def test_coverage_has_every_current_bec_and_named_statuses() -> None:
     assert frame["bec"].nunique() == 219
     counts = frame["coverage_status"].value_counts().to_dict()
     assert counts == {
-        "mixed_zone": 209,
+        "mixed_zone": 195,
         "no_diagram": 4,
         "reviewed_variant": 1,
-        "reviewed_zone": 5,
+        "reviewed_zone": 19,
     }
 
 

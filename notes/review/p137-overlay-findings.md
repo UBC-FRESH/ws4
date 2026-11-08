@@ -98,7 +98,13 @@ their source paths. cwn is now marked reviewed.
 
 Western redcedar planted is complete with 17 top-height paths, 15 QMD paths, and
 crown closure from source path 582. Direct overlay inspection shows the curves on
-their source paths.
+their source paths. cwp is now marked reviewed.
+
+### swn pass
+
+White spruce natural is complete with 17 top-height paths, 9 QMD paths, and crown
+closure from source path 49. Direct overlay inspection shows the curves on their
+source paths.
 
 ## TASS predicted mortality curves
 

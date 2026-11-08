@@ -127,7 +127,8 @@ use full value series, so their unlabelled interior curves are kept. See
 ## swn status
 
 White spruce natural is stored as `sbs-sw-natural.json`, provisional. Top height,
-QMD, and boundaries are vector; crown closure is a raster trace. See
+QMD, boundaries, and crown closure are vector paths. Top height uses the full
+value series, so its unlabelled interior curves are kept. See
 `notes/reference/swn-digitisation.md`.
 
 ## cwn status

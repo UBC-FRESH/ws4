@@ -82,7 +82,10 @@ members; its crown closure is source path 590. The ssp overlay is
 653. The cwn overlay is `notes/review/p137-overlays/cwn.png`. cwn is marked reviewed.
 
 `cwp` has 17 top-height paths, 15 QMD paths, and crown closure from source path
-582. The cwp overlay is `notes/review/p137-overlays/cwp.png`.
+582. The cwp overlay is `notes/review/p137-overlays/cwp.png`. cwp is marked reviewed.
+
+`swn` has 17 top-height paths, 9 QMD paths, and crown closure from source path 49.
+The swn overlay is `notes/review/p137-overlays/swn.png`.
 
 Evidence: `notes/review/p137-overlay-findings.md` and
 `notes/review/p137-overlays/`.

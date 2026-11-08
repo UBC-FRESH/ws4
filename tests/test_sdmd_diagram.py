@@ -770,7 +770,7 @@ def test_white_spruce_natural_diagram_is_valid() -> None:
     assert validate_diagram(diagram) == []
     top = sorted(item.value for item in diagram.isopleths if item.kind == "top_height")
     qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
-    assert top == [6, 10, 14, 18, 22, 26, 30, 34, 38]
+    assert top == [6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38]
     assert qmd == [5, 10, 15, 20, 25, 30, 35, 40, 45]
     assert diagram.review.status == "provisional"
 
@@ -891,7 +891,7 @@ def test_western_redcedar_planted_diagram_is_valid() -> None:
     qmd = sorted(item.value for item in diagram.isopleths if item.kind == "qmd")
     assert top == [6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 32, 36, 40, 44, 48]
     assert qmd == [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75]
-    assert diagram.review.status == "provisional"
+    assert diagram.review.status == "reviewed"
 
 
 def test_white_spruce_planted_diagram_is_valid() -> None:

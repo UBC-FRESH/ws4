@@ -31,10 +31,10 @@ def test_builder_emits_all_current_labels() -> None:
     frame = _builder().build_coverage()
     assert len(frame) == 219
     assert frame["coverage_status"].value_counts().to_dict() == {
-        "mixed_zone": 209,
+        "mixed_zone": 195,
         "no_diagram": 4,
         "reviewed_variant": 1,
-        "reviewed_zone": 5,
+        "reviewed_zone": 19,
     }
     assert set(frame["bec"]) == set(frame["bec"].unique())
 
@@ -42,12 +42,12 @@ def test_builder_emits_all_current_labels() -> None:
 def test_builder_emits_the_provisional_review_queue() -> None:
     """The builder names the eight provisional diagrams and their labels."""
     queue = _builder().build_review_queue()
-    assert len(queue) == 3
+    assert len(queue) == 2
     assert set(queue["status"]) == {"provisional"}
     labels: set[str] = set()
     for value in queue["bec_labels"]:
         labels.update(item for item in str(value).split(";") if item)
-    assert len(labels) == 210
+    assert len(labels) == 196
 
 
 def test_builder_reads_all_atlas_reviews() -> None:
