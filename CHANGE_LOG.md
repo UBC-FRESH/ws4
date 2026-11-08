@@ -4727,3 +4727,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P154.1: built the TSA 29 factorized archive and padded cache, declared the managed
   stock account and factorized paths in the base profile, and validated exact GPU replay
   for zero and one generation. The 42.5-million-row sparse table is unchanged.
+
+- P154 close-out: PR #914 squash-merged as `8f5aae0`; parent #912 and task #913 are
+  closed. The TSA 29 stock target now uses a factorized basis with exact GPU replay and
+  no state fallback. Dashboard: **GREEN**.
