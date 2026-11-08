@@ -6384,7 +6384,7 @@ function renderRunHealth() {
     badge(`portfolio member${state.runSource.member ? ` ${state.runSource.member}` : ''}`);
     badge('member targets');
   }
-  if (state.runSummary?.exact_match !== undefined) {
+  if (typeof state.runSummary?.exact_match === 'boolean') {
     badge(
       `exact replay ${state.runSummary.exact_match ? 'yes' : 'NO'}`,
       state.runSummary.exact_match ? 'available' : 'failing'

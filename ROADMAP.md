@@ -146,7 +146,7 @@ exists and the maintainer approves it.
 | P146 Live multi-account scan | #862 | `feature/p146-live-multi-account-scan` | complete |
 | P147 Diverse multi-account scaffold | #865 | `feature/p147-diverse-scaffold` | complete |
 | P148 Portfolio and promoted-run cleanup | #869 | `feature/p148-portfolio-cleanup` | complete |
-| P149 State-run exactness | #873 | `feature/p149-state-exactness` | active |
+| P149 State-run exactness | #873 | `fix/p149-summary-trim` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4394,13 +4394,14 @@ Acceptance:
 ## Phase 149: State-run exactness
 
 Parent issue: #873
-Branch: `feature/p149-state-exactness`
+Branch: `fix/p149-summary-trim`
 Status: active
 Report: `notes/reports/p149-state-exactness.md`
 
 Goal: surface and persist exact-objective replay results for web state runs.
 
 - [x] P149.1 Persist state exactness in the web summary (#874)
+- [x] P149.2 Keep the state exactness payload compact and cover the badge (#883)
 
 Acceptance:
 
