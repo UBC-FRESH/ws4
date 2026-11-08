@@ -10,7 +10,7 @@ contract, the starting state, the seven FWI outputs, and the validation against 
 implementation.
 
 The codes are a weather/moisture layer, not a fire-behaviour model by themselves. The FBP
-surface-fire equations are a later P154 task.
+surface-fire equations are a later P156 task.
 
 Daily weather
 -------------
@@ -97,7 +97,7 @@ Limits
 ------
 
 - The FBP fuel types and surface-fire equations are not implemented yet; they are split to
-  P154.8.
+  P156.8.
 - The weather is daily, not hourly or diurnal.
 - The latitude adjustment is the standard Canadian form; it is not a site-specific
   day-length model.

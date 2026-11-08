@@ -2,7 +2,7 @@
 
 The package starts with the fuel, moisture, and environment contracts and the validated
 Rothermel (1972) surface-fire kernel. Crown fire, FBP-specific fuel types, and spatially
-explicit growth follow in later P154 tasks.
+explicit growth follow in later P156 tasks.
 """
 
 from __future__ import annotations
@@ -63,6 +63,7 @@ from .growth import (
     GrowthResult,
     GrowthSnapshot,
     SiteGrid,
+    directional_ros,
     effective_wind,
     fragment_ignition_events,
     fragment_ignition_times,
@@ -117,6 +118,7 @@ __all__ = [
     "critical_surface_ros",
     "crown_fraction_burned",
     "crown_rate_of_spread_c6",
+    "directional_ros",
     "drought_code",
     "duff_moisture_code",
     "effective_wind",

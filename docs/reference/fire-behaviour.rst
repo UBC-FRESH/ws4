@@ -11,7 +11,7 @@ spread, reaction intensity, head fire intensity, flame length, and fuel consumpt
 
 This page specifies the fuel, moisture, and environment contracts and the Rothermel kernel. It
 does not yet specify crown fire, the Canadian FBP fuel types, or landscape growth; those are
-later P154 tasks.
+later P156 tasks.
 
 Fuel contract
 -------------
@@ -131,7 +131,7 @@ Limits
 ------
 
 - Only the Rothermel surface kernel is implemented. The Canadian FBP equations, crown fire,
-  and landscape growth are later P154 tasks.
+  and landscape growth are later P156 tasks.
 - The standard cases validate the kernel, not a landscape. A standard-case pass does not prove
   a fire perimeter or an observed-fire match.
 - Head fire intensity and flame length are derived and are not part of the reference-case

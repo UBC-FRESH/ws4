@@ -7,7 +7,7 @@ ignition wave to each neighbour with a directional rate of spread from an ellipt
 The head rate of spread comes from the validated FBP surface and crown layer. The effective
 wind speed folds the slope into the wind vector using the FBP slope adjustment. The first slice
 is a homogeneous fuel grid with a burnable mask; heterogeneous fuel and the P144 event-log
-bridge follow in later P154 tasks.
+bridge follow in later P156 tasks.
 """
 
 from __future__ import annotations
@@ -516,6 +516,26 @@ def _direction_ros(head_ros: float, length_breadth: float, angle_rad: float) -> 
     if denominator <= 0.0:
         return 0.0
     return float(head_ros * (1.0 - eccentricity) / denominator)
+
+
+def directional_ros(head_ros_m_min: float, length_breadth: float, angle_deg: float) -> float:
+    """Return the elliptical rate of spread in a direction relative to the head.
+
+    Parameters
+    ----------
+    head_ros_m_min : float
+        Head-fire rate of spread.
+    length_breadth : float
+        Fire ellipse length-to-breadth ratio.
+    angle_deg : float
+        Direction relative to the head, in degrees.
+
+    Returns
+    -------
+    float
+        Directional rate of spread in metres per minute.
+    """
+    return _direction_ros(head_ros_m_min, length_breadth, math.radians(angle_deg))
 
 
 def grow_fire(grid: SiteGrid, config: GrowthConfig) -> GrowthResult:

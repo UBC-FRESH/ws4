@@ -19,6 +19,7 @@ from ws4.fire.growth import (
     EffectiveWind,
     GrowthConfig,
     SiteGrid,
+    directional_ros,
     effective_wind,
     fragment_ignition_events,
     fragment_ignition_times,
@@ -331,3 +332,10 @@ def test_fragment_bridge_rejects_bad_grids_and_time_spans() -> None:
     fragments[:, 20:] = 2
     with pytest.raises(FireFuelError, match="more than one"):
         fragment_ignition_events(result, fragments, minutes_per_year=1.0)
+
+
+def test_directional_ros_matches_the_ellipse_template() -> None:
+    """The public directional ROS is the head value and falls toward the back."""
+    assert directional_ros(10.0, 1.0, 90.0) == pytest.approx(10.0)
+    assert directional_ros(10.0, 3.0, 0.0) == pytest.approx(10.0)
+    assert directional_ros(10.0, 3.0, 180.0) < directional_ros(10.0, 3.0, 90.0)

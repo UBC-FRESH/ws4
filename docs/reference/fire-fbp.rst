@@ -11,7 +11,7 @@ surface head fire intensity, and a derived flame length.
 
 Crown fire is deliberately not part of this layer. Every result carries
 ``surface_only: true``; the crown fraction burned, crown fire propagation, and crown fire
-intensity are P154.3.
+intensity are P156.3.
 
 Fuel types
 ----------
@@ -42,7 +42,7 @@ Inputs
   and grass fuel load for O1.
 
 The surface layer is **flat ground**. Slope adjustment, effective wind speed, and the
-spread azimuth are part of the growth task (P154.4).
+spread azimuth are part of the growth task (P156.4).
 
 Outputs
 -------
@@ -96,8 +96,8 @@ The demo prints:
 Limits
 ------
 
-- Flat ground only. Slope adjustment and effective wind speed are P154.4.
-- Surface fire only. Crown fire is P154.3.
+- Flat ground only. Slope adjustment and effective wind speed are P156.4.
+- Surface fire only. Crown fire is P156.3.
 - The C6 crown-fire ROS/HFI is not claimed; only the C6 surface component is validated.
 - The VRI-to-FBP fuel-type mapping is not implemented yet.
 - The FBP surface equations are validated against standard tables and the reference

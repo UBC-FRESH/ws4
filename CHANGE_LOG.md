@@ -4657,7 +4657,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   the state fallback pending a prebuilt basis or factorized archive. Dashboard:
   **GREEN**.
 
-- P154.1/P154.2: added `ws4/fire` with the metric fuel, moisture, and environment contracts,
+- P156.1/P156.2: added `ws4/fire` with the metric fuel, moisture, and environment contracts,
   the 13 Anderson standard fuel models, the 16 Scott-Burgan moisture scenarios, and the
   Rothermel (1972) surface-fire kernel with the standard corrections. The kernel matches the
   R `Rothermel` validation oracle on all 13 models at `D2L2`, 8 km/h, level ground, the custom
@@ -4667,26 +4667,26 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   `examples/fire_rothermel_demo.py`. The fire suite has 42 tests. `python
   scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**. Dashboard: **GREEN**.
 
-- P154.7: added `ws4/fire/fwi.py` with the Canadian FWI moisture codes: FFMC, DMC, DC, ISI,
+- P156.7: added `ws4/fire/fwi.py` with the Canadian FWI moisture codes: FFMC, DMC, DC, ISI,
   BUI, FWI, and DSR, with the daily weather contract, the standard starting state, the
   latitude day-length adjustment, and the FBP high-wind ISI form. The ten-day sequences at
   latitude 55 and latitude 20 match the `cffdrs` reference within `1e-4` for all seven codes.
   Added `docs/reference/fire-weather.rst`, `examples/fire_fwi_demo.py`, and 8 FWI tests. The
   fire suite now has 50 tests. `python scripts/check_workflow.py` reports **0 error(s), 0
   warning(s)**. Dashboard: **GREEN**. The FBP fuel types and surface-fire equations are split
-  to P154.8 (#900).
+  to P156.8 (#900).
 
-- P154.8: added `ws4/fire/fbp.py` with the 17 Canadian FBP fuel types, surface fuel
+- P156.8: added `ws4/fire/fbp.py` with the 17 Canadian FBP fuel types, surface fuel
   consumption, the buildup effect, the surface rate of spread, the surface head fire
   intensity, and a derived flame length. The surface ROS and SFC match the `cffdrs` reference
   within 0.02 on all 17 fuel types at FFMC 90, BUI 60, 10 km/h, flat ground, and on a
   320-point grid across C2/C3/C7/M1/S1; the C6 surface component is validated separately. The
-  layer is flat-ground and surface-only; slope is P154.4 and crown fire is P154.3. Added
+  layer is flat-ground and surface-only; slope is P156.4 and crown fire is P156.3. Added
   `docs/reference/fire-fbp.rst`, `examples/fire_fbp_demo.py`, and 7 FBP tests. The fire suite
   now has 57 tests. `python scripts/check_workflow.py` reports **0 error(s), 0 warning(s)**.
   Dashboard: **GREEN**.
 
-- P154.3: added `ws4/fire/crown.py` with Van Wagner critical surface intensity, the FBP crown
+- P156.3: added `ws4/fire/crown.py` with Van Wagner critical surface intensity, the FBP crown
   fraction burned, the C6 crown rate of spread and head-fire blend, the S/I/C fire
   description, an optional Van Wagner active-crown threshold, and derived foliar moisture
   content. CFB and ROS match `cffdrs` within 0.02, HFI within 1.0 kW/m, and the fire
@@ -4695,7 +4695,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   fire suite now has 66 tests. `python scripts/check_workflow.py` reports **0 error(s), 0
   warning(s)**. Dashboard: **GREEN**.
 
-- P154.4: added `ws4/fire/growth.py` with the homogeneous `SiteGrid`, the FBP slope
+- P156.4: added `ws4/fire/growth.py` with the homogeneous `SiteGrid`, the FBP slope
   adjustment as `effective_wind`, the FBP length-to-breadth relation, a minimum-travel-time /
   Huygens growth engine, burnable-mask barriers, and area/perimeter snapshots. The slope
   adjustment matches `cffdrs` on 40 wind/slope/fuel cases within 0.02 km/h and 0.1 degree.
@@ -4710,11 +4710,23 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   fire suite now has 80 tests. `python scripts/dashboard.py` reports **OVERALL: GREEN** on
   all seven gates.
 
-- Phase renumber: the credible fire phase is now **P154** (was P151) and the 3D scene phase
+- Phase renumber: the credible fire phase is now **P156** (was P151) and the 3D scene phase
   is now **P155** (was P150), because `main` carries P150 (GPU guard), P151 (web console),
-  P152 (sandboxed runner), and P153 (assistant script review). The parent and child issue
-  titles and bodies were retitled, and the roadmap, design notes, docs, and module references
-  use the new identifiers. The 3D branch was renamed to `feature/p155-fire-3d`. The fire
-  branch rename is pending: `feature/p154-fire-behaviour` is already checked out in another
-  active worktree with uncommitted P154.5 changes, so this renumber commit is on
-  `feature/p151-fire-behaviour` and should be cherry-picked there. Dashboard: **GREEN**.
+  P152 (sandboxed runner), P153 (assistant script review), and P154 (TSA 29 GPU stock). The
+  parent and child issue titles and bodies were retitled, and the roadmap, design notes,
+  docs, and module references use the new identifiers. The fire branch is
+  `feature/p156-fire-behaviour`; the old P151 and P154 feature branches were retired. The
+  3D branch is `feature/p155-fire-3d`. A concurrent agent's mixed P151.5/scene commit is
+  preserved by the tag `salvage/other-agent-p151.5`; its fire-event/account integration was
+  salvaged here and its scene package remains on the P155 branch. Dashboard: **GREEN**.
+
+- P156.5: coupled the fire kernel to the P144 event log and accounts. Added
+  `FireBehaviourConfig` and a directional FBP spread path. Behaviour-driven fire events
+  record the FBP fuel, FFMC, BUI, wind, effective wind, spread azimuth, slope, aspect, ROS,
+  head-fire intensity, flame length, crown fraction, fuel consumption, smoke strength, fire
+  description, and kernel version. Accounts add mean/max ROS, mean/max intensity, mean/max
+  flame length, and the area-weighted crown fraction. The legacy graph probability remains
+  the default when `behaviour=None`. The scene package is not on this branch; P155 owns it.
+  Added 4 behaviour tests and fixed the integration to use the slope-adjusted effective wind,
+  validate C6 slope at construction, and weight the crown account by event area. Dashboard:
+  **GREEN**.

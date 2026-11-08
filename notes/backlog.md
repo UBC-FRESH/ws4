@@ -432,23 +432,23 @@ items are enhancements and maintenance.
   visible fire front and per-tree ignition are finer than the fragment event, while the
   fragment event remains the audit record. Target: a later landscape-visualization phase.
 
-## Fire behaviour (P154)
+## Fire behaviour (P156)
 
-- **Rothermel surface-fire kernel.** `done` (P154.2, #892). The metric fuel, moisture, and
+- **Rothermel surface-fire kernel.** `done` (P156.2, #892). The metric fuel, moisture, and
   environment contracts and the Rothermel (1972) kernel are implemented and match the R
   ``Rothermel`` reference on the 13 Anderson models, the custom dynamic example, and a
   15-point A3 wind/slope grid.
-- **Canadian FBP fuel types and surface fire.** `done` (P154.8, #900). The 17 FBP fuel types,
+- **Canadian FBP fuel types and surface fire.** `done` (P156.8, #900). The 17 FBP fuel types,
   surface fuel consumption, the buildup effect, the surface rate of spread, and the surface
   head fire intensity match `cffdrs` within 0.02 on the base table and a 320-point grid.
-  Flat-ground and surface-only; slope is P154.4 and crown fire is P154.3.
+  Flat-ground and surface-only; slope is P156.4 and crown fire is P156.3.
 - **VRI-to-FBP fuel-type mapping.** `open`. Map the WS4/VRI fuel description to an FBP fuel
-  type with provenance. Target: P154.9 (#905).
-- **Crown fire.** `done` (P154.3, #893). Van Wagner initiation, the FBP crown fraction, the
+  type with provenance. Target: P156.9 (#905).
+- **Crown fire.** `done` (P156.3, #893). Van Wagner initiation, the FBP crown fraction, the
   C6 crown rate of spread, the S/I/C description, and an optional Van Wagner active-crown
   threshold match `cffdrs` on the base table, a 320-point grid, and three C6 cases. Flat
   ground; no spotting or growth.
 - **Growth geometry.** `open`. A site/fuel grid and an elliptical/Huygens or cellular growth
-  engine, with homogeneous shape and barrier tests. Target: P154.4.
+  engine, with homogeneous shape and barrier tests. Target: P156.4.
 - **Observed-fire validation.** `open`. Compare the kernel and growth engine to a public
-  benchmark and an observed perimeter, with tolerances named. Target: P154.6.
+  benchmark and an observed perimeter, with tolerances named. Target: P156.6.

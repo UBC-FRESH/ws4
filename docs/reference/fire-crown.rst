@@ -93,14 +93,14 @@ The demo prints:
 Limits
 ------
 
-- Flat ground only. Slope adjustment is P154.4.
+- Flat ground only. Slope adjustment is P156.4.
 - No spotting or ember transport.
 - No growth geometry; the result is a point/weather behaviour, not a perimeter.
 - The FMC is derived from latitude, longitude, elevation, and Julian day, or supplied
   explicitly.
 - The active-crown threshold is optional because it needs a canopy bulk density; the FBP
   ``CFB`` class is always reported.
-- The VRI-to-FBP fuel-type mapping is P154.9.
+- The VRI-to-FBP fuel-type mapping is P156.9.
 
 Cross-references
 ----------------
