@@ -4740,3 +4740,15 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   type. Added the representative fixture `tests/fixtures/fire/vri_fbp_stands.csv`,
   `docs/reference/fire-vri.rst`, and 6 VRI tests. The fire/ecosystem fire suite now has 106
   tests. `python scripts/dashboard.py` reports **OVERALL: GREEN** on all seven gates.
+
+- P156.6: added `ws4/fire/benchmark.py`, `scripts/benchmark_fire_growth.py`, and
+  `docs/reference/fire-benchmark.rst`. The benchmark compares the Huygens engine with the
+  public FBP ellipse on 20 fuel/wind scenarios at FFMC 90, BUI 60, and 60 minutes: mean
+  absolute relative error is 7.4 percent for area, 1.3 percent for length, 1.9 percent for
+  width, and 25.2 percent for the raster perimeter; the maxima are 16.4, 8.4, 8.4, and 30.9
+  percent. A 54-scenario FFMC/BUI/fuel/wind ensemble reports P10/P50/P90 area and exceedance
+  probabilities. The growth default is now 16 primitive directions, and a barrier is checked
+  along the whole cell-to-cell segment so a coarse direction cannot jump a one-cell no-fuel
+  band. Added 9 benchmark tests; the fire/ecosystem fire suite has 115 tests. The per-scenario
+  data and summary are in `notes/reports/p156-benchmark.csv` and
+  `notes/reports/p156-benchmark-summary.json`. Dashboard: **GREEN**.

@@ -85,6 +85,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
      - The site grid, slope-adjusted effective wind, Huygens growth, and perimeter snapshots.
    * - :doc:`fire-vri`
      - The VRI stand contract, the deterministic FBP fuel-type rules, and provenance.
+   * - :doc:`fire-benchmark`
+     - The FBP ellipse benchmark, the scenario ensemble, and the reported tolerances.
    * - :doc:`femic-hydrology`
      - Pinned FEMIC hydrology response bundles, checksums, flood-risk rows, and
        applicability metadata.
@@ -124,4 +126,5 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    fire-crown
    fire-growth
    fire-vri
+   fire-benchmark
    femic-hydrology

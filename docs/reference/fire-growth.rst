@@ -58,6 +58,11 @@ The engine keeps the earliest arrival per cell in a priority queue. A cell is bu
 arrival time is reached. The burned area is ``cells × cell area``; the perimeter is the exposed
 cell edge length. Snapshots record time, cell count, area, and perimeter.
 
+The default update uses 16 primitive directions. ``GrowthConfig.neighbor_radius`` selects 8,
+16, or 24 directions; more directions reduce the grid anisotropy at higher cost. A barrier is
+checked along the whole cell-to-cell segment, so a coarse direction cannot jump over a
+one-cell no-fuel band.
+
 Non-burnable cells never ignite, so a barrier is a mask, not a penalty.
 
 Fragment bridge
@@ -82,6 +87,9 @@ Validation
   within 25 percent on the test grid.
 - Wind elongates the burned area downwind and moves the centroid downwind.
 - The flat-ground wind ellipse length and width match the analytic ellipse within 10 percent.
+- On the public FBP ellipse benchmark, the 16-direction default keeps area within 16.4 percent,
+  length and width within 8.4 percent, and the raster perimeter within 30.9 percent. See
+  :doc:`fire-benchmark`.
 - Wind and slope combine into one effective wind vector; the centroid moves northeast for a
   west wind and a south-facing slope.
 - Slope moves the centroid upslope with zero wind.
@@ -118,7 +126,8 @@ Limits
   not carry a DEM; slope and aspect are grid-wide.
 - C6 slope adjustment is unsupported.
 - No spotting or ember transport.
-- The perimeter is the raster cell-edge length, not a sub-cell contour.
+- The perimeter is the raster cell-edge length, not a sub-cell contour; it is systematically
+  about 25 percent above the smooth ellipse on the benchmark grid.
 - The fragment bridge emits ignition events, but the P156.5 integration still has to carry the
   growth state through the accounts and the 3D viewer.
 - The growth is not yet calibrated or compared to an observed perimeter; that is P156.6.

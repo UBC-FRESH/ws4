@@ -170,12 +170,16 @@ class GrowthConfig:
         The snapshot interval in minutes (default 30).
     allow_diagonal : bool, optional
         Use the eight-neighbourhood (default True); False uses four neighbours.
+    neighbor_radius : int, optional
+        Primitive-direction radius in [1, 3]. One is the eight-neighbourhood, two is the
+        sixteen-direction ring, and three is the twenty-four-direction ring (default 2).
     """
 
     ignition_cells: tuple[tuple[int, int], ...]
     max_time_min: float = 240.0
     snapshot_interval_min: float = 30.0
     allow_diagonal: bool = True
+    neighbor_radius: int = 2
 
     def __post_init__(self) -> None:
         """Validate the growth configuration."""
@@ -188,6 +192,10 @@ class GrowthConfig:
             raise FireFuelError("max_time_min must be positive")
         if _non_negative(self.snapshot_interval_min, "snapshot_interval_min") <= 0.0:
             raise FireFuelError("snapshot_interval_min must be positive")
+        if isinstance(self.neighbor_radius, bool) or not isinstance(self.neighbor_radius, int):
+            raise FireFuelError("neighbor_radius must be an integer")
+        if self.neighbor_radius < 1 or self.neighbor_radius > 3:
+            raise FireFuelError("neighbor_radius must be between 1 and 3")
 
 
 @dataclass(frozen=True)
@@ -538,6 +546,32 @@ def directional_ros(head_ros_m_min: float, length_breadth: float, angle_deg: flo
     return _direction_ros(head_ros_m_min, length_breadth, math.radians(angle_deg))
 
 
+def _line_is_burnable(burnable: np.ndarray, row: int, col: int, drow: int, dcol: int) -> bool:
+    """Return whether every cell between a source and a target is burnable."""
+    steps = max(abs(drow), abs(dcol))
+    for step in range(1, steps):
+        middle_row = row + round(drow * step / steps)
+        middle_col = col + round(dcol * step / steps)
+        if not bool(burnable[middle_row, middle_col]):
+            return False
+    return True
+
+
+def _neighbor_offsets(allow_diagonal: bool, radius: int) -> list[tuple[int, int]]:
+    """Return the primitive neighbour offsets for the growth update."""
+    if not allow_diagonal:
+        return [(0, 1), (0, -1), (1, 0), (-1, 0)]
+    offsets: list[tuple[int, int]] = []
+    for drow in range(-radius, radius + 1):
+        for dcol in range(-radius, radius + 1):
+            if drow == 0 and dcol == 0:
+                continue
+            if math.gcd(abs(drow), abs(dcol)) != 1:
+                continue
+            offsets.append((drow, dcol))
+    return offsets
+
+
 def grow_fire(grid: SiteGrid, config: GrowthConfig) -> GrowthResult:
     """Grow a fire on a homogeneous site grid.
 
@@ -605,9 +639,7 @@ def grow_fire(grid: SiteGrid, config: GrowthConfig) -> GrowthResult:
     for row, col in config.ignition_cells:
         ignition[row, col] = 0.0
         heapq.heappush(queue, (0.0, row, col))
-    offsets = [(0, 1), (0, -1), (1, 0), (-1, 0)]
-    if config.allow_diagonal:
-        offsets += [(1, 1), (1, -1), (-1, 1), (-1, -1)]
+    offsets = _neighbor_offsets(config.allow_diagonal, config.neighbor_radius)
     while queue:
         time, row, col = heapq.heappop(queue)
         if time > config.max_time_min:
@@ -620,6 +652,8 @@ def grow_fire(grid: SiteGrid, config: GrowthConfig) -> GrowthResult:
             if nrow < 0 or nrow >= grid.rows or ncol < 0 or ncol >= grid.cols:
                 continue
             if not bool(burnable[nrow, ncol]):
+                continue
+            if not _line_is_burnable(burnable, row, col, drow, dcol):
                 continue
             distance = grid.cell_size_m * math.hypot(drow, dcol)
             direction = math.degrees(math.atan2(dcol, -drow)) % 360.0
