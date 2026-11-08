@@ -149,6 +149,7 @@ exists and the maintainer approves it.
 | P149 State-run exactness | #873 | `feature/p149-state-exactness` | complete |
 | P150 GPU extension guard | #886 | `fix/gpu-extension-guard` | complete |
 | P151 Web UI power-user console | #789 | `feature/p151-web-console` | complete |
+| P152 Sandboxed Python runner | #901 | `feature/p152-python-sandbox` | active |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4453,4 +4454,23 @@ Acceptance:
 - Input paths stay inside read-only roots; outputs stay in a scratch job directory.
 - Output, cancellation, quotas, artifacts, and audit records work.
 - Browser smoke and dashboard pass.
+
+## Phase 152: Sandboxed Python runner
+
+Parent issue: #901
+Branch: `feature/p152-python-sandbox`
+Status: active
+Report: `notes/reports/p152-python-sandbox.md`
+
+Goal: run explicitly reviewed WS4 Python scripts with a fail-closed sandbox.
+
+- [x] P152.1 Run reviewed scripts in a Landlock sandbox (#902)
+
+Acceptance:
+
+- Unreviewed scripts are rejected.
+- Landlock and unshare are required; there is no unsandboxed fallback.
+- Selected inputs are read-only; only job scratch is writable.
+- Host files, other runs, network, and credentials are unavailable.
+- Browser review, tests, and dashboard pass.
 

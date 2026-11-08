@@ -28,6 +28,50 @@ workspace absent.
 What is allowed
 ---------------
 
+Sandboxed Python tier
+---------------------
+
+``--allow-console-python`` adds a second, explicitly reviewed tier for WS4 Python API
+scripts. It requires ``--allow-console`` and a host with Landlock and unshare
+(``--console-root`` still defines the read-only inputs). On the public portal,
+``WS4_CONSOLE_PYTHON=1`` enables it alongside ``WS4_CONSOLE_TOKEN``.
+
+.. code-block:: bash
+
+   ws4 serve --dataset build/compiled --runs runs --targets targets.yaml \
+       --allow-console --allow-console-python \
+       --console-token "$WS4_CONSOLE_TOKEN" --console-root /path/to/instance
+
+The browser shows a script editor, an input-path field, and a required **I reviewed this
+script** checkbox. The API equivalent is:
+
+.. code-block:: python
+
+   response = requests.post(
+       "http://127.0.0.1:8000/api/console/python/jobs",
+       headers={"Authorization": f"Bearer {token}"},
+       json={
+           "script": "from ws4.opt.objective import load_targets\nprint('reviewed')\n",
+           "inputs": ["/srv/instance/config/ws4/targets/evenflow.yaml"],
+           "reviewed": True,
+       },
+       timeout=10,
+   )
+
+The script can read the selected inputs, the mounted dataset, the installed WS4 package,
+and its own scratch directory. It can write only scratch. The worker applies:
+
+- Landlock filesystem rules (the policy denies everything not explicitly allowed);
+- a new user, PID, and network namespace through ``unshare``;
+- no inherited console token or host credentials;
+- address-space, CPU, file-size, process, and open-file resource limits;
+- the console's wall-clock, output, concurrency, and rate limits.
+
+If Landlock or a functional unshare cannot be demonstrated, the job is refused. There is
+no unsandboxed Python fallback. This tier does not install packages, allow network access,
+or run an interactive terminal; assistant-authored scripts still require the review flow
+before submission.
+
 The console can launch these command families:
 
 .. list-table::

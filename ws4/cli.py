@@ -1638,6 +1638,11 @@ def serve(
         "--console-rate-limit",
         help="Console job starts allowed per minute",
     ),
+    allow_console_python: bool = typer.Option(
+        False,
+        "--allow-console-python",
+        help="Enable the sandboxed Python script tier (requires Landlock and unshare)",
+    ),
     crs: str = typer.Option(
         "EPSG:4326",
         "--crs",
@@ -1680,6 +1685,8 @@ def serve(
         raise typer.BadParameter("--spread-accounts needs --topology and --block-coordinates")
     if allow_console and not (console_token or "").strip():
         raise typer.BadParameter("--allow-console needs --console-token or WS4_CONSOLE_TOKEN")
+    if allow_console_python and not allow_console:
+        raise typer.BadParameter("--allow-console-python needs --allow-console")
     try:
         from .web.app import create_app
     except ImportError as error:
@@ -1717,6 +1724,7 @@ def serve(
             console_timeout=console_timeout,
             console_output_bytes=console_output_bytes,
             console_rate_limit=console_rate_limit,
+            allow_console_python=allow_console_python,
         ),
         host=host,
         port=port,

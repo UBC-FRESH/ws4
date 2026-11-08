@@ -479,6 +479,21 @@
             <button id="console-cancel" type="button" disabled>Cancel</button>
             <span id="console-job-status" class="hint"></span>
           </div>
+          <div id="console-python" class="console-python" hidden>
+            <h3>Sandboxed Python</h3>
+            <p class="hint">Scripts run only after explicit review, with Landlock file confinement, no network, and per-job resource limits. This is not an unsandboxed terminal.</p>
+            <label class="console-field">Python script
+              <textarea id="console-python-script" rows="8" spellcheck="false" placeholder="from ws4 ..."></textarea>
+            </label>
+            <label class="console-field">Read-only inputs (one absolute path per line)
+              <textarea id="console-python-inputs" rows="3" spellcheck="false" placeholder="optional files or directories"></textarea>
+            </label>
+            <label class="console-review"><input id="console-python-reviewed" type="checkbox"> I reviewed this script and want it to run</label>
+            <div class="run-row console-actions">
+              <button id="console-python-run" type="button" disabled>Run reviewed script</button>
+              <span id="console-python-status" class="hint"></span>
+            </div>
+          </div>
           <pre id="console-output" class="console-output" aria-live="polite"></pre>
           <div id="console-artifacts" class="console-artifacts"></div>
         </section>

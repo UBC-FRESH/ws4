@@ -8601,6 +8601,9 @@ async function loadConsole() {
     status.textContent = `connected · ${state.console.schema.workspace}`;
     renderConsoleCommands();
     $('console-run').disabled = false;
+    const python = state.console.schema.python;
+    $('console-python').hidden = !python?.enabled;
+    $('console-python-run').disabled = !python?.enabled;
   } catch (error) {
     state.console.schema = null;
     status.textContent = `console unavailable: ${error.message}`;
@@ -8676,6 +8679,7 @@ async function startConsoleJob() {
   state.console.offset = 0;
   state.console.job = null;
   runButton.disabled = true;
+  $('console-python-run').disabled = true;
   cancelButton.disabled = true;
   status.textContent = 'starting…';
   try {
@@ -8730,6 +8734,7 @@ async function refreshConsoleJob(id) {
       if (state.console.timer) window.clearInterval(state.console.timer);
       state.console.timer = null;
       $('console-run').disabled = false;
+      $('console-python-run').disabled = !state.console.schema?.python?.enabled;
       $('console-cancel').disabled = true;
       $('console-job-status').textContent = `${job.command} · ${job.id} · ${job.status}${job.error ? ` · ${job.error}` : ''}`;
       await loadConsoleArtifacts(id);
@@ -8811,6 +8816,51 @@ function relativeBytes(bytes) {
   return `${(value / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+async function startPythonJob() {
+  const output = $('console-output');
+  const status = $('console-python-status');
+  const runButton = $('console-python-run');
+  if (!state.console.schema?.python?.enabled) {
+    status.textContent = 'sandboxed Python is disabled';
+    return;
+  }
+  if (!$('console-python-reviewed').checked) {
+    status.textContent = 'review the script and tick the confirmation first';
+    return;
+  }
+  const script = $('console-python-script').value;
+  if (!script.trim()) {
+    status.textContent = 'enter a script';
+    return;
+  }
+  const inputs = $('console-python-inputs').value
+    .split('\n')
+    .map((value) => value.trim())
+    .filter(Boolean);
+  output.textContent = '';
+  state.console.offset = 0;
+  state.console.job = null;
+  runButton.disabled = true;
+  $('console-run').disabled = true;
+  $('console-cancel').disabled = true;
+  status.textContent = 'starting sandbox…';
+  try {
+    const job = await consoleApi('api/console/python/jobs', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ script, inputs, reviewed: true }),
+    });
+    state.console.job = job;
+    status.textContent = `python · ${job.id} · ${job.status}`;
+    $('console-cancel').disabled = false;
+    pollConsoleJob(job.id);
+  } catch (error) {
+    status.textContent = `script rejected: ${error.message}`;
+    runButton.disabled = false;
+    $('console-run').disabled = false;
+  }
+}
+
 function wireConsole() {
   if (!$('console-connect')) return;
   $('console-connect').addEventListener('click', () => {
@@ -8827,6 +8877,7 @@ function wireConsole() {
   });
   $('console-command').addEventListener('change', renderConsoleFields);
   $('console-run').addEventListener('click', startConsoleJob);
+  $('console-python-run').addEventListener('click', startPythonJob);
   $('console-cancel').addEventListener('click', cancelConsoleJob);
 }
 

@@ -24,6 +24,7 @@ from ws4.web.console import (
     ConsoleValidationError,
     build_console_argv,
 )
+from ws4.web.sandbox import sandbox_available
 
 TOKEN = "test-console-token"
 
@@ -35,6 +36,7 @@ def _app(
     timeout: float = 15.0,
     output_bytes: int = 1_000_000,
     rate: int = 6,
+    python_enabled: bool = False,
 ) -> tuple[TestClient, Path, Path]:
     """Create a dataset, a reportable run, and a console-enabled client."""
     dataset = tmp_path / "dataset"
@@ -63,6 +65,7 @@ def _app(
         console_output_bytes=output_bytes,
         console_rate_limit=rate,
         console_workspace="test",
+        allow_console_python=python_enabled,
     )
     return TestClient(app), run, targets
 
@@ -348,3 +351,102 @@ def test_manager_rate_limit_rejects_a_sixth_job(tmp_path: Path) -> None:
     _wait_manager(manager, job["id"])
     with pytest.raises(ConsoleRateLimitError):
         manager.start(ConsoleJobRequest(command=ConsoleCommand.report, run=str(run)))
+
+
+def test_python_console_requires_review_and_valid_inputs(tmp_path: Path) -> None:
+    """The Python tier refuses unreviewed scripts and paths outside the roots."""
+    client, _run, _targets = _app(tmp_path, python_enabled=True)
+    schema = client.get("/api/console", headers=_headers()).json()
+    assert schema["python"]["enabled"] is True
+    cases = [
+        {"script": "print('no')\n"},
+        {"script": "", "reviewed": True},
+        {"script": "print('no')\n", "reviewed": True, "inputs": ["../../etc/passwd"]},
+    ]
+    for body in cases:
+        response = client.post("/api/console/python/jobs", headers=_headers(), json=body)
+        assert response.status_code == 422, (body, response.text)
+
+
+@pytest.mark.skipif(not sandbox_available(), reason="Landlock and unshare are unavailable")
+def test_python_job_is_confined_to_inputs_and_scratch(tmp_path: Path) -> None:
+    """The sandbox blocks host reads, input writes, other runs, and network access."""
+    client, run, targets = _app(tmp_path, python_enabled=True, timeout=30.0)
+    script = f"""from pathlib import Path
+import os
+import socket
+target = Path({str(targets)!r})
+print('target-first-line', target.read_text(encoding='utf-8').splitlines()[0])
+Path('out.txt').write_text('written', encoding='utf-8')
+try:
+    Path('/etc/passwd').read_text(encoding='utf-8')
+    print('READ_LEAK')
+except OSError:
+    print('read-denied')
+try:
+    target.write_text('leak', encoding='utf-8')
+    print('WRITE_LEAK')
+except OSError:
+    print('write-denied')
+try:
+    Path({str(run / "account_values.csv")!r}).read_text(encoding='utf-8')
+    print('RUN_LEAK')
+except OSError:
+    print('run-denied')
+try:
+    sock = socket.socket()
+    sock.settimeout(0.3)
+    sock.connect(('1.1.1.1', 80))
+    print('NET_LEAK')
+except OSError:
+    print('net-denied')
+print('token', os.environ.get('WS4_CONSOLE_TOKEN'))
+"""
+    response = client.post(
+        "/api/console/python/jobs",
+        headers=_headers(),
+        json={"script": script, "inputs": [str(targets)], "reviewed": True},
+    )
+    assert response.status_code == 200, response.text
+    job = response.json()
+    finished = _wait(client, job["id"], timeout=40.0)
+    assert finished["status"] == "completed", finished
+    output = client.get(
+        f"/api/console/jobs/{job['id']}/output",
+        headers=_headers(),
+    ).json()["text"]
+    assert "target-first-line" in output
+    assert "read-denied" in output
+    assert "write-denied" in output
+    assert "run-denied" in output
+    assert "net-denied" in output
+    assert "LEAK" not in output
+    assert "token None" in output
+    assert targets.read_text(encoding="utf-8").startswith("targets:")
+    artifacts = client.get(
+        f"/api/console/jobs/{job['id']}/artifacts",
+        headers=_headers(),
+    ).json()
+    assert "out.txt" in {item["name"] for item in artifacts}
+
+
+@pytest.mark.skipif(not sandbox_available(), reason="Landlock and unshare are unavailable")
+def test_python_job_can_read_a_selected_run_directory(tmp_path: Path) -> None:
+    """A selected run directory is a valid read-only input."""
+    client, run, _targets = _app(tmp_path, python_enabled=True, timeout=30.0)
+    script = f"""from pathlib import Path
+print(Path({str(run / "account_values.csv")!r}).read_text(encoding='utf-8').splitlines()[0])
+"""
+    response = client.post(
+        "/api/console/python/jobs",
+        headers=_headers(),
+        json={"script": script, "inputs": [str(run)], "reviewed": True},
+    )
+    assert response.status_code == 200, response.text
+    finished = _wait(client, response.json()["id"], timeout=40.0)
+    assert finished["status"] == "completed", finished
+    output = client.get(
+        f"/api/console/jobs/{finished['id']}/output",
+        headers=_headers(),
+    ).json()["text"]
+    assert "offset,account,value" in output
