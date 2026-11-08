@@ -3,8 +3,9 @@
 Status: active (P151)
 Phase: P151 (Credible fire behaviour and growth)
 Date: 2026-11-08
-Related: `docs/reference/fire-behaviour.rst`, `docs/reference/ecosystem-fire.rst`,
-`notes/design/ws4-stochastic-landscape.md`, parent issue #890
+Related: `docs/reference/fire-behaviour.rst`, `docs/reference/fire-growth.rst`,
+`docs/reference/ecosystem-fire.rst`, `notes/design/ws4-stochastic-landscape.md`,
+parent issue #890
 
 ## 1. Why Rothermel first
 
@@ -88,39 +89,77 @@ FFMC 90, BUI 60, 10 km/h, flat ground, and on a 320-point grid across C2, C3, C7
 The C6 surface component is validated separately. The layer is flat-ground and surface-only:
 slope adjustment is P151.4, and crown fire is P151.3.
 
-## 6. What follows
+## 6. Crown fire
 
-- **P151.3 Crown fire.** Van Wagner initiation, Cruz et al. propagation, and the passive to
-  active transition.
-- **P151.3 Crown fire.** Van Wagner initiation, Cruz et al. propagation, and the passive to
-  active transition.
-- **P151.4 Growth.** A site/fuel grid, slope adjustment, and an elliptical or cellular growth
-  engine, with homogeneous shape tests and a barrier test.
+P151.3 added the Van Wagner initiation threshold, the FBP crown fraction burned, the C6
+crown rate of spread and head-fire blend, the S/I/C fire description, and an optional Van
+Wagner active-crown threshold. CFB and ROS match `cffdrs` within 0.02, HFI within 1.0 kW/m,
+and the fire description exactly on the 17-fuel-type base table, a 320-point grid, and three
+C6 cases.
+
+## 7. Growth and perimeter
+
+P151.4 added `ws4/fire/growth.py`:
+
+- `SiteGrid` carries the fuel type, the cell geometry, FFMC, BUI, wind, slope and aspect, the
+  optional M/O parameters, and a burnable mask.
+- `effective_wind` folds slope into the wind vector using the FBP slope adjustment: the
+  zero-wind surface rate of spread, the slope factor, the inverse RSI relation, the effective
+  ISI, and the effective wind speed, then a vector addition. It matches `cffdrs` on 40
+  wind/slope/fuel cases within 0.02 km/h and 0.1 degree.
+- `grow_fire` uses a minimum-travel-time / Huygens construction. The head rate of spread comes
+  from the validated FBP surface and crown layer, the length-to-breadth ratio comes from the
+  FBP ellipse relation, and each neighbour receives an arrival time from the directional ROS.
+  A priority queue keeps the earliest arrival per cell.
+- Snapshots record time, burned cells, area, and exposed perimeter. Non-burnable cells never
+  ignite, so a barrier is a mask.
+
+The shape tests cover a circle with no wind or slope, a downwind ellipse, an upslope
+displacement, a non-burnable barrier, and monotone snapshots. C6 slope adjustment is
+explicitly unsupported and raises; flat-ground C6 growth is supported.
+
+## 8. What follows
+
 - **P151.5 Integration.** The P144 event record carries the fuel, weather, slope, kernel
-  version, ROS, intensity, and flame length. The P150 viewer's flames and smoke scale with
-  those values.
+  version, ROS, intensity, and flame length. The P152 viewer's flames and smoke scale with
+  those values. The growth front maps to fragment ignition times.
 - **P151.6 Benchmark.** A public growth-model comparison and an observed-fire case, with the
   tolerances and limits named.
+- **P151.9 VRI mapping.** Map VRI species, age, and canopy attributes to FBP fuel types, with
+  an accuracy report and an explicit unknown class.
+- **P152 3D scene.** Renumber the 3D fire scene phase from the old P150 label, because `main`
+  already carries a P150 GPU guard.
 
-## 8. Limits and risks
+## 9. Limits and risks
 
 - A standard-case pass does not prove a landscape fire. The growth and benchmark tasks are
   separate.
 - The derived intensity and flame length depend on the heat yield and consumption fraction;
   those are scene parameters and must be visible in the event record.
-- The FBP fuel types and moisture codes are not implemented yet. Mapping them to Rothermel
-  proxies would be a modelling choice, not a validation.
+- The growth grid is homogeneous in fuel and weather; heterogeneous fuel and the fragment
+  event-log bridge are P151.5 and later.
+- The growth perimeter is the raster cell-edge length, not a sub-cell contour. The circle
+  perimeter is about 16 percent above the analytic circle on the test grid.
+- C6 slope adjustment is unsupported; the engine raises rather than silently substituting a
+  surface proxy.
 - The 13 Anderson models are a validation set, not a BC fuel map. The VRI/Nemora fuel layer
   must be built and documented separately.
 - Unit conversion is the main silent-error risk; the tests pin the reference values in the
   metric contract.
 
-## 9. References
+## 10. References
 
 - Rothermel, R. C. (1972). A mathematical model for predicting fire spread in wildland fuels.
 - Albini, F. A. (1976). Computer-based models of wildland fire behavior.
 - Andrews, P. L., Cruz, M. G., and Rothermel, R. C. (2013). Examination of the wind speed limit
   function in the Rothermel surface fire spread model.
 - Scott, J. H., and Burgan, R. E. (2005). Standard fire behavior fuel models.
+- Van Wagner, C. E. (1977). Conditions for the start and spread of crown fire.
+- Cruz, M. G., Alexander, M. E., and Wakimoto, R. H. (2005). Development and evaluation of a
+  crown fire spread model.
+- Forestry Canada Fire Danger Group (1992). Development and structure of the Canadian Forest
+  Fire Behavior Prediction System.
 - Vacchiano, G., and Ascoli, D. (2015). An implementation of the Rothermel fire spread model in
   the R programming language. Used as a validation oracle only.
+- Wang, X., Wotton, B. M., Cantin, A. S., et al. The Canadian Forest Fire Danger Rating System
+  and `cffdrs`. Used as a validation oracle only.

@@ -4694,3 +4694,14 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   Added `docs/reference/fire-crown.rst`, `examples/fire_crown_demo.py`, and 9 crown tests. The
   fire suite now has 66 tests. `python scripts/check_workflow.py` reports **0 error(s), 0
   warning(s)**. Dashboard: **GREEN**.
+
+- P151.4: added `ws4/fire/growth.py` with the homogeneous `SiteGrid`, the FBP slope
+  adjustment as `effective_wind`, the FBP length-to-breadth relation, a minimum-travel-time /
+  Huygens growth engine, burnable-mask barriers, and area/perimeter snapshots. The slope
+  adjustment matches `cffdrs` on 40 wind/slope/fuel cases within 0.02 km/h and 0.1 degree.
+  The growth tests cover a no-wind circle (perimeter within 25 percent of the analytic
+  circle), a downwind ellipse, an upslope centroid displacement, a barrier, and monotone
+  snapshots. C6 slope adjustment raises explicitly; flat-ground C6 growth is supported.
+  Added `docs/reference/fire-growth.rst`, `examples/fire_growth_demo.py`, and 10 growth
+  tests. The fire suite now has 76 tests. `python scripts/dashboard.py` reports
+  **OVERALL: GREEN** on all seven gates.

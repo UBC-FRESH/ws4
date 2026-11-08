@@ -81,6 +81,8 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    * - :doc:`fire-crown`
      - Crown fire initiation, the FBP crown fraction, the C6 crown rate of spread, and the
        active-crown threshold.
+   * - :doc:`fire-growth`
+     - The site grid, slope-adjusted effective wind, Huygens growth, and perimeter snapshots.
    * - :doc:`femic-hydrology`
      - Pinned FEMIC hydrology response bundles, checksums, flood-risk rows, and
        applicability metadata.
@@ -118,4 +120,5 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    fire-weather
    fire-fbp
    fire-crown
+   fire-growth
    femic-hydrology
