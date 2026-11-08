@@ -1039,7 +1039,9 @@ def create_app(
         When true, ``POST /api/runs`` may start a search with the configured dataset and targets.
         False (the default) keeps the service read-only apart from the targets file.
     initial_schedule : Path or None, optional
-        A primed schedule passed to every web-started search. It is needed for flow targets
+        A primed schedule passed to every web-started search.
+    state_config : dict or None, optional
+        Resident-state search settings for the web state runner. It is needed for flow targets
         whose reference period must carry wood before the even-flow comparison is meaningful.
     allow_agent : bool, optional
         When true, ``POST /api/chat`` may run one turn through the OpenCode CLI. The agent can

@@ -18,7 +18,6 @@ from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
-
 from ws4.web.app import create_app
 
 ROOT = Path(__file__).resolve().parent
@@ -128,7 +127,7 @@ _request_log: dict[str, deque[float]] = defaultdict(deque)
 
 
 @app.middleware("http")
-async def public_guardrails(request: Request, call_next: Any) -> Any:
+async def public_guardrails(request: Request, call_next: Any) -> Any:  # noqa: ANN401
     """Keep the public instance portal bounded and uncached."""
     if request.method in {"POST", "PUT", "PATCH"}:
         content_length = request.headers.get("content-length")
@@ -154,6 +153,8 @@ async def public_guardrails(request: Request, call_next: Any) -> Any:
 
 @dataclass
 class Instance:
+    """One mounted public instance."""
+
     slug: str
     label: str
     subtitle: str
@@ -214,9 +215,8 @@ def _resolve(slug: str, root: Path) -> Instance:
     if not (dataset / "fragments.parquet").is_file():
         return Instance(slug, label, subtitle, root, False, "dataset is missing fragments.parquet")
     try:
-        import pyarrow.parquet as pq
+        import pyarrow.parquet as pq  # type: ignore[import-untyped]
 
-        partitions = pq.ParquetFile(dataset / "fragments.parquet").metadata.num_row_groups
         rows = pq.ParquetFile(dataset / "fragments.parquet").metadata.num_rows
         # The shared demo is one CPU core; keep the giant TSA instances off it.
         if rows > 200_000:
@@ -301,13 +301,14 @@ for directory in sorted(INSTANCES_ROOT.glob("femic-*-instance")):
         instance.mount = f"/instance/{instance.slug}/"
         try:
             _build_mount(instance, instance.mount.rstrip("/"))
-        except Exception as error:  # noqa: BLE001 - report a broken instance on the card
+        except Exception as error:
             instance.ready = False
             instance.reason = f"could not start WS4 UI: {error}"
     INSTANCES.append(instance)
 
 
 def _landing() -> str:
+    """Render the landing page HTML."""
     cards = []
     for instance in INSTANCES:
         if instance.ready:
@@ -321,7 +322,8 @@ def _landing() -> str:
         reason = f'<p class="reason">{html.escape(instance.reason)}</p>' if instance.reason else ""
         cards.append(
             f"""{action}
-              <div class="card-top"><span class="kicker">{html.escape(instance.slug)}</span><span class="badge">{status}</span></div>
+              <div class="card-top"><span class="kicker">{html.escape(instance.slug)}</span>
+              <span class="badge">{status}</span></div>
               <h2>{html.escape(instance.label)}</h2>
               <p>{html.escape(instance.subtitle or "Public FEMIC instance")}</p>
               {reason}
@@ -337,17 +339,25 @@ def _landing() -> str:
 <title>WS4 Public Instance Portal</title>
 <style>
   :root {{ color-scheme: light; font-family: system-ui, sans-serif; }}
-  body {{ margin: 0; min-height: 100vh; display: grid; place-items: center; background: radial-gradient(circle at top left, #dcecdf, #f3f6f1 55%, #e7eee8); color: #17201b; }}
+  body {{ margin: 0; min-height: 100vh; display: grid; place-items: center;
+         background: radial-gradient(circle at top left, #dcecdf, #f3f6f1 55%, #e7eee8);
+         color: #17201b; }}
   main {{ width: min(1180px, calc(100vw - 36px)); padding: 40px 0; }}
-  .kicker {{ color: #1f6b43; text-transform: uppercase; letter-spacing: .12em; font-size: .72rem; font-weight: 700; }}
+  .kicker {{ color: #1f6b43; text-transform: uppercase; letter-spacing: .12em;
+    font-size: .72rem; font-weight: 700; }}
   h1 {{ margin: 0 0 8px; font-size: clamp(2rem, 5vw, 3.4rem); letter-spacing: -.04em; }}
-  p.lead {{ max-width: 780px; margin: 0 0 30px; color: #4c5c52; font-size: 1.05rem; line-height: 1.55; }}
+  p.lead {{ max-width: 780px; margin: 0 0 30px; color: #4c5c52;
+    font-size: 1.05rem; line-height: 1.55; }}
   .doors {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }}
-  a.door, .door {{ display: block; min-height: 176px; padding: 20px; border-radius: 16px; text-decoration: none; color: inherit; background: #fff; box-shadow: 0 12px 36px #173d2a1c; border: 1px solid #c9d8ce; transition: transform .15s ease, box-shadow .15s ease; }}
+  a.door, .door {{ display: block; min-height: 176px; padding: 20px;
+    border-radius: 16px; text-decoration: none; color: inherit; background: #fff;
+    box-shadow: 0 12px 36px #173d2a1c; border: 1px solid #c9d8ce;
+    transition: transform .15s ease, box-shadow .15s ease; }}
   a.door:hover {{ transform: translateY(-3px); box-shadow: 0 16px 44px #173d2a28; }}
   .door.disabled {{ opacity: .72; background: #f7faf7; box-shadow: none; }}
   .card-top {{ display: flex; align-items: center; gap: 10px; justify-content: space-between; }}
-  .badge {{ font: 700 10px system-ui; letter-spacing: .08em; border-radius: 999px; padding: 4px 8px; color: #1f6b43; background: #e6f3e8; border: 1px solid #b9dec0; }}
+  .badge {{ font: 700 10px system-ui; letter-spacing: .08em; border-radius: 999px;
+    padding: 4px 8px; color: #1f6b43; background: #e6f3e8; border: 1px solid #b9dec0; }}
   .disabled .badge {{ color: #80631b; background: #fff7df; border-color: #ead9a5; }}
   h2 {{ margin: 12px 0 6px; font-size: 1.25rem; }}
   .door p {{ margin: 0; color: #52645a; line-height: 1.45; }}
@@ -363,9 +373,13 @@ def _landing() -> str:
 <main>
   <div class="kicker">WS4 · public experimental demo · no login · state engine · agent enabled</div>
   <h1>Open a forest model.</h1>
-  <p class="lead">Launch any public FEMIC instance in the WS4 web UI. Searches use the resident-state accelerated engine on one CPU core. Choose a model below to edit targets, run a schedule, inspect the map, reports, and the embedded assistant.</p>
+  <p class="lead">Launch any public FEMIC instance in the WS4 web UI.
+  Searches use the resident-state accelerated engine on one CPU core.
+  Choose a model below to edit targets, run a schedule, inspect the map, reports,
+  and the embedded assistant.</p>
   <div class="doors">{"".join(cards)}</div>
-  <footer>WS4 public demo · {ready} runnable instance{"s" if ready != 1 else ""} · resident-state search · one CPU core · embedded agent enabled</footer>
+  <footer>WS4 public demo · {ready} runnable instance{"s" if ready != 1 else ""} ·
+  resident-state search · one CPU core · embedded agent enabled</footer>
 </main>
 </body>
 </html>"""
@@ -373,11 +387,13 @@ def _landing() -> str:
 
 @app.get("/", response_class=HTMLResponse)
 def landing() -> HTMLResponse:
+    """Render the public instance landing page."""
     return HTMLResponse(_landing(), headers={"Cache-Control": "no-store"})
 
 
 @app.get("/health")
 def health() -> dict[str, Any]:
+    """Return portal liveness and instance counts."""
     return {
         "status": "ok",
         "instances": len(INSTANCES),

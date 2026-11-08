@@ -9,11 +9,11 @@ their usual artefacts.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
 
 import pandas as pd
 
@@ -52,6 +52,13 @@ def _candidate_index(dataset: Path, targets: Path, years: int, destination: Path
 
 
 def main() -> int:
+    """Run the state search and write the web-readable run directory.
+
+    Returns
+    -------
+    int
+        Process exit status.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", required=True, type=Path)
     parser.add_argument("--targets", required=True, type=Path)
@@ -81,9 +88,7 @@ def main() -> int:
     candidate_cache = args.candidate_cache
     if candidate_index is not None and not candidate_index.is_file():
         candidate_index.parent.mkdir(parents=True, exist_ok=True)
-        candidate_index = _candidate_index(
-            args.dataset, args.targets, args.years, candidate_index
-        )
+        candidate_index = _candidate_index(args.dataset, args.targets, args.years, candidate_index)
     elif not candidate_index and not candidate_cache:
         candidate_index = _candidate_index(
             args.dataset, args.targets, args.years, out / "candidates.npz"
@@ -191,10 +196,8 @@ def main() -> int:
             except json.JSONDecodeError:
                 continue
             if record.get("type") == "step":
-                try:
+                with contextlib.suppress(TypeError, ValueError):
                     iterations_run = max(iterations_run, int(record.get("iteration", 0)))
-                except (TypeError, ValueError):
-                    pass
                 if isinstance(record.get("objective"), (int, float)):
                     objective = float(record["objective"])
     try:
@@ -211,9 +214,7 @@ def main() -> int:
         "status": "complete",
         "objective": objective,
     }
-    (out / "state_search.json").write_text(
-        json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
-    )
+    (out / "state_search.json").write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
     (out / "summary.json").write_text(
         json.dumps(
             {
