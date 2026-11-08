@@ -37,9 +37,7 @@ INSTANCES_ROOT = Path(
 CONSOLE_TOKEN = os.environ.get("WS4_CONSOLE_TOKEN", "").strip()
 RUNS_ROOT = ROOT / "runs"
 CACHE_ROOT = ROOT / "cache"
-SDMD_DEMO_ROOT = Path(
-    os.environ.get("WS4_SDMD_DEMO_ROOT", str(ROOT / "var" / "sdmd-demo"))
-)
+SDMD_DEMO_ROOT = Path(os.environ.get("WS4_SDMD_DEMO_ROOT", str(ROOT / "var" / "sdmd-demo")))
 SDMD_PLI_ROOT = ROOT / "ws4" / "sdmd" / "data" / "pilot-tsa23-idfdk3-pli"
 RUNS_ROOT.mkdir(parents=True, exist_ok=True)
 CACHE_ROOT.mkdir(parents=True, exist_ok=True)
@@ -252,7 +250,9 @@ def _gpu_label(gpu: dict[str, Any]) -> tuple[str, str]:
 
 def _resolve(slug: str, root: Path) -> Instance:
     spec = dict(SPECS.get(slug, {}))
-    label, subtitle = LABEL_OVERRIDES.get(slug, (slug.removeprefix("femic-").removesuffix("-instance"), ""))
+    label, subtitle = LABEL_OVERRIDES.get(
+        slug, (slug.removeprefix("femic-").removesuffix("-instance"), "")
+    )
     label = str(spec.get("label", label))
     subtitle = str(spec.get("subtitle", subtitle))
     if not root.is_dir():
@@ -262,17 +262,27 @@ def _resolve(slug: str, root: Path) -> Instance:
     initial = _existing(root, spec.get("initial"))
     if dataset is None:
         # A common fallback for instances with a compiled build.
-        for candidate in (root / "build" / "compiled", root / "ws4" / "runtime" / "matrix", root / "runtime" / "matrix"):
-            if (candidate / "manifest.json").is_file() and (candidate / "fragments.parquet").is_file():
+        for candidate in (
+            root / "build" / "compiled",
+            root / "ws4" / "runtime" / "matrix",
+            root / "runtime" / "matrix",
+        ):
+            if (candidate / "manifest.json").is_file() and (
+                candidate / "fragments.parquet"
+            ).is_file():
                 dataset = candidate
                 break
     if targets is None:
-        for candidate in sorted(root.glob("config/**/targets*.yaml")) + sorted(root.glob("ws4/targets*.yaml")):
+        for candidate in sorted(root.glob("config/**/targets*.yaml")) + sorted(
+            root.glob("ws4/targets*.yaml")
+        ):
             if candidate.is_file():
                 targets = candidate
                 break
     if initial is None:
-        for candidate in sorted(root.glob("runtime/seed*.csv")) + sorted(root.glob("ws4/runtime/*/schedule.csv")):
+        for candidate in sorted(root.glob("runtime/seed*.csv")) + sorted(
+            root.glob("ws4/runtime/*/schedule.csv")
+        ):
             if candidate.is_file():
                 initial = candidate
                 break
@@ -304,7 +314,13 @@ def _resolve(slug: str, root: Path) -> Instance:
         return Instance(slug, label, subtitle, root, False, "no targets YAML")
     # A state run can build its candidate index and seed-state cache on first use;
     # an existing candidate cache only avoids that one-time cost.
-    spec.update({"dataset": str(dataset), "targets": str(targets), "initial": str(initial) if initial else None})
+    spec.update(
+        {
+            "dataset": str(dataset),
+            "targets": str(targets),
+            "initial": str(initial) if initial else None,
+        }
+    )
     gpu = _gpu_readiness(root, spec)
     spec["gpu"] = gpu
     return Instance(slug, label, subtitle, root, True, spec=spec, gpu=gpu)
@@ -424,7 +440,9 @@ def _build_mount(instance: Instance, mount_path: str) -> None:
         "tile_cache_dir": cache / "tiles",
         "crs": spec.get("crs", "EPSG:3005"),
     }
-    profile_source = root / str(spec["scenario_profiles"]) if spec.get("scenario_profiles") else None
+    profile_source = (
+        root / str(spec["scenario_profiles"]) if spec.get("scenario_profiles") else None
+    )
     if profile_source is not None and profile_source.is_file():
         try:
             library = yaml.safe_load(profile_source.read_text(encoding="utf-8")) or {}
@@ -438,9 +456,7 @@ def _build_mount(instance: Instance, mount_path: str) -> None:
                 if isinstance(raw_target, str) and (base_dir / raw_target).resolve() == base_target:
                     profile["targets"] = str(targets)
             cached_profiles = cache / "profiles-default.yaml"
-            cached_profiles.write_text(
-                yaml.safe_dump(library, sort_keys=False), encoding="utf-8"
-            )
+            cached_profiles.write_text(yaml.safe_dump(library, sort_keys=False), encoding="utf-8")
             options["scenario_profiles"] = cached_profiles
         except (OSError, yaml.YAMLError):
             options["scenario_profiles"] = profile_source
@@ -476,6 +492,7 @@ for directory in sorted(INSTANCES_ROOT.glob("femic-*-instance")):
             instance.ready = False
             instance.reason = f"could not start WS4 UI: {error}"
     INSTANCES.append(instance)
+
 
 def _mount_sdmd_demo() -> Instance | None:
     """Mount the standalone SDMD pilot when its store is present.
@@ -558,11 +575,11 @@ if _sdmd_pli is not None:
     INSTANCES.append(_sdmd_pli)
 
 
-def _landing() -> str:
+def _landing(prefix: str = "") -> str:
     cards = []
     for instance in INSTANCES:
         if instance.ready:
-            action = f'<a class="door" href="{html.escape(instance.mount)}?view=sdmd">'
+            action = f'<a class="door" href="{prefix}{html.escape(instance.mount)}?view=sdmd">'
             footer = "Launch instance →"
             status = "READY"
         else:
@@ -579,19 +596,19 @@ def _landing() -> str:
             f'<p class="gpu {gpu_class}"><span class="gpu-dot"></span>'
             f"<strong>{html.escape(gpu_label)}</strong> · {html.escape(gpu_detail)}</p>"
         )
-        reason = f"<p class=\"reason\">{html.escape(instance.reason)}</p>" if instance.reason else ""
+        reason = f'<p class="reason">{html.escape(instance.reason)}</p>' if instance.reason else ""
         cards.append(
-            f'''{action}
+            f"""{action}
               <div class="card-top"><span class="kicker">{html.escape(instance.slug)}</span><span class="badge">{status}</span></div>
               <h2>{html.escape(instance.label)}</h2>
               <p>{html.escape(instance.subtitle or "Public FEMIC instance")}</p>
               {gpu_line}
               {reason}
               <div class="arrow">{footer}</div>
-            </{'a' if instance.ready else 'div'}>'''
+            </{"a" if instance.ready else "div"}>"""
         )
     ready = sum(1 for instance in INSTANCES if instance.ready)
-    return f'''<!doctype html>
+    return f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -632,16 +649,25 @@ def _landing() -> str:
   <div class="kicker">WS4 · public experimental demo · no login · state engine · agent enabled</div>
   <h1>Open a forest model.</h1>
   <p class="lead">Launch any public FEMIC instance in the WS4 web UI. Normal searches use the resident-state engine on one CPU core; the card badges show which instances have additional GPU profile runs or CLI-only GPU artifacts. Choose a model below to edit targets, run a schedule, inspect the map, reports, and the embedded assistant.</p>
-  <div class="doors">{''.join(cards)}</div>
-  <footer>WS4 public demo · {ready} runnable instance{'s' if ready != 1 else ''} · resident-state search · GPU readiness shown per instance · embedded agent enabled</footer>
+  <div class="doors">{"".join(cards)}</div>
+  <footer>WS4 public demo · {ready} runnable instance{"s" if ready != 1 else ""} · resident-state search · GPU readiness shown per instance · embedded agent enabled</footer>
 </main>
 </body>
-</html>'''
+</html>"""
+
+
+def _request_prefix(request: Request) -> str:
+    """Return the external proxy prefix for generated links."""
+    value = request.headers.get("x-forwarded-prefix") or request.headers.get("x-script-name")
+    if not value:
+        value = str(request.scope.get("root_path", ""))
+    value = value.strip().strip("/")
+    return f"/{value}" if value else ""
 
 
 @app.get("/", response_class=HTMLResponse)
-def landing() -> HTMLResponse:
-    return HTMLResponse(_landing(), headers={"Cache-Control": "no-store"})
+def landing(request: Request) -> HTMLResponse:
+    return HTMLResponse(_landing(_request_prefix(request)), headers={"Cache-Control": "no-store"})
 
 
 @app.get("/api/instances")
