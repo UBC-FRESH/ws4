@@ -4723,3 +4723,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
 - P153 close-out: PR #909 squash-merged as `772d45b`; parent #906 and task #907 are
   closed. Assistant code can be staged for review but never runs without explicit
   confirmation. Dashboard: **GREEN**.
+
+- P154.1: built the TSA 29 factorized archive and padded cache, declared the managed
+  stock account and factorized paths in the base profile, and validated exact GPU replay
+  for zero and one generation. The 42.5-million-row sparse table is unchanged.
