@@ -429,6 +429,10 @@ items are enhancements and maintenance.
   smoke, a timeline, and a burnt scar are in place. Real VRI polygon rendering and the
   per-tree P156 growth ignition are in P155.2/P155.4. Shader quality and embers are P155.3
   (#880); the WS4 web Fire workspace is P155.4 (#881).
+- **WS4 web Fire workspace.** `done` (P155.4, #881). Run scene discovery, manifest and
+  payload endpoints, a Fire workspace with shared timeline, tree and fragment inspection,
+  scene A/B comparison, and the vendored-Three viewer are implemented. The phase remains
+  active for P155.3 visual polish and P155.5 close-out.
 - **Sub-fragment fire refinement.** `done` for the growth path (P155.2/P155.4). Each tree
   samples the P156 growth grid at its position; the fragment event remains the audit record.
   The viewer clock is in minutes and the tree burn duration is 2 minutes.

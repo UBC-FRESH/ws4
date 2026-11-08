@@ -117,6 +117,7 @@ def test_scene_write_produces_every_artifact(tmp_path: Path) -> None:
         paths.animation,
         paths.event_log,
         paths.summary,
+        paths.payload,
     ):
         assert path.is_file()
     manifest = json.loads(paths.manifest.read_text(encoding="utf-8"))

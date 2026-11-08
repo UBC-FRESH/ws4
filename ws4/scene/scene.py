@@ -195,6 +195,8 @@ class ScenePaths:
         ``event_log.json``.
     summary : Path
         ``summary.json``.
+    payload : Path
+        ``payload.json`` with the compact viewer payload.
     """
 
     directory: Path
@@ -206,6 +208,7 @@ class ScenePaths:
     animation: Path
     event_log: Path
     summary: Path
+    payload: Path
 
 
 @dataclass(frozen=True)
@@ -401,6 +404,7 @@ class FireScene:
         animation_path = out_dir / "animation.parquet"
         event_log_path = out_dir / "event_log.json"
         summary_path = out_dir / "summary.json"
+        payload_path = out_dir / "payload.json"
         viewer_path = out_dir / "viewer.html"
         manifest_path.write_text(
             json.dumps(self.manifest.to_dict(), indent=2, sort_keys=True) + "\n",
@@ -413,6 +417,10 @@ class FireScene:
         self.event_log.write(event_log_path)
         summary_path.write_text(
             json.dumps(self.summary(), indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        payload_path.write_text(
+            json.dumps(self.viewer_payload(), sort_keys=True) + "\n",
             encoding="utf-8",
         )
         template = Path(__file__).with_name(VIEWER_TEMPLATE)
@@ -434,6 +442,7 @@ class FireScene:
             animation=animation_path,
             event_log=event_log_path,
             summary=summary_path,
+            payload=payload_path,
         )
 
 

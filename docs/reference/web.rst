@@ -49,20 +49,29 @@ files so it sees the search at the solver's rate rather than behind one writer.
 Browser shell
 -------------
 
-The browser shell is organised around four workspaces, plus an optional **Console**
-workspace when the service is started with ``--allow-console`` and a token, and an
-optional **SDMD** workspace when it is started with ``--sdmd-dir``:
+The browser shell is organised around four workspaces, plus optional **Fire**,
+**Console**, and **SDMD** workspaces when their artifacts and feature flags are present:
 
 - **Map** — layers, treatment/cumulative views, and block detail.
 - **Plan** — the account browser, target editor, and solve controls.
 - **Results** — Reports, Compare, and Search as nested sections.
 - **Data** — the dataset summary plus LiDAR and Carbon when the selected run/dataset
   actually has them.
+- **Fire** — a discovered ``ws4.fire.scene.v1`` package with a shared timeline, tree
+  and fragment inspection, and side-by-side scene comparison. See
+  :doc:`fire-scene`.
 - **Console** — the token-authenticated allowlisted command composer, when
   ``--allow-console`` is set. See :doc:`../howto/web-console`.
 - **SDMD** — the AU Explorer: BC coverage selector, yield, stand density,
   regimes, and the constraint editor, when ``--sdmd-dir`` is set. See
   :doc:`sdmd`.
+
+Fire scenes are served read-only under ``/api/fire``: ``GET /api/fire/scenes`` lists
+scene packages discovered in run directories, and each scene has a manifest, compact
+payload, and viewer endpoint. The workspace uses the same vendored Three.js module as the
+rest of the browser shell; the standalone scene viewer keeps its CDN import. A scene is
+found when a run contains ``fire_scene/manifest.json`` (or ``fire-scene``, ``fire``, or
+``scene``) with the ``ws4.fire.scene.v1`` schema.
 
 The **Map** workspace uses a neutral fill for untreated blocks and a red accent for treated
 blocks, so treatment reads as the subject and the estate remains visible as context. When the

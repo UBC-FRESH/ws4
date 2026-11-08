@@ -114,6 +114,7 @@ Scene package
      animation.parquet    # per-tree ignition, burn duration, intensity, state
      event_log.json       # the full P144 event log
      summary.json         # counts, tree summary, timeline end
+     payload.json         # compact bounds/stands/trees/fires/timeline payload
      viewer.html          # standalone viewer with the scene data embedded
 
 The manifest records the fire run's replay digest, the scenario, the tree generator, the
@@ -131,7 +132,26 @@ Viewer
 
 ``viewer.html`` is a standalone page. It embeds the scene JSON, so it opens from a local file
 without a server. It uses Three.js from a CDN, so the first slice needs internet access for
-the module; the later web phase will vendor the module.
+the module.
+
+Web workspace
+-------------
+
+The WS4 web service discovers a completed scene in a run directory when it contains
+``fire_scene/manifest.json`` (or ``fire-scene``, ``fire``, or ``scene``) with schema
+version ``ws4.fire.scene.v1``. The read-only endpoints are:
+
+- ``GET /api/fire/scenes``: discovered scenes and manifest summaries;
+- ``GET /api/fire/runs/{run}``: one scene manifest and summary;
+- ``GET /api/fire/runs/{run}/payload``: the compact viewer payload from
+  ``payload.json``;
+- ``GET /api/fire/runs/{run}/viewer``: the viewer with the vendored Three.js paths.
+
+The **Fire** workspace shows the scene over the main canvas, with a shared timeline,
+play/pause, speed, camera controls, tree and fragment inspection, and side-by-side Scene A
+and Scene B comparison. The viewer accepts ``?embedded=1`` and a small ``postMessage`` API
+so the workspace timeline can drive both scenes. The standalone viewer keeps its CDN
+module import; the served web viewer uses the local vendored Three.js module.
 
 The viewer provides:
 

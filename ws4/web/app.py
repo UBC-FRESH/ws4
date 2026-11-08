@@ -1207,8 +1207,26 @@ def create_app(
     def run_dir(name: str) -> Path:
         return _run_directory(runs_root, name)
 
+    fire_scene_names = ("fire_scene", "fire-scene", "fire", "scene")
+
+    def fire_scene_directory(directory: Path) -> Path | None:
+        """Return a run's fire-scene directory when its manifest is valid."""
+        candidates = [directory / name for name in fire_scene_names]
+        candidates.append(directory)
+        for candidate in candidates:
+            manifest_path = candidate / "manifest.json"
+            if not manifest_path.is_file():
+                continue
+            try:
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            if manifest.get("schema_version") == "ws4.fire.scene.v1":
+                return candidate
+        return None
+
     def run_entries() -> list[Path]:
-        """Return the directories that are runs: a summary or the simulator's account values."""
+        """Return the directories that are runs: a run artifact or a fire scene."""
         return [
             directory
             for directory in (sorted(runs_root.iterdir()) if runs_root.is_dir() else [])
@@ -1219,8 +1237,81 @@ def create_app(
                 or (directory / "carbon_manifest.json").is_file()
                 or (directory / "run_manifest.json").is_file()
                 or (directory / "telemetry.jsonl").is_file()
+                or fire_scene_directory(directory) is not None
             )
         ]
+
+    def fire_scene_for(run: str) -> tuple[Path, Path]:
+        """Return the run's scene directory and manifest path."""
+        directory = run_dir(run)
+        scene = fire_scene_directory(directory)
+        if scene is None:
+            raise HTTPException(status_code=404, detail=f"run {run!r} has no fire scene")
+        return directory, scene
+
+    def fire_payload(run: str) -> dict[str, Any]:
+        """Return the compact viewer payload from payload.json or embedded viewer data."""
+        _directory, scene = fire_scene_for(run)
+        payload_path = scene / "payload.json"
+        if payload_path.is_file():
+            try:
+                payload = json.loads(payload_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError) as error:
+                raise HTTPException(
+                    status_code=422, detail=f"fire scene payload is invalid: {error}"
+                ) from error
+            if isinstance(payload, dict):
+                return payload
+        viewer_path = scene / "viewer.html"
+        if viewer_path.is_file():
+            match = re.search(
+                r'<script id="scene-data" type="application/json">(.*?)</script>',
+                viewer_path.read_text(encoding="utf-8"),
+                re.DOTALL,
+            )
+            if match is not None:
+                try:
+                    payload = json.loads(match.group(1))
+                except ValueError as error:
+                    raise HTTPException(
+                        status_code=422, detail=f"fire scene viewer payload is invalid: {error}"
+                    ) from error
+                if isinstance(payload, dict):
+                    return payload
+        raise HTTPException(status_code=422, detail="fire scene has no readable payload")
+
+    def fire_entries() -> list[dict[str, Any]]:
+        """Return the discovered fire scenes for the run selector."""
+        entries: list[dict[str, Any]] = []
+        for directory in run_entries():
+            scene = fire_scene_directory(directory)
+            if scene is None:
+                continue
+            try:
+                manifest = json.loads((scene / "manifest.json").read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            summary: dict[str, Any] = {}
+            summary_path = scene / "summary.json"
+            if summary_path.is_file():
+                try:
+                    loaded = json.loads(summary_path.read_text(encoding="utf-8"))
+                except (OSError, ValueError):
+                    loaded = {}
+                if isinstance(loaded, dict):
+                    summary = loaded
+            entries.append(
+                {
+                    "run": directory.name,
+                    "scene": scene.name,
+                    "manifest": manifest,
+                    "summary": summary,
+                    "viewer": f"api/fire/runs/{directory.name}/viewer",
+                    "payload": f"api/fire/runs/{directory.name}/payload",
+                }
+            )
+        entries.sort(key=lambda item: str(item["run"]), reverse=True)
+        return entries
 
     def read_csv(run: Path, name: str) -> pd.DataFrame:
         """Read a run table, normalising the legacy ``year``/``period`` clock to ``offset``."""
@@ -1395,6 +1486,57 @@ def create_app(
         return FileResponse(
             scene,
             media_type="text/html",
+            headers={"Cache-Control": "no-store, must-revalidate"},
+        )
+
+    @app.get("/api/fire/scenes")
+    def fire_scenes() -> list[dict[str, Any]]:
+        """Return fire scenes discovered under the configured runs."""
+        return fire_entries()
+
+    @app.get("/api/fire/runs/{run}")
+    def fire_scene_manifest(run: str) -> dict[str, Any]:
+        """Return one run's fire-scene manifest and summary."""
+        _directory, scene = fire_scene_for(run)
+        manifest = json.loads((scene / "manifest.json").read_text(encoding="utf-8"))
+        summary: dict[str, Any] = {}
+        summary_path = scene / "summary.json"
+        if summary_path.is_file():
+            try:
+                loaded = json.loads(summary_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                loaded = {}
+            if isinstance(loaded, dict):
+                summary = loaded
+        return {"run": run, "scene": scene.name, "manifest": manifest, "summary": summary}
+
+    @app.get("/api/fire/runs/{run}/payload")
+    def fire_scene_payload(run: str) -> dict[str, Any]:
+        """Return a fire scene's compact viewer payload."""
+        return fire_payload(run)
+
+    @app.get("/api/fire/runs/{run}/viewer", response_class=HTMLResponse)
+    def fire_scene_viewer(run: str) -> HTMLResponse:
+        """Return the scene viewer with the WS4 vendored Three.js paths."""
+        _directory, scene = fire_scene_for(run)
+        viewer_path = scene / "viewer.html"
+        if not viewer_path.is_file():
+            raise HTTPException(status_code=404, detail=f"run {run!r} has no fire viewer")
+        html = viewer_path.read_text(encoding="utf-8")
+        html = html.replace(
+            "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "../../../../static/vendor/three/three.module.js",
+        )
+        html = html.replace(
+            "https://unpkg.com/three@0.160.0/examples/jsm/",
+            "../../../../static/vendor/three/",
+        )
+        html = html.replace(
+            'from "three/addons/controls/OrbitControls.js"',
+            'from "../../../../static/vendor/three/OrbitControls.js"',
+        )
+        return HTMLResponse(
+            html,
             headers={"Cache-Control": "no-store, must-revalidate"},
         )
 
@@ -2265,6 +2407,7 @@ def create_app(
                 "console": console_manager is not None,
                 "console_python": console_manager is not None
                 and console_manager.config.python_enabled,
+                "fire": bool(fire_entries()),
             },
             "runs": found,
         }

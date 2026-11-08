@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=112">
+  <link rel="stylesheet" href="static/style.css?v=113">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
   <script type="importmap">
     {
@@ -18,7 +18,7 @@
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v112</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v113</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <div class="period-control">
@@ -39,6 +39,7 @@
         <button id="ws-plan" role="tab" aria-selected="false" aria-controls="workspace-plan" data-workspace="plan">Plan</button>
         <button id="ws-results" role="tab" aria-selected="false" aria-controls="workspace-results" data-workspace="results">Results</button>
         <button id="ws-pareto" role="tab" aria-selected="false" aria-controls="workspace-pareto" data-workspace="pareto">Pareto</button>
+        <button id="ws-fire" role="tab" aria-selected="false" aria-controls="workspace-fire" data-workspace="fire" hidden>Fire</button>
         <button id="ws-data" role="tab" aria-selected="false" aria-controls="workspace-data" data-workspace="data">Data</button>
         <button id="ws-console" role="tab" aria-selected="false" aria-controls="workspace-console" data-workspace="console" hidden>Console</button>
         <button id="ws-sdmd" role="tab" aria-selected="false" aria-controls="workspace-sdmd" data-workspace="sdmd" hidden>SDMD</button>
@@ -167,6 +168,7 @@
           <div id="run-health-badges" class="run-health-badges"></div>
           <div class="run-health-actions">
             <button id="run-health-plan" type="button">Open Plan</button>
+            <button id="run-health-fire" type="button" hidden>Open fire scene</button>
             <button id="run-health-failing" type="button">Show failing targets</button>
           </div>
         </div>
@@ -390,6 +392,48 @@
             <button id="pareto-open" class="button ghost" type="button" disabled>Open schedule</button>
           </div>
           <div id="pareto-compare" class="pareto-compare"></div>
+        </section>
+      </div>
+      <div id="workspace-fire" class="workspace" role="tabpanel" aria-labelledby="ws-fire" hidden>
+        <section id="tab-fire" role="tabpanel" aria-labelledby="ws-fire">
+          <h2>Fire scene</h2>
+          <p class="hint">A deterministic replay of a P144 fire event log over a synthetic tree layer. The viewer is read-only; timeline controls drive both scenes in comparison.</p>
+          <div class="fire-toolbar">
+            <label>Scene A <select id="fire-scene-a"></select></label>
+            <label><input id="fire-compare" type="checkbox"> Compare</label>
+            <label>Scene B <select id="fire-scene-b" disabled></select></label>
+            <button id="fire-refresh" type="button">Refresh scenes</button>
+            <span id="fire-status" class="hint" aria-live="polite"></span>
+          </div>
+          <div class="fire-controls">
+            <button id="fire-play" type="button">Play</button>
+            <button id="fire-reset" type="button">Reset</button>
+            <input id="fire-time" type="range" min="0" max="1" step="0.01" value="0" aria-label="Fire timeline">
+            <span id="fire-clock" class="hint">0</span>
+            <select id="fire-speed" aria-label="Playback speed">
+              <option value="0.5">0.5×</option>
+              <option value="1" selected>1×</option>
+              <option value="5">5×</option>
+              <option value="10">10×</option>
+            </select>
+          </div>
+          <div class="fire-inspect">
+            <div>
+              <h3>Scene</h3>
+              <div id="fire-summary" class="fire-summary"></div>
+            </div>
+            <div>
+              <h3>Tree</h3>
+              <label class="fire-search">Search <input id="fire-tree-search" type="search" placeholder="tree id or species"></label>
+              <select id="fire-tree" aria-label="Tree to inspect"></select>
+              <div id="fire-tree-detail" class="fire-detail"></div>
+            </div>
+            <div>
+              <h3>Fragment</h3>
+              <select id="fire-fragment" aria-label="Fragment to inspect"></select>
+              <div id="fire-fragment-detail" class="fire-detail"></div>
+            </div>
+          </div>
         </section>
       </div>
       <div id="workspace-data" class="workspace" role="tabpanel" aria-labelledby="ws-data" hidden>
@@ -625,6 +669,16 @@
       <div class="scale" id="scale"></div>
       <button id="map-3d-toggle" class="map-3d-toggle" type="button" aria-expanded="false" title="Open the experimental 3D estate replay">3D</button>
     </div>
+    <div id="fire-wrap" class="fire-wrap" hidden>
+      <div class="fire-frame-card">
+        <div id="fire-label-a" class="fire-frame-label"></div>
+        <iframe id="fire-frame-a" title="Fire scene A" loading="eager"></iframe>
+      </div>
+      <div id="fire-frame-card-b" class="fire-frame-card" hidden>
+        <div id="fire-label-b" class="fire-frame-label"></div>
+        <iframe id="fire-frame-b" title="Fire scene B" loading="eager"></iframe>
+      </div>
+    </div>
     <div id="pareto-wrap" class="pareto-wrap" hidden>
       <canvas id="pareto-canvas" aria-label="Interactive 3D Pareto solution cloud"></canvas>
       <div id="pareto-axis-labels" class="pareto-axis-labels">
@@ -687,6 +741,6 @@
     <p class="hint">Shortcuts pause while typing in an input, select, or editor.</p>
   </dialog>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=112"></script>
+  <script type="module" src="static/app.js?v=113"></script>
 </body>
 </html>

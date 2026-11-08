@@ -4857,3 +4857,8 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   12,588 Nemora-placed stems) and `examples/fire_3d_vri_demo.py`. The VRI demo burns 95.42 ha,
   with 27.07 m/min head ROS, 8.40 m flame length, and a 0–240 minute ignition window. Added
   the Nemora adapter tests and the per-tree ignition tests. Dashboard: **GREEN**.
+
+- P155.4: added fire-scene discovery and read-only APIs, a Fire workspace with shared
+  timeline, tree/fragment inspection, comparison, and a vendored-Three viewer. The scene
+  package now writes `payload.json`; the viewer accepts embedded mode and postMessage
+  timeline commands.
