@@ -4709,3 +4709,12 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   `docs/reference/fire-growth.rst`, `examples/fire_growth_demo.py`, and 14 growth tests. The
   fire suite now has 80 tests. `python scripts/dashboard.py` reports **OVERALL: GREEN** on
   all seven gates.
+
+- Phase renumber: the credible fire phase is now **P154** (was P151) and the 3D scene phase
+  is now **P155** (was P150), because `main` carries P150 (GPU guard), P151 (web console),
+  P152 (sandboxed runner), and P153 (assistant script review). The parent and child issue
+  titles and bodies were retitled, and the roadmap, design notes, docs, and module references
+  use the new identifiers. The 3D branch was renamed to `feature/p155-fire-3d`. The fire
+  branch rename is pending: `feature/p154-fire-behaviour` is already checked out in another
+  active worktree with uncommitted P154.5 changes, so this renumber commit is on
+  `feature/p151-fire-behaviour` and should be cherry-picked there. Dashboard: **GREEN**.
