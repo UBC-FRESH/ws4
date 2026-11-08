@@ -7,6 +7,19 @@
 3. `overlay` draws the curves over the rendered page with `figrecover.qa`.
 4. `review` writes a `figrecover` review manifest.
 
+`sdmd-line-import.yaml` is the locked line-type workflow for the fdcp
+top-height family. `sdmd-qmd-import.yaml` is the same pattern for QMD. They
+render the source with `figrecover`, then `ws4.sdmd.import-lines` matches printed
+labels to the requested dashed paths and writes a
+`ws4.sdmd.line-import.v1` artifact with the value, path index, label distance,
+and ordered points for every curve. Ambiguous, distant, duplicate, or unordered
+matches fail the node instead of being guessed. The full value series is
+declared, so unlabelled interior curves are kept rather than silently skipped.
+Both recipes were validated on `fdcp` on 2026-11-07: FreshForge completed
+`render success` and `import success` for top height (17 paths) and QMD (14
+paths). `fdcp` is now marked reviewed; the other nine diagrams remain
+provisional.
+
 Install the optional tools:
 
 ```bash

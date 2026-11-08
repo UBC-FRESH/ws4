@@ -1,0 +1,16 @@
+stand_id,leading_species,conifer_fraction,deciduous_fraction,crown_closure_percent,age_years,height_m,land_cover,fuel_type,treatment,expected_fuel_type,expected_rule
+S001,Pl,0.9,0.1,55,75,22,forest,,,C3,pine-mature
+S002,Pl,0.95,0.05,45,25,8,forest,,,C4,pine-immature
+S003,Fd,0.9,0.1,60,90,30,forest,,,C7,douglas-fir
+S004,Sx,0.85,0.15,35,120,25,forest,,,C1,spruce-open
+S005,Sx,0.85,0.15,55,120,25,forest,,,C2,spruce-closed
+S006,At,0.1,0.9,50,60,20,forest,,,D1,deciduous
+S007,Pl,0.55,0.45,55,50,18,forest,,,M2,mixedwood
+S008,At,0.35,0.65,45,15,4,forest,,,M3,mixedwood-immature
+S009,,0.0,0.0,0,0,0,grass,,,O1B,land-cover-grass-standing
+S010,,0.0,0.0,0,0,0,grass,,matted,O1A,land-cover-grass-matted
+S011,Pl,0.9,0.1,55,50,18,forest,,slash,S2,treatment-slash
+S012,,0.0,0.0,0,0,0,non-forest,,,,land-cover-non-fuel
+S013,Pl,0.9,0.1,55,50,18,forest,C-2,,C2,explicit-fbp
+S014,,0.0,0.0,0,0,0,water,WA,,,explicit-non-fuel
+S015,Xx,0.9,0.1,55,50,18,forest,,,ERROR,unknown-species

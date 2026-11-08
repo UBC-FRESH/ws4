@@ -4,7 +4,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/OrbitControls.js";
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' }, runSource: null, portfolioScan: [], portfolioTargets: [], pareto: { available: false, artifact: '', data: null, chart: null, cloud: null, selected: null, pinned: [], screen: [], artifacts: [] } };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' }, runSource: null, runSummary: null, console: { schema: null, token: '', job: null, timer: null, offset: 0, busy: false }, portfolioScan: [], portfolioTargets: [], pareto: { available: false, artifact: '', data: null, chart: null, cloud: null, selected: null, pinned: [], screen: [], artifacts: [] } };
 
 state.estate3d = { open: false, features: [], yaw: -0.55, zoom: 1, exaggeration: 1, hits: [] };
 const ESTATE_3D_LIMIT = 2000;
@@ -4056,6 +4056,7 @@ function renderSdmdLegend() {
   for (const [kind, text] of [
     ['obs', 'Observed plot'],
     ['env', 'Observed envelope'],
+    ['cai', 'CAI density range'],
     ['traj', 'Selected regime path'],
     ['height', 'Top-height isopleth'],
     ['qmd', 'QMD isopleth'],
@@ -4136,10 +4137,17 @@ function renderSdmdDiagram() {
   const points = state.sdmd.points?.points ?? [];
   const envelope = state.sdmd.points?.envelope ?? [];
   const isopleths = state.sdmd.points?.diagram?.isopleths ?? [];
+  const caiBand = (state.sdmd.points?.diagram?.cai_band ?? [])
+    .map((point) => ({ tph: sdmdNumber(point[0]), volume: sdmdNumber(point[1]) }))
+    .filter((point) => point.tph > 0 && point.volume > 0);
   const trajectory = state.sdmd.trajectoryData?.points ?? [];
   const width = 720, height = 420, left = 62, right = 22, top = 20, bottom = 42;
-  const all = [...points, ...trajectory.map((point) => ({ tph: point[0], mean_tree_volume_m3: point[1] }))]
-    .map((point) => ({ tph: sdmdNumber(point.tph), volume: sdmdNumber(point.mean_tree_volume_m3) }))
+  const all = [
+    ...points,
+    ...trajectory.map((point) => ({ tph: point[0], mean_tree_volume_m3: point[1] })),
+    ...caiBand,
+  ]
+    .map((point) => ({ tph: sdmdNumber(point.tph), volume: sdmdNumber(point.mean_tree_volume_m3 ?? point.volume) }))
     .filter((point) => point.tph > 0 && point.volume > 0);
   if (!all.length) {
     if (note) note.textContent = 'No SDMD points for this AU.';
@@ -4153,6 +4161,10 @@ function renderSdmdDiagram() {
   const maxY = Math.max(...logs.map((pair) => pair[1])) + 0.08;
   const x = (tph) => sdmdScale(Math.log10(tph), minX, maxX, left, width - right);
   const y = (volume) => sdmdScale(Math.log10(volume), minY, maxY, height - bottom, top);
+  if (caiBand.length >= 3) {
+    const polygon = caiBand.map((point) => `${x(point.tph).toFixed(1)},${y(point.volume).toFixed(1)}`).join(' ');
+    sdmdNode(svg, 'polygon', { points: polygon, class: 'sdmd-cai-band' });
+  }
   for (const power of sdmdLogTicks(Math.ceil(minX), Math.floor(maxX))) {
     const xValue = x(10 ** power);
     sdmdNode(svg, 'line', { x1: xValue, x2: xValue, y1: top, y2: height - bottom, class: 'sdmd-grid-line' });
@@ -4235,7 +4247,8 @@ function renderSdmdDiagram() {
   }
   if (note) {
     const status = state.sdmd.trajectoryData?.status;
-    note.textContent = `Black dots: ${points.length} observed plots. Blue polygon: observed envelope (${envelope.length} vertices). ${trajectory.length ? `Orange dashed: selected regime path (${trajectory.length} points, ${status ?? 'loaded'}).` : 'Pick a trajectory above to draw an orange path.'}`;
+    const caiNote = caiBand.length ? ' Grey band: source CAI density range (display-only, no numeric level).' : '';
+    note.textContent = `Black dots: ${points.length} observed plots. Blue polygon: observed envelope (${envelope.length} vertices).${caiNote} ${trajectory.length ? `Orange dashed: selected regime path (${trajectory.length} points, ${status ?? 'loaded'}).` : 'Pick a trajectory above to draw an orange path.'}`;
   }
 }
 
@@ -4553,7 +4566,8 @@ async function loadSdmdCoverage() {
     const payload = await api('api/sdmd/coverage');
     state.sdmd.coverage = payload.rows ?? [];
     const counts = payload.counts ?? {};
-    $('sdmd-coverage-count').textContent = `${payload.count ?? 0} BEC labels · ${counts.reviewed ?? 0} reviewed · ${counts.provisional ?? 0} provisional · ${counts['no-diagram'] ?? 0} gaps`;
+    const reviewed = (counts.reviewed_variant ?? 0) + (counts.reviewed_zone ?? 0);
+    $('sdmd-coverage-count').textContent = `${payload.count ?? 0} BEC labels · ${reviewed} reviewed · ${counts.mixed_zone ?? 0} mixed · ${counts.no_diagram ?? 0} gaps`;
     const zones = [...new Set(state.sdmd.coverage.map((row) => row.zone))].sort();
     const zoneSelect = $('sdmd-coverage-zone');
     zoneSelect.replaceChildren();
@@ -5088,6 +5102,7 @@ function workspaceAllowed(workspace) {
   if (workspace === 'map') return true;
   if (workspace === 'sdmd') return Boolean(state.sdmd.available);
   const panels = skinPanels();
+  if (workspace === 'console') return Boolean(state.datasetSummary?.capabilities?.console);
   if (workspace === 'plan') return panels.has('targets');
   if (workspace === 'pareto') return panels.has('search');
   if (workspace === 'results') {
@@ -5156,7 +5171,7 @@ function syncNavigation() {
   }
   if (state.workspace === 'map') $('tab-legend').hidden = false;
   if (state.workspace === 'plan') $('tab-targets').hidden = false;
-  $('map-wrap').hidden = state.workspace === 'plan' || state.workspace === 'sdmd' || state.workspace === 'pareto';
+  $('map-wrap').hidden = state.workspace === 'plan' || state.workspace === 'sdmd' || state.workspace === 'pareto' || state.workspace === 'console';
   $('target-canvas').hidden = state.workspace !== 'plan';
   $('sdmd-canvas').hidden = state.workspace !== 'sdmd';
   $('pareto-wrap').hidden = state.workspace !== 'pareto';
@@ -5225,6 +5240,10 @@ function activateSubView() {
   }
   if (state.workspace === 'pareto') {
     loadParetoArtifacts();
+    return;
+  }
+  if (state.workspace === 'console') {
+    loadConsole();
     return;
   }
   if (state.workspace !== 'results' && state.compareView) clearCompareView();
@@ -6383,6 +6402,12 @@ function renderRunHealth() {
   if (state.runSource) {
     badge(`portfolio member${state.runSource.member ? ` ${state.runSource.member}` : ''}`);
     badge('member targets');
+  }
+  if (typeof state.runSummary?.exact_match === 'boolean') {
+    badge(
+      `exact replay ${state.runSummary.exact_match ? 'yes' : 'NO'}`,
+      state.runSummary.exact_match ? 'available' : 'failing'
+    );
   }
   badge(`LiDAR ${state.lidar?.available ? 'available' : '—'}`, state.lidar?.available ? 'available' : 'unavailable');
   badge(`Carbon ${state.carbon?.available ? 'available' : '—'}`, state.carbon?.available ? 'available' : 'unavailable');
@@ -8381,6 +8406,19 @@ function applyChatChip(chip) {
     showDetail(target);
     return;
   }
+  if (action === 'stage_script' && typeof target === 'string') {
+    if (!state.console.schema?.python?.enabled) {
+      showToast('sandboxed Python is not enabled on this service', true);
+      return;
+    }
+    setWorkspace('console');
+    $('console-python-script').value = target;
+    $('console-python-reviewed').checked = false;
+    $('console-python-status').textContent =
+      'assistant script staged — review the code and tick confirmation before running';
+    $('console-python-script').focus();
+    return;
+  }
   if (action === 'ask' && typeof target === 'string') {
     const input = $('chat-input');
     if (!input) return;
@@ -8527,6 +8565,335 @@ async function loadAgent() {
     setAssistantVisible(false);
     $('chat-model').textContent = 'unavailable';
   }
+}
+
+const CONSOLE_TOKEN_KEY = 'ws4-console-token';
+
+function consoleAuthHeaders() {
+  return state.console.token ? { Authorization: `Bearer ${state.console.token}` } : {};
+}
+
+async function consoleApi(path, options = {}) {
+  const response = await fetch(path, {
+    ...options,
+    headers: {
+      accept: 'application/json',
+      ...consoleAuthHeaders(),
+      ...(options.headers || {}),
+    },
+  });
+  if (!response.ok) {
+    let detail = response.statusText;
+    try { detail = (await response.json()).detail ?? detail; } catch { /* not json */ }
+    throw new Error(detail);
+  }
+  return response.json();
+}
+
+function readToken() {
+  try { return sessionStorage.getItem(CONSOLE_TOKEN_KEY) || ''; } catch { return ''; }
+}
+
+function rememberConsoleToken(token) {
+  try {
+    if (token) sessionStorage.setItem(CONSOLE_TOKEN_KEY, token);
+    else sessionStorage.removeItem(CONSOLE_TOKEN_KEY);
+  } catch { /* session storage is optional */ }
+}
+
+async function loadConsole() {
+  const tokenInput = $('console-token');
+  const status = $('console-status');
+  if (!state.console.token) state.console.token = readToken();
+  if (tokenInput && state.console.token) tokenInput.value = state.console.token;
+  if (!state.console.token) {
+    status.textContent = 'enter the collaborator token';
+    return;
+  }
+  status.textContent = 'connecting…';
+  try {
+    state.console.schema = await consoleApi('api/console');
+    status.textContent = `connected · ${state.console.schema.workspace}`;
+    renderConsoleCommands();
+    $('console-run').disabled = false;
+    const python = state.console.schema.python;
+    $('console-python').hidden = !python?.enabled;
+    $('console-python-run').disabled = !python?.enabled;
+  } catch (error) {
+    state.console.schema = null;
+    status.textContent = `console unavailable: ${error.message}`;
+    $('console-run').disabled = true;
+  }
+}
+
+function renderConsoleCommands() {
+  const select = $('console-command');
+  if (!select) return;
+  const previous = select.value;
+  select.replaceChildren();
+  for (const command of state.console.schema?.commands ?? []) {
+    const option = document.createElement('option');
+    option.value = command.name;
+    option.textContent = command.name;
+    option.title = command.description ?? '';
+    select.appendChild(option);
+  }
+  if (previous && [...select.options].some((option) => option.value === previous)) {
+    select.value = previous;
+  }
+  renderConsoleFields();
+}
+
+function renderConsoleFields() {
+  const container = $('console-fields');
+  const select = $('console-command');
+  if (!container || !select) return;
+  container.replaceChildren();
+  const command = (state.console.schema?.commands ?? []).find((item) => item.name === select.value);
+  if (!command) return;
+  const note = document.createElement('p');
+  note.className = 'hint';
+  note.textContent = `${command.description} Outputs are written to the job scratch directory.`;
+  container.appendChild(note);
+  for (const field of command.fields ?? []) {
+    const label = document.createElement('label');
+    label.className = 'console-field';
+    label.textContent = field.required ? `${field.label} *` : field.label;
+    const input = document.createElement('input');
+    input.id = `console-field-${field.name}`;
+    input.type = field.kind === 'number' ? 'number' : 'text';
+    if (field.kind === 'number') input.step = 'any';
+    input.spellcheck = false;
+    input.value = field.default ?? '';
+    input.placeholder = field.kind === 'dir' ? 'absolute directory path' : 'absolute file path';
+    label.appendChild(input);
+    container.appendChild(label);
+  }
+}
+
+function consoleRequestBody() {
+  const select = $('console-command');
+  const command = (state.console.schema?.commands ?? []).find((item) => item.name === select.value);
+  if (!command) throw new Error('select a console command');
+  const body = { command: command.name };
+  for (const field of command.fields ?? []) {
+    const input = $(`console-field-${field.name}`);
+    const value = input?.value?.trim() ?? '';
+    if (!value) continue;
+    body[field.name] = field.kind === 'number' ? Number(value) : value;
+  }
+  return body;
+}
+
+async function startConsoleJob() {
+  const output = $('console-output');
+  const status = $('console-job-status');
+  const runButton = $('console-run');
+  const cancelButton = $('console-cancel');
+  output.textContent = '';
+  state.console.offset = 0;
+  state.console.job = null;
+  runButton.disabled = true;
+  $('console-python-run').disabled = true;
+  cancelButton.disabled = true;
+  status.textContent = 'starting…';
+  try {
+    const job = await consoleApi('api/console/jobs', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(consoleRequestBody()),
+    });
+    state.console.job = job;
+    status.textContent = `${job.command} · ${job.id} · ${job.status}`;
+    cancelButton.disabled = false;
+    pollConsoleJob(job.id);
+  } catch (error) {
+    status.textContent = `job rejected: ${error.message}`;
+    runButton.disabled = false;
+  }
+}
+
+function pollConsoleJob(id) {
+  if (state.console.timer) window.clearInterval(state.console.timer);
+  state.console.timer = window.setInterval(() => refreshConsoleJob(id), 700);
+  refreshConsoleJob(id);
+}
+
+async function refreshConsoleJob(id) {
+  if (state.console.busy) return;
+  state.console.busy = true;
+  try {
+    const job = await consoleApi(`api/console/jobs/${encodeURIComponent(id)}`);
+    state.console.job = job;
+    const chunk = await consoleApi(
+      `api/console/jobs/${encodeURIComponent(id)}/output?offset=${state.console.offset}`
+    );
+    if (chunk.text) {
+      const output = $('console-output');
+      output.textContent += chunk.text;
+      state.console.offset = chunk.next_offset;
+      output.scrollTop = output.scrollHeight;
+    }
+    $('console-job-status').textContent = `${job.command} · ${job.id} · ${job.status}`;
+    if (['completed', 'failed', 'cancelled'].includes(job.status)) {
+      let guard = 0;
+      while (chunk.text.length >= 65536 && guard < 32) {
+        const extra = await consoleApi(
+          `api/console/jobs/${encodeURIComponent(id)}/output?offset=${state.console.offset}`
+        );
+        if (!extra.text) break;
+        $('console-output').textContent += extra.text;
+        state.console.offset = extra.next_offset;
+        guard += 1;
+      }
+      if (state.console.timer) window.clearInterval(state.console.timer);
+      state.console.timer = null;
+      $('console-run').disabled = false;
+      $('console-python-run').disabled = !state.console.schema?.python?.enabled;
+      $('console-cancel').disabled = true;
+      $('console-job-status').textContent = `${job.command} · ${job.id} · ${job.status}${job.error ? ` · ${job.error}` : ''}`;
+      await loadConsoleArtifacts(id);
+    }
+  } catch (error) {
+    $('console-job-status').textContent = `job status failed: ${error.message}`;
+  } finally {
+    state.console.busy = false;
+  }
+}
+
+async function cancelConsoleJob() {
+  if (!state.console.job) return;
+  $('console-cancel').disabled = true;
+  try {
+    state.console.job = await consoleApi(
+      `api/console/jobs/${encodeURIComponent(state.console.job.id)}/cancel`,
+      { method: 'POST' }
+    );
+    $('console-job-status').textContent = `${state.console.job.command} · cancelling…`;
+  } catch (error) {
+    $('console-job-status').textContent = `cancel failed: ${error.message}`;
+  }
+}
+
+async function loadConsoleArtifacts(id) {
+  const container = $('console-artifacts');
+  if (!container) return;
+  container.replaceChildren();
+  try {
+    const artifacts = await consoleApi(`api/console/jobs/${encodeURIComponent(id)}/artifacts`);
+    if (!artifacts.length) return;
+    const title = document.createElement('p');
+    title.className = 'hint';
+    title.textContent = `${artifacts.length} artifact${artifacts.length === 1 ? '' : 's'}`;
+    container.appendChild(title);
+    for (const artifact of artifacts) {
+      const row = document.createElement('div');
+      row.className = 'console-artifact';
+      const name = document.createElement('code');
+      name.textContent = artifact.name;
+      const download = document.createElement('button');
+      download.type = 'button';
+      download.textContent = 'Download';
+      download.addEventListener('click', () => downloadConsoleArtifact(id, artifact.name));
+      row.append(name, document.createTextNode(` ${relativeBytes(artifact.bytes)} `), download);
+      container.appendChild(row);
+    }
+  } catch (error) {
+    const note = document.createElement('p');
+    note.className = 'hint';
+    note.textContent = `artifacts unavailable: ${error.message}`;
+    container.appendChild(note);
+  }
+}
+
+async function downloadConsoleArtifact(id, name) {
+  try {
+    const response = await fetch(
+      `api/console/jobs/${encodeURIComponent(id)}/artifacts/${encodeURIComponent(name)}`,
+      { headers: consoleAuthHeaders() }
+    );
+    if (!response.ok) throw new Error(response.statusText);
+    const blob = await response.blob();
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = name.split('/').pop();
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  } catch (error) {
+    showToast(`download failed: ${error.message}`, true);
+  }
+}
+
+function relativeBytes(bytes) {
+  const value = Number(bytes) || 0;
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+async function startPythonJob() {
+  const output = $('console-output');
+  const status = $('console-python-status');
+  const runButton = $('console-python-run');
+  if (!state.console.schema?.python?.enabled) {
+    status.textContent = 'sandboxed Python is disabled';
+    return;
+  }
+  if (!$('console-python-reviewed').checked) {
+    status.textContent = 'review the script and tick the confirmation first';
+    return;
+  }
+  const script = $('console-python-script').value;
+  if (!script.trim()) {
+    status.textContent = 'enter a script';
+    return;
+  }
+  const inputs = $('console-python-inputs').value
+    .split('\n')
+    .map((value) => value.trim())
+    .filter(Boolean);
+  output.textContent = '';
+  state.console.offset = 0;
+  state.console.job = null;
+  runButton.disabled = true;
+  $('console-run').disabled = true;
+  $('console-cancel').disabled = true;
+  status.textContent = 'starting sandbox…';
+  try {
+    const job = await consoleApi('api/console/python/jobs', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ script, inputs, reviewed: true }),
+    });
+    state.console.job = job;
+    status.textContent = `python · ${job.id} · ${job.status}`;
+    $('console-cancel').disabled = false;
+    pollConsoleJob(job.id);
+  } catch (error) {
+    status.textContent = `script rejected: ${error.message}`;
+    runButton.disabled = false;
+    $('console-run').disabled = false;
+  }
+}
+
+function wireConsole() {
+  if (!$('console-connect')) return;
+  $('console-connect').addEventListener('click', () => {
+    state.console.token = $('console-token').value.trim();
+    rememberConsoleToken(state.console.token);
+    loadConsole();
+  });
+  $('console-token').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      state.console.token = $('console-token').value.trim();
+      rememberConsoleToken(state.console.token);
+      loadConsole();
+    }
+  });
+  $('console-command').addEventListener('change', renderConsoleFields);
+  $('console-run').addEventListener('click', startConsoleJob);
+  $('console-python-run').addEventListener('click', startPythonJob);
+  $('console-cancel').addEventListener('click', cancelConsoleJob);
 }
 
 function wireControls() {
@@ -8821,8 +9188,10 @@ async function loadRunContext() {
     await loadAgent();
     try {
       const runSummary = await api(`api/runs/${encodeURIComponent(state.run)}/summary`);
+      state.runSummary = runSummary;
       state.runSource = runSummary.portfolio_source ?? null;
     } catch {
+      state.runSummary = null;
       state.runSource = null;
     }
     await loadPeriods();
@@ -8866,12 +9235,14 @@ async function start() {
   wireControls();
   wireSdmd();
   wirePareto();
+  wireConsole();
   wirePortfolioScan();
   wireScaffoldTargets();
   loadWatched();
   try {
     const summary = await api('api/summary');
     state.datasetSummary = summary;
+    syncNavigation();
     $('dataset-name').textContent = summary.dataset ?? '';
     const select = $('run');
     for (const run of summary.runs ?? []) {

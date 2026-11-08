@@ -7,6 +7,7 @@ viewer HTML. The tree layer is synthetic and the fire event log remains the auth
 
 from __future__ import annotations
 
+from .ignition import IgnitionSamplingError, sample_tree_ignition
 from .scene import (
     SCENE_SCHEMA_VERSION,
     FireScene,
@@ -29,6 +30,7 @@ __all__ = [
     "TREE_COLUMNS",
     "TREE_SCHEMA_VERSION",
     "FireScene",
+    "IgnitionSamplingError",
     "SceneError",
     "SceneManifest",
     "ScenePaths",
@@ -36,5 +38,6 @@ __all__ = [
     "TreeError",
     "TreeInventory",
     "compile_fire_scene",
+    "sample_tree_ignition",
     "synthetic_tree_inventory",
 ]

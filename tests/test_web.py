@@ -21,6 +21,7 @@ import yaml
 pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient
 from ws4.web.app import (
+    _agent_environment,
     _chat_chip,
     _chat_context_lines,
     _chat_index,
@@ -34,6 +35,7 @@ def _app(
     *,
     with_geometry: bool = True,
     tile_cache_dir: Path | None = None,
+    fire_scene: Path | None = None,
 ) -> tuple[TestClient, Path]:
     """Create a dataset, a run and a client over them; return the client and the targets path."""
     dataset = tmp_path / "dataset"
@@ -92,6 +94,7 @@ def _app(
         runs=tmp_path / "runs",
         targets=targets,
         geometry=geometry if with_geometry else None,
+        fire_scene=fire_scene,
         tile_cache_dir=tile_cache_dir,
     )
     return TestClient(app), targets
@@ -1744,6 +1747,32 @@ def test_split_chat_actions_handles_lowercase_multiline_and_repeated_markers() -
     ]
 
 
+def test_agent_environment_drops_console_secrets() -> None:
+    """The chat agent cannot inherit the console token or session hooks."""
+    environment = _agent_environment(
+        {
+            "PATH": "/bin",
+            "OPENCODE_SESSION_ID": "session",
+            "OPENCODE_TERMINAL": "1",
+            "WS4_CONSOLE_TOKEN": "secret",
+            "WS4_CONSOLE_PYTHON": "1",
+        }
+    )
+    assert environment == {"PATH": "/bin"}
+
+
+def test_chat_chip_stages_script_text_without_execution() -> None:
+    """The assistant can stage code, but only the reviewed console may execute it."""
+    source = "from pathlib import Path\n\nprint('review me')\n"
+    assert _chat_chip({"label": "Review script", "action": "stage_script", "target": source}) == {
+        "label": "Review script",
+        "action": "stage_script",
+        "target": source.strip(),
+    }
+    assert _chat_chip({"label": "x", "action": "stage_script", "target": "  "}) is None
+    assert _chat_chip({"label": "x", "action": "stage_script", "target": "x" * 20_001}) is None
+
+
 def test_chat_chip_rejects_unsafe_targets() -> None:
     """Every chip action has a bounded, non-executable target."""
     assert _chat_chip({"label": "x", "action": "open_workspace", "target": "shell"}) is None
@@ -2543,3 +2572,26 @@ def test_profile_run_allows_table_only_resources(
     assert captured[-1][captured[-1].index("--generations") + 1] == "0"
     assert "--factorized" not in captured[-1]
     assert "--factorized-cache" not in captured[-1]
+
+
+def test_fire_scene_route_serves_the_viewer(tmp_path: Path) -> None:
+    """The /fire route serves a configured standalone viewer."""
+    viewer = tmp_path / "viewer.html"
+    viewer.write_text("<h1>Fire scene</h1>", encoding="utf-8")
+    client, _ = _app(tmp_path, fire_scene=viewer)
+
+    response = client.get("/fire")
+
+    assert response.status_code == 200
+    assert "Fire scene" in response.text
+    assert response.headers["content-type"].startswith("text/html")
+
+
+def test_fire_scene_route_is_explicit_when_missing(tmp_path: Path) -> None:
+    """A missing viewer returns 404 rather than an empty page."""
+    client, _ = _app(tmp_path, fire_scene=tmp_path / "missing.html")
+
+    response = client.get("/fire")
+
+    assert response.status_code == 404
+    assert "fire scene is not installed" in response.json()["detail"]

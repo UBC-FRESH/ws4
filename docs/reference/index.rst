@@ -69,9 +69,27 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
        and disturbance accounts.
    * - :doc:`ecosystem-scenarios`
      - Scenario ensembles, common random numbers, risk targets, and the out-of-sample report.
+   * - :doc:`fire-behaviour`
+     - The Rothermel surface-fire kernel, fuel and moisture contracts, standard cases, and
+       derived intensity.
+   * - :doc:`fire-weather`
+     - The Canadian FWI moisture codes, the daily weather contract, and the reference
+       validation.
+   * - :doc:`fire-fbp`
+     - The FBP fuel types, surface fuel consumption, surface rate of spread, and surface
+       intensity.
+   * - :doc:`fire-crown`
+     - Crown fire initiation, the FBP crown fraction, the C6 crown rate of spread, and the
+       active-crown threshold.
+   * - :doc:`fire-growth`
+     - The site grid, slope-adjusted effective wind, Huygens growth, and perimeter snapshots.
+   * - :doc:`fire-vri`
+     - The VRI stand contract, the deterministic FBP fuel-type rules, and provenance.
+   * - :doc:`fire-benchmark`
+     - The FBP ellipse benchmark, the scenario ensemble, and the reported tolerances.
    * - :doc:`fire-scene`
      - Synthetic individual-tree stands, the portable fire-scene package, and the standalone
-       3D viewer.
+       3D fire viewer.
    * - :doc:`femic-hydrology`
      - Pinned FEMIC hydrology response bundles, checksums, flood-risk rows, and
        applicability metadata.
@@ -105,5 +123,12 @@ authority on mechanism; the how-to guides are the authority on tasks, and the gu
    ecosystem-package
    ecosystem-fire
    ecosystem-scenarios
+   fire-behaviour
+   fire-weather
+   fire-fbp
+   fire-crown
+   fire-growth
+   fire-vri
+   fire-benchmark
    fire-scene
    femic-hydrology

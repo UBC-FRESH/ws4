@@ -165,3 +165,23 @@ def test_viewer_template_contains_the_expected_hooks() -> None:
     assert "timeline" in text
     assert "Play" in text
     assert "three" in text
+
+
+def test_scene_time_unit_round_trips_and_reaches_the_viewer() -> None:
+    """The scene clock can be minutes and the viewer payload carries the unit."""
+    run, trees = make_fire()
+    scene = compile_fire_scene(
+        run.run(5),
+        trees,
+        scene_id="minutes",
+        particle_budget=500,
+        burn_duration_years=2.0,
+        time_unit="minutes",
+    )
+
+    assert scene.manifest.time_unit == "minutes"
+    assert SceneManifest.from_dict(scene.manifest.to_dict()).time_unit == "minutes"
+    payload = scene.viewer_payload()
+    timeline = payload["timeline"]
+    assert isinstance(timeline, dict)
+    assert timeline["unit"] == "minutes"

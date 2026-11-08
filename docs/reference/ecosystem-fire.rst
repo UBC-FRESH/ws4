@@ -46,6 +46,21 @@ The wind factor is one when wind is disabled or the edge has no bearing. Otherwi
 used, so a zero-fuel barrier stops the fire. The draw is keyed by the edge, so the same
 scenario tape gives the same crossing decision regardless of traversal order.
 
+The legacy probability path is retained for replay tests. A run that supplies
+``FireBehaviourConfig`` uses the validated FBP surface/crown kernel instead:
+
+- the head rate of spread and ellipse shape come from the FBP layer;
+- the edge direction relative to the effective wind gives a directional rate of spread;
+- the crossing probability is ``min(1, directional ROS × time step / edge distance)``;
+- the crossing draw remains keyed by the edge and scenario tape;
+- the event time advances by ``distance / (ROS × minutes per year)``.
+
+Every behaviour-driven fire event carries ``behaviour_source``, ``fbp_fuel_type``, FFMC,
+BUI, wind, slope, ``ros_m_min``, ``head_fire_intensity_kw_m``, ``flame_length_m``,
+``crown_fraction_burned``, ``surface_fuel_consumption_kg_m2``, ``smoke_strength``,
+``fire_description``, and ``kernel_version``. The scene reads those attributes to scale
+flames and smoke, so the event record is the single source of the visual state.
+
 Every burned fragment produces one ``fire`` event with phase ``propagation``, a severity
 class and value, the mortality fraction, the fragment area, and the event that caused it.
 The event id is derived from the ignition event id and the fragment id, so two fires in one
@@ -92,6 +107,13 @@ A run writes account rows with ``year``, ``account``, and ``value``:
 - ``fire.killed_biomass_t``
 - ``fire.snag_created_t``
 - ``fire.emitted_biomass_t``
+- ``fire.ros_mean_m_min``
+- ``fire.ros_max_m_min``
+- ``fire.intensity_mean_kw_m``
+- ``fire.intensity_max_kw_m``
+- ``fire.flame_length_mean_m``
+- ``fire.flame_length_max_m``
+- ``fire.crown_fraction_area_weighted``
 - ``salvage.count``
 - ``salvage.area_ha``
 - ``salvage.volume_m3``

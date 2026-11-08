@@ -43,7 +43,7 @@
 <canvas id="canvas"></canvas>
 <div id="title" class="hud">
   <h1>WS4 fire scene</h1>
-  <p>Synthetic tree layer over a compiled stand map. Fire timed from the P144 event log.</p>
+  <p>Synthetic tree layer over the P156 FBP growth field. Each tree ignites from the local cell arrival time.</p>
 </div>
 <div id="stats" class="hud">
   <div><span>fragments</span><strong id="stat-fragments">—</strong></div>
@@ -436,7 +436,7 @@ document.getElementById("stat-fires").textContent = DATA.counts.fires;
 function setTime(t) {
   state.time = Math.max(0, Math.min(DATA.timeline.end, t));
   slider.value = String(state.time);
-  clock.textContent = `${state.time.toFixed(2)} y`;
+  clock.textContent = `${state.time.toFixed(1)} ${DATA.timeline.unit || "y"}`;
   updateBurnState(state.time);
   updateStands(state.time);
 }

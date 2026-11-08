@@ -30,6 +30,8 @@ Working notes for WS4. Notes are living: update them in the same change set as t
   optimization with stochastic spatially explicit landscape processes in one event engine.
 - `design/ws4-fire-3d-visualization.md` — queued idea: synthetic individual-tree stands over
   real VRI polygons and a real-time 3D fire/smoke viewer.
+- `design/ws4-fire-behaviour.md` — the P156 Rothermel surface-fire kernel, contracts, and
+  standard-case validation plan.
 - `design/ws4-optimization-stack.md` — the optimization stack and the execution substrate.
 - `design/weighted-goal-programming-aspirations.md` — targets are weighted aspirations, not hard bounds; maximum even-flow harvest and priority-tier caveats.
 - `design/gpu-effect-cache-interactivity.md` — target-independent GPU cache basis, lazy column extension, and live target editing.
@@ -142,3 +144,15 @@ Working notes for WS4. Notes are living: update them in the same change set as t
 - `reports/p146-live-multi-account-scan.md` — P146 five-account TSA27 browser validation.
 - `reports/p147-diverse-scaffold.md` — P147 diverse account preset and warnings.
 - `reports/p148-portfolio-cleanup.md` — P148 guarded cleanup for artifacts and promoted runs.
+- `reports/p149-state-exactness.md` — P149 state-run exactness and UI badge.
+- P149.2 records the compact exactness payload and the live exact replay.
+- `reports/p150-gpu-extension-guard.md` — P150 lazy effect-table row guard and the TSA 29
+  managed-stock limitation.
+- `reports/p151-web-console.md` — P151 allowlisted web console, its security boundary,
+  browser smoke, and the remaining sandbox tiers.
+- `reports/p152-python-sandbox.md` — reviewed Python scripts under Landlock and unshare,
+  with the host-read, write, network, and credential checks.
+- `reports/p153-assistant-script-review.md` — assistant script staging, review requirements,
+  and the console-secret environment guard.
+- `reports/p154-tsa29-stock.md` — TSA 29 factorized stock basis, build costs, and exact
+  GPU replay.

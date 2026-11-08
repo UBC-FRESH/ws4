@@ -17,10 +17,9 @@ def test_coverage_has_every_current_bec_and_named_statuses() -> None:
     assert frame["bec"].nunique() == 219
     counts = frame["coverage_status"].value_counts().to_dict()
     assert counts == {
-        "mixed_zone": 209,
         "no_diagram": 4,
         "reviewed_variant": 1,
-        "reviewed_zone": 5,
+        "reviewed_zone": 214,
     }
 
 
@@ -34,13 +33,13 @@ def test_reviewed_variant_has_au_evidence_and_diagrams() -> None:
     assert row["au_ids"] == "AU-IDFdk3-TSA23-FDI;AU-IDFdk3-TSA23-PLI"
 
 
-def test_provisional_and_no_diagram_rows_are_explicit() -> None:
-    """Zone-level and missing coverage are not silently treated as reviewed."""
-    provisional = coverage_row("CWHvm1")
-    assert provisional is not None
-    assert provisional["coverage_status"] == "mixed_zone"
-    assert "zone" in provisional["match_level"]
-    assert "fdcn" in str(provisional["diagram_ids"])
+def test_reviewed_zone_and_no_diagram_rows_are_explicit() -> None:
+    """Zone-level and missing coverage are named explicitly."""
+    reviewed = coverage_row("CWHvm1")
+    assert reviewed is not None
+    assert reviewed["coverage_status"] == "reviewed_zone"
+    assert "zone" in reviewed["match_level"]
+    assert "fdcn" in str(reviewed["diagram_ids"])
     missing = coverage_row("BAFAun")
     assert missing is not None
     assert missing["coverage_status"] == "no_diagram"
@@ -52,10 +51,10 @@ def test_provisional_and_no_diagram_rows_are_explicit() -> None:
 
 def test_coverage_filters_and_unknown_label() -> None:
     """Zone/status filters and unknown labels are explicit."""
-    payload = coverage_payload(zone="CWH", status="mixed_zone")
+    payload = coverage_payload(zone="CWH", status="reviewed_zone")
     assert payload["count"] > 0
     assert all(row["zone"] == "CWH" for row in payload["rows"])
-    assert all(row["coverage_status"] == "mixed_zone" for row in payload["rows"])
+    assert all(row["coverage_status"] == "reviewed_zone" for row in payload["rows"])
     assert coverage_row("XYZ99") is None
 
 

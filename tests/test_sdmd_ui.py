@@ -48,6 +48,9 @@ def test_app_js_wires_the_sdmd_api() -> None:
         "function renderSdmdInterpretation",
         "sdmd-iso-height",
         "sdmd-trajectory",
+        "cai_band",
+        "sdmd-cai-band",
+        "CAI density range",
     ):
         assert marker in javascript
 

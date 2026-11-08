@@ -10,6 +10,7 @@ behaviour checkable before calibration.
 from __future__ import annotations
 
 import hashlib
+import heapq
 import json
 import math
 from collections import deque
@@ -19,6 +20,9 @@ from pathlib import Path
 from typing import Final
 
 import pandas as pd
+
+from ws4.fire import FireFuelError, fbp_crown_fire
+from ws4.fire.growth import directional_ros, effective_wind, length_to_breadth
 
 from .events import Event
 from .log import EventLog, EventLogBuilder, EventLogMetadata
@@ -79,6 +83,34 @@ def _severity_class(severity: float) -> str:
     return "very_high"
 
 
+def _attribute_number(event: Event, name: str) -> float | None:
+    """Return a numeric event attribute, or None when absent."""
+    for key, value in event.attributes:
+        if key == name and isinstance(value, (int, float)) and not isinstance(value, bool):
+            return float(value)
+    return None
+
+
+def _mean(values: Sequence[float]) -> float:
+    """Return the arithmetic mean, or zero for an empty sequence."""
+    return 0.0 if not values else sum(values) / len(values)
+
+
+def _area_weighted_mean(events: Sequence[Event], name: str) -> float:
+    """Return the area-weighted mean of a numeric event attribute."""
+    total_area = 0.0
+    weighted = 0.0
+    for event in events:
+        if event.area_ha is None:
+            continue
+        value = _attribute_number(event, name)
+        if value is None:
+            continue
+        total_area += float(event.area_ha)
+        weighted += float(event.area_ha) * value
+    return 0.0 if total_area <= 0.0 else weighted / total_area
+
+
 @dataclass(frozen=True)
 class FireEdge:
     """One undirected edge of the landscape graph.
@@ -118,6 +150,64 @@ class FireEdge:
 
 
 @dataclass(frozen=True)
+class FireBehaviourConfig:
+    """The FBP fuel and weather inputs used by the fire-behaviour path.
+
+    Parameters
+    ----------
+    fuel_type : str, optional
+        FBP fuel type (default ``C2``).
+    ffmc : float, optional
+        Fine Fuel Moisture Code (default 90).
+    bui : float, optional
+        Buildup Index (default 60).
+    wind_kmh : float, optional
+        Ten-metre wind speed (default 10 km/h).
+    wind_direction_deg : float, optional
+        Direction the wind comes from (default 270).
+    slope_percent : float, optional
+        Ground slope in percent (default 0).
+    aspect_deg : float, optional
+        Slope aspect (default 0).
+    time_step_min : float, optional
+        Edge-crossing time step used to derive a crossing probability (default 60).
+    """
+
+    fuel_type: str = "C2"
+    ffmc: float = 90.0
+    bui: float = 60.0
+    wind_kmh: float = 10.0
+    wind_direction_deg: float = 270.0
+    slope_percent: float = 0.0
+    aspect_deg: float = 0.0
+    time_step_min: float = 60.0
+
+    def __post_init__(self) -> None:
+        """Validate the behaviour inputs through the FBP layer."""
+        if not math.isfinite(self.time_step_min) or self.time_step_min <= 0.0:
+            raise FireError("behaviour.time_step_min must be positive")
+        try:
+            wind = effective_wind(
+                self.fuel_type,
+                self.ffmc,
+                self.bui,
+                self.wind_kmh,
+                self.wind_direction_deg,
+                self.slope_percent,
+                self.aspect_deg,
+            )
+            fbp_crown_fire(
+                self.fuel_type,
+                self.ffmc,
+                self.bui,
+                wind.speed_kmh,
+            )
+            length_to_breadth(self.fuel_type, wind.speed_kmh)
+        except (FireFuelError, ValueError) as error:
+            raise FireError(str(error)) from error
+
+
+@dataclass(frozen=True)
 class FireConfig:
     """The parameters of the fire process and its salvage source.
 
@@ -149,6 +239,10 @@ class FireConfig:
         The merchantable volume per tonne of snag (default 1.0).
     max_spread_steps : int, optional
         The maximum burned fragments per fire, a guard against a runaway run (default 10000).
+    behaviour : FireBehaviourConfig or None, optional
+        When supplied, use the FBP surface/crown kernel and directional edge rates instead of
+        the legacy graph-percolation probability. ``None`` keeps the legacy path for
+        deterministic tests and replay compatibility.
     """
 
     ignition_rate_per_fragment_year: float = 0.01
@@ -164,6 +258,7 @@ class FireConfig:
     salvage_delay_years: int = 1
     salvage_volume_m3_per_t: float = 1.0
     max_spread_steps: int = 10_000
+    behaviour: FireBehaviourConfig | None = None
 
     def __post_init__(self) -> None:
         """Validate the configuration."""
@@ -195,6 +290,8 @@ class FireConfig:
             raise FireError("max_spread_steps must be an integer")
         if self.max_spread_steps <= 0:
             raise FireError("max_spread_steps must be positive")
+        if self.behaviour is not None and not isinstance(self.behaviour, FireBehaviourConfig):
+            raise FireError("behaviour must be a FireBehaviourConfig or None")
 
 
 class FireProcess:
@@ -322,6 +419,8 @@ class FireProcess:
         if start not in state.fragment_areas:
             return ()
         fuel = self._fragment_values(state, "fuel_t_ha")
+        if self.config.behaviour is not None:
+            return self._behaviour_spread(state, ignition, fuel)
         year = ignition.year
         burned: set[int] = set()
         events: list[Event] = []
@@ -370,6 +469,144 @@ class FireProcess:
                 if self.tape.bernoulli(key, probability):
                     queue.append((edge.target, depth + 1, event.event_id))
         return tuple(sorted(events, key=lambda item: item.sort_key))
+
+    def _behaviour_spread(
+        self,
+        state: CohortState,
+        ignition: Event,
+        fuel: dict[int, float],
+    ) -> tuple[Event, ...]:
+        """Propagate a fire with the FBP kernel and directional edge rates."""
+        start = ignition.fragment_ids[0]
+        burned: set[int] = set()
+        events: list[Event] = []
+        heap: list[tuple[float, int, int, str]] = [(ignition.time, 0, start, ignition.event_id)]
+        while heap and len(events) < self.config.max_spread_steps:
+            time, depth, fragment, parent = heapq.heappop(heap)
+            if fragment in burned:
+                continue
+            burned.add(fragment)
+            severity = self._severity(fragment, ignition.year)
+            mortality = min(1.0, severity * self.config.mortality_factor)
+            behavior, _ = self._behaviour_for_bearing(None)
+            event = Event(
+                event_id=f"fire-{ignition.event_id}-{fragment}",
+                process_id=FIRE_PROCESS_ID,
+                event_type="fire",
+                time=time,
+                year=math.floor(time),
+                phase="propagation",
+                source=FIRE_SOURCE,
+                scenario_id=self.scenario_id,
+                priority=depth,
+                fragment_ids=(fragment,),
+                severity_class=_severity_class(severity),
+                severity_value=severity,
+                magnitude=mortality,
+                area_ha=state.fragment_areas[fragment],
+                parent_event_id=parent,
+                confidence=1.0,
+                attributes=(
+                    ("depth", depth),
+                    ("ignition_event_id", ignition.event_id),
+                    ("mortality_fraction", mortality),
+                    *behavior,
+                ),
+            )
+            events.append(event)
+            for edge in self._neighbors.get(fragment, ()):
+                if edge.target in burned:
+                    continue
+                target_fuel = fuel.get(edge.target, 0.0)
+                if target_fuel <= 0.0:
+                    continue
+                edge_behavior, probability = self._behaviour_for_bearing(
+                    edge.bearing_deg,
+                    distance_m=edge.distance_m,
+                    target_fuel=target_fuel,
+                )
+                if probability <= 0.0:
+                    continue
+                key = DrawKey(
+                    FIRE_PROCESS_ID,
+                    edge.target,
+                    ignition.year,
+                    _draw_index("behaviour", edge.source, edge.target),
+                )
+                if not self.tape.bernoulli(key, probability):
+                    continue
+                ros = next(
+                    (float(value) for name, value in edge_behavior if name == "ros_m_min"),
+                    0.0,
+                )
+                travel_years = 0.0
+                if ros > 0.0:
+                    travel_years = edge.distance_m / (ros * 525_600.0)
+                heapq.heappush(
+                    heap,
+                    (time + travel_years, depth + 1, edge.target, event.event_id),
+                )
+        return tuple(sorted(events, key=lambda item: item.sort_key))
+
+    def _behaviour_for_bearing(
+        self,
+        bearing_deg: float | None,
+        *,
+        distance_m: float = 0.0,
+        target_fuel: float = 1.0,
+    ) -> tuple[tuple[tuple[str, float | str], ...], float]:
+        """Return event attributes and the edge-crossing probability."""
+        config = self.config.behaviour
+        if config is None:  # pragma: no cover - guarded by the caller
+            return (), 0.0
+        wind = effective_wind(
+            config.fuel_type,
+            config.ffmc,
+            config.bui,
+            config.wind_kmh,
+            config.wind_direction_deg,
+            config.slope_percent,
+            config.aspect_deg,
+        )
+        crown = fbp_crown_fire(
+            config.fuel_type,
+            config.ffmc,
+            config.bui,
+            wind.speed_kmh,
+        )
+        angle = 0.0 if bearing_deg is None else bearing_deg - wind.azimuth_deg
+        ros = directional_ros(
+            crown.rate_of_spread_m_min,
+            length_to_breadth(config.fuel_type, wind.speed_kmh),
+            angle,
+        )
+        distance = max(distance_m, 1.0)
+        fuel_factor = min(1.0, max(0.0, target_fuel / self.config.fuel_reference_t_ha))
+        probability = min(1.0, ros * config.time_step_min / distance * fuel_factor)
+        smoke = min(
+            1.0,
+            (crown.surface_fuel_consumption_kg_m2 + crown.crown_fuel_consumption_kg_m2) / 5.0,
+        )
+        attributes = (
+            ("behaviour_source", "ws4.fire.fbp"),
+            ("fbp_fuel_type", config.fuel_type),
+            ("ffmc", config.ffmc),
+            ("bui", config.bui),
+            ("wind_kmh", config.wind_kmh),
+            ("effective_wind_kmh", wind.speed_kmh),
+            ("spread_azimuth_deg", wind.azimuth_deg),
+            ("slope_percent", config.slope_percent),
+            ("aspect_deg", config.aspect_deg),
+            ("ros_m_min", ros),
+            ("head_fire_intensity_kw_m", crown.head_fire_intensity_kw_m),
+            ("flame_length_m", crown.flame_length_m),
+            ("crown_fraction_burned", crown.crown_fraction_burned),
+            ("surface_fuel_consumption_kg_m2", crown.surface_fuel_consumption_kg_m2),
+            ("smoke_strength", smoke),
+            ("fire_description", crown.fire_description),
+            ("kernel_version", "fbp-cffdrs-v1"),
+        )
+        return attributes, probability
 
     def apply(self, state: CohortState, event: Event) -> CohortState:
         """Apply one fire event's mortality to the cohort state.
@@ -781,8 +1018,21 @@ class FireRun:
         salvage_volume = sum(
             float(event.magnitude) for event in salvage if event.magnitude is not None
         )
+        ros_values = [
+            value for event in fires if (value := _attribute_number(event, "ros_m_min")) is not None
+        ]
+        intensity_values = [
+            value
+            for event in fires
+            if (value := _attribute_number(event, "head_fire_intensity_kw_m")) is not None
+        ]
+        flame_values = [
+            value
+            for event in fires
+            if (value := _attribute_number(event, "flame_length_m")) is not None
+        ]
         totals = self._state_totals()
-        return [
+        rows = [
             {"year": year, "account": "fire.count", "value": float(len(fires))},
             {"year": year, "account": "fire.burned_area_ha", "value": burned_area},
             {
@@ -828,7 +1078,43 @@ class FireRun:
             {"year": year, "account": "state.biomass_t", "value": totals["biomass_t"]},
             {"year": year, "account": "state.fuel_t", "value": totals["fuel_t"]},
             {"year": year, "account": "state.snag_t", "value": totals["snag_t"]},
+            {
+                "year": year,
+                "account": "fire.ros_mean_m_min",
+                "value": _mean(ros_values),
+            },
+            {
+                "year": year,
+                "account": "fire.ros_max_m_min",
+                "value": max(ros_values, default=0.0),
+            },
+            {
+                "year": year,
+                "account": "fire.intensity_mean_kw_m",
+                "value": _mean(intensity_values),
+            },
+            {
+                "year": year,
+                "account": "fire.intensity_max_kw_m",
+                "value": max(intensity_values, default=0.0),
+            },
+            {
+                "year": year,
+                "account": "fire.flame_length_mean_m",
+                "value": _mean(flame_values),
+            },
+            {
+                "year": year,
+                "account": "fire.flame_length_max_m",
+                "value": max(flame_values, default=0.0),
+            },
+            {
+                "year": year,
+                "account": "fire.crown_fraction_area_weighted",
+                "value": _area_weighted_mean(fires, "crown_fraction_burned"),
+            },
         ]
+        return rows
 
     def _state_totals(self) -> dict[str, float]:
         """Return the cohort state's biomass, fuel, and snag totals."""
@@ -972,5 +1258,12 @@ def run_fire_demo(*, rows: int = 5, cols: int = 5, years: int = 30, seed: int = 
         distance_scale_m=150.0,
         wind_direction_deg=225.0,
         wind_strength=0.3,
+        behaviour=FireBehaviourConfig(
+            fuel_type="C2",
+            ffmc=90.0,
+            bui=60.0,
+            wind_kmh=10.0,
+            wind_direction_deg=225.0,
+        ),
     )
     return FireRun(state, edges, config, scenario_id="demo", seed=seed).run(years)
