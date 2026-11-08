@@ -73,6 +73,14 @@ def test_dashboard_help_documents_the_outputs() -> None:
     assert "--json" in result.stdout
 
 
+def test_serve_help_documents_the_console() -> None:
+    """The serve help names the opt-in console flag and token option."""
+    result = run_ws4("serve", "--help")
+    assert result.returncode == 0
+    assert "--allow-console" in result.stdout
+    assert "--console-token" in result.stdout
+
+
 def test_dashboard_rejects_an_unknown_option() -> None:
     """The dashboard exits with status 2 on an option it does not know."""
     result = run_script("dashboard.py", "--bogus")
