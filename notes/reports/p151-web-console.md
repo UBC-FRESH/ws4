@@ -1,10 +1,11 @@
 # P151 Web UI power-user console
 
 Date: 2026-11-08
-Status: active
+Status: complete
 Branch: `feature/p151-web-console`
 Parent issue: #789
 Task issue: #790
+Merge commit: `cc5c4ff`
 
 The roadmap uses P151 for this work because P127 already names the target-chart and
 Solve-semantics phase. The product request and issues are still the P127 console tasks.
@@ -46,4 +47,8 @@ sandboxed Python API runner and assistant-script review flow remain P127.2 and P
   timeout, cancellation, output flooding, concurrency, and rate limiting.
 - Browser smoke: token connect, `report` run, `Report written` output, 7 artifacts, and
   no page errors.
+- Portal smoke on port 8791 with `WS4_CONSOLE_TOKEN`: `/api/summary` reported
+  `console: true`, the catalog returned five commands, and an unauthenticated request
+  returned 401. The deployed public portal has no token and reports `console: false`
+  with the console API absent.
 - Dashboard: `OVERALL: GREEN`.

@@ -21,6 +21,10 @@ exist and the browser does not show the **Console** workspace. ``--console-token
 also be supplied directly; the environment variable is preferred so the secret stays out
 of the process argument list.
 
+On the public portal, setting ``WS4_CONSOLE_TOKEN`` enables the same console for every
+mounted instance. Leaving it unset keeps the public demo read-only and the **Console**
+workspace absent.
+
 What is allowed
 ---------------
 
