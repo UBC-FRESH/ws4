@@ -153,7 +153,7 @@ exists and the maintainer approves it.
 | P152 Sandboxed Python runner | #901 | `feature/p152-python-sandbox` | complete |
 | P153 Assistant script review | #906 | `feature/p153-assistant-script-review` | complete |
 | P154 TSA 29 GPU stock | #912 | `feature/p154-tsa29-stock` | complete |
-| P156 Credible fire behaviour and growth | #890 | `feature/p156-fire-behaviour` | pr-open |
+| P156 Credible fire behaviour and growth | #890 | `feature/p156-fire-behaviour` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4558,7 +4558,7 @@ Acceptance:
 
 Parent issue: #890
 Branch: `feature/p156-fire-behaviour`
-Status: pr-open
+Status: complete
 Design note: `notes/design/ws4-fire-behaviour.md`
 Report: `notes/reports/p156-closeout.md`
 PR: #917

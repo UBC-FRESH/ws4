@@ -4834,3 +4834,7 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   mean absolute area error, 16.4 percent maximum, and a 54-scenario ensemble with P50 10.13 ha
   and P90 199.85 ha. The viewer flame/smoke criterion is deferred to P155. Status: `pr-open`;
   no merge, tag, release, or settings change performed. Dashboard: **GREEN**.
+
+- P156 close-out: squash-merged pull request #917 into `main` after maintainer approval;
+  the phase branch is deleted and parent #890 is closed. The close-out report is
+  `notes/reports/p156-closeout.md`. Dashboard: **GREEN**.
