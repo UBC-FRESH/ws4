@@ -148,7 +148,7 @@ exists and the maintainer approves it.
 | P148 Portfolio and promoted-run cleanup | #869 | `feature/p148-portfolio-cleanup` | complete |
 | P149 State-run exactness | #873 | `feature/p149-state-exactness` | complete |
 | P150 GPU extension guard | #886 | `fix/gpu-extension-guard` | complete |
-| P151 Web UI power-user console | #789 | `feature/p151-web-console` | active |
+| P151 Web UI power-user console | #789 | `feature/p151-web-console` | complete |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4437,8 +4437,10 @@ Acceptance:
 
 Parent issue: #789
 Branch: `feature/p151-web-console`
-Status: active
+Status: complete
+Merge commit: `cc5c4ff`
 Report: `notes/reports/p151-web-console.md`
+PR: #897
 
 Goal: add a token-authenticated, allowlisted command composer without exposing a shell.
 
