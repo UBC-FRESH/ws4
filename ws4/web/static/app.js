@@ -4,7 +4,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/OrbitControls.js";
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' }, runSource: null, runSummary: null, console: { schema: null, token: '', job: null, timer: null, offset: 0, busy: false }, portfolioScan: [], portfolioTargets: [], pareto: { available: false, artifact: '', data: null, chart: null, cloud: null, selected: null, pinned: [], screen: [], artifacts: [] } };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' }, runSource: null, runSummary: null, scenario: { liveRows: [], list: [], loadedId: '', source: 'Live targets' }, realized: new Map(), fire: { scenes: [], selected: '', selectedB: '', payloads: new Map(), activePayload: null, playing: false }, console: { schema: null, token: '', job: null, timer: null, offset: 0, busy: false }, portfolioScan: [], portfolioTargets: [], pareto: { available: false, artifact: '', data: null, chart: null, cloud: null, selected: null, pinned: [], screen: [], artifacts: [] } };
 
 state.estate3d = { open: false, features: [], yaw: -0.55, zoom: 1, exaggeration: 1, hits: [] };
 const ESTATE_3D_LIMIT = 2000;
@@ -5102,6 +5102,7 @@ function workspaceAllowed(workspace) {
   if (workspace === 'map') return true;
   if (workspace === 'sdmd') return Boolean(state.sdmd.available);
   const panels = skinPanels();
+  if (workspace === 'fire') return Boolean(state.datasetSummary?.capabilities?.fire);
   if (workspace === 'console') return Boolean(state.datasetSummary?.capabilities?.console);
   if (workspace === 'plan') return panels.has('targets');
   if (workspace === 'pareto') return panels.has('search');
@@ -5171,10 +5172,11 @@ function syncNavigation() {
   }
   if (state.workspace === 'map') $('tab-legend').hidden = false;
   if (state.workspace === 'plan') $('tab-targets').hidden = false;
-  $('map-wrap').hidden = state.workspace === 'plan' || state.workspace === 'sdmd' || state.workspace === 'pareto' || state.workspace === 'console';
+  $('map-wrap').hidden = ['plan', 'sdmd', 'pareto', 'console', 'fire'].includes(state.workspace);
   $('target-canvas').hidden = state.workspace !== 'plan';
   $('sdmd-canvas').hidden = state.workspace !== 'sdmd';
   $('pareto-wrap').hidden = state.workspace !== 'pareto';
+  $('fire-wrap').hidden = state.workspace !== 'fire';
   if (state.workspace === 'plan') renderTargetCharts();
   if (state.workspace === 'sdmd') renderSdmd();
   if (state.workspace === 'pareto' && state.pareto.chart) resizeParetoChart();
@@ -5246,6 +5248,10 @@ function activateSubView() {
     loadConsole();
     return;
   }
+  if (state.workspace === 'fire') {
+    loadFireWorkspace();
+    return;
+  }
   if (state.workspace !== 'results' && state.compareView) clearCompareView();
 }
 
@@ -5266,6 +5272,7 @@ function setWorkspace(workspace, { sync = true, activate = true } = {}) {
     clearCompareView();
   }
   state.workspace = requested;
+  document.body.dataset.workspace = requested;
   syncNavigation();
   if (SUB_PANELS[requested]) {
     const sub = currentSub(requested) ?? visibleSubs(requested)[0] ?? null;
@@ -6006,7 +6013,229 @@ function renderTargetChart(account, periods) {
   return card;
 }
 
+function matrixTargetLabel(cell) {
+  const min = cell.minimum;
+  const max = cell.maximum;
+  let label = '—';
+  if (min !== null && min !== undefined && max !== null && max !== undefined) {
+    label = `${compactNumber(min)}–${compactNumber(max)}`;
+  } else if (min !== null && min !== undefined) {
+    label = `≥${compactNumber(min)}`;
+  } else if (max !== null && max !== undefined) {
+    label = `≤${compactNumber(max)}`;
+  }
+  if (cell.flow) label += ` · ${cell.flow}`;
+  return label;
+}
+
+function matrixGap(cell) {
+  if (cell.achieved === null || cell.achieved === undefined) return null;
+  const value = Number(cell.achieved);
+  if (cell.minimum !== null && cell.minimum !== undefined && value < Number(cell.minimum)) {
+    return value - Number(cell.minimum);
+  }
+  if (cell.maximum !== null && cell.maximum !== undefined && value > Number(cell.maximum)) {
+    return value - Number(cell.maximum);
+  }
+  return null;
+}
+
+function renderScenarioMatrix() {
+  const section = $('scenario-matrix');
+  const table = $('scenario-matrix-table');
+  const status = $('matrix-status');
+  if (!section || !table || !status) return;
+  const accounts = [...new Set(state.targets.map((row) => row.account))].sort((a, b) => a.localeCompare(b));
+  const periods = state.targetSeries?.periods?.length
+    ? state.targetSeries.periods
+    : (state.periods.length ? state.periods : targetPeriodsFromRows());
+  if (!accounts.length || !periods.length) {
+    section.hidden = true;
+    return;
+  }
+  const onlyFailing = Boolean($('matrix-only-failing')?.checked);
+  const rows = accounts.map((account) => {
+    const cells = targetChartCells(account);
+    const failing = cells.some((cell) => ['below', 'above'].includes(targetStatus(cell, cell.achieved)));
+    return { account, cells, failing };
+  });
+  const visible = onlyFailing ? rows.filter((row) => row.failing) : rows;
+  section.hidden = false;
+  table.replaceChildren();
+  const head = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  const accountHead = document.createElement('th');
+  accountHead.scope = 'col';
+  accountHead.textContent = 'Account';
+  headRow.append(accountHead);
+  for (const period of periods) {
+    const cell = document.createElement('th');
+    cell.scope = 'col';
+    cell.textContent = `P${Number(period.index) + 1}`;
+    cell.title = period.label ?? `period ${Number(period.index) + 1}`;
+    headRow.append(cell);
+  }
+  head.append(headRow);
+  table.append(head);
+  const body = document.createElement('tbody');
+  const failingCells = rows.reduce(
+    (total, row) => total + row.cells.filter((cell) => ['below', 'above'].includes(targetStatus(cell, cell.achieved))).length,
+    0
+  );
+  for (const { account, cells } of visible) {
+    const tr = document.createElement('tr');
+    const accountCell = document.createElement('th');
+    accountCell.scope = 'row';
+    accountCell.className = 'matrix-account';
+    const label = accountTableLabel(account);
+    const root = document.createElement('span');
+    root.className = 'account-root';
+    root.textContent = label.root;
+    const name = document.createElement('span');
+    name.className = 'matrix-account-name';
+    name.textContent = label.label;
+    name.title = account;
+    accountCell.append(root, name);
+    const unit = accountUnit(account, false);
+    if (unit) {
+      const badge = document.createElement('span');
+      badge.className = 'account-unit';
+      badge.textContent = unit;
+      accountCell.append(badge);
+    }
+    const accountRows = state.targets.filter((row) => row.account === account);
+    if (accountRows.some((row) => row.flow)) {
+      const flow = document.createElement('span');
+      flow.className = 'matrix-flow';
+      flow.textContent = accountRows.find((row) => row.flow)?.flow ?? 'flow';
+      accountCell.append(flow);
+    }
+    accountCell.title = `Filter the target editor to ${account}`;
+    accountCell.addEventListener('click', () => {
+      $('target-filter-search').value = account;
+      $('target-filter-status').value = '';
+      applyTargetFilter();
+      $('target-filter-search').focus();
+    });
+    tr.append(accountCell);
+    for (const period of periods) {
+      const cell = cells[Number(period.index)] ?? chartCell(account, period);
+      const achieved = cell.achieved;
+      const stateName = targetStatus(cell, achieved);
+      const cellNode = document.createElement('td');
+      cellNode.className = `matrix-cell ${stateName}`;
+      if (cell.active === false) cellNode.classList.add('off');
+      if (cell.minimum === null && cell.maximum === null && cell.flow) cellNode.classList.add('flow-only');
+      const target = document.createElement('span');
+      target.className = 'matrix-target';
+      target.textContent = matrixTargetLabel(cell);
+      const realized = document.createElement('span');
+      realized.className = 'matrix-realized';
+      realized.textContent = achieved === null || achieved === undefined
+        ? '—'
+        : compactNumber(achieved);
+      const gap = matrixGap(cell);
+      const gapNode = document.createElement('span');
+      gapNode.className = 'matrix-gap';
+      gapNode.textContent = gap === null ? '' : `Δ${compactNumber(gap)}`;
+      cellNode.append(target, realized, gapNode);
+      const bits = [
+        period.label ?? `P${Number(period.index) + 1}`,
+        `target min ${cell.minimum ?? '—'}`,
+        `max ${cell.maximum ?? '—'}`,
+        `realized ${achieved ?? '—'}`,
+        stateName,
+      ];
+      if (cell.flow) bits.push(`flow ${cell.flow}`);
+      if (cell.active === false) bits.push('inactive');
+      cellNode.title = bits.join(' · ');
+      cellNode.addEventListener('click', () => {
+        setPeriod(Number(period.index));
+        syncNavigation();
+      });
+      tr.append(cellNode);
+    }
+    body.append(tr);
+  }
+  table.append(body);
+  const suffix = onlyFailing ? ` · ${visible.length} of ${rows.length} shown` : '';
+  status.textContent = `${rows.length} account${rows.length === 1 ? '' : 's'} · ${periods.length} periods · ${failingCells} failing cell${failingCells === 1 ? '' : 's'}${suffix}`;
+}
+
+function penaltyTargetLabel(row) {
+  if (row.flow) {
+    const low = row.minimum ?? '—';
+    const high = row.maximum ?? '—';
+    return `${row.flow} ${low}..${high}%`;
+  }
+  if (row.minimum !== null && row.maximum !== null) return `${compactNumber(row.minimum)}..${compactNumber(row.maximum)}`;
+  if (row.minimum !== null) return `≥${compactNumber(row.minimum)}`;
+  if (row.maximum !== null) return `≤${compactNumber(row.maximum)}`;
+  return '—';
+}
+
+function penaltyGap(row, value) {
+  if (row.flow || value === null || value === undefined) return '—';
+  if (row.minimum !== null && value < row.minimum) return compactNumber(value - row.minimum);
+  if (row.maximum !== null && value > row.maximum) return compactNumber(value - row.maximum);
+  return '—';
+}
+
+function renderPenaltyLedger() {
+  const section = $('penalty-ledger');
+  const table = $('penalty-table');
+  const body = table?.querySelector('tbody');
+  const summary = $('penalty-summary');
+  const empty = $('penalty-empty');
+  if (!section || !table || !body || !summary || !empty) return;
+  const active = state.targets.filter((row) => row.active !== false);
+  const maxPriority = Math.max(1, ...active.map((row) => Number(row.priority) || 1));
+  const entries = active.map((row) => {
+    const realized = state.realized.get(String(row.index));
+    const value = realized?.value ?? null;
+    const penalty = Number(realized?.penalty ?? 0);
+    const factor = 1e9 ** (maxPriority - (Number(row.priority) || 1));
+    return { row, value, penalty, weighted: penalty * factor, status: realized?.status ?? statusOf(row, value) };
+  });
+  const binding = entries.filter((entry) => entry.penalty > 0);
+  const total = entries.reduce((sum, entry) => sum + entry.weighted, 0);
+  const visible = $('penalty-binding-only').checked ? binding : entries;
+  visible.sort((left, right) => right.weighted - left.weighted);
+  section.hidden = false;
+  empty.hidden = visible.length > 0;
+  table.hidden = visible.length === 0;
+  summary.textContent = `${binding.length} binding · ${entries.length - binding.length} met/inactive`;
+  body.replaceChildren();
+  for (const entry of visible.slice(0, 30)) {
+    const row = document.createElement('tr');
+    const label = accountTableLabel(entry.row.account);
+    const cells = [
+      `${label.root ? `${label.root} · ` : ''}${label.label}`,
+      entry.row.period === null || entry.row.period === undefined ? `year ${entry.row.year}` : `P${entry.row.period}`,
+      penaltyTargetLabel(entry.row),
+      entry.value === null || entry.value === undefined ? '—' : compactNumber(entry.value),
+      penaltyGap(entry.row, entry.value),
+      `min ${entry.row.min_weight ?? 1} · max ${entry.row.max_weight ?? 1}`,
+      String(entry.row.priority ?? 1),
+      compactNumber(entry.penalty),
+      total > 0 ? `${((entry.weighted / total) * 100).toFixed(1)}%` : '—',
+      entry.status,
+    ];
+    for (const [index, value] of cells.entries()) {
+      const cell = document.createElement('td');
+      cell.textContent = value;
+      if (index === 9) cell.className = entry.status;
+      row.append(cell);
+    }
+    row.title = `${entry.row.account} · ${entry.status} · weighted penalty ${compactNumber(entry.weighted)}`;
+    body.append(row);
+  }
+}
+
 function renderTargetCharts() {
+  renderScenarioMatrix();
+  renderScenarioDiff();
+  renderPenaltyLedger();
   const grid = $('target-chart-grid');
   const empty = $('target-chart-empty');
   const count = $('target-chart-count');
@@ -6411,6 +6640,8 @@ function renderRunHealth() {
   }
   badge(`LiDAR ${state.lidar?.available ? 'available' : '—'}`, state.lidar?.available ? 'available' : 'unavailable');
   badge(`Carbon ${state.carbon?.available ? 'available' : '—'}`, state.carbon?.available ? 'available' : 'unavailable');
+  const fireScene = state.fire.scenes.find((scene) => scene.run === state.run);
+  $('run-health-fire').hidden = !fireScene;
   $('run-health-failing').disabled = failing === 0;
 }
 
@@ -6840,6 +7071,183 @@ async function postTargets(rows, message) {
   }
 }
 
+function batchMaxPeriod() {
+  const fromSeries = state.targetSeries?.periods?.length ?? 0;
+  return Math.max(1, fromSeries || targetPeriodsFromRows().length || 1);
+}
+
+function syncBatchDefaults() {
+  const end = $('batch-end');
+  const start = $('batch-start');
+  const width = $('batch-width');
+  const max = batchMaxPeriod();
+  if (!end?.dataset.synced || Number(end.value) < 1 || Number(end.value) > max) {
+    start.value = '1';
+    end.value = String(max);
+    end.dataset.synced = '1';
+  }
+  if (width && !width.dataset.synced) {
+    const existing = state.targets.find((row) => Number(row.period_width) > 0)?.period_width ?? 10;
+    width.value = String(existing);
+    width.dataset.synced = '1';
+  }
+}
+
+function buildBatchRows() {
+  const accounts = [...state.selectedAccounts].sort((a, b) => a.localeCompare(b));
+  const mode = $('batch-mode').value;
+  let start = Number($('batch-start').value);
+  let end = Number($('batch-end').value);
+  const width = Number($('batch-width').value);
+  const minText = $('batch-min').value.trim();
+  const maxText = $('batch-max').value.trim();
+  const minimum = minText === '' ? null : Number(minText);
+  const maximum = maxText === '' ? null : Number(maxText);
+  const minWeight = Number($('batch-min-weight').value);
+  const maxWeight = Number($('batch-max-weight').value);
+  const priority = Number($('batch-priority').value);
+  const normalization = $('batch-normalization').value;
+  if (!accounts.length) return { error: 'select one or more accounts in the browser', additions: [], conflicts: 0 };
+  if (!Number.isInteger(start) || start < 1) return { error: 'start period must be a whole number of at least 1', additions: [], conflicts: 0 };
+  if (!Number.isInteger(end) || end < start) return { error: 'end period must be at least the start period', additions: [], conflicts: 0 };
+  if (!Number.isInteger(width) || width < 1) return { error: 'period width must be a whole number of at least 1', additions: [], conflicts: 0 };
+  if (minimum !== null && !Number.isFinite(minimum)) return { error: 'minimum must be a number', additions: [], conflicts: 0 };
+  if (maximum !== null && !Number.isFinite(maximum)) return { error: 'maximum must be a number', additions: [], conflicts: 0 };
+  if (minimum !== null && maximum !== null && minimum > maximum) return { error: 'minimum is above maximum', additions: [], conflicts: 0 };
+  if (!Number.isFinite(minWeight) || minWeight < 0) return { error: 'minimum weight must be zero or more', additions: [], conflicts: 0 };
+  if (!Number.isFinite(maxWeight) || maxWeight < 0) return { error: 'maximum weight must be zero or more', additions: [], conflicts: 0 };
+  if (!Number.isInteger(priority) || priority < 1) return { error: 'priority must be a positive integer', additions: [], conflicts: 0 };
+  if (mode === 'level' && (minimum === null || maximum === null)) {
+    return { error: 'level mode needs both minimum and maximum', additions: [], conflicts: 0 };
+  }
+  if (mode === 'min' && minimum === null) return { error: 'minimum mode needs a minimum', additions: [], conflicts: 0 };
+  if (mode === 'max' && maximum === null) return { error: 'maximum mode needs a maximum', additions: [], conflicts: 0 };
+  if (mode === 'flow' && (minimum === null || maximum === null)) {
+    return { error: 'even-flow mode needs a minimum and maximum percentage', additions: [], conflicts: 0 };
+  }
+  const existing = new Set(state.targets.map(targetKey));
+  const rows = collectTargets();
+  const additions = [];
+  let conflicts = 0;
+  if (mode === 'flow') {
+    for (const account of accounts) {
+      const row = {
+        index: rows.length + additions.length,
+        account,
+        period: start,
+        year: start * width,
+        period_width: width,
+        flow: 'even',
+        flow_start_period: start,
+        flow_end_period: end,
+        shape: 'non_linear',
+        minimum,
+        maximum,
+        min_weight: minWeight,
+        max_weight: maxWeight,
+        priority,
+        normalization,
+        active: true,
+      };
+      if (existing.has(targetKey(row))) conflicts += 1;
+      else additions.push(row);
+    }
+  } else {
+    for (const account of accounts) {
+      for (let period = start; period <= end; period += 1) {
+        const row = {
+          index: rows.length + additions.length,
+          account,
+          period,
+          year: period * width,
+          period_width: width,
+          flow: '',
+          shape: 'linear',
+          minimum: mode === 'max' ? null : minimum,
+          maximum: mode === 'min' ? null : maximum,
+          min_weight: minWeight,
+          max_weight: maxWeight,
+          priority,
+          normalization,
+          active: true,
+        };
+        if (existing.has(targetKey(row))) conflicts += 1;
+        else additions.push(row);
+      }
+    }
+  }
+  return { error: '', additions, conflicts, accounts: accounts.length, start, end, width, mode };
+}
+
+function renderBatchPreview() {
+  const preview = $('batch-preview');
+  const status = $('batch-status');
+  if (!preview || !status) return;
+  const result = buildBatchRows();
+  if (result.error) {
+    preview.hidden = true;
+    status.textContent = result.error;
+    return;
+  }
+  const total = result.additions.length;
+  status.textContent = result.conflicts
+    ? `${total} new · ${result.conflicts} already exist`
+    : `${total} new target${total === 1 ? '' : 's'}`;
+  preview.hidden = total === 0;
+  preview.textContent = result.additions
+    .slice(0, 8)
+    .map((row) => `${row.account} · P${row.period} · ${row.flow ? `flow ${row.flow}` : `min ${row.minimum ?? '—'} max ${row.maximum ?? '—'}`}`)
+    .join('\n') + (total > 8 ? `\n… ${total - 8} more` : '');
+}
+
+async function addBatchTargets() {
+  const status = $('batch-status');
+  const result = buildBatchRows();
+  if (result.error) {
+    status.textContent = result.error;
+    return;
+  }
+  if (!result.additions.length) {
+    status.textContent = 'nothing to add; the selected rows already exist';
+    return;
+  }
+  const rows = collectTargets();
+  const additions = result.additions.map((row, index) => ({ ...row, index: rows.length + index }));
+  const saved = await postTargets([...rows, ...additions], `added ${additions.length} targets`);
+  if (saved) {
+    status.textContent = `added ${additions.length} target${additions.length === 1 ? '' : 's'}`;
+    renderBatchPreview();
+  }
+}
+
+function syncBatchAll() {
+  const all = $('batch-all').checked;
+  $('batch-end').disabled = all;
+  if (all) {
+    $('batch-end').value = String(batchMaxPeriod());
+    $('batch-start').value = '1';
+  }
+  renderBatchPreview();
+}
+
+function wireBatchTargets() {
+  if (!$('batch-add')) return;
+  $('batch-all').addEventListener('change', syncBatchAll);
+  $('batch-mode').addEventListener('change', () => {
+    const mode = $('batch-mode').value;
+    $('batch-min').disabled = mode === 'max';
+    $('batch-max').disabled = mode === 'min';
+    renderBatchPreview();
+  });
+  for (const id of ['batch-start', 'batch-end', 'batch-width', 'batch-min', 'batch-max', 'batch-min-weight', 'batch-max-weight', 'batch-priority', 'batch-normalization']) {
+    $(id).addEventListener('input', renderBatchPreview);
+    $(id).addEventListener('change', renderBatchPreview);
+  }
+  $('batch-add').addEventListener('click', addBatchTargets);
+  syncBatchDefaults();
+  syncBatchAll();
+}
+
 async function addTarget() {
   const accounts = state.selectedAccounts.size
     ? [...state.selectedAccounts]
@@ -6897,7 +7305,212 @@ async function removeTarget(index) {
   await postTargets(rows, 'removed target');
 }
 
-async function loadTargets() {
+function scenarioField(row, field) {
+  if (field === 'notes') return String(row.notes ?? '');
+  if (field === 'active') return row.active !== false;
+  if (field === 'flow') return String(row.flow ?? '');
+  const value = row[field];
+  return value === null || value === undefined ? '' : String(value);
+}
+
+function scenarioDiffEntries() {
+  const live = new Map((state.scenario.liveRows ?? []).map((row) => [targetKey(row), row]));
+  const current = new Map(collectTargets().map((row) => [targetKey(row), row]));
+  const fields = [
+    'minimum',
+    'maximum',
+    'min_weight',
+    'max_weight',
+    'priority',
+    'normalization',
+    'active',
+    'flow',
+    'flow_start_period',
+    'flow_end_period',
+    'shape',
+    'notes',
+  ];
+  const entries = [];
+  for (const [key, row] of current) {
+    const previous = live.get(key);
+    if (!previous) {
+      entries.push({ mark: '+', className: 'diff-added', account: row.account, fields: 'added' });
+      continue;
+    }
+    const changes = fields
+      .filter((field) => scenarioField(previous, field) !== scenarioField(row, field))
+      .map((field) => `${field}: ${scenarioField(previous, field) || '—'} → ${scenarioField(row, field) || '—'}`);
+    if (changes.length) {
+      entries.push({
+        mark: '~',
+        className: 'diff-changed',
+        account: `${row.account} · P${row.period ?? row.year}`,
+        fields: changes.join(' · '),
+      });
+    }
+  }
+  for (const [key, row] of live) {
+    if (!current.has(key)) {
+      entries.push({ mark: '-', className: 'diff-removed', account: row.account, fields: 'removed' });
+    }
+  }
+  return entries;
+}
+
+function renderScenarioDiff() {
+  const panel = $('scenario-diff');
+  const body = $('scenario-diff-body');
+  const summary = $('scenario-diff-summary');
+  if (!panel || !body || !summary) return;
+  if (!state.scenario.liveRows.length) {
+    panel.hidden = true;
+    return;
+  }
+  const entries = scenarioDiffEntries();
+  panel.hidden = false;
+  const added = entries.filter((entry) => entry.mark === '+').length;
+  const removed = entries.filter((entry) => entry.mark === '-').length;
+  const changed = entries.filter((entry) => entry.mark === '~').length;
+  summary.textContent = entries.length
+    ? `Target diff from live: +${added} · −${removed} · ~${changed}`
+    : 'Target diff from live: no changes';
+  body.replaceChildren();
+  if (!entries.length) {
+    const note = document.createElement('p');
+    note.className = 'hint';
+    note.textContent = 'The editor matches the live target file.';
+    body.append(note);
+    return;
+  }
+  for (const entry of entries.slice(0, 80)) {
+    const row = document.createElement('div');
+    row.className = 'scenario-diff-row';
+    const mark = document.createElement('span');
+    mark.className = `diff-mark ${entry.className}`;
+    mark.textContent = entry.mark;
+    const account = document.createElement('span');
+    account.className = 'diff-account';
+    account.textContent = entry.account;
+    account.title = entry.account;
+    const fields = document.createElement('span');
+    fields.className = 'diff-fields';
+    fields.textContent = entry.fields;
+    row.append(mark, account, fields);
+    body.append(row);
+  }
+}
+
+async function loadScenarioList() {
+  const select = $('scenario-select');
+  if (!select) return;
+  try {
+    const list = await api('api/scenarios');
+    state.scenario.list = Array.isArray(list) ? list : [];
+  } catch {
+    state.scenario.list = [];
+  }
+  const previous = state.scenario.loadedId || select.value;
+  select.replaceChildren();
+  const live = document.createElement('option');
+  live.value = '';
+  live.textContent = 'Live targets';
+  select.append(live);
+  for (const item of state.scenario.list) {
+    const option = document.createElement('option');
+    option.value = item.id;
+    option.textContent = `${item.name} · ${item.target_count} targets`;
+    option.title = item.description || item.name;
+    select.append(option);
+  }
+  if ([...select.options].some((option) => option.value === previous)) select.value = previous;
+  $('scenario-delete').disabled = !select.value;
+}
+
+async function loadSelectedScenario() {
+  const select = $('scenario-select');
+  const status = $('scenario-status');
+  if (!select.value) {
+    await loadTargets();
+    status.textContent = 'editing live targets';
+    return;
+  }
+  status.textContent = 'loading scenario…';
+  try {
+    const scenario = await api(`api/scenarios/${encodeURIComponent(select.value)}`);
+    state.scenario.loadedId = select.value;
+    await loadTargets(scenario.targets, { source: scenario.name });
+    state.scenario.source = scenario.name;
+    status.textContent = `editing ${scenario.name}; save targets to publish`;
+    $('scenario-select').value = select.value;
+    $('scenario-delete').disabled = false;
+  } catch (error) {
+    status.textContent = `scenario load failed: ${error.message}`;
+  }
+}
+
+async function saveScenario() {
+  const name = $('scenario-name').value.trim();
+  const status = $('scenario-status');
+  if (!name) {
+    status.textContent = 'enter a scenario name';
+    $('scenario-name').focus();
+    return;
+  }
+  status.textContent = 'saving scenario…';
+  try {
+    const scenario = await api('api/scenarios', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        description: $('scenario-description').value.trim(),
+        targets: collectTargets(),
+      }),
+    });
+    state.scenario.loadedId = scenario.id;
+    state.scenario.source = scenario.name;
+    await loadScenarioList();
+    $('scenario-select').value = scenario.id;
+    $('scenario-delete').disabled = false;
+    status.textContent = `saved scenario ${scenario.name}; live targets unchanged`;
+  } catch (error) {
+    status.textContent = `scenario save failed: ${error.message}`;
+  }
+}
+
+async function deleteSelectedScenario() {
+  const select = $('scenario-select');
+  const status = $('scenario-status');
+  if (!select.value) return;
+  try {
+    await api(`api/scenarios/${encodeURIComponent(select.value)}`, { method: 'DELETE' });
+    state.scenario.loadedId = '';
+    select.value = '';
+    await loadScenarioList();
+    status.textContent = 'scenario deleted';
+  } catch (error) {
+    status.textContent = `scenario delete failed: ${error.message}`;
+  }
+}
+
+function wireScenarioBar() {
+  if (!$('scenario-select')) return;
+  $('scenario-load').addEventListener('click', loadSelectedScenario);
+  $('scenario-reload').addEventListener('click', async () => {
+    await loadTargets();
+    $('scenario-status').textContent = 'editing live targets';
+  });
+  $('scenario-save').addEventListener('click', saveScenario);
+  $('scenario-delete').addEventListener('click', deleteSelectedScenario);
+  $('scenario-select').addEventListener('change', () => {
+    $('scenario-delete').disabled = !$('scenario-select').value;
+  });
+  $('targets-table').addEventListener('input', renderScenarioDiff);
+  $('targets-table').addEventListener('change', renderScenarioDiff);
+  loadScenarioList();
+}
+
+async function loadTargets(rowsOverride = null, { source = 'live' } = {}) {
   const empty = $('targets-empty');
   const table = $('targets-table');
   const button = $('save-targets');
@@ -6905,9 +7518,17 @@ async function loadTargets() {
     state.chartDirty = false;
     setChartStatus('');
     state.targetCells = new Map();
+    state.realized = new Map();
     state.windowValues = new Map();
-    const rows = await api('api/targets.json');
+    const rows = rowsOverride ?? await api('api/targets.json');
     rows.forEach((row) => { row.active = row.active !== false; });
+    if (rowsOverride === null) {
+      state.scenario.liveRows = rows.map((row) => ({ ...row }));
+      state.scenario.loadedId = '';
+      state.scenario.source = 'Live targets';
+    } else {
+      state.scenario.source = source;
+    }
     state.targets = rows;
     populateScanAccounts();
     renderPortfolioScan();
@@ -6978,6 +7599,7 @@ async function loadTargets() {
       const realized = await api(`api/runs/${encodeURIComponent(state.run)}/targets`);
       for (const item of realized) {
         values[item.index] = item.value;
+        state.realized.set(String(item.index), item);
       }
     } catch { /* no realized values for this run */ }
     rows.forEach((row, index) => {
@@ -7152,6 +7774,10 @@ async function loadTargets() {
     renderWatchPanel();
     renderTargetCharts();
     renderAccountTree();
+    syncBatchDefaults();
+    renderBatchPreview();
+    renderScenarioDiff();
+    await loadScenarioList();
     if (state.skin) applySkin(state.skin);
   } catch (error) {
     empty.hidden = false;
@@ -8449,7 +9075,6 @@ async function sendChat(event) {
         session: state.chatSession || null,
         run: state.run || null,
         year: state.year,
-        async: true,
         context: chatContext(),
       }),
     });
@@ -8459,19 +9084,8 @@ async function sendChat(event) {
       await new Promise((resolve) => window.setTimeout(resolve, 2000));
       response = await request();
     }
-    let payload = await response.json().catch(() => ({}));
+    const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload.detail || `chat failed (${response.status})`);
-    if (payload.job) {
-      // The agent turn runs in the background; short status polls keep proxy
-      // timeouts from cutting off long tool-using turns.
-      while (payload.status === 'running') {
-        await new Promise((resolve) => window.setTimeout(resolve, 1000));
-        const poll = await fetch(`api/chat/${encodeURIComponent(payload.job)}`);
-        payload = await poll.json().catch(() => ({}));
-        if (!poll.ok) throw new Error(payload.detail || `chat failed (${poll.status})`);
-      }
-      if (payload.status === 'error') throw new Error(payload.detail || 'chat failed');
-    }
     state.chatSession = payload.session || state.chatSession;
     thinking.classList.remove('thinking');
     thinking.innerHTML = renderMarkdown(payload.reply || '(no reply)');
@@ -8908,6 +9522,273 @@ function wireConsole() {
   $('console-cancel').addEventListener('click', cancelConsoleJob);
 }
 
+function fireSceneByRun(run) {
+  return state.fire.scenes.find((scene) => scene.run === run) ?? null;
+}
+
+function fireSceneLabel(scene) {
+  const manifest = scene.manifest ?? {};
+  return `${scene.run} · ${manifest.scene_id ?? scene.scene}`;
+}
+
+async function loadFireScenes({ run = null } = {}) {
+  const status = $('fire-status');
+  status.textContent = 'loading scenes…';
+  try {
+    const scenes = await api('api/fire/scenes');
+    state.fire.scenes = Array.isArray(scenes) ? scenes : [];
+  } catch (error) {
+    state.fire.scenes = [];
+    status.textContent = `fire scenes unavailable: ${error.message}`;
+  }
+  const selectA = $('fire-scene-a');
+  const selectB = $('fire-scene-b');
+  selectA.replaceChildren();
+  selectB.replaceChildren();
+  for (const scene of state.fire.scenes) {
+    for (const select of [selectA, selectB]) {
+      const option = document.createElement('option');
+      option.value = scene.run;
+      option.textContent = fireSceneLabel(scene);
+      select.appendChild(option);
+    }
+  }
+  const preferred = fireSceneByRun(run ?? state.run)
+    ?? fireSceneByRun(state.fire.selected)
+    ?? state.fire.scenes[0]
+    ?? null;
+  selectB.disabled = state.fire.scenes.length < 2;
+  $('fire-compare').disabled = state.fire.scenes.length < 2;
+  if (!preferred) {
+    $('fire-frame-a').removeAttribute('src');
+    $('fire-summary').replaceChildren();
+    status.textContent = 'no fire scenes found in the run directory';
+    return;
+  }
+  selectA.value = preferred.run;
+  await setFireScene('a', preferred.run);
+  status.textContent = `${state.fire.scenes.length} scene${state.fire.scenes.length === 1 ? '' : 's'}`;
+}
+
+async function setFireScene(which, run) {
+  const scene = fireSceneByRun(run);
+  if (!scene) return;
+  if (which === 'a') state.fire.selected = run;
+  else state.fire.selectedB = run;
+  const frame = $(which === 'a' ? 'fire-frame-a' : 'fire-frame-b');
+  const label = $(which === 'a' ? 'fire-label-a' : 'fire-label-b');
+  frame.src = `${scene.viewer}?embedded=1&bloom=0`;
+  label.textContent = `${which.toUpperCase()} · ${fireSceneLabel(scene)}`;
+  if (which === 'a') {
+    state.fire.playing = false;
+    $('fire-play').textContent = 'Play';
+    state.fire.activePayload = await loadFirePayload(scene);
+    renderFireSummary(scene, state.fire.activePayload);
+    renderFireTreeOptions();
+    renderFireFragmentOptions();
+  }
+}
+
+async function loadFirePayload(scene) {
+  if (state.fire.payloads.has(scene.run)) return state.fire.payloads.get(scene.run);
+  const payload = await api(scene.payload);
+  state.fire.payloads.set(scene.run, payload);
+  return payload;
+}
+
+function fireSummaryRow(label, value) {
+  const row = document.createElement('div');
+  const key = document.createElement('span');
+  key.textContent = label;
+  const strong = document.createElement('strong');
+  strong.textContent = String(value ?? '—');
+  row.append(key, strong);
+  return row;
+}
+
+function renderFireSummary(scene, payload) {
+  const container = $('fire-summary');
+  const manifest = payload?.manifest ?? scene.manifest ?? {};
+  const timeline = payload?.timeline ?? {};
+  container.replaceChildren(
+    fireSummaryRow('Run', scene.run),
+    fireSummaryRow('Scene', manifest.scene_id),
+    fireSummaryRow('Trees', manifest.tree_count),
+    fireSummaryRow('Fragments', manifest.fragment_count),
+    fireSummaryRow('Synthetic layer', manifest.synthetic_trees ? 'yes' : 'no'),
+    fireSummaryRow('Timeline end', `${Number(timeline.end ?? 0).toFixed(1)} ${timeline.unit ?? ''}`),
+    fireSummaryRow('Replay token', manifest.run_replay_token)
+  );
+}
+
+function renderFireTreeOptions() {
+  const select = $('fire-tree');
+  const query = $('fire-tree-search').value.trim().toLowerCase();
+  const trees = state.fire.activePayload?.trees ?? [];
+  const matches = trees.filter((tree) => {
+    if (!query) return true;
+    return `${tree.tree_id} ${tree.species} ${tree.fragment_id}`.toLowerCase().includes(query);
+  });
+  select.replaceChildren();
+  for (const tree of matches.slice(0, 1000)) {
+    const option = document.createElement('option');
+    option.value = String(tree.tree_id);
+    option.textContent = `${tree.tree_id} · ${tree.species} · fragment ${tree.fragment_id}`;
+    select.appendChild(option);
+  }
+  $('fire-tree-detail').textContent = matches.length
+    ? `${matches.length} matching tree${matches.length === 1 ? '' : 's'}`
+    : 'no matching trees';
+  if (matches.length) renderFireTreeDetail(matches[0]);
+}
+
+function renderFireTreeDetail(tree) {
+  if (!tree) return;
+  const detail = $('fire-tree-detail');
+  detail.replaceChildren(
+    fireSummaryRow('Species', tree.species),
+    fireSummaryRow('Fragment', tree.fragment_id),
+    fireSummaryRow('DBH cm', Number(tree.dbh_cm).toFixed(1)),
+    fireSummaryRow('Height m', Number(tree.height_m).toFixed(1)),
+    fireSummaryRow('Crown ratio', Number(tree.crown_ratio).toFixed(2)),
+    fireSummaryRow('Crown fuel t', Number(tree.crown_fuel_t).toFixed(2)),
+    fireSummaryRow('Surface fuel t/ha', Number(tree.surface_fuel_t_ha).toFixed(2)),
+    fireSummaryRow('Ignition', tree.burn_time === null ? 'unburned' : `${Number(tree.burn_time).toFixed(1)} ${state.fire.activePayload?.timeline?.unit ?? ''}`),
+    fireSummaryRow('Flame intensity', Number(tree.flame_intensity).toFixed(2)),
+    fireSummaryRow('Post-fire', tree.post_fire_state)
+  );
+}
+
+function renderFireFragmentOptions() {
+  const select = $('fire-fragment');
+  const stands = state.fire.activePayload?.stands ?? [];
+  select.replaceChildren();
+  for (const stand of stands) {
+    const option = document.createElement('option');
+    option.value = String(stand.fragment_id);
+    option.textContent = `fragment ${stand.fragment_id} · ${Number(stand.area_ha).toFixed(1)} ha`;
+    select.appendChild(option);
+  }
+  if (stands.length) renderFireFragmentDetail(stands[0]);
+  else $('fire-fragment-detail').textContent = 'no fragments in this scene';
+}
+
+function renderFireFragmentDetail(stand) {
+  if (!stand) return;
+  const unit = state.fire.activePayload?.timeline?.unit ?? '';
+  $('fire-fragment-detail').replaceChildren(
+    fireSummaryRow('Fragment', stand.fragment_id),
+    fireSummaryRow('Area ha', Number(stand.area_ha).toFixed(1)),
+    fireSummaryRow('Burn time', stand.burn_time === null ? 'unburned' : `${Number(stand.burn_time).toFixed(1)} ${unit}`)
+  );
+}
+
+function firePost(action, extra = {}) {
+  const message = { type: 'ws4-fire', action, ...extra };
+  for (const id of ['fire-frame-a', 'fire-frame-b']) {
+    const frame = $(id);
+    if (frame?.contentWindow) frame.contentWindow.postMessage(message, '*');
+  }
+}
+
+async function openFireForRun(run) {
+  await loadFireScenes({ run });
+  if (fireSceneByRun(run)) setWorkspace('fire');
+}
+
+async function loadFireWorkspace() {
+  if (!state.fire.scenes.length) await loadFireScenes();
+  else if (state.fire.selected) await setFireScene('a', state.fire.selected);
+}
+
+function wireFire() {
+  if (!$('fire-scene-a')) return;
+  $('fire-refresh').addEventListener('click', () => loadFireScenes());
+  $('fire-scene-a').addEventListener('change', () => setFireScene('a', $('fire-scene-a').value));
+  $('fire-scene-b').addEventListener('change', () => setFireScene('b', $('fire-scene-b').value));
+  $('fire-compare').addEventListener('change', async () => {
+    const enabled = $('fire-compare').checked;
+    $('fire-frame-card-b').hidden = !enabled;
+    $('fire-wrap').classList.toggle('compare', enabled);
+    if (enabled) {
+      const fallback = state.fire.scenes.find((scene) => scene.run !== state.fire.selected);
+      const run = $('fire-scene-b').value || fallback?.run;
+      if (run) {
+        $('fire-scene-b').value = run;
+        await setFireScene('b', run);
+      }
+    }
+  });
+  $('fire-play').addEventListener('click', () => {
+    state.fire.playing = !state.fire.playing;
+    $('fire-play').textContent = state.fire.playing ? 'Pause' : 'Play';
+    firePost(state.fire.playing ? 'play' : 'pause');
+  });
+  $('fire-reset').addEventListener('click', () => {
+    state.fire.playing = false;
+    $('fire-play').textContent = 'Play';
+    $('fire-time').value = '0';
+    firePost('reset');
+  });
+  $('fire-ignition').addEventListener('click', () => {
+    state.fire.playing = true;
+    $('fire-play').textContent = 'Pause';
+    $('fire-time').value = '0';
+    firePost('reset');
+    firePost('play');
+  });
+  $('fire-jump').addEventListener('click', () => {
+    const end = Number($('fire-time').max) || 1;
+    const time = end * 0.25;
+    state.fire.playing = true;
+    $('fire-play').textContent = 'Pause';
+    $('fire-time').value = String(time);
+    firePost('setTime', { time });
+    firePost('focus');
+    firePost('play');
+  });
+  $('fire-fullscreen').addEventListener('click', () => {
+    const wrap = $('fire-wrap');
+    if (document.fullscreenElement) document.exitFullscreen();
+    else wrap.requestFullscreen?.();
+  });
+  $('fire-time').addEventListener('input', () => {
+    state.fire.playing = false;
+    $('fire-play').textContent = 'Play';
+    firePost('setTime', { time: Number($('fire-time').value) });
+  });
+  $('fire-speed').addEventListener('change', () => {
+    firePost('speed', { speed: Number($('fire-speed').value) });
+  });
+  $('fire-tree-search').addEventListener('input', renderFireTreeOptions);
+  $('fire-tree').addEventListener('change', () => {
+    const tree = (state.fire.activePayload?.trees ?? []).find(
+      (candidate) => String(candidate.tree_id) === $('fire-tree').value
+    );
+    renderFireTreeDetail(tree);
+    if (tree) firePost('focusTree', { tree_id: tree.tree_id });
+  });
+  $('fire-fragment').addEventListener('change', () => {
+    const stand = (state.fire.activePayload?.stands ?? []).find(
+      (candidate) => String(candidate.fragment_id) === $('fire-fragment').value
+    );
+    renderFireFragmentDetail(stand);
+  });
+  window.addEventListener('message', (event) => {
+    const data = event.data;
+    if (!data || data.type !== 'ws4-fire-state') return;
+    if (event.source !== $('fire-frame-a')?.contentWindow) return;
+    const end = Number(data.end ?? 1);
+    $('fire-time').max = String(end);
+    $('fire-time').value = String(data.time ?? 0);
+    $('fire-clock').textContent = `${Number(data.time ?? 0).toFixed(1)} ${data.unit ?? ''}`;
+    state.fire.playing = Boolean(data.playing);
+    $('fire-play').textContent = state.fire.playing ? 'Pause' : 'Play';
+    $('fire-status').textContent =
+      `${data.burning ?? 0} burning · ${data.burnt ?? 0} burnt trees`;
+  });
+}
+
 function wireControls() {
   wireSplitter();
   wireChatSplitter();
@@ -8967,12 +9848,15 @@ function wireControls() {
     state.targetSort = { key: null, direction: 1 };
     applyTargetSort();
   });
+  $('matrix-only-failing').addEventListener('change', renderScenarioMatrix);
+  $('penalty-binding-only').addEventListener('change', renderPenaltyLedger);
   $('target-filter-search').addEventListener('input', applyTargetFilter);
   $('target-filter-status').addEventListener('change', applyTargetFilter);
   $('target-filter-clear').addEventListener('click', clearTargetFilters);
   $('target-pin-failing').addEventListener('click', pinVisibleFailing);
   $('target-unpin-visible').addEventListener('click', unpinVisibleTargets);
   $('run-health-plan').addEventListener('click', () => setWorkspace('plan'));
+  $('run-health-fire').addEventListener('click', () => openFireForRun(state.run));
   $('run-health-failing').addEventListener('click', showFailingTargets);
   for (const button of document.querySelectorAll('.workspaces [data-workspace]')) {
     button.addEventListener('click', () => setWorkspace(button.dataset.workspace));
@@ -9248,8 +10132,11 @@ async function start() {
   wireSdmd();
   wirePareto();
   wireConsole();
+  wireFire();
   wirePortfolioScan();
   wireScaffoldTargets();
+  wireBatchTargets();
+  wireScenarioBar();
   loadWatched();
   try {
     const summary = await api('api/summary');
@@ -9275,6 +10162,7 @@ async function start() {
     if (!preferred) { statusLine('no runs found'); return; }
     select.value = preferred.id;
     state.run = preferred.id;
+    await loadFireScenes({ run: preferred.id });
     const requestedPeriod = Number(params.get('period'));
     if (Number.isFinite(requestedPeriod) && requestedPeriod >= 0) {
       state.pendingPeriod = requestedPeriod;
