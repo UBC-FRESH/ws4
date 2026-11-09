@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WS4</title>
-  <link rel="stylesheet" href="static/style.css?v=116">
+  <link rel="stylesheet" href="static/style.css?v=117">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
   <script type="importmap">
     {
@@ -18,7 +18,7 @@
 <body>
   <a class="skip-link" href="#map-wrap">Skip to map</a>
   <header>
-    <div class="brand"><strong>WS4</strong><span class="build">v116</span><span id="dataset-name" class="dataset-name"></span></div>
+    <div class="brand"><strong>WS4</strong><span class="build">v117</span><span id="dataset-name" class="dataset-name"></span></div>
     <label class="skin-control">Skin <select id="skin"></select></label>
     <label>Run <select id="run"></select></label>
     <div class="period-control">
@@ -67,7 +67,25 @@
           <button id="run-profile" type="button">Run profile</button>
           <span id="profile-status" class="hint"></span>
         </div>
-        <div id="target-summary" class="target-summary" aria-live="polite" hidden></div>
+        <div id="scenario-bar" class="scenario-bar">
+          <div class="scenario-row">
+            <label>Scenario <select id="scenario-select"><option value="">Live targets</option></select></label>
+            <button id="scenario-load" type="button">Load into editor</button>
+            <button id="scenario-reload" type="button">Reload live</button>
+            <button id="scenario-delete" type="button" disabled>Delete</button>
+          </div>
+          <div class="scenario-row">
+            <input id="scenario-name" type="text" placeholder="New scenario name" autocomplete="off">
+            <input id="scenario-description" type="text" placeholder="Description (optional)" autocomplete="off">
+            <button id="scenario-save" type="button">Save as scenario</button>
+            <span id="scenario-status" class="hint"></span>
+          </div>
+          <details id="scenario-diff" class="scenario-diff" hidden>
+            <summary id="scenario-diff-summary">Target diff from live</summary>
+            <div id="scenario-diff-body"></div>
+          </details>
+        </div>
+        <div id="target-summary" class="target-summary" aria-live="polite" hidden></div>        <div id="target-summary" class="target-summary" aria-live="polite" hidden></div>
         <p id="targets-empty" class="hint">no targets yet — pick an account below</p>
         <div id="account-browser" class="account-browser">
           <div class="account-browser-head">
@@ -792,6 +810,6 @@
     <p class="hint">Shortcuts pause while typing in an input, select, or editor.</p>
   </dialog>
   <script src="static/vendor/maplibre-gl.js"></script>
-  <script type="module" src="static/app.js?v=116"></script>
+  <script type="module" src="static/app.js?v=117"></script>
 </body>
 </html>

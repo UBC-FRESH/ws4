@@ -341,6 +341,65 @@ def test_plan_batch_targets_adds_multiple_accounts_and_periods(tmp_path: Path) -
         thread.join(timeout=10)
 
 
+def test_plan_scenario_library_saves_loads_and_diffs(tmp_path: Path) -> None:
+    """A named scenario is separate from live targets and can be loaded as a draft."""
+    server, thread, url = _server(tmp_path)
+    try:
+        with sync_playwright() as playwright:
+            try:
+                browser = playwright.chromium.launch(
+                    headless=True,
+                    args=["--use-gl=swiftshader", "--enable-webgl"],
+                )
+            except Exception as error:  # pragma: no cover - browser not installed
+                pytest.skip(f"chromium is not available: {error}")
+            page = browser.new_page(viewport={"width": 1500, "height": 1000})
+            errors: list[str] = []
+            page.on("pageerror", lambda error: errors.append(str(error)))
+            page.goto(f"{url}/?run=run1&view=plan")
+            page.wait_for_function(
+                "!document.querySelector('#workspace-plan').hidden && "
+                "document.querySelectorAll('#targets-table tbody tr:not(.target-detail)')"
+                ".length >= 6",
+                timeout=15000,
+            )
+            live_before = (tmp_path / "targets.yaml").read_text(encoding="utf-8")
+            page.locator('#targets-table [data-field="minimum"]').first.fill("9999")
+            page.fill("#scenario-name", "P158 test scenario")
+            page.click("#scenario-save")
+            page.wait_for_function(
+                "document.querySelector('#scenario-status').textContent.includes('saved scenario')",
+                timeout=15000,
+            )
+            assert (tmp_path / "targets.yaml").read_text(encoding="utf-8") == live_before
+            assert page.locator("#scenario-select option").count() > 1
+            page.wait_for_function(
+                "document.querySelector('#scenario-diff-summary').textContent.includes('~1')",
+                timeout=15000,
+            )
+            page.click("#scenario-reload")
+            page.wait_for_function(
+                "document.querySelector('#scenario-diff-summary').textContent"
+                ".includes('no changes')",
+                timeout=15000,
+            )
+            scenario_id = page.locator("#scenario-select option").nth(1).get_attribute("value")
+            page.select_option("#scenario-select", scenario_id)
+            page.click("#scenario-load")
+            page.wait_for_function(
+                "document.querySelector('#scenario-diff-summary').textContent.includes('~1')",
+                timeout=15000,
+            )
+            assert (
+                page.locator('#targets-table [data-field="minimum"]').first.input_value() == "9999"
+            )
+            assert errors == []
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(timeout=10)
+
+
 def test_search_builds_a_scan_and_opens_the_explorer(tmp_path: Path) -> None:
     """The guided scan writes the vary expression and the 3D cross-link loads it."""
     server, thread, url = _server(tmp_path)

@@ -86,6 +86,11 @@ periods, or the LiDAR scale). Clicking a block adds a dark outline and fills the
 panel; the outline is available in both MapLibre and the SVG fallback. **Map engine** and
 **Unavailable layers** are compact disclosure rows, not active controls.
 
+Plan also has a **scenario library**. Save the current editor rows under a name without
+changing the live target file; load a saved scenario into the editor; reload the live
+targets; and inspect a diff between the editor and live targets before publishing. A
+scenario is stored as `runs/scenarios/<slug>/targets.yaml` with a small metadata record.
+
 Use **Batch add targets** after selecting accounts in the account browser: choose a
 period range or all periods, a level/minimum/maximum or even-flow mode, bounds, weights,
 priority, and normalization. The composer previews the new rows, refuses duplicates, and

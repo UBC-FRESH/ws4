@@ -4,7 +4,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/OrbitControls.js";
 
-const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' }, runSource: null, runSummary: null, fire: { scenes: [], selected: '', selectedB: '', payloads: new Map(), activePayload: null, playing: false }, console: { schema: null, token: '', job: null, timer: null, offset: 0, busy: false }, portfolioScan: [], portfolioTargets: [], pareto: { available: false, artifact: '', data: null, chart: null, cloud: null, selected: null, pinned: [], screen: [], artifacts: [] } };
+const state = { run: null, year: 0, features: [], view: { s: 1, x: 0, y: 0 }, base: null, skin: null, targets: [], pickedAccount: null, selectedAccounts: new Set(), targetCells: new Map(), watched: new Set(), targetSignature: "", windowValues: new Map(), series: new Map(), runPaused: false, live: { active: false, schedule: new Map(), total: 0 }, history: [], periods: [], periodIndex: 0, periodWidth: 1, yearChosen: false, chatSession: null, chatBusy: false, compareView: false, compare: null, compareAccounts: [], compareToken: 0, compareInitialized: false, layers: null, layerMode: 'current', patchClasses: new Set(), patchCatalog: [], compartmentAccounts: [], compartmentClasses: [], compartmentAccount: '', selectedCompartments: new Set(), baseAttributes: [], baseAttribute: '', roads: [], showRoads: false, usedRoads: [], showUsedRoads: false, blockElements: new Map(), mapEngine: (typeof window.maplibregl !== 'undefined' ? 'maplibre' : 'svg'), mapLibre: null, mapLibreReady: false, mapLoading: false, suppressViewportReload: false, mapTotals: null, mapFitted: false, lidar: null, lidarField: '', lidarRange: null, carbon: null, carbonAccount: '', workspace: 'map', subview: { results: 'reports', data: 'dataset' }, datasetSummary: null, geometryAvailable: true, selectedBlock: null, selectedGeometry: null, pendingBlock: null, pendingPeriod: null, urlReady: false, targetSeries: null, chartDirty: false, targetSort: { key: null, direction: 1 }, sdmd: { available: false, regions: [], aus: [], region: '', au: '', source: '', detail: null, plots: [], yield: [], points: null, regimes: [], preview: null, trajectory: '', trajectoryData: null, yieldMetric: 'volume_m3_ha' }, runSource: null, runSummary: null, scenario: { liveRows: [], list: [], loadedId: '', source: 'Live targets' }, fire: { scenes: [], selected: '', selectedB: '', payloads: new Map(), activePayload: null, playing: false }, console: { schema: null, token: '', job: null, timer: null, offset: 0, busy: false }, portfolioScan: [], portfolioTargets: [], pareto: { available: false, artifact: '', data: null, chart: null, cloud: null, selected: null, pinned: [], screen: [], artifacts: [] } };
 
 state.estate3d = { open: false, features: [], yaw: -0.55, zoom: 1, exaggeration: 1, hits: [] };
 const ESTATE_3D_LIMIT = 2000;
@@ -6164,6 +6164,7 @@ function renderScenarioMatrix() {
 
 function renderTargetCharts() {
   renderScenarioMatrix();
+  renderScenarioDiff();
   const grid = $('target-chart-grid');
   const empty = $('target-chart-empty');
   const count = $('target-chart-count');
@@ -7233,7 +7234,212 @@ async function removeTarget(index) {
   await postTargets(rows, 'removed target');
 }
 
-async function loadTargets() {
+function scenarioField(row, field) {
+  if (field === 'notes') return String(row.notes ?? '');
+  if (field === 'active') return row.active !== false;
+  if (field === 'flow') return String(row.flow ?? '');
+  const value = row[field];
+  return value === null || value === undefined ? '' : String(value);
+}
+
+function scenarioDiffEntries() {
+  const live = new Map((state.scenario.liveRows ?? []).map((row) => [targetKey(row), row]));
+  const current = new Map(collectTargets().map((row) => [targetKey(row), row]));
+  const fields = [
+    'minimum',
+    'maximum',
+    'min_weight',
+    'max_weight',
+    'priority',
+    'normalization',
+    'active',
+    'flow',
+    'flow_start_period',
+    'flow_end_period',
+    'shape',
+    'notes',
+  ];
+  const entries = [];
+  for (const [key, row] of current) {
+    const previous = live.get(key);
+    if (!previous) {
+      entries.push({ mark: '+', className: 'diff-added', account: row.account, fields: 'added' });
+      continue;
+    }
+    const changes = fields
+      .filter((field) => scenarioField(previous, field) !== scenarioField(row, field))
+      .map((field) => `${field}: ${scenarioField(previous, field) || '—'} → ${scenarioField(row, field) || '—'}`);
+    if (changes.length) {
+      entries.push({
+        mark: '~',
+        className: 'diff-changed',
+        account: `${row.account} · P${row.period ?? row.year}`,
+        fields: changes.join(' · '),
+      });
+    }
+  }
+  for (const [key, row] of live) {
+    if (!current.has(key)) {
+      entries.push({ mark: '-', className: 'diff-removed', account: row.account, fields: 'removed' });
+    }
+  }
+  return entries;
+}
+
+function renderScenarioDiff() {
+  const panel = $('scenario-diff');
+  const body = $('scenario-diff-body');
+  const summary = $('scenario-diff-summary');
+  if (!panel || !body || !summary) return;
+  if (!state.scenario.liveRows.length) {
+    panel.hidden = true;
+    return;
+  }
+  const entries = scenarioDiffEntries();
+  panel.hidden = false;
+  const added = entries.filter((entry) => entry.mark === '+').length;
+  const removed = entries.filter((entry) => entry.mark === '-').length;
+  const changed = entries.filter((entry) => entry.mark === '~').length;
+  summary.textContent = entries.length
+    ? `Target diff from live: +${added} · −${removed} · ~${changed}`
+    : 'Target diff from live: no changes';
+  body.replaceChildren();
+  if (!entries.length) {
+    const note = document.createElement('p');
+    note.className = 'hint';
+    note.textContent = 'The editor matches the live target file.';
+    body.append(note);
+    return;
+  }
+  for (const entry of entries.slice(0, 80)) {
+    const row = document.createElement('div');
+    row.className = 'scenario-diff-row';
+    const mark = document.createElement('span');
+    mark.className = `diff-mark ${entry.className}`;
+    mark.textContent = entry.mark;
+    const account = document.createElement('span');
+    account.className = 'diff-account';
+    account.textContent = entry.account;
+    account.title = entry.account;
+    const fields = document.createElement('span');
+    fields.className = 'diff-fields';
+    fields.textContent = entry.fields;
+    row.append(mark, account, fields);
+    body.append(row);
+  }
+}
+
+async function loadScenarioList() {
+  const select = $('scenario-select');
+  if (!select) return;
+  try {
+    const list = await api('api/scenarios');
+    state.scenario.list = Array.isArray(list) ? list : [];
+  } catch {
+    state.scenario.list = [];
+  }
+  const previous = state.scenario.loadedId || select.value;
+  select.replaceChildren();
+  const live = document.createElement('option');
+  live.value = '';
+  live.textContent = 'Live targets';
+  select.append(live);
+  for (const item of state.scenario.list) {
+    const option = document.createElement('option');
+    option.value = item.id;
+    option.textContent = `${item.name} · ${item.target_count} targets`;
+    option.title = item.description || item.name;
+    select.append(option);
+  }
+  if ([...select.options].some((option) => option.value === previous)) select.value = previous;
+  $('scenario-delete').disabled = !select.value;
+}
+
+async function loadSelectedScenario() {
+  const select = $('scenario-select');
+  const status = $('scenario-status');
+  if (!select.value) {
+    await loadTargets();
+    status.textContent = 'editing live targets';
+    return;
+  }
+  status.textContent = 'loading scenario…';
+  try {
+    const scenario = await api(`api/scenarios/${encodeURIComponent(select.value)}`);
+    state.scenario.loadedId = select.value;
+    await loadTargets(scenario.targets, { source: scenario.name });
+    state.scenario.source = scenario.name;
+    status.textContent = `editing ${scenario.name}; save targets to publish`;
+    $('scenario-select').value = select.value;
+    $('scenario-delete').disabled = false;
+  } catch (error) {
+    status.textContent = `scenario load failed: ${error.message}`;
+  }
+}
+
+async function saveScenario() {
+  const name = $('scenario-name').value.trim();
+  const status = $('scenario-status');
+  if (!name) {
+    status.textContent = 'enter a scenario name';
+    $('scenario-name').focus();
+    return;
+  }
+  status.textContent = 'saving scenario…';
+  try {
+    const scenario = await api('api/scenarios', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        description: $('scenario-description').value.trim(),
+        targets: collectTargets(),
+      }),
+    });
+    state.scenario.loadedId = scenario.id;
+    state.scenario.source = scenario.name;
+    await loadScenarioList();
+    $('scenario-select').value = scenario.id;
+    $('scenario-delete').disabled = false;
+    status.textContent = `saved scenario ${scenario.name}; live targets unchanged`;
+  } catch (error) {
+    status.textContent = `scenario save failed: ${error.message}`;
+  }
+}
+
+async function deleteSelectedScenario() {
+  const select = $('scenario-select');
+  const status = $('scenario-status');
+  if (!select.value) return;
+  try {
+    await api(`api/scenarios/${encodeURIComponent(select.value)}`, { method: 'DELETE' });
+    state.scenario.loadedId = '';
+    select.value = '';
+    await loadScenarioList();
+    status.textContent = 'scenario deleted';
+  } catch (error) {
+    status.textContent = `scenario delete failed: ${error.message}`;
+  }
+}
+
+function wireScenarioBar() {
+  if (!$('scenario-select')) return;
+  $('scenario-load').addEventListener('click', loadSelectedScenario);
+  $('scenario-reload').addEventListener('click', async () => {
+    await loadTargets();
+    $('scenario-status').textContent = 'editing live targets';
+  });
+  $('scenario-save').addEventListener('click', saveScenario);
+  $('scenario-delete').addEventListener('click', deleteSelectedScenario);
+  $('scenario-select').addEventListener('change', () => {
+    $('scenario-delete').disabled = !$('scenario-select').value;
+  });
+  $('targets-table').addEventListener('input', renderScenarioDiff);
+  $('targets-table').addEventListener('change', renderScenarioDiff);
+  loadScenarioList();
+}
+
+async function loadTargets(rowsOverride = null, { source = 'live' } = {}) {
   const empty = $('targets-empty');
   const table = $('targets-table');
   const button = $('save-targets');
@@ -7242,8 +7448,15 @@ async function loadTargets() {
     setChartStatus('');
     state.targetCells = new Map();
     state.windowValues = new Map();
-    const rows = await api('api/targets.json');
+    const rows = rowsOverride ?? await api('api/targets.json');
     rows.forEach((row) => { row.active = row.active !== false; });
+    if (rowsOverride === null) {
+      state.scenario.liveRows = rows.map((row) => ({ ...row }));
+      state.scenario.loadedId = '';
+      state.scenario.source = 'Live targets';
+    } else {
+      state.scenario.source = source;
+    }
     state.targets = rows;
     populateScanAccounts();
     renderPortfolioScan();
@@ -7490,6 +7703,8 @@ async function loadTargets() {
     renderAccountTree();
     syncBatchDefaults();
     renderBatchPreview();
+    renderScenarioDiff();
+    await loadScenarioList();
     if (state.skin) applySkin(state.skin);
   } catch (error) {
     empty.hidden = false;
@@ -9847,6 +10062,7 @@ async function start() {
   wirePortfolioScan();
   wireScaffoldTargets();
   wireBatchTargets();
+  wireScenarioBar();
   loadWatched();
   try {
     const summary = await api('api/summary');
