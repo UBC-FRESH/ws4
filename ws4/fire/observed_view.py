@@ -92,8 +92,10 @@ def render_comparison_svg(
                 col += 1
             x1 = px(grid.xll + start * grid.cell_size_m)
             x2 = px(grid.xll + col * grid.cell_size_m)
-            y1 = py(grid.yll + (row + 1) * grid.cell_size_m)
-            y2 = py(grid.yll + row * grid.cell_size_m)
+            # The mask rows are north-first. Convert the row's north and south
+            # edges to projected y before handing them to the screen transform.
+            y1 = py(grid.yll + (grid.nrows - row) * grid.cell_size_m)
+            y2 = py(grid.yll + (grid.nrows - row - 1) * grid.cell_size_m)
             paths.append(f"M{x1:.2f},{y1:.2f} h{x2 - x1:.2f} v{y2 - y1:.2f} h{-(x2 - x1):.2f} Z")
     simulated_path = " ".join(paths)
 

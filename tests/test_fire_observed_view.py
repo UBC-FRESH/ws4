@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import re
+from dataclasses import replace
 from pathlib import Path
 
+import numpy as np
 import pytest
 from ws4.fire.comparison import DogribCase, run_dogrib_case
 from ws4.fire.observed import ObservedFire, load_dogrib
@@ -60,3 +63,18 @@ def test_write_comparison_svg_writes_a_file(
 def test_render_rejects_a_tiny_canvas(fire: ObservedFire, case: DogribCase) -> None:
     with pytest.raises(ValueError, match="too small"):
         render_comparison_svg(fire, case, width=320, height=240)
+
+
+def test_simulated_mask_rows_are_north_first(fire: ObservedFire, case: DogribCase) -> None:
+    """The simulated path maps north-first mask rows to the top of the map."""
+    rows, cols = case.growth.ignition_time_min.shape
+    mask = np.full((rows, cols), np.inf)
+    mask[0, 0] = 0.0
+    mask[rows - 1, cols - 1] = 0.0
+    growth = replace(case.growth, ignition_time_min=mask)
+    view_case = replace(case, growth=growth, initial_burned_mask=None)
+    svg = render_comparison_svg(fire, view_case)
+    first_path = svg.split('<path d="', 1)[1].split('"', 1)[0]
+    ys = [float(match[1]) for match in re.findall(r"M([\d.]+),([\d.]+)", first_path)]
+    assert min(ys) < 200.0
+    assert max(ys) > 500.0
