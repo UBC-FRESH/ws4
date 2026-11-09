@@ -5010,3 +5010,34 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   and 17.1° orientation error. The FireSTARR transformer cannot use the observed start
   perimeter, fuel break, or river wind patch, so this is not a Scenario 2b reproduction.
   Prometheus remains a Windows-only blocker. Issue #945 closed. Dashboard: **GREEN**.
+
+- P160.1: added `BurningConditions` to the growth path. Hourly steps now carry relative
+  humidity, and exclusive ISI, wind, and humidity bounds suspend new spread until a later
+  step passes. The Dogrib helper encodes the sample values (ISI > 8, wind > 5 km/h, humidity
+  50 %) and exposes both readings of the README's contradictory "greater than 50 %" wording;
+  the event weather is 18-40 %. The physically plausible maximum leaves Scenario 2b unchanged
+  at 16,241 ha (+58.9%), perimeter +75.9%, IoU 0.385, Sorensen 0.556, centroid 1.77 km, and
+  6.5°; the literal minimum would stop growth. WindNinja 2c/2d and the fixed matrix remain
+  P160.2/P160.3. Dashboard: **GREEN**.
+
+- P160.2: added `ws4.fire.wind` for the Dogrib WindNinja inputs. The loader validates paired
+  angle/velocity ESRI ASCII grids, records method/source/geometry provenance, rejects missing
+  or mismatched pairs, and selects the nearest direction grid by circular distance. Added the
+  `fire-wind` reference page and a synthetic-pair test suite. The full conservation-of-mass and
+  conservation-of-mass-and-momentum grids remain untracked because the archive has no explicit
+  licence file; the docs record the public archive path and the 2c/2d member names. Dashboard:
+  **GREEN**.
+
+- P160.3: ran the fixed Dogrib matrix with the threshold gate and both WindNinja methods.
+  Thresholds leave 2b unchanged at 16,241 ha (+58.9%), perimeter +75.9%, IoU 0.385,
+  Sorensen 0.556, centroid 1.77 km, and 6.5°; the literal RH > 50 % reading stops growth
+  (937 ha). Conservation of mass (2c) is 7,976 ha (−21.9%), perimeter +21.1%, IoU 0.274,
+  Sorensen 0.430, centroid 6.80 km, and 15.7°; conservation of mass and momentum (2d) is
+  5,251 ha (−48.6%), perimeter −14.9%, IoU 0.237, Sorensen 0.384, centroid 8.99 km, and
+  32.3°. Neither wind method explains the 2b overprediction. Dashboard: **GREEN**.
+
+- P160.4: closed out the phase with the fixed 2b/2c/2d matrix. The threshold gate leaves 2b
+  unchanged; the literal RH reading stops growth; the WindNinja 2c/2d grids underburn and fail
+  the spatial screens. Recorded the third-party data licence limit, the nearest-direction
+  selection limit, and the recommendation to acquire a second independent fire before fitting.
+  No calibration was performed. Dashboard: **GREEN**.

@@ -65,6 +65,22 @@ one-cell no-fuel band.
 
 Non-burnable cells never ignite, so a barrier is a mask, not a penalty.
 
+Burning conditions
+------------------
+
+``BurningConditions`` gates growth on the hourly weather step. The thresholds are exclusive,
+matching the sample-scenario wording: ISI, wind, and relative-humidity bounds must be strictly
+passed. A failed step does not extinguish the fire; it suspends new spread until a later step
+passes. This is how the engine represents a temporary burning-condition shutdown.
+
+The gate requires a time-dependent weather stream and a relative-humidity value on every step.
+The Dogrib sample records an hourly ISI greater than 8, wind greater than 5 km/h, and a
+relative-humidity condition at 50 percent. The sample README says "greater than 50 percent",
+but the event weather is 18--40 percent and a greater-than condition would stop all growth.
+``ws4.fire.comparison.dogrib_burning_conditions`` therefore exposes both readings as a
+sensitivity: ``relative_humidity="lt"`` uses the physically plausible maximum and ``"gt"``
+preserves the literal wording. The interpretation used is recorded in the run summary.
+
 Fragment bridge
 ---------------
 

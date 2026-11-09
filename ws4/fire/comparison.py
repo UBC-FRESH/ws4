@@ -25,6 +25,7 @@ from .fwi import (
     initial_fwi_state,
 )
 from .growth import (
+    BurningConditions,
     GrowthConfig,
     GrowthResult,
     SiteGrid,
@@ -33,6 +34,7 @@ from .growth import (
     slope_aspect_from_elevation,
 )
 from .observed import ObservedFire, ObservedGrid
+from .wind import WindNinjaGrid, same_geometry
 
 
 class ComparisonError(RuntimeError):
@@ -167,6 +169,15 @@ class DogribCase:
             "fuel_type": self.fuel_type,
             "fuel_mode": self.fuel_mode,
             "weather_mode": self.weather_mode,
+            "wind_grids": (
+                None
+                if self.growth.config.wind_grids is None
+                else {
+                    "directions": sorted(self.growth.config.wind_grids),
+                    "method": next(iter(self.growth.config.wind_grids.values())).method,
+                    "source": next(iter(self.growth.config.wind_grids.values())).source,
+                }
+            ),
             "ffmc": self.ffmc,
             "bui": self.bui,
             "wind_kmh": self.wind_kmh,
@@ -185,6 +196,11 @@ class DogribCase:
                 "length_to_breadth": self.growth.length_to_breadth,
                 "effective_wind_kmh": self.growth.effective_wind.speed_kmh,
                 "spread_azimuth_deg": self.growth.effective_wind.azimuth_deg,
+                "burning_conditions": (
+                    None
+                    if self.growth.config.burning_conditions is None
+                    else self.growth.config.burning_conditions.to_dict()
+                ),
             },
             "metrics": self.metrics.to_dict(),
         }
@@ -553,11 +569,54 @@ def hourly_weather_steps(
                 % 360.0,
                 ffmc=current_ffmc,
                 bui=buildup,
+                relative_humidity_percent=humidity,
             )
         )
     if not steps or steps[0].start_min != 0.0:
         raise ComparisonError("weather stream does not start at the event start")
     return tuple(steps)
+
+
+def dogrib_burning_conditions(*, relative_humidity: str = "lt") -> BurningConditions:
+    """Return the Dogrib sample burning-condition thresholds.
+
+    The sample README requires an hourly Initial Spread Index greater than 8, a wind speed
+    greater than 5 km/h, and a relative-humidity condition of 50 percent. The README wording
+    says "greater than 50 percent", but the event weather is 18-40 percent and a greater-than
+    condition would stop all growth. ``relative_humidity="lt"`` uses the physically plausible
+    maximum; ``"gt"`` preserves the literal README reading for a sensitivity run.
+
+    Parameters
+    ----------
+    relative_humidity : str, optional
+        ``"lt"`` for relative humidity below 50 percent, or ``"gt"`` for above 50 percent.
+
+    Returns
+    -------
+    BurningConditions
+        The threshold set with a source label.
+
+    Raises
+    ------
+    ComparisonError
+        If ``relative_humidity`` is neither ``"lt"`` nor ``"gt"``.
+    """
+    source = "Dogrib_v624 sample README: hourly ISI > 8, wind > 5 km/h"
+    if relative_humidity == "lt":
+        return BurningConditions(
+            isi_gt=8.0,
+            wind_gt_kmh=5.0,
+            relative_humidity_lt_percent=50.0,
+            source=source,
+        )
+    if relative_humidity == "gt":
+        return BurningConditions(
+            isi_gt=8.0,
+            wind_gt_kmh=5.0,
+            relative_humidity_gt_percent=50.0,
+            source=source,
+        )
+    raise ComparisonError("relative_humidity must be 'lt' or 'gt'")
 
 
 def run_dogrib_case(
@@ -577,6 +636,8 @@ def run_dogrib_case(
     slope_percent: float = 32.0,
     aspect_deg: float = 180.0,
     duration_min: float = 402.0,
+    burning_conditions: BurningConditions | None = None,
+    wind_grids: dict[int, WindNinjaGrid] | None = None,
 ) -> DogribCase:
     """Run one Dogrib base or sensitivity case and compare it with the final perimeter.
 
@@ -608,6 +669,10 @@ def run_dogrib_case(
         Homogeneous aspect (default 180).
     duration_min : float, optional
         Simulation duration (default 402 minutes, the 6.7-hour run).
+    burning_conditions : BurningConditions or None, optional
+        Hourly growth gate; None applies no threshold. The hourly weather path is required.
+    wind_grids : dict of int to WindNinjaGrid or None, optional
+        Spatial wind inputs keyed by direction. The hourly weather path is required.
 
     Returns
     -------
@@ -622,6 +687,14 @@ def run_dogrib_case(
     weather = reference_weather(fire)
     ffmc_value = weather["ffmc"] if ffmc is None else ffmc
     bui_value = weather["bui"] if bui is None else bui
+    if wind_grids is not None:
+        if not wind_grids:
+            raise ComparisonError("wind_grids must not be empty")
+        if not hourly_weather:
+            raise ComparisonError("wind_grids require hourly_weather")
+        for wind_grid in wind_grids.values():
+            if not same_geometry(wind_grid.geometry, fire.grid):
+                raise ComparisonError("wind-grid geometry must match the observed grid")
     if hourly_weather:
         steps = hourly_weather_steps(
             fire,
@@ -632,7 +705,11 @@ def run_dogrib_case(
         )
         wind_value = steps[0].wind_kmh
         direction_value = steps[0].wind_direction_deg
-        weather_mode = "hourly" if not weather_patches else "hourly+patches"
+        weather_mode = "hourly"
+        if weather_patches:
+            weather_mode += "+patches"
+        if wind_grids is not None:
+            weather_mode += "+wind-grid"
     else:
         steps = None
         wind_value = weather["wind_kmh"] if wind_kmh is None else wind_kmh
@@ -721,6 +798,8 @@ def run_dogrib_case(
             neighbor_radius=2,
             weather_steps=steps,
             wind_patch_end_min=420.0 if weather_patches else None,
+            burning_conditions=burning_conditions,
+            wind_grids=wind_grids,
         ),
     )
     simulated = np.isfinite(growth.ignition_time_min)
