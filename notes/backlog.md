@@ -477,9 +477,12 @@ items are enhancements and maintenance.
   18–40 %, so both interpretations are exposed; the physical maximum reading leaves the P157
   Scenario 2b result unchanged, while the literal minimum reading stops growth. WindNinja 2c/2d
   and the fixed comparison matrix remain P160.2/P160.3.
-- **WindNinja 2c/2d wind grids.** `open` (P160.2, #949; P160.3, #950). The public Dogrib archive
-  contains the conservation-of-mass and conservation-of-mass-and-momentum grids; the loader,
-  provenance, and fixed 2b/2c/2d matrix are not implemented yet.
+- **WindNinja 2c/2d wind grids.** `done` (P160.2, #949; P160.3, #950). The loader and provenance
+  are implemented, and the fixed 2b/2c/2d matrix is recorded in
+  `notes/reports/p160-dogrib-matrix.md`. Scenario 2c is 7,976 ha (−21.9%, IoU 0.274), and
+  scenario 2d is 5,251 ha (−48.6%, IoU 0.237); both are worse than the 2b polygon-patch case on
+  the spatial screens. The full grids remain untracked because the archive has no explicit
+  licence file.
 - **Planscape and burn-emulator review.** `done`. Reviewed the Planscape planning platform,
   its external burn-emulator client, and the burn-emulator surrogate. Planscape has no fire
   spread engine or observed-fire calibration. The burn-emulator trains a CNN on Pyretechnics

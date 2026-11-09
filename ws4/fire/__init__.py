@@ -93,6 +93,7 @@ from .wind import (
     load_windninja_directory,
     nearest_wind_direction,
     read_windninja_pair,
+    same_geometry,
     wind_grid_at,
 )
 
@@ -165,6 +166,7 @@ __all__ = [
     "map_vri_table",
     "nearest_wind_direction",
     "read_windninja_pair",
+    "same_geometry",
     "surface_fire",
     "surface_fuel_consumption",
     "van_wagner_active_crown",

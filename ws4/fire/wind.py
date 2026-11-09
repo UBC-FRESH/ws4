@@ -260,6 +260,32 @@ def wind_grid_at(
     return _non_negative(speed, "speed_kmh"), _number(direction, "angle_deg") % 360.0
 
 
+def same_geometry(first: ObservedGrid, second: ObservedGrid) -> bool:
+    """Return whether two grids share dimensions, origin, cell size, and CRS.
+
+    No-data values are allowed to differ because the WindNinja archive and the observed-fire
+    fixture use different sentinels.
+
+    Parameters
+    ----------
+    first, second : ObservedGrid
+        Grids to compare.
+
+    Returns
+    -------
+    bool
+        True when the geometry fields match.
+    """
+    return (
+        first.ncols == second.ncols
+        and first.nrows == second.nrows
+        and first.xll == second.xll
+        and first.yll == second.yll
+        and first.cell_size_m == second.cell_size_m
+        and first.crs == second.crs
+    )
+
+
 def angular_distance(first_deg: float, second_deg: float) -> float:
     """Return the smallest absolute angular distance between two directions.
 

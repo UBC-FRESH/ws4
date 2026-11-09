@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 from ws4.fire.fuel import FireFuelError
+from ws4.fire.growth import GrowthConfig, SiteGrid, WeatherStep, grow_fire
 from ws4.fire.observed import ObservedGrid
 from ws4.fire.wind import (
     WindNinjaGrid,
@@ -127,6 +128,45 @@ def test_wind_grid_at_selects_the_nearest_grid_and_cell(tmp_path: Path) -> None:
 
     assert speed == pytest.approx(10.0)
     assert direction == pytest.approx(90.0)
+
+
+def test_wind_grids_drive_growth() -> None:
+    geometry = ObservedGrid(31, 31, 0.0, 0.0, 10.0, -9999.0, "local")
+    grid = SiteGrid(
+        fuel_type="C2",
+        rows=31,
+        cols=31,
+        cell_size_m=10.0,
+        ffmc=90.0,
+        bui=60.0,
+        wind_kmh=5.0,
+        wind_direction_deg=270.0,
+        slope_percent=0.0,
+        aspect_deg=0.0,
+    )
+    wind = WindNinjaGrid(
+        direction_deg=270,
+        angle_deg=np.full((31, 31), 270.0),
+        speed_kmh=np.full((31, 31), 30.0),
+        geometry=geometry,
+        method="conservation_of_mass",
+        source="test archive",
+    )
+    result = grow_fire(
+        grid,
+        GrowthConfig(
+            ignition_cells=((15, 15),),
+            max_time_min=60.0,
+            snapshot_interval_min=60.0,
+            weather_steps=(
+                WeatherStep(0.0, 5.0, 270.0, ffmc=90.0, bui=60.0, relative_humidity_percent=40.0),
+            ),
+            wind_grids={270: wind},
+        ),
+    )
+
+    assert result.burned_area_ha > 0.01
+    assert result.summary()["wind_grids"] is not None
 
 
 def test_grid_cell_for_xy_uses_north_first_rows() -> None:

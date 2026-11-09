@@ -29,6 +29,7 @@ from .fbp import (
 )
 from .fuel import FireFuelError, _non_negative, _number, _probability
 from .fwi import initial_spread_index
+from .wind import WindNinjaGrid, wind_grid_at
 
 if TYPE_CHECKING:
     from ws4.ecosystem.events import Event
@@ -461,6 +462,9 @@ class GrowthConfig:
         Stop applying the site-grid wind-direction patch after this time.
     burning_conditions : BurningConditions or None, optional
         Weather-step thresholds. They require ``weather_steps`` with relative humidity.
+    wind_grids : dict of int to WindNinjaGrid or None, optional
+        Spatial wind inputs keyed by domain-average direction. They require
+        ``weather_steps`` and select the nearest direction grid for each step.
     """
 
     ignition_cells: tuple[tuple[int, int], ...]
@@ -471,6 +475,7 @@ class GrowthConfig:
     weather_steps: tuple[WeatherStep, ...] | None = None
     wind_patch_end_min: float | None = None
     burning_conditions: BurningConditions | None = None
+    wind_grids: dict[int, WindNinjaGrid] | None = None
 
     def __post_init__(self) -> None:
         """Validate the growth configuration."""
@@ -508,6 +513,15 @@ class GrowthConfig:
                 raise FireFuelError(
                     "burning_conditions require relative_humidity_percent on every weather step"
                 )
+        if self.wind_grids is not None:
+            if not self.wind_grids:
+                raise FireFuelError("wind_grids must not be empty")
+            if self.weather_steps is None:
+                raise FireFuelError("wind_grids require weather_steps")
+            if any(not isinstance(key, int) for key in self.wind_grids):
+                raise FireFuelError("wind_grids keys must be integer directions")
+            if any(not isinstance(value, WindNinjaGrid) for value in self.wind_grids.values()):
+                raise FireFuelError("wind_grids values must be WindNinjaGrid objects")
         if (
             self.wind_patch_end_min is not None
             and _non_negative(self.wind_patch_end_min, "wind_patch_end_min") <= 0.0
@@ -658,6 +672,15 @@ class GrowthResult:
                 None
                 if self.config.burning_conditions is None
                 else self.config.burning_conditions.to_dict()
+            ),
+            "wind_grids": (
+                None
+                if self.config.wind_grids is None
+                else {
+                    "directions": sorted(self.config.wind_grids),
+                    "method": next(iter(self.config.wind_grids.values())).method,
+                    "source": next(iter(self.config.wind_grids.values())).source,
+                }
             ),
             "burned_area_ha": self.burned_area_ha,
             "perimeter_m": self.perimeter_m,
@@ -1135,7 +1158,15 @@ def _grow_fire_time_dependent(grid: SiteGrid, config: GrowthConfig) -> GrowthRes
                 )
                 cache[key] = blocked
                 return blocked
+        wind_kmh = step.wind_kmh
         wind_direction = step.wind_direction_deg
+        if config.wind_grids is not None:
+            wind_kmh, wind_direction = wind_grid_at(
+                config.wind_grids,
+                row=row,
+                col=col,
+                direction_deg=step.wind_direction_deg,
+            )
         patch_active = (
             config.wind_patch_end_min is None or step.start_min < config.wind_patch_end_min
         )
@@ -1149,7 +1180,7 @@ def _grow_fire_time_dependent(grid: SiteGrid, config: GrowthConfig) -> GrowthRes
             col,
             grid.ffmc if step.ffmc is None else step.ffmc,
             grid.bui if step.bui is None else step.bui,
-            step.wind_kmh,
+            wind_kmh,
             wind_direction,
         )
         cache[key] = value

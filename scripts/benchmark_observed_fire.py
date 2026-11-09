@@ -92,9 +92,53 @@ SCENARIOS: tuple[str, ...] = (
     "heterogeneous-hourly-1372",
     "heterogeneous-long-1372",
 )
+EXTRA_SCENARIOS: tuple[str, ...] = (
+    "scenario-2b-thresholds",
+    "scenario-2b-rh-above",
+)
+WIND_GRID_SCENARIOS: tuple[str, ...] = (
+    "scenario-2c",
+    "scenario-2d",
+)
 
 
-def run_scenario(fire: ObservedFire, name: str) -> DogribCase:
+def load_wind_grids(root: Path) -> dict[str, dict[int, Any]]:
+    """Load the two WindNinja methods under a Dogrib wind-grid root.
+
+    Parameters
+    ----------
+    root : Path
+        Directory containing ``conserv_mass/`` and ``conserv_mass_moment/``.
+
+    Returns
+    -------
+    dict of str to dict
+        Grids keyed by method, then by domain-average direction.
+    """
+    from ws4.fire.observed import DOGRIB_CRS
+    from ws4.fire.wind import load_windninja_directory
+
+    return {
+        "conservation_of_mass": load_windninja_directory(
+            root / "conserv_mass",
+            method="conservation_of_mass",
+            source="Dogrib_v624 WindNinja conservation-of-mass grids",
+            crs=DOGRIB_CRS,
+        ),
+        "conservation_of_mass_and_momentum": load_windninja_directory(
+            root / "conserv_mass_moment",
+            method="conservation_of_mass_and_momentum",
+            source="Dogrib_v624 WindNinja conservation-of-mass-and-momentum grids",
+            crs=DOGRIB_CRS,
+        ),
+    }
+
+
+def run_scenario(
+    fire: ObservedFire,
+    name: str,
+    wind_grids: dict[str, dict[int, Any]] | None = None,
+) -> DogribCase:
     """Run one named sensitivity scenario.
 
     Parameters
@@ -102,13 +146,47 @@ def run_scenario(fire: ObservedFire, name: str) -> DogribCase:
     fire : ObservedFire
         Dogrib observed fire.
     name : str
-        Scenario name from ``SCENARIOS``.
+        Scenario name from ``SCENARIOS`` or ``WIND_GRID_SCENARIOS``.
+    wind_grids : dict, optional
+        WindNinja grids keyed by method. Required for 2c and 2d.
 
     Returns
     -------
     DogribCase
         The simulated growth and comparison.
     """
+    if name in {"scenario-2b-thresholds", "scenario-2b-rh-above", "scenario-2c", "scenario-2d"}:
+        from ws4.fire.comparison import dogrib_burning_conditions
+
+        if name in {"scenario-2b-thresholds", "scenario-2b-rh-above"}:
+            interpretation = "gt" if name == "scenario-2b-rh-above" else "lt"
+            return run_dogrib_case(
+                fire,
+                scenario=name,
+                heterogeneous=True,
+                hourly_weather=True,
+                weather_patches=True,
+                point_ignition=True,
+                fuel_break_start=True,
+                duration_min=402.0,
+                burning_conditions=dogrib_burning_conditions(relative_humidity=interpretation),
+            )
+        if wind_grids is None:
+            raise ValueError(f"{name} requires WindNinja grids")
+        method = (
+            "conservation_of_mass" if name == "scenario-2c" else "conservation_of_mass_and_momentum"
+        )
+        return run_dogrib_case(
+            fire,
+            scenario=name,
+            heterogeneous=True,
+            hourly_weather=True,
+            point_ignition=True,
+            fuel_break_start=True,
+            duration_min=402.0,
+            burning_conditions=dogrib_burning_conditions(),
+            wind_grids=wind_grids[method],
+        )
     if name == "scenario-2b":
         return run_dogrib_case(
             fire,
@@ -164,12 +242,22 @@ def main() -> None:
         type=Path,
         default=ROOT / "notes" / "reports" / "p157-dogrib-view.svg",
     )
+    parser.add_argument(
+        "--wind-grids-root",
+        type=Path,
+        default=None,
+        help="Dogrib WindNinja root with conserv_mass/ and conserv_mass_moment/.",
+    )
     args = parser.parse_args()
     fire = load_dogrib(ROOT / "tests" / "fixtures" / "fire" / "dogrib")
+    wind_grids = None if args.wind_grids_root is None else load_wind_grids(args.wind_grids_root)
+    scenarios = list(SCENARIOS) + list(EXTRA_SCENARIOS)
+    if wind_grids is not None:
+        scenarios.extend(WIND_GRID_SCENARIOS)
     rows: list[dict[str, object]] = []
     base_case: DogribCase | None = None
-    for name in SCENARIOS:
-        case = run_scenario(fire, name)
+    for name in scenarios:
+        case = run_scenario(fire, name, wind_grids)
         if name == "scenario-2b":
             base_case = case
         row: dict[str, object] = {
@@ -191,6 +279,12 @@ def main() -> None:
             "head_ros_m_min": case.growth.head_ros_m_min,
             "length_to_breadth": case.growth.length_to_breadth,
             "burned_area_ha": case.growth.burned_area_ha,
+            "burning_conditions": (
+                None
+                if case.growth.config.burning_conditions is None
+                else case.growth.config.burning_conditions.to_dict()
+            ),
+            "wind_grids": case.to_dict()["wind_grids"],
         }
         row.update({f"metric_{key}": value for key, value in case.metrics.to_dict().items()})
         rows.append(row)

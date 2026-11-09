@@ -4728,6 +4728,7 @@ Branch: `feature/p160-dogrib-wind-thresholds`
 Status: active
 Design note: `notes/design/ws4-fire-behaviour.md`
 Evidence: `notes/reports/p157-observed-validation.md`
+Matrix: `notes/reports/p160-dogrib-matrix.md`
 Close-out: `notes/reports/p157-closeout.md`
 
 Goal: test whether the remaining Dogrib area/perimeter overprediction is explained by the
@@ -4736,7 +4737,7 @@ grids, without calibrating WS4 to the observed perimeter.
 
 - [x] P160.1 Burning-condition threshold contract and gate (#948)
 - [x] P160.2 WindNinja 2c/2d wind-grid inputs (#949)
-- [ ] P160.3 Run the 2b/2c/2d comparison matrix (#950)
+- [x] P160.3 Run the 2b/2c/2d comparison matrix (#950)
 - [ ] P160.4 Close out with evidence and limits (#951)
 
 Acceptance:

@@ -5027,3 +5027,11 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   conservation-of-mass-and-momentum grids remain untracked because the archive has no explicit
   licence file; the docs record the public archive path and the 2c/2d member names. Dashboard:
   **GREEN**.
+
+- P160.3: ran the fixed Dogrib matrix with the threshold gate and both WindNinja methods.
+  Thresholds leave 2b unchanged at 16,241 ha (+58.9%), perimeter +75.9%, IoU 0.385,
+  Sorensen 0.556, centroid 1.77 km, and 6.5°; the literal RH > 50 % reading stops growth
+  (937 ha). Conservation of mass (2c) is 7,976 ha (−21.9%), perimeter +21.1%, IoU 0.274,
+  Sorensen 0.430, centroid 6.80 km, and 15.7°; conservation of mass and momentum (2d) is
+  5,251 ha (−48.6%), perimeter −14.9%, IoU 0.237, Sorensen 0.384, centroid 8.99 km, and
+  32.3°. Neither wind method explains the 2b overprediction. Dashboard: **GREEN**.
