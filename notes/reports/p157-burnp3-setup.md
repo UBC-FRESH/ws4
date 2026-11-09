@@ -37,12 +37,24 @@ burnP3PlusFireSTARR      1.5.7
    rasters, weather, ignition/start perimeter, fuel crosswalk, and Scenario 2b
    weather patches where supported.
 
+## Scenario 2b limitation
+
+The BurnP3+FireSTARR transformer starts from a point ignition
+(`burnP3Plus_DeterministicIgnitionLocation`) and does not pass a start perimeter to
+FireSTARR. It also builds hourly weather from the daily
+`burnP3Plus_DeterministicBurnCondition` table. It therefore cannot reproduce the
+Dogrib 13:00 start perimeter/fuel break or the Scenario 2b river-polygon wind patch.
+
+BurnP3+Prometheus is the faithful route for that scenario, but Prometheus currently
+fails under Wine. BurnP3+FireSTARR can still be run from the Dogrib ignition point as
+a separate reference, but it is not an apples-to-apples Scenario 2b comparison.
+
 ## Next
 
-- Create or import a BurnP3+FireSTARR library.
-- Populate the Dogrib inputs and run the FireSTARR transformer.
-- Compare the resulting perimeter with observed, WS4 Scenario 2b, and the direct
-  FireSTARR run.
+- If a Windows host is available, run BurnP3+Prometheus on Scenario 2b.
+- Otherwise run BurnP3+FireSTARR from the Dogrib ignition point and label it as a
+  point-ignition reference, not a Scenario 2b reproduction.
+- Compare either result with observed, WS4 Scenario 2b, and the direct FireSTARR run.
 
 This is a real setup task, not a failed model run. The direct FireSTARR comparison
 is already complete; BurnP3 is the wrapper/reference workflow around it.
