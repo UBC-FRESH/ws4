@@ -4636,6 +4636,7 @@ Report: `notes/reports/p157-closeout.md`
 Evidence: `notes/reports/p157-observed-validation.md`
 Comparison: `notes/reports/p157-firestarr-comparison.md`
 Wine: `notes/reports/p157-prometheus-wine.md`
+BurnP3 setup: `notes/reports/p157-burnp3-setup.md`
 PR: #943
 
 Goal: validate the P156 kernel and growth engine against a public observed fire perimeter,

@@ -4950,6 +4950,9 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   IoU 0.304, Sorensen 0.466. External parity, burning-condition thresholds, WindNinja,
   hourly BUI, and spotting remain accepted limits. Closed as partial validation, not an
   operational match.
+- P157.10 BurnP3 setup: installed SyncroSim 3.1.32 Linux, BurnP3+ 2.6.11,
+  BurnP3+FireSTARR 1.5.7, the bundled FireSTARR binary, and R/rsyncrosim. Remaining work is
+  the R `arrow` package and a BurnP3 library/Dogrib scenario. No BurnP3 model run yet.
 - P157 Prometheus/Wine negative result: Prometheus 2023.06.01 installs under a clean
   64-bit Wine prefix after .NET 4.8, VC++ 2015-2022, and Java 8, but `Prometheus.exe` exits
   with `System.Runtime.InteropServices.SEHException` at `WinMainCRTStartup`. No GUI opens.
