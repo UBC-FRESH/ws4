@@ -4730,7 +4730,7 @@ Design note: `notes/design/ws4-fire-behaviour.md`
 Evidence: `notes/reports/p157-observed-validation.md`
 Matrix: `notes/reports/p160-dogrib-matrix.md`
 Report: `notes/reports/p160-closeout.md`
-PR: #947
+PR: #952
 
 Goal: test whether the remaining Dogrib area/perimeter overprediction is explained by the
 documented Prometheus burning-condition thresholds and the WindNinja scenario 2c/2d wind

@@ -69,4 +69,4 @@ Do not merge, tag, release, or change settings without maintainer approval.
 ## Pull request
 
 Stacked on PR #943 (`feature/p157-observed-fire`). Retarget to `main` after #943 merges.
-PR: to be opened.
+PR: #952.
