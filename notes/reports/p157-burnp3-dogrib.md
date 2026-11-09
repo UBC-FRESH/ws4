@@ -40,6 +40,11 @@ not apples-to-apples.
   Prometheus remains blocked under Wine.
 - Do not rank the models from this table. The input bases differ.
 
+## View
+
+![BurnP3 point-ignition compared with WS4 Scenario 2b](p157-burnp3-comparison.png)
+
 ## Artifacts
 
 - `notes/reports/p157-burnp3-dogrib.csv`
+- `notes/reports/p157-burnp3-comparison.png`
