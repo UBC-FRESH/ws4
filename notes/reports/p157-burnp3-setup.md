@@ -18,7 +18,7 @@ Prometheus.
 - `burnP3PlusFireSTARR` 1.5.7.
 - Bundled FireSTARR `tbd` binary, version 0.9.2.1; marked executable.
 - R 4.3.3 with `sf`, `terra`, `tidyverse`, `data.table`, `lubridate`, `rlang`,
-  and `rsyncrosim`.
+  `rsyncrosim`, and `arrow` 26.0.1.
 - System GDAL 3.8.4 and Mono 6.8.0.
 
 Package check:
@@ -30,12 +30,10 @@ burnP3PlusFireSTARR      1.5.7
 
 ## Remaining blockers
 
-1. **R `arrow` package** is not installed. BurnP3+ `shared.R` imports it
-   unconditionally and uses it for Parquet outputs.
-2. **No BurnP3 library** has been created or imported yet. The BurnP3+ Quickstart
+1. **No BurnP3 library** has been created or imported yet. The BurnP3+ Quickstart
    template is distributed through SyncroSim Studio’s “From Online Template”
    flow, not as a standalone file in the package.
-3. The Dogrib scenario still needs to be mapped into BurnP3 datasheets: landscape
+2. The Dogrib scenario still needs to be mapped into BurnP3 datasheets: landscape
    rasters, weather, ignition/start perimeter, fuel crosswalk, and Scenario 2b
    weather patches where supported.
 
