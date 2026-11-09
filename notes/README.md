@@ -168,3 +168,7 @@ Working notes for WS4. Notes are living: update them in the same change set as t
   penalties.
 - `reports/p158-closeout.md` — Plan scenario workspace verification, tablet limits, and phase
   close-out.
+- `reports/p160-dogrib-matrix.md` — burning-condition and WindNinja 2c/2d evidence; the
+  threshold gate does not change 2b, and the WindNinja grids underburn.
+- `reports/p160-closeout.md` — P160 close-out, accepted limits, and the next-fire
+  calibration recommendation.

@@ -470,6 +470,19 @@ items are enhancements and maintenance.
   WindNinja scenarios, hourly BUI, spotting, and external Prometheus/FARSITE parity remain
   missing. P157.4 accepts these limits and closes the phase as a partial validation result,
   not an operational match.
+- **Burning-condition thresholds.** `done` for the growth gate (P160.1, #948). ``BurningConditions``
+  gates hourly growth on exclusive ISI, wind, and relative-humidity bounds; a failed step
+  suspends spread until a later step passes. The Dogrib sample values are ISI > 8, wind > 5 km/h,
+  and relative humidity 50 %. The README says "greater than 50 %" while the event weather is
+  18–40 %, so both interpretations are exposed; the physical maximum reading leaves the P157
+  Scenario 2b result unchanged, while the literal minimum reading stops growth. WindNinja 2c/2d
+  and the fixed comparison matrix remain P160.2/P160.3.
+- **WindNinja 2c/2d wind grids.** `done` (P160.2, #949; P160.3, #950). The loader and provenance
+  are implemented, and the fixed 2b/2c/2d matrix is recorded in
+  `notes/reports/p160-dogrib-matrix.md`. Scenario 2c is 7,976 ha (−21.9%, IoU 0.274), and
+  scenario 2d is 5,251 ha (−48.6%, IoU 0.237); both are worse than the 2b polygon-patch case on
+  the spatial screens. The full grids remain untracked because the archive has no explicit
+  licence file.
 - **Planscape and burn-emulator review.** `done`. Reviewed the Planscape planning platform,
   its external burn-emulator client, and the burn-emulator surrogate. Planscape has no fire
   spread engine or observed-fire calibration. The burn-emulator trains a CNN on Pyretechnics

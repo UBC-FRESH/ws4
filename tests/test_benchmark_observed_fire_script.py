@@ -35,12 +35,20 @@ class FakeMetrics:
         }
 
 
+class FakeConfig:
+    """A minimal growth-config stand-in."""
+
+    burning_conditions = None
+    wind_grids = None
+
+
 class FakeGrowth:
     """A minimal growth stand-in."""
 
     head_ros_m_min = 40.0
     length_to_breadth = 3.2
     burned_area_ha = 6.0
+    config = FakeConfig()
 
 
 class FakeCase:
@@ -62,6 +70,10 @@ class FakeCase:
         self.initial_burned_mask = None
         self.growth = FakeGrowth()
         self.metrics = FakeMetrics()
+
+    def to_dict(self) -> dict[str, object]:
+        """Return a fixed case summary."""
+        return {"wind_grids": None}
 
 
 class FakeFire:
@@ -132,7 +144,11 @@ def test_main_writes_results(
     output = tmp_path / "results.csv"
     summary = tmp_path / "summary.json"
     monkeypatch.setattr(module, "load_dogrib", lambda path: FakeFire())
-    monkeypatch.setattr(module, "run_scenario", lambda fire, name: FakeCase(name))
+    monkeypatch.setattr(
+        module,
+        "run_scenario",
+        lambda fire, name, wind_grids=None: FakeCase(name),
+    )
     monkeypatch.setattr(module, "write_comparison_svg", lambda fire, case, path: Path(path))
     monkeypatch.setattr(
         sys,
@@ -145,6 +161,6 @@ def test_main_writes_results(
     assert output.is_file()
     assert summary.is_file()
     frame = pd.read_csv(output)
-    assert list(frame["scenario"]) == list(module.SCENARIOS)
+    assert list(frame["scenario"]) == list(module.SCENARIOS) + list(module.EXTRA_SCENARIOS)
     assert "heterogeneous" in capsys.readouterr().out
     assert "RWF085" in summary.read_text(encoding="utf-8")

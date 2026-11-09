@@ -12,6 +12,7 @@ from ws4.fire.comparison import (
     ComparisonError,
     centroid,
     compare_masks,
+    dogrib_burning_conditions,
     hourly_weather_steps,
     observed_mask,
     orientation,
@@ -142,6 +143,7 @@ def test_hourly_weather_steps_cover_the_dogrib_event() -> None:
     assert steps[0].start_min == pytest.approx(0.0)
     assert steps[0].wind_kmh == pytest.approx(21.0)
     assert steps[-1].start_min == pytest.approx(1320.0)
+    assert steps[0].relative_humidity_percent == pytest.approx(20.0)
     first_ffmc = steps[0].ffmc
     overnight_ffmc = steps[12].ffmc
     assert first_ffmc is not None
@@ -194,3 +196,24 @@ def test_dogrib_scenario_2b_uses_point_ignition_and_fuel_break() -> None:
     assert bool(case.initial_burned_mask.any())
     assert case.growth.config.wind_patch_end_min == pytest.approx(420.0)
     assert case.growth.grid.wind_direction_patch is not None
+
+
+def test_dogrib_case_records_burning_conditions() -> None:
+    fire = load_dogrib(FIXTURE)
+    case = run_dogrib_case(
+        fire,
+        scenario="threshold-test",
+        heterogeneous=True,
+        hourly_weather=True,
+        duration_min=1.0,
+        burning_conditions=dogrib_burning_conditions(),
+    )
+
+    summary = case.to_dict()
+    growth = summary["growth"]
+    assert isinstance(growth, dict)
+    recorded = growth["burning_conditions"]
+    assert isinstance(recorded, dict)
+    assert recorded["isi_gt"] == pytest.approx(8.0)
+    assert recorded["wind_gt_kmh"] == pytest.approx(5.0)
+    assert recorded["relative_humidity_lt_percent"] == pytest.approx(50.0)

@@ -159,7 +159,8 @@ fuel break, the +15° landscape patch, and the 280° river-polygon patch. The 40
 16,241 ha (+58.9%), perimeter +75.9%, centroid 1.77 km, IoU 0.385, Sorensen 0.556, and 6.5°
 orientation error. It passes centroid, orientation, IoU, and Sorensen; area and perimeter fail.
 Burning-condition thresholds, WindNinja scenarios, spotting, hourly BUI, and external
-Prometheus/FARSITE parity remain missing.
+Prometheus/FARSITE parity remain missing. P160 adds the threshold gate and the 2c/2d wind-grid
+inputs as a follow-up, without fitting the observed perimeter.
 
 ## 10. What follows
 

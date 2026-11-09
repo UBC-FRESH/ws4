@@ -158,6 +158,7 @@ exists and the maintainer approves it.
 | P157 Observed fire and perimeter validation | #923 | `feature/p157-observed-fire` | pr-open |
 | P158 Plan scenario matrix | #928 | `feature/p158-plan-matrix` | complete |
 | P159 Fire surrogate feasibility | #946 | `feature/p159-fire-surrogate` | planned |
+| P160 Dogrib burning conditions and wind-grid fidelity | #947 | `feature/p160-dogrib-wind-thresholds` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4718,4 +4719,36 @@ Acceptance:
 - The web and UI paths do not depend on the surrogate unless the error gate passes.
 - The model card records data provenance, licence limits, and failure modes.
 - P159 may close with a no-go result; a rejected surrogate is a complete outcome.
+- `python scripts/dashboard.py` is green.
+
+## Phase 160: Dogrib burning conditions and wind-grid fidelity
+
+Parent issue: #947
+Branch: `feature/p160-dogrib-wind-thresholds`
+Status: pr-open
+Design note: `notes/design/ws4-fire-behaviour.md`
+Evidence: `notes/reports/p157-observed-validation.md`
+Matrix: `notes/reports/p160-dogrib-matrix.md`
+Report: `notes/reports/p160-closeout.md`
+PR: #953
+
+Goal: test whether the remaining Dogrib area/perimeter overprediction is explained by the
+documented Prometheus burning-condition thresholds and the WindNinja scenario 2c/2d wind
+grids, without calibrating WS4 to the observed perimeter.
+
+- [x] P160.1 Burning-condition threshold contract and gate (#948)
+- [x] P160.2 WindNinja 2c/2d wind-grid inputs (#949)
+- [x] P160.3 Run the 2b/2c/2d comparison matrix (#950)
+- [x] P160.4 Close out with evidence and limits (#951)
+
+Acceptance:
+
+- The threshold source, units, direction, and ambiguity are recorded.
+- A threshold failure stops growth for that weather step and is visible in the run record.
+- Scenario 2c uses the conservation-of-mass grids and 2d uses the conservation-of-mass-and-
+  momentum grids, with provenance.
+- The 2b/2c/2d runs use the same grid, fuel, terrain, ignition, start perimeter, and weather
+  stream except for the documented wind input.
+- The report states whether the change improves the P157 screens or fails.
+- No observed-fire calibration is claimed.
 - `python scripts/dashboard.py` is green.
