@@ -4950,6 +4950,13 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   IoU 0.304, Sorensen 0.466. External parity, burning-condition thresholds, WindNinja,
   hourly BUI, and spotting remain accepted limits. Closed as partial validation, not an
   operational match.
+- P157.9: added the first external-model comparison. FireSTARR v0.9.29 deterministic on the
+  Dogrib 200 m comparison grid produced 13,808 ha vs 10,132 observed (+36.3%), perimeter
+  +94.0%, centroid 6.91 km, IoU 0.140, Sorensen 0.246, orientation 5.5°. WS4 raw wind on
+  the same grid produced 29,480 ha (+191.0%), perimeter +157.1%, centroid 3.09 km, IoU 0.252,
+  Sorensen 0.403, orientation 9.1°. FireSTARR needs tiled GeoTIFF inputs and a weather stream
+  starting at the start of the start date. Prometheus and FlamMap/FARSITE are freely
+  downloadable but remain Windows GUI runs. Dashboard: **GREEN**.
 - P157.8: added the pinned weather-patch KML and reproduced the documented Scenario 2b inputs:
   point ignition, the 13:00 perimeter as a non-fuel break plus 935 ha initial burned area, the
   +15° landscape wind patch until 18:30, and the 280° river-polygon patch until 20:00. The

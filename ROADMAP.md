@@ -4634,6 +4634,7 @@ Status: pr-open
 Design note: `notes/design/ws4-fire-behaviour.md`
 Report: `notes/reports/p157-closeout.md`
 Evidence: `notes/reports/p157-observed-validation.md`
+Comparison: `notes/reports/p157-firestarr-comparison.md`
 PR: #943
 
 Goal: validate the P156 kernel and growth engine against a public observed fire perimeter,
@@ -4646,6 +4647,7 @@ with explicit provenance, metrics, tolerances, and limitations.
 - [x] P157.6 Heterogeneous spatial FBP growth (#940)
 - [x] P157.7 Hourly weather and time-matched Dogrib run (#941)
 - [x] P157.8 Reproduce Dogrib Scenario 2b inputs (#942)
+- [x] P157.9 FireSTARR side-by-side benchmark (#944)
 - [x] P157.4 Verify and close out observed-fire validation (#927)
 
 Acceptance:

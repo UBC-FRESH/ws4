@@ -130,11 +130,26 @@ observed geometry is read-only.
   and 280° polygon patch.
 - Hourly weather steps cover the 23-row Dogrib event; overnight FFMC is lower than the start.
 
+## External-model comparison
+
+FireSTARR v0.9.29 deterministic was run on a 200 m comparison grid covering the full Dogrib
+extent, with the same observed start perimeter, fuel, terrain, and weather. It does not include
+the Scenario 2b polygon wind patch. The raw-wind comparison is:
+
+| Model | Area (ha) | Area bias | IoU | Sorensen | Centroid (km) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Observed | 10,132 | — | — | — | — |
+| WS4 raw wind | 29,480 | +191.0% | 0.252 | 0.403 | 3.09 |
+| FireSTARR deterministic | 13,808 | +36.3% | 0.140 | 0.246 | 6.91 |
+
+FireSTARR is closer on area; WS4 is closer on overlap and centroid. Full details and caveats:
+`notes/reports/p157-firestarr-comparison.md`.
+
 ## What this does not verify
 
-- **External model parity.** No runnable Prometheus/FARSITE oracle was used. This is an
-  independent reimplementation of published FBP and Huygens logic, not a line-by-line parity
-  test against a known-good executable.
+- **External model parity is partial.** FireSTARR was run deterministically on the raw-wind
+  case. Prometheus and FARSITE were not run; there is no line-by-line parity test against a
+  known-good executable.
 - **Burning conditions.** The sample scenario requires thresholds on ISI, wind, and relative
   humidity for growth. Those thresholds are not applied.
 - **WindNinja grids.** Scenario 2b uses the polygon patch, not the conservation-of-mass wind

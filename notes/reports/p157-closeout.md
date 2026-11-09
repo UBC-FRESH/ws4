@@ -56,6 +56,9 @@ The time-matched Scenario 2b sensitivity (1,372 minutes to the observed 11:52 fi
   landscape wind offset, and the 280° polygon patch.
 - The standard, model-to-model, and observed-fire evidence are separated in the design note,
   the evidence report, and the docs page.
+- FireSTARR v0.9.29 deterministic was run on the same Dogrib reference fire at 200 m; the
+  raw-wind comparison is in `notes/reports/p157-firestarr-comparison.md`. FireSTARR is closer
+  on area; WS4 is closer on overlap and centroid. Prometheus and FARSITE were not run.
 - Full suite: dashboard tests gate green; the coverage gate is at least 90%.
 - Dashboard: `OVERALL: GREEN` on all seven gates.
 
@@ -63,8 +66,9 @@ The time-matched Scenario 2b sensitivity (1,372 minutes to the observed 11:52 fi
 
 These are explicit limitations of the phase, not hidden assumptions:
 
-1. **No external model parity.** No runnable Prometheus/FARSITE oracle was used. This is an
-   independent FBP/Huygens implementation, not a line-by-line parity test.
+1. **External model parity is partial.** FireSTARR was run deterministically on the Dogrib
+   raw-wind case; Prometheus and FARSITE were not run. There is no line-by-line parity test
+   against a known-good executable.
 2. **Burning-condition thresholds.** The sample scenario uses ISI, wind, and relative-humidity
    thresholds for growth. Those thresholds are not applied.
 3. **WindNinja scenarios.** Scenario 2b uses the polygon patch, not the conservation-of-mass

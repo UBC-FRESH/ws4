@@ -1,0 +1,4 @@
+model,cell_m,area_ha,area_bias_pct,perimeter_bias_pct,centroid_km,iou,sorensen,orientation_deg
+Observed final,200,10132,0.0,0.0,0.0,1.0,1.0,0.0
+"WS4 raw wind, 1,372 min",200,29480,191.0,157.1,3.09,0.252,0.403,9.1
+"FireSTARR deterministic, 1,372 min",200,13808,36.3,94.0,6.91,0.14,0.246,5.5
