@@ -37,6 +37,12 @@ The documented-scenario run passes location, orientation, and both overlap scree
 overpredicts area and perimeter. It is close enough in shape to be useful, but it is not an
 operational match.
 
+The BurnP3+FireSTARR point-ignition reference is 6,004 ha (−40.7%), perimeter −24.5%,
+centroid 6.44 km, IoU 0.103, Sorensen 0.187, and 17.1° orientation error. It is a point-
+ignition, daily-weather run, not a Scenario 2b reproduction: the FireSTARR transformer does
+not accept the observed 13:00 start perimeter, the fuel break, or the river-polygon wind
+patch. The result is in `notes/reports/p157-burnp3-dogrib.md`.
+
 The time-matched Scenario 2b sensitivity (1,372 minutes to the observed 11:52 final) is
 27,678 ha (+170.8%), perimeter +177.7%, centroid 1.07 km, IoU 0.304, Sorensen 0.466, and
 8.0° orientation error. It passes centroid, orientation, and overlap; area and perimeter fail.
@@ -58,7 +64,10 @@ The time-matched Scenario 2b sensitivity (1,372 minutes to the observed 11:52 fi
   the evidence report, and the docs page.
 - FireSTARR v0.9.29 deterministic was run on the same Dogrib reference fire at 200 m; the
   raw-wind comparison is in `notes/reports/p157-firestarr-comparison.md`. FireSTARR is closer
-  on area; WS4 is closer on overlap and centroid. Prometheus and FARSITE were not run.
+  on area; WS4 is closer on overlap and centroid.
+- BurnP3+ 2.6.10 with BurnP3+FireSTARR 1.5.7 was run as a point-ignition reference; the
+  result and its Scenario 2b limitation are in `notes/reports/p157-burnp3-dogrib.md`.
+  Prometheus and FARSITE were not run.
 - Full suite: dashboard tests gate green; the coverage gate is at least 90%.
 - Dashboard: `OVERALL: GREEN` on all seven gates.
 
@@ -67,8 +76,10 @@ The time-matched Scenario 2b sensitivity (1,372 minutes to the observed 11:52 fi
 These are explicit limitations of the phase, not hidden assumptions:
 
 1. **External model parity is partial.** FireSTARR was run deterministically on the Dogrib
-   raw-wind case; Prometheus and FARSITE were not run. There is no line-by-line parity test
-   against a known-good executable.
+   raw-wind case, and BurnP3+FireSTARR was run at point ignition. BurnP3+FireSTARR cannot use
+   the observed start perimeter, fuel break, or river-polygon wind patch, so its result is not
+   a Scenario 2b reproduction. Prometheus and FARSITE were not run. There is no line-by-line
+   parity test against a known-good executable.
 2. **Burning-condition thresholds.** The sample scenario uses ISI, wind, and relative-humidity
    thresholds for growth. Those thresholds are not applied.
 3. **WindNinja scenarios.** Scenario 2b uses the polygon patch, not the conservation-of-mass

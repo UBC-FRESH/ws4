@@ -4653,7 +4653,7 @@ with explicit provenance, metrics, tolerances, and limitations.
 - [x] P157.7 Hourly weather and time-matched Dogrib run (#941)
 - [x] P157.8 Reproduce Dogrib Scenario 2b inputs (#942)
 - [x] P157.9 FireSTARR side-by-side benchmark (#944)
-- [ ] P157.10 BurnP3 reference comparison (#945)
+- [x] P157.10 BurnP3 reference comparison (#945)
 - [x] P157.4 Verify and close out observed-fire validation (#927)
 
 Acceptance:

@@ -5004,3 +5004,9 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   the Pyretechnics cross-check gate, and the bounded surrogate plan in
   `notes/design/ws4-open-fire-model-reuse.md`. Opened planned phase P159 (#946); no branch,
   code, or model training started. Dashboard: **GREEN**.
+
+- P157.10 closed: recorded the BurnP3+FireSTARR point-ignition result in the P157 close-out,
+  including the -40.7% area, -24.5% perimeter, 6.44 km centroid, 0.103 IoU, 0.187 Sorensen,
+  and 17.1° orientation error. The FireSTARR transformer cannot use the observed start
+  perimeter, fuel break, or river wind patch, so this is not a Scenario 2b reproduction.
+  Prometheus remains a Windows-only blocker. Issue #945 closed. Dashboard: **GREEN**.
