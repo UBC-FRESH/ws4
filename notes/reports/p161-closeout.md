@@ -112,4 +112,4 @@ the Dogrib holdout for fitting or quietly widen the current bounds.
 
 ## Pull request
 
-PR: to be opened.
+PR: #960.

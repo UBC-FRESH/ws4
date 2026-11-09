@@ -4763,7 +4763,7 @@ Status: pr-open
 Design note: `notes/design/ws4-second-fire-calibration.md`
 Protocol: `notes/design/ws4-fire-calibration-protocol.md`
 Report: `notes/reports/p161-closeout.md`
-PR: TBD
+PR: #960
 
 Goal: add an independent second observed fire, pre-register a calibration and holdout protocol,
 and test whether calibrated WS4 parameters improve the new fire while Dogrib remains an
