@@ -279,6 +279,125 @@ class SiteGrid:
 
 
 @dataclass(frozen=True)
+class BurningConditions:
+    """Restrict growth to weather steps that meet the documented burning conditions.
+
+    The thresholds are exclusive, matching the sample scenario wording: an ISI must be
+    greater than ``isi_gt``, wind greater than ``wind_gt_kmh``, and relative humidity
+    greater than or less than the configured bound. At least one threshold must be set.
+
+    Parameters
+    ----------
+    isi_gt : float or None, optional
+        Minimum exclusive Initial Spread Index.
+    wind_gt_kmh : float or None, optional
+        Minimum exclusive ten-metre wind speed in km/h.
+    relative_humidity_gt_percent : float or None, optional
+        Minimum exclusive relative humidity in percent.
+    relative_humidity_lt_percent : float or None, optional
+        Maximum exclusive relative humidity in percent.
+    source : str, optional
+        Provenance label for the threshold set.
+
+    Raises
+    ------
+    FireFuelError
+        If no threshold is set, a threshold is negative, or a humidity bound is outside
+        [0, 100] or inverted.
+    """
+
+    isi_gt: float | None = None
+    wind_gt_kmh: float | None = None
+    relative_humidity_gt_percent: float | None = None
+    relative_humidity_lt_percent: float | None = None
+    source: str = ""
+
+    def __post_init__(self) -> None:
+        """Validate the threshold set."""
+        values = (
+            self.isi_gt,
+            self.wind_gt_kmh,
+            self.relative_humidity_gt_percent,
+            self.relative_humidity_lt_percent,
+        )
+        if all(value is None for value in values):
+            raise FireFuelError("at least one burning-condition threshold is required")
+        for value, name in (
+            (self.isi_gt, "isi_gt"),
+            (self.wind_gt_kmh, "wind_gt_kmh"),
+        ):
+            if value is not None and _non_negative(value, name) < 0.0:
+                raise FireFuelError(f"{name} must be non-negative")
+        for value, name in (
+            (self.relative_humidity_gt_percent, "relative_humidity_gt_percent"),
+            (self.relative_humidity_lt_percent, "relative_humidity_lt_percent"),
+        ):
+            if value is not None and not 0.0 <= _number(value, name) <= 100.0:
+                raise FireFuelError(f"{name} must be between 0 and 100")
+        if (
+            self.relative_humidity_gt_percent is not None
+            and self.relative_humidity_lt_percent is not None
+            and self.relative_humidity_gt_percent >= self.relative_humidity_lt_percent
+        ):
+            raise FireFuelError(
+                "relative_humidity_gt_percent must be less than relative_humidity_lt_percent"
+            )
+
+    def allows(
+        self,
+        *,
+        isi: float,
+        wind_kmh: float,
+        relative_humidity_percent: float,
+    ) -> bool:
+        """Return whether a weather step meets every configured threshold.
+
+        Parameters
+        ----------
+        isi : float
+            Initial Spread Index for the step.
+        wind_kmh : float
+            Ten-metre wind speed for the step.
+        relative_humidity_percent : float
+            Relative humidity for the step.
+
+        Returns
+        -------
+        bool
+            True when every configured threshold is met.
+        """
+        if self.isi_gt is not None and not isi > self.isi_gt:
+            return False
+        if self.wind_gt_kmh is not None and not wind_kmh > self.wind_gt_kmh:
+            return False
+        if (
+            self.relative_humidity_gt_percent is not None
+            and not relative_humidity_percent > self.relative_humidity_gt_percent
+        ):
+            return False
+        return not (
+            self.relative_humidity_lt_percent is not None
+            and relative_humidity_percent >= self.relative_humidity_lt_percent
+        )
+
+    def to_dict(self) -> dict[str, object]:
+        """Return the threshold set as a JSON-serializable mapping.
+
+        Returns
+        -------
+        dict
+            Configured thresholds and their provenance label.
+        """
+        return {
+            "isi_gt": self.isi_gt,
+            "wind_gt_kmh": self.wind_gt_kmh,
+            "relative_humidity_gt_percent": self.relative_humidity_gt_percent,
+            "relative_humidity_lt_percent": self.relative_humidity_lt_percent,
+            "source": self.source,
+        }
+
+
+@dataclass(frozen=True)
 class WeatherStep:
     """One piecewise-constant weather interval for time-dependent growth.
 
@@ -292,6 +411,8 @@ class WeatherStep:
         Direction the wind comes from, clockwise from north.
     ffmc, bui : float or None, optional
         Moisture codes for this interval. None uses the site-grid values.
+    relative_humidity_percent : float or None, optional
+        Relative humidity in percent, required when burning conditions are enabled.
     """
 
     start_min: float
@@ -299,6 +420,7 @@ class WeatherStep:
     wind_direction_deg: float
     ffmc: float | None = None
     bui: float | None = None
+    relative_humidity_percent: float | None = None
 
     def __post_init__(self) -> None:
         """Validate the weather step."""
@@ -310,6 +432,10 @@ class WeatherStep:
             raise FireFuelError("ffmc must be between 0 and 101")
         if self.bui is not None:
             _non_negative(self.bui, "bui")
+        if self.relative_humidity_percent is not None and not (
+            0.0 <= _number(self.relative_humidity_percent, "relative_humidity_percent") <= 100.0
+        ):
+            raise FireFuelError("relative_humidity_percent must be between 0 and 100")
 
 
 @dataclass(frozen=True)
@@ -333,6 +459,8 @@ class GrowthConfig:
         Piecewise-constant weather. None uses one constant state from the site grid.
     wind_patch_end_min : float or None, optional
         Stop applying the site-grid wind-direction patch after this time.
+    burning_conditions : BurningConditions or None, optional
+        Weather-step thresholds. They require ``weather_steps`` with relative humidity.
     """
 
     ignition_cells: tuple[tuple[int, int], ...]
@@ -342,6 +470,7 @@ class GrowthConfig:
     neighbor_radius: int = 2
     weather_steps: tuple[WeatherStep, ...] | None = None
     wind_patch_end_min: float | None = None
+    burning_conditions: BurningConditions | None = None
 
     def __post_init__(self) -> None:
         """Validate the growth configuration."""
@@ -370,6 +499,15 @@ class GrowthConfig:
                 previous = step.start_min
             if self.weather_steps[0].start_min != 0.0:
                 raise FireFuelError("the first weather step must start at 0")
+        if self.burning_conditions is not None:
+            if not isinstance(self.burning_conditions, BurningConditions):
+                raise FireFuelError("burning_conditions must be a BurningConditions value")
+            if self.weather_steps is None:
+                raise FireFuelError("burning_conditions require weather_steps")
+            if any(step.relative_humidity_percent is None for step in self.weather_steps):
+                raise FireFuelError(
+                    "burning_conditions require relative_humidity_percent on every weather step"
+                )
         if (
             self.wind_patch_end_min is not None
             and _non_negative(self.wind_patch_end_min, "wind_patch_end_min") <= 0.0
@@ -516,6 +654,11 @@ class GrowthResult:
                 "time_dependent" if self.config.weather_steps is not None else "constant"
             ),
             "weather_steps": len(self.config.weather_steps or ()),
+            "burning_conditions": (
+                None
+                if self.config.burning_conditions is None
+                else self.config.burning_conditions.to_dict()
+            ),
             "burned_area_ha": self.burned_area_ha,
             "perimeter_m": self.perimeter_m,
             "snapshots": [snapshot.to_dict() for snapshot in self.snapshots],
@@ -928,13 +1071,17 @@ def _dynamic_arrival(
         if value is None:
             return math.inf
         head, ratio, wind = value
+        step_end = starts[index + 1] if index + 1 < len(starts) else math.inf
         if head <= 0.0:
-            return math.inf
+            time = step_end
+            index += 1
+            continue
         relative = math.radians(direction - wind.azimuth_deg)
         ros = _direction_ros(head, ratio, relative)
         if ros <= 0.0:
-            return math.inf
-        step_end = starts[index + 1] if index + 1 < len(starts) else math.inf
+            time = step_end
+            index += 1
+            continue
         available = step_end - time
         if available <= 1e-9:
             index += 1
@@ -965,6 +1112,29 @@ def _grow_fire_time_dependent(grid: SiteGrid, config: GrowthConfig) -> GrowthRes
         if key in cache:
             return cache[key]
         step = steps[index]
+        if config.burning_conditions is not None:
+            humidity = step.relative_humidity_percent
+            if humidity is None:
+                raise FireFuelError(
+                    "burning_conditions require relative_humidity_percent on every weather step"
+                )
+            isi = initial_spread_index(
+                grid.ffmc if step.ffmc is None else step.ffmc,
+                step.wind_kmh,
+                fbp=True,
+            )
+            if not config.burning_conditions.allows(
+                isi=isi,
+                wind_kmh=step.wind_kmh,
+                relative_humidity_percent=humidity,
+            ):
+                blocked = (
+                    0.0,
+                    1.0,
+                    EffectiveWind(step.wind_kmh, step.wind_direction_deg),
+                )
+                cache[key] = blocked
+                return blocked
         wind_direction = step.wind_direction_deg
         patch_active = (
             config.wind_patch_end_min is None or step.start_min < config.wind_patch_end_min

@@ -25,6 +25,7 @@ from .fwi import (
     initial_fwi_state,
 )
 from .growth import (
+    BurningConditions,
     GrowthConfig,
     GrowthResult,
     SiteGrid,
@@ -185,6 +186,11 @@ class DogribCase:
                 "length_to_breadth": self.growth.length_to_breadth,
                 "effective_wind_kmh": self.growth.effective_wind.speed_kmh,
                 "spread_azimuth_deg": self.growth.effective_wind.azimuth_deg,
+                "burning_conditions": (
+                    None
+                    if self.growth.config.burning_conditions is None
+                    else self.growth.config.burning_conditions.to_dict()
+                ),
             },
             "metrics": self.metrics.to_dict(),
         }
@@ -553,11 +559,54 @@ def hourly_weather_steps(
                 % 360.0,
                 ffmc=current_ffmc,
                 bui=buildup,
+                relative_humidity_percent=humidity,
             )
         )
     if not steps or steps[0].start_min != 0.0:
         raise ComparisonError("weather stream does not start at the event start")
     return tuple(steps)
+
+
+def dogrib_burning_conditions(*, relative_humidity: str = "lt") -> BurningConditions:
+    """Return the Dogrib sample burning-condition thresholds.
+
+    The sample README requires an hourly Initial Spread Index greater than 8, a wind speed
+    greater than 5 km/h, and a relative-humidity condition of 50 percent. The README wording
+    says "greater than 50 percent", but the event weather is 18-40 percent and a greater-than
+    condition would stop all growth. ``relative_humidity="lt"`` uses the physically plausible
+    maximum; ``"gt"`` preserves the literal README reading for a sensitivity run.
+
+    Parameters
+    ----------
+    relative_humidity : str, optional
+        ``"lt"`` for relative humidity below 50 percent, or ``"gt"`` for above 50 percent.
+
+    Returns
+    -------
+    BurningConditions
+        The threshold set with a source label.
+
+    Raises
+    ------
+    ComparisonError
+        If ``relative_humidity`` is neither ``"lt"`` nor ``"gt"``.
+    """
+    source = "Dogrib_v624 sample README: hourly ISI > 8, wind > 5 km/h"
+    if relative_humidity == "lt":
+        return BurningConditions(
+            isi_gt=8.0,
+            wind_gt_kmh=5.0,
+            relative_humidity_lt_percent=50.0,
+            source=source,
+        )
+    if relative_humidity == "gt":
+        return BurningConditions(
+            isi_gt=8.0,
+            wind_gt_kmh=5.0,
+            relative_humidity_gt_percent=50.0,
+            source=source,
+        )
+    raise ComparisonError("relative_humidity must be 'lt' or 'gt'")
 
 
 def run_dogrib_case(
@@ -577,6 +626,7 @@ def run_dogrib_case(
     slope_percent: float = 32.0,
     aspect_deg: float = 180.0,
     duration_min: float = 402.0,
+    burning_conditions: BurningConditions | None = None,
 ) -> DogribCase:
     """Run one Dogrib base or sensitivity case and compare it with the final perimeter.
 
@@ -608,6 +658,8 @@ def run_dogrib_case(
         Homogeneous aspect (default 180).
     duration_min : float, optional
         Simulation duration (default 402 minutes, the 6.7-hour run).
+    burning_conditions : BurningConditions or None, optional
+        Hourly growth gate; None applies no threshold. The hourly weather path is required.
 
     Returns
     -------
@@ -721,6 +773,7 @@ def run_dogrib_case(
             neighbor_radius=2,
             weather_steps=steps,
             wind_patch_end_min=420.0 if weather_patches else None,
+            burning_conditions=burning_conditions,
         ),
     )
     simulated = np.isfinite(growth.ignition_time_min)

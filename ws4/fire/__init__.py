@@ -57,6 +57,7 @@ from .fwi import (
 )
 from .growth import (
     GROWTH_MODEL_VERSION,
+    BurningConditions,
     EffectiveWind,
     FragmentIgnition,
     GrowthConfig,
@@ -102,6 +103,7 @@ __all__ = [
     "KERNEL_VERSION",
     "MOISTURE_SCENARIOS",
     "VRI_FBP_VERSION",
+    "BurningConditions",
     "CrownFireResult",
     "DailyWeather",
     "EffectiveWind",

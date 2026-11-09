@@ -5010,3 +5010,12 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   and 17.1° orientation error. The FireSTARR transformer cannot use the observed start
   perimeter, fuel break, or river wind patch, so this is not a Scenario 2b reproduction.
   Prometheus remains a Windows-only blocker. Issue #945 closed. Dashboard: **GREEN**.
+
+- P160.1: added `BurningConditions` to the growth path. Hourly steps now carry relative
+  humidity, and exclusive ISI, wind, and humidity bounds suspend new spread until a later
+  step passes. The Dogrib helper encodes the sample values (ISI > 8, wind > 5 km/h, humidity
+  50 %) and exposes both readings of the README's contradictory "greater than 50 %" wording;
+  the event weather is 18-40 %. The physically plausible maximum leaves Scenario 2b unchanged
+  at 16,241 ha (+58.9%), perimeter +75.9%, IoU 0.385, Sorensen 0.556, centroid 1.77 km, and
+  6.5°; the literal minimum would stop growth. WindNinja 2c/2d and the fixed matrix remain
+  P160.2/P160.3. Dashboard: **GREEN**.
