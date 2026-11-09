@@ -5041,3 +5041,11 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   the spatial screens. Recorded the third-party data licence limit, the nearest-direction
   selection limit, and the recommendation to acquire a second independent fire before fitting.
   No calibration was performed. Dashboard: **GREEN**.
+
+- P161.1: completed the second-fire data gate. Selected Hay River / K'atl'odeeche SS005-23
+  (14–20 May 2023): CFSDS 2023_320 final progression/perimeter, ECCC Hay River A hourly
+  weather, FireSTARR Fuel 2023 FBP 100 m (2.83 GB, SHA-256 recorded), ASTER terrain, and a
+  satellite-inferred ignition. Conditional pass: the fuel/terrain subsets must be acquired
+  before P161.2. Rejected Horse River 2016 (analytic FBP fuel raster token-gated), WildfireAV
+  (US FBFM), the June Nomad run (no matching perimeter), and CFSDS-only alternatives (no
+  hourly/FBP fuel). Dashboard: **GREEN**.
