@@ -37,6 +37,25 @@ burnP3PlusFireSTARR      1.5.7
    rasters, weather, ignition/start perimeter, fuel crosswalk, and Scenario 2b
    weather patches where supported.
 
+## SyncroSim license blocker
+
+A BurnP3 library was created with the BurnP3+ and BurnP3+FireSTARR packages, a
+`Definitions` project, and a `Dogrib FireSTARR` scenario. Project-level fuel types,
+season, and FireSTARR fuel crosswalk were saved; scenario-level landscape rasters,
+deterministic ignition, deterministic burn conditions, curing, green-up, run control,
+and output options were saved.
+
+Running the FireSTARR transformer stops at:
+
+```text
+You must be signed in and have a valid SyncroSim license to use this feature.
+```
+
+SyncroSim requires an account/license for model execution. No credentials are
+available in this environment, and creating or using an external account needs
+maintainer approval under the workflow rules. The BurnP3 run is therefore blocked at
+the licence gate, not at the data/library step.
+
 ## Scenario 2b limitation
 
 The BurnP3+FireSTARR transformer starts from a point ignition
