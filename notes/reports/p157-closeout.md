@@ -56,7 +56,7 @@ The time-matched Scenario 2b sensitivity (1,372 minutes to the observed 11:52 fi
   landscape wind offset, and the 280° polygon patch.
 - The standard, model-to-model, and observed-fire evidence are separated in the design note,
   the evidence report, and the docs page.
-- Full suite: 2,117 passed; total coverage 90.20%.
+- Full suite: dashboard tests gate green; the coverage gate is at least 90%.
 - Dashboard: `OVERALL: GREEN` on all seven gates.
 
 ## Accepted limits
