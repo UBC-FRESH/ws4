@@ -59,6 +59,7 @@ class FakeCase:
         self.slope_percent = 32.0
         self.aspect_deg = 180.0
         self.start_cells = 759
+        self.initial_burned_mask = None
         self.growth = FakeGrowth()
         self.metrics = FakeMetrics()
 
@@ -85,28 +86,36 @@ def test_scenario_overrides_are_explicit(monkeypatch: pytest.MonkeyPatch) -> Non
         assert case.scenario == name
 
     assert calls[0] == {
-        "scenario": "heterogeneous-hourly-1372",
+        "scenario": "scenario-2b",
         "heterogeneous": True,
         "hourly_weather": True,
-        "duration_min": 1372.0,
+        "weather_patches": True,
+        "point_ignition": True,
+        "fuel_break_start": True,
+        "duration_min": 402.0,
     }
-    assert calls[1] == {"scenario": "heterogeneous", "heterogeneous": True}
-    assert calls[2] == {"scenario": "homogeneous"}
-    assert calls[3] == {
+    assert calls[1] == {
         "scenario": "heterogeneous-hourly-402",
         "heterogeneous": True,
         "hourly_weather": True,
         "duration_min": 402.0,
     }
+    assert calls[2] == {"scenario": "heterogeneous", "heterogeneous": True}
+    assert calls[3] == {"scenario": "homogeneous"}
     assert calls[4] == {
-        "scenario": "heterogeneous-wind-27",
+        "scenario": "scenario-2b-1372",
         "heterogeneous": True,
-        "wind_kmh": 27.0,
+        "hourly_weather": True,
+        "weather_patches": True,
+        "point_ignition": True,
+        "fuel_break_start": True,
+        "duration_min": 1372.0,
     }
     assert calls[5] == {
-        "scenario": "heterogeneous-no-wind",
+        "scenario": "heterogeneous-hourly-1372",
         "heterogeneous": True,
-        "wind_kmh": 0.0,
+        "hourly_weather": True,
+        "duration_min": 1372.0,
     }
     assert calls[6] == {
         "scenario": "heterogeneous-long-1372",

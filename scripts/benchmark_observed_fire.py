@@ -84,12 +84,12 @@ def write_comparison_svg(fire: ObservedFire, case: DogribCase, path: Path) -> Pa
 
 
 SCENARIOS: tuple[str, ...] = (
-    "heterogeneous-hourly-1372",
+    "scenario-2b",
+    "heterogeneous-hourly-402",
     "heterogeneous",
     "homogeneous",
-    "heterogeneous-hourly-402",
-    "heterogeneous-wind-27",
-    "heterogeneous-no-wind",
+    "scenario-2b-1372",
+    "heterogeneous-hourly-1372",
     "heterogeneous-long-1372",
 )
 
@@ -109,20 +109,38 @@ def run_scenario(fire: ObservedFire, name: str) -> DogribCase:
     DogribCase
         The simulated growth and comparison.
     """
-    if name == "homogeneous":
-        return run_dogrib_case(fire, scenario=name)
-    if name == "heterogeneous-hourly-1372":
+    if name == "scenario-2b":
         return run_dogrib_case(
-            fire, scenario=name, heterogeneous=True, hourly_weather=True, duration_min=1372.0
+            fire,
+            scenario=name,
+            heterogeneous=True,
+            hourly_weather=True,
+            weather_patches=True,
+            point_ignition=True,
+            fuel_break_start=True,
+            duration_min=402.0,
+        )
+    if name == "scenario-2b-1372":
+        return run_dogrib_case(
+            fire,
+            scenario=name,
+            heterogeneous=True,
+            hourly_weather=True,
+            weather_patches=True,
+            point_ignition=True,
+            fuel_break_start=True,
+            duration_min=1372.0,
         )
     if name == "heterogeneous-hourly-402":
         return run_dogrib_case(
             fire, scenario=name, heterogeneous=True, hourly_weather=True, duration_min=402.0
         )
-    if name == "heterogeneous-wind-27":
-        return run_dogrib_case(fire, scenario=name, heterogeneous=True, wind_kmh=27.0)
-    if name == "heterogeneous-no-wind":
-        return run_dogrib_case(fire, scenario=name, heterogeneous=True, wind_kmh=0.0)
+    if name == "heterogeneous-hourly-1372":
+        return run_dogrib_case(
+            fire, scenario=name, heterogeneous=True, hourly_weather=True, duration_min=1372.0
+        )
+    if name == "homogeneous":
+        return run_dogrib_case(fire, scenario=name)
     if name == "heterogeneous-long-1372":
         return run_dogrib_case(fire, scenario=name, heterogeneous=True, duration_min=1372.0)
     return run_dogrib_case(fire, scenario=name, heterogeneous=True)
@@ -152,7 +170,7 @@ def main() -> None:
     base_case: DogribCase | None = None
     for name in SCENARIOS:
         case = run_scenario(fire, name)
-        if name == "heterogeneous-hourly-1372":
+        if name == "scenario-2b":
             base_case = case
         row: dict[str, object] = {
             "scenario": case.scenario,
@@ -167,6 +185,9 @@ def main() -> None:
             "slope_percent": case.slope_percent,
             "aspect_deg": case.aspect_deg,
             "start_cells": case.start_cells,
+            "initial_burned_ha": 0.0
+            if case.initial_burned_mask is None
+            else float(case.initial_burned_mask.sum()) * case.growth.grid.cell_area_ha,
             "head_ros_m_min": case.growth.head_ros_m_min,
             "length_to_breadth": case.growth.length_to_breadth,
             "burned_area_ha": case.growth.burned_area_ha,

@@ -241,6 +241,8 @@ class ObservedFire:
         Fuel-grid value to FBP fuel type, or None for non-fuel.
     perimeters : tuple of ObservedPerimeter
         Observed perimeters, sorted by time.
+    weather_patch_projected : tuple of tuple of (float, float) or None, optional
+        Projected rings of the polygon weather patch, or None.
     weather : pandas.DataFrame
         Hourly weather with typed columns.
     provenance : dict
@@ -263,6 +265,7 @@ class ObservedFire:
     perimeters: tuple[ObservedPerimeter, ...]
     weather: pd.DataFrame
     provenance: Mapping[str, object]
+    weather_patch_projected: tuple[tuple[tuple[float, float], ...], ...] | None = None
 
     @property
     def version(self) -> str:
@@ -419,6 +422,9 @@ class ObservedFire:
             "ignition_xy": list(self.ignition_xy),
             "grid": self.grid.to_dict(),
             "perimeters": [item.to_dict() for item in self.perimeters],
+            "weather_patch_polygons": 0
+            if self.weather_patch_projected is None
+            else len(self.weather_patch_projected),
             "weather_rows": len(self.weather),
             "weather_start": self.weather["local_time"].min().isoformat(),
             "weather_end": self.weather["local_time"].max().isoformat(),
@@ -730,6 +736,13 @@ def load_dogrib(directory: str | Path) -> ObservedFire:
         raise ObservedFireError("weather stream has a gap between hourly records")
     if event_start >= event_end:
         raise ObservedFireError("event window must be increasing")
+    patch_path = root / "weather_patch_polygon_wd_280.kml"
+    weather_patch: tuple[tuple[tuple[float, float], ...], ...] | None = None
+    if patch_path.is_file():
+        weather_patch = tuple(
+            tuple(transformer.transform(lon, lat) for lon, lat in ring)
+            for ring in read_kml_rings(patch_path)
+        )
     provenance = {
         "source": DOGRIB_SOURCE,
         "archive": "web.archive.org/web/20220120133307",
@@ -758,6 +771,7 @@ def load_dogrib(directory: str | Path) -> ObservedFire:
         fuel_lookup=lookup,
         perimeters=tuple(perimeters),
         weather=weather,
+        weather_patch_projected=weather_patch,
         provenance=provenance,
     )
 

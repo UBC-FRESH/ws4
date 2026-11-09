@@ -155,7 +155,7 @@ exists and the maintainer approves it.
 | P154 TSA 29 GPU stock | #912 | `feature/p154-tsa29-stock` | complete |
 | P155 3D fire scene and synthetic tree stands | #877 | `feature/p155-fire-3d` | complete |
 | P156 Credible fire behaviour and growth | #890 | `feature/p156-fire-behaviour` | complete |
-| P157 Observed fire and perimeter validation | #923 | `feature/p157-observed-fire` | active |
+| P157 Observed fire and perimeter validation | #923 | `feature/p157-observed-fire` | pr-open |
 | P100 Condition-card provenance | #670 | `feature/p100-condition-provenance` | pr-open |
 | P101 Scenario storyboard export | #696 | `feature/p101-storyboard` | pr-open |
 
@@ -4629,9 +4629,10 @@ Acceptance:
 
 Parent issue: #923
 Branch: `feature/p157-observed-fire`
-Status: active
+Status: pr-open
 Design note: `notes/design/ws4-fire-behaviour.md`
-Report: `notes/reports/p157-observed-validation.md`
+Report: `notes/reports/p157-closeout.md`
+Evidence: `notes/reports/p157-observed-validation.md`
 
 Goal: validate the P156 kernel and growth engine against a public observed fire perimeter,
 with explicit provenance, metrics, tolerances, and limitations.
@@ -4642,7 +4643,8 @@ with explicit provenance, metrics, tolerances, and limitations.
 - [x] P157.5 Correct observed-grid row orientation (#939)
 - [x] P157.6 Heterogeneous spatial FBP growth (#940)
 - [x] P157.7 Hourly weather and time-matched Dogrib run (#941)
-- [ ] P157.4 Verify and close out observed-fire validation (#927)
+- [x] P157.8 Reproduce Dogrib Scenario 2b inputs (#942)
+- [x] P157.4 Verify and close out observed-fire validation (#927)
 
 Acceptance:
 

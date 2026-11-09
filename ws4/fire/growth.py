@@ -127,6 +127,8 @@ class SiteGrid:
         Per-cell terrain. None uses the corresponding scalar field.
     conifer_percent_grid, dead_fir_percent_grid, crown_closure_percent_grid : optional
         Per-cell FBP blend parameters. None uses the scalar values.
+    wind_direction_patch : numpy.ndarray or None, optional
+        Per-cell wind-direction override in degrees, or NaN outside the patch.
     """
 
     fuel_type: str
@@ -156,6 +158,7 @@ class SiteGrid:
     conifer_percent_grid: np.ndarray | None = None
     dead_fir_percent_grid: np.ndarray | None = None
     crown_closure_percent_grid: np.ndarray | None = None
+    wind_direction_patch: np.ndarray | None = None
 
     def __post_init__(self) -> None:
         """Validate the grid and canonicalize the burnable mask."""
@@ -239,6 +242,12 @@ class SiteGrid:
             self.cols,
             self.crown_closure_percent,
         )
+        wind_patch: np.ndarray | None = None
+        if self.wind_direction_patch is not None:
+            wind_patch = np.asarray(self.wind_direction_patch, dtype=float)
+            if wind_patch.shape != (self.rows, self.cols):
+                raise FireFuelError("wind_direction_patch must have shape (rows, cols)")
+            wind_patch = wind_patch.copy()
         object.__setattr__(self, "fuel_type", name)
         object.__setattr__(self, "cell_size_m", cell)
         object.__setattr__(self, "ffmc", code)
@@ -255,6 +264,7 @@ class SiteGrid:
         object.__setattr__(self, "conifer_percent_grid", conifer_grid)
         object.__setattr__(self, "dead_fir_percent_grid", dead_fir_grid)
         object.__setattr__(self, "crown_closure_percent_grid", closure_grid)
+        object.__setattr__(self, "wind_direction_patch", wind_patch)
 
     @property
     def cell_area_ha(self) -> float:
@@ -321,6 +331,8 @@ class GrowthConfig:
         sixteen-direction ring, and three is the twenty-four-direction ring (default 2).
     weather_steps : tuple of WeatherStep or None, optional
         Piecewise-constant weather. None uses one constant state from the site grid.
+    wind_patch_end_min : float or None, optional
+        Stop applying the site-grid wind-direction patch after this time.
     """
 
     ignition_cells: tuple[tuple[int, int], ...]
@@ -329,6 +341,7 @@ class GrowthConfig:
     allow_diagonal: bool = True
     neighbor_radius: int = 2
     weather_steps: tuple[WeatherStep, ...] | None = None
+    wind_patch_end_min: float | None = None
 
     def __post_init__(self) -> None:
         """Validate the growth configuration."""
@@ -357,6 +370,11 @@ class GrowthConfig:
                 previous = step.start_min
             if self.weather_steps[0].start_min != 0.0:
                 raise FireFuelError("the first weather step must start at 0")
+        if (
+            self.wind_patch_end_min is not None
+            and _non_negative(self.wind_patch_end_min, "wind_patch_end_min") <= 0.0
+        ):
+            raise FireFuelError("wind_patch_end_min must be positive")
 
 
 @dataclass(frozen=True)
@@ -863,6 +881,11 @@ def _local_behaviour(
         key = (row, col)
         cached = cache.get(key)
         if cached is None:
+            wind_direction = grid.wind_direction_deg
+            if grid.wind_direction_patch is not None:
+                patch = float(grid.wind_direction_patch[row, col])
+                if np.isfinite(patch):
+                    wind_direction = patch
             value = _cell_behaviour(
                 grid,
                 int(row),
@@ -870,7 +893,7 @@ def _local_behaviour(
                 grid.ffmc,
                 grid.bui,
                 grid.wind_kmh,
-                grid.wind_direction_deg,
+                wind_direction,
             )
             if value is None:
                 continue
@@ -942,6 +965,14 @@ def _grow_fire_time_dependent(grid: SiteGrid, config: GrowthConfig) -> GrowthRes
         if key in cache:
             return cache[key]
         step = steps[index]
+        wind_direction = step.wind_direction_deg
+        patch_active = (
+            config.wind_patch_end_min is None or step.start_min < config.wind_patch_end_min
+        )
+        if patch_active and grid.wind_direction_patch is not None:
+            patch = float(grid.wind_direction_patch[row, col])
+            if np.isfinite(patch):
+                wind_direction = patch
         value = _cell_behaviour(
             grid,
             row,
@@ -949,7 +980,7 @@ def _grow_fire_time_dependent(grid: SiteGrid, config: GrowthConfig) -> GrowthRes
             grid.ffmc if step.ffmc is None else step.ffmc,
             grid.bui if step.bui is None else step.bui,
             step.wind_kmh,
-            step.wind_direction_deg,
+            wind_direction,
         )
         cache[key] = value
         return value

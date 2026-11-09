@@ -76,7 +76,9 @@ def render_comparison_svg(
     def py(y: float) -> float:
         return offset_y + (grid.yll + grid.nrows * grid.cell_size_m - y) * scale
 
-    mask = case.growth.ignition_time_min
+    mask = case.growth.ignition_time_min.copy()
+    if case.initial_burned_mask is not None:
+        mask[case.initial_burned_mask] = 0.0
     rows, cols = mask.shape
     paths: list[str] = []
     for row in range(rows):

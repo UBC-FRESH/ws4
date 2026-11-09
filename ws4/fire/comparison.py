@@ -133,7 +133,9 @@ class DogribCase:
     metrics : PerimeterMetrics
         Comparison against the observed final perimeter.
     start_cells : int
-        Number of ignition cells seeded from the observed start perimeter.
+        Number of ignition cells seeded from the observed start perimeter or point.
+    initial_burned_mask : numpy.ndarray or None, optional
+        Pre-burned cells included in the comparison mask, or None.
     """
 
     scenario: str
@@ -150,6 +152,7 @@ class DogribCase:
     growth: GrowthResult
     metrics: PerimeterMetrics
     start_cells: int
+    initial_burned_mask: np.ndarray | None = None
 
     def to_dict(self) -> dict[str, object]:
         """Return the case summary as a JSON-serializable mapping.
@@ -172,6 +175,9 @@ class DogribCase:
             "aspect_deg": self.aspect_deg,
             "duration_min": self.duration_min,
             "start_cells": self.start_cells,
+            "initial_burned_ha": 0.0
+            if self.initial_burned_mask is None
+            else float(self.initial_burned_mask.sum()) * self.growth.grid.cell_area_ha,
             "growth": {
                 "burned_area_ha": self.growth.burned_area_ha,
                 "perimeter_m": self.growth.perimeter_m,
@@ -484,6 +490,8 @@ def hourly_weather_steps(
     *,
     ffmc: float | None = None,
     bui: float | None = None,
+    direction_offset_deg: float = 0.0,
+    offset_until_min: float | None = None,
 ) -> tuple[WeatherStep, ...]:
     """Build hourly wind steps from the observed weather stream.
 
@@ -498,6 +506,10 @@ def hourly_weather_steps(
         Observed fire.
     ffmc, bui : float or None, optional
         Moisture codes; None uses the event-day reference values.
+    direction_offset_deg : float, optional
+        Add this many degrees to wind directions inside the offset window.
+    offset_until_min : float or None, optional
+        End of the wind-direction offset window in minutes; None applies always.
 
     Returns
     -------
@@ -533,7 +545,12 @@ def hourly_weather_steps(
             WeatherStep(
                 start_min=float(index * 60),
                 wind_kmh=wind,
-                wind_direction_deg=direction,
+                wind_direction_deg=(
+                    direction + direction_offset_deg
+                    if offset_until_min is None or index * 60 < offset_until_min
+                    else direction
+                )
+                % 360.0,
                 ffmc=current_ffmc,
                 bui=buildup,
             )
@@ -550,6 +567,9 @@ def run_dogrib_case(
     fuel_type: str = "C2",
     heterogeneous: bool = False,
     hourly_weather: bool = False,
+    weather_patches: bool = False,
+    point_ignition: bool = False,
+    fuel_break_start: bool = False,
     ffmc: float | None = None,
     bui: float | None = None,
     wind_kmh: float | None = None,
@@ -572,6 +592,14 @@ def run_dogrib_case(
         Use the observed per-cell fuel, blend, and terrain grids (default False).
     hourly_weather : bool, optional
         Use the observed hourly wind steps (default False).
+    weather_patches : bool, optional
+        Apply the sample Scenario 2b wind patches: +15 degrees until 18:30 and 280 degrees
+        inside the river-polygon patch until 20:00 (default False).
+    point_ignition : bool, optional
+        Start from the observed ignition point instead of the whole start perimeter.
+    fuel_break_start : bool, optional
+        Treat the observed 13:00 perimeter as non-fuel and include it in the burned mask as
+        initial area (default False).
     ffmc, bui, wind_kmh, wind_direction_deg : float or None, optional
         Weather overrides; None uses :func:`reference_weather`.
     slope_percent : float, optional
@@ -595,10 +623,16 @@ def run_dogrib_case(
     ffmc_value = weather["ffmc"] if ffmc is None else ffmc
     bui_value = weather["bui"] if bui is None else bui
     if hourly_weather:
-        steps = hourly_weather_steps(fire, ffmc=ffmc_value, bui=bui_value)
+        steps = hourly_weather_steps(
+            fire,
+            ffmc=ffmc_value,
+            bui=bui_value,
+            direction_offset_deg=15.0 if weather_patches else 0.0,
+            offset_until_min=330.0 if weather_patches else None,
+        )
         wind_value = steps[0].wind_kmh
         direction_value = steps[0].wind_direction_deg
-        weather_mode = "hourly"
+        weather_mode = "hourly" if not weather_patches else "hourly+patches"
     else:
         steps = None
         wind_value = weather["wind_kmh"] if wind_kmh is None else wind_kmh
@@ -628,12 +662,35 @@ def run_dogrib_case(
         closure_grid = np.full((rows, cols), 80.0, dtype=float)
         fuel_mode = f"homogeneous {fuel_type}"
     start_mask = observed_mask(fire, 0)
-    start_mask &= burnable
-    start_cells = tuple(
-        (int(row), int(col)) for row, col in zip(*np.where(start_mask), strict=True)
-    )
+    initial_burned: np.ndarray | None = None
+    if fuel_break_start:
+        burnable &= ~start_mask
+        initial_burned = start_mask
+    start_cells: tuple[tuple[int, int], ...]
+    if point_ignition:
+        x, y = fire.ignition_xy
+        ign_col = int((x - fire.grid.xll) // fire.grid.cell_size_m)
+        ign_row = fire.grid.nrows - 1 - int((y - fire.grid.yll) // fire.grid.cell_size_m)
+        ignition = (ign_row, ign_col)
+        if not (0 <= ign_row < rows and 0 <= ign_col < cols and burnable[ign_row, ign_col]):
+            candidates = np.argwhere(burnable)
+            if len(candidates) == 0:
+                raise ComparisonError("grid has no burnable cells near the ignition point")
+            distances = (candidates[:, 0] - ign_row) ** 2 + (candidates[:, 1] - ign_col) ** 2
+            nearest = candidates[int(np.argmin(distances))]
+            ignition = (int(nearest[0]), int(nearest[1]))
+        start_cells = (ignition,)
+    else:
+        start_mask &= burnable
+        start_cells = tuple(
+            (int(row), int(col)) for row, col in zip(*np.where(start_mask), strict=True)
+        )
     if not start_cells:
         raise ComparisonError("observed start perimeter has no burnable cells")
+    wind_patch: np.ndarray | None = None
+    if weather_patches and fire.weather_patch_projected is not None:
+        patch_mask = rasterize_rings(fire.weather_patch_projected, fire.grid)
+        wind_patch = np.where(patch_mask, 280.0, np.nan)
     grid = SiteGrid(
         fuel_type=fuel_type,
         rows=rows,
@@ -653,6 +710,7 @@ def run_dogrib_case(
         conifer_percent_grid=conifer_grid,
         dead_fir_percent_grid=dead_grid,
         crown_closure_percent_grid=closure_grid,
+        wind_direction_patch=wind_patch,
     )
     growth = grow_fire(
         grid,
@@ -662,9 +720,12 @@ def run_dogrib_case(
             snapshot_interval_min=duration_min,
             neighbor_radius=2,
             weather_steps=steps,
+            wind_patch_end_min=420.0 if weather_patches else None,
         ),
     )
     simulated = np.isfinite(growth.ignition_time_min)
+    if initial_burned is not None:
+        simulated = simulated | initial_burned
     observed = observed_mask(fire, -1)
     metrics = compare_masks(simulated, observed, fire.grid)
     return DogribCase(
@@ -682,6 +743,7 @@ def run_dogrib_case(
         growth=growth,
         metrics=metrics,
         start_cells=len(start_cells),
+        initial_burned_mask=initial_burned,
     )
 
 

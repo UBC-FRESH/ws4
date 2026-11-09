@@ -4934,11 +4934,6 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   centroid and overlap fail. No external Prometheus/FARSITE parity, hourly weather, or
   spotting yet. Dashboard: **GREEN**.
 
-- P157.4: verified and closed out the Dogrib observed-fire validation. The benchmark matrix,
-  CSV, JSON, and SVG reproduce. The time-matched run is 29,509 ha vs 10,219 (+188.8%),
-  perimeter +222.8%, centroid 3.01 km, IoU 0.255, Sorensen 0.406, and 9.2° orientation error.
-  It passes centroid/orientation and fails area, perimeter, and overlap. External parity,
-  hourly BUI, and spotting remain accepted limits. Closed as a negative validation result.
 - P157.7: added time-dependent growth. `WeatherStep` and `GrowthConfig.weather_steps` drive a
   FIFO edge-travel integration through piecewise-constant weather. The Dogrib case builds 23
   hourly steps from the weather stream, advances FFMC with the standard equation, and holds BUI
@@ -4947,3 +4942,20 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   and orientation but fails area, perimeter, and overlap. The 1,372-minute constant-weather run
   is 49,207 ha (+381.5%). Added wind-shift, constant-step, and hourly-step tests. No external
   Prometheus/FARSITE parity, hourly BUI, or spotting. Dashboard: **GREEN**.
+
+- P157.4: verified and closed out the Dogrib observed-fire phase. Scenario 2b at 402 minutes
+  is 16,241 ha vs 10,219 (+58.9%), perimeter +75.9%, centroid 1.77 km, IoU 0.385, Sorensen
+  0.556, and 6.5° orientation error. It passes centroid, orientation, IoU, and Sorensen;
+  area and perimeter fail. The 1,372-minute time-matched sensitivity is 27,678 ha (+170.8%),
+  IoU 0.304, Sorensen 0.466. External parity, burning-condition thresholds, WindNinja,
+  hourly BUI, and spotting remain accepted limits. Closed as partial validation, not an
+  operational match.
+- P157.8: added the pinned weather-patch KML and reproduced the documented Scenario 2b inputs:
+  point ignition, the 13:00 perimeter as a non-fuel break plus 935 ha initial burned area, the
+  +15° landscape wind patch until 18:30, and the 280° river-polygon patch until 20:00. The
+  402-minute case is 16,241 ha vs 10,219 (+58.9%), perimeter +75.9%, centroid 1.77 km, IoU
+  0.385, Sorensen 0.556, orientation 6.5°. It passes centroid, orientation, IoU, and Sorensen;
+  area and perimeter fail. A 1,372-minute Scenario 2b run is 27,678 ha (+170.8%), centroid
+  1.07 km, IoU 0.304, Sorensen 0.466. Added point-ignition, fuel-break, weather-patch, and
+  wind-patch tests. No external Prometheus/FARSITE parity, burning-condition thresholds,
+  WindNinja scenarios, hourly BUI, or spotting. Dashboard: **GREEN**.

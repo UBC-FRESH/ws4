@@ -165,3 +165,32 @@ def test_dogrib_hourly_case_uses_weather_steps() -> None:
     assert case.growth.config.weather_steps is not None
     assert len(case.growth.config.weather_steps) == 23
     assert case.growth.summary()["weather_mode"] == "time_dependent"
+
+
+def test_hourly_weather_offset_stops_at_the_patch_end() -> None:
+    fire = load_dogrib(FIXTURE)
+    steps = hourly_weather_steps(fire, direction_offset_deg=15.0, offset_until_min=330.0)
+
+    assert steps[0].wind_direction_deg == pytest.approx((225.0 + 15.0) % 360.0)
+    assert steps[6].wind_direction_deg == pytest.approx(225.0)
+
+
+def test_dogrib_scenario_2b_uses_point_ignition_and_fuel_break() -> None:
+    fire = load_dogrib(FIXTURE)
+    case = run_dogrib_case(
+        fire,
+        scenario="2b-test",
+        heterogeneous=True,
+        hourly_weather=True,
+        weather_patches=True,
+        point_ignition=True,
+        fuel_break_start=True,
+        duration_min=1.0,
+    )
+
+    assert case.weather_mode == "hourly+patches"
+    assert case.start_cells == 1
+    assert case.initial_burned_mask is not None
+    assert bool(case.initial_burned_mask.any())
+    assert case.growth.config.wind_patch_end_min == pytest.approx(420.0)
+    assert case.growth.grid.wind_direction_patch is not None

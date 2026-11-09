@@ -154,7 +154,12 @@ perimeter, and orientation screen; centroid and overlap fail. P157.7 adds time-d
 growth and a 1,372-minute time-matched run with hourly weather. That run is 29,509 ha
 (+188.8%), perimeter +222.8%, centroid 3.01 km, IoU 0.255, Sorensen 0.406, and 9.2°
 orientation error. It passes centroid and orientation but fails area, perimeter, and overlap.
-Spotting, hourly BUI, and an external Prometheus/FARSITE parity test remain missing.
+P157.8 reproduces the documented Scenario 2b inputs: point ignition, the 13:00 perimeter as a
+fuel break, the +15° landscape patch, and the 280° river-polygon patch. The 402-minute case is
+16,241 ha (+58.9%), perimeter +75.9%, centroid 1.77 km, IoU 0.385, Sorensen 0.556, and 6.5°
+orientation error. It passes centroid, orientation, IoU, and Sorensen; area and perimeter fail.
+Burning-condition thresholds, WindNinja scenarios, spotting, hourly BUI, and external
+Prometheus/FARSITE parity remain missing.
 
 ## 10. What follows
 

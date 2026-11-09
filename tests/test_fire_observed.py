@@ -28,6 +28,8 @@ def test_dogrib_fixture_loads_with_geometry_and_weather() -> None:
     assert fire.version == OBSERVED_FIRE_VERSION
     assert fire.grid.ncols == 357
     assert fire.grid.nrows == 223
+    assert fire.weather_patch_projected is not None
+    assert len(fire.weather_patch_projected) == 1
     assert fire.grid.cell_size_m == 100.0
     assert fire.grid.contains(*fire.ignition_xy)
     assert len(fire.weather) == 864

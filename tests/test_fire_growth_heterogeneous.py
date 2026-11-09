@@ -337,3 +337,20 @@ def test_nodata_elevation_is_filled_and_masked() -> None:
 def test_elevation_with_no_valid_cells_fails() -> None:
     with pytest.raises(FireFuelError, match="no valid cells"):
         slope_aspect_from_elevation(np.full((3, 3), -9999.0), 10.0, nodata=-9999.0)
+
+
+def test_wind_direction_patch_requires_the_grid_shape() -> None:
+    with pytest.raises(FireFuelError, match="wind_direction_patch"):
+        SiteGrid(
+            fuel_type="C2",
+            rows=3,
+            cols=3,
+            cell_size_m=10.0,
+            ffmc=90.0,
+            bui=40.0,
+            wind_kmh=15.0,
+            wind_direction_deg=270.0,
+            slope_percent=0.0,
+            aspect_deg=0.0,
+            wind_direction_patch=np.zeros((2, 2)),
+        )

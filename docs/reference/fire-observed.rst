@@ -87,27 +87,25 @@ can use a homogeneous C2 reference or the observed per-cell fuel, terrain, and h
 ESRI ASCII grids store row zero at the north edge. P157.5 corrected an earlier north/south
 row flip; the earlier P157.2 numbers are invalid.
 
-The primary case is now time-matched to the observed final: observed grid, hourly weather,
-1,372 minutes to the 11:52 perimeter. The sample dataset's Scenario 2 is 402 minutes
-(13:00–19:42); the 402-minute cases are retained for the official duration, but there is no
-observed 19:42 perimeter in the fixture. FFMC starts at 92.7 and is advanced hourly; BUI is held at 98.7 because the
-stream has no hourly BUI conversion.
+The documented Scenario 2 is 402 minutes, 13:00–19:42. P157.8 reproduces its main inputs:
+point ignition, the 13:00 perimeter as a non-fuel break, per-cell fuel and terrain, hourly
+weather, the +15° landscape wind patch, and the 280° river-polygon patch.
 
-Time-matched observed-grid result:
+Scenario 2b, 402 minutes:
 
-- area 29,509 ha vs 10,219 ha (+188.8%);
-- perimeter 517.2 km vs 160.2 km (+222.8%);
-- centroid 3.01 km;
-- orientation error 9.2°;
-- IoU 0.255 and Sorensen 0.406.
+- area 16,241 ha vs 10,219 ha (+58.9%), including 935 ha of initial burned area;
+- perimeter 281.8 km vs 160.2 km (+75.9%);
+- centroid 1.77 km;
+- orientation error 6.5°;
+- IoU 0.385 and Sorensen 0.556.
 
-The 402-minute observed-grid case is not time-matched: 8,203 ha (−19.7%), perimeter +11.6%,
-centroid 9.85 km, IoU 0.206, Sorensen 0.342, orientation 29.2°. The homogeneous C2 reference
-is 13,852 ha (+35.6%), perimeter +75.2%, centroid 6.17 km, IoU 0.264, Sorensen 0.418,
-orientation 0.7°.
+It passes centroid, orientation, IoU, and Sorensen; it fails area and perimeter. A
+1,372-minute Scenario 2b run is 27,678 ha (+170.8%), perimeter +177.7%, centroid 1.07 km,
+IoU 0.304, Sorensen 0.466, and 8.0° orientation error.
 
-The time-matched run passes the centroid and orientation checks but fails area, perimeter,
-IoU, and Sorensen. The full evidence is in ``notes/reports/p157-observed-validation.md`` and
+Raw-wind controls: 402-minute observed-grid hourly is 17,195 ha (+68.3%), centroid 5.18 km,
+IoU 0.186; 402-minute constant wind is 8,203 ha (−19.7%), centroid 9.85 km, IoU 0.206.
+The full evidence is in ``notes/reports/p157-observed-validation.md`` and
 ``notes/reports/p157-dogrib-results.csv``. The same view is served read-only at
 ``/api/fire/observed/dogrib.svg``.
 
@@ -122,7 +120,8 @@ Limits
   No runnable Prometheus/FARSITE oracle was used for parity.
 - Hourly FFMC uses the standard FFMC equation on hourly weather; BUI is held constant.
 - Spotting is absent; the observed final contains 25 polygons, including spot fires.
-- The time-matched run overpredicts area by 189%, so it is not an operational match.
+- Scenario 2b overpredicts area by 59% and perimeter by 76%, so it is not an operational match.
+- Burning-condition thresholds, the WindNinja scenarios, hourly BUI, and spotting are missing.
 - The event window ends at the 11:52 perimeter in this archive. The Prometheus scenario text
   describes a slightly later end; the loader records the archive's actual timestamp.
 - The weather and perimeter times are local time. No daylight-saving conversion is applied.
