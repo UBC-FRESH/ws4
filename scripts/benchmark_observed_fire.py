@@ -19,6 +19,7 @@ if str(ROOT) not in sys.path:
 
 from ws4.fire.comparison import DogribCase, run_dogrib_case  # noqa: E402
 from ws4.fire.observed import ObservedFire, load_dogrib  # noqa: E402
+from ws4.fire.observed_view import write_comparison_svg  # noqa: E402
 
 SCENARIOS: tuple[str, ...] = ("base", "wind-27", "wind-43", "flat", "no-wind", "long-800")
 
@@ -64,11 +65,19 @@ def main() -> None:
         type=Path,
         default=ROOT / "notes" / "reports" / "p157-dogrib-summary.json",
     )
+    parser.add_argument(
+        "--view",
+        type=Path,
+        default=ROOT / "notes" / "reports" / "p157-dogrib-view.svg",
+    )
     args = parser.parse_args()
     fire = load_dogrib(ROOT / "tests" / "fixtures" / "fire" / "dogrib")
     rows: list[dict[str, object]] = []
+    base_case: DogribCase | None = None
     for name in SCENARIOS:
         case = run_scenario(fire, name)
+        if name == "base":
+            base_case = case
         row: dict[str, object] = {
             "scenario": case.scenario,
             "duration_min": case.duration_min,
@@ -89,9 +98,12 @@ def main() -> None:
     frame = pd.DataFrame(rows)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     frame.to_csv(args.output, index=False)
+    if base_case is not None:
+        write_comparison_svg(fire, base_case, args.view)
     summary = {
         "fire": fire.to_dict(),
         "scenarios": rows,
+        "view": str(args.view),
     }
     args.summary.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     columns = [

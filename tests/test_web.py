@@ -38,6 +38,7 @@ def _app(
     with_geometry: bool = True,
     tile_cache_dir: Path | None = None,
     fire_scene: Path | None = None,
+    fire_view: Path | None = None,
 ) -> tuple[TestClient, Path]:
     """Create a dataset, a run and a client over them; return the client and the targets path."""
     dataset = tmp_path / "dataset"
@@ -97,6 +98,7 @@ def _app(
         targets=targets,
         geometry=geometry if with_geometry else None,
         fire_scene=fire_scene,
+        fire_view=fire_view,
         tile_cache_dir=tile_cache_dir,
     )
     return TestClient(app), targets
@@ -132,6 +134,7 @@ def test_the_landing_page_lists_the_dataset_and_its_runs(tmp_path: Path) -> None
     assert 'id="run"' in response.text  # the application shell, not a server-rendered list
     assert 'id="load-condition-card"' in response.text
     assert 'id="condition-card"' in response.text
+    assert 'id="fire-observed"' in response.text
     assert client.get("/static/app.js").status_code == 200
     assert client.get("/health").json() == {"status": "ok"}
 
@@ -158,6 +161,7 @@ def test_shell_has_run_snapshot_timeline_playback_and_help(tmp_path: Path) -> No
     assert "row.account === account && !row.flow" in script
     assert "function syncTargetTableInputs" in script
     assert "syncTargetTableInputs();" in script
+    assert "api/fire/observed/dogrib.svg" in script
     assert "await startProfileRun();" in script
 
 
@@ -2597,6 +2601,33 @@ def test_fire_scene_route_is_explicit_when_missing(tmp_path: Path) -> None:
 
     assert response.status_code == 404
     assert "fire scene is not installed" in response.json()["detail"]
+
+
+def test_observed_fire_view_route_serves_the_svg(tmp_path: Path) -> None:
+    """The observed-versus-simulated view is a read-only SVG response."""
+    view = tmp_path / "dogrib.svg"
+    view.write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg"><title>Dogrib</title></svg>',
+        encoding="utf-8",
+    )
+    client, _ = _app(tmp_path, fire_view=view)
+
+    response = client.get("/api/fire/observed/dogrib.svg")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("image/svg+xml")
+    assert "Dogrib" in response.text
+    assert response.headers["cache-control"] == "no-store, must-revalidate"
+
+
+def test_observed_fire_view_is_explicit_when_missing(tmp_path: Path) -> None:
+    """A missing observed-fire view names the missing artifact."""
+    client, _ = _app(tmp_path, fire_view=tmp_path / "missing.svg")
+
+    response = client.get("/api/fire/observed/dogrib.svg")
+
+    assert response.status_code == 404
+    assert "observed fire view is not installed" in response.json()["detail"]
 
 
 def test_fire_scene_discovery_payload_and_vendored_viewer(tmp_path: Path) -> None:

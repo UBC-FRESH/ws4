@@ -466,4 +466,4 @@ items are enhancements and maintenance.
   observed-fire contract, and comparison harness are implemented. The homogeneous base case
   passes the area/perimeter/orientation screen but fails the centroid and overlap screen
   (14.29 km centroid error, IoU 0.070). Heterogeneous fuel/terrain and spotting are the next
-  modelling steps. Target: P157.3/P157.4.
+  modelling steps. P157.3 adds the read-only SVG view and API endpoint. Target: P157.4.

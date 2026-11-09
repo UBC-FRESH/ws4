@@ -9135,6 +9135,9 @@ function wireFire() {
     if (document.fullscreenElement) document.exitFullscreen();
     else wrap.requestFullscreen?.();
   });
+  $('fire-observed').addEventListener('click', () => {
+    window.open('api/fire/observed/dogrib.svg', '_blank', 'noopener');
+  });
   $('fire-time').addEventListener('input', () => {
     state.fire.playing = false;
     $('fire-play').textContent = 'Play';

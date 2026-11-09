@@ -993,6 +993,7 @@ def create_app(
     roads: Path | None = None,
     crs: str = "EPSG:4326",
     fire_scene: Path | None = None,
+    fire_view: Path | None = None,
     tile_cache_dir: Path | None = None,
     allow_console: bool = False,
     console_token: str | None = None,
@@ -1069,6 +1070,9 @@ def create_app(
     fire_scene : Path or None, optional
         A standalone fire-scene ``viewer.html``. When omitted, ``/fire`` serves
         ``static/fire-demo/viewer.html`` if that demo file is installed.
+    fire_view : Path or None, optional
+        An observed-versus-simulated SVG served at ``/api/fire/observed/dogrib.svg``.
+        When omitted, the repository's ``docs/_static/fire-dogrib-view.svg`` is used.
     tile_cache_dir : Path or None, optional
         Directory for durable MVT tiles. ``None`` keeps tiles in memory only.
     allow_console : bool, optional
@@ -1122,6 +1126,11 @@ def create_app(
     route_config_path = Path(route_config).resolve() if route_config is not None else None
     roads_path = Path(roads).resolve() if roads is not None else None
     fire_scene_path = Path(fire_scene).resolve() if fire_scene is not None else None
+    fire_view_path = (
+        Path(fire_view).resolve()
+        if fire_view is not None
+        else Path(__file__).resolve().parents[2] / "docs" / "_static" / "fire-dogrib-view.svg"
+    )
     tile_cache_root = Path(tile_cache_dir).resolve() if tile_cache_dir is not None else None
     source_crs = str(crs)
     agent_working_directory = Path(agent_cwd).resolve() if agent_cwd is not None else Path.cwd()
@@ -1486,6 +1495,17 @@ def create_app(
         return FileResponse(
             scene,
             media_type="text/html",
+            headers={"Cache-Control": "no-store, must-revalidate"},
+        )
+
+    @app.get("/api/fire/observed/dogrib.svg")
+    def observed_fire_view() -> FileResponse:
+        """Return the read-only Dogrib observed-versus-simulated view."""
+        if not fire_view_path.is_file():
+            raise HTTPException(status_code=404, detail="observed fire view is not installed")
+        return FileResponse(
+            fire_view_path,
+            media_type="image/svg+xml",
             headers={"Cache-Control": "no-store, must-revalidate"},
         )
 

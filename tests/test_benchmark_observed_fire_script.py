@@ -99,6 +99,7 @@ def test_main_writes_results(
     summary = tmp_path / "summary.json"
     monkeypatch.setattr(module, "load_dogrib", lambda path: FakeFire())
     monkeypatch.setattr(module, "run_scenario", lambda fire, name: FakeCase(name))
+    monkeypatch.setattr(module, "write_comparison_svg", lambda fire, case, path: Path(path))
     monkeypatch.setattr(
         sys,
         "argv",

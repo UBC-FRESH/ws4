@@ -94,7 +94,12 @@ The base-case result is characterized, not accepted for footprint:
 
 The coarse area, perimeter, and orientation screen passes; the centroid and overlap screen
 fails. The full evidence is in ``notes/reports/p157-observed-validation.md`` and
-``notes/reports/p157-dogrib-results.csv``.
+``notes/reports/p157-dogrib-results.csv``. The same view is served read-only at
+``/api/fire/observed/dogrib.svg``.
+
+.. image:: /_static/fire-dogrib-view.svg
+   :alt: Dogrib observed start and final perimeters over the simulated burned area
+   :width: 100%
 
 Limits
 ------
