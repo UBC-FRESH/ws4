@@ -108,6 +108,14 @@ Artifacts:
 - `notes/reports/p157-dogrib-view.svg`
 - `docs/_static/fire-dogrib-view.svg`
 
+## Prometheus/Wine attempt
+
+Prometheus 2023.06.01 installed under a clean 64-bit Wine prefix after VC++ 2015–2022,
+.NET 4.8, and Java 8. The installed `Prometheus.exe` exits with
+`System.Runtime.InteropServices.SEHException` at `WinMainCRTStartup`; no GUI opens. Full
+negative result: `notes/reports/p157-prometheus-wine.md`. BurnP3+FireSTARR is the practical
+Linux reference path.
+
 ## Pull request
 
 PR #943 is queued for maintainer approval. Do not merge, tag, release, or change settings

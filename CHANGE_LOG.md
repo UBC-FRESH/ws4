@@ -4950,6 +4950,10 @@ tests: 129 passed. Dashboard: `OVERALL: GREEN`.
   IoU 0.304, Sorensen 0.466. External parity, burning-condition thresholds, WindNinja,
   hourly BUI, and spotting remain accepted limits. Closed as partial validation, not an
   operational match.
+- P157 Prometheus/Wine negative result: Prometheus 2023.06.01 installs under a clean
+  64-bit Wine prefix after .NET 4.8, VC++ 2015-2022, and Java 8, but `Prometheus.exe` exits
+  with `System.Runtime.InteropServices.SEHException` at `WinMainCRTStartup`. No GUI opens.
+  This is a Wine runtime blocker; Prometheus needs a Windows host or BurnP3+FireSTARR.
 - P157.9: added the first external-model comparison. FireSTARR v0.9.29 deterministic on the
   Dogrib 200 m comparison grid produced 13,808 ha vs 10,132 observed (+36.3%), perimeter
   +94.0%, centroid 6.91 km, IoU 0.140, Sorensen 0.246, orientation 5.5°. WS4 raw wind on
